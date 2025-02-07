@@ -1,6 +1,6 @@
 <img src="Images/Logo.png?raw=true" width="420" height="100" /> 
   
-[![NuGet](https://img.shields.io/badge/Nuget-v2.1.5-red.svg)](https://www.nuget.org/packages/WPFHexaEditor/)
+[![NuGet](https://img.shields.io/nuget/v/WPFHexaEditor?color=red)](https://www.nuget.org/packages/WPFHexaEditor/)
 [![NetFramework](https://img.shields.io/badge/.Net%20Framework-4.7/4.8-green.svg)](https://www.microsoft.com/net/download/windows)
 [![NetFramework](https://img.shields.io/badge/.Net%20-5.0-green.svg)](https://www.microsoft.com/net/download/windows)
 [![NetFramework](https://img.shields.io/badge/Language-C%23%207.0+-orange.svg)](https://blogs.msdn.microsoft.com/dotnet/2016/08/24/whats-new-in-csharp-7-0/)
@@ -10,11 +10,11 @@ Wpf Hexeditor is a powerful and fully customisable user control for editing file
 
 You can use it very easily in Wpf or WinForm application. Download the code and test the Wpf (C#, VB.NET) and WinForm (C#) samples.
 
-The control are localized in English, French, Russian, Polish, Portuguese and Chinese
+The control is localized in English, French, Russian, Polish, Portuguese and Chinese.
 
 ### ⭐ You want to say thank or just like project  ?
 
-Hexeditor control is totaly free and can be used in all project you want like open source and commercial applications. I make it in my free time and a few colaborators help me when they can... Please hit the ⭐️ button or fork and I will be very happy ;) I accept help contribution...  
+Hexeditor control is totally free and can be used in all project you want like open source and commercial applications. I make it in my free time and a few collaborators help me when they can... Please hit the ⭐️ button or fork and I will be very happy ;) I accept help contribution...  
 
 ### 🖼 Screenshots
 
@@ -24,7 +24,7 @@ Sample with standard ASCII character table
 Sample with custom character table (TBL) on SNES Final Fantasy II US
 ![example](Images/Sample9-TBL.png?raw=true)
 
-Sample use ByteShiftLeft and BytePerLine properties with custom TBL for edit fixed lenght table...
+Sample use ByteShiftLeft and BytePerLine properties with custom TBL for edit fixed length table...
 ![example](Images/Sample12-FIXEDTBL-BYTESHIFT.png?raw=true)
 
 Sample use of find and find/replace dialog...
@@ -48,7 +48,7 @@ Unicode TBL are supported. For use put value at the right of equal (=) like this
 
 ![example](Images/TBLExplain.png?raw=true)
 
-### 🛒 Somes features
+### 🛒 Some features
 
 ⭐ = New features
 
@@ -56,14 +56,14 @@ Unicode TBL are supported. For use put value at the right of equal (=) like this
 - ⭐ Edit in hexadecimal, decimal and binary 
 - ⭐ Edit in 8bit, 16bit and 32bit
 - ⭐ Edit in LoHi or HiLo
-- ⭐ View as BarChart (see in screenshot. will evoluate in future)
+- ⭐ View as BarChart (see in screenshot. will evolve in future)
 - Find and Find/Replace dialog
 - Append byte at end of file
 - Include HexBox, an Hexadecimal TextBox with spinner
 - Fill selection (or another array) with byte.
 - Support of common key in window like CTRL+C, CTRL+V, CTRL+Z, CTRL+Y, CTRL+A, ESC...
 - Copy to clipboard as code like C#, VB.Net, C, Java, F# ... 
-- Support custom .TBL character table file insted of default ASCII.
+- Support custom .TBL character table file instead of default ASCII.
 - Unlimited Undo / Redo
 - Finds methods (FindFirst, FindNext, FindAll, FindLast, FindSelection) and overload for (string, byte[])
 - Replace methods (ReplaceFirst, ReplaceNext, ReplaceAll) and overload for (string, byte[])
@@ -71,9 +71,9 @@ Unicode TBL are supported. For use put value at the right of equal (=) like this
 - Bookmark
 - Group byte in block of 2,4,6,8 bytes...
 - Show data as hexadecimal or decimal
-- Possibility to view only a part of file/stream in editor and dont loose anychange when used it (AllowVisualByteAdress...)
+- Possibility to view only a part of file/stream in editor and don't loose any change when used it (AllowVisualByteAdress...)
 - Zoom / UnZoom hexeditor content (50% to 200%)
-- Positility to show or not the bytes are deleted.
+- Possibility to show or not the bytes are deleted.
 - Customize the color of bytes, TBL, background, header, and much more ...
 - ...
 
