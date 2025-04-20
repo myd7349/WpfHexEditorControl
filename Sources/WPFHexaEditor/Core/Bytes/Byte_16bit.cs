@@ -40,10 +40,10 @@ namespace WpfHexaEditor.Core.Bytes
             var value = new byte[2];
             var sign_positive = true;
             var prefix = "";
-            var byteValue = (order == ByteOrderType.HiLo) ? Byte.ToArray().Reverse().ToArray() : Byte.ToArray();
-            var originValue = (order == ByteOrderType.HiLo) ? OriginByte.ToArray().Reverse().ToArray() : OriginByte.ToArray();
-            var ByteInt = BitConverter.ToUInt16(byteValue.Reverse().ToArray(), 0);
-            var OriginInt = BitConverter.ToUInt16(originValue.Reverse().ToArray(), 0);
+            var byteValue = (order == ByteOrderType.HiLo) ? Byte.AsEnumerable().Reverse().ToArray() : Byte.ToArray();
+            var originValue = (order == ByteOrderType.HiLo) ? OriginByte.AsEnumerable().Reverse().ToArray() : OriginByte.ToArray();
+            var ByteInt = BitConverter.ToUInt16(byteValue.AsEnumerable().Reverse().ToArray(), 0);
+            var OriginInt = BitConverter.ToUInt16(originValue.AsEnumerable().Reverse().ToArray(), 0);
 
             switch (state)
             {
@@ -90,7 +90,7 @@ namespace WpfHexaEditor.Core.Bytes
                         break;
                     case DataVisualType.Decimal:
                         text = (sign_positive ? "" : "-") + prefix +
-                            BitConverter.ToUInt16(value: value.Reverse().ToArray(), startIndex: 0).ToString("d5");
+                            BitConverter.ToUInt16(value: value.AsEnumerable().Reverse().ToArray(), startIndex: 0).ToString("d5");
                         break;
                     case DataVisualType.Binary:
                         text = (sign_positive ? "" : "-") + prefix +
