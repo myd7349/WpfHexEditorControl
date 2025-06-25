@@ -1,3 +1,10 @@
+### [HexEditor.Wpf](https://www.nuget.org/packages/HexEditor.Wpf)
+
+> [!NOTE]
+> This is not the official repository of `WpfHexEditorControl`. Since the NuGet package for [```WpfHexEditorControl```](https://www.nuget.org/packages/WPFHexaEditor) hasn't been updated for a while, I decided to compile a version from the latest source code myself and publish it to NuGet.
+
+### Original README.md of WpfHexEditorControl
+
 <img src="Images/Logo.png?raw=true" width="420" height="100" /> 
   
 [![NuGet](https://img.shields.io/nuget/v/WPFHexaEditor?color=red)](https://www.nuget.org/packages/WPFHexaEditor/)
