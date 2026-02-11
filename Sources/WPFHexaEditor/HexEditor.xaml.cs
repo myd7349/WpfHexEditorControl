@@ -79,6 +79,26 @@ namespace WpfHexaEditor
         private readonly ByteModificationService _byteModificationService = new ByteModificationService();
 
         /// <summary>
+        /// Service for bookmark management operations
+        /// </summary>
+        private readonly BookmarkService _bookmarkService = new BookmarkService();
+
+        /// <summary>
+        /// Service for TBL (character table) management operations
+        /// </summary>
+        private readonly TblService _tblService = new TblService();
+
+        /// <summary>
+        /// Service for position calculations and conversions
+        /// </summary>
+        private readonly PositionService _positionService = new PositionService();
+
+        /// <summary>
+        /// Service for custom background block management
+        /// </summary>
+        private readonly CustomBackgroundService _customBackgroundService = new CustomBackgroundService();
+
+        /// <summary>
         /// The large change of scroll when clicked on scrollbar
         /// </summary>
         private double _scrollLargeChange = 100;
@@ -1052,10 +1072,14 @@ namespace WpfHexaEditor
         /// </summary>
         public void LoadTblFile(string fileName)
         {
-            if (!File.Exists(fileName)) return;
+            // Load via service (data layer)
+            if (!_tblService.LoadFromFile(fileName))
+                return;
 
-            _tblCharacterTable = new TblStream(fileName);
+            // Update reference for backward compatibility
+            _tblCharacterTable = _tblService.CharacterTable;
 
+            // Update UI (visual layer)
             TblLabel.Visibility = Visibility.Visible;
             TblLabel.ToolTip = $"TBL file : {fileName}";
 
@@ -1072,9 +1096,15 @@ namespace WpfHexaEditor
         /// </summary>
         public void LoadDefaultTbl(DefaultCharacterTableType type = DefaultCharacterTableType.Ascii)
         {
-            _tblCharacterTable = TblStream.CreateDefaultTbl(type);
+            // Load via service (data layer)
+            if (!_tblService.LoadDefault(type))
+                return;
+
+            // Update reference for backward compatibility
+            _tblCharacterTable = _tblService.CharacterTable;
             TblShowMte = false;
 
+            // Update UI (visual layer)
             TblLabel.Visibility = Visibility.Visible;
             TblLabel.ToolTip = $"{Properties.Resources.DefaultTBLString} : {type}";
 
@@ -1883,24 +1913,15 @@ namespace WpfHexaEditor
         /// Get the line number of position in parameter
         /// </summary>
         public long GetLineNumber(long position) =>
-            (position - ByteShiftLeft - (HideByteDeleted
-                                            ? GetCountOfByteDeletedBeforePosition(position)
-                                            : 0)
-            ) / (BytePerLine * ByteSizeRatio);
+            _positionService.GetLineNumber(position, ByteShiftLeft, HideByteDeleted,
+                BytePerLine, ByteSizeRatio, _provider);
 
         /// <summary>
         /// Get the column number of the position
         /// </summary>
-        public long GetColumnNumber(long position)
-        {
-            var correcter = HideByteDeleted
-                ? GetCountOfByteDeletedBeforePosition(position)
-                : 0;
-
-            return AllowVisualByteAddress
-                ? (position - VisualByteAdressStart - ByteShiftLeft - correcter) % BytePerLine
-                : (position - ByteShiftLeft - correcter) % BytePerLine;
-        }
+        public long GetColumnNumber(long position) =>
+            _positionService.GetColumnNumber(position, HideByteDeleted, AllowVisualByteAddress,
+                VisualByteAdressStart, ByteShiftLeft, BytePerLine, _provider);
 
         /// <summary>
         /// Set position of cursor
@@ -1938,29 +1959,8 @@ namespace WpfHexaEditor
         /// </summary>
         /// <param name="position">Start position for compute the correction</param>
         /// <param name="positionCorrection">Positive or negative position number to add/substract from position</param>
-        private long GetValidPositionFrom(long position, long positionCorrection)
-        {
-            if (!CheckIsOpen(_provider)) return -1;
-
-            var validPosition = position;
-            var gap = positionCorrection >= 0 ? positionCorrection : -positionCorrection;
-
-            long cnt = 0;
-            for (long i = 0; i < gap; i++)
-            {
-                cnt++;
-
-                if (_provider.CheckIfIsByteModified(position + (positionCorrection > 0 ? cnt : -cnt), ByteAction.Deleted).success)
-                {
-                    validPosition += positionCorrection > 0 ? 1 : -1;
-                    i--;
-                }
-                else
-                    validPosition += positionCorrection > 0 ? 1 : -1;
-            }
-
-            return validPosition >= 0 ? validPosition : -1;
-        }
+        private long GetValidPositionFrom(long position, long positionCorrection) =>
+            _positionService.GetValidPositionFrom(position, positionCorrection, CheckIsOpen(_provider) ? _provider : null);
 
         #endregion position methods
 
@@ -3582,30 +3582,16 @@ namespace WpfHexaEditor
         /// Get first visible byte position in control
         /// TODO: fix the first visible byte when HideByteDeleted are activated... 95% completed
         /// </summary>
-        private long FirstVisibleBytePosition
-        {
-            get
-            {
-                //Compute the cibled position for the first visible byte position
-                var cibledPosition = AllowVisualByteAddress
-                    ? ((long)VerticalScrollBar.Value) * (BytePerLine + ByteShiftLeft + VisualByteAdressStart) * ByteSizeRatio
-                    : ((long)VerticalScrollBar.Value) * (BytePerLine + ByteShiftLeft) * ByteSizeRatio;
-
-                //Count the byte are deleted before the cibled position
-                return HideByteDeleted
-                    ? cibledPosition + GetCountOfByteDeletedBeforePosition(cibledPosition)
-                    : cibledPosition;
-            }
-        }
+        private long FirstVisibleBytePosition =>
+            _positionService.GetFirstVisibleBytePosition((long)VerticalScrollBar.Value,
+                BytePerLine, ByteShiftLeft, ByteSizeRatio, HideByteDeleted, AllowVisualByteAddress,
+                VisualByteAdressStart, _provider);
 
         /// <summary>
         /// Get the number of byte are deleted before the position in parameter
         /// </summary>
         private long GetCountOfByteDeletedBeforePosition(long position) =>
-            (!CheckIsOpen(_provider))
-                ? 0
-                : _provider.GetByteModifieds(ByteAction.Deleted)
-                           .Count(b => b.Value.BytePositionInStream < position);
+            _positionService.GetCountOfByteDeletedBeforePosition(position, CheckIsOpen(_provider) ? _provider : null);
 
         /// <summary>
         /// Return true if SelectionStart are visible in control
@@ -3616,8 +3602,7 @@ namespace WpfHexaEditor
         /// Return true if the byteposition are visible in viewer
         /// </summary>
         public bool IsBytePositionAreVisible(long bytePosition) =>
-            bytePosition >= FirstVisibleBytePosition &&
-            bytePosition <= LastVisibleBytePosition;
+            _positionService.IsBytePositionVisible(bytePosition, FirstVisibleBytePosition, LastVisibleBytePosition);
 
         /// <summary>
         /// Get last visible byte position in control
@@ -4186,27 +4171,35 @@ namespace WpfHexaEditor
         {
             get
             {
-                var bmList = new List<BookMark>();
-
-                TraverseScrollMarker(sm =>
-                {
-                    if (sm.Tag is BookMark bm && bm.Marker == ScrollMarker.Bookmark)
-                        bmList.Add(bm);
-                });
-
-                return bmList.Select(bm => bm);
+                return _bookmarkService.GetBookmarksByMarker(ScrollMarker.Bookmark);
             }
         }
 
         /// <summary>
         /// Set bookmark at specified position
         /// </summary>
-        public void SetBookMark(long position) => SetScrollMarker(position, ScrollMarker.Bookmark);
+        public void SetBookMark(long position)
+        {
+            // Add to service (data layer)
+            _bookmarkService.AddBookmark(position, string.Empty, ScrollMarker.Bookmark);
+
+            // Update UI (visual layer)
+            SetScrollMarker(position, ScrollMarker.Bookmark);
+        }
 
         /// <summary>
         /// Set bookmark at selection start
         /// </summary>
-        public void SetBookMark() => SetScrollMarker(SelectionStart, ScrollMarker.Bookmark);
+        public void SetBookMark()
+        {
+            var position = SelectionStart;
+
+            // Add to service (data layer)
+            _bookmarkService.AddBookmark(position, string.Empty, ScrollMarker.Bookmark);
+
+            // Update UI (visual layer)
+            SetScrollMarker(position, ScrollMarker.Bookmark);
+        }
 
         /// <summary>
         /// Initialize brush cache to avoid repeated TryFindResource calls
@@ -4404,12 +4397,16 @@ namespace WpfHexaEditor
         /// <param name="marker">Type of marker to clear</param>
         public void ClearScrollMarker(ScrollMarker marker)
         {
+            // Clear from service (data layer)
+            if (marker == ScrollMarker.Bookmark)
+                _bookmarkService.RemoveAllBookmarks(marker);
+
             // Collect markers to remove (avoid modification during iteration)
             var keysToRemove = _scrollMarkerCache.Keys
                 .Where(k => k.StartsWith($"{marker}_"))
                 .ToList();
 
-            // Batch remove
+            // Batch remove from UI
             foreach (var key in keysToRemove)
             {
                 if (_scrollMarkerCache.TryGetValue(key, out var rect))
@@ -4427,6 +4424,10 @@ namespace WpfHexaEditor
         /// <param name="position"></param>
         public void ClearScrollMarker(ScrollMarker marker, long position)
         {
+            // Clear from service (data layer)
+            if (marker == ScrollMarker.Bookmark)
+                _bookmarkService.RemoveBookmark(position, marker);
+
             var topPosition = (VerticalScrollBar.Track == null) ? 0 :
                 (int)(GetLineNumber(position) * VerticalScrollBar.Track.TickHeight(MaxLine) - 1).Round(1);
 
@@ -5936,24 +5937,29 @@ namespace WpfHexaEditor
         /// <summary>
         /// Add of remove CustomBackgroundBlock in this list to use in hexeditor
         /// </summary>
-        public List<CustomBackgroundBlock> CustomBackgroundBlockItems { get; set; } = new();
+        public List<CustomBackgroundBlock> CustomBackgroundBlockItems
+        {
+            get => _customBackgroundService.GetAllBlocks().ToList();
+            set
+            {
+                _customBackgroundService.ClearAll();
+                if (value != null)
+                    _customBackgroundService.AddBlocks(value);
+            }
+        }
 
         /// <summary>
         /// Get the first CustomBackgroundBlock finded in list.
         /// </summary>
         public CustomBackgroundBlock GetCustomBackgroundBlock(long position) =>
-            CustomBackgroundBlockItems?
-                .OrderBy(c => c.StartOffset)
-                .FirstOrDefault(cbb =>
-                    position >= cbb.StartOffset &&
-                    position <= cbb.StopOffset - 1);
+            _customBackgroundService.GetBlockAt(position);
 
         /// <summary>
         /// Clear the list of custom background block
         /// </summary>
         public void ClearCustomBackgroundBlock()
         {
-            CustomBackgroundBlockItems.Clear();
+            _customBackgroundService.ClearAll();
             RefreshView(true);
         }
 

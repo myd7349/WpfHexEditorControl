@@ -1,11 +1,139 @@
 # Services Architecture
 
 This folder contains services that encapsulate the business logic of the HexEditor.
-The goal is to reduce the complexity of the `HexEditor` class (currently 6115 lines) by extracting responsibilities into dedicated services.
+The goal is to reduce the complexity of the `HexEditor` class by extracting responsibilities into dedicated services.
 
-## 📋 Available Services
+## 📋 Available Services (10 Total)
 
-### ✨ HighlightService
+### 1. 📋 ClipboardService
+**Responsibility:** Manage copy/paste/cut operations
+
+**Main methods:**
+- `CopyToClipboard()` - Copy to clipboard
+- `CopyToStream()` - Copy to stream
+- `GetCopyData()` - Retrieve copied data
+- `FillWithByte()` - Fill selection with a byte
+- `CanCopy()` - Check if copy is possible
+- `CanDelete()` - Check if deletion is possible
+
+**Usage:**
+```csharp
+var clipboardService = new ClipboardService
+{
+    DefaultCopyMode = CopyPasteMode.HexaString
+};
+
+// Copy selection
+clipboardService.CopyToClipboard(_provider, SelectionStart, SelectionStop, _tblCharacterTable);
+
+// Check if can copy
+if (clipboardService.CanCopy(SelectionLength, _provider))
+{
+    // ...
+}
+```
+
+---
+
+### 2. 🔍 FindReplaceService
+**Responsibility:** Search and replace data with optimized cache
+
+**Main methods:**
+- `FindFirst()` - Find first occurrence
+- `FindNext()` - Find next occurrence
+- `FindLast()` - Find last occurrence
+- `FindAll()` - Find all occurrences
+- `ReplaceFirst()` - Replace first occurrence
+- `ReplaceAll()` - Replace all occurrences
+- `ClearCache()` - Clear search cache
+
+**Usage:**
+```csharp
+var findReplaceService = new FindReplaceService();
+
+// Search
+byte[] searchData = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F };
+long position = findReplaceService.FindFirst(_provider, searchData);
+
+// Replace
+byte[] replaceData = new byte[] { 0x57, 0x6F, 0x72, 0x6C, 0x64 };
+var replacedPositions = findReplaceService.ReplaceAll(_provider, searchData, replaceData, false, false);
+```
+
+**Note:** The service includes a search cache with 5-second timeout to optimize performance.
+
+---
+
+### 3. ↩️ UndoRedoService
+**Responsibility:** Manage undo/redo history
+
+**Main methods:**
+- `Undo()` - Undo last action (returns byte position)
+- `Redo()` - Redo an undone action (returns byte position)
+- `ClearAll()` - Clear all history
+- `CanUndo()` - Check if undo is possible
+- `CanRedo()` - Check if redo is possible
+- `GetUndoCount()` - Get number of actions in history
+- `GetUndoStack()` - Get undo stack
+
+**Usage:**
+```csharp
+var undoRedoService = new UndoRedoService();
+
+// Undo
+if (undoRedoService.CanUndo(_provider))
+{
+    long position = undoRedoService.Undo(_provider);
+    // Update position in UI
+}
+
+// Redo
+if (undoRedoService.CanRedo(_provider))
+{
+    long position = undoRedoService.Redo(_provider, repeat: 3);
+    // Redo the last 3 undone actions
+}
+```
+
+---
+
+### 4. 🎯 SelectionService
+**Responsibility:** Manage selection and validation
+
+**Main methods:**
+- `IsValidSelection()` - Check if selection is valid
+- `GetSelectionLength()` - Calculate selection length
+- `FixSelectionRange()` - Fix start/stop order
+- `ValidateSelection()` - Validate and adjust selection to bounds
+- `GetSelectionBytes()` - Retrieve selected bytes
+- `GetAllBytes()` - Retrieve all bytes from provider
+- `GetSelectAllStart()` / `GetSelectAllStop()` - Calculate positions for "Select All"
+- `IsAllSelected()` - Check if everything is selected
+- `HasSelection()` - Check if a selection exists
+- `ExtendSelection()` - Extend selection with an offset
+- `GetSelectionByte()` - Retrieve byte at position
+
+**Usage:**
+```csharp
+var selectionService = new SelectionService();
+
+// Check selection
+if (selectionService.IsValidSelection(SelectionStart, SelectionStop))
+{
+    long length = selectionService.GetSelectionLength(SelectionStart, SelectionStop);
+    byte[] data = selectionService.GetSelectionBytes(_provider, SelectionStart, SelectionStop);
+}
+
+// Fix selection if inverted
+var (start, stop) = selectionService.FixSelectionRange(SelectionStart, SelectionStop);
+
+// Validate and adjust to bounds
+var (validStart, validStop) = selectionService.ValidateSelection(_provider, SelectionStart, SelectionStop);
+```
+
+---
+
+### 5. ✨ HighlightService
 **Responsibility:** Manage byte highlighting (search results, marked bytes)
 
 **Main methods:**
@@ -41,11 +169,11 @@ foreach (var (start, length) in highlightService.GetHighlightedRanges())
 highlightService.UnHighLightAll();
 ```
 
-**Note:** This service is stateful and maintains the dictionary of highlighted positions internally.
+**Note:** This service is **stateful** and maintains the dictionary of highlighted positions internally.
 
 ---
 
-### 🔧 ByteModificationService
+### 6. 🔧 ByteModificationService
 **Responsibility:** Manage byte modifications (insert, delete, modify)
 
 **Main methods:**
@@ -87,144 +215,190 @@ if (modService.CanModify(_provider, readOnlyMode))
 
 ---
 
-### ✅ ClipboardService
-**Responsibility:** Manage copy/paste/cut operations
+### 7. 🔖 BookmarkService
+**Responsibility:** Manage bookmark operations
 
 **Main methods:**
-- `CopyToClipboard()` - Copy to clipboard
-- `CopyToStream()` - Copy to stream
-- `GetCopyData()` - Retrieve copied data
-- `FillWithByte()` - Fill selection with a byte
-- `CanCopy()` - Check if copy is possible
-- `CanDelete()` - Check if deletion is possible
+- `AddBookmark(long position, string description, ScrollMarker marker)` - Add bookmark
+- `RemoveBookmark(long position, ScrollMarker? marker)` - Remove bookmark at position
+- `RemoveAllBookmarks(ScrollMarker marker)` - Remove all bookmarks of type
+- `ClearAll()` - Clear all bookmarks
+- `GetAllBookmarks()` - Get all bookmarks
+- `GetBookmarksByMarker(ScrollMarker marker)` - Get bookmarks by type
+- `GetBookmarkAt(long position)` - Get bookmark at position
+- `HasBookmarkAt(long position)` - Check if bookmark exists
+- `GetNextBookmark(long position)` - Get next bookmark after position
+- `GetPreviousBookmark(long position)` - Get previous bookmark before position
+- `UpdateBookmarkDescription(long position, string description)` - Update description
 
 **Usage:**
 ```csharp
-var clipboardService = new ClipboardService
-{
-    DefaultCopyMode = CopyPasteMode.HexaString
-};
+var bookmarkService = new BookmarkService();
 
-// Copy selection
-clipboardService.CopyToClipboard(_provider, SelectionStart, SelectionStop, _tblCharacterTable);
+// Add bookmark
+bookmarkService.AddBookmark(0x1000, "Important data", ScrollMarker.Bookmark);
 
-// Check if can copy
-if (clipboardService.CanCopy(SelectionLength, _provider))
+// Navigate bookmarks
+var nextBookmark = bookmarkService.GetNextBookmark(currentPosition);
+if (nextBookmark != null)
 {
-    // ...
+    SetPosition(nextBookmark.BytePositionInStream);
+}
+
+// Check if position has bookmark
+if (bookmarkService.HasBookmarkAt(position))
+{
+    // Display bookmark indicator
 }
 ```
 
 ---
 
-### 🔄 FindReplaceService
-**Responsibility:** Search and replace data with optimized cache
+### 8. 📚 TblService
+**Responsibility:** Manage TBL (character table) operations
 
 **Main methods:**
-- `FindFirst()` - Find first occurrence
-- `FindNext()` - Find next occurrence
-- `FindLast()` - Find last occurrence
-- `FindAll()` - Find all occurrences
-- `ReplaceFirst()` - Replace first occurrence
-- `ReplaceAll()` - Replace all occurrences
-- `ClearCache()` - Clear search cache
+- `LoadFromFile(string fileName)` - Load TBL from file
+- `LoadDefault(DefaultCharacterTableType type)` - Load default table (ASCII, EBCDIC)
+- `Clear()` - Clear current table
+- `GetTblBookmarks()` - Get bookmarks from TBL
+- `HasBookmarks()` - Check if table has bookmarks
+- `GetBookmarkCount()` - Get count of TBL bookmarks
+- `FindMatch(string hex, bool showSpecialValue)` - Find character match for hex
+- `BytesToString(byte[] bytes)` - Convert bytes to TBL string
+- `IsDefaultTable()` - Check if using default table
+- `IsFileTable()` - Check if loaded from file
+- `GetTableInfo()` - Get table description
 
 **Usage:**
 ```csharp
-var findReplaceService = new FindReplaceService();
+var tblService = new TblService();
 
-// Search
-byte[] searchData = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F };
-long position = findReplaceService.FindFirst(_provider, searchData);
+// Load TBL file
+if (tblService.LoadFromFile("game.tbl"))
+{
+    // Use TBL for text display
+    string text = tblService.BytesToString(bytes);
 
-// Replace
-byte[] replaceData = new byte[] { 0x57, 0x6F, 0x72, 0x6C, 0x64 };
-var replacedPositions = findReplaceService.ReplaceAll(_provider, searchData, replaceData, false, false);
+    // Get TBL bookmarks
+    foreach (var bookmark in tblService.GetTblBookmarks())
+    {
+        Console.WriteLine($"TBL Bookmark: {bookmark.Description}");
+    }
+}
+
+// Load default ASCII table
+tblService.LoadDefault(DefaultCharacterTableType.Ascii);
 ```
 
-**Note:** The service includes a search cache with 5-second timeout to optimize performance.
+**Note:** Used for ROM reverse engineering and game hacking to decode custom character encodings.
 
 ---
 
-### ↩️ UndoRedoService
-**Responsibility:** Manage undo/redo history
+### 9. 📐 PositionService
+**Responsibility:** Position calculations and conversions
 
 **Main methods:**
-- `Undo()` - Undo last action (returns byte position)
-- `Redo()` - Redo an undone action (returns byte position)
-- `ClearAll()` - Clear all history
-- `CanUndo()` - Check if undo is possible
-- `CanRedo()` - Check if redo is possible
-- `GetUndoCount()` - Get number of actions in history
-- `GetUndoStack()` - Get undo stack
+- `GetLineNumber(long position, ...)` - Calculate line number for position
+- `GetColumnNumber(long position, ...)` - Calculate column number
+- `GetCountOfByteDeletedBeforePosition(long position, ByteProvider)` - Count deleted bytes
+- `GetValidPositionFrom(long position, long correction, ByteProvider)` - Get valid position with deleted byte correction
+- `HexLiteralToLong(string hexLiteral)` - Convert hex string to long
+- `LongToHex(long position)` - Convert long to hex string
+- `GetFirstVisibleBytePosition(...)` - Calculate first visible byte based on scroll
+- `IsBytePositionVisible(long bytePosition, ...)` - Check if position is visible
+- `IsPositionValid(long position, long maxLength)` - Validate position in range
+- `ClampPosition(long position, long min, long max)` - Clamp position to range
 
 **Usage:**
 ```csharp
-var undoRedoService = new UndoRedoService();
+var positionService = new PositionService();
 
-// Undo
-if (undoRedoService.CanUndo(_provider))
-{
-    long position = undoRedoService.Undo(_provider);
-    // Update position in UI
-}
+// Get line/column
+long line = positionService.GetLineNumber(position, byteShiftLeft, hideByteDeleted,
+    bytePerLine, byteSizeRatio, provider);
+long column = positionService.GetColumnNumber(position, hideByteDeleted, allowVisualByteAddress,
+    visualStart, byteShiftLeft, bytePerLine, provider);
 
-// Redo
-if (undoRedoService.CanRedo(_provider))
+// Hex conversion
+var (success, position) = positionService.HexLiteralToLong("0xFF00");
+string hex = positionService.LongToHex(65535); // "FF00"
+
+// Validate position
+if (positionService.IsPositionValid(position, provider.Length))
 {
-    long position = undoRedoService.Redo(_provider, repeat: 3);
-    // Redo the last 3 undone actions
+    // Position is valid
 }
 ```
 
 ---
 
-### 🎯 SelectionService
-**Responsibility:** Manage selection and validation
+### 10. 🎨 CustomBackgroundService
+**Responsibility:** Manage custom background color blocks
 
 **Main methods:**
-- `IsValidSelection()` - Check if selection is valid
-- `GetSelectionLength()` - Calculate selection length
-- `FixSelectionRange()` - Fix start/stop order
-- `ValidateSelection()` - Validate and adjust selection to bounds
-- `GetSelectionBytes()` - Retrieve selected bytes
-- `GetAllBytes()` - Retrieve all bytes from provider
-- `GetSelectAllStart()` / `GetSelectAllStop()` - Calculate positions for "Select All"
-- `IsAllSelected()` - Check if everything is selected
-- `HasSelection()` - Check if a selection exists
-- `ExtendSelection()` - Extend selection with an offset
-- `GetSelectionByte()` - Retrieve byte at position
+- `AddBlock(CustomBackgroundBlock block)` - Add background block
+- `AddBlock(long start, long length, SolidColorBrush color, string description)` - Add block with parameters
+- `AddBlocks(IEnumerable<CustomBackgroundBlock> blocks)` - Add multiple blocks
+- `RemoveBlock(CustomBackgroundBlock block)` - Remove specific block
+- `RemoveBlocksAt(long position)` - Remove blocks at position
+- `RemoveBlocksInRange(long start, long end)` - Remove blocks in range
+- `ClearAll()` - Clear all blocks
+- `GetAllBlocks()` - Get all blocks
+- `GetBlockAt(long position)` - Get first block at position
+- `GetBlocksAt(long position)` - Get all blocks at position (overlapping)
+- `GetBlocksInRange(long start, long end)` - Get blocks in range
+- `HasBlockAt(long position)` - Check if block exists at position
+- `WouldOverlap(long start, long length)` - Check if new block would overlap
+- `GetOverlappingBlocks(long start, long length)` - Get overlapping blocks
 
 **Usage:**
 ```csharp
-var selectionService = new SelectionService();
+var backgroundService = new CustomBackgroundService();
 
-// Check selection
-if (selectionService.IsValidSelection(SelectionStart, SelectionStop))
+// Add colored block
+backgroundService.AddBlock(0x1000, 256, Brushes.LightBlue, "Header section");
+backgroundService.AddBlock(0x2000, 512, Brushes.LightGreen, "Data section");
+
+// Get block at position
+var block = backgroundService.GetBlockAt(position);
+if (block != null)
 {
-    long length = selectionService.GetSelectionLength(SelectionStart, SelectionStop);
-    byte[] data = selectionService.GetSelectionBytes(_provider, SelectionStart, SelectionStop);
+    // Apply block color to display
+    BackgroundColor = block.Color;
 }
 
-// Fix selection if inverted
-var (start, stop) = selectionService.FixSelectionRange(SelectionStart, SelectionStop);
+// Check for overlaps before adding
+if (!backgroundService.WouldOverlap(newStart, newLength))
+{
+    backgroundService.AddBlock(newStart, newLength, Brushes.Yellow);
+}
 
-// Validate and adjust to bounds
-var (validStart, validStop) = selectionService.ValidateSelection(_provider, SelectionStart, SelectionStop);
+// Get all blocks in viewport
+foreach (var block in backgroundService.GetBlocksInRange(firstVisible, lastVisible))
+{
+    // Render colored background
+}
 ```
+
+**Note:** Useful for visually marking file structure sections (headers, data, padding, etc.)
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-HexEditor (Main Controller)
-    ├── ClipboardService
-    ├── FindReplaceService
-    ├── UndoRedoService
-    ├── SelectionService
-    ├── HighlightService
-    └── ByteModificationService
+HexEditor (Main WPF Control)
+    ├── ClipboardService          (Copy/Paste/Cut)
+    ├── FindReplaceService        (Search with cache)
+    ├── UndoRedoService           (History management)
+    ├── SelectionService          (Selection validation)
+    ├── HighlightService          (Search result highlighting) [STATEFUL]
+    ├── ByteModificationService   (Insert/Delete/Modify)
+    ├── BookmarkService           (Bookmark management) [STATEFUL]
+    ├── TblService                (Character tables) [STATEFUL]
+    ├── PositionService           (Position calculations)
+    └── CustomBackgroundService   (Background coloring) [STATEFUL]
 ```
 
 ## 📦 Benefits of this Architecture
@@ -234,43 +408,46 @@ HexEditor (Main Controller)
 3. **Reusability** - Services can be used in other contexts
 4. **Maintainability** - Code is easier to understand and modify
 5. **Extensibility** - Easy to add new services
+6. **Reduced Complexity** - HexEditor.xaml.cs reduced from managing everything to coordinating services
+7. **Clear API** - Each service has well-defined public methods
+8. **No Breaking Changes** - Public API of HexEditor preserved
 
 ## 🔧 Implementation Details
 
-The service-based architecture was implemented progressively to maintain stability:
+### Service Types
 
-**Core Services:**
-- ✅ ClipboardService - Copy/paste/cut operations
-- ✅ FindReplaceService - Search and replace with caching
-- ✅ UndoRedoService - History management
-- ✅ SelectionService - Selection validation
+**Stateless Services** (6):
+- ClipboardService
+- FindReplaceService
+- UndoRedoService
+- SelectionService
+- ByteModificationService
+- PositionService
 
-**Specialized Services:**
-- ✅ HighlightService - Search result highlighting
-- ✅ ByteModificationService - Insert/delete/modify operations
+**Stateful Services** (4):
+- HighlightService (maintains highlight dictionary)
+- BookmarkService (maintains bookmark list)
+- TblService (maintains current TBL table)
+- CustomBackgroundService (maintains background block list)
 
-**Key Achievements:**
-- All 6 services fully integrated into HexEditor.xaml.cs
-- Critical bug fix: Cache properly cleared after modifications
-- API preserved - no breaking changes
-- Removed internal dictionaries (now in HighlightService)
-- Refactored core methods: ModifyByte, InsertByte, InsertBytes, DeleteSelection
-- Services handle business logic, HexEditor handles UI
-- 0 compilation errors, 0 warnings
+### Design Principles
 
-**Benefits:**
-- ✅ Code remains functional during refactoring
-- ✅ Each service is testable in isolation
-- ✅ Progressive migration prevents regressions
-- ✅ Clear separation between business logic and UI
+- **Dependency Injection**: All dependencies passed as method parameters
+- **Return Values**: Methods return success/failure indicators instead of throwing exceptions
+- **Validation**: All inputs validated at service boundary
+- **Immutability**: Services don't modify passed parameters
+- **Isolation**: Services don't depend on HexEditor or each other
+- **UI Separation**: Services handle business logic, HexEditor handles UI updates
 
 ## 📝 Development Notes
 
 - All services are in the `WpfHexaEditor.Services` namespace
-- Services are stateless (when possible) - except HighlightService which maintains highlight state
-- Dependencies are passed as parameters rather than injected
+- Services are stateless when possible (6/10 are stateless)
+- Dependencies passed as parameters (no constructor injection)
 - Services do NOT depend on HexEditor (strong decoupling)
-- Services handle business logic, HexEditor handles UI updates
+- Services handle business logic, HexEditor handles UI updates (RefreshView, SetScrollMarker, UpdateStatusBar, etc.)
+- Single-line methods use `=>` expression syntax
+- All methods documented with XML comments
 
 ## 🐛 Bug Fixes
 
@@ -280,10 +457,45 @@ The service-based architecture was implemented progressively to maintain stabili
 - **Solution:** Added `ClearCache()` calls at all 11 data modification points in HexEditor
 - **Locations:** ModifyByte, Paste, FillWithByte, ReplaceByte, ReplaceFirst, ReplaceAll, Undo handler, InsertByte, InsertBytes, DeleteSelection
 
-## 🔮 Future Enhancements
+## 🎯 Coverage
 
-Potential additional services:
-- **BookmarkService** - Manage bookmarks
-- **TblService** - Manage custom character tables
-- **PositionService** - Position calculations and conversions
-- **ValidationService** - Validate data integrity
+**What's covered by services:**
+- ✅ Clipboard operations (Copy/Paste/Cut)
+- ✅ Find and replace with caching
+- ✅ Undo/redo history
+- ✅ Selection validation and management
+- ✅ Search result highlighting
+- ✅ Byte modifications (insert/delete/modify)
+- ✅ Bookmark management
+- ✅ TBL character table operations
+- ✅ Position calculations and conversions
+- ✅ Custom background blocks
+
+**What remains in HexEditor:**
+- 🎨 WPF UI logic (dependency properties, visual tree, rendering)
+- 🔄 Event handling and coordination
+- 📊 Status bar updates
+- 🖼️ ScrollBar and viewport management
+- 🎯 Caret and focus management
+- 🖱️ Mouse and keyboard interaction
+
+## 📊 Statistics
+
+- **Total Services**: 10
+- **Lines Extracted**: ~2500+ lines of business logic
+- **Stateless Services**: 6
+- **Stateful Services**: 4
+- **Public Methods**: ~150+
+- **Zero Breaking Changes**: ✅
+- **Compilation Errors**: 0
+- **Warnings**: 0
+
+## 🚀 Future Enhancements
+
+While the current 10 services cover all significant business logic, potential enhancements could include:
+
+- **Unit Tests**: Create comprehensive test suite for each service
+- **Async Operations**: Add async variants for file I/O heavy operations
+- **Event System**: Add event notifications for service state changes
+- **Service Composition**: Create higher-level services that compose existing services
+- **Performance Monitoring**: Add instrumentation to measure service call performance

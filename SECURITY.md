@@ -26,7 +26,7 @@ WPF HexEditor officially supports and receives security updates on:
 
 ## Recent Security-Related Updates
 
-### 2026-02-10 - Phase 3 Architecture Refactoring
+### 2026-02-10 - Architecture Refactoring
 
 **Security Improvements:**
 - Enhanced code maintainability through service-based architecture

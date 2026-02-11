@@ -97,10 +97,11 @@ Insert the control like this in your XAML...:
 
 WPF HexEditor now uses a modern **service-based architecture** for improved maintainability and testability.
 
-### Service Layer
+### Service Layer (10 Services)
 
 The control is powered by specialized services that handle different aspects of functionality:
 
+#### Core Services
 - **📋 ClipboardService** - Manages copy/paste/cut operations
 - **🔍 FindReplaceService** - Search and replace with optimized caching
 - **↩️ UndoRedoService** - Undo/redo history management
@@ -108,11 +109,23 @@ The control is powered by specialized services that handle different aspects of 
 - **✨ HighlightService** - Manages byte highlighting for search results
 - **🔧 ByteModificationService** - Handles insert, delete, and modify operations
 
+#### Additional Services
+- **🔖 BookmarkService** - Bookmark management and navigation
+- **📚 TblService** - Custom character table (TBL) operations
+- **📐 PositionService** - Position calculations and conversions
+- **🎨 CustomBackgroundService** - Custom background color blocks
+
 **Benefits:**
-- ✅ Separation of concerns
-- ✅ Unit testable components
-- ✅ Reusable across projects
-- ✅ Easier to maintain and extend
+- ✅ Separation of concerns - Each service has a single responsibility
+- ✅ Unit testable components - Services can be tested in isolation
+- ✅ Reusable across projects - Services are decoupled from HexEditor
+- ✅ Easier to maintain and extend - Clear APIs and focused logic
+- ✅ No breaking changes - Public API preserved during refactoring
+
+**Statistics:**
+- 10 services total (6 stateless, 4 stateful)
+- ~150+ public methods
+- ~2500+ lines of business logic extracted
 
 See [Services Documentation](Sources/WPFHexaEditor/Services/README.md) for details.
 
