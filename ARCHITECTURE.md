@@ -21,11 +21,17 @@ graph TB
         subgraph "Main Library"
             WPFHexaEditor[WPFHexaEditor.dll<br/>WpfHexEditorCore.csproj]
 
-            subgraph "Services Layer"
+            subgraph "Services Layer (10 Services)"
                 ClipboardSvc[ClipboardService]
                 FindReplaceSvc[FindReplaceService]
                 UndoRedoSvc[UndoRedoService]
                 SelectionSvc[SelectionService]
+                HighlightSvc[HighlightService]
+                ByteModSvc[ByteModificationService]
+                BookmarkSvc[BookmarkService]
+                TblSvc[TblService]
+                PositionSvc[PositionService]
+                CustomBgSvc[CustomBackgroundService]
             end
 
             subgraph "Core Layer"
@@ -63,11 +69,19 @@ graph TB
     HexEditor --> FindReplaceSvc
     HexEditor --> UndoRedoSvc
     HexEditor --> SelectionSvc
+    HexEditor --> HighlightSvc
+    HexEditor --> ByteModSvc
+    HexEditor --> BookmarkSvc
+    HexEditor --> TblSvc
+    HexEditor --> PositionSvc
+    HexEditor --> CustomBgSvc
 
     ClipboardSvc --> ByteProvider
     FindReplaceSvc --> ByteProvider
     UndoRedoSvc --> ByteProvider
     SelectionSvc --> ByteProvider
+    ByteModSvc --> ByteProvider
+    PositionSvc --> ByteProvider
 
     HexEditor --> ByteProvider
     HexEditor --> TBL
@@ -89,6 +103,12 @@ graph TB
     style FindReplaceSvc fill:#c8e6c9
     style UndoRedoSvc fill:#c8e6c9
     style SelectionSvc fill:#c8e6c9
+    style HighlightSvc fill:#b3e5fc
+    style ByteModSvc fill:#b3e5fc
+    style BookmarkSvc fill:#f8bbd0
+    style TblSvc fill:#f8bbd0
+    style PositionSvc fill:#f8bbd0
+    style CustomBgSvc fill:#f8bbd0
     style ByteProvider fill:#ffccbc
 ```
 
@@ -651,12 +671,18 @@ graph TB
 ```mermaid
 graph TB
     subgraph "Testing Strategy"
-        subgraph "Unit Tests"
+        subgraph "Unit Tests (10 Services + Core)"
             UT1[ClipboardService Tests]
             UT2[FindReplaceService Tests]
             UT3[UndoRedoService Tests]
             UT4[SelectionService Tests]
-            UT5[ByteProvider Tests]
+            UT5[HighlightService Tests]
+            UT6[ByteModificationService Tests]
+            UT7[BookmarkService Tests]
+            UT8[TblService Tests]
+            UT9[PositionService Tests]
+            UT10[CustomBackgroundService Tests]
+            UT11[ByteProvider Tests]
         end
 
         subgraph "Integration Tests"
@@ -679,17 +705,30 @@ graph TB
     UT3 -.-> IT1
     UT4 -.-> IT1
     UT5 -.-> IT1
+    UT6 -.-> IT1
+    UT7 -.-> IT1
+    UT8 -.-> IT1
+    UT9 -.-> IT1
+    UT10 -.-> IT1
+    UT11 -.-> IT1
 
     IT1 -.-> Samples
     IT2 -.-> Samples
     IT3 -.-> Samples
 
-    UT5 -.-> PT
+    UT11 -.-> PT
 
     style UT1 fill:#c8e6c9
     style UT2 fill:#c8e6c9
     style UT3 fill:#c8e6c9
     style UT4 fill:#c8e6c9
+    style UT5 fill:#b3e5fc
+    style UT6 fill:#b3e5fc
+    style UT7 fill:#f8bbd0
+    style UT8 fill:#f8bbd0
+    style UT9 fill:#f8bbd0
+    style UT10 fill:#f8bbd0
+    style UT11 fill:#ffccbc
     style PT fill:#fff9c4
 ```
 
@@ -700,9 +739,11 @@ graph TB
 ### Key Architectural Decisions
 
 1. **Service-Based Architecture** (2026 Refactoring)
-   - Extracted business logic from 6115-line `HexEditor` class
-   - Created 4 specialized services
-   - Improved testability and maintainability
+   - Extracted business logic from `HexEditor` class
+   - Created 10 specialized services (6 stateless, 4 stateful)
+   - ~2500+ lines of business logic extracted
+   - Improved testability, maintainability, and reusability
+   - Zero breaking changes to public API
 
 2. **Provider Pattern**
    - `ByteProvider` abstracts file/stream access
