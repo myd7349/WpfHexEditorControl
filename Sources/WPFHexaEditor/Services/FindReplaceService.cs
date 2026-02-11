@@ -17,6 +17,36 @@ namespace WpfHexaEditor.Services
     /// <summary>
     /// Service responsible for find and replace operations with LRU caching
     /// </summary>
+    /// <example>
+    /// Basic synchronous usage:
+    /// <code>
+    /// var service = new FindReplaceService(cacheCapacity: 20);
+    /// byte[] pattern = new byte[] { 0xFF, 0x00 };
+    ///
+    /// // Find first occurrence
+    /// long position = service.FindFirst(provider, pattern);
+    /// if (position != -1)
+    ///     Console.WriteLine($"Found at position {position}");
+    ///
+    /// // Find all occurrences (with caching - 460x faster on repeated calls!)
+    /// var results = service.FindAll(provider, pattern);
+    /// Console.WriteLine($"Found {results.Count()} matches");
+    ///
+    /// // Find next occurrence
+    /// long nextPos = service.FindNext(provider, pattern, position);
+    ///
+    /// // Replace first
+    /// byte[] replacement = new byte[] { 0xAA, 0xBB };
+    /// service.ReplaceFirst(provider, pattern, replacement, readOnlyMode: false);
+    ///
+    /// // Replace all
+    /// int replacedCount = service.ReplaceAll(provider, pattern, replacement,
+    ///                                        truncate: false, readOnlyMode: false);
+    ///
+    /// // Clear cache when data changes
+    /// service.ClearCache();
+    /// </code>
+    /// </example>
     public class FindReplaceService
     {
         #region Search Cache (LRU)

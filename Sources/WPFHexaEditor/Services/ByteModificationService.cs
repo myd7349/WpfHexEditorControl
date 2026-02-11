@@ -11,6 +11,45 @@ namespace WpfHexaEditor.Services
     /// <summary>
     /// Service responsible for byte modification operations (modify, insert, delete)
     /// </summary>
+    /// <example>
+    /// Basic usage:
+    /// <code>
+    /// var service = new ByteModificationService();
+    ///
+    /// // Check permissions
+    /// if (service.CanModify(provider, readOnlyMode: false))
+    /// {
+    ///     // Modify a single byte
+    ///     service.ModifyByte(provider, 0xFF, position: 0, undoLength: 1, readOnlyMode: false);
+    /// }
+    ///
+    /// // Insert operations
+    /// if (service.CanInsert(provider, canInsertAnywhere: true))
+    /// {
+    ///     // Insert single byte
+    ///     service.InsertByte(provider, 0xAA, position: 10, canInsertAnywhere: true);
+    ///
+    ///     // Insert byte multiple times
+    ///     service.InsertByte(provider, 0xBB, position: 20, length: 5, canInsertAnywhere: true);
+    ///
+    ///     // Insert byte array
+    ///     byte[] data = new byte[] { 0x11, 0x22, 0x33 };
+    ///     int count = service.InsertBytes(provider, data, position: 30, canInsertAnywhere: true);
+    /// }
+    ///
+    /// // Delete operations
+    /// if (service.CanDelete(provider, readOnlyMode: false, allowDelete: true))
+    /// {
+    ///     // Delete bytes at position
+    ///     long lastPos = service.DeleteBytes(provider, position: 40, length: 5,
+    ///                                         readOnlyMode: false, allowDelete: true);
+    ///
+    ///     // Delete range (auto-corrects if start > stop)
+    ///     service.DeleteRange(provider, startPosition: 50, stopPosition: 60,
+    ///                          readOnlyMode: false, allowDelete: true);
+    /// }
+    /// </code>
+    /// </example>
     public class ByteModificationService
     {
         #region Modify Operations
