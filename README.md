@@ -33,28 +33,61 @@ Hexeditor control is totaly free and can be used in all project you want like op
 
 ### 🖼 Screenshots
 
-Sample with standard ASCII character table
-![example](Images/Sample11-NOTBL.png?raw=true)
+<table>
+<tr>
+<td width="50%" align="center">
+  <b>📝 Standard ASCII View</b><br/>
+  <sub>Clean interface with hex/ASCII side-by-side</sub><br/><br/>
+  <img src="Images/Sample11-NOTBL.png?raw=true" alt="Standard ASCII view"/>
+</td>
+<td width="50%" align="center">
+  <b>🎮 Custom TBL (Final Fantasy II)</b><br/>
+  <sub>Game ROM editing with custom character tables</sub><br/><br/>
+  <img src="Images/Sample9-TBL.png?raw=true" alt="Custom TBL"/>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+  <b>🔍 Find & Replace</b><br/>
+  <sub>Advanced search with pattern matching</sub><br/><br/>
+  <img src="Images/Sample15-FindReplaceDialog.png?raw=true" alt="Find/Replace"/>
+</td>
+<td width="50%" align="center">
+  <b>📊 BarChart View ⭐</b><br/>
+  <sub>Visual data representation for analysis</sub><br/><br/>
+  <img src="Images/Sample12-BarChart.png?raw=true" alt="BarChart"/>
+</td>
+</tr>
+</table>
 
-Sample with custom character table (TBL) on SNES Final Fantasy II US
-![example](Images/Sample9-TBL.png?raw=true)
+<details>
+<summary>🔧 <b>Advanced Features</b> - Click to see more screenshots</summary>
 
-Sample use ByteShiftLeft and BytePerLine properties with custom TBL for edit fixed lenght table...
-![example](Images/Sample12-FIXEDTBL-BYTESHIFT.png?raw=true)
+<br/>
 
-Sample use of find and find/replace dialog...
-![example](Images/Sample15-FindReplaceDialog.png?raw=true)
+<table>
+<tr>
+<td width="50%" align="center">
+  <b>⚙️ ByteShift + Fixed Table Editing</b><br/>
+  <sub>Advanced table editing with byte shifting</sub><br/><br/>
+  <img src="Images/Sample12-FIXEDTBL-BYTESHIFT.png?raw=true" alt="ByteShift"/>
+</td>
+<td width="50%" align="center">
+  <b>🖥️ AvalonDock Integration ⭐</b><br/>
+  <sub>Dockable panels for complex workflows</sub><br/><br/>
+  <img src="Images/Sample11-AvalonDock.png?raw=true" alt="AvalonDock"/>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center" colspan="2">
+  <b>🎨 Custom Background Blocks</b><br/>
+  <sub>Visual diff and data highlighting</sub><br/><br/>
+  <img src="Images/Sample15-CustomBackgroundBlock.png?raw=true" alt="CustomBackgroundBlock"/>
+</td>
+</tr>
+</table>
 
-
-⭐ Sample use of BarChart representation of the data ...
-![example](Images/Sample12-BarChart.png?raw=true)
-
-⭐ Sample use of control in AvalonDock ...
-
-![example](Images/Sample11-AvalonDock.png?raw=true)
-
-⭐ Sample use of CustomBackgroundBlock in the "Find difference bytes sample" ...
-![example](Images/Sample15-CustomBackgroundBlock.png?raw=true)
+</details>
 
 ## 🧾 What is TBL (custom character table)
 The TBL are small plaintext .tbl files that link every hexadecimal value with a character, which proves most useful when reading and changing text data. Wpf HexEditor support .tbl and you can define your custom character table as you want.
