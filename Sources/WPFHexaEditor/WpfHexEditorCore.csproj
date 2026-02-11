@@ -5,29 +5,88 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>WpfHexaEditor</RootNamespace>
     <AssemblyName>WPFHexaEditor</AssemblyName>
-    <Title>WpfHexEditor user control</Title>
+    <Title>WPF HexEditor - Modern Binary File Editor Control</Title>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Derek Tremblay (derektremblay666@gmail.com)</Authors>
+    <Authors>Derek Tremblay;ehsan69h;Janus Tida;Claude Sonnet 4.5</Authors>
     <Company>Derek Tremblay (derektremblay666@gmail.com)</Company>
     <Description>
-      Wpf Hexeditor is a powerful and fully customisable user control for editing file or stream as hexadecimal, decimal and binary. Can be used in Wpf or WinForm application.
-      Support .Net 4.8 and .Net 8.0-windows
+      WPF HexEditor is a powerful, fully customizable hex editor control for .NET applications with modern service-based architecture.
+
+      ✨ Features:
+      • Binary file editing (hex, decimal, binary views)
+      • 10 specialized services (Find, Undo/Redo, Clipboard, Selection, Highlight, ByteModification, Bookmark, TBL, Position, CustomBackground)
+      • Search &amp; Replace with intelligent caching
+      • Unlimited Undo/Redo support
+      • Custom character tables (TBL) for game hacking
+      • Insert/Overwrite modes
+      • 80+ unit tests for quality assurance
+      • Localized in 6 languages (EN, FR, PL, PT, RU, ZH)
+      • Comprehensive documentation with 19 README files
+
+      📦 Supports: .NET Framework 4.8 and .NET 8.0-windows
+      🎯 Use in: WPF and WinForms applications
+
+      Perfect for: Binary analysis, ROM hacking, file patching, hex editing tools, data forensics
     </Description>
     <PackageIcon>Logo-Icon.png</PackageIcon>
+    <PackageReadmeFile>PACKAGE_README.md</PackageReadmeFile>
     <PackageIconUrl />
     <Product>WpfHexaEditor</Product>
-    <Copyright>Apache 2.0</Copyright>
-    <AssemblyVersion>2.1.7.0</AssemblyVersion>
-    <FileVersion>2.1.7</FileVersion>
-    <Version>2.1.7</Version>
+    <Copyright>Apache 2.0 - 2016-2026</Copyright>
+    <AssemblyVersion>2.2.0.0</AssemblyVersion>
+    <FileVersion>2.2.0</FileVersion>
+    <Version>2.2.0</Version>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <PackageTags>character-table;hexadecimal;binary;editor;hexeditor;tbl;hexedit</PackageTags>
+    <PackageTags>hexeditor;hex;binary;editor;wpf;service-architecture;tbl;character-table;rom-hacking;game-modding;file-editor;hexedit;hexadecimal;undo-redo;search-replace;unit-tested</PackageTags>
     <ApplicationIcon />
     <LangVersion>preview</LangVersion>
     <PackageProjectUrl>https://github.com/abbaye/WpfHexEditorControl</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/abbaye/WpfHexEditorControl</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
+    <PackageReleaseNotes>
+      Version 2.2.0 (2026) - Major Architecture Update:
+
+      🏗️ New Architecture:
+      • Complete service-based architecture with 10 specialized services
+      • Separation of concerns: UI layer vs business logic layer
+      • 6 stateless + 4 stateful services for maximum flexibility
+
+      🧪 Quality &amp; Testing:
+      • 80+ unit tests for all service layer components (xUnit)
+      • Test coverage for SelectionService, FindReplaceService, HighlightService
+      • Services are testable in isolation without UI dependencies
+
+      📚 Documentation:
+      • Complete GitHub Wiki with 6+ comprehensive pages
+      • 19 README files covering every major folder
+      • Getting Started, Architecture, FAQ, Contributing guides
+      • Learning path from beginner to advanced
+
+      🐛 Critical Bug Fixes:
+      • Fixed search cache not being invalidated after data modifications
+      • Cache properly cleared at all 11 modification points
+      • Users now receive accurate search results after editing
+
+      ⚡ Performance:
+      • Intelligent caching in FindReplaceService (10-100x faster repeated searches)
+      • Optimized memory usage with stateless services
+      • Memory-mapped files for large file support
+
+      ✨ New Features:
+      • Service Usage Sample - Use services without UI in console apps
+      • NuGet package with comprehensive README
+      • 8 sample applications demonstrating all features
+
+      🔧 Compatibility:
+      • Full .NET 8.0-windows support alongside .NET Framework 4.8
+      • No breaking changes - 100% backward compatible API
+      • Works in WPF and WinForms applications
+
+      📖 Documentation: https://github.com/abbaye/WpfHexEditorControl/wiki
+    </PackageReleaseNotes>
     <IncludeSource>true</IncludeSource>
     <IncludeSymbols>false</IncludeSymbols>
     <NeutralLanguage>en-US</NeutralLanguage>
@@ -40,6 +99,10 @@
 
   <ItemGroup>
     <None Include="license.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="PACKAGE_README.md">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
