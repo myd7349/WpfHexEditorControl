@@ -1,9 +1,9 @@
 <img src="Images/Logo.png?raw=true" width="420" height="100" /> 
   
-[![NuGet](https://img.shields.io/badge/Nuget-v2.1.5-red.svg)](https://www.nuget.org/packages/WPFHexaEditor/)
-[![NetFramework](https://img.shields.io/badge/.Net%20Framework-4.7/4.8-green.svg)](https://www.microsoft.com/net/download/windows)
-[![NetFramework](https://img.shields.io/badge/.Net%20-5.0-green.svg)](https://www.microsoft.com/net/download/windows)
-[![NetFramework](https://img.shields.io/badge/Language-C%23%207.0+-orange.svg)](https://blogs.msdn.microsoft.com/dotnet/2016/08/24/whats-new-in-csharp-7-0/)
+[![NuGet](https://img.shields.io/badge/Nuget-v2.1.7-red.svg)](https://www.nuget.org/packages/WPFHexaEditor/)
+[![NetFramework](https://img.shields.io/badge/.Net%20Framework-4.8-green.svg)](https://www.microsoft.com/net/download/windows)
+[![NetFramework](https://img.shields.io/badge/.Net%208.0--windows-green.svg)](https://dotnet.microsoft.com/download)
+[![NetFramework](https://img.shields.io/badge/Language-C%23%20preview-orange.svg)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/abbaye/WpfHexEditorControl/blob/master/LICENSE)
 
 Wpf Hexeditor is a powerful and fully customisable user control for editing file or stream as hexadecimal, decimal and binary. 
@@ -92,6 +92,45 @@ Insert the control like this in your XAML...:
 <control:HexEditor Width="Auto" Height="Auto"/>
 <control:HexEditor FileName="{Binding FileNamePath}" Width="Auto" Height="Auto"/>
 ```
+
+## 🏗️ Architecture
+
+WPF HexEditor now uses a modern **service-based architecture** for improved maintainability and testability.
+
+### Service Layer
+
+The control is powered by specialized services that handle different aspects of functionality:
+
+- **📋 ClipboardService** - Manages copy/paste/cut operations
+- **🔍 FindReplaceService** - Search and replace with optimized caching
+- **↩️ UndoRedoService** - Undo/redo history management
+- **🎯 SelectionService** - Selection validation and manipulation
+
+**Benefits:**
+- ✅ Separation of concerns
+- ✅ Unit testable components
+- ✅ Reusable across projects
+- ✅ Easier to maintain and extend
+
+See [Services Documentation](Sources/WPFHexaEditor/Services/README.md) for details.
+
+## 📚 Documentation
+
+- **[Services Architecture](Sources/WPFHexaEditor/Services/README.md)** - Business logic layer
+- **[Core Components](Sources/WPFHexaEditor/Core/README.md)** - Core infrastructure and data handling
+- **[Sample Applications](Sources/Samples/README.md)** - Usage examples and demos
+
+## 🔧 Supported Frameworks
+
+- ✅ .NET Framework 4.8
+- ✅ .NET 8.0-windows
+
+## 🐛 Recent Bug Fixes
+
+**Critical Fix (2026):**
+- Fixed search cache not being invalidated after data modifications
+- Users now receive accurate search results after editing
+- Cache properly cleared at all 11 modification points
 
 ---
 ✨ Wpf HexEditor user control, by Derek Tremblay (derektremblay666@gmail.com) coded for your fun! 😊🤟

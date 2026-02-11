@@ -1,0 +1,252 @@
+# WPF HexEditor Samples
+
+This directory contains various sample applications demonstrating different features and use cases of the WPF HexEditor control.
+
+## 📁 Available Samples
+
+### 🖥️ WPFHexEditor.Sample.CSharp
+**Platform:** WPF (C#)
+**Description:** Main C# WPF sample application showcasing core features of the HexEditor control.
+
+**Features demonstrated:**
+- Opening and editing binary files
+- Copy/paste operations (Ctrl+C, Ctrl+V)
+- Undo/redo functionality (Ctrl+Z, Ctrl+Y)
+- Find and replace dialogs
+- Custom character table (TBL) support
+- Multiple view modes (hexadecimal, decimal, binary)
+- Bookmarks
+- Selection operations
+
+**How to run:**
+```bash
+cd WPFHexEditor.Sample.CSharp
+dotnet run
+```
+
+---
+
+### 📐 WpfHexEditor.Sample.VB
+**Platform:** WPF (VB.NET)
+**Description:** Visual Basic .NET version of the WPF sample, demonstrating the same features for VB developers.
+
+**How to run:**
+```bash
+cd WpfHexEditor.Sample.VB
+dotnet run
+```
+
+---
+
+### 📊 WpfHexEditor.Sample.BarChart
+**Platform:** WPF (C#)
+**Description:** Advanced sample showing how to visualize binary data as a bar chart alongside the hex editor.
+
+**Features demonstrated:**
+- Real-time bar chart representation of byte values
+- Visual data analysis
+- Custom data visualization
+- Synchronized scrolling between chart and hex view
+
+**Use cases:**
+- Analyzing file entropy
+- Visualizing data patterns
+- Finding compressed/encrypted sections
+- Binary file analysis
+
+---
+
+### 🪟 WpfHexEditor.Sample.Winform
+**Platform:** Windows Forms (C#)
+**Description:** Demonstrates how to integrate the WPF HexEditor control into a Windows Forms application using ElementHost.
+
+**Features demonstrated:**
+- WPF/WinForms interoperability
+- ElementHost usage
+- Cross-platform UI integration
+
+**How to run:**
+```bash
+cd WpfHexEditor.Sample.Winform
+dotnet run
+```
+
+---
+
+### 🏢 WpfHexEditor.Sample.AvalonDock
+**Platform:** WPF (C#)
+**Description:** Shows integration with AvalonDock for professional docking and tabbed layouts.
+
+**Features demonstrated:**
+- Multiple hex editor instances in tabs
+- Docking panels
+- Professional IDE-like interface
+- Floating windows
+- Layout persistence
+
+**Use cases:**
+- Multi-file editing
+- Professional binary editing tools
+- IDE integration
+- Advanced file comparison
+
+---
+
+### 📝 WpfHexEditor.Sample.InsertByteAnywhere
+**Platform:** WPF (C#)
+**Description:** Demonstrates advanced byte insertion and deletion capabilities.
+
+**Features demonstrated:**
+- Insert bytes at any position
+- Delete bytes from selection
+- Dynamic file size modification
+- Insert mode vs overwrite mode
+
+**Use cases:**
+- Binary file modification
+- Data injection
+- Binary patching
+- File format manipulation
+
+---
+
+### 🔍 WpfHexEditor.Sample.BinaryFilesDifference
+**Platform:** WPF (C#)
+**Description:** Advanced sample for comparing two binary files and highlighting differences.
+
+**Features demonstrated:**
+- Side-by-side file comparison
+- Difference highlighting with custom background colors
+- Synchronized scrolling
+- CustomBackgroundBlock API usage
+
+**Use cases:**
+- Binary diff tools
+- Version comparison
+- ROM hacking (comparing different versions)
+- Patch analysis
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- .NET 8.0 SDK or .NET Framework 4.8
+- Visual Studio 2022 or later (optional)
+- Windows OS
+
+### Building All Samples
+From the repository root:
+```bash
+cd Sources
+dotnet build WpfHexEditorControl.sln
+```
+
+### Running a Specific Sample
+Navigate to the sample directory and run:
+```bash
+dotnet run --project <SampleProjectName>.csproj
+```
+
+Or open the solution in Visual Studio and set the desired sample as the startup project.
+
+## 📚 Learning Path
+
+**Recommended order for learning:**
+
+1. **Start with:** `WPFHexEditor.Sample.CSharp`
+   Learn the basics: opening files, editing, copy/paste, undo/redo
+
+2. **Next:** `WpfHexEditor.Sample.InsertByteAnywhere`
+   Learn advanced editing: insertion, deletion, dynamic modifications
+
+3. **Then:** `WpfHexEditor.Sample.BarChart`
+   Learn data visualization and analysis techniques
+
+4. **Advanced:** `WpfHexEditor.Sample.BinaryFilesDifference`
+   Learn file comparison and custom rendering
+
+5. **Integration:** `WpfHexEditor.Sample.AvalonDock`
+   Learn professional UI integration patterns
+
+6. **Cross-platform:** `WpfHexEditor.Sample.Winform`
+   Learn WPF/WinForms interoperability
+
+## 🎨 Common Code Patterns
+
+### Opening a File
+```csharp
+hexEditor.FileName = @"C:\path\to\file.bin";
+```
+
+### Programmatic Selection
+```csharp
+hexEditor.SelectionStart = 0x100;
+hexEditor.SelectionStop = 0x1FF;
+```
+
+### Finding Data
+```csharp
+byte[] searchData = new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F }; // "Hello"
+long position = hexEditor.FindFirst(searchData);
+```
+
+### Custom Character Table
+```csharp
+hexEditor.LoadTblFile(@"C:\path\to\custom.tbl");
+```
+
+### Handling Events
+```csharp
+hexEditor.SelectionStartChanged += (s, e) =>
+{
+    Console.WriteLine($"Selection at: 0x{hexEditor.SelectionStart:X}");
+};
+```
+
+## 🛠️ Architecture Integration
+
+All samples now use the new **Service-based Architecture**:
+- `ClipboardService` - Copy/paste operations
+- `FindReplaceService` - Search with optimized caching
+- `UndoRedoService` - Undo/redo history management
+- `SelectionService` - Selection validation and manipulation
+
+See [Services/README.md](../WPFHexaEditor/Services/README.md) for details.
+
+## 📖 Additional Resources
+
+- [Main README](../../README.md) - Project overview and features
+- [Services Documentation](../WPFHexaEditor/Services/README.md) - Architecture details
+- [Core Documentation](../WPFHexaEditor/Core/README.md) - Core components
+- [NuGet Package](https://www.nuget.org/packages/WPFHexaEditor/) - Get the library
+
+## 💡 Tips
+
+- **Performance:** For large files (>100MB), consider using `AllowVisualByteAdress` to view only a portion
+- **Custom TBL:** Create your own character tables for game modding or proprietary formats
+- **Events:** Subscribe to events like `BytesModified`, `SelectionChanged` for reactive UI
+- **Theming:** Customize colors via properties like `ForegroundSecondColor`, `SelectionFirstColor`
+
+## 🐛 Troubleshooting
+
+**Issue:** Sample won't build
+**Solution:** Ensure you're targeting .NET 8.0-windows or .NET Framework 4.8
+
+**Issue:** File won't open
+**Solution:** Check file permissions and that the file exists
+
+**Issue:** High memory usage
+**Solution:** Use `AllowVisualByteAdress` for large files
+
+## 📝 Contributing
+
+Want to add a new sample? Please:
+1. Follow the naming convention: `WpfHexEditor.Sample.<FeatureName>`
+2. Include a README in your sample directory
+3. Add your sample to this index
+4. Submit a pull request
+
+---
+
+✨ Created by Derek Tremblay (derektremblay666@gmail.com)
