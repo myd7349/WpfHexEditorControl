@@ -7,6 +7,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using WpfHexaEditor.Core.Bytes;
 
 namespace WpfHexaEditor.Services
@@ -189,6 +191,131 @@ namespace WpfHexaEditor.Services
 
         #endregion
 
+        #region Async Find Methods (UI Responsive)
+
+        /// <summary>
+        /// ASYNC: Find first occurrence without blocking UI.
+        /// UI stays responsive during long searches on large files.
+        /// </summary>
+        /// <param name="provider">ByteProvider instance</param>
+        /// <param name="data">Pattern to search for</param>
+        /// <param name="startPosition">Position to start search</param>
+        /// <param name="progress">Progress reporter (0-100%)</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Position of first occurrence, or -1 if not found</returns>
+        public async Task<long> FindFirstAsync(
+            ByteProvider provider,
+            byte[] data,
+            long startPosition = 0,
+            IProgress<int> progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (data == null || provider == null || !provider.IsOpen)
+                return -1;
+
+            try
+            {
+                var results = await provider.FindAllAsync(data, startPosition, progress, cancellationToken);
+                return results?.FirstOrDefault() ?? -1;
+            }
+            catch (OperationCanceledException)
+            {
+                return -1;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// ASYNC: Find all occurrences without blocking UI.
+        /// Provides real-time progress updates and supports cancellation.
+        /// Perfect for large files where users need to see progress.
+        /// </summary>
+        /// <param name="provider">ByteProvider instance</param>
+        /// <param name="data">Pattern to search for</param>
+        /// <param name="startPosition">Position to start search</param>
+        /// <param name="progress">Progress reporter (0-100%)</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>List of positions where pattern is found</returns>
+        /// <example>
+        /// // Usage with progress bar and cancel button:
+        /// var progress = new Progress&lt;int&gt;(percent => ProgressBar.Value = percent);
+        /// var cts = new CancellationTokenSource();
+        /// CancelButton.Click += (s, e) => cts.Cancel();
+        ///
+        /// try
+        /// {
+        ///     var results = await service.FindAllAsync(provider, pattern, 0, progress, cts.Token);
+        ///     ResultsList.ItemsSource = results;
+        /// }
+        /// catch (OperationCanceledException)
+        /// {
+        ///     StatusText.Text = "Search cancelled by user";
+        /// }
+        /// </example>
+        public async Task<List<long>> FindAllAsync(
+            ByteProvider provider,
+            byte[] data,
+            long startPosition = 0,
+            IProgress<int> progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (data == null || provider == null || !provider.IsOpen)
+                return new List<long>();
+
+            try
+            {
+                return await provider.FindAllAsync(data, startPosition, progress, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // Re-throw so caller can handle cancellation
+            }
+            catch
+            {
+                return new List<long>();
+            }
+        }
+
+        /// <summary>
+        /// ASYNC: Count occurrences without blocking UI.
+        /// Shows real-time progress as file is scanned.
+        /// </summary>
+        /// <param name="provider">ByteProvider instance</param>
+        /// <param name="data">Pattern to count</param>
+        /// <param name="startPosition">Position to start search</param>
+        /// <param name="progress">Progress reporter (0-100%)</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Number of occurrences</returns>
+        public async Task<int> CountOccurrencesAsync(
+            ByteProvider provider,
+            byte[] data,
+            long startPosition = 0,
+            IProgress<int> progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (data == null || provider == null || !provider.IsOpen)
+                return 0;
+
+            try
+            {
+                var results = await provider.FindAllAsync(data, startPosition, progress, cancellationToken);
+                return results?.Count ?? 0;
+            }
+            catch (OperationCanceledException)
+            {
+                return 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        #endregion
+
         #region Replace Methods
 
         /// <summary>
@@ -261,6 +388,108 @@ namespace WpfHexaEditor.Services
             }
 
             return positions;
+        }
+
+        #endregion
+
+        #region Async Replace Methods (UI Responsive)
+
+        /// <summary>
+        /// ASYNC: Replace all occurrences without blocking UI.
+        /// Shows real-time progress: find phase (0-50%), replace phase (50-100%).
+        /// User can cancel at any time with CancellationToken.
+        /// </summary>
+        /// <param name="provider">ByteProvider instance</param>
+        /// <param name="findData">Pattern to find</param>
+        /// <param name="replaceData">Data to replace with</param>
+        /// <param name="truncateLength">If true, truncate replace data to match find data length</param>
+        /// <param name="readOnlyMode">If true, operation will fail</param>
+        /// <param name="progress">Progress reporter (0-100%)</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Number of replacements made</returns>
+        /// <example>
+        /// // Usage with progress bar and cancel button:
+        /// var progress = new Progress&lt;int&gt;(percent =>
+        /// {
+        ///     ProgressBar.Value = percent;
+        ///     StatusText.Text = $"Replacing... {percent}%";
+        /// });
+        /// var cts = new CancellationTokenSource();
+        /// CancelButton.Click += (s, e) => cts.Cancel();
+        ///
+        /// try
+        /// {
+        ///     int count = await service.ReplaceAllAsync(
+        ///         provider, findPattern, replacePattern,
+        ///         truncate: false, readOnly: false,
+        ///         progress, cts.Token);
+        ///     StatusText.Text = $"Replaced {count} occurrences";
+        /// }
+        /// catch (OperationCanceledException)
+        /// {
+        ///     StatusText.Text = "Replace cancelled by user";
+        /// }
+        /// </example>
+        public async Task<int> ReplaceAllAsync(
+            ByteProvider provider,
+            byte[] findData,
+            byte[] replaceData,
+            bool truncateLength,
+            bool readOnlyMode,
+            IProgress<int> progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (findData == null || replaceData == null) return 0;
+            if (provider == null || !provider.IsOpen) return 0;
+            if (readOnlyMode) return 0;
+
+            try
+            {
+                // Phase 1: Find all occurrences (0-50% progress)
+                var findProgress = new Progress<int>(percent =>
+                {
+                    progress?.Report(percent / 2); // Map 0-100% to 0-50%
+                });
+
+                var positions = await provider.FindAllAsync(findData, 0, findProgress, cancellationToken);
+
+                if (positions == null || positions.Count == 0)
+                    return 0;
+
+                // Phase 2: Replace all occurrences (50-100% progress)
+                var finalReplaceData = truncateLength
+                    ? replaceData.Take(findData.Length).ToArray()
+                    : replaceData;
+
+                int totalReplacements = positions.Count;
+                int currentReplacement = 0;
+
+                await Task.Run(() =>
+                {
+                    foreach (var position in positions)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        provider.Paste(position, finalReplaceData, false);
+                        currentReplacement++;
+
+                        // Report progress (50% + current/total * 50%)
+                        int replacePercent = 50 + (currentReplacement * 50 / totalReplacements);
+                        progress?.Report(replacePercent);
+                    }
+                }, cancellationToken);
+
+                progress?.Report(100);
+                return totalReplacements;
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // Re-throw so caller can handle cancellation
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         #endregion

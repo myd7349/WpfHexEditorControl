@@ -144,7 +144,7 @@ namespace WpfHexaEditor.Core.Bytes
 
         /// <summary>
         /// Asynchronously finds all occurrences of a byte pattern.
-        /// Reports progress during the search.
+        /// Reports progress during the search based on bytes scanned.
         /// </summary>
         /// <param name="provider">ByteProvider instance</param>
         /// <param name="pattern">Pattern to search for</param>
@@ -165,29 +165,88 @@ namespace WpfHexaEditor.Core.Bytes
             return await Task.Run(() =>
             {
                 var results = new List<long>();
+                const int chunkSize = 64 * 1024; // 64KB chunks
+                var buffer = ArrayPool<byte>.Shared.Rent(chunkSize + pattern.Length);
                 var totalLength = provider.Length;
-                var lastProgressPercent = 0;
+                var lastProgressPercent = -1;
 
-                foreach (var position in provider.FindIndexOf(pattern, startPosition))
+                try
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    long currentPosition = startPosition;
+                    int overlap = pattern.Length - 1;
 
-                    results.Add(position);
-
-                    // Report progress every 1%
-                    if (progress != null && totalLength > 0)
+                    while (currentPosition < totalLength)
                     {
-                        var currentPercent = (int)((position * 100) / totalLength);
-                        if (currentPercent > lastProgressPercent)
-                        {
-                            progress.Report(currentPercent);
-                            lastProgressPercent = currentPercent;
-                        }
-                    }
-                }
+                        cancellationToken.ThrowIfCancellationRequested();
 
-                progress?.Report(100);
-                return results;
+                        // Calculate chunk size (don't read past end)
+                        int bytesToRead = (int)Math.Min(chunkSize, totalLength - currentPosition);
+                        if (bytesToRead <= 0) break;
+
+                        // Read chunk
+                        int bytesRead = 0;
+                        for (int i = 0; i < bytesToRead && currentPosition + i < totalLength; i++)
+                        {
+                            var (byteValue, success) = provider.GetByte(currentPosition + i);
+                            if (!success) break;
+                            buffer[i] = byteValue.Value;
+                            bytesRead++;
+                        }
+
+                        if (bytesRead == 0) break;
+
+                        // Search in this chunk
+                        ReadOnlySpan<byte> searchSpan = new ReadOnlySpan<byte>(buffer, 0, bytesRead);
+                        ReadOnlySpan<byte> patternSpan = new ReadOnlySpan<byte>(pattern);
+
+                        int searchPos = 0;
+                        while (searchPos <= searchSpan.Length - pattern.Length)
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+
+                            int matchIndex = searchSpan.Slice(searchPos).IndexOf(patternSpan);
+                            if (matchIndex == -1) break;
+
+                            long absolutePosition = currentPosition + searchPos + matchIndex;
+
+                            // Avoid duplicates from overlapping chunks
+                            if (results.Count == 0 || absolutePosition > results[results.Count - 1])
+                            {
+                                results.Add(absolutePosition);
+                            }
+
+                            searchPos += matchIndex + 1;
+                        }
+
+                        // Report progress based on bytes scanned
+                        if (progress != null && totalLength > 0)
+                        {
+                            long bytesScanned = currentPosition + bytesRead;
+                            var currentPercent = (int)((bytesScanned * 100) / totalLength);
+                            if (currentPercent != lastProgressPercent)
+                            {
+                                progress.Report(currentPercent);
+                                lastProgressPercent = currentPercent;
+                            }
+                        }
+
+                        // Move to next chunk, accounting for overlap to catch patterns spanning chunks
+                        long nextPosition = currentPosition + bytesRead - overlap;
+
+                        // If we're not making progress or reached the end, stop
+                        if (nextPosition <= currentPosition || bytesRead < pattern.Length)
+                            break;
+
+                        currentPosition = nextPosition;
+                    }
+
+                    progress?.Report(100);
+                    return results;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                }
             }, cancellationToken);
         }
 
