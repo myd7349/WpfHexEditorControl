@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-	  <TargetFrameworks>net48;net70-windows;net8.0-windows</TargetFrameworks>
+	  <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
     <UseWPF>true</UseWPF>
     <RootNamespace>WpfHexaEditor</RootNamespace>
     <AssemblyName>WPFHexaEditor</AssemblyName>
@@ -11,7 +11,7 @@
     <Company>Derek Tremblay (derektremblay666@gmail.com)</Company>
     <Description>
       Wpf Hexeditor is a powerful and fully customisable user control for editing file or stream as hexadecimal, decimal and binary. Can be used in Wpf or WinForm application.
-      Support .Net 4.8, .Net 7.0-windows and .Net 8.0-windows
+      Support .Net 4.8 and .Net 8.0-windows
     </Description>
     <PackageIcon>Logo-Icon.png</PackageIcon>
     <PackageIconUrl />
@@ -133,5 +133,9 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Services\" />
   </ItemGroup>
 </Project>

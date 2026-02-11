@@ -25,6 +25,7 @@ using WpfHexaEditor.Core.EventArguments;
 using WpfHexaEditor.Core.Interfaces;
 using WpfHexaEditor.Core.MethodExtention;
 using WpfHexaEditor.Dialog;
+using WpfHexaEditor.Services;
 using static WpfHexaEditor.Core.Bytes.ByteConverters;
 using static WpfHexaEditor.Core.Bytes.ByteProvider;
 using Path = System.IO.Path;
@@ -46,6 +47,26 @@ namespace WpfHexaEditor
         /// Byte provider for work with file or stream currently loaded in control.
         /// </summary>
         private ByteProvider _provider;
+
+        /// <summary>
+        /// Service for undo/redo operations
+        /// </summary>
+        private readonly UndoRedoService _undoRedoService = new UndoRedoService();
+
+        /// <summary>
+        /// Service for clipboard operations
+        /// </summary>
+        private readonly ClipboardService _clipboardService = new ClipboardService();
+
+        /// <summary>
+        /// Service for selection operations
+        /// </summary>
+        private readonly SelectionService _selectionService = new SelectionService();
+
+        /// <summary>
+        /// Service for find/replace operations with caching
+        /// </summary>
+        private readonly FindReplaceService _findReplaceService = new FindReplaceService();
 
         /// <summary>
         /// The large change of scroll when clicked on scrollbar
@@ -90,23 +111,6 @@ namespace WpfHexaEditor
         /// Flag to indicate if color cache needs update
         /// </summary>
         private bool _colorCacheNeedsUpdate = true;
-
-        /// <summary>
-        /// Cache for find operations to avoid redundant searches
-        /// </summary>
-        private byte[] _lastSearchData;
-        private IEnumerable<long> _lastSearchResults;
-        private long _lastSearchTimestamp;
-
-        /// <summary>
-        /// Clear find cache when data is modified
-        /// </summary>
-        private void ClearFindCache()
-        {
-            _lastSearchData = null;
-            _lastSearchResults = null;
-            _lastSearchTimestamp = 0;
-        }
 
         /// <summary>
         /// Byte position in file when mouse right click occurs.
@@ -296,6 +300,9 @@ namespace WpfHexaEditor
         public HexEditor()
         {
             InitializeComponent();
+
+            // Initialize clipboard service default mode
+            _clipboardService.DefaultCopyMode = CopyPasteMode.HexaString;
 
             //Refresh view
             CheckProviderIsOnProgress();
@@ -1202,6 +1209,7 @@ namespace WpfHexaEditor
             }
 
             BytesModified?.Invoke(this, e);
+            _findReplaceService.ClearCache();  // Clear search cache after modification
         }
 
         private void Control_ByteDeleted(object sender, EventArgs e) => DeleteSelection();
@@ -1217,6 +1225,7 @@ namespace WpfHexaEditor
 
             _provider.AddByteModified(@byte, bytePositionInStream, undoLength);
             SetScrollMarker(bytePositionInStream, ScrollMarker.ByteModified);
+            _findReplaceService.ClearCache();  // Clear search cache after modification
             UpdateByteModified();
 
             UpdateStatusBar();
@@ -1508,10 +1517,9 @@ namespace WpfHexaEditor
                     }, (d, baseValue) =>
                     {
                         if (d is not HexEditor ctrl) return -1L;
-                        if (!CheckIsOpen(ctrl._provider)) return -1L;
-                        if ((long)baseValue < -1) return -1L;
 
-                        return baseValue;
+                        var (start, _) = ctrl._selectionService.ValidateSelection(ctrl._provider, (long)baseValue, ctrl.SelectionStop);
+                        return start;
                     }));
 
 
@@ -1540,13 +1548,8 @@ namespace WpfHexaEditor
                     {
                         if (d is not HexEditor ctrl) return baseValue;
 
-                        var value = (long)baseValue;
-
-                        if (value < -1 || !CheckIsOpen(ctrl._provider)) return -1L;
-
-                        return value >= ctrl._provider.Length
-                            ? ctrl._provider.Length
-                            : baseValue;
+                        var (_, stop) = ctrl._selectionService.ValidateSelection(ctrl._provider, ctrl.SelectionStart, (long)baseValue);
+                        return stop;
                     }));
 
         /// <summary>
@@ -1554,10 +1557,9 @@ namespace WpfHexaEditor
         /// </summary>
         private void FixSelectionStartStop()
         {
-            if (SelectionStart > SelectionStop)
-                SelectionStart = SelectionStop;
-            else
-                SelectionStop = SelectionStart;
+            var (start, stop) = _selectionService.FixSelectionRange(SelectionStart, SelectionStop);
+            SelectionStart = start;
+            SelectionStop = stop;
         }
 
         /// <summary>
@@ -1582,8 +1584,8 @@ namespace WpfHexaEditor
         {
             if (CheckIsOpen(_provider))
             {
-                SelectionStart = 0;
-                SelectionStop = _provider.Length;
+                SelectionStart = _selectionService.GetSelectAllStart(_provider);
+                SelectionStop = _selectionService.GetSelectAllStop(_provider);
             }
             else
             {
@@ -1597,16 +1599,14 @@ namespace WpfHexaEditor
         /// <summary>
         /// Get the length of byte are selected (base 1)
         /// </summary>
-        public long SelectionLength => GetSelectionLength(SelectionStart, SelectionStop);
+        public long SelectionLength => _selectionService.GetSelectionLength(SelectionStart, SelectionStop);
 
         /// <summary>
         /// Get byte array from current selection
         /// </summary>
         public byte[] GetSelectionByteArray()
         {
-            using var ms = new MemoryStream();
-            CopyToStream(ms, true);
-            return (byte[])ms.ToArray().Clone();
+            return _selectionService.GetSelectionBytes(_provider, SelectionStart, SelectionStop, true);
         }
 
         /// <summary>
@@ -1722,7 +1722,11 @@ namespace WpfHexaEditor
         /// <summary>
         /// Set or get the default copy to clipboard mode
         /// </summary>
-        public CopyPasteMode DefaultCopyToClipboardMode { get; set; } = CopyPasteMode.HexaString;
+        public CopyPasteMode DefaultCopyToClipboardMode
+        {
+            get => _clipboardService.DefaultCopyMode;
+            set => _clipboardService.DefaultCopyMode = value;
+        }
 
         /// <summary>
         /// Paste clipboard string without inserting byte at selection start
@@ -1759,6 +1763,7 @@ namespace WpfHexaEditor
                 _provider.Paste(SelectionStart, clipBoardText, expend);
 
             SetScrollMarker(SelectionStart, ScrollMarker.ByteModified, Properties.Resources.PasteFromClipboardString);
+            _findReplaceService.ClearCache();  // Clear search cache after modification
             RefreshView();
 
             BytesModified?.Invoke(this, new ByteEventArgs(SelectionStart));
@@ -1774,10 +1779,9 @@ namespace WpfHexaEditor
         /// </summary>
         public void FillWithByte(long startPosition, long length, byte val)
         {
-            if (!CheckIsOpen(_provider) || startPosition <= -1 || length <= 0 || ReadOnlyMode) return;
-
-            _provider.FillWithByte(startPosition, length, val);
+            _clipboardService.FillWithByte(_provider, startPosition, length, val, ReadOnlyMode);
             SetScrollMarker(SelectionStart, ScrollMarker.ByteModified, Properties.Resources.FillSelectionAloneString);
+            _findReplaceService.ClearCache();  // Clear search cache after modification
             RefreshView();
         }
 
@@ -1786,9 +1790,7 @@ namespace WpfHexaEditor
         /// </summary>
         public byte[] GetAllBytes(bool copyChange)
         {
-            if (!CheckIsOpen(_provider)) return null;
-
-            return _provider.GetAllBytes(copyChange);
+            return _clipboardService.GetAllBytes(_provider, copyChange);
         }
 
         /// <summary>
@@ -1799,12 +1801,12 @@ namespace WpfHexaEditor
         /// <summary>
         /// Return true if Copy method could be invoked.
         /// </summary>
-        public bool CanCopy => SelectionLength >= 1 && CheckIsOpen(_provider);
+        public bool CanCopy => _clipboardService.CanCopy(SelectionLength, _provider);
 
         /// <summary>
         /// Return true if delete method could be invoked.
         /// </summary>
-        public bool CanDelete => CanCopy && !ReadOnlyMode && AllowDeleteByte;
+        public bool CanDelete => _clipboardService.CanDelete(SelectionLength, _provider, ReadOnlyMode, AllowDeleteByte);
 
         /// <summary>
         /// Copy to clipboard with default CopyPasteMode.ASCIIString
@@ -1823,9 +1825,8 @@ namespace WpfHexaEditor
         public void CopyToClipboard(CopyPasteMode copypastemode, long selectionStart, long selectionStop, bool copyChange, TblStream tbl)
         {
             if (!CanCopy) return;
-            if (!CheckIsOpen(_provider)) return;
 
-            _provider.CopyToClipboard(copypastemode, selectionStart, selectionStop, copyChange, tbl);
+            _clipboardService.CopyToClipboard(_provider, copypastemode, selectionStart, selectionStop, copyChange, tbl);
         }
 
         /// <summary>
@@ -1846,9 +1847,8 @@ namespace WpfHexaEditor
         public void CopyToStream(Stream output, long selectionStart, long selectionStop, bool copyChange)
         {
             if (!CanCopy) return;
-            if (!CheckIsOpen(_provider)) return;
 
-            _provider.CopyToStream(output, selectionStart, selectionStop, copyChange);
+            _clipboardService.CopyToStream(_provider, output, selectionStart, selectionStop, copyChange);
         }
 
         /// <summary>
@@ -1857,9 +1857,8 @@ namespace WpfHexaEditor
         public byte[] GetCopyData(long selectionStart, long selectionStop, bool copyChange)
         {
             if (!CanCopy) return null;
-            if (!CheckIsOpen(_provider)) return null;
 
-            return _provider.GetCopyData(selectionStart, selectionStop, copyChange);
+            return _clipboardService.GetCopyData(_provider, selectionStart, selectionStop, copyChange);
         }
 
         /// <summary>
@@ -2144,8 +2143,7 @@ namespace WpfHexaEditor
         {
             if (!CheckIsOpen(_provider)) return;
 
-            _provider.ClearUndoChange();
-            _provider.ClearRedoChange();
+            _undoRedoService.ClearAll(_provider);
         }
 
         /// <summary>
@@ -2158,19 +2156,18 @@ namespace WpfHexaEditor
 
             if (!CheckIsOpen(_provider)) return;
 
-            for (var i = 0; i < repeat; i++)
-                _provider.Undo();
+            var position = _undoRedoService.Undo(_provider, repeat);
 
             RefreshView();
 
             //Update focus
-            if (UndoStack.Count == 0) return;
+            if (position >= 0)
+            {
+                if (!IsBytePositionAreVisible(position))
+                    SetPosition(position);
 
-            var position = UndoStack.ElementAt(0).BytePositionInStream;
-            if (!IsBytePositionAreVisible(position))
-                SetPosition(position);
-
-            SetFocusAt(position);
+                SetFocusAt(position);
+            }
 
             Undone?.Invoke(this, EventArgs.Empty);
         }
@@ -2184,19 +2181,18 @@ namespace WpfHexaEditor
 
             if (!CheckIsOpen(_provider)) return;
 
-            for (var i = 0; i < repeat; i++)
-                _provider.Redo();
+            var position = _undoRedoService.Redo(_provider, repeat);
 
             RefreshView();
 
             //Update focus
-            if (RedoStack.Count == 0) return;
+            if (position >= 0)
+            {
+                if (!IsBytePositionAreVisible(position))
+                    SetPosition(position);
 
-            var position = RedoStack.ElementAt(0).BytePositionInStream;
-            if (!IsBytePositionAreVisible(position))
-                SetPosition(position);
-
-            SetFocusAt(position);
+                SetFocusAt(position);
+            }
 
             Redone?.Invoke(this, EventArgs.Empty);
         }
@@ -2217,27 +2213,28 @@ namespace WpfHexaEditor
             }
 
             IsModified = _provider.UndoCount > 0;
+            _findReplaceService.ClearCache();  // Clear search cache after undo
         }
 
         /// <summary>
         /// Get the undo count
         /// </summary>
-        public long UndoCount => CheckIsOpen(_provider) ? _provider.UndoCount : 0;
+        public long UndoCount => _undoRedoService.GetUndoCount(_provider);
 
         /// <summary>
         /// Get the undo count
         /// </summary>
-        public long RedoCount => CheckIsOpen(_provider) ? _provider.RedoCount : 0;
+        public long RedoCount => _undoRedoService.GetRedoCount(_provider);
 
         /// <summary>
         /// Get the undo stack
         /// </summary>
-        public Stack<ByteModified> UndoStack => CheckIsOpen(_provider) ? _provider.UndoStack : null;
+        public Stack<ByteModified> UndoStack => _undoRedoService.GetUndoStack(_provider);
 
         /// <summary>
         /// Get the Redo stack
         /// </summary>
-        public Stack<ByteModified> RedoStack => CheckIsOpen(_provider) ? _provider.RedoStack : null;
+        public Stack<ByteModified> RedoStack => _undoRedoService.GetRedoStack(_provider);
 
         #endregion Undo / Redo
 
@@ -3720,17 +3717,12 @@ namespace WpfHexaEditor
         public long FindFirst(byte[] data, long startPosition = 0, bool highLight = false)
         {
             if (data == null) return -1;
-            if (!CheckIsOpen(_provider)) return -1;
 
             UnHighLightAll();
 
             try
             {
-                // OPTIMIZED: Use FirstOrDefault() instead of ToList().First() to avoid materializing entire sequence
-                var position = _provider.FindIndexOf(data, startPosition).FirstOrDefault();
-
-                if (position == 0 && !_provider.FindIndexOf(data, startPosition).Any())
-                    position = -1;
+                var position = _findReplaceService.FindFirst(_provider, data, startPosition);
 
                 if (position == -1)
                 {
@@ -3783,36 +3775,12 @@ namespace WpfHexaEditor
         public long FindLast(byte[] data, bool highLight = false)
         {
             if (data == null) return -1;
-            if (!CheckIsOpen(_provider)) return -1;
 
             UnHighLightAll();
 
             try
             {
-                // OPTIMIZED: Use LastOrDefault() instead of ToList().Last()
-                // However, LastOrDefault still needs to enumerate all, so we cache the results
-                var results = _provider.FindIndexOf(data, SelectionStart + 1);
-
-                // Check if we have cached results for the same search
-                if (_lastSearchData != null && data.SequenceEqual(_lastSearchData) &&
-                    _lastSearchResults != null && DateTime.Now.Ticks - _lastSearchTimestamp < TimeSpan.FromSeconds(5).Ticks)
-                {
-                    results = _lastSearchResults.Where(p => p > SelectionStart);
-                }
-                else
-                {
-                    // Cache the results for potential reuse
-                    var resultsList = results.ToList();
-                    _lastSearchData = data;
-                    _lastSearchResults = resultsList;
-                    _lastSearchTimestamp = DateTime.Now.Ticks;
-                    results = resultsList;
-                }
-
-                var position = results.LastOrDefault();
-
-                if (position == 0 && !results.Any())
-                    position = -1;
+                var position = _findReplaceService.FindLast(_provider, data, SelectionStart);
 
                 if (position == -1)
                 {
@@ -3857,7 +3825,7 @@ namespace WpfHexaEditor
 
             UnHighLightAll();
 
-            return CheckIsOpen(_provider) ? _provider.FindIndexOf(data) : null;
+            return _findReplaceService.FindAll(_provider, data);
         }
 
         /// <summary>
@@ -3879,25 +3847,8 @@ namespace WpfHexaEditor
 
             if (highLight)
             {
-                // Check cache first
-                IEnumerable<long> positions;
-                if (_lastSearchData != null && data.SequenceEqual(_lastSearchData) &&
-                    _lastSearchResults != null && DateTime.Now.Ticks - _lastSearchTimestamp < TimeSpan.FromSeconds(5).Ticks)
-                {
-                    positions = _lastSearchResults;
-                }
-                else
-                {
-                    positions = FindAll(data);
-                    if (positions == null) return null;
-
-                    // Cache results
-                    var resultsList = positions.ToList();
-                    _lastSearchData = data;
-                    _lastSearchResults = resultsList;
-                    _lastSearchTimestamp = DateTime.Now.Ticks;
-                    positions = resultsList;
-                }
+                // Use cached FindAll from service
+                var positions = _findReplaceService.FindAllCached(_provider, data);
 
                 if (positions == null) return null;
 
@@ -3949,10 +3900,9 @@ namespace WpfHexaEditor
         /// </summary>
         public void ReplaceByte(long startPosition, long length, byte original, byte replace)
         {
-            if (!CheckIsOpen(_provider) || startPosition <= -1 || length <= 0 || ReadOnlyMode) return;
-
-            _provider.ReplaceByte(startPosition, length, original, replace);
+            _findReplaceService.ReplaceByte(_provider, startPosition, length, original, replace, ReadOnlyMode);
             SetScrollMarker(SelectionStart, ScrollMarker.ByteModified, Properties.Resources.ReplaceWithByteString);
+            _findReplaceService.ClearCache();  // Clear search cache after modification
             RefreshView();
         }
 
@@ -3964,26 +3914,25 @@ namespace WpfHexaEditor
             ReplaceFirst(findData, replaceData, true, startPosition, hightlight);
 
         /// <summary>
-        /// Replace the first byte array define by findData in byteprovider at start position. 
+        /// Replace the first byte array define by findData in byteprovider at start position.
         /// </summary>
         /// <returns>Return the position of replace. Return -1 on error/no replace</returns>
         public long ReplaceFirst(byte[] findData, byte[] replaceData, bool truckLength = true, long startPosition = 0, bool hightlight = false)
         {
-            if (findData == null || replaceData == null || !CheckIsOpen(_provider) || ReadOnlyMode) return -1;
+            if (findData == null || replaceData == null) return -1;
 
-            var position = FindFirst(findData, startPosition, hightlight);
+            var position = _findReplaceService.ReplaceFirst(_provider, findData, replaceData, startPosition, truckLength, ReadOnlyMode);
 
             if (position > -1)
             {
-                var finalReplaceData = truckLength
-                    ? replaceData.Take(findData.Length).ToArray()
-                    : replaceData;
-
-                _provider.Paste(position, finalReplaceData, false);
-
+                // UI logic
                 SetScrollMarker(position, ScrollMarker.ByteModified);
 
+                if (hightlight)
+                    AddHighLight(position, findData.Length, false);
+
                 UnSelectAll();
+                _findReplaceService.ClearCache();  // Clear search cache after modification
                 RefreshView();
 
                 return position;
@@ -4093,28 +4042,28 @@ namespace WpfHexaEditor
             ReplaceFirst(StringToByte(find), StringToByte(replace), truckLength, SelectionStart + 1);
 
         /// <summary>
-        /// Replace the all byte array define by findData in byteprovider. 
+        /// Replace the all byte array define by findData in byteprovider.
         /// </summary>
         /// <returns>Return the an IEnumerable contains all positions are replaced. Return null on error/no replace</returns>
         public IEnumerable<long> ReplaceAll(byte[] findData, byte[] replaceData, bool truckLength = true, bool hightlight = false)
         {
-            if (findData == null || replaceData == null || ReadOnlyMode || !CheckIsOpen(_provider)) return null;
+            if (findData == null || replaceData == null) return null;
 
-            var positions = FindAll(findData, hightlight).ToList();
+            var positions = _findReplaceService.ReplaceAll(_provider, findData, replaceData, truckLength, ReadOnlyMode);
 
-            if (!positions.Any()) return null;
+            if (positions == null) return null;
 
-            var finalReplaceData = truckLength
-                ? replaceData.Take(findData.Length).ToArray()
-                : replaceData;
-
+            // UI logic
             foreach (var position in positions)
             {
-                _provider.Paste(position, finalReplaceData, false);
                 SetScrollMarker(position, ScrollMarker.ByteModified);
+
+                if (hightlight)
+                    AddHighLight(position, findData.Length, false);
             }
 
             UnSelectAll();
+            _findReplaceService.ClearCache();  // Clear search cache after modification
             RefreshView();
 
             return positions;
@@ -5867,6 +5816,7 @@ namespace WpfHexaEditor
             _setFocusTest = true;
 
             SetScrollMarker(position, ScrollMarker.ByteDeleted);
+            _findReplaceService.ClearCache();  // Clear search cache after deletion
 
             UpdateScrollBar();
             RefreshView(true);
@@ -6095,6 +6045,7 @@ namespace WpfHexaEditor
             for (var i = 0; i <= length; i++)
                 _provider.AddByteAdded(@byte, bytePositionInStream + i);
 
+            _findReplaceService.ClearCache();  // Clear search cache after modification
             RefreshView();
         }
 
@@ -6109,6 +6060,7 @@ namespace WpfHexaEditor
             foreach (var @byte in bytes)
                 _provider.AddByteAdded(@byte, bytePositionInStream++);
 
+            _findReplaceService.ClearCache();  // Clear search cache after modification
             RefreshView();
         }
         #endregion
