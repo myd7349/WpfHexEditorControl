@@ -19,6 +19,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using System.Xml.Linq;
 using WpfHexaEditor.Core;
 using WpfHexaEditor.Core.Bytes;
@@ -3207,31 +3208,39 @@ namespace WpfHexaEditor
                     {
                         //BYTE INSERT ANYWHERE IS IN DEVELOPMENT!! ///////////
                         //DOES NOT WORK CLEANLY! BE PATIENT
-                        if (_provider.CheckIfIsByteModified(_provider.Position, ByteAction.Added).success)
+
+                        // Issue #137 Optimization: Cache the check result instead of calling twice
+                        var addedCheck = _provider.CheckIfIsByteModified(_provider.Position, ByteAction.Added);
+                        if (addedCheck.success)
                         {
                             if (_provider.Eof) continue;
 
-                            var (_, val) = _provider.CheckIfIsByteModified(_provider.Position, ByteAction.Added);
-
-                            if (val.Byte != null) _viewBuffer[readSize] = val.Byte.Value;
-                            _viewBufferBytePosition[readSize] = val.BytePositionInStream;
+                            // Reuse cached result instead of calling CheckIfIsByteModified again
+                            if (addedCheck.val.Byte != null)
+                                _viewBuffer[readSize] = addedCheck.val.Byte.Value;
+                            _viewBufferBytePosition[readSize] = addedCheck.val.BytePositionInStream;
                             _provider.Position++;
                             readSize++;
                         }
                         /////////////////////////////////////////////////////
-                        else if (!_provider.CheckIfIsByteModified(_provider.Position, ByteAction.Deleted).success)
-                        {
-                            if (_provider.Eof) continue;
-
-                            _viewBuffer[readSize] = (byte)_provider.ReadByte();
-                            _viewBufferBytePosition[readSize] = _provider.Position - 1;
-                            readSize++;
-                        }
                         else
                         {
-                            _viewBufferBytePosition[readSize] = -1;
-                            _provider.Position++;
-                            i--;
+                            // Issue #137 Optimization: Cache the check result
+                            var (deletedSuccess, _) = _provider.CheckIfIsByteModified(_provider.Position, ByteAction.Deleted);
+                            if (!deletedSuccess)
+                            {
+                                if (_provider.Eof) continue;
+
+                                _viewBuffer[readSize] = (byte)_provider.ReadByte();
+                                _viewBufferBytePosition[readSize] = _provider.Position - 1;
+                                readSize++;
+                            }
+                            else
+                            {
+                                _viewBufferBytePosition[readSize] = -1;
+                                _provider.Position++;
+                                i--;
+                            }
                         }
                     }
                 else
