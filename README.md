@@ -6,6 +6,20 @@
 [![NetFramework](https://img.shields.io/badge/Language-C%23%20preview-orange.svg)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/abbaye/WpfHexEditorControl/blob/master/LICENSE)
 
+## 📑 Quick Navigation
+
+| Section | Description |
+|---------|-------------|
+| [🖼 Screenshots](#-screenshots) | Visual examples and use cases |
+| [🛒 Features](#-somes-features) | Complete feature list |
+| [👏 How to Use](#-how-to-use) | Quick start guide |
+| [🏗️ Architecture](#️-architecture) | Service-based design |
+| [📚 Documentation](#-documentation) | Complete documentation index |
+| [🧪 Testing](#-unit-testing) | Unit tests and quality |
+| [🔧 Frameworks](#-supported-frameworks) | .NET support |
+
+---
+
 Wpf Hexeditor is a powerful and fully customisable user control for editing file or stream as hexadecimal, decimal and binary. 
 
 You can use it very easily in Wpf or WinForm application. Download the code and test the Wpf (C#, VB.NET) and WinForm (C#) samples.
@@ -131,10 +145,123 @@ See [Services Documentation](Sources/WPFHexaEditor/Services/README.md) for detai
 
 ## 📚 Documentation
 
-- **[📐 Architecture Diagrams](ARCHITECTURE.md)** - Visual architecture documentation with Mermaid diagrams
-- **[Services Architecture](Sources/WPFHexaEditor/Services/README.md)** - Business logic layer
-- **[Core Components](Sources/WPFHexaEditor/Core/README.md)** - Core infrastructure and data handling
-- **[Sample Applications](Sources/Samples/README.md)** - Usage examples and demos
+### 📖 Table of Contents
+
+- [Getting Started](#-how-to-use) - Quick integration guide
+- [Architecture](#️-architecture) - Service-based design overview
+- [API Reference](#-main-control-api) - HexEditor control documentation
+- [Sample Applications](#-sample-applications) - Working examples
+- [Core Components](#-core-components) - Internal architecture
+- [Testing](#-unit-testing) - Unit tests and quality assurance
+
+---
+
+### 🎯 Main Control API
+
+**[WPFHexaEditor Control](Sources/WPFHexaEditor/README.md)** - Complete documentation for the main HexEditor control
+- Control architecture with 10 services
+- Property reference and customization
+- Usage examples (basic and advanced)
+- Performance optimization tips
+- Multi-targeting support (.NET 4.8 / .NET 8.0)
+- Internationalization (6 languages)
+
+### 📐 Architecture & Design
+
+**[Architecture Diagrams](ARCHITECTURE.md)** - Visual architecture documentation
+- Service layer architecture (Mermaid diagrams)
+- Data flow diagrams
+- Component relationships
+- Design patterns used
+
+**[Services Layer](Sources/WPFHexaEditor/Services/README.md)** - Business logic architecture
+- Complete API reference for all 10 services
+- Service usage examples and patterns
+- Stateless vs stateful services
+- Integration guidelines
+
+### 🎨 Sample Applications
+
+**[Samples Overview](Sources/Samples/README.md)** - All sample applications
+
+**Individual Samples:**
+- **[C# WPF Sample](Sources/Samples/WPFHexEditor.Sample.CSharp/README.md)** - Main comprehensive demo
+- **[VB.NET Sample](Sources/Samples/WpfHexEditor.Sample.VB/README.md)** - Visual Basic version
+- **[WinForms Sample](Sources/Samples/WpfHexEditor.Sample.Winform/README.md)** - Windows Forms integration
+- **[AvalonDock Sample](Sources/Samples/WpfHexEditor.Sample.AvalonDock/README.md)** - Professional IDE-like interface
+- **[BarChart Sample](Sources/Samples/WpfHexEditor.Sample.BarChart/README.md)** - Visual data analysis
+- **[Binary Diff Sample](Sources/Samples/WpfHexEditor.Sample.BinaryFilesDifference/README.md)** - File comparison
+- **[Insert Anywhere Sample](Sources/Samples/WpfHexEditor.Sample.InsertByteAnywhere/README.md)** - Dynamic insertion/deletion
+- **[Service Usage Sample](Sources/Samples/WpfHexEditor.Sample.ServiceUsage/README.md)** - Console app using services without UI
+
+### 🧩 Core Components
+
+**[Core Overview](Sources/WPFHexaEditor/Core/README.md)** - Core infrastructure documentation
+
+**Detailed Component Documentation:**
+- **[Bytes/](Sources/WPFHexaEditor/Core/Bytes/README.md)** - ByteProvider and byte manipulation
+  - File/stream I/O with modification tracking
+  - Insert/delete/modify operations
+  - Undo/redo support
+  - Conversion utilities
+
+- **[CharacterTable/](Sources/WPFHexaEditor/Core/CharacterTable/README.md)** - TBL file support
+  - Custom character encoding for game hacking
+  - Multi-byte character support (DTE)
+  - Bidirectional byte ↔ character mapping
+
+- **[Converters/](Sources/WPFHexaEditor/Core/Converters/README.md)** - WPF value converters
+  - Hex/decimal conversions
+  - Visibility converters
+  - Path/filename converters
+
+- **[EventArguments/](Sources/WPFHexaEditor/Core/EventArguments/README.md)** - Custom event args
+  - ByteEventArgs for modifications
+  - ByteDifferenceEventArgs for comparisons
+  - CustomBackgroundBlockEventArgs for highlighting
+
+- **[Interfaces/](Sources/WPFHexaEditor/Core/Interfaces/README.md)** - Core interfaces
+  - IByte - Byte control contract
+  - IByteControl - Manipulation interface
+  - IByteModified - Change tracking contract
+
+- **[MethodExtention/](Sources/WPFHexaEditor/Core/MethodExtention/README.md)** - Extension methods
+  - Byte array extensions
+  - String parsing helpers
+  - Double formatting
+  - Application helpers
+
+- **[Native/](Sources/WPFHexaEditor/Core/Native/README.md)** - Windows API P/Invoke
+  - High-performance file I/O
+  - Memory-mapped files
+  - Native window operations
+
+- **[Dialog/](Sources/WPFHexaEditor/Dialog/README.md)** - UI dialogs
+  - Find window
+  - Find/Replace window
+  - Byte input dialogs
+
+### 🧪 Testing & Quality
+
+**[Unit Tests](Sources/WPFHexaEditor.Tests/README.md)** - Test suite documentation
+- 80+ unit tests with xUnit
+- Service layer test coverage
+- Test patterns and best practices
+- Running tests and CI/CD integration
+
+### 🔧 Development Tools
+
+**[ByteProviderBench](Sources/Tools/ByteProviderBench/README.md)** - Performance benchmarking tool
+- Read/write performance testing
+- Memory usage profiling
+- Search algorithm benchmarks
+
+### 📂 Project Structure
+
+**[Sources Overview](Sources/README.md)** - Complete source code structure
+- Directory organization
+- Build instructions
+- Multi-targeting configuration
 
 ## 🔧 Supported Frameworks
 
@@ -167,5 +294,90 @@ The service-based architecture makes unit testing straightforward - services can
 - Users now receive accurate search results after editing
 - Cache properly cleared at all 11 modification points
 
+## 🗺️ Complete Documentation Map
+
+Every major folder in the project contains comprehensive README documentation:
+
+```
+📦 WpfHexEditorControl/
+│
+├── 📄 README.md (this file) ..................... Main project overview
+├── 📄 ARCHITECTURE.md .......................... Architecture diagrams
+│
+├── 📂 Sources/
+│   ├── 📄 README.md ............................ Source code overview
+│   │
+│   ├── 📂 WPFHexaEditor/
+│   │   ├── 📄 README.md ........................ Main control documentation
+│   │   │
+│   │   ├── 📂 Services/
+│   │   │   └── 📄 README.md .................... 10 services API reference
+│   │   │
+│   │   ├── 📂 Core/
+│   │   │   ├── 📄 README.md .................... Core components overview
+│   │   │   ├── 📂 Bytes/README.md .............. ByteProvider & data layer
+│   │   │   ├── 📂 CharacterTable/README.md ..... TBL file support
+│   │   │   ├── 📂 Converters/README.md ......... WPF value converters
+│   │   │   ├── 📂 EventArguments/README.md ..... Custom event args
+│   │   │   ├── 📂 Interfaces/README.md ......... Core interfaces
+│   │   │   ├── 📂 MethodExtention/README.md .... Extension methods
+│   │   │   └── 📂 Native/README.md ............. Windows API P/Invoke
+│   │   │
+│   │   └── 📂 Dialog/
+│   │       └── 📄 README.md .................... Find/Replace dialogs
+│   │
+│   ├── 📂 WPFHexaEditor.Tests/
+│   │   └── 📄 README.md ........................ 80+ unit tests
+│   │
+│   ├── 📂 Samples/
+│   │   ├── 📄 README.md ........................ Samples overview
+│   │   ├── 📂 WPFHexEditor.Sample.CSharp/README.md
+│   │   ├── 📂 WpfHexEditor.Sample.VB/README.md
+│   │   ├── 📂 WpfHexEditor.Sample.Winform/README.md
+│   │   ├── 📂 WpfHexEditor.Sample.AvalonDock/README.md
+│   │   ├── 📂 WpfHexEditor.Sample.BarChart/README.md
+│   │   ├── 📂 WpfHexEditor.Sample.BinaryFilesDifference/README.md
+│   │   ├── 📂 WpfHexEditor.Sample.InsertByteAnywhere/README.md
+│   │   └── 📂 WpfHexEditor.Sample.ServiceUsage/README.md
+│   │
+│   └── 📂 Tools/
+│       └── 📂 ByteProviderBench/
+│           └── 📄 README.md .................... Performance benchmarking
+```
+
+**Total Documentation:** 19 comprehensive README files covering every aspect of the project! 📚
+
+## 💡 Learning Path
+
+**Beginner:** Start here
+1. Read [How to Use](#-how-to-use) for basic integration
+2. Explore [C# Sample](Sources/Samples/WPFHexEditor.Sample.CSharp/README.md) for practical examples
+3. Review [Main Control API](Sources/WPFHexaEditor/README.md) for available properties
+
+**Intermediate:** Dive deeper
+4. Understand [Architecture](ARCHITECTURE.md) and service layer design
+5. Study [Services Documentation](Sources/WPFHexaEditor/Services/README.md) for advanced features
+6. Try specialized samples ([BarChart](Sources/Samples/WpfHexEditor.Sample.BarChart/README.md), [Binary Diff](Sources/Samples/WpfHexEditor.Sample.BinaryFilesDifference/README.md))
+
+**Advanced:** Master the internals
+7. Explore [Core Components](Sources/WPFHexaEditor/Core/README.md) architecture
+8. Review [ByteProvider](Sources/WPFHexaEditor/Core/Bytes/README.md) for data layer understanding
+9. Study [Unit Tests](Sources/WPFHexaEditor.Tests/README.md) for testing patterns
+10. Build custom tools with [Service Usage Sample](Sources/Samples/WpfHexEditor.Sample.ServiceUsage/README.md)
+
+## 🤝 Contributing
+
+We welcome contributions! The comprehensive documentation makes it easy to understand the codebase:
+- All services are documented with API references
+- Unit tests provide usage examples
+- Architecture diagrams show component relationships
+- Each folder has detailed README with examples
+
 ---
-✨ Wpf HexEditor user control, by Derek Tremblay (derektremblay666@gmail.com) coded for your fun! 😊🤟
+
+✨ **WPF HexEditor** - A powerful, well-documented hex editor control for .NET
+
+Created by Derek Tremblay (derektremblay666@gmail.com)
+Contributors: ehsan69h, Janus Tida, Claude Sonnet 4.5
+
+Coded with ❤️ for the community! 😊🤟
