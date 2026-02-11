@@ -58,6 +58,57 @@ namespace WpfHexaEditor
         private Dictionary<long, long> _markedPositionList = new();
 
         /// <summary>
+        /// Cache for scroll markers: Key = "marker_position", Value = Rectangle
+        /// </summary>
+        private readonly Dictionary<string, Rectangle> _scrollMarkerCache = new();
+
+        /// <summary>
+        /// Cache for scroll marker brushes to avoid repeated TryFindResource calls
+        /// </summary>
+        private SolidColorBrush _bookMarkColorBrush;
+        private SolidColorBrush _searchBookMarkColorBrush;
+        private SolidColorBrush _selectionStartBookMarkColorBrush;
+        private SolidColorBrush _byteModifiedMarkColorBrush;
+        private SolidColorBrush _byteDeletedMarkColorBrush;
+
+        /// <summary>
+        /// Cache for byte color brushes to avoid recalculating on every property change
+        /// </summary>
+        private Brush _cachedSelectionFirstColor;
+        private Brush _cachedSelectionSecondColor;
+        private Brush _cachedByteModifiedColor;
+        private Brush _cachedMouseOverColor;
+        private Brush _cachedByteDeletedColor;
+        private Brush _cachedByteAddedColor;
+        private Brush _cachedHighLightColor;
+        private Brush _cachedForeground;
+        private Brush _cachedForegroundSecondColor;
+        private Brush _cachedForegroundContrast;
+        private Brush _cachedBackground;
+
+        /// <summary>
+        /// Flag to indicate if color cache needs update
+        /// </summary>
+        private bool _colorCacheNeedsUpdate = true;
+
+        /// <summary>
+        /// Cache for find operations to avoid redundant searches
+        /// </summary>
+        private byte[] _lastSearchData;
+        private IEnumerable<long> _lastSearchResults;
+        private long _lastSearchTimestamp;
+
+        /// <summary>
+        /// Clear find cache when data is modified
+        /// </summary>
+        private void ClearFindCache()
+        {
+            _lastSearchData = null;
+            _lastSearchResults = null;
+            _lastSearchTimestamp = 0;
+        }
+
+        /// <summary>
         /// Byte position in file when mouse right click occurs.
         /// </summary>
         private long _rightClickBytePosition = -1;
@@ -557,11 +608,118 @@ namespace WpfHexaEditor
             ctrl.BaseGrid.Background = (Brush)e.NewValue;
         }
 
+        /// <summary>
+        /// Update color cache from dependency properties
+        /// </summary>
+        private void UpdateColorCache()
+        {
+            _cachedSelectionFirstColor = SelectionFirstColor;
+            _cachedSelectionSecondColor = SelectionSecondColor;
+            _cachedByteModifiedColor = ByteModifiedColor;
+            _cachedMouseOverColor = MouseOverColor;
+            _cachedByteDeletedColor = ByteDeletedColor;
+            _cachedByteAddedColor = ByteAddedColor;
+            _cachedHighLightColor = HighLightColor;
+            _cachedForeground = Foreground;
+            _cachedForegroundSecondColor = ForegroundSecondColor;
+            _cachedForegroundContrast = ForegroundContrast;
+            _cachedBackground = Background;
+            _colorCacheNeedsUpdate = false;
+        }
+
+        /// <summary>
+        /// Get cached colors for fast access - avoids DependencyProperty overhead
+        /// </summary>
+        internal Brush GetCachedSelectionFirstColor()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedSelectionFirstColor;
+        }
+
+        internal Brush GetCachedSelectionSecondColor()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedSelectionSecondColor;
+        }
+
+        internal Brush GetCachedByteModifiedColor()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedByteModifiedColor;
+        }
+
+        internal Brush GetCachedMouseOverColor()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedMouseOverColor;
+        }
+
+        internal Brush GetCachedByteDeletedColor()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedByteDeletedColor;
+        }
+
+        internal Brush GetCachedHighLightColor()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedHighLightColor;
+        }
+
+        internal Brush GetCachedForeground()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedForeground;
+        }
+
+        internal Brush GetCachedForegroundSecondColor()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedForegroundSecondColor;
+        }
+
+        internal Brush GetCachedBackground()
+        {
+            if (_colorCacheNeedsUpdate) UpdateColorCache();
+            return _cachedBackground;
+        }
+
+        /// <summary>
+        /// Update only colors without full refresh - OPTIMIZED
+        /// </summary>
+        private void UpdateColorsOnly()
+        {
+            if (_colorCacheNeedsUpdate)
+                UpdateColorCache();
+
+            // Batch update with BeginInit/EndInit for better performance
+            HexDataStackPanel.BeginInit();
+            StringDataStackPanel.BeginInit();
+
+            try
+            {
+                // Update all visible bytes with new colors
+                TraverseHexAndStringBytes(ctrl =>
+                {
+                    ctrl.UpdateVisual();
+                }, force: false);
+            }
+            finally
+            {
+                HexDataStackPanel.EndInit();
+                StringDataStackPanel.EndInit();
+            }
+        }
+
         private static void Control_ColorPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not HexEditor ctrl || e.NewValue == e.OldValue) return;
 
-            ctrl.RefreshView();
+            // Mark color cache as needing update
+            ctrl._colorCacheNeedsUpdate = true;
+
+            // Use optimized color-only update instead of full RefreshView
+            ctrl.UpdateColorsOnly();
         }
 
         public new FontFamily FontFamily
@@ -2415,16 +2573,20 @@ namespace WpfHexaEditor
         private void TraverseHexBytes(Action<HexByte> act, ref bool exit, bool force = false)
         {
             var visibleLine = MaxVisibleLine;
-            var cnt = 0;
+            var hexStackCount = HexDataStackPanel.Children.Count;
+            var maxLines = force ? hexStackCount : Math.Min(visibleLine, hexStackCount);
 
-            //HexByte panel
-            foreach (StackPanel hexDataStack in HexDataStackPanel.Children)
+            //HexByte panel - optimized with for loop to avoid enumerator allocation
+            for (var lineIdx = 0; lineIdx < maxLines; lineIdx++)
             {
-                if (cnt++ == visibleLine && !force) break;
+                if (!(HexDataStackPanel.Children[lineIdx] is StackPanel hexDataStack)) continue;
 
-                foreach (var ctrl in hexDataStack.Children)
-                    if (ctrl is HexByte hexCtrl)
+                var childCount = hexDataStack.Children.Count;
+                for (var i = 0; i < childCount; i++)
+                {
+                    if (hexDataStack.Children[i] is HexByte hexCtrl)
                         act(hexCtrl);
+                }
 
                 if (exit) return;
             }
@@ -2445,17 +2607,20 @@ namespace WpfHexaEditor
         private void TraverseStringBytes(Action<StringByte> act, ref bool exit, bool force = false)
         {
             var visibleLine = MaxVisibleLine;
-            var cnt = 0;
+            var stringStackCount = StringDataStackPanel.Children.Count;
+            var maxLines = force ? stringStackCount : Math.Min(visibleLine, stringStackCount);
 
-            //Stringbyte panel
-            foreach (StackPanel stringDataStack in StringDataStackPanel.Children)
+            //Stringbyte panel - optimized with for loop to avoid enumerator allocation
+            for (var lineIdx = 0; lineIdx < maxLines; lineIdx++)
             {
-                if (cnt++ == visibleLine && !force)
-                    break;
+                if (!(StringDataStackPanel.Children[lineIdx] is StackPanel stringDataStack)) continue;
 
-                foreach (var ctrl in stringDataStack.Children)
-                    if (ctrl is StringByte sbControl)
+                var childCount = stringDataStack.Children.Count;
+                for (var i = 0; i < childCount; i++)
+                {
+                    if (stringDataStack.Children[i] is StringByte sbControl)
                         act(sbControl);
+                }
 
                 if (exit) return;
             }
@@ -2493,15 +2658,13 @@ namespace WpfHexaEditor
         /// </summary>
         private void TraverseLineInfo(Action<FastTextLine> act)
         {
-            var visibleLine = MaxVisibleLine;
-            var cnt = 0;
+            var childCount = LinesInfoStackPanel.Children.Count;
+            var maxLines = Math.Min(MaxVisibleLine, childCount);
 
-            //lines infos panel
-            foreach (var ctrl in LinesInfoStackPanel.Children)
+            //lines infos panel - optimized with for loop
+            for (var i = 0; i < maxLines; i++)
             {
-                if (cnt++ == visibleLine) break;
-
-                if (ctrl is FastTextLine lineInfo)
+                if (LinesInfoStackPanel.Children[i] is FastTextLine lineInfo)
                     act(lineInfo);
             }
         }
@@ -2511,15 +2674,13 @@ namespace WpfHexaEditor
         /// </summary>
         private void TraverseHeader(Action<FastTextLine> act)
         {
-            var visibleLine = MaxVisibleLine;
-            var cnt = 0;
+            var childCount = HexHeaderStackPanel.Children.Count;
+            var maxLines = Math.Min(MaxVisibleLine, childCount);
 
-            //header panel
-            foreach (var ctrl in HexHeaderStackPanel.Children)
+            //header panel - optimized with for loop
+            for (var i = 0; i < maxLines; i++)
             {
-                if (cnt++ == visibleLine) break;
-
-                if (ctrl is FastTextLine column)
+                if (HexHeaderStackPanel.Children[i] is FastTextLine column)
                     act(column);
             }
         }
@@ -2529,9 +2690,13 @@ namespace WpfHexaEditor
         /// </summary>
         private void TraverseScrollMarker(Action<Rectangle> act, ref bool exit)
         {
-            for (var i = MarkerGrid.Children.Count - 1; i >= 0; i--)
+            var children = MarkerGrid.Children;
+            var count = children.Count;
+
+            // Iterate in reverse order, caching the collection reference
+            for (var i = count - 1; i >= 0; i--)
             {
-                if (MarkerGrid.Children[i] is Rectangle rect)
+                if (children[i] is Rectangle rect)
                     act(rect);
 
                 if (exit) return;
@@ -2693,6 +2858,85 @@ namespace WpfHexaEditor
             TraverseLineInfo(ctrl => { ctrl.Tag = ctrl.Text = string.Empty; });
 
         /// <summary>
+        /// Optimized update that combines UpdateByteModified, UpdateSelection, UpdateHighLight and UpdateVisual in one traversal
+        /// </summary>
+        private void UpdateByteControlsOptimized()
+        {
+            if (!CheckIsOpen(_provider)) return;
+
+            // Pre-calculate all values once
+            var modifiedBytesDictionary = _provider.GetByteModifieds(ByteAction.All);
+            var minSelect = SelectionStart <= SelectionStop ? SelectionStart : SelectionStop;
+            var maxSelect = SelectionStart <= SelectionStop ? SelectionStop : SelectionStart;
+            var hasHighlights = _markedPositionList.Count > 0;
+
+            // Single traversal for StringBytes
+            var exit = false;
+            TraverseStringBytes(ctrl =>
+            {
+                // Update byte modified
+                if (modifiedBytesDictionary.TryGetValue(ctrl.BytePositionInStream, out var byteModified))
+                {
+                    ctrl.InternalChange = true;
+                    if (byteModified.Byte.HasValue)
+                        ctrl.Byte.ChangeByteValue(byteModified.Byte.Value, ctrl.BytePositionInStream);
+
+                    if (byteModified.Action == ByteAction.Modified || byteModified.Action == ByteAction.Deleted)
+                        ctrl.Action = byteModified.Action;
+
+                    ctrl.InternalChange = false;
+                }
+
+                // Update selection
+                ctrl.IsSelected = ctrl.BytePositionInStream >= minSelect &&
+                                  ctrl.BytePositionInStream <= maxSelect &&
+                                  ctrl.BytePositionInStream != -1 &&
+                                  ctrl.Action != ByteAction.Deleted;
+
+                // Update highlight
+                ctrl.IsHighLight = hasHighlights && _markedPositionList.ContainsKey(ctrl.BytePositionInStream);
+
+                // Update visual
+                ctrl.UpdateVisual();
+            }, ref exit);
+
+            // Single traversal for HexBytes
+            exit = false;
+            TraverseHexBytes(ctrl =>
+            {
+                // Update byte modified
+                for (var i = 0; i < ByteSizeRatio; i++)
+                {
+                    if (modifiedBytesDictionary.TryGetValue(ctrl.BytePositionInStream + i, out var byteModified))
+                    {
+                        ctrl.InternalChange = true;
+                        if (byteModified.Byte.HasValue)
+                            ctrl.Byte.ChangeByteValue(byteModified.Byte.Value, ctrl.BytePositionInStream + i);
+
+                        if (byteModified.Action == ByteAction.Modified || byteModified.Action == ByteAction.Deleted)
+                            ctrl.Action = byteModified.Action;
+
+                        ctrl.InternalChange = false;
+                    }
+                }
+
+                // Update selection
+                ctrl.IsSelected = ctrl.BytePositionInStream >= minSelect &&
+                                  ctrl.BytePositionInStream <= maxSelect &&
+                                  ctrl.BytePositionInStream != -1 &&
+                                  ctrl.Action != ByteAction.Deleted;
+
+                // Update highlight
+                ctrl.IsHighLight = hasHighlights && _markedPositionList.ContainsKey(ctrl.BytePositionInStream);
+
+                // Update visual
+                ctrl.UpdateVisual();
+            }, ref exit);
+
+            IsModified = _provider.UndoCount > 0;
+        }
+
+        /// <summary>
         /// Refresh currentview of hexeditor
         /// </summary>
         public void RefreshView(bool controlResize = false, bool refreshData = true)
@@ -2706,12 +2950,9 @@ namespace WpfHexaEditor
             if (refreshData)
                 UpdateViewers(controlResize);
 
-            //Update visual of byte control
-            UpdateByteModified();
-            UpdateSelection();
-            UpdateHighLight();
+            //Update visual of byte control - optimized: combines UpdateByteModified, UpdateSelection, UpdateHighLight, and UpdateVisual
+            UpdateByteControlsOptimized();
             UpdateStatusBar(false);
-            UpdateVisual();
             UpdateFocus();
 
             if (controlResize)
@@ -3474,7 +3715,7 @@ namespace WpfHexaEditor
             FindFirst(StringToByte(text), startPosition);
 
         /// <summary>
-        /// Find first occurence of byte[] in stream. Search start as startPosition.
+        /// Find first occurence of byte[] in stream. Search start as startPosition. - OPTIMIZED
         /// </summary>
         public long FindFirst(byte[] data, long startPosition = 0, bool highLight = false)
         {
@@ -3485,7 +3726,18 @@ namespace WpfHexaEditor
 
             try
             {
-                var position = _provider.FindIndexOf(data, startPosition).ToList().First();
+                // OPTIMIZED: Use FirstOrDefault() instead of ToList().First() to avoid materializing entire sequence
+                var position = _provider.FindIndexOf(data, startPosition).FirstOrDefault();
+
+                if (position == 0 && !_provider.FindIndexOf(data, startPosition).Any())
+                    position = -1;
+
+                if (position == -1)
+                {
+                    UnSelectAll();
+                    UnHighLightAll();
+                    return -1;
+                }
 
                 SetPosition(position, data.Length);
 
@@ -3525,7 +3777,7 @@ namespace WpfHexaEditor
         public long FindLast(string text) => FindLast(StringToByte(text));
 
         /// <summary>
-        /// Find first occurence of byte[] in stream.
+        /// Find last occurence of byte[] in stream. - OPTIMIZED
         /// </summary>
         /// <returns>Return the position</returns>
         public long FindLast(byte[] data, bool highLight = false)
@@ -3537,7 +3789,37 @@ namespace WpfHexaEditor
 
             try
             {
-                var position = _provider.FindIndexOf(data, SelectionStart + 1).ToList().Last();
+                // OPTIMIZED: Use LastOrDefault() instead of ToList().Last()
+                // However, LastOrDefault still needs to enumerate all, so we cache the results
+                var results = _provider.FindIndexOf(data, SelectionStart + 1);
+
+                // Check if we have cached results for the same search
+                if (_lastSearchData != null && data.SequenceEqual(_lastSearchData) &&
+                    _lastSearchResults != null && DateTime.Now.Ticks - _lastSearchTimestamp < TimeSpan.FromSeconds(5).Ticks)
+                {
+                    results = _lastSearchResults.Where(p => p > SelectionStart);
+                }
+                else
+                {
+                    // Cache the results for potential reuse
+                    var resultsList = results.ToList();
+                    _lastSearchData = data;
+                    _lastSearchResults = resultsList;
+                    _lastSearchTimestamp = DateTime.Now.Ticks;
+                    results = resultsList;
+                }
+
+                var position = results.LastOrDefault();
+
+                if (position == 0 && !results.Any())
+                    position = -1;
+
+                if (position == -1)
+                {
+                    UnSelectAll();
+                    UnHighLightAll();
+                    return -1;
+                }
 
                 SetPosition(position, data.Length);
 
@@ -3586,7 +3868,7 @@ namespace WpfHexaEditor
             FindAll(StringToByte(text), highLight);
 
         /// <summary>
-        /// Find all occurence of string in stream. Highlight occurance in stream is MarcAll as true
+        /// Find all occurence of string in stream. Highlight occurance in stream is MarcAll as true - OPTIMIZED
         /// </summary>
         /// <returns>Return null if no occurence found</returns>
         public IEnumerable<long> FindAll(byte[] data, bool highLight)
@@ -3597,16 +3879,45 @@ namespace WpfHexaEditor
 
             if (highLight)
             {
-                var positions = FindAll(data);
+                // Check cache first
+                IEnumerable<long> positions;
+                if (_lastSearchData != null && data.SequenceEqual(_lastSearchData) &&
+                    _lastSearchResults != null && DateTime.Now.Ticks - _lastSearchTimestamp < TimeSpan.FromSeconds(5).Ticks)
+                {
+                    positions = _lastSearchResults;
+                }
+                else
+                {
+                    positions = FindAll(data);
+                    if (positions == null) return null;
+
+                    // Cache results
+                    var resultsList = positions.ToList();
+                    _lastSearchData = data;
+                    _lastSearchResults = resultsList;
+                    _lastSearchTimestamp = DateTime.Now.Ticks;
+                    positions = resultsList;
+                }
 
                 if (positions == null) return null;
 
                 var findAll = positions as IList<long> ?? positions.ToList();
-                foreach (var position in findAll)
-                {
-                    AddHighLight(position, data.Length, false);
 
-                    SetScrollMarker(position, ScrollMarker.SearchHighLight);
+                // OPTIMIZED: Batch operations with BeginInit/EndInit for better performance
+                MarkerGrid.BeginInit();
+
+                try
+                {
+                    // Add all highlights and markers in a batch
+                    foreach (var position in findAll)
+                    {
+                        AddHighLight(position, data.Length, false);
+                        SetScrollMarker(position, ScrollMarker.SearchHighLight);
+                    }
+                }
+                finally
+                {
+                    MarkerGrid.EndInit();
                 }
 
                 UnSelectAll();
@@ -3939,20 +4250,34 @@ namespace WpfHexaEditor
         public void SetBookMark() => SetScrollMarker(SelectionStart, ScrollMarker.Bookmark);
 
         /// <summary>
+        /// Initialize brush cache to avoid repeated TryFindResource calls
+        /// </summary>
+        private void InitializeScrollMarkerBrushes()
+        {
+            _bookMarkColorBrush ??= (SolidColorBrush)TryFindResource("BookMarkColor");
+            _searchBookMarkColorBrush ??= (SolidColorBrush)TryFindResource("SearchBookMarkColor");
+            _selectionStartBookMarkColorBrush ??= (SolidColorBrush)TryFindResource("SelectionStartBookMarkColor");
+            _byteModifiedMarkColorBrush ??= (SolidColorBrush)TryFindResource("ByteModifiedMarkColor");
+            _byteDeletedMarkColorBrush ??= (SolidColorBrush)TryFindResource("ByteDeletedMarkColor");
+        }
+
+        /// <summary>
         /// Set marker at position using bookmark object
         /// </summary>
         private void SetScrollMarker(BookMark mark) =>
             SetScrollMarker(mark.BytePositionInStream, mark.Marker, mark.Description);
 
         /// <summary>
-        /// Set marker at position
+        /// Set marker at position - OPTIMIZED VERSION with cache
         /// </summary>
         private void SetScrollMarker(long position, ScrollMarker marker, string description = "")
         {
             if (!CheckIsOpen(_provider)) return;
 
+            // Initialize brushes cache if not done
+            InitializeScrollMarkerBrushes();
+
             double rightPosition = 0;
-            var exit = false;
 
             //create bookmark
             var bookMark = new BookMark
@@ -3966,14 +4291,17 @@ namespace WpfHexaEditor
 
             if (marker == ScrollMarker.SelectionStart)
             {
-                TraverseScrollMarker(sm =>
+                // Use cache to quickly remove existing SelectionStart marker
+                var selectionStartKey = $"{ScrollMarker.SelectionStart}_";
+                var keysToRemove = _scrollMarkerCache.Keys.Where(k => k.StartsWith(selectionStartKey)).ToList();
+                foreach (var key in keysToRemove)
                 {
-                    if (sm.Tag is BookMark mark && mark.Marker == ScrollMarker.SelectionStart)
+                    if (_scrollMarkerCache.TryGetValue(key, out var existingRect))
                     {
-                        MarkerGrid.Children.Remove(sm);
-                        exit = true;
+                        MarkerGrid.Children.Remove(existingRect);
+                        _scrollMarkerCache.Remove(key);
                     }
-                }, ref exit);
+                }
 
                 bookMark.BytePositionInStream = SelectionStart;
             }
@@ -3990,71 +4318,70 @@ namespace WpfHexaEditor
 
             #endregion
 
-            #region Check if position already exist and exit if exist                
+            #region Check if position already exist using cache
+
+            var cacheKey = $"{marker}_{(int)topPosition}";
 
             if (marker != ScrollMarker.SelectionStart)
             {
-                exit = false;
-
-                TraverseScrollMarker(sm =>
-                {
-                    if (sm.Tag is BookMark mark && mark.Marker == marker &&
-                        (int)sm.Margin.Top == (int)topPosition)
-                        exit = true;
-                }, ref exit);
-
-                if (exit) return;
+                // Check cache instead of traversing all markers
+                if (_scrollMarkerCache.ContainsKey(cacheKey))
+                    return;
             }
 
             #endregion
 
             #region Set somes properties for different marker
 
-            new Rectangle().With(r =>
+            var r = new Rectangle
             {
-                r.VerticalAlignment = VerticalAlignment.Top;
-                r.HorizontalAlignment = HorizontalAlignment.Left;
-                r.Tag = bookMark;
-                r.Width = 5;
-                r.Height = 3;
-                r.DataContext = bookMark;
+                VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Tag = bookMark,
+                Width = 5,
+                Height = 3,
+                DataContext = bookMark
+            };
 
-                switch (marker)
-                {
-                    case ScrollMarker.TblBookmark:
-                    case ScrollMarker.Bookmark:
-                        r.ToolTip = TryFindResource("ScrollMarkerSearchToolTip");
-                        r.Fill = (SolidColorBrush)TryFindResource("BookMarkColor");
-                        break;
-                    case ScrollMarker.SearchHighLight:
-                        r.ToolTip = TryFindResource("ScrollMarkerSearchToolTip");
-                        r.Fill = (SolidColorBrush)TryFindResource("SearchBookMarkColor");
-                        r.HorizontalAlignment = HorizontalAlignment.Center;
-                        break;
-                    case ScrollMarker.SelectionStart:
-                        r.Fill = (SolidColorBrush)TryFindResource("SelectionStartBookMarkColor");
-                        r.Width = VerticalScrollBar.ActualWidth;
-                        r.Height = 3;
-                        break;
-                    case ScrollMarker.ByteModified:
-                        r.ToolTip = TryFindResource("ScrollMarkerSearchToolTip");
-                        r.Fill = (SolidColorBrush)TryFindResource("ByteModifiedMarkColor");
-                        r.HorizontalAlignment = HorizontalAlignment.Right;
-                        break;
-                    case ScrollMarker.ByteDeleted:
-                        r.ToolTip = TryFindResource("ScrollMarkerSearchToolTip");
-                        r.Fill = (SolidColorBrush)TryFindResource("ByteDeletedMarkColor");
-                        r.HorizontalAlignment = HorizontalAlignment.Right;
-                        rightPosition = 4;
-                        break;
-                }
+            var tooltip = TryFindResource("ScrollMarkerSearchToolTip");
 
-                r.MouseDown += Rect_MouseDown;
-                r.Margin = new Thickness(0, topPosition, rightPosition, 0);
+            switch (marker)
+            {
+                case ScrollMarker.TblBookmark:
+                case ScrollMarker.Bookmark:
+                    r.ToolTip = tooltip;
+                    r.Fill = _bookMarkColorBrush;
+                    break;
+                case ScrollMarker.SearchHighLight:
+                    r.ToolTip = tooltip;
+                    r.Fill = _searchBookMarkColorBrush;
+                    r.HorizontalAlignment = HorizontalAlignment.Center;
+                    break;
+                case ScrollMarker.SelectionStart:
+                    r.Fill = _selectionStartBookMarkColorBrush;
+                    r.Width = VerticalScrollBar.ActualWidth;
+                    r.Height = 3;
+                    break;
+                case ScrollMarker.ByteModified:
+                    r.ToolTip = tooltip;
+                    r.Fill = _byteModifiedMarkColorBrush;
+                    r.HorizontalAlignment = HorizontalAlignment.Right;
+                    break;
+                case ScrollMarker.ByteDeleted:
+                    r.ToolTip = tooltip;
+                    r.Fill = _byteDeletedMarkColorBrush;
+                    r.HorizontalAlignment = HorizontalAlignment.Right;
+                    rightPosition = 4;
+                    break;
+            }
 
-                //Add to grid
-                MarkerGrid.Children.Add(r);
-            });
+            r.MouseDown += Rect_MouseDown;
+            r.Margin = new Thickness(0, topPosition, rightPosition, 0);
+
+            //Add to cache and grid
+            _scrollMarkerCache[cacheKey] = r;
+            MarkerGrid.Children.Add(r);
+
             #endregion
         }
 
@@ -4067,66 +4394,113 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Update all scroll marker position
+        /// Update all scroll marker position - OPTIMIZED with batch updates
         /// </summary>
-        private void UpdateScrollMarkerPosition() =>
-            TraverseScrollMarker(ctrl =>
+        private void UpdateScrollMarkerPosition()
+        {
+            if (VerticalScrollBar.Track == null) return;
+
+            // Suspend layout updates during batch modification
+            MarkerGrid.BeginInit();
+
+            try
             {
-                if (ctrl.Tag is not BookMark bm) return;
+                var tickHeight = VerticalScrollBar.Track.TickHeight(MaxLine);
 
-                try
+                // Use cache for faster iteration
+                foreach (var rect in _scrollMarkerCache.Values)
                 {
-                    ctrl.Margin = new Thickness
-                    (
-                        0,
-                        GetLineNumber(bm.BytePositionInStream) * VerticalScrollBar.Track.TickHeight(MaxLine) - ctrl.ActualHeight,
-                        0,
-                        0
-                    );
+                    if (rect.Tag is not BookMark bm) continue;
+
+                    try
+                    {
+                        var newTop = GetLineNumber(bm.BytePositionInStream) * tickHeight - rect.ActualHeight;
+                        rect.Margin = new Thickness(0, newTop, 0, 0);
+                    }
+                    catch
+                    {
+                        rect.Margin = new Thickness(0);
+                    }
                 }
-                catch
-                {
-                    ctrl.Margin = new Thickness(0);
-                }
-            });
+            }
+            finally
+            {
+                // Resume layout updates - single redraw
+                MarkerGrid.EndInit();
+            }
+        }
 
         /// <summary>
-        /// Clear ScrollMarker
+        /// Clear ScrollMarker - OPTIMIZED with cache clear
         /// </summary>
-        public void ClearAllScrollMarker() => MarkerGrid.Children.Clear();
+        public void ClearAllScrollMarker()
+        {
+            MarkerGrid.Children.Clear();
+            _scrollMarkerCache.Clear();
+        }
 
         /// <summary>
-        /// Clear ScrollMarker
+        /// Clear ScrollMarker - OPTIMIZED to avoid removing during traversal
         /// </summary>
         /// <param name="marker">Type of marker to clear</param>
-        public void ClearScrollMarker(ScrollMarker marker) =>
-            TraverseScrollMarker(sm =>
+        public void ClearScrollMarker(ScrollMarker marker)
+        {
+            // Collect markers to remove (avoid modification during iteration)
+            var keysToRemove = _scrollMarkerCache.Keys
+                .Where(k => k.StartsWith($"{marker}_"))
+                .ToList();
+
+            // Batch remove
+            foreach (var key in keysToRemove)
             {
-                if (sm.Tag is BookMark mark && mark.Marker == marker)
-                    MarkerGrid.Children.Remove(sm);
-            });
+                if (_scrollMarkerCache.TryGetValue(key, out var rect))
+                {
+                    MarkerGrid.Children.Remove(rect);
+                    _scrollMarkerCache.Remove(key);
+                }
+            }
+        }
 
         /// <summary>
-        /// Clear ScrollMarker
+        /// Clear ScrollMarker - OPTIMIZED with cache lookup
         /// </summary>
         /// <param name="marker">Type of marker to clear</param>
         /// <param name="position"></param>
-        public void ClearScrollMarker(ScrollMarker marker, long position) =>
-            TraverseScrollMarker(sm =>
+        public void ClearScrollMarker(ScrollMarker marker, long position)
+        {
+            var topPosition = (VerticalScrollBar.Track == null) ? 0 :
+                (int)(GetLineNumber(position) * VerticalScrollBar.Track.TickHeight(MaxLine) - 1).Round(1);
+
+            var cacheKey = $"{marker}_{topPosition}";
+
+            if (_scrollMarkerCache.TryGetValue(cacheKey, out var rect))
             {
-                if (sm.Tag is BookMark mark && mark.Marker == marker && mark.BytePositionInStream == position)
-                    MarkerGrid.Children.Remove(sm);
-            });
+                MarkerGrid.Children.Remove(rect);
+                _scrollMarkerCache.Remove(cacheKey);
+            }
+        }
 
         /// <summary>
-        /// Clear ScrollMarker at position
+        /// Clear ScrollMarker at position - OPTIMIZED
         /// </summary>
-        public void ClearScrollMarker(long position) =>
-            TraverseScrollMarker(sm =>
+        public void ClearScrollMarker(long position)
+        {
+            // Find all markers at this position across all types
+            var keysToRemove = _scrollMarkerCache
+                .Where(kvp => kvp.Value.Tag is BookMark bm && bm.BytePositionInStream == position)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            // Batch remove
+            foreach (var key in keysToRemove)
             {
-                if (sm.Tag is BookMark mark && mark.BytePositionInStream == position)
-                    MarkerGrid.Children.Remove(sm);
-            });
+                if (_scrollMarkerCache.TryGetValue(key, out var rect))
+                {
+                    MarkerGrid.Children.Remove(rect);
+                    _scrollMarkerCache.Remove(key);
+                }
+            }
+        }
 
         #endregion Bookmark and other scrollmarker
 
