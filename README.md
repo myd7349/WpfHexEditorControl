@@ -1,6 +1,6 @@
 <img src="Images/Logo.png?raw=true" width="420" height="100" /> 
   
-[![NuGet](https://img.shields.io/badge/Nuget-v2.1.7-red.svg)](https://www.nuget.org/packages/WPFHexaEditor/)
+[![NuGet](https://img.shields.io/badge/Nuget-v2.2.0-red.svg)](https://www.nuget.org/packages/WPFHexaEditor/)
 [![NetFramework](https://img.shields.io/badge/.Net%20Framework-4.8-green.svg)](https://www.microsoft.com/net/download/windows)
 [![NetFramework](https://img.shields.io/badge/.Net%208.0--windows-green.svg)](https://dotnet.microsoft.com/download)
 [![NetFramework](https://img.shields.io/badge/Language-C%23%20preview-orange.svg)](https://learn.microsoft.com/en-us/dotnet/csharp/)
