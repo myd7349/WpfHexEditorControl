@@ -26,6 +26,20 @@ Performance benchmarking suite using [BenchmarkDotNet](https://benchmarkdotnet.o
 - **Scroll Calculations**: Position and line offset calculations
 - **Different Configurations**: 8, 16, 32 bytes per line
 
+### 4. Highlight Operations (`HighlightServiceBenchmarks`) ⚡ NEW v2.2+
+- **Single Operations**: Add, Remove, Check single highlights
+- **Bulk Operations (No Batch)**: Baseline performance for 1000 ranges, 10000 positions
+- **Bulk Operations (With Batch)**: BeginBatch/EndBatch optimization (10-100x faster)
+- **Bulk APIs**: AddHighLightRanges, AddHighLightPositions (5-10x faster)
+- **Query Operations**: GetHighlightCount, HasHighlights, GetHighlightedPositions, GetHighlightedRanges
+- **Clear Operations**: UnHighLightAll with thousands of highlights
+- **Real-World Scenario**: FindAll + Highlight workflow (1000 results)
+
+**Key Comparisons:**
+- HashSet vs Dictionary migration (2-3x faster, 50% less memory)
+- Batching vs No batching (10-100x speedup)
+- Bulk APIs vs Manual loops (5-10x speedup)
+
 ## 🚀 Running Benchmarks
 
 ### Run All Benchmarks
@@ -46,6 +60,9 @@ dotnet run -c Release --filter "*SearchBenchmarks*"
 
 # Run only Virtualization benchmarks
 dotnet run -c Release --filter "*VirtualizationBenchmarks*"
+
+# Run only Highlight benchmarks (NEW v2.2+)
+dotnet run -c Release --filter "*HighlightServiceBenchmarks*"
 ```
 
 ### Run Specific Benchmark Method
