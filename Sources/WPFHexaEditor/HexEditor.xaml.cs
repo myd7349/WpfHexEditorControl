@@ -69,6 +69,16 @@ namespace WpfHexaEditor
         private readonly FindReplaceService _findReplaceService = new FindReplaceService();
 
         /// <summary>
+        /// Service for highlight operations (search results, marked bytes)
+        /// </summary>
+        private readonly HighlightService _highlightService = new HighlightService();
+
+        /// <summary>
+        /// Service for byte modification operations (insert, delete, modify)
+        /// </summary>
+        private readonly ByteModificationService _byteModificationService = new ByteModificationService();
+
+        /// <summary>
         /// The large change of scroll when clicked on scrollbar
         /// </summary>
         private double _scrollLargeChange = 100;
@@ -76,7 +86,8 @@ namespace WpfHexaEditor
         /// <summary>
         /// List of byte are highlighted
         /// </summary>
-        private Dictionary<long, long> _markedPositionList = new();
+        // REMOVED: _markedPositionList is now managed by HighlightService
+        // private Dictionary<long, long> _markedPositionList = new();
 
         /// <summary>
         /// Cache for scroll markers: Key = "marker_position", Value = Rectangle
@@ -1220,10 +1231,9 @@ namespace WpfHexaEditor
         /// </summary>
         public void ModifyByte(byte? @byte, long bytePositionInStream, long undoLength = 1)
         {
-            if (!CheckIsOpen(_provider)) return;
-            if (_provider.ReadOnlyMode) return;
+            if (!_byteModificationService.ModifyByte(_provider, @byte, bytePositionInStream, undoLength, ReadOnlyMode))
+                return;
 
-            _provider.AddByteModified(@byte, bytePositionInStream, undoLength);
             SetScrollMarker(bytePositionInStream, ScrollMarker.ByteModified);
             _findReplaceService.ClearCache();  // Clear search cache after modification
             UpdateByteModified();
@@ -2865,7 +2875,7 @@ namespace WpfHexaEditor
             var modifiedBytesDictionary = _provider.GetByteModifieds(ByteAction.All);
             var minSelect = SelectionStart <= SelectionStop ? SelectionStart : SelectionStop;
             var maxSelect = SelectionStart <= SelectionStop ? SelectionStop : SelectionStart;
-            var hasHighlights = _markedPositionList.Count > 0;
+            var hasHighlights = _highlightService.HasHighlights();
 
             // Single traversal for StringBytes
             var exit = false;
@@ -2891,7 +2901,7 @@ namespace WpfHexaEditor
                                   ctrl.Action != ByteAction.Deleted;
 
                 // Update highlight
-                ctrl.IsHighLight = hasHighlights && _markedPositionList.ContainsKey(ctrl.BytePositionInStream);
+                ctrl.IsHighLight = hasHighlights && _highlightService.IsHighlighted(ctrl.BytePositionInStream);
 
                 // Update visual
                 ctrl.UpdateVisual();
@@ -2924,7 +2934,7 @@ namespace WpfHexaEditor
                                   ctrl.Action != ByteAction.Deleted;
 
                 // Update highlight
-                ctrl.IsHighLight = hasHighlights && _markedPositionList.ContainsKey(ctrl.BytePositionInStream);
+                ctrl.IsHighLight = hasHighlights && _highlightService.IsHighlighted(ctrl.BytePositionInStream);
 
                 // Update visual
                 ctrl.UpdateVisual();
@@ -3395,9 +3405,9 @@ namespace WpfHexaEditor
         /// </summary>
         private void UpdateHighLight()
         {
-            if (_markedPositionList.Count > 0)
-                TraverseHexAndStringBytes(ctrl => ctrl.IsHighLight = _markedPositionList.ContainsKey(ctrl.BytePositionInStream));
-            else //Un highlight all            
+            if (_highlightService.HasHighlights())
+                TraverseHexAndStringBytes(ctrl => ctrl.IsHighLight = _highlightService.IsHighlighted(ctrl.BytePositionInStream));
+            else //Un highlight all
                 TraverseHexAndStringBytes(ctrl => ctrl.IsHighLight = false);
         }
 
@@ -4756,7 +4766,7 @@ namespace WpfHexaEditor
         /// </summary>
         public void UnHighLightAll()
         {
-            _markedPositionList.Clear();
+            _highlightService.UnHighLightAll();
             UpdateHighLight();
             ClearScrollMarker(ScrollMarker.SearchHighLight);
         }
@@ -4769,11 +4779,7 @@ namespace WpfHexaEditor
         /// <param name="updateVisual">Set to true for update the visual after adding</param>
         public void AddHighLight(long startPosition, long length, bool updateVisual = true)
         {
-            if (startPosition < 0) return;
-
-            for (var i = startPosition; i < startPosition + length; i++)
-                //if (!_markedPositionList.ContainsValue(i))
-                _markedPositionList.Add(i, i);
+            _highlightService.AddHighLight(startPosition, length);
 
             if (updateVisual) UpdateHighLight();
         }
@@ -4786,9 +4792,7 @@ namespace WpfHexaEditor
         /// <param name="updateVisual">Set to true for update the visual after removing</param>
         public void RemoveHighLight(long startPosition, long length, bool updateVisual = true)
         {
-            for (var i = startPosition; i < startPosition + length; i++)
-                if (_markedPositionList.ContainsValue(i))
-                    _markedPositionList.Remove(i);
+            _highlightService.RemoveHighLight(startPosition, length);
 
             if (updateVisual) UpdateHighLight();
         }
@@ -4845,7 +4849,8 @@ namespace WpfHexaEditor
                 _tblCharacterTable?.Dispose();
                 _viewBuffer = null;
                 _viewBufferBytePosition = null;
-                _markedPositionList = null;
+                // _markedPositionList is now managed by HighlightService (no need to null)
+                _highlightService.Clear();
             }
 
             _disposedValue = true;
@@ -5221,7 +5226,7 @@ namespace WpfHexaEditor
                     new XElement("ByteModifieds", new XAttribute("Count", _provider.GetByteModifieds(ByteAction.All).Count)),
                     new XElement("BookMarks", new XAttribute("Count", BookMarks.Count())),
                     new XElement("TBL", new XAttribute("Loaded", _tblCharacterTable is not null)),
-                    new XElement("HighLights", new XAttribute("Count", _markedPositionList.Count))));
+                    new XElement("HighLights", new XAttribute("Count", _highlightService.GetHighlightCount()))));
 
             #region Create ByteModifieds tag
 
@@ -5242,8 +5247,8 @@ namespace WpfHexaEditor
 
             var bmRootHl = doc.Element("WpfHexEditor")?.Element("HighLights");
 
-            foreach (var bm in _markedPositionList)
-                bmRootHl?.Add(new XElement("HighLight", new XAttribute("Position", bm.Value)));
+            foreach (var position in _highlightService.GetHighlightedPositions())
+                bmRootHl?.Add(new XElement("HighLight", new XAttribute("Position", position)));
             #endregion
 
             #region Create bookmarks tag
@@ -5803,14 +5808,13 @@ namespace WpfHexaEditor
         /// </summary>
         public void DeleteSelection()
         {
-            if (!CanDelete || !CheckIsOpen(_provider) || ReadOnlyMode) return;
-            if (_provider.ReadOnlyMode) return; //ReadOnlyMode is on debugging...
-
             var position = SelectionStart > SelectionStop
                 ? SelectionStop
                 : SelectionStart;
 
-            var lastPosition = _provider.AddByteDeleted(position, SelectionLength);
+            var lastPosition = _byteModificationService.DeleteBytes(_provider, position, SelectionLength, ReadOnlyMode, CanDelete);
+
+            if (lastPosition == -1) return;
 
             //Prevent to move down the scrollbar
             _setFocusTest = true;
@@ -6039,11 +6043,8 @@ namespace WpfHexaEditor
         /// </summary>
         public void InsertByte(byte @byte, long bytePositionInStream, long length)
         {
-            if (!CheckIsOpen(_provider)) return;
-            if (!CanInsertAnywhere) return;
-
-            for (var i = 0; i <= length; i++)
-                _provider.AddByteAdded(@byte, bytePositionInStream + i);
+            if (!_byteModificationService.InsertByte(_provider, @byte, bytePositionInStream, length, CanInsertAnywhere))
+                return;
 
             _findReplaceService.ClearCache();  // Clear search cache after modification
             RefreshView();
@@ -6054,11 +6055,8 @@ namespace WpfHexaEditor
         /// </summary>
         public void InsertBytes(byte[] bytes, long bytePositionInStream)
         {
-            if (!CheckIsOpen(_provider)) return;
-            if (!CanInsertAnywhere) return;
-
-            foreach (var @byte in bytes)
-                _provider.AddByteAdded(@byte, bytePositionInStream++);
+            if (_byteModificationService.InsertBytes(_provider, bytes, bytePositionInStream, CanInsertAnywhere) == 0)
+                return;
 
             _findReplaceService.ClearCache();  // Clear search cache after modification
             RefreshView();

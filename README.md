@@ -105,6 +105,8 @@ The control is powered by specialized services that handle different aspects of 
 - **🔍 FindReplaceService** - Search and replace with optimized caching
 - **↩️ UndoRedoService** - Undo/redo history management
 - **🎯 SelectionService** - Selection validation and manipulation
+- **✨ HighlightService** - Manages byte highlighting for search results
+- **🔧 ByteModificationService** - Handles insert, delete, and modify operations
 
 **Benefits:**
 - ✅ Separation of concerns

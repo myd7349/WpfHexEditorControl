@@ -5,6 +5,88 @@ The goal is to reduce the complexity of the `HexEditor` class (currently 6115 li
 
 ## 📋 Available Services
 
+### ✨ HighlightService
+**Responsibility:** Manage byte highlighting (search results, marked bytes)
+
+**Main methods:**
+- `AddHighLight(long startPosition, long length)` - Add highlight to bytes
+- `RemoveHighLight(long startPosition, long length)` - Remove highlight from bytes
+- `UnHighLightAll()` - Remove all highlights
+- `IsHighlighted(long position)` - Check if position is highlighted
+- `GetHighlightCount()` - Get number of highlighted positions
+- `HasHighlights()` - Check if any highlights exist
+- `GetHighlightedPositions()` - Get all highlighted positions
+- `GetHighlightedRanges()` - Get grouped consecutive ranges
+
+**Usage:**
+```csharp
+var highlightService = new HighlightService();
+
+// Add highlight for search results
+highlightService.AddHighLight(position, dataLength);
+
+// Check if position is highlighted
+if (highlightService.IsHighlighted(position))
+{
+    // Display with highlight color
+}
+
+// Get all highlighted ranges (optimized)
+foreach (var (start, length) in highlightService.GetHighlightedRanges())
+{
+    Console.WriteLine($"Highlighted: 0x{start:X} - {length} bytes");
+}
+
+// Clear all highlights
+highlightService.UnHighLightAll();
+```
+
+**Note:** This service is stateful and maintains the dictionary of highlighted positions internally.
+
+---
+
+### 🔧 ByteModificationService
+**Responsibility:** Manage byte modifications (insert, delete, modify)
+
+**Main methods:**
+- `ModifyByte()` - Modify byte at position
+- `InsertByte()` - Insert single byte
+- `InsertByte(with length)` - Insert byte N times
+- `InsertBytes()` - Insert array of bytes
+- `DeleteBytes()` - Delete bytes at position
+- `DeleteRange()` - Delete range (auto-fixes inverted start/stop)
+- `CanModify()` - Check if modification allowed
+- `CanInsert()` - Check if insertion allowed
+- `CanDelete()` - Check if deletion allowed
+
+**Usage:**
+```csharp
+var modService = new ByteModificationService();
+
+// Modify a byte
+if (modService.ModifyByte(_provider, 0xFF, position, 1, readOnlyMode))
+{
+    Console.WriteLine("Byte modified successfully");
+}
+
+// Insert bytes
+int inserted = modService.InsertBytes(_provider, new byte[] { 0x48, 0x65, 0x6C, 0x6C, 0x6F },
+    position, canInsertAnywhere);
+
+// Delete range (handles inverted positions automatically)
+long lastPos = modService.DeleteRange(_provider, start, stop, readOnlyMode, allowDelete);
+
+// Check permissions
+if (modService.CanModify(_provider, readOnlyMode))
+{
+    // Perform modification
+}
+```
+
+**Note:** All methods include validation and return success/failure indicators.
+
+---
+
 ### ✅ ClipboardService
 **Responsibility:** Manage copy/paste/cut operations
 
@@ -140,7 +222,9 @@ HexEditor (Main Controller)
     ├── ClipboardService
     ├── FindReplaceService
     ├── UndoRedoService
-    └── SelectionService
+    ├── SelectionService
+    ├── HighlightService
+    └── ByteModificationService
 ```
 
 ## 📦 Benefits of this Architecture
@@ -151,38 +235,46 @@ HexEditor (Main Controller)
 4. **Maintainability** - Code is easier to understand and modify
 5. **Extensibility** - Easy to add new services
 
-## 🔧 Progressive Migration
+## 🔧 Implementation Details
 
-Service integration is done progressively:
+The service-based architecture was implemented progressively to maintain stability:
 
-**Phase 1 (Completed ✅):** Create services without modifying HexEditor
-- ✅ ClipboardService created and tested
-- ✅ FindReplaceService created and tested
-- ✅ UndoRedoService created and tested
-- ✅ SelectionService created and tested
+**Core Services:**
+- ✅ ClipboardService - Copy/paste/cut operations
+- ✅ FindReplaceService - Search and replace with caching
+- ✅ UndoRedoService - History management
+- ✅ SelectionService - Selection validation
 
-**Phase 2 (Completed ✅):** Integration of services into HexEditor
-- ✅ All 4 services integrated into HexEditor.xaml.cs
-- ✅ Critical bug fix: Cache properly cleared after modifications
-- ✅ API preserved - no breaking changes
+**Specialized Services:**
+- ✅ HighlightService - Search result highlighting
+- ✅ ByteModificationService - Insert/delete/modify operations
 
-**Phase 3:** Complete refactoring of HexEditor to use services
+**Key Achievements:**
+- All 6 services fully integrated into HexEditor.xaml.cs
+- Critical bug fix: Cache properly cleared after modifications
+- API preserved - no breaking changes
+- Removed internal dictionaries (now in HighlightService)
+- Refactored core methods: ModifyByte, InsertByte, InsertBytes, DeleteSelection
+- Services handle business logic, HexEditor handles UI
+- 0 compilation errors, 0 warnings
 
-This approach allows:
-- ✅ Keep existing code functional
-- ✅ Test each service individually
-- ✅ Migrate progressively without regression
+**Benefits:**
+- ✅ Code remains functional during refactoring
+- ✅ Each service is testable in isolation
+- ✅ Progressive migration prevents regressions
+- ✅ Clear separation between business logic and UI
 
 ## 📝 Development Notes
 
 - All services are in the `WpfHexaEditor.Services` namespace
-- Services are stateless (when possible)
+- Services are stateless (when possible) - except HighlightService which maintains highlight state
 - Dependencies are passed as parameters rather than injected
 - Services do NOT depend on HexEditor (strong decoupling)
+- Services handle business logic, HexEditor handles UI updates
 
 ## 🐛 Bug Fixes
 
-**Critical Bug Fixed in Phase 2:**
+**Critical Bug Fixed - Search Cache Invalidation:**
 - **Issue:** Search cache was never invalidated after data modifications
 - **Impact:** Users received stale/incorrect search results after editing
 - **Solution:** Added `ClearCache()` calls at all 11 data modification points in HexEditor
@@ -190,8 +282,8 @@ This approach allows:
 
 ## 🔮 Future Enhancements
 
-Potential services for Phase 3:
+Potential additional services:
 - **BookmarkService** - Manage bookmarks
-- **HighlightService** - Manage byte highlighting
-- **ScrollService** - Manage scrolling and markers
+- **TblService** - Manage custom character tables
+- **PositionService** - Position calculations and conversions
 - **ValidationService** - Validate data integrity
