@@ -6,6 +6,7 @@
 //////////////////////////////////////////////
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using WpfHexaEditor.Core;
@@ -19,6 +20,11 @@ namespace WpfHexaEditor
         #region Global class variables
 
         private KeyDownLabel _keyDownLabel = KeyDownLabel.FirstChar;
+
+        // Performance optimization: Cache calculated widths (static for reuse across instances)
+        private static readonly Dictionary<(ByteSizeType, DataVisualType, DataVisualState), int> _widthCache
+            = new Dictionary<(ByteSizeType, DataVisualType, DataVisualState), int>();
+        private static readonly object _widthCacheLock = new object();
 
         #endregion global class variables
 
@@ -51,8 +57,23 @@ namespace WpfHexaEditor
         public void UpdateDataVisualWidth() =>
             Width = CalculateCellWidth(_parent.ByteSize, _parent.DataStringVisual, _parent.DataStringState);
 
-        public static int CalculateCellWidth(ByteSizeType byteSize, DataVisualType type, DataVisualState state) =>
-            byteSize switch
+        /// <summary>
+        /// Calculate cell width with caching (OPTIMIZED v2.2+)
+        /// Uses static dictionary cache to avoid repeated calculations (O(1) lookups)
+        /// </summary>
+        public static int CalculateCellWidth(ByteSizeType byteSize, DataVisualType type, DataVisualState state)
+        {
+            var key = (byteSize, type, state);
+
+            // Check cache first (O(1) lookup)
+            lock (_widthCacheLock)
+            {
+                if (_widthCache.TryGetValue(key, out var cachedWidth))
+                    return cachedWidth;
+            }
+
+            // Calculate width (expensive)
+            var width = byteSize switch
             {
                 ByteSizeType.Bit8 => type switch
                 {
@@ -103,6 +124,15 @@ namespace WpfHexaEditor
                 },
                 _ => throw new NotImplementedException(),
             };
+
+            // Cache result for future lookups
+            lock (_widthCacheLock)
+            {
+                _widthCache[key] = width;
+            }
+
+            return width;
+        }
 
         #endregion Methods
 
@@ -173,15 +203,21 @@ namespace WpfHexaEditor
                 _parent.HideCaret();
             else
             {
-                //TODO: clear size and use BaseByte.TextFormatted property...
-                //TODO: Take the scale factor from parent
-                var size = Text[1].ToString()
-                    .GetScreenSize(_parent.FontFamily, _parent.FontSize, _parent.FontStyle, FontWeight,
-                        _parent.FontStretch, _parent.Foreground, this);
-
-                //update site with scale factor
-                //size.Width *= _parent.ZoomScale;
-                //size.Height *= _parent.ZoomScale;
+                // OPTIMIZATION v2.2+: Use TextFormatted when available to avoid string allocation
+                Size size;
+                if (TextFormatted is not null && Text.Length > 1)
+                {
+                    // Use cached FormattedText width (no allocation)
+                    size = new Size(TextFormatted.Width / Text.Length, TextFormatted.Height);
+                }
+                else
+                {
+                    // Fallback to original calculation (rare path)
+                    size = Text.Length > 1
+                        ? Text[1].ToString().GetScreenSize(_parent.FontFamily, _parent.FontSize, _parent.FontStyle, FontWeight,
+                            _parent.FontStretch, _parent.Foreground, this)
+                        : new Size(10, 16); // Default size
+                }
 
                 _parent.SetCaretSize(size.Width + 2, ActualHeight - 2);
                 _parent.SetCaretMode(_parent.VisualCaretMode);
