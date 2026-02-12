@@ -249,6 +249,26 @@ namespace WpfHexaEditor.V2.Controls
         public double LineHeight => _lineHeight;
 
         /// <summary>
+        /// Byte spacer positioning (V1 compatible)
+        /// </summary>
+        public ByteSpacerPosition ByteSpacerPositioning { get; set; } = ByteSpacerPosition.Both;
+
+        /// <summary>
+        /// Byte spacer width (V1 compatible)
+        /// </summary>
+        public ByteSpacerWidth ByteSpacerWidthTickness { get; set; } = ByteSpacerWidth.Normal;
+
+        /// <summary>
+        /// Byte grouping for spacers (V1 compatible)
+        /// </summary>
+        public ByteSpacerGroup ByteGrouping { get; set; } = ByteSpacerGroup.EightByte;
+
+        /// <summary>
+        /// Byte spacer visual style (V1 compatible)
+        /// </summary>
+        public ByteSpacerVisual ByteSpacerVisualStyle { get; set; } = ByteSpacerVisual.Empty;
+
+        /// <summary>
         /// Force refresh of cached lines and visual rendering
         /// </summary>
         public void Refresh()
@@ -280,10 +300,19 @@ namespace WpfHexaEditor.V2.Controls
                 // Draw offset
                 DrawOffset(dc, line.OffsetLabel, y);
 
-                // Draw hex bytes
+                // Draw hex bytes with byte spacers
                 double hexX = OffsetWidth;
                 for (int i = 0; i < line.Bytes.Count; i++)
                 {
+                    // Draw byte spacer before this byte if needed
+                    if ((ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                         ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel) &&
+                        i % (int)ByteGrouping == 0 && i > 0)
+                    {
+                        DrawByteSpacer(dc, hexX, y);
+                        hexX += (int)ByteSpacerWidthTickness;
+                    }
+
                     var byteData = line.Bytes[i];
                     DrawHexByte(dc, byteData, hexX, y);
                     hexX += HexByteWidth + HexByteSpacing;
@@ -293,10 +322,19 @@ namespace WpfHexaEditor.V2.Controls
                 double separatorX = OffsetWidth + (_bytesPerLine * (HexByteWidth + HexByteSpacing)) + 8;
                 dc.DrawRectangle(_separatorBrush, null, new Rect(separatorX, y, 1, _lineHeight));
 
-                // Draw ASCII bytes
+                // Draw ASCII bytes with byte spacers
                 double asciiX = separatorX + SeparatorWidth;
                 for (int i = 0; i < line.Bytes.Count; i++)
                 {
+                    // Draw byte spacer before this byte if needed
+                    if ((ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                         ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
+                        i % (int)ByteGrouping == 0 && i > 0)
+                    {
+                        DrawByteSpacer(dc, asciiX, y);
+                        asciiX += (int)ByteSpacerWidthTickness;
+                    }
+
                     var byteData = line.Bytes[i];
                     DrawAsciiByte(dc, byteData, asciiX, y);
                     asciiX += AsciiCharWidth;
@@ -402,6 +440,36 @@ namespace WpfHexaEditor.V2.Controls
             double textY = y + (_lineHeight - formattedText.Height) / 2;
 
             dc.DrawText(formattedText, new Point(textX, textY));
+        }
+
+        /// <summary>
+        /// Draw a byte spacer separator at the specified position (V1 compatible)
+        /// </summary>
+        private void DrawByteSpacer(DrawingContext dc, double x, double y)
+        {
+            int width = (int)ByteSpacerWidthTickness;
+
+            switch (ByteSpacerVisualStyle)
+            {
+                case ByteSpacerVisual.Empty:
+                    // Empty spacer - just space, nothing to draw
+                    break;
+
+                case ByteSpacerVisual.Line:
+                    // Solid vertical line
+                    var linePen = new Pen(_separatorBrush, 1);
+                    double lineX = x + width / 2.0;
+                    dc.DrawLine(linePen, new Point(lineX, y), new Point(lineX, y + _lineHeight));
+                    break;
+
+                case ByteSpacerVisual.Dash:
+                    // Dashed vertical line
+                    var dashPen = new Pen(_separatorBrush, 1);
+                    dashPen.DashStyle = new DashStyle(new double[] { 2, 2 }, 0);
+                    double dashX = x + width / 2.0;
+                    dc.DrawLine(dashPen, new Point(dashX, y), new Point(dashX, y + _lineHeight));
+                    break;
+            }
         }
 
         private bool IsPositionSelected(long position)

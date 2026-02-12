@@ -152,9 +152,14 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" Text="Offset" Style="{StaticResource HeaderTextStyle}" Margin="8,0,0,0"/>
-                <TextBlock Grid.Column="1" Text="Hex" Style="{StaticResource HeaderTextStyle}" Margin="0,0,0,0"/>
+
+                <!-- Dynamic hex column headers (00 01 02...0F) with byte spacers -->
+                <StackPanel x:Name="HexHeaderStackPanel" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,0"/>
+
                 <Border Grid.Column="2" Width="1" Background="Transparent" Margin="8,0,8,0"/>
-                <TextBlock Grid.Column="3" Text="ASCII" Style="{StaticResource HeaderTextStyle}" Margin="8,0,0,0"/>
+
+                <!-- Dynamic ASCII column headers with byte spacers -->
+                <StackPanel x:Name="AsciiHeaderStackPanel" Grid.Column="3" Orientation="Horizontal" Margin="8,0,0,0"/>
             </Grid>
         </Border>
 

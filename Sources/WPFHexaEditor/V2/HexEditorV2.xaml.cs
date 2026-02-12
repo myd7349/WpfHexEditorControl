@@ -32,6 +32,8 @@ namespace WpfHexaEditor.V2
         private VirtualPosition _mouseDownPosition = VirtualPosition.Invalid;
         private Border _headerBorder;
         private System.Windows.Controls.Primitives.StatusBar _statusBar;
+        private StackPanel _hexHeaderStackPanel;
+        private StackPanel _asciiHeaderStackPanel;
 
         // Bookmarks (V1 compatible)
         private readonly List<long> _bookmarks = new List<long>();
@@ -76,6 +78,11 @@ namespace WpfHexaEditor.V2
             // Find XAML elements for display options
             _headerBorder = this.FindName("HeaderBorder") as Border;
             _statusBar = this.FindName("StatusBar") as System.Windows.Controls.Primitives.StatusBar;
+            _hexHeaderStackPanel = this.FindName("HexHeaderStackPanel") as StackPanel;
+            _asciiHeaderStackPanel = this.FindName("AsciiHeaderStackPanel") as StackPanel;
+
+            // Initialize column headers with byte position numbers
+            this.Loaded += (s, e) => RefreshColumnHeader();
         }
 
         #region Public Events (V1 Compatible)
@@ -370,6 +377,9 @@ namespace WpfHexaEditor.V2
 
                     // Update status bar
                     BytesPerLineText.Text = $"Bytes/Line: {value}";
+
+                    // Refresh column headers to match new BytePerLine
+                    RefreshColumnHeader();
                 }
             }
         }
@@ -425,18 +435,85 @@ namespace WpfHexaEditor.V2
             DependencyProperty.Register(nameof(ShowColumnSeparator), typeof(bool), typeof(HexEditorV2),
                 new PropertyMetadata(true));
 
+        #endregion
+
+        #region V1 Compatibility - Byte Spacer Properties
+
         /// <summary>
-        /// Show vertical line separator every N bytes
+        /// Get or set the byte spacing position (V1 compatible)
         /// </summary>
-        public int ByteGroupSize
+        public ByteSpacerPosition ByteSpacerPositioning
         {
-            get => (int)GetValue(ByteGroupSizeProperty);
-            set => SetValue(ByteGroupSizeProperty, value);
+            get => (ByteSpacerPosition)GetValue(ByteSpacerPositioningProperty);
+            set => SetValue(ByteSpacerPositioningProperty, value);
         }
 
-        public static readonly DependencyProperty ByteGroupSizeProperty =
-            DependencyProperty.Register(nameof(ByteGroupSize), typeof(int), typeof(HexEditorV2),
-                new PropertyMetadata(8));
+        public static readonly DependencyProperty ByteSpacerPositioningProperty =
+            DependencyProperty.Register(nameof(ByteSpacerPositioning), typeof(ByteSpacerPosition), typeof(HexEditorV2),
+                new FrameworkPropertyMetadata(ByteSpacerPosition.Both, ByteSpacer_Changed));
+
+        /// <summary>
+        /// Get or set the byte spacer width (V1 compatible)
+        /// </summary>
+        public ByteSpacerWidth ByteSpacerWidthTickness
+        {
+            get => (ByteSpacerWidth)GetValue(ByteSpacerWidthTicknessProperty);
+            set => SetValue(ByteSpacerWidthTicknessProperty, value);
+        }
+
+        public static readonly DependencyProperty ByteSpacerWidthTicknessProperty =
+            DependencyProperty.Register(nameof(ByteSpacerWidthTickness), typeof(ByteSpacerWidth), typeof(HexEditorV2),
+                new FrameworkPropertyMetadata(ByteSpacerWidth.Normal, ByteSpacer_Changed));
+
+        /// <summary>
+        /// Get or set the byte grouping (V1 compatible)
+        /// </summary>
+        public ByteSpacerGroup ByteGrouping
+        {
+            get => (ByteSpacerGroup)GetValue(ByteGroupingProperty);
+            set => SetValue(ByteGroupingProperty, value);
+        }
+
+        public static readonly DependencyProperty ByteGroupingProperty =
+            DependencyProperty.Register(nameof(ByteGrouping), typeof(ByteSpacerGroup), typeof(HexEditorV2),
+                new FrameworkPropertyMetadata(ByteSpacerGroup.EightByte, ByteSpacer_Changed));
+
+        /// <summary>
+        /// Get or set the visual of byte spacer (V1 compatible)
+        /// </summary>
+        public ByteSpacerVisual ByteSpacerVisualStyle
+        {
+            get => (ByteSpacerVisual)GetValue(ByteSpacerVisualStyleProperty);
+            set => SetValue(ByteSpacerVisualStyleProperty, value);
+        }
+
+        public static readonly DependencyProperty ByteSpacerVisualStyleProperty =
+            DependencyProperty.Register(nameof(ByteSpacerVisualStyle), typeof(ByteSpacerVisual), typeof(HexEditorV2),
+                new FrameworkPropertyMetadata(ByteSpacerVisual.Empty, ByteSpacer_Changed));
+
+        /// <summary>
+        /// Callback when any byte spacer property changes - triggers header and viewport refresh
+        /// </summary>
+        private static void ByteSpacer_Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditorV2 editor)
+            {
+                // Sync byte spacer properties to HexViewport
+                if (editor.HexViewport != null)
+                {
+                    editor.HexViewport.ByteSpacerPositioning = editor.ByteSpacerPositioning;
+                    editor.HexViewport.ByteSpacerWidthTickness = editor.ByteSpacerWidthTickness;
+                    editor.HexViewport.ByteGrouping = editor.ByteGrouping;
+                    editor.HexViewport.ByteSpacerVisualStyle = editor.ByteSpacerVisualStyle;
+                }
+
+                // Refresh column header to show new spacers
+                editor.RefreshColumnHeader();
+
+                // Refresh viewport rendering to show new spacers
+                editor.HexViewport?.InvalidateVisual();
+            }
+        }
 
         #endregion
 
@@ -728,6 +805,12 @@ namespace WpfHexaEditor.V2
             _viewModel = HexEditorViewModel.OpenFile(filePath);
             HexViewport.LinesSource = _viewModel.Lines;
             HexViewport.BytesPerLine = _viewModel.BytePerLine;
+
+            // Initialize byte spacer properties on viewport (V1 compatibility)
+            HexViewport.ByteSpacerPositioning = ByteSpacerPositioning;
+            HexViewport.ByteSpacerWidthTickness = ByteSpacerWidthTickness;
+            HexViewport.ByteGrouping = ByteGrouping;
+            HexViewport.ByteSpacerVisualStyle = ByteSpacerVisualStyle;
 
             // Store file info
             FileName = filePath;
@@ -1938,6 +2021,133 @@ namespace WpfHexaEditor.V2
                 {
                     _viewModel.EndUpdate();
                 }
+            }
+        }
+
+        #endregion
+
+        #region Column Header Generation (V1 Compatible)
+
+        /// <summary>
+        /// Refresh the column headers with byte position numbers and byte spacers (V1 compatible)
+        /// Called when BytePerLine, ByteGrouping, or ByteSpacer properties change
+        /// </summary>
+        private void RefreshColumnHeader()
+        {
+            if (_hexHeaderStackPanel == null || _asciiHeaderStackPanel == null)
+                return;
+
+            // Clear existing headers
+            _hexHeaderStackPanel.Children.Clear();
+            _asciiHeaderStackPanel.Children.Clear();
+
+            int bytesPerLine = BytePerLine;
+
+            // Generate hex column headers (00 01 02...0F)
+            for (int i = 0; i < bytesPerLine; i++)
+            {
+                // Add byte spacer before this column if needed
+                if (ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                    ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel)
+                {
+                    AddByteSpacer(_hexHeaderStackPanel, i, forceEmpty: true);
+                }
+
+                // Add byte position header (00, 01, 02, etc.)
+                var headerText = new TextBlock
+                {
+                    Text = i.ToString("X2"),
+                    Width = 22, // Match HexByteWidth from HexViewport
+                    TextAlignment = TextAlignment.Center,
+                    FontSize = 11,
+                    FontWeight = FontWeights.Normal,
+                    Foreground = Resources["HeaderTextBrush"] as System.Windows.Media.Brush,
+                    Margin = new Thickness(0, 0, 2, 0) // HexByteSpacing
+                };
+
+                _hexHeaderStackPanel.Children.Add(headerText);
+            }
+
+            // Generate ASCII column headers (just spacing placeholders for now, or could show char positions)
+            for (int i = 0; i < bytesPerLine; i++)
+            {
+                // Add byte spacer before this column if needed
+                if (ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                    ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel)
+                {
+                    AddByteSpacer(_asciiHeaderStackPanel, i, forceEmpty: true);
+                }
+
+                // Add placeholder for ASCII column (could show position or just be blank)
+                var headerText = new TextBlock
+                {
+                    Text = " ", // Blank or could show position like V1
+                    Width = 10, // Match AsciiCharWidth from HexViewport
+                    TextAlignment = TextAlignment.Center,
+                    FontSize = 11,
+                    Foreground = Resources["HeaderTextBrush"] as System.Windows.Media.Brush
+                };
+
+                _asciiHeaderStackPanel.Children.Add(headerText);
+            }
+        }
+
+        /// <summary>
+        /// Add byte spacer to a StackPanel at the specified column position (V1 compatible)
+        /// Spacers are added every ByteGrouping bytes (e.g., every 8 bytes)
+        /// </summary>
+        /// <param name="stack">StackPanel to add spacer to</param>
+        /// <param name="column">Current column index (0-based)</param>
+        /// <param name="forceEmpty">Force empty spacer even if visual style is Line or Dash</param>
+        private void AddByteSpacer(StackPanel stack, int column, bool forceEmpty = false)
+        {
+            // Only add spacer at group boundaries (e.g., every 8 bytes)
+            // column % ByteGrouping must be 0, and column > 0 (no spacer before first byte)
+            if (column % (int)ByteGrouping != 0 || column <= 0)
+                return;
+
+            int width = (int)ByteSpacerWidthTickness;
+
+            if (!forceEmpty)
+            {
+                switch (ByteSpacerVisualStyle)
+                {
+                    case ByteSpacerVisual.Empty:
+                        stack.Children.Add(new TextBlock { Width = width });
+                        break;
+
+                    case ByteSpacerVisual.Line:
+                        // Solid vertical line
+                        stack.Children.Add(new System.Windows.Shapes.Line
+                        {
+                            Y2 = 20, // Line height
+                            X1 = width / 2.0,
+                            X2 = width / 2.0,
+                            Stroke = BorderBrush,
+                            StrokeThickness = 1,
+                            Width = width
+                        });
+                        break;
+
+                    case ByteSpacerVisual.Dash:
+                        // Dashed vertical line
+                        stack.Children.Add(new System.Windows.Shapes.Line
+                        {
+                            Y2 = 19,
+                            X1 = width / 2.0,
+                            X2 = width / 2.0,
+                            Stroke = BorderBrush,
+                            StrokeDashArray = new DoubleCollection(new double[] { 2 }),
+                            StrokeThickness = 1,
+                            Width = width
+                        });
+                        break;
+                }
+            }
+            else
+            {
+                // Force empty spacer (used for headers)
+                stack.Children.Add(new TextBlock { Width = width });
             }
         }
 
