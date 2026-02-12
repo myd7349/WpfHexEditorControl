@@ -75,7 +75,8 @@ namespace WPFHexaEditorExample
 
                 // INSERT MODE settings (NEW for Issue #31)
                 HexEdit.CanInsertAnywhere = Settings.Default.CanInsertAnywhere;
-                HexEdit.VisualCaretMode = Settings.Default.IsInsertMode ? CaretMode.Insert : CaretMode.Overwrite;
+                // NOTE: VisualCaretMode NOT loaded - always starts in Overwrite mode
+                // User can toggle with Insert key during session
 
                 // Editor settings
                 HexEdit.ReadOnlyMode = Settings.Default.ReadOnlyMode;
@@ -84,7 +85,6 @@ namespace WPFHexaEditorExample
 
                 System.Diagnostics.Debug.WriteLine($"[SETTINGS] Settings loaded successfully");
                 System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.CanInsertAnywhere: {HexEdit.CanInsertAnywhere}");
-                System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.VisualCaretMode: {HexEdit.VisualCaretMode}");
             }
             catch (Exception ex)
             {
@@ -102,7 +102,6 @@ namespace WPFHexaEditorExample
             {
                 System.Diagnostics.Debug.WriteLine($"[SETTINGS] Saving settings...");
                 System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.CanInsertAnywhere: {HexEdit.CanInsertAnywhere}");
-                System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.VisualCaretMode: {HexEdit.VisualCaretMode}");
                 System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.HideByteDeleted: {HexEdit.HideByteDeleted}");
 
                 // View settings
@@ -130,7 +129,7 @@ namespace WPFHexaEditorExample
 
                 // INSERT MODE settings (NEW for Issue #31)
                 Settings.Default.CanInsertAnywhere = HexEdit.CanInsertAnywhere;
-                Settings.Default.IsInsertMode = HexEdit.VisualCaretMode == CaretMode.Insert;
+                // NOTE: VisualCaretMode NOT saved - always starts in Overwrite mode
 
                 // Editor settings
                 Settings.Default.ReadOnlyMode = HexEdit.ReadOnlyMode;
