@@ -148,7 +148,7 @@ namespace WPFHexaEditor.Tests.Services
 
             // Assert
             Assert.True(success);
-            Assert.Equal(0xFF, byteValue.Value);
+            Assert.Equal(0xFF, byteValue!.Value);
         }
 
         #endregion
@@ -274,9 +274,9 @@ namespace WPFHexaEditor.Tests.Services
             // Arrange
             var provider = CreateTestProvider();
             var service = new UndoRedoService();
-            var byte0 = provider.GetByte(0).singleByte.Value;
-            var byte1 = provider.GetByte(1).singleByte.Value;
-            var byte2 = provider.GetByte(2).singleByte.Value;
+            var byte0 = provider.GetByte(0).singleByte!.Value;
+            var byte1 = provider.GetByte(1).singleByte!.Value;
+            var byte2 = provider.GetByte(2).singleByte!.Value;
 
             provider.AddByteModified(0xFF, 0);
             provider.AddByteModified(0xAA, 1);
@@ -286,17 +286,17 @@ namespace WPFHexaEditor.Tests.Services
             service.Undo(provider, repeat: 3);
 
             // Assert - All restored
-            Assert.Equal(byte0, provider.GetByte(0).singleByte.Value);
-            Assert.Equal(byte1, provider.GetByte(1).singleByte.Value);
-            Assert.Equal(byte2, provider.GetByte(2).singleByte.Value);
+            Assert.Equal(byte0, provider.GetByte(0).singleByte!.Value);
+            Assert.Equal(byte1, provider.GetByte(1).singleByte!.Value);
+            Assert.Equal(byte2, provider.GetByte(2).singleByte!.Value);
 
             // Act - Redo all
             service.Redo(provider, repeat: 3);
 
             // Assert - All modified again
-            Assert.Equal(0xFF, provider.GetByte(0).singleByte.Value);
-            Assert.Equal(0xAA, provider.GetByte(1).singleByte.Value);
-            Assert.Equal(0xBB, provider.GetByte(2).singleByte.Value);
+            Assert.Equal(0xFF, provider.GetByte(0).singleByte!.Value);
+            Assert.Equal(0xAA, provider.GetByte(1).singleByte!.Value);
+            Assert.Equal(0xBB, provider.GetByte(2).singleByte!.Value);
         }
 
         [Fact]

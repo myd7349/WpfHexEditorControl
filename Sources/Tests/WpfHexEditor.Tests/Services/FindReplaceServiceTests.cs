@@ -237,7 +237,7 @@ namespace WPFHexaEditor.Tests.Services
             // Verify replacement (position 100 should now be 0xFF)
             var (byteValue, success) = _provider.GetByte(100);
             Assert.True(success);
-            Assert.Equal(replace, byteValue.Value);
+            Assert.Equal(replace, byteValue!.Value);
         }
 
         [Fact]
@@ -251,7 +251,7 @@ namespace WPFHexaEditor.Tests.Services
             // Verify no replacement (position 100 should still be original)
             var (byteValue, success) = _provider.GetByte(100);
             Assert.True(success);
-            Assert.Equal(original, byteValue.Value);
+            Assert.Equal(original, byteValue!.Value);
         }
 
         [Fact]
