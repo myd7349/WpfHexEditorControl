@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         configuration: [Debug, Release]
-        framework: [net48, net8.0-windows]
+        framework: [net8.0-windows]
 
     steps:
     - name: 📥 Checkout code
