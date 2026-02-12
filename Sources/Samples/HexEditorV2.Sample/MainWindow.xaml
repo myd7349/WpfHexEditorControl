@@ -1,0 +1,166 @@
+<Window x:Class="HexEditorV2.Sample.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:v2="clr-namespace:WpfHexaEditor.V2;assembly=WPFHexaEditor"
+        mc:Ignorable="d"
+        Title="HexEditorV2 Sample - New Architecture with Native Insert Mode"
+        Height="600" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        KeyDown="Window_KeyDown">
+
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveCommand}"/>
+        <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}"/>
+        <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}"/>
+        <KeyBinding Key="A" Modifiers="Control" Command="{Binding SelectAllCommand}"/>
+    </Window.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Menu -->
+            <RowDefinition Height="Auto"/> <!-- Toolbar -->
+            <RowDefinition Height="*"/>    <!-- HexEditor -->
+        </Grid.RowDefinitions>
+
+        <!-- Menu -->
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..." Click="Open_Click" InputGestureText="Ctrl+O"/>
+                <MenuItem Header="_Save" x:Name="SaveMenuItem" Click="Save_Click" InputGestureText="Ctrl+S" IsEnabled="False"/>
+                <MenuItem Header="Save _As..." x:Name="SaveAsMenuItem" Click="SaveAs_Click" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="_Close" x:Name="CloseMenuItem" Click="Close_Click" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" x:Name="UndoMenuItem" Click="Undo_Click" InputGestureText="Ctrl+Z" IsEnabled="False"/>
+                <MenuItem Header="_Redo" x:Name="RedoMenuItem" Click="Redo_Click" InputGestureText="Ctrl+Y" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Select _All" x:Name="SelectAllMenuItem" Click="SelectAll_Click" InputGestureText="Ctrl+A" IsEnabled="False"/>
+                <MenuItem Header="_Clear Selection" x:Name="ClearSelectionMenuItem" Click="ClearSelection_Click" IsEnabled="False"/>
+                <MenuItem Header="_Delete Selection" x:Name="DeleteSelectionMenuItem" Click="DeleteSelection_Click" InputGestureText="Del" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Copy" x:Name="CopyMenuItem" Click="Copy_Click" InputGestureText="Ctrl+C" IsEnabled="False"/>
+                <MenuItem Header="Copy as Hexadecimal" x:Name="CopyHexMenuItem" Click="CopyHex_Click" IsEnabled="False"/>
+                <MenuItem Header="Copy as ASCII String" x:Name="CopyAsciiMenuItem" Click="CopyAscii_Click" IsEnabled="False"/>
+                <MenuItem Header="Paste" x:Name="PasteMenuItem" Click="Paste_Click" InputGestureText="Ctrl+V" IsEnabled="False"/>
+            </MenuItem>
+            <MenuItem Header="_Search">
+                <MenuItem Header="_Find..." x:Name="FindMenuItem" Click="Find_Click" InputGestureText="Ctrl+F" IsEnabled="False"/>
+                <MenuItem Header="Find _Next" x:Name="FindNextMenuItem" Click="FindNext_Click" InputGestureText="F3" IsEnabled="False"/>
+                <MenuItem Header="Find _Previous" x:Name="FindPreviousMenuItem" Click="FindPrevious_Click" InputGestureText="Shift+F3" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="_Replace..." x:Name="ReplaceMenuItem" Click="Replace_Click" InputGestureText="Ctrl+H" IsEnabled="False"/>
+            </MenuItem>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Byte Operations">
+                    <MenuItem Header="_Fill with Byte..." x:Name="FillWithByteMenuItem" Click="FillWithByte_Click" IsEnabled="False"/>
+                    <MenuItem Header="_Get Byte at Position..." x:Name="GetByteMenuItem" Click="GetByte_Click" IsEnabled="False"/>
+                    <MenuItem Header="_Set Byte at Position..." x:Name="SetByteMenuItem" Click="SetByte_Click" IsEnabled="False"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Bookmarks">
+                    <MenuItem Header="Toggle Bookmark" x:Name="ToggleBookmarkMenuItem" Click="ToggleBookmark_Click" InputGestureText="Ctrl+B" IsEnabled="False"/>
+                    <MenuItem Header="_Clear All Bookmarks" x:Name="ClearBookmarksMenuItem" Click="ClearBookmarks_Click" IsEnabled="False"/>
+                    <Separator/>
+                    <MenuItem Header="_Next Bookmark" x:Name="NextBookmarkMenuItem" Click="NextBookmark_Click" InputGestureText="Ctrl+N" IsEnabled="False"/>
+                    <MenuItem Header="_Previous Bookmark" x:Name="PreviousBookmarkMenuItem" Click="PreviousBookmark_Click" InputGestureText="Ctrl+P" IsEnabled="False"/>
+                    <Separator/>
+                    <MenuItem Header="_Show All Bookmarks..." x:Name="ShowBookmarksMenuItem" Click="ShowBookmarks_Click" IsEnabled="False"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Character Table (TBL)">
+                    <MenuItem Header="_Load TBL File..." x:Name="LoadTBLMenuItem" Click="LoadTBL_Click" IsEnabled="False"/>
+                    <MenuItem Header="_Close TBL" x:Name="CloseTBLMenuItem" Click="CloseTBL_Click" IsEnabled="False"/>
+                    <Separator/>
+                    <MenuItem Header="Table Type">
+                        <MenuItem Header="ASCII" x:Name="TblAsciiMenuItem" Click="TblType_Click" Tag="0" IsCheckable="True" IsChecked="True"/>
+                        <MenuItem Header="EBCDIC (with special chars)" x:Name="TblEbcdicSpecialMenuItem" Click="TblType_Click" Tag="1" IsCheckable="True"/>
+                        <MenuItem Header="EBCDIC (no special chars)" x:Name="TblEbcdicNoSpecialMenuItem" Click="TblType_Click" Tag="2" IsCheckable="True"/>
+                    </MenuItem>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Position">
+                <MenuItem Header="_Go to Position..." x:Name="GoToPositionMenuItem" Click="GoToPosition_Click" InputGestureText="Ctrl+G" IsEnabled="False"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Insert Mode" IsCheckable="True"
+                          x:Name="InsertModeMenuItem"
+                          Checked="InsertMode_Changed"
+                          Unchecked="InsertMode_Changed"
+                          IsEnabled="False"/>
+                <MenuItem Header="_Read Only" IsCheckable="True"
+                          x:Name="ReadOnlyMenuItem"
+                          Checked="ReadOnly_Changed"
+                          Unchecked="ReadOnly_Changed"
+                          IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Display Options">
+                    <MenuItem Header="Show Status Bar" IsCheckable="True" x:Name="ShowStatusBarMenuItem"
+                              Checked="ShowStatusBar_Changed" Unchecked="ShowStatusBar_Changed" IsChecked="True" IsEnabled="False"/>
+                    <MenuItem Header="Show Header" IsCheckable="True" x:Name="ShowHeaderMenuItem"
+                              Checked="ShowHeader_Changed" Unchecked="ShowHeader_Changed" IsChecked="True" IsEnabled="False"/>
+                    <MenuItem Header="Show Offset" IsCheckable="True" x:Name="ShowOffsetMenuItem"
+                              IsChecked="True" IsEnabled="False"
+                              ToolTip="Note: Always visible in V2 (XAML limitation)"/>
+                    <MenuItem Header="Show ASCII" IsCheckable="True" x:Name="ShowAsciiMenuItem"
+                              IsChecked="True" IsEnabled="False"
+                              ToolTip="Note: Always visible in V2 (XAML limitation)"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Bytes Per Line">
+                    <MenuItem Header="8" x:Name="BytesPerLine8MenuItem" Click="BytesPerLine_Click" Tag="8"/>
+                    <MenuItem Header="16" x:Name="BytesPerLine16MenuItem" Click="BytesPerLine_Click" Tag="16" IsChecked="True"/>
+                    <MenuItem Header="32" x:Name="BytesPerLine32MenuItem" Click="BytesPerLine_Click" Tag="32"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Colors (V1 Compatible)">
+                    <MenuItem Header="🎨 Change Selection Color..." Click="ChangeSelectionColor_Click"/>
+                    <MenuItem Header="🟧 Change Modified Color..." Click="ChangeModifiedColor_Click"/>
+                    <MenuItem Header="🟩 Change Added Color..." Click="ChangeAddedColor_Click"/>
+                    <MenuItem Header="🟥 Change Deleted Color..." Click="ChangeDeletedColor_Click"/>
+                    <MenuItem Header="🔵 Change Alternate Byte Color..." Click="ChangeAlternateColor_Click"/>
+                    <Separator/>
+                    <MenuItem Header="↩️ Reset to Defaults" Click="ResetColors_Click"/>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" Click="About_Click"/>
+                <MenuItem Header="_Keyboard Shortcuts" Click="KeyboardShortcuts_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Toolbar -->
+        <ToolBar Grid.Row="1">
+            <Button x:Name="OpenButton" Click="Open_Click" ToolTip="Open file (Ctrl+O)">
+                <TextBlock Text="📂 Open" FontSize="12"/>
+            </Button>
+            <Button x:Name="SaveButton" Click="Save_Click" ToolTip="Save file (Ctrl+S)" IsEnabled="False">
+                <TextBlock Text="💾 Save" FontSize="12"/>
+            </Button>
+            <Separator/>
+            <Button x:Name="UndoButton" Click="Undo_Click" ToolTip="Undo (Ctrl+Z)" IsEnabled="False">
+                <TextBlock Text="↶ Undo" FontSize="12"/>
+            </Button>
+            <Button x:Name="RedoButton" Click="Redo_Click" ToolTip="Redo (Ctrl+Y)" IsEnabled="False">
+                <TextBlock Text="↷ Redo" FontSize="12"/>
+            </Button>
+            <Separator/>
+            <ToggleButton x:Name="InsertModeToggle" ToolTip="Toggle Insert/Overwrite mode (Insert key)"
+                          Checked="InsertModeToggle_Changed" Unchecked="InsertModeToggle_Changed" IsEnabled="False">
+                <TextBlock Text="INS" FontSize="12" FontWeight="Bold"/>
+            </ToggleButton>
+            <ToggleButton x:Name="ReadOnlyToggle" ToolTip="Toggle Read-Only mode"
+                          Checked="ReadOnlyToggle_Changed" Unchecked="ReadOnlyToggle_Changed" IsEnabled="False">
+                <TextBlock Text="🔒 RO" FontSize="12"/>
+            </ToggleButton>
+        </ToolBar>
+
+        <!-- HexEditorV2 Control -->
+        <v2:HexEditorV2 x:Name="HexEditor" Grid.Row="2"/>
+    </Grid>
+</Window>

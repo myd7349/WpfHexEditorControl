@@ -1,0 +1,231 @@
+<UserControl x:Class="WpfHexaEditor.V2.HexEditorV2"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:WpfHexaEditor.V2"
+             xmlns:models="clr-namespace:WpfHexaEditor.V2.Models"
+             xmlns:converters="clr-namespace:WpfHexaEditor.V2.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="450" d:DesignWidth="800"
+             Background="White"
+             FontFamily="Consolas"
+             FontSize="14">
+
+    <UserControl.Resources>
+        <!-- Converters -->
+        <converters:BoolToSelectionBrushConverter x:Key="BoolToSelectionBrushConverter"/>
+        <converters:ActionToBrushConverter x:Key="ActionToBrushConverter"/>
+
+        <!-- Professional Color Scheme -->
+        <SolidColorBrush x:Key="SelectionBrush" Color="#0078D4" Opacity="0.4"/>
+        <SolidColorBrush x:Key="ModifiedBrush" Color="#FFA500"/>
+        <SolidColorBrush x:Key="AddedBrush" Color="#4CAF50"/>
+        <SolidColorBrush x:Key="DeletedBrush" Color="#F44336"/>
+        <SolidColorBrush x:Key="HeaderBrush" Color="#F5F5F5"/>
+        <SolidColorBrush x:Key="HeaderTextBrush" Color="#424242"/>
+        <SolidColorBrush x:Key="OffsetBrush" Color="#757575"/>
+        <SolidColorBrush x:Key="ByteBorderBrush" Color="Transparent"/>
+        <SolidColorBrush x:Key="ByteHoverBrush" Color="#E3F2FD"/>
+
+        <!-- Customizable Byte Colors (V1 compatibility) -->
+        <SolidColorBrush x:Key="ByteForegroundBrush" Color="#000000"/>
+        <SolidColorBrush x:Key="AlternateByteForegroundBrush" Color="#0000FF"/>
+        <SolidColorBrush x:Key="ColumnSeparatorBrush" Color="#D0D0D0"/>
+
+        <!-- Styles for better appearance -->
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{StaticResource HeaderTextBrush}"/>
+            <Setter Property="Padding" Value="5,3"/>
+        </Style>
+
+        <!-- Data template for a single hex byte -->
+        <DataTemplate x:Key="HexByteTemplate">
+            <Border x:Name="ByteBorder" Width="22" Height="18" Margin="0,0,2,0" CornerRadius="2"
+                    Background="{Binding IsSelected, Converter={StaticResource BoolToSelectionBrushConverter}}"
+                    BorderBrush="{Binding Action, Converter={StaticResource ActionToBrushConverter}}"
+                    BorderThickness="1.5">
+                <TextBlock Text="{Binding HexString}"
+                           TextAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="#212121"
+                           FontWeight="Medium"/>
+            </Border>
+            <DataTemplate.Triggers>
+                <!-- Cursor visual: thicker blue border -->
+                <DataTrigger Binding="{Binding IsCursor}" Value="True">
+                    <Setter TargetName="ByteBorder" Property="BorderBrush" Value="#0078D4"/>
+                    <Setter TargetName="ByteBorder" Property="BorderThickness" Value="2.5"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Data template for a single ASCII byte -->
+        <DataTemplate x:Key="AsciiByteTemplate">
+            <Border x:Name="AsciiBorder" Width="10" Height="18" Margin="0" CornerRadius="1"
+                    Background="{Binding IsSelected, Converter={StaticResource BoolToSelectionBrushConverter}}"
+                    BorderBrush="Transparent"
+                    BorderThickness="1">
+                <TextBlock Text="{Binding AsciiChar}"
+                           TextAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="#424242"
+                           FontSize="13"/>
+            </Border>
+            <DataTemplate.Triggers>
+                <!-- Cursor visual: blue border -->
+                <DataTrigger Binding="{Binding IsCursor}" Value="True">
+                    <Setter TargetName="AsciiBorder" Property="BorderBrush" Value="#0078D4"/>
+                    <Setter TargetName="AsciiBorder" Property="BorderThickness" Value="1.5"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Data template for a hex line -->
+        <DataTemplate DataType="{x:Type models:HexLine}">
+            <Grid Margin="0,1" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110"/> <!-- Offset -->
+                    <ColumnDefinition Width="Auto"/>   <!-- Hex bytes -->
+                    <ColumnDefinition Width="Auto"/> <!-- Separator -->
+                    <ColumnDefinition Width="Auto"/> <!-- ASCII -->
+                </Grid.ColumnDefinitions>
+
+                <!-- Offset label -->
+                <TextBlock Grid.Column="0"
+                           Text="{Binding OffsetLabel}"
+                           Foreground="{StaticResource OffsetBrush}"
+                           FontFamily="Consolas"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           Margin="8,0,10,0"/>
+
+                <!-- Hex bytes -->
+                <ItemsControl Grid.Column="1"
+                              ItemsSource="{Binding Bytes}"
+                              ItemTemplate="{StaticResource HexByteTemplate}"
+                              Margin="0,2">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <!-- Separator -->
+                <Border Grid.Column="2" Width="1" Background="#E0E0E0" Margin="8,0"/>
+
+                <!-- ASCII bytes -->
+                <ItemsControl Grid.Column="3"
+                              ItemsSource="{Binding Bytes}"
+                              ItemTemplate="{StaticResource AsciiByteTemplate}"
+                              Margin="8,2,0,2">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Column Headers -->
+            <RowDefinition Height="*"/>    <!-- Content -->
+            <RowDefinition Height="Auto"/> <!-- Status bar -->
+        </Grid.RowDefinitions>
+
+        <!-- Column Headers -->
+        <Border x:Name="HeaderBorder" Grid.Row="0" Background="{StaticResource HeaderBrush}" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1" Padding="0,5,0,5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110"/> <!-- Offset -->
+                    <ColumnDefinition Width="Auto"/>   <!-- Hex -->
+                    <ColumnDefinition Width="Auto"/> <!-- Separator -->
+                    <ColumnDefinition Width="Auto"/> <!-- ASCII -->
+                    <ColumnDefinition Width="*"/> <!-- Remaining space -->
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Offset" Style="{StaticResource HeaderTextStyle}" Margin="8,0,0,0"/>
+                <TextBlock Grid.Column="1" Text="Hex" Style="{StaticResource HeaderTextStyle}"/>
+                <Border Grid.Column="2" Width="1" Background="Transparent" Margin="8,0"/>
+                <TextBlock Grid.Column="3" Text="ASCII" Style="{StaticResource HeaderTextStyle}" Margin="8,0,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Content area with scrollbar -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Lines display -->
+            <ScrollViewer Grid.Column="0"
+                          x:Name="ContentScroller"
+                          VerticalScrollBarVisibility="Hidden"
+                          HorizontalScrollBarVisibility="Auto"
+                          CanContentScroll="True">
+                <ItemsControl x:Name="LinesControl"
+                              Background="White"
+                              Focusable="True"
+                              MouseDown="Content_MouseDown"
+                              MouseMove="Content_MouseMove"
+                              MouseUp="Content_MouseUp"
+                              KeyDown="Content_KeyDown"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              VirtualizingPanel.CacheLength="1,1"
+                              VirtualizingPanel.CacheLengthUnit="Page">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Vertical scrollbar -->
+            <ScrollBar Grid.Column="1"
+                       x:Name="VerticalScroll"
+                       Orientation="Vertical"
+                       Scroll="VerticalScroll_Scroll"
+                       Minimum="0"
+                       Maximum="1000"
+                       ViewportSize="20"
+                       SmallChange="1"
+                       LargeChange="10"/>
+        </Grid>
+
+        <!-- Status bar -->
+        <StatusBar x:Name="StatusBar" Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusText" Text="Ready"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock x:Name="FileSizeText" Text="Size: -"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock x:Name="SelectionInfo" Text="No selection"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock x:Name="PositionInfo" Text="Position: 0"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock x:Name="EditModeText" Text="Mode: Overwrite"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock x:Name="BytesPerLineText" Text="Bytes/Line: 16"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</UserControl>
