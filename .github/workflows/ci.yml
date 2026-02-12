@@ -9,7 +9,7 @@ on:
 
 env:
   SOLUTION_PATH: 'Sources/WpfHexEditorControl.sln'
-  TEST_PROJECT_PATH: 'Sources/WPFHexaEditor.Tests/WPFHexaEditor.Tests.csproj'
+  TEST_PROJECT_PATH: 'Sources/Tests/WpfHexEditor.Tests/WpfHexEditor.Tests.csproj'
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
