@@ -6,6 +6,7 @@
 // NOT A TRUE PROJECT! IT'S JUST FOR TESTING THE HEXEDITOR... DO NOT WATCH THE CODE LOL ;) 
 //////////////////////////////////////////////
 
+using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,6 +16,7 @@ using Microsoft.Win32;
 using WpfHexaEditor.Core;
 using WpfHexaEditor.Core.CharacterTable;
 using WpfHexaEditor.Dialog;
+using WpfHexEditor.Sample.Properties;
 
 namespace WPFHexaEditorExample
 {
@@ -26,6 +28,126 @@ namespace WPFHexaEditorExample
             //System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en");
 
             InitializeComponent();
+
+            // Load saved settings when window is loaded
+            Loaded += MainWindow_Loaded;
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            LoadSettings();
+        }
+
+        /// <summary>
+        /// Load user settings from Properties.Settings
+        /// </summary>
+        private void LoadSettings()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] Loading settings...");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] CanInsertAnywhere: {Settings.Default.CanInsertAnywhere}");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] IsInsertMode: {Settings.Default.IsInsertMode}");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] HideByteDeleted: {Settings.Default.HideByteDeleted}");
+
+                // View settings
+                HexEdit.HeaderVisibility = Settings.Default.HeaderVisible ? Visibility.Visible : Visibility.Collapsed;
+                HexEdit.HexDataVisibility = Settings.Default.HexDataVisible ? Visibility.Visible : Visibility.Collapsed;
+                HexEdit.StringDataVisibility = Settings.Default.StringDataVisible ? Visibility.Visible : Visibility.Collapsed;
+                HexEdit.LineInfoVisibility = Settings.Default.LineInfoVisible ? Visibility.Visible : Visibility.Collapsed;
+                HexEdit.StatusBarVisibility = Settings.Default.StatusBarVisible ? Visibility.Visible : Visibility.Collapsed;
+
+                // Option settings
+                HexEdit.AllowContextMenu = Settings.Default.AllowContextMenu;
+                HexEdit.ShowByteToolTip = Settings.Default.ShowByteToolTip;
+                HexEdit.AllowAutoHighLightSelectionByte = Settings.Default.AllowAutoHighLightSelectionByte;
+                HexEdit.AllowAutoSelectSameByteAtDoubleClick = Settings.Default.AllowAutoSelectSameByteAtDoubleClick;
+                HexEdit.AllowByteCount = Settings.Default.AllowByteCount;
+                HexEdit.FileDroppingConfirmation = Settings.Default.FileDroppingConfirmation;
+                HexEdit.AllowTextDrop = Settings.Default.AllowTextDrop;
+                HexEdit.AllowFileDrop = Settings.Default.AllowFileDrop;
+                HexEdit.HideByteDeleted = Settings.Default.HideByteDeleted;
+                HexEdit.AllowDeleteByte = Settings.Default.AllowDeleteByte;
+                HexEdit.AppendNeedConfirmation = Settings.Default.AppendNeedConfirmation;
+                HexEdit.AllowExtend = Settings.Default.AllowExtend;
+                HexEdit.AllowDrop = Settings.Default.AllowDrop;
+                HexEdit.AllowZoom = Settings.Default.AllowZoom;
+
+                // INSERT MODE settings (NEW for Issue #31)
+                HexEdit.CanInsertAnywhere = Settings.Default.CanInsertAnywhere;
+                HexEdit.VisualCaretMode = Settings.Default.IsInsertMode ? CaretMode.Insert : CaretMode.Overwrite;
+
+                // Editor settings
+                HexEdit.ReadOnlyMode = Settings.Default.ReadOnlyMode;
+                SetReadOnlyMenu.IsChecked = Settings.Default.ReadOnlyMode;
+                HexEdit.BytePerLine = Settings.Default.BytePerLine;
+
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] Settings loaded successfully");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.CanInsertAnywhere: {HexEdit.CanInsertAnywhere}");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.VisualCaretMode: {HexEdit.VisualCaretMode}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] ERROR loading settings: {ex.Message}");
+                MessageBox.Show($"Failed to load settings: {ex.Message}", "Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Save user settings to Properties.Settings
+        /// </summary>
+        private void SaveSettings()
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] Saving settings...");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.CanInsertAnywhere: {HexEdit.CanInsertAnywhere}");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.VisualCaretMode: {HexEdit.VisualCaretMode}");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] HexEdit.HideByteDeleted: {HexEdit.HideByteDeleted}");
+
+                // View settings
+                Settings.Default.HeaderVisible = HexEdit.HeaderVisibility == Visibility.Visible;
+                Settings.Default.HexDataVisible = HexEdit.HexDataVisibility == Visibility.Visible;
+                Settings.Default.StringDataVisible = HexEdit.StringDataVisibility == Visibility.Visible;
+                Settings.Default.LineInfoVisible = HexEdit.LineInfoVisibility == Visibility.Visible;
+                Settings.Default.StatusBarVisible = HexEdit.StatusBarVisibility == Visibility.Visible;
+
+                // Option settings
+                Settings.Default.AllowContextMenu = HexEdit.AllowContextMenu;
+                Settings.Default.ShowByteToolTip = HexEdit.ShowByteToolTip;
+                Settings.Default.AllowAutoHighLightSelectionByte = HexEdit.AllowAutoHighLightSelectionByte;
+                Settings.Default.AllowAutoSelectSameByteAtDoubleClick = HexEdit.AllowAutoSelectSameByteAtDoubleClick;
+                Settings.Default.AllowByteCount = HexEdit.AllowByteCount;
+                Settings.Default.FileDroppingConfirmation = HexEdit.FileDroppingConfirmation;
+                Settings.Default.AllowTextDrop = HexEdit.AllowTextDrop;
+                Settings.Default.AllowFileDrop = HexEdit.AllowFileDrop;
+                Settings.Default.HideByteDeleted = HexEdit.HideByteDeleted;
+                Settings.Default.AllowDeleteByte = HexEdit.AllowDeleteByte;
+                Settings.Default.AppendNeedConfirmation = HexEdit.AppendNeedConfirmation;
+                Settings.Default.AllowExtend = HexEdit.AllowExtend;
+                Settings.Default.AllowDrop = HexEdit.AllowDrop;
+                Settings.Default.AllowZoom = HexEdit.AllowZoom;
+
+                // INSERT MODE settings (NEW for Issue #31)
+                Settings.Default.CanInsertAnywhere = HexEdit.CanInsertAnywhere;
+                Settings.Default.IsInsertMode = HexEdit.VisualCaretMode == CaretMode.Insert;
+
+                // Editor settings
+                Settings.Default.ReadOnlyMode = HexEdit.ReadOnlyMode;
+                Settings.Default.BytePerLine = HexEdit.BytePerLine;
+
+                // Save to disk
+                Settings.Default.Save();
+
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] Settings saved successfully");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] Saved CanInsertAnywhere: {Settings.Default.CanInsertAnywhere}");
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] Saved IsInsertMode: {Settings.Default.IsInsertMode}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SETTINGS] ERROR saving settings: {ex.Message}");
+                MessageBox.Show($"Failed to save settings: {ex.Message}", "Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         private void OpenMenu_Click(object sender, RoutedEventArgs e)
@@ -76,7 +198,12 @@ namespace WPFHexaEditorExample
 
         private void CloseFileMenu_Click(object sender, RoutedEventArgs e) => CloseFile();
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) => HexEdit.CloseProvider();
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // Save user settings before closing
+            SaveSettings();
+            HexEdit.CloseProvider();
+        }
 
         private void ExitMenu_Click(object sender, RoutedEventArgs e) => Close();
 

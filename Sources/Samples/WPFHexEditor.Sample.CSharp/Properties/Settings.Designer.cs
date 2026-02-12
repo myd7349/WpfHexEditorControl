@@ -34,5 +34,193 @@ namespace WpfHexEditor.Sample.Properties {
                 this["ApplicationName"] = value;
             }
         }
+
+        // View Settings
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool HeaderVisible {
+            get { return ((bool)(this["HeaderVisible"])); }
+            set { this["HeaderVisible"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool HexDataVisible {
+            get { return ((bool)(this["HexDataVisible"])); }
+            set { this["HexDataVisible"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool StringDataVisible {
+            get { return ((bool)(this["StringDataVisible"])); }
+            set { this["StringDataVisible"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool LineInfoVisible {
+            get { return ((bool)(this["LineInfoVisible"])); }
+            set { this["LineInfoVisible"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool StatusBarVisible {
+            get { return ((bool)(this["StatusBarVisible"])); }
+            set { this["StatusBarVisible"] = value; }
+        }
+
+        // Option Settings
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AllowContextMenu {
+            get { return ((bool)(this["AllowContextMenu"])); }
+            set { this["AllowContextMenu"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool ShowByteToolTip {
+            get { return ((bool)(this["ShowByteToolTip"])); }
+            set { this["ShowByteToolTip"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AllowAutoHighLightSelectionByte {
+            get { return ((bool)(this["AllowAutoHighLightSelectionByte"])); }
+            set { this["AllowAutoHighLightSelectionByte"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AllowAutoSelectSameByteAtDoubleClick {
+            get { return ((bool)(this["AllowAutoSelectSameByteAtDoubleClick"])); }
+            set { this["AllowAutoSelectSameByteAtDoubleClick"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AllowByteCount {
+            get { return ((bool)(this["AllowByteCount"])); }
+            set { this["AllowByteCount"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool FileDroppingConfirmation {
+            get { return ((bool)(this["FileDroppingConfirmation"])); }
+            set { this["FileDroppingConfirmation"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AllowTextDrop {
+            get { return ((bool)(this["AllowTextDrop"])); }
+            set { this["AllowTextDrop"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AllowFileDrop {
+            get { return ((bool)(this["AllowFileDrop"])); }
+            set { this["AllowFileDrop"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool HideByteDeleted {
+            get { return ((bool)(this["HideByteDeleted"])); }
+            set { this["HideByteDeleted"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool AllowDeleteByte {
+            get { return ((bool)(this["AllowDeleteByte"])); }
+            set { this["AllowDeleteByte"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AppendNeedConfirmation {
+            get { return ((bool)(this["AppendNeedConfirmation"])); }
+            set { this["AppendNeedConfirmation"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AllowExtend {
+            get { return ((bool)(this["AllowExtend"])); }
+            set { this["AllowExtend"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AllowDrop {
+            get { return ((bool)(this["AllowDrop"])); }
+            set { this["AllowDrop"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AllowZoom {
+            get { return ((bool)(this["AllowZoom"])); }
+            set { this["AllowZoom"] = value; }
+        }
+
+        // INSERT MODE Settings (NEW for Issue #31)
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool CanInsertAnywhere {
+            get { return ((bool)(this["CanInsertAnywhere"])); }
+            set { this["CanInsertAnywhere"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IsInsertMode {
+            get { return ((bool)(this["IsInsertMode"])); }
+            set { this["IsInsertMode"] = value; }
+        }
+
+        // Editor Settings
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ReadOnlyMode {
+            get { return ((bool)(this["ReadOnlyMode"])); }
+            set { this["ReadOnlyMode"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("16")]
+        public int BytePerLine {
+            get { return ((int)(this["BytePerLine"])); }
+            set { this["BytePerLine"] = value; }
+        }
     }
 }
