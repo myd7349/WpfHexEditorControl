@@ -4,6 +4,8 @@
 // Contributors: Claude Sonnet 4.5
 //////////////////////////////////////////////
 
+using System.Collections.Generic;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 using WpfHexaEditor.Services;
 
