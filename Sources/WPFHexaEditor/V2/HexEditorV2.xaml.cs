@@ -86,6 +86,20 @@ namespace WpfHexaEditor.V2
 
             // Initialize column headers with byte position numbers
             this.Loaded += (s, e) => RefreshColumnHeader();
+
+            // V1 Compatible: Subscribe to right-click event for context menu
+            if (HexViewport != null)
+            {
+                HexViewport.ByteRightClick += HexViewport_ByteRightClick;
+            }
+        }
+
+        /// <summary>
+        /// Handle right-click on byte for context menu (V1 compatible)
+        /// </summary>
+        private void HexViewport_ByteRightClick(object sender, Controls.ByteRightClickEventArgs e)
+        {
+            ShowContextMenu(e.Position);
         }
 
         #region Public Events (V1 Compatible)
@@ -4041,6 +4055,132 @@ namespace WpfHexaEditor.V2
                 // Force empty spacer (used for headers)
                 stack.Children.Add(new TextBlock { Width = width });
             }
+        }
+
+        #endregion
+
+        #region Context Menu Handlers (V1 Compatible)
+
+        private long _rightClickPosition = -1;
+
+        /// <summary>
+        /// Show context menu on right-click (V1 compatible)
+        /// </summary>
+        public void ShowContextMenu(long position)
+        {
+            if (!AllowContextMenu) return;
+
+            _rightClickPosition = position;
+
+            // Select the byte if no selection
+            if (SelectionLength <= 1)
+            {
+                SelectionStart = position;
+                SelectionStop = position;
+            }
+
+            // Access menu items from ContextMenu
+            var contextMenu = this.ContextMenu;
+            if (contextMenu == null) return;
+
+            // Enable/disable menu items based on state
+            var undoItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "UndoMenuItem") as MenuItem;
+            var copyAsItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyAsMenuItem") as MenuItem;
+            var copyHexaItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyHexaMenuItem") as MenuItem;
+            var copyAsciiItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyAsciiMenuItem") as MenuItem;
+            var copyCSharpItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyCSharpMenuItem") as MenuItem;
+            var copyCItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyCMenuItem") as MenuItem;
+            var copyTblItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyTblMenuItem") as MenuItem;
+            var findAllItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "FindAllMenuItem") as MenuItem;
+            var pasteItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "PasteMenuItem") as MenuItem;
+            var deleteItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "DeleteMenuItem") as MenuItem;
+            var fillItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "FillByteMenuItem") as MenuItem;
+            var replaceItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "ReplaceByteMenuItem") as MenuItem;
+
+            if (undoItem != null) undoItem.IsEnabled = CanUndo;
+            if (copyAsItem != null) copyAsItem.IsEnabled = SelectionLength > 0;
+            if (copyHexaItem != null) copyHexaItem.IsEnabled = SelectionLength > 0;
+            if (copyAsciiItem != null) copyAsciiItem.IsEnabled = SelectionLength > 0;
+            if (copyCSharpItem != null) copyCSharpItem.IsEnabled = SelectionLength > 0;
+            if (copyCItem != null) copyCItem.IsEnabled = SelectionLength > 0;
+            if (copyTblItem != null) copyTblItem.IsEnabled = SelectionLength > 0 && _tblStream != null;
+            if (findAllItem != null) findAllItem.IsEnabled = SelectionLength > 0;
+            if (pasteItem != null) pasteItem.IsEnabled = !ReadOnlyMode && Clipboard.ContainsText();
+            if (deleteItem != null) deleteItem.IsEnabled = !ReadOnlyMode && SelectionLength > 0;
+            if (fillItem != null) fillItem.IsEnabled = !ReadOnlyMode && SelectionLength > 0;
+            if (replaceItem != null) replaceItem.IsEnabled = !ReadOnlyMode && SelectionLength > 0;
+
+            // Show context menu
+            contextMenu.Visibility = Visibility.Visible;
+            contextMenu.IsOpen = true;
+        }
+
+        private void UndoMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Undo();
+        }
+
+        private void CopyHexaMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            CopyToClipboard(CopyPasteMode.HexaString);
+        }
+
+        private void CopyAsciiMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            CopyToClipboard(CopyPasteMode.AsciiString);
+        }
+
+        private void CopyCSharpMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            CopyToClipboard(CopyPasteMode.CSharpCode);
+        }
+
+        private void CopyCMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            CopyToClipboard(CopyPasteMode.CCode);
+        }
+
+        private void CopyTblMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            CopyToClipboard(CopyPasteMode.TblString);
+        }
+
+        private void FindAllMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var selection = GetSelectionByteArray();
+            if (selection != null && selection.Length > 0)
+            {
+                FindAll(selection, 0);
+                StatusText.Text = $"Found all occurrences of selection";
+            }
+        }
+
+        private void PasteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            Paste();
+        }
+
+        private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            DeleteSelection();
+        }
+
+        private void FillByteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // V1 Compatible: Fill selection with 0x00 (simplified - V1 would show dialog)
+            // TODO: Add proper input dialog for .NET Core compatibility
+            FillWithByte(0x00, SelectionStart, SelectionLength);
+            StatusText.Text = $"Filled {SelectionLength} bytes with 0x00";
+        }
+
+        private void ReplaceByteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // V1 Compatible: Replace 0x00 with 0xFF in selection (simplified - V1 would show dialog)
+            // TODO: Add proper input dialog for .NET Core compatibility
+            byte[] findData = new byte[] { 0x00 };
+            byte[] replaceData = new byte[] { 0xFF };
+            var replaced = ReplaceAll(findData, replaceData, false, false);
+            StatusText.Text = $"Replaced {replaced.Count()} occurrences";
         }
 
         #endregion

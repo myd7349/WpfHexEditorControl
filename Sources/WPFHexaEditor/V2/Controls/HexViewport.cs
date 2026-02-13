@@ -760,12 +760,33 @@ namespace WpfHexaEditor.V2.Controls
             // TODO: Implement mouse drag selection
         }
 
+        protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
+        {
+            base.OnMouseRightButtonDown(e);
+
+            // Get position at mouse click for context menu
+            var position = HitTestByte(e.GetPosition(this));
+            if (position.HasValue)
+            {
+                ByteRightClick?.Invoke(this, new ByteRightClickEventArgs(position.Value));
+            }
+        }
+
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
 
             // TODO: Implement selection end
         }
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Event raised when a byte is right-clicked (for context menu)
+        /// </summary>
+        public event EventHandler<ByteRightClickEventArgs> ByteRightClick;
 
         #endregion
 
@@ -795,5 +816,18 @@ namespace WpfHexaEditor.V2.Controls
         public event EventHandler<Key> NavigationKeyPressed;
 
         #endregion
+    }
+
+    /// <summary>
+    /// Event args for ByteRightClick event (context menu)
+    /// </summary>
+    public class ByteRightClickEventArgs : EventArgs
+    {
+        public long Position { get; }
+
+        public ByteRightClickEventArgs(long position)
+        {
+            Position = position;
+        }
     }
 }
