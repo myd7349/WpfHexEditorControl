@@ -190,6 +190,29 @@ namespace WpfHexaEditor.V2.ViewModels
         public long FileLength => _provider?.Length ?? 0;
 
         /// <summary>
+        /// Get all modified byte positions (for scroll markers)
+        /// </summary>
+        public IEnumerable<long> GetModifiedPositions()
+        {
+            if (_provider == null)
+                return Enumerable.Empty<long>();
+
+            // Collect modified positions from all cached lines
+            var modifiedPositions = new List<long>();
+            foreach (var line in Lines)
+            {
+                foreach (var byteData in line.Bytes)
+                {
+                    if (byteData.Action != ByteAction.Nothing && byteData.VirtualPos.IsValid)
+                    {
+                        modifiedPositions.Add(byteData.VirtualPos.Value);
+                    }
+                }
+            }
+            return modifiedPositions;
+        }
+
+        /// <summary>
         /// Total virtual length (file + inserted - deleted_if_hidden)
         /// </summary>
         public long VirtualLength
@@ -491,13 +514,16 @@ namespace WpfHexaEditor.V2.ViewModels
         {
             if (ReadOnlyMode) return false;
 
-            // Determine paste position BEFORE deleting selection
+            // Get the paste position (virtual)
             long pastePosition;
             if (HasSelection)
             {
-                // Capture the start position before deleting
+                // Paste at the start of the selection (will overwrite)
                 pastePosition = Math.Min(_selectionStart.Value, _selectionStop.Value);
-                DeleteSelection();
+
+                // Clear selection (but don't delete bytes - we'll overwrite them)
+                SelectionStart = VirtualPosition.Invalid;
+                SelectionStop = VirtualPosition.Invalid;
             }
             else
             {
@@ -505,10 +531,9 @@ namespace WpfHexaEditor.V2.ViewModels
                 pastePosition = _selectionStart.IsValid ? _selectionStart.Value : 0;
             }
 
-            var startPos = new VirtualPosition(pastePosition);
-
-            // Convert virtual position to physical
-            var physicalStart = VirtualToPhysical(startPos);
+            // Convert virtual position to physical for paste
+            var pasteVirtualPos = new VirtualPosition(pastePosition);
+            var physicalStart = VirtualToPhysical(pasteVirtualPos);
             if (!physicalStart.IsValid) return false;
 
             // Try to get binary data from clipboard first (preferred format)
