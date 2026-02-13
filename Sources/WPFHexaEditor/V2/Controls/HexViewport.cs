@@ -32,6 +32,7 @@ namespace WpfHexaEditor.V2.Controls
         private long _selectionStart = -1;
         private long _selectionStop = -1;
         private HashSet<long> _highlightedPositions = new();
+        private List<Core.CustomBackgroundBlock> _customBackgroundBlocks = new();
 
         // Cached resources
         private Typeface _typeface;
@@ -153,6 +154,20 @@ namespace WpfHexaEditor.V2.Controls
         private void LinesSource_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             UpdateCachedLines();
+        }
+
+        /// <summary>
+        /// Gets or sets the list of custom background blocks for highlighting byte ranges.
+        /// Phase 7.1 - V1 Compatible feature.
+        /// </summary>
+        public List<Core.CustomBackgroundBlock> CustomBackgroundBlocks
+        {
+            get => _customBackgroundBlocks;
+            set
+            {
+                _customBackgroundBlocks = value ?? new List<Core.CustomBackgroundBlock>();
+                InvalidateVisual(); // Trigger re-render
+            }
         }
 
         private void UpdateCachedLines()
@@ -380,7 +395,21 @@ namespace WpfHexaEditor.V2.Controls
             double byteWidth = HexByteWidth - HexByteSpacing;
             var rect = new Rect(x, y, byteWidth, _lineHeight);
 
-            // Draw selection background first (full cell)
+            // Phase 7.1: Draw custom background block FIRST (underneath everything)
+            if (_customBackgroundBlocks != null && _customBackgroundBlocks.Count > 0)
+            {
+                long position = byteData.VirtualPos.Value;
+                foreach (var block in _customBackgroundBlocks)
+                {
+                    if (position >= block.StartOffset && position <= block.StopOffset)
+                    {
+                        dc.DrawRoundedRectangle(block.Color, null, rect, 2, 2);
+                        break; // Only draw first matching block
+                    }
+                }
+            }
+
+            // Draw selection background (on top of custom background)
             bool isSelected = IsPositionSelected(byteData.VirtualPos.Value);
             if (isSelected)
             {
@@ -429,7 +458,21 @@ namespace WpfHexaEditor.V2.Controls
         {
             var rect = new Rect(x, y, AsciiCharWidth, _lineHeight);
 
-            // Draw selection background
+            // Phase 7.1: Draw custom background block FIRST (underneath everything)
+            if (_customBackgroundBlocks != null && _customBackgroundBlocks.Count > 0)
+            {
+                long position = byteData.VirtualPos.Value;
+                foreach (var block in _customBackgroundBlocks)
+                {
+                    if (position >= block.StartOffset && position <= block.StopOffset)
+                    {
+                        dc.DrawRoundedRectangle(block.Color, null, rect, 1, 1);
+                        break; // Only draw first matching block
+                    }
+                }
+            }
+
+            // Draw selection background (on top of custom background)
             bool isSelected = IsPositionSelected(byteData.VirtualPos.Value);
             if (isSelected)
             {

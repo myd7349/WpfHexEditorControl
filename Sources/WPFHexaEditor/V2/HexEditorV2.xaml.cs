@@ -404,7 +404,7 @@ namespace WpfHexaEditor.V2
         private bool _allowCustomBackgroundBlock = true;
 
         /// <summary>
-        /// Enable or disable custom background blocks (V1 compatible)
+        /// Enable or disable custom background blocks (V1 compatible - Phase 7.1)
         /// </summary>
         public bool AllowCustomBackgroundBlock
         {
@@ -412,7 +412,13 @@ namespace WpfHexaEditor.V2
             set
             {
                 _allowCustomBackgroundBlock = value;
-                HexViewport?.InvalidateVisual();
+
+                // Phase 7.1: Sync with HexViewport - pass blocks if enabled, empty list if disabled
+                if (HexViewport != null)
+                {
+                    HexViewport.CustomBackgroundBlocks = value ? _customBackgroundBlocks : new List<Core.CustomBackgroundBlock>();
+                    HexViewport.InvalidateVisual();
+                }
             }
         }
 
@@ -2146,32 +2152,50 @@ namespace WpfHexaEditor.V2
         #region Public Methods - Custom Background Blocks (V1 Compatible)
 
         /// <summary>
-        /// Add a custom background block (V1 compatible)
+        /// Add a custom background block (V1 compatible - Phase 7.1)
         /// </summary>
         public void AddCustomBackgroundBlock(Core.CustomBackgroundBlock block)
         {
             if (block == null) return;
             _customBackgroundBlocks.Add(block);
-            HexViewport?.InvalidateVisual();
+
+            // Phase 7.1: Sync with HexViewport for rendering
+            if (HexViewport != null)
+            {
+                HexViewport.CustomBackgroundBlocks = _customBackgroundBlocks;
+                HexViewport.InvalidateVisual();
+            }
         }
 
         /// <summary>
-        /// Remove a custom background block (V1 compatible)
+        /// Remove a custom background block (V1 compatible - Phase 7.1)
         /// </summary>
         public void RemoveCustomBackgroundBlock(Core.CustomBackgroundBlock block)
         {
             if (block == null) return;
             _customBackgroundBlocks.Remove(block);
-            HexViewport?.InvalidateVisual();
+
+            // Phase 7.1: Sync with HexViewport for rendering
+            if (HexViewport != null)
+            {
+                HexViewport.CustomBackgroundBlocks = _customBackgroundBlocks;
+                HexViewport.InvalidateVisual();
+            }
         }
 
         /// <summary>
-        /// Clear all custom background blocks (V1 compatible)
+        /// Clear all custom background blocks (V1 compatible - Phase 7.1)
         /// </summary>
         public void ClearCustomBackgroundBlock()
         {
             _customBackgroundBlocks.Clear();
-            HexViewport?.InvalidateVisual();
+
+            // Phase 7.1: Sync with HexViewport for rendering
+            if (HexViewport != null)
+            {
+                HexViewport.CustomBackgroundBlocks = _customBackgroundBlocks;
+                HexViewport.InvalidateVisual();
+            }
         }
 
         /// <summary>
