@@ -44,6 +44,9 @@ namespace WpfHexaEditor.V2
         private TblStream _tblStream;
         private CharacterTableType _characterTableType = CharacterTableType.Ascii;
 
+        // Zoom support (V1 compatible)
+        private ScaleTransform _scaler;
+
         // Hex editing state
         private bool _isEditingByte = false;
         private VirtualPosition _editingPosition = VirtualPosition.Invalid;
@@ -92,6 +95,9 @@ namespace WpfHexaEditor.V2
             {
                 HexViewport.ByteRightClick += HexViewport_ByteRightClick;
             }
+
+            // V1 Compatible: Initialize zoom system
+            InitialiseZoom();
         }
 
         /// <summary>
@@ -1107,6 +1113,86 @@ namespace WpfHexaEditor.V2
         public static readonly DependencyProperty ForegroundContrastProperty =
             DependencyProperty.Register(nameof(ForegroundContrast), typeof(Color), typeof(HexEditorV2),
                 new PropertyMetadata(Colors.Black));
+
+        #endregion
+
+        #region Zoom Support (V1 Compatible)
+
+        /// <summary>
+        /// Get or set the zoom scale (V1 compatible)
+        /// Possible Scale: 0.5 to 2.0 (50% to 200%)
+        /// </summary>
+        public double ZoomScale
+        {
+            get => (double)GetValue(ZoomScaleProperty);
+            set => SetValue(ZoomScaleProperty, value);
+        }
+
+        public static readonly DependencyProperty ZoomScaleProperty =
+            DependencyProperty.Register(nameof(ZoomScale), typeof(double), typeof(HexEditorV2),
+                new FrameworkPropertyMetadata(1.0, ZoomScale_ChangedCallBack, ZoomScale_CoerceValueCallBack));
+
+        private static object ZoomScale_CoerceValueCallBack(DependencyObject d, object baseValue)
+        {
+            // Clamp zoom between 0.5 and 2.0 (V1 compatible range)
+            double value = (double)baseValue;
+            if (value < 0.5) return 0.5;
+            if (value > 2.0) return 2.0;
+            return value;
+        }
+
+        private static void ZoomScale_ChangedCallBack(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditorV2 ctrl && e.NewValue != e.OldValue)
+            {
+                ctrl.UpdateZoom();
+            }
+        }
+
+        /// <summary>
+        /// Initialize the support of zoom (V1 compatible)
+        /// </summary>
+        private void InitialiseZoom()
+        {
+            if (_scaler != null) return;
+
+            _scaler = new ScaleTransform(ZoomScale, ZoomScale);
+
+            // Apply scale transform to zoomable elements (like V1)
+            if (_hexHeaderStackPanel != null)
+                _hexHeaderStackPanel.LayoutTransform = _scaler;
+            if (_asciiHeaderStackPanel != null)
+                _asciiHeaderStackPanel.LayoutTransform = _scaler;
+            if (HexViewport != null)
+                HexViewport.LayoutTransform = _scaler;
+        }
+
+        /// <summary>
+        /// Update the zoom to ZoomScale value if AllowZoom is true (V1 compatible)
+        /// </summary>
+        private void UpdateZoom()
+        {
+            if (!AllowZoom) return;
+
+            if (_scaler == null) InitialiseZoom();
+            if (_scaler != null)
+            {
+                _scaler.ScaleX = ZoomScale;
+                _scaler.ScaleY = ZoomScale;
+            }
+
+            // Update viewport and refresh display
+            HexViewport?.InvalidateVisual();
+            UpdateVisibleLines();
+
+            // Raise V1 compatible event
+            OnZoomScaleChanged(EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Reset the zoom to 100% (V1 compatible)
+        /// </summary>
+        public void ResetZoom() => ZoomScale = 1.0;
 
         #endregion
 
@@ -2173,14 +2259,7 @@ namespace WpfHexaEditor.V2
                 FileName = string.Empty;
         }
 
-        /// <summary>
-        /// V1: Reset zoom to 100%
-        /// </summary>
-        public void ResetZoom()
-        {
-            if (HexViewport != null)
-                base.FontSize = 14; // Default font size
-        }
+        // ResetZoom moved to Zoom Support region above
 
         /// <summary>
         /// V1: Update focus
@@ -2526,7 +2605,17 @@ namespace WpfHexaEditor.V2
         /// <summary>
         /// Show tooltip on byte hover (V1 compatible)
         /// </summary>
-        public bool ShowByteToolTip { get; set; } = false;
+        public bool ShowByteToolTip
+        {
+            get => HexViewport?.ShowByteToolTip ?? false;
+            set
+            {
+                if (HexViewport != null)
+                {
+                    HexViewport.ShowByteToolTip = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Hide bytes that are marked as deleted (V1 compatible)
@@ -3590,11 +3679,11 @@ namespace WpfHexaEditor.V2
                 return;
 
             // Ctrl+MouseWheel = Zoom (V1 compatible)
-            if (Keyboard.Modifiers == ModifierKeys.Control)
+            if (Keyboard.Modifiers == ModifierKeys.Control && AllowZoom)
             {
-                double delta = e.Delta > 0 ? 1 : -1;
-                double newFontSize = FontSize + delta;
-                FontSize = Math.Max(6, Math.Min(72, newFontSize));
+                double delta = e.Delta > 0 ? 0.1 : -0.1;
+                double newZoom = ZoomScale + delta;
+                ZoomScale = Math.Max(0.5, Math.Min(2.0, newZoom));
                 e.Handled = true;
                 return;
             }

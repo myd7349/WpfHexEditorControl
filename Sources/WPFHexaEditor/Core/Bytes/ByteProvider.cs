@@ -1146,8 +1146,9 @@ namespace WpfHexaEditor.Core.Bytes
                     if (!Eof)
                     {
                         Position = startPosition + i++;
+                        // Fix: Use Position (not Position - 1) and set undoLength to 1 for each byte
                         if (GetByte(Position).singleByte != ByteConverters.CharToByte(chr))
-                            AddByteModified(ByteConverters.CharToByte(chr), Position - 1, pastelength);
+                            AddByteModified(ByteConverters.CharToByte(chr), Position, 1);
                     }
                     else
                         break;
@@ -1185,8 +1186,9 @@ namespace WpfHexaEditor.Core.Bytes
                     if (!Eof)
                     {
                         Position = startPosition + i++;
+                        // Fix: Use Position (not Position - 1) and set undoLength to 1 for each byte
                         if (GetByte(Position).singleByte != bt)
-                            AddByteModified(bt, Position - 1, pastelength);
+                            AddByteModified(bt, Position, 1);
                     }
                     else
                         break;

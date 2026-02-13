@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -34,6 +35,7 @@ namespace WpfHexaEditor.V2.Controls
         private HashSet<long> _highlightedPositions = new();
         private List<Core.CustomBackgroundBlock> _customBackgroundBlocks = new();
         private Core.CharacterTable.TblStream _tblStream; // Phase 7.5: TBL for character type detection
+        private bool _showByteToolTip = false; // V1 compatible: Show tooltip on byte hover
 
         // Cached resources
         private Typeface _typeface;
@@ -380,6 +382,15 @@ namespace WpfHexaEditor.V2.Controls
             set { _tblStream = value; InvalidateVisual(); }
         }
 
+        /// <summary>
+        /// Show tooltip on byte hover (V1 compatible)
+        /// </summary>
+        public bool ShowByteToolTip
+        {
+            get => _showByteToolTip;
+            set => _showByteToolTip = value;
+        }
+
         #endregion
 
         #region Rendering
@@ -589,6 +600,21 @@ namespace WpfHexaEditor.V2.Controls
                 dc.DrawRoundedRectangle(_selectedBrush, null, rect, 1, 1);
             }
 
+            // Draw action border (Modified/Added/Deleted indicator)
+            if (byteData.Action != ByteAction.Nothing)
+            {
+                Brush borderBrush = byteData.Action switch
+                {
+                    ByteAction.Modified => _modifiedBrush,
+                    ByteAction.Added => _addedBrush,
+                    ByteAction.Deleted => _deletedBrush,
+                    _ => Brushes.Transparent
+                };
+
+                var borderPen = new Pen(borderBrush, 1.5);
+                dc.DrawRoundedRectangle(null, borderPen, rect, 1, 1);
+            }
+
             // Draw cursor border
             if (byteData.VirtualPos.Value == _cursorPosition)
             {
@@ -756,6 +782,39 @@ namespace WpfHexaEditor.V2.Controls
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+
+            // V1 compatible: Show byte tooltip on hover
+            if (_showByteToolTip)
+            {
+                var position = HitTestByte(e.GetPosition(this));
+                if (position.HasValue)
+                {
+                    // Find the byte data at this position
+                    var byteData = _linesCached?
+                        .SelectMany(line => line.Bytes)
+                        .FirstOrDefault(b => b.VirtualPos.IsValid && b.VirtualPos.Value == position.Value);
+
+                    if (byteData != null)
+                    {
+                        byte byteValue = byteData.Value;
+                        char asciiChar = (byteValue >= 32 && byteValue < 127) ? (char)byteValue : '.';
+
+                        string tooltipText = $"Position: 0x{position.Value:X8} ({position.Value})\n" +
+                                           $"Value: 0x{byteValue:X2} ({byteValue})\n" +
+                                           $"ASCII: '{asciiChar}'";
+
+                        ToolTip = tooltipText;
+                        return;
+                    }
+                }
+
+                // Clear tooltip if not over a byte
+                ToolTip = null;
+            }
+            else
+            {
+                ToolTip = null;
+            }
 
             // TODO: Implement mouse drag selection
         }

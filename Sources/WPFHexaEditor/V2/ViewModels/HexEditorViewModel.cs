@@ -327,6 +327,10 @@ namespace WpfHexaEditor.V2.ViewModels
 
             _provider.AddByteModified(newValue, physicalPos.Value);
 
+            // Notify Undo/Redo state changed
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
+
             // OPTIMIZATION: Invalidate only the affected line, not the entire cache
             InvalidateLineAtPosition(virtualPos.Value);
 
@@ -373,6 +377,10 @@ namespace WpfHexaEditor.V2.ViewModels
             // Add byte to insertions dictionary
             _provider.AddByteAdded(value, virtualPos.Value);
 
+            // Notify Undo/Redo state changed
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
+
             // Track insertion for position mapping
             if (_insertions.ContainsKey(physicalPos.Value))
                 _insertions[physicalPos.Value]++;
@@ -396,6 +404,10 @@ namespace WpfHexaEditor.V2.ViewModels
             if (!physicalPos.IsValid) return;
 
             _provider.AddByteDeleted(physicalPos.Value, 1);
+
+            // Notify Undo/Redo state changed
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
 
             // Track deletion for position mapping
             if (_deletions.ContainsKey(physicalPos.Value))
