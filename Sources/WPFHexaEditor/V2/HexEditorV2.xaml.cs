@@ -2640,15 +2640,21 @@ namespace WpfHexaEditor.V2
         /// <summary>
         /// Show tooltip on byte hover (V1 compatible)
         /// </summary>
+        public static readonly DependencyProperty ShowByteToolTipProperty =
+            DependencyProperty.Register(nameof(ShowByteToolTip), typeof(bool),
+                typeof(HexEditorV2), new PropertyMetadata(false, OnShowByteToolTipChanged));
+
         public bool ShowByteToolTip
         {
-            get => HexViewport?.ShowByteToolTip ?? false;
-            set
+            get => (bool)GetValue(ShowByteToolTipProperty);
+            set => SetValue(ShowByteToolTipProperty, value);
+        }
+
+        private static void OnShowByteToolTipChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditorV2 editor && editor.HexViewport != null)
             {
-                if (HexViewport != null)
-                {
-                    HexViewport.ShowByteToolTip = value;
-                }
+                editor.HexViewport.ShowByteToolTip = (bool)e.NewValue;
             }
         }
 
