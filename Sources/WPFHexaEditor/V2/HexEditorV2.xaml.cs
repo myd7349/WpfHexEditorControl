@@ -353,6 +353,31 @@ namespace WpfHexaEditor.V2
 
         #endregion
 
+        #region V1 Compatibility - Configuration Properties
+
+        // Backing fields
+        private bool _allowContextMenu = true;
+        private bool _allowZoom = true;
+        private MouseWheelSpeed _mouseWheelSpeed = MouseWheelSpeed.Normal;
+        private DataVisualType _dataStringVisual = DataVisualType.Hexadecimal;
+        private DataVisualType _offSetStringVisual = DataVisualType.Hexadecimal;
+        private ByteOrderType _byteOrder = ByteOrderType.LoHi;
+        private ByteSizeType _byteSize = ByteSizeType.Bit8;
+        private System.Text.Encoding _customEncoding = System.Text.Encoding.UTF8;
+        private PreloadByteInEditor _preloadByteInEditorMode = PreloadByteInEditor.MaxScreenVisibleLineAtDataLoad;
+
+        public bool AllowContextMenu { get => _allowContextMenu; set => _allowContextMenu = value; }
+        public bool AllowZoom { get => _allowZoom; set => _allowZoom = value; }
+        public MouseWheelSpeed MouseWheelSpeed { get => _mouseWheelSpeed; set => _mouseWheelSpeed = value; }
+        public DataVisualType DataStringVisual { get => _dataStringVisual; set => _dataStringVisual = value; }
+        public DataVisualType OffSetStringVisual { get => _offSetStringVisual; set => _offSetStringVisual = value; }
+        public ByteOrderType ByteOrder { get => _byteOrder; set => _byteOrder = value; }
+        public ByteSizeType ByteSize { get => _byteSize; set => _byteSize = value; }
+        public System.Text.Encoding CustomEncoding { get => _customEncoding; set => _customEncoding = value ?? System.Text.Encoding.UTF8; }
+        public PreloadByteInEditor PreloadByteInEditorMode { get => _preloadByteInEditorMode; set => _preloadByteInEditorMode = value; }
+
+        #endregion
+
         #region Public Properties
 
         /// <summary>
@@ -663,18 +688,12 @@ namespace WpfHexaEditor.V2
         }
 
         /// <summary>
-        /// Font size for zoom (V1 compatible - use Ctrl+MouseWheel)
+        /// Font size for zoom (V1 compatible - placeholder)
         /// </summary>
         public new double FontSize
         {
-            get => HexViewport?.FontSize ?? 14;
-            set
-            {
-                if (HexViewport != null && value >= 6 && value <= 72)
-                {
-                    HexViewport.FontSize = value;
-                }
-            }
+            get => base.FontSize;
+            set => base.FontSize = value;
         }
 
         /// <summary>
