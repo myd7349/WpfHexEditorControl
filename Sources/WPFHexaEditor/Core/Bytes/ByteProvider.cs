@@ -1146,9 +1146,9 @@ namespace WpfHexaEditor.Core.Bytes
                     if (!Eof)
                     {
                         Position = startPosition + i++;
-                        // Fix: Use Position (not Position - 1) and set undoLength to 1 for each byte
-                        if (GetByte(Position).singleByte != ByteConverters.CharToByte(chr))
-                            AddByteModified(ByteConverters.CharToByte(chr), Position, 1);
+                        // Always modify the byte, even if it's already the same value
+                        // This ensures pasting the same content twice works correctly
+                        AddByteModified(ByteConverters.CharToByte(chr), Position, 1);
                     }
                     else
                         break;
@@ -1186,9 +1186,9 @@ namespace WpfHexaEditor.Core.Bytes
                     if (!Eof)
                     {
                         Position = startPosition + i++;
-                        // Fix: Use Position (not Position - 1) and set undoLength to 1 for each byte
-                        if (GetByte(Position).singleByte != bt)
-                            AddByteModified(bt, Position, 1);
+                        // Always modify the byte, even if it's already the same value
+                        // This ensures pasting the same content twice works correctly
+                        AddByteModified(bt, Position, 1);
                     }
                     else
                         break;
