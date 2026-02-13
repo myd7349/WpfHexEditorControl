@@ -33,6 +33,7 @@ namespace WpfHexaEditor.V2.Controls
         private long _selectionStop = -1;
         private HashSet<long> _highlightedPositions = new();
         private List<Core.CustomBackgroundBlock> _customBackgroundBlocks = new();
+        private Core.CharacterTable.TblStream _tblStream; // Phase 7.5: TBL for character type detection
 
         // Cached resources
         private Typeface _typeface;
@@ -370,6 +371,15 @@ namespace WpfHexaEditor.V2.Controls
             set { _tblDefaultBrush = new SolidColorBrush(value); _tblDefaultBrush.Freeze(); InvalidateVisual(); }
         }
 
+        /// <summary>
+        /// TBL Stream for character type detection - Phase 7.5 V1 Compatibility
+        /// </summary>
+        public Core.CharacterTable.TblStream TblStream
+        {
+            get => _tblStream;
+            set { _tblStream = value; InvalidateVisual(); }
+        }
+
         #endregion
 
         #region Rendering
@@ -541,7 +551,38 @@ namespace WpfHexaEditor.V2.Controls
                 }
             }
 
-            // Draw selection background (on top of custom background)
+            // Phase 7.5: Draw TBL color background (between custom background and selection)
+            if (_tblStream != null && _tblShowMte)
+            {
+                try
+                {
+                    // Convert byte to hex string for TBL lookup
+                    string hexByte = byteData.Value.ToString("X2");
+                    var (text, dteType) = _tblStream.FindMatch(hexByte, showSpecialValue: true);
+
+                    // Select brush based on DTE type
+                    Brush tblBrush = dteType switch
+                    {
+                        Core.CharacterTable.DteType.DualTitleEncoding => _tblDteBrush,
+                        Core.CharacterTable.DteType.MultipleTitleEncoding => _tblMteBrush,
+                        Core.CharacterTable.DteType.EndBlock => _tblEndBlockBrush,
+                        Core.CharacterTable.DteType.EndLine => _tblEndLineBrush,
+                        _ => _tblDefaultBrush
+                    };
+
+                    // Draw TBL color background
+                    if (tblBrush != _tblDefaultBrush || dteType != Core.CharacterTable.DteType.Invalid)
+                    {
+                        dc.DrawRectangle(tblBrush, null, rect);
+                    }
+                }
+                catch
+                {
+                    // Silently ignore TBL lookup errors
+                }
+            }
+
+            // Draw selection background (on top of custom background and TBL colors)
             bool isSelected = IsPositionSelected(byteData.VirtualPos.Value);
             if (isSelected)
             {

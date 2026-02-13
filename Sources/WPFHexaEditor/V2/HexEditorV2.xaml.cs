@@ -2428,6 +2428,11 @@ namespace WpfHexaEditor.V2
             {
                 _tblStream = new TblStream(path);
                 _characterTableType = CharacterTableType.TblFile;
+
+                // Phase 7.5: Sync TblStream to HexViewport for color rendering
+                if (HexViewport != null)
+                    HexViewport.TblStream = _tblStream;
+
                 StatusText.Text = $"TBL loaded: {System.IO.Path.GetFileName(path)}";
             }
             catch (Exception ex)
@@ -2435,6 +2440,10 @@ namespace WpfHexaEditor.V2
                 StatusText.Text = $"Failed to load TBL: {ex.Message}";
                 _tblStream = null;
                 _characterTableType = CharacterTableType.Ascii;
+
+                // Phase 7.5: Clear TblStream in HexViewport
+                if (HexViewport != null)
+                    HexViewport.TblStream = null;
             }
         }
 
@@ -2450,6 +2459,11 @@ namespace WpfHexaEditor.V2
                 _tblStream = null;
             }
             _characterTableType = CharacterTableType.Ascii;
+
+            // Phase 7.5: Clear TblStream in HexViewport
+            if (HexViewport != null)
+                HexViewport.TblStream = null;
+
             StatusText.Text = "TBL closed, using ASCII";
         }
 
@@ -2466,6 +2480,10 @@ namespace WpfHexaEditor.V2
                 if (value == CharacterTableType.TblFile && _tblStream == null)
                 {
                     _tblStream = TblStream.CreateDefaultTbl(DefaultCharacterTableType.Ascii);
+
+                    // Phase 7.5: Sync TblStream to HexViewport
+                    if (HexViewport != null)
+                        HexViewport.TblStream = _tblStream;
                 }
                 // If switching away from TBL, close it
                 else if (value != CharacterTableType.TblFile && _tblStream != null)
@@ -2951,6 +2969,11 @@ namespace WpfHexaEditor.V2
             {
                 _tblStream = TblStream.CreateDefaultTbl(type);
                 _characterTableType = CharacterTableType.TblFile;
+
+                // Phase 7.5: Sync TblStream to HexViewport for color rendering
+                if (HexViewport != null)
+                    HexViewport.TblStream = _tblStream;
+
                 StatusText.Text = $"Default TBL loaded: {type}";
             }
             catch (Exception ex)
