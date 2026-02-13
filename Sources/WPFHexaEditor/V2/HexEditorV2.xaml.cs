@@ -1078,11 +1078,73 @@ namespace WpfHexaEditor.V2
 
         #endregion
 
+        #region Phase 8 - XAML Binding DependencyProperties
+
+        /// <summary>
+        /// FileName DependencyProperty for XAML binding (Phase 8)
+        /// </summary>
+        public static readonly DependencyProperty FileNameProperty =
+            DependencyProperty.Register(nameof(FileName), typeof(string), typeof(HexEditorV2),
+                new PropertyMetadata(string.Empty, OnFileNamePropertyChanged));
+
+        private static void OnFileNamePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditorV2 editor && e.NewValue is string path && !string.IsNullOrEmpty(path))
+            {
+                // Note: Auto-loading from FileName property change is opt-in behavior
+                // Applications can manually call OpenFile() if needed
+            }
+        }
+
+        /// <summary>
+        /// IsModified DependencyProperty for XAML binding (Phase 8)
+        /// </summary>
+        public static readonly DependencyProperty IsModifiedProperty =
+            DependencyProperty.Register(nameof(IsModified), typeof(bool), typeof(HexEditorV2),
+                new PropertyMetadata(false));
+
+        /// <summary>
+        /// Position DependencyProperty for XAML binding (Phase 8)
+        /// </summary>
+        public static readonly DependencyProperty PositionProperty =
+            DependencyProperty.Register(nameof(Position), typeof(long), typeof(HexEditorV2),
+                new PropertyMetadata(-1L, OnPositionPropertyChanged));
+
+        private static void OnPositionPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditorV2 editor && e.NewValue is long position && position >= 0)
+            {
+                editor.SetPosition(position);
+            }
+        }
+
+        /// <summary>
+        /// ReadOnlyMode DependencyProperty for XAML binding (Phase 8)
+        /// </summary>
+        public static readonly DependencyProperty ReadOnlyModeProperty =
+            DependencyProperty.Register(nameof(ReadOnlyMode), typeof(bool), typeof(HexEditorV2),
+                new PropertyMetadata(false, OnReadOnlyModePropertyChanged));
+
+        private static void OnReadOnlyModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditorV2 editor && e.NewValue is bool readOnly)
+            {
+                if (editor._viewModel != null)
+                    editor._viewModel.ReadOnlyMode = readOnly;
+            }
+        }
+
+        #endregion
+
         #region V1 Compatibility - Brush Properties (wrap Color properties)
 
         /// <summary>
-        /// V1 compatible: Selection first color as Brush. Use SelectionFirstColor (Color) for V2 code.
+        /// V1 compatible: Selection first color as Brush. Use <see cref="SelectionFirstColor"/> (Color) for V2 code.
         /// </summary>
+        /// <remarks>
+        /// This property is provided for V1 compatibility. New code should use the Color-based property.
+        /// </remarks>
+        [Obsolete("Use SelectionFirstColor (Color property) instead. This Brush wrapper is for V1 compatibility only.", false)]
         public Brush SelectionFirstColorBrush
         {
             get => new SolidColorBrush(SelectionFirstColor);
