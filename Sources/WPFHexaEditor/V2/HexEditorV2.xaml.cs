@@ -35,6 +35,7 @@ namespace WpfHexaEditor.V2
         private System.Windows.Controls.Primitives.StatusBar _statusBar;
         private StackPanel _hexHeaderStackPanel;
         private StackPanel _asciiHeaderStackPanel;
+        private Controls.BarChartPanel _barChartPanel;
 
         // Bookmarks (V1 compatible)
         private readonly List<long> _bookmarks = new List<long>();
@@ -81,6 +82,7 @@ namespace WpfHexaEditor.V2
             _statusBar = this.FindName("StatusBar") as System.Windows.Controls.Primitives.StatusBar;
             _hexHeaderStackPanel = this.FindName("HexHeaderStackPanel") as StackPanel;
             _asciiHeaderStackPanel = this.FindName("AsciiHeaderStackPanel") as StackPanel;
+            _barChartPanel = this.FindName("BarChartPanel") as Controls.BarChartPanel;
 
             // Initialize column headers with byte position numbers
             this.Loaded += (s, e) => RefreshColumnHeader();
@@ -1107,8 +1109,20 @@ namespace WpfHexaEditor.V2
         {
             if (d is HexEditorV2 editor && e.NewValue is string path && !string.IsNullOrEmpty(path))
             {
-                // Note: Auto-loading from FileName property change is opt-in behavior
-                // Applications can manually call OpenFile() if needed
+                // V1 Compatibility: Auto-load file when FileName is set (CRITICAL FIX)
+                // This enables V1 pattern: HexEdit.FileName = "file.bin" to automatically open the file
+                try
+                {
+                    // Only open if different from current file and file exists
+                    if (path != e.OldValue?.ToString() && System.IO.File.Exists(path))
+                    {
+                        editor.OpenFile(path);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    editor.StatusText.Text = $"Failed to open file: {ex.Message}";
+                }
             }
         }
 
@@ -1422,12 +1436,19 @@ namespace WpfHexaEditor.V2
         private Visibility _barChartPanelVisibility = Visibility.Collapsed;
 
         /// <summary>
-        /// V1 compatible: Bar chart panel visibility (Phase 7)
+        /// V1 compatible: Bar chart panel visibility (Phase 7.4 - Complete)
         /// </summary>
         public Visibility BarChartPanelVisibility
         {
             get => _barChartPanelVisibility;
-            set => _barChartPanelVisibility = value;
+            set
+            {
+                _barChartPanelVisibility = value;
+
+                // Update bar chart when made visible (Phase 7.4)
+                if (value == Visibility.Visible)
+                    UpdateBarChart();
+            }
         }
 
         #endregion
@@ -1481,6 +1502,9 @@ namespace WpfHexaEditor.V2
             FileSizeText.Text = $"Size: {FormatFileSize(fileInfo.Length)}";
             BytesPerLineText.Text = $"Bytes/Line: {_viewModel.BytePerLine}";
             EditModeText.Text = $"Mode: {_viewModel.EditMode}";
+
+            // Update bar chart panel (Phase 7.4)
+            UpdateBarChart();
         }
 
         /// <summary>
@@ -1519,9 +1543,35 @@ namespace WpfHexaEditor.V2
             StatusText.Text = "Ready";
             FileSizeText.Text = "Size: -";
             SelectionInfo.Text = "No selection";
+
+            // Clear bar chart (Phase 7.4)
+            _barChartPanel?.Clear();
             PositionInfo.Text = "Position: 0";
             EditModeText.Text = "Mode: Overwrite";
             BytesPerLineText.Text = "Bytes/Line: 16";
+        }
+
+        /// <summary>
+        /// Update bar chart panel with current file data (Phase 7.4)
+        /// </summary>
+        private void UpdateBarChart()
+        {
+            if (_barChartPanel == null || _viewModel == null)
+                return;
+
+            // Only update if bar chart is visible
+            if (BarChartPanelVisibility != Visibility.Visible)
+                return;
+
+            try
+            {
+                // Use efficient ViewModel-based update for large files
+                _barChartPanel.UpdateDataFromViewModel(_viewModel);
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Bar chart update failed: {ex.Message}";
+            }
         }
 
         #endregion

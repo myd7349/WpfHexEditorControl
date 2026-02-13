@@ -137,6 +137,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Column Headers -->
             <RowDefinition Height="*"/>    <!-- Content -->
+            <RowDefinition Height="Auto"/> <!-- Bar Chart Panel (Phase 7.4) -->
             <RowDefinition Height="Auto"/> <!-- Status bar -->
         </Grid.RowDefinitions>
 
@@ -195,8 +196,17 @@
                        LargeChange="10"/>
         </Grid>
 
+        <!-- Bar Chart Panel (Phase 7.4 - V1 compatible feature) -->
+        <Border x:Name="BarChartBorder" Grid.Row="2"
+                BorderBrush="#D0D0D0" BorderThickness="0,1,0,0"
+                Visibility="{Binding BarChartPanelVisibility, RelativeSource={RelativeSource AncestorType=local:HexEditorV2}}">
+            <controls:BarChartPanel x:Name="BarChartPanel"
+                                     Height="150"
+                                     Margin="5"/>
+        </Border>
+
         <!-- Status bar -->
-        <StatusBar x:Name="StatusBar" Grid.Row="2">
+        <StatusBar x:Name="StatusBar" Grid.Row="3">
             <StatusBarItem>
                 <TextBlock x:Name="StatusText" Text="Ready"/>
             </StatusBarItem>
