@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -375,6 +376,50 @@ namespace WpfHexaEditor.V2
         public ByteSizeType ByteSize { get => _byteSize; set => _byteSize = value; }
         public System.Text.Encoding CustomEncoding { get => _customEncoding; set => _customEncoding = value ?? System.Text.Encoding.UTF8; }
         public PreloadByteInEditor PreloadByteInEditorMode { get => _preloadByteInEditorMode; set => _preloadByteInEditorMode = value; }
+
+        // TBL Advanced Features (V1 compatible)
+        private bool _tblShowMte = false;
+        private System.Windows.Media.Color _tblDteColor = Colors.Yellow;
+        private System.Windows.Media.Color _tblMteColor = Colors.LightBlue;
+        private System.Windows.Media.Color _tblEndBlockColor = Colors.Red;
+        private System.Windows.Media.Color _tblEndLineColor = Colors.Orange;
+        private System.Windows.Media.Color _tblDefaultColor = Colors.White;
+
+        public bool TblShowMte { get => _tblShowMte; set { _tblShowMte = value; HexViewport?.InvalidateVisual(); } }
+        public System.Windows.Media.Color TblDteColor { get => _tblDteColor; set { _tblDteColor = value; HexViewport?.InvalidateVisual(); } }
+        public System.Windows.Media.Color TblMteColor { get => _tblMteColor; set { _tblMteColor = value; HexViewport?.InvalidateVisual(); } }
+        public System.Windows.Media.Color TblEndBlockColor { get => _tblEndBlockColor; set { _tblEndBlockColor = value; HexViewport?.InvalidateVisual(); } }
+        public System.Windows.Media.Color TblEndLineColor { get => _tblEndLineColor; set { _tblEndLineColor = value; HexViewport?.InvalidateVisual(); } }
+        public System.Windows.Media.Color TblDefaultColor { get => _tblDefaultColor; set { _tblDefaultColor = value; HexViewport?.InvalidateVisual(); } }
+
+        // Bar Chart Panel color (V1 compatible)
+        private System.Windows.Media.Color _barChartColor = Colors.Blue;
+        public System.Windows.Media.Color BarChartColor { get => _barChartColor; set => _barChartColor = value; }
+
+        #endregion
+
+        #region V1 Compatibility - Custom Background Blocks
+
+        private readonly List<Core.CustomBackgroundBlock> _customBackgroundBlocks = new List<Core.CustomBackgroundBlock>();
+        private bool _allowCustomBackgroundBlock = true;
+
+        /// <summary>
+        /// Enable or disable custom background blocks (V1 compatible)
+        /// </summary>
+        public bool AllowCustomBackgroundBlock
+        {
+            get => _allowCustomBackgroundBlock;
+            set
+            {
+                _allowCustomBackgroundBlock = value;
+                HexViewport?.InvalidateVisual();
+            }
+        }
+
+        /// <summary>
+        /// Get the list of custom background blocks (V1 compatible)
+        /// </summary>
+        public List<Core.CustomBackgroundBlock> CustomBackgroundBlockItems => _customBackgroundBlocks;
 
         #endregion
 
@@ -1296,14 +1341,15 @@ namespace WpfHexaEditor.V2
             set { /* V2 does not support hiding hex panel */ }
         }
 
+        private Visibility _barChartPanelVisibility = Visibility.Collapsed;
+
         /// <summary>
-        /// V1 compatible: Bar chart panel visibility. Not yet implemented in V2.
-        /// Will be implemented in Phase 7.
+        /// V1 compatible: Bar chart panel visibility (Phase 7)
         /// </summary>
         public Visibility BarChartPanelVisibility
         {
-            get => Visibility.Collapsed;
-            set { /* Bar chart not yet implemented in V2 */ }
+            get => _barChartPanelVisibility;
+            set => _barChartPanelVisibility = value;
         }
 
         #endregion
@@ -2021,6 +2067,205 @@ namespace WpfHexaEditor.V2
         {
             SetPosition(position);
             UpdateFocus();
+        }
+
+        #endregion
+
+        #region Public Methods - Custom Background Blocks (V1 Compatible)
+
+        /// <summary>
+        /// Add a custom background block (V1 compatible)
+        /// </summary>
+        public void AddCustomBackgroundBlock(Core.CustomBackgroundBlock block)
+        {
+            if (block == null) return;
+            _customBackgroundBlocks.Add(block);
+            HexViewport?.InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Remove a custom background block (V1 compatible)
+        /// </summary>
+        public void RemoveCustomBackgroundBlock(Core.CustomBackgroundBlock block)
+        {
+            if (block == null) return;
+            _customBackgroundBlocks.Remove(block);
+            HexViewport?.InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Clear all custom background blocks (V1 compatible)
+        /// </summary>
+        public void ClearCustomBackgroundBlock()
+        {
+            _customBackgroundBlocks.Clear();
+            HexViewport?.InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Get custom background block at position (V1 compatible)
+        /// </summary>
+        public Core.CustomBackgroundBlock GetCustomBackgroundBlock(long position)
+        {
+            return _customBackgroundBlocks.FirstOrDefault(b =>
+                position >= b.StartOffset && position < b.StopOffset);
+        }
+
+        /// <summary>
+        /// Get all custom background blocks at position (V1 compatible)
+        /// </summary>
+        public IEnumerable<Core.CustomBackgroundBlock> GetCustomBackgroundBlocks(long position)
+        {
+            return _customBackgroundBlocks.Where(b =>
+                position >= b.StartOffset && position < b.StopOffset);
+        }
+
+        #endregion
+
+        #region Public Methods - File Comparison (V1 Compatible)
+
+        /// <summary>
+        /// Compare this file with another HexEditorV2 (V1 compatible)
+        /// Returns list of differences between the two files
+        /// </summary>
+        public IEnumerable<Core.Bytes.ByteDifference> Compare(HexEditorV2 other)
+        {
+            if (_viewModel == null || other?._viewModel == null)
+                return Enumerable.Empty<Core.Bytes.ByteDifference>();
+
+            return CompareProviders(_viewModel, other._viewModel);
+        }
+
+        /// <summary>
+        /// Compare this file with a ByteProvider (V1 compatible)
+        /// Returns list of differences between the two providers
+        /// </summary>
+        public IEnumerable<Core.Bytes.ByteDifference> Compare(Core.Bytes.ByteProvider provider)
+        {
+            if (_viewModel == null || provider == null)
+                return Enumerable.Empty<Core.Bytes.ByteDifference>();
+
+            // Create temporary ViewModel wrapper for comparison
+            var tempViewModel = new ViewModels.HexEditorViewModel(provider);
+            var result = CompareProviders(_viewModel, tempViewModel);
+            tempViewModel.Close();
+            return result;
+        }
+
+        /// <summary>
+        /// Internal comparison logic
+        /// </summary>
+        private IEnumerable<Core.Bytes.ByteDifference> CompareProviders(
+            ViewModels.HexEditorViewModel vm1,
+            ViewModels.HexEditorViewModel vm2)
+        {
+            var differences = new List<Core.Bytes.ByteDifference>();
+            long maxLength = Math.Max(vm1.VirtualLength, vm2.VirtualLength);
+
+            for (long i = 0; i < maxLength; i++)
+            {
+                byte byte1 = i < vm1.VirtualLength ? vm1.GetByteAt(new Models.VirtualPosition(i)) : (byte)0;
+                byte byte2 = i < vm2.VirtualLength ? vm2.GetByteAt(new Models.VirtualPosition(i)) : (byte)0;
+
+                if (byte1 != byte2)
+                {
+                    differences.Add(new Core.Bytes.ByteDifference(byte1, byte2, i));
+                }
+            }
+
+            return differences;
+        }
+
+        #endregion
+
+        #region Public Methods - State Persistence (V1 Compatible)
+
+        /// <summary>
+        /// Save current editor state to XML file (V1 compatible)
+        /// Saves: position, selection, bookmarks, font size, filename
+        /// </summary>
+        public void SaveCurrentState(string stateFilename)
+        {
+            try
+            {
+                var doc = new System.Xml.Linq.XDocument(
+                    new System.Xml.Linq.XElement("HexEditorState",
+                        new System.Xml.Linq.XElement("FileName", FileName ?? string.Empty),
+                        new System.Xml.Linq.XElement("Position", Position),
+                        new System.Xml.Linq.XElement("SelectionStart", SelectionStart),
+                        new System.Xml.Linq.XElement("SelectionStop", SelectionStop),
+                        new System.Xml.Linq.XElement("FontSize", FontSize),
+                        new System.Xml.Linq.XElement("BytePerLine", BytePerLine),
+                        new System.Xml.Linq.XElement("Bookmarks",
+                            _bookmarks.Select(b => new System.Xml.Linq.XElement("Bookmark", b))
+                        )
+                    )
+                );
+
+                doc.Save(stateFilename);
+                StatusText.Text = $"State saved to {System.IO.Path.GetFileName(stateFilename)}";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Failed to save state: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Load editor state from XML file (V1 compatible)
+        /// Restores: position, selection, bookmarks, font size
+        /// Note: Does NOT reload the file, only restores state
+        /// </summary>
+        public void LoadCurrentState(string stateFilename)
+        {
+            try
+            {
+                var doc = System.Xml.Linq.XDocument.Load(stateFilename);
+                var root = doc.Root;
+
+                if (root?.Name != "HexEditorState") return;
+
+                // Restore basic properties
+                var fontSize = root.Element("FontSize")?.Value;
+                if (fontSize != null && double.TryParse(fontSize, out double fs))
+                    FontSize = fs;
+
+                var bytesPerLine = root.Element("BytePerLine")?.Value;
+                if (bytesPerLine != null && int.TryParse(bytesPerLine, out int bpl))
+                    BytePerLine = bpl;
+
+                // Restore position and selection
+                var position = root.Element("Position")?.Value;
+                if (position != null && long.TryParse(position, out long pos))
+                    SetPosition(pos);
+
+                var selStart = root.Element("SelectionStart")?.Value;
+                var selStop = root.Element("SelectionStop")?.Value;
+                if (selStart != null && long.TryParse(selStart, out long start) &&
+                    selStop != null && long.TryParse(selStop, out long stop))
+                {
+                    SelectionStart = start;
+                    SelectionStop = stop;
+                }
+
+                // Restore bookmarks
+                var bookmarks = root.Element("Bookmarks")?.Elements("Bookmark");
+                if (bookmarks != null)
+                {
+                    ClearAllBookmarks();
+                    foreach (var bookmark in bookmarks)
+                    {
+                        if (long.TryParse(bookmark.Value, out long bookmarkPos))
+                            SetBookmark(bookmarkPos);
+                    }
+                }
+
+                StatusText.Text = $"State loaded from {System.IO.Path.GetFileName(stateFilename)}";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Failed to load state: {ex.Message}";
+            }
         }
 
         #endregion
