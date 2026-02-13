@@ -59,7 +59,8 @@ namespace WpfHexaEditor.V2.Controls
 
         // Colors
         private Brush _offsetBrush = new SolidColorBrush(Color.FromRgb(0x75, 0x75, 0x75));
-        private Brush _normalByteBrush = new SolidColorBrush(Color.FromRgb(0x21, 0x21, 0x21));
+        private Brush _normalByteBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0x00)); // Black (V1 default)
+        private Brush _alternateByteBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0xFF)); // Blue (V1 default)
         private Brush _selectedBrush = new SolidColorBrush(Color.FromArgb(0x66, 0x00, 0x78, 0xD4)); // #0078D4 with 40% opacity
         private Brush _modifiedBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xA5, 0x00)); // Orange
         private Brush _addedBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0xAF, 0x50)); // Green
@@ -113,6 +114,7 @@ namespace WpfHexaEditor.V2.Controls
             // Freeze brushes for performance
             _offsetBrush.Freeze();
             _normalByteBrush.Freeze();
+            _alternateByteBrush.Freeze();
             _selectedBrush.Freeze();
             _modifiedBrush.Freeze();
             _addedBrush.Freeze();
@@ -411,6 +413,22 @@ namespace WpfHexaEditor.V2.Controls
             }
         }
 
+        /// <summary>
+        /// Update byte foreground colors (V1 compatible - Phase 7.6)
+        /// </summary>
+        public void SetByteForegroundColors(Brush normalBrush, Brush alternateBrush)
+        {
+            _normalByteBrush = normalBrush?.Clone() ?? _normalByteBrush;
+            _alternateByteBrush = alternateBrush?.Clone() ?? _alternateByteBrush;
+
+            if (_normalByteBrush.CanFreeze && !_normalByteBrush.IsFrozen)
+                _normalByteBrush.Freeze();
+            if (_alternateByteBrush.CanFreeze && !_alternateByteBrush.IsFrozen)
+                _alternateByteBrush.Freeze();
+
+            InvalidateVisual();
+        }
+
         #endregion
 
         #region Rendering
@@ -548,13 +566,20 @@ namespace WpfHexaEditor.V2.Controls
             }
 
             // Draw hex text centered in the cell
+            // V1 compatible: Alternate foreground color every 4 bytes for visual grouping
+            long bytePosition = byteData.VirtualPos.Value;
+            int byteIndexInLine = (int)(bytePosition % _bytesPerLine);
+            bool useAlternateColor = (byteIndexInLine / 4) % 2 == 1; // Groups of 4 bytes alternate
+
+            Brush textBrush = useAlternateColor ? _alternateByteBrush : _normalByteBrush;
+
             var formattedText = new FormattedText(
                 byteData.HexString,
                 System.Globalization.CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 _typeface,
                 _fontSize,
-                _normalByteBrush,
+                textBrush,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             // Center the text within the byte cell

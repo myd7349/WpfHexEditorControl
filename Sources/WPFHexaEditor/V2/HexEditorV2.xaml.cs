@@ -1065,7 +1065,15 @@ namespace WpfHexaEditor.V2
         {
             if (d is HexEditorV2 editor)
             {
-                editor.Resources["AlternateByteForegroundBrush"] = new SolidColorBrush((Color)e.NewValue);
+                var brush = new SolidColorBrush((Color)e.NewValue);
+                editor.Resources["AlternateByteForegroundBrush"] = brush;
+
+                // Update HexViewport colors (Phase 7.6)
+                if (editor.HexViewport != null)
+                {
+                    var normalBrush = editor.Resources["ByteForegroundBrush"] as Brush;
+                    editor.HexViewport.SetByteForegroundColors(normalBrush, brush);
+                }
             }
         }
 
@@ -1576,6 +1584,11 @@ namespace WpfHexaEditor.V2
             HexViewport.ByteSpacerWidthTickness = ByteSpacerWidthTickness;
             HexViewport.ByteGrouping = ByteGrouping;
             HexViewport.ByteSpacerVisualStyle = ByteSpacerVisualStyle;
+
+            // Initialize byte foreground colors (Phase 7.6 - V1 compatibility)
+            var normalBrush = Resources["ByteForegroundBrush"] as Brush;
+            var alternateBrush = Resources["AlternateByteForegroundBrush"] as Brush;
+            HexViewport.SetByteForegroundColors(normalBrush, alternateBrush);
 
             // Store file info
             FileName = filePath;
