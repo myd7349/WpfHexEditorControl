@@ -103,8 +103,10 @@ namespace WpfHexaEditor.V2.Controls
             // Initialize custom tooltip that follows mouse
             _byteToolTip = new System.Windows.Controls.ToolTip
             {
-                Placement = PlacementMode.Mouse,
-                PlacementTarget = this
+                Placement = PlacementMode.Relative,
+                PlacementTarget = this,
+                HorizontalOffset = 0,
+                VerticalOffset = 20 // Offset below cursor
             };
             ToolTip = _byteToolTip;
 
@@ -804,7 +806,9 @@ namespace WpfHexaEditor.V2.Controls
             // V1 compatible: Show byte tooltip on hover (follows mouse)
             if (_showByteToolTip && _byteToolTip != null)
             {
-                var position = HitTestByte(e.GetPosition(this));
+                var mousePos = e.GetPosition(this);
+                var position = HitTestByte(mousePos);
+
                 if (position.HasValue)
                 {
                     // Find the byte data at this position
@@ -821,6 +825,9 @@ namespace WpfHexaEditor.V2.Controls
                                            $"Value: 0x{byteValue:X2} ({byteValue})\n" +
                                            $"ASCII: '{asciiChar}'";
 
+                        // Update tooltip position to follow mouse
+                        _byteToolTip.HorizontalOffset = mousePos.X + 15;
+                        _byteToolTip.VerticalOffset = mousePos.Y + 20;
                         _byteToolTip.Content = tooltipText;
                         _byteToolTip.IsOpen = true;
                         return;

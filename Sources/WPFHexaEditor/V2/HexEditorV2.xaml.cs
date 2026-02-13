@@ -36,6 +36,7 @@ namespace WpfHexaEditor.V2
         private StackPanel _hexHeaderStackPanel;
         private StackPanel _asciiHeaderStackPanel;
         private Controls.BarChartPanel _barChartPanel;
+        private Controls.ScrollMarkerPanel _scrollMarkers;
 
         // Bookmarks (V1 compatible)
         private readonly List<long> _bookmarks = new List<long>();
@@ -86,6 +87,7 @@ namespace WpfHexaEditor.V2
             _hexHeaderStackPanel = this.FindName("HexHeaderStackPanel") as StackPanel;
             _asciiHeaderStackPanel = this.FindName("AsciiHeaderStackPanel") as StackPanel;
             _barChartPanel = this.FindName("BarChartPanel") as Controls.BarChartPanel;
+            _scrollMarkers = this.FindName("ScrollMarkers") as Controls.ScrollMarkerPanel;
 
             // Initialize column headers with byte position numbers
             this.Loaded += (s, e) => RefreshColumnHeader();
@@ -1605,6 +1607,13 @@ namespace WpfHexaEditor.V2
 
             // Update bar chart panel (Phase 7.4)
             UpdateBarChart();
+
+            // Update scroll markers (V1 compatible)
+            if (_scrollMarkers != null)
+            {
+                _scrollMarkers.FileLength = _viewModel.FileLength;
+                UpdateScrollMarkers();
+            }
         }
 
         /// <summary>
@@ -1671,6 +1680,32 @@ namespace WpfHexaEditor.V2
             catch (Exception ex)
             {
                 StatusText.Text = $"Bar chart update failed: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Update scroll markers with bookmarks, modifications, and search results (V1 compatible)
+        /// </summary>
+        private void UpdateScrollMarkers()
+        {
+            if (_scrollMarkers == null || _viewModel == null)
+                return;
+
+            try
+            {
+                // Update bookmarks
+                _scrollMarkers.BookmarkPositions = new HashSet<long>(_bookmarks);
+
+                // Update modified positions from ViewModel
+                var modifiedPositions = new HashSet<long>(_viewModel.GetModifiedPositions());
+                _scrollMarkers.ModifiedPositions = modifiedPositions;
+
+                // Search results would be updated separately when FindAll is called
+                // (we'll add that later)
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Scroll markers update failed: {ex.Message}";
             }
         }
 
@@ -2948,25 +2983,47 @@ namespace WpfHexaEditor.V2
 
         /// <summary>
         /// Clear all scroll markers (V1 compatible)
-        /// In V2, this is a no-op as scroll markers are not implemented yet
         /// </summary>
         public void ClearScrollMarker()
         {
-            // V2 doesn't have scroll markers yet
-            // This is a stub for V1 compatibility
-            StatusText.Text = "Scroll markers cleared (not implemented in V2)";
+            if (_scrollMarkers != null)
+            {
+                _scrollMarkers.ClearAllMarkers();
+            }
         }
 
         /// <summary>
         /// Clear specific type of scroll marker (V1 compatible)
-        /// In V2, this is a no-op as scroll markers are not implemented yet
         /// </summary>
         /// <param name="marker">Type of marker to clear</param>
         public void ClearScrollMarker(ScrollMarker marker)
         {
-            // V2 doesn't have scroll markers yet
-            // This is a stub for V1 compatibility
-            StatusText.Text = $"Scroll markers cleared: {marker} (not implemented in V2)";
+            if (_scrollMarkers == null) return;
+
+            switch (marker)
+            {
+                case ScrollMarker.Nothing:
+                    _scrollMarkers.ClearAllMarkers();
+                    break;
+
+                case ScrollMarker.SearchHighLight:
+                    _scrollMarkers.SearchResultPositions = new HashSet<long>();
+                    break;
+
+                case ScrollMarker.Bookmark:
+                case ScrollMarker.TblBookmark:
+                    _scrollMarkers.BookmarkPositions = new HashSet<long>();
+                    break;
+
+                case ScrollMarker.ByteModified:
+                case ScrollMarker.ByteDeleted:
+                    _scrollMarkers.ModifiedPositions = new HashSet<long>();
+                    break;
+
+                case ScrollMarker.SelectionStart:
+                    // Selection is not shown in scroll markers, so nothing to clear
+                    break;
+            }
         }
 
         #endregion
