@@ -2934,6 +2934,85 @@ namespace WpfHexaEditor.V2
 
         #endregion
 
+        #region Phase 13 - V1 Dialog Compatibility (Find/Replace Overloads)
+
+        /// <summary>
+        /// Find first occurrence with highlight support (V1 dialog compatible)
+        /// </summary>
+        public long FindFirst(byte[] data, long startPosition, bool highLight)
+        {
+            var result = FindFirst(data, startPosition);
+            // V2 doesn't support inline highlight parameter, but we can ignore it
+            return result;
+        }
+
+        /// <summary>
+        /// Find next occurrence with highlight support (V1 dialog compatible)
+        /// </summary>
+        public long FindNext(byte[] data, bool highLight)
+        {
+            return FindNext(data, Position);
+        }
+
+        /// <summary>
+        /// Find last occurrence with highlight support (V1 dialog compatible)
+        /// </summary>
+        public long FindLast(byte[] data, bool highLight)
+        {
+            return FindLast(data);
+        }
+
+        /// <summary>
+        /// Find all occurrences with highlight support (V1 dialog compatible)
+        /// Returns IEnumerable for V1 compatibility
+        /// </summary>
+        public IEnumerable<long> FindAll(byte[] data, bool highLight)
+        {
+            return FindAll(data, 0);
+        }
+
+        /// <summary>
+        /// Replace first with V1 signature (truckLength, then highlight)
+        /// </summary>
+        public long ReplaceFirst(byte[] findData, byte[] replaceData, bool truckLength, bool hightlight)
+        {
+            return ReplaceFirst(findData, replaceData, 0, truckLength);
+        }
+
+        /// <summary>
+        /// Replace next with V1 signature (truckLength, then highlight)
+        /// </summary>
+        public long ReplaceNext(byte[] findData, byte[] replaceData, bool truckLength, bool hightlight)
+        {
+            return ReplaceNext(findData, replaceData, Position + 1, truckLength);
+        }
+
+        /// <summary>
+        /// Replace all with V1 signature (truckLength, then highlight)
+        /// Returns IEnumerable for V1 dialog compatibility
+        /// </summary>
+        public IEnumerable<long> ReplaceAll(byte[] findData, byte[] replaceData, bool truckLength, bool hightlight)
+        {
+            // V2 ReplaceAll returns int (count), but V1 dialogs expect IEnumerable<long> (positions)
+            // For compatibility, we'll find all positions and replace them, returning the positions
+            var positions = new List<long>();
+            long pos = 0;
+            while (pos >= 0 && pos < VirtualLength)
+            {
+                pos = FindFirst(findData, pos);
+                if (pos >= 0)
+                {
+                    positions.Add(pos);
+                    // Replace at this position
+                    ReplaceFirst(findData, replaceData, pos, truckLength);
+                    pos += replaceData.Length; // Move past the replaced data
+                }
+            }
+            return positions;
+        }
+
+        #endregion
+
         #region Internal Events
 
         private void Content_MouseDown(object sender, MouseButtonEventArgs e)

@@ -13,14 +13,32 @@ namespace WpfHexaEditor.Dialog
     /// </summary>
     public partial class FindReplaceWindow
     {
-        private readonly HexEditor _parent;
+        private readonly HexEditor _parentV1;
+        private readonly V2.HexEditorV2 _parentV2;
 
+        /// <summary>
+        /// Constructor accepting V1 HexEditor
+        /// </summary>
         public FindReplaceWindow(HexEditor parent, byte[] findData = null)
         {
             InitializeComponent();
 
             //Parent hexeditor for "binding" search
-            _parent = parent;
+            _parentV1 = parent;
+
+            InitializeMStream(FindHexEdit, findData);
+            InitializeMStream(ReplaceHexEdit);
+        }
+
+        /// <summary>
+        /// Constructor accepting V2 HexEditorV2 (Phase 13 - 100% compatibility)
+        /// </summary>
+        public FindReplaceWindow(V2.HexEditorV2 parent, byte[] findData = null)
+        {
+            InitializeComponent();
+
+            //Parent hexeditor for "binding" search
+            _parentV2 = parent;
 
             InitializeMStream(FindHexEdit, findData);
             InitializeMStream(ReplaceHexEdit);
@@ -31,29 +49,67 @@ namespace WpfHexaEditor.Dialog
         private void ClearReplaceButton_Click(object sender, RoutedEventArgs e) => InitializeMStream(ReplaceHexEdit);
         private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
-        private void FindAllButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.FindAll(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+        private void FindAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.FindAll(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+            else if (_parentV2 != null)
+                _parentV2.FindAll(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+        }
 
-        private void FindFirstButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.FindFirst(FindHexEdit.GetAllBytes(), 0, HighlightMenuItem.IsChecked);
+        private void FindFirstButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.FindFirst(FindHexEdit.GetAllBytes(), 0, HighlightMenuItem.IsChecked);
+            else if (_parentV2 != null)
+                _parentV2.FindFirst(FindHexEdit.GetAllBytes(), 0, HighlightMenuItem.IsChecked);
+        }
 
-        private void FindNextButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.FindNext(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+        private void FindNextButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.FindNext(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+            else if (_parentV2 != null)
+                _parentV2.FindNext(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+        }
 
-        private void FindLastButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.FindLast(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+        private void FindLastButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.FindLast(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+            else if (_parentV2 != null)
+                _parentV2.FindLast(FindHexEdit.GetAllBytes(), HighlightMenuItem.IsChecked);
+        }
 
-        private void ReplaceButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.ReplaceFirst(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
-                TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+        private void ReplaceButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.ReplaceFirst(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
+                    TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+            else if (_parentV2 != null)
+                _parentV2.ReplaceFirst(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
+                    TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+        }
 
-        private void ReplaceNextButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.ReplaceNext(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
-               TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+        private void ReplaceNextButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.ReplaceNext(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
+                   TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+            else if (_parentV2 != null)
+                _parentV2.ReplaceNext(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
+                   TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+        }
 
-        private void ReplaceAllButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.ReplaceAll(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
-                TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+        private void ReplaceAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.ReplaceAll(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
+                    TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+            else if (_parentV2 != null)
+                _parentV2.ReplaceAll(FindHexEdit.GetAllBytes(), ReplaceHexEdit.GetAllBytes(),
+                    TrimMenuItem.IsChecked, HighlightMenuItem.IsChecked);
+        }
 
         private void ReplaceHexEdit_BytesDeleted(object sender, System.EventArgs e) =>
             InitializeMStream(ReplaceHexEdit, ReplaceHexEdit.GetAllBytes());

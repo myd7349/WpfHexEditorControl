@@ -14,14 +14,31 @@ namespace WpfHexaEditor.Dialog
     public partial class FindWindow
     {
         private MemoryStream _findMs = new(1);
-        private readonly HexEditor _parent;
+        private readonly HexEditor _parentV1;
+        private readonly V2.HexEditorV2 _parentV2;
 
+        /// <summary>
+        /// Constructor accepting V1 HexEditor
+        /// </summary>
         public FindWindow(HexEditor parent, byte[] findData = null)
         {
             InitializeComponent();
 
             //Parent hexeditor for "binding" search
-            _parent = parent;
+            _parentV1 = parent;
+
+            InitializeMStream(findData);
+        }
+
+        /// <summary>
+        /// Constructor accepting V2 HexEditorV2 (Phase 13 - 100% compatibility)
+        /// </summary>
+        public FindWindow(V2.HexEditorV2 parent, byte[] findData = null)
+        {
+            InitializeComponent();
+
+            //Parent hexeditor for "binding" search
+            _parentV2 = parent;
 
             InitializeMStream(findData);
         }
@@ -32,17 +49,37 @@ namespace WpfHexaEditor.Dialog
         private void FindHexEdit_BytesDeleted(object sender, System.EventArgs e) =>
             InitializeMStream(FindHexEdit.GetAllBytes());
 
-        private void FindAllButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.FindAll(FindHexEdit.GetAllBytes(), true);
+        private void FindAllButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.FindAll(FindHexEdit.GetAllBytes(), true);
+            else if (_parentV2 != null)
+                _parentV2.FindAll(FindHexEdit.GetAllBytes(), true);
+        }
 
-        private void FindFirstButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.FindFirst(FindHexEdit.GetAllBytes());
+        private void FindFirstButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.FindFirst(FindHexEdit.GetAllBytes());
+            else if (_parentV2 != null)
+                _parentV2.FindFirst(FindHexEdit.GetAllBytes());
+        }
 
-        private void FindNextButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.FindNext(FindHexEdit.GetAllBytes());
+        private void FindNextButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.FindNext(FindHexEdit.GetAllBytes());
+            else if (_parentV2 != null)
+                _parentV2.FindNext(FindHexEdit.GetAllBytes(), false);
+        }
 
-        private void FindLastButton_Click(object sender, RoutedEventArgs e) =>
-            _parent?.FindLast(FindHexEdit.GetAllBytes());
+        private void FindLastButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_parentV1 != null)
+                _parentV1.FindLast(FindHexEdit.GetAllBytes());
+            else if (_parentV2 != null)
+                _parentV2.FindLast(FindHexEdit.GetAllBytes(), false);
+        }
 
         /// <summary>
         /// Initialize stream and hexeditor
