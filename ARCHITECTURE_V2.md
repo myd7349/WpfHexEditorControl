@@ -742,7 +742,7 @@ sequenceDiagram
     FileSystem-->>ByteProvider: Temp file stream
 
     Note over ByteProvider: Write virtual view to temp file
-    loop vPos = 0; vPos < VirtualLength; vPos += 64KB
+    loop For each 64KB chunk (vPos = 0 to VirtualLength)
         ByteProvider->>ByteProvider: Calculate toRead = min(64KB, remaining)
 
         ByteProvider->>ByteReader: GetBytes(vPos, toRead)
