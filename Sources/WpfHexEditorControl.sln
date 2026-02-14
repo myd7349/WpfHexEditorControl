@@ -5,21 +5,21 @@ VisualStudioVersion = 17.14.36705.20
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{E7C58EBD-5476-4A12-83EB-235DE68AF079}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Sample.Winform", "Samples\WpfHexEditor.Sample.Winform\WpfHexEditor.Sample.Winform.csproj", "{326EED14-1180-46CC-8583-E6A249A248B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Sample.Winform", "Samples\Legacy\WpfHexEditor.Sample.Winform\WpfHexEditor.Sample.Winform.csproj", "{326EED14-1180-46CC-8583-E6A249A248B6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditorCore", "WPFHexaEditor\WpfHexEditorCore.csproj", "{A53B3778-BA1D-4C35-9DC8-7A21E8224872}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Sample", "Samples\WPFHexEditor.Sample.CSharp\WpfHexEditor.Sample.csproj", "{80EB8D57-296B-4CD3-99D6-C227FD3BA286}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Sample", "Samples\Legacy\WPFHexEditor.Sample.CSharp\WpfHexEditor.Sample.csproj", "{80EB8D57-296B-4CD3-99D6-C227FD3BA286}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Sample.BarChart", "Samples\WpfHexEditor.Sample.BarChart\WpfHexEditor.Sample.BarChart.csproj", "{61C30859-C234-4AC4-BCCB-1BFE8202C2A6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Sample.BarChart", "Samples\Legacy\WpfHexEditor.Sample.BarChart\WpfHexEditor.Sample.BarChart.csproj", "{61C30859-C234-4AC4-BCCB-1BFE8202C2A6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Sample.BinaryFilesDifference", "Samples\WpfHexEditor.Sample.BinaryFilesDifference\WpfHexEditor.Sample.BinaryFilesDifference.csproj", "{2652120F-9599-44A4-95F2-CBD71F6134F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Sample.BinaryFilesDifference", "Samples\Legacy\WpfHexEditor.Sample.BinaryFilesDifference\WpfHexEditor.Sample.BinaryFilesDifference.csproj", "{2652120F-9599-44A4-95F2-CBD71F6134F6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Sample.InsertByteAnywhere", "Samples\WpfHexEditor.Sample.InsertByteAnywhere\WpfHexEditor.Sample.InsertByteAnywhere.csproj", "{3D2FA808-7163-4103-ADBE-9912D28F7ECE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Sample.InsertByteAnywhere", "Samples\Legacy\WpfHexEditor.Sample.InsertByteAnywhere\WpfHexEditor.Sample.InsertByteAnywhere.csproj", "{3D2FA808-7163-4103-ADBE-9912D28F7ECE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Sample.ServiceUsage", "Samples\WpfHexEditor.Sample.ServiceUsage\WpfHexEditor.Sample.ServiceUsage.csproj", "{164B8974-751F-4611-929D-21CF3C03B4A7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Sample.ServiceUsage", "Samples\Legacy\WpfHexEditor.Sample.ServiceUsage\WpfHexEditor.Sample.ServiceUsage.csproj", "{164B8974-751F-4611-929D-21CF3C03B4A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Sample.Performance", "Samples\WpfHexEditor.Sample.Performance\WpfHexEditor.Sample.Performance.csproj", "{7D2B8C5A-037E-4A5D-8687-505850EC2A54}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Sample.Performance", "Samples\Legacy\WpfHexEditor.Sample.Performance\WpfHexEditor.Sample.Performance.csproj", "{7D2B8C5A-037E-4A5D-8687-505850EC2A54}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HexEditorV2.Sample", "Samples\HexEditorV2.Sample\HexEditorV2.Sample.csproj", "{B1A2C3D4-E5F6-7890-A1B2-C3D4E5F67890}"
 EndProject
