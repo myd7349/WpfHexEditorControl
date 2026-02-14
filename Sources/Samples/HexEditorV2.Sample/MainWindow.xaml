@@ -83,6 +83,8 @@
                         <MenuItem Header="EBCDIC (no special chars)" x:Name="TblEbcdicNoSpecialMenuItem" Click="TblType_Click" Tag="2" IsCheckable="True"/>
                     </MenuItem>
                 </MenuItem>
+                <Separator/>
+                <MenuItem Header="🧪 _Test ByteProvider V2" Click="TestByteProviderV2_Click"/>
             </MenuItem>
             <MenuItem Header="_Position">
                 <MenuItem Header="_Go to Position..." x:Name="GoToPositionMenuItem" Click="GoToPosition_Click" InputGestureText="Ctrl+G" IsEnabled="False"/>

@@ -21,7 +21,7 @@ namespace WpfHexaEditor.V2.ByteProvider
     /// - Proper support for multiple insertions at same position
     ///
     /// Architecture:
-    /// - FileProvider: Pure file I/O with 64KB cache
+    /// - FileProvider: Pure file I/O with 64KB cachea
     /// - EditsManager: Tracks all modifications (Modified/Inserted/Deleted)
     /// - PositionMapper: Virtual↔Physical conversion with cache
     /// - ByteReader: Intelligent byte reading with multi-layer caching
@@ -412,6 +412,150 @@ namespace WpfHexaEditor.V2.ByteProvider
             return $"ByteReader: {lineCache} lines ({lineMem}KB)\n" +
                    $"PositionMapper: {v2p} V→P, {p2v} P→V entries (valid: {valid})\n" +
                    $"EditsManager: {mod} modified, {ins} inserted, {del} deleted ({editMem}KB)";
+        }
+
+        #endregion
+
+        #region V1 Compatibility Layer
+
+        // These properties/methods provide V1 (ByteProviderLegacy) compatibility
+        // to allow HexEditorViewModel to work with V2 without major refactoring.
+
+        /// <summary>
+        /// V1 compatibility: Current sequential read position.
+        /// </summary>
+        public long Position { get; set; } = 0;
+
+        /// <summary>
+        /// V1 compatibility: Alias for FilePath.
+        /// </summary>
+        public string FileName => FilePath;
+
+        /// <summary>
+        /// V1 compatibility: Alias for VirtualLength.
+        /// </summary>
+        public long Length => VirtualLength;
+
+        /// <summary>
+        /// V1 compatibility: Read byte at current Position and advance Position.
+        /// Returns -1 if read fails (for V1 compatibility).
+        /// </summary>
+        public int ReadByte()
+        {
+            var (value, success) = GetByte(Position);
+            if (success)
+            {
+                Position++;
+                return value;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// V1 compatibility: Alias for Save().
+        /// </summary>
+        public void SubmitChanges()
+        {
+            Save();
+        }
+
+        /// <summary>
+        /// V1 compatibility: Alias for SaveAs(string, bool).
+        /// </summary>
+        public bool SubmitChanges(string newFilename, bool overwrite = false)
+        {
+            try
+            {
+                SaveAs(newFilename, overwrite);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// V1 compatibility: Modify a byte at physical position.
+        /// Note: V1 signature has (byte, long), V2 has (long, byte).
+        /// </summary>
+        public void AddByteModified(byte value, long virtualPosition, long undoLength = 1)
+        {
+            ModifyByte(virtualPosition, value);
+        }
+
+        /// <summary>
+        /// V1 compatibility: Delete bytes starting at position.
+        /// </summary>
+        public long AddByteDeleted(long virtualPosition, long length)
+        {
+            DeleteBytes(virtualPosition, length);
+            return virtualPosition; // Return position for V1 compatibility
+        }
+
+        /// <summary>
+        /// V1 compatibility: Paste bytes at position.
+        /// </summary>
+        public void Paste(long virtualPosition, byte[] bytes, bool allowExtend)
+        {
+            if (bytes == null || bytes.Length == 0)
+                return;
+
+            // In V2, we always insert bytes (V1 had allowExtend parameter)
+            InsertBytes(virtualPosition, bytes);
+        }
+
+        /// <summary>
+        /// V1 compatibility: Fill a range with a specific byte value.
+        /// </summary>
+        public void FillWithByte(long virtualPosition, long length, byte value)
+        {
+            for (long i = 0; i < length; i++)
+            {
+                ModifyByte(virtualPosition + i, value);
+            }
+        }
+
+        /// <summary>
+        /// V1 compatibility: Check if a byte is modified.
+        /// Returns (success, modifiedByte).
+        /// </summary>
+        public (bool success, byte? modifiedByte) CheckIfIsByteModified(long virtualPosition, Core.ByteAction action)
+        {
+            // Convert virtual to physical position
+            var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPosition, PhysicalLength);
+
+            if (isInserted)
+            {
+                // This is an inserted byte
+                if (action == Core.ByteAction.Added)
+                {
+                    var (value, success) = GetByte(virtualPosition);
+                    return (success, success ? value : (byte?)null);
+                }
+                return (false, null);
+            }
+
+            if (!physicalPos.HasValue)
+                return (false, null);
+
+            // Check modifications at physical position
+            switch (action)
+            {
+                case Core.ByteAction.Modified:
+                    var (modValue, modExists) = _editsManager.GetModifiedByte(physicalPos.Value);
+                    return (modExists, modExists ? modValue : (byte?)null);
+
+                case Core.ByteAction.Deleted:
+                    bool isDeleted = _editsManager.IsDeleted(physicalPos.Value);
+                    return (isDeleted, null);
+
+                case Core.ByteAction.Added:
+                    return (false, null); // Already handled above
+
+                default:
+                    return (false, null);
+            }
         }
 
         #endregion

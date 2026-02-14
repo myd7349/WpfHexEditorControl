@@ -130,13 +130,18 @@ namespace WpfHexaEditor.V2.ByteProvider
                 _insertedBytes[physicalPosition] = insertions;
             }
 
-            // Calculate starting virtualOffset (after existing insertions)
-            long startOffset = insertions.Count > 0 ? insertions[insertions.Count - 1].VirtualOffset + 1 : 0;
+            // LIFO (stack-like) behavior: last inserted appears first
+            // Increment VirtualOffset of ALL existing insertions to make room at the beginning
+            for (int i = 0; i < insertions.Count; i++)
+            {
+                var existing = insertions[i];
+                insertions[i] = new InsertedByte(existing.Value, existing.VirtualOffset + bytes.Length);
+            }
 
-            // Add new insertions
+            // Insert new bytes at the BEGINNING with VirtualOffset 0, 1, 2, ...
             for (int i = 0; i < bytes.Length; i++)
             {
-                insertions.Add(new InsertedByte(bytes[i], startOffset + i));
+                insertions.Insert(i, new InsertedByte(bytes[i], i));
             }
         }
 

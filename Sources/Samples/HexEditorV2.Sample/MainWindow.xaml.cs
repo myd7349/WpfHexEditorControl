@@ -1381,5 +1381,66 @@ namespace HexEditorV2.Sample
         }
 
         #endregion
+
+        #region ByteProvider V2 Testing
+
+        private async void TestByteProviderV2_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Create a window to show test results
+                var resultsWindow = new Window
+                {
+                    Title = "ByteProvider V2 Test Results - Running...",
+                    Width = 800,
+                    Height = 600,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = this
+                };
+
+                var textBox = new TextBox
+                {
+                    Text = "Running tests, please wait...\n\n",
+                    IsReadOnly = true,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+                    Padding = new Thickness(10)
+                };
+
+                resultsWindow.Content = textBox;
+                resultsWindow.Show(); // Show immediately (non-modal)
+
+                // Run tests on background thread
+                string testResults = await System.Threading.Tasks.Task.Run(() =>
+                {
+                    var originalOut = Console.Out;
+                    var writer = new System.IO.StringWriter();
+                    Console.SetOut(writer);
+
+                    try
+                    {
+                        // Run all ByteProvider V2 tests
+                        WpfHexaEditor.V2.ByteProvider.ByteProviderV2Test.RunAllTests();
+                        return writer.ToString();
+                    }
+                    finally
+                    {
+                        Console.SetOut(originalOut);
+                    }
+                });
+
+                // Update UI with results
+                textBox.Text = testResults;
+                resultsWindow.Title = "ByteProvider V2 Test Results - Completed";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Test failed with error:\n\n{ex.Message}\n\n{ex.StackTrace}",
+                    "Test Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        #endregion
     }
 }

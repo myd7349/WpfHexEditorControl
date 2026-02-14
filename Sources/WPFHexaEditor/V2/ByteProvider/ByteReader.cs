@@ -23,6 +23,7 @@ namespace WpfHexaEditor.V2.ByteProvider
         // Line cache for rendering performance (most common use case)
         private readonly Dictionary<long, byte[]> _lineCache = new();
         private const int MAX_LINE_CACHE_ENTRIES = 1000; // ~16KB cache for 16-byte lines
+        private const int LINE_SIZE = 16; // Fixed line size for cache (must match typical BytesPerLine)
 
         public ByteReader(FileProvider fileProvider, EditsManager editsManager, PositionMapper positionMapper)
         {
@@ -33,11 +34,31 @@ namespace WpfHexaEditor.V2.ByteProvider
 
         /// <summary>
         /// Read a single byte at a virtual position.
-        /// Returns the byte value considering all edits (Modified/Inserted/Deleted).
+        /// Checks cache first, but doesn't populate cache (use GetLine() for that).
         /// </summary>
         /// <param name="virtualPosition">Virtual position (user-visible)</param>
         /// <returns>Byte value and success flag</returns>
         public (byte value, bool success) GetByte(long virtualPosition)
+        {
+            // Quick cache check (without populating cache)
+            long lineStart = (virtualPosition / LINE_SIZE) * LINE_SIZE;
+            if (_lineCache.TryGetValue(lineStart, out byte[] cachedLine))
+            {
+                int offset = (int)(virtualPosition - lineStart);
+                if (offset < cachedLine.Length)
+                    return (cachedLine[offset], true);
+            }
+
+            // Cache miss - read directly without populating cache
+            // (cache is populated by GetLine() calls during rendering)
+            return ReadByteInternal(virtualPosition);
+        }
+
+        /// <summary>
+        /// Internal method to read a single byte without cache.
+        /// Used by GetBytes() to populate the cache.
+        /// </summary>
+        private (byte value, bool success) ReadByteInternal(long virtualPosition)
         {
             if (!_fileProvider.IsOpen || virtualPosition < 0)
                 return (0, false);
@@ -116,45 +137,51 @@ namespace WpfHexaEditor.V2.ByteProvider
 
             count = (int)Math.Min(count, available);
 
-            // Try line cache first (common for rendering)
-            long lineStart = (virtualPosition / count) * count;
+            // Try line cache first using fixed LINE_SIZE
+            long lineStart = (virtualPosition / LINE_SIZE) * LINE_SIZE;
+            int offsetInLine = (int)(virtualPosition - lineStart);
+
+            // Check if requested data is in cache
             if (_lineCache.TryGetValue(lineStart, out byte[] cachedLine))
             {
-                int offset = (int)(virtualPosition - lineStart);
-                int length = Math.Min(count, cachedLine.Length - offset);
-
+                int length = Math.Min(count, cachedLine.Length - offsetInLine);
                 if (length > 0)
                 {
                     byte[] result = new byte[length];
-                    Array.Copy(cachedLine, offset, result, 0, length);
+                    Array.Copy(cachedLine, offsetInLine, result, 0, length);
                     return result;
                 }
             }
 
-            // Cache miss - read byte by byte (handles all edit types)
-            byte[] bytes = new byte[count];
-            int bytesRead = 0;
+            // Cache miss - read the full line and cache it
+            int lineSize = (int)Math.Min(LINE_SIZE, virtualLength - lineStart);
+            byte[] fullLine = new byte[lineSize];
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < lineSize; i++)
             {
-                var (b, success) = GetByte(virtualPosition + i);
+                var (b, success) = ReadByteInternal(lineStart + i);
                 if (!success)
+                {
+                    Array.Resize(ref fullLine, i);
                     break;
-
-                bytes[i] = b;
-                bytesRead++;
+                }
+                fullLine[i] = b;
             }
 
-            if (bytesRead < count)
-                Array.Resize(ref bytes, bytesRead);
-
-            // Cache the line if it's a full read
-            if (virtualPosition == lineStart && bytesRead == count)
+            // Cache the full line
+            if (fullLine.Length > 0)
             {
-                CacheLine(lineStart, bytes);
+                CacheLine(lineStart, fullLine);
             }
 
-            return bytes;
+            // Return the requested portion
+            int requestedLength = Math.Min(count, fullLine.Length - offsetInLine);
+            if (requestedLength <= 0)
+                return Array.Empty<byte>();
+
+            byte[] requestedBytes = new byte[requestedLength];
+            Array.Copy(fullLine, offsetInLine, requestedBytes, 0, requestedLength);
+            return requestedBytes;
         }
 
         /// <summary>

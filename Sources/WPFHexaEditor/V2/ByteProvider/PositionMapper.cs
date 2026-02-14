@@ -136,9 +136,8 @@ namespace WpfHexaEditor.V2.ByteProvider
                 virtualPos++;
             }
 
-            // Add insertions at target position
-            int insertionsAtTarget = _editsManager.GetInsertionCountAt(physicalPosition);
-            virtualPos += insertionsAtTarget;
+            // Don't add insertions at target - they come BEFORE this physical position in virtual view
+            // (already counted in the loop above)
 
             // Cache result
             if (_cacheValid)
