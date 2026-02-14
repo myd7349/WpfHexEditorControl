@@ -44,6 +44,11 @@ namespace WpfHexaEditor.Core.Bytes
         /// </summary>
         public bool IsReadOnly { get; private set; }
 
+        /// <summary>
+        /// Gets the underlying stream.
+        /// </summary>
+        public Stream Stream => _stream;
+
         public FileProvider()
         {
             _cache = new byte[CACHE_SIZE];

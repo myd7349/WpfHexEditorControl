@@ -504,6 +504,12 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
+        /// Gets the underlying stream used by the ByteProvider
+        /// Read-only property for V1 compatibility
+        /// </summary>
+        public Stream Stream => _viewModel?.Provider?.Stream;
+
+        /// <summary>
         /// Preload byte strategy - DependencyProperty
         /// </summary>
         public PreloadByteInEditor PreloadByteInEditorMode

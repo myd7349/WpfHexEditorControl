@@ -78,6 +78,11 @@ namespace WpfHexaEditor.Core.Bytes
         public bool IsReadOnly => _fileProvider.IsReadOnly;
 
         /// <summary>
+        /// Gets the underlying stream.
+        /// </summary>
+        public Stream Stream => _fileProvider.Stream;
+
+        /// <summary>
         /// Gets whether any modifications exist.
         /// </summary>
         public bool HasChanges => _editsManager.HasChanges;
