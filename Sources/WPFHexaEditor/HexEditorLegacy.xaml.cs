@@ -42,7 +42,7 @@ namespace WpfHexaEditor
     /// Wpf Hexeditor is a fast and fully customisable user control for editing file or stream as hexadecimal. 
     /// Can be used in Wpf or WinForm application
     /// </remarks>
-    public partial class HexEditorLegacy : IDisposable
+    public partial class HexEditorLegacy : UserControl, IDisposable
     {
         #region Global class variables
 
