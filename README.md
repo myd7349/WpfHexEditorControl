@@ -167,10 +167,12 @@ Unicode characters are fully supported. Place the value to the right of the equa
 ### 🛒 Feature Comparison: V1 (Legacy) vs V2
 
 > **Legend:** ✅ = Available | ⚠️ = Limited/Buggy | ❌ = Not Available | 🆕 = New in V2 | ⚡ = Performance improvement in V2
+>
+> **Note (v2.6+):** V2 is now the **main control** called `HexEditor`. V1 is now `HexEditorLegacy` (deprecated).
 
 #### 📝 Core Editing
 
-| Feature | V1 (HexEditor) | V2 (HexEditorV2) | Notes |
+| Feature | V1 (HexEditorLegacy) | V2 (HexEditor - Main) | Notes |
 |---------|:--------------:|:----------------:|-------|
 | Multi-format editing (Hex/Dec/Bin) | ✅ | ✅ | |
 | Multi-byte support (8/16/32-bit) | ✅ | ✅ | |

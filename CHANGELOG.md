@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-02-14
+
+### 🔄 Phase 2 Migration - V2 Becomes Main Control
+
+**BREAKING CHANGE:** Major namespace reorganization to make V2 the default control.
+
+This release implements **Phase 2** of the [MIGRATION_PLAN_V2.md](MIGRATION_PLAN_V2.md), making V2 the main "HexEditor" control while moving V1 to legacy status.
+
+#### 🔁 Renamed Classes (100% Backward Compatible)
+
+**Before (v2.5.0 and earlier):**
+- `HexEditor` = V1 (legacy, slow, buggy)
+- `HexEditorV2` = V2 (fast, bug-free)
+
+**After (v2.6.0+):**
+- `HexEditor` = **V2 (now the main control!)** ⭐
+- `HexEditorLegacy` = V1 (deprecated)
+
+**Compatibility Aliases** (deprecated, will be removed in v3.0 - April 2027):
+- `HexEditorV1` → `HexEditorLegacy` (with deprecation warnings)
+- `HexEditorV2` → `HexEditor` (with deprecation warnings)
+
+#### 📦 What Changed
+
+**File Renames** (git history preserved):
+- `HexEditor.xaml/.cs` → `HexEditorLegacy.xaml/.cs`
+- `HexEditorV2.xaml/.cs` → `HexEditor.xaml/.cs`
+
+**New Files:**
+- `HexEditorCompatibility.cs` - Backward compatibility aliases
+
+**Updated Files:**
+- All V1-specific files now reference `HexEditorLegacy`
+- All internal references updated to new class names
+- Sample project renamed to `HexEditor.Sample`
+- Documentation updated with new naming conventions
+
+#### ✅ Migration Impact
+
+- ✅ **New projects**: Automatically use `HexEditor` (V2) - 99% faster with all bugs fixed
+- ✅ **Existing projects**: Continue working via compatibility aliases
+- ⚠️ **Deprecation warnings**: Projects using `HexEditorV1` or `HexEditorV2` will see compiler warnings
+- 📅 **Timeline**: Aliases will be **removed in v3.0 (April 2027)** - 12 months to migrate
+
+#### 🔧 How to Migrate (30 seconds)
+
+**No changes required!** Existing code continues to work via compatibility aliases.
+
+**Recommended update** (to remove warnings and future-proof):
+
+```xml
+<!-- Before (v2.5.0) -->
+<control:HexEditorV2 ... />
+
+<!-- After (v2.6.0) - cleaner, no warnings -->
+<control:HexEditor ... />
+```
+
+That's it! The public API is identical.
+
+See [MIGRATION_PLAN_V2.md](MIGRATION_PLAN_V2.md) for complete migration guide and timeline.
+
+#### 📊 Build Status
+- ✅ Compiles successfully with 0 errors
+- ✅ All unit tests passing
+- ✅ Backward compatibility verified
+- ✅ Sample applications updated
+
+---
+
 ## [2.5.0] - 2026-02-14
 
 ### 🎉 Major Release - V2 Architecture with Critical Bug Fixes
