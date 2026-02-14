@@ -28,7 +28,10 @@
       "Bash(/tmp/missing_methods.txt << 'EOF'\nMÉTHODES UTILISÉES PAR HexEditorViewModel:\n1. SubmitChanges\\(\\) → Save\\(\\)\n2. SubmitChanges\\(string, bool\\) → SaveAs\\(string, bool\\) ✓\n3. FileName property → FilePath ✓\n4. GetByte\\(long\\) ✓\n5. Close\\(\\) ✓\n6. Length property → VirtualLength\n7. Position property \\(get/set\\) ✗ MANQUANT\n8. ReadByte\\(\\) ✗ MANQUANT\n9. AddByteModified\\(byte, long\\) → ModifyByte\\(long, byte\\)\n10. AddByteDeleted\\(long, long\\) → DeleteBytes\\(long, long\\) ✓\n11. Paste\\(long, byte[], bool\\) ✗ MANQUANT\n12. FillWithByte\\(long, long, byte\\) ✗ MANQUANT\n13. CheckIfIsByteModified\\(long, ByteAction\\) ✗ MANQUANT\nEOF)",
       "Bash(Select-String -Pattern \"error|warning\")",
       "Bash(Select-Object -Last 50)",
-      "Bash(Select-String -Pattern \"\\(error|warning|Build succeeded|Build FAILED\\)\" -Context 0,2)"
+      "Bash(Select-String -Pattern \"\\(error|warning|Build succeeded|Build FAILED\\)\" -Context 0,2)",
+      "Bash(git push:*)",
+      "Bash(test:*)",
+      "Bash(git mv:*)"
     ]
   }
 }

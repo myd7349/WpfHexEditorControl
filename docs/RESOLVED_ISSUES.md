@@ -111,9 +111,9 @@ int virtualOffset = totalInsertions - 1 - (int)(virtualPosition - virtualStart);
 
 ### Documentation
 
-- [ISSUE_145_CLOSURE.md](../ISSUE_145_CLOSURE.md) - Resolution summary
-- [ISSUE_HexInput_Insert_Mode.md](../ISSUE_HexInput_Insert_Mode.md) - Complete technical analysis
-- [ARCHITECTURE_V2.md](../ARCHITECTURE_V2.md) - Updated architecture documentation
+- [ISSUE_145_CLOSURE.md](../issues/145_Insert_Mode_Bug.md) - Resolution summary
+- [ISSUE_HexInput_Insert_Mode.md](../issues/HexInput_Insert_Mode_Analysis.md) - Complete technical analysis
+- [ARCHITECTURE_V2.md](./architecture/HexEditorV2.md) - Updated architecture documentation
 
 ### Resolution Date
 
@@ -217,8 +217,8 @@ With the PositionMapper fix, ByteReader should now correctly read inserted bytes
 
 ### Documentation
 
-- [ISSUE_Save_DataLoss.md](../ISSUE_Save_DataLoss.md) - Complete analysis and fix documentation
-- [ARCHITECTURE_V2.md](../ARCHITECTURE_V2.md) - Save operation flow diagrams
+- [ISSUE_Save_DataLoss.md](../issues/Save_DataLoss_Bug.md) - Complete analysis and fix documentation
+- [ARCHITECTURE_V2.md](./architecture/HexEditorV2.md) - Save operation flow diagrams
 
 ### Resolution Date
 

@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ByteReader.cs` lines 76-156 - Corrected LIFO offset calculation
   - `ByteProvider.cs` lines 264-300 - Fixed ModifyInsertedByte LIFO offset
   - `HexEditorV2.xaml.cs` - Added cursor position synchronization with drift tolerance
-- **Documentation**: [ISSUE_145_CLOSURE.md](ISSUE_145_CLOSURE.md), [ISSUE_HexInput_Insert_Mode.md](ISSUE_HexInput_Insert_Mode.md)
+- **Documentation**: [issues/145_Insert_Mode_Bug.md](issues/145_Insert_Mode_Bug.md), [issues/HexInput_Insert_Mode_Analysis.md](issues/HexInput_Insert_Mode_Analysis.md)
 
 #### Save Data Loss Bug ✅ COMPLETELY RESOLVED
 - **Fixed**: Root cause of catastrophic data loss during Save operations (MB → KB file corruption)
@@ -42,11 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ✅ After save, reopen and verify: content matches perfectly
 - **Performance**: Added fast save path for modification-only edits (10-100x faster)
 - **Commits**: 405b164 (root cause), 35b19b5 (LIFO offset fixes)
-- **Documentation**: [ISSUE_Save_DataLoss.md](ISSUE_Save_DataLoss.md), [RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md)
+- **Documentation**: [issues/Save_DataLoss_Bug.md](issues/Save_DataLoss_Bug.md), [docs/RESOLVED_ISSUES.md](docs/RESOLVED_ISSUES.md)
 
 ### 📚 Documentation
 
-#### ARCHITECTURE_V2.md - Complete V2 Architecture Documentation
+#### docs/architecture/HexEditorV2.md - Complete V2 Architecture Documentation
 - **Added**: Comprehensive architecture documentation with Mermaid diagrams
   - Component overview and dependencies
   - ByteProvider V2 internal architecture
@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed Component Overview diagram (commit d572de1)
   - Fixed sequenceDiagram loop syntax (commit 9a31b3f)
 - **Commits**: 3800bd8 (content update), 6af1bee, d572de1, 9a31b3f (diagram fixes)
-- **File**: [ARCHITECTURE_V2.md](ARCHITECTURE_V2.md)
+- **File**: [docs/architecture/HexEditorV2.md](docs/architecture/HexEditorV2.md)
 
 ### 🔧 Internal Improvements
 

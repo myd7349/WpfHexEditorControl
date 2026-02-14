@@ -211,6 +211,66 @@ namespace WpfHexaEditor.Core.Bytes
         }
 
         /// <summary>
+        /// Read multiple bytes into a provided buffer (zero-allocation version).
+        /// Optimized for high-performance scenarios where buffer reuse is critical.
+        /// </summary>
+        /// <param name="physicalPosition">Starting physical offset</param>
+        /// <param name="buffer">Buffer to read into</param>
+        /// <param name="offset">Offset in buffer to start writing</param>
+        /// <param name="count">Number of bytes to read</param>
+        /// <returns>Number of bytes actually read</returns>
+        public int ReadBytes(long physicalPosition, byte[] buffer, int offset, int count)
+        {
+            if (!IsOpen || physicalPosition < 0 || count <= 0 || buffer == null)
+                return 0;
+
+            // Clamp to file length
+            long available = Length - physicalPosition;
+            if (available <= 0)
+                return 0;
+
+            count = (int)Math.Min(count, available);
+
+            // Try to read from cache first
+            if (IsInCache(physicalPosition))
+            {
+                int cacheOffset = (int)(physicalPosition - _cachePosition);
+                int availableInCache = _cacheLength - cacheOffset;
+
+                if (count <= availableInCache)
+                {
+                    // Fully in cache
+                    Array.Copy(_cache, cacheOffset, buffer, offset, count);
+                    return count;
+                }
+                else
+                {
+                    // Partially in cache
+                    Array.Copy(_cache, cacheOffset, buffer, offset, availableInCache);
+
+                    // Read remainder directly from stream
+                    _stream.Position = physicalPosition + availableInCache;
+                    int remaining = count - availableInCache;
+                    int bytesRead = _stream.Read(buffer, offset + availableInCache, remaining);
+
+                    // Update cache with new data
+                    FillCache(physicalPosition + availableInCache);
+                    return availableInCache + bytesRead;
+                }
+            }
+
+            // Not in cache - read directly
+            _stream.Position = physicalPosition;
+            int totalRead = _stream.Read(buffer, offset, count);
+
+            // Update cache if read was small enough
+            if (count <= CACHE_SIZE)
+                FillCache(physicalPosition);
+
+            return totalRead;
+        }
+
+        /// <summary>
         /// Write a single byte at a physical position.
         /// Invalidates cache at that position.
         /// </summary>
