@@ -2704,6 +2704,34 @@ namespace WpfHexaEditor
             }
         }
 
+        /// <summary>
+        /// Update scroll markers selection bar to show current selection
+        /// </summary>
+        private void UpdateScrollMarkersSelection()
+        {
+            if (_scrollMarkers == null || _viewModel == null)
+                return;
+
+            try
+            {
+                long start = _viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : -1;
+                long stop = _viewModel.SelectionStop.IsValid ? _viewModel.SelectionStop.Value : -1;
+
+                if (start >= 0 && stop >= 0)
+                {
+                    _scrollMarkers.SetSelection(start, stop);
+                }
+                else
+                {
+                    _scrollMarkers.ClearSelection();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SCROLLMARKERS] Selection update failed: {ex.Message}");
+            }
+        }
+
         #endregion
 
         #region Public Methods - Edit Operations
@@ -5660,6 +5688,8 @@ namespace WpfHexaEditor
                     HexViewport.SelectionStart = _viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : -1;
                     // Update auto-highlight to match the byte at the new selection
                     UpdateAutoHighlightByte();
+                    // Update scroll markers selection bar
+                    UpdateScrollMarkersSelection();
                     break;
 
                 case nameof(HexEditorViewModel.SelectionStop):
@@ -5668,6 +5698,8 @@ namespace WpfHexaEditor
                     HexViewport.CursorPosition = _viewModel.SelectionStop.IsValid ? _viewModel.SelectionStop.Value :
                                                  (_viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : 0);
                     HexViewport.SelectionStop = _viewModel.SelectionStop.IsValid ? _viewModel.SelectionStop.Value : -1;
+                    // Update scroll markers selection bar
+                    UpdateScrollMarkersSelection();
                     break;
 
                 case nameof(HexEditorViewModel.TotalLines):
@@ -6035,6 +6067,13 @@ namespace WpfHexaEditor
 
             // Update status
             StatusText.Text = $"Edited byte at {_editingPosition.Value:X8}";
+
+            // Update scroll markers in background (low priority)
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                UpdateScrollMarkers();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+
             System.Diagnostics.Debug.WriteLine($"[COMMIT] === CommitByteEdit END === (_isEditingByte now false)");
         }
 

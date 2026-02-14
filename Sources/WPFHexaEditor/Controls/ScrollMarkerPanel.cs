@@ -109,6 +109,36 @@ namespace WpfHexaEditor.Controls
             }
         }
 
+        /// <summary>
+        /// Current selection start position (-1 if no selection)
+        /// </summary>
+        public long SelectionStart { get; set; } = -1;
+
+        /// <summary>
+        /// Current selection stop position (-1 if no selection)
+        /// </summary>
+        public long SelectionStop { get; set; } = -1;
+
+        /// <summary>
+        /// Update selection range
+        /// </summary>
+        public void SetSelection(long start, long stop)
+        {
+            SelectionStart = start;
+            SelectionStop = stop;
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Clear selection
+        /// </summary>
+        public void ClearSelection()
+        {
+            SelectionStart = -1;
+            SelectionStop = -1;
+            InvalidateVisual();
+        }
+
         #endregion
 
         #region Public Methods
@@ -166,6 +196,12 @@ namespace WpfHexaEditor.Controls
             double panelHeight = ActualHeight;
             double panelWidth = ActualWidth;
 
+            // Draw selection bar first (behind markers)
+            if (SelectionStart >= 0 && SelectionStop >= 0)
+            {
+                DrawSelectionBar(dc, panelHeight, panelWidth);
+            }
+
             // Draw markers for each type
             // Order: Custom → Modified → Search → Bookmarks (bookmarks on top)
 
@@ -218,6 +254,35 @@ namespace WpfHexaEditor.Controls
             );
 
             dc.DrawRectangle(brush, null, rect);
+        }
+
+        /// <summary>
+        /// Draw selection bar showing current selection range
+        /// </summary>
+        private void DrawSelectionBar(DrawingContext dc, double panelHeight, double panelWidth)
+        {
+            if (_fileLength == 0 || SelectionStart < 0 || SelectionStop < 0)
+                return;
+
+            // Calculate start and stop positions
+            long start = Math.Min(SelectionStart, SelectionStop);
+            long stop = Math.Max(SelectionStart, SelectionStop);
+
+            // Convert to vertical positions
+            double startY = ((double)start / _fileLength) * panelHeight;
+            double stopY = ((double)stop / _fileLength) * panelHeight;
+
+            // Ensure minimum height for visibility
+            double height = Math.Max(stopY - startY, 3.0);
+
+            // Clamp to visible area
+            startY = Math.Max(0, Math.Min(panelHeight - height, startY));
+
+            // Draw semi-transparent blue bar for selection
+            var selectionBrush = new SolidColorBrush(Color.FromArgb(80, 0x00, 0x78, 0xD4)); // Semi-transparent blue
+            var rect = new Rect(0, startY, panelWidth, height);
+
+            dc.DrawRectangle(selectionBrush, null, rect);
         }
 
         #endregion
