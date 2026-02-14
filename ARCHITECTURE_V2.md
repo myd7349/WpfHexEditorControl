@@ -231,14 +231,14 @@ PasteAtPosition(long pos)                  // Paste from clipboard
 **Architecture:**
 ```mermaid
 graph TB
-    BP[ByteProvider<br/>Central Coordinator]
+    BP[ByteProvider -Central Coordinator]
 
     subgraph "Managed Components"
-        FP[FileProvider<br/>File I/O]
-        BR[ByteReader<br/>Read Operations]
-        EM[EditsManager<br/>Edit Storage]
-        PM[PositionMapper<br/>Position Conversion]
-        UR[UndoRedoManager<br/>History Stack]
+        FP[FileProvider -File I/O]
+        BR[ByteReader -Read Operations]
+        EM[EditsManager -Edit Storage]
+        PM[PositionMapper -Position Conversion]
+        UR[UndoRedoManager -History Stack]
     end
 
     BP --> FP
@@ -299,18 +299,18 @@ bool IsOpen                  // File open state
 graph TD
     Start[ReadByteInternal virtualPos]
 
-    Convert[VirtualToPhysical<br/>virtualPos → physicalPos?, isInserted]
+    Convert[VirtualToPhysical -virtualPos → physicalPos?, isInserted]
 
     CheckInserted{isInserted?}
     CheckDeleted{isDeleted?}
     CheckModified{isModified?}
 
-    GetInserted[GetInsertedBytesAt physicalPos<br/>Search by VirtualOffset]
+    GetInserted[GetInsertedBytesAt physicalPos -Search by VirtualOffset]
     GetModified[GetModifiedByte physicalPos]
     GetOriginal[FileProvider.ReadByte physicalPos]
 
     ReturnInserted[Return inserted byte, true]
-    ReturnDeleted[Return 0, false<br/>Should not happen]
+    ReturnDeleted[Return 0, false -Should not happen]
     ReturnModified[Return modified byte, true]
     ReturnOriginal[Return original byte, true]
 
@@ -373,18 +373,18 @@ long GetVirtualLength()                            // Calculate virtual length
 graph LR
     subgraph "EditsManager Storage"
         subgraph "Modified Bytes"
-            ModDict["Dictionary<br/>long physicalPos → byte value"]
+            ModDict["Dictionary -long physicalPos → byte value"]
         end
 
         subgraph "Inserted Bytes"
-            InsDict["Dictionary<br/>long physicalPos → List&lt;InsertedByte&gt;"]
+            InsDict["Dictionary -long physicalPos → List&lt;InsertedByte&gt;"]
             InsList1["List[0] = newest InsertedByte offset=0"]
             InsList2["List[1] = ..."]
             InsList3["List[N-1] = oldest InsertedByte offset=N-1"]
         end
 
         subgraph "Deleted Positions"
-            DelSet["HashSet<br/>long physicalPos"]
+            DelSet["HashSet -long physicalPos"]
         end
     end
 
@@ -568,11 +568,11 @@ graph TB
 
     CheckCache{Cache Valid?}
 
-    CacheHit[Return from Cache<br/>O 1 operation]
+    CacheHit[Return from Cache -O 1 operation]
 
-    CacheMiss[Calculate Block Start<br/>blockStart = P / 64KB × 64KB]
-    ReadBlock[Read 64KB Block<br/>from File Stream]
-    UpdateCache[Update Cache<br/>Store block]
+    CacheMiss[Calculate Block Start -blockStart = P / 64KB × 64KB]
+    ReadBlock[Read 64KB Block -from File Stream]
+    UpdateCache[Update Cache -Store block]
     ReturnByte[Return Byte]
 
     Request --> CheckCache
@@ -971,27 +971,27 @@ classDiagram
 graph TD
     subgraph "Dependency Layers"
         subgraph "Layer 1: UI"
-            V2[HexEditorV2<br/>WPF UserControl]
-            HV[HexViewport<br/>Custom Control]
+            V2[HexEditorV2 -WPF UserControl]
+            HV[HexViewport -Custom Control]
         end
 
         subgraph "Layer 2: Presentation"
-            VM[HexEditorViewModel<br/>MVVM Logic]
+            VM[HexEditorViewModel -MVVM Logic]
         end
 
         subgraph "Layer 3: Data Access"
-            BP[ByteProvider<br/>API Facade]
+            BP[ByteProvider -API Facade]
         end
 
         subgraph "Layer 4: Core Processing"
-            BR[ByteReader<br/>Read Operations]
-            EM[EditsManager<br/>Edit Storage]
-            PM[PositionMapper<br/>Position Conversion]
-            UR[UndoRedoManager<br/>History]
+            BR[ByteReader -Read Operations]
+            EM[EditsManager -Edit Storage]
+            PM[PositionMapper -Position Conversion]
+            UR[UndoRedoManager -History]
         end
 
         subgraph "Layer 5: Storage"
-            FP[FileProvider<br/>File I/O]
+            FP[FileProvider -File I/O]
             FS[File System]
         end
     end
@@ -1042,16 +1042,16 @@ graph TD
 ```mermaid
 graph TB
     subgraph "User's View - Virtual Positions"
-        V["Virtual File (What User Sees)<br/>[0][1][2][3][4][5][6][7]<br/>Length = 8"]
+        V["Virtual File (What User Sees) -[0][1][2][3][4][5][6][7] -Length = 8"]
     end
 
     subgraph "Mapping Layer"
-        PM[PositionMapper<br/>Virtual ↔ Physical]
-        EM[EditsManager<br/>Track Edits]
+        PM[PositionMapper -Virtual ↔ Physical]
+        EM[EditsManager -Track Edits]
     end
 
     subgraph "File on Disk - Physical Positions"
-        P["Physical File (Original)<br/>[0][1][2][3][4][5]<br/>Length = 6"]
+        P["Physical File (Original) -[0][1][2][3][4][5] -Length = 6"]
     end
 
     subgraph "Edits"
@@ -1098,7 +1098,7 @@ graph LR
     end
 
     subgraph "Insertions"
-        I1[At phys 2:<br/>X, Y inserted]
+        I1[At phys 2: -X, Y inserted]
     end
 
     subgraph "Virtual View"
@@ -1155,15 +1155,15 @@ The V2 architecture uses **LIFO (Last-In-First-Out)** storage for multiple inser
 ```mermaid
 graph TB
     subgraph "Timeline: Inserting at Physical Position 100"
-        T1["Time 1: Insert A<br/>User types A at position 100"]
-        T2["Time 2: Insert B<br/>User types B at position 100"]
-        T3["Time 3: Insert C<br/>User types C at position 100"]
+        T1["Time 1: Insert A -User types A at position 100"]
+        T2["Time 2: Insert B -User types B at position 100"]
+        T3["Time 3: Insert C -User types C at position 100"]
     end
 
     subgraph "Internal Storage (Array)"
-        S1["Step 1:<br/>[A offset=0]"]
-        S2["Step 2:<br/>[B offset=0] [A offset=1]"]
-        S3["Step 3:<br/>[C offset=0] [B offset=1] [A offset=2]"]
+        S1["Step 1: -[A offset=0]"]
+        S2["Step 2: -[B offset=0] [A offset=1]"]
+        S3["Step 3: -[C offset=0] [B offset=1] [A offset=2]"]
     end
 
     subgraph "Virtual View (What User Sees)"
@@ -1269,19 +1269,19 @@ targetOffset = totalInsertions - 1 - relativePosition
 ```mermaid
 graph LR
     subgraph "Virtual Positions (User View)"
-        VP0["Pos 150<br/>relativePos=0"]
-        VP1["Pos 151<br/>relativePos=1"]
-        VP2["Pos 152<br/>relativePos=2"]
+        VP0["Pos 150 -relativePos=0"]
+        VP1["Pos 151 -relativePos=1"]
+        VP2["Pos 152 -relativePos=2"]
     end
 
     subgraph "Inversion Formula"
-        F["targetOffset =<br/>totalInsertions - 1 - relativePos"]
+        F["targetOffset = -totalInsertions - 1 - relativePos"]
     end
 
     subgraph "LIFO Array (Internal)"
-        A0["Array[0]<br/>VirtualOffset=0<br/>Value=C"]
-        A1["Array[1]<br/>VirtualOffset=1<br/>Value=B"]
-        A2["Array[2]<br/>VirtualOffset=2<br/>Value=A"]
+        A0["Array[0] -VirtualOffset=0 -Value=C"]
+        A1["Array[1] -VirtualOffset=1 -Value=B"]
+        A2["Array[2] -VirtualOffset=2 -Value=A"]
     end
 
     VP0 --> F
@@ -1305,17 +1305,17 @@ graph LR
 ```mermaid
 graph LR
     subgraph "Operation Complexity"
-        Op1["Single Byte Read<br/>GetByte virtualPos"]
-        Op2["Multi-Byte Read<br/>GetBytes virtualPos, count"]
-        Op3["Line Read Cached<br/>GetLine virtualPos, 16"]
-        Op4["Position Mapping<br/>VirtualToPhysical"]
+        Op1["Single Byte Read -GetByte virtualPos"]
+        Op2["Multi-Byte Read -GetBytes virtualPos, count"]
+        Op3["Line Read Cached -GetLine virtualPos, 16"]
+        Op4["Position Mapping -VirtualToPhysical"]
     end
 
     subgraph "Time Complexity"
-        C1["O 1 with cache<br/>O log n without"]
-        C2["O n<br/>n = count"]
-        C3["O 1<br/>Cache hit"]
-        C4["O log n<br/>Binary search segments"]
+        C1["O 1 with cache -O log n without"]
+        C2["O n -n = count"]
+        C3["O 1 -Cache hit"]
+        C4["O log n -Binary search segments"]
     end
 
     Op1 --> C1
@@ -1352,17 +1352,17 @@ graph LR
 ```mermaid
 graph TB
     subgraph "Memory Components"
-        FC["File Cache<br/>64 KB<br/>FileProvider"]
-        LC["Line Cache<br/>~1.6 KB<br/>100 lines × 16 bytes<br/>ByteReader"]
-        ME["Modified Bytes<br/>8 bytes/entry<br/>Dictionary"]
-        IE["Inserted Bytes<br/>12 bytes/entry<br/>Dictionary + List"]
-        DE["Deleted Positions<br/>8 bytes/entry<br/>HashSet"]
-        SM["Segment Map<br/>Variable<br/>~20 bytes/segment"]
+        FC["File Cache -64 KB -FileProvider"]
+        LC["Line Cache -~1.6 KB -100 lines × 16 bytes -ByteReader"]
+        ME["Modified Bytes -8 bytes/entry -Dictionary"]
+        IE["Inserted Bytes -12 bytes/entry -Dictionary + List"]
+        DE["Deleted Positions -8 bytes/entry -HashSet"]
+        SM["Segment Map -Variable -~20 bytes/segment"]
     end
 
     subgraph "Total Memory"
-        Fixed["Fixed:<br/>~66 KB"]
-        Variable["Variable:<br/>O m<br/>m = edits"]
+        Fixed["Fixed: -~66 KB"]
+        Variable["Variable: -O m -m = edits"]
     end
 
     FC --> Fixed
@@ -1421,15 +1421,15 @@ Memory = 66 KB (fixed)
 ```mermaid
 graph LR
     subgraph "Save Operation"
-        S1[Read Virtual View<br/>64 KB chunks]
-        S2[Write to Temp File<br/>Sequential]
-        S3[Atomic Replace<br/>Delete + Rename]
+        S1[Read Virtual View -64 KB chunks]
+        S2[Write to Temp File -Sequential]
+        S3[Atomic Replace -Delete + Rename]
     end
 
     subgraph "Complexity"
-        C1["O n<br/>n = VirtualLength"]
-        C2["O n<br/>Disk I/O"]
-        C3["O 1<br/>File system"]
+        C1["O n -n = VirtualLength"]
+        C2["O n -Disk I/O"]
+        C3["O 1 -File system"]
     end
 
     S1 --> C1
@@ -1455,17 +1455,17 @@ graph LR
 ```mermaid
 graph TB
     subgraph "V1 Architecture HexEditor"
-        V1_Mono["Monolithic Design<br/>Single Large Class"]
-        V1_WPF["WPF Virtualization<br/>Built-in Controls"]
-        V1_Simple["Simple Edit Storage<br/>ByteModified List"]
-        V1_FIFO["FIFO Insertions<br/>Append to List"]
+        V1_Mono["Monolithic Design -Single Large Class"]
+        V1_WPF["WPF Virtualization -Built-in Controls"]
+        V1_Simple["Simple Edit Storage -ByteModified List"]
+        V1_FIFO["FIFO Insertions -Append to List"]
     end
 
     subgraph "V2 Architecture HexEditorV2"
-        V2_Layer["Layered Design<br/>MVVM + Components"]
-        V2_Custom["Custom Rendering<br/>DrawingContext"]
-        V2_Advanced["Advanced Edit Storage<br/>Separate by Type"]
-        V2_LIFO["LIFO Insertions<br/>Stack-like Prepend"]
+        V2_Layer["Layered Design -MVVM + Components"]
+        V2_Custom["Custom Rendering -DrawingContext"]
+        V2_Advanced["Advanced Edit Storage -Separate by Type"]
+        V2_LIFO["LIFO Insertions -Stack-like Prepend"]
     end
 
     style V1_Mono fill:#ffccbc
@@ -1587,17 +1587,17 @@ Result: F0 F0 F0 F0 F0 FF  (5-6 bytes with incomplete nibbles)
 ```mermaid
 graph TB
     subgraph "Current Limitations"
-        L1["LIFO Complexity<br/>Non-intuitive mapping<br/>Error-prone"]
-        L2["No Streaming Save<br/>All bytes read sequentially<br/>Not suitable for >1GB"]
-        L3["Basic Undo/Redo<br/>Single-level history<br/>No branching"]
-        L4["Single-threaded<br/>No concurrent edits<br/>No async operations"]
+        L1["LIFO Complexity -Non-intuitive mapping -Error-prone"]
+        L2["No Streaming Save -All bytes read sequentially -Not suitable for >1GB"]
+        L3["Basic Undo/Redo -Single-level history -No branching"]
+        L4["Single-threaded -No concurrent edits -No async operations"]
     end
 
     subgraph "Impact"
-        I1["Development Difficulty<br/>Bug-prone Code"]
-        I2["Performance Ceiling<br/>Large File Limitations"]
-        I3["User Experience<br/>Limited Undo"]
-        I4["Responsiveness<br/>UI Freezes"]
+        I1["Development Difficulty -Bug-prone Code"]
+        I2["Performance Ceiling -Large File Limitations"]
+        I3["User Experience -Limited Undo"]
+        I4["Responsiveness -UI Freezes"]
     end
 
     L1 --> I1
@@ -1621,22 +1621,22 @@ graph TB
 graph TB
     subgraph "Test Strategy V2"
         subgraph "Unit Tests Needed"
-            UT1["ByteProvider Tests<br/>Open/Save/Edit"]
-            UT2["ByteReader Tests<br/>Read/Cache"]
-            UT3["EditsManager Tests<br/>LIFO Insertions"]
-            UT4["PositionMapper Tests<br/>Virtual↔Physical"]
-            UT5["FileProvider Tests<br/>Caching"]
+            UT1["ByteProvider Tests -Open/Save/Edit"]
+            UT2["ByteReader Tests -Read/Cache"]
+            UT3["EditsManager Tests -LIFO Insertions"]
+            UT4["PositionMapper Tests -Virtual↔Physical"]
+            UT5["FileProvider Tests -Caching"]
         end
 
         subgraph "Integration Tests Needed"
-            IT1["HexEditorV2 + ViewModel<br/>End-to-end Editing"]
-            IT2["Save with Complex Edits<br/>Insert+Modify+Delete"]
-            IT3["Undo/Redo Chains<br/>History Management"]
+            IT1["HexEditorV2 + ViewModel -End-to-end Editing"]
+            IT2["Save with Complex Edits -Insert+Modify+Delete"]
+            IT3["Undo/Redo Chains -History Management"]
         end
 
         subgraph "Manual Testing"
-            MT1["Sample Applications<br/>Real File Editing"]
-            MT2["Performance Testing<br/>Large Files"]
+            MT1["Sample Applications -Real File Editing"]
+            MT2["Performance Testing -Large Files"]
         end
     end
 
@@ -1692,15 +1692,15 @@ graph TB
 ```mermaid
 graph LR
     subgraph "Immediate Fixes"
-        F1["Fix Save Bug<br/>Data Loss Prevention"]
-        F2["Add Validation<br/>Exceptions not Silent Fail"]
-        F3["Fix Insert Mode<br/>F0 Pattern Bug"]
+        F1["Fix Save Bug -Data Loss Prevention"]
+        F2["Add Validation -Exceptions not Silent Fail"]
+        F3["Fix Insert Mode -F0 Pattern Bug"]
     end
 
     subgraph "Quality Improvements"
-        Q1["Add Unit Tests<br/>Core Components"]
-        Q2["Add Diagnostics<br/>Logging & Errors"]
-        Q3["Add Documentation<br/>Code Comments"]
+        Q1["Add Unit Tests -Core Components"]
+        Q2["Add Diagnostics -Logging & Errors"]
+        Q3["Add Documentation -Code Comments"]
     end
 
     F1 --> Q1
