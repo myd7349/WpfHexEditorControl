@@ -6,7 +6,7 @@ This document tracks critical issues that have been resolved in WPF HexEditor V2
 
 **Status**: Completely resolved (2026-02-14)
 **Severity**: High - Critical usability issue
-**Milestone**: v2.2.1
+**Milestone**: v2.5.0
 
 ### Problem Description
 
@@ -125,7 +125,7 @@ int virtualOffset = totalInsertions - 1 - (int)(virtualPosition - virtualStart);
 
 **Status**: Completely resolved and validated (2026-02-14)
 **Severity**: CRITICAL - Permanent data loss
-**Milestone**: v2.2.1
+**Milestone**: v2.5.0
 
 ### Problem Description
 
@@ -258,7 +258,7 @@ The bug in PositionMapper affected:
 
 ## Summary
 
-**v2.2.1 Status:**
+**v2.5.0 Status:**
 - ✅ Issue #145 (Insert Mode bug): **COMPLETELY RESOLVED**
 - ✅ Save Data Loss Bug: **COMPLETELY RESOLVED AND VALIDATED**
 
@@ -269,7 +269,7 @@ The bug in PositionMapper affected:
 4. ✅ Removed debug logging overhead for production performance
 5. ✅ Insert Mode now fully functional and reliable
 
-**Ready for v2.2.1 release with full confidence!** 🎉
+**Ready for v2.5.0 release with full confidence!** 🎉
 
 ---
 
