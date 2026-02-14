@@ -79,15 +79,51 @@ namespace WpfHexaEditor.Core.Bytes
                 // Find the inserted byte at this virtual position
                 var insertions = _editsManager.GetInsertedBytesAt(physicalPos.Value);
 
-                // CRITICAL FIX: Insertions are stored in LIFO order
-                // Array: [newest (offset=0), ..., oldest (offset=N-1)]
-                // Virtual positions: [oldest=virtualStart, ..., newest=virtualStart+N-1]
-                // Must INVERT the offset calculation!
+                // CORRECT LAYOUT: Insertions come BEFORE the physical byte in virtual space!
+                // PhysicalToVirtual(P) returns the position where insertions START (first inserted byte)
+                // Virtual layout: [Insert0_oldest, Insert1, ..., InsertN-1_newest, PhysicalByte]
+                // So: virtualStart = position of FIRST inserted byte (oldest in LIFO array[N-1])
+                //     virtualStart + N = position of physical byte
                 long virtualStart = _positionMapper.PhysicalToVirtual(physicalPos.Value, physicalFileLength);
+
+                // Calculate offset within the inserted bytes range
+                // relativePosition = 0 means FIRST inserted byte (oldest, LIFO index N-1)
+                // relativePosition = N-1 means LAST inserted byte (newest, LIFO index 0)
                 long relativePosition = virtualPosition - virtualStart;
+
+                if (relativePosition < 0 || relativePosition >= insertions.Count)
+                {
+                    // WORKAROUND BUG: VirtualToPhysical incorrectly returned isInserted=true
+                    // but position is outside insertion range. This is a bug in VirtualToPhysical.
+                    // Workaround: try reading as physical byte instead
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[ByteReader] BUG WORKAROUND: VirtualToPhysical returned isInserted=true for virtualPos={virtualPosition}, " +
+                        $"but relativePosition={relativePosition} is outside insertion range [0, {insertions.Count}). " +
+                        $"Attempting to read as physical byte instead (physicalPos={physicalPos.Value}).");
+
+                    // Try to read directly from physical file
+                    if (physicalPos.HasValue && physicalPos.Value >= 0 && physicalPos.Value < physicalFileLength)
+                    {
+                        var (physByte, success) = _fileProvider.ReadByte(physicalPos.Value);
+                        if (success)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[ByteReader] Workaround successful: read byte 0x{physByte:X2} from physical position {physicalPos.Value}");
+                            return (physByte, true);
+                        }
+                    }
+
+                    // If workaround fails, return error
+                    System.Diagnostics.Debug.WriteLine($"[ByteReader] Workaround FAILED - returning 0");
+                    return (0, false);
+                }
+
                 int totalInsertions = insertions.Count;
 
-                // Invert: newest (high virtual pos) has low offset, oldest (low virtual pos) has high offset
+                // Convert relative position to LIFO array index
+                // Insertions stored in LIFO: [newest at 0, ..., oldest at N-1]
+                // Virtual positions: [oldest at virtualStart+0, ..., newest at virtualStart+N-1]
+                // relativePosition 0 (first inserted/oldest) → LIFO index N-1
+                // relativePosition N-1 (last inserted/newest)  → LIFO index 0
                 long targetOffset = totalInsertions - 1 - relativePosition;
 
                 // Search for inserted byte with matching VirtualOffset

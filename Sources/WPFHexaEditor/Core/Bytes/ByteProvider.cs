@@ -404,7 +404,20 @@ namespace WpfHexaEditor.Core.Bytes
                 _editsManager.DeleteByte(physicalPos.Value);
             }
 
-            InvalidateCaches();
+            // CRITICAL: Must invalidate PositionMapper cache immediately after deletion
+            // Even in batch mode, because virtual-to-physical mapping changes with each deletion
+            // If we don't invalidate, subsequent deletions in the batch will use stale mappings
+            _positionMapper.InvalidateCache();
+
+            // Invalidate other caches (respects batch mode)
+            if (!_batchMode)
+            {
+                _byteReader.ClearLineCache();
+            }
+            else
+            {
+                _batchDirty = true; // Mark for end-of-batch invalidation
+            }
         }
 
         /// <summary>
@@ -497,12 +510,9 @@ namespace WpfHexaEditor.Core.Bytes
 
                 _fileProvider.Flush();
 
-                // Clear edits after successful save
-                _editsManager.ClearAll();
-                _positionMapper.InvalidateCache();
-
-                // Notify listeners (ViewModel) to refresh view
-                OnChangesCleared();
+                // Clear edits AND undo/redo history after successful save
+                // ClearAllEdits also calls OnChangesCleared() to refresh view
+                ClearAllEdits();
 
                 System.Diagnostics.Debug.WriteLine("[ByteProvider] FAST SAVE complete");
             }
@@ -650,7 +660,40 @@ namespace WpfHexaEditor.Core.Bytes
                         // Restore old values
                         if (operation.OldValues != null)
                         {
-                            ModifyBytes(operation.VirtualPosition, operation.OldValues);
+                            // CRITICAL FIX: Check if restored values match original file
+                            // If they do, REMOVE modification instead of re-adding it
+                            for (int i = 0; i < operation.OldValues.Length; i++)
+                            {
+                                long virtualPos = operation.VirtualPosition + i;
+                                byte restoredValue = operation.OldValues[i];
+
+                                // Get physical position and check if it's from original file
+                                var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPos, _fileProvider.Length);
+
+                                if (!isInserted && physicalPos.HasValue)
+                                {
+                                    // Read original file value
+                                    var (originalValue, success) = _fileProvider.ReadByte(physicalPos.Value);
+
+                                    if (success && restoredValue == originalValue)
+                                    {
+                                        // Restored value matches original file - REMOVE modification
+                                        _editsManager.RemoveModification(physicalPos.Value);
+                                    }
+                                    else
+                                    {
+                                        // Restored value is different - keep as modified
+                                        _editsManager.ModifyByte(physicalPos.Value, restoredValue);
+                                    }
+                                }
+                                else
+                                {
+                                    // For inserted bytes, use ModifyBytes
+                                    ModifyByte(virtualPos, restoredValue);
+                                }
+                            }
+
+                            InvalidateCaches();
                         }
                         break;
 
@@ -660,10 +703,25 @@ namespace WpfHexaEditor.Core.Bytes
                         break;
 
                     case UndoOperationType.Delete:
-                        // Re-insert the deleted bytes
+                        // Undelete the bytes (remove deletion marks)
+                        // CRITICAL FIX: Don't insert new bytes - just undelete the original bytes
                         if (operation.OldValues != null)
                         {
-                            InsertBytes(operation.VirtualPosition, operation.OldValues);
+                            for (int i = 0; i < operation.OldValues.Length; i++)
+                            {
+                                long virtualPos = operation.VirtualPosition + i;
+
+                                // Get physical position
+                                var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPos, _fileProvider.Length);
+
+                                if (!isInserted && physicalPos.HasValue)
+                                {
+                                    // Undelete the byte (remove from deleted set)
+                                    _editsManager.UndeleteByte(physicalPos.Value);
+                                }
+                            }
+
+                            InvalidateCaches();
                         }
                         break;
                 }

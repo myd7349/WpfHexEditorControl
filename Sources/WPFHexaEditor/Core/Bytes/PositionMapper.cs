@@ -120,7 +120,10 @@ namespace WpfHexaEditor.Core.Bytes
                 return (null, false);
 
             // Try cache first
-            if (_cacheValid && _virtualToPhysicalCache.TryGetValue(virtualPosition, out long cachedPhysical))
+            // CRITICAL FIX: Cache only stores physical position, always returns isInserted=false
+            // Don't use cache for now - it's causing bugs where inserted bytes return isInserted=false from cache
+            // TODO: Enhance cache to store isInserted flag (requires Dictionary<long, (long, bool)>)
+            if (false && _cacheValid && _virtualToPhysicalCache.TryGetValue(virtualPosition, out long cachedPhysical))
             {
                 return (cachedPhysical, false);
             }
@@ -175,6 +178,7 @@ namespace WpfHexaEditor.Core.Bytes
                     if (virtualPosition >= currentVirtual && virtualPosition < currentVirtual + segment.InsertedCount)
                     {
                         // This is an inserted byte
+                        // DON'T cache inserted bytes - cache can't store isInserted=true flag
                         return (segment.PhysicalPos, true);
                     }
                     currentVirtual += segment.InsertedCount;

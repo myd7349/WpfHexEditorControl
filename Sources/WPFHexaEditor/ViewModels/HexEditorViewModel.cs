@@ -265,7 +265,13 @@ namespace WpfHexaEditor.ViewModels
         /// </summary>
         private void OnProviderChangesCleared(object sender, EventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("[HexEditorViewModel] ChangesCleared event received - refreshing view");
+            System.Diagnostics.Debug.WriteLine("[HexEditorViewModel] ChangesCleared event received - clearing cache and refreshing view");
+
+            // CRITICAL: Clear the line cache BEFORE refresh
+            // Cached lines contain old modification status (GetByteAction results)
+            // Must recreate lines with fresh status from provider
+            ClearLineCache();
+
             RefreshVisibleLines();
         }
 
