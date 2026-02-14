@@ -646,6 +646,33 @@ namespace WpfHexaEditor
         /// </summary>
         public long RedoCount => _viewModel?.Provider?.RedoCount ?? 0;
 
+        private bool _isOnLongProcess = false;
+        /// <summary>
+        /// V1 compatible: Is a long process currently running? Set to false to cancel.
+        /// </summary>
+        public bool IsOnLongProcess
+        {
+            get => _isOnLongProcess;
+            set => _isOnLongProcess = value;
+        }
+
+        private double _longProcessProgress = 0;
+        /// <summary>
+        /// V1 compatible: Progress of current long process (0.0 to 1.0)
+        /// </summary>
+        public double LongProcessProgress
+        {
+            get => _longProcessProgress;
+            set
+            {
+                if (Math.Abs(_longProcessProgress - value) > 0.001) // Avoid too many events
+                {
+                    _longProcessProgress = value;
+                    OnLongProcessProgressChanged(EventArgs.Empty);
+                }
+            }
+        }
+
         /// <summary>
         /// V1 compatible: Can copy selection to clipboard?
         /// </summary>
@@ -3135,6 +3162,94 @@ namespace WpfHexaEditor
                 result[i] = _viewModel.GetByte(i);
             }
             return result;
+        }
+
+        /// <summary>
+        /// V1 compatible: Replace byte with another in current selection
+        /// </summary>
+        /// <param name="original">Byte to find and replace</param>
+        /// <param name="replace">Byte to replace with</param>
+        public void ReplaceByte(byte original, byte replace)
+        {
+            if (_viewModel == null || !_viewModel.HasSelection)
+                return;
+
+            var selStart = _viewModel.SelectionStart.Value;
+            var selLength = _viewModel.SelectionLength;
+
+            ReplaceByte(selStart, selLength, original, replace);
+        }
+
+        /// <summary>
+        /// V1 compatible: Replace byte with another in specified range
+        /// </summary>
+        /// <param name="startPosition">Start position (virtual)</param>
+        /// <param name="length">Length of range to search</param>
+        /// <param name="original">Byte to find and replace</param>
+        /// <param name="replace">Byte to replace with</param>
+        public void ReplaceByte(long startPosition, long length, byte original, byte replace)
+        {
+            if (_viewModel == null || ReadOnlyMode || length <= 0)
+                return;
+
+            if (startPosition < 0 || startPosition >= VirtualLength)
+                return;
+
+            // Fire long process started event
+            IsOnLongProcess = true;
+            OnLongProcessProgressStarted(EventArgs.Empty);
+
+            try
+            {
+                int replacedCount = 0;
+
+                // Begin batched update for performance
+                _viewModel.BeginUpdate();
+                try
+                {
+                    for (long i = 0; i < length; i++)
+                    {
+                        long pos = startPosition + i;
+                        if (pos >= VirtualLength)
+                            break;
+
+                        // Check if we should break early (user cancelled)
+                        if (!IsOnLongProcess)
+                            break;
+
+                        // Progress reporting every 2000 bytes
+                        if (i % 2000 == 0)
+                        {
+                            LongProcessProgress = (double)i / length;
+                        }
+
+                        // Check if byte matches and replace
+                        var currentByte = _viewModel.GetByte(pos);
+                        if (currentByte == original)
+                        {
+                            ModifyByte(replace, pos);
+                            replacedCount++;
+                        }
+                    }
+                }
+                finally
+                {
+                    _viewModel.EndUpdate();
+                }
+
+                // Update status
+                StatusText.Text = $"Replaced {replacedCount} occurrences of 0x{original:X2} with 0x{replace:X2}";
+
+                // Fire replace completed event
+                OnReplaceByteCompleted(EventArgs.Empty);
+            }
+            finally
+            {
+                // Fire long process completed event
+                IsOnLongProcess = false;
+                LongProcessProgress = 0;
+                OnLongProcessProgressCompleted(EventArgs.Empty);
+            }
         }
 
         #endregion
