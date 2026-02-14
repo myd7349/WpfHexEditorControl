@@ -3650,9 +3650,16 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// V1: Clear all undo/redo history
+        /// V1: Clear all modifications and undo/redo history
         /// </summary>
-        public void ClearAllChange() => _viewModel?.ClearUndoRedo();
+        public void ClearAllChange()
+        {
+            if (_viewModel?.Provider == null) return;
+
+            _viewModel.Provider.ClearAllEdits();
+            IsModified = false;
+            StatusText.Text = "All changes cleared";
+        }
 
         /// <summary>
         /// V1: Refresh view with options
