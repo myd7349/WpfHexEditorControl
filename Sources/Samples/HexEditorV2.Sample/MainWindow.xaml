@@ -1,11 +1,11 @@
-<Window x:Class="HexEditorV2.Sample.MainWindow"
+<Window x:Class="HexEditor.Sample.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:v2="clr-namespace:WpfHexaEditor;assembly=WPFHexaEditor"
+        xmlns:hex="clr-namespace:WpfHexaEditor;assembly=WPFHexaEditor"
         mc:Ignorable="d"
-        Title="HexEditorV2 Sample - New Architecture with Native Insert Mode"
+        Title="HexEditor Sample - Advanced Features Demo"
         Height="600" Width="1000"
         WindowStartupLocation="CenterScreen"
         KeyDown="Window_KeyDown">
@@ -240,8 +240,8 @@
             </ToggleButton>
         </ToolBar>
 
-        <!-- HexEditorV2 Control -->
-        <v2:HexEditorV2 x:Name="HexEditor" Grid.Row="2"
+        <!-- HexEditor Control (V2 Architecture) -->
+        <hex:HexEditor x:Name="HexEditor" Grid.Row="2"
                         AllowContextMenu="{Binding IsChecked, ElementName=AllowContextMenuOption}"
                         ShowByteToolTip="{Binding IsChecked, ElementName=ShowByteToolTipOption}"
                         AllowAutoHighLightSelectionByte="{Binding IsChecked, ElementName=AutoHighlightOption}"

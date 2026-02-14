@@ -6,7 +6,7 @@ using System.Windows.Input;
 using Microsoft.Win32;
 using WpfHexaEditor.Models;
 
-namespace HexEditorV2.Sample
+namespace HexEditor.Sample
 {
     public partial class MainWindow : Window
     {
@@ -34,7 +34,7 @@ namespace HexEditorV2.Sample
                 {
                     HexEditor.OpenFile(dialog.FileName);
                     _currentFilePath = dialog.FileName;
-                    Title = $"HexEditorV2 - {System.IO.Path.GetFileName(dialog.FileName)}";
+                    Title = $"HexEditor - {System.IO.Path.GetFileName(dialog.FileName)}";
                     UpdateUIState();
                 }
                 catch (Exception ex)
@@ -88,7 +88,7 @@ namespace HexEditorV2.Sample
                 try
                 {
                     // TODO: Implement SaveAs in HexEditor
-                    MessageBox.Show("SaveAs not yet implemented in HexEditorV2", "Info",
+                    MessageBox.Show("SaveAs not yet implemented in HexEditor", "Info",
                         MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
@@ -103,7 +103,7 @@ namespace HexEditorV2.Sample
         {
             HexEditor.Close();
             _currentFilePath = null;
-            Title = "HexEditorV2 Sample";
+            Title = "HexEditor Sample";
             UpdateUIState();
         }
 
@@ -1164,14 +1164,14 @@ namespace HexEditorV2.Sample
         private void About_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show(
-                "HexEditorV2 Sample Application\n\n" +
+                "HexEditor Sample Application\n\n" +
                 "Version: 2.0 Alpha\n" +
                 "Architecture: MVVM with native insert mode\n" +
                 "Author: Derek Tremblay\n" +
                 "Contributors: Claude Sonnet 4.5\n\n" +
                 "Copyright © 2026\n" +
                 "Licensed under Apache 2.0",
-                "About HexEditorV2",
+                "About HexEditor",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
