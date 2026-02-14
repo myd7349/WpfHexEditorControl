@@ -357,7 +357,7 @@
                     </TabControl.Resources>
                 </TabControl>
 
-                <v1control:HexEditor
+                <v1control:HexEditorLegacy
                     x:Name="HexEdit"
                     Grid.Row="1"
                     Width="Auto"

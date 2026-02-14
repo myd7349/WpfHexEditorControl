@@ -26,7 +26,7 @@
             Click="OpenButton_Click"
             Content="Open file..." />
 
-        <hexedit:HexEditor
+        <hexedit:HexEditorLegacy
             x:Name="HexEditor"
             Grid.Row="1"
             BarChartPanelVisibility="Visible"

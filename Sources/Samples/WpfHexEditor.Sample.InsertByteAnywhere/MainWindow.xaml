@@ -19,7 +19,7 @@
     mc:Ignorable="d">
 
     <Grid>
-        <WpfHexaEditor:HexEditor
+        <WpfHexaEditor:HexEditorLegacy
             x:Name="HexEditor"
             Margin="10,50,10,10"
             AllowAutoHighLightSelectionByte="False"
