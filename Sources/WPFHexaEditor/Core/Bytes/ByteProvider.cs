@@ -248,9 +248,21 @@ namespace WpfHexaEditor.Core.Bytes
                 // Modifying an inserted byte - update the byte in EditsManager's insertion list
                 if (physicalPos.HasValue)
                 {
-                    // Calculate which inserted byte this is (virtual offset within insertions)
+                    // CRITICAL FIX: Insertions are stored in LIFO (stack) order
+                    // The NEWEST insertion has offset 0, OLDEST has highest offset
+                    // Virtual positions increase with insertion order, but offsets are inverted
+
                     long virtualStart = _positionMapper.PhysicalToVirtual(physicalPos.Value, _fileProvider.Length);
-                    int virtualOffset = (int)(virtualPosition - virtualStart);
+                    int totalInsertions = _editsManager.GetInsertionCountAt(physicalPos.Value);
+
+                    // Invert the offset calculation to account for LIFO storage
+                    // If we have 3 insertions at physical pos 102:
+                    //   virtual 102 → offset 2 (oldest, last in list)
+                    //   virtual 103 → offset 1 (middle)
+                    //   virtual 104 → offset 0 (newest, first in list)
+                    int virtualOffset = totalInsertions - 1 - (int)(virtualPosition - virtualStart);
+
+                    System.Diagnostics.Debug.WriteLine($"[ByteProvider] ModifyInserted: virtual={virtualPosition}, physical={physicalPos.Value}, virtualStart={virtualStart}, total={totalInsertions}, offset={virtualOffset}");
 
                     // Update the inserted byte's value
                     bool success = _editsManager.ModifyInsertedByte(physicalPos.Value, virtualOffset, value);

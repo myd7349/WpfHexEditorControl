@@ -1162,7 +1162,7 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty ByteSpacerPositioningProperty =
             DependencyProperty.Register(nameof(ByteSpacerPositioning), typeof(ByteSpacerPosition), typeof(HexEditorV2),
-                new FrameworkPropertyMetadata(ByteSpacerPosition.Both, ByteSpacer_Changed));
+                new FrameworkPropertyMetadata(ByteSpacerPosition.HexBytePanel, ByteSpacer_Changed));
 
         /// <summary>
         /// Get or set the byte spacer width 
@@ -5942,7 +5942,48 @@ namespace WpfHexaEditor
                 return;
 
             // Start new byte edit if not currently editing, or position changed
-            if (!_isEditingByte || _editingPosition != currentPos)
+            // SPECIAL CASE: In Insert mode, if waiting for low nibble and position drifted by ±1,
+            // DON'T reset - this is position drift after InsertByte, continue with same edit
+            bool shouldResetEdit = false;
+
+            if (!_isEditingByte)
+            {
+                // Not currently editing - definitely start new edit
+                shouldResetEdit = true;
+                System.Diagnostics.Debug.WriteLine($"[HEXINPUT] Not editing - will start new byte edit");
+            }
+            else if (_editingPosition != currentPos)
+            {
+                // Position changed - check if this is acceptable drift in Insert mode
+                if (_viewModel.EditMode == EditMode.Insert && !_editingHighNibble)
+                {
+                    // We're in Insert mode, waiting for low nibble, and position drifted
+                    long drift = Math.Abs(currentPos.Value - _editingPosition.Value);
+                    if (drift <= 1)
+                    {
+                        // Position drift of ±1 is acceptable in Insert mode after InsertByte
+                        // Force currentPos back to _editingPosition and continue same edit
+                        System.Diagnostics.Debug.WriteLine($"[HEXINPUT] INSERT MODE DRIFT TOLERANCE: currentPos={currentPos.Value}, _editingPosition={_editingPosition.Value}, drift={drift}");
+                        System.Diagnostics.Debug.WriteLine($"[HEXINPUT] Continuing with same byte edit at _editingPosition={_editingPosition.Value}");
+                        currentPos = _editingPosition; // Force back to editing position
+                        shouldResetEdit = false;
+                    }
+                    else
+                    {
+                        // Drift is too large - must be a real position change
+                        shouldResetEdit = true;
+                        System.Diagnostics.Debug.WriteLine($"[HEXINPUT] Position changed by {drift} - starting new byte edit");
+                    }
+                }
+                else
+                {
+                    // In Overwrite mode or editing high nibble - any position change means new edit
+                    shouldResetEdit = true;
+                    System.Diagnostics.Debug.WriteLine($"[HEXINPUT] Position changed - starting new byte edit");
+                }
+            }
+
+            if (shouldResetEdit)
             {
                 _isEditingByte = true;
                 _editingPosition = currentPos;
@@ -5985,10 +6026,33 @@ namespace WpfHexaEditor
                 if (_viewModel.EditMode == EditMode.Insert)
                 {
                     System.Diagnostics.Debug.WriteLine($"[HEXINPUT] HIGH NIBBLE - INSERT MODE: Inserting byte IMMEDIATELY with value 0x{_editingValue:X2}");
-                    _viewModel.InsertByte(_editingPosition, _editingValue);
-                    // Don't move to next byte yet - wait for low nibble to modify this inserted byte
-                    // CRITICAL: Keep cursor at editing position to allow low nibble input
-                    _viewModel.SetSelection(_editingPosition);
+
+                    // Save the insertion position BEFORE calling InsertByte
+                    var insertionPos = _editingPosition;
+
+                    _viewModel.InsertByte(insertionPos, _editingValue);
+
+                    // CRITICAL FIX: Force synchronous position update to prevent drift
+                    // Use Dispatcher.Invoke with Send priority to ensure position is set IMMEDIATELY
+                    // before any other UI updates or events can interfere
+                    Dispatcher.Invoke(() =>
+                    {
+                        _viewModel.SetSelection(insertionPos);
+
+                        // Verify the position was set correctly
+                        var actualPos = _viewModel.SelectionStart;
+                        System.Diagnostics.Debug.WriteLine($"[HEXINPUT] HIGH NIBBLE - After forced SetSelection: cursor at {actualPos.Value}, expected {insertionPos.Value}");
+
+                        if (actualPos != insertionPos)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[HEXINPUT] HIGH NIBBLE - WARNING: Position drift detected even after forced update!");
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Send);
+
+                    // Keep _editingPosition at the insertion point (where the byte was inserted)
+                    // The low nibble MUST modify this same position
+                    _editingPosition = insertionPos;
+
                     System.Diagnostics.Debug.WriteLine($"[HEXINPUT] HIGH NIBBLE - Cursor locked at position {_editingPosition.Value} for low nibble");
                 }
                 else

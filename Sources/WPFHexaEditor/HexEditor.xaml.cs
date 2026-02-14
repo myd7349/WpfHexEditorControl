@@ -4920,7 +4920,7 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty ByteSpacerPositioningProperty =
             DependencyProperty.Register(nameof(ByteSpacerPositioning), typeof(ByteSpacerPosition), typeof(HexEditor),
-                new FrameworkPropertyMetadata(ByteSpacerPosition.Both, ByteSpacer_Changed));
+                new FrameworkPropertyMetadata(ByteSpacerPosition.HexBytePanel, ByteSpacer_Changed));
 
         /// <summary>
         /// Get or set the byte spacer width
