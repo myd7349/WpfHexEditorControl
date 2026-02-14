@@ -77,6 +77,9 @@ namespace WpfHexaEditor.V2.Controls
         private Brush _tblMteBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xD8, 0xE6)); // LightBlue
         private Brush _tblEndBlockBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0x00)); // Red
         private Brush _tblEndLineBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xA5, 0x00)); // Orange
+
+        // Debug counter to avoid spamming logs every frame
+        private int _debugRenderCount = 0;
         private Brush _tblDefaultBrush = new SolidColorBrush(Colors.White);
 
         // Auto-highlight (V1 compatible feature)
@@ -234,6 +237,7 @@ namespace WpfHexaEditor.V2.Controls
             set
             {
                 _bytesPerLine = value;
+                _linesCached.Clear(); // Clear cached lines - they use old BytesPerLine
                 InvalidateMeasure(); // Force layout recalculation
                 InvalidateVisual();
             }
@@ -621,6 +625,12 @@ namespace WpfHexaEditor.V2.Controls
 
                 var borderPen = new Pen(borderBrush, 1.5);
                 dc.DrawRoundedRectangle(null, borderPen, rect, 2, 2);
+
+                // Debug: Log action borders (only for Added/Modified, not every frame)
+                if ((byteData.Action == ByteAction.Added || byteData.Action == ByteAction.Modified) && _debugRenderCount++ % 60 == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[RENDER] Drawing {byteData.Action} border at pos {byteData.VirtualPos.Value}: 0x{byteData.Value:X2}");
+                }
             }
 
             // Draw cursor border (thicker, on top)

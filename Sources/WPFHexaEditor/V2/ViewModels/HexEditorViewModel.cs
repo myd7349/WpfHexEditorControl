@@ -33,9 +33,18 @@ namespace WpfHexaEditor.V2.ViewModels
         private readonly SelectionService _selectionService = new();
         private readonly FindReplaceService _findReplaceService = new();
 
+        /// <summary>
+        /// Expose ByteProvider for external configuration (e.g., CanInsertAnywhere)
+        /// </summary>
+        public ByteProvider Provider => _provider;
+
         // Position mapping: tracks insertions/deletions for Virtual ↔ Physical conversion
         private readonly Dictionary<long, long> _insertions = new(); // physicalPos → count
         private readonly Dictionary<long, long> _deletions = new();  // physicalPos → count
+
+        // Store inserted bytes separately (virtual position → byte value)
+        // ByteProvider can't handle multiple insertions at same physical position correctly
+        private readonly Dictionary<long, byte> _insertedBytes = new();
 
         // Performance: Line cache to avoid recreating lines on every scroll
         private readonly Dictionary<long, HexLine> _lineCache = new();
@@ -397,23 +406,43 @@ namespace WpfHexaEditor.V2.ViewModels
 
             var physicalPos = VirtualToPhysical(virtualPos);
 
-            // Add byte to insertions dictionary
-            _provider.AddByteAdded(value, virtualPos.Value);
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] Inserting 0x{value:X2} at virtualPos={virtualPos.Value}, physicalPos={physicalPos.Value}");
 
-            // Notify Undo/Redo state changed
-            OnPropertyChanged(nameof(CanUndo));
-            OnPropertyChanged(nameof(CanRedo));
+            // Store inserted byte in ViewModel dictionary (indexed by VIRTUAL position)
+            // This prevents ByteProvider confusion between inserted bytes and file bytes
+            _insertedBytes[virtualPos.Value] = value;
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] Stored in _insertedBytes[{virtualPos.Value}] = 0x{value:X2}");
+
+            // NOTE: We do NOT call _provider.AddByteAdded() here because:
+            // 1. It would add entry to ByteProvider's dictionary at virtual position
+            // 2. This blocks reading of file bytes at same physical position
+            // 3. Undo/Redo for insertions will be handled separately in ViewModel
+            // TODO: Implement Undo/Redo stack in ViewModel for inserted bytes
+
+            // Notify Undo/Redo state changed (will be implemented with ViewModel undo stack)
+            // OnPropertyChanged(nameof(CanUndo));
+            // OnPropertyChanged(nameof(CanRedo));
 
             // Track insertion for position mapping
             if (_insertions.ContainsKey(physicalPos.Value))
+            {
                 _insertions[physicalPos.Value]++;
+                System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] _insertions[{physicalPos.Value}] incremented to {_insertions[physicalPos.Value]}");
+            }
             else
+            {
                 _insertions[physicalPos.Value] = 1;
+                System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] _insertions[{physicalPos.Value}] = 1");
+            }
+
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] VirtualLength before refresh: {VirtualLength}, FileLength: {FileLength}, Total insertions: {_insertions.Values.Sum()}");
 
             // OPTIMIZATION: Since insert shifts all following bytes, we need full refresh
             // But we can still use incremental update if scrolling is stable
             ClearLineCache();
             RefreshVisibleLines();
+
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] VirtualLength after refresh: {VirtualLength}");
         }
 
         /// <summary>
@@ -536,6 +565,9 @@ namespace WpfHexaEditor.V2.ViewModels
             var physicalStart = VirtualToPhysical(pasteVirtualPos);
             if (!physicalStart.IsValid) return false;
 
+            // Determine insert mode based on EditMode setting
+            bool shouldInsert = (EditMode == Models.EditMode.Insert);
+
             // Try to get binary data from clipboard first (preferred format)
             var dataObj = System.Windows.Clipboard.GetDataObject();
             if (dataObj != null && dataObj.GetDataPresent("BinaryData"))
@@ -546,7 +578,10 @@ namespace WpfHexaEditor.V2.ViewModels
                     if (memStream != null && memStream.Length > 0)
                     {
                         byte[] bytes = memStream.ToArray();
-                        _provider.PasteNotInsert(physicalStart.Value, bytes);
+
+                        // Use insert or overwrite based on EditMode
+                        _provider.Paste(physicalStart.Value, bytes, shouldInsert);
+
                         ClearLineCache();
                         RefreshVisibleLines();
                         return true;
@@ -562,7 +597,8 @@ namespace WpfHexaEditor.V2.ViewModels
             string clipboardText = System.Windows.Clipboard.GetText();
             if (string.IsNullOrEmpty(clipboardText)) return false;
 
-            _provider.PasteNotInsert(physicalStart.Value, clipboardText);
+            // Use insert or overwrite based on EditMode
+            _provider.Paste(physicalStart.Value, clipboardText, shouldInsert);
 
             ClearLineCache();
             RefreshVisibleLines();
@@ -1125,13 +1161,25 @@ namespace WpfHexaEditor.V2.ViewModels
             var endPos = Math.Min(startVirtualPos + BytePerLine, VirtualLength);
             var lineLength = (int)(endPos - startVirtualPos);
 
+            System.Diagnostics.Debug.WriteLine($"[CREATELINE] Line {lineNumber}: start={startVirtualPos}, endPos={endPos}, VirtualLength={VirtualLength}, expected bytes={lineLength}");
+
             // Batch read bytes for better performance
+            int bytesAdded = 0;
             for (long virtualPos = startVirtualPos; virtualPos < endPos; virtualPos++)
             {
                 var byteData = CreateByteDataOptimized(new VirtualPosition(virtualPos));
                 if (byteData != null)
+                {
                     line.Bytes.Add(byteData);
+                    bytesAdded++;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CREATELINE] NULL ByteData at virtualPos {virtualPos}!");
+                }
             }
+
+            System.Diagnostics.Debug.WriteLine($"[CREATELINE] Line {lineNumber}: Added {bytesAdded} bytes to line (expected {lineLength})");
 
             return line;
         }
@@ -1143,28 +1191,45 @@ namespace WpfHexaEditor.V2.ViewModels
         {
             var physicalPos = VirtualToPhysical(virtualPos);
 
-            // Fast path: Check if this is an inserted byte first
-            var (addedSuccess, addedByte) = _provider.CheckIfIsByteModified(virtualPos.Value, ByteAction.Added);
-            if (addedSuccess && addedByte.Byte.HasValue)
+            // Calculate cursor position (cursor is at the active end of selection)
+            var cursorPos = _selectionStop.IsValid ? _selectionStop : _selectionStart;
+            bool isCursor = cursorPos.IsValid && virtualPos == cursorPos;
+
+            // Fast path: Check if this is an inserted byte first (check ViewModel dictionary)
+            if (_insertedBytes.TryGetValue(virtualPos.Value, out byte insertedValue))
             {
+                System.Diagnostics.Debug.WriteLine($"[CREATEBYTE] Virtual {virtualPos.Value}: INSERTED byte (from ViewModel), value=0x{insertedValue:X2}");
                 return new ByteData
                 {
                     VirtualPos = virtualPos,
                     PhysicalPos = null,
-                    Value = addedByte.Byte.Value,
+                    Value = insertedValue,
                     Action = ByteAction.Added,
-                    IsSelected = IsByteSelected(virtualPos)
+                    IsSelected = IsByteSelected(virtualPos),
+                    IsCursor = isCursor
                 };
             }
 
             // Validate physical position
-            if (!physicalPos.IsValid || physicalPos.Value >= FileLength)
+            if (!physicalPos.IsValid)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CREATEBYTE] Virtual {virtualPos.Value}: Physical position INVALID");
                 return null;
+            }
+
+            if (physicalPos.Value >= FileLength)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CREATEBYTE] Virtual {virtualPos.Value}: Physical {physicalPos.Value} >= FileLength {FileLength}");
+                return null;
+            }
 
             // Read byte value
             var (byteValue, success) = _provider.GetByte(physicalPos.Value);
             if (!success || !byteValue.HasValue)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CREATEBYTE] Virtual {virtualPos.Value}: Failed to read from physical {physicalPos.Value}");
                 return null;
+            }
 
             // Check if modified - use combined check to reduce calls
             var (modSuccess, modByte) = _provider.CheckIfIsByteModified(physicalPos.Value, ByteAction.Modified);
@@ -1175,7 +1240,8 @@ namespace WpfHexaEditor.V2.ViewModels
                 PhysicalPos = physicalPos,
                 Value = byteValue.Value,
                 Action = modSuccess ? ByteAction.Modified : ByteAction.Nothing,
-                IsSelected = IsByteSelected(virtualPos)
+                IsSelected = IsByteSelected(virtualPos),
+                IsCursor = isCursor
             };
         }
 

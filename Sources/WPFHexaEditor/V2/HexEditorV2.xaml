@@ -227,9 +227,9 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="110"/> <!-- Offset: matches OffsetWidth -->
-                    <ColumnDefinition Width="420"/>   <!-- Hex: 16 * (24 + 2) + margin -->
+                    <ColumnDefinition Width="Auto"/>   <!-- Hex: auto-size for all columns with spacers -->
                     <ColumnDefinition Width="20"/> <!-- Separator: matches SeparatorWidth -->
-                    <ColumnDefinition Width="180"/> <!-- ASCII: 16 * 10 + margins -->
+                    <ColumnDefinition Width="Auto"/> <!-- ASCII: auto-size -->
                     <ColumnDefinition Width="*"/> <!-- Remaining space -->
                 </Grid.ColumnDefinitions>
 
@@ -275,6 +275,14 @@
                        ViewportSize="20"
                        SmallChange="1"
                        LargeChange="10"/>
+
+            <!-- Scroll markers overlay (V1 compatible) -->
+            <controls:ScrollMarkerPanel Grid.Column="1"
+                                         x:Name="ScrollMarkers"
+                                         Panel.ZIndex="1"
+                                         Width="18"
+                                         HorizontalAlignment="Right"
+                                         Margin="0,18,0,18"/>
         </Grid>
 
         <!-- Bar Chart Panel (Phase 7.4 - V1 compatible feature) -->
