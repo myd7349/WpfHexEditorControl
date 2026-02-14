@@ -6581,20 +6581,37 @@ namespace WpfHexaEditor
 
         private void FillByteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Fill selection with 0x00 (simplified - V1 would show dialog)
-            // TODO: Add proper input dialog for .NET Core compatibility
-            FillWithByte(0x00, SelectionStart, SelectionLength);
-            StatusText.Text = $"Filled {SelectionLength} bytes with 0x00";
+            // Show dialog to get byte value
+            var dialog = new Dialog.GiveByteWindow
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                byte fillByte = (byte)dialog.HexTextBox.LongValue;
+                FillWithByte(fillByte, SelectionStart, SelectionLength);
+                StatusText.Text = $"Filled {SelectionLength} bytes with 0x{fillByte:X2}";
+            }
         }
 
         private void ReplaceByteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Replace 0x00 with 0xFF in selection (simplified - V1 would show dialog)
-            // TODO: Add proper input dialog for .NET Core compatibility
-            byte[] findData = new byte[] { 0x00 };
-            byte[] replaceData = new byte[] { 0xFF };
-            var replaced = ReplaceAll(findData, replaceData, false, false);
-            StatusText.Text = $"Replaced {replaced.Count()} occurrences";
+            // Show dialog to get find/replace byte values
+            var dialog = new Dialog.ReplaceByteWindow
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                byte findByte = (byte)dialog.HexTextBox.LongValue;
+                byte replaceByte = (byte)dialog.ReplaceHexTextBox.LongValue;
+                byte[] findData = new byte[] { findByte };
+                byte[] replaceData = new byte[] { replaceByte };
+                var replaced = ReplaceAll(findData, replaceData, false, false);
+                StatusText.Text = $"Replaced {replaced.Count()} occurrences (0x{findByte:X2} → 0x{replaceByte:X2})";
+            }
         }
 
         private void ReverseSelectionMenuItem_Click(object sender, RoutedEventArgs e)
