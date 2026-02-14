@@ -727,6 +727,88 @@ namespace WpfHexaEditor.V2
             set => StatusBar.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        #region Status Bar Item Visibility Properties
+
+        /// <summary>
+        /// Show or hide status message in status bar
+        /// </summary>
+        public bool ShowStatusMessage
+        {
+            get => (bool)GetValue(ShowStatusMessageProperty);
+            set => SetValue(ShowStatusMessageProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowStatusMessageProperty =
+            DependencyProperty.Register(nameof(ShowStatusMessage), typeof(bool), typeof(HexEditorV2),
+                new PropertyMetadata(true));
+
+        /// <summary>
+        /// Show or hide file size in status bar
+        /// </summary>
+        public bool ShowFileSizeInStatusBar
+        {
+            get => (bool)GetValue(ShowFileSizeInStatusBarProperty);
+            set => SetValue(ShowFileSizeInStatusBarProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowFileSizeInStatusBarProperty =
+            DependencyProperty.Register(nameof(ShowFileSizeInStatusBar), typeof(bool), typeof(HexEditorV2),
+                new PropertyMetadata(true));
+
+        /// <summary>
+        /// Show or hide selection info in status bar
+        /// </summary>
+        public bool ShowSelectionInStatusBar
+        {
+            get => (bool)GetValue(ShowSelectionInStatusBarProperty);
+            set => SetValue(ShowSelectionInStatusBarProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowSelectionInStatusBarProperty =
+            DependencyProperty.Register(nameof(ShowSelectionInStatusBar), typeof(bool), typeof(HexEditorV2),
+                new PropertyMetadata(true));
+
+        /// <summary>
+        /// Show or hide position info in status bar
+        /// </summary>
+        public bool ShowPositionInStatusBar
+        {
+            get => (bool)GetValue(ShowPositionInStatusBarProperty);
+            set => SetValue(ShowPositionInStatusBarProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowPositionInStatusBarProperty =
+            DependencyProperty.Register(nameof(ShowPositionInStatusBar), typeof(bool), typeof(HexEditorV2),
+                new PropertyMetadata(true));
+
+        /// <summary>
+        /// Show or hide edit mode in status bar
+        /// </summary>
+        public bool ShowEditModeInStatusBar
+        {
+            get => (bool)GetValue(ShowEditModeInStatusBarProperty);
+            set => SetValue(ShowEditModeInStatusBarProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowEditModeInStatusBarProperty =
+            DependencyProperty.Register(nameof(ShowEditModeInStatusBar), typeof(bool), typeof(HexEditorV2),
+                new PropertyMetadata(true));
+
+        /// <summary>
+        /// Show or hide bytes per line in status bar
+        /// </summary>
+        public bool ShowBytesPerLineInStatusBar
+        {
+            get => (bool)GetValue(ShowBytesPerLineInStatusBarProperty);
+            set => SetValue(ShowBytesPerLineInStatusBarProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowBytesPerLineInStatusBarProperty =
+            DependencyProperty.Register(nameof(ShowBytesPerLineInStatusBar), typeof(bool), typeof(HexEditorV2),
+                new PropertyMetadata(true));
+
+        #endregion
+
         /// <summary>
         /// Show or hide the column header (V1 compatible)
         /// </summary>

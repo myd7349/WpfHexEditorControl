@@ -15,6 +15,7 @@
 
     <UserControl.Resources>
         <!-- Converters -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:BoolToSelectionBrushConverter x:Key="BoolToSelectionBrushConverter"/>
         <converters:ActionToBrushConverter x:Key="ActionToBrushConverter"/>
 
@@ -295,28 +296,44 @@
         </Border>
 
         <!-- Status bar -->
-        <StatusBar x:Name="StatusBar" Grid.Row="3">
-            <StatusBarItem>
+        <StatusBar x:Name="StatusBar" Grid.Row="3" DataContext="{Binding RelativeSource={RelativeSource AncestorType=local:HexEditorV2}}">
+            <StatusBar.ContextMenu>
+                <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <MenuItem Header="Status Message" IsCheckable="True" IsChecked="{Binding ShowStatusMessage, Mode=TwoWay}"/>
+                    <MenuItem Header="File Size" IsCheckable="True" IsChecked="{Binding ShowFileSizeInStatusBar, Mode=TwoWay}"/>
+                    <MenuItem Header="Selection Info" IsCheckable="True" IsChecked="{Binding ShowSelectionInStatusBar, Mode=TwoWay}"/>
+                    <MenuItem Header="Position" IsCheckable="True" IsChecked="{Binding ShowPositionInStatusBar, Mode=TwoWay}"/>
+                    <MenuItem Header="Edit Mode" IsCheckable="True" IsChecked="{Binding ShowEditModeInStatusBar, Mode=TwoWay}"/>
+                    <MenuItem Header="Bytes Per Line" IsCheckable="True" IsChecked="{Binding ShowBytesPerLineInStatusBar, Mode=TwoWay}"/>
+                </ContextMenu>
+            </StatusBar.ContextMenu>
+
+            <StatusBarItem Visibility="{Binding ShowStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock x:Name="StatusText" Text="Ready"/>
             </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
+            <Separator Visibility="{Binding ShowStatusMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <StatusBarItem Visibility="{Binding ShowFileSizeInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock x:Name="FileSizeText" Text="Size: -"/>
             </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
+            <Separator Visibility="{Binding ShowFileSizeInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <StatusBarItem Visibility="{Binding ShowSelectionInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock x:Name="SelectionInfo" Text="No selection"/>
             </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
+            <Separator Visibility="{Binding ShowSelectionInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <StatusBarItem Visibility="{Binding ShowPositionInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock x:Name="PositionInfo" Text="Position: 0"/>
             </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
+            <Separator Visibility="{Binding ShowPositionInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <StatusBarItem Visibility="{Binding ShowEditModeInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock x:Name="EditModeText" Text="Mode: Overwrite"/>
             </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
+            <Separator Visibility="{Binding ShowEditModeInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <StatusBarItem Visibility="{Binding ShowBytesPerLineInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock x:Name="BytesPerLineText" Text="Bytes/Line: 16"/>
             </StatusBarItem>
         </StatusBar>
