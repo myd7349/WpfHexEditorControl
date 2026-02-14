@@ -1449,6 +1449,20 @@ namespace HexEditorV2.Sample
             }
         }
 
+        private void ReverseSelection_Click(object sender, RoutedEventArgs e)
+        {
+            if (HexEditor == null) return;
+            HexEditor.ReverseSelection();
+        }
+
+        private void FindAllOccurrence_Click(object sender, RoutedEventArgs e)
+        {
+            if (HexEditor == null) return;
+            // TODO: Implement find all occurrence functionality
+            MessageBox.Show("Find all occurrence functionality will be implemented in a future version.",
+                "Not Implemented", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
         #endregion
     }
 }

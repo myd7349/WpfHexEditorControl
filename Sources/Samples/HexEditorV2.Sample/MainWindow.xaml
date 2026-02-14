@@ -40,21 +40,46 @@
                 <MenuItem Header="_Undo" x:Name="UndoMenuItem" Click="Undo_Click" InputGestureText="Ctrl+Z" IsEnabled="False"/>
                 <MenuItem Header="_Redo" x:Name="RedoMenuItem" Click="Redo_Click" InputGestureText="Ctrl+Y" IsEnabled="False"/>
                 <Separator/>
-                <MenuItem Header="Select _All" x:Name="SelectAllMenuItem" Click="SelectAll_Click" InputGestureText="Ctrl+A" IsEnabled="False"/>
-                <MenuItem Header="_Clear Selection" x:Name="ClearSelectionMenuItem" Click="ClearSelection_Click" IsEnabled="False"/>
-                <MenuItem Header="_Delete Selection" x:Name="DeleteSelectionMenuItem" Click="DeleteSelection_Click" InputGestureText="Del" IsEnabled="False"/>
+                <MenuItem Header="_Find..." x:Name="FindMenuItem" Click="Find_Click" InputGestureText="Ctrl+F" IsEnabled="False"/>
+                <MenuItem Header="Find and _Replace..." x:Name="ReplaceMenuItem" Click="Replace_Click" InputGestureText="Ctrl+H" IsEnabled="False"/>
+                <MenuItem Header="Find All Occurrence of Selection" x:Name="FindAllOccurrenceMenuItem" Click="FindAllOccurrence_Click" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Reverse Selection" x:Name="ReverseSelectionMenuItem" Click="ReverseSelection_Click" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Read Only" x:Name="ReadOnlyMenuItemEdit" IsCheckable="True"
+                          Checked="ReadOnly_Changed"
+                          Unchecked="ReadOnly_Changed"
+                          IsEnabled="False"/>
                 <Separator/>
                 <MenuItem Header="Copy" x:Name="CopyMenuItem" Click="Copy_Click" InputGestureText="Ctrl+C" IsEnabled="False"/>
                 <MenuItem Header="Copy as Hexadecimal" x:Name="CopyHexMenuItem" Click="CopyHex_Click" IsEnabled="False"/>
                 <MenuItem Header="Copy as ASCII String" x:Name="CopyAsciiMenuItem" Click="CopyAscii_Click" IsEnabled="False"/>
+                <MenuItem Header="Delete Selection" x:Name="DeleteSelectionMenuItem" Click="DeleteSelection_Click" InputGestureText="Del" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="Select _All" x:Name="SelectAllMenuItem" Click="SelectAll_Click" InputGestureText="Ctrl+A" IsEnabled="False"/>
+                <MenuItem Header="_Clear Selection" x:Name="ClearSelectionMenuItem" Click="ClearSelection_Click" IsEnabled="False"/>
+                <Separator/>
                 <MenuItem Header="Paste" x:Name="PasteMenuItem" Click="Paste_Click" InputGestureText="Ctrl+V" IsEnabled="False"/>
+                <Separator/>
+                <MenuItem Header="_Bookmarks">
+                    <MenuItem Header="Toggle Bookmark" x:Name="ToggleBookmarkMenuItemEdit" Click="ToggleBookmark_Click" InputGestureText="Ctrl+B" IsEnabled="False"/>
+                    <MenuItem Header="_Clear All Bookmarks" x:Name="ClearBookmarksMenuItemEdit" Click="ClearBookmarks_Click" IsEnabled="False"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="_Character Table (TBL)">
+                    <MenuItem Header="_Load TBL File..." x:Name="LoadTBLMenuItemEdit" Click="LoadTBL_Click" IsEnabled="False"/>
+                    <MenuItem Header="_Close TBL" x:Name="CloseTBLMenuItemEdit" Click="CloseTBL_Click" IsEnabled="False"/>
+                    <Separator/>
+                    <MenuItem Header="Table Type">
+                        <MenuItem Header="ASCII" x:Name="TblAsciiMenuItemEdit" Click="TblType_Click" Tag="0" IsCheckable="True" IsChecked="True"/>
+                        <MenuItem Header="EBCDIC (with special chars)" x:Name="TblEbcdicSpecialMenuItemEdit" Click="TblType_Click" Tag="1" IsCheckable="True"/>
+                        <MenuItem Header="EBCDIC (no special chars)" x:Name="TblEbcdicNoSpecialMenuItemEdit" Click="TblType_Click" Tag="2" IsCheckable="True"/>
+                    </MenuItem>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="_Search">
-                <MenuItem Header="_Find..." x:Name="FindMenuItem" Click="Find_Click" InputGestureText="Ctrl+F" IsEnabled="False"/>
                 <MenuItem Header="Find _Next" x:Name="FindNextMenuItem" Click="FindNext_Click" InputGestureText="F3" IsEnabled="False"/>
                 <MenuItem Header="Find _Previous" x:Name="FindPreviousMenuItem" Click="FindPrevious_Click" InputGestureText="Shift+F3" IsEnabled="False"/>
-                <Separator/>
-                <MenuItem Header="_Replace..." x:Name="ReplaceMenuItem" Click="Replace_Click" InputGestureText="Ctrl+H" IsEnabled="False"/>
             </MenuItem>
             <MenuItem Header="_Tools">
                 <MenuItem Header="_Byte Operations">
@@ -216,6 +241,19 @@
         </ToolBar>
 
         <!-- HexEditorV2 Control -->
-        <v2:HexEditorV2 x:Name="HexEditor" Grid.Row="2"/>
+        <v2:HexEditorV2 x:Name="HexEditor" Grid.Row="2"
+                        AllowContextMenu="{Binding IsChecked, ElementName=AllowContextMenuOption}"
+                        ShowByteToolTip="{Binding IsChecked, ElementName=ShowByteToolTipOption}"
+                        AllowAutoHighLightSelectionByte="{Binding IsChecked, ElementName=AutoHighlightOption}"
+                        AllowAutoSelectSameByteAtDoubleClick="True"
+                        AllowByteCount="{Binding IsChecked, ElementName=ByteCountOption}"
+                        FileDroppingConfirmation="{Binding IsChecked, ElementName=FileDropConfirmOption}"
+                        AllowTextDrop="{Binding IsChecked, ElementName=AllowTextDropOption}"
+                        AllowFileDrop="{Binding IsChecked, ElementName=AllowFileDropOption}"
+                        HideByteDeleted="False"
+                        AllowDeleteByte="True"
+                        AppendNeedConfirmation="True"
+                        AllowExtend="False"
+                        AllowZoom="{Binding IsChecked, ElementName=AllowZoomOption}"/>
     </Grid>
 </Window>
