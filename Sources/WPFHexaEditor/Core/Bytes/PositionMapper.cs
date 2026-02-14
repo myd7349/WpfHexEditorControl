@@ -35,7 +35,8 @@ namespace WpfHexaEditor.Core.Bytes
         private bool _segmentMapValid = false;
 
         // Caches for bidirectional mapping
-        private readonly Dictionary<long, long> _virtualToPhysicalCache = new();
+        // Enhanced: Virtual → (Physical, IsInserted) to properly cache inserted byte flag
+        private readonly Dictionary<long, (long physicalPos, bool isInserted)> _virtualToPhysicalCache = new();
         private readonly Dictionary<long, long> _physicalToVirtualCache = new();
 
         // Cache metadata
@@ -119,13 +120,10 @@ namespace WpfHexaEditor.Core.Bytes
             if (virtualPosition < 0)
                 return (null, false);
 
-            // Try cache first
-            // CRITICAL FIX: Cache only stores physical position, always returns isInserted=false
-            // Don't use cache for now - it's causing bugs where inserted bytes return isInserted=false from cache
-            // TODO: Enhance cache to store isInserted flag (requires Dictionary<long, (long, bool)>)
-            if (false && _cacheValid && _virtualToPhysicalCache.TryGetValue(virtualPosition, out long cachedPhysical))
+            // Try cache first (now enhanced to store isInserted flag)
+            if (_cacheValid && _virtualToPhysicalCache.TryGetValue(virtualPosition, out var cached))
             {
-                return (cachedPhysical, false);
+                return (cached.physicalPos, cached.isInserted);
             }
 
             // Build segment map if needed
@@ -139,7 +137,7 @@ namespace WpfHexaEditor.Core.Bytes
 
                 if (_cacheValid)
                 {
-                    _virtualToPhysicalCache[virtualPosition] = virtualPosition;
+                    _virtualToPhysicalCache[virtualPosition] = (virtualPosition, false);
                     _physicalToVirtualCache[virtualPosition] = virtualPosition;
                 }
                 return (virtualPosition, false);
@@ -163,7 +161,7 @@ namespace WpfHexaEditor.Core.Bytes
 
                     if (_cacheValid)
                     {
-                        _virtualToPhysicalCache[virtualPosition] = physPos;
+                        _virtualToPhysicalCache[virtualPosition] = (physPos, false);
                         _physicalToVirtualCache[physPos] = virtualPosition;
                     }
                     return (physPos, false);
@@ -177,8 +175,11 @@ namespace WpfHexaEditor.Core.Bytes
                 {
                     if (virtualPosition >= currentVirtual && virtualPosition < currentVirtual + segment.InsertedCount)
                     {
-                        // This is an inserted byte
-                        // DON'T cache inserted bytes - cache can't store isInserted=true flag
+                        // This is an inserted byte - now we CAN cache it with isInserted=true
+                        if (_cacheValid)
+                        {
+                            _virtualToPhysicalCache[virtualPosition] = (segment.PhysicalPos, true);
+                        }
                         return (segment.PhysicalPos, true);
                     }
                     currentVirtual += segment.InsertedCount;
@@ -191,7 +192,7 @@ namespace WpfHexaEditor.Core.Bytes
                     {
                         if (_cacheValid)
                         {
-                            _virtualToPhysicalCache[virtualPosition] = segment.PhysicalPos;
+                            _virtualToPhysicalCache[virtualPosition] = (segment.PhysicalPos, false);
                             _physicalToVirtualCache[segment.PhysicalPos] = virtualPosition;
                         }
                         return (segment.PhysicalPos, false);
@@ -213,7 +214,7 @@ namespace WpfHexaEditor.Core.Bytes
 
                     if (_cacheValid)
                     {
-                        _virtualToPhysicalCache[virtualPosition] = physPos;
+                        _virtualToPhysicalCache[virtualPosition] = (physPos, false);
                         _physicalToVirtualCache[physPos] = virtualPosition;
                     }
                     return (physPos, false);
@@ -248,7 +249,7 @@ namespace WpfHexaEditor.Core.Bytes
                 if (_cacheValid)
                 {
                     _physicalToVirtualCache[physicalPosition] = physicalPosition;
-                    _virtualToPhysicalCache[physicalPosition] = physicalPosition;
+                    _virtualToPhysicalCache[physicalPosition] = (physicalPosition, false);
                 }
                 return physicalPosition;
             }
@@ -270,7 +271,7 @@ namespace WpfHexaEditor.Core.Bytes
                     if (_cacheValid)
                     {
                         _physicalToVirtualCache[physicalPosition] = virtualPos;
-                        _virtualToPhysicalCache[virtualPos] = physicalPosition;
+                        _virtualToPhysicalCache[virtualPos] = (physicalPosition, false);
                     }
                     return virtualPos;
                 }
@@ -286,7 +287,7 @@ namespace WpfHexaEditor.Core.Bytes
                     if (_cacheValid)
                     {
                         _physicalToVirtualCache[physicalPosition] = virtualPos;
-                        _virtualToPhysicalCache[virtualPos] = physicalPosition;
+                        _virtualToPhysicalCache[virtualPos] = (physicalPosition, false);
                     }
                     return virtualPos;
                 }
@@ -313,7 +314,7 @@ namespace WpfHexaEditor.Core.Bytes
             if (_cacheValid)
             {
                 _physicalToVirtualCache[physicalPosition] = virtualPos;
-                _virtualToPhysicalCache[virtualPos] = physicalPosition;
+                _virtualToPhysicalCache[virtualPos] = (physicalPosition, false);
             }
 
             return virtualPos;
