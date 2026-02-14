@@ -223,7 +223,7 @@ namespace WpfHexaEditor.Core.Bytes
             {
                 _stream.Position = physicalPosition;
                 _stream.WriteByte(value);
-                _stream.Flush();
+                // Note: Caller should call Flush() after batch writes for better performance
 
                 // Invalidate cache around written position
                 InvalidateCacheAt(physicalPosition);
@@ -258,6 +258,14 @@ namespace WpfHexaEditor.Core.Bytes
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Flush pending writes to disk.
+        /// </summary>
+        public void Flush()
+        {
+            _stream?.Flush();
         }
 
         /// <summary>

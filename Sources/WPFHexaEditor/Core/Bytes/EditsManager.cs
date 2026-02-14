@@ -276,6 +276,15 @@ namespace WpfHexaEditor.Core.Bytes
         }
 
         /// <summary>
+        /// Get all modified bytes as (position, value) pairs.
+        /// Only returns actual byte modifications, not insertions or deletions.
+        /// </summary>
+        public IEnumerable<KeyValuePair<long, byte>> GetAllModifiedBytes()
+        {
+            return _modifiedBytes;
+        }
+
+        /// <summary>
         /// Clear all modifications.
         /// </summary>
         public void ClearAll()

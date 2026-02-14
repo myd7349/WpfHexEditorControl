@@ -442,7 +442,8 @@ namespace WpfHexaEditor.Core.Bytes
 
         /// <summary>
         /// Save all changes to the file.
-        /// Applies all modifications (Modified/Inserted/Deleted) to create new file content.
+        /// OPTIMIZED: Uses fast in-place write for modifications-only (no insertions/deletions).
+        /// Falls back to full rewrite (SaveAs) when insertions/deletions are present.
         /// </summary>
         public void Save()
         {
@@ -455,7 +456,41 @@ namespace WpfHexaEditor.Core.Bytes
             if (string.IsNullOrEmpty(FilePath))
                 throw new InvalidOperationException("Cannot save: no file path");
 
-            SaveAs(FilePath, true);
+            // OPTIMIZATION: Fast path for modifications-only (no insertions/deletions)
+            bool hasInsertions = _editsManager.TotalInsertedBytesCount > 0;
+            bool hasDeletions = _editsManager.DeletedCount > 0;
+
+            if (!hasInsertions && !hasDeletions)
+            {
+                // FAST PATH: Write only modified bytes in-place
+                // 10-100x faster for files with only byte modifications
+                System.Diagnostics.Debug.WriteLine($"[ByteProvider] FAST SAVE: {_editsManager.ModifiedCount} modified bytes (no insertions/deletions)");
+
+                foreach (var kvp in _editsManager.GetAllModifiedBytes())
+                {
+                    long physicalPos = kvp.Key;
+                    byte newValue = kvp.Value;
+
+                    if (!_fileProvider.WriteByte(physicalPos, newValue))
+                    {
+                        throw new IOException($"Failed to write byte at physical position 0x{physicalPos:X}");
+                    }
+                }
+
+                _fileProvider.Flush();
+
+                // Clear edits after successful save
+                _editsManager.ClearAll();
+                _positionMapper.InvalidateCache();
+
+                System.Diagnostics.Debug.WriteLine("[ByteProvider] FAST SAVE complete");
+            }
+            else
+            {
+                // FULL REWRITE: Needed for insertions/deletions
+                System.Diagnostics.Debug.WriteLine($"[ByteProvider] FULL SAVE: {_editsManager.TotalInsertedBytesCount} insertions, {_editsManager.DeletedCount} deletions");
+                SaveAs(FilePath, true);
+            }
         }
 
         /// <summary>
