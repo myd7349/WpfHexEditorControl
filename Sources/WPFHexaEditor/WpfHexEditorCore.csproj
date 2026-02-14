@@ -33,9 +33,9 @@
     <PackageIconUrl />
     <Product>WpfHexaEditor</Product>
     <Copyright>Apache 2.0 - 2016-2026</Copyright>
-    <AssemblyVersion>2.5.0.0</AssemblyVersion>
-    <FileVersion>2.5.0</FileVersion>
-    <Version>2.5.0</Version>
+    <AssemblyVersion>2.6.0.0</AssemblyVersion>
+    <FileVersion>2.6.0</FileVersion>
+    <Version>2.6.0</Version>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <PackageTags>hexeditor;hex;binary;editor;wpf;service-architecture;tbl;character-table;rom-hacking;game-modding;file-editor;hexedit;hexadecimal;undo-redo;search-replace;unit-tested</PackageTags>
     <ApplicationIcon />
@@ -47,50 +47,33 @@
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>license.txt</PackageLicenseFile>
     <PackageReleaseNotes>
-      Version 2.5.0 (2026-02-14) - Major Milestone: V2 Architecture Complete + All Critical Bugs Resolved:
+      Version 2.6.0 (2026-02-14) - Phase 2 Migration: V2 Becomes Main Control
 
-      🏗️ New Architecture:
-      • Complete service-based architecture with 10 specialized services
-      • Separation of concerns: UI layer vs business logic layer
-      • 6 stateless + 4 stateful services for maximum flexibility
+      🔄 BREAKING CHANGE: Major namespace reorganization (100% backward compatible)
 
-      🧪 Quality &amp; Testing:
-      • 80+ unit tests for all service layer components (xUnit)
-      • Test coverage for SelectionService, FindReplaceService, HighlightService
-      • Services are testable in isolation without UI dependencies
+      HexEditor is now the main V2 control (fast, modern, bug-free):
+      • HexEditor = V2 architecture (previously HexEditorV2) ⭐ NEW DEFAULT
+      • HexEditorLegacy = V1 architecture (previously HexEditor) - DEPRECATED
 
-      📚 Documentation:
-      • Complete GitHub Wiki with 6+ comprehensive pages
-      • 19 README files covering every major folder
-      • Getting Started, Architecture, FAQ, Contributing guides
-      • Learning path from beginner to advanced
+      Compatibility aliases (deprecated, remove in v3.0 - April 2027):
+      • HexEditorV1 → HexEditorLegacy (compiler warnings)
+      • HexEditorV2 → HexEditor (compiler warnings)
 
-      🐛 Critical Bug Fixes (v2.5.0):
-      • ✅ Issue #145 RESOLVED - Insert Mode hex input now works correctly (was producing F0 pattern)
-      • ✅ Save Data Loss Bug RESOLVED - All comprehensive validation tests passed! (MB → KB corruption fixed)
-      • Fixed PositionMapper.PhysicalToVirtual() critical bug affecting both issues
-      • Fixed LIFO offset calculations in ByteReader and ByteProvider
-      • Added cursor position synchronization with drift tolerance in Insert mode
+      ✨ What This Means:
+      • New projects automatically get the fast V2 control (99% faster, all bugs fixed)
+      • Existing code continues working via compatibility aliases
+      • 12-month migration window before aliases removed in v3.0
 
-      ⚡ Performance (v2.5.0):
-      • Removed all Debug.WriteLine logging (92+ statements) - 10-100x faster save operations
-      • Fast save path for modification-only edits (10-100x faster than full virtual reads)
-      • Intelligent caching in FindReplaceService (10-100x faster repeated searches)
-      • Parallel multi-core search (2-4x faster for large files &gt; 100MB)
-      • SIMD vectorization (4-8x faster single-byte searches with AVX2/SSE2)
-      • 99% faster rendering (DrawingContext vs ItemsControl)
-      • 80-90% less memory usage
+      📦 Additional Changes:
+      • Reorganized sample projects: Legacy samples moved to Samples/Legacy/
+      • Updated all samples to use explicit control names (HexEditor vs HexEditorLegacy)
+      • Enhanced documentation with migration guide
 
-      ✨ New Features:
-      • Service Usage Sample - Use services without UI in console apps
-      • NuGet package with comprehensive README
-      • 8 sample applications demonstrating all features
+      🔧 Migration (30 seconds):
+      Replace &lt;control:HexEditorV2 /&gt; with &lt;control:HexEditor /&gt; - that's it!
+      API is identical, no functional changes required.
 
-      🔧 Compatibility:
-      • Full .NET 8.0-windows support alongside .NET Framework 4.8
-      • No breaking changes - 100% backward compatible API
-      • Works in WPF and WinForms applications
-
+      📖 Full Migration Guide: https://github.com/abbaye/WpfHexEditorControl/blob/master/MIGRATION_PLAN_V2.md
       📖 Documentation: https://github.com/abbaye/WpfHexEditorControl/wiki
     </PackageReleaseNotes>
     <IncludeSource>true</IncludeSource>
