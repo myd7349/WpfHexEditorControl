@@ -1205,6 +1205,14 @@ namespace HexEditorV2.Sample
                 MessageBoxImage.Information);
         }
 
+        private void ResetZoom_Click(object sender, RoutedEventArgs e)
+        {
+            if (ZoomSlider != null)
+            {
+                ZoomSlider.Value = 1.0;
+            }
+        }
+
         #endregion
 
         #region Keyboard Handling

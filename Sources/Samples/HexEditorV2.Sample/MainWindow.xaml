@@ -130,6 +130,59 @@
                     <MenuItem Header="↩️ Reset to Defaults" Click="ResetColors_Click"/>
                 </MenuItem>
             </MenuItem>
+            <MenuItem Header="_Options">
+                <MenuItem Header="Context Menu" IsCheckable="True" x:Name="AllowContextMenuOption"
+                          IsChecked="True" IsEnabled="False"
+                          ToolTip="Enable or disable right-click context menu"/>
+                <MenuItem Header="Show Byte ToolTip" IsCheckable="True" x:Name="ShowByteToolTipOption"
+                          IsChecked="False" IsEnabled="False"
+                          ToolTip="Show tooltip with byte information on hover"/>
+                <Separator/>
+                <MenuItem Header="Auto-Highlight Selection Byte" IsCheckable="True" x:Name="AutoHighlightOption"
+                          IsChecked="False" IsEnabled="False"
+                          ToolTip="Automatically highlight all bytes with same value as selected byte"/>
+                <MenuItem Header="Count Selected Bytes" IsCheckable="True" x:Name="ByteCountOption"
+                          IsChecked="False" IsEnabled="False"
+                          ToolTip="Count occurrences of selected byte value"/>
+                <Separator/>
+                <MenuItem Header="File Operations">
+                    <MenuItem Header="Allow File Drop" IsCheckable="True" x:Name="AllowFileDropOption"
+                              IsChecked="True" IsEnabled="False"
+                              ToolTip="Allow dragging files onto the editor"/>
+                    <MenuItem Header="File Drop Confirmation" IsCheckable="True" x:Name="FileDropConfirmOption"
+                              IsChecked="True" IsEnabled="False"
+                              ToolTip="Require confirmation before opening dropped file"/>
+                    <MenuItem Header="Allow Text Drop" IsCheckable="True" x:Name="AllowTextDropOption"
+                              IsChecked="True" IsEnabled="False"
+                              ToolTip="Allow dragging text onto the editor"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Allow Zoom" IsCheckable="True" x:Name="AllowZoomOption"
+                          IsChecked="True" IsEnabled="False"
+                          ToolTip="Enable zoom with Ctrl+MouseWheel"/>
+                <MenuItem Header="Zoom Level">
+                    <MenuItem Header="Reset Zoom (100%)" Click="ResetZoom_Click" IsEnabled="False"/>
+                    <Separator/>
+                    <StackPanel Orientation="Horizontal" Margin="10,5">
+                        <Label Content="50%" Width="40"/>
+                        <Slider x:Name="ZoomSlider" Width="200" Minimum="0.5" Maximum="2.0"
+                                Value="1.0" LargeChange="0.1"
+                                ToolTip="Zoom: 50% to 200%"
+                                IsEnabled="False"/>
+                        <Label Content="200%" Width="40" Margin="5,0,0,0"/>
+                    </StackPanel>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Mouse Wheel Scroll Speed" IsEnabled="False">
+                    <StackPanel Orientation="Horizontal" Margin="10,5">
+                        <Label Content="Speed:" Width="60"/>
+                        <Slider x:Name="ScrollSpeedSlider" Width="200" Minimum="1" Maximum="10"
+                                Value="3" TickFrequency="1" IsSnapToTickEnabled="True"
+                                ToolTip="Lines per wheel notch"/>
+                        <Label x:Name="ScrollSpeedLabel" Content="3" Width="30" Margin="5,0,0,0"/>
+                    </StackPanel>
+                </MenuItem>
+            </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About" Click="About_Click"/>
                 <MenuItem Header="_Keyboard Shortcuts" Click="KeyboardShortcuts_Click"/>
