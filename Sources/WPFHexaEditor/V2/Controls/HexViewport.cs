@@ -671,16 +671,18 @@ namespace WpfHexaEditor.V2.Controls
                 dc.DrawRoundedRectangle(null, _cursorPen, rect, 2, 2);
 
                 // Position caret at cursor byte (only visible in Insert mode)
-                // Caret should appear as a flashing vertical line at the left edge of the byte
+                // Caret should appear as a flashing vertical line at the left edge of the byte (between bytes)
                 if (_caret != null && EditMode == EditMode.Insert)
                 {
                     _caret.MoveCaret(x, y);
                     _caret.CaretMode = CaretMode.Insert; // Vertical line
+                    System.Diagnostics.Debug.WriteLine($"[CARET] Positioned at x={x}, y={y}, EditMode=Insert, IsEnable={_caret.IsEnable}, IsVisibleCaret={_caret.IsVisibleCaret}");
                 }
                 else if (_caret != null)
                 {
                     // In Overwrite mode, use block caret or hide it (V1 shows block)
                     _caret.Hide();
+                    System.Diagnostics.Debug.WriteLine($"[CARET] Hidden (EditMode={EditMode}, _caret!=null={_caret != null})");
                 }
             }
 

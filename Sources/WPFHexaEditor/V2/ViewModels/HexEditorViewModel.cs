@@ -598,16 +598,12 @@ namespace WpfHexaEditor.V2.ViewModels
                 string clipboardText = System.Windows.Clipboard.GetText();
                 if (string.IsNullOrEmpty(clipboardText)) return false;
 
-                // Convert hex string to bytes (assuming clipboard has hex text like "48 65 6C 6C 6F")
-                clipboardText = clipboardText.Replace(" ", "").Replace("\r", "").Replace("\n", "");
-                if (clipboardText.Length % 2 != 0) return false; // Invalid hex string
-
-                bytesToPaste = new byte[clipboardText.Length / 2];
-                for (int i = 0; i < bytesToPaste.Length; i++)
+                // Convert each character to byte (same as V1 ByteProvider.Paste(string))
+                // Each character's ASCII code becomes a byte value
+                bytesToPaste = new byte[clipboardText.Length];
+                for (int i = 0; i < clipboardText.Length; i++)
                 {
-                    string hexByte = clipboardText.Substring(i * 2, 2);
-                    if (!byte.TryParse(hexByte, System.Globalization.NumberStyles.HexNumber, null, out bytesToPaste[i]))
-                        return false; // Invalid hex
+                    bytesToPaste[i] = ByteConverters.CharToByte(clipboardText[i]);
                 }
             }
 
