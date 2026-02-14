@@ -5412,7 +5412,6 @@ namespace WpfHexaEditor
                     _viewModel.EditMode = _viewModel.EditMode == EditMode.Insert
                         ? EditMode.Overwrite
                         : EditMode.Insert;
-                    StatusText.Text = _viewModel.EditMode == EditMode.Insert ? "Insert mode" : "Overwrite mode";
                     break;
 
                 // Delete key: Delete selection
@@ -5697,7 +5696,7 @@ namespace WpfHexaEditor
             {
                 // Show VirtualLength (includes insertions in Insert mode)
                 long displayLength = _viewModel.VirtualLength;
-                FileSizeText.Text = $"Size: {FormatFileSize(displayLength)} ({displayLength:N0} bytes)";
+                FileSizeText.Text = $"Size: {FormatFileSize(displayLength)}";
             }
         }
 
