@@ -50,29 +50,29 @@ HexEditorV2 represents a complete architectural rewrite of the WpfHexEditor cont
 ```mermaid
 graph TB
     subgraph "UI Layer (WPF)"
-        HexEditorV2[HexEditorV2.xaml<br/>WPF UserControl]
-        HexViewport[HexViewport<br/>Custom Rendering]
-        ContextMenu[Context Menu<br/>Status Bar]
+        HexEditorV2["HexEditorV2.xaml - WPF UserControl"]
+        HexViewport["HexViewport - Custom Rendering"]
+        ContextMenu["Context Menu - Status Bar"]
     end
 
     subgraph "Presentation Layer (MVVM)"
-        ViewModel[HexEditorViewModel<br/>Business Logic]
+        ViewModel["HexEditorViewModel - Business Logic"]
     end
 
     subgraph "Data Access Layer"
-        ByteProvider[ByteProvider<br/>Coordinator & API]
+        ByteProvider["ByteProvider - Coordinator & API"]
     end
 
     subgraph "Core Processing Layer"
-        ByteReader[ByteReader<br/>Virtual View Reader]
-        EditsManager[EditsManager<br/>Edit Tracking]
-        PositionMapper[PositionMapper<br/>Virtual↔Physical]
-        UndoRedoManager[UndoRedoManager<br/>History Stack]
+        ByteReader["ByteReader - Virtual View Reader"]
+        EditsManager["EditsManager - Edit Tracking"]
+        PositionMapper["PositionMapper - Virtual↔Physical"]
+        UndoRedoManager["UndoRedoManager - History Stack"]
     end
 
     subgraph "Storage Layer"
-        FileProvider[FileProvider<br/>File I/O & Cache]
-        FileSystem[File System<br/>Disk Storage]
+        FileProvider["FileProvider - File I/O & Cache"]
+        FileSystem["File System - Disk Storage"]
     end
 
     HexEditorV2 --> HexViewport
@@ -112,23 +112,23 @@ graph TB
 ```mermaid
 graph LR
     subgraph "HexEditorV2 (View Layer)"
-        View[HexEditorV2.xaml.cs<br/>Input & Rendering]
-        Viewport[HexViewport Control<br/>Custom DrawingContext]
+        View["HexEditorV2.xaml.cs - Input & Rendering"]
+        Viewport["HexViewport Control - Custom DrawingContext"]
     end
 
     subgraph "ViewModel Layer"
-        VM[HexEditorViewModel<br/>Virtual Length<br/>Visible Lines<br/>Selection State<br/>Edit Operations]
+        VM["HexEditorViewModel - Virtual Length, Visible Lines, Selection State, Edit Operations"]
     end
 
     subgraph "Data Layer"
-        Provider[ByteProvider<br/>File Management<br/>Coordinate Components<br/>Undo/Redo]
+        Provider["ByteProvider - File Management, Coordinate Components, Undo/Redo"]
     end
 
     subgraph "Core Components"
-        Reader[ByteReader<br/>Read Virtual View<br/>Line Cache (16B)]
-        Edits[EditsManager<br/>Track Edits<br/>Modified/Inserted/Deleted]
-        Mapper[PositionMapper<br/>Virtual↔Physical<br/>Segment Map]
-        File[FileProvider<br/>Stream I/O<br/>Block Cache (64KB)]
+        Reader["ByteReader - Read Virtual View, Line Cache (16B)"]
+        Edits["EditsManager - Track Edits, Modified/Inserted/Deleted"]
+        Mapper["PositionMapper - Virtual↔Physical, Segment Map"]
+        File["FileProvider - Stream I/O, Block Cache (64KB)"]
     end
 
     View --> Viewport
