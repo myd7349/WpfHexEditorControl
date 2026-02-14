@@ -27,7 +27,7 @@ namespace WpfHexaEditor.V2.ViewModels
     {
         #region Fields
 
-        private ByteProvider _provider; // Not readonly - can be reassigned when saving with insertions
+        private Core.Bytes.ByteProviderLegacy _provider; // Not readonly - can be reassigned when saving with insertions
         private readonly UndoRedoService _undoRedoService = new();
         private readonly ClipboardService _clipboardService = new();
         private readonly SelectionService _selectionService = new();
@@ -36,7 +36,7 @@ namespace WpfHexaEditor.V2.ViewModels
         /// <summary>
         /// Expose ByteProvider for external configuration (e.g., CanInsertAnywhere)
         /// </summary>
-        public ByteProvider Provider => _provider;
+        public Core.Bytes.ByteProviderLegacy Provider => _provider;
 
         // Position mapping: tracks insertions/deletions for Virtual ↔ Physical conversion
         private readonly Dictionary<long, long> _insertions = new(); // physicalPos → count
@@ -267,7 +267,7 @@ namespace WpfHexaEditor.V2.ViewModels
 
         #region Constructor
 
-        public HexEditorViewModel(ByteProvider provider)
+        public HexEditorViewModel(Core.Bytes.ByteProviderLegacy provider)
         {
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
@@ -291,7 +291,7 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public static HexEditorViewModel OpenFile(string filePath)
         {
-            var provider = new ByteProvider(filePath);
+            var provider = new Core.Bytes.ByteProviderLegacy(filePath);
             return new HexEditorViewModel(provider);
         }
 
@@ -372,7 +372,7 @@ namespace WpfHexaEditor.V2.ViewModels
                 System.IO.File.Move(tempFile, originalFile);
 
                 // Reopen file
-                _provider = new ByteProvider(originalFile);
+                _provider = new Core.Bytes.ByteProviderLegacy(originalFile);
 
                 // Clear insertions (they're now in the file)
                 _insertedBytes.Clear();

@@ -3021,7 +3021,7 @@ namespace WpfHexaEditor.V2
         /// <param name="highlightDifferences">Automatically highlight differences</param>
         /// <param name="maxDifferences">Maximum differences to return (0 = unlimited)</param>
         /// <returns>Enumerable of byte differences</returns>
-        public IEnumerable<ByteDifference> Compare(Core.Bytes.ByteProvider provider, bool highlightDifferences = true, long maxDifferences = 1000)
+        public IEnumerable<ByteDifference> Compare(Core.Bytes.ByteProviderLegacy provider, bool highlightDifferences = true, long maxDifferences = 1000)
         {
             if (provider == null || _viewModel?.Provider == null)
                 return Enumerable.Empty<ByteDifference>();
@@ -3373,7 +3373,7 @@ namespace WpfHexaEditor.V2
         /// Compare this file with a ByteProvider (V1 compatible)
         /// Returns list of differences between the two providers
         /// </summary>
-        public IEnumerable<Core.Bytes.ByteDifference> Compare(Core.Bytes.ByteProvider provider)
+        public IEnumerable<Core.Bytes.ByteDifference> Compare(Core.Bytes.ByteProviderLegacy provider)
         {
             if (_viewModel == null || provider == null)
                 return Enumerable.Empty<Core.Bytes.ByteDifference>();

@@ -22,9 +22,14 @@ using TextDataFormat = System.Windows.TextDataFormat;
 namespace WpfHexaEditor.Core.Bytes
 {
     /// <summary>
-    /// Used for interaction with file or stream
+    /// ByteProviderLegacy - Legacy V1 byte provider for backward compatibility.
+    ///
+    /// LEGACY: This is the original V1 implementation. New code should use V2.ByteProvider.ByteProvider
+    /// which is 10x-100x faster with better architecture.
+    ///
+    /// Used for interaction with file or stream.
     /// </summary>
-    public sealed class ByteProvider : IDisposable
+    public sealed class ByteProviderLegacy : IDisposable
     {
         #region Globals variable
 
@@ -67,17 +72,17 @@ namespace WpfHexaEditor.Core.Bytes
         /// <summary>
         /// Default constructor
         /// </summary>
-        public ByteProvider() { }
+        public ByteProviderLegacy() { }
 
         /// <summary>
         /// Construct new ByteProvider with filename and try to open file
         /// </summary>
-        public ByteProvider(string fileName) => FileName = fileName;
+        public ByteProviderLegacy(string fileName) => FileName = fileName;
 
         /// <summary>
         /// Construct new ByteProvider with filename and try to open file
         /// </summary>
-        public ByteProvider(string fileName, bool readOnlyMode, bool canInsertAnywhere)
+        public ByteProviderLegacy(string fileName, bool readOnlyMode, bool canInsertAnywhere)
         {
             CanInsertAnywhere = canInsertAnywhere;
             ReadOnlyMode = readOnlyMode;
@@ -87,7 +92,7 @@ namespace WpfHexaEditor.Core.Bytes
         /// <summary>
         /// Constuct new ByteProvider with stream
         /// </summary>
-        public ByteProvider(Stream stream, bool canInsertAnywhere)
+        public ByteProviderLegacy(Stream stream, bool canInsertAnywhere)
         {
             CanInsertAnywhere = canInsertAnywhere;
             Stream = stream;
@@ -290,7 +295,7 @@ namespace WpfHexaEditor.Core.Bytes
         /// <summary>
         /// Get if the provider is open
         /// </summary>
-        public static bool CheckIsOpen(ByteProvider provider) => provider?.IsOpen == true;
+        public static bool CheckIsOpen(ByteProviderLegacy provider) => provider?.IsOpen == true;
 
         #endregion isOpen property/methods
 
@@ -1636,7 +1641,7 @@ namespace WpfHexaEditor.Core.Bytes
         /// Compare this provider with another and get all bytes difference
         /// </summary>
         /// <returns>Return each byte not equal in the two provider</returns>
-        public IEnumerable<ByteDifference> Compare(ByteProvider providerToCompare, bool compareChange = false)
+        public IEnumerable<ByteDifference> Compare(ByteProviderLegacy providerToCompare, bool compareChange = false)
         {
             if (!CheckIsOpen(this) || !CheckIsOpen(providerToCompare)) yield return null;
 

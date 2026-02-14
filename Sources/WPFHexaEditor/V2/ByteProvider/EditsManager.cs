@@ -1,0 +1,323 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.5
+//////////////////////////////////////////////
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace WpfHexaEditor.V2.ByteProvider
+{
+    /// <summary>
+    /// Represents an inserted byte at a specific virtual offset from a physical position.
+    /// </summary>
+    public struct InsertedByte
+    {
+        public byte Value;
+        public long VirtualOffset; // Offset from physical position (0, 1, 2, ...)
+
+        public InsertedByte(byte value, long virtualOffset)
+        {
+            Value = value;
+            VirtualOffset = virtualOffset;
+        }
+    }
+
+    /// <summary>
+    /// EditsManager - Tracks all modifications (Modified, Inserted, Deleted bytes).
+    /// Uses separate storage for each type to handle insertions correctly.
+    /// Works with PHYSICAL positions only.
+    /// Thread-safe for read operations, external locking required for writes.
+    /// </summary>
+    public sealed class EditsManager
+    {
+        // Separate dictionaries for each edit type
+        private readonly Dictionary<long, byte> _modifiedBytes = new();
+        private readonly Dictionary<long, List<InsertedByte>> _insertedBytes = new();
+        private readonly HashSet<long> _deletedPositions = new();
+
+        /// <summary>
+        /// Gets the number of modified bytes.
+        /// </summary>
+        public int ModifiedCount => _modifiedBytes.Count;
+
+        /// <summary>
+        /// Gets the number of physical positions with insertions.
+        /// </summary>
+        public int InsertedPositionsCount => _insertedBytes.Count;
+
+        /// <summary>
+        /// Gets the total number of inserted bytes across all positions.
+        /// </summary>
+        public int TotalInsertedBytesCount => _insertedBytes.Values.Sum(list => list.Count);
+
+        /// <summary>
+        /// Gets the number of deleted bytes.
+        /// </summary>
+        public int DeletedCount => _deletedPositions.Count;
+
+        /// <summary>
+        /// Gets whether any modifications exist.
+        /// </summary>
+        public bool HasChanges => _modifiedBytes.Count > 0 || _insertedBytes.Count > 0 || _deletedPositions.Count > 0;
+
+        #region Modify Operations
+
+        /// <summary>
+        /// Mark a byte as modified at a physical position.
+        /// </summary>
+        public void ModifyByte(long physicalPosition, byte value)
+        {
+            if (physicalPosition < 0)
+                throw new ArgumentOutOfRangeException(nameof(physicalPosition));
+
+            // Can't modify a deleted byte
+            if (_deletedPositions.Contains(physicalPosition))
+                throw new InvalidOperationException($"Cannot modify deleted byte at position {physicalPosition}");
+
+            _modifiedBytes[physicalPosition] = value;
+        }
+
+        /// <summary>
+        /// Check if a byte is modified at a physical position.
+        /// </summary>
+        public bool IsModified(long physicalPosition)
+        {
+            return _modifiedBytes.ContainsKey(physicalPosition);
+        }
+
+        /// <summary>
+        /// Get the modified byte value at a physical position.
+        /// </summary>
+        public (byte value, bool exists) GetModifiedByte(long physicalPosition)
+        {
+            if (_modifiedBytes.TryGetValue(physicalPosition, out byte value))
+                return (value, true);
+
+            return (0, false);
+        }
+
+        /// <summary>
+        /// Remove modification at a physical position (revert to original).
+        /// </summary>
+        public bool RemoveModification(long physicalPosition)
+        {
+            return _modifiedBytes.Remove(physicalPosition);
+        }
+
+        #endregion
+
+        #region Insert Operations
+
+        /// <summary>
+        /// Insert byte(s) at a physical position.
+        /// Multiple insertions at the same position are supported and ordered by virtualOffset.
+        /// </summary>
+        public void InsertBytes(long physicalPosition, byte[] bytes)
+        {
+            if (physicalPosition < 0)
+                throw new ArgumentOutOfRangeException(nameof(physicalPosition));
+
+            if (bytes == null || bytes.Length == 0)
+                return;
+
+            // Get or create insertion list for this position
+            if (!_insertedBytes.TryGetValue(physicalPosition, out var insertions))
+            {
+                insertions = new List<InsertedByte>(bytes.Length);
+                _insertedBytes[physicalPosition] = insertions;
+            }
+
+            // Calculate starting virtualOffset (after existing insertions)
+            long startOffset = insertions.Count > 0 ? insertions[insertions.Count - 1].VirtualOffset + 1 : 0;
+
+            // Add new insertions
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                insertions.Add(new InsertedByte(bytes[i], startOffset + i));
+            }
+        }
+
+        /// <summary>
+        /// Insert a single byte at a physical position.
+        /// </summary>
+        public void InsertByte(long physicalPosition, byte value)
+        {
+            InsertBytes(physicalPosition, new[] { value });
+        }
+
+        /// <summary>
+        /// Get all inserted bytes at a physical position, ordered by virtualOffset.
+        /// </summary>
+        public List<InsertedByte> GetInsertedBytesAt(long physicalPosition)
+        {
+            if (_insertedBytes.TryGetValue(physicalPosition, out var insertions))
+                return insertions; // Already ordered
+
+            return new List<InsertedByte>(); // Empty list
+        }
+
+        /// <summary>
+        /// Check if there are any insertions at a physical position.
+        /// </summary>
+        public bool HasInsertionsAt(long physicalPosition)
+        {
+            return _insertedBytes.ContainsKey(physicalPosition) && _insertedBytes[physicalPosition].Count > 0;
+        }
+
+        /// <summary>
+        /// Get the number of inserted bytes at a specific physical position.
+        /// </summary>
+        public int GetInsertionCountAt(long physicalPosition)
+        {
+            if (_insertedBytes.TryGetValue(physicalPosition, out var insertions))
+                return insertions.Count;
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Remove all insertions at a physical position.
+        /// </summary>
+        public bool RemoveInsertionsAt(long physicalPosition)
+        {
+            return _insertedBytes.Remove(physicalPosition);
+        }
+
+        #endregion
+
+        #region Delete Operations
+
+        /// <summary>
+        /// Mark a byte as deleted at a physical position.
+        /// </summary>
+        public void DeleteByte(long physicalPosition)
+        {
+            if (physicalPosition < 0)
+                throw new ArgumentOutOfRangeException(nameof(physicalPosition));
+
+            _deletedPositions.Add(physicalPosition);
+
+            // Remove any modification at this position (deleted overrides modified)
+            _modifiedBytes.Remove(physicalPosition);
+        }
+
+        /// <summary>
+        /// Delete multiple bytes starting at a physical position.
+        /// </summary>
+        public void DeleteBytes(long startPhysicalPosition, long count)
+        {
+            for (long i = 0; i < count; i++)
+            {
+                DeleteByte(startPhysicalPosition + i);
+            }
+        }
+
+        /// <summary>
+        /// Check if a byte is deleted at a physical position.
+        /// </summary>
+        public bool IsDeleted(long physicalPosition)
+        {
+            return _deletedPositions.Contains(physicalPosition);
+        }
+
+        /// <summary>
+        /// Undelete a byte at a physical position (revert to original).
+        /// </summary>
+        public bool UndeleteByte(long physicalPosition)
+        {
+            return _deletedPositions.Remove(physicalPosition);
+        }
+
+        #endregion
+
+        #region Bulk Operations
+
+        /// <summary>
+        /// Get all physical positions with any type of modification.
+        /// </summary>
+        public IEnumerable<long> GetAllModifiedPositions()
+        {
+            return _modifiedBytes.Keys
+                .Concat(_insertedBytes.Keys)
+                .Concat(_deletedPositions)
+                .Distinct()
+                .OrderBy(p => p);
+        }
+
+        /// <summary>
+        /// Clear all modifications.
+        /// </summary>
+        public void ClearAll()
+        {
+            _modifiedBytes.Clear();
+            _insertedBytes.Clear();
+            _deletedPositions.Clear();
+        }
+
+        /// <summary>
+        /// Clear only modifications (keep insertions and deletions).
+        /// </summary>
+        public void ClearModifications()
+        {
+            _modifiedBytes.Clear();
+        }
+
+        /// <summary>
+        /// Clear only insertions (keep modifications and deletions).
+        /// </summary>
+        public void ClearInsertions()
+        {
+            _insertedBytes.Clear();
+        }
+
+        /// <summary>
+        /// Clear only deletions (keep modifications and insertions).
+        /// </summary>
+        public void ClearDeletions()
+        {
+            _deletedPositions.Clear();
+        }
+
+        /// <summary>
+        /// Get memory usage statistics.
+        /// </summary>
+        public (int modifiedBytes, int insertedBytes, int deletedBytes, long estimatedMemoryKB) GetStatistics()
+        {
+            // Rough estimate:
+            // - Modified: 8 bytes (long key) + 1 byte (value) = 9 bytes per entry
+            // - Inserted: 8 bytes (long key) + list overhead + (1 byte value + 8 bytes offset) * count
+            // - Deleted: 8 bytes (long key)
+
+            long modMemory = _modifiedBytes.Count * 9;
+            long insMemory = _insertedBytes.Sum(kvp => 8 + 16 + (kvp.Value.Count * 9));
+            long delMemory = _deletedPositions.Count * 8;
+
+            long totalBytes = modMemory + insMemory + delMemory;
+            long totalKB = totalBytes / 1024;
+
+            return (_modifiedBytes.Count, TotalInsertedBytesCount, _deletedPositions.Count, totalKB);
+        }
+
+        #endregion
+
+        #region Query Helpers
+
+        /// <summary>
+        /// Get a summary of edits in a physical position range.
+        /// </summary>
+        public (int modified, int inserted, int deleted) GetEditSummaryInRange(long startPhysical, long endPhysical)
+        {
+            int modified = _modifiedBytes.Keys.Count(p => p >= startPhysical && p <= endPhysical);
+            int inserted = _insertedBytes.Where(kvp => kvp.Key >= startPhysical && kvp.Key <= endPhysical)
+                                          .Sum(kvp => kvp.Value.Count);
+            int deleted = _deletedPositions.Count(p => p >= startPhysical && p <= endPhysical);
+
+            return (modified, inserted, deleted);
+        }
+
+        #endregion
+    }
+}

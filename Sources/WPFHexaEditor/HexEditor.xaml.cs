@@ -30,7 +30,7 @@ using WpfHexaEditor.Core.MethodExtention;
 using WpfHexaEditor.Dialog;
 using WpfHexaEditor.Services;
 using static WpfHexaEditor.Core.Bytes.ByteConverters;
-using static WpfHexaEditor.Core.Bytes.ByteProvider;
+using static WpfHexaEditor.Core.Bytes.ByteProviderLegacy;
 using Path = System.IO.Path;
 
 namespace WpfHexaEditor
@@ -49,7 +49,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Byte provider for work with file or stream currently loaded in control.
         /// </summary>
-        private ByteProvider _provider;
+        private ByteProviderLegacy _provider;
 
         /// <summary>
         /// Service for undo/redo operations
@@ -2300,7 +2300,7 @@ namespace WpfHexaEditor
 
         private void Provider_ChangesSubmited(object sender, EventArgs e)
         {
-            if (sender is not ByteProvider bp) return;
+            if (sender is not ByteProviderLegacy bp) return;
 
             //Refresh filename
             var filename = bp.FileName;
@@ -2342,7 +2342,7 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Set the Stream are used by ByteProvider
+        /// Set the Stream are used by ByteProviderLegacy
         /// </summary>
         public Stream Stream
         {
@@ -2434,7 +2434,7 @@ namespace WpfHexaEditor
             if (PreloadByteInEditorMode == PreloadByteInEditor.MaxScreenVisibleLineAtDataLoad)
                 BuildDataLines(MaxScreenVisibleLine);
 
-            _provider = new ByteProvider(filename, ReadOnlyMode, CanInsertAnywhere);
+            _provider = new ByteProviderLegacy(filename, ReadOnlyMode, CanInsertAnywhere);
 
             _provider.With(p =>
             {
@@ -2486,7 +2486,7 @@ namespace WpfHexaEditor
             if (PreloadByteInEditorMode == PreloadByteInEditor.MaxScreenVisibleLineAtDataLoad)
                 BuildDataLines(MaxScreenVisibleLine);
 
-            _provider = new ByteProvider(stream, CanInsertAnywhere);
+            _provider = new ByteProviderLegacy(stream, CanInsertAnywhere);
 
             _provider.With(p =>
             {
@@ -5208,7 +5208,7 @@ namespace WpfHexaEditor
         #region Save/Load control state (Can be used to implement multi-file support in client editor... ;)
 
         /// <summary>
-        /// Save the current state of ByteProvider in a xml text file.
+        /// Save the current state of ByteProviderLegacy in a xml text file.
         /// </summary>
         public void SaveCurrentState(string filename)
         {
@@ -6014,7 +6014,7 @@ namespace WpfHexaEditor
         /// Compare this stream with another and get all bytes difference
         /// </summary>
         /// <returns>Return each byte not equal in the two provider</returns>
-        public IEnumerable<ByteDifference> Compare(ByteProvider providerToCompare, bool compareChange = false) =>
+        public IEnumerable<ByteDifference> Compare(ByteProviderLegacy providerToCompare, bool compareChange = false) =>
             _provider.Compare(providerToCompare, compareChange);
 
         /// <summary>

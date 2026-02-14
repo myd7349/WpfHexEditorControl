@@ -16,7 +16,7 @@ namespace WpfHexaEditor.V2.Services
     /// <code>
     /// var service = new ComparisonService();
     ///
-    /// // Compare two ByteProviders
+    /// // Compare two Core.Bytes.ByteProviderLegacys
     /// var differences = service.Compare(provider1, provider2);
     ///
     /// // Or compare two editors
@@ -31,13 +31,13 @@ namespace WpfHexaEditor.V2.Services
     public class ComparisonService
     {
         /// <summary>
-        /// Compare two ByteProviders and return all differences
+        /// Compare two Core.Bytes.ByteProviderLegacys and return all differences
         /// </summary>
-        /// <param name="original">First ByteProvider (original)</param>
-        /// <param name="compare">Second ByteProvider (to compare against)</param>
+        /// <param name="original">First Core.Bytes.ByteProviderLegacy (original)</param>
+        /// <param name="compare">Second Core.Bytes.ByteProviderLegacy (to compare against)</param>
         /// <param name="maxDifferences">Maximum number of differences to return (0 = unlimited)</param>
         /// <returns>Enumerable of byte differences</returns>
-        public IEnumerable<ByteDifference> Compare(ByteProvider original, ByteProvider compare, long maxDifferences = 0)
+        public IEnumerable<ByteDifference> Compare(Core.Bytes.ByteProviderLegacy original, Core.Bytes.ByteProviderLegacy compare, long maxDifferences = 0)
         {
             if (original == null || compare == null || !original.IsOpen || !compare.IsOpen)
                 yield break;
@@ -88,15 +88,15 @@ namespace WpfHexaEditor.V2.Services
         }
 
         /// <summary>
-        /// Compare two regions of ByteProviders
+        /// Compare two regions of Core.Bytes.ByteProviderLegacys
         /// </summary>
-        /// <param name="original">First ByteProvider</param>
-        /// <param name="compare">Second ByteProvider</param>
+        /// <param name="original">First Core.Bytes.ByteProviderLegacy</param>
+        /// <param name="compare">Second Core.Bytes.ByteProviderLegacy</param>
         /// <param name="startPosition">Start position for comparison</param>
         /// <param name="length">Length of region to compare</param>
         /// <param name="maxDifferences">Maximum differences to return</param>
         /// <returns>Enumerable of byte differences</returns>
-        public IEnumerable<ByteDifference> CompareRegion(ByteProvider original, ByteProvider compare,
+        public IEnumerable<ByteDifference> CompareRegion(Core.Bytes.ByteProviderLegacy original, Core.Bytes.ByteProviderLegacy compare,
             long startPosition, long length, long maxDifferences = 0)
         {
             if (original == null || compare == null || !original.IsOpen || !compare.IsOpen)
@@ -131,9 +131,9 @@ namespace WpfHexaEditor.V2.Services
         }
 
         /// <summary>
-        /// Count total number of differences between two ByteProviders (faster than enumerating all)
+        /// Count total number of differences between two Core.Bytes.ByteProviderLegacys (faster than enumerating all)
         /// </summary>
-        public long CountDifferences(ByteProvider original, ByteProvider compare)
+        public long CountDifferences(Core.Bytes.ByteProviderLegacy original, Core.Bytes.ByteProviderLegacy compare)
         {
             if (original == null || compare == null || !original.IsOpen || !compare.IsOpen)
                 return 0;
@@ -160,9 +160,9 @@ namespace WpfHexaEditor.V2.Services
         }
 
         /// <summary>
-        /// Calculate similarity percentage between two ByteProviders (0.0 - 100.0)
+        /// Calculate similarity percentage between two Core.Bytes.ByteProviderLegacys (0.0 - 100.0)
         /// </summary>
-        public double CalculateSimilarity(ByteProvider original, ByteProvider compare)
+        public double CalculateSimilarity(Core.Bytes.ByteProviderLegacy original, Core.Bytes.ByteProviderLegacy compare)
         {
             if (original == null || compare == null || !original.IsOpen || !compare.IsOpen)
                 return 0.0;
