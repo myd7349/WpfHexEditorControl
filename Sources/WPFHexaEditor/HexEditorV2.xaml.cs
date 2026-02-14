@@ -6365,6 +6365,47 @@ namespace WpfHexaEditor
             ReverseSelection();
         }
 
+        private void SetBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: Implement bookmark functionality
+            // For now, just show a message
+            System.Diagnostics.Debug.WriteLine("[BOOKMARK] Set bookmark requested");
+        }
+
+        private void ClearBookmarksMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO: Implement bookmark functionality
+            // For now, just show a message
+            System.Diagnostics.Debug.WriteLine("[BOOKMARK] Clear all bookmarks requested");
+        }
+
+        private void PasteOverwriteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            // Save current mode
+            var originalMode = _viewModel.EditMode;
+
+            try
+            {
+                // Temporarily switch to Overwrite mode
+                _viewModel.EditMode = EditMode.Overwrite;
+
+                // Paste
+                Paste();
+            }
+            finally
+            {
+                // Restore original mode
+                _viewModel.EditMode = originalMode;
+            }
+        }
+
+        private void SelectAllMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            SelectAll();
+        }
+
         #endregion
     }
 }

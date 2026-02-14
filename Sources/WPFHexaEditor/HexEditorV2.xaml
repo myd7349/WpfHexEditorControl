@@ -145,6 +145,21 @@
             </MenuItem>
             <Separator/>
 
+            <!-- Bookmarks -->
+            <MenuItem x:Name="BookmarksMenuItem" Header="Bookmarks">
+                <MenuItem x:Name="SetBookmarkMenuItem" Header="Set Bookmark" Click="SetBookmarkMenuItem_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📌" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="ClearBookmarksMenuItem" Header="Clear All Bookmarks" Click="ClearBookmarksMenuItem_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🗑️" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <Separator/>
+
             <!-- Copy submenu -->
             <MenuItem x:Name="CopyAsMenuItem" Header="Copy As...">
                 <MenuItem x:Name="CopyHexaMenuItem" Header="Copy as Hexadecimal" Click="CopyHexaMenuItem_Click">
@@ -192,6 +207,13 @@
                 </MenuItem.Icon>
             </MenuItem>
 
+            <!-- Paste without inserting (Overwrite mode) -->
+            <MenuItem x:Name="PasteOverwriteMenuItem" Header="Paste without inserting" Click="PasteOverwriteMenuItem_Click">
+                <MenuItem.Icon>
+                    <TextBlock Text="📝" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
+
             <!-- Delete -->
             <MenuItem x:Name="DeleteMenuItem" Header="Delete" Click="DeleteMenuItem_Click">
                 <MenuItem.Icon>
@@ -217,6 +239,15 @@
             <MenuItem x:Name="ReverseSelectionMenuItem" Header="Reverse Selection" Click="ReverseSelectionMenuItem_Click">
                 <MenuItem.Icon>
                     <TextBlock Text="⇄" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
+
+            <Separator/>
+
+            <!-- Select All -->
+            <MenuItem x:Name="SelectAllMenuItem" Header="Select all" Click="SelectAllMenuItem_Click">
+                <MenuItem.Icon>
+                    <TextBlock Text="▦" FontSize="14"/>
                 </MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
