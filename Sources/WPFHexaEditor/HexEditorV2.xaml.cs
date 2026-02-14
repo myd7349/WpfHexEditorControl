@@ -643,6 +643,65 @@ namespace WpfHexaEditor
         public long SelectionLength => _viewModel?.SelectionLength ?? 0;
 
         /// <summary>
+        /// V1 compatible: Selected bytes as hex string (e.g., "48 65 6C 6C 6F")
+        /// </summary>
+        public string SelectionHex
+        {
+            get
+            {
+                if (_viewModel == null || !_viewModel.HasSelection)
+                    return string.Empty;
+
+                var bytes = _viewModel.GetSelectionBytes();
+                if (bytes == null || bytes.Length == 0)
+                    return string.Empty;
+
+                return BitConverter.ToString(bytes).Replace("-", " ");
+            }
+        }
+
+        /// <summary>
+        /// V1 compatible: Selected bytes as ASCII string
+        /// </summary>
+        public string SelectionString
+        {
+            get
+            {
+                if (_viewModel == null || !_viewModel.HasSelection)
+                    return string.Empty;
+
+                var bytes = _viewModel.GetSelectionBytes();
+                if (bytes == null || bytes.Length == 0)
+                    return string.Empty;
+
+                var chars = new char[bytes.Length];
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    chars[i] = ByteConverters.ByteToChar(bytes[i]);
+                }
+                return new string(chars);
+            }
+        }
+
+        /// <summary>
+        /// V1 compatible: Current selection line number (0-based)
+        /// </summary>
+        public long SelectionLine
+        {
+            get
+            {
+                if (_viewModel == null)
+                    return 0;
+
+                var position = _viewModel.SelectionStart;
+                if (!position.IsValid)
+                    return 0;
+
+                return position.Value / (_viewModel.BytePerLine > 0 ? _viewModel.BytePerLine : 16);
+            }
+        }
+
+        /// <summary>
         /// Virtual length (total bytes including inserted/deleted) - V1 compatible
         /// </summary>
         public long VirtualLength => _viewModel?.VirtualLength ?? 0;
