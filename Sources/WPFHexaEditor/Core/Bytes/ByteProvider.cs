@@ -484,6 +484,15 @@ namespace WpfHexaEditor.Core.Bytes
                     {
                         int toRead = (int)Math.Min(BUFFER_SIZE, virtualLength - vPos);
                         byte[] buffer = GetBytes(vPos, toRead);
+
+                        // CRITICAL VALIDATION: Ensure GetBytes returned the full requested buffer
+                        if (buffer.Length != toRead)
+                        {
+                            throw new InvalidOperationException(
+                                $"CRITICAL: GetBytes returned {buffer.Length} bytes, expected {toRead} at position 0x{vPos:X}. " +
+                                $"This indicates a serious bug in ByteReader that causes data loss during save operations.");
+                        }
+
                         outputStream.Write(buffer, 0, buffer.Length);
                     }
 

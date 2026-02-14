@@ -98,9 +98,24 @@ namespace WpfHexaEditor.Core.Bytes
                     }
                 }
 
-                // Not found - this shouldn't happen if position mapper is correct
-                System.Diagnostics.Debug.WriteLine($"[ByteReader] ERROR: Could not find inserted byte at virtual {virtualPosition}, relative {relativePosition}, targetOffset {targetOffset}, total {totalInsertions}");
-                return (0, false);
+                // CRITICAL ERROR: Insertion not found - this indicates a bug in LIFO offset calculation
+                // Build detailed diagnostic message showing all available offsets
+                var availableOffsets = string.Join(", ",
+                    insertions.Select((ib, idx) => $"[{idx}]=offset:{ib.VirtualOffset}/value:0x{ib.Value:X2}"));
+
+                throw new InvalidOperationException(
+                    $"CRITICAL: Insertion lookup failed at virtual position 0x{virtualPosition:X}.\n" +
+                    $"Details:\n" +
+                    $"  Physical Position: 0x{physicalPos.Value:X}\n" +
+                    $"  Virtual Start (PhysicalToVirtual): 0x{virtualStart:X}\n" +
+                    $"  Relative Position: {relativePosition}\n" +
+                    $"  Total Insertions: {totalInsertions}\n" +
+                    $"  Target Offset (calculated): {targetOffset}\n" +
+                    $"  Available insertions: {availableOffsets}\n" +
+                    $"This indicates either:\n" +
+                    $"  1. Bug in LIFO offset inversion formula\n" +
+                    $"  2. PhysicalToVirtual returns wrong semantics (NEWEST instead of OLDEST)\n" +
+                    $"  3. EditsManager insertion list is corrupted");
             }
 
             // No physical position = beyond file
@@ -130,11 +145,12 @@ namespace WpfHexaEditor.Core.Bytes
 
         /// <summary>
         /// Read multiple bytes starting at a virtual position.
-        /// Optimized for sequential reads (e.g., rendering a line).
+        /// CRITICAL FIX: Always returns exactly 'count' bytes (or throws exception).
+        /// Phase 2 of save bug fix - ensures GetBytes never returns partial data.
         /// </summary>
         /// <param name="virtualPosition">Starting virtual position</param>
         /// <param name="count">Number of bytes to read</param>
-        /// <returns>Byte array (may be shorter than requested)</returns>
+        /// <returns>Byte array of exactly 'count' bytes</returns>
         public byte[] GetBytes(long virtualPosition, int count)
         {
             if (!_fileProvider.IsOpen || virtualPosition < 0 || count <= 0)
@@ -150,51 +166,33 @@ namespace WpfHexaEditor.Core.Bytes
 
             count = (int)Math.Min(count, available);
 
-            // Try line cache first using fixed LINE_SIZE
-            long lineStart = (virtualPosition / LINE_SIZE) * LINE_SIZE;
-            int offsetInLine = (int)(virtualPosition - lineStart);
+            // CRITICAL FIX: Always allocate and fill the full requested buffer
+            // Don't return early with partial cache data - that causes massive data loss in SaveAs
+            byte[] result = new byte[count];
+            int bytesRead = 0;
 
-            // Check if requested data is in cache
-            if (_lineCache.TryGetValue(lineStart, out byte[] cachedLine))
+            // Read bytes one by one until buffer is full
+            while (bytesRead < count)
             {
-                int length = Math.Min(count, cachedLine.Length - offsetInLine);
-                if (length > 0)
-                {
-                    byte[] result = new byte[length];
-                    Array.Copy(cachedLine, offsetInLine, result, 0, length);
-                    return result;
-                }
-            }
+                long currentPos = virtualPosition + bytesRead;
+                var (b, success) = ReadByteInternal(currentPos);
 
-            // Cache miss - read the full line and cache it
-            int lineSize = (int)Math.Min(LINE_SIZE, virtualLength - lineStart);
-            byte[] fullLine = new byte[lineSize];
-
-            for (int i = 0; i < lineSize; i++)
-            {
-                var (b, success) = ReadByteInternal(lineStart + i);
                 if (!success)
                 {
-                    Array.Resize(ref fullLine, i);
-                    break;
+                    // ReadByteInternal should throw detailed exception if it fails
+                    // If we reach here, it means virtualLength calculation was wrong
+                    throw new InvalidOperationException(
+                        $"CRITICAL: Failed to read byte at virtual position 0x{currentPos:X} " +
+                        $"(bytesRead={bytesRead}/{count}). VirtualLength={virtualLength} but byte not available. " +
+                        $"This indicates a bug in PositionMapper.GetVirtualLength().");
                 }
-                fullLine[i] = b;
+
+                result[bytesRead] = b;
+                bytesRead++;
             }
 
-            // Cache the full line
-            if (fullLine.Length > 0)
-            {
-                CacheLine(lineStart, fullLine);
-            }
-
-            // Return the requested portion
-            int requestedLength = Math.Min(count, fullLine.Length - offsetInLine);
-            if (requestedLength <= 0)
-                return Array.Empty<byte>();
-
-            byte[] requestedBytes = new byte[requestedLength];
-            Array.Copy(fullLine, offsetInLine, requestedBytes, 0, requestedLength);
-            return requestedBytes;
+            // Guarantee: result.Length == count
+            return result;
         }
 
         /// <summary>
