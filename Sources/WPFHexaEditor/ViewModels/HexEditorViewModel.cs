@@ -245,6 +245,9 @@ namespace WpfHexaEditor.ViewModels
         {
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
+            // Subscribe to provider events
+            _provider.ChangesCleared += OnProviderChangesCleared;
+
             // Set default copy mode to ASCII string for normal copy/paste operations
             _clipboardService.DefaultCopyMode = CopyPasteMode.AsciiString;
 
@@ -254,6 +257,16 @@ namespace WpfHexaEditor.ViewModels
             // STARTUP OPTIMIZATION: Don't call RefreshVisibleLines() here
             // It will be called later when the control is fully loaded and VisibleLines is properly set
             // RefreshVisibleLines();
+        }
+
+        /// <summary>
+        /// Handle provider changes cleared event (after save or explicit clear).
+        /// Refresh the view to remove modification indicators.
+        /// </summary>
+        private void OnProviderChangesCleared(object sender, EventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("[HexEditorViewModel] ChangesCleared event received - refreshing view");
+            RefreshVisibleLines();
         }
 
         #endregion

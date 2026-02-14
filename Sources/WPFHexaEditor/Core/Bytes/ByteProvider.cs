@@ -115,6 +115,24 @@ namespace WpfHexaEditor.Core.Bytes
 
         #endregion
 
+        #region Events
+
+        /// <summary>
+        /// Fired when all changes have been cleared (after save or explicit clear).
+        /// Listeners should refresh their views to remove modification indicators.
+        /// </summary>
+        public event EventHandler ChangesCleared;
+
+        /// <summary>
+        /// Raise the ChangesCleared event.
+        /// </summary>
+        private void OnChangesCleared()
+        {
+            ChangesCleared?.Invoke(this, EventArgs.Empty);
+        }
+
+        #endregion
+
         #region Constructor
 
         public ByteProvider()
@@ -483,6 +501,9 @@ namespace WpfHexaEditor.Core.Bytes
                 _editsManager.ClearAll();
                 _positionMapper.InvalidateCache();
 
+                // Notify listeners (ViewModel) to refresh view
+                OnChangesCleared();
+
                 System.Diagnostics.Debug.WriteLine("[ByteProvider] FAST SAVE complete");
             }
             else
@@ -490,6 +511,7 @@ namespace WpfHexaEditor.Core.Bytes
                 // FULL REWRITE: Needed for insertions/deletions
                 System.Diagnostics.Debug.WriteLine($"[ByteProvider] FULL SAVE: {_editsManager.TotalInsertedBytesCount} insertions, {_editsManager.DeletedCount} deletions");
                 SaveAs(FilePath, true);
+                // Note: OnChangesCleared() is called inside OpenFile() at the end of SaveAs
             }
         }
 
@@ -563,12 +585,16 @@ namespace WpfHexaEditor.Core.Bytes
         /// <summary>
         /// Clear all modifications (revert to original file).
         /// Also clears undo/redo history.
+        /// Notifies listeners (ViewModel) to refresh view.
         /// </summary>
         public void ClearAllEdits()
         {
             _editsManager.ClearAll();
             _undoRedoManager.ClearAll();
             InvalidateCaches();
+
+            // Notify listeners to refresh their views
+            OnChangesCleared();
         }
 
         /// <summary>
