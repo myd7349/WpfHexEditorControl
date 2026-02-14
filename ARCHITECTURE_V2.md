@@ -520,28 +520,34 @@ class PositionSegment
 | Method | Complexity | Description |
 |--------|------------|-------------|
 | `VirtualToPhysical(virtualPos, fileLength)` | O(log n) | Returns (physicalPos?, isInserted) |
-| `PhysicalToVirtual(physicalPos, fileLength)` | O(log n) | Returns virtual position of OLDEST insertion |
+| `PhysicalToVirtual(physicalPos, fileLength)` | O(log n) | Returns virtual position of PHYSICAL byte |
 | `GetVirtualLength(fileLength)` | O(1) | Calculate total virtual length |
 | `InvalidateCache()` | O(1) | Clear position cache after edits |
 
 **Important Semantics:**
 
 When multiple bytes are inserted at physical position P:
-- `PhysicalToVirtual(P)` returns the virtual position of the **OLDEST** (first) inserted byte
-- This is the starting virtual position for the insertion group
+- `PhysicalToVirtual(P)` returns the virtual position of the **PHYSICAL** byte at position P
+- The physical byte appears AFTER all inserted bytes in virtual space
+- Virtual layout: `[Insert0_oldest, Insert1, ..., InsertN-1_newest, PhysicalByte]`
 
 **Example:**
 ```
-Insert A, B, C at physical 100
-  Array: [C(offset=0), B(offset=1), A(offset=2)]
+Insert 3 bytes (A, B, C) at physical position 100:
+  LIFO array: [C(offset=0), B(offset=1), A(offset=2)]
+  segment.VirtualOffset = 150 (position of A, oldest inserted byte)
 
-  PhysicalToVirtual(100) = 150  (position of A, the oldest)
+  PhysicalToVirtual(100) = 153  (position of physical byte, AFTER all 3 insertions)
 
   Virtual positions:
-    150 → A (oldest, offset=2)
-    151 → B (middle, offset=1)
-    152 → C (newest, offset=0)
+    150 → A (oldest, offset=2, LIFO array index 2)
+    151 → B (middle, offset=1, LIFO array index 1)
+    152 → C (newest, offset=0, LIFO array index 0)
+    153 → Physical byte at position 100 (AFTER all insertions)
 ```
+
+**Critical Fix (commit 405b164):**
+The original implementation incorrectly returned `segment.VirtualOffset` (position 150 in example), but the physical byte is at position 153. This was fixed to return `segment.VirtualOffset + segment.InsertedCount`.
 
 ---
 
@@ -1123,13 +1129,13 @@ graph LR
 
 | Operation | Input | Output | Notes |
 |-----------|-------|--------|-------|
-| VirtualToPhysical | virtual 0 | (physical 0, false) | Original byte |
+| VirtualToPhysical | virtual 0 | (physical 0, false) | Original byte A |
 | VirtualToPhysical | virtual 2 | (physical 2, true) | Inserted byte X |
 | VirtualToPhysical | virtual 3 | (physical 2, true) | Inserted byte Y |
 | VirtualToPhysical | virtual 4 | (physical 2, false) | Original byte C |
 | PhysicalToVirtual | physical 0 | virtual 0 | No edits before |
-| PhysicalToVirtual | physical 2 | virtual 2 | Position of OLDEST insertion (X) |
-| PhysicalToVirtual | physical 3 | virtual 5 | +2 insertions before |
+| PhysicalToVirtual | physical 2 | virtual 4 | Position of physical byte C (AFTER 2 insertions) |
+| PhysicalToVirtual | physical 3 | virtual 5 | Physical byte D (+2 insertions before) |
 
 ---
 
@@ -1201,33 +1207,40 @@ Timestamp:    newest          middle           oldest
 
 ### Reading from LIFO Storage
 
-**PhysicalToVirtual Semantics:**
+**PhysicalToVirtual Semantics (CORRECTED in commit 405b164):**
 ```
-PhysicalToVirtual(100) returns the virtual position of the OLDEST insertion (A)
+PhysicalToVirtual(P) returns the virtual position of the PHYSICAL byte at position P
+(AFTER all insertions at that position)
 ```
 
 **Example:**
 ```
-Physical position 100 has insertions: [C, B, A]
-PhysicalToVirtual(100) = 150  (position of A in virtual view)
+Physical position 100 has 3 insertions: [C, B, A]
+Virtual layout: [A at 150, B at 151, C at 152, PhysicalByte at 153]
+
+PhysicalToVirtual(100) = 153  (position of physical byte, AFTER 3 insertions)
 
 Virtual positions:
   150 → A (oldest, VirtualOffset = 2, array index = 2)
   151 → B (middle, VirtualOffset = 1, array index = 1)
   152 → C (newest, VirtualOffset = 0, array index = 0)
+  153 → Physical byte at position 100
 ```
 
 **ReadByteInternal Algorithm:**
 ```csharp
 // Read virtual position 151 (should return B)
-virtualStart = PhysicalToVirtual(100) = 150  // Position of A (oldest)
-relativePosition = virtualPos - virtualStart = 151 - 150 = 1
+long physicalByteVirtualPos = PhysicalToVirtual(100) = 153  // Physical byte position
+long firstInsertedVirtualPos = physicalByteVirtualPos - totalInsertions
+                              = 153 - 3 = 150  // Position of A (oldest)
+long relativePosition = virtualPos - firstInsertedVirtualPos
+                      = 151 - 150 = 1
 
-// Calculate target VirtualOffset
+// Calculate target VirtualOffset (LIFO inversion)
 totalInsertions = 3
-targetOffset = totalInsertions - 1 - relativePosition
-             = 3 - 1 - 1
-             = 1  // This matches B's VirtualOffset!
+long targetOffset = totalInsertions - 1 - relativePosition
+                  = 3 - 1 - 1
+                  = 1  // This matches B's VirtualOffset!
 
 // Search for InsertedByte with VirtualOffset = 1
 for (int i = 0; i < insertions.Count; i++)
@@ -1648,7 +1661,7 @@ graph TB
 
 3. ✅ **Position Mapping**
    - Test VirtualToPhysical with insertions
-   - Test PhysicalToVirtual returns OLDEST insertion position
+   - Test PhysicalToVirtual returns PHYSICAL byte position (after all insertions)
    - Test edge cases (beginning, end, middle)
 
 4. **GetBytes Correctness**
