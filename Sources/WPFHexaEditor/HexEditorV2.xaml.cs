@@ -3253,6 +3253,85 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
+        /// V1 compatible: Fill current selection with specified byte value
+        /// </summary>
+        /// <param name="val">Byte value to fill with</param>
+        public void FillWithByte(byte val)
+        {
+            if (_viewModel == null || !_viewModel.HasSelection)
+                return;
+
+            var selStart = _viewModel.SelectionStart.Value;
+            var selLength = _viewModel.SelectionLength;
+
+            FillWithByte(selStart, selLength, val);
+        }
+
+        /// <summary>
+        /// V1 compatible: Fill specified range with byte value
+        /// </summary>
+        /// <param name="startPosition">Start position (virtual)</param>
+        /// <param name="length">Length of range to fill</param>
+        /// <param name="val">Byte value to fill with</param>
+        public void FillWithByte(long startPosition, long length, byte val)
+        {
+            if (_viewModel == null || ReadOnlyMode || length <= 0)
+                return;
+
+            if (startPosition < 0 || startPosition >= VirtualLength)
+                return;
+
+            // Fire long process started event
+            IsOnLongProcess = true;
+            OnLongProcessProgressStarted(EventArgs.Empty);
+
+            try
+            {
+                // Begin batched update for performance
+                _viewModel.BeginUpdate();
+                try
+                {
+                    for (long i = 0; i < length; i++)
+                    {
+                        long pos = startPosition + i;
+                        if (pos >= VirtualLength)
+                            break;
+
+                        // Check if we should break early (user cancelled)
+                        if (!IsOnLongProcess)
+                            break;
+
+                        // Progress reporting every 2000 bytes
+                        if (i % 2000 == 0)
+                        {
+                            LongProcessProgress = (double)i / length;
+                        }
+
+                        // Modify the byte
+                        ModifyByte(val, pos);
+                    }
+                }
+                finally
+                {
+                    _viewModel.EndUpdate();
+                }
+
+                // Update status
+                StatusText.Text = $"Filled {length} bytes with 0x{val:X2}";
+
+                // Fire fill completed event
+                OnFillWithByteCompleted(EventArgs.Empty);
+            }
+            finally
+            {
+                // Fire long process completed event
+                IsOnLongProcess = false;
+                LongProcessProgress = 0;
+                OnLongProcessProgressCompleted(EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
         /// V1 compatible: Get all byte modifications matching the specified action
         /// </summary>
         /// <param name="action">ByteAction to filter by (Modified, Added, Deleted, or All)</param>
