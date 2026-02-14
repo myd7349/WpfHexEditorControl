@@ -470,6 +470,55 @@ namespace WpfHexaEditor.V2.ViewModels
         }
 
         /// <summary>
+        /// Insert multiple bytes at virtual position (OPTIMIZED for Paste/bulk operations)
+        /// Much faster than calling InsertByte() repeatedly
+        /// </summary>
+        public void InsertBytes(VirtualPosition startVirtualPos, byte[] bytes)
+        {
+            if (ReadOnlyMode || EditMode != EditMode.Insert || bytes == null || bytes.Length == 0) return;
+
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTES] === Batch insert START === {bytes.Length} bytes at pos {startVirtualPos.Value}");
+
+            // Get starting physical position
+            var physicalPos = VirtualToPhysical(startVirtualPos);
+
+            // Insert all bytes in one batch (no refresh until the end)
+            long currentVirtualPos = startVirtualPos.Value;
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                // Store each byte in _insertedBytes dictionary
+                _insertedBytes[currentVirtualPos] = bytes[i];
+
+                // Record in undo stack (each byte separately for granular undo)
+                var edit = new InsertByteEdit(currentVirtualPos, physicalPos.Value, bytes[i]);
+                _insertUndoStack.Push(edit);
+
+                currentVirtualPos++;
+            }
+
+            // Update insertion count ONCE for the physical position
+            if (_insertions.ContainsKey(physicalPos.Value))
+                _insertions[physicalPos.Value] += bytes.Length;
+            else
+                _insertions[physicalPos.Value] = bytes.Length;
+
+            // Clear redo stack (new operations invalidate redo)
+            _insertRedoStack.Clear();
+
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTES] Inserted {bytes.Length} bytes, undo stack: {_insertUndoStack.Count}");
+
+            // Notify changes
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
+
+            // ONE refresh at the end (not per byte!)
+            ClearLineCache();
+            RefreshVisibleLines();
+
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTES] === Batch insert END === VirtualLength: {VirtualLength}");
+        }
+
+        /// <summary>
         /// Delete byte at virtual position
         /// </summary>
         public void DeleteByte(VirtualPosition virtualPos)
@@ -626,16 +675,10 @@ namespace WpfHexaEditor.V2.ViewModels
             if (EditMode == Models.EditMode.Insert)
             {
                 // INSERT MODE: Create ByteAdded entries (green borders)
-                // Insert each byte at the current virtual position, shifting subsequent bytes
-                var currentVirtualPos = new VirtualPosition(pastePosition);
-
-                foreach (byte b in bytesToPaste)
-                {
-                    InsertByte(currentVirtualPos, b);
-                    currentVirtualPos = new VirtualPosition(currentVirtualPos.Value + 1);
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[PASTE INSERT] Inserted {bytesToPaste.Length} bytes at virtual pos {pastePosition} (green borders)");
+                // Use optimized batch insert (MUCH faster than individual InsertByte() calls)
+                var startVirtualPos = new VirtualPosition(pastePosition);
+                InsertBytes(startVirtualPos, bytesToPaste);
+                System.Diagnostics.Debug.WriteLine($"[PASTE INSERT] Batch inserted {bytesToPaste.Length} bytes at virtual pos {pastePosition} (green borders)");
             }
             else
             {
@@ -647,10 +690,12 @@ namespace WpfHexaEditor.V2.ViewModels
 
                 _provider.Paste(physicalStart.Value, bytesToPaste, false);
                 System.Diagnostics.Debug.WriteLine($"[PASTE OVERWRITE] Modified {bytesToPaste.Length} bytes at physical pos {physicalStart.Value} (orange borders)");
+
+                // Refresh for overwrite mode (Insert mode already refreshes in InsertBytes)
+                ClearLineCache();
+                RefreshVisibleLines();
             }
 
-            ClearLineCache();
-            RefreshVisibleLines();
             return true;
         }
 
