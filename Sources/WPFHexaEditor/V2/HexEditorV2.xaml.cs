@@ -1470,9 +1470,14 @@ namespace WpfHexaEditor.V2
                 if (editor._viewModel != null)
                 {
                     editor._viewModel.EditMode = mode;
-                    // Update status bar
-                    editor.EditModeText.Text = mode == Models.EditMode.Insert ? "Mode: Insert" : "Mode: Overwrite";
                 }
+
+                // Sync to HexViewport for caret display
+                editor.HexViewport.EditMode = mode;
+                editor.HexViewport.InvalidateVisual(); // Refresh to show/hide caret
+
+                // Update status bar
+                editor.EditModeText.Text = mode == Models.EditMode.Insert ? "Mode: Insert" : "Mode: Overwrite";
             }
         }
 
@@ -2135,7 +2140,8 @@ namespace WpfHexaEditor.V2
 
             // Synchronize ViewModel with control's EditMode (which may have been set before file opened, e.g., from settings)
             _viewModel.EditMode = EditMode;
-            System.Diagnostics.Debug.WriteLine($"[OPENFILE] EditMode synchronized: Control={EditMode}, ViewModel={_viewModel.EditMode}");
+            HexViewport.EditMode = EditMode; // Also sync to HexViewport for caret display
+            System.Diagnostics.Debug.WriteLine($"[OPENFILE] EditMode synchronized: Control={EditMode}, ViewModel={_viewModel.EditMode}, HexViewport={HexViewport.EditMode}");
 
             // CRITICAL: Synchronize ByteProvider.CanInsertAnywhere so inserted bytes get ByteAction.Added
             if (EditMode == EditMode.Insert)

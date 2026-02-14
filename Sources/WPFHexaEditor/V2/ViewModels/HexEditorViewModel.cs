@@ -46,6 +46,10 @@ namespace WpfHexaEditor.V2.ViewModels
         // ByteProvider can't handle multiple insertions at same physical position correctly
         private readonly Dictionary<long, byte> _insertedBytes = new();
 
+        // Undo/Redo stacks for inserted bytes (ViewModel-managed, separate from ByteProvider)
+        private readonly Stack<InsertByteEdit> _insertUndoStack = new();
+        private readonly Stack<InsertByteEdit> _insertRedoStack = new();
+
         // Performance: Line cache to avoid recreating lines on every scroll
         private readonly Dictionary<long, HexLine> _lineCache = new();
         private long _lastScrollStart = -1;
@@ -246,14 +250,14 @@ namespace WpfHexaEditor.V2.ViewModels
         public ObservableCollection<HexLine> Lines { get; } = new();
 
         /// <summary>
-        /// Can undo?
+        /// Can undo? (checks both ByteProvider and ViewModel insert stacks)
         /// </summary>
-        public bool CanUndo => _undoRedoService.CanUndo(_provider);
+        public bool CanUndo => _undoRedoService.CanUndo(_provider) || _insertUndoStack.Count > 0;
 
         /// <summary>
-        /// Can redo?
+        /// Can redo? (checks both ByteProvider and ViewModel insert stacks)
         /// </summary>
-        public bool CanRedo => _undoRedoService.CanRedo(_provider);
+        public bool CanRedo => _undoRedoService.CanRedo(_provider) || _insertRedoStack.Count > 0;
 
         #endregion
 
@@ -315,6 +319,8 @@ namespace WpfHexaEditor.V2.ViewModels
         public void ClearUndoRedo()
         {
             _undoRedoService.ClearAll(_provider);
+            _insertUndoStack.Clear();
+            _insertRedoStack.Clear();
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
         }
@@ -417,11 +423,16 @@ namespace WpfHexaEditor.V2.ViewModels
             // 1. It would add entry to ByteProvider's dictionary at virtual position
             // 2. This blocks reading of file bytes at same physical position
             // 3. Undo/Redo for insertions will be handled separately in ViewModel
-            // TODO: Implement Undo/Redo stack in ViewModel for inserted bytes
 
-            // Notify Undo/Redo state changed (will be implemented with ViewModel undo stack)
-            // OnPropertyChanged(nameof(CanUndo));
-            // OnPropertyChanged(nameof(CanRedo));
+            // Record operation for undo/redo
+            var edit = new InsertByteEdit(virtualPos.Value, physicalPos.Value, value);
+            _insertUndoStack.Push(edit);
+            _insertRedoStack.Clear(); // New operation invalidates redo history
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE UNDO] Recorded edit, undo stack count: {_insertUndoStack.Count}");
+
+            // Notify Undo/Redo state changed
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
 
             // Track insertion for position mapping
             if (_insertions.ContainsKey(physicalPos.Value))
@@ -560,13 +571,8 @@ namespace WpfHexaEditor.V2.ViewModels
                 pastePosition = _selectionStart.IsValid ? _selectionStart.Value : 0;
             }
 
-            // Convert virtual position to physical for paste
-            var pasteVirtualPos = new VirtualPosition(pastePosition);
-            var physicalStart = VirtualToPhysical(pasteVirtualPos);
-            if (!physicalStart.IsValid) return false;
-
-            // Determine insert mode based on EditMode setting
-            bool shouldInsert = (EditMode == Models.EditMode.Insert);
+            // Get bytes to paste
+            byte[] bytesToPaste = null;
 
             // Try to get binary data from clipboard first (preferred format)
             var dataObj = System.Windows.Clipboard.GetDataObject();
@@ -577,14 +583,7 @@ namespace WpfHexaEditor.V2.ViewModels
                     var memStream = dataObj.GetData("BinaryData") as MemoryStream;
                     if (memStream != null && memStream.Length > 0)
                     {
-                        byte[] bytes = memStream.ToArray();
-
-                        // Use insert or overwrite based on EditMode
-                        _provider.Paste(physicalStart.Value, bytes, shouldInsert);
-
-                        ClearLineCache();
-                        RefreshVisibleLines();
-                        return true;
+                        bytesToPaste = memStream.ToArray();
                     }
                 }
                 catch
@@ -593,12 +592,53 @@ namespace WpfHexaEditor.V2.ViewModels
                 }
             }
 
-            // Fall back to text format
-            string clipboardText = System.Windows.Clipboard.GetText();
-            if (string.IsNullOrEmpty(clipboardText)) return false;
+            // Fall back to text format if no binary data
+            if (bytesToPaste == null)
+            {
+                string clipboardText = System.Windows.Clipboard.GetText();
+                if (string.IsNullOrEmpty(clipboardText)) return false;
 
-            // Use insert or overwrite based on EditMode
-            _provider.Paste(physicalStart.Value, clipboardText, shouldInsert);
+                // Convert hex string to bytes (assuming clipboard has hex text like "48 65 6C 6C 6F")
+                clipboardText = clipboardText.Replace(" ", "").Replace("\r", "").Replace("\n", "");
+                if (clipboardText.Length % 2 != 0) return false; // Invalid hex string
+
+                bytesToPaste = new byte[clipboardText.Length / 2];
+                for (int i = 0; i < bytesToPaste.Length; i++)
+                {
+                    string hexByte = clipboardText.Substring(i * 2, 2);
+                    if (!byte.TryParse(hexByte, System.Globalization.NumberStyles.HexNumber, null, out bytesToPaste[i]))
+                        return false; // Invalid hex
+                }
+            }
+
+            if (bytesToPaste == null || bytesToPaste.Length == 0) return false;
+
+            // Handle paste based on EditMode
+            if (EditMode == Models.EditMode.Insert)
+            {
+                // INSERT MODE: Create ByteAdded entries (green borders)
+                // Insert each byte at the current virtual position, shifting subsequent bytes
+                var currentVirtualPos = new VirtualPosition(pastePosition);
+
+                foreach (byte b in bytesToPaste)
+                {
+                    InsertByte(currentVirtualPos, b);
+                    currentVirtualPos = new VirtualPosition(currentVirtualPos.Value + 1);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[PASTE INSERT] Inserted {bytesToPaste.Length} bytes at virtual pos {pastePosition} (green borders)");
+            }
+            else
+            {
+                // OVERWRITE MODE: Create ByteModified entries (orange borders)
+                // Use ByteProvider to overwrite existing bytes
+                var pasteVirtualPos = new VirtualPosition(pastePosition);
+                var physicalStart = VirtualToPhysical(pasteVirtualPos);
+                if (!physicalStart.IsValid) return false;
+
+                _provider.Paste(physicalStart.Value, bytesToPaste, false);
+                System.Diagnostics.Debug.WriteLine($"[PASTE OVERWRITE] Modified {bytesToPaste.Length} bytes at physical pos {physicalStart.Value} (orange borders)");
+            }
 
             ClearLineCache();
             RefreshVisibleLines();
@@ -710,11 +750,38 @@ namespace WpfHexaEditor.V2.ViewModels
         #region Public Methods - Undo/Redo
 
         /// <summary>
-        /// Undo last operation
+        /// Undo last operation (handles both ByteProvider modifications and ViewModel insertions)
         /// </summary>
         public void Undo()
         {
-            long position = _undoRedoService.Undo(_provider);
+            // Prioritize ViewModel insert operations (most recent)
+            if (_insertUndoStack.Count > 0)
+            {
+                var edit = _insertUndoStack.Pop();
+                System.Diagnostics.Debug.WriteLine($"[UNDO INSERT] Undoing insertion at virtual pos {edit.VirtualPosition}, value 0x{edit.Value:X2}");
+
+                // Remove from _insertedBytes dictionary
+                _insertedBytes.Remove(edit.VirtualPosition);
+
+                // Update position mapping (decrement insertion count)
+                if (_insertions.ContainsKey(edit.PhysicalPosition))
+                {
+                    _insertions[edit.PhysicalPosition]--;
+                    if (_insertions[edit.PhysicalPosition] <= 0)
+                        _insertions.Remove(edit.PhysicalPosition);
+                }
+
+                // Push to redo stack
+                _insertRedoStack.Push(edit);
+                System.Diagnostics.Debug.WriteLine($"[UNDO INSERT] Insert undo complete, undo stack: {_insertUndoStack.Count}, redo stack: {_insertRedoStack.Count}");
+            }
+            else
+            {
+                // Delegate to ByteProvider for modifications
+                long position = _undoRedoService.Undo(_provider);
+                System.Diagnostics.Debug.WriteLine($"[UNDO] ByteProvider undo at position {position}");
+            }
+
             ClearLineCache();
             RefreshVisibleLines();
             OnPropertyChanged(nameof(CanUndo));
@@ -724,11 +791,36 @@ namespace WpfHexaEditor.V2.ViewModels
         }
 
         /// <summary>
-        /// Redo last undone operation
+        /// Redo last undone operation (handles both ByteProvider modifications and ViewModel insertions)
         /// </summary>
         public void Redo()
         {
-            long position = _undoRedoService.Redo(_provider);
+            // Prioritize ViewModel insert operations (most recent undone)
+            if (_insertRedoStack.Count > 0)
+            {
+                var edit = _insertRedoStack.Pop();
+                System.Diagnostics.Debug.WriteLine($"[REDO INSERT] Redoing insertion at virtual pos {edit.VirtualPosition}, value 0x{edit.Value:X2}");
+
+                // Add back to _insertedBytes dictionary
+                _insertedBytes[edit.VirtualPosition] = edit.Value;
+
+                // Update position mapping (increment insertion count)
+                if (_insertions.ContainsKey(edit.PhysicalPosition))
+                    _insertions[edit.PhysicalPosition]++;
+                else
+                    _insertions[edit.PhysicalPosition] = 1;
+
+                // Push back to undo stack
+                _insertUndoStack.Push(edit);
+                System.Diagnostics.Debug.WriteLine($"[REDO INSERT] Insert redo complete, undo stack: {_insertUndoStack.Count}, redo stack: {_insertRedoStack.Count}");
+            }
+            else
+            {
+                // Delegate to ByteProvider for modifications
+                long position = _undoRedoService.Redo(_provider);
+                System.Diagnostics.Debug.WriteLine($"[REDO] ByteProvider redo at position {position}");
+            }
+
             ClearLineCache();
             RefreshVisibleLines();
             OnPropertyChanged(nameof(CanUndo));
@@ -1301,6 +1393,27 @@ namespace WpfHexaEditor.V2.ViewModels
         {
             _suppressRefresh = false;
             RefreshVisibleLines();
+        }
+
+        #endregion
+
+        #region Undo/Redo Internal Types
+
+        /// <summary>
+        /// Record of a single byte insertion operation for undo/redo
+        /// </summary>
+        private class InsertByteEdit
+        {
+            public long VirtualPosition { get; set; }
+            public long PhysicalPosition { get; set; }
+            public byte Value { get; set; }
+
+            public InsertByteEdit(long virtualPos, long physicalPos, byte value)
+            {
+                VirtualPosition = virtualPos;
+                PhysicalPosition = physicalPos;
+                Value = value;
+            }
         }
 
         #endregion

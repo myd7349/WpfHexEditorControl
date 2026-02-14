@@ -75,8 +75,12 @@ namespace WPFHexaEditorExample
 
                 // INSERT MODE settings (NEW for Issue #31)
                 HexEdit.CanInsertAnywhere = Settings.Default.CanInsertAnywhere;
-                // NOTE: VisualCaretMode NOT loaded - always starts in Overwrite mode
-                // User can toggle with Insert key during session
+
+                // Load Insert mode from settings (V2)
+                if (Settings.Default.IsInsertMode)
+                {
+                    HexEdit.EditMode = WpfHexaEditor.V2.Models.EditMode.Insert;
+                }
 
                 // Editor settings
                 HexEdit.ReadOnlyMode = Settings.Default.ReadOnlyMode;
