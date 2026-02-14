@@ -195,18 +195,75 @@ int virtualOffset = totalInsertions - 1 - (int)(virtualPosition - virtualStart);
 
 **Result:** ⚠️ PARTIALLY FIXED - logs show correct offset calculation, but bytes still show as F0 F0 F0 instead of FF FF FF
 
-### Remaining Issue
-Despite both fixes, typing "FFFFFFFF" still produces "F0 F0 F0 F0 F0 FF" pattern. The cursor tracking works, offset calculation is correct, but the ModifyInsertedByte operation appears to fail silently or modify the wrong byte.
+### Fix 3: Critical PositionMapper.PhysicalToVirtual Bug (FINAL FIX)
+**Location:** `PositionMapper.cs` lines 278-290
 
-**Next Steps:**
-1. Debug `EditsManager.ModifyInsertedByte` to verify it finds and updates the correct byte
-2. Verify inserted bytes list order and offset assignment in `InsertBytes`
-3. Check if there's a cache invalidation issue preventing visual update
+**Problem Identified:**
+After inserting bytes, the rendering showed PHYSICAL byte values instead of INSERTED byte values. Detailed logging revealed:
+- During modification: `PhysicalToVirtual(52) = 53` ✓ (correct)
+- During rendering: `PhysicalToVirtual(52) = 52` ❌ (incorrect)
 
-**Status:** 🔴 PAUSED - Critical save bug takes priority
+PhysicalToVirtual was returning inconsistent values! The modification succeeded in EditsManager, but rendering read wrong bytes.
+
+**Root Cause:**
+In `PositionMapper.PhysicalToVirtual`, when finding exact segment match:
+```csharp
+if (physicalPosition == segment.PhysicalPos)
+{
+    virtualPos = segment.VirtualOffset;  // ❌ Returns position of FIRST inserted byte
+    return virtualPos;
+}
+```
+
+But with 1 insertion at physical pos 52:
+- Virtual layout: `[Insert0 at 52, PhysicalByte at 53]`
+- `segment.VirtualOffset = 52` (position of Insert0)
+- Bug: PhysicalToVirtual(52) returned 52 instead of 53
+- This caused `relativePosition = 52 - 51 = 1` (out of range [0,1))
+- Workaround triggered → read physical byte instead of inserted byte
+
+**The Fix:**
+```csharp
+if (physicalPosition == segment.PhysicalPos)
+{
+    // CRITICAL FIX: VirtualOffset points to FIRST inserted byte (oldest in LIFO)
+    // Physical byte at this position is AFTER all inserted bytes
+    // Virtual layout: [Insert0, Insert1, ..., InsertN-1, PhysicalByte]
+    //                  ^VirtualOffset                      ^PhysicalByte position
+    virtualPos = segment.VirtualOffset + segment.InsertedCount;
+    return virtualPos;
+}
+```
+
+**Result:** ✅ **FULLY FIXED!**
+- `PhysicalToVirtual(52)` now consistently returns 53 (position of physical byte)
+- `firstInsertedVirtualPos = 53 - 1 = 52` ✓
+- `relativePosition = 52 - 52 = 0` ✓ (in range [0,1))
+- Workaround no longer triggers
+- Inserted bytes display correctly with proper values
+
+**Testing Confirmed:**
+- Typing "FFFFFFFF" produces: `FF FF FF FF` ✓ (4 bytes, all correct)
+- Works in both hex panel and ASCII panel ✓
+- Green highlighting shows inserted bytes correctly ✓
+- No crashes, no phantom bytes, no workarounds ✓
+
+**Commit:** 405b164 - Fix critical PositionMapper bug causing inserted bytes to display incorrectly
 
 ---
 
-**Labels**: bug, high-priority, V2, insert-mode, hex-input
+## ✅ Resolution Status: **RESOLVED**
+
+All three fixes were required to solve the F0 bug:
+1. ✅ Cursor position synchronization
+2. ✅ LIFO offset calculation in ByteProvider.ModifyByteInternal
+3. ✅ PhysicalToVirtual calculation in PositionMapper (critical root cause)
+
+The issue is now **completely fixed** and working correctly in both hex and ASCII panels.
+
+---
+
+**Labels**: bug, high-priority, V2, insert-mode, hex-input, **RESOLVED**
 **Milestone**: v2.2.1
-**Assignee**: TBD
+**Resolution Date**: 2026-02-14
+**Fixed in Commit**: 405b164
