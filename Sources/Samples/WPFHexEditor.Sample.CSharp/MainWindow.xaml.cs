@@ -76,11 +76,11 @@ namespace WPFHexaEditorExample
                 // INSERT MODE settings (NEW for Issue #31)
                 HexEdit.CanInsertAnywhere = Settings.Default.CanInsertAnywhere;
 
-                // Load Insert mode from settings (V2)
-                if (Settings.Default.IsInsertMode)
-                {
-                    HexEdit.EditMode = WpfHexaEditor.V2.Models.EditMode.Insert;
-                }
+                // Load Insert mode from settings (V2 only - commented out for V1)
+                // if (Settings.Default.IsInsertMode)
+                // {
+                //     HexEdit.EditMode = WpfHexaEditor.V2.Models.EditMode.Insert;
+                // }
 
                 // Editor settings
                 HexEdit.ReadOnlyMode = Settings.Default.ReadOnlyMode;

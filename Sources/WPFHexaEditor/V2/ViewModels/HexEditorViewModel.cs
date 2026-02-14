@@ -1234,7 +1234,7 @@ namespace WpfHexaEditor.V2.ViewModels
                     VirtualPos = new VirtualPosition(virtualPos),
                     PhysicalPos = null, // ByteProvider V2 handles mapping internally
                     Value = lineBytes[i],
-                    Action = ByteAction.Nothing, // TODO: Get action from ByteProvider V2
+                    Action = _provider.GetByteAction(virtualPos),
                     IsSelected = IsByteSelected(new VirtualPosition(virtualPos)),
                     IsCursor = cursorPos.IsValid && virtualPos == cursorPos.Value
                 };

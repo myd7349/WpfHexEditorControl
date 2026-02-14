@@ -184,6 +184,29 @@ namespace WpfHexaEditor.V2.ByteProvider
         }
 
         /// <summary>
+        /// Modify an inserted byte's value at a specific physical position and virtual offset.
+        /// Returns true if the byte was found and modified.
+        /// </summary>
+        public bool ModifyInsertedByte(long physicalPosition, int virtualOffset, byte newValue)
+        {
+            if (!_insertedBytes.TryGetValue(physicalPosition, out var insertions))
+                return false;
+
+            // Find the inserted byte with the matching virtual offset
+            for (int i = 0; i < insertions.Count; i++)
+            {
+                if (insertions[i].VirtualOffset == virtualOffset)
+                {
+                    // Replace with new value, keeping the same offset
+                    insertions[i] = new InsertedByte(newValue, virtualOffset);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Remove all insertions at a physical position.
         /// </summary>
         public bool RemoveInsertionsAt(long physicalPosition)

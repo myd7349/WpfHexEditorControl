@@ -202,11 +202,22 @@ namespace WpfHexaEditor.V2.ByteProvider
 
             if (isInserted)
             {
-                // Modifying an inserted byte - need to update EditsManager's insertion list
-                // For now, we'll treat this as a modify of the physical position
-                // (This is a simplification - full implementation would update the insertion list)
+                // Modifying an inserted byte - update the byte in EditsManager's insertion list
                 if (physicalPos.HasValue)
-                    _editsManager.ModifyByte(physicalPos.Value, value);
+                {
+                    // Calculate which inserted byte this is (virtual offset within insertions)
+                    long virtualStart = _positionMapper.PhysicalToVirtual(physicalPos.Value, _fileProvider.Length);
+                    int virtualOffset = (int)(virtualPosition - virtualStart);
+
+                    // Update the inserted byte's value
+                    bool success = _editsManager.ModifyInsertedByte(physicalPos.Value, virtualOffset, value);
+
+                    if (!success)
+                    {
+                        // This shouldn't happen, but log for debugging
+                        System.Diagnostics.Debug.WriteLine($"[ByteProvider] Failed to modify inserted byte at virtual pos {virtualPosition}, physical pos {physicalPos.Value}, offset {virtualOffset}");
+                    }
+                }
             }
             else if (physicalPos.HasValue)
             {
@@ -655,6 +666,37 @@ namespace WpfHexaEditor.V2.ByteProvider
                 default:
                     return (false, null);
             }
+        }
+
+        /// <summary>
+        /// Get the ByteAction for a virtual position (for visual indicators).
+        /// Returns Added/Modified/Deleted/Nothing.
+        /// </summary>
+        public Core.ByteAction GetByteAction(long virtualPosition)
+        {
+            if (virtualPosition < 0 || virtualPosition >= VirtualLength)
+                return Core.ByteAction.Nothing;
+
+            // Convert virtual to physical position
+            var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPosition, PhysicalLength);
+
+            // Check if inserted (Added)
+            if (isInserted)
+                return Core.ByteAction.Added;
+
+            if (!physicalPos.HasValue)
+                return Core.ByteAction.Nothing;
+
+            // Check if deleted
+            if (_editsManager.IsDeleted(physicalPos.Value))
+                return Core.ByteAction.Deleted;
+
+            // Check if modified
+            var (_, isModified) = _editsManager.GetModifiedByte(physicalPos.Value);
+            if (isModified)
+                return Core.ByteAction.Modified;
+
+            return Core.ByteAction.Nothing;
         }
 
         #endregion
