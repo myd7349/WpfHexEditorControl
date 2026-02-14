@@ -27,28 +27,18 @@ namespace WpfHexaEditor.V2.ViewModels
     {
         #region Fields
 
-        private Core.Bytes.ByteProviderLegacy _provider; // Not readonly - can be reassigned when saving with insertions
+        private WpfHexaEditor.V2.ByteProvider.ByteProvider _provider; // Not readonly - can be reassigned when saving with insertions
         private readonly UndoRedoService _undoRedoService = new();
         private readonly ClipboardService _clipboardService = new();
         private readonly SelectionService _selectionService = new();
         private readonly FindReplaceService _findReplaceService = new();
 
         /// <summary>
-        /// Expose ByteProvider for external configuration (e.g., CanInsertAnywhere)
+        /// Expose ByteProvider V2 for external configuration
         /// </summary>
-        public Core.Bytes.ByteProviderLegacy Provider => _provider;
+        public WpfHexaEditor.V2.ByteProvider.ByteProvider Provider => _provider;
 
-        // Position mapping: tracks insertions/deletions for Virtual ↔ Physical conversion
-        private readonly Dictionary<long, long> _insertions = new(); // physicalPos → count
-        private readonly Dictionary<long, long> _deletions = new();  // physicalPos → count
-
-        // Store inserted bytes separately (virtual position → byte value)
-        // ByteProvider can't handle multiple insertions at same physical position correctly
-        private readonly Dictionary<long, byte> _insertedBytes = new();
-
-        // Undo/Redo stacks for inserted bytes (ViewModel-managed, separate from ByteProvider)
-        private readonly Stack<InsertByteEdit> _insertUndoStack = new();
-        private readonly Stack<InsertByteEdit> _insertRedoStack = new();
+        // ByteProvider V2 handles insertions/deletions internally - no manual tracking needed!
 
         // Performance: Line cache to avoid recreating lines on every scroll
         private readonly Dictionary<long, HexLine> _lineCache = new();
@@ -230,18 +220,10 @@ namespace WpfHexaEditor.V2.ViewModels
         }
 
         /// <summary>
-        /// Total virtual length (file + inserted - deleted_if_hidden)
+        /// Total virtual length (file + inserted - deleted)
+        /// ByteProvider V2 handles this calculation internally
         /// </summary>
-        public long VirtualLength
-        {
-            get
-            {
-                long length = FileLength;
-                length += _insertions.Values.Sum();
-                // Note: deleted bytes are still in file, only hidden from view
-                return length;
-            }
-        }
+        public long VirtualLength => _provider?.VirtualLength ?? 0;
 
         /// <summary>
         /// Total number of lines
@@ -254,27 +236,29 @@ namespace WpfHexaEditor.V2.ViewModels
         public ObservableCollection<HexLine> Lines { get; } = new();
 
         /// <summary>
-        /// Can undo? (checks both ByteProvider and ViewModel insert stacks)
+        /// Can undo? (ByteProvider V2 handles undo internally)
+        /// TODO: Implement undo/redo properly for ByteProvider V2
         /// </summary>
-        public bool CanUndo => _undoRedoService.CanUndo(_provider) || _insertUndoStack.Count > 0;
+        public bool CanUndo => _provider?.HasChanges ?? false;
 
         /// <summary>
-        /// Can redo? (checks both ByteProvider and ViewModel insert stacks)
+        /// Can redo? (ByteProvider V2 handles redo internally)
+        /// TODO: Implement undo/redo properly for ByteProvider V2
         /// </summary>
-        public bool CanRedo => _undoRedoService.CanRedo(_provider) || _insertRedoStack.Count > 0;
+        public bool CanRedo => false; // Not implemented yet for ByteProvider V2
 
         #endregion
 
         #region Constructor
 
-        public HexEditorViewModel(Core.Bytes.ByteProviderLegacy provider)
+        public HexEditorViewModel(WpfHexaEditor.V2.ByteProvider.ByteProvider provider)
         {
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
             // Set default copy mode to ASCII string for normal copy/paste operations
             _clipboardService.DefaultCopyMode = CopyPasteMode.AsciiString;
 
-            // Note: ByteProvider doesn't expose DataChanged event
+            // ByteProvider V2 handles all edits internally with proper Virtual/Physical mapping
             // RefreshVisibleLines will be called manually after operations
 
             // STARTUP OPTIMIZATION: Don't call RefreshVisibleLines() here
@@ -291,105 +275,21 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public static HexEditorViewModel OpenFile(string filePath)
         {
-            var provider = new Core.Bytes.ByteProviderLegacy(filePath);
+            var provider = new WpfHexaEditor.V2.ByteProvider.ByteProvider();
+            provider.OpenFile(filePath);
             return new HexEditorViewModel(provider);
         }
 
         /// <summary>
-        /// Save changes to file (handles insertions in Insert mode)
+        /// Save changes to file
+        /// ByteProvider V2 handles all modifications/insertions/deletions internally
         /// </summary>
         public void Save()
         {
-            // If no insertions, use standard ByteProvider save
-            if (_insertedBytes.Count == 0)
-            {
-                _provider.SubmitChanges();
-                return;
-            }
+            // ByteProvider V2 handles everything internally
+            _provider.SubmitChanges();
 
-            // WITH INSERTIONS: Need to rebuild the file with inserted bytes integrated
-            System.Diagnostics.Debug.WriteLine($"[SAVE] Saving with {_insertedBytes.Count} inserted bytes...");
-
-            string originalFile = _provider.FileName;
-            string tempFile = System.IO.Path.GetTempFileName();
-
-            try
-            {
-                // Write all bytes (file + insertions) to temp file
-                using (var fs = new System.IO.FileStream(tempFile, System.IO.FileMode.Create, System.IO.FileAccess.Write))
-                {
-                    long virtualLength = VirtualLength;
-                    byte[] buffer = new byte[4096]; // 4KB buffer for performance
-                    int bufferIndex = 0;
-
-                    for (long virtualPos = 0; virtualPos < virtualLength; virtualPos++)
-                    {
-                        // Get byte at this virtual position (handles insertions and modifications)
-                        byte b;
-                        if (_insertedBytes.TryGetValue(virtualPos, out byte insertedByte))
-                        {
-                            // Inserted byte
-                            b = insertedByte;
-                        }
-                        else
-                        {
-                            // File byte (may be modified)
-                            var physicalPos = VirtualToPhysical(new VirtualPosition(virtualPos));
-                            if (physicalPos.IsValid)
-                            {
-                                var result = _provider.GetByte(physicalPos.Value);
-                                b = result.singleByte ?? 0;
-                            }
-                            else
-                            {
-                                continue; // Skip invalid positions
-                            }
-                        }
-
-                        // Add to buffer
-                        buffer[bufferIndex++] = b;
-
-                        // Flush buffer when full
-                        if (bufferIndex >= buffer.Length)
-                        {
-                            fs.Write(buffer, 0, bufferIndex);
-                            bufferIndex = 0;
-                        }
-                    }
-
-                    // Flush remaining bytes
-                    if (bufferIndex > 0)
-                    {
-                        fs.Write(buffer, 0, bufferIndex);
-                    }
-                }
-
-                // Close current file
-                _provider.Close();
-
-                // Replace original file with new file
-                System.IO.File.Delete(originalFile);
-                System.IO.File.Move(tempFile, originalFile);
-
-                // Reopen file
-                _provider = new Core.Bytes.ByteProviderLegacy(originalFile);
-
-                // Clear insertions (they're now in the file)
-                _insertedBytes.Clear();
-                _insertions.Clear();
-                _insertUndoStack.Clear();
-                _insertRedoStack.Clear();
-
-                System.Diagnostics.Debug.WriteLine($"[SAVE] File saved successfully with insertions integrated");
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[SAVE ERROR] {ex.Message}");
-                // Clean up temp file if it exists
-                if (System.IO.File.Exists(tempFile))
-                    System.IO.File.Delete(tempFile);
-                throw;
-            }
+            System.Diagnostics.Debug.WriteLine($"[SAVE] File saved successfully");
         }
 
         /// <summary>
@@ -413,9 +313,8 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public void ClearUndoRedo()
         {
-            _undoRedoService.ClearAll(_provider);
-            _insertUndoStack.Clear();
-            _insertRedoStack.Clear();
+            // TODO: ByteProvider V2 needs undo/redo implementation
+            // _undoRedoService.ClearAll(_provider); // Needs ByteProvider V2 support
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
         }
@@ -438,44 +337,26 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public byte GetByteAt(VirtualPosition virtualPos)
         {
-            var physicalPos = VirtualToPhysical(virtualPos);
-            if (!physicalPos.IsValid || physicalPos.Value >= _provider.Length)
-                return 0;
-
-            // Set position and read byte
-            _provider.Position = physicalPos.Value;
-            int byteValue = _provider.ReadByte();
-            return byteValue >= 0 ? (byte)byteValue : (byte)0;
+            // ByteProvider V2 works with virtual positions directly
+            var (value, success) = _provider.GetByte(virtualPos.Value);
+            return success ? value : (byte)0;
         }
 
         /// <summary>
         /// Modify byte at virtual position
-        /// Handles both inserted bytes (_insertedBytes) and file bytes (ByteProvider)
+        /// ByteProvider V2 handles all byte types (inserted/file/deleted) internally
         /// </summary>
         public void ModifyByte(VirtualPosition virtualPos, byte newValue)
         {
             if (ReadOnlyMode) return;
 
-            // Check if this is an inserted byte (stored in ViewModel)
-            if (_insertedBytes.ContainsKey(virtualPos.Value))
-            {
-                // Update the inserted byte directly
-                _insertedBytes[virtualPos.Value] = newValue;
-                System.Diagnostics.Debug.WriteLine($"[MODIFYBYTE] Updated inserted byte at virtual pos {virtualPos.Value}: 0x{newValue:X2}");
-            }
-            else
-            {
-                // Modify file byte via ByteProvider
-                var physicalPos = VirtualToPhysical(virtualPos);
-                if (!physicalPos.IsValid) return;
+            // ByteProvider V2 handles all modifications internally
+            _provider.ModifyByte(virtualPos.Value, newValue);
+            System.Diagnostics.Debug.WriteLine($"[MODIFYBYTE] Modified byte at virtual pos {virtualPos.Value}: 0x{newValue:X2}");
 
-                _provider.AddByteModified(newValue, physicalPos.Value);
-                System.Diagnostics.Debug.WriteLine($"[MODIFYBYTE] Modified file byte at physical pos {physicalPos.Value}: 0x{newValue:X2}");
-
-                // Notify Undo/Redo state changed (ByteProvider handles undo for modifications)
-                OnPropertyChanged(nameof(CanUndo));
-                OnPropertyChanged(nameof(CanRedo));
-            }
+            // Notify Undo/Redo state changed (ByteProvider handles undo for modifications)
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
 
             // OPTIMIZATION: Invalidate only the affected line, not the entire cache
             InvalidateLineAtPosition(virtualPos.Value);
@@ -518,46 +399,19 @@ namespace WpfHexaEditor.V2.ViewModels
         {
             if (ReadOnlyMode || EditMode != EditMode.Insert) return;
 
-            var physicalPos = VirtualToPhysical(virtualPos);
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] Inserting 0x{value:X2} at virtualPos={virtualPos.Value}");
 
-            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] Inserting 0x{value:X2} at virtualPos={virtualPos.Value}, physicalPos={physicalPos.Value}");
+            // ByteProvider V2 handles insertions internally with proper LIFO (stack-like) behavior
+            _provider.InsertByte(virtualPos.Value, value);
 
-            // Store inserted byte in ViewModel dictionary (indexed by VIRTUAL position)
-            // This prevents ByteProvider confusion between inserted bytes and file bytes
-            _insertedBytes[virtualPos.Value] = value;
-            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] Stored in _insertedBytes[{virtualPos.Value}] = 0x{value:X2}");
-
-            // NOTE: We do NOT call _provider.AddByteAdded() here because:
-            // 1. It would add entry to ByteProvider's dictionary at virtual position
-            // 2. This blocks reading of file bytes at same physical position
-            // 3. Undo/Redo for insertions will be handled separately in ViewModel
-
-            // Record operation for undo/redo
-            var edit = new InsertByteEdit(virtualPos.Value, physicalPos.Value, value);
-            _insertUndoStack.Push(edit);
-            _insertRedoStack.Clear(); // New operation invalidates redo history
-            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE UNDO] Recorded edit, undo stack count: {_insertUndoStack.Count}");
-
-            // Notify Undo/Redo state changed
+            // TODO: Undo/Redo for insertions (needs to be reimplemented for ByteProvider V2)
+            // For now, insertions are not undoable
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
 
-            // Track insertion for position mapping
-            if (_insertions.ContainsKey(physicalPos.Value))
-            {
-                _insertions[physicalPos.Value]++;
-                System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] _insertions[{physicalPos.Value}] incremented to {_insertions[physicalPos.Value]}");
-            }
-            else
-            {
-                _insertions[physicalPos.Value] = 1;
-                System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] _insertions[{physicalPos.Value}] = 1");
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] VirtualLength before refresh: {VirtualLength}, FileLength: {FileLength}, Total insertions: {_insertions.Values.Sum()}");
+            System.Diagnostics.Debug.WriteLine($"[INSERTBYTE] VirtualLength before refresh: {VirtualLength}");
 
             // OPTIMIZATION: Since insert shifts all following bytes, we need full refresh
-            // But we can still use incremental update if scrolling is stable
             ClearLineCache();
             RefreshVisibleLines();
 
@@ -566,7 +420,7 @@ namespace WpfHexaEditor.V2.ViewModels
 
         /// <summary>
         /// Insert multiple bytes at virtual position (OPTIMIZED for Paste/bulk operations)
-        /// Much faster than calling InsertByte() repeatedly
+        /// ByteProvider V2 handles batch insertion efficiently with proper LIFO ordering
         /// </summary>
         public void InsertBytes(VirtualPosition startVirtualPos, byte[] bytes)
         {
@@ -574,35 +428,10 @@ namespace WpfHexaEditor.V2.ViewModels
 
             System.Diagnostics.Debug.WriteLine($"[INSERTBYTES] === Batch insert START === {bytes.Length} bytes at pos {startVirtualPos.Value}");
 
-            // Get starting physical position
-            var physicalPos = VirtualToPhysical(startVirtualPos);
+            // ByteProvider V2 handles all insertion logic internally
+            _provider.InsertBytes(startVirtualPos.Value, bytes);
 
-            // Insert all bytes in one batch (no refresh until the end)
-            long currentVirtualPos = startVirtualPos.Value;
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                // Store each byte in _insertedBytes dictionary
-                _insertedBytes[currentVirtualPos] = bytes[i];
-
-                // Record in undo stack (each byte separately for granular undo)
-                var edit = new InsertByteEdit(currentVirtualPos, physicalPos.Value, bytes[i]);
-                _insertUndoStack.Push(edit);
-
-                currentVirtualPos++;
-            }
-
-            // Update insertion count ONCE for the physical position
-            if (_insertions.ContainsKey(physicalPos.Value))
-                _insertions[physicalPos.Value] += bytes.Length;
-            else
-                _insertions[physicalPos.Value] = bytes.Length;
-
-            // Clear redo stack (new operations invalidate redo)
-            _insertRedoStack.Clear();
-
-            System.Diagnostics.Debug.WriteLine($"[INSERTBYTES] Inserted {bytes.Length} bytes, undo stack: {_insertUndoStack.Count}");
-
-            // Notify changes
+            // TODO: Undo/Redo for insertions (needs to be reimplemented for ByteProvider V2)
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
 
@@ -615,28 +444,20 @@ namespace WpfHexaEditor.V2.ViewModels
 
         /// <summary>
         /// Delete byte at virtual position
+        /// ByteProvider V2 handles deletion internally
         /// </summary>
         public void DeleteByte(VirtualPosition virtualPos)
         {
             if (ReadOnlyMode) return;
 
-            var physicalPos = VirtualToPhysical(virtualPos);
-            if (!physicalPos.IsValid) return;
-
-            _provider.AddByteDeleted(physicalPos.Value, 1);
+            // ByteProvider V2 handles deletions internally
+            _provider.DeleteByte(virtualPos.Value);
 
             // Notify Undo/Redo state changed
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
 
-            // Track deletion for position mapping
-            if (_deletions.ContainsKey(physicalPos.Value))
-                _deletions[physicalPos.Value]++;
-            else
-                _deletions[physicalPos.Value] = 1;
-
             // OPTIMIZATION: Since delete shifts all following bytes, we need full refresh
-            // But we can still use incremental update if scrolling is stable
             ClearLineCache();
             RefreshVisibleLines();
         }
@@ -678,15 +499,30 @@ namespace WpfHexaEditor.V2.ViewModels
 
             var start = Math.Min(_selectionStart.Value, _selectionStop.Value);
             var stop = Math.Max(_selectionStart.Value, _selectionStop.Value);
+            var length = stop - start + 1;
 
-            // Convert virtual positions to physical positions
-            var physicalStart = VirtualToPhysical(new VirtualPosition(start));
-            var physicalStop = VirtualToPhysical(new VirtualPosition(stop));
+            // Get bytes directly from ByteProvider V2 (works with virtual positions)
+            var bytes = new byte[length];
+            for (long i = 0; i < length; i++)
+            {
+                bytes[i] = GetByteAt(new VirtualPosition(start + i));
+            }
 
-            if (!physicalStart.IsValid || !physicalStop.IsValid) return false;
-
-            _clipboardService.CopyToClipboard(_provider, physicalStart.Value, physicalStop.Value);
-            return true;
+            // Copy to clipboard (simple implementation - can be enhanced later)
+            try
+            {
+                using (var ms = new MemoryStream(bytes))
+                {
+                    var dataObj = new System.Windows.DataObject();
+                    dataObj.SetData("BinaryData", ms);
+                    System.Windows.Clipboard.SetDataObject(dataObj, true);
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -778,13 +614,12 @@ namespace WpfHexaEditor.V2.ViewModels
             else
             {
                 // OVERWRITE MODE: Create ByteModified entries (orange borders)
-                // Use ByteProvider to overwrite existing bytes
-                var pasteVirtualPos = new VirtualPosition(pastePosition);
-                var physicalStart = VirtualToPhysical(pasteVirtualPos);
-                if (!physicalStart.IsValid) return false;
-
-                _provider.Paste(physicalStart.Value, bytesToPaste, false);
-                System.Diagnostics.Debug.WriteLine($"[PASTE OVERWRITE] Modified {bytesToPaste.Length} bytes at physical pos {physicalStart.Value} (orange borders)");
+                // Overwrite existing bytes directly (ByteProvider V2 works with virtual positions)
+                for (int i = 0; i < bytesToPaste.Length; i++)
+                {
+                    ModifyByte(new VirtualPosition(pastePosition + i), bytesToPaste[i]);
+                }
+                System.Diagnostics.Debug.WriteLine($"[PASTE OVERWRITE] Modified {bytesToPaste.Length} bytes at virtual pos {pastePosition} (orange borders)");
 
                 // Refresh for overwrite mode (Insert mode already refreshes in InsertBytes)
                 ClearLineCache();
@@ -899,40 +734,20 @@ namespace WpfHexaEditor.V2.ViewModels
         #region Public Methods - Undo/Redo
 
         /// <summary>
-        /// Undo last operation (handles both ByteProvider modifications and ViewModel insertions)
+        /// Undo last operation
+        /// TODO: ByteProvider V2 needs undo/redo implementation
         /// </summary>
         public void Undo()
         {
-            // Prioritize ViewModel insert operations (most recent)
-            if (_insertUndoStack.Count > 0)
-            {
-                var edit = _insertUndoStack.Pop();
-                System.Diagnostics.Debug.WriteLine($"[UNDO INSERT] Undoing insertion at virtual pos {edit.VirtualPosition}, value 0x{edit.Value:X2}");
+            // TODO: Implement undo/redo for ByteProvider V2
+            // ByteProvider V2 doesn't have undo/redo methods yet
+            System.Diagnostics.Debug.WriteLine($"[UNDO] Not implemented for ByteProvider V2 yet");
 
-                // Remove from _insertedBytes dictionary
-                _insertedBytes.Remove(edit.VirtualPosition);
+            // For now, do nothing
+            // When implemented, this should:
+            // 1. Call _provider.Undo()
+            // 2. Refresh the display
 
-                // Update position mapping (decrement insertion count)
-                if (_insertions.ContainsKey(edit.PhysicalPosition))
-                {
-                    _insertions[edit.PhysicalPosition]--;
-                    if (_insertions[edit.PhysicalPosition] <= 0)
-                        _insertions.Remove(edit.PhysicalPosition);
-                }
-
-                // Push to redo stack
-                _insertRedoStack.Push(edit);
-                System.Diagnostics.Debug.WriteLine($"[UNDO INSERT] Insert undo complete, undo stack: {_insertUndoStack.Count}, redo stack: {_insertRedoStack.Count}");
-            }
-            else
-            {
-                // Delegate to ByteProvider for modifications
-                long position = _undoRedoService.Undo(_provider);
-                System.Diagnostics.Debug.WriteLine($"[UNDO] ByteProvider undo at position {position}");
-            }
-
-            ClearLineCache();
-            RefreshVisibleLines();
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
             OnPropertyChanged(nameof(VirtualLength));
@@ -940,38 +755,20 @@ namespace WpfHexaEditor.V2.ViewModels
         }
 
         /// <summary>
-        /// Redo last undone operation (handles both ByteProvider modifications and ViewModel insertions)
+        /// Redo last undone operation
+        /// TODO: ByteProvider V2 needs undo/redo implementation
         /// </summary>
         public void Redo()
         {
-            // Prioritize ViewModel insert operations (most recent undone)
-            if (_insertRedoStack.Count > 0)
-            {
-                var edit = _insertRedoStack.Pop();
-                System.Diagnostics.Debug.WriteLine($"[REDO INSERT] Redoing insertion at virtual pos {edit.VirtualPosition}, value 0x{edit.Value:X2}");
+            // TODO: Implement undo/redo for ByteProvider V2
+            // ByteProvider V2 doesn't have undo/redo methods yet
+            System.Diagnostics.Debug.WriteLine($"[REDO] Not implemented for ByteProvider V2 yet");
 
-                // Add back to _insertedBytes dictionary
-                _insertedBytes[edit.VirtualPosition] = edit.Value;
+            // For now, do nothing
+            // When implemented, this should:
+            // 1. Call _provider.Redo()
+            // 2. Refresh the display
 
-                // Update position mapping (increment insertion count)
-                if (_insertions.ContainsKey(edit.PhysicalPosition))
-                    _insertions[edit.PhysicalPosition]++;
-                else
-                    _insertions[edit.PhysicalPosition] = 1;
-
-                // Push back to undo stack
-                _insertUndoStack.Push(edit);
-                System.Diagnostics.Debug.WriteLine($"[REDO INSERT] Insert redo complete, undo stack: {_insertUndoStack.Count}, redo stack: {_insertRedoStack.Count}");
-            }
-            else
-            {
-                // Delegate to ByteProvider for modifications
-                long position = _undoRedoService.Redo(_provider);
-                System.Diagnostics.Debug.WriteLine($"[REDO] ByteProvider redo at position {position}");
-            }
-
-            ClearLineCache();
-            RefreshVisibleLines();
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
             OnPropertyChanged(nameof(VirtualLength));
@@ -984,10 +781,27 @@ namespace WpfHexaEditor.V2.ViewModels
 
         /// <summary>
         /// Find first occurrence of byte array
+        /// TODO: Optimize with Boyer-Moore or similar algorithm
         /// </summary>
         public long FindFirst(byte[] data, long startPosition = 0)
         {
-            return _findReplaceService.FindFirst(_provider, data, startPosition);
+            if (data == null || data.Length == 0) return -1;
+
+            long virtualLength = VirtualLength;
+            for (long pos = startPosition; pos <= virtualLength - data.Length; pos++)
+            {
+                bool match = true;
+                for (int i = 0; i < data.Length; i++)
+                {
+                    if (GetByteAt(new VirtualPosition(pos + i)) != data[i])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) return pos;
+            }
+            return -1;
         }
 
         /// <summary>
@@ -995,15 +809,25 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public long FindNext(byte[] data, long currentPosition)
         {
-            return _findReplaceService.FindNext(_provider, data, currentPosition);
+            return FindFirst(data, currentPosition + 1);
         }
 
         /// <summary>
         /// Find last occurrence of byte array
+        /// TODO: Optimize by searching backwards
         /// </summary>
         public long FindLast(byte[] data, long startPosition = 0)
         {
-            return _findReplaceService.FindLast(_provider, data, startPosition);
+            if (data == null || data.Length == 0) return -1;
+
+            long lastFound = -1;
+            long pos = startPosition;
+            while ((pos = FindFirst(data, pos)) != -1)
+            {
+                lastFound = pos;
+                pos++;
+            }
+            return lastFound;
         }
 
         /// <summary>
@@ -1011,7 +835,14 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public IEnumerable<long> FindAll(byte[] data, long startPosition = 0)
         {
-            return _findReplaceService.FindAll(_provider, data, startPosition);
+            if (data == null || data.Length == 0) yield break;
+
+            long pos = startPosition;
+            while ((pos = FindFirst(data, pos)) != -1)
+            {
+                yield return pos;
+                pos++;
+            }
         }
 
         /// <summary>
@@ -1019,14 +850,20 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public long ReplaceFirst(byte[] findData, byte[] replaceData, long startPosition = 0, bool truncateLength = false)
         {
-            var result = _findReplaceService.ReplaceFirst(_provider, findData, replaceData, startPosition, truncateLength, _readOnlyMode);
-            if (result != -1)
+            if (ReadOnlyMode) return -1;
+
+            long pos = FindFirst(findData, startPosition);
+            if (pos == -1) return -1;
+
+            // Replace bytes
+            for (int i = 0; i < replaceData.Length && i < findData.Length; i++)
             {
-                _findReplaceService.ClearCache(); // Clear cache after modification
-                ClearLineCache();
-                RefreshVisibleLines();
+                ModifyByte(new VirtualPosition(pos + i), replaceData[i]);
             }
-            return result;
+
+            ClearLineCache();
+            RefreshVisibleLines();
+            return pos;
         }
 
         /// <summary>
@@ -1034,32 +871,42 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public long ReplaceNext(byte[] findData, byte[] replaceData, long currentPosition, bool truncateLength = false)
         {
-            var result = _findReplaceService.ReplaceNext(_provider, findData, replaceData, currentPosition, truncateLength, _readOnlyMode);
-            if (result != -1)
-            {
-                _findReplaceService.ClearCache(); // Clear cache after modification
-                ClearLineCache();
-                RefreshVisibleLines();
-            }
-            return result;
+            return ReplaceFirst(findData, replaceData, currentPosition + 1, truncateLength);
         }
 
         /// <summary>
         /// Replace all occurrences
+        /// OPTIMIZED: Batch modifications for better performance
         /// </summary>
         public int ReplaceAll(byte[] findData, byte[] replaceData, bool truncateLength = false)
         {
-            var positions = _findReplaceService.ReplaceAll(_provider, findData, replaceData, truncateLength, _readOnlyMode);
-            int count = positions?.Count() ?? 0;
+            if (ReadOnlyMode) return 0;
 
-            if (count > 0)
+            var positions = FindAll(findData).ToList();
+
+            if (positions.Count > 0)
             {
-                _findReplaceService.ClearCache(); // Clear cache after modification
-                ClearLineCache();
-                RefreshVisibleLines();
+                // Use BeginUpdate to suppress display refresh during batch operations
+                BeginUpdate();
+                try
+                {
+                    foreach (var pos in positions)
+                    {
+                        // Use ModifyByte which won't refresh display due to BeginUpdate
+                        for (int i = 0; i < replaceData.Length && i < findData.Length; i++)
+                        {
+                            ModifyByte(new VirtualPosition(pos + i), replaceData[i]);
+                        }
+                    }
+                }
+                finally
+                {
+                    // EndUpdate will refresh display once
+                    EndUpdate();
+                }
             }
 
-            return count;
+            return positions.Count;
         }
 
         /// <summary>
@@ -1067,7 +914,8 @@ namespace WpfHexaEditor.V2.ViewModels
         /// </summary>
         public void ClearFindCache()
         {
-            _findReplaceService.ClearCache();
+            // No cache in this simple implementation
+            // TODO: Implement caching for better performance
         }
 
         #endregion
@@ -1106,15 +954,14 @@ namespace WpfHexaEditor.V2.ViewModels
             if (startPosition < 0 || length <= 0) return;
             if (startPosition >= VirtualLength) return;
 
-            // Convert virtual start position to physical
-            var physicalStart = VirtualToPhysical(new VirtualPosition(startPosition));
-            if (!physicalStart.IsValid) return;
-
             // Clamp length to available space
             long actualLength = Math.Min(length, VirtualLength - startPosition);
 
-            // Fill using provider
-            _provider.FillWithByte(physicalStart.Value, actualLength, value);
+            // Fill each byte (ByteProvider V2 works with virtual positions)
+            for (long i = 0; i < actualLength; i++)
+            {
+                ModifyByte(new VirtualPosition(startPosition + i), value);
+            }
 
             // Refresh display
             ClearLineCache();
@@ -1127,62 +974,28 @@ namespace WpfHexaEditor.V2.ViewModels
 
         /// <summary>
         /// Convert virtual position to physical position
+        /// NOTE: ByteProvider V2 handles virtual/physical mapping internally.
+        /// This method is kept for compatibility but may not be needed.
         /// </summary>
         public PhysicalPosition VirtualToPhysical(VirtualPosition virtualPos)
         {
+            // TODO: ByteProvider V2 integration - determine if this is still needed
+            // For now, return the same position (1:1 mapping as placeholder)
             if (!virtualPos.IsValid) return PhysicalPosition.Invalid;
-
-            long physical = virtualPos.Value;
-
-            // Subtract all insertions before this position
-            foreach (var kvp in _insertions.OrderBy(x => x.Key))
-            {
-                if (kvp.Key <= physical)
-                    physical -= kvp.Value;
-                else
-                    break;
-            }
-
-            // Add all deletions before this position (deleted bytes still in file)
-            foreach (var kvp in _deletions.OrderBy(x => x.Key))
-            {
-                if (kvp.Key <= physical)
-                    physical += kvp.Value;
-                else
-                    break;
-            }
-
-            return new PhysicalPosition(Math.Max(0, physical));
+            return new PhysicalPosition(virtualPos.Value);
         }
 
         /// <summary>
         /// Convert physical position to virtual position
+        /// NOTE: ByteProvider V2 handles virtual/physical mapping internally.
+        /// This method is kept for compatibility but may not be needed.
         /// </summary>
         public VirtualPosition PhysicalToVirtual(PhysicalPosition physicalPos)
         {
+            // TODO: ByteProvider V2 integration - determine if this is still needed
+            // For now, return the same position (1:1 mapping as placeholder)
             if (!physicalPos.IsValid) return VirtualPosition.Invalid;
-
-            long virtual_ = physicalPos.Value;
-
-            // Add all insertions before this position
-            foreach (var kvp in _insertions.OrderBy(x => x.Key))
-            {
-                if (kvp.Key <= virtual_)
-                    virtual_ += kvp.Value;
-                else
-                    break;
-            }
-
-            // Subtract all deletions before this position
-            foreach (var kvp in _deletions.OrderBy(x => x.Key))
-            {
-                if (kvp.Key <= virtual_)
-                    virtual_ -= kvp.Value;
-                else
-                    break;
-            }
-
-            return new VirtualPosition(Math.Max(0, virtual_));
+            return new VirtualPosition(physicalPos.Value);
         }
 
         #endregion
@@ -1389,6 +1202,7 @@ namespace WpfHexaEditor.V2.ViewModels
 
         /// <summary>
         /// Create a single hex line (optimized with batch reading)
+        /// OPTIMIZED: Use GetBytes() to read entire line at once instead of byte-by-byte
         /// </summary>
         private HexLine CreateLine(long lineNumber)
         {
@@ -1403,97 +1217,36 @@ namespace WpfHexaEditor.V2.ViewModels
             var endPos = Math.Min(startVirtualPos + BytePerLine, VirtualLength);
             var lineLength = (int)(endPos - startVirtualPos);
 
-            System.Diagnostics.Debug.WriteLine($"[CREATELINE] Line {lineNumber}: start={startVirtualPos}, endPos={endPos}, VirtualLength={VirtualLength}, expected bytes={lineLength}");
+            if (lineLength <= 0) return line;
 
-            // Batch read bytes for better performance
-            int bytesAdded = 0;
-            for (long virtualPos = startVirtualPos; virtualPos < endPos; virtualPos++)
+            // OPTIMIZATION: Read entire line at once using ByteProvider V2's GetBytes()
+            byte[] lineBytes = _provider.GetBytes(startVirtualPos, lineLength);
+
+            // Calculate cursor position once
+            var cursorPos = _selectionStop.IsValid ? _selectionStop : _selectionStart;
+
+            // Create ByteData for each byte in the line
+            for (int i = 0; i < lineBytes.Length; i++)
             {
-                var byteData = CreateByteDataOptimized(new VirtualPosition(virtualPos));
-                if (byteData != null)
+                long virtualPos = startVirtualPos + i;
+                var byteData = new ByteData
                 {
-                    line.Bytes.Add(byteData);
-                    bytesAdded++;
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CREATELINE] NULL ByteData at virtualPos {virtualPos}!");
-                }
+                    VirtualPos = new VirtualPosition(virtualPos),
+                    PhysicalPos = null, // ByteProvider V2 handles mapping internally
+                    Value = lineBytes[i],
+                    Action = ByteAction.Nothing, // TODO: Get action from ByteProvider V2
+                    IsSelected = IsByteSelected(new VirtualPosition(virtualPos)),
+                    IsCursor = cursorPos.IsValid && virtualPos == cursorPos.Value
+                };
+                line.Bytes.Add(byteData);
             }
-
-            System.Diagnostics.Debug.WriteLine($"[CREATELINE] Line {lineNumber}: Added {bytesAdded} bytes to line (expected {lineLength})");
 
             return line;
         }
 
-        /// <summary>
-        /// Create a single hex byte (optimized version with reduced provider calls)
-        /// </summary>
-        private ByteData CreateByteDataOptimized(VirtualPosition virtualPos)
-        {
-            var physicalPos = VirtualToPhysical(virtualPos);
-
-            // Calculate cursor position (cursor is at the active end of selection)
-            var cursorPos = _selectionStop.IsValid ? _selectionStop : _selectionStart;
-            bool isCursor = cursorPos.IsValid && virtualPos == cursorPos;
-
-            // Fast path: Check if this is an inserted byte first (check ViewModel dictionary)
-            if (_insertedBytes.TryGetValue(virtualPos.Value, out byte insertedValue))
-            {
-                System.Diagnostics.Debug.WriteLine($"[CREATEBYTE] Virtual {virtualPos.Value}: INSERTED byte (from ViewModel), value=0x{insertedValue:X2}");
-                return new ByteData
-                {
-                    VirtualPos = virtualPos,
-                    PhysicalPos = null,
-                    Value = insertedValue,
-                    Action = ByteAction.Added,
-                    IsSelected = IsByteSelected(virtualPos),
-                    IsCursor = isCursor
-                };
-            }
-
-            // Validate physical position
-            if (!physicalPos.IsValid)
-            {
-                System.Diagnostics.Debug.WriteLine($"[CREATEBYTE] Virtual {virtualPos.Value}: Physical position INVALID");
-                return null;
-            }
-
-            if (physicalPos.Value >= FileLength)
-            {
-                System.Diagnostics.Debug.WriteLine($"[CREATEBYTE] Virtual {virtualPos.Value}: Physical {physicalPos.Value} >= FileLength {FileLength}");
-                return null;
-            }
-
-            // Read byte value
-            var (byteValue, success) = _provider.GetByte(physicalPos.Value);
-            if (!success || !byteValue.HasValue)
-            {
-                System.Diagnostics.Debug.WriteLine($"[CREATEBYTE] Virtual {virtualPos.Value}: Failed to read from physical {physicalPos.Value}");
-                return null;
-            }
-
-            // Check if modified - use combined check to reduce calls
-            var (modSuccess, modByte) = _provider.CheckIfIsByteModified(physicalPos.Value, ByteAction.Modified);
-
-            return new ByteData
-            {
-                VirtualPos = virtualPos,
-                PhysicalPos = physicalPos,
-                Value = byteValue.Value,
-                Action = modSuccess ? ByteAction.Modified : ByteAction.Nothing,
-                IsSelected = IsByteSelected(virtualPos),
-                IsCursor = isCursor
-            };
-        }
-
-        /// <summary>
-        /// Create a single hex byte (legacy method, kept for compatibility)
-        /// </summary>
-        private ByteData CreateByteData(VirtualPosition virtualPos)
-        {
-            return CreateByteDataOptimized(virtualPos);
-        }
+        // REMOVED: CreateByteDataOptimized() and CreateByteData()
+        // These methods read one byte at a time which is extremely slow
+        // Now we use GetBytes() in CreateLine() to read entire lines at once
 
         /// <summary>
         /// Check if byte at virtual position is selected
@@ -1529,20 +1282,25 @@ namespace WpfHexaEditor.V2.ViewModels
         #region Performance Helpers
 
         /// <summary>
-        /// Begin batch operation (suppresses UI updates)
+        /// Begin batch operation (suppresses UI updates and provider cache invalidations)
+        /// OPTIMIZED: Also tells ByteProvider to defer cache invalidations
         /// </summary>
         public void BeginUpdate()
         {
             _suppressRefresh = true;
+            _provider?.BeginBatch();
         }
 
         /// <summary>
-        /// End batch operation (triggers single UI update)
+        /// End batch operation (triggers single UI update and cache invalidation)
+        /// OPTIMIZED: Invalidates provider caches and refreshes display once
         /// </summary>
         public void EndUpdate()
         {
+            _provider?.EndBatch();
             _suppressRefresh = false;
-            RefreshVisibleLines();
+            ClearLineCache(); // Clear ViewModel line cache
+            RefreshVisibleLines(); // Refresh display once
         }
 
         #endregion

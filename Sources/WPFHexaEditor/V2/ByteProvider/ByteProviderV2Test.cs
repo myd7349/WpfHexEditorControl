@@ -43,6 +43,12 @@ namespace WpfHexaEditor.V2.ByteProvider
                 Console.WriteLine("Starting Test 5...");
                 TestMemorySource();
 
+                Console.WriteLine("Starting Test 6...");
+                TestOptimizedPositionMapper();
+
+                Console.WriteLine("Starting Test 7...");
+                TestBatchOperations();
+
                 Console.WriteLine("\n========================================");
                 Console.WriteLine("All tests completed!");
                 Console.WriteLine("========================================");
@@ -222,6 +228,112 @@ namespace WpfHexaEditor.V2.ByteProvider
             provider.ModifyByte(0, 0x68); // 'H' -> 'h'
             var (firstByte, _) = provider.GetByte(0);
             Console.WriteLine($"  Modified first byte: 0x{firstByte:X2} (expected: 0x68) - {(firstByte == 0x68 ? "✓ PASS" : "✗ FAIL")}");
+
+            provider.Dispose();
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Test 6: Optimized PositionMapper performance (segment-based approach)
+        /// </summary>
+        private static void TestOptimizedPositionMapper()
+        {
+            Console.WriteLine("Test 6: Optimized PositionMapper Performance");
+            Console.WriteLine("--------------------------------------------");
+
+            var provider = new ByteProvider();
+
+            // Create 100KB test file with scattered edits
+            var testData = new byte[100 * 1024];
+            for (int i = 0; i < testData.Length; i++)
+                testData[i] = (byte)(i % 256);
+
+            provider.OpenMemory(testData);
+
+            // Add scattered modifications and insertions (every 1000 bytes)
+            for (int i = 0; i < testData.Length; i += 1000)
+            {
+                provider.ModifyByte(i, 0xFF);
+                if (i % 2000 == 0)
+                    provider.InsertByte(i, 0xAA);
+            }
+
+            Console.WriteLine($"  File size: {testData.Length / 1024}KB");
+            Console.WriteLine($"  Edits: {provider.ModificationStats.modified} modified, {provider.ModificationStats.inserted} inserted");
+
+            // Benchmark: Access positions near the end of file (worst case for O(n) approach)
+            var stopwatch = Stopwatch.StartNew();
+            long testPosition = provider.VirtualLength - 1000;
+
+            for (int i = 0; i < 100; i++)
+            {
+                provider.GetByte(testPosition + i);
+            }
+
+            stopwatch.Stop();
+            Console.WriteLine($"  100 reads near end of file: {stopwatch.ElapsedMilliseconds}ms");
+            Console.WriteLine($"  Average: {stopwatch.ElapsedMilliseconds / 100.0:F3}ms per read");
+            Console.WriteLine($"  {(stopwatch.ElapsedMilliseconds < 50 ? "✓ PASS (Fast!)" : "✗ SLOW (check optimization)")}");
+
+            provider.Dispose();
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Test 7: Batch operations performance
+        /// </summary>
+        private static void TestBatchOperations()
+        {
+            Console.WriteLine("Test 7: Batch Operations Performance");
+            Console.WriteLine("------------------------------------");
+
+            var provider = new ByteProvider();
+            var testData = new byte[10000];
+            for (int i = 0; i < testData.Length; i++)
+                testData[i] = (byte)(i % 256);
+
+            provider.OpenMemory(testData);
+
+            // Test 7a: Non-batched modifications (slow)
+            var stopwatch = Stopwatch.StartNew();
+            for (int i = 0; i < 1000; i++)
+            {
+                provider.ModifyByte(i, 0xFF);
+            }
+            stopwatch.Stop();
+            long nonBatchedTime = stopwatch.ElapsedMilliseconds;
+            Console.WriteLine($"  Non-batched: 1000 modifications in {nonBatchedTime}ms");
+
+            // Reset
+            provider.ClearAllEdits();
+
+            // Test 7b: Batched modifications (fast)
+            stopwatch.Restart();
+            provider.BeginBatch();
+            for (int i = 0; i < 1000; i++)
+            {
+                provider.ModifyByte(i, 0xFF);
+            }
+            provider.EndBatch();
+            stopwatch.Stop();
+            long batchedTime = stopwatch.ElapsedMilliseconds;
+            Console.WriteLine($"  Batched: 1000 modifications in {batchedTime}ms");
+
+            double speedup = nonBatchedTime > 0 ? (double)nonBatchedTime / Math.Max(1, batchedTime) : 0;
+            Console.WriteLine($"  Speedup: {speedup:F1}x faster");
+            Console.WriteLine($"  {(speedup > 1.5 ? "✓ PASS (Batching is faster!)" : "✗ WARNING (Batching should be faster)")}");
+
+            // Test 7c: ModifyBytes batch method
+            provider.ClearAllEdits();
+            stopwatch.Restart();
+            byte[] values = new byte[1000];
+            for (int i = 0; i < values.Length; i++)
+                values[i] = 0xFF;
+            provider.ModifyBytes(0, values);
+            stopwatch.Stop();
+            long modifyBytesTime = stopwatch.ElapsedMilliseconds;
+            Console.WriteLine($"  ModifyBytes: 1000 modifications in {modifyBytesTime}ms");
+            Console.WriteLine($"  {(modifyBytesTime <= batchedTime + 5 ? "✓ PASS" : "✗ WARNING")}");
 
             provider.Dispose();
             Console.WriteLine();

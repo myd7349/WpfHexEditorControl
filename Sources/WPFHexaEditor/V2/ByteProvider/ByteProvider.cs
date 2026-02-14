@@ -37,6 +37,10 @@ namespace WpfHexaEditor.V2.ByteProvider
         private readonly PositionMapper _positionMapper;
         private readonly ByteReader _byteReader;
 
+        // Batching support to avoid repeated cache invalidations
+        private bool _batchMode = false;
+        private bool _batchDirty = false;
+
         #endregion
 
         #region Properties
@@ -180,6 +184,16 @@ namespace WpfHexaEditor.V2.ByteProvider
         /// </summary>
         public void ModifyByte(long virtualPosition, byte value)
         {
+            ModifyByteInternal(virtualPosition, value);
+            InvalidateCaches();
+        }
+
+        /// <summary>
+        /// Internal version of ModifyByte that doesn't invalidate caches.
+        /// Used for batch operations.
+        /// </summary>
+        private void ModifyByteInternal(long virtualPosition, byte value)
+        {
             if (IsReadOnly)
                 throw new InvalidOperationException("File is read-only");
 
@@ -198,7 +212,27 @@ namespace WpfHexaEditor.V2.ByteProvider
             {
                 _editsManager.ModifyByte(physicalPos.Value, value);
             }
+        }
 
+        /// <summary>
+        /// Modify multiple bytes starting at a virtual position.
+        /// OPTIMIZED: Batch modification with single cache invalidation.
+        /// </summary>
+        public void ModifyBytes(long startVirtualPosition, byte[] values)
+        {
+            if (IsReadOnly)
+                throw new InvalidOperationException("File is read-only");
+
+            if (values == null || values.Length == 0)
+                return;
+
+            // Batch modify without invalidating cache each time
+            for (int i = 0; i < values.Length; i++)
+            {
+                ModifyByteInternal(startVirtualPosition + i, values[i]);
+            }
+
+            // Invalidate caches ONCE at the end
             InvalidateCaches();
         }
 
@@ -265,13 +299,40 @@ namespace WpfHexaEditor.V2.ByteProvider
 
         /// <summary>
         /// Delete multiple bytes starting at a virtual position.
+        /// OPTIMIZED: Batch deletion with single cache invalidation.
         /// </summary>
         public void DeleteBytes(long startVirtualPosition, long count)
         {
+            if (IsReadOnly)
+                throw new InvalidOperationException("File is read-only");
+
+            if (count <= 0)
+                return;
+
+            // Batch delete without invalidating cache each time
             for (long i = 0; i < count; i++)
             {
-                DeleteByte(startVirtualPosition + i);
+                long virtualPos = startVirtualPosition + i;
+
+                // Convert to physical position
+                var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPos, _fileProvider.Length);
+
+                if (isInserted)
+                {
+                    // Deleting an inserted byte - remove from insertions
+                    if (physicalPos.HasValue)
+                    {
+                        _editsManager.DeleteByte(physicalPos.Value);
+                    }
+                }
+                else if (physicalPos.HasValue)
+                {
+                    _editsManager.DeleteByte(physicalPos.Value);
+                }
             }
+
+            // Invalidate caches ONCE at the end
+            InvalidateCaches();
         }
 
         #endregion
@@ -396,8 +457,39 @@ namespace WpfHexaEditor.V2.ByteProvider
 
         private void InvalidateCaches()
         {
+            if (_batchMode)
+            {
+                // In batch mode, just mark as dirty instead of invalidating
+                _batchDirty = true;
+                return;
+            }
+
             _positionMapper.InvalidateCache();
             _byteReader.ClearLineCache();
+        }
+
+        /// <summary>
+        /// Begin batch operation mode - cache invalidations are deferred until EndBatch().
+        /// Use this for multiple sequential modifications to improve performance.
+        /// </summary>
+        public void BeginBatch()
+        {
+            _batchMode = true;
+            _batchDirty = false;
+        }
+
+        /// <summary>
+        /// End batch operation mode - invalidates caches if any modifications were made.
+        /// </summary>
+        public void EndBatch()
+        {
+            _batchMode = false;
+            if (_batchDirty)
+            {
+                _positionMapper.InvalidateCache();
+                _byteReader.ClearLineCache();
+                _batchDirty = false;
+            }
         }
 
         /// <summary>
@@ -507,13 +599,20 @@ namespace WpfHexaEditor.V2.ByteProvider
 
         /// <summary>
         /// V1 compatibility: Fill a range with a specific byte value.
+        /// OPTIMIZED: Use batch modification for better performance.
         /// </summary>
         public void FillWithByte(long virtualPosition, long length, byte value)
         {
-            for (long i = 0; i < length; i++)
-            {
-                ModifyByte(virtualPosition + i, value);
-            }
+            if (length <= 0)
+                return;
+
+            // Create array filled with value
+            byte[] fillArray = new byte[length];
+            for (int i = 0; i < length; i++)
+                fillArray[i] = value;
+
+            // Use batch modification (single cache invalidation)
+            ModifyBytes(virtualPosition, fillArray);
         }
 
         /// <summary>

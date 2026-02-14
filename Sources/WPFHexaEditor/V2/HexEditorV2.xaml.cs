@@ -2233,11 +2233,10 @@ namespace WpfHexaEditor.V2
             HexViewport.EditMode = EditMode; // Also sync to HexViewport for caret display
             System.Diagnostics.Debug.WriteLine($"[OPENFILE] EditMode synchronized: Control={EditMode}, ViewModel={_viewModel.EditMode}, HexViewport={HexViewport.EditMode}");
 
-            // CRITICAL: Synchronize ByteProvider.CanInsertAnywhere so inserted bytes get ByteAction.Added
+            // ByteProvider V2 always supports insertion anywhere - no need to set flag
             if (EditMode == EditMode.Insert)
             {
-                _viewModel.Provider.CanInsertAnywhere = true;
-                System.Diagnostics.Debug.WriteLine($"[OPENFILE] ByteProvider.CanInsertAnywhere set to TRUE");
+                System.Diagnostics.Debug.WriteLine($"[OPENFILE] Edit mode is INSERT");
             }
 
             // Initialize byte spacer properties on viewport (V1 compatibility)
@@ -2990,7 +2989,10 @@ namespace WpfHexaEditor.V2
             if (other == null || _viewModel?.Provider == null || other._viewModel?.Provider == null)
                 return Enumerable.Empty<ByteDifference>();
 
-            var differences = _comparisonService.Compare(_viewModel.Provider, other._viewModel.Provider, maxDifferences).ToList();
+            // TODO: Implement comparison for ByteProvider V2
+            // ComparisonService needs to be updated to work with ByteProvider V2
+            var differences = new List<ByteDifference>(); // Stub for now
+            // var differences = _comparisonService.Compare(_viewModel.Provider, other._viewModel.Provider, maxDifferences).ToList();
             _comparisonResults = differences;
 
             if (highlightDifferences && differences.Any())
@@ -3026,7 +3028,10 @@ namespace WpfHexaEditor.V2
             if (provider == null || _viewModel?.Provider == null)
                 return Enumerable.Empty<ByteDifference>();
 
-            var differences = _comparisonService.Compare(_viewModel.Provider, provider, maxDifferences).ToList();
+            // TODO: Implement comparison between ByteProvider V2 and ByteProviderLegacy
+            // ComparisonService needs to be updated
+            var differences = new List<ByteDifference>(); // Stub for now
+            // var differences = _comparisonService.Compare(_viewModel.Provider, provider, maxDifferences).ToList();
             _comparisonResults = differences;
 
             if (highlightDifferences && differences.Any())
@@ -3075,7 +3080,9 @@ namespace WpfHexaEditor.V2
             if (other == null || _viewModel?.Provider == null || other._viewModel?.Provider == null)
                 return 0;
 
-            return _comparisonService.CountDifferences(_viewModel.Provider, other._viewModel.Provider);
+            // TODO: Implement for ByteProvider V2
+            return 0; // Stub
+            // return _comparisonService.CountDifferences(_viewModel.Provider, other._viewModel.Provider);
         }
 
         /// <summary>
@@ -3086,7 +3093,9 @@ namespace WpfHexaEditor.V2
             if (other == null || _viewModel?.Provider == null || other._viewModel?.Provider == null)
                 return 0.0;
 
-            return _comparisonService.CalculateSimilarity(_viewModel.Provider, other._viewModel.Provider);
+            // TODO: Implement for ByteProvider V2
+            return 0.0; // Stub
+            // return _comparisonService.CalculateSimilarity(_viewModel.Provider, other._viewModel.Provider);
         }
 
         #endregion
@@ -3378,11 +3387,15 @@ namespace WpfHexaEditor.V2
             if (_viewModel == null || provider == null)
                 return Enumerable.Empty<Core.Bytes.ByteDifference>();
 
-            // Create temporary ViewModel wrapper for comparison
-            var tempViewModel = new ViewModels.HexEditorViewModel(provider);
-            var result = CompareProviders(_viewModel, tempViewModel);
-            tempViewModel.Close();
-            return result;
+            // TODO: Implement comparison between ByteProvider V2 and ByteProviderLegacy
+            // Can't create HexEditorViewModel with ByteProviderLegacy anymore
+            return Enumerable.Empty<Core.Bytes.ByteDifference>(); // Stub for now
+
+            // Old code:
+            // var tempViewModel = new ViewModels.HexEditorViewModel(provider);
+            // var result = CompareProviders(_viewModel, tempViewModel);
+            // tempViewModel.Close();
+            // return result;
         }
 
         /// <summary>
@@ -3652,11 +3665,10 @@ namespace WpfHexaEditor.V2
                 {
                     EditMode = EditMode.Insert;
 
-                    // CRITICAL: Also set ByteProvider.CanInsertAnywhere so inserted bytes get ByteAction.Added
+                    // ByteProvider V2 always supports insertion anywhere - no flag needed
                     if (_viewModel?.Provider != null)
                     {
-                        _viewModel.Provider.CanInsertAnywhere = true;
-                        System.Diagnostics.Debug.WriteLine($"[CANINSERT] ByteProvider.CanInsertAnywhere set to TRUE");
+                        System.Diagnostics.Debug.WriteLine($"[CANINSERT] ByteProvider V2 supports insertion");
                     }
                 }
                 // Note: Setting false doesn't force Overwrite to allow other modes
