@@ -161,12 +161,28 @@ namespace WpfHexaEditor.Core.Bytes
             if (_editsManager.IsDeleted(physical))
             {
                 // DIAGNOSTIC: This shouldn't happen if VirtualToPhysical is correct!
+                // Get more diagnostic info
+                int totalDeleted = _editsManager.DeletedCount;
+                int totalInserted = _editsManager.TotalInsertedBytesCount;
+
+                // Find all deleted positions near this one for context
+                var nearbyDeleted = new System.Collections.Generic.List<long>();
+                for (long p = Math.Max(0, physical - 5); p <= Math.Min(physicalFileLength - 1, physical + 5); p++)
+                {
+                    if (_editsManager.IsDeleted(p))
+                        nearbyDeleted.Add(p);
+                }
+
                 throw new InvalidOperationException(
                     $"BUG FOUND! VirtualToPhysical returned a DELETED byte!\n" +
                     $"Virtual Position: {virtualPosition}\n" +
                     $"Physical Position: {physical}\n" +
                     $"VirtualLength: {virtualLength}\n" +
+                    $"PhysicalLength: {physicalFileLength}\n" +
                     $"IsInserted: {isInserted}\n" +
+                    $"TotalDeleted: {totalDeleted}\n" +
+                    $"TotalInserted: {totalInserted}\n" +
+                    $"Deleted positions near {physical}: [{string.Join(", ", nearbyDeleted)}]\n" +
                     $"This means VirtualToPhysical is NOT skipping deleted bytes correctly!");
             }
 

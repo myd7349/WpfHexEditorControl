@@ -568,9 +568,22 @@ namespace WpfHexaEditor.Controls
                 // Draw separator and ASCII (if visible)
                 if (ShowAscii)
                 {
-                    // Use actual hexX position after drawing all bytes (accounts for byte spacers)
-                    // hexX is already at the position after last byte, just add a small margin
-                    double separatorX = hexX + 4;
+                    // CRITICAL FIX: Separator must ALWAYS be at the same X position
+                    // Calculate position as if line had full _bytesPerLine bytes (accounting for byte spacers)
+                    double hexStartX = ShowOffset ? OffsetWidth : 0;
+
+                    // Calculate number of byte spacers for a full line
+                    int numSpacers = 0;
+                    if (_bytesPerLine >= (int)ByteGrouping)
+                    {
+                        numSpacers = (_bytesPerLine % (int)ByteGrouping == 0)
+                            ? (_bytesPerLine / (int)ByteGrouping) - 1
+                            : _bytesPerLine / (int)ByteGrouping;
+                    }
+                    double spacersWidth = numSpacers * (int)ByteSpacerWidthTickness;
+
+                    // Separator is always at fixed position (full line width + margin)
+                    double separatorX = hexStartX + (_bytesPerLine * (HexByteWidth + HexByteSpacing)) + spacersWidth + 4;
                     dc.DrawRectangle(_separatorBrush, null, new Rect(separatorX, y, 1, _lineHeight));
 
                     // Draw ASCII bytes with byte spacers

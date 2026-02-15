@@ -472,6 +472,16 @@ namespace WpfHexaEditor
                     if (_viewModel.HasSelection && !_viewModel.ReadOnlyMode)
                     {
                         DeleteSelection();
+
+                        // CRITICAL UX FIX: After deletion, position cursor (with scroll) and restore focus
+                        // This ensures immediate keyboard responsiveness and visibility
+                        if (_viewModel.SelectionStart != null && _viewModel.SelectionStart.IsValid)
+                        {
+                            SetPosition(_viewModel.SelectionStart.Value);
+                        }
+
+                        // Ensure keyboard focus is on the control for immediate input
+                        Focus();
                     }
                     break;
 
