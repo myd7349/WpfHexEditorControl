@@ -1,0 +1,270 @@
+<!--
+    Apache 2.0  2026
+    HexEditor V2 Modern Sample - Cyberpunk Theme
+    Vibrant neon colors inspired by cyberpunk aesthetics
+    Author : Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Sonnet 4.5
+-->
+
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ==================== COLOR PALETTE ==================== -->
+
+    <!-- Background Colors (Dark Cyberpunk) -->
+    <Color x:Key="BackgroundColor">#0A0E27</Color>
+    <Color x:Key="SurfaceColor">#141B3D</Color>
+    <Color x:Key="SurfaceElevatedColor">#1E2749</Color>
+    <Color x:Key="OverlayColor">#80000000</Color>
+
+    <!-- Foreground Colors -->
+    <Color x:Key="ForegroundColor">#E0E7FF</Color>
+    <Color x:Key="ForegroundSecondaryColor">#A0AED9</Color>
+    <Color x:Key="ForegroundTertiaryColor">#6B7AA1</Color>
+
+    <!-- Accent Colors (Neon Pink/Purple/Cyan) -->
+    <Color x:Key="AccentColor">#FF006E</Color>
+    <Color x:Key="AccentHoverColor">#FF2A8D</Color>
+    <Color x:Key="AccentPressedColor">#D90058</Color>
+    <Color x:Key="AccentSecondaryColor">#8B00FF</Color>
+
+    <!-- Secondary Accent (Neon Cyan) -->
+    <Color x:Key="CyanAccentColor">#00F0FF</Color>
+
+    <!-- Semantic Colors (Neon) -->
+    <Color x:Key="SuccessColor">#00FF9F</Color>
+    <Color x:Key="WarningColor">#FFBE0B</Color>
+    <Color x:Key="ErrorColor">#FF006E</Color>
+    <Color x:Key="InfoColor">#00F0FF</Color>
+
+    <!-- Border & Divider (Glowing) -->
+    <Color x:Key="BorderColor">#8B00FF</Color>
+    <Color x:Key="DividerColor">#2E3A5F</Color>
+
+    <!-- Hover & Press States -->
+    <Color x:Key="HoverColor">#2A3759</Color>
+    <Color x:Key="PressedColor">#364470</Color>
+    <Color x:Key="SelectedColor">#3D1A5C</Color>
+
+    <!-- ==================== BRUSHES ==================== -->
+
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+    <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevatedColor}"/>
+    <SolidColorBrush x:Key="ForegroundBrush" Color="{StaticResource ForegroundColor}"/>
+    <SolidColorBrush x:Key="ForegroundSecondaryBrush" Color="{StaticResource ForegroundSecondaryColor}"/>
+    <SolidColorBrush x:Key="ForegroundTertiaryBrush" Color="{StaticResource ForegroundTertiaryColor}"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+
+    <!-- Semantic Color Brushes -->
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+    <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
+
+    <!-- Neon Glow Brush -->
+    <SolidColorBrush x:Key="GlassBrush" Color="#40FF006E" Opacity="0.1"/>
+
+    <!-- ==================== EFFECTS ==================== -->
+
+    <!-- Neon Glow Effect -->
+    <DropShadowEffect x:Key="NeonGlow"
+                      Color="{StaticResource AccentColor}"
+                      ShadowDepth="0"
+                      BlurRadius="20"
+                      Opacity="0.8"/>
+
+    <!-- Cyan Neon Glow -->
+    <DropShadowEffect x:Key="CyanNeonGlow"
+                      Color="{StaticResource CyanAccentColor}"
+                      ShadowDepth="0"
+                      BlurRadius="20"
+                      Opacity="0.8"/>
+
+    <!-- Accent Glow -->
+    <DropShadowEffect x:Key="AccentGlow"
+                      Color="{StaticResource AccentColor}"
+                      ShadowDepth="0"
+                      BlurRadius="24"
+                      Opacity="0.9"/>
+
+    <!-- Subtle Shadow -->
+    <DropShadowEffect x:Key="SubtleShadow"
+                      Color="#FF006E"
+                      ShadowDepth="0"
+                      BlurRadius="12"
+                      Opacity="0.4"/>
+
+    <!-- ==================== MODERN BUTTON STYLE ==================== -->
+
+    <Style x:Key="ModernButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Effect" Value="{StaticResource SubtleShadow}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="2"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background">
+                                <Setter.Value>
+                                    <SolidColorBrush Color="{StaticResource HoverColor}"/>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter TargetName="border" Property="Effect" Value="{StaticResource NeonGlow}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background">
+                                <Setter.Value>
+                                    <SolidColorBrush Color="{StaticResource PressedColor}"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Accent Button (Primary Action) -->
+    <Style x:Key="AccentButtonStyle" TargetType="Button" BasedOn="{StaticResource ModernButtonStyle}">
+        <Setter Property="Background">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FF006E" Offset="0"/>
+                    <GradientStop Color="#8B00FF" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Effect" Value="{StaticResource AccentGlow}"/>
+    </Style>
+
+    <!-- ==================== MODERN TEXTBOX STYLE ==================== -->
+
+    <Style x:Key="ModernTextBoxStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontFamily" Value="Consolas"/>
+        <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
+        <Setter Property="SelectionOpacity" Value="0.5"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="2">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                     Margin="{TemplateBinding Padding}"
+                                     VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="border" Property="Effect" Value="{StaticResource NeonGlow}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="BorderBrush">
+                                <Setter.Value>
+                                    <SolidColorBrush Color="{StaticResource CyanAccentColor}"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ==================== GLASS PANEL STYLE ==================== -->
+
+    <Style x:Key="GlassPanelStyle" TargetType="Border">
+        <Setter Property="Background">
+            <Setter.Value>
+                <SolidColorBrush Color="{StaticResource SurfaceColor}" Opacity="0.8"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="BorderBrush">
+            <Setter.Value>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FF006E" Offset="0"/>
+                    <GradientStop Color="#8B00FF" Offset="0.5"/>
+                    <GradientStop Color="#00F0FF" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Effect" Value="{StaticResource NeonGlow}"/>
+    </Style>
+
+    <!-- ==================== MODERN TOGGLE BUTTON ==================== -->
+
+    <Style x:Key="ModernToggleButtonStyle" TargetType="RadioButton">
+        <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="16"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="border" Property="Background">
+                                <Setter.Value>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#FF006E" Offset="0"/>
+                                        <GradientStop Color="#8B00FF" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                            <Setter TargetName="border" Property="Effect" Value="{StaticResource AccentGlow}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Effect" Value="{StaticResource NeonGlow}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

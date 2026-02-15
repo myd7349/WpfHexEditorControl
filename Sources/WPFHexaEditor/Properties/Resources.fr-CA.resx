@@ -315,4 +315,61 @@
   <data name="OpenAsReadOnlyString" xml:space="preserve">
     <value>Le fichier est verrouillé. Voulez-vous l'ouvrir en mode lecture seule?</value>
   </data>
+  <data name="SearchCommandCenterString" xml:space="preserve">
+    <value>CENTRE DE COMMANDE DE RECHERCHE</value>
+  </data>
+  <data name="SearchTextModeString" xml:space="preserve">
+    <value>Texte</value>
+  </data>
+  <data name="SearchHexModeString" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="SearchRegexModeString" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="SearchWildcardModeString" xml:space="preserve">
+    <value>Joker</value>
+  </data>
+  <data name="SearchPreviousString" xml:space="preserve">
+    <value>Précédent</value>
+  </data>
+  <data name="SearchNextString" xml:space="preserve">
+    <value>Suivant</value>
+  </data>
+  <data name="SearchFindAllString" xml:space="preserve">
+    <value>Trouver tout</value>
+  </data>
+  <data name="SearchMatchesString" xml:space="preserve">
+    <value>correspondances</value>
+  </data>
+  <data name="SearchInString" xml:space="preserve">
+    <value>en</value>
+  </data>
+  <data name="SearchNoMatchesString" xml:space="preserve">
+    <value>Aucune correspondance trouvée</value>
+  </data>
+  <data name="SearchV2BadgeString" xml:space="preserve">
+    <value>99% PLUS RAPIDE AVEC V2</value>
+  </data>
+  <data name="ClearSearchString" xml:space="preserve">
+    <value>Effacer</value>
+  </data>
+  <data name="CommandPaletteString" xml:space="preserve">
+    <value>Palette de commandes</value>
+  </data>
+  <data name="PerformanceDashboardString" xml:space="preserve">
+    <value>Tableau de bord des performances</value>
+  </data>
+  <data name="ThemeDarkGlassString" xml:space="preserve">
+    <value>Verre sombre</value>
+  </data>
+  <data name="ThemeLightString" xml:space="preserve">
+    <value>Clair</value>
+  </data>
+  <data name="ThemeCyberpunkString" xml:space="preserve">
+    <value>Cyberpunk</value>
+  </data>
+  <data name="ThemeMinimalString" xml:space="preserve">
+    <value>Minimal</value>
+  </data>
 </root>

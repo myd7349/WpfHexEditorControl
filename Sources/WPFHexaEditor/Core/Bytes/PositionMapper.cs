@@ -249,23 +249,34 @@ namespace WpfHexaEditor.Core.Bytes
             {
                 var segment = _segments[i];
 
-                // Add gap between last physical and this segment
-                long gapSize = segment.PhysicalPos - currentPhysical;
-                if (virtualPosition < currentVirtual + gapSize)
+                // CRITICAL FIX: Scan gap between last physical and this segment, skipping deleted bytes
+                // This fixes the bug where deleted bytes in gaps were being returned
+                long gapEnd = segment.PhysicalPos;
+                while (currentPhysical < gapEnd && currentVirtual <= virtualPosition)
                 {
-                    // Virtual position falls in the gap (unmodified region)
-                    long offset = virtualPosition - currentVirtual;
-                    long physPos = currentPhysical + offset;
+                    // Check if this physical position is deleted
+                    bool isDeleted = _editsManager.IsDeleted(currentPhysical);
 
-                    if (_cacheValid)
+                    if (!isDeleted)
                     {
-                        _virtualToPhysicalCache[virtualPosition] = (physPos, false);
-                        _physicalToVirtualCache[physPos] = virtualPosition;
+                        // This is a valid (non-deleted) byte
+                        if (currentVirtual == virtualPosition)
+                        {
+                            // Found it!
+                            if (_cacheValid)
+                            {
+                                _virtualToPhysicalCache[virtualPosition] = (currentPhysical, false);
+                                _physicalToVirtualCache[currentPhysical] = virtualPosition;
+                            }
+                            return (currentPhysical, false);
+                        }
+                        currentVirtual++;
                     }
-                    return (physPos, false);
+                    // else: deleted byte, don't increment currentVirtual
+
+                    currentPhysical++;
                 }
 
-                currentVirtual += gapSize;
                 currentPhysical = segment.PhysicalPos;
 
                 // Check if virtual position falls within inserted bytes at this segment
@@ -456,13 +467,11 @@ namespace WpfHexaEditor.Core.Bytes
         /// </summary>
         public long GetVirtualLength(long physicalFileLength)
         {
-            // TEMPORARY DIAGNOSTIC: Disable cache completely to force validation every time
-            // This will help us catch the bug and see the detailed diagnostic
-            //const long MaxReasonableLength = 10_000_000; // 10MB (must be > MaxReasonableInsertions)
-            //if (_cacheValid && _cachedVirtualLength >= 0 && _cachedVirtualLength < MaxReasonableLength)
-            //    return _cachedVirtualLength;
+            // Try cache first
+            if (_cacheValid && _cachedVirtualLength >= 0)
+                return _cachedVirtualLength;
 
-            // Always recalculate to trigger validation
+            // Calculate: Physical + Insertions - Deletions
             long virtualLength = physicalFileLength;
 
             // Add inserted bytes
@@ -472,21 +481,6 @@ namespace WpfHexaEditor.Core.Bytes
             // Subtract deleted bytes
             int deletedCount = _editsManager.DeletedCount;
             virtualLength -= deletedCount;
-
-            // NUCLEAR TEST: Always throw to see if GetVirtualLength is even called!
-            if (virtualLength > 1_000_000) // Only trigger if suspicious
-            {
-                var insertionsByPosition = _editsManager.GetInsertionPositionsWithCounts();
-                var largestPosition = insertionsByPosition.OrderByDescending(kvp => kvp.Value).FirstOrDefault();
-
-                throw new InvalidOperationException(
-                    $"NUCLEAR TEST: GetVirtualLength WAS CALLED! " +
-                    $"PhysicalLength={physicalFileLength}, " +
-                    $"InsertedCount={insertedCount}, " +
-                    $"DeletedCount={deletedCount}, " +
-                    $"CalculatedVirtualLength={virtualLength}, " +
-                    $"LargestInsertionAt PhysicalPos={largestPosition.Key} has {largestPosition.Value} bytes.");
-            }
 
             // CRITICAL VALIDATION: Detect corruption early
             // VirtualLength should never be wildly different from physical length

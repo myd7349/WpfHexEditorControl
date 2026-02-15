@@ -1,0 +1,349 @@
+<!--
+    Apache 2.0  2026
+    HexEditor V2 - Modern Main Window with Professional Ribbon
+    Complete Microsoft Ribbon implementation
+    Author : Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Sonnet 4.5
+-->
+
+<ribbon:RibbonWindow x:Class="WpfHexEditor.Sample.Main.Views.ModernMainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ribbon="clr-namespace:System.Windows.Controls.Ribbon;assembly=System.Windows.Controls.Ribbon"
+        xmlns:local="clr-namespace:WpfHexEditor.Sample.Main.Views"
+        xmlns:components="clr-namespace:WpfHexEditor.Sample.Main.Views.Components"
+        xmlns:hexEditor="clr-namespace:WpfHexaEditor;assembly=WPFHexaEditor"
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}"
+        Height="900" Width="1600"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}">
+
+    <ribbon:RibbonWindow.Resources>
+        <components:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </ribbon:RibbonWindow.Resources>
+
+    <ribbon:RibbonWindow.InputBindings>
+        <!-- Keyboard shortcuts -->
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenFileCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveFileCommand}"/>
+        <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseFileCommand}"/>
+        <KeyBinding Key="F" Modifiers="Control" Command="{Binding ToggleSearchPanelCommand}"/>
+        <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}"/>
+        <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}"/>
+        <KeyBinding Key="OemComma" Modifiers="Control" Command="{Binding ToggleSettingsPanelCommand}"/>
+    </ribbon:RibbonWindow.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Ribbon -->
+            <RowDefinition Height="*"/>     <!-- HexEditor FULLSCREEN -->
+        </Grid.RowDefinitions>
+
+        <!-- Professional Microsoft Ribbon -->
+        <ribbon:Ribbon Grid.Row="0"
+                      x:Name="MainRibbon"
+                      Background="{StaticResource BackgroundBrush}"
+                      Foreground="{StaticResource ForegroundBrush}">
+
+            <!-- Application Menu (File Button) -->
+            <ribbon:Ribbon.ApplicationMenu>
+                <ribbon:RibbonApplicationMenu KeyTip="F">
+                    <ribbon:RibbonApplicationMenuItem Header="Open"
+                                                     Command="{Binding OpenFileCommand}"
+                                                     ImageSource="{StaticResource Icon.Open}"
+                                                     KeyTip="O"/>
+                    <ribbon:RibbonApplicationMenuItem Header="Save"
+                                                     Command="{Binding SaveFileCommand}"
+                                                     ImageSource="{StaticResource Icon.Save}"
+                                                     KeyTip="S"/>
+                    <ribbon:RibbonApplicationMenuItem Header="Save As..."
+                                                     Command="{Binding SaveFileCommand}"
+                                                     ImageSource="{StaticResource Icon.Save}"
+                                                     KeyTip="A"/>
+                    <ribbon:RibbonSeparator/>
+                    <ribbon:RibbonApplicationMenuItem Header="Close"
+                                                     Command="{Binding CloseFileCommand}"
+                                                     ImageSource="{StaticResource Icon.Close}"
+                                                     KeyTip="C"/>
+                    <ribbon:RibbonSeparator/>
+                    <ribbon:RibbonApplicationMenuItem Header="Exit"
+                                                     KeyTip="X"
+                                                     ImageSource="{StaticResource Icon.Close}"
+                                                     Click="ExitMenuItem_Click"/>
+                </ribbon:RibbonApplicationMenu>
+            </ribbon:Ribbon.ApplicationMenu>
+
+            <!-- Quick Access Toolbar -->
+            <ribbon:Ribbon.QuickAccessToolBar>
+                <ribbon:RibbonQuickAccessToolBar>
+                    <ribbon:RibbonButton Label="Save"
+                                        SmallImageSource="{StaticResource Icon.Save}"
+                                        Command="{Binding SaveFileCommand}"
+                                        ToolTip="Save (Ctrl+S)"/>
+                    <ribbon:RibbonButton Label="Undo"
+                                        SmallImageSource="{StaticResource Icon.Undo}"
+                                        Command="{Binding UndoCommand}"
+                                        ToolTip="Undo (Ctrl+Z)"/>
+                    <ribbon:RibbonButton Label="Redo"
+                                        SmallImageSource="{StaticResource Icon.Redo}"
+                                        Command="{Binding RedoCommand}"
+                                        ToolTip="Redo (Ctrl+Y)"/>
+                </ribbon:RibbonQuickAccessToolBar>
+            </ribbon:Ribbon.QuickAccessToolBar>
+
+            <!-- HOME TAB -->
+            <ribbon:RibbonTab Header="Home" KeyTip="H">
+
+                <!-- Clipboard Group -->
+                <ribbon:RibbonGroup Header="Clipboard">
+                    <ribbon:RibbonButton Label="Paste"
+                                        LargeImageSource="{StaticResource Icon.Paste}"
+                                        Command="ApplicationCommands.Paste"
+                                        KeyTip="V"/>
+                    <ribbon:RibbonButton Label="Cut"
+                                        SmallImageSource="{StaticResource Icon.Cut}"
+                                        Command="ApplicationCommands.Cut"
+                                        KeyTip="X"/>
+                    <ribbon:RibbonButton Label="Copy"
+                                        SmallImageSource="{StaticResource Icon.Copy}"
+                                        Command="ApplicationCommands.Copy"
+                                        KeyTip="C"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Edit Group -->
+                <ribbon:RibbonGroup Header="Edit">
+                    <ribbon:RibbonButton Label="Undo"
+                                        LargeImageSource="{StaticResource Icon.Undo}"
+                                        Command="{Binding UndoCommand}"
+                                        KeyTip="Z"/>
+                    <ribbon:RibbonButton Label="Redo"
+                                        LargeImageSource="{StaticResource Icon.Redo}"
+                                        Command="{Binding RedoCommand}"
+                                        KeyTip="Y"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Selection Group -->
+                <ribbon:RibbonGroup Header="Selection">
+                    <ribbon:RibbonButton Label="Select All"
+                                        SmallImageSource="{StaticResource Icon.SelectAll}"
+                                        Command="ApplicationCommands.SelectAll"
+                                        KeyTip="A"/>
+                    <ribbon:RibbonButton Label="Clear"
+                                        SmallImageSource="{StaticResource Icon.Clear}"
+                                        KeyTip="D"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Display Group -->
+                <ribbon:RibbonGroup Header="Display">
+                    <ribbon:RibbonButton Label="16 Bytes/Line"
+                                        LargeImageSource="{StaticResource Icon.Settings}"
+                                        KeyTip="B"/>
+                </ribbon:RibbonGroup>
+            </ribbon:RibbonTab>
+
+            <!-- EDIT TAB -->
+            <ribbon:RibbonTab Header="Edit" KeyTip="E">
+
+                <!-- Find Group -->
+                <ribbon:RibbonGroup Header="Find">
+                    <ribbon:RibbonButton Label="Find"
+                                        LargeImageSource="{StaticResource Icon.Find}"
+                                        Command="{Binding SearchCommand}"
+                                        KeyTip="F"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Go To Group -->
+                <ribbon:RibbonGroup Header="Navigate">
+                    <ribbon:RibbonButton Label="Go To"
+                                        LargeImageSource="{StaticResource Icon.GoTo}"
+                                        KeyTip="G"/>
+                    <ribbon:RibbonButton Label="Bookmarks"
+                                        SmallImageSource="{StaticResource Icon.Bookmark}"
+                                        KeyTip="B"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Insert/Delete Group -->
+                <ribbon:RibbonGroup Header="Modify">
+                    <ribbon:RibbonButton Label="Insert Byte"
+                                        SmallImageSource="{StaticResource Icon.Insert}"
+                                        KeyTip="I"/>
+                    <ribbon:RibbonButton Label="Delete Byte"
+                                        SmallImageSource="{StaticResource Icon.Delete}"
+                                        KeyTip="D"/>
+                    <ribbon:RibbonButton Label="Fill Selection"
+                                        SmallImageSource="{StaticResource Icon.Copy}"
+                                        KeyTip="L"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Edit Mode Group -->
+                <ribbon:RibbonGroup Header="Mode">
+                    <ribbon:RibbonToggleButton Label="Overwrite"
+                                              SmallImageSource="{StaticResource Icon.Settings}"
+                                              IsChecked="True"
+                                              KeyTip="O"/>
+                    <ribbon:RibbonToggleButton Label="Insert"
+                                              SmallImageSource="{StaticResource Icon.Insert}"
+                                              KeyTip="N"/>
+                    <ribbon:RibbonToggleButton Label="Read Only"
+                                              SmallImageSource="{StaticResource Icon.Clear}"
+                                              KeyTip="R"/>
+                </ribbon:RibbonGroup>
+            </ribbon:RibbonTab>
+
+            <!-- VIEW TAB -->
+            <ribbon:RibbonTab Header="View" KeyTip="V">
+
+                <!-- Zoom Group -->
+                <ribbon:RibbonGroup Header="Zoom">
+                    <ribbon:RibbonButton Label="Zoom In"
+                                        SmallImageSource="{StaticResource Icon.ZoomIn}"
+                                        KeyTip="I"/>
+                    <ribbon:RibbonButton Label="Zoom Out"
+                                        SmallImageSource="{StaticResource Icon.ZoomOut}"
+                                        KeyTip="O"/>
+                    <ribbon:RibbonButton Label="100%"
+                                        SmallImageSource="{StaticResource Icon.Find}"
+                                        KeyTip="1"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Display Options Group -->
+                <ribbon:RibbonGroup Header="Display Options">
+                    <ribbon:RibbonCheckBox Label="Show Tooltip"
+                                          KeyTip="T"/>
+                    <ribbon:RibbonCheckBox Label="Hide Deleted"
+                                          KeyTip="H"/>
+                    <ribbon:RibbonCheckBox Label="Highlight Matches"
+                                          IsChecked="True"
+                                          KeyTip="M"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Themes Group -->
+                <ribbon:RibbonGroup Header="Themes">
+                    <ribbon:RibbonMenuButton Label="Select Theme"
+                                            SmallImageSource="{StaticResource Icon.Settings}">
+                        <ribbon:RibbonMenuItem Header="Office (Light)" Tag="Office" Click="ThemeMenuItem_Click"/>
+                        <ribbon:RibbonMenuItem Header="Dark Glass" Tag="DarkGlass" Click="ThemeMenuItem_Click"/>
+                        <ribbon:RibbonMenuItem Header="Visual Studio" Tag="VisualStudio" Click="ThemeMenuItem_Click"/>
+                        <ribbon:RibbonMenuItem Header="Minimal" Tag="Minimal" Click="ThemeMenuItem_Click"/>
+                    </ribbon:RibbonMenuButton>
+                </ribbon:RibbonGroup>
+
+                <!-- Panels Group -->
+                <ribbon:RibbonGroup Header="Panels">
+                    <ribbon:RibbonCheckBox Label="Settings Panel"
+                                          IsChecked="{Binding IsSettingsPanelVisible, Mode=TwoWay}"
+                                          KeyTip="S"/>
+                </ribbon:RibbonGroup>
+            </ribbon:RibbonTab>
+
+            <!-- DATA TAB -->
+            <ribbon:RibbonTab Header="Data" KeyTip="D">
+
+                <!-- Export Group -->
+                <ribbon:RibbonGroup Header="Export">
+                    <ribbon:RibbonButton Label="Export"
+                                        LargeImageSource="{StaticResource Icon.Export}"
+                                        KeyTip="E"/>
+                    <ribbon:RibbonMenuButton Label="Export As"
+                                            SmallImageSource="{StaticResource Icon.Export}">
+                        <ribbon:RibbonMenuItem Header="C# Byte Array"/>
+                        <ribbon:RibbonMenuItem Header="C Code"/>
+                        <ribbon:RibbonMenuItem Header="Java Code"/>
+                        <ribbon:RibbonMenuItem Header="Hex String"/>
+                    </ribbon:RibbonMenuButton>
+                </ribbon:RibbonGroup>
+
+                <!-- Compare Group -->
+                <ribbon:RibbonGroup Header="Compare">
+                    <ribbon:RibbonButton Label="Compare Files"
+                                        LargeImageSource="{StaticResource Icon.Find}"
+                                        KeyTip="C"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Statistics Group -->
+                <ribbon:RibbonGroup Header="Statistics">
+                    <ribbon:RibbonButton Label="Byte Count"
+                                        SmallImageSource="{StaticResource Icon.Settings}"
+                                        KeyTip="O"/>
+                    <ribbon:RibbonButton Label="Statistics"
+                                        SmallImageSource="{StaticResource Icon.Settings}"
+                                        KeyTip="S"/>
+                    <ribbon:RibbonButton Label="Entropy"
+                                        SmallImageSource="{StaticResource Icon.Settings}"
+                                        KeyTip="E"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Advanced Group -->
+                <ribbon:RibbonGroup Header="Advanced">
+                    <ribbon:RibbonButton Label="Checksum"
+                                        SmallImageSource="{StaticResource Icon.Settings}"
+                                        KeyTip="H"/>
+                    <ribbon:RibbonButton Label="Hash (MD5/SHA)"
+                                        SmallImageSource="{StaticResource Icon.Settings}"
+                                        KeyTip="A"/>
+                </ribbon:RibbonGroup>
+            </ribbon:RibbonTab>
+
+            <!-- TOOLS TAB -->
+            <ribbon:RibbonTab Header="Tools" KeyTip="T">
+
+                <!-- Settings Group -->
+                <ribbon:RibbonGroup Header="Options">
+                    <ribbon:RibbonButton Label="Settings"
+                                        LargeImageSource="{StaticResource Icon.Settings}"
+                                        Command="{Binding ToggleSettingsPanelCommand}"
+                                        KeyTip="S"/>
+                </ribbon:RibbonGroup>
+
+                <!-- Language Group -->
+                <ribbon:RibbonGroup Header="Language">
+                    <ribbon:RibbonMenuButton Label="Select Language"
+                                            SmallImageSource="{StaticResource Icon.Settings}">
+                        <ribbon:RibbonMenuItem Header="English" Tag="en-US"/>
+                        <ribbon:RibbonMenuItem Header="Français" Tag="fr-FR"/>
+                        <ribbon:RibbonMenuItem Header="Deutsch" Tag="de-DE"/>
+                    </ribbon:RibbonMenuButton>
+                </ribbon:RibbonGroup>
+
+                <!-- Help Group -->
+                <ribbon:RibbonGroup Header="Help">
+                    <ribbon:RibbonButton Label="Documentation"
+                                        SmallImageSource="{StaticResource Icon.Help}"
+                                        KeyTip="D"/>
+                    <ribbon:RibbonButton Label="About"
+                                        SmallImageSource="{StaticResource Icon.Help}"
+                                        Command="{Binding ShowAboutCommand}"
+                                        KeyTip="A"/>
+                </ribbon:RibbonGroup>
+            </ribbon:RibbonTab>
+
+        </ribbon:Ribbon>
+
+        <!-- Main Content Area with Settings Panel -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- HexEditor FULLSCREEN -->
+            <hexEditor:HexEditor Grid.Column="0"
+                                x:Name="HexEditorControl"
+                                Background="{StaticResource BackgroundBrush}"
+                                Foreground="{StaticResource ForegroundBrush}"/>
+
+            <!-- Right: Settings Panel (Slide-out) -->
+            <Border Grid.Column="1"
+                   Width="420"
+                   Background="{StaticResource SurfaceBrush}"
+                   BorderBrush="{StaticResource BorderBrush}"
+                   BorderThickness="1,0,0,0"
+                   Visibility="{Binding IsSettingsPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                <components:HexEditorSettings x:Name="HexEditorSettingsPanel"/>
+            </Border>
+        </Grid>
+    </Grid>
+</ribbon:RibbonWindow>

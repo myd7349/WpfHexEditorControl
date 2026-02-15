@@ -499,25 +499,27 @@ namespace WpfHexEditor.Sample.Main
         {
             if (!HexEditor.IsFileLoaded) return;
 
-            var dialog = CreateHexInputDialog("Find", "Enter hex bytes to find (e.g., 48 65 6C 6C 6F):");
-            if (dialog.ShowDialog() == true && dialog.Tag is byte[] findData && findData.Length > 0)
+            // V2 ENHANCED: Use new ultra-performant FindReplaceDialog
+            var dialog = new WpfHexaEditor.SearchModule.Views.FindReplaceDialog
             {
-                _lastFindData = findData;
-                long position = HexEditor.FindFirst(findData, HexEditor.Position);
+                Owner = this
+            };
 
-                if (position >= 0)
-                {
-                    _lastFindPosition = position;
-                    HexEditor.FindSelect(position, findData.Length);
-                    MessageBox.Show($"Found at position {position} (0x{position:X})", "Found",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show("Pattern not found", "Not Found",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
+            // Create and configure ViewModel
+            var viewModel = new WpfHexaEditor.SearchModule.ViewModels.ReplaceViewModel
+            {
+                ByteProvider = HexEditor.GetByteProvider()
+            };
+
+            // Handle match navigation
+            viewModel.OnMatchFound += (s, match) =>
+            {
+                _lastFindPosition = match.Position;
+                HexEditor.FindSelect(match.Position, match.Length);
+            };
+
+            dialog.ViewModel = viewModel;
+            dialog.Show(); // Non-modal for better UX
         }
 
         private void FindNext_Click(object sender, RoutedEventArgs e)
@@ -559,50 +561,27 @@ namespace WpfHexEditor.Sample.Main
         {
             if (!HexEditor.IsFileLoaded || HexEditor.ReadOnlyMode) return;
 
-            var findDialog = CreateHexInputDialog("Replace - Find", "Enter hex bytes to find:");
-            if (findDialog.ShowDialog() != true || !(findDialog.Tag is byte[] findData) || findData.Length == 0)
-                return;
-
-            var replaceDialog = CreateHexInputDialog("Replace - Replace With", "Enter replacement hex bytes:");
-            if (replaceDialog.ShowDialog() != true || !(replaceDialog.Tag is byte[] replaceData))
-                return;
-
-            var result = MessageBox.Show(
-                "Replace All occurrences?\n\nYes = Replace All\nNo = Replace First Only\nCancel = Cancel",
-                "Replace Scope",
-                MessageBoxButton.YesNoCancel,
-                MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Cancel) return;
-
-            try
+            // V2 ENHANCED: Use same FindReplaceDialog as Find (it supports both modes)
+            var dialog = new WpfHexaEditor.SearchModule.Views.FindReplaceDialog
             {
-                if (result == MessageBoxResult.Yes)
-                {
-                    int count = HexEditor.ReplaceAll(findData, replaceData);
-                    MessageBox.Show($"Replaced {count} occurrence(s)", "Replace Complete",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    long position = HexEditor.ReplaceFirst(findData, replaceData, HexEditor.Position);
-                    if (position >= 0)
-                    {
-                        MessageBox.Show($"Replaced at position {position} (0x{position:X})", "Replaced",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Pattern not found", "Not Found",
-                            MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-                }
-            }
-            catch (Exception ex)
+                Owner = this
+            };
+
+            // Create and configure ViewModel
+            var viewModel = new WpfHexaEditor.SearchModule.ViewModels.ReplaceViewModel
             {
-                MessageBox.Show($"Replace failed: {ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                ByteProvider = HexEditor.GetByteProvider()
+            };
+
+            // Handle match navigation
+            viewModel.OnMatchFound += (s, match) =>
+            {
+                _lastFindPosition = match.Position;
+                HexEditor.FindSelect(match.Position, match.Length);
+            };
+
+            dialog.ViewModel = viewModel;
+            dialog.Show(); // Non-modal for better UX
         }
 
         private Window CreateHexInputDialog(string title, string prompt)
@@ -1219,6 +1198,23 @@ namespace WpfHexEditor.Sample.Main
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
+            // V2 ENHANCED: Handle Ctrl+F (Find) and Ctrl+H (Replace)
+            if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (HexEditor.IsFileLoaded)
+                    Find_Click(sender, e);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.H && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (HexEditor.IsFileLoaded && !HexEditor.ReadOnlyMode)
+                    Replace_Click(sender, e);
+                e.Handled = true;
+                return;
+            }
+
             // Handle F3 (Find Next) and Shift+F3 (Find Previous)
             if (e.Key == Key.F3)
             {

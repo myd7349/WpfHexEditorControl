@@ -125,6 +125,16 @@ namespace WpfHexaEditor
             return _viewModel.ReplaceAll(findData, replaceData, truncateLength);
         }
 
+        /// <summary>
+        /// Gets the underlying ByteProvider for advanced search operations.
+        /// V2 ENHANCED: Used by SearchModule dialogs for ultra-performant searching.
+        /// </summary>
+        /// <returns>The ByteProvider instance, or null if no file is loaded</returns>
+        public Core.Bytes.ByteProvider GetByteProvider()
+        {
+            return _viewModel?.GetByteProvider();
+        }
+
         #endregion
     }
 }

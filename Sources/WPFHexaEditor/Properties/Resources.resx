@@ -328,4 +328,61 @@
   <data name="BytesTagString" xml:space="preserve">
     <value>Bytes</value>
   </data>
+  <data name="SearchCommandCenterString" xml:space="preserve">
+    <value>SEARCH COMMAND CENTER</value>
+  </data>
+  <data name="SearchTextModeString" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="SearchHexModeString" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="SearchRegexModeString" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="SearchWildcardModeString" xml:space="preserve">
+    <value>Wildcard</value>
+  </data>
+  <data name="SearchPreviousString" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="SearchNextString" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="SearchFindAllString" xml:space="preserve">
+    <value>Find All</value>
+  </data>
+  <data name="SearchMatchesString" xml:space="preserve">
+    <value>matches</value>
+  </data>
+  <data name="SearchInString" xml:space="preserve">
+    <value>in</value>
+  </data>
+  <data name="SearchNoMatchesString" xml:space="preserve">
+    <value>No matches found</value>
+  </data>
+  <data name="SearchV2BadgeString" xml:space="preserve">
+    <value>99% FASTER WITH V2</value>
+  </data>
+  <data name="ClearSearchString" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="CommandPaletteString" xml:space="preserve">
+    <value>Command Palette</value>
+  </data>
+  <data name="PerformanceDashboardString" xml:space="preserve">
+    <value>Performance Dashboard</value>
+  </data>
+  <data name="ThemeDarkGlassString" xml:space="preserve">
+    <value>Dark Glass</value>
+  </data>
+  <data name="ThemeLightString" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="ThemeCyberpunkString" xml:space="preserve">
+    <value>Cyberpunk</value>
+  </data>
+  <data name="ThemeMinimalString" xml:space="preserve">
+    <value>Minimal</value>
+  </data>
 </root>

@@ -40,7 +40,16 @@
       "Bash(dotnet clean:*)",
       "Bash(powershell:*)",
       "Bash(for file in WpfHexEditor.Sample.BinaryFilesDifference/WpfHexEditor.Sample.BinaryFilesDifference.csproj WPFHexEditor.Sample.CSharp/WpfHexEditor.Sample.csproj WpfHexEditor.Sample.InsertByteAnywhere/WpfHexEditor.Sample.InsertByteAnywhere.csproj WpfHexEditor.Sample.Performance/WpfHexEditor.Sample.Performance.csproj WpfHexEditor.Sample.ServiceUsage/WpfHexEditor.Sample.ServiceUsage.csproj)",
-      "Bash(do sed -i 's|Include=\"\"\\\\\\\\.\\\\\\\\.\\\\\\\\\\\\\\\\\\\\\\\\.\\\\\\\\.\\\\\\\\\\\\\\\\WPFHexaEditor|Include=\"\"..\\\\\\\\..\\\\\\\\..\\\\\\\\WPFHexaEditor|g' \"$file\")"
+      "Bash(do sed -i 's|Include=\"\"\\\\\\\\.\\\\\\\\.\\\\\\\\\\\\\\\\\\\\\\\\.\\\\\\\\.\\\\\\\\\\\\\\\\WPFHexaEditor|Include=\"\"..\\\\\\\\..\\\\\\\\..\\\\\\\\WPFHexaEditor|g' \"$file\")",
+      "Bash(for start in 2653 2696 2741 2781 2794 2826 2848 2861)",
+      "Bash(do awk \"NR>=$start && /^[[:space:]]*#endregion$/ {print NR; exit}\" HexEditor.xaml.cs)",
+      "Bash(Select-String -Pattern \"error|Build FAILED|Build succeeded\")",
+      "Bash(Select-String -Pattern \"\\(error|warning CS|Compilación|Build\\)\")",
+      "Bash(Select-Object -First 20)",
+      "Bash(Select-String -Pattern \"error|succeeded|FAILED\")",
+      "Bash(Select-Object -Last 20)",
+      "Bash(start WpfHexEditor.Sample.Main.exe)",
+      "Bash(returned a DELETED physical position\" errors that occurred during deletion operations.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
