@@ -160,9 +160,14 @@ namespace WpfHexaEditor.Core.Bytes
             // Check if deleted
             if (_editsManager.IsDeleted(physical))
             {
-                // Deleted bytes don't appear in virtual view
-                // This shouldn't happen if VirtualToPhysical is correct
-                return (0, false);
+                // DIAGNOSTIC: This shouldn't happen if VirtualToPhysical is correct!
+                throw new InvalidOperationException(
+                    $"BUG FOUND! VirtualToPhysical returned a DELETED byte!\n" +
+                    $"Virtual Position: {virtualPosition}\n" +
+                    $"Physical Position: {physical}\n" +
+                    $"VirtualLength: {virtualLength}\n" +
+                    $"IsInserted: {isInserted}\n" +
+                    $"This means VirtualToPhysical is NOT skipping deleted bytes correctly!");
             }
 
             // Check if modified
