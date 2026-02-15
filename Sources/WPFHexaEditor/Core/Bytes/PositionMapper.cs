@@ -198,13 +198,11 @@ namespace WpfHexaEditor.Core.Bytes
             if (virtualPosition < 0)
                 return (null, false);
 
-            // TEMPORARY WORKAROUND: Disable cache until scan logic bug is fixed
-            // Cache invalidation in DeleteBytes() is now correct, but scan logic still has a bug
-            // TODO: Fix the scan logic that returns deleted positions
-            //if (_cacheValid && _virtualToPhysicalCache.TryGetValue(virtualPosition, out var cached))
-            //{
-            //    return (cached.physicalPos, cached.isInserted);
-            //}
+            // Try cache first (now enhanced to store isInserted flag)
+            if (_cacheValid && _virtualToPhysicalCache.TryGetValue(virtualPosition, out var cached))
+            {
+                return (cached.physicalPos, cached.isInserted);
+            }
 
             // Build segment map if needed
             BuildSegmentMap(physicalFileLength);
@@ -302,7 +300,21 @@ namespace WpfHexaEditor.Core.Bytes
                     currentPhysical++;
                 }
 
-                currentPhysical = segment.PhysicalPos;
+                // CRITICAL: After scanning gap, currentPhysical should be at segment.PhysicalPos
+                // The old line "currentPhysical = segment.PhysicalPos" was WRONG because:
+                // - If we exited loop early (currentVirtual > virtualPosition), it would skip bytes
+                // - If we scanned the whole gap, currentPhysical == gapEnd == segment.PhysicalPos anyway
+                // So this line either does nothing OR breaks the logic. Removed.
+                //
+                // Verify we're at the segment position (should always be true after full gap scan)
+                if (currentPhysical != segment.PhysicalPos)
+                {
+                    // This shouldn't happen if logic is correct
+                    // If it does, it means we exited early, which shouldn't happen given the loop condition
+                    throw new InvalidOperationException(
+                        $"INTERNAL BUG: After gap scan, currentPhysical ({currentPhysical}) != segment.PhysicalPos ({segment.PhysicalPos}). " +
+                        $"This indicates the gap scan logic has a bug.");
+                }
 
                 // Check if virtual position falls within inserted bytes at this segment
                 if (segment.InsertedCount > 0)
