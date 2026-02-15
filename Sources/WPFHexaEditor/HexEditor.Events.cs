@@ -1,0 +1,1152 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.5
+//////////////////////////////////////////////
+
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Input;
+using WpfHexaEditor.Core;
+using WpfHexaEditor.Models;
+using WpfHexaEditor.ViewModels;
+
+namespace WpfHexaEditor
+{
+    /// <summary>
+    /// HexEditor partial class - Internal Events
+    /// Contains event handlers for mouse, keyboard, scrolling, and UI updates
+    /// </summary>
+    public partial class HexEditor
+    {
+        #region Internal Events
+
+        private void Content_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (_viewModel == null || e.ChangedButton != MouseButton.Left)
+                return;
+
+            // Set keyboard focus to enable keyboard input
+            HexViewport.Focus();
+
+            // Detect which area was clicked (Hex or ASCII)
+            var mousePos = e.GetPosition(HexViewport);
+            var clickArea = GetClickAreaAtMouse(mousePos);
+            _isAsciiEditMode = (clickArea == ClickArea.Ascii);
+
+
+            // Get the virtual position at mouse coordinates
+            var position = GetVirtualPositionAtMouse(mousePos);
+            if (!position.IsValid)
+                return;
+
+            // Check for Shift key (extend selection)
+            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            {
+                _viewModel.ExtendSelection(position);
+            }
+            else
+            {
+                // Start new selection
+                _viewModel.SetSelection(position);
+                _isMouseDown = true;
+                _mouseDownPosition = position;
+
+                // Capture mouse for drag operation
+                HexViewport.CaptureMouse();
+            }
+
+            e.Handled = true;
+        }
+
+        private void Content_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_viewModel == null || !_isMouseDown || e.LeftButton != MouseButtonState.Pressed)
+            {
+                StopAutoScroll();
+                return;
+            }
+
+            Point mousePos = e.GetPosition(HexViewport);
+            _lastMousePosition = mousePos;
+
+            var position = GetVirtualPositionAtMouse(mousePos);
+            if (position.IsValid)
+            {
+                // Update selection range during drag
+                _viewModel.SetSelectionRange(_mouseDownPosition, position);
+            }
+
+            // Check if mouse is near the top or bottom edge for auto-scroll
+            double viewportHeight = HexViewport.ActualHeight;
+
+            if (mousePos.Y < AutoScrollEdgeThreshold)
+            {
+                // Near top edge - scroll up
+                StartAutoScroll(-1);
+            }
+            else if (mousePos.Y > viewportHeight - AutoScrollEdgeThreshold)
+            {
+                // Near bottom edge - scroll down
+                StartAutoScroll(1);
+            }
+            else
+            {
+                // In the middle - stop auto-scroll
+                StopAutoScroll();
+            }
+
+            e.Handled = true;
+        }
+
+        private void Content_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left && _isMouseDown)
+            {
+                _isMouseDown = false;
+                HexViewport.ReleaseMouseCapture();
+                StopAutoScroll();
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to find the virtual position at mouse coordinates
+        /// Uses HexViewport's precise hit-testing with actual measured dimensions
+        /// </summary>
+        /// <summary>
+        /// Click area types for mouse input
+        /// </summary>
+        private enum ClickArea
+        {
+            Hex,
+            Ascii,
+            Other
+        }
+
+        /// <summary>
+        /// Get which area was clicked at mouse position
+        /// </summary>
+        private ClickArea GetClickAreaAtMouse(Point mousePosition)
+        {
+            if (_viewModel == null)
+                return ClickArea.Other;
+
+            // Layout constants (must match HexViewport.cs)
+            const double OffsetWidth = 110;
+            const double HexByteWidth = 24;
+            const double HexByteSpacing = 2;
+            const double SeparatorWidth = 20;
+            const int ByteGrouping = 4;
+            const double ByteSpacerWidthTickness = 6;
+
+            double x = mousePosition.X;
+
+            // Check if in hex area
+            double hexStartX = OffsetWidth;
+
+            // Calculate hexEndX accounting for byte spacers
+            int numSpacers = 0;
+            if (_viewModel.BytePerLine >= ByteGrouping)
+            {
+                numSpacers = (_viewModel.BytePerLine / ByteGrouping) - 1;
+                // If not evenly divisible, we have one less spacer
+                if (_viewModel.BytePerLine % ByteGrouping == 0)
+                    numSpacers = (_viewModel.BytePerLine / ByteGrouping) - 1;
+                else
+                    numSpacers = _viewModel.BytePerLine / ByteGrouping;
+            }
+            double spacersWidth = numSpacers * ByteSpacerWidthTickness;
+            double hexEndX = OffsetWidth + (_viewModel.BytePerLine * (HexByteWidth + HexByteSpacing)) + spacersWidth;
+
+            if (x >= hexStartX && x < hexEndX)
+                return ClickArea.Hex;
+
+            // Check if in ASCII area
+            double separatorX = hexEndX + 4; // Match rendering code (was +8, now +4)
+            double asciiStartX = separatorX + SeparatorWidth;
+
+            if (x >= asciiStartX)
+                return ClickArea.Ascii;
+
+            return ClickArea.Other;
+        }
+
+        private VirtualPosition GetVirtualPositionAtMouse(Point mousePosition)
+        {
+            if (_viewModel == null || _viewModel.Lines.Count == 0)
+                return VirtualPosition.Invalid;
+
+            // Use HexViewport's actual LineHeight (calculated from font metrics)
+            double lineHeight = HexViewport.LineHeight;
+            if (lineHeight <= 0)
+                return VirtualPosition.Invalid;
+
+            // Layout constants (must match HexViewport.cs)
+            const double OffsetWidth = 110;
+            const double HexByteWidth = 24;
+            const double HexByteSpacing = 2;
+            const double TopMargin = 2;
+            const double SeparatorWidth = 20;
+            const double AsciiCharWidth = 10;
+            const int ByteGrouping = 4;
+            const double ByteSpacerWidthTickness = 6;
+
+            // Calculate line number from Y coordinate
+            double y = mousePosition.Y - TopMargin;
+            if (y < 0)
+                return VirtualPosition.Invalid;
+
+            int lineIndex = (int)(y / lineHeight);
+
+            // Clamp to valid line range
+            if (lineIndex < 0 || lineIndex >= _viewModel.Lines.Count)
+                return VirtualPosition.Invalid;
+
+            var line = _viewModel.Lines[lineIndex];
+            if (line.Bytes.Count == 0)
+                return VirtualPosition.Invalid;
+
+            double x = mousePosition.X;
+
+            // Check if clicked in offset area - select first byte
+            if (x < OffsetWidth)
+            {
+                return line.Bytes[0].VirtualPos;
+            }
+
+            // Calculate hex area dimensions WITH byte spacers
+            double hexStartX = OffsetWidth;
+            int numSpacers = 0;
+            if (_viewModel.BytePerLine >= ByteGrouping)
+            {
+                numSpacers = (_viewModel.BytePerLine % ByteGrouping == 0)
+                    ? (_viewModel.BytePerLine / ByteGrouping) - 1
+                    : _viewModel.BytePerLine / ByteGrouping;
+            }
+            double spacersWidth = numSpacers * ByteSpacerWidthTickness;
+            double hexEndX = OffsetWidth + (_viewModel.BytePerLine * (HexByteWidth + HexByteSpacing)) + spacersWidth;
+
+            // Check if click is in hex area
+            if (x >= hexStartX && x < hexEndX)
+            {
+                // Click in hex area - need to account for byte spacers
+                double relativeX = x - hexStartX;
+
+                // Calculate byte index accounting for spacers
+                int byteIndex = 0;
+                double currentX = 0;
+
+                for (int i = 0; i < _viewModel.BytePerLine && i < line.Bytes.Count; i++)
+                {
+                    // Add spacer width before this byte if needed
+                    if (_viewModel.BytePerLine >= ByteGrouping && i > 0 && i % ByteGrouping == 0)
+                    {
+                        currentX += ByteSpacerWidthTickness;
+                    }
+
+                    // Check if click is within this byte's bounds
+                    if (relativeX >= currentX && relativeX < currentX + HexByteWidth + HexByteSpacing)
+                    {
+                        byteIndex = i;
+                        break;
+                    }
+
+                    currentX += HexByteWidth + HexByteSpacing;
+                    byteIndex = i;
+                }
+
+                // Clamp to valid byte range
+                byteIndex = Math.Max(0, Math.Min(byteIndex, line.Bytes.Count - 1));
+                return line.Bytes[byteIndex].VirtualPos;
+            }
+
+            // Check if click is in ASCII area
+            double separatorX = hexEndX + 4;
+            double asciiStartX = separatorX + SeparatorWidth;
+
+            // Calculate ASCII area width WITH spacers
+            int numAsciiSpacers = 0;
+            if (_viewModel.BytePerLine >= ByteGrouping)
+            {
+                numAsciiSpacers = (_viewModel.BytePerLine % ByteGrouping == 0)
+                    ? (_viewModel.BytePerLine / ByteGrouping) - 1
+                    : _viewModel.BytePerLine / ByteGrouping;
+            }
+            double asciiSpacersWidth = numAsciiSpacers * ByteSpacerWidthTickness;
+            double asciiEndX = asciiStartX + (_viewModel.BytePerLine * AsciiCharWidth) + asciiSpacersWidth;
+
+            if (x >= asciiStartX && x < asciiEndX)
+            {
+                // Click in ASCII area - need to account for byte spacers
+                double relativeX = x - asciiStartX;
+
+                // Calculate byte index accounting for spacers
+                int byteIndex = 0;
+                double currentX = 0;
+
+                for (int i = 0; i < _viewModel.BytePerLine && i < line.Bytes.Count; i++)
+                {
+                    // Add spacer width before this byte if needed
+                    if (_viewModel.BytePerLine >= ByteGrouping && i > 0 && i % ByteGrouping == 0)
+                    {
+                        currentX += ByteSpacerWidthTickness;
+                    }
+
+                    // Check if click is within this byte's bounds
+                    if (relativeX >= currentX && relativeX < currentX + AsciiCharWidth)
+                    {
+                        byteIndex = i;
+                        break;
+                    }
+
+                    currentX += AsciiCharWidth;
+                    byteIndex = i;
+                }
+
+                // Clamp to valid byte range
+                byteIndex = Math.Max(0, Math.Min(byteIndex, line.Bytes.Count - 1));
+                return line.Bytes[byteIndex].VirtualPos;
+            }
+
+            // Click in separator or beyond - select last byte on line
+            return line.Bytes[line.Bytes.Count - 1].VirtualPos;
+        }
+
+        private void Content_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (_viewModel == null) return;
+
+            bool handled = true;
+            bool isShiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+            bool isCtrlPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+
+            // Get current position:
+            // - If there's a selection: use SelectionStop (the active/cursor end)
+            // - If no selection: use SelectionStart (the cursor position)
+            var currentPos = _viewModel.HasSelection && _viewModel.SelectionStop.IsValid
+                ? _viewModel.SelectionStop
+                : (_viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart : VirtualPosition.Zero);
+
+            VirtualPosition newPos = currentPos;
+
+            switch (e.Key)
+            {
+                // Arrow keys navigation
+                case Key.Left:
+                    if (isCtrlPressed)
+                    {
+                        // Ctrl+Left: Jump left by 8 bytes (or to start of line if closer)
+                        long jumpSize = 8;
+                        long lineStart = (currentPos.Value / _viewModel.BytePerLine) * _viewModel.BytePerLine;
+                        long targetPos = currentPos.Value - jumpSize;
+
+                        // Don't go before start of current line (unless we're at the very start)
+                        if (currentPos.Value > 0)
+                        {
+                            if (targetPos < lineStart && currentPos.Value != lineStart)
+                                newPos = new VirtualPosition(lineStart);
+                            else
+                                newPos = new VirtualPosition(Math.Max(0, targetPos));
+                        }
+                    }
+                    else
+                    {
+                        // Normal Left: Move one byte left
+                        if (currentPos.Value > 0)
+                            newPos = new VirtualPosition(currentPos.Value - 1);
+                    }
+                    break;
+
+                case Key.Right:
+                    if (isCtrlPressed)
+                    {
+                        // Ctrl+Right: Jump right by 8 bytes (or to end of line if closer)
+                        long jumpSize = 8;
+                        long lineStart = (currentPos.Value / _viewModel.BytePerLine) * _viewModel.BytePerLine;
+                        long lineEnd = Math.Min(lineStart + _viewModel.BytePerLine - 1, _viewModel.VirtualLength - 1);
+                        long targetPos = currentPos.Value + jumpSize;
+
+                        // Don't go past end of current line (unless we're at the very end)
+                        if (currentPos.Value < _viewModel.VirtualLength - 1)
+                        {
+                            if (targetPos > lineEnd && currentPos.Value != lineEnd)
+                                newPos = new VirtualPosition(lineEnd);
+                            else
+                                newPos = new VirtualPosition(Math.Min(_viewModel.VirtualLength - 1, targetPos));
+                        }
+                    }
+                    else
+                    {
+                        // Normal Right: Move one byte right
+                        if (currentPos.Value < _viewModel.VirtualLength - 1)
+                            newPos = new VirtualPosition(currentPos.Value + 1);
+                    }
+                    break;
+
+                case Key.Up:
+                    if (isCtrlPressed)
+                    {
+                        // Ctrl+Up: Jump up by a page
+                        long jump = _viewModel.BytePerLine * _viewModel.VisibleLines;
+                        newPos = new VirtualPosition(Math.Max(0, currentPos.Value - jump));
+                    }
+                    else
+                    {
+                        // Normal Up: Move one line up
+                        if (currentPos.Value >= _viewModel.BytePerLine)
+                            newPos = new VirtualPosition(currentPos.Value - _viewModel.BytePerLine);
+                    }
+                    break;
+
+                case Key.Down:
+                    if (isCtrlPressed)
+                    {
+                        // Ctrl+Down: Jump down by a page
+                        long jump = _viewModel.BytePerLine * _viewModel.VisibleLines;
+                        newPos = new VirtualPosition(Math.Min(_viewModel.VirtualLength - 1, currentPos.Value + jump));
+                    }
+                    else
+                    {
+                        // Normal Down: Move one line down
+                        if (currentPos.Value + _viewModel.BytePerLine < _viewModel.VirtualLength)
+                            newPos = new VirtualPosition(currentPos.Value + _viewModel.BytePerLine);
+                    }
+                    break;
+
+                // Page Up/Down
+                case Key.PageUp:
+                    {
+                        long jump = _viewModel.BytePerLine * _viewModel.VisibleLines;
+                        newPos = new VirtualPosition(Math.Max(0, currentPos.Value - jump));
+                    }
+                    break;
+
+                case Key.PageDown:
+                    {
+                        long jump = _viewModel.BytePerLine * _viewModel.VisibleLines;
+                        newPos = new VirtualPosition(Math.Min(_viewModel.VirtualLength - 1, currentPos.Value + jump));
+                    }
+                    break;
+
+                // Home/End
+                case Key.Home:
+                    if (isCtrlPressed)
+                    {
+                        // Ctrl+Home: Go to start of file
+                        newPos = VirtualPosition.Zero;
+                    }
+                    else
+                    {
+                        // Home: Go to start of current line
+                        long lineStart = (currentPos.Value / _viewModel.BytePerLine) * _viewModel.BytePerLine;
+                        newPos = new VirtualPosition(lineStart);
+                    }
+                    break;
+
+                case Key.End:
+                    if (isCtrlPressed)
+                    {
+                        // Ctrl+End: Go to end of file
+                        newPos = new VirtualPosition(_viewModel.VirtualLength - 1);
+                    }
+                    else
+                    {
+                        // End: Go to end of current line
+                        long lineStart = (currentPos.Value / _viewModel.BytePerLine) * _viewModel.BytePerLine;
+                        long lineEnd = Math.Min(lineStart + _viewModel.BytePerLine - 1, _viewModel.VirtualLength - 1);
+                        newPos = new VirtualPosition(lineEnd);
+                    }
+                    break;
+
+                // Insert key: Toggle edit mode
+                case Key.Insert:
+                    _viewModel.EditMode = _viewModel.EditMode == EditMode.Insert
+                        ? EditMode.Overwrite
+                        : EditMode.Insert;
+                    break;
+
+                // Delete key: Delete selection
+                case Key.Delete:
+                    if (_viewModel.HasSelection && !_viewModel.ReadOnlyMode)
+                    {
+                        DeleteSelection();
+                    }
+                    break;
+
+                // Ctrl+Z: Undo
+                case Key.Z:
+                    if (isCtrlPressed && !_viewModel.ReadOnlyMode)
+                    {
+                        Undo();
+                    }
+                    break;
+
+                // Ctrl+Y: Redo
+                case Key.Y:
+                    if (isCtrlPressed && !_viewModel.ReadOnlyMode)
+                    {
+                        Redo();
+                    }
+                    break;
+
+                // Ctrl+C: Copy
+                case Key.C:
+                    if (isCtrlPressed && _viewModel.HasSelection)
+                    {
+                        Copy();
+                    }
+                    break;
+
+                // Ctrl+X: Cut
+                case Key.X:
+                    if (isCtrlPressed && _viewModel.HasSelection && !_viewModel.ReadOnlyMode)
+                    {
+                        Cut();
+                    }
+                    break;
+
+                // Ctrl+V: Paste
+                case Key.V:
+                    if (isCtrlPressed && !_viewModel.ReadOnlyMode)
+                    {
+                        Paste();
+                    }
+                    break;
+
+                // Ctrl+A: Select all
+                case Key.A:
+                    if (isCtrlPressed)
+                    {
+                        SelectAll();
+                    }
+                    break;
+
+                // F2: Next Bookmark
+                case Key.F2:
+                    if (isShiftPressed)
+                        GoToPreviousBookmark();
+                    else
+                        GoToNextBookmark();
+                    break;
+
+                // Ctrl+B: Toggle Bookmark
+                case Key.B:
+                    if (isCtrlPressed)
+                    {
+                        SetBookmarkMenuItem_Click(null, null);
+                    }
+                    break;
+
+                // Text/Hex input editing
+                default:
+                    if (!_viewModel.ReadOnlyMode)
+                    {
+                        // ASCII mode: Handle text input (A-Z, a-z, 0-9, space, punctuation)
+                        if (_isAsciiEditMode && TryGetAsciiChar(e.Key, out char asciiChar))
+                        {
+                            HandleAsciiInput(asciiChar, currentPos);
+                            handled = true;
+                        }
+                        // Hex mode: Handle hex digit input (0-9, A-F)
+                        else if (!_isAsciiEditMode && TryGetHexValue(e.Key, out byte hexValue))
+                        {
+                            HandleHexInput(hexValue, currentPos);
+                            handled = true;
+                        }
+                        else
+                        {
+                            handled = false;
+                        }
+                    }
+                    else
+                    {
+                        handled = false;
+                    }
+                    break;
+            }
+
+            // Update selection based on navigation
+            if (newPos != currentPos)
+            {
+                if (isShiftPressed)
+                {
+                    // Shift+navigation: Extend selection
+                    _viewModel.ExtendSelection(newPos);
+                }
+                else
+                {
+                    // Normal navigation: Move cursor
+                    _viewModel.SetSelection(newPos);
+                }
+
+                // Auto-scroll to keep selection visible
+                EnsurePositionVisible(newPos);
+            }
+
+            if (handled)
+                e.Handled = true;
+        }
+
+        /// <summary>
+        /// Ensure a virtual position is visible by scrolling if necessary
+        /// </summary>
+        private void EnsurePositionVisible(VirtualPosition position)
+        {
+            if (_viewModel == null)
+                return;
+
+            long lineNumber = position.Value / _viewModel.BytePerLine;
+            long currentScroll = _viewModel.ScrollPosition;
+
+            // Scroll up if position is above viewport
+            if (lineNumber < currentScroll)
+            {
+                _viewModel.ScrollPosition = lineNumber;
+            }
+            // Scroll down if position is below viewport
+            else if (lineNumber >= currentScroll + _viewModel.VisibleLines)
+            {
+                _viewModel.ScrollPosition = lineNumber - _viewModel.VisibleLines + 1;
+            }
+        }
+
+        private void VerticalScroll_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.ScrollPosition = (long)e.NewValue;
+            }
+        }
+
+        /// <summary>
+        /// <summary>
+        /// Handle BaseGrid size changes to adjust visible lines (exact V1 approach)
+        /// </summary>
+        private void BaseGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Only react to height changes (like V1's Grid_SizeChanged)
+            if (!e.HeightChanged || _viewModel == null)
+                return;
+
+            // Delay UpdateVisibleLines to ensure BaseGrid.RowDefinitions[1].ActualHeight is updated
+            // Use Render priority for better responsiveness while still ensuring layout is complete
+            Dispatcher.BeginInvoke(new Action(() => UpdateVisibleLines()), System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+        /// <summary>
+        /// Handle mouse wheel scrolling on ContentScroller
+        /// </summary>
+        private void ContentScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (_viewModel == null)
+                return;
+
+            // Ctrl+MouseWheel = Zoom
+            if (Keyboard.Modifiers == ModifierKeys.Control && AllowZoom)
+            {
+                double delta = e.Delta > 0 ? 0.1 : -0.1;
+                double newZoom = ZoomScale + delta;
+                ZoomScale = Math.Max(0.5, Math.Min(2.0, newZoom));
+                e.Handled = true;
+                return;
+            }
+
+            // Standard behavior: scroll 3 lines per wheel notch
+            // Delta is typically 120 per notch, so divide by 40 to get 3 lines
+            int linesToScroll = -e.Delta / 40;
+
+            long newScrollPos = _viewModel.ScrollPosition + linesToScroll;
+            long maxScroll = Math.Max(0, _viewModel.TotalLines - _viewModel.VisibleLines);
+
+            // Clamp to valid range
+            newScrollPos = Math.Max(0, Math.Min(maxScroll, newScrollPos));
+
+            if (_viewModel.ScrollPosition != newScrollPos)
+            {
+                _viewModel.ScrollPosition = newScrollPos;
+                VerticalScroll.Value = newScrollPos;
+            }
+
+            // Mark event as handled to prevent ScrollViewer from scrolling
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// Update visible lines based on BaseGrid Row 1 height (exact V1 approach)
+        /// V1 uses: (int)(BaseGrid.RowDefinitions[1].ActualHeight / (LineHeight * ZoomScale)) + 1
+        /// V2 uses: (int)(BaseGrid.RowDefinitions[1].ActualHeight / LineHeight) + 1 (no ZoomScale)
+        /// </summary>
+        private void UpdateVisibleLines()
+        {
+            if (_viewModel == null)
+                return;
+
+            // Get the actual line height from HexViewport
+            double lineHeight = HexViewport.LineHeight;
+            if (lineHeight <= 0)
+                return; // Not initialized yet
+
+            // Use BaseGrid.RowDefinitions[1].ActualHeight (EXACTLY like V1 does)
+            // Row 0 = Header, Row 1 = Content area, Row 2 = Status bar
+            double actualHeight = BaseGrid.RowDefinitions[1].ActualHeight;
+            if (actualHeight <= 0)
+                return; // Not initialized yet
+
+            // Calculate how many lines fit in the viewport
+            // Use Math.Ceiling to ensure we always have enough space for partial lines at bottom
+            // Add 2 extra lines to prevent last line from being cut off (increased safety margin)
+            int calculatedLines = (int)Math.Ceiling(actualHeight / lineHeight) + 2;
+
+            // Clamp to reasonable range (minimum 5, maximum 100)
+            calculatedLines = Math.Max(5, Math.Min(100, calculatedLines));
+
+            // Only update if different (avoid thrashing)
+            if (_viewModel.VisibleLines != calculatedLines)
+            {
+                _viewModel.VisibleLines = calculatedLines; // Property setter calls RefreshVisibleLines() internally
+                VerticalScroll.Maximum = Math.Max(0, _viewModel.TotalLines - _viewModel.VisibleLines + 3);
+                VerticalScroll.ViewportSize = _viewModel.VisibleLines;
+
+                // Force full refresh after collection update completes (like V1's RefreshView(true) call)
+                // Use Dispatcher to ensure collection changes are processed before refreshing viewport
+                Dispatcher.BeginInvoke(new Action(() => HexViewport.Refresh()), System.Windows.Threading.DispatcherPriority.Render);
+            }
+        }
+
+        private void ViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(HexEditorViewModel.SelectionLength):
+                    UpdateSelectionInfo();
+                    break;
+
+                case nameof(HexEditorViewModel.SelectionStart):
+                    UpdatePositionInfo();
+                    // Update HexViewport selection anchor
+                    HexViewport.SelectionStart = _viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : -1;
+                    // Update auto-highlight to match the byte at the new selection
+                    UpdateAutoHighlightByte();
+                    // Update scroll markers selection bar
+                    UpdateScrollMarkersSelection();
+                    break;
+
+                case nameof(HexEditorViewModel.SelectionStop):
+                    // Update HexViewport cursor (active end) and selection
+                    // Cursor is at SelectionStop (the end that moves during Shift+navigation)
+                    HexViewport.CursorPosition = _viewModel.SelectionStop.IsValid ? _viewModel.SelectionStop.Value :
+                                                 (_viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : 0);
+                    HexViewport.SelectionStop = _viewModel.SelectionStop.IsValid ? _viewModel.SelectionStop.Value : -1;
+                    // Update scroll markers selection bar
+                    UpdateScrollMarkersSelection();
+                    break;
+
+                case nameof(HexEditorViewModel.TotalLines):
+                    var newMaximum = Math.Max(0, _viewModel.TotalLines - _viewModel.VisibleLines + 3);
+                    VerticalScroll.Maximum = newMaximum;
+                    // Update file size display (VirtualLength may have changed due to insertions)
+                    UpdateFileSizeDisplay();
+                    break;
+
+                case nameof(HexEditorViewModel.VirtualLength):
+                    // VirtualLength changed due to insertions/deletions
+                    // Update scroll markers FileLength and refresh markers
+                    if (_scrollMarkers != null)
+                    {
+                        _scrollMarkers.FileLength = _viewModel.VirtualLength;
+                    }
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        UpdateScrollMarkers();
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                    break;
+
+                case nameof(HexEditorViewModel.EditMode):
+                    EditModeText.Text = $"Mode: {_viewModel.EditMode}";
+                    break;
+
+                case nameof(HexEditorViewModel.BytePerLine):
+                    BytesPerLineText.Text = $"Bytes/Line: {_viewModel.BytePerLine}";
+                    HexViewport.BytesPerLine = _viewModel.BytePerLine;
+                    RefreshColumnHeader(); // Regenerate headers to match new BytesPerLine
+                    break;
+            }
+        }
+
+        private void UpdateFileSizeDisplay()
+        {
+            if (_viewModel != null)
+            {
+                // Show VirtualLength (includes insertions in Insert mode)
+                long displayLength = _viewModel.VirtualLength;
+                FileSizeText.Text = $"Size: {FormatFileSize(displayLength)}";
+            }
+        }
+
+        private void UpdateSelectionInfo()
+        {
+            if (_viewModel?.HasSelection == true)
+            {
+                SelectionInfo.Text = $"Selection: {_viewModel.SelectionLength} bytes";
+            }
+            else
+            {
+                SelectionInfo.Text = "No selection";
+            }
+        }
+
+        private void UpdatePositionInfo()
+        {
+            if (_viewModel?.SelectionStart.IsValid == true)
+            {
+                PositionInfo.Text = $"Position: 0x{_viewModel.SelectionStart.Value:X}";
+            }
+            else
+            {
+                PositionInfo.Text = "Position: 0";
+            }
+        }
+
+        private string FormatFileSize(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]} ({bytes:N0} bytes)";
+        }
+
+        /// <summary>
+        /// Try to convert a Key to a hex value (0-15)
+        /// </summary>
+        private bool TryGetHexValue(Key key, out byte value)
+        {
+            // Number keys (0-9)
+            if (key >= Key.D0 && key <= Key.D9)
+            {
+                value = (byte)(key - Key.D0);
+                return true;
+            }
+
+            // Numpad keys (0-9)
+            if (key >= Key.NumPad0 && key <= Key.NumPad9)
+            {
+                value = (byte)(key - Key.NumPad0);
+                return true;
+            }
+
+            // Letter keys (A-F)
+            if (key >= Key.A && key <= Key.F)
+            {
+                value = (byte)(key - Key.A + 10);
+                return true;
+            }
+
+            value = 0;
+            return false;
+        }
+
+        /// <summary>
+        /// Try to convert a key press to an ASCII character
+        /// </summary>
+        private bool TryGetAsciiChar(Key key, out char asciiChar)
+        {
+            bool isShiftPressed = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            // Letters A-Z
+            if (key >= Key.A && key <= Key.Z)
+            {
+                asciiChar = (char)('A' + (key - Key.A));
+                if (!isShiftPressed)
+                    asciiChar = char.ToLower(asciiChar);
+                return true;
+            }
+
+            // Digits 0-9 (with shift for symbols)
+            if (key >= Key.D0 && key <= Key.D9)
+            {
+                if (isShiftPressed)
+                {
+                    // Shift+digit produces symbols: )!@#$%^&*(
+                    char[] shiftDigits = { ')', '!', '@', '#', '$', '%', '^', '&', '*', '(' };
+                    asciiChar = shiftDigits[key - Key.D0];
+                }
+                else
+                {
+                    asciiChar = (char)('0' + (key - Key.D0));
+                }
+                return true;
+            }
+
+            // NumPad digits 0-9
+            if (key >= Key.NumPad0 && key <= Key.NumPad9)
+            {
+                asciiChar = (char)('0' + (key - Key.NumPad0));
+                return true;
+            }
+
+            // Space
+            if (key == Key.Space)
+            {
+                asciiChar = ' ';
+                return true;
+            }
+
+            // Common punctuation (basic ASCII support)
+            var punctuation = new Dictionary<Key, (char normal, char shifted)>
+            {
+                { Key.OemPeriod, ('.', '>') },
+                { Key.OemComma, (',', '<') },
+                { Key.OemSemicolon, (';', ':') },
+                { Key.OemQuotes, ('\'', '"') },
+                { Key.OemQuestion, ('/', '?') },
+                { Key.OemOpenBrackets, ('[', '{') },
+                { Key.OemCloseBrackets, (']', '}') },
+                { Key.OemPipe, ('\\', '|') },
+                { Key.OemMinus, ('-', '_') },
+                { Key.OemPlus, ('=', '+') },
+                { Key.OemTilde, ('`', '~') }
+            };
+
+            if (punctuation.TryGetValue(key, out var chars))
+            {
+                asciiChar = isShiftPressed ? chars.shifted : chars.normal;
+                return true;
+            }
+
+            asciiChar = '\0';
+            return false;
+        }
+
+        /// <summary>
+        /// Handle ASCII text input for editing bytes in ASCII mode
+        /// </summary>
+        private void HandleAsciiInput(char asciiChar, VirtualPosition currentPos)
+        {
+
+            if (_viewModel == null || _viewModel.ReadOnlyMode)
+                return;
+
+            // Convert ASCII character to byte
+            byte byteValue = (byte)asciiChar;
+
+            // Determine action based on edit mode
+            if (_viewModel.EditMode == EditMode.Insert)
+            {
+                // Insert mode: insert new byte
+                _viewModel.InsertByte(currentPos, byteValue);
+            }
+            else
+            {
+                // Overwrite mode: modify existing byte
+                _viewModel.ModifyByte(currentPos, byteValue);
+            }
+
+            // Move to next byte
+            var nextPos = new VirtualPosition(currentPos.Value + 1);
+            if (nextPos.Value < _viewModel.VirtualLength)
+            {
+                _viewModel.SetSelection(nextPos);
+                EnsurePositionVisible(nextPos);
+            }
+
+            // Update status
+            StatusText.Text = $"ASCII input: '{asciiChar}' at {currentPos.Value:X8}";
+        }
+
+        /// <summary>
+        /// Handle hex digit input for editing bytes
+        /// </summary>
+        private void HandleHexInput(byte hexValue, VirtualPosition currentPos)
+        {
+
+            if (_viewModel == null || _viewModel.ReadOnlyMode)
+                return;
+
+            // Start new byte edit if not currently editing, or position changed
+            // SPECIAL CASE: In Insert mode, if waiting for low nibble and position drifted by ±1,
+            // DON'T reset - this is position drift after InsertByte, continue with same edit
+            bool shouldResetEdit = false;
+
+            if (!_isEditingByte)
+            {
+                // Not currently editing - definitely start new edit
+                shouldResetEdit = true;
+            }
+            else if (_editingPosition != currentPos)
+            {
+                // Position changed - check if this is acceptable drift in Insert mode
+                if (_viewModel.EditMode == EditMode.Insert && !_editingHighNibble)
+                {
+                    // We're in Insert mode, waiting for low nibble, and position drifted
+                    long drift = Math.Abs(currentPos.Value - _editingPosition.Value);
+                    if (drift <= 1)
+                    {
+                        // Position drift of ±1 is acceptable in Insert mode after InsertByte
+                        // Force currentPos back to _editingPosition and continue same edit
+                        currentPos = _editingPosition; // Force back to editing position
+                        shouldResetEdit = false;
+                    }
+                    else
+                    {
+                        // Drift is too large - must be a real position change
+                        shouldResetEdit = true;
+                    }
+                }
+                else
+                {
+                    // In Overwrite mode or editing high nibble - any position change means new edit
+                    shouldResetEdit = true;
+                }
+            }
+
+            if (shouldResetEdit)
+            {
+                _isEditingByte = true;
+                _editingPosition = currentPos;
+                _editingHighNibble = true;
+
+                // Initialize editing value based on mode
+                // Insert mode: start with 0x00 (creating new byte)
+                // Overwrite mode: start with existing byte value (modifying it)
+                if (_viewModel.EditMode == EditMode.Insert)
+                {
+                    _editingValue = 0;
+                }
+                else
+                {
+                    var physicalPos = _viewModel.VirtualToPhysical(currentPos);
+                    _editingValue = physicalPos.IsValid
+                        ? _viewModel.GetByteAt(currentPos)
+                        : (byte)0;
+                }
+
+            }
+
+            // Update the appropriate nibble
+            if (_editingHighNibble)
+            {
+
+                // Update high nibble (bits 4-7)
+                byte oldValue = _editingValue;
+                _editingValue = (byte)((_editingValue & 0x0F) | (hexValue << 4));
+
+
+                _editingHighNibble = false; // Move to low nibble
+
+                // IN INSERT MODE: Insert byte IMMEDIATELY after first nibble (don't wait for second nibble)
+                if (_viewModel.EditMode == EditMode.Insert)
+                {
+
+                    // Save the insertion position BEFORE calling InsertByte
+                    var insertionPos = _editingPosition;
+
+                    _viewModel.InsertByte(insertionPos, _editingValue);
+
+                    // CRITICAL FIX: Force synchronous position update to prevent drift
+                    // Use Dispatcher.Invoke with Send priority to ensure position is set IMMEDIATELY
+                    // before any other UI updates or events can interfere
+                    Dispatcher.Invoke(() =>
+                    {
+                        _viewModel.SetSelection(insertionPos);
+
+                        // Verify the position was set correctly
+                        var actualPos = _viewModel.SelectionStart;
+
+                        if (actualPos != insertionPos)
+                        {
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Send);
+
+                    // Keep _editingPosition at the insertion point (where the byte was inserted)
+                    // The low nibble MUST modify this same position
+                    _editingPosition = insertionPos;
+
+                }
+                else
+                {
+                    // OVERWRITE MODE: Update visual display immediately after high nibble (preview only)
+                    UpdateBytePreview(_editingPosition, _editingValue);
+                }
+            }
+            else
+            {
+
+                // Update low nibble (bits 0-3)
+                byte oldValue = _editingValue;
+                _editingValue = (byte)((_editingValue & 0xF0) | hexValue);
+
+
+                // Byte is complete, write it
+                CommitByteEdit();
+
+                // Move to next byte
+                var nextPos = new VirtualPosition(currentPos.Value + 1);
+
+                if (nextPos.Value < _viewModel.VirtualLength)
+                {
+                    _viewModel.SetSelection(nextPos);
+                    EnsurePositionVisible(nextPos);
+                }
+                else
+                {
+                    _isEditingByte = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Commit the current byte edit to the provider
+        /// </summary>
+        /// <summary>
+        /// Update byte display temporarily during editing (before commit)
+        /// Shows real-time feedback as user types each nibble
+        /// </summary>
+        private void UpdateBytePreview(VirtualPosition position, byte previewValue)
+        {
+            if (_viewModel == null || !position.IsValid)
+                return;
+
+            // Update the byte value in the ViewModel temporarily for preview
+            _viewModel.UpdateBytePreview(position, previewValue);
+
+            // Force visual refresh to show the change immediately
+            HexViewport.InvalidateVisual();
+        }
+
+        private void CommitByteEdit()
+        {
+            if (!_isEditingByte || _viewModel == null)
+            {
+                return;
+            }
+
+
+            // In Insert mode, the byte was already inserted after the first nibble
+            // So the low nibble should MODIFY the inserted byte (not insert again)
+            // In Overwrite mode, modify the existing byte
+            _viewModel.ModifyByte(_editingPosition, _editingValue);
+
+            _isEditingByte = false;
+            _editingHighNibble = true;
+
+            // Update status
+            StatusText.Text = $"Edited byte at {_editingPosition.Value:X8}";
+
+            // Update scroll markers in background (low priority)
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                UpdateScrollMarkers();
+            }), System.Windows.Threading.DispatcherPriority.Background);
+
+        }
+
+        #endregion
+    }
+}

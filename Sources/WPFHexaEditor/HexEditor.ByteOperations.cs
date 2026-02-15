@@ -1,0 +1,366 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.5
+//////////////////////////////////////////////
+
+using System;
+using System.Collections.Generic;
+using WpfHexaEditor.Core;
+using WpfHexaEditor.Core.Bytes;
+using WpfHexaEditor.Models;
+
+namespace WpfHexaEditor
+{
+    /// <summary>
+    /// HexEditor partial class - Byte Operations
+    /// Contains methods for manipulating individual bytes and byte ranges
+    /// </summary>
+    public partial class HexEditor
+    {
+        #region Public Methods - Byte Operations
+
+        /// <summary>
+        /// Get byte value at position
+        /// </summary>
+        /// <param name="position">Position in file (virtual)</param>
+        /// <returns>Byte value at position, or 0 if position is invalid</returns>
+        public byte GetByte(long position)
+        {
+            if (_viewModel == null) return 0;
+            return _viewModel.GetByte(position);
+        }
+
+        /// <summary>
+        /// Set byte value at position
+        /// </summary>
+        /// <param name="position">Position in file (virtual)</param>
+        /// <param name="value">Byte value to set</param>
+        public void SetByte(long position, byte value)
+        {
+            _viewModel?.SetByte(position, value);
+        }
+
+        /// <summary>
+        /// Fill a range with a specific byte value
+        /// </summary>
+        /// <param name="value">Byte value to fill with</param>
+        /// <param name="startPosition">Start position (virtual)</param>
+        /// <param name="length">Number of bytes to fill</param>
+        public void FillWithByte(byte value, long startPosition, long length)
+        {
+            _viewModel?.FillWithByte(value, startPosition, length);
+        }
+
+        /// <summary>
+        /// Modify byte with undo support
+        /// </summary>
+        /// <param name="byte">New byte value (null to delete)</param>
+        /// <param name="bytePositionInStream">Position in stream (virtual)</param>
+        /// <param name="undoLength">Length for undo operation (usually 1)</param>
+        public void ModifyByte(byte? @byte, long bytePositionInStream, long undoLength = 1)
+        {
+            if (_viewModel == null || ReadOnlyMode) return;
+
+            if (@byte.HasValue)
+            {
+                // Modify the byte
+                _viewModel.ModifyByte(new VirtualPosition(bytePositionInStream), @byte.Value);
+            }
+            else
+            {
+                // Delete the byte (null value means delete)
+                _viewModel.DeleteByte(new VirtualPosition(bytePositionInStream));
+            }
+        }
+
+        /// <summary>
+        /// Insert a single byte at position
+        /// </summary>
+        /// <param name="byte">Byte value to insert</param>
+        /// <param name="bytePositionInStream">Position in stream (virtual)</param>
+        public void InsertByte(byte @byte, long bytePositionInStream)
+        {
+            if (_viewModel == null || ReadOnlyMode) return;
+            _viewModel.InsertByte(new VirtualPosition(bytePositionInStream), @byte);
+        }
+
+        /// <summary>
+        /// Insert a byte repeated multiple times at position
+        /// </summary>
+        /// <param name="byte">Byte value to insert</param>
+        /// <param name="bytePositionInStream">Position in stream (virtual)</param>
+        /// <param name="length">Number of times to repeat the byte</param>
+        public void InsertByte(byte @byte, long bytePositionInStream, long length)
+        {
+            if (_viewModel == null || ReadOnlyMode || length <= 0) return;
+
+            // Create array of repeated byte
+            byte[] bytes = new byte[length];
+            for (long i = 0; i < length; i++)
+            {
+                bytes[i] = @byte;
+            }
+
+            _viewModel.InsertBytes(new VirtualPosition(bytePositionInStream), bytes);
+        }
+
+        /// <summary>
+        /// Insert multiple bytes at position
+        /// </summary>
+        /// <param name="bytes">Byte array to insert</param>
+        /// <param name="bytePositionInStream">Position in stream (virtual)</param>
+        public void InsertBytes(byte[] bytes, long bytePositionInStream)
+        {
+            if (_viewModel == null || ReadOnlyMode || bytes == null || bytes.Length == 0) return;
+            _viewModel.InsertBytes(new VirtualPosition(bytePositionInStream), bytes);
+        }
+
+        /// <summary>
+        /// Delete bytes at position
+        /// </summary>
+        /// <param name="bytePositionInStream">Start position (virtual)</param>
+        /// <param name="length">Number of bytes to delete</param>
+        public void DeleteBytesAtPosition(long bytePositionInStream, long length)
+        {
+            if (_viewModel == null || ReadOnlyMode || length <= 0) return;
+
+            // Delete bytes one by one (ByteProvider V2 handles this internally)
+            _viewModel.BeginUpdate();
+            try
+            {
+                for (long i = 0; i < length; i++)
+                {
+                    _viewModel.DeleteByte(new VirtualPosition(bytePositionInStream));
+                    // Note: After deleting, the next byte shifts to the same position
+                    // So we keep deleting at the same position
+                }
+            }
+            finally
+            {
+                _viewModel.EndUpdate();
+            }
+        }
+
+        /// <summary>
+        /// Get byte with copyChange parameter
+        /// Returns tuple with byte value and success flag
+        /// </summary>
+        /// <param name="position">Position in file (virtual)</param>
+        /// <param name="copyChange">If true, returns modified value; if false, returns original value</param>
+        /// <returns>Tuple (byte value, success flag)</returns>
+        public (byte? singleByte, bool success) GetByte(long position, bool copyChange)
+        {
+            if (_viewModel == null || position < 0 || position >= VirtualLength)
+                return (null, false);
+
+            // V2 always returns modified values (copyChange=true behavior)
+            // To get original values (copyChange=false), we would need ByteProvider support
+            // For now, we only support copyChange=true
+            var byteValue = _viewModel.GetByte(position);
+            return (byteValue, true);
+        }
+
+        /// <summary>
+        /// Get all bytes from file
+        /// </summary>
+        /// <param name="copyChange">If true, includes modifications; if false, original file only</param>
+        /// <returns>Byte array of entire file</returns>
+        public byte[] GetAllBytes(bool copyChange = true)
+        {
+            if (_viewModel == null || VirtualLength == 0)
+                return Array.Empty<byte>();
+
+            // V2 always returns modified values (copyChange=true behavior)
+            // Get all bytes from ByteProvider
+            byte[] result = new byte[VirtualLength];
+            for (long i = 0; i < VirtualLength; i++)
+            {
+                result[i] = _viewModel.GetByte(i);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Replace byte with another in current selection
+        /// </summary>
+        /// <param name="original">Byte to find and replace</param>
+        /// <param name="replace">Byte to replace with</param>
+        public void ReplaceByte(byte original, byte replace)
+        {
+            if (_viewModel == null || !_viewModel.HasSelection)
+                return;
+
+            var selStart = _viewModel.SelectionStart.Value;
+            var selLength = _viewModel.SelectionLength;
+
+            ReplaceByte(selStart, selLength, original, replace);
+        }
+
+        /// <summary>
+        /// Replace byte with another in specified range
+        /// </summary>
+        /// <param name="startPosition">Start position (virtual)</param>
+        /// <param name="length">Length of range to search</param>
+        /// <param name="original">Byte to find and replace</param>
+        /// <param name="replace">Byte to replace with</param>
+        public void ReplaceByte(long startPosition, long length, byte original, byte replace)
+        {
+            if (_viewModel == null || ReadOnlyMode || length <= 0)
+                return;
+
+            if (startPosition < 0 || startPosition >= VirtualLength)
+                return;
+
+            // Fire long process started event
+            IsOnLongProcess = true;
+            OnLongProcessProgressStarted(EventArgs.Empty);
+
+            try
+            {
+                int replacedCount = 0;
+
+                // Begin batched update for performance
+                _viewModel.BeginUpdate();
+                try
+                {
+                    for (long i = 0; i < length; i++)
+                    {
+                        long pos = startPosition + i;
+                        if (pos >= VirtualLength)
+                            break;
+
+                        // Check if we should break early (user cancelled)
+                        if (!IsOnLongProcess)
+                            break;
+
+                        // Progress reporting every 2000 bytes
+                        if (i % 2000 == 0)
+                        {
+                            LongProcessProgress = (double)i / length;
+                        }
+
+                        // Check if byte matches and replace
+                        var currentByte = _viewModel.GetByte(pos);
+                        if (currentByte == original)
+                        {
+                            ModifyByte(replace, pos);
+                            replacedCount++;
+                        }
+                    }
+                }
+                finally
+                {
+                    _viewModel.EndUpdate();
+                }
+
+                // Update status
+                StatusText.Text = $"Replaced {replacedCount} occurrences of 0x{original:X2} with 0x{replace:X2}";
+
+                // Fire replace completed event
+                OnReplaceByteCompleted(EventArgs.Empty);
+            }
+            finally
+            {
+                // Fire long process completed event
+                IsOnLongProcess = false;
+                LongProcessProgress = 0;
+                OnLongProcessProgressCompleted(EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Fill current selection with specified byte value
+        /// </summary>
+        /// <param name="val">Byte value to fill with</param>
+        public void FillWithByte(byte val)
+        {
+            if (_viewModel == null || !_viewModel.HasSelection)
+                return;
+
+            var selStart = _viewModel.SelectionStart.Value;
+            var selLength = _viewModel.SelectionLength;
+
+            FillWithByte(selStart, selLength, val);
+        }
+
+        /// <summary>
+        /// Fill specified range with byte value
+        /// </summary>
+        /// <param name="startPosition">Start position (virtual)</param>
+        /// <param name="length">Length of range to fill</param>
+        /// <param name="val">Byte value to fill with</param>
+        public void FillWithByte(long startPosition, long length, byte val)
+        {
+            if (_viewModel == null || ReadOnlyMode || length <= 0)
+                return;
+
+            if (startPosition < 0 || startPosition >= VirtualLength)
+                return;
+
+            // Fire long process started event
+            IsOnLongProcess = true;
+            OnLongProcessProgressStarted(EventArgs.Empty);
+
+            try
+            {
+                // Begin batched update for performance
+                _viewModel.BeginUpdate();
+                try
+                {
+                    for (long i = 0; i < length; i++)
+                    {
+                        long pos = startPosition + i;
+                        if (pos >= VirtualLength)
+                            break;
+
+                        // Check if we should break early (user cancelled)
+                        if (!IsOnLongProcess)
+                            break;
+
+                        // Progress reporting every 2000 bytes
+                        if (i % 2000 == 0)
+                        {
+                            LongProcessProgress = (double)i / length;
+                        }
+
+                        // Modify the byte
+                        ModifyByte(val, pos);
+                    }
+                }
+                finally
+                {
+                    _viewModel.EndUpdate();
+                }
+
+                // Update status
+                StatusText.Text = $"Filled {length} bytes with 0x{val:X2}";
+
+                // Fire fill completed event
+                OnFillWithByteCompleted(EventArgs.Empty);
+            }
+            finally
+            {
+                // Fire long process completed event
+                IsOnLongProcess = false;
+                LongProcessProgress = 0;
+                OnLongProcessProgressCompleted(EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Get all byte modifications matching the specified action
+        /// </summary>
+        /// <param name="action">ByteAction to filter by (Modified, Added, Deleted, or All)</param>
+        /// <returns>Dictionary of ByteModified objects keyed by position, or null if no provider</returns>
+        public IDictionary<long, ByteModified> GetByteModifieds(ByteAction action)
+        {
+            if (_viewModel?.Provider == null)
+                return null;
+
+            return _viewModel.Provider.GetByteModifieds(action);
+        }
+
+        #endregion
+    }
+}

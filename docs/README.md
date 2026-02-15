@@ -11,7 +11,7 @@ Complete documentation for the WPF HexEditor control project.
 ## 🏗️ Architecture
 
 - **[Solution Architecture](architecture/Solution_Architecture.md)** - Overall solution structure, services layer
-- **[HexEditorV2 Architecture](architecture/HexEditorV2.md)** - V2-specific MVVM architecture with insert mode
+- **[HexEditor Architecture](architecture/HexEditorArchitecture.md)** - V2 MVVM architecture with partial class organization
 - **[Architecture Overview](architecture/Overview.md)** - Component layers and data flow
 
 ## ⚡ Performance

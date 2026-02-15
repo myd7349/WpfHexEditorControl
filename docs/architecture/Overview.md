@@ -458,7 +458,7 @@ if (physicalPosition == segment.PhysicalPos) {
 **Documentation**:
 - [ISSUE_145_CLOSURE.md](../../issues/145_Insert_Mode_Bug.md) - Resolution summary
 - [ISSUE_HexInput_Insert_Mode.md](../../issues/HexInput_Insert_Mode_Analysis.md) - Complete analysis
-- [ARCHITECTURE_V2.md](./HexEditorV2.md) - Updated architecture docs
+- [HexEditor Architecture](./HexEditorArchitecture.md) - Updated architecture docs
 
 ### Save Data Loss Bug ✅ COMPLETELY RESOLVED
 

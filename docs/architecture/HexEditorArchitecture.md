@@ -150,9 +150,36 @@ graph LR
     style File fill:#b3e5fc
 ```
 
-### 1. HexEditorV2 (View)
+### 1. HexEditor (View)
 
-**File:** `Sources/WPFHexaEditor/HexEditorV2.xaml.cs`
+**Main File:** `Sources/WPFHexaEditor/HexEditor.xaml.cs` (3,617 lines)
+
+**Partial Class Architecture (2026-02 Refactoring):**
+
+The HexEditor control was refactored from a monolithic 6,750-line file into a modular partial class architecture for better maintainability:
+
+| Partial Class File | Lines | Responsibility |
+|--------------------|-------|----------------|
+| **HexEditor.xaml.cs** | 3,617 | Main class, properties, constructor, infrastructure |
+| **HexEditor.FileOperations.cs** | 380 | File I/O (Open, Save, Close, UpdateBarChart) |
+| **HexEditor.EditOperations.cs** | 116 | Edit ops (Undo, Redo, Copy, Cut, Paste, Select) |
+| **HexEditor.Search.cs** | 134 | Find/Replace operations |
+| **HexEditor.Bookmarks.cs** | 101 | Bookmark management |
+| **HexEditor.ByteOperations.cs** | 367 | Byte manipulation (Get, Set, Insert, Delete, Fill) |
+| **HexEditor.Events.cs** | 1,128 | Event handlers (Mouse, Keyboard, Scroll, UI updates) |
+| **HexEditor.ContextMenu.cs** | 477 | Context menu handlers + auto-scroll + column headers |
+| **HexEditor.Clipboard.cs** | 258 | Clipboard operations (Copy as Hex/ASCII/C#/C) |
+| **HexEditor.Highlights.cs** | 89 | Byte range highlighting |
+| **HexEditor.TBL.cs** | 102 | Character table support |
+| **HexEditor.StatePersistence.cs** | 110 | State save/load to XML |
+| **HexEditor.Zoom.cs** | 98 | Zoom/scale functionality |
+
+**Benefits:**
+- **46% code reduction** in main file (6,750 → 3,617 lines)
+- **Clear separation of concerns** - each file has single responsibility
+- **Easier navigation** - find functionality by category
+- **Better maintainability** - modify specific features without affecting others
+- **Team collaboration** - reduced merge conflicts
 
 **Responsibilities:**
 - WPF UserControl hosting the hex editor UI
@@ -179,6 +206,65 @@ _isEditingByte → true when first nibble typed
 _editingHighNibble → true for high nibble (F_), false for low (_F)
 _editingPosition → virtual position being edited
 _editingValue → accumulated byte value (0xF0 → 0xFF)
+```
+
+**Partial Class Organization:**
+```mermaid
+graph TB
+    subgraph "HexEditor - Partial Class Architecture"
+        Main["HexEditor.xaml.cs -Main class 3,617 lines -Properties, Constructor, Infrastructure"]
+
+        subgraph "File & Data Operations"
+            File["HexEditor.FileOperations.cs -380 lines"]
+            Byte["HexEditor.ByteOperations.cs -367 lines"]
+            Clip["HexEditor.Clipboard.cs -258 lines"]
+        end
+
+        subgraph "Editing Operations"
+            Edit["HexEditor.EditOperations.cs -116 lines"]
+            Search["HexEditor.Search.cs -134 lines"]
+        end
+
+        subgraph "UI & Events"
+            Events["HexEditor.Events.cs -1,128 lines -Mouse, Keyboard, Scroll"]
+            Context["HexEditor.ContextMenu.cs -477 lines -Menus, AutoScroll, Headers"]
+        end
+
+        subgraph "Features"
+            Book["HexEditor.Bookmarks.cs -101 lines"]
+            High["HexEditor.Highlights.cs -89 lines"]
+            TBL["HexEditor.TBL.cs -102 lines"]
+            State["HexEditor.StatePersistence.cs -110 lines"]
+            Zoom["HexEditor.Zoom.cs -98 lines"]
+        end
+    end
+
+    Main --> File
+    Main --> Byte
+    Main --> Clip
+    Main --> Edit
+    Main --> Search
+    Main --> Events
+    Main --> Context
+    Main --> Book
+    Main --> High
+    Main --> TBL
+    Main --> State
+    Main --> Zoom
+
+    style Main fill:#fff9c4
+    style File fill:#c8e6c9
+    style Byte fill:#c8e6c9
+    style Clip fill:#c8e6c9
+    style Edit fill:#e1f5ff
+    style Search fill:#e1f5ff
+    style Events fill:#ffccbc
+    style Context fill:#ffccbc
+    style Book fill:#f3e5f5
+    style High fill:#f3e5f5
+    style TBL fill:#f3e5f5
+    style State fill:#f3e5f5
+    style Zoom fill:#f3e5f5
 ```
 
 ---
@@ -1486,7 +1572,7 @@ graph TB
 | **Edit Storage** | Single ByteModified list | Separate by type (EditsManager) |
 | **Insertion Order** | FIFO (append to end) | LIFO (prepend to front) |
 | **Caching** | Minimal (WPF cache) | Multi-level (file 64KB + line 16B) |
-| **Code Structure** | ~3000 lines single file | Distributed across components |
+| **Code Structure** | ~3000 lines single file | Modular (13 partial class files) |
 | **Testability** | Low (UI coupled) | High (components isolated) |
 | **Complexity** | Lower (simpler logic) | Higher (more abstraction) |
 | **Maintainability** | Moderate | High (clear responsibilities) |
@@ -1776,8 +1862,10 @@ graph LR
 ## 📝 Document Status
 
 **Last Updated:** 2026-02-14
-**Version:** 1.0
+**Version:** 1.1
 **Status:** 🚨 CRITICAL BUGS - Save operation broken, Insert mode buggy
+**Recent Changes:**
+- ✅ **Partial Class Refactoring** (2026-02-14): Refactored HexEditor from monolithic 6,750-line file into 13 modular partial classes for better maintainability
 **Next Action:** Apply Phase 1 validation fixes from revision plan
 
 ---
