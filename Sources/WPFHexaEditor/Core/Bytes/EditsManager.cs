@@ -218,6 +218,33 @@ namespace WpfHexaEditor.Core.Bytes
             return _insertedBytes.Remove(physicalPosition);
         }
 
+        /// <summary>
+        /// Remove a specific inserted byte at a physical position by its virtual offset.
+        /// Returns true if the byte was found and removed.
+        /// </summary>
+        public bool RemoveSpecificInsertion(long physicalPosition, long virtualOffset)
+        {
+            if (!_insertedBytes.TryGetValue(physicalPosition, out var insertions))
+                return false;
+
+            // Find and remove the insertion with matching virtualOffset
+            int index = insertions.FindIndex(ib => ib.VirtualOffset == virtualOffset);
+            if (index >= 0)
+            {
+                insertions.RemoveAt(index);
+
+                // If no more insertions at this position, remove the entire entry
+                if (insertions.Count == 0)
+                {
+                    _insertedBytes.Remove(physicalPosition);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
         #endregion
 
         #region Delete Operations
@@ -228,7 +255,16 @@ namespace WpfHexaEditor.Core.Bytes
         public void DeleteByte(long physicalPosition)
         {
             if (physicalPosition < 0)
-                throw new ArgumentOutOfRangeException(nameof(physicalPosition));
+                throw new ArgumentOutOfRangeException(nameof(physicalPosition),
+                    $"Physical position cannot be negative: {physicalPosition}");
+
+            // CRITICAL: Don't allow marking positions as deleted beyond reasonable bounds
+            // This prevents VirtualLength calculation from going wildly wrong
+            // Note: We allow positions slightly beyond physical file length to handle edge cases,
+            // but not arbitrarily large positions
+            if (physicalPosition > long.MaxValue / 2)
+                throw new ArgumentOutOfRangeException(nameof(physicalPosition),
+                    $"Physical position is unreasonably large: {physicalPosition}");
 
             _deletedPositions.Add(physicalPosition);
 

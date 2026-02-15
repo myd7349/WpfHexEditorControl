@@ -302,20 +302,36 @@ namespace WpfHexaEditor.Core.Bytes
             }
 
             // Check remaining gap after last segment
+            // CRITICAL FIX: Must skip over deleted bytes in the remaining gap
             if (currentPhysical < physicalFileLength)
             {
-                long remaining = physicalFileLength - currentPhysical;
-                if (virtualPosition < currentVirtual + remaining)
-                {
-                    long offset = virtualPosition - currentVirtual;
-                    long physPos = currentPhysical + offset;
+                // Scan through remaining bytes, skipping deleted ones
+                long scanVirtual = currentVirtual;
+                long scanPhysical = currentPhysical;
 
-                    if (_cacheValid)
+                while (scanPhysical < physicalFileLength && scanVirtual <= virtualPosition)
+                {
+                    // Check if this physical position is deleted
+                    bool isDeleted = _editsManager.IsDeleted(scanPhysical);
+
+                    if (!isDeleted)
                     {
-                        _virtualToPhysicalCache[virtualPosition] = (physPos, false);
-                        _physicalToVirtualCache[physPos] = virtualPosition;
+                        // This is a valid (non-deleted) byte
+                        if (scanVirtual == virtualPosition)
+                        {
+                            // Found it!
+                            if (_cacheValid)
+                            {
+                                _virtualToPhysicalCache[virtualPosition] = (scanPhysical, false);
+                                _physicalToVirtualCache[scanPhysical] = virtualPosition;
+                            }
+                            return (scanPhysical, false);
+                        }
+                        scanVirtual++;
                     }
-                    return (physPos, false);
+                    // else: deleted byte, don't increment scanVirtual
+
+                    scanPhysical++;
                 }
             }
 
