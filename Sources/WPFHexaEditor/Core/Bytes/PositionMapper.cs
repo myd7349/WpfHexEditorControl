@@ -475,8 +475,8 @@ namespace WpfHexaEditor.Core.Bytes
 
             // CRITICAL VALIDATION: Detect corruption early
             // VirtualLength should never be wildly different from physical length
-            // A reasonable upper bound is physical + 100MB of insertions
-            const long MaxReasonableInsertions = 100_000_000; // 100 MB
+            // A reasonable upper bound is physical + 1MB of insertions
+            const long MaxReasonableInsertions = 1_000_000; // 1 MB
             if (insertedCount > MaxReasonableInsertions)
             {
                 // DIAGNOSTIC: Find which physical position has massive insertions
