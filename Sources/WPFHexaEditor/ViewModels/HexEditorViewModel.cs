@@ -483,8 +483,21 @@ namespace WpfHexaEditor.ViewModels
                 EndUpdate();
             }
 
-            SelectionStart = VirtualPosition.Invalid;
-            SelectionStop = VirtualPosition.Invalid;
+            // UX IMPROVEMENT: Position cursor at the byte after deletion (or at end if deleted last bytes)
+            // This keeps the cursor in a useful position instead of clearing the selection
+            long newPosition = Math.Min(start, Math.Max(0, VirtualLength - 1));
+
+            if (VirtualLength > 0)
+            {
+                SelectionStart = new VirtualPosition(newPosition);
+                SelectionStop = VirtualPosition.Invalid; // Clear selection range
+            }
+            else
+            {
+                // File is now empty
+                SelectionStart = VirtualPosition.Invalid;
+                SelectionStop = VirtualPosition.Invalid;
+            }
         }
 
         /// <summary>
@@ -900,6 +913,16 @@ namespace WpfHexaEditor.ViewModels
         {
             // No cache in this simple implementation
             // TODO: Implement caching for better performance
+        }
+
+        /// <summary>
+        /// Gets the underlying ByteProvider for advanced operations.
+        /// V2 ENHANCED: Exposes ByteProvider for SearchModule and other advanced features.
+        /// </summary>
+        /// <returns>The ByteProvider instance, or null if not available</returns>
+        public Core.Bytes.ByteProvider GetByteProvider()
+        {
+            return _provider;
         }
 
         #endregion
