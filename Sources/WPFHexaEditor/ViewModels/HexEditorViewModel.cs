@@ -454,6 +454,22 @@ namespace WpfHexaEditor.ViewModels
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
 
+            // UX FIX: Position cursor at the byte after deletion (or at end if deleted last byte)
+            // This activates/focuses the cursor so user doesn't need to click manually
+            long virtualLen = VirtualLength;
+            if (virtualLen > 0)
+            {
+                long newPosition = Math.Min(virtualPos.Value, Math.Max(0, virtualLen - 1));
+                SelectionStart = new VirtualPosition(newPosition);
+                SelectionStop = VirtualPosition.Invalid; // Clear selection range
+            }
+            else
+            {
+                // File is empty after deletion
+                SelectionStart = VirtualPosition.Invalid;
+                SelectionStop = VirtualPosition.Invalid;
+            }
+
             // OPTIMIZATION: Since delete shifts all following bytes, we need full refresh
             ClearLineCache();
             RefreshVisibleLines();
