@@ -457,8 +457,8 @@ namespace WpfHexaEditor.Core.Bytes
         public long GetVirtualLength(long physicalFileLength)
         {
             // CRITICAL FIX: Validate cached value before returning it!
-            // If cache contains corrupted value (>1GB), recalculate
-            const long MaxReasonableLength = 1_000_000_000; // 1GB
+            // If cache contains corrupted value (>10MB), recalculate to trigger validation
+            const long MaxReasonableLength = 10_000_000; // 10MB (must be > MaxReasonableInsertions)
             if (_cacheValid && _cachedVirtualLength >= 0 && _cachedVirtualLength < MaxReasonableLength)
                 return _cachedVirtualLength;
 
