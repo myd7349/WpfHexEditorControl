@@ -1,6 +1,8 @@
 ﻿<!--
-    Apache 2.0  - 2016-2018
+    Apache 2.0  - 2016-2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Sonnet 4.5
+    V2 MVVM Architecture - Data binding instead of code-behind events
 -->
 
 <UserControl
@@ -10,9 +12,15 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:p="clr-namespace:WpfHexaEditor.Properties"
+    xmlns:converters="clr-namespace:WpfHexaEditor.Core.Converters"
     Width="100"
     Height="24"
     mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:BoolInverterConverter x:Key="InverseBoolConverter" />
+    </UserControl.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="13" />
@@ -24,11 +32,12 @@
             <RowDefinition />
         </Grid.RowDefinitions>
 
+        <!-- Up Button - Bound to IncrementCommand -->
         <RepeatButton
             Grid.Column="2"
             Padding="0"
             BorderBrush="#FFCDCBCB"
-            Click="UpButton_Click">
+            Command="{Binding IncrementCommand}">
             <Grid>
                 <TextBlock
                     Margin="0,-1,0,0"
@@ -37,12 +46,13 @@
             </Grid>
         </RepeatButton>
 
+        <!-- Down Button - Bound to DecrementCommand -->
         <RepeatButton
             Grid.Row="1"
             Grid.Column="2"
             Padding="0"
             BorderBrush="#FFCDCBCB"
-            Click="DownButton_Click">
+            Command="{Binding DecrementCommand}">
             <Grid>
                 <TextBlock
                     Margin="0,-1,0,0"
@@ -51,6 +61,7 @@
             </Grid>
         </RepeatButton>
 
+        <!-- TextBox - Two-way binding to DisplayValue -->
         <TextBox
             x:Name="HexTextBox"
             Grid.Row="0"
@@ -59,22 +70,28 @@
             VerticalContentAlignment="Center"
             BorderBrush="{x:Null}"
             Focusable="True"
+            IsReadOnly="{Binding IsReadOnly}"
             IsUndoEnabled="False"
             KeyDown="HexTextBox_KeyDown"
             MaxLength="15"
             MaxLines="1"
             PreviewKeyDown="HexTextBox_PreviewKeyDown"
             TabIndex="1"
-            Text="0"
-            TextChanged="HexTextBox_TextChanged">
+            Text="{Binding DisplayValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+            ToolTip="{Binding LongValue}">
             <TextBox.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Click="CopyHexaMenuItem_Click" Header="{x:Static p:Resources.CopyAsHexadecimalString}" />
-                    <MenuItem Click="CopyLongMenuItem_Click" Header="{x:Static p:Resources.CopyAsDecimalString}" />
+                    <MenuItem
+                        Command="{Binding CopyHexCommand}"
+                        Header="{x:Static p:Resources.CopyAsHexadecimalString}" />
+                    <MenuItem
+                        Command="{Binding CopyDecimalCommand}"
+                        Header="{x:Static p:Resources.CopyAsDecimalString}" />
                 </ContextMenu>
             </TextBox.ContextMenu>
         </TextBox>
 
+        <!-- 0x Label -->
         <Label
             Grid.Row="0"
             Grid.RowSpan="2"

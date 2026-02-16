@@ -1,170 +1,274 @@
 ﻿//////////////////////////////////////////////
-// Apache 2.0  - 2017-2019
+// Apache 2.0  - 2017-2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.5
+// V2 MVVM Architecture - Minimal code-behind with ViewModel integration
 //////////////////////////////////////////////
 
 using System;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexaEditor.ViewModels;
 
 namespace WpfHexaEditor
 {
     /// <summary>
-    /// Control for enter hex value and deal with.
+    /// HexBox control - V2 MVVM Architecture.
+    /// Uses HexBoxViewModel for all business logic.
+    /// Maintains V1 DependencyProperty API for backward compatibility.
     /// </summary>
-    public partial class HexBox
+    public partial class HexBox : UserControl
     {
-        public HexBox() => InitializeComponent();
-
-        #region Events
-        /// <summary>
-        /// Occurs when value are changed.
-        /// </summary>
-        public event EventHandler ValueChanged;
-
-        #endregion
-
-        #region Properties
+        #region Dependency Properties (V1 Compatibility)
 
         /// <summary>
-        /// Get hexadecimal value of LongValue
+        /// LongValue DependencyProperty for backward compatibility.
+        /// Syncs with ViewModel.LongValue.
         /// </summary>
-        public string HexValue => ByteConverters.LongToHex(LongValue);
+        public static readonly DependencyProperty LongValueProperty =
+            DependencyProperty.Register(
+                nameof(LongValue),
+                typeof(long),
+                typeof(HexBox),
+                new FrameworkPropertyMetadata(
+                    0L,
+                    FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                    LongValue_Changed));
 
-        /// <summary>
-        /// Get or set maximum value
-        /// </summary>
-        public long MaximumValue
-        {
-            get => (long)GetValue(MaximumValueProperty);
-            set => SetValue(MaximumValueProperty, value);
-        }
-
-        public static readonly DependencyProperty MaximumValueProperty =
-            DependencyProperty.Register(nameof(MaximumValue), typeof(long), typeof(HexBox),
-                new FrameworkPropertyMetadata(long.MaxValue, MaximumValue_Changed));
-
-        private static void MaximumValue_Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not HexBox ctrl) return;
-            if (e.NewValue == e.OldValue) return;
-            if (ctrl.LongValue <= (long)e.NewValue) return;
-
-            ctrl.UpdateValueFrom((long)e.NewValue);
-        }
-
-        /// <summary>
-        /// Get or set the hex value show in control
-        /// </summary>
         public long LongValue
         {
             get => (long)GetValue(LongValueProperty);
             set => SetValue(LongValueProperty, value);
         }
 
-        public static readonly DependencyProperty LongValueProperty =
-            DependencyProperty.Register(nameof(LongValue), typeof(long), typeof(HexBox),
-                new FrameworkPropertyMetadata(0L, LongValue_Changed, LongValue_CoerceValue));
-
-        private static object LongValue_CoerceValue(DependencyObject d, object baseValue)
-        {
-            var ctrl = d as HexBox;
-
-            var newValue = (long)baseValue;
-
-            if (newValue > ctrl.MaximumValue) newValue = ctrl.MaximumValue;
-            if (newValue < 0) newValue = 0;
-
-            return newValue;
-        }
-
         private static void LongValue_Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not HexBox ctrl) return;
+            if (d is not HexBox control || control.ViewModel == null) return;
             if (e.NewValue == e.OldValue) return;
 
-            var val = ByteConverters.LongToHex((long)e.NewValue);
+            // Sync DependencyProperty → ViewModel (avoid circular updates)
+            if (control._isSyncingFromViewModel) return;
 
-            if (val == "00000000")
-                val = "0";
-            else if (val.Length >= 3)
-                val = val.TrimStart('0');
-
-            ctrl.HexTextBox.Text = val.ToUpperInvariant();
-            ctrl.HexTextBox.CaretIndex = ctrl.HexTextBox.Text.Length;
-            ctrl.ToolTip = e.NewValue;
-
-            ctrl.ValueChanged?.Invoke(ctrl, EventArgs.Empty);
+            control._isSyncingFromDP = true;
+            try
+            {
+                control.ViewModel.LongValue = (long)e.NewValue;
+            }
+            finally
+            {
+                control._isSyncingFromDP = false;
+            }
         }
 
-        #endregion Properties       
-
-        #region Methods
-
         /// <summary>
-        /// Substract one to the LongValue
+        /// MaximumValue DependencyProperty for backward compatibility.
+        /// Syncs with ViewModel.MaximumValue.
         /// </summary>
-        private void SubstractOne() => LongValue--;
+        public static readonly DependencyProperty MaximumValueProperty =
+            DependencyProperty.Register(
+                nameof(MaximumValue),
+                typeof(long),
+                typeof(HexBox),
+                new FrameworkPropertyMetadata(long.MaxValue, MaximumValue_Changed));
 
-        /// <summary>
-        /// Add one to the LongValue
-        /// </summary>
-        private void AddOne() => LongValue++;
-
-        /// <summary>
-        /// Update value from decimal long
-        /// </summary>
-        private void UpdateValueFrom(long value) => LongValue = value;
-
-        /// <summary>
-        /// Update value from hex string
-        /// </summary>
-        private void UpdateValueFrom(string value)
+        public long MaximumValue
         {
-            var (success, val) = ByteConverters.HexLiteralToLong(value);
-
-            LongValue = success ? val : 0;
+            get => (long)GetValue(MaximumValueProperty);
+            set => SetValue(MaximumValueProperty, value);
         }
 
-        #endregion Methods
+        private static void MaximumValue_Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not HexBox control || control.ViewModel == null) return;
+            if (e.NewValue == e.OldValue) return;
 
-        #region Controls events
+            // Sync DependencyProperty → ViewModel
+            if (control._isSyncingFromViewModel) return;
 
-        private void HexTextBox_PreviewKeyDown(object sender, KeyEventArgs e) =>
-            e.Handled = !KeyValidator.IsHexKey(e.Key) &&
-                !KeyValidator.IsBackspaceKey(e.Key) &&
-                !KeyValidator.IsDeleteKey(e.Key) &&
-                !KeyValidator.IsArrowKey(e.Key) &&
-                !KeyValidator.IsTabKey(e.Key) &&
-                !KeyValidator.IsEnterKey(e.Key);
+            control._isSyncingFromDP = true;
+            try
+            {
+                control.ViewModel.MaximumValue = (long)e.NewValue;
+            }
+            finally
+            {
+                control._isSyncingFromDP = false;
+            }
+        }
 
+        #endregion
+
+        #region Fields
+
+        private bool _isSyncingFromViewModel; // Prevent circular updates
+        private bool _isSyncingFromDP; // Prevent circular updates
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// ViewModel instance (V2 architecture)
+        /// </summary>
+        public HexBoxViewModel ViewModel { get; private set; }
+
+        /// <summary>
+        /// V1 Compatibility: Get hexadecimal value
+        /// </summary>
+        public string HexValue => ViewModel?.HexValue ?? "0";
+
+        #endregion
+
+        #region Events (V1 Compatibility)
+
+        /// <summary>
+        /// Raised when value changes (V1 compatibility)
+        /// </summary>
+        public event EventHandler ValueChanged;
+
+        #endregion
+
+        #region Constructor
+
+        public HexBox()
+        {
+            // Create ViewModel BEFORE InitializeComponent
+            ViewModel = new HexBoxViewModel();
+            DataContext = ViewModel;
+
+            InitializeComponent();
+
+            // Subscribe to ViewModel events AFTER InitializeComponent
+            ViewModel.ValueChanged += OnViewModelValueChanged;
+            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        /// <summary>
+        /// Handle ViewModel.ValueChanged event
+        /// </summary>
+        private void OnViewModelValueChanged(object sender, EventArgs e)
+        {
+            // Sync ViewModel → DependencyProperty (for V1 compatibility)
+            if (!_isSyncingFromDP && LongValue != ViewModel.LongValue)
+            {
+                _isSyncingFromViewModel = true;
+                try
+                {
+                    SetValue(LongValueProperty, ViewModel.LongValue);
+                }
+                finally
+                {
+                    _isSyncingFromViewModel = false;
+                }
+            }
+
+            // Raise V1 event for backward compatibility
+            ValueChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Handle ViewModel property changes
+        /// </summary>
+        private void OnViewModelPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // Sync ViewModel → DependencyProperties
+            if (_isSyncingFromDP) return;
+
+            _isSyncingFromViewModel = true;
+            try
+            {
+                switch (e.PropertyName)
+                {
+                    case nameof(HexBoxViewModel.LongValue):
+                        if (LongValue != ViewModel.LongValue)
+                            SetValue(LongValueProperty, ViewModel.LongValue);
+                        break;
+
+                    case nameof(HexBoxViewModel.MaximumValue):
+                        if (MaximumValue != ViewModel.MaximumValue)
+                            SetValue(MaximumValueProperty, ViewModel.MaximumValue);
+                        break;
+                }
+            }
+            finally
+            {
+                _isSyncingFromViewModel = false;
+            }
+        }
+
+        /// <summary>
+        /// Validate keyboard input (V1 logic preserved).
+        /// Only allow hex keys, backspace, delete, arrows, tab, enter.
+        /// This is a UI concern, so it stays in code-behind.
+        /// </summary>
+        private void HexTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            // Allow all navigation/editing keys
+            if (KeyValidator.IsHexKey(e.Key) ||
+                KeyValidator.IsBackspaceKey(e.Key) ||
+                KeyValidator.IsDeleteKey(e.Key) ||
+                KeyValidator.IsArrowKey(e.Key) ||
+                KeyValidator.IsTabKey(e.Key) ||
+                KeyValidator.IsEnterKey(e.Key))
+            {
+                e.Handled = false;
+                return;
+            }
+
+            // Block all other keys
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// Handle arrow keys for increment/decrement (V1 compatibility)
+        /// </summary>
         private void HexTextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Up)
-                AddOne();
-
-            if (e.Key == Key.Down)
-                SubstractOne();
-
-            HexTextBox.Focus();
+            if (e.Key == Key.Up && ViewModel.IncrementCommand.CanExecute(null))
+            {
+                ViewModel.IncrementCommand.Execute(null);
+                HexTextBox.Focus();
+            }
+            else if (e.Key == Key.Down && ViewModel.DecrementCommand.CanExecute(null))
+            {
+                ViewModel.DecrementCommand.Execute(null);
+                HexTextBox.Focus();
+            }
         }
 
-        private void UpButton_Click(object sender, RoutedEventArgs e) => AddOne();
+        #endregion
 
-        private void DownButton_Click(object sender, RoutedEventArgs e) => SubstractOne();
+        #region Public Methods (V1 Compatibility)
 
-        private void HexTextBox_TextChanged(object sender, TextChangedEventArgs e) =>
-            UpdateValueFrom(HexTextBox.Text);
+        /// <summary>
+        /// Increment value by 1 (V1 compatibility)
+        /// </summary>
+        public void AddOne()
+        {
+            if (ViewModel.IncrementCommand.CanExecute(null))
+            {
+                ViewModel.IncrementCommand.Execute(null);
+            }
+        }
 
-        private void CopyHexaMenuItem_Click(object sender, RoutedEventArgs e) =>
-            Clipboard.SetText($"0x{HexTextBox.Text}");
+        /// <summary>
+        /// Decrement value by 1 (V1 compatibility)
+        /// </summary>
+        public void SubstractOne()
+        {
+            if (ViewModel.DecrementCommand.CanExecute(null))
+            {
+                ViewModel.DecrementCommand.Execute(null);
+            }
+        }
 
-        private void CopyLongMenuItem_Click(object sender, RoutedEventArgs e) =>
-            Clipboard.SetText(LongValue.ToString());
-
-        #endregion Controls events
+        #endregion
     }
 }
