@@ -99,6 +99,24 @@ Plan détaillé en français pour le portage vers Avalonia.
 
 ---
 
+### 6. [Implementation Roadmap](./IMPLEMENTATION_ROADMAP.md) 🗺️
+**Complete implementation roadmap based on Strategy C**
+
+Detailed 11-week implementation plan with multi-platform NuGet strategy.
+
+**Contains:**
+- Multi-platform support matrix (Core, WPF, Avalonia)
+- NuGet package architecture (v3.0 and v4.0)
+- Complete phase-by-phase timeline (Week 0-11)
+- Transition period roadmap (v3.0 → v4.0)
+- Sample app creation plan
+- CI/CD pipeline configuration
+- Success metrics and risk mitigation
+
+**Perfect for:** Project managers, implementation teams
+
+---
+
 ## 🎯 Quick Links by Role
 
 ### I'm a Developer Using the Control
