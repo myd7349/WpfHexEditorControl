@@ -96,6 +96,19 @@ namespace WpfHexaEditor.Controls
         private bool _isMouseDown = false;
         private long? _dragStartPosition = null;
 
+        // Refresh time tracking
+        private System.Diagnostics.Stopwatch _refreshStopwatch = new System.Diagnostics.Stopwatch();
+        private long _lastRefreshTimeMs = 0;
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Event raised when the refresh time is updated after rendering
+        /// </summary>
+        public event EventHandler<long> RefreshTimeUpdated;
+
         #endregion
 
         #region Constructor
@@ -521,10 +534,16 @@ namespace WpfHexaEditor.Controls
 
         protected override void OnRender(DrawingContext dc)
         {
+            // Start timing the refresh
+            _refreshStopwatch.Restart();
+
             base.OnRender(dc);
 
             if (_linesCached == null || _linesCached.Count == 0)
+            {
+                _refreshStopwatch.Stop();
                 return;
+            }
 
             // Draw white background
             dc.DrawRectangle(Brushes.White, null, new Rect(0, 0, ActualWidth, ActualHeight));
@@ -609,6 +628,11 @@ namespace WpfHexaEditor.Controls
 
                 y += _lineHeight;
             }
+
+            // Stop timing and raise event
+            _refreshStopwatch.Stop();
+            _lastRefreshTimeMs = _refreshStopwatch.ElapsedMilliseconds;
+            RefreshTimeUpdated?.Invoke(this, _lastRefreshTimeMs);
         }
 
         private void DrawCustomBackgroundBlocks(DrawingContext dc)

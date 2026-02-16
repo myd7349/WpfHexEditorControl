@@ -114,6 +114,7 @@ namespace WpfHexaEditor
                 HexViewport.ByteDoubleClicked += HexViewport_ByteDoubleClicked;
                 HexViewport.ByteDragSelection += HexViewport_ByteDragSelection;
                 HexViewport.KeyboardNavigation += HexViewport_KeyboardNavigation;
+                HexViewport.RefreshTimeUpdated += HexViewport_RefreshTimeUpdated;
             }
 
             // Initialize zoom system
@@ -300,6 +301,17 @@ namespace WpfHexaEditor
             // Update UI
             UpdateSelectionInfo();
             UpdatePositionInfo();
+        }
+
+        /// <summary>
+        /// Handle refresh time update from HexViewport
+        /// </summary>
+        private void HexViewport_RefreshTimeUpdated(object sender, long refreshTimeMs)
+        {
+            if (RefreshTimeText != null)
+            {
+                RefreshTimeText.Text = $"Refresh: {refreshTimeMs} ms";
+            }
         }
 
         #region Public Events
@@ -1082,6 +1094,19 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty ShowBytesPerLineInStatusBarProperty =
             DependencyProperty.Register(nameof(ShowBytesPerLineInStatusBar), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(true));
+
+        /// <summary>
+        /// Show or hide refresh time in status bar
+        /// </summary>
+        public bool ShowRefreshTimeInStatusBar
+        {
+            get => (bool)GetValue(ShowRefreshTimeInStatusBarProperty);
+            set => SetValue(ShowRefreshTimeInStatusBarProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowRefreshTimeInStatusBarProperty =
+            DependencyProperty.Register(nameof(ShowRefreshTimeInStatusBar), typeof(bool), typeof(HexEditor),
                 new PropertyMetadata(true));
 
         #endregion

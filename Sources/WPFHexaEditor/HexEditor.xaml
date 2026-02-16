@@ -343,6 +343,7 @@
                     <MenuItem Header="Position" IsCheckable="True" IsChecked="{Binding ShowPositionInStatusBar, Mode=TwoWay}"/>
                     <MenuItem Header="Edit Mode" IsCheckable="True" IsChecked="{Binding ShowEditModeInStatusBar, Mode=TwoWay}"/>
                     <MenuItem Header="Bytes Per Line" IsCheckable="True" IsChecked="{Binding ShowBytesPerLineInStatusBar, Mode=TwoWay}"/>
+                    <MenuItem Header="Refresh Time" IsCheckable="True" IsChecked="{Binding ShowRefreshTimeInStatusBar, Mode=TwoWay}"/>
                 </ContextMenu>
             </StatusBar.ContextMenu>
 
@@ -373,6 +374,11 @@
 
             <StatusBarItem Visibility="{Binding ShowBytesPerLineInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}">
                 <TextBlock x:Name="BytesPerLineText" Text="Bytes/Line: 16"/>
+            </StatusBarItem>
+            <Separator Visibility="{Binding ShowBytesPerLineInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+            <StatusBarItem Visibility="{Binding ShowRefreshTimeInStatusBar, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock x:Name="RefreshTimeText" Text="Refresh: 0 ms"/>
             </StatusBarItem>
         </StatusBar>
     </Grid>
