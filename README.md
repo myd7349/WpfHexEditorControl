@@ -5,6 +5,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorControl)
 [![C#](https://img.shields.io/badge/C%23-12.0-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Languages](https://img.shields.io/badge/Languages-9-success?logo=googletranslate&logoColor=white)](https://github.com/abbaye/WpfHexEditorControl#-key-highlights)
 [![V2 Architecture](https://img.shields.io/badge/Architecture-V2%20MVVM-orange?logo=github)](https://github.com/abbaye/WpfHexEditorControl/wiki)
 [![Performance](https://img.shields.io/badge/Performance-99%25%20Faster-success?logo=lightning)](https://github.com/abbaye/WpfHexEditorControl#-performance)
 
@@ -35,7 +36,7 @@
 - **🔧 Easy Integration** - Drop-in WPF/WinForms control, works out of the box
 - **🎨 Fully Customizable** - Colors, fonts, themes, and display modes
 - **⚡ Production Ready** - Battle-tested with 80+ unit tests and comprehensive samples
-- **🌍 Localized** - 6 languages: English, French, Russian, Polish, Portuguese, Chinese
+- **🌍 Multilingual** - 9 languages with instant switching: 🇺🇸 English, 🇪🇸 Spanish (ES/LATAM), 🇫🇷 French (FR/CA), 🇵🇱 Polish, 🇧🇷 Portuguese, 🇷🇺 Russian, 🇨🇳 Chinese
 
 ### 🆕 What's New in V2?
 

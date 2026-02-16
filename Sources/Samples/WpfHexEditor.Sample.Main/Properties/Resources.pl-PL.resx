@@ -965,7 +965,7 @@
     <value>Kod</value>
   </data>
   <data name="Options_Language_RestartWarning" xml:space="preserve">
-    <value>Uruchom aplikację ponownie po zmianie języka.</value>
+    <value>Zmiany języka są stosowane natychmiast - nie wymaga ponownego uruchomienia! 🚀</value>
   </data>
 
   <!-- ==== MESSAGE BOX STRINGS (from code-behind) ==== -->
@@ -990,13 +990,11 @@
     <comment>Language unchanged message text</comment>
   </data>
   <data name="Message_LanguageChanged_Title" xml:space="preserve">
-    <value>Język zmieniony - wymagane ponowne uruchomienie</value>
+    <value>Język zmieniony</value>
     <comment>Language changed message box title</comment>
   </data>
   <data name="Message_LanguageChanged_Text" xml:space="preserve">
-    <value>Język zmieniony na {0}.
-
-Uruchom aplikację ponownie, aby zastosować nowy język.</value>
+    <value>Pomyślnie zmieniono język na {0}!</value>
     <comment>Language changed message text</comment>
   </data>
   <data name="Message_NoLanguageSelected_Title" xml:space="preserve">

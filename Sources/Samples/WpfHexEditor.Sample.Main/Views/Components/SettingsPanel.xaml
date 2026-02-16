@@ -12,7 +12,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:WpfHexEditor.Sample.Main.Views.Components"
-             xmlns:properties="clr-namespace:WpfHexEditor.Sample.Main.Properties"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="400">
 
@@ -29,7 +28,7 @@
             <!-- Header -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
                 <TextBlock Text="⚙️" FontSize="28" Margin="0,0,12,0"/>
-                <TextBlock Text="{x:Static properties:Resources.Settings_Title}"
+                <TextBlock Text="{DynamicResource Settings_Title}"
                           FontSize="22"
                           FontWeight="Bold"
                           Foreground="{StaticResource ForegroundBrush}"
@@ -39,7 +38,7 @@
             <!-- Theme Section -->
             <Border Style="{StaticResource GlassPanelStyle}" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="{x:Static properties:Resources.Settings_Theme_Title}"
+                    <TextBlock Text="{DynamicResource Settings_Theme_Title}"
                               FontSize="16"
                               FontWeight="SemiBold"
                               Foreground="{StaticResource ForegroundBrush}"
@@ -99,7 +98,7 @@
             <!-- Language Section -->
             <Border Style="{StaticResource GlassPanelStyle}" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="{x:Static properties:Resources.Settings_Language_Title}"
+                    <TextBlock Text="{DynamicResource Settings_Language_Title}"
                               FontSize="16"
                               FontWeight="SemiBold"
                               Foreground="{StaticResource ForegroundBrush}"
@@ -120,29 +119,29 @@
             <!-- Search Options Section -->
             <Border Style="{StaticResource GlassPanelStyle}" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="{x:Static properties:Resources.Settings_Search_Title}"
+                    <TextBlock Text="{DynamicResource Settings_Search_Title}"
                               FontSize="16"
                               FontWeight="SemiBold"
                               Foreground="{StaticResource ForegroundBrush}"
                               Margin="0,0,0,12"/>
 
-                    <CheckBox Content="{x:Static properties:Resources.Settings_Search_EnableParallel}"
+                    <CheckBox Content="{DynamicResource Settings_Search_EnableParallel}"
                              IsChecked="{Binding EnableParallelSearch}"
                              Foreground="{StaticResource ForegroundBrush}"
                              Margin="0,0,0,8"/>
 
-                    <CheckBox Content="{x:Static properties:Resources.Settings_Search_UseWildcard}"
+                    <CheckBox Content="{DynamicResource Settings_Search_UseWildcard}"
                              IsChecked="{Binding UseWildcardSearch}"
                              Foreground="{StaticResource ForegroundBrush}"
                              Margin="0,0,0,8"/>
 
-                    <CheckBox Content="{x:Static properties:Resources.Settings_Search_HighlightMatches}"
+                    <CheckBox Content="{DynamicResource Settings_Search_HighlightMatches}"
                              IsChecked="{Binding HighlightAllMatches}"
                              Foreground="{StaticResource ForegroundBrush}"
                              Margin="0,0,0,12"/>
 
                     <StackPanel Margin="0,0,0,0">
-                        <TextBlock Text="{x:Static properties:Resources.Settings_Search_ResultLimit}"
+                        <TextBlock Text="{DynamicResource Settings_Search_ResultLimit}"
                                   FontSize="12"
                                   Foreground="{StaticResource ForegroundSecondaryBrush}"
                                   Margin="0,0,0,8"/>
@@ -175,29 +174,29 @@
             <!-- Display Options Section -->
             <Border Style="{StaticResource GlassPanelStyle}" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="{x:Static properties:Resources.Settings_Display_Title}"
+                    <TextBlock Text="{DynamicResource Settings_Display_Title}"
                               FontSize="16"
                               FontWeight="SemiBold"
                               Foreground="{StaticResource ForegroundBrush}"
                               Margin="0,0,0,12"/>
 
-                    <CheckBox Content="{x:Static properties:Resources.Settings_Display_ShowLineNumbers}"
+                    <CheckBox Content="{DynamicResource Settings_Display_ShowLineNumbers}"
                              IsChecked="{Binding ShowLineNumbers}"
                              Foreground="{StaticResource ForegroundBrush}"
                              Margin="0,0,0,8"/>
 
-                    <CheckBox Content="{x:Static properties:Resources.Settings_Display_ShowScrollMarkers}"
+                    <CheckBox Content="{DynamicResource Settings_Display_ShowScrollMarkers}"
                              IsChecked="{Binding ShowScrollMarkers}"
                              Foreground="{StaticResource ForegroundBrush}"
                              Margin="0,0,0,8"/>
 
-                    <CheckBox Content="{x:Static properties:Resources.Settings_Display_ShowStatusBar}"
+                    <CheckBox Content="{DynamicResource Settings_Display_ShowStatusBar}"
                              IsChecked="{Binding ShowStatusBar}"
                              Foreground="{StaticResource ForegroundBrush}"
                              Margin="0,0,0,12"/>
 
                     <StackPanel>
-                        <TextBlock Text="{x:Static properties:Resources.Settings_Display_BytesPerLine}"
+                        <TextBlock Text="{DynamicResource Settings_Display_BytesPerLine}"
                                   FontSize="12"
                                   Foreground="{StaticResource ForegroundSecondaryBrush}"
                                   Margin="0,0,0,8"/>
@@ -214,7 +213,7 @@
             <!-- Performance Info Section -->
             <Border Style="{StaticResource GlassPanelStyle}" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Text="{x:Static properties:Resources.Settings_Performance_Title}"
+                    <TextBlock Text="{DynamicResource Settings_Performance_Title}"
                               FontSize="16"
                               FontWeight="SemiBold"
                               Foreground="{StaticResource ForegroundBrush}"
@@ -224,22 +223,22 @@
                            CornerRadius="8"
                            Padding="12,8"
                            Margin="0,0,0,8">
-                        <TextBlock Text="{x:Static properties:Resources.Settings_Performance_V2Active}"
+                        <TextBlock Text="{DynamicResource Settings_Performance_V2Active}"
                                   FontSize="12"
                                   FontWeight="Bold"
                                   Foreground="#000000"
                                   HorizontalAlignment="Center"/>
                     </Border>
 
-                    <TextBlock Text="{x:Static properties:Resources.Settings_Performance_Feature1}"
+                    <TextBlock Text="{DynamicResource Settings_Performance_Feature1}"
                               FontSize="11"
                               Foreground="{StaticResource ForegroundSecondaryBrush}"
                               Margin="0,0,0,4"/>
-                    <TextBlock Text="{x:Static properties:Resources.Settings_Performance_Feature2}"
+                    <TextBlock Text="{DynamicResource Settings_Performance_Feature2}"
                               FontSize="11"
                               Foreground="{StaticResource ForegroundSecondaryBrush}"
                               Margin="0,0,0,4"/>
-                    <TextBlock Text="{x:Static properties:Resources.Settings_Performance_Feature3}"
+                    <TextBlock Text="{DynamicResource Settings_Performance_Feature3}"
                               FontSize="11"
                               Foreground="{StaticResource ForegroundSecondaryBrush}"/>
                 </StackPanel>
@@ -253,13 +252,13 @@
                 </Grid.ColumnDefinitions>
 
                 <Button Grid.Column="0"
-                       Content="{x:Static properties:Resources.Settings_Button_ResetDefaults}"
+                       Content="{DynamicResource Settings_Button_ResetDefaults}"
                        Command="{Binding ResetToDefaultsCommand}"
                        Style="{StaticResource ModernButtonStyle}"
                        Margin="0,0,8,0"/>
 
                 <Button Grid.Column="1"
-                       Content="{x:Static properties:Resources.Settings_Button_SaveSettings}"
+                       Content="{DynamicResource Settings_Button_SaveSettings}"
                        Command="{Binding SaveSettingsCommand}"
                        Style="{StaticResource AccentButtonStyle}"
                        Margin="8,0,0,0"/>

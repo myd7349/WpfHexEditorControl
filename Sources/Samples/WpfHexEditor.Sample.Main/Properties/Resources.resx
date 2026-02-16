@@ -471,8 +471,8 @@
     <comment>Options dialog - ListView column header for Code</comment>
   </data>
   <data name="Options_Language_RestartWarning" xml:space="preserve">
-    <value>Please restart the application after changing the language.</value>
-    <comment>Options dialog - Language change warning message</comment>
+    <value>Language changes apply instantly - no restart required! 🚀</value>
+    <comment>Options dialog - Language change info message</comment>
   </data>
   <data name="Options_Language_Warning" xml:space="preserve">
     <value>Please restart the application after changing the language.</value>
@@ -1031,13 +1031,11 @@
     <comment>Language unchanged message text</comment>
   </data>
   <data name="Message_LanguageChanged_Title" xml:space="preserve">
-    <value>Language Changed - Restart Required</value>
+    <value>Language Changed</value>
     <comment>Language changed message box title</comment>
   </data>
   <data name="Message_LanguageChanged_Text" xml:space="preserve">
-    <value>Language changed to {0}.
-
-Please restart the application to apply the new language.</value>
+    <value>Language successfully changed to {0}!</value>
     <comment>Language changed message text</comment>
   </data>
   <data name="Message_NoLanguageSelected_Title" xml:space="preserve">

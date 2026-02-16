@@ -148,41 +148,17 @@ namespace WpfHexEditor.Sample.Main.Views
 
         private void LanguageOptions_Click(object sender, RoutedEventArgs e)
         {
-            var currentCulture = Thread.CurrentThread.CurrentUICulture;
-
+            // Open the Options dialog
+            // Language changes happen instantly when user selects from the list
+            // All culture management is handled by DynamicResourceManager
             var dialog = new OptionsDialog
             {
                 Owner = this
             };
 
-            if (dialog.ShowDialog() == true)
-            {
-                var selectedCulture = dialog.SelectedCulture;
-
-                // Check if language actually changed
-                if (selectedCulture.Name == currentCulture.Name)
-                {
-                    MessageBox.Show(
-                        string.Format(Properties.Resources.Message_LanguageUnchanged_Text, selectedCulture.NativeName),
-                        Properties.Resources.Message_LanguageUnchanged_Title,
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
-                    return;
-                }
-
-                // Save the selected language
-                System.Diagnostics.Debug.WriteLine($"[LanguageOptions_Click] Saving culture: '{selectedCulture.Name}'");
-                WpfHexEditor.Sample.Main.Properties.Settings.Default.PreferredCulture = selectedCulture.Name;
-                WpfHexEditor.Sample.Main.Properties.Settings.Default.Save();
-                System.Diagnostics.Debug.WriteLine($"[LanguageOptions_Click] Settings saved successfully");
-
-                // Inform the user
-                MessageBox.Show(
-                    string.Format(Properties.Resources.Message_LanguageChanged_Text, selectedCulture.NativeName),
-                    Properties.Resources.Message_LanguageChanged_Title,
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
+            dialog.ShowDialog();
+            // Note: No need to check DialogResult or show confirmation MessageBox
+            // Language changes are applied instantly as user clicks in the list!
         }
 
         protected override void OnClosed(EventArgs e)

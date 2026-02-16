@@ -12,7 +12,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:WpfHexEditor.Sample.Main.Views.Components"
-             xmlns:properties="clr-namespace:WpfHexEditor.Sample.Main.Properties"
              mc:Ignorable="d"
              d:DesignHeight="60" d:DesignWidth="500"
              Loaded="UserControl_Loaded">
@@ -87,9 +86,9 @@
                              FontSize="11"
                              VerticalAlignment="Center"
                              Margin="4,0">
-                        <ComboBoxItem Content="{x:Static properties:Resources.Search_Mode_Text}" IsSelected="{Binding IsTextMode}"/>
-                        <ComboBoxItem Content="{x:Static properties:Resources.Search_Mode_Hex}" IsSelected="{Binding IsHexMode}"/>
-                        <ComboBoxItem Content="{x:Static properties:Resources.Search_Mode_Regex}" IsSelected="{Binding IsRegexMode}"/>
+                        <ComboBoxItem Content="{DynamicResource Search_Mode_Text}" IsSelected="{Binding IsTextMode}"/>
+                        <ComboBoxItem Content="{DynamicResource Search_Mode_Hex}" IsSelected="{Binding IsHexMode}"/>
+                        <ComboBoxItem Content="{DynamicResource Search_Mode_Regex}" IsSelected="{Binding IsRegexMode}"/>
                     </ComboBox>
 
                     <!-- Clear Button -->
@@ -101,7 +100,7 @@
                            Margin="2,0,4,0"
                            Style="{StaticResource ModernButtonStyle}"
                            Command="{Binding ClearSearchCommand}"
-                           ToolTip="{x:Static properties:Resources.Search_Clear_ToolTip}"
+                           ToolTip="{DynamicResource Search_Clear_ToolTip}"
                            Visibility="{Binding HasSearchPattern, Converter={StaticResource BoolToVisibilityConverter}}"/>
                 </Grid>
             </Border>
@@ -114,7 +113,7 @@
                        Style="{StaticResource ModernButtonStyle}"
                        Command="{Binding FindPreviousCommand}"
                        IsEnabled="{Binding HasResults}"
-                       ToolTip="{x:Static properties:Resources.Search_Previous_ToolTip}"
+                       ToolTip="{DynamicResource Search_Previous_ToolTip}"
                        Margin="0,0,4,0"/>
 
                 <Button Content="▶"
@@ -123,16 +122,16 @@
                        Style="{StaticResource ModernButtonStyle}"
                        Command="{Binding FindNextCommand}"
                        IsEnabled="{Binding HasResults}"
-                       ToolTip="{x:Static properties:Resources.Search_Next_ToolTip}"
+                       ToolTip="{DynamicResource Search_Next_ToolTip}"
                        Margin="0,0,4,0"/>
 
-                <Button Content="{x:Static properties:Resources.Search_FindAll}"
+                <Button Content="{DynamicResource Search_FindAll}"
                        Height="32"
                        Padding="12,0"
                        Style="{StaticResource AccentButtonStyle}"
                        Command="{Binding FindAllCommand}"
                        IsEnabled="{Binding CanSearch}"
-                       ToolTip="{x:Static properties:Resources.Search_FindAll_ToolTip}"/>
+                       ToolTip="{DynamicResource Search_FindAll_ToolTip}"/>
             </StackPanel>
         </Grid>
 
@@ -146,7 +145,7 @@
                       Foreground="{StaticResource ForegroundSecondaryBrush}"
                       VerticalAlignment="Center">
                 <Run Text="{Binding ResultCount, Mode=OneWay}"/>
-                <Run Text="{x:Static properties:Resources.Search_Matches}"/>
+                <Run Text="{DynamicResource Search_Matches}"/>
             </TextBlock>
 
             <TextBlock Text="•"

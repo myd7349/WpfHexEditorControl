@@ -795,13 +795,11 @@
     <comment>Language unchanged message text</comment>
   </data>
   <data name="Message_LanguageChanged_Title" xml:space="preserve">
-    <value>语言已更改 - 需要重启</value>
+    <value>语言已更改</value>
     <comment>Language changed message box title</comment>
   </data>
   <data name="Message_LanguageChanged_Text" xml:space="preserve">
-    <value>语言已更改为 {0}。
-
-请重启应用程序以应用新语言。</value>
+    <value>成功将语言更改为 {0}！</value>
     <comment>Language changed message text</comment>
   </data>
   <data name="Message_NoLanguageSelected_Title" xml:space="preserve">
@@ -1061,7 +1059,7 @@
     <value>代码</value>
   </data>
   <data name="Options_Language_RestartWarning" xml:space="preserve">
-    <value>更改语言后请重启应用程序。</value>
+    <value>语言更改立即生效 - 无需重启！🚀</value>
   </data>
 
 </root>

@@ -15,7 +15,6 @@
         xmlns:local="clr-namespace:WpfHexEditor.Sample.Main.Views"
         xmlns:components="clr-namespace:WpfHexEditor.Sample.Main.Views.Components"
         xmlns:hexEditor="clr-namespace:WpfHexaEditor;assembly=WPFHexaEditor"
-        xmlns:properties="clr-namespace:WpfHexEditor.Sample.Main.Properties"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
         Height="900" Width="1600"
@@ -52,25 +51,25 @@
             <!-- Application Menu (File Button) -->
             <ribbon:Ribbon.ApplicationMenu>
                 <ribbon:RibbonApplicationMenu KeyTip="F">
-                    <ribbon:RibbonApplicationMenuItem Header="{x:Static properties:Resources.Menu_File_Open}"
+                    <ribbon:RibbonApplicationMenuItem Header="{DynamicResource Menu_File_Open}"
                                                      Command="{Binding OpenFileCommand}"
                                                      ImageSource="{StaticResource Icon.Open}"
                                                      KeyTip="O"/>
-                    <ribbon:RibbonApplicationMenuItem Header="{x:Static properties:Resources.Menu_File_Save}"
+                    <ribbon:RibbonApplicationMenuItem Header="{DynamicResource Menu_File_Save}"
                                                      Command="{Binding SaveFileCommand}"
                                                      ImageSource="{StaticResource Icon.Save}"
                                                      KeyTip="S"/>
-                    <ribbon:RibbonApplicationMenuItem Header="{x:Static properties:Resources.Menu_File_SaveAs}"
+                    <ribbon:RibbonApplicationMenuItem Header="{DynamicResource Menu_File_SaveAs}"
                                                      Command="{Binding SaveFileCommand}"
                                                      ImageSource="{StaticResource Icon.Save}"
                                                      KeyTip="A"/>
                     <ribbon:RibbonSeparator/>
-                    <ribbon:RibbonApplicationMenuItem Header="{x:Static properties:Resources.Menu_File_Close}"
+                    <ribbon:RibbonApplicationMenuItem Header="{DynamicResource Menu_File_Close}"
                                                      Command="{Binding CloseFileCommand}"
                                                      ImageSource="{StaticResource Icon.Close}"
                                                      KeyTip="C"/>
                     <ribbon:RibbonSeparator/>
-                    <ribbon:RibbonApplicationMenuItem Header="{x:Static properties:Resources.Menu_File_Exit}"
+                    <ribbon:RibbonApplicationMenuItem Header="{DynamicResource Menu_File_Exit}"
                                                      KeyTip="X"
                                                      ImageSource="{StaticResource Icon.Close}"
                                                      Click="ExitMenuItem_Click"/>
@@ -80,240 +79,240 @@
             <!-- Quick Access Toolbar -->
             <ribbon:Ribbon.QuickAccessToolBar>
                 <ribbon:RibbonQuickAccessToolBar>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.QAT_Save_Label}"
+                    <ribbon:RibbonButton Label="{DynamicResource QAT_Save_Label}"
                                         SmallImageSource="{StaticResource Icon.Save}"
                                         Command="{Binding SaveFileCommand}"
-                                        ToolTip="{x:Static properties:Resources.QAT_Save_Tooltip}"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.QAT_Undo_Label}"
+                                        ToolTip="{DynamicResource QAT_Save_Tooltip}"/>
+                    <ribbon:RibbonButton Label="{DynamicResource QAT_Undo_Label}"
                                         SmallImageSource="{StaticResource Icon.Undo}"
                                         Command="{Binding UndoCommand}"
-                                        ToolTip="{x:Static properties:Resources.QAT_Undo_Tooltip}"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.QAT_Redo_Label}"
+                                        ToolTip="{DynamicResource QAT_Undo_Tooltip}"/>
+                    <ribbon:RibbonButton Label="{DynamicResource QAT_Redo_Label}"
                                         SmallImageSource="{StaticResource Icon.Redo}"
                                         Command="{Binding RedoCommand}"
-                                        ToolTip="{x:Static properties:Resources.QAT_Redo_Tooltip}"/>
+                                        ToolTip="{DynamicResource QAT_Redo_Tooltip}"/>
                 </ribbon:RibbonQuickAccessToolBar>
             </ribbon:Ribbon.QuickAccessToolBar>
 
             <!-- HOME TAB -->
-            <ribbon:RibbonTab Header="{x:Static properties:Resources.Ribbon_Home_Tab}" KeyTip="H">
+            <ribbon:RibbonTab Header="{DynamicResource Ribbon_Home_Tab}" KeyTip="H">
 
                 <!-- Clipboard Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Home_Clipboard_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Home_Paste}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Home_Clipboard_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Home_Paste}"
                                         LargeImageSource="{StaticResource Icon.Paste}"
                                         Command="ApplicationCommands.Paste"
                                         KeyTip="V"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Home_Cut}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Home_Cut}"
                                         SmallImageSource="{StaticResource Icon.Cut}"
                                         Command="ApplicationCommands.Cut"
                                         KeyTip="X"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Home_Copy}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Home_Copy}"
                                         SmallImageSource="{StaticResource Icon.Copy}"
                                         Command="ApplicationCommands.Copy"
                                         KeyTip="C"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Edit Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Home_Edit_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Home_Undo}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Home_Edit_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Home_Undo}"
                                         LargeImageSource="{StaticResource Icon.Undo}"
                                         Command="{Binding UndoCommand}"
                                         KeyTip="Z"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Home_Redo}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Home_Redo}"
                                         LargeImageSource="{StaticResource Icon.Redo}"
                                         Command="{Binding RedoCommand}"
                                         KeyTip="Y"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Selection Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Home_Selection_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Home_SelectAll}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Home_Selection_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Home_SelectAll}"
                                         SmallImageSource="{StaticResource Icon.SelectAll}"
                                         Command="ApplicationCommands.SelectAll"
                                         KeyTip="A"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Home_Clear}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Home_Clear}"
                                         SmallImageSource="{StaticResource Icon.Clear}"
                                         KeyTip="D"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Display Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Home_Display_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Home_16BytesPerLine}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Home_Display_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Home_16BytesPerLine}"
                                         LargeImageSource="{StaticResource Icon.Settings}"
                                         KeyTip="B"/>
                 </ribbon:RibbonGroup>
             </ribbon:RibbonTab>
 
             <!-- EDIT TAB -->
-            <ribbon:RibbonTab Header="{x:Static properties:Resources.Ribbon_Edit_Tab}" KeyTip="E">
+            <ribbon:RibbonTab Header="{DynamicResource Ribbon_Edit_Tab}" KeyTip="E">
 
                 <!-- Find Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Edit_Find_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Edit_Find}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Edit_Find_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Edit_Find}"
                                         LargeImageSource="{StaticResource Icon.Find}"
                                         Command="{Binding SearchCommand}"
                                         KeyTip="F"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Go To Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Edit_Navigate_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Edit_GoTo}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Edit_Navigate_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Edit_GoTo}"
                                         LargeImageSource="{StaticResource Icon.GoTo}"
                                         KeyTip="G"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Edit_Bookmarks}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Edit_Bookmarks}"
                                         SmallImageSource="{StaticResource Icon.Bookmark}"
                                         KeyTip="B"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Insert/Delete Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Edit_Modify_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Edit_InsertByte}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Edit_Modify_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Edit_InsertByte}"
                                         SmallImageSource="{StaticResource Icon.Insert}"
                                         KeyTip="I"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Edit_DeleteByte}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Edit_DeleteByte}"
                                         SmallImageSource="{StaticResource Icon.Delete}"
                                         KeyTip="D"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Edit_FillSelection}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Edit_FillSelection}"
                                         SmallImageSource="{StaticResource Icon.Copy}"
                                         KeyTip="L"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Edit Mode Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Edit_Mode_Group}">
-                    <ribbon:RibbonToggleButton Label="{x:Static properties:Resources.Ribbon_Edit_Overwrite}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Edit_Mode_Group}">
+                    <ribbon:RibbonToggleButton Label="{DynamicResource Ribbon_Edit_Overwrite}"
                                               SmallImageSource="{StaticResource Icon.Settings}"
                                               IsChecked="True"
                                               KeyTip="O"/>
-                    <ribbon:RibbonToggleButton Label="{x:Static properties:Resources.Ribbon_Edit_Insert}"
+                    <ribbon:RibbonToggleButton Label="{DynamicResource Ribbon_Edit_Insert}"
                                               SmallImageSource="{StaticResource Icon.Insert}"
                                               KeyTip="N"/>
-                    <ribbon:RibbonToggleButton Label="{x:Static properties:Resources.Ribbon_Edit_ReadOnly}"
+                    <ribbon:RibbonToggleButton Label="{DynamicResource Ribbon_Edit_ReadOnly}"
                                               SmallImageSource="{StaticResource Icon.Clear}"
                                               KeyTip="R"/>
                 </ribbon:RibbonGroup>
             </ribbon:RibbonTab>
 
             <!-- VIEW TAB -->
-            <ribbon:RibbonTab Header="{x:Static properties:Resources.Ribbon_View_Tab}" KeyTip="V">
+            <ribbon:RibbonTab Header="{DynamicResource Ribbon_View_Tab}" KeyTip="V">
 
                 <!-- Zoom Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_View_Zoom_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_View_ZoomIn}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_View_Zoom_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_View_ZoomIn}"
                                         SmallImageSource="{StaticResource Icon.ZoomIn}"
                                         KeyTip="I"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_View_ZoomOut}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_View_ZoomOut}"
                                         SmallImageSource="{StaticResource Icon.ZoomOut}"
                                         KeyTip="O"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_View_Zoom100}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_View_Zoom100}"
                                         SmallImageSource="{StaticResource Icon.Find}"
                                         KeyTip="1"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Display Options Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_View_DisplayOptions_Group}">
-                    <ribbon:RibbonCheckBox Label="{x:Static properties:Resources.Ribbon_View_ShowTooltip}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_View_DisplayOptions_Group}">
+                    <ribbon:RibbonCheckBox Label="{DynamicResource Ribbon_View_ShowTooltip}"
                                           KeyTip="T"/>
-                    <ribbon:RibbonCheckBox Label="{x:Static properties:Resources.Ribbon_View_HideDeleted}"
+                    <ribbon:RibbonCheckBox Label="{DynamicResource Ribbon_View_HideDeleted}"
                                           KeyTip="H"/>
-                    <ribbon:RibbonCheckBox Label="{x:Static properties:Resources.Ribbon_View_HighlightMatches}"
+                    <ribbon:RibbonCheckBox Label="{DynamicResource Ribbon_View_HighlightMatches}"
                                           IsChecked="True"
                                           KeyTip="M"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Themes Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_View_Themes_Group}">
-                    <ribbon:RibbonMenuButton Label="{x:Static properties:Resources.Ribbon_View_SelectTheme}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_View_Themes_Group}">
+                    <ribbon:RibbonMenuButton Label="{DynamicResource Ribbon_View_SelectTheme}"
                                             SmallImageSource="{StaticResource Icon.Settings}">
-                        <ribbon:RibbonMenuItem Header="{x:Static properties:Resources.Ribbon_View_Theme_Office}" Tag="Office" Click="ThemeMenuItem_Click"/>
-                        <ribbon:RibbonMenuItem Header="{x:Static properties:Resources.Ribbon_View_Theme_DarkGlass}" Tag="DarkGlass" Click="ThemeMenuItem_Click"/>
-                        <ribbon:RibbonMenuItem Header="{x:Static properties:Resources.Ribbon_View_Theme_VisualStudio}" Tag="VisualStudio" Click="ThemeMenuItem_Click"/>
-                        <ribbon:RibbonMenuItem Header="{x:Static properties:Resources.Ribbon_View_Theme_Minimal}" Tag="Minimal" Click="ThemeMenuItem_Click"/>
+                        <ribbon:RibbonMenuItem Header="{DynamicResource Ribbon_View_Theme_Office}" Tag="Office" Click="ThemeMenuItem_Click"/>
+                        <ribbon:RibbonMenuItem Header="{DynamicResource Ribbon_View_Theme_DarkGlass}" Tag="DarkGlass" Click="ThemeMenuItem_Click"/>
+                        <ribbon:RibbonMenuItem Header="{DynamicResource Ribbon_View_Theme_VisualStudio}" Tag="VisualStudio" Click="ThemeMenuItem_Click"/>
+                        <ribbon:RibbonMenuItem Header="{DynamicResource Ribbon_View_Theme_Minimal}" Tag="Minimal" Click="ThemeMenuItem_Click"/>
                     </ribbon:RibbonMenuButton>
                 </ribbon:RibbonGroup>
 
                 <!-- Panels Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_View_Panels_Group}">
-                    <ribbon:RibbonCheckBox Label="{x:Static properties:Resources.Ribbon_View_SettingsPanel}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_View_Panels_Group}">
+                    <ribbon:RibbonCheckBox Label="{DynamicResource Ribbon_View_SettingsPanel}"
                                           IsChecked="{Binding IsSettingsPanelVisible, Mode=TwoWay}"
                                           KeyTip="S"/>
                 </ribbon:RibbonGroup>
             </ribbon:RibbonTab>
 
             <!-- DATA TAB -->
-            <ribbon:RibbonTab Header="{x:Static properties:Resources.Ribbon_Data_Tab}" KeyTip="D">
+            <ribbon:RibbonTab Header="{DynamicResource Ribbon_Data_Tab}" KeyTip="D">
 
                 <!-- Export Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Data_Export_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Data_Export}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Data_Export_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Data_Export}"
                                         LargeImageSource="{StaticResource Icon.Export}"
                                         KeyTip="E"/>
-                    <ribbon:RibbonMenuButton Label="{x:Static properties:Resources.Ribbon_Data_ExportAs}"
+                    <ribbon:RibbonMenuButton Label="{DynamicResource Ribbon_Data_ExportAs}"
                                             SmallImageSource="{StaticResource Icon.Export}">
-                        <ribbon:RibbonMenuItem Header="{x:Static properties:Resources.Ribbon_Data_ExportAs_CSharpByteArray}"/>
-                        <ribbon:RibbonMenuItem Header="{x:Static properties:Resources.Ribbon_Data_ExportAs_CCode}"/>
-                        <ribbon:RibbonMenuItem Header="{x:Static properties:Resources.Ribbon_Data_ExportAs_JavaCode}"/>
-                        <ribbon:RibbonMenuItem Header="{x:Static properties:Resources.Ribbon_Data_ExportAs_HexString}"/>
+                        <ribbon:RibbonMenuItem Header="{DynamicResource Ribbon_Data_ExportAs_CSharpByteArray}"/>
+                        <ribbon:RibbonMenuItem Header="{DynamicResource Ribbon_Data_ExportAs_CCode}"/>
+                        <ribbon:RibbonMenuItem Header="{DynamicResource Ribbon_Data_ExportAs_JavaCode}"/>
+                        <ribbon:RibbonMenuItem Header="{DynamicResource Ribbon_Data_ExportAs_HexString}"/>
                     </ribbon:RibbonMenuButton>
                 </ribbon:RibbonGroup>
 
                 <!-- Compare Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Data_Compare_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Data_CompareFiles}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Data_Compare_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Data_CompareFiles}"
                                         LargeImageSource="{StaticResource Icon.Find}"
                                         KeyTip="C"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Statistics Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Data_Statistics_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Data_ByteCount}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Data_Statistics_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Data_ByteCount}"
                                         SmallImageSource="{StaticResource Icon.Settings}"
                                         KeyTip="O"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Data_Statistics}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Data_Statistics}"
                                         SmallImageSource="{StaticResource Icon.Settings}"
                                         KeyTip="S"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Data_Entropy}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Data_Entropy}"
                                         SmallImageSource="{StaticResource Icon.Settings}"
                                         KeyTip="E"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Advanced Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Data_Advanced_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Data_Checksum}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Data_Advanced_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Data_Checksum}"
                                         SmallImageSource="{StaticResource Icon.Settings}"
                                         KeyTip="H"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Data_Hash}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Data_Hash}"
                                         SmallImageSource="{StaticResource Icon.Settings}"
                                         KeyTip="A"/>
                 </ribbon:RibbonGroup>
             </ribbon:RibbonTab>
 
             <!-- TOOLS TAB -->
-            <ribbon:RibbonTab Header="{x:Static properties:Resources.Ribbon_Tools_Tab}" KeyTip="T">
+            <ribbon:RibbonTab Header="{DynamicResource Ribbon_Tools_Tab}" KeyTip="T">
 
                 <!-- Settings Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Tools_Options_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Tools_Settings}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Tools_Options_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Tools_Settings}"
                                         LargeImageSource="{StaticResource Icon.Settings}"
                                         Command="{Binding ToggleSettingsPanelCommand}"
                                         KeyTip="S"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Language Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Tools_Language_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Tools_Language}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Tools_Language_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Tools_Language}"
                                         LargeImageSource="{StaticResource Icon.Settings}"
-                                        ToolTip="{x:Static properties:Resources.Ribbon_Tools_Language_Tooltip}"
+                                        ToolTip="{DynamicResource Ribbon_Tools_Language_Tooltip}"
                                         Click="LanguageOptions_Click"
                                         KeyTip="L"/>
                 </ribbon:RibbonGroup>
 
                 <!-- Help Group -->
-                <ribbon:RibbonGroup Header="{x:Static properties:Resources.Ribbon_Tools_Help_Group}">
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Tools_Documentation}"
+                <ribbon:RibbonGroup Header="{DynamicResource Ribbon_Tools_Help_Group}">
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Tools_Documentation}"
                                         SmallImageSource="{StaticResource Icon.Help}"
                                         KeyTip="D"/>
-                    <ribbon:RibbonButton Label="{x:Static properties:Resources.Ribbon_Tools_About}"
+                    <ribbon:RibbonButton Label="{DynamicResource Ribbon_Tools_About}"
                                         SmallImageSource="{StaticResource Icon.Help}"
                                         Command="{Binding ShowAboutCommand}"
                                         KeyTip="A"/>

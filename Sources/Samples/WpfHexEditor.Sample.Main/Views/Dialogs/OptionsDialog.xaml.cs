@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using WpfHexEditor.Sample.Main.Services;
 
 namespace WpfHexEditor.Sample.Main.Views.Dialogs
 {
@@ -15,43 +16,33 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
 
         public OptionsDialog()
         {
-            // CRITICAL: Restore culture BEFORE InitializeComponent to ensure XAML resources load in correct language
-            var cultureName = Properties.Settings.Default.PreferredCulture;
-            if (!string.IsNullOrEmpty(cultureName))
-            {
-                try
-                {
-                    var culture = new CultureInfo(cultureName);
-                    System.Threading.Thread.CurrentThread.CurrentCulture = culture;
-                    System.Threading.Thread.CurrentThread.CurrentUICulture = culture;
-                    System.Diagnostics.Debug.WriteLine($"[OptionsDialog.Constructor] Set culture to: {culture.Name}");
-                }
-                catch (CultureNotFoundException ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[OptionsDialog.Constructor] CultureNotFoundException: {ex.Message}");
-                }
-            }
-
+            // Resources are now loaded dynamically via DynamicResource
+            // No need to restore culture here - it's handled globally by DynamicResourceManager
             InitializeComponent();
             LoadLanguages();
+
+            // Subscribe to selection changes for instant language switching
+            LanguageListView.SelectionChanged += LanguageListView_SelectionChanged;
         }
 
         private void LoadLanguages()
         {
-            // Current 6 languages supported in V2
+            // Current 9 languages supported in V2
             var languages = new List<LanguageInfo>
             {
                 new LanguageInfo { Flag = "🇺🇸", Code = "en", Name = "English", NativeName = "English" },
+                new LanguageInfo { Flag = "🇪🇸", Code = "es-ES", Name = "Spanish (Spain)", NativeName = "Español (España)" },
+                new LanguageInfo { Flag = "🇲🇽", Code = "es-419", Name = "Spanish (Latin America)", NativeName = "Español (Latinoamérica)" },
+                new LanguageInfo { Flag = "🇫🇷", Code = "fr-FR", Name = "French (France)", NativeName = "Français (France)" },
                 new LanguageInfo { Flag = "🇨🇦", Code = "fr-CA", Name = "French (Canada)", NativeName = "Français (Canada)" },
                 new LanguageInfo { Flag = "🇵🇱", Code = "pl-PL", Name = "Polish", NativeName = "Polski" },
                 new LanguageInfo { Flag = "🇧🇷", Code = "pt-BR", Name = "Portuguese (Brazil)", NativeName = "Português (Brasil)" },
                 new LanguageInfo { Flag = "🇷🇺", Code = "ru-RU", Name = "Russian", NativeName = "Русский" },
                 new LanguageInfo { Flag = "🇨🇳", Code = "zh-CN", Name = "Chinese (Simplified)", NativeName = "简体中文" },
 
-                // Future languages (Phase 2 - will be added when resources are ready)
+                // Future languages (Phase 3 - will be added when resources are ready)
                 /*
                 new LanguageInfo { Flag = "🇩🇪", Code = "de-DE", Name = "German", NativeName = "Deutsch" },
-                new LanguageInfo { Flag = "🇪🇸", Code = "es-ES", Name = "Spanish", NativeName = "Español" },
                 new LanguageInfo { Flag = "🇮🇹", Code = "it-IT", Name = "Italian", NativeName = "Italiano" },
                 new LanguageInfo { Flag = "🇯🇵", Code = "ja-JP", Name = "Japanese", NativeName = "日本語" },
                 new LanguageInfo { Flag = "🇰🇷", Code = "ko-KR", Name = "Korean", NativeName = "한국어" },
@@ -93,6 +84,35 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
             // Update current language display
             CurrentLanguageFlag.Text = currentLang.Flag;
             CurrentLanguageText.Text = $"{currentLang.Name} - {currentLang.NativeName}";
+        }
+
+        /// <summary>
+        /// Handles instant language switching when user selects a language from the list.
+        /// </summary>
+        private void LanguageListView_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (LanguageListView.SelectedItem is LanguageInfo selected)
+            {
+                var newCulture = new CultureInfo(selected.Code);
+                var oldCulture = DynamicResourceManager.CurrentCulture;
+
+                // Only change if it's actually different
+                if (newCulture.Name != oldCulture.Name)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[OptionsDialog.LanguageListView_SelectionChanged] Instantly changing culture from '{oldCulture.Name}' to '{newCulture.Name}'");
+
+                    // Change culture instantly - no confirmation needed!
+                    DynamicResourceManager.ChangeCulture(newCulture, persistent: true);
+
+                    // Update the current language display immediately
+                    CurrentLanguageFlag.Text = selected.Flag;
+                    CurrentLanguageText.Text = $"{selected.Name} - {selected.NativeName}";
+
+                    SelectedCulture = newCulture;
+
+                    System.Diagnostics.Debug.WriteLine($"[OptionsDialog.LanguageListView_SelectionChanged] Language changed instantly! UI updated in real-time.");
+                }
+            }
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
