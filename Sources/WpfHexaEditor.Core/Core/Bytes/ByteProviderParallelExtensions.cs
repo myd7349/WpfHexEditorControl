@@ -121,7 +121,7 @@ namespace WpfHexaEditor.Core.Bytes
                         {
                             var (byteValue, success) = provider.GetByte(chunkStart + i);
                             if (!success) break;
-                            buffer[i] = byteValue.Value;
+                            buffer[i] = byteValue;
                             bytesRead++;
                         }
 

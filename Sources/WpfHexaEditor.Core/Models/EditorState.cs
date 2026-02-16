@@ -163,11 +163,11 @@ namespace WpfHexaEditor.Models
         {
             try
             {
-                return (PlatformColor)ColorConverter.ConvertFromString(argb);
+                return (PlatformColor)PlatformColor.Parse(argb);
             }
             catch
             {
-                return Colors.Black;
+                return PlatformColor.Black;
             }
         }
     }

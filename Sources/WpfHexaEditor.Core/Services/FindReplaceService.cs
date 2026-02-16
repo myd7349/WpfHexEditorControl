@@ -78,11 +78,7 @@ namespace WpfHexaEditor.Services
 
             try
             {
-                var position = provider.FindIndexOf(data, startPosition).FirstOrDefault();
-
-                if (position == 0 && !provider.FindIndexOf(data, startPosition).Any())
-                    position = -1;
-
+                var position = provider.FindFirst(data, startPosition);
                 return position;
             }
             catch
@@ -155,7 +151,7 @@ namespace WpfHexaEditor.Services
             if (data == null || provider == null || !provider.IsOpen)
                 return null;
 
-            return provider.FindIndexOf(data, startPosition);
+            return provider.FindAll(data, startPosition);
         }
 
         /// <summary>
@@ -557,7 +553,7 @@ namespace WpfHexaEditor.Services
             }
 
             // Perform fresh search and cache results
-            var results = provider.FindIndexOf(data, startPosition).ToList();
+            var results = provider.FindAll(data, startPosition).ToList();
             _searchCache.Put(cacheKey, results);
 
             return results;

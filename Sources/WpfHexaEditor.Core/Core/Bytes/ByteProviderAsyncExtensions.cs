@@ -28,7 +28,7 @@ namespace WpfHexaEditor.Core.Bytes
         /// <param name="position">Position to read from</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Tuple of (byte value, success)</returns>
-        public static Task<(byte? value, bool success)> GetByteAsync(
+        public static Task<(byte value, bool success)> GetByteAsync(
             this ByteProvider provider,
             long position,
             CancellationToken cancellationToken = default)
@@ -63,7 +63,7 @@ namespace WpfHexaEditor.Core.Bytes
 
                     var (byteValue, success) = provider.GetByte(position + i);
                     if (!success) break;
-                    buffer[i] = byteValue.Value;
+                    buffer[i] = byteValue;
                 }
                 return buffer;
             }, cancellationToken);
@@ -103,7 +103,7 @@ namespace WpfHexaEditor.Core.Bytes
                     var (byteValue, success) = provider.GetByte(position + i);
                     if (!success) break;
 
-                    buffer[offset + i] = byteValue.Value;
+                    buffer[offset + i] = byteValue;
                     bytesRead++;
                 }
                 return bytesRead;
@@ -134,7 +134,7 @@ namespace WpfHexaEditor.Core.Bytes
 
             return await Task.Run(() =>
             {
-                var results = provider.FindIndexOf(pattern, startPosition).ToList();
+                var results = provider.FindAll(pattern, startPosition).ToList();
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (results.Count == 0) return -1;
@@ -189,7 +189,7 @@ namespace WpfHexaEditor.Core.Bytes
                         {
                             var (byteValue, success) = provider.GetByte(currentPosition + i);
                             if (!success) break;
-                            buffer[i] = byteValue.Value;
+                            buffer[i] = byteValue;
                             bytesRead++;
                         }
 
@@ -361,7 +361,7 @@ namespace WpfHexaEditor.Core.Bytes
                     var (byteValue, success) = provider.GetByte(position + i);
                     if (success)
                     {
-                        checksum = (checksum + byteValue.Value) % long.MaxValue;
+                        checksum = (checksum + byteValue) % long.MaxValue;
                     }
 
                     // Report progress every 1%

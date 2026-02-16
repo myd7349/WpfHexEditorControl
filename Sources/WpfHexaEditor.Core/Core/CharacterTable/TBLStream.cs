@@ -31,12 +31,12 @@ namespace WpfHexaEditor.Core.CharacterTable
 
         #region Constructors
         /// <summary>
-        /// Constructeur permétant de charg?le fichier DTE
+        /// Constructeur permï¿½tant de charg?le fichier DTE
         /// </summary>
         public TblStream(string fileName) => FileName = fileName;
 
         /// <summary>
-        /// Constructeur permétant de chargéle fichier DTE
+        /// Constructeur permï¿½tant de chargï¿½le fichier DTE
         /// </summary>
         public TblStream() { }
         #endregion
@@ -65,8 +65,8 @@ namespace WpfHexaEditor.Core.CharacterTable
         {
             if (showSpecialValue)
             {
-                if (_dteList.ContainsKey($"/{hex}")) return (Properties.Resources.EndTagString, DteType.EndBlock); //"<end>";
-                if (_dteList.ContainsKey($"*{hex}")) return (Properties.Resources.LineTagString, DteType.EndLine); //"<ln>";
+                if (_dteList.ContainsKey($"/{hex}")) return ("<end>", DteType.EndBlock);
+                if (_dteList.ContainsKey($"*{hex}")) return ("<ln>", DteType.EndLine);
             }
 
             return _dteList.ContainsKey(hex)
@@ -341,9 +341,9 @@ namespace WpfHexaEditor.Core.CharacterTable
         public int Length => _dteList.Count;
 
         /// <summary>
-//         /// Get of set bookmarks
-//         /// </summary>
-// // TODO: UI-specific -         public List<BookMark> BookMarks { get; set; } = new();
+        /// Get or set bookmarks
+        /// </summary>
+        public List<BookMark> BookMarks { get; set; } = new();
 
         public int TotalDte => _dteList.Count(l => l.Value.Type == DteType.DualTitleEncoding);
         public int TotalMte => _dteList.Count(l => l.Value.Type == DteType.MultipleTitleEncoding);
@@ -403,10 +403,12 @@ namespace WpfHexaEditor.Core.CharacterTable
                         tbl.Add(new Dte(ByteConverters.ByteToHex(i).ToUpperInvariant(), $"{ByteConverters.ByteToChar(i)}"));
                     break;
                 case DefaultCharacterTableType.EbcdicWithSpecialChar:
-                    tbl.Load(Properties.Resources.EBCDIC);
+                    // TODO: UI Resources - Replace with actual EBCDIC resource
+                    tbl.Load("EBCDIC");
                     break;
                 case DefaultCharacterTableType.EbcdicNoSpecialChar:
-                    tbl.Load(Properties.Resources.EBCDICNoSpecialChar);
+                    // TODO: UI Resources - Replace with actual EBCDIC resource
+                    tbl.Load("EBCDICNoSpecialChar");
                     break;
             }
 

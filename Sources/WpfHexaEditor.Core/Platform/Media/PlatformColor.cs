@@ -68,6 +68,50 @@ namespace WpfHexaEditor.Core.Platform.Media
         public uint ToUInt32() => ((uint)A << 24) | ((uint)R << 16) | ((uint)G << 8) | B;
 
         /// <summary>
+        /// Parses a color string in hex format (#RRGGBB or #AARRGGBB).
+        /// </summary>
+        /// <param name="colorString">Color string (e.g., "#FF0000" or "#80FF0000")</param>
+        /// <returns>Parsed color, or Black if parsing fails</returns>
+        public static PlatformColor Parse(string colorString)
+        {
+            if (string.IsNullOrWhiteSpace(colorString))
+                return Black;
+
+            colorString = colorString.Trim();
+
+            // Remove # prefix if present
+            if (colorString.StartsWith("#"))
+                colorString = colorString.Substring(1);
+
+            try
+            {
+                if (colorString.Length == 6)
+                {
+                    // #RRGGBB format
+                    byte r = System.Convert.ToByte(colorString.Substring(0, 2), 16);
+                    byte g = System.Convert.ToByte(colorString.Substring(2, 2), 16);
+                    byte b = System.Convert.ToByte(colorString.Substring(4, 2), 16);
+                    return FromRgb(r, g, b);
+                }
+                else if (colorString.Length == 8)
+                {
+                    // #AARRGGBB format
+                    byte a = System.Convert.ToByte(colorString.Substring(0, 2), 16);
+                    byte r = System.Convert.ToByte(colorString.Substring(2, 2), 16);
+                    byte g = System.Convert.ToByte(colorString.Substring(4, 2), 16);
+                    byte b = System.Convert.ToByte(colorString.Substring(6, 2), 16);
+                    return FromArgb(a, r, g, b);
+                }
+            }
+            catch
+            {
+                // Parsing failed, return black
+            }
+
+            return Black;
+        }
+
+        /// <summary>
         /// Returns a string representation of the color in ARGB format.
         /// </summary>
         public override string ToString() => $"#{A:X2}{R:X2}{G:X2}{B:X2}";

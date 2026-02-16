@@ -113,6 +113,15 @@ namespace WpfHexaEditor.Core.Bytes
         /// </summary>
         public int RedoCount => _undoRedoManager.RedoStackCount;
 
+        /// <summary>
+        /// Gets or sets read-only mode (V1 Legacy compatibility - maps to IsReadOnly).
+        /// </summary>
+        public bool ReadOnlyMode
+        {
+            get => IsReadOnly;
+            set => throw new NotSupportedException("ReadOnlyMode is read-only. Use OpenFile with appropriate mode.");
+        }
+
         #endregion
 
         #region Events
@@ -343,6 +352,32 @@ namespace WpfHexaEditor.Core.Bytes
             }
 
             // Invalidate caches ONCE at the end
+            InvalidateCaches();
+        }
+
+        /// <summary>
+        /// Replace all occurrences of a byte value with another in a range.
+        /// V1 Legacy compatibility method.
+        /// </summary>
+        public void ReplaceByte(long startPosition, long length, byte original, byte replace)
+        {
+            if (IsReadOnly)
+                throw new InvalidOperationException("File is read-only");
+
+            if (startPosition < 0 || length <= 0)
+                return;
+
+            long endPosition = Math.Min(startPosition + length, Length);
+
+            for (long pos = startPosition; pos < endPosition; pos++)
+            {
+                var (byteValue, success) = GetByte(pos);
+                if (success && byteValue == original)
+                {
+                    ModifyByteInternal(pos, replace);
+                }
+            }
+
             InvalidateCaches();
         }
 
@@ -1729,6 +1764,34 @@ namespace WpfHexaEditor.Core.Bytes
             }
 
             return count;
+        }
+
+        #endregion
+
+        #region V1 Legacy Compatibility Methods
+
+        /// <summary>
+        /// Legacy method for adding a byte modification (V1 compatibility).
+        /// Maps to InsertByte internally.
+        /// </summary>
+        public void AddByteAdded(ByteModified modification)
+        {
+            if (modification == null || !modification.IsValid)
+                return;
+
+            if (modification.Action == ByteAction.Added && modification.Byte.HasValue)
+            {
+                InsertByte(modification.BytePositionInStream, modification.Byte.Value);
+            }
+        }
+
+        /// <summary>
+        /// Legacy method for finding byte sequence (V1 compatibility).
+        /// Maps to FindFirst.
+        /// </summary>
+        public long FindIndexOf(byte[] data, long startPosition = 0)
+        {
+            return FindFirst(data, startPosition);
         }
 
         #endregion

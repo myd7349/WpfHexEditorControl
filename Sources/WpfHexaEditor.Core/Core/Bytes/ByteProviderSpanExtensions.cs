@@ -62,7 +62,7 @@ namespace WpfHexaEditor.Core.Bytes
                     // If read fails, return partial data
                     return new ReadOnlySpan<byte>(buffer, 0, i);
                 }
-                buffer[i] = byteValue.Value;
+                buffer[i] = byteValue;
             }
 
             return new ReadOnlySpan<byte>(buffer, 0, count);
@@ -98,7 +98,7 @@ namespace WpfHexaEditor.Core.Bytes
                 {
                     return new Span<byte>(buffer, 0, i);
                 }
-                buffer[i] = byteValue.Value;
+                buffer[i] = byteValue;
             }
 
             return new Span<byte>(buffer, 0, count);
@@ -390,7 +390,7 @@ namespace WpfHexaEditor.Core.Bytes
                     _length = i;
                     break;
                 }
-                _buffer[i] = byteValue.Value;
+                _buffer[i] = byteValue;
             }
         }
 
