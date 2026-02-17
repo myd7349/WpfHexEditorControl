@@ -1,7 +1,7 @@
 <!--
     Apache 2.0  2026
-    HexEditor V2 - VS 2026 Preview Style Main Window (Minimal Version)
-    Modern interface with glassmorphism
+    HexEditor V2 - Main Window (Classic Menu + Toolbar Style)
+    Based on original MainWindow.xaml structure
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.5
 -->
@@ -12,123 +12,177 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfHexEditor.Sample.Main.Views"
+        xmlns:components="clr-namespace:WpfHexEditor.Sample.Main.Views.Components"
         xmlns:hexEditor="clr-namespace:WpfHexaEditor;assembly=WPFHexaEditor"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
         Height="900" Width="1600"
         WindowStartupLocation="CenterScreen"
-        Background="#0A0E27">
+        Background="#F0F0F0">
 
     <Window.InputBindings>
         <!-- Keyboard shortcuts -->
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewFileCommand}"/>
         <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenFileCommand}"/>
         <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveFileCommand}"/>
         <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseFileCommand}"/>
         <KeyBinding Key="F" Modifiers="Control" Command="{Binding ToggleSearchPanelCommand}"/>
         <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}"/>
         <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}"/>
+        <KeyBinding Key="A" Modifiers="Control" Command="{Binding SelectAllCommand}"/>
+        <KeyBinding Key="G" Modifiers="Control" Command="{Binding GoToPositionCommand}"/>
+        <KeyBinding Key="B" Modifiers="Control" Command="{Binding ToggleBookmarkCommand}"/>
         <KeyBinding Key="OemComma" Modifiers="Control" Command="{Binding ToggleSettingsPanelCommand}"/>
     </Window.InputBindings>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- Command Bar -->
-            <RowDefinition Height="*"/>     <!-- Main Content -->
-            <RowDefinition Height="Auto"/>  <!-- Status Bar -->
+            <RowDefinition Height="Auto"/> <!-- Menu -->
+            <RowDefinition Height="Auto"/> <!-- Toolbar -->
+            <RowDefinition Height="*"/>    <!-- Content -->
         </Grid.RowDefinitions>
 
-        <!-- Floating Command Bar (Minimal styling) -->
-        <Border Grid.Row="0"
-                Background="#252842"
-                CornerRadius="16"
-                Padding="16"
-                Margin="16,12,16,8"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top">
-            <Border.Effect>
-                <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="8" Opacity="0.5"/>
-            </Border.Effect>
+        <!-- Menu Bar (Original Structure) -->
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..." Command="{Binding OpenFileCommand}" InputGestureText="Ctrl+O"/>
+                <MenuItem Header="_Save" Command="{Binding SaveFileCommand}" InputGestureText="Ctrl+S"/>
+                <MenuItem Header="Save _As..." Command="{Binding SaveAsFileCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Close" Command="{Binding CloseFileCommand}"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}"/>
+            </MenuItem>
 
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" Command="{Binding UndoCommand}" InputGestureText="Ctrl+Z"/>
+                <MenuItem Header="_Redo" Command="{Binding RedoCommand}" InputGestureText="Ctrl+Y"/>
+                <Separator/>
+                <MenuItem Header="_Find..." Command="{Binding ToggleSearchPanelCommand}" InputGestureText="Ctrl+F"/>
+                <MenuItem Header="Find and _Replace..." Command="{Binding ToggleSearchPanelCommand}" InputGestureText="Ctrl+H"/>
+                <Separator/>
+                <MenuItem Header="Copy" Command="{Binding CopyCommand}" InputGestureText="Ctrl+C"/>
+                <MenuItem Header="Paste" Command="{Binding PasteCommand}" InputGestureText="Ctrl+V"/>
+                <MenuItem Header="Delete Selection" Command="{Binding DeleteSelectionCommand}" InputGestureText="Del"/>
+                <Separator/>
+                <MenuItem Header="Select _All" Command="{Binding SelectAllCommand}" InputGestureText="Ctrl+A"/>
+                <MenuItem Header="_Clear Selection" Command="{Binding ClearSelectionCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Bookmarks">
+                    <MenuItem Header="Toggle Bookmark" Command="{Binding ToggleBookmarkCommand}" InputGestureText="Ctrl+B"/>
+                    <MenuItem Header="_Clear All Bookmarks" Command="{Binding ClearBookmarksCommand}"/>
+                </MenuItem>
+            </MenuItem>
 
-                <!-- File Group -->
-                <Button Content="📄" ToolTip="New File (Ctrl+N)"
-                        Command="{Binding NewFileCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="White"
-                        Padding="12,6" FontSize="18" Cursor="Hand"/>
-                <Button Content="📁" ToolTip="Open File (Ctrl+O)"
-                        Command="{Binding OpenFileCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="White"
-                        Padding="12,6" FontSize="18" Cursor="Hand"/>
-                <Button Content="💾" ToolTip="Save File (Ctrl+S)"
-                        Command="{Binding SaveFileCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="White"
-                        Padding="12,6" FontSize="18" Cursor="Hand"/>
+            <MenuItem Header="_Search">
+                <MenuItem Header="Find _Next" Command="{Binding FindNextCommand}" InputGestureText="F3"/>
+                <MenuItem Header="Find _Previous" Command="{Binding FindPreviousCommand}" InputGestureText="Shift+F3"/>
+            </MenuItem>
 
-                <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
+            <MenuItem Header="_Tools">
+                <MenuItem Header="_Bookmarks">
+                    <MenuItem Header="Toggle Bookmark" Command="{Binding ToggleBookmarkCommand}" InputGestureText="Ctrl+B"/>
+                    <MenuItem Header="_Clear All Bookmarks" Command="{Binding ClearBookmarksCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="_Next Bookmark" Command="{Binding NextBookmarkCommand}" InputGestureText="Ctrl+N"/>
+                    <MenuItem Header="_Previous Bookmark" Command="{Binding PreviousBookmarkCommand}" InputGestureText="Ctrl+P"/>
+                    <Separator/>
+                    <MenuItem Header="_Show All Bookmarks..." Command="{Binding ShowBookmarksCommand}"/>
+                </MenuItem>
+            </MenuItem>
 
-                <!-- Edit Group -->
-                <Button Content="↩️" ToolTip="Undo (Ctrl+Z)"
-                        Command="{Binding UndoCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="White"
-                        Padding="12,6" FontSize="18" Cursor="Hand"/>
-                <Button Content="↪️" ToolTip="Redo (Ctrl+Y)"
-                        Command="{Binding RedoCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="White"
-                        Padding="12,6" FontSize="18" Cursor="Hand"/>
+            <MenuItem Header="_Position">
+                <MenuItem Header="_Go to Position..." Command="{Binding GoToPositionCommand}" InputGestureText="Ctrl+G"/>
+            </MenuItem>
 
-                <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
+            <MenuItem Header="_View">
+                <MenuItem Header="Display Options">
+                    <MenuItem Header="Show Status Bar" IsCheckable="True" IsChecked="True"/>
+                    <MenuItem Header="Show Header" IsCheckable="True" IsChecked="True"/>
+                    <MenuItem Header="Show Offset" IsCheckable="True" IsChecked="True"/>
+                    <MenuItem Header="Show ASCII" IsCheckable="True" IsChecked="True"/>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Bytes Per Line">
+                    <MenuItem Header="8" Tag="8"/>
+                    <MenuItem Header="16" Tag="16" IsChecked="True"/>
+                    <MenuItem Header="32" Tag="32"/>
+                </MenuItem>
+            </MenuItem>
 
-                <!-- Search Box -->
-                <TextBox x:Name="SearchBox" Width="250"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Background="#1A1D35" Foreground="White" BorderBrush="#60FFFFFF"
-                         BorderThickness="1" Padding="12,8" FontSize="14"
-                         ToolTip="Quick search in file"/>
+            <MenuItem Header="_Options">
+                <MenuItem Header="_Paramètres..." Command="{Binding ToggleSettingsPanelCommand}" InputGestureText="Ctrl+,">
+                    <MenuItem.Icon>
+                        <TextBlock Text="⚙️" FontSize="16"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Thème" Command="{Binding ToggleThemeCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🎨" FontSize="16"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="_Langue" Command="{Binding ToggleLanguageCommand}">
+                    <MenuItem.Icon>
+                        <TextBlock Text="🌐" FontSize="16"/>
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="Context Menu" IsCheckable="True" IsChecked="True"/>
+                <MenuItem Header="Show Byte ToolTip" IsCheckable="True"/>
+                <Separator/>
+                <MenuItem Header="Auto-Highlight Selection Byte" IsCheckable="True"/>
+                <MenuItem Header="Count Selected Bytes" IsCheckable="True"/>
+            </MenuItem>
 
-                <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" Command="{Binding ShowAboutCommand}"/>
+                <MenuItem Header="_Keyboard Shortcuts" Command="{Binding ShowKeyboardShortcutsCommand}"/>
+            </MenuItem>
+        </Menu>
 
-                <!-- Right Side -->
-                <Button Content="⚙️" ToolTip="Settings (Ctrl+,)"
-                        Command="{Binding ToggleSettingsPanelCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="White"
-                        Padding="12,6" FontSize="18" Cursor="Hand"/>
-                <Button Content="🎨" ToolTip="Theme"
-                        Command="{Binding ToggleThemeCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="White"
-                        Padding="12,6" FontSize="18" Cursor="Hand"/>
-                <Button Content="🌐" ToolTip="Language"
-                        Command="{Binding ToggleLanguageCommand}"
-                        Background="Transparent" BorderThickness="0" Foreground="White"
-                        Padding="12,6" FontSize="18" Cursor="Hand"/>
+        <!-- Toolbar (Original Structure) -->
+        <ToolBar Grid.Row="1">
+            <Button Command="{Binding OpenFileCommand}" ToolTip="Open file (Ctrl+O)">
+                <TextBlock Text="📂 Open" FontSize="12"/>
+            </Button>
+            <Button Command="{Binding SaveFileCommand}" ToolTip="Save file (Ctrl+S)">
+                <TextBlock Text="💾 Save" FontSize="12"/>
+            </Button>
+            <Separator/>
+            <Button Command="{Binding UndoCommand}" ToolTip="Undo (Ctrl+Z)">
+                <TextBlock Text="↶ Undo" FontSize="12"/>
+            </Button>
+            <Button Command="{Binding RedoCommand}" ToolTip="Redo (Ctrl+Y)">
+                <TextBlock Text="↷ Redo" FontSize="12"/>
+            </Button>
+            <Separator/>
+            <ToggleButton ToolTip="Toggle Insert/Overwrite mode (Insert key)">
+                <TextBlock Text="INS" FontSize="12" FontWeight="Bold"/>
+            </ToggleButton>
+            <ToggleButton ToolTip="Toggle Read-Only mode">
+                <TextBlock Text="🔒 RO" FontSize="12"/>
+            </ToggleButton>
+        </ToolBar>
 
-            </StackPanel>
-        </Border>
+        <!-- Main Content with Settings Panel -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Main Content (No sidebar for now) -->
-        <Border Grid.Row="1"
-                Background="#1A1D35"
-                CornerRadius="12"
-                Margin="16,8">
-
+            <!-- HexEditor Control -->
             <hexEditor:HexEditor x:Name="HexEditorControl"
-                                Background="#0A0E27"
-                                Foreground="White"
+                                Grid.Column="0"
                                 Margin="4"/>
 
-        </Border>
+            <!-- Settings Panel (Slide-in from right) -->
+            <components:SettingsPanel x:Name="HexEditorSettingsPanel"
+                                     Grid.Column="1"
+                                     Width="0"
+                                     Visibility="Collapsed"/>
 
-        <!-- Status Bar -->
-        <StatusBar Grid.Row="2" Background="#1A1D35" Foreground="#B4B9D8"
-                   Height="28" Padding="8,0" BorderBrush="#60FFFFFF" BorderThickness="0,1,0,0">
-            <StatusBarItem Content="{Binding StatusText}"/>
-            <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
-            <StatusBarItem Content="{Binding PositionText}"/>
-            <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
-            <StatusBarItem Content="{Binding EncodingText}"/>
-            <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
-            <StatusBarItem Content="{Binding FileSizeText}" HorizontalAlignment="Right"/>
-        </StatusBar>
+        </Grid>
 
     </Grid>
 
