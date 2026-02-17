@@ -232,8 +232,8 @@ namespace WpfHexaEditor
 
             _rightClickPosition = position;
 
-            // Select the byte if no selection
-            if (SelectionLength <= 1)
+            // Select the byte if no selection (preserve existing selection)
+            if (SelectionLength < 1)
             {
                 SelectionStart = position;
                 SelectionStop = position;
@@ -251,6 +251,7 @@ namespace WpfHexaEditor
             var copyCSharpItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyCSharpMenuItem") as MenuItem;
             var copyCItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyCMenuItem") as MenuItem;
             var copyTblItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyTblMenuItem") as MenuItem;
+            var copyFormattedViewItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyFormattedViewMenuItem") as MenuItem;
             var findAllItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "FindAllMenuItem") as MenuItem;
             var pasteItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "PasteMenuItem") as MenuItem;
             var deleteItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "DeleteMenuItem") as MenuItem;
@@ -264,6 +265,7 @@ namespace WpfHexaEditor
             if (copyCSharpItem != null) copyCSharpItem.IsEnabled = SelectionLength > 0;
             if (copyCItem != null) copyCItem.IsEnabled = SelectionLength > 0;
             if (copyTblItem != null) copyTblItem.IsEnabled = SelectionLength > 0 && _tblStream != null;
+            if (copyFormattedViewItem != null) copyFormattedViewItem.IsEnabled = SelectionLength > 0;
             if (findAllItem != null) findAllItem.IsEnabled = SelectionLength > 0;
             if (pasteItem != null) pasteItem.IsEnabled = !ReadOnlyMode && Clipboard.ContainsText();
             if (deleteItem != null) deleteItem.IsEnabled = !ReadOnlyMode && SelectionLength > 0;
@@ -303,6 +305,11 @@ namespace WpfHexaEditor
         private void CopyTblMenuItem_Click(object sender, RoutedEventArgs e)
         {
             CopyToClipboard(CopyPasteMode.TblString);
+        }
+
+        private void CopyFormattedViewMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            CopyToClipboard(CopyPasteMode.FormattedView);
         }
 
         private void FindAllMenuItem_Click(object sender, RoutedEventArgs e)

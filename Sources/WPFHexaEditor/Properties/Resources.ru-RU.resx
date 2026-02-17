@@ -327,6 +327,9 @@
   <data name="CopyAsCCodeString" xml:space="preserve">
     <value>Копировать как код C</value>
   </data>
+  <data name="CopyAsFormattedViewString" xml:space="preserve">
+    <value>Копировать как форматированный вид</value>
+  </data>
   <data name="PasteString" xml:space="preserve">
     <value>Вставить</value>
   </data>

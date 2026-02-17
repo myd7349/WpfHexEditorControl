@@ -327,6 +327,9 @@
   <data name="CopyAsCCodeString" xml:space="preserve">
     <value>复制为 C 代码</value>
   </data>
+  <data name="CopyAsFormattedViewString" xml:space="preserve">
+    <value>复制为格式化视图</value>
+  </data>
   <data name="PasteString" xml:space="preserve">
     <value>粘贴</value>
   </data>

@@ -56,6 +56,9 @@ namespace WpfHexaEditor
                     case CopyPasteMode.CCode:
                         CopyAsCCode();
                         break;
+                    case CopyPasteMode.FormattedView:
+                        CopyAsFormattedView();
+                        break;
                     default:
                         Copy(); // Default to hex
                         break;
@@ -156,6 +159,99 @@ namespace WpfHexaEditor
                 Clipboard.SetText(sb.ToString());
                 StatusText.Text = $"Copied {bytes.Length} bytes as C code";
             }
+        }
+
+        private void CopyAsFormattedView()
+        {
+            if (_viewModel == null || !_viewModel.HasSelection)
+                return;
+
+            var bytes = _viewModel.GetSelectionBytes();
+            if (bytes == null || bytes.Length == 0)
+                return;
+
+            var sb = new StringBuilder();
+            var selStart = _viewModel.SelectionStart.Value;
+            var bytesPerLine = _viewModel.BytePerLine;
+            var byteGrouping = (int)ByteGrouping;
+
+            // Calculate starting line offset (aligned to line boundary)
+            long startLine = selStart / bytesPerLine;
+            long startOffset = startLine * bytesPerLine;
+            int startByteInLine = (int)(selStart - startOffset);
+
+            // Process each line
+            int byteIndex = 0;
+            while (byteIndex < bytes.Length)
+            {
+                long currentLineOffset = startOffset + ((byteIndex + startByteInLine) / bytesPerLine) * bytesPerLine;
+
+                // Offset column
+                sb.Append($"0x{currentLineOffset:X8}");
+                sb.Append("  ");
+
+                // Hex bytes section
+                int bytesInThisLine = Math.Min(bytesPerLine, bytes.Length - byteIndex + startByteInLine);
+                if (byteIndex == 0)
+                    bytesInThisLine = Math.Min(bytesPerLine - startByteInLine, bytes.Length);
+
+                // Add leading spaces for first line if selection doesn't start at line beginning
+                if (byteIndex == 0 && startByteInLine > 0)
+                {
+                    for (int i = 0; i < startByteInLine; i++)
+                    {
+                        sb.Append("   "); // 3 spaces for each byte (2 hex digits + 1 space)
+                        if ((i + 1) % byteGrouping == 0 && i < bytesPerLine - 1)
+                            sb.Append(" "); // Extra space for byte grouping
+                    }
+                }
+
+                // Add hex bytes
+                for (int i = 0; i < bytesInThisLine - (byteIndex == 0 ? startByteInLine : 0); i++)
+                {
+                    int bytePos = (byteIndex == 0 && startByteInLine > 0) ? i : i;
+                    int linePos = (byteIndex == 0) ? startByteInLine + i : i;
+
+                    sb.Append($"{bytes[byteIndex + i]:X2}");
+                    sb.Append(" ");
+
+                    if ((linePos + 1) % byteGrouping == 0 && linePos < bytesPerLine - 1)
+                        sb.Append(" ");
+                }
+
+                // Pad remaining bytes in line with spaces
+                int remainingBytes = bytesPerLine - (byteIndex == 0 ? startByteInLine : 0) - bytesInThisLine + (byteIndex == 0 ? startByteInLine : 0);
+                for (int i = bytesInThisLine; i < bytesPerLine; i++)
+                {
+                    sb.Append("   ");
+                    if ((i + 1) % byteGrouping == 0 && i < bytesPerLine - 1)
+                        sb.Append(" ");
+                }
+
+                sb.Append("  ");
+
+                // ASCII section
+                if (byteIndex == 0 && startByteInLine > 0)
+                {
+                    for (int i = 0; i < startByteInLine; i++)
+                        sb.Append(" ");
+                }
+
+                for (int i = 0; i < bytesInThisLine - (byteIndex == 0 ? startByteInLine : 0); i++)
+                {
+                    byte b = bytes[byteIndex + i];
+                    char c = (b >= 32 && b < 127) ? (char)b : '.';
+                    sb.Append(c);
+                }
+
+                byteIndex += bytesInThisLine - (byteIndex == 0 ? startByteInLine : 0);
+
+                if (byteIndex < bytes.Length)
+                    sb.AppendLine();
+            }
+
+            Clipboard.SetText(sb.ToString());
+            StatusText.Text = $"Copied {bytes.Length} bytes as formatted view";
         }
 
         /// <summary>

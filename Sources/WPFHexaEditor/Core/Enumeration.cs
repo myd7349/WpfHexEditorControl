@@ -46,7 +46,8 @@ namespace WpfHexaEditor.Core
         JavaCode,
         CCode,
         FSharpCode,
-        PascalCode
+        PascalCode,
+        FormattedView
     }
 
     /// <summary>

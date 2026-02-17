@@ -188,6 +188,11 @@
                         <TextBlock Text="📋" FontSize="14"/>
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem x:Name="CopyFormattedViewMenuItem" Header="{DynamicResource CopyAsFormattedViewString}" Click="CopyFormattedViewMenuItem_Click">
+                    <MenuItem.Icon>
+                        <TextBlock Text="📋" FontSize="14"/>
+                    </MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
 
             <Separator/>
