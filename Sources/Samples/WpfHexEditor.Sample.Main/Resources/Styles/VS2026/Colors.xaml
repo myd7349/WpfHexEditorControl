@@ -41,9 +41,11 @@
 
     <SolidColorBrush x:Key="VS2026_GlassBlurBrush" Color="{StaticResource VS2026_GlassBlur}"/>
     <SolidColorBrush x:Key="VS2026_GlassBorderBrush" Color="{StaticResource VS2026_GlassBorder}"/>
+    <SolidColorBrush x:Key="VS2026_GlassHoverBrush" Color="{StaticResource VS2026_GlassHover}"/>
 
     <SolidColorBrush x:Key="VS2026_TextPrimaryBrush" Color="{StaticResource VS2026_TextPrimary}"/>
     <SolidColorBrush x:Key="VS2026_TextSecondaryBrush" Color="{StaticResource VS2026_TextSecondary}"/>
+    <SolidColorBrush x:Key="VS2026_TextDisabledBrush" Color="{StaticResource VS2026_TextDisabled}"/>
 
     <!-- Gradient Brushes -->
     <LinearGradientBrush x:Key="VS2026_HeroGradient" StartPoint="0,0" EndPoint="1,1">
