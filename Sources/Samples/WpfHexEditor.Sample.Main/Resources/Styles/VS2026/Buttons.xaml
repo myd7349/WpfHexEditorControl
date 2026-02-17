@@ -18,7 +18,8 @@
                             CornerRadius="8"
                             Padding="{TemplateBinding Padding}">
                         <ContentPresenter HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"/>
+                                        VerticalAlignment="Center"
+                                        TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -75,7 +76,8 @@
                                 CornerRadius="12"
                                 Margin="0">
                             <ContentPresenter HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"/>
+                                            VerticalAlignment="Center"
+                                            TextElement.Foreground="{TemplateBinding Foreground}"/>
                         </Border>
 
                         <!-- Hover Glow -->
@@ -125,7 +127,8 @@
                                             Opacity="0.6"/>
                         </Border.Effect>
                         <ContentPresenter HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"/>
+                                        VerticalAlignment="Center"
+                                        TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

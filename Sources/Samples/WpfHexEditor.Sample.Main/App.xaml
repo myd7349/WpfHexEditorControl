@@ -4,7 +4,7 @@
              xmlns:services="clr-namespace:WpfHexEditor.Sample.Main.Services"
              xmlns:hexServices="clr-namespace:WpfHexaEditor.Services;assembly=WPFHexaEditor"
              StartupUri="Views/VS2026MainWindow.xaml">
-    <!-- VS 2026 Preview UI is now active! Change back to "ModernMainWindow.xaml" or "MainWindow.xaml" for legacy UI -->
+    <!-- VS 2026 Preview UI (minimal version with inline styles) -->
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -12,9 +12,7 @@
                 <services:LocalizedResourceDictionary/>
                 <!-- HexEditor Control Localization Resources -->
                 <hexServices:LocalizedResourceDictionary/>
-                <!-- VS 2026 Preview Theme -->
-                <ResourceDictionary Source="Resources/Styles/VS2026Theme.xaml"/>
-                <!-- Default Theme: Office (ThemeManager will switch if user has different preference) -->
+                <!-- Office Theme (needed for existing dialogs like Options/Paramètres) -->
                 <ResourceDictionary Source="Resources/Themes/Office.xaml"/>
                 <!-- Ribbon Vector Icons (Temporary - will be removed when Ribbon is deleted) -->
                 <ResourceDictionary Source="Resources/RibbonIcons.xaml"/>

@@ -1,7 +1,7 @@
 <!--
     Apache 2.0  2026
-    HexEditor V2 - VS 2026 Preview Style Main Window
-    Modern futuristic interface without Ribbon
+    HexEditor V2 - VS 2026 Preview Style Main Window (Minimal Version)
+    Modern interface with glassmorphism
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.5
 -->
@@ -17,10 +17,10 @@
         Title="{Binding WindowTitle}"
         Height="900" Width="1600"
         WindowStartupLocation="CenterScreen"
-        Style="{StaticResource VS2026Window}">
+        Background="#0A0E27">
 
     <Window.InputBindings>
-        <!-- Keyboard shortcuts (same as before) -->
+        <!-- Keyboard shortcuts -->
         <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenFileCommand}"/>
         <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveFileCommand}"/>
         <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseFileCommand}"/>
@@ -28,9 +28,6 @@
         <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}"/>
         <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}"/>
         <KeyBinding Key="OemComma" Modifiers="Control" Command="{Binding ToggleSettingsPanelCommand}"/>
-        <!-- VS 2026 New Shortcuts -->
-        <KeyBinding Key="T" Modifiers="Control" Command="{Binding ToggleCommandPaletteCommand}"/>
-        <KeyBinding Key="B" Modifiers="Control" Command="{Binding ToggleSidebarCommand}"/>
     </Window.InputBindings>
 
     <Grid>
@@ -40,147 +37,96 @@
             <RowDefinition Height="Auto"/>  <!-- Status Bar -->
         </Grid.RowDefinitions>
 
-        <!-- VS 2026 Floating Command Bar -->
+        <!-- Floating Command Bar (Minimal styling) -->
         <Border Grid.Row="0"
-                Style="{StaticResource VS2026FloatingPanel}"
+                Background="#252842"
+                CornerRadius="16"
+                Padding="16"
                 Margin="16,12,16,8"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="20" ShadowDepth="8" Opacity="0.5"/>
+            </Border.Effect>
 
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
 
                 <!-- File Group -->
-                <Button Content="📄"
-                        ToolTip="New File (Ctrl+N)"
-                        Style="{StaticResource VS2026FlatButton}"
-                        Command="{Binding NewFileCommand}"/>
-                <Button Content="📁"
-                        ToolTip="Open File (Ctrl+O)"
-                        Style="{StaticResource VS2026FlatButton}"
-                        Command="{Binding OpenFileCommand}"/>
-                <Button Content="💾"
-                        ToolTip="Save File (Ctrl+S)"
-                        Style="{StaticResource VS2026FlatButton}"
-                        Command="{Binding SaveFileCommand}"/>
+                <Button Content="📄" ToolTip="New File (Ctrl+N)"
+                        Command="{Binding NewFileCommand}"
+                        Background="Transparent" BorderThickness="0" Foreground="White"
+                        Padding="12,6" FontSize="18" Cursor="Hand"/>
+                <Button Content="📁" ToolTip="Open File (Ctrl+O)"
+                        Command="{Binding OpenFileCommand}"
+                        Background="Transparent" BorderThickness="0" Foreground="White"
+                        Padding="12,6" FontSize="18" Cursor="Hand"/>
+                <Button Content="💾" ToolTip="Save File (Ctrl+S)"
+                        Command="{Binding SaveFileCommand}"
+                        Background="Transparent" BorderThickness="0" Foreground="White"
+                        Padding="12,6" FontSize="18" Cursor="Hand"/>
 
-                <Separator Style="{StaticResource VS2026Separator}"/>
+                <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
 
                 <!-- Edit Group -->
-                <Button Content="↩️"
-                        ToolTip="Undo (Ctrl+Z)"
-                        Style="{StaticResource VS2026FlatButton}"
-                        Command="{Binding UndoCommand}"/>
-                <Button Content="↪️"
-                        ToolTip="Redo (Ctrl+Y)"
-                        Style="{StaticResource VS2026FlatButton}"
-                        Command="{Binding RedoCommand}"/>
+                <Button Content="↩️" ToolTip="Undo (Ctrl+Z)"
+                        Command="{Binding UndoCommand}"
+                        Background="Transparent" BorderThickness="0" Foreground="White"
+                        Padding="12,6" FontSize="18" Cursor="Hand"/>
+                <Button Content="↪️" ToolTip="Redo (Ctrl+Y)"
+                        Command="{Binding RedoCommand}"
+                        Background="Transparent" BorderThickness="0" Foreground="White"
+                        Padding="12,6" FontSize="18" Cursor="Hand"/>
 
-                <Separator Style="{StaticResource VS2026Separator}"/>
+                <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
 
                 <!-- Search Box -->
-                <TextBox x:Name="SearchBox"
-                         Width="250"
-                         Style="{StaticResource VS2026SearchBox}"
+                <TextBox x:Name="SearchBox" Width="250"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Tag="🔍 AI Search (Ctrl+F)..."
+                         Background="#1A1D35" Foreground="White" BorderBrush="#60FFFFFF"
+                         BorderThickness="1" Padding="12,8" FontSize="14"
                          ToolTip="Quick search in file"/>
 
-                <Separator Style="{StaticResource VS2026Separator}"/>
+                <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
 
                 <!-- Right Side -->
-                <Button Content="⚙️"
-                        ToolTip="Settings (Ctrl+,)"
-                        Style="{StaticResource VS2026FlatButton}"
-                        Command="{Binding ToggleSettingsPanelCommand}"/>
-                <Button Content="🎨"
-                        ToolTip="Theme"
-                        Style="{StaticResource VS2026FlatButton}"
-                        Command="{Binding ToggleThemeCommand}"/>
-                <Button Content="🌐"
-                        ToolTip="Language"
-                        Style="{StaticResource VS2026FlatButton}"
-                        Command="{Binding ToggleLanguageCommand}"/>
+                <Button Content="⚙️" ToolTip="Settings (Ctrl+,)"
+                        Command="{Binding ToggleSettingsPanelCommand}"
+                        Background="Transparent" BorderThickness="0" Foreground="White"
+                        Padding="12,6" FontSize="18" Cursor="Hand"/>
+                <Button Content="🎨" ToolTip="Theme"
+                        Command="{Binding ToggleThemeCommand}"
+                        Background="Transparent" BorderThickness="0" Foreground="White"
+                        Padding="12,6" FontSize="18" Cursor="Hand"/>
+                <Button Content="🌐" ToolTip="Language"
+                        Command="{Binding ToggleLanguageCommand}"
+                        Background="Transparent" BorderThickness="0" Foreground="White"
+                        Padding="12,6" FontSize="18" Cursor="Hand"/>
 
             </StackPanel>
         </Border>
 
-        <!-- Main Content with Sidebar -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/> <!-- Sidebar -->
-                <ColumnDefinition Width="*"/>    <!-- HexEditor Content -->
-            </Grid.ColumnDefinitions>
+        <!-- Main Content (No sidebar for now) -->
+        <Border Grid.Row="1"
+                Background="#1A1D35"
+                CornerRadius="12"
+                Margin="16,8">
 
-            <!-- VS 2026 Neumorphic Sidebar -->
-            <Border Grid.Column="0"
-                    Background="{StaticResource VS2026_DarkSurfaceBrush}"
-                    Width="60">
+            <hexEditor:HexEditor x:Name="HexEditorControl"
+                                Background="#0A0E27"
+                                Foreground="White"
+                                Margin="4"/>
 
-                <StackPanel VerticalAlignment="Top" Margin="0,8,0,0">
-
-                    <!-- Explorer -->
-                    <Button Style="{StaticResource VS2026SidebarButton}"
-                            ToolTip="Explorer"
-                            Command="{Binding ToggleExplorerCommand}">
-                        <TextBlock Text="📁" FontSize="24"/>
-                    </Button>
-
-                    <!-- Search -->
-                    <Button Style="{StaticResource VS2026SidebarButton}"
-                            ToolTip="Search (Ctrl+F)"
-                            Command="{Binding ToggleSearchPanelCommand}">
-                        <TextBlock Text="🔍" FontSize="24"/>
-                    </Button>
-
-                    <!-- Bookmarks -->
-                    <Button Style="{StaticResource VS2026SidebarButton}"
-                            ToolTip="Bookmarks"
-                            Command="{Binding ToggleBookmarksCommand}">
-                        <TextBlock Text="📌" FontSize="24"/>
-                    </Button>
-
-                    <!-- Statistics -->
-                    <Button Style="{StaticResource VS2026SidebarButton}"
-                            ToolTip="Statistics"
-                            Command="{Binding ToggleStatsCommand}">
-                        <TextBlock Text="📊" FontSize="24"/>
-                    </Button>
-
-                    <!-- Settings (Bottom) -->
-                    <Button Style="{StaticResource VS2026SidebarButton}"
-                            ToolTip="Settings (Ctrl+,)"
-                            VerticalAlignment="Bottom"
-                            Margin="0,0,0,8"
-                            Command="{Binding ToggleSettingsPanelCommand}">
-                        <TextBlock Text="⚙️" FontSize="24"/>
-                    </Button>
-
-                </StackPanel>
-            </Border>
-
-            <!-- HexEditor Content Area -->
-            <Border Grid.Column="1"
-                    Background="{StaticResource VS2026_DarkSurfaceBrush}"
-                    CornerRadius="12"
-                    Margin="8">
-
-                <hexEditor:HexEditor x:Name="HexEditorControl"
-                                    Background="{StaticResource VS2026_DeepSpaceBrush}"
-                                    Foreground="{StaticResource VS2026_TextPrimaryBrush}"
-                                    Margin="4"/>
-
-            </Border>
-
-        </Grid>
+        </Border>
 
         <!-- Status Bar -->
-        <StatusBar Grid.Row="2" Style="{StaticResource VS2026StatusBar}">
+        <StatusBar Grid.Row="2" Background="#1A1D35" Foreground="#B4B9D8"
+                   Height="28" Padding="8,0" BorderBrush="#60FFFFFF" BorderThickness="0,1,0,0">
             <StatusBarItem Content="{Binding StatusText}"/>
-            <Separator Style="{StaticResource VS2026Separator}"/>
+            <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
             <StatusBarItem Content="{Binding PositionText}"/>
-            <Separator Style="{StaticResource VS2026Separator}"/>
+            <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
             <StatusBarItem Content="{Binding EncodingText}"/>
-            <Separator Style="{StaticResource VS2026Separator}"/>
+            <Separator Width="1" Margin="8,4" Background="#60FFFFFF"/>
             <StatusBarItem Content="{Binding FileSizeText}" HorizontalAlignment="Right"/>
         </StatusBar>
 
