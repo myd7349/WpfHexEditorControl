@@ -656,6 +656,34 @@
     <value>Appearance</value>
     <comment>Options dialog - Appearance tab header</comment>
   </data>
+  <data name="Options_ClipboardTab" xml:space="preserve">
+    <value>Clipboard</value>
+    <comment>Options dialog - Clipboard tab header</comment>
+  </data>
+  <data name="Options_CopyMode_Instructions" xml:space="preserve">
+    <value>Select the default format for copying data to clipboard:</value>
+    <comment>Options dialog - Copy mode selection instructions</comment>
+  </data>
+  <data name="Options_CopyMode_CurrentLabel" xml:space="preserve">
+    <value>CURRENT COPY FORMAT</value>
+    <comment>Options dialog - Current copy format label</comment>
+  </data>
+  <data name="Options_CopyMode_ColumnIcon" xml:space="preserve">
+    <value>Icon</value>
+    <comment>Options dialog - Copy mode list column header for icon</comment>
+  </data>
+  <data name="Options_CopyMode_ColumnName" xml:space="preserve">
+    <value>Format</value>
+    <comment>Options dialog - Copy mode list column header for name</comment>
+  </data>
+  <data name="Options_CopyMode_ColumnDescription" xml:space="preserve">
+    <value>Description</value>
+    <comment>Options dialog - Copy mode list column header for description</comment>
+  </data>
+  <data name="Options_CopyMode_InstantInfo" xml:space="preserve">
+    <value>Changes take effect immediately when you select a format</value>
+    <comment>Options dialog - Copy mode instant change info message</comment>
+  </data>
   <data name="Options_PerformanceTab" xml:space="preserve">
     <value>Performance</value>
     <comment>Options dialog - Performance tab header</comment>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using WpfHexaEditor.Core;
 using WpfHexEditor.Sample.Main.Services;
 
 namespace WpfHexEditor.Sample.Main.Views.Dialogs
@@ -13,6 +14,7 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
     public partial class OptionsDialog : Window
     {
         public CultureInfo SelectedCulture { get; private set; }
+        public CopyPasteMode SelectedCopyMode { get; private set; }
 
         public OptionsDialog()
         {
@@ -21,12 +23,16 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
             InitializeComponent();
             LoadLanguages();
             LoadThemes();
+            LoadCopyModes();
 
             // Subscribe to selection changes for instant language switching
             LanguageListView.SelectionChanged += LanguageListView_SelectionChanged;
 
             // Subscribe to selection changes for instant theme switching
             ThemeListView.SelectionChanged += ThemeListView_SelectionChanged;
+
+            // Subscribe to selection changes for instant copy mode switching
+            CopyModeListView.SelectionChanged += CopyModeListView_SelectionChanged;
         }
 
         private void LoadLanguages()
@@ -195,6 +201,62 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
         {
             DialogResult = false;
         }
+
+        private void LoadCopyModes()
+        {
+            // All supported copy modes
+            var copyModes = new List<CopyModeInfo>
+            {
+                new CopyModeInfo { Icon = "📋", Mode = CopyPasteMode.HexaString, DisplayName = "Hexadecimal", Description = "Copy as hexadecimal string (e.g., \"48656C6C6F\")" },
+                new CopyModeInfo { Icon = "📝", Mode = CopyPasteMode.AsciiString, DisplayName = "ASCII", Description = "Copy as ASCII text string" },
+                new CopyModeInfo { Icon = "📊", Mode = CopyPasteMode.FormattedView, DisplayName = "Formatted View", Description = "Copy with offsets, hex bytes, and ASCII columns" },
+                new CopyModeInfo { Icon = "💻", Mode = CopyPasteMode.CSharpCode, DisplayName = "C# Code", Description = "Copy as C# byte array code" },
+                new CopyModeInfo { Icon = "🔧", Mode = CopyPasteMode.CCode, DisplayName = "C Code", Description = "Copy as C byte array code" },
+                new CopyModeInfo { Icon = "📖", Mode = CopyPasteMode.TblString, DisplayName = "TBL String", Description = "Copy using loaded TBL character table" }
+            };
+
+            CopyModeListView.ItemsSource = copyModes;
+
+            // Select current copy mode (default to HexaString if not set)
+            var currentMode = CopyPasteMode.HexaString; // TODO: Load from settings
+            System.Diagnostics.Debug.WriteLine($"[OptionsDialog.LoadCopyModes] Current Copy Mode: {currentMode}");
+
+            var currentModeInfo = copyModes.FirstOrDefault(m => m.Mode == currentMode) ?? copyModes.First();
+            System.Diagnostics.Debug.WriteLine($"[OptionsDialog.LoadCopyModes] Matched mode: {currentModeInfo.DisplayName}");
+
+            CopyModeListView.SelectedItem = currentModeInfo;
+            SelectedCopyMode = currentMode;
+
+            // Update current copy mode display
+            CurrentCopyModeIcon.Text = currentModeInfo.Icon;
+            CurrentCopyModeText.Text = $"{currentModeInfo.DisplayName} - {currentModeInfo.Description}";
+        }
+
+        /// <summary>
+        /// Handles instant copy mode switching when user selects a mode from the list.
+        /// </summary>
+        private void CopyModeListView_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (CopyModeListView.SelectedItem is CopyModeInfo selected)
+            {
+                var oldMode = SelectedCopyMode;
+
+                // Only change if it's actually different
+                if (selected.Mode != oldMode)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[OptionsDialog.CopyModeListView_SelectionChanged] Instantly changing copy mode from '{oldMode}' to '{selected.Mode}'");
+
+                    // Update the current copy mode display immediately
+                    CurrentCopyModeIcon.Text = selected.Icon;
+                    CurrentCopyModeText.Text = $"{selected.DisplayName} - {selected.Description}";
+
+                    SelectedCopyMode = selected.Mode;
+
+                    // TODO: Persist the setting
+                    System.Diagnostics.Debug.WriteLine($"[OptionsDialog.CopyModeListView_SelectionChanged] Copy mode changed instantly! UI updated in real-time.");
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -245,6 +307,32 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
 
         /// <summary>
         /// Description of the theme
+        /// </summary>
+        public string Description { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a copy mode option with icon, mode, and description
+    /// </summary>
+    public class CopyModeInfo
+    {
+        /// <summary>
+        /// Icon emoji for the copy mode
+        /// </summary>
+        public string Icon { get; set; }
+
+        /// <summary>
+        /// Copy/Paste mode enum value
+        /// </summary>
+        public CopyPasteMode Mode { get; set; }
+
+        /// <summary>
+        /// Display name of the copy mode
+        /// </summary>
+        public string DisplayName { get; set; }
+
+        /// <summary>
+        /// Description of the copy mode
         /// </summary>
         public string Description { get; set; }
     }
