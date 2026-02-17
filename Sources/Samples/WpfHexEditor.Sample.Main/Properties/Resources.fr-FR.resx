@@ -247,7 +247,7 @@
     <value>Basculer mode Insertion/Écrasement (Touche Insertion)</value>
   </data>
   <data name="Toolbar_ReadOnly" xml:space="preserve">
-    <value>🔒 LEC</value>
+    <value>LEC</value>
   </data>
   <data name="Toolbar_ReadOnly_ToolTip" xml:space="preserve">
     <value>Basculer mode Lecture seule</value>
@@ -498,7 +498,7 @@
     <value>Options</value>
   </data>
   <data name="Options_Header_Title" xml:space="preserve">
-    <value>⚙️ Options de l'application</value>
+    <value>Options de l'application</value>
   </data>
   <data name="Options_Header_Subtitle" xml:space="preserve">
     <value>Configurez vos préférences de l'éditeur hexadécimal</value>
@@ -730,7 +730,7 @@
     <value>Autoriser compte d'octets</value>
   </data>
   <data name="HexSettings_Advanced_Header" xml:space="preserve">
-    <value>⚙️ Options avancées</value>
+    <value>Options avancées</value>
   </data>
   <data name="HexSettings_Advanced_ByteShift" xml:space="preserve">
     <value>Décalage d'octet à gauche :</value>
@@ -952,7 +952,7 @@
     <value>Permettre le comptage d'octets</value>
   </data>
   <data name="HexSettings_Advanced_Title" xml:space="preserve">
-    <value>⚙️ Options avancées</value>
+    <value>Options avancées</value>
   </data>
   <data name="HexSettings_Advanced_ByteShiftLeft" xml:space="preserve">
     <value>Décalage d'octet à gauche :</value>

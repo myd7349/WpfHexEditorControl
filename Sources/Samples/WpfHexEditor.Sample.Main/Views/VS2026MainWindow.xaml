@@ -18,7 +18,8 @@
         Title="{Binding WindowTitle}"
         Height="900" Width="1600"
         WindowStartupLocation="CenterScreen"
-        Background="#F0F0F0">
+        Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource ForegroundBrush}">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -49,54 +50,222 @@
         <!-- Menu Bar (Original Structure) -->
         <Menu Grid.Row="0">
             <MenuItem Header="{DynamicResource Menu_File}">
-                <MenuItem Header="{DynamicResource Menu_File_Open}" Command="{Binding OpenFileCommand}" InputGestureText="Ctrl+O"/>
-                <MenuItem Header="{DynamicResource Menu_File_Save}" Command="{Binding SaveFileCommand}" InputGestureText="Ctrl+S"/>
-                <MenuItem Header="{DynamicResource Menu_File_SaveAs}" Command="{Binding SaveAsFileCommand}"/>
+                <MenuItem Command="{Binding OpenFileCommand}" InputGestureText="Ctrl+O">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📂 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_File_Open}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding SaveFileCommand}" InputGestureText="Ctrl+S">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="💾 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_File_Save}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding SaveAsFileCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="💾 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_File_SaveAs}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="{DynamicResource Menu_File_Close}" Command="{Binding CloseFileCommand}"/>
+                <MenuItem Command="{Binding CloseFileCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="❌ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_File_Close}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="{DynamicResource Menu_File_Exit}" Command="{Binding ExitCommand}"/>
+                <MenuItem Command="{Binding ExitCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🚪 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_File_Exit}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
             </MenuItem>
 
             <MenuItem Header="{DynamicResource Menu_Edit}">
-                <MenuItem Header="{DynamicResource Menu_Edit_Undo}" Command="{Binding UndoCommand}" InputGestureText="Ctrl+Z"/>
-                <MenuItem Header="{DynamicResource Menu_Edit_Redo}" Command="{Binding RedoCommand}" InputGestureText="Ctrl+Y"/>
+                <MenuItem Command="{Binding UndoCommand}" InputGestureText="Ctrl+Z">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="↶ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_Undo}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding RedoCommand}" InputGestureText="Ctrl+Y">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="↷ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_Redo}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="{DynamicResource Menu_Edit_Find}" Command="{Binding ToggleSearchPanelCommand}" InputGestureText="Ctrl+F"/>
-                <MenuItem Header="{DynamicResource Menu_Edit_FindReplace}" Command="{Binding ToggleSearchPanelCommand}" InputGestureText="Ctrl+H"/>
+                <MenuItem Command="{Binding ToggleSearchPanelCommand}" InputGestureText="Ctrl+F">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔍 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_Find}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding ToggleSearchPanelCommand}" InputGestureText="Ctrl+H">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔎 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_FindReplace}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="{DynamicResource Menu_Edit_Copy}" Command="{Binding CopyCommand}" InputGestureText="Ctrl+C"/>
-                <MenuItem Header="{DynamicResource Menu_Edit_Paste}" Command="{Binding PasteCommand}" InputGestureText="Ctrl+V"/>
-                <MenuItem Header="{DynamicResource Menu_Edit_DeleteSelection}" Command="{Binding DeleteSelectionCommand}" InputGestureText="Del"/>
+                <MenuItem Command="{Binding CopyCommand}" InputGestureText="Ctrl+C">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📋 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_Copy}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding PasteCommand}" InputGestureText="Ctrl+V">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📄 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_Paste}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding DeleteSelectionCommand}" InputGestureText="Del">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🗑️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_DeleteSelection}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
                 <Separator/>
-                <MenuItem Header="{DynamicResource Menu_Edit_SelectAll}" Command="{Binding SelectAllCommand}" InputGestureText="Ctrl+A"/>
-                <MenuItem Header="{DynamicResource Menu_Edit_ClearSelection}" Command="{Binding ClearSelectionCommand}"/>
+                <MenuItem Command="{Binding SelectAllCommand}" InputGestureText="Ctrl+A">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="☑️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_SelectAll}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding ClearSelectionCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⬜ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Edit_ClearSelection}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="{DynamicResource Menu_Edit_Bookmarks}">
-                    <MenuItem Header="{DynamicResource Menu_Edit_ToggleBookmark}" Command="{Binding ToggleBookmarkCommand}" InputGestureText="Ctrl+B"/>
-                    <MenuItem Header="{DynamicResource Menu_Edit_ClearAllBookmarks}" Command="{Binding ClearBookmarksCommand}"/>
+                    <MenuItem Command="{Binding ToggleBookmarkCommand}" InputGestureText="Ctrl+B">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔖 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="{DynamicResource Menu_Edit_ToggleBookmark}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem Command="{Binding ClearBookmarksCommand}">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🗑️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="{DynamicResource Menu_Edit_ClearAllBookmarks}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
                 </MenuItem>
             </MenuItem>
 
             <MenuItem Header="{DynamicResource Menu_Search}">
-                <MenuItem Header="{DynamicResource Menu_Search_FindNext}" Command="{Binding FindNextCommand}" InputGestureText="F3"/>
-                <MenuItem Header="{DynamicResource Menu_Search_FindPrevious}" Command="{Binding FindPreviousCommand}" InputGestureText="Shift+F3"/>
+                <MenuItem Command="{Binding FindNextCommand}" InputGestureText="F3">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⬇️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Search_FindNext}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding FindPreviousCommand}" InputGestureText="Shift+F3">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⬆️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Search_FindPrevious}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
             </MenuItem>
 
             <MenuItem Header="{DynamicResource Menu_Tools}">
                 <MenuItem Header="{DynamicResource Menu_Tools_Bookmarks}">
-                    <MenuItem Header="{DynamicResource Menu_Edit_ToggleBookmark}" Command="{Binding ToggleBookmarkCommand}" InputGestureText="Ctrl+B"/>
-                    <MenuItem Header="{DynamicResource Menu_Edit_ClearAllBookmarks}" Command="{Binding ClearBookmarksCommand}"/>
+                    <MenuItem Command="{Binding ToggleBookmarkCommand}" InputGestureText="Ctrl+B">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔖 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="{DynamicResource Menu_Edit_ToggleBookmark}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem Command="{Binding ClearBookmarksCommand}">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🗑️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="{DynamicResource Menu_Edit_ClearAllBookmarks}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
                     <Separator/>
-                    <MenuItem Header="{DynamicResource Menu_Tools_NextBookmark}" Command="{Binding NextBookmarkCommand}" InputGestureText="Ctrl+N"/>
-                    <MenuItem Header="{DynamicResource Menu_Tools_PreviousBookmark}" Command="{Binding PreviousBookmarkCommand}" InputGestureText="Ctrl+P"/>
+                    <MenuItem Command="{Binding NextBookmarkCommand}" InputGestureText="Ctrl+N">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⬇️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="{DynamicResource Menu_Tools_NextBookmark}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem Command="{Binding PreviousBookmarkCommand}" InputGestureText="Ctrl+P">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⬆️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="{DynamicResource Menu_Tools_PreviousBookmark}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
                     <Separator/>
-                    <MenuItem Header="{DynamicResource Menu_Tools_ShowAllBookmarks}" Command="{Binding ShowBookmarksCommand}"/>
+                    <MenuItem Command="{Binding ShowBookmarksCommand}">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📚 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="{DynamicResource Menu_Tools_ShowAllBookmarks}"/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
                 </MenuItem>
             </MenuItem>
 
             <MenuItem Header="{DynamicResource Menu_Position}">
-                <MenuItem Header="{DynamicResource Menu_Position_GoTo}" Command="{Binding GoToPositionCommand}" InputGestureText="Ctrl+G"/>
+                <MenuItem Command="{Binding GoToPositionCommand}" InputGestureText="Ctrl+G">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🎯 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Position_GoTo}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
             </MenuItem>
 
             <MenuItem Header="{DynamicResource Menu_View}">
@@ -115,16 +284,22 @@
             </MenuItem>
 
             <MenuItem Header="{DynamicResource Menu_Options}">
-                <MenuItem Header="{DynamicResource Menu_Options_SettingsPanel}" Command="{Binding ToggleSettingsPanelCommand}" InputGestureText="Ctrl+,">
-                    <MenuItem.Icon>
-                        <TextBlock Text="⚙️" FontSize="16"/>
-                    </MenuItem.Icon>
+                <MenuItem Command="{Binding ToggleSettingsPanelCommand}" InputGestureText="Ctrl+,">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚙️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Options_SettingsPanel}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="{DynamicResource Menu_Options_Advanced}" Click="ShowOptionsDialog_Click">
-                    <MenuItem.Icon>
-                        <TextBlock Text="🔧" FontSize="16"/>
-                    </MenuItem.Icon>
+                <MenuItem Click="ShowOptionsDialog_Click">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔧 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Options_Advanced}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="{DynamicResource Menu_Options_ContextMenu}" IsCheckable="True" IsChecked="True"/>
@@ -135,8 +310,22 @@
             </MenuItem>
 
             <MenuItem Header="{DynamicResource Menu_Help}">
-                <MenuItem Header="{DynamicResource Menu_Help_About}" Command="{Binding ShowAboutCommand}"/>
-                <MenuItem Header="{DynamicResource Menu_Help_KeyboardShortcuts}" Command="{Binding ShowKeyboardShortcutsCommand}"/>
+                <MenuItem Command="{Binding ShowAboutCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="ℹ️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Help_About}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Command="{Binding ShowKeyboardShortcutsCommand}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⌨️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="{DynamicResource Menu_Help_KeyboardShortcuts}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
             </MenuItem>
         </Menu>
 
