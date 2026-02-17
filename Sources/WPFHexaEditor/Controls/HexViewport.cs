@@ -1093,9 +1093,10 @@ namespace WpfHexaEditor.Controls
                 {
                     ByteDoubleClicked?.Invoke(this, clickedPosition.Value);
                 }
-                else
+                else if (e.ChangedButton == MouseButton.Left)
                 {
-                    // Single click - start selection drag
+                    // Single LEFT click only - start selection drag
+                    // Right-click is handled separately in OnMouseRightButtonDown to preserve selection
                     _isMouseDown = true;
                     _dragStartPosition = clickedPosition.Value;
                     CaptureMouse();
@@ -1229,6 +1230,7 @@ namespace WpfHexaEditor.Controls
             if (position.HasValue)
             {
                 ByteRightClick?.Invoke(this, new ByteRightClickEventArgs(position.Value));
+                e.Handled = true; // Prevent event from bubbling up
             }
         }
 
