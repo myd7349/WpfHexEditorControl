@@ -1527,7 +1527,7 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty MouseOverColorProperty =
             DependencyProperty.Register(nameof(MouseOverColor), typeof(Color), typeof(HexEditor),
-                new PropertyMetadata(Color.FromRgb(227, 242, 253), OnMouseOverColorChanged));
+                new PropertyMetadata(Color.FromRgb(0, 102, 204), OnMouseOverColorChanged)); // Deep Blue - HDR visible
 
         private static void OnMouseOverColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

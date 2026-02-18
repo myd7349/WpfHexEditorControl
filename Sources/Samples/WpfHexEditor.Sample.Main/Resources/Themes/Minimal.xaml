@@ -52,7 +52,7 @@
     <Color x:Key="HexEditor_ByteDeletedColor">#000000</Color>              <!-- Black -->
     <Color x:Key="HexEditor_ByteAddedColor">#444444</Color>                <!-- Dark Gray -->
     <Color x:Key="HexEditor_HighLightColor">#999999</Color>                <!-- Light Gray -->
-    <Color x:Key="HexEditor_MouseOverColor">#F0F0F0</Color>                <!-- Very Light Gray -->
+    <!-- MouseOverColor removed - controlled by HexEditor DP default -->
     <Color x:Key="HexEditor_ForegroundSecondColor">#444444</Color>         <!-- Dark Gray -->
     <Color x:Key="HexEditor_ForegroundOffSetHeaderColor">#666666</Color>   <!-- Medium Gray -->
     <Color x:Key="HexEditor_ForegroundHighLightOffSetHeaderColor">#000000</Color> <!-- Black -->

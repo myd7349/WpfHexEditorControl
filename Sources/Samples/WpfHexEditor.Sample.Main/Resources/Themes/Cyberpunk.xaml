@@ -55,7 +55,7 @@
     <Color x:Key="HexEditor_ByteDeletedColor">#FF006E</Color>              <!-- Neon Pink -->
     <Color x:Key="HexEditor_ByteAddedColor">#00FF9F</Color>                <!-- Neon Green -->
     <Color x:Key="HexEditor_HighLightColor">#FFBE0B</Color>                <!-- Neon Yellow -->
-    <Color x:Key="HexEditor_MouseOverColor">#3D1A5C</Color>                <!-- Dark Purple -->
+    <!-- MouseOverColor removed - controlled by HexEditor DP default -->
     <Color x:Key="HexEditor_ForegroundSecondColor">#00F0FF</Color>         <!-- Neon Cyan -->
     <Color x:Key="HexEditor_ForegroundOffSetHeaderColor">#A0AED9</Color>   <!-- Light Blue -->
     <Color x:Key="HexEditor_ForegroundHighLightOffSetHeaderColor">#00F0FF</Color> <!-- Bright Cyan -->

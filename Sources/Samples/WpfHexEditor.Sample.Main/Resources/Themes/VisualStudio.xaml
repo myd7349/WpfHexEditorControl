@@ -52,7 +52,7 @@
     <Color x:Key="HexEditor_ByteDeletedColor">#F48771</Color>              <!-- Salmon Red -->
     <Color x:Key="HexEditor_ByteAddedColor">#4EC9B0</Color>                <!-- Teal Green -->
     <Color x:Key="HexEditor_HighLightColor">#FFCC00</Color>                <!-- Yellow -->
-    <Color x:Key="HexEditor_MouseOverColor">#094771</Color>                <!-- Dark Blue -->
+    <!-- MouseOverColor removed - controlled by HexEditor DP default -->
     <Color x:Key="HexEditor_ForegroundSecondColor">#1C97EA</Color>         <!-- Light Blue -->
     <Color x:Key="HexEditor_ForegroundOffSetHeaderColor">#CCCCCC</Color>   <!-- Light Gray -->
     <Color x:Key="HexEditor_ForegroundHighLightOffSetHeaderColor">#1C97EA</Color> <!-- Bright Blue -->

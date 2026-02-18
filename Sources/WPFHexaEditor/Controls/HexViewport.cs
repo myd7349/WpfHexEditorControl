@@ -111,7 +111,7 @@ namespace WpfHexaEditor.Controls
         // Mouse hover preview (shows which byte will be selected)
         private long _mouseHoverPosition = -1; // Position of byte under mouse cursor
         private bool _mouseHoverInHexArea = true; // True if hovering in hex area, false if in ASCII area
-        private Brush _mouseHoverBrush = new SolidColorBrush(Color.FromArgb(0x40, 0xE3, 0xF2, 0xFD)); // Light blue hover
+        private Brush _mouseHoverBrush = new SolidColorBrush(Color.FromRgb(255, 140, 0)); // Dark orange FULLY OPAQUE - HDR compatible
 
         // Refresh time tracking
         private System.Diagnostics.Stopwatch _refreshStopwatch = new System.Diagnostics.Stopwatch();
@@ -459,7 +459,20 @@ namespace WpfHexaEditor.Controls
         public Brush MouseHoverBrush
         {
             get => _mouseHoverBrush;
-            set { _mouseHoverBrush = value; InvalidateVisual(); }
+            set
+            {
+                // Ensure the brush is not null - keep fully opaque for HDR screens
+                if (value is SolidColorBrush solidBrush)
+                {
+                    // Use the color as-is (don't reduce opacity - important for HDR screens)
+                    _mouseHoverBrush = value;
+                }
+                else
+                {
+                    _mouseHoverBrush = value ?? new SolidColorBrush(Color.FromRgb(255, 140, 0)); // Dark orange fully opaque
+                }
+                InvalidateVisual();
+            }
         }
 
         /// <summary>
@@ -878,7 +891,9 @@ namespace WpfHexaEditor.Controls
 
             // Draw mouse hover preview (shows which byte will be selected on click)
             // Only show in hex area if mouse is hovering in hex area (matches Legacy behavior)
-            if (_mouseHoverPosition >= 0 && _mouseHoverInHexArea && byteData.VirtualPos.Value == _mouseHoverPosition)
+            if (_mouseHoverPosition >= 0 && _mouseHoverInHexArea &&
+                byteData.VirtualPos.Value == _mouseHoverPosition &&
+                _mouseHoverBrush != null)
             {
                 dc.DrawRoundedRectangle(_mouseHoverBrush, null, rect, 2, 2);
             }
@@ -1217,9 +1232,12 @@ namespace WpfHexaEditor.Controls
 
             double x = mousePos.X;
 
+            // Start position depends on ShowOffset setting (matches drawing logic)
+            double hexStartX = ShowOffset ? OffsetWidth : 0;
+
             // Check if click is in hex area
             // Must account for ByteSpacers to get accurate byte position
-            double hexX = OffsetWidth;
+            double hexX = hexStartX;
 
             for (int i = 0; i < line.Bytes.Count; i++)
             {
@@ -1232,15 +1250,16 @@ namespace WpfHexaEditor.Controls
                     hexX += (int)ByteSpacerWidthTickness;
                 }
 
-                // Check if click is within this byte's rect (matches DrawHexByte logic)
-                double byteWidth = HexByteWidth - HexByteSpacing;
-                if (x >= hexX && x < hexX + byteWidth)
+                // Check if click is within this byte's rect
+                // Include full spacing to avoid gaps between bytes (but ByteSpacers are still excluded)
+                double byteHitWidth = HexByteWidth + HexByteSpacing;
+                if (x >= hexX && x < hexX + byteHitWidth)
                 {
-                    // Click is within this byte's visual rect
+                    // Click is within this byte's area (including spacing after it)
                     return (line.Bytes[i].VirtualPos.Value, true);
                 }
 
-                hexX += HexByteWidth + HexByteSpacing;
+                hexX += byteHitWidth;
             }
 
             // Check if click is in ASCII area
@@ -1257,7 +1276,8 @@ namespace WpfHexaEditor.Controls
             }
             double hexSpacersWidth = numSpacers * (int)ByteSpacerWidthTickness;
 
-            double separatorX = OffsetWidth + (_bytesPerLine * (HexByteWidth + HexByteSpacing)) + hexSpacersWidth + 8;
+            // Calculate separator position (matches drawing logic exactly)
+            double separatorX = hexStartX + (_bytesPerLine * (HexByteWidth + HexByteSpacing)) + hexSpacersWidth + 4;
             double asciiX = separatorX + SeparatorWidth;
 
             // Iterate through bytes in ASCII area (spacers added in loop, not pre-calculated)

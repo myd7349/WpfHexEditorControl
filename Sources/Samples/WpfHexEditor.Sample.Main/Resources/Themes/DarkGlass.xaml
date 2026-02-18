@@ -51,7 +51,7 @@
     <Color x:Key="HexEditor_ByteDeletedColor">#FF5252</Color>              <!-- Red -->
     <Color x:Key="HexEditor_ByteAddedColor">#00E676</Color>                <!-- Green -->
     <Color x:Key="HexEditor_HighLightColor">#FFD700</Color>                <!-- Gold -->
-    <Color x:Key="HexEditor_MouseOverColor">#1A4D5C</Color>                <!-- Dark Cyan -->
+    <!-- MouseOverColor removed - controlled by HexEditor DP default -->
     <Color x:Key="HexEditor_ForegroundSecondColor">#40C4FF</Color>         <!-- Light Blue -->
     <Color x:Key="HexEditor_ForegroundOffSetHeaderColor">#B0B0B0</Color>   <!-- Light Gray -->
     <Color x:Key="HexEditor_ForegroundHighLightOffSetHeaderColor">#00D9FF</Color> <!-- Bright Cyan -->
