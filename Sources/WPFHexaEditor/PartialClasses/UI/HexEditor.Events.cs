@@ -624,6 +624,7 @@ namespace WpfHexaEditor
             if (lineNumber < currentScroll)
             {
                 _viewModel.ScrollPosition = lineNumber;
+                VerticalScroll.Value = lineNumber; // Sync scrollbar visual
             }
             // Scroll down if cursor moves beyond the last visible byte (Legacy behavior)
             // This accounts for status bar and other UI elements that may hide bottom lines
@@ -643,6 +644,7 @@ namespace WpfHexaEditor
                     if (lastVisibleByte >= 0 && bytePosition > lastVisibleByte)
                     {
                         _viewModel.ScrollPosition = currentScroll + 1;
+                        VerticalScroll.Value = currentScroll + 1; // Sync scrollbar visual
                     }
                 }
             }
