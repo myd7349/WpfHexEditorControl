@@ -245,6 +245,7 @@ namespace WpfHexaEditor
 
             // Enable/disable menu items based on state
             var undoItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "UndoMenuItem") as MenuItem;
+            var copyItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyMenuItem") as MenuItem;
             var copyAsItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyAsMenuItem") as MenuItem;
             var copyHexaItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyHexaMenuItem") as MenuItem;
             var copyAsciiItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "CopyAsciiMenuItem") as MenuItem;
@@ -259,6 +260,7 @@ namespace WpfHexaEditor
             var replaceItem = LogicalTreeHelper.FindLogicalNode(contextMenu, "ReplaceByteMenuItem") as MenuItem;
 
             if (undoItem != null) undoItem.IsEnabled = CanUndo;
+            if (copyItem != null) copyItem.IsEnabled = SelectionLength > 0;
             if (copyAsItem != null) copyAsItem.IsEnabled = SelectionLength > 0;
             if (copyHexaItem != null) copyHexaItem.IsEnabled = SelectionLength > 0;
             if (copyAsciiItem != null) copyAsciiItem.IsEnabled = SelectionLength > 0;
@@ -280,6 +282,11 @@ namespace WpfHexaEditor
         private void UndoMenuItem_Click(object sender, RoutedEventArgs e)
         {
             Undo();
+        }
+
+        private void CopyMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            CopyToClipboard(); // Uses default copy mode
         }
 
         private void CopyHexaMenuItem_Click(object sender, RoutedEventArgs e)

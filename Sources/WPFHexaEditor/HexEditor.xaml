@@ -161,6 +161,13 @@
             </MenuItem>
             <Separator/>
 
+            <!-- Copy (default mode) -->
+            <MenuItem x:Name="CopyMenuItem" Header="{DynamicResource CopyString}" Click="CopyMenuItem_Click">
+                <MenuItem.Icon>
+                    <TextBlock Text="📋" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
+
             <!-- Copy submenu -->
             <MenuItem x:Name="CopyAsMenuItem" Header="{DynamicResource CopySelectionAsString}">
                 <MenuItem x:Name="CopyHexaMenuItem" Header="{DynamicResource CopyAsHexadecimalString}" Click="CopyHexaMenuItem_Click">

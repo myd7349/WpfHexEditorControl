@@ -397,6 +397,9 @@
   <data name="CopyAsAutoString" xml:space="preserve">
     <value>Copy (Auto)</value>
   </data>
+  <data name="CopyString" xml:space="preserve">
+    <value>Copy</value>
+  </data>
   <data name="PasteString" xml:space="preserve">
     <value>Paste</value>
   </data>

@@ -330,6 +330,9 @@
   <data name="CopyAsFormattedViewString" xml:space="preserve">
     <value>Kopiuj jako sformatowany widok</value>
   </data>
+  <data name="CopyString" xml:space="preserve">
+    <value>Kopiuj</value>
+  </data>
   <data name="PasteString" xml:space="preserve">
     <value>Wklej</value>
   </data>
