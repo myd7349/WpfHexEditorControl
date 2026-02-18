@@ -2591,7 +2591,8 @@ namespace WpfHexaEditor
         /// </summary>
         private void LongRunningService_OperationStarted(object sender, Events.OperationProgressEventArgs e)
         {
-            Dispatcher.Invoke(() =>
+            // Use BeginInvoke for non-blocking UI updates
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 // Show progress overlay
                 ProgressOverlay.Visibility = Visibility.Visible;
@@ -2603,7 +2604,7 @@ namespace WpfHexaEditor
 
                 // Change cursor to Wait
                 Mouse.OverrideCursor = Cursors.Wait;
-            });
+            }), System.Windows.Threading.DispatcherPriority.Normal);
         }
 
         /// <summary>
@@ -2611,12 +2612,13 @@ namespace WpfHexaEditor
         /// </summary>
         private void LongRunningService_OperationProgress(object sender, Events.OperationProgressEventArgs e)
         {
-            Dispatcher.Invoke(() =>
+            // Use BeginInvoke for non-blocking UI updates
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 // Update progress
                 ProgressOverlay.ViewModel.ProgressPercentage = e.ProgressPercentage;
                 ProgressOverlay.ViewModel.StatusMessage = e.StatusMessage;
-            });
+            }), System.Windows.Threading.DispatcherPriority.Normal);
         }
 
         /// <summary>
@@ -2624,7 +2626,8 @@ namespace WpfHexaEditor
         /// </summary>
         private void LongRunningService_OperationCompleted(object sender, Events.OperationCompletedEventArgs e)
         {
-            Dispatcher.Invoke(() =>
+            // Use BeginInvoke for non-blocking UI updates
+            Dispatcher.BeginInvoke(new Action(() =>
             {
                 // Hide progress overlay
                 ProgressOverlay.Visibility = Visibility.Collapsed;
@@ -2640,7 +2643,7 @@ namespace WpfHexaEditor
                     else
                         StatusText.Text = $"Operation failed: {e.ErrorMessage}";
                 }
-            });
+            }), System.Windows.Threading.DispatcherPriority.Normal);
         }
 
         #endregion
