@@ -627,12 +627,23 @@ namespace WpfHexaEditor
             }
             // Scroll down if cursor moves beyond the last visible byte (Legacy behavior)
             // This accounts for status bar and other UI elements that may hide bottom lines
+            // EXCEPT when all content fits in viewport (nothing to scroll)
             else
             {
-                long lastVisibleByte = HexViewport.LastVisibleBytePosition;
-                if (lastVisibleByte >= 0 && bytePosition > lastVisibleByte)
+                // Disable adjustment if all content is visible (handles resize dynamically)
+                // Add +4 to account for lines hidden by status bar (extra margin for safety)
+                long maxScroll = Math.Max(0, _viewModel.TotalLines - _viewModel.VisibleLines + 4);
+
+                // Only apply scroll adjustment if:
+                // 1. Scrolling is possible (maxScroll > 0)
+                // 2. Not already scrolled to the bottom (currentScroll < maxScroll)
+                if (maxScroll > 0 && currentScroll < maxScroll)
                 {
-                    _viewModel.ScrollPosition = currentScroll + 1;
+                    long lastVisibleByte = HexViewport.LastVisibleBytePosition;
+                    if (lastVisibleByte >= 0 && bytePosition > lastVisibleByte)
+                    {
+                        _viewModel.ScrollPosition = currentScroll + 1;
+                    }
                 }
             }
         }
