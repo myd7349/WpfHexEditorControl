@@ -613,28 +613,27 @@ namespace WpfHexaEditor
         /// </summary>
         private void EnsurePositionVisible(VirtualPosition position)
         {
-            if (_viewModel == null || !position.IsValid)
+            if (_viewModel == null || !position.IsValid || HexViewport == null)
                 return;
 
             long bytePosition = position.Value;
             long lineNumber = bytePosition / _viewModel.BytePerLine;
             long currentScroll = _viewModel.ScrollPosition;
 
-            // Calculate scroll threshold: 2 lines before the last visible line
-            // This makes scrolling start earlier to keep context visible
-            const int bottomMarginLines = 2;
-            long scrollThresholdLine = currentScroll + _viewModel.VisibleLines - bottomMarginLines - 1;
-            long scrollThresholdBytePosition = (scrollThresholdLine + 1) * _viewModel.BytePerLine - 1;
-
-            // Scroll up if position is above viewport (original behavior - no margin)
+            // Scroll up if position is above viewport
             if (lineNumber < currentScroll)
             {
                 _viewModel.ScrollPosition = lineNumber;
             }
-            // Scroll down if cursor reaches the threshold (2 lines before bottom)
-            else if (scrollThresholdLine >= 0 && bytePosition > scrollThresholdBytePosition)
+            // Scroll down if cursor moves beyond the last visible byte (Legacy behavior)
+            // This accounts for status bar and other UI elements that may hide bottom lines
+            else
             {
-                _viewModel.ScrollPosition = currentScroll + 1;
+                long lastVisibleByte = HexViewport.LastVisibleBytePosition;
+                if (lastVisibleByte >= 0 && bytePosition > lastVisibleByte)
+                {
+                    _viewModel.ScrollPosition = currentScroll + 1;
+                }
             }
         }
 

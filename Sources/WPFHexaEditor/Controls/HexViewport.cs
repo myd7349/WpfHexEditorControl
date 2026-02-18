@@ -117,6 +117,36 @@ namespace WpfHexaEditor.Controls
         private System.Diagnostics.Stopwatch _refreshStopwatch = new System.Diagnostics.Stopwatch();
         private long _lastRefreshTimeMs = 0;
 
+        /// <summary>
+        /// Get the last visible byte position in the viewport (matches Legacy behavior)
+        /// Only counts lines that are FULLY visible (not cut off by status bar or bottom edge)
+        /// </summary>
+        public long LastVisibleBytePosition
+        {
+            get
+            {
+                if (_linesCached == null || _linesCached.Count == 0)
+                    return -1;
+
+                // Simple approach: Exclude last 3 lines to account for status bar and UI elements
+                // This matches Legacy behavior where status bar hides bottom lines
+                const int linesToExclude = 3;
+                int lastVisibleLineIndex = _linesCached.Count - linesToExclude - 1;
+
+                if (lastVisibleLineIndex >= 0 && lastVisibleLineIndex < _linesCached.Count)
+                {
+                    var line = _linesCached[lastVisibleLineIndex];
+                    if (line.Bytes != null && line.Bytes.Count > 0)
+                    {
+                        var lastByte = line.Bytes[line.Bytes.Count - 1];
+                        return lastByte.VirtualPos.IsValid ? lastByte.VirtualPos.Value : -1;
+                    }
+                }
+
+                return -1;
+            }
+        }
+
         #endregion
 
         #region Events

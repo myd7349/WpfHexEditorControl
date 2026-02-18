@@ -314,7 +314,7 @@
                                       MouseDown="Content_MouseDown"
                                       MouseMove="Content_MouseMove"
                                       MouseUp="Content_MouseUp"
-                                      KeyDown="Content_KeyDown"/>
+                                      PreviewKeyDown="Content_KeyDown"/>
             </ScrollViewer>
 
             <!-- Vertical scrollbar -->
