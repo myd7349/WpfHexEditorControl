@@ -51,31 +51,6 @@ V2 represents a complete architectural overhaul with **dramatic performance impr
 
 **[See full V1 vs V2 comparison](#-feature-comparison-v1-legacy-vs-v2)** 👇
 
-### 🌐 Cross-Platform Architecture (Preview)
-
-**NEW**: Core library is now platform-agnostic! The business logic has been extracted to `netstandard2.0`, enabling support for multiple UI frameworks:
-
-- ✅ **WpfHexaEditor.Core** - Platform-agnostic business logic (netstandard2.0)
-- ✅ **WpfHexaEditor.Wpf** - WPF platform implementation (net48, net8.0-windows)
-- ✅ **WpfHexaEditor.Avalonia** - Avalonia platform implementation (net8.0)
-- 🚧 **Future**: MAUI, Uno Platform, Console applications
-
-**Key Benefits:**
-- 📱 **True Cross-Platform** - Same Core works on Windows (WPF), Linux, macOS, Web (Avalonia)
-- 🧪 **Testable** - Business logic tested without UI frameworks (46 unit tests ✓)
-- 🔌 **Zero Dependencies** - Core has no UI framework dependencies
-- ⚡ **Same Performance** - Full SIMD/parallel optimizations maintained
-
-**Status:** Preview - Core library complete with tests and examples. See [ARCHITECTURE.md](Sources/ARCHITECTURE.md) for details.
-
-### 🎯 Perfect For
-
-- 🔍 **Developers** - Debug binary protocols, inspect file formats
-- 🎮 **Game Modders** - ROM hacking with custom TBL character tables
-- 🔐 **Security Researchers** - Analyze executables and data structures
-- 📊 **Data Scientists** - Visualize and analyze binary data patterns
-- 💾 **System Administrators** - Low-level file inspection and repair
-
 ### ⭐ Support This Project
 
 WPF HexEditor is **100% free and open source** (Apache 2.0). It can be used in personal projects, commercial applications, and everything in between.
@@ -181,74 +156,6 @@ Unicode characters are fully supported. Place the value to the right of the equa
 **Supported in both V1 and V2** ✅
 
 </details>
-
-### 🖼️ Visual Comparison: V1 (Legacy) vs V2 (Modern)
-
-**See the difference at a glance!** V2 brings modern rendering, visual search markers, and enhanced UI while maintaining 100% API compatibility.
-
-> **📸 TODO:** Create dedicated comparison screenshots:
-> - `Images/V1-Legacy-Interface.png` - HexEditorLegacy with a binary file
-> - `Images/V2-Modern-Interface.png` - HexEditor (V2) with scroll markers visible
-> - `Images/V1-FindAll.png` - V1 search results (basic highlighting)
-> - `Images/V2-FindAll-Markers.png` - V2 search with scroll markers
->
-> _Current images show V2 features only. Placeholders will be replaced with proper V1 vs V2 comparison screenshots._
-
-<table>
-<tr>
-<td width="50%" align="center">
-  <b>V1 (HexEditorLegacy) - Legacy</b><br/>
-  <sub>ItemsControl rendering • No scroll markers • Standard search</sub><br/><br/>
-  <img src="Images/Sample11-NOTBL.png?raw=true" alt="V1 Legacy Interface (placeholder)"/>
-  <br/><br/>
-  <sub>⚠️ Slower rendering • Insert Mode bugs • Save data loss issues</sub>
-</td>
-<td width="50%" align="center">
-  <b>V2 (HexEditor) - Modern ⭐</b><br/>
-  <sub>DrawingContext rendering • Scroll markers • Enhanced search</sub><br/><br/>
-  <img src="Images/Sample15-CustomBackgroundBlock.png?raw=true" alt="V2 Modern Interface (placeholder)"/>
-  <br/><br/>
-  <sub>✅ 99% faster • All bugs fixed • New visualization features</sub>
-</td>
-</tr>
-</table>
-
-**Key Visual Improvements in V2:**
-- 📍 **Scrollbar Markers** - Orange markers show search results, blue for bookmarks, green for additions, red for deletions
-- 🎨 **Enhanced Rendering** - Smoother, faster DrawingContext-based rendering (99% faster)
-- 🔍 **Find All Highlighting** - Better visual feedback with scroll markers for navigation
-- 📊 **BarChart Panel** - Visual byte frequency distribution (V2-exclusive)
-- 🪟 **AvalonDock Support** - Dockable panels for professional IDE interface (V2-exclusive)
-
-<details>
-<summary>📸 <b>Find All Comparison</b> - Click to see search result visualization</summary>
-
-<br/>
-
-<table>
-<tr>
-<td width="50%" align="center">
-  <b>V1 Find All Results</b><br/>
-  <sub>Basic highlighting only</sub><br/><br/>
-  <img src="Images/Sample11-NOTBL.png?raw=true" alt="V1 Find All (placeholder)"/>
-</td>
-<td width="50%" align="center">
-  <b>V2 Find All Results ⭐</b><br/>
-  <sub>Highlighting + scroll markers + Escape key support</sub><br/><br/>
-  <img src="Images/Sample15-FindReplaceDialog.png?raw=true" alt="V2 Find All with Markers (placeholder)"/>
-</td>
-</tr>
-</table>
-
-**V2 Search Enhancements:**
-- ✅ Orange scroll markers show all search results at a glance
-- ✅ Press ESC to close find panel and clear markers
-- ✅ 10-100x faster search (LRU cache + parallel + SIMD)
-- ✅ Visual navigation via scrollbar markers
-
-</details>
-
----
 
 ### 🛒 Feature Comparison: V1 (Legacy) vs V2 (Modern)
 
@@ -667,143 +574,12 @@ All shortcuts are configurable via AllowBuildin* properties.
 
 ---
 
-### 🚀 Migrating from V1 to V2
-
-#### Zero Code Changes Required!
-
-V2 maintains **100% API compatibility** with V1. Your existing code works without modification:
-
-```xml
-<!-- V1 and V2 - Identical XAML -->
-<wpfHexEditor:HexEditor x:Name="HexEdit"
-                        Width="Auto"
-                        Height="Auto"
-                        FileName="{Binding FilePath}"/>
-```
-
-```csharp
-// V1 and V2 - Identical C# code
-var hexEditor = new HexEditor();
-hexEditor.OpenFile("data.bin");
-hexEditor.SetPosition(0x1000);
-hexEditor.SetSelection(0x1000, 0x1100);
-```
-
-#### What Changed Behind the Scenes
-
-**Class Names:**
-- **V1** is now `HexEditorLegacy` (deprecated but fully supported)
-- **V2** is now `HexEditor` (main control, recommended)
-- Same namespace: `WpfHexaEditor`
-- Same assembly: `WPFHexaEditor.dll`
-
-**Automatic Selection:**
-- NuGet package automatically selects correct implementation
-- Single package works for both `.net48` and `.net8.0-windows`
-- No conditional compilation needed
-
-#### What You Gain by Upgrading
-
-**Performance Improvements:**
-- 🚀 **99% faster rendering** - DrawingContext vs ItemsControl (5-10x speedup)
-- 🚀 **10-100x faster search** - LRU cache + parallel processing + SIMD vectorization
-- 🚀 **80-90% less memory** - Span&lt;T&gt;, ArrayPool, render caching
-- 🚀 **100% UI responsiveness** - All long operations are async with progress reporting
-- 🚀 **Up to 6,000x faster** for large edited files (true binary search fix)
-
-**Critical Bug Fixes:**
-- ✅ **Issue #145 FIXED** - Insert Mode hex input (F0 F0 pattern bug completely resolved)
-- ✅ **Save data loss FIXED** - Multi-MB file corruption bug completely resolved
-- ✅ **Search cache invalidation FIXED** - Stale search results after edits
-- ✅ **Binary search FIXED** - O(m) → O(log m) position mapping
-
-**New V2-Exclusive Features:**
-- 📊 **BarChart View** - Visual byte frequency distribution
-- 📍 **Scrollbar Markers** - Visual indicators for search results, bookmarks, changes
-- 🪟 **AvalonDock Integration** - Professional IDE-like dockable interface
-- 🏗️ **Service Architecture** - 15 specialized services, 80+ unit tests
-- 🌐 **Cross-Platform Foundation** - Platform-agnostic Core library (netstandard2.0)
-- 🔍 **Binary Comparison** - Compare files with similarity percentage
-- ⏱️ **Async Operations** - Progress reporting + cancellation support
-- 🎯 **SIMD Optimization** - Hardware-accelerated search (AVX2/SSE2)
-
-**Better Architecture:**
-- 🏗️ **MVVM Pattern** - HexEditorViewModel, INotifyPropertyChanged, RelayCommand
-- 🧪 **Unit Tests** - 80+ tests with xUnit, full service coverage
-- 📚 **Documentation** - 19 comprehensive READMEs covering every component
-- 🔧 **Maintainable** - Clean separation of concerns, service-based design
-
-#### Migration Steps
-
-1. **Update NuGet Package** (optional, if not already on v2.x)
-   ```bash
-   dotnet add package WPFHexaEditor --version 2.6.0
-   ```
-
-2. **Rebuild Your Project**
-   - No code changes required
-   - V2 is automatically selected (HexEditor = V2, HexEditorLegacy = V1)
-
-3. **Test Critical Workflows**
-   - File open/save operations
-   - Insert mode editing (if you use it)
-   - Search operations
-   - Your custom features
-
-4. **Enjoy the Performance Boost!**
-   - 99% faster rendering
-   - 10-100x faster search
-   - 80-90% less memory usage
-   - All bugs fixed
-
-**That's it!** V2 is a drop-in replacement with zero breaking changes.
-
-#### Performance Visualization
-
-V2 achieves dramatic performance gains through **6 optimization tiers**:
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│  🎨 Tier 1: DrawingContext Rendering   ⚡⚡⚡   99% faster      │
-│  🔍 Tier 2: LRU Search Cache           ⚡⚡⚡   10-100x         │
-│  🔄 Tier 3: Parallel Multi-Core        ⚡⚡    2-4x            │
-│  🎯 Tier 4: SIMD Vectorization (AVX2)  ⚡⚡    4-8x            │
-│  📦 Tier 5: Span<T> + ArrayPool        ⚡⚡    90% less GC     │
-│  🔍 Tier 6: True Binary Search         ⚡⚡⚡⚡⚡  100-5,882x     │
-└────────────────────────────────────────────────────────────────┘
-
-Combined Result:
-  • Up to 6,000x faster for large edited files
-  • 80-90% memory reduction
-  • 100% UI responsiveness (async operations)
-  • All critical bugs fixed
-```
-
-#### FAQ
-
-**Q: Will my V1 code break?**
-A: No. V2 maintains 100% API compatibility. Your code works without changes.
-
-**Q: Can I use both V1 and V2 in the same project?**
-A: Yes. Use `HexEditorLegacy` for V1 and `HexEditor` for V2.
-
-**Q: Should I migrate?**
-A: **Yes!** V2 fixes critical bugs (Insert Mode #145, Save data loss) and is 99% faster. Migration is risk-free with zero code changes.
-
-**Q: What if I find a V2 bug?**
-A: Report it at https://github.com/abbaye/WpfHexEditorControl/issues. V1 (`HexEditorLegacy`) remains available as fallback.
-
-**Q: Does V2 support .NET Framework 4.8?**
-A: Yes! V2 multi-targets `net48` and `net8.0-windows`. Single NuGet package works for both.
-
-**Q: What about performance on .NET Framework vs .NET 8?**
-A: .NET 8 gets additional optimizations (Span&lt;T&gt;, SIMD, PGO) but .NET Framework still benefits from 99% rendering speedup, LRU cache, and all bug fixes.
-
----
-
 📖 **See [Performance Guide](PERFORMANCE_GUIDE.md) for detailed optimization documentation**
 
-### ⚡ Performance Optimizations (v2.2+)
+<details>
+<summary><b>⚡ Performance Optimizations (v2.2+)</b></summary>
+
+<br/>
 
 > **📖 For detailed performance documentation, benchmarking results, and best practices, see the [Performance Guide](PERFORMANCE_GUIDE.md)**
 
@@ -949,6 +725,8 @@ A: .NET 8 gets additional optimizations (Span&lt;T&gt;, SIMD, PGO) but .NET Fram
 
 See [PERFORMANCE_GUIDE.md](PERFORMANCE_GUIDE.md) for comprehensive documentation.
 
+</details>
+
 ### 👏 How to use
 Add a reference to `WPFHexaEditor.dll` from your project, then add the following namespace to your XAML:
 
@@ -965,7 +743,10 @@ Insert the control like this in your XAML...:
 <control:HexEditor FileName="{Binding FileNamePath}" Width="Auto" Height="Auto"/>
 ```
 
-## 🏗️ Architecture
+<details>
+<summary><h2>🏗️ Architecture</h2></summary>
+
+<br/>
 
 WPF HexEditor now uses a modern [**service-based architecture**](ARCHITECTURE.md) for improved maintainability and testability.
 
@@ -1005,7 +786,12 @@ The control is powered by specialized services that handle different aspects of 
 
 See [Services Documentation](Sources/WPFHexaEditor/Services/README.md) for details.
 
-## 📚 Documentation
+</details>
+
+<details>
+<summary><h2>📚 Documentation</h2></summary>
+
+<br/>
 
 ### 📖 Table of Contents
 
@@ -1126,6 +912,8 @@ See [Services Documentation](Sources/WPFHexaEditor/Services/README.md) for detai
 - Build instructions
 - Multi-targeting configuration
 
+</details>
+
 ## 🔧 Supported Frameworks
 
 WPF HexEditor uses **multi-targeting** to support both legacy and modern .NET platforms:
@@ -1136,47 +924,6 @@ WPF HexEditor uses **multi-targeting** to support both legacy and modern .NET pl
 |-----------|---------|-------------|----------|
 | **net48** | .NET Framework 4.8 | Legacy Windows desktop platform | Existing WPF/WinForms applications |
 | **net8.0-windows** | .NET 8 (LTS) | Modern cross-platform .NET | New applications, better performance |
-
-### ✨ Benefits of Multi-Targeting
-
-- ✅ **Single NuGet Package** - Works in both old and new projects
-- ✅ **Zero Breaking Changes** - Drop-in replacement for existing apps
-- ✅ **Future-Proof** - Ready for .NET Core migration
-- ✅ **Best Performance** - Modern .NET gets latest optimizations (Span&lt;T&gt;, SIMD)
-- ✅ **Same API** - Identical code works on both platforms
-
-### 🚀 Usage
-
-```xml
-<!-- .NET Framework 4.8 project -->
-<TargetFramework>net48</TargetFramework>
-<PackageReference Include="WPFHexaEditor" Version="2.2.0" />
-
-<!-- .NET 8.0 project -->
-<TargetFramework>net8.0-windows</TargetFramework>
-<PackageReference Include="WPFHexaEditor" Version="2.2.0" />
-```
-
-Both scenarios use the **exact same NuGet package** - the correct binary is automatically selected!
-
-## 🧪 Unit Testing
-
-The project includes comprehensive unit tests for all service layer components:
-
-- **Test Framework:** xUnit with .NET 8.0-windows
-- **Test Project:** `WPFHexaEditor.Tests`
-- **Coverage:** 80+ tests across 3 test suites
-  - `SelectionServiceTests` - 35 tests for selection operations
-  - `FindReplaceServiceTests` - 35 tests for search/replace with caching
-  - `HighlightServiceTests` - 10+ tests for highlight management
-
-**Running tests:**
-```bash
-cd Sources/WPFHexaEditor.Tests
-dotnet test
-```
-
-The service-based architecture makes unit testing straightforward - services can be tested in isolation without UI dependencies.
 
 ## 🐛 Recent Bug Fixes
 
@@ -1219,7 +966,10 @@ The service-based architecture makes unit testing straightforward - services can
 - Users now receive accurate search results after editing
 - Cache properly cleared at all 11 modification points
 
-## 🗺️ Complete Documentation Map
+<details>
+<summary><h2>🗺️ Complete Documentation Map</h2></summary>
+
+<br/>
 
 Every major folder in the project contains comprehensive README documentation:
 
@@ -1272,6 +1022,8 @@ Every major folder in the project contains comprehensive README documentation:
 
 **Total Documentation:** 19 comprehensive README files covering every aspect of the project! 📚
 
+</details>
+
 ## 💡 Learning Path
 
 **Beginner:** Start here
@@ -1290,13 +1042,17 @@ Every major folder in the project contains comprehensive README documentation:
 9. Study [Unit Tests](Sources/WPFHexaEditor.Tests/README.md) for testing patterns
 10. Build custom tools with [Service Usage Sample](Sources/Samples/WpfHexEditor.Sample.ServiceUsage/README.md)
 
-## 🤝 Contributing
+## ⭐ Support This Project
 
-We welcome contributions! The comprehensive documentation makes it easy to understand the codebase:
-- All services are documented with API references
-- Unit tests provide usage examples
-- Architecture diagrams show component relationships
-- Each folder has detailed README with examples
+WPF HexEditor is **100% free and open source** (Apache 2.0). It can be used in personal projects, commercial applications, and everything in between.
+
+This project is developed in **free time** by passionate contributors. If you find it useful:
+- ⭐ **Star this repository** - It helps others discover the project!
+- 🍴 **Fork and contribute** - Pull requests are always welcome
+- 💬 **Share feedback** - Report bugs or suggest features
+- 📖 **Improve documentation** - Help others get started
+
+**Every star motivates us to keep improving! 🙏**
 
 ---
 
