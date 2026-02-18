@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using WpfHexaEditor.Models;
 using WpfHexaEditor.Services;
@@ -148,26 +149,36 @@ namespace WpfHexaEditor
                 true, // Can cancel
                 async (progress, cancellationToken) =>
                 {
-                    // Use existing FindReplaceService async method with progress
-                    var searchProgress = new Progress<int>(percent =>
+                    return await Task.Run(() =>
                     {
                         progress.Report(new OperationProgress
                         {
-                            Percentage = percent,
-                            Message = $"Searching... {percent}%"
+                            Percentage = 10,
+                            Message = "Starting search..."
                         });
-                    });
+                        cancellationToken.ThrowIfCancellationRequested();
 
-                    // Access FindReplaceService from ViewModel
-                    var findService = new FindReplaceService();
-                    results = await findService.FindAllAsync(
-                        _viewModel.Provider,
-                        pattern,
-                        startPosition,
-                        searchProgress,
-                        cancellationToken);
+                        // Use ByteProvider V2's FindAll method
+                        var matches = _viewModel.Provider.FindAll(pattern, startPosition);
 
-                    return true;
+                        progress.Report(new OperationProgress
+                        {
+                            Percentage = 50,
+                            Message = "Processing matches..."
+                        });
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        // Convert IEnumerable to List
+                        results = matches.ToList();
+
+                        progress.Report(new OperationProgress
+                        {
+                            Percentage = 100,
+                            Message = $"Found {results.Count} matches"
+                        });
+
+                        return true;
+                    }, cancellationToken);
                 });
 
             return results;
@@ -198,29 +209,55 @@ namespace WpfHexaEditor
                 false, // Cannot cancel (data integrity)
                 async (progress, cancellationToken) =>
                 {
-                    // Use existing FindReplaceService async method with 2-phase progress
-                    var replaceProgress = new Progress<int>(percent =>
+                    return await Task.Run(() =>
                     {
-                        string phase = percent <= 50 ? "Finding matches" : "Replacing";
                         progress.Report(new OperationProgress
                         {
-                            Percentage = percent,
-                            Message = $"{phase}... {percent}%"
+                            Percentage = 10,
+                            Message = "Finding matches..."
                         });
-                    });
 
-                    // Access FindReplaceService
-                    var findService = new FindReplaceService();
-                    replacementCount = await findService.ReplaceAllAsync(
-                        _viewModel.Provider,
-                        findPattern,
-                        replacePattern,
-                        truncateLength,
-                        ReadOnlyMode,
-                        replaceProgress,
-                        cancellationToken);
+                        // Phase 1: Find all occurrences
+                        var matches = _viewModel.Provider.FindAll(findPattern, 0).ToList();
 
-                    return true;
+                        progress.Report(new OperationProgress
+                        {
+                            Percentage = 50,
+                            Message = $"Found {matches.Count} matches. Replacing..."
+                        });
+
+                        if (matches.Count == 0)
+                            return true;
+
+                        // Phase 2: Replace each occurrence
+                        // Note: Replace in reverse order to maintain position validity
+                        var sortedMatches = matches.OrderByDescending(pos => pos).ToList();
+
+                        foreach (var position in sortedMatches)
+                        {
+                            // Delete old pattern
+                            for (int i = 0; i < findPattern.Length; i++)
+                            {
+                                _viewModel.Provider.DeleteByte(new VirtualPosition(position));
+                            }
+
+                            // Insert new pattern
+                            for (int i = replacePattern.Length - 1; i >= 0; i--)
+                            {
+                                _viewModel.Provider.InsertByte(new VirtualPosition(position), replacePattern[i]);
+                            }
+
+                            replacementCount++;
+                        }
+
+                        progress.Report(new OperationProgress
+                        {
+                            Percentage = 100,
+                            Message = $"Replaced {replacementCount} occurrences"
+                        });
+
+                        return true;
+                    }, cancellationToken);
                 });
 
             return replacementCount;
