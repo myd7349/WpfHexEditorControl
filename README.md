@@ -30,7 +30,10 @@
 
 **WPF HexEditor** is a powerful, high-performance hex editor control designed specifically for .NET applications. Built with modern architecture and optimized for both small and large files, it provides a professional-grade binary editing experience.
 
-### 🎯 Key Highlights
+<details>
+<summary><b>🎯 Key Highlights</b></summary>
+
+<br/>
 
 - **🚀 Blazing Fast** - 99% faster rendering than V1, handles GB+ files with ease
 - **🔧 Easy Integration** - Drop-in WPF/WinForms control, works out of the box
@@ -38,7 +41,12 @@
 - **⚡ Production Ready** - Battle-tested with 80+ unit tests and comprehensive samples
 - **🌍 Multilingual** - 9 languages with instant switching: 🇺🇸 English, 🇪🇸 Spanish (ES/LATAM), 🇫🇷 French (FR/CA), 🇵🇱 Polish, 🇧🇷 Portuguese, 🇷🇺 Russian, 🇨🇳 Chinese
 
-### 🆕 What's New in V2?
+</details>
+
+<details>
+<summary><b>🆕 What's New in V2?</b></summary>
+
+<br/>
 
 V2 represents a complete architectural overhaul with **dramatic performance improvements**:
 
@@ -50,6 +58,8 @@ V2 represents a complete architectural overhaul with **dramatic performance impr
 - ✅ **100% backward compatible** - Drop-in replacement for V1
 
 **[See full V1 vs V2 comparison](#-feature-comparison-v1-legacy-vs-v2)** 👇
+
+</details>
 
 ### 🖼 Screenshots
 
