@@ -18,8 +18,8 @@ using WpfHexaEditor.Properties;
 namespace WpfHexaEditor
 {
     /// <summary>
-    /// HexEditor partial class - Context Menu and UI Helpers
-    /// Contains context menu handlers, auto-scroll, and column header generation
+    /// HexEditor partial class - UI Helpers
+    /// Contains auto-scroll logic, column header generation, and context menu handlers
     /// </summary>
     public partial class HexEditor
     {
@@ -116,6 +116,13 @@ namespace WpfHexaEditor
 
             int bytesPerLine = BytePerLine;
 
+            // Calculate which column has SelectionStart (if any)
+            int selectionStartColumn = -1;
+            if (_viewModel != null && _viewModel.SelectionStart.IsValid)
+            {
+                selectionStartColumn = (int)(_viewModel.SelectionStart.Value % bytesPerLine);
+            }
+
             // Generate hex column headers (00 01 02...0F)
             for (int i = 0; i < bytesPerLine; i++)
             {
@@ -127,13 +134,14 @@ namespace WpfHexaEditor
                 }
 
                 // Add byte position header (00, 01, 02, etc.)
+                bool isSelectionColumn = (i == selectionStartColumn);
                 var headerText = new TextBlock
                 {
                     Text = i.ToString("X2"),
                     Width = 24, // Match HexByteWidth from HexViewport
                     TextAlignment = TextAlignment.Center,
                     FontSize = 11,
-                    FontWeight = FontWeights.Normal,
+                    FontWeight = isSelectionColumn ? FontWeights.Bold : FontWeights.Normal,
                     Foreground = Resources["HeaderTextBrush"] as System.Windows.Media.Brush,
                     Margin = new Thickness(0, 0, 2, 0) // HexByteSpacing
                 };
@@ -145,12 +153,14 @@ namespace WpfHexaEditor
             for (int i = 0; i < bytesPerLine; i++)
             {
                 // Add placeholder for ASCII column (could show position or just be blank)
+                bool isSelectionColumn = (i == selectionStartColumn);
                 var headerText = new TextBlock
                 {
                     Text = " ", // Blank or could show position like V1
                     Width = 10, // Match AsciiCharWidth from HexViewport
                     TextAlignment = TextAlignment.Center,
                     FontSize = 11,
+                    FontWeight = isSelectionColumn ? FontWeights.Bold : FontWeights.Normal,
                     Foreground = Resources["HeaderTextBrush"] as System.Windows.Media.Brush
                 };
 

@@ -21,6 +21,15 @@ using WpfHexaEditor.Models;
 namespace WpfHexaEditor.Controls
 {
     /// <summary>
+    /// Active panel type for dual-color selection
+    /// </summary>
+    public enum ActivePanelType
+    {
+        Hex,
+        Ascii
+    }
+
+    /// <summary>
     /// High-performance custom rendering viewport that draws hex bytes directly using DrawingContext.
     /// Eliminates WPF binding/template/virtualization overhead for maximum performance.
     /// </summary>
@@ -95,6 +104,9 @@ namespace WpfHexaEditor.Controls
         // Mouse drag selection support
         private bool _isMouseDown = false;
         private long? _dragStartPosition = null;
+
+        // Active panel tracking for dual-color selection
+        private ActivePanelType _activePanel = ActivePanelType.Hex;
 
         // Refresh time tracking
         private System.Diagnostics.Stopwatch _refreshStopwatch = new System.Diagnostics.Stopwatch();
@@ -418,6 +430,25 @@ namespace WpfHexaEditor.Controls
         public bool ShowAscii { get; set; } = true;
 
         /// <summary>
+        /// Gets or sets the active panel (Hex or ASCII)
+        /// </summary>
+        public ActivePanelType ActivePanel
+        {
+            get => _activePanel;
+            set { _activePanel = value; InvalidateVisual(); }
+        }
+
+        /// <summary>
+        /// Brush for selection in the active panel
+        /// </summary>
+        public Brush SelectionActiveBrush { get; set; }
+
+        /// <summary>
+        /// Brush for selection in the inactive panel
+        /// </summary>
+        public Brush SelectionInactiveBrush { get; set; }
+
+        /// <summary>
         /// Force refresh of cached lines and visual rendering
         /// </summary>
         public void Refresh()
@@ -561,7 +592,7 @@ namespace WpfHexaEditor.Controls
                 // Draw offset (if visible)
                 if (ShowOffset)
                 {
-                    DrawOffset(dc, line.OffsetLabel, y);
+                    DrawOffset(dc, line, y);
                 }
 
                 // Draw hex bytes with byte spacers
@@ -774,13 +805,24 @@ namespace WpfHexaEditor.Controls
             }
         }
 
-        private void DrawOffset(DrawingContext dc, string offset, double y)
+        private void DrawOffset(DrawingContext dc, HexLine line, double y)
         {
+            // Check if SelectionStart is on this line (use bold typeface if true)
+            bool isSelectionStartLine = false;
+            if (_selectionStart >= 0 && line.StartPosition.IsValid && line.Bytes.Count > 0)
+            {
+                long lineStart = line.StartPosition.Value;
+                long lineEnd = lineStart + line.Bytes.Count - 1;
+                isSelectionStartLine = (_selectionStart >= lineStart && _selectionStart <= lineEnd);
+            }
+
+            var typeface = isSelectionStartLine ? _boldTypeface : _typeface;
+
             var formattedText = new FormattedText(
-                offset,
+                line.OffsetLabel,
                 System.Globalization.CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
-                _typeface,
+                typeface,
                 13,
                 _offsetBrush,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
@@ -824,7 +866,11 @@ namespace WpfHexaEditor.Controls
             bool isSelected = IsPositionSelected(byteData.VirtualPos.Value);
             if (isSelected)
             {
-                dc.DrawRoundedRectangle(_selectedBrush, null, rect, 2, 2);
+                // Use active or inactive brush based on which panel is active
+                Brush selectionBrush = (_activePanel == ActivePanelType.Hex && SelectionActiveBrush != null)
+                    ? SelectionActiveBrush
+                    : (SelectionInactiveBrush != null ? SelectionInactiveBrush : _selectedBrush);
+                dc.DrawRoundedRectangle(selectionBrush, null, rect, 2, 2);
             }
 
             // Draw added byte background (light green) to make inserted bytes more visible
@@ -962,7 +1008,11 @@ namespace WpfHexaEditor.Controls
             bool isSelected = IsPositionSelected(byteData.VirtualPos.Value);
             if (isSelected)
             {
-                dc.DrawRoundedRectangle(_selectedBrush, null, rect, 1, 1);
+                // Use active or inactive brush based on which panel is active
+                Brush selectionBrush = (_activePanel == ActivePanelType.Ascii && SelectionActiveBrush != null)
+                    ? SelectionActiveBrush
+                    : (SelectionInactiveBrush != null ? SelectionInactiveBrush : _selectedBrush);
+                dc.DrawRoundedRectangle(selectionBrush, null, rect, 1, 1);
             }
 
             // Draw added byte background (light green) to make inserted bytes more visible

@@ -35,6 +35,10 @@ namespace WpfHexaEditor
             var clickArea = GetClickAreaAtMouse(mousePos);
             _isAsciiEditMode = (clickArea == ClickArea.Ascii);
 
+            // Set the active panel for dual-color selection
+            HexViewport.ActivePanel = (clickArea == ClickArea.Ascii)
+                ? Controls.ActivePanelType.Ascii
+                : Controls.ActivePanelType.Hex;
 
             // Get the virtual position at mouse coordinates
             var position = GetVirtualPositionAtMouse(mousePos);
@@ -746,6 +750,8 @@ namespace WpfHexaEditor
                     UpdateAutoHighlightByte();
                     // Update scroll markers selection bar
                     UpdateScrollMarkersSelection();
+                    // Refresh column headers to highlight the SelectionStart column
+                    RefreshColumnHeader();
                     break;
 
                 case nameof(HexEditorViewModel.SelectionStop):

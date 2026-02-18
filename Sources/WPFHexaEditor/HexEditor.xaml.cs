@@ -115,6 +115,10 @@ namespace WpfHexaEditor
                 HexViewport.ByteDragSelection += HexViewport_ByteDragSelection;
                 HexViewport.KeyboardNavigation += HexViewport_KeyboardNavigation;
                 HexViewport.RefreshTimeUpdated += HexViewport_RefreshTimeUpdated;
+
+                // Initialize selection brushes
+                HexViewport.SelectionActiveBrush = SelectionActiveBrush;
+                HexViewport.SelectionInactiveBrush = SelectionInactiveBrush;
             }
 
             // Initialize zoom system
@@ -738,6 +742,24 @@ namespace WpfHexaEditor
         {
             get => (System.Windows.Media.Color)GetValue(BarChartColorProperty);
             set => SetValue(BarChartColorProperty, value);
+        }
+
+        /// <summary>
+        /// Selection brush for the active panel (Hex or ASCII) - DependencyProperty
+        /// </summary>
+        public Brush SelectionActiveBrush
+        {
+            get => (Brush)GetValue(SelectionActiveBrushProperty);
+            set => SetValue(SelectionActiveBrushProperty, value);
+        }
+
+        /// <summary>
+        /// Selection brush for the inactive panel (Hex or ASCII) - DependencyProperty
+        /// </summary>
+        public Brush SelectionInactiveBrush
+        {
+            get => (Brush)GetValue(SelectionInactiveBrushProperty);
+            set => SetValue(SelectionInactiveBrushProperty, value);
         }
 
         #endregion
@@ -2024,6 +2046,39 @@ namespace WpfHexaEditor
             if (d is HexEditor editor && e.NewValue is Color color && editor._barChartPanel != null)
             {
                 editor._barChartPanel.BarColor = color;
+            }
+        }
+
+        /// <summary>
+        /// SelectionActiveBrush DependencyProperty for XAML binding
+        /// Brush used for selection in the active panel (Hex or ASCII)
+        /// </summary>
+        public static readonly DependencyProperty SelectionActiveBrushProperty =
+            DependencyProperty.Register(nameof(SelectionActiveBrush), typeof(Brush), typeof(HexEditor),
+                new PropertyMetadata(new SolidColorBrush(Color.FromArgb(0x66, 0x00, 0x78, 0xD4)), OnSelectionBrushChanged));
+
+        /// <summary>
+        /// SelectionInactiveBrush DependencyProperty for XAML binding
+        /// Brush used for selection in the inactive panel (Hex or ASCII)
+        /// </summary>
+        public static readonly DependencyProperty SelectionInactiveBrushProperty =
+            DependencyProperty.Register(nameof(SelectionInactiveBrush), typeof(Brush), typeof(HexEditor),
+                new PropertyMetadata(new SolidColorBrush(Color.FromArgb(0x33, 0x00, 0x78, 0xD4)), OnSelectionBrushChanged));
+
+        private static void OnSelectionBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is Brush brush && editor.HexViewport != null)
+            {
+                // Update HexViewport brushes
+                if (e.Property == SelectionActiveBrushProperty)
+                {
+                    editor.HexViewport.SelectionActiveBrush = brush;
+                }
+                else if (e.Property == SelectionInactiveBrushProperty)
+                {
+                    editor.HexViewport.SelectionInactiveBrush = brush;
+                }
+                editor.HexViewport.InvalidateVisual();
             }
         }
 
