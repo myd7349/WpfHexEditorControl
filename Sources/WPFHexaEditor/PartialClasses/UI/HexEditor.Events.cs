@@ -266,18 +266,16 @@ namespace WpfHexaEditor
             double separatorX = hexEndX + 4;
             double asciiStartX = separatorX + SeparatorWidth;
 
-            // Calculate ASCII area width based on ACTUAL byte count (not max bytes per line)
-            // This prevents clicks in empty space from being processed
-            int actualByteCount = line.Bytes.Count;
+            // Calculate ASCII area width WITH spacers (full width for all bytes per line)
             int numAsciiSpacers = 0;
-            if (actualByteCount >= ByteGrouping)
+            if (_viewModel.BytePerLine >= ByteGrouping)
             {
-                numAsciiSpacers = (actualByteCount % ByteGrouping == 0)
-                    ? (actualByteCount / ByteGrouping) - 1
-                    : actualByteCount / ByteGrouping;
+                numAsciiSpacers = (_viewModel.BytePerLine % ByteGrouping == 0)
+                    ? (_viewModel.BytePerLine / ByteGrouping) - 1
+                    : _viewModel.BytePerLine / ByteGrouping;
             }
             double asciiSpacersWidth = numAsciiSpacers * ByteSpacerWidthTickness;
-            double asciiEndX = asciiStartX + (actualByteCount * AsciiCharWidth) + asciiSpacersWidth;
+            double asciiEndX = asciiStartX + (_viewModel.BytePerLine * AsciiCharWidth) + asciiSpacersWidth;
 
             if (x >= asciiStartX && x < asciiEndX)
             {
@@ -307,9 +305,14 @@ namespace WpfHexaEditor
                     byteIndex = i;
                 }
 
-                // Clamp to valid byte range
-                byteIndex = Math.Max(0, Math.Min(byteIndex, line.Bytes.Count - 1));
-                return line.Bytes[byteIndex].VirtualPos;
+                // Validate that the clicked byte actually exists on this line
+                if (byteIndex >= 0 && byteIndex < line.Bytes.Count)
+                {
+                    return line.Bytes[byteIndex].VirtualPos;
+                }
+
+                // Click in ASCII area but beyond actual bytes - return Invalid
+                return VirtualPosition.Invalid;
             }
 
             // Click in separator or beyond (empty area) - return Invalid to prevent selection
