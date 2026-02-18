@@ -115,9 +115,9 @@ namespace WpfHexaEditor.Controls
 
         public HexViewport()
         {
-            // Initialize typeface
-            _typeface = new Typeface(new FontFamily("Consolas"), FontStyles.Normal, FontWeights.Medium, FontStretches.Normal);
-            _boldTypeface = new Typeface(new FontFamily("Consolas"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+            // Initialize typeface (matches HexEditorLegacy default)
+            _typeface = new Typeface(new FontFamily("Courier New"), FontStyles.Normal, FontWeights.Medium, FontStretches.Normal);
+            _boldTypeface = new Typeface(new FontFamily("Courier New"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
 
             // Calculate character dimensions
             CalculateCharacterDimensions();
@@ -1147,9 +1147,12 @@ namespace WpfHexaEditor.Controls
             // Check if click is in ASCII area
             double separatorX = OffsetWidth + (_bytesPerLine * (HexByteWidth + HexByteSpacing)) + 8;
             double asciiStartX = separatorX + SeparatorWidth;
-            double asciiEndX = asciiStartX + (_bytesPerLine * AsciiCharWidth);
 
-            if (x >= asciiStartX && x < asciiEndX)
+            // Calculate actual end based on real byte count, not max bytes per line
+            // This prevents clicks in empty space from being processed
+            double actualAsciiEndX = asciiStartX + (line.Bytes.Count * AsciiCharWidth);
+
+            if (x >= asciiStartX && x < actualAsciiEndX)
             {
                 // Click in ASCII area
                 double relativeX = x - asciiStartX;
@@ -1168,11 +1171,16 @@ namespace WpfHexaEditor.Controls
         {
             base.OnMouseMove(e);
 
+            var mousePos = e.GetPosition(this);
+            var position = HitTestByte(mousePos);
+
+            // Update cursor based on whether mouse is over valid byte area
+            // Show arrow cursor in empty area to indicate it's not interactive
+            this.Cursor = position.HasValue ? Cursors.IBeam : Cursors.Arrow;
+
             // V1 compatible: Show byte tooltip on hover (follows mouse)
             if (_showByteToolTip && _byteToolTip != null)
             {
-                var mousePos = e.GetPosition(this);
-                var position = HitTestByte(mousePos);
 
                 if (position.HasValue)
                 {

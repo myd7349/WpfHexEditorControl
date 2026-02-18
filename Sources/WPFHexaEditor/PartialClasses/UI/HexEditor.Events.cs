@@ -266,16 +266,18 @@ namespace WpfHexaEditor
             double separatorX = hexEndX + 4;
             double asciiStartX = separatorX + SeparatorWidth;
 
-            // Calculate ASCII area width WITH spacers
+            // Calculate ASCII area width based on ACTUAL byte count (not max bytes per line)
+            // This prevents clicks in empty space from being processed
+            int actualByteCount = line.Bytes.Count;
             int numAsciiSpacers = 0;
-            if (_viewModel.BytePerLine >= ByteGrouping)
+            if (actualByteCount >= ByteGrouping)
             {
-                numAsciiSpacers = (_viewModel.BytePerLine % ByteGrouping == 0)
-                    ? (_viewModel.BytePerLine / ByteGrouping) - 1
-                    : _viewModel.BytePerLine / ByteGrouping;
+                numAsciiSpacers = (actualByteCount % ByteGrouping == 0)
+                    ? (actualByteCount / ByteGrouping) - 1
+                    : actualByteCount / ByteGrouping;
             }
             double asciiSpacersWidth = numAsciiSpacers * ByteSpacerWidthTickness;
-            double asciiEndX = asciiStartX + (_viewModel.BytePerLine * AsciiCharWidth) + asciiSpacersWidth;
+            double asciiEndX = asciiStartX + (actualByteCount * AsciiCharWidth) + asciiSpacersWidth;
 
             if (x >= asciiStartX && x < asciiEndX)
             {
@@ -310,8 +312,8 @@ namespace WpfHexaEditor
                 return line.Bytes[byteIndex].VirtualPos;
             }
 
-            // Click in separator or beyond - select last byte on line
-            return line.Bytes[line.Bytes.Count - 1].VirtualPos;
+            // Click in separator or beyond (empty area) - return Invalid to prevent selection
+            return VirtualPosition.Invalid;
         }
 
         private void Content_KeyDown(object sender, KeyEventArgs e)
