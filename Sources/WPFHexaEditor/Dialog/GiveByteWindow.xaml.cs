@@ -111,9 +111,42 @@ namespace WpfHexaEditor.Dialog
 
         private void OKButton_Click(object sender, RoutedEventArgs e)
         {
-            if (ViewModel.IsValid)
+            if (!ViewModel.IsValid)
+                return;
+
+            // Show confirmation dialog if option is enabled
+            if (ViewModel.ShowConfirmation)
             {
-                DialogResult = true;
+                var preview = GetResourceString("PreviewString");
+                var fillText = GetResourceString("FillSelectionString");
+                var title = GetResourceString("EnterHexValueMsgString");
+
+                var message = $"{preview}\n" +
+                             $"0x{ViewModel.ByteValue:X2}\n\n" +
+                             $"{fillText}?";
+
+                var result = MessageBox.Show(
+                    message,
+                    title,
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes)
+                    return;
+            }
+
+            DialogResult = true;
+        }
+
+        private string GetResourceString(string key)
+        {
+            try
+            {
+                return Application.Current.TryFindResource(key) as string ?? key;
+            }
+            catch
+            {
+                return key;
             }
         }
 

@@ -380,6 +380,48 @@ namespace WpfHexaEditor
             }
         }
 
+        /// <summary>
+        /// Invert the bits of each byte in the current selection (XOR with 0xFF)
+        /// </summary>
+        public void InvertSelection()
+        {
+            if (_viewModel == null || !_viewModel.HasSelection)
+            {
+                StatusText.Text = "No selection to invert";
+                return;
+            }
+
+            try
+            {
+                // Get the selected bytes
+                var start = _viewModel.SelectionStart.Value;
+                var bytes = _viewModel.GetSelectionBytes();
+                if (bytes == null || bytes.Length == 0)
+                {
+                    StatusText.Text = "Selection is empty";
+                    return;
+                }
+
+                // Invert each byte (XOR with 0xFF)
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = (byte)(bytes[i] ^ 0xFF);
+                }
+
+                // Write the inverted bytes back
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    _viewModel.ModifyByte(new VirtualPosition(start + i), bytes[i]);
+                }
+
+                StatusText.Text = $"Inverted {bytes.Length} bytes";
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Invert failed: {ex.Message}";
+            }
+        }
+
         #endregion
     }
 }

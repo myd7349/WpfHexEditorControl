@@ -378,6 +378,9 @@
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>Seçimi Ters Çevir</value>
   </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>Seçimi tersine çevir</value>
+  </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>Durum Mesajı</value>
   </data>

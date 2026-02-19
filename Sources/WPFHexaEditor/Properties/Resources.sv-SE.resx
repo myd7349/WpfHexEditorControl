@@ -378,6 +378,9 @@
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>Vänd markering</value>
   </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>Invertera markering</value>
+  </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>Statusmeddelande</value>
   </data>

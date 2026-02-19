@@ -22,6 +22,7 @@ namespace WpfHexaEditor.ViewModels
         #region Fields
 
         private byte? _byteValue;
+        private bool _showConfirmation = true;
 
         #endregion
 
@@ -63,6 +64,22 @@ namespace WpfHexaEditor.ViewModels
                     return $"0x{_byteValue:X2}";
                 }
                 return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Whether to show confirmation dialog before filling
+        /// </summary>
+        public bool ShowConfirmation
+        {
+            get => _showConfirmation;
+            set
+            {
+                if (_showConfirmation != value)
+                {
+                    _showConfirmation = value;
+                    OnPropertyChanged();
+                }
             }
         }
 

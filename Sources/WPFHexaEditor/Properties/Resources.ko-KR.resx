@@ -378,6 +378,9 @@
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>선택 영역 반전</value>
   </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>선택 반전</value>
+  </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>상태 메시지</value>
   </data>

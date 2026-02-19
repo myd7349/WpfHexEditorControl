@@ -378,6 +378,9 @@
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>Auswahl umkehren</value>
   </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>Auswahl invertieren</value>
+  </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>Statusmeldung</value>
   </data>

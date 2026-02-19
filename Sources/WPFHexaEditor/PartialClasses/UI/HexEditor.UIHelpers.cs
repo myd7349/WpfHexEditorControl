@@ -599,6 +599,11 @@ namespace WpfHexaEditor
             ReverseSelection();
         }
 
+        private void InvertSelectionMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            InvertSelection();
+        }
+
         private void SetBookmarkMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (_viewModel == null || !_viewModel.SelectionStart.IsValid)

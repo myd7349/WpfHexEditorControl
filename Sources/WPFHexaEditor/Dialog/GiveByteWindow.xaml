@@ -9,7 +9,7 @@
     xmlns:p="clr-namespace:WpfHexaEditor.Properties"
     Title="{DynamicResource EnterHexValueMsgString}"
     Width="420"
-    Height="220"
+    Height="260"
     x:ClassModifier="internal"
     Icon="/WPFHexaEditor;component/Resources/Icon/Logo-Icon.ico"
     ResizeMode="NoResize"
@@ -25,6 +25,7 @@
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -84,8 +85,17 @@
             </StackPanel>
         </Border>
 
+        <!-- Options Section -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+            <CheckBox
+                Content="{DynamicResource ShowConfirmationString}"
+                IsChecked="{Binding ShowConfirmation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Margin="0,4"
+                TabIndex="1"/>
+        </StackPanel>
+
         <!-- Buttons -->
-        <StackPanel Grid.Row="3"
+        <StackPanel Grid.Row="4"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
             <Button
@@ -95,7 +105,7 @@
                 Height="28"
                 Margin="0,0,8,0"
                 IsDefault="True"
-                TabIndex="1"
+                TabIndex="2"
                 Click="OKButton_Click">
                 <Button.Style>
                     <Style TargetType="Button">
@@ -124,7 +134,7 @@
                 Width="90"
                 Height="28"
                 IsCancel="True"
-                TabIndex="2">
+                TabIndex="3">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="#F3F3F3"/>
