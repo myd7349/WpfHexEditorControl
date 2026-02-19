@@ -760,13 +760,42 @@ namespace WpfHexEditor.Sample.Main
         {
             if (!HexEditor.IsFileLoaded || HexEditor.ReadOnlyMode) return;
 
-            var dialog = CreateByteInputDialog("Fill with Byte", "Enter byte value (hex):", "Start position:", "Length:");
-            if (dialog.ShowDialog() == true && dialog.Tag is (byte byteValue, long startPos, long length))
+            // Check if there's a selection
+            if (!HexEditor.HasSelection)
+            {
+                MessageBox.Show("Please select a range of bytes to fill.", "No Selection",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            // Use the modern MVVM GiveByteWindow dialog
+            var dialog = new WpfHexaEditor.Dialog.GiveByteWindow
+            {
+                Owner = this
+            };
+
+            // If the selection is a single byte, pre-fill it as the value
+            if (HexEditor.SelectionLength == 1)
             {
                 try
                 {
-                    HexEditor.FillWithByte(byteValue, startPos, length);
-                    MessageBox.Show($"Filled {length} bytes with 0x{byteValue:X2} starting at position {startPos}",
+                    var selectedByte = HexEditor.GetByte(HexEditor.SelectionStart);
+                    dialog.ViewModel.ByteValue = selectedByte;
+                }
+                catch { /* Ignore errors */ }
+            }
+
+            if (dialog.ShowDialog() == true)
+            {
+                try
+                {
+                    byte fillByte = dialog.ByteValue;
+                    long fillStart = HexEditor.SelectionStart;
+                    long fillLength = HexEditor.SelectionLength;
+
+                    HexEditor.FillWithByte(fillByte, fillStart, fillLength);
+
+                    MessageBox.Show($"Filled {fillLength} bytes with 0x{fillByte:X2} in selection",
                         "Fill Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
