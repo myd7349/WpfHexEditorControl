@@ -59,216 +59,216 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- Existing resources (109) - Spanish (Spain) translations -->
+  <!-- Swedish (sv-SE) - Translated -->
   <data name="AppendByteConfirmationString" xml:space="preserve">
-    <value>Habéis alcanzado el final del archivo. ¿Queréis añadir un byte? Esta operación no se puede cancelar si continuáis.</value>
+    <value>Du har nått slutet av filen. Vill du lägga till en byte? Den här åtgärden kan inte avbrytas om du fortsätter.</value>
   </data>
   <data name="BookmarksString" xml:space="preserve">
-    <value>Marcadores</value>
+    <value>Bokmärken</value>
   </data>
   <data name="ByteActionString" xml:space="preserve">
-    <value>Acción de byte</value>
+    <value>Byte-åtgärd</value>
   </data>
   <data name="ByteString" xml:space="preserve">
     <value>Byte</value>
   </data>
   <data name="CancelLongProcessString" xml:space="preserve">
-    <value>Cancelar proceso largo</value>
+    <value>Avbryt lång process</value>
   </data>
   <data name="CancelLongProcessToolTipString" xml:space="preserve">
-    <value>Haced clic para cancelar el proceso largo.</value>
+    <value>Klicka för att avbryta lång process.</value>
   </data>
   <data name="CancelString" xml:space="preserve">
-    <value>Cancelar</value>
+    <value>Avbryt</value>
   </data>
   <data name="ClearBookMarkString" xml:space="preserve">
-    <value>Borrar marcador</value>
+    <value>Rensa bokmärke</value>
   </data>
   <data name="ClearString" xml:space="preserve">
-    <value>Borrar</value>
+    <value>Rensa</value>
   </data>
   <data name="ClickToGoAtPositionString" xml:space="preserve">
-    <value>Haced clic para ir a la posición.</value>
+    <value>Klicka för att gå till position.</value>
   </data>
   <data name="CloseString" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>Stäng</value>
   </data>
   <data name="CopyAsASCIIString" xml:space="preserve">
-    <value>Copiar como ASCII</value>
+    <value>Kopiera som ASCII</value>
   </data>
   <data name="CopyAsDecimalString" xml:space="preserve">
-    <value>Copiar como decimal</value>
+    <value>Kopiera som decimal</value>
   </data>
   <data name="CopyAsHexadecimalString" xml:space="preserve">
-    <value>Copiar como hexadecimal</value>
+    <value>Kopiera som hexadecimal</value>
   </data>
   <data name="CopyAsTBLString" xml:space="preserve">
-    <value>Cadena TBL (archivo de caracteres cargado)</value>
+    <value>TBL-sträng (teckenfil laddad)</value>
   </data>
   <data name="CopySelectionAsString" xml:space="preserve">
-    <value>Copiar selección como...</value>
+    <value>Kopiera markering som ...</value>
   </data>
   <data name="CountOfString" xml:space="preserve">
-    <value>Recuento de</value>
+    <value>Antal av</value>
   </data>
   <data name="DefaultTBLString" xml:space="preserve">
-    <value>TBL predeterminado</value>
+    <value>Standard TBL</value>
   </data>
   <data name="DeleteString" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>Ta bort</value>
   </data>
   <data name="DescriptionString" xml:space="preserve">
-    <value>Descripción</value>
+    <value>Beskrivning</value>
   </data>
   <data name="EndTagString" xml:space="preserve">
-    <value>&lt;fin&gt;</value>
+    <value>&lt;slut&gt;</value>
   </data>
   <data name="EnterHexValueMsgString" xml:space="preserve">
-    <value>Introducid valor hexadecimal...</value>
+    <value>Ange hexadecimalt värde ...</value>
   </data>
   <data name="FileDroppingConfirmationString" xml:space="preserve">
-    <value>¿Queréis cerrar el archivo actual y abrir: </value>
+    <value>Vill du stänga den aktuella filen och öppna: </value>
   </data>
   <data name="FillSelectionAloneString" xml:space="preserve">
-    <value>Rellenar selección con byte</value>
+    <value>Fyll markering med byte</value>
   </data>
   <data name="FillSelectionString" xml:space="preserve">
-    <value>Rellenar selección con byte...</value>
+    <value>Fyll markering med byte...</value>
   </data>
   <data name="FindAllString" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>Sök alla</value>
   </data>
   <data name="FindAndReplaceString" xml:space="preserve">
-    <value>Buscar y reemplazar</value>
+    <value>Sök och ersätt</value>
   </data>
   <data name="FindByteString" xml:space="preserve">
-    <value>Byte a buscar</value>
+    <value>Byte att söka</value>
   </data>
   <data name="FindFirstString" xml:space="preserve">
-    <value>Buscar primero</value>
+    <value>Sök första</value>
   </data>
   <data name="FindLastString" xml:space="preserve">
-    <value>Buscar último</value>
+    <value>Sök sista</value>
   </data>
   <data name="FindNextString" xml:space="preserve">
-    <value>Buscar siguiente</value>
+    <value>Sök nästa</value>
   </data>
   <data name="FindSelectionString" xml:space="preserve">
-    <value>Buscar todas las ocurrencias de la selección</value>
+    <value>Sök alla förekomster av markering</value>
   </data>
   <data name="FindString" xml:space="preserve">
-    <value>Buscar</value>
+    <value>Sök</value>
   </data>
   <data name="FindWhatString" xml:space="preserve">
-    <value>Buscar qué:</value>
+    <value>Sök vad:</value>
   </data>
   <data name="FirstByteString" xml:space="preserve">
-    <value>Primer byte</value>
+    <value>Första byte</value>
   </data>
   <data name="HexString" xml:space="preserve">
     <value>Hex</value>
   </data>
   <data name="KBTagString" xml:space="preserve">
-    <value>KB</value>
+    <value>Kb</value>
   </data>
   <data name="LengthString" xml:space="preserve">
-    <value>Longitud</value>
+    <value>Längd</value>
   </data>
   <data name="LineStatusBarTagString" xml:space="preserve">
-    <value>Ln</value>
+    <value>Rad</value>
   </data>
   <data name="LineTagString" xml:space="preserve">
-    <value>&lt;ln&gt;</value>
+    <value>&lt;rad&gt;</value>
   </data>
   <data name="LongString" xml:space="preserve">
-    <value>Long</value>
+    <value>Lång</value>
   </data>
   <data name="MBTagString" xml:space="preserve">
-    <value>MB</value>
+    <value>Mb</value>
   </data>
   <data name="OkString" xml:space="preserve">
-    <value>Aceptar</value>
+    <value>Ok</value>
   </data>
   <data name="PasteExtendByteConfirmationString" xml:space="preserve">
-    <value>La operación de pegado alcanzó el final del archivo. ¿Queréis extender el archivo para completar la operación? Esta operación no se puede cancelar si continuáis.</value>
+    <value>Klistra in-åtgärden nådde slutet av filen. Vill du utöka filen för att slutföra åtgärden? Den här åtgärden kan inte avbrytas om du fortsätter.</value>
   </data>
   <data name="PasteFromClipboardString" xml:space="preserve">
-    <value>Pegar desde el portapapeles</value>
+    <value>Klistra in från urklipp</value>
   </data>
   <data name="PasteNotInsertString" xml:space="preserve">
-    <value>Pegar sin insertar</value>
+    <value>Klistra in utan att infoga</value>
   </data>
   <data name="PositionString" xml:space="preserve">
-    <value>Posición</value>
+    <value>Position</value>
   </data>
   <data name="ReplaceAllString" xml:space="preserve">
-    <value>Reemplazar todo</value>
+    <value>Ersätt alla</value>
   </data>
   <data name="ReplaceByByteString" xml:space="preserve">
-    <value>Reemplazar por byte</value>
+    <value>Ersätt med byte</value>
   </data>
   <data name="ReplaceNextString" xml:space="preserve">
-    <value>Reemplazar siguiente</value>
+    <value>Ersätt nästa</value>
   </data>
   <data name="ReplaceSelectionString" xml:space="preserve">
-    <value>Reemplazar byte en la selección...</value>
+    <value>Ersätt byte i markering...</value>
   </data>
   <data name="ReplaceString" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>Ersätt</value>
   </data>
   <data name="ReplaceWithByteString" xml:space="preserve">
-    <value>Reemplazar con byte</value>
+    <value>Ersätt med byte</value>
   </data>
   <data name="ReplaceWithString" xml:space="preserve">
-    <value>Reemplazar con:</value>
+    <value>Ersätt med:</value>
   </data>
   <data name="SelectAllString" xml:space="preserve">
-    <value>Seleccionar todo</value>
+    <value>Markera allt</value>
   </data>
   <data name="SetBookMarkString" xml:space="preserve">
-    <value>Establecer marcador</value>
+    <value>Sätt bokmärke</value>
   </data>
   <data name="TBLString" xml:space="preserve">
     <value>TBL</value>
   </data>
   <data name="ThisStringAreNotHexString" xml:space="preserve">
-    <value>Esta cadena no es hexadecimal</value>
+    <value>Den här strängen är inte hex</value>
   </data>
   <data name="UndoString" xml:space="preserve">
-    <value>Deshacer</value>
+    <value>Ångra</value>
   </data>
   <data name="ValueString" xml:space="preserve">
-    <value>Valor</value>
+    <value>Värde</value>
   </data>
   <data name="WritingErrorExeptionString" xml:space="preserve">
-    <value>Ocurrió un error al escribir.</value>
+    <value>Ett fel uppstod vid skrivning.</value>
   </data>
   <data name="HighLightSettingString" xml:space="preserve">
-    <value>Resaltar todos los datos encontrados</value>
+    <value>Markera all hittad data</value>
   </data>
   <data name="ReplaceTrimSettingString" xml:space="preserve">
-    <value>Recortar los datos a la longitud de búsqueda al reemplazar</value>
+    <value>Trimma datan till sökningens längd vid ersättning</value>
   </data>
   <data name="ZoomResetString" xml:space="preserve">
-    <value>Restablecer zoom al 100%</value>
+    <value>Återställ zoom till 100%</value>
   </data>
   <data name="ZoomString" xml:space="preserve">
     <value>Zoom</value>
   </data>
   <data name="ConvertStringToLongErrorString" xml:space="preserve">
-    <value>No se puede convertir esta cadena a long</value>
+    <value>Kan inte konvertera denna sträng till lång</value>
   </data>
   <data name="OpenAsReadOnlyString" xml:space="preserve">
-    <value>El archivo está bloqueado. ¿Queréis abrirlo en modo de solo lectura?</value>
+    <value>Filen är låst. Vill du öppna den i skrivskyddat läge?</value>
   </data>
   <data name="BytesTagString" xml:space="preserve">
     <value>Bytes</value>
   </data>
   <data name="SearchCommandCenterString" xml:space="preserve">
-    <value>CENTRO DE COMANDOS DE BÚSQUEDA</value>
+    <value>SÖKKOMMANDOCENTER</value>
   </data>
   <data name="SearchTextModeString" xml:space="preserve">
-    <value>Texto</value>
+    <value>Text</value>
   </data>
   <data name="SearchHexModeString" xml:space="preserve">
     <value>Hex</value>
@@ -277,177 +277,178 @@
     <value>Regex</value>
   </data>
   <data name="SearchWildcardModeString" xml:space="preserve">
-    <value>Comodín</value>
+    <value>Jokertecken</value>
   </data>
   <data name="SearchPreviousString" xml:space="preserve">
-    <value>Anterior</value>
+    <value>Föregående</value>
   </data>
   <data name="SearchNextString" xml:space="preserve">
-    <value>Siguiente</value>
+    <value>Nästa</value>
   </data>
   <data name="SearchFindAllString" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>Sök alla</value>
   </data>
   <data name="SearchMatchesString" xml:space="preserve">
-    <value>coincidencias</value>
+    <value>träffar</value>
   </data>
   <data name="SearchInString" xml:space="preserve">
-    <value>en</value>
+    <value>i</value>
   </data>
   <data name="SearchNoMatchesString" xml:space="preserve">
-    <value>No se encontraron coincidencias</value>
+    <value>Inga träffar hittades</value>
   </data>
   <data name="SearchV2BadgeString" xml:space="preserve">
-    <value>99% MÁS RÁPIDO CON V2</value>
+    <value>99% SNABBARE MED V2</value>
   </data>
   <data name="ClearSearchString" xml:space="preserve">
-    <value>Borrar</value>
+    <value>Rensa</value>
   </data>
   <data name="CommandPaletteString" xml:space="preserve">
-    <value>Paleta de comandos</value>
+    <value>Kommandopalett</value>
   </data>
   <data name="PerformanceDashboardString" xml:space="preserve">
-    <value>Panel de rendimiento</value>
+    <value>Prestandainstrumentpanel</value>
   </data>
   <data name="ThemeDarkGlassString" xml:space="preserve">
-    <value>Cristal oscuro</value>
+    <value>Mörkt glas</value>
   </data>
   <data name="ThemeLightString" xml:space="preserve">
-    <value>Claro</value>
+    <value>Ljust</value>
   </data>
   <data name="ThemeCyberpunkString" xml:space="preserve">
-    <value>Ciberpunk</value>
+    <value>Cyberpunk</value>
   </data>
   <data name="ThemeMinimalString" xml:space="preserve">
-    <value>Minimalista</value>
+    <value>Minimalt</value>
   </data>
   <data name="CopyAsCSharpCodeString" xml:space="preserve">
-    <value>Copiar como código C#</value>
+    <value>Kopiera som C#-kod</value>
   </data>
   <data name="CopyAsCCodeString" xml:space="preserve">
-    <value>Copiar como código C</value>
+    <value>Kopiera som C-kod</value>
   </data>
   <data name="CopyAsFormattedViewString" xml:space="preserve">
-    <value>Copiar como vista formateada</value>
+    <value>Kopiera som formaterad vy</value>
+  </data>
+  <data name="CopyAsAutoString" xml:space="preserve">
+    <value>Kopiera (Auto)</value>
   </data>
   <data name="CopyString" xml:space="preserve">
-    <value>Copiar</value>
+    <value>Kopiera</value>
   </data>
   <data name="PasteString" xml:space="preserve">
-    <value>Pegar</value>
+    <value>Klistra in</value>
   </data>
   <data name="FillWithByteString" xml:space="preserve">
-    <value>Rellenar con byte...</value>
+    <value>Fyll med byte...</value>
   </data>
   <data name="ReplaceByteMenuString" xml:space="preserve">
-    <value>Reemplazar byte...</value>
+    <value>Ersätt byte...</value>
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
-    <value>Invertir selección</value>
+    <value>Vänd markering</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
-    <value>Mensaje de estado</value>
+    <value>Statusmeddelande</value>
   </data>
   <data name="FileSizeString" xml:space="preserve">
-    <value>Tamaño del archivo</value>
+    <value>Filstorlek</value>
   </data>
   <data name="SelectionInfoString" xml:space="preserve">
-    <value>Información de selección</value>
+    <value>Markeringsinformation</value>
   </data>
   <data name="EditModeString" xml:space="preserve">
-    <value>Modo de edición</value>
+    <value>Redigeringsläge</value>
   </data>
   <data name="BytesPerLineString" xml:space="preserve">
-    <value>Bytes por línea</value>
+    <value>Bytes per rad</value>
   </data>
   <data name="RefreshTimeString" xml:space="preserve">
-    <value>Tiempo de actualización</value>
+    <value>Uppdateringstid</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
     <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
-    <value>Listo</value>
+    <value>Redo</value>
   </data>
   <data name="NoSelectionString" xml:space="preserve">
-    <value>Sin selección</value>
+    <value>Ingen markering</value>
   </data>
   <data name="ModeOverwriteString" xml:space="preserve">
-    <value>Modo: Sobrescribir</value>
+    <value>Läge: Skriv över</value>
   </data>
-
-  <!-- New resources (53) - Spanish (Spain) translations -->
   <data name="FindAndReplaceDialogTitle" xml:space="preserve">
-    <value>Buscar y reemplazar</value>
+    <value>Sök och ersätt</value>
   </data>
   <data name="FindGroupHeader" xml:space="preserve">
-    <value>Buscar</value>
+    <value>Sök</value>
   </data>
   <data name="ReplaceGroupHeader" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>Ersätt</value>
   </data>
   <data name="ResultsGroupHeader" xml:space="preserve">
-    <value>Resultados</value>
+    <value>Resultat</value>
   </data>
   <data name="FindTextLabel" xml:space="preserve">
-    <value>Buscar:</value>
+    <value>Sök:</value>
   </data>
   <data name="ReplaceTextLabel" xml:space="preserve">
-    <value>Reemplazar con:</value>
+    <value>Ersätt med:</value>
   </data>
   <data name="FindPreviousButton" xml:space="preserve">
-    <value>Anterior</value>
+    <value>Föregående</value>
   </data>
   <data name="FindNextButton" xml:space="preserve">
-    <value>Siguiente</value>
+    <value>Nästa</value>
   </data>
   <data name="FindAllButton" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>Sök alla</value>
   </data>
   <data name="ReplaceButton" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>Ersätt</value>
   </data>
   <data name="ReplaceAllButton" xml:space="preserve">
-    <value>Reemplazar todo</value>
+    <value>Ersätt alla</value>
   </data>
   <data name="CaseSensitiveCheckbox" xml:space="preserve">
-    <value>Distinguir mayúsculas y minúsculas</value>
+    <value>Skiftlägeskänslig</value>
   </data>
   <data name="WholeWordCheckbox" xml:space="preserve">
-    <value>Palabra completa</value>
+    <value>Helt ord</value>
   </data>
   <data name="UseRegexCheckbox" xml:space="preserve">
-    <value>Usar expresiones regulares</value>
+    <value>Använd reguljära uttryck</value>
   </data>
   <data name="SearchInSelectionCheckbox" xml:space="preserve">
-    <value>Buscar solo en la selección</value>
+    <value>Sök endast i markering</value>
   </data>
   <data name="HighlightAllCheckbox" xml:space="preserve">
-    <value>Resaltar todas las coincidencias</value>
+    <value>Markera alla träffar</value>
   </data>
   <data name="CloseDialogButton" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>Stäng</value>
   </data>
   <data name="NoResultsFound" xml:space="preserve">
-    <value>No se encontraron resultados</value>
+    <value>Inga resultat hittades</value>
   </data>
   <data name="MatchesFoundFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas</value>
+    <value>{0} träffar hittades</value>
   </data>
   <data name="ReplacedFormat" xml:space="preserve">
-    <value>{0} reemplazados</value>
+    <value>{0} ersatta</value>
   </data>
   <data name="SearchPanelTitle" xml:space="preserve">
-    <value>Búsqueda</value>
+    <value>Sök</value>
   </data>
   <data name="SearchFindLabel" xml:space="preserve">
-    <value>Buscar:</value>
+    <value>Sök:</value>
   </data>
   <data name="SearchModePlaceholder" xml:space="preserve">
-    <value>Introducid texto de búsqueda...</value>
+    <value>Ange söktext...</value>
   </data>
   <data name="TextModeLabel" xml:space="preserve">
-    <value>Texto</value>
+    <value>Text</value>
   </data>
   <data name="HexModeLabel" xml:space="preserve">
     <value>Hex</value>
@@ -456,204 +457,204 @@
     <value>Regex</value>
   </data>
   <data name="WildcardModeLabel" xml:space="preserve">
-    <value>Comodín</value>
+    <value>Jokertecken</value>
   </data>
   <data name="MatchCaseLabel" xml:space="preserve">
-    <value>Coincidir mayúsculas y minúsculas</value>
+    <value>Matcha skiftläge</value>
   </data>
   <data name="WholeWordLabel" xml:space="preserve">
-    <value>Palabra completa</value>
+    <value>Helt ord</value>
   </data>
   <data name="SearchOptionsLabel" xml:space="preserve">
-    <value>Opciones</value>
+    <value>Alternativ</value>
   </data>
   <data name="SearchResultsLabel" xml:space="preserve">
-    <value>Resultados</value>
+    <value>Resultat</value>
   </data>
   <data name="CurrentMatchLabel" xml:space="preserve">
-    <value>Coincidencia actual</value>
+    <value>Nuvarande träff</value>
   </data>
   <data name="TotalMatchesLabel" xml:space="preserve">
-    <value>Total de coincidencias</value>
+    <value>Totala träffar</value>
   </data>
   <data name="QuickSearchTooltip" xml:space="preserve">
-    <value>Búsqueda rápida (Ctrl+F)</value>
+    <value>Snabbsökning (Ctrl+F)</value>
   </data>
   <data name="PreviousMatchTooltip" xml:space="preserve">
-    <value>Coincidencia anterior (Shift+F3)</value>
+    <value>Föregående träff (Shift+F3)</value>
   </data>
   <data name="NextMatchTooltip" xml:space="preserve">
-    <value>Siguiente coincidencia (F3)</value>
+    <value>Nästa träff (F3)</value>
   </data>
   <data name="CloseSearchTooltip" xml:space="preserve">
-    <value>Cerrar búsqueda (Esc)</value>
+    <value>Stäng sökning (Esc)</value>
   </data>
   <data name="SearchOptionsTooltip" xml:space="preserve">
-    <value>Opciones de búsqueda</value>
+    <value>Sökalternativ</value>
   </data>
   <data name="StatusSearching" xml:space="preserve">
-    <value>Buscando...</value>
+    <value>Söker...</value>
   </data>
   <data name="StatusSearchComplete" xml:space="preserve">
-    <value>Búsqueda completada</value>
+    <value>Sökningen slutförd</value>
   </data>
   <data name="StatusFoundMatchesFormat" xml:space="preserve">
-    <value>Se encontraron {0} coincidencias en {1}ms</value>
+    <value>Hittade {0} träffar på {1}ms</value>
   </data>
   <data name="StatusMatchFoundAtFormat" xml:space="preserve">
-    <value>Coincidencia encontrada en la posición 0x{0:X8}</value>
+    <value>Träff hittad på position 0x{0:X8}</value>
   </data>
   <data name="StatusNoMoreMatches" xml:space="preserve">
-    <value>No se encontraron más coincidencias</value>
+    <value>Inga fler träffar hittades</value>
   </data>
   <data name="StatusReachedEndOfFile" xml:space="preserve">
-    <value>Se alcanzó el final del archivo</value>
+    <value>Nådde slutet av filen</value>
   </data>
   <data name="StatusReachedStartOfFile" xml:space="preserve">
-    <value>Se alcanzó el inicio del archivo</value>
+    <value>Nådde början av filen</value>
   </data>
   <data name="StatusReplacing" xml:space="preserve">
-    <value>Reemplazando...</value>
+    <value>Ersätter...</value>
   </data>
   <data name="StatusReplaceComplete" xml:space="preserve">
-    <value>Reemplazo completado</value>
+    <value>Ersättning slutförd</value>
   </data>
   <data name="StatusReplacedFormat" xml:space="preserve">
-    <value>Se reemplazaron {0} ocurrencias</value>
+    <value>Ersatte {0} förekomster</value>
   </data>
   <data name="StatusInvalidSearchPattern" xml:space="preserve">
-    <value>Patrón de búsqueda no válido</value>
+    <value>Ogiltigt sökmönster</value>
   </data>
   <data name="StatusInvalidRegex" xml:space="preserve">
-    <value>Expresión regular no válida</value>
+    <value>Ogiltigt reguljärt uttryck</value>
   </data>
   <data name="StatusSearchCancelled" xml:space="preserve">
-    <value>Búsqueda cancelada</value>
+    <value>Sökningen avbruten</value>
   </data>
   <data name="StatusReplaceCancelled" xml:space="preserve">
-    <value>Reemplazo cancelado</value>
+    <value>Ersättning avbruten</value>
   </data>
   <data name="StatusCancelling" xml:space="preserve">
-    <value>Cancelando...</value>
+    <value>Avbryter...</value>
   </data>
   <data name="StatusError" xml:space="preserve">
-    <value>Error: {0}</value>
+    <value>Fel: {0}</value>
   </data>
   <data name="StatusFoundMatchesWithSpeedFormat" xml:space="preserve">
-    <value>Se encontraron {0} coincidencias en {1}ms ({2:F2} MB/s)</value>
+    <value>Hittade {0} träffar på {1}ms ({2:F2} MB/s)</value>
   </data>
   <data name="StatusMatchFoundAtWrappedFormat" xml:space="preserve">
-    <value>Coincidencia encontrada en la posición 0x{0:X8} (ajustada)</value>
+    <value>Träff hittad på position 0x{0:X8} (rundad)</value>
   </data>
   <data name="StatusNoPreviousMatches" xml:space="preserve">
-    <value>No se encontraron coincidencias anteriores</value>
+    <value>Inga föregående träffar hittades</value>
   </data>
   <data name="StatusMatchOfTotalFormat" xml:space="preserve">
-    <value>Coincidencia {0} de {1} en la posición 0x{2:X8}</value>
+    <value>Träff {0} av {1} på position 0x{2:X8}</value>
   </data>
   <data name="StatusReplacedAtFormat" xml:space="preserve">
-    <value>Reemplazado en la posición 0x{0:X8} (Total: {1})</value>
+    <value>Ersatt på position 0x{0:X8} (Totalt: {1})</value>
   </data>
   <data name="StatusReplaceError" xml:space="preserve">
-    <value>Error de reemplazo: {0}</value>
+    <value>Ersättningsfel: {0}</value>
   </data>
   <data name="StatusNoMatchesToReplace" xml:space="preserve">
-    <value>No hay coincidencias para reemplazar</value>
+    <value>Inga träffar att ersätta</value>
   </data>
   <data name="StatusInvalidReplacementPattern" xml:space="preserve">
-    <value>Patrón de reemplazo no válido</value>
+    <value>Ogiltigt ersättningsmönster</value>
   </data>
   <data name="StatusReplacedOccurrencesFormat" xml:space="preserve">
-    <value>Se reemplazaron {0} ocurrencia(s). Total de reemplazos: {1}</value>
+    <value>Ersatte {0} förekomst(er). Totala ersättningar: {1}</value>
   </data>
   <data name="StatusReplaceAllError" xml:space="preserve">
-    <value>Error de reemplazar todo: {0}</value>
+    <value>Ersätt alla-fel: {0}</value>
   </data>
   <data name="StatusNoMoreBookmarksAfter" xml:space="preserve">
-    <value>No hay más marcadores después de la posición actual</value>
+    <value>Inga fler bokmärken efter nuvarande position</value>
   </data>
   <data name="StatusNoMoreBookmarksBefore" xml:space="preserve">
-    <value>No hay más marcadores antes de la posición actual</value>
+    <value>Inga fler bokmärken före nuvarande position</value>
   </data>
   <data name="BookmarkSetFormat" xml:space="preserve">
-    <value>Marcador establecido en 0x{0:X8}</value>
+    <value>Bokmärke satt på 0x{0:X8}</value>
   </data>
   <data name="BookmarkClearedFormat" xml:space="preserve">
-    <value>Marcador borrado en 0x{0:X8}</value>
+    <value>Bokmärke rensat på 0x{0:X8}</value>
   </data>
   <data name="BookmarkNavigatedFormat" xml:space="preserve">
-    <value>Navegado al marcador en 0x{0:X8}</value>
+    <value>Navigerade till bokmärke på 0x{0:X8}</value>
   </data>
   <data name="BookmarkAllCleared" xml:space="preserve">
-    <value>Todos los marcadores borrados</value>
+    <value>Alla bokmärken rensade</value>
   </data>
   <data name="CopySelectionString" xml:space="preserve">
-    <value>Copiar selección</value>
+    <value>Kopiera markering</value>
   </data>
   <data name="CutSelectionString" xml:space="preserve">
-    <value>Cortar selección</value>
+    <value>Klipp ut markering</value>
   </data>
   <data name="InsertByteString" xml:space="preserve">
-    <value>Insertar byte...</value>
+    <value>Infoga byte...</value>
   </data>
   <data name="DeleteByteString" xml:space="preserve">
-    <value>Eliminar byte</value>
+    <value>Ta bort byte</value>
   </data>
   <data name="DeleteSelectionString" xml:space="preserve">
-    <value>Eliminar selección</value>
+    <value>Ta bort markering</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>Ir al desplazamiento...</value>
+    <value>Gå till offset...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
-    <value>Propiedades</value>
-  </data>
-  <data name="ProgressButtonCancel" xml:space="preserve">
-    <value>Cancelar</value>
-  </data>
-  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
-    <value>Archivo abierto correctamente</value>
-  </data>
-  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
-    <value>Archivo guardado correctamente</value>
-  </data>
-  <data name="ProgressMessageFindingMatches" xml:space="preserve">
-    <value>Buscando coincidencias...</value>
-  </data>
-  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas</value>
-  </data>
-  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
-    <value>Cargando datos del archivo...</value>
-  </data>
-  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
-    <value>Abriendo flujo de archivo...</value>
-  </data>
-  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
-    <value>Preparando para guardar...</value>
-  </data>
-  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
-    <value>{0} ocurrencias reemplazadas</value>
-  </data>
-  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas. Reemplazando...</value>
-  </data>
-  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
-    <value>Buscando... {0} encontradas</value>
-  </data>
-  <data name="ProgressMessageStartingSearch" xml:space="preserve">
-    <value>Iniciando búsqueda...</value>
+    <value>Egenskaper</value>
   </data>
   <data name="ProgressTitleOpeningFile" xml:space="preserve">
-    <value>Abriendo archivo</value>
+    <value>Öppnar fil</value>
   </data>
-  <data name="ProgressTitleReplacing" xml:space="preserve">
-    <value>Reemplazando</value>
+  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
+    <value>Öppnar filström...</value>
+  </data>
+  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
+    <value>Laddar fildata...</value>
+  </data>
+  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
+    <value>Filen öppnades framgångsrikt</value>
   </data>
   <data name="ProgressTitleSavingFile" xml:space="preserve">
-    <value>Guardando archivo</value>
+    <value>Sparar fil</value>
+  </data>
+  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
+    <value>Förbereder för att spara...</value>
+  </data>
+  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
+    <value>Filen sparades framgångsrikt</value>
   </data>
   <data name="ProgressTitleSearching" xml:space="preserve">
-    <value>Buscando</value>
+    <value>Söker</value>
+  </data>
+  <data name="ProgressMessageStartingSearch" xml:space="preserve">
+    <value>Startar sökning...</value>
+  </data>
+  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
+    <value>Söker... {0} hittade</value>
+  </data>
+  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
+    <value>Hittade {0} träffar</value>
+  </data>
+  <data name="ProgressTitleReplacing" xml:space="preserve">
+    <value>Ersätter</value>
+  </data>
+  <data name="ProgressMessageFindingMatches" xml:space="preserve">
+    <value>Hittar träffar...</value>
+  </data>
+  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
+    <value>Hittade {0} träffar. Ersätter...</value>
+  </data>
+  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
+    <value>Ersatte {0} förekomster</value>
+  </data>
+  <data name="ProgressButtonCancel" xml:space="preserve">
+    <value>Avbryt</value>
   </data>
 </root>

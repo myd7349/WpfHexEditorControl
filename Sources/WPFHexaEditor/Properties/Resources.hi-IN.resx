@@ -59,216 +59,216 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- Existing resources (109) - Spanish (Spain) translations -->
+  <!-- Hindi (hi-IN) - Translated to Hindi (Devanagari) -->
   <data name="AppendByteConfirmationString" xml:space="preserve">
-    <value>Habéis alcanzado el final del archivo. ¿Queréis añadir un byte? Esta operación no se puede cancelar si continuáis.</value>
+    <value>आप फ़ाइल के अंत तक पहुँच गए हैं। क्या आप एक बाइट जोड़ना चाहते हैं? यदि आप जारी रखते हैं तो इस क्रिया को रद्द नहीं किया जा सकता।</value>
   </data>
   <data name="BookmarksString" xml:space="preserve">
-    <value>Marcadores</value>
+    <value>बुकमार्क</value>
   </data>
   <data name="ByteActionString" xml:space="preserve">
-    <value>Acción de byte</value>
+    <value>बाइट क्रिया</value>
   </data>
   <data name="ByteString" xml:space="preserve">
-    <value>Byte</value>
+    <value>बाइट</value>
   </data>
   <data name="CancelLongProcessString" xml:space="preserve">
-    <value>Cancelar proceso largo</value>
+    <value>लंबी प्रक्रिया रद्द करें</value>
   </data>
   <data name="CancelLongProcessToolTipString" xml:space="preserve">
-    <value>Haced clic para cancelar el proceso largo.</value>
+    <value>लंबी प्रक्रिया रद्द करने के लिए क्लिक करें।</value>
   </data>
   <data name="CancelString" xml:space="preserve">
-    <value>Cancelar</value>
+    <value>रद्द करें</value>
   </data>
   <data name="ClearBookMarkString" xml:space="preserve">
-    <value>Borrar marcador</value>
+    <value>बुकमार्क साफ़ करें</value>
   </data>
   <data name="ClearString" xml:space="preserve">
-    <value>Borrar</value>
+    <value>साफ़ करें</value>
   </data>
   <data name="ClickToGoAtPositionString" xml:space="preserve">
-    <value>Haced clic para ir a la posición.</value>
+    <value>स्थिति पर जाने के लिए क्लिक करें।</value>
   </data>
   <data name="CloseString" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>बंद करें</value>
   </data>
   <data name="CopyAsASCIIString" xml:space="preserve">
-    <value>Copiar como ASCII</value>
+    <value>ASCII के रूप में कॉपी करें</value>
   </data>
   <data name="CopyAsDecimalString" xml:space="preserve">
-    <value>Copiar como decimal</value>
+    <value>दशमलव के रूप में कॉपी करें</value>
   </data>
   <data name="CopyAsHexadecimalString" xml:space="preserve">
-    <value>Copiar como hexadecimal</value>
+    <value>हेक्साडेसिमल के रूप में कॉपी करें</value>
   </data>
   <data name="CopyAsTBLString" xml:space="preserve">
-    <value>Cadena TBL (archivo de caracteres cargado)</value>
+    <value>TBL स्ट्रिंग (कैरेक्टर फ़ाइल लोड की गई)</value>
   </data>
   <data name="CopySelectionAsString" xml:space="preserve">
-    <value>Copiar selección como...</value>
+    <value>चयन कॉपी करें इस रूप में...</value>
   </data>
   <data name="CountOfString" xml:space="preserve">
-    <value>Recuento de</value>
+    <value>की संख्या</value>
   </data>
   <data name="DefaultTBLString" xml:space="preserve">
-    <value>TBL predeterminado</value>
+    <value>डिफ़ॉल्ट TBL</value>
   </data>
   <data name="DeleteString" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>हटाएँ</value>
   </data>
   <data name="DescriptionString" xml:space="preserve">
-    <value>Descripción</value>
+    <value>विवरण</value>
   </data>
   <data name="EndTagString" xml:space="preserve">
-    <value>&lt;fin&gt;</value>
+    <value>&lt;अंत&gt;</value>
   </data>
   <data name="EnterHexValueMsgString" xml:space="preserve">
-    <value>Introducid valor hexadecimal...</value>
+    <value>हेक्साडेसिमल मान दर्ज करें...</value>
   </data>
   <data name="FileDroppingConfirmationString" xml:space="preserve">
-    <value>¿Queréis cerrar el archivo actual y abrir: </value>
+    <value>क्या आप वर्तमान फ़ाइल बंद करके खोलना चाहते हैं: </value>
   </data>
   <data name="FillSelectionAloneString" xml:space="preserve">
-    <value>Rellenar selección con byte</value>
+    <value>चयन को बाइट से भरें</value>
   </data>
   <data name="FillSelectionString" xml:space="preserve">
-    <value>Rellenar selección con byte...</value>
+    <value>चयन को बाइट से भरें...</value>
   </data>
   <data name="FindAllString" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>सभी खोजें</value>
   </data>
   <data name="FindAndReplaceString" xml:space="preserve">
-    <value>Buscar y reemplazar</value>
+    <value>खोजें और बदलें</value>
   </data>
   <data name="FindByteString" xml:space="preserve">
-    <value>Byte a buscar</value>
+    <value>खोजने के लिए बाइट</value>
   </data>
   <data name="FindFirstString" xml:space="preserve">
-    <value>Buscar primero</value>
+    <value>पहला खोजें</value>
   </data>
   <data name="FindLastString" xml:space="preserve">
-    <value>Buscar último</value>
+    <value>अंतिम खोजें</value>
   </data>
   <data name="FindNextString" xml:space="preserve">
-    <value>Buscar siguiente</value>
+    <value>अगला खोजें</value>
   </data>
   <data name="FindSelectionString" xml:space="preserve">
-    <value>Buscar todas las ocurrencias de la selección</value>
+    <value>चयन की सभी घटनाएँ खोजें</value>
   </data>
   <data name="FindString" xml:space="preserve">
-    <value>Buscar</value>
+    <value>खोजें</value>
   </data>
   <data name="FindWhatString" xml:space="preserve">
-    <value>Buscar qué:</value>
+    <value>क्या खोजें:</value>
   </data>
   <data name="FirstByteString" xml:space="preserve">
-    <value>Primer byte</value>
+    <value>पहला बाइट</value>
   </data>
   <data name="HexString" xml:space="preserve">
     <value>Hex</value>
   </data>
   <data name="KBTagString" xml:space="preserve">
-    <value>KB</value>
+    <value>Kb</value>
   </data>
   <data name="LengthString" xml:space="preserve">
-    <value>Longitud</value>
+    <value>लंबाई</value>
   </data>
   <data name="LineStatusBarTagString" xml:space="preserve">
-    <value>Ln</value>
+    <value>पं</value>
   </data>
   <data name="LineTagString" xml:space="preserve">
-    <value>&lt;ln&gt;</value>
+    <value>&lt;पं&gt;</value>
   </data>
   <data name="LongString" xml:space="preserve">
-    <value>Long</value>
+    <value>लांग</value>
   </data>
   <data name="MBTagString" xml:space="preserve">
-    <value>MB</value>
+    <value>Mb</value>
   </data>
   <data name="OkString" xml:space="preserve">
-    <value>Aceptar</value>
+    <value>ठीक है</value>
   </data>
   <data name="PasteExtendByteConfirmationString" xml:space="preserve">
-    <value>La operación de pegado alcanzó el final del archivo. ¿Queréis extender el archivo para completar la operación? Esta operación no se puede cancelar si continuáis.</value>
+    <value>पेस्ट क्रिया फ़ाइल के अंत तक पहुँच गई। क्या आप संपूर्ण क्रिया के लिए फ़ाइल को विस्तारित करना चाहते हैं? यदि आप जारी रखते हैं तो इस क्रिया को रद्द नहीं किया जा सकता।</value>
   </data>
   <data name="PasteFromClipboardString" xml:space="preserve">
-    <value>Pegar desde el portapapeles</value>
+    <value>क्लिपबोर्ड से पेस्ट करें</value>
   </data>
   <data name="PasteNotInsertString" xml:space="preserve">
-    <value>Pegar sin insertar</value>
+    <value>बिना सम्मिलित किए पेस्ट करें</value>
   </data>
   <data name="PositionString" xml:space="preserve">
-    <value>Posición</value>
+    <value>स्थिति</value>
   </data>
   <data name="ReplaceAllString" xml:space="preserve">
-    <value>Reemplazar todo</value>
+    <value>सभी बदलें</value>
   </data>
   <data name="ReplaceByByteString" xml:space="preserve">
-    <value>Reemplazar por byte</value>
+    <value>बाइट द्वारा बदलें</value>
   </data>
   <data name="ReplaceNextString" xml:space="preserve">
-    <value>Reemplazar siguiente</value>
+    <value>अगला बदलें</value>
   </data>
   <data name="ReplaceSelectionString" xml:space="preserve">
-    <value>Reemplazar byte en la selección...</value>
+    <value>चयन में बाइट बदलें...</value>
   </data>
   <data name="ReplaceString" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>बदलें</value>
   </data>
   <data name="ReplaceWithByteString" xml:space="preserve">
-    <value>Reemplazar con byte</value>
+    <value>बाइट से बदलें</value>
   </data>
   <data name="ReplaceWithString" xml:space="preserve">
-    <value>Reemplazar con:</value>
+    <value>इससे बदलें:</value>
   </data>
   <data name="SelectAllString" xml:space="preserve">
-    <value>Seleccionar todo</value>
+    <value>सभी चुनें</value>
   </data>
   <data name="SetBookMarkString" xml:space="preserve">
-    <value>Establecer marcador</value>
+    <value>बुकमार्क सेट करें</value>
   </data>
   <data name="TBLString" xml:space="preserve">
     <value>TBL</value>
   </data>
   <data name="ThisStringAreNotHexString" xml:space="preserve">
-    <value>Esta cadena no es hexadecimal</value>
+    <value>यह स्ट्रिंग Hex नहीं है</value>
   </data>
   <data name="UndoString" xml:space="preserve">
-    <value>Deshacer</value>
+    <value>पूर्ववत करें</value>
   </data>
   <data name="ValueString" xml:space="preserve">
-    <value>Valor</value>
+    <value>मान</value>
   </data>
   <data name="WritingErrorExeptionString" xml:space="preserve">
-    <value>Ocurrió un error al escribir.</value>
+    <value>लिखते समय एक त्रुटि हुई।</value>
   </data>
   <data name="HighLightSettingString" xml:space="preserve">
-    <value>Resaltar todos los datos encontrados</value>
+    <value>सभी खोजे गए डेटा को हाइलाइट करें</value>
   </data>
   <data name="ReplaceTrimSettingString" xml:space="preserve">
-    <value>Recortar los datos a la longitud de búsqueda al reemplazar</value>
+    <value>बदलते समय खोज की लंबाई पर डेटा ट्रिम करें</value>
   </data>
   <data name="ZoomResetString" xml:space="preserve">
-    <value>Restablecer zoom al 100%</value>
+    <value>ज़ूम को 100% पर रीसेट करें</value>
   </data>
   <data name="ZoomString" xml:space="preserve">
-    <value>Zoom</value>
+    <value>ज़ूम</value>
   </data>
   <data name="ConvertStringToLongErrorString" xml:space="preserve">
-    <value>No se puede convertir esta cadena a long</value>
+    <value>इस स्ट्रिंग को लांग में परिवर्तित नहीं किया जा सकता</value>
   </data>
   <data name="OpenAsReadOnlyString" xml:space="preserve">
-    <value>El archivo está bloqueado. ¿Queréis abrirlo en modo de solo lectura?</value>
+    <value>फ़ाइल लॉक है। क्या आप इसे केवल-पढ़ने योग्य मोड में खोलना चाहते हैं?</value>
   </data>
   <data name="BytesTagString" xml:space="preserve">
-    <value>Bytes</value>
+    <value>बाइट्स</value>
   </data>
   <data name="SearchCommandCenterString" xml:space="preserve">
-    <value>CENTRO DE COMANDOS DE BÚSQUEDA</value>
+    <value>खोज कमांड केंद्र</value>
   </data>
   <data name="SearchTextModeString" xml:space="preserve">
-    <value>Texto</value>
+    <value>टेक्स्ट</value>
   </data>
   <data name="SearchHexModeString" xml:space="preserve">
     <value>Hex</value>
@@ -277,177 +277,178 @@
     <value>Regex</value>
   </data>
   <data name="SearchWildcardModeString" xml:space="preserve">
-    <value>Comodín</value>
+    <value>वाइल्डकार्ड</value>
   </data>
   <data name="SearchPreviousString" xml:space="preserve">
-    <value>Anterior</value>
+    <value>पिछला</value>
   </data>
   <data name="SearchNextString" xml:space="preserve">
-    <value>Siguiente</value>
+    <value>अगला</value>
   </data>
   <data name="SearchFindAllString" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>सभी खोजें</value>
   </data>
   <data name="SearchMatchesString" xml:space="preserve">
-    <value>coincidencias</value>
+    <value>मिलान</value>
   </data>
   <data name="SearchInString" xml:space="preserve">
-    <value>en</value>
+    <value>में</value>
   </data>
   <data name="SearchNoMatchesString" xml:space="preserve">
-    <value>No se encontraron coincidencias</value>
+    <value>कोई मिलान नहीं मिला</value>
   </data>
   <data name="SearchV2BadgeString" xml:space="preserve">
-    <value>99% MÁS RÁPIDO CON V2</value>
+    <value>V2 के साथ 99% तेज़</value>
   </data>
   <data name="ClearSearchString" xml:space="preserve">
-    <value>Borrar</value>
+    <value>साफ़ करें</value>
   </data>
   <data name="CommandPaletteString" xml:space="preserve">
-    <value>Paleta de comandos</value>
+    <value>कमांड पैलेट</value>
   </data>
   <data name="PerformanceDashboardString" xml:space="preserve">
-    <value>Panel de rendimiento</value>
+    <value>प्रदर्शन डैशबोर्ड</value>
   </data>
   <data name="ThemeDarkGlassString" xml:space="preserve">
-    <value>Cristal oscuro</value>
+    <value>डार्क ग्लास</value>
   </data>
   <data name="ThemeLightString" xml:space="preserve">
-    <value>Claro</value>
+    <value>लाइट</value>
   </data>
   <data name="ThemeCyberpunkString" xml:space="preserve">
-    <value>Ciberpunk</value>
+    <value>साइबरपंक</value>
   </data>
   <data name="ThemeMinimalString" xml:space="preserve">
-    <value>Minimalista</value>
+    <value>मिनिमल</value>
   </data>
   <data name="CopyAsCSharpCodeString" xml:space="preserve">
-    <value>Copiar como código C#</value>
+    <value>C# कोड के रूप में कॉपी करें</value>
   </data>
   <data name="CopyAsCCodeString" xml:space="preserve">
-    <value>Copiar como código C</value>
+    <value>C कोड के रूप में कॉपी करें</value>
   </data>
   <data name="CopyAsFormattedViewString" xml:space="preserve">
-    <value>Copiar como vista formateada</value>
+    <value>स्वरूपित दृश्य के रूप में कॉपी करें</value>
+  </data>
+  <data name="CopyAsAutoString" xml:space="preserve">
+    <value>कॉपी करें (स्वतः)</value>
   </data>
   <data name="CopyString" xml:space="preserve">
-    <value>Copiar</value>
+    <value>कॉपी करें</value>
   </data>
   <data name="PasteString" xml:space="preserve">
-    <value>Pegar</value>
+    <value>पेस्ट करें</value>
   </data>
   <data name="FillWithByteString" xml:space="preserve">
-    <value>Rellenar con byte...</value>
+    <value>बाइट से भरें...</value>
   </data>
   <data name="ReplaceByteMenuString" xml:space="preserve">
-    <value>Reemplazar byte...</value>
+    <value>बाइट बदलें...</value>
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
-    <value>Invertir selección</value>
+    <value>चयन उलटें</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
-    <value>Mensaje de estado</value>
+    <value>स्थिति संदेश</value>
   </data>
   <data name="FileSizeString" xml:space="preserve">
-    <value>Tamaño del archivo</value>
+    <value>फ़ाइल का आकार</value>
   </data>
   <data name="SelectionInfoString" xml:space="preserve">
-    <value>Información de selección</value>
+    <value>चयन जानकारी</value>
   </data>
   <data name="EditModeString" xml:space="preserve">
-    <value>Modo de edición</value>
+    <value>संपादन मोड</value>
   </data>
   <data name="BytesPerLineString" xml:space="preserve">
-    <value>Bytes por línea</value>
+    <value>प्रति पंक्ति बाइट्स</value>
   </data>
   <data name="RefreshTimeString" xml:space="preserve">
-    <value>Tiempo de actualización</value>
+    <value>रीफ्रेश समय</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
     <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
-    <value>Listo</value>
+    <value>तैयार</value>
   </data>
   <data name="NoSelectionString" xml:space="preserve">
-    <value>Sin selección</value>
+    <value>कोई चयन नहीं</value>
   </data>
   <data name="ModeOverwriteString" xml:space="preserve">
-    <value>Modo: Sobrescribir</value>
+    <value>मोड: ओवरराइट</value>
   </data>
-
-  <!-- New resources (53) - Spanish (Spain) translations -->
   <data name="FindAndReplaceDialogTitle" xml:space="preserve">
-    <value>Buscar y reemplazar</value>
+    <value>खोजें और बदलें</value>
   </data>
   <data name="FindGroupHeader" xml:space="preserve">
-    <value>Buscar</value>
+    <value>खोजें</value>
   </data>
   <data name="ReplaceGroupHeader" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>बदलें</value>
   </data>
   <data name="ResultsGroupHeader" xml:space="preserve">
-    <value>Resultados</value>
+    <value>परिणाम</value>
   </data>
   <data name="FindTextLabel" xml:space="preserve">
-    <value>Buscar:</value>
+    <value>खोजें:</value>
   </data>
   <data name="ReplaceTextLabel" xml:space="preserve">
-    <value>Reemplazar con:</value>
+    <value>इससे बदलें:</value>
   </data>
   <data name="FindPreviousButton" xml:space="preserve">
-    <value>Anterior</value>
+    <value>पिछला</value>
   </data>
   <data name="FindNextButton" xml:space="preserve">
-    <value>Siguiente</value>
+    <value>अगला</value>
   </data>
   <data name="FindAllButton" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>सभी खोजें</value>
   </data>
   <data name="ReplaceButton" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>बदलें</value>
   </data>
   <data name="ReplaceAllButton" xml:space="preserve">
-    <value>Reemplazar todo</value>
+    <value>सभी बदलें</value>
   </data>
   <data name="CaseSensitiveCheckbox" xml:space="preserve">
-    <value>Distinguir mayúsculas y minúsculas</value>
+    <value>केस संवेदनशील</value>
   </data>
   <data name="WholeWordCheckbox" xml:space="preserve">
-    <value>Palabra completa</value>
+    <value>पूरा शब्द</value>
   </data>
   <data name="UseRegexCheckbox" xml:space="preserve">
-    <value>Usar expresiones regulares</value>
+    <value>रेगुलर एक्सप्रेशन उपयोग करें</value>
   </data>
   <data name="SearchInSelectionCheckbox" xml:space="preserve">
-    <value>Buscar solo en la selección</value>
+    <value>केवल चयन में खोजें</value>
   </data>
   <data name="HighlightAllCheckbox" xml:space="preserve">
-    <value>Resaltar todas las coincidencias</value>
+    <value>सभी मिलान हाइलाइट करें</value>
   </data>
   <data name="CloseDialogButton" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>बंद करें</value>
   </data>
   <data name="NoResultsFound" xml:space="preserve">
-    <value>No se encontraron resultados</value>
+    <value>कोई परिणाम नहीं मिला</value>
   </data>
   <data name="MatchesFoundFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas</value>
+    <value>{0} मिलान मिले</value>
   </data>
   <data name="ReplacedFormat" xml:space="preserve">
-    <value>{0} reemplazados</value>
+    <value>{0} बदले गए</value>
   </data>
   <data name="SearchPanelTitle" xml:space="preserve">
-    <value>Búsqueda</value>
+    <value>खोज</value>
   </data>
   <data name="SearchFindLabel" xml:space="preserve">
-    <value>Buscar:</value>
+    <value>खोजें:</value>
   </data>
   <data name="SearchModePlaceholder" xml:space="preserve">
-    <value>Introducid texto de búsqueda...</value>
+    <value>खोज टेक्स्ट दर्ज करें...</value>
   </data>
   <data name="TextModeLabel" xml:space="preserve">
-    <value>Texto</value>
+    <value>टेक्स्ट</value>
   </data>
   <data name="HexModeLabel" xml:space="preserve">
     <value>Hex</value>
@@ -456,204 +457,204 @@
     <value>Regex</value>
   </data>
   <data name="WildcardModeLabel" xml:space="preserve">
-    <value>Comodín</value>
+    <value>वाइल्डकार्ड</value>
   </data>
   <data name="MatchCaseLabel" xml:space="preserve">
-    <value>Coincidir mayúsculas y minúsculas</value>
+    <value>केस मिलाएं</value>
   </data>
   <data name="WholeWordLabel" xml:space="preserve">
-    <value>Palabra completa</value>
+    <value>पूरा शब्द</value>
   </data>
   <data name="SearchOptionsLabel" xml:space="preserve">
-    <value>Opciones</value>
+    <value>विकल्प</value>
   </data>
   <data name="SearchResultsLabel" xml:space="preserve">
-    <value>Resultados</value>
+    <value>परिणाम</value>
   </data>
   <data name="CurrentMatchLabel" xml:space="preserve">
-    <value>Coincidencia actual</value>
+    <value>वर्तमान मिलान</value>
   </data>
   <data name="TotalMatchesLabel" xml:space="preserve">
-    <value>Total de coincidencias</value>
+    <value>कुल मिलान</value>
   </data>
   <data name="QuickSearchTooltip" xml:space="preserve">
-    <value>Búsqueda rápida (Ctrl+F)</value>
+    <value>त्वरित खोज (Ctrl+F)</value>
   </data>
   <data name="PreviousMatchTooltip" xml:space="preserve">
-    <value>Coincidencia anterior (Shift+F3)</value>
+    <value>पिछला मिलान (Shift+F3)</value>
   </data>
   <data name="NextMatchTooltip" xml:space="preserve">
-    <value>Siguiente coincidencia (F3)</value>
+    <value>अगला मिलान (F3)</value>
   </data>
   <data name="CloseSearchTooltip" xml:space="preserve">
-    <value>Cerrar búsqueda (Esc)</value>
+    <value>खोज बंद करें (Esc)</value>
   </data>
   <data name="SearchOptionsTooltip" xml:space="preserve">
-    <value>Opciones de búsqueda</value>
+    <value>खोज विकल्प</value>
   </data>
   <data name="StatusSearching" xml:space="preserve">
-    <value>Buscando...</value>
+    <value>खोज रहे हैं...</value>
   </data>
   <data name="StatusSearchComplete" xml:space="preserve">
-    <value>Búsqueda completada</value>
+    <value>खोज पूर्ण</value>
   </data>
   <data name="StatusFoundMatchesFormat" xml:space="preserve">
-    <value>Se encontraron {0} coincidencias en {1}ms</value>
+    <value>{1}ms में {0} मिलान मिले</value>
   </data>
   <data name="StatusMatchFoundAtFormat" xml:space="preserve">
-    <value>Coincidencia encontrada en la posición 0x{0:X8}</value>
+    <value>स्थिति 0x{0:X8} पर मिलान मिला</value>
   </data>
   <data name="StatusNoMoreMatches" xml:space="preserve">
-    <value>No se encontraron más coincidencias</value>
+    <value>कोई और मिलान नहीं मिला</value>
   </data>
   <data name="StatusReachedEndOfFile" xml:space="preserve">
-    <value>Se alcanzó el final del archivo</value>
+    <value>फ़ाइल के अंत तक पहुँच गए</value>
   </data>
   <data name="StatusReachedStartOfFile" xml:space="preserve">
-    <value>Se alcanzó el inicio del archivo</value>
+    <value>फ़ाइल की शुरुआत तक पहुँच गए</value>
   </data>
   <data name="StatusReplacing" xml:space="preserve">
-    <value>Reemplazando...</value>
+    <value>बदल रहे हैं...</value>
   </data>
   <data name="StatusReplaceComplete" xml:space="preserve">
-    <value>Reemplazo completado</value>
+    <value>बदलना पूर्ण</value>
   </data>
   <data name="StatusReplacedFormat" xml:space="preserve">
-    <value>Se reemplazaron {0} ocurrencias</value>
+    <value>{0} घटनाएँ बदली गईं</value>
   </data>
   <data name="StatusInvalidSearchPattern" xml:space="preserve">
-    <value>Patrón de búsqueda no válido</value>
+    <value>अमान्य खोज पैटर्न</value>
   </data>
   <data name="StatusInvalidRegex" xml:space="preserve">
-    <value>Expresión regular no válida</value>
+    <value>अमान्य रेगुलर एक्सप्रेशन</value>
   </data>
   <data name="StatusSearchCancelled" xml:space="preserve">
-    <value>Búsqueda cancelada</value>
+    <value>खोज रद्द की गई</value>
   </data>
   <data name="StatusReplaceCancelled" xml:space="preserve">
-    <value>Reemplazo cancelado</value>
+    <value>बदलना रद्द किया गया</value>
   </data>
   <data name="StatusCancelling" xml:space="preserve">
-    <value>Cancelando...</value>
+    <value>रद्द कर रहे हैं...</value>
   </data>
   <data name="StatusError" xml:space="preserve">
-    <value>Error: {0}</value>
+    <value>त्रुटि: {0}</value>
   </data>
   <data name="StatusFoundMatchesWithSpeedFormat" xml:space="preserve">
-    <value>Se encontraron {0} coincidencias en {1}ms ({2:F2} MB/s)</value>
+    <value>{1}ms में {0} मिलान मिले ({2:F2} MB/s)</value>
   </data>
   <data name="StatusMatchFoundAtWrappedFormat" xml:space="preserve">
-    <value>Coincidencia encontrada en la posición 0x{0:X8} (ajustada)</value>
+    <value>स्थिति 0x{0:X8} पर मिलान मिला (लपेटा गया)</value>
   </data>
   <data name="StatusNoPreviousMatches" xml:space="preserve">
-    <value>No se encontraron coincidencias anteriores</value>
+    <value>कोई पिछला मिलान नहीं मिला</value>
   </data>
   <data name="StatusMatchOfTotalFormat" xml:space="preserve">
-    <value>Coincidencia {0} de {1} en la posición 0x{2:X8}</value>
+    <value>स्थिति 0x{2:X8} पर {1} में से {0} मिलान</value>
   </data>
   <data name="StatusReplacedAtFormat" xml:space="preserve">
-    <value>Reemplazado en la posición 0x{0:X8} (Total: {1})</value>
+    <value>स्थिति 0x{0:X8} पर बदला गया (कुल: {1})</value>
   </data>
   <data name="StatusReplaceError" xml:space="preserve">
-    <value>Error de reemplazo: {0}</value>
+    <value>बदलने में त्रुटि: {0}</value>
   </data>
   <data name="StatusNoMatchesToReplace" xml:space="preserve">
-    <value>No hay coincidencias para reemplazar</value>
+    <value>बदलने के लिए कोई मिलान नहीं</value>
   </data>
   <data name="StatusInvalidReplacementPattern" xml:space="preserve">
-    <value>Patrón de reemplazo no válido</value>
+    <value>अमान्य प्रतिस्थापन पैटर्न</value>
   </data>
   <data name="StatusReplacedOccurrencesFormat" xml:space="preserve">
-    <value>Se reemplazaron {0} ocurrencia(s). Total de reemplazos: {1}</value>
+    <value>{0} घटना(एँ) बदली गईं। कुल प्रतिस्थापन: {1}</value>
   </data>
   <data name="StatusReplaceAllError" xml:space="preserve">
-    <value>Error de reemplazar todo: {0}</value>
+    <value>सभी बदलने में त्रुटि: {0}</value>
   </data>
   <data name="StatusNoMoreBookmarksAfter" xml:space="preserve">
-    <value>No hay más marcadores después de la posición actual</value>
+    <value>वर्तमान स्थिति के बाद कोई और बुकमार्क नहीं</value>
   </data>
   <data name="StatusNoMoreBookmarksBefore" xml:space="preserve">
-    <value>No hay más marcadores antes de la posición actual</value>
+    <value>वर्तमान स्थिति से पहले कोई और बुकमार्क नहीं</value>
   </data>
   <data name="BookmarkSetFormat" xml:space="preserve">
-    <value>Marcador establecido en 0x{0:X8}</value>
+    <value>0x{0:X8} पर बुकमार्क सेट किया गया</value>
   </data>
   <data name="BookmarkClearedFormat" xml:space="preserve">
-    <value>Marcador borrado en 0x{0:X8}</value>
+    <value>0x{0:X8} पर बुकमार्क साफ़ किया गया</value>
   </data>
   <data name="BookmarkNavigatedFormat" xml:space="preserve">
-    <value>Navegado al marcador en 0x{0:X8}</value>
+    <value>0x{0:X8} पर बुकमार्क पर नेविगेट किया गया</value>
   </data>
   <data name="BookmarkAllCleared" xml:space="preserve">
-    <value>Todos los marcadores borrados</value>
+    <value>सभी बुकमार्क साफ़ किए गए</value>
   </data>
   <data name="CopySelectionString" xml:space="preserve">
-    <value>Copiar selección</value>
+    <value>चयन कॉपी करें</value>
   </data>
   <data name="CutSelectionString" xml:space="preserve">
-    <value>Cortar selección</value>
+    <value>चयन कट करें</value>
   </data>
   <data name="InsertByteString" xml:space="preserve">
-    <value>Insertar byte...</value>
+    <value>बाइट सम्मिलित करें...</value>
   </data>
   <data name="DeleteByteString" xml:space="preserve">
-    <value>Eliminar byte</value>
+    <value>बाइट हटाएँ</value>
   </data>
   <data name="DeleteSelectionString" xml:space="preserve">
-    <value>Eliminar selección</value>
+    <value>चयन हटाएँ</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>Ir al desplazamiento...</value>
+    <value>Offset पर जाएँ...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
-    <value>Propiedades</value>
-  </data>
-  <data name="ProgressButtonCancel" xml:space="preserve">
-    <value>Cancelar</value>
-  </data>
-  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
-    <value>Archivo abierto correctamente</value>
-  </data>
-  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
-    <value>Archivo guardado correctamente</value>
-  </data>
-  <data name="ProgressMessageFindingMatches" xml:space="preserve">
-    <value>Buscando coincidencias...</value>
-  </data>
-  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas</value>
-  </data>
-  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
-    <value>Cargando datos del archivo...</value>
-  </data>
-  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
-    <value>Abriendo flujo de archivo...</value>
-  </data>
-  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
-    <value>Preparando para guardar...</value>
-  </data>
-  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
-    <value>{0} ocurrencias reemplazadas</value>
-  </data>
-  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas. Reemplazando...</value>
-  </data>
-  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
-    <value>Buscando... {0} encontradas</value>
-  </data>
-  <data name="ProgressMessageStartingSearch" xml:space="preserve">
-    <value>Iniciando búsqueda...</value>
+    <value>गुण</value>
   </data>
   <data name="ProgressTitleOpeningFile" xml:space="preserve">
-    <value>Abriendo archivo</value>
+    <value>फ़ाइल खोल रहे हैं</value>
   </data>
-  <data name="ProgressTitleReplacing" xml:space="preserve">
-    <value>Reemplazando</value>
+  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
+    <value>फ़ाइल स्ट्रीम खोल रहे हैं...</value>
+  </data>
+  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
+    <value>फ़ाइल डेटा लोड कर रहे हैं...</value>
+  </data>
+  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
+    <value>फ़ाइल सफलतापूर्वक खोली गई</value>
   </data>
   <data name="ProgressTitleSavingFile" xml:space="preserve">
-    <value>Guardando archivo</value>
+    <value>फ़ाइल सहेज रहे हैं</value>
+  </data>
+  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
+    <value>सहेजने की तैयारी कर रहे हैं...</value>
+  </data>
+  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
+    <value>फ़ाइल सफलतापूर्वक सहेजी गई</value>
   </data>
   <data name="ProgressTitleSearching" xml:space="preserve">
-    <value>Buscando</value>
+    <value>खोज रहे हैं</value>
+  </data>
+  <data name="ProgressMessageStartingSearch" xml:space="preserve">
+    <value>खोज शुरू कर रहे हैं...</value>
+  </data>
+  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
+    <value>खोज रहे हैं... {0} मिले</value>
+  </data>
+  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
+    <value>{0} मिलान मिले</value>
+  </data>
+  <data name="ProgressTitleReplacing" xml:space="preserve">
+    <value>बदल रहे हैं</value>
+  </data>
+  <data name="ProgressMessageFindingMatches" xml:space="preserve">
+    <value>मिलान खोज रहे हैं...</value>
+  </data>
+  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
+    <value>{0} मिलान मिले। बदल रहे हैं...</value>
+  </data>
+  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
+    <value>{0} घटनाएँ बदली गईं</value>
+  </data>
+  <data name="ProgressButtonCancel" xml:space="preserve">
+    <value>रद्द करें</value>
   </data>
 </root>

@@ -59,216 +59,216 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- Existing resources (109) - Spanish (Spain) translations -->
+  <!-- Korean (ko-KR) - Korean translations -->
   <data name="AppendByteConfirmationString" xml:space="preserve">
-    <value>Habéis alcanzado el final del archivo. ¿Queréis añadir un byte? Esta operación no se puede cancelar si continuáis.</value>
+    <value>파일의 끝에 도달했습니다. 1바이트를 추가하시겠습니까? 계속하면 이 작업을 취소할 수 없습니다.</value>
   </data>
   <data name="BookmarksString" xml:space="preserve">
-    <value>Marcadores</value>
+    <value>북마크</value>
   </data>
   <data name="ByteActionString" xml:space="preserve">
-    <value>Acción de byte</value>
+    <value>바이트 작업</value>
   </data>
   <data name="ByteString" xml:space="preserve">
-    <value>Byte</value>
+    <value>바이트</value>
   </data>
   <data name="CancelLongProcessString" xml:space="preserve">
-    <value>Cancelar proceso largo</value>
+    <value>장시간 프로세스 취소</value>
   </data>
   <data name="CancelLongProcessToolTipString" xml:space="preserve">
-    <value>Haced clic para cancelar el proceso largo.</value>
+    <value>클릭하여 장시간 프로세스를 취소합니다.</value>
   </data>
   <data name="CancelString" xml:space="preserve">
-    <value>Cancelar</value>
+    <value>취소</value>
   </data>
   <data name="ClearBookMarkString" xml:space="preserve">
-    <value>Borrar marcador</value>
+    <value>북마크 지우기</value>
   </data>
   <data name="ClearString" xml:space="preserve">
-    <value>Borrar</value>
+    <value>지우기</value>
   </data>
   <data name="ClickToGoAtPositionString" xml:space="preserve">
-    <value>Haced clic para ir a la posición.</value>
+    <value>클릭하여 해당 위치로 이동합니다.</value>
   </data>
   <data name="CloseString" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>닫기</value>
   </data>
   <data name="CopyAsASCIIString" xml:space="preserve">
-    <value>Copiar como ASCII</value>
+    <value>ASCII로 복사</value>
   </data>
   <data name="CopyAsDecimalString" xml:space="preserve">
-    <value>Copiar como decimal</value>
+    <value>10진수로 복사</value>
   </data>
   <data name="CopyAsHexadecimalString" xml:space="preserve">
-    <value>Copiar como hexadecimal</value>
+    <value>16진수로 복사</value>
   </data>
   <data name="CopyAsTBLString" xml:space="preserve">
-    <value>Cadena TBL (archivo de caracteres cargado)</value>
+    <value>TBL 문자열 (문자 파일 로드됨)</value>
   </data>
   <data name="CopySelectionAsString" xml:space="preserve">
-    <value>Copiar selección como...</value>
+    <value>선택 영역을 다음으로 복사...</value>
   </data>
   <data name="CountOfString" xml:space="preserve">
-    <value>Recuento de</value>
+    <value>개수</value>
   </data>
   <data name="DefaultTBLString" xml:space="preserve">
-    <value>TBL predeterminado</value>
+    <value>기본 TBL</value>
   </data>
   <data name="DeleteString" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>삭제</value>
   </data>
   <data name="DescriptionString" xml:space="preserve">
-    <value>Descripción</value>
+    <value>설명</value>
   </data>
   <data name="EndTagString" xml:space="preserve">
-    <value>&lt;fin&gt;</value>
+    <value>&lt;끝&gt;</value>
   </data>
   <data name="EnterHexValueMsgString" xml:space="preserve">
-    <value>Introducid valor hexadecimal...</value>
+    <value>16진수 값 입력...</value>
   </data>
   <data name="FileDroppingConfirmationString" xml:space="preserve">
-    <value>¿Queréis cerrar el archivo actual y abrir: </value>
+    <value>현재 파일을 닫고 다음 파일을 여시겠습니까: </value>
   </data>
   <data name="FillSelectionAloneString" xml:space="preserve">
-    <value>Rellenar selección con byte</value>
+    <value>선택 영역을 바이트로 채우기</value>
   </data>
   <data name="FillSelectionString" xml:space="preserve">
-    <value>Rellenar selección con byte...</value>
+    <value>선택 영역을 바이트로 채우기...</value>
   </data>
   <data name="FindAllString" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>모두 찾기</value>
   </data>
   <data name="FindAndReplaceString" xml:space="preserve">
-    <value>Buscar y reemplazar</value>
+    <value>찾기 및 바꾸기</value>
   </data>
   <data name="FindByteString" xml:space="preserve">
-    <value>Byte a buscar</value>
+    <value>검색할 바이트</value>
   </data>
   <data name="FindFirstString" xml:space="preserve">
-    <value>Buscar primero</value>
+    <value>처음 찾기</value>
   </data>
   <data name="FindLastString" xml:space="preserve">
-    <value>Buscar último</value>
+    <value>마지막 찾기</value>
   </data>
   <data name="FindNextString" xml:space="preserve">
-    <value>Buscar siguiente</value>
+    <value>다음 찾기</value>
   </data>
   <data name="FindSelectionString" xml:space="preserve">
-    <value>Buscar todas las ocurrencias de la selección</value>
+    <value>선택 영역의 모든 발생 찾기</value>
   </data>
   <data name="FindString" xml:space="preserve">
-    <value>Buscar</value>
+    <value>찾기</value>
   </data>
   <data name="FindWhatString" xml:space="preserve">
-    <value>Buscar qué:</value>
+    <value>찾을 내용:</value>
   </data>
   <data name="FirstByteString" xml:space="preserve">
-    <value>Primer byte</value>
+    <value>첫 번째 바이트</value>
   </data>
   <data name="HexString" xml:space="preserve">
     <value>Hex</value>
   </data>
   <data name="KBTagString" xml:space="preserve">
-    <value>KB</value>
+    <value>Kb</value>
   </data>
   <data name="LengthString" xml:space="preserve">
-    <value>Longitud</value>
+    <value>길이</value>
   </data>
   <data name="LineStatusBarTagString" xml:space="preserve">
-    <value>Ln</value>
+    <value>줄</value>
   </data>
   <data name="LineTagString" xml:space="preserve">
-    <value>&lt;ln&gt;</value>
+    <value>&lt;줄&gt;</value>
   </data>
   <data name="LongString" xml:space="preserve">
     <value>Long</value>
   </data>
   <data name="MBTagString" xml:space="preserve">
-    <value>MB</value>
+    <value>Mb</value>
   </data>
   <data name="OkString" xml:space="preserve">
-    <value>Aceptar</value>
+    <value>확인</value>
   </data>
   <data name="PasteExtendByteConfirmationString" xml:space="preserve">
-    <value>La operación de pegado alcanzó el final del archivo. ¿Queréis extender el archivo para completar la operación? Esta operación no se puede cancelar si continuáis.</value>
+    <value>붙여넣기 작업이 파일의 끝에 도달했습니다. 작업을 완료하기 위해 파일을 확장하시겠습니까? 계속하면 이 작업을 취소할 수 없습니다.</value>
   </data>
   <data name="PasteFromClipboardString" xml:space="preserve">
-    <value>Pegar desde el portapapeles</value>
+    <value>클립보드에서 붙여넣기</value>
   </data>
   <data name="PasteNotInsertString" xml:space="preserve">
-    <value>Pegar sin insertar</value>
+    <value>삽입하지 않고 붙여넣기</value>
   </data>
   <data name="PositionString" xml:space="preserve">
-    <value>Posición</value>
+    <value>위치</value>
   </data>
   <data name="ReplaceAllString" xml:space="preserve">
-    <value>Reemplazar todo</value>
+    <value>모두 바꾸기</value>
   </data>
   <data name="ReplaceByByteString" xml:space="preserve">
-    <value>Reemplazar por byte</value>
+    <value>바이트로 바꾸기</value>
   </data>
   <data name="ReplaceNextString" xml:space="preserve">
-    <value>Reemplazar siguiente</value>
+    <value>다음 바꾸기</value>
   </data>
   <data name="ReplaceSelectionString" xml:space="preserve">
-    <value>Reemplazar byte en la selección...</value>
+    <value>선택 영역의 바이트 바꾸기...</value>
   </data>
   <data name="ReplaceString" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>바꾸기</value>
   </data>
   <data name="ReplaceWithByteString" xml:space="preserve">
-    <value>Reemplazar con byte</value>
+    <value>다음 바이트로 바꾸기</value>
   </data>
   <data name="ReplaceWithString" xml:space="preserve">
-    <value>Reemplazar con:</value>
+    <value>바꿀 내용:</value>
   </data>
   <data name="SelectAllString" xml:space="preserve">
-    <value>Seleccionar todo</value>
+    <value>모두 선택</value>
   </data>
   <data name="SetBookMarkString" xml:space="preserve">
-    <value>Establecer marcador</value>
+    <value>북마크 설정</value>
   </data>
   <data name="TBLString" xml:space="preserve">
     <value>TBL</value>
   </data>
   <data name="ThisStringAreNotHexString" xml:space="preserve">
-    <value>Esta cadena no es hexadecimal</value>
+    <value>이 문자열은 16진수가 아닙니다</value>
   </data>
   <data name="UndoString" xml:space="preserve">
-    <value>Deshacer</value>
+    <value>실행 취소</value>
   </data>
   <data name="ValueString" xml:space="preserve">
-    <value>Valor</value>
+    <value>값</value>
   </data>
   <data name="WritingErrorExeptionString" xml:space="preserve">
-    <value>Ocurrió un error al escribir.</value>
+    <value>쓰기 중 오류가 발생했습니다.</value>
   </data>
   <data name="HighLightSettingString" xml:space="preserve">
-    <value>Resaltar todos los datos encontrados</value>
+    <value>찾은 모든 데이터 강조 표시</value>
   </data>
   <data name="ReplaceTrimSettingString" xml:space="preserve">
-    <value>Recortar los datos a la longitud de búsqueda al reemplazar</value>
+    <value>바꿀 때 찾은 길이에 맞게 데이터 자르기</value>
   </data>
   <data name="ZoomResetString" xml:space="preserve">
-    <value>Restablecer zoom al 100%</value>
+    <value>확대/축소를 100%로 재설정</value>
   </data>
   <data name="ZoomString" xml:space="preserve">
-    <value>Zoom</value>
+    <value>확대/축소</value>
   </data>
   <data name="ConvertStringToLongErrorString" xml:space="preserve">
-    <value>No se puede convertir esta cadena a long</value>
+    <value>이 문자열을 long으로 변환할 수 없습니다</value>
   </data>
   <data name="OpenAsReadOnlyString" xml:space="preserve">
-    <value>El archivo está bloqueado. ¿Queréis abrirlo en modo de solo lectura?</value>
+    <value>파일이 잠겨 있습니다. 읽기 전용 모드로 여시겠습니까?</value>
   </data>
   <data name="BytesTagString" xml:space="preserve">
-    <value>Bytes</value>
+    <value>바이트</value>
   </data>
   <data name="SearchCommandCenterString" xml:space="preserve">
-    <value>CENTRO DE COMANDOS DE BÚSQUEDA</value>
+    <value>검색 명령 센터</value>
   </data>
   <data name="SearchTextModeString" xml:space="preserve">
-    <value>Texto</value>
+    <value>텍스트</value>
   </data>
   <data name="SearchHexModeString" xml:space="preserve">
     <value>Hex</value>
@@ -277,177 +277,178 @@
     <value>Regex</value>
   </data>
   <data name="SearchWildcardModeString" xml:space="preserve">
-    <value>Comodín</value>
+    <value>와일드카드</value>
   </data>
   <data name="SearchPreviousString" xml:space="preserve">
-    <value>Anterior</value>
+    <value>이전</value>
   </data>
   <data name="SearchNextString" xml:space="preserve">
-    <value>Siguiente</value>
+    <value>다음</value>
   </data>
   <data name="SearchFindAllString" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>모두 찾기</value>
   </data>
   <data name="SearchMatchesString" xml:space="preserve">
-    <value>coincidencias</value>
+    <value>일치 항목</value>
   </data>
   <data name="SearchInString" xml:space="preserve">
-    <value>en</value>
+    <value>에서</value>
   </data>
   <data name="SearchNoMatchesString" xml:space="preserve">
-    <value>No se encontraron coincidencias</value>
+    <value>일치 항목을 찾을 수 없습니다</value>
   </data>
   <data name="SearchV2BadgeString" xml:space="preserve">
-    <value>99% MÁS RÁPIDO CON V2</value>
+    <value>V2로 99% 더 빠름</value>
   </data>
   <data name="ClearSearchString" xml:space="preserve">
-    <value>Borrar</value>
+    <value>지우기</value>
   </data>
   <data name="CommandPaletteString" xml:space="preserve">
-    <value>Paleta de comandos</value>
+    <value>명령 팔레트</value>
   </data>
   <data name="PerformanceDashboardString" xml:space="preserve">
-    <value>Panel de rendimiento</value>
+    <value>성능 대시보드</value>
   </data>
   <data name="ThemeDarkGlassString" xml:space="preserve">
-    <value>Cristal oscuro</value>
+    <value>다크 글래스</value>
   </data>
   <data name="ThemeLightString" xml:space="preserve">
-    <value>Claro</value>
+    <value>라이트</value>
   </data>
   <data name="ThemeCyberpunkString" xml:space="preserve">
-    <value>Ciberpunk</value>
+    <value>사이버펑크</value>
   </data>
   <data name="ThemeMinimalString" xml:space="preserve">
-    <value>Minimalista</value>
+    <value>미니멀</value>
   </data>
   <data name="CopyAsCSharpCodeString" xml:space="preserve">
-    <value>Copiar como código C#</value>
+    <value>C# 코드로 복사</value>
   </data>
   <data name="CopyAsCCodeString" xml:space="preserve">
-    <value>Copiar como código C</value>
+    <value>C 코드로 복사</value>
   </data>
   <data name="CopyAsFormattedViewString" xml:space="preserve">
-    <value>Copiar como vista formateada</value>
+    <value>형식화된 뷰로 복사</value>
+  </data>
+  <data name="CopyAsAutoString" xml:space="preserve">
+    <value>복사 (자동)</value>
   </data>
   <data name="CopyString" xml:space="preserve">
-    <value>Copiar</value>
+    <value>복사</value>
   </data>
   <data name="PasteString" xml:space="preserve">
-    <value>Pegar</value>
+    <value>붙여넣기</value>
   </data>
   <data name="FillWithByteString" xml:space="preserve">
-    <value>Rellenar con byte...</value>
+    <value>바이트로 채우기...</value>
   </data>
   <data name="ReplaceByteMenuString" xml:space="preserve">
-    <value>Reemplazar byte...</value>
+    <value>바이트 바꾸기...</value>
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
-    <value>Invertir selección</value>
+    <value>선택 영역 반전</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
-    <value>Mensaje de estado</value>
+    <value>상태 메시지</value>
   </data>
   <data name="FileSizeString" xml:space="preserve">
-    <value>Tamaño del archivo</value>
+    <value>파일 크기</value>
   </data>
   <data name="SelectionInfoString" xml:space="preserve">
-    <value>Información de selección</value>
+    <value>선택 정보</value>
   </data>
   <data name="EditModeString" xml:space="preserve">
-    <value>Modo de edición</value>
+    <value>편집 모드</value>
   </data>
   <data name="BytesPerLineString" xml:space="preserve">
-    <value>Bytes por línea</value>
+    <value>줄당 바이트 수</value>
   </data>
   <data name="RefreshTimeString" xml:space="preserve">
-    <value>Tiempo de actualización</value>
+    <value>새로 고침 시간</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
     <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
-    <value>Listo</value>
+    <value>준비</value>
   </data>
   <data name="NoSelectionString" xml:space="preserve">
-    <value>Sin selección</value>
+    <value>선택 없음</value>
   </data>
   <data name="ModeOverwriteString" xml:space="preserve">
-    <value>Modo: Sobrescribir</value>
+    <value>모드: 덮어쓰기</value>
   </data>
-
-  <!-- New resources (53) - Spanish (Spain) translations -->
   <data name="FindAndReplaceDialogTitle" xml:space="preserve">
-    <value>Buscar y reemplazar</value>
+    <value>찾기 및 바꾸기</value>
   </data>
   <data name="FindGroupHeader" xml:space="preserve">
-    <value>Buscar</value>
+    <value>찾기</value>
   </data>
   <data name="ReplaceGroupHeader" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>바꾸기</value>
   </data>
   <data name="ResultsGroupHeader" xml:space="preserve">
-    <value>Resultados</value>
+    <value>결과</value>
   </data>
   <data name="FindTextLabel" xml:space="preserve">
-    <value>Buscar:</value>
+    <value>찾을 내용:</value>
   </data>
   <data name="ReplaceTextLabel" xml:space="preserve">
-    <value>Reemplazar con:</value>
+    <value>바꿀 내용:</value>
   </data>
   <data name="FindPreviousButton" xml:space="preserve">
-    <value>Anterior</value>
+    <value>이전</value>
   </data>
   <data name="FindNextButton" xml:space="preserve">
-    <value>Siguiente</value>
+    <value>다음</value>
   </data>
   <data name="FindAllButton" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>모두 찾기</value>
   </data>
   <data name="ReplaceButton" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>바꾸기</value>
   </data>
   <data name="ReplaceAllButton" xml:space="preserve">
-    <value>Reemplazar todo</value>
+    <value>모두 바꾸기</value>
   </data>
   <data name="CaseSensitiveCheckbox" xml:space="preserve">
-    <value>Distinguir mayúsculas y minúsculas</value>
+    <value>대/소문자 구분</value>
   </data>
   <data name="WholeWordCheckbox" xml:space="preserve">
-    <value>Palabra completa</value>
+    <value>단어 단위로</value>
   </data>
   <data name="UseRegexCheckbox" xml:space="preserve">
-    <value>Usar expresiones regulares</value>
+    <value>정규 표현식 사용</value>
   </data>
   <data name="SearchInSelectionCheckbox" xml:space="preserve">
-    <value>Buscar solo en la selección</value>
+    <value>선택 영역에서만 검색</value>
   </data>
   <data name="HighlightAllCheckbox" xml:space="preserve">
-    <value>Resaltar todas las coincidencias</value>
+    <value>모든 일치 항목 강조 표시</value>
   </data>
   <data name="CloseDialogButton" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>닫기</value>
   </data>
   <data name="NoResultsFound" xml:space="preserve">
-    <value>No se encontraron resultados</value>
+    <value>결과를 찾을 수 없습니다</value>
   </data>
   <data name="MatchesFoundFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas</value>
+    <value>{0}개의 일치 항목을 찾았습니다</value>
   </data>
   <data name="ReplacedFormat" xml:space="preserve">
-    <value>{0} reemplazados</value>
+    <value>{0}개 바꿈</value>
   </data>
   <data name="SearchPanelTitle" xml:space="preserve">
-    <value>Búsqueda</value>
+    <value>검색</value>
   </data>
   <data name="SearchFindLabel" xml:space="preserve">
-    <value>Buscar:</value>
+    <value>찾을 내용:</value>
   </data>
   <data name="SearchModePlaceholder" xml:space="preserve">
-    <value>Introducid texto de búsqueda...</value>
+    <value>검색할 텍스트 입력...</value>
   </data>
   <data name="TextModeLabel" xml:space="preserve">
-    <value>Texto</value>
+    <value>텍스트</value>
   </data>
   <data name="HexModeLabel" xml:space="preserve">
     <value>Hex</value>
@@ -456,204 +457,204 @@
     <value>Regex</value>
   </data>
   <data name="WildcardModeLabel" xml:space="preserve">
-    <value>Comodín</value>
+    <value>와일드카드</value>
   </data>
   <data name="MatchCaseLabel" xml:space="preserve">
-    <value>Coincidir mayúsculas y minúsculas</value>
+    <value>대/소문자 일치</value>
   </data>
   <data name="WholeWordLabel" xml:space="preserve">
-    <value>Palabra completa</value>
+    <value>단어 단위로</value>
   </data>
   <data name="SearchOptionsLabel" xml:space="preserve">
-    <value>Opciones</value>
+    <value>옵션</value>
   </data>
   <data name="SearchResultsLabel" xml:space="preserve">
-    <value>Resultados</value>
+    <value>결과</value>
   </data>
   <data name="CurrentMatchLabel" xml:space="preserve">
-    <value>Coincidencia actual</value>
+    <value>현재 일치 항목</value>
   </data>
   <data name="TotalMatchesLabel" xml:space="preserve">
-    <value>Total de coincidencias</value>
+    <value>전체 일치 항목</value>
   </data>
   <data name="QuickSearchTooltip" xml:space="preserve">
-    <value>Búsqueda rápida (Ctrl+F)</value>
+    <value>빠른 검색 (Ctrl+F)</value>
   </data>
   <data name="PreviousMatchTooltip" xml:space="preserve">
-    <value>Coincidencia anterior (Shift+F3)</value>
+    <value>이전 일치 항목 (Shift+F3)</value>
   </data>
   <data name="NextMatchTooltip" xml:space="preserve">
-    <value>Siguiente coincidencia (F3)</value>
+    <value>다음 일치 항목 (F3)</value>
   </data>
   <data name="CloseSearchTooltip" xml:space="preserve">
-    <value>Cerrar búsqueda (Esc)</value>
+    <value>검색 닫기 (Esc)</value>
   </data>
   <data name="SearchOptionsTooltip" xml:space="preserve">
-    <value>Opciones de búsqueda</value>
+    <value>검색 옵션</value>
   </data>
   <data name="StatusSearching" xml:space="preserve">
-    <value>Buscando...</value>
+    <value>검색 중...</value>
   </data>
   <data name="StatusSearchComplete" xml:space="preserve">
-    <value>Búsqueda completada</value>
+    <value>검색 완료</value>
   </data>
   <data name="StatusFoundMatchesFormat" xml:space="preserve">
-    <value>Se encontraron {0} coincidencias en {1}ms</value>
+    <value>{1}ms 동안 {0}개의 일치 항목을 찾았습니다</value>
   </data>
   <data name="StatusMatchFoundAtFormat" xml:space="preserve">
-    <value>Coincidencia encontrada en la posición 0x{0:X8}</value>
+    <value>위치 0x{0:X8}에서 일치 항목을 찾았습니다</value>
   </data>
   <data name="StatusNoMoreMatches" xml:space="preserve">
-    <value>No se encontraron más coincidencias</value>
+    <value>더 이상 일치 항목을 찾을 수 없습니다</value>
   </data>
   <data name="StatusReachedEndOfFile" xml:space="preserve">
-    <value>Se alcanzó el final del archivo</value>
+    <value>파일의 끝에 도달했습니다</value>
   </data>
   <data name="StatusReachedStartOfFile" xml:space="preserve">
-    <value>Se alcanzó el inicio del archivo</value>
+    <value>파일의 시작에 도달했습니다</value>
   </data>
   <data name="StatusReplacing" xml:space="preserve">
-    <value>Reemplazando...</value>
+    <value>바꾸는 중...</value>
   </data>
   <data name="StatusReplaceComplete" xml:space="preserve">
-    <value>Reemplazo completado</value>
+    <value>바꾸기 완료</value>
   </data>
   <data name="StatusReplacedFormat" xml:space="preserve">
-    <value>Se reemplazaron {0} ocurrencias</value>
+    <value>{0}개 항목을 바꿨습니다</value>
   </data>
   <data name="StatusInvalidSearchPattern" xml:space="preserve">
-    <value>Patrón de búsqueda no válido</value>
+    <value>잘못된 검색 패턴</value>
   </data>
   <data name="StatusInvalidRegex" xml:space="preserve">
-    <value>Expresión regular no válida</value>
+    <value>잘못된 정규 표현식</value>
   </data>
   <data name="StatusSearchCancelled" xml:space="preserve">
-    <value>Búsqueda cancelada</value>
+    <value>검색이 취소되었습니다</value>
   </data>
   <data name="StatusReplaceCancelled" xml:space="preserve">
-    <value>Reemplazo cancelado</value>
+    <value>바꾸기가 취소되었습니다</value>
   </data>
   <data name="StatusCancelling" xml:space="preserve">
-    <value>Cancelando...</value>
+    <value>취소하는 중...</value>
   </data>
   <data name="StatusError" xml:space="preserve">
-    <value>Error: {0}</value>
+    <value>오류: {0}</value>
   </data>
   <data name="StatusFoundMatchesWithSpeedFormat" xml:space="preserve">
-    <value>Se encontraron {0} coincidencias en {1}ms ({2:F2} MB/s)</value>
+    <value>{1}ms 동안 {0}개의 일치 항목을 찾았습니다 ({2:F2} MB/s)</value>
   </data>
   <data name="StatusMatchFoundAtWrappedFormat" xml:space="preserve">
-    <value>Coincidencia encontrada en la posición 0x{0:X8} (ajustada)</value>
+    <value>위치 0x{0:X8}에서 일치 항목을 찾았습니다 (순환됨)</value>
   </data>
   <data name="StatusNoPreviousMatches" xml:space="preserve">
-    <value>No se encontraron coincidencias anteriores</value>
+    <value>이전 일치 항목을 찾을 수 없습니다</value>
   </data>
   <data name="StatusMatchOfTotalFormat" xml:space="preserve">
-    <value>Coincidencia {0} de {1} en la posición 0x{2:X8}</value>
+    <value>위치 0x{2:X8}에서 {1}개 중 {0}번째 일치 항목</value>
   </data>
   <data name="StatusReplacedAtFormat" xml:space="preserve">
-    <value>Reemplazado en la posición 0x{0:X8} (Total: {1})</value>
+    <value>위치 0x{0:X8}에서 바꿈 (전체: {1}개)</value>
   </data>
   <data name="StatusReplaceError" xml:space="preserve">
-    <value>Error de reemplazo: {0}</value>
+    <value>바꾸기 오류: {0}</value>
   </data>
   <data name="StatusNoMatchesToReplace" xml:space="preserve">
-    <value>No hay coincidencias para reemplazar</value>
+    <value>바꿀 일치 항목이 없습니다</value>
   </data>
   <data name="StatusInvalidReplacementPattern" xml:space="preserve">
-    <value>Patrón de reemplazo no válido</value>
+    <value>잘못된 바꾸기 패턴</value>
   </data>
   <data name="StatusReplacedOccurrencesFormat" xml:space="preserve">
-    <value>Se reemplazaron {0} ocurrencia(s). Total de reemplazos: {1}</value>
+    <value>{0}개 항목을 바꿨습니다. 전체 바꾸기: {1}개</value>
   </data>
   <data name="StatusReplaceAllError" xml:space="preserve">
-    <value>Error de reemplazar todo: {0}</value>
+    <value>모두 바꾸기 오류: {0}</value>
   </data>
   <data name="StatusNoMoreBookmarksAfter" xml:space="preserve">
-    <value>No hay más marcadores después de la posición actual</value>
+    <value>현재 위치 이후에 북마크가 없습니다</value>
   </data>
   <data name="StatusNoMoreBookmarksBefore" xml:space="preserve">
-    <value>No hay más marcadores antes de la posición actual</value>
+    <value>현재 위치 이전에 북마크가 없습니다</value>
   </data>
   <data name="BookmarkSetFormat" xml:space="preserve">
-    <value>Marcador establecido en 0x{0:X8}</value>
+    <value>0x{0:X8}에 북마크를 설정했습니다</value>
   </data>
   <data name="BookmarkClearedFormat" xml:space="preserve">
-    <value>Marcador borrado en 0x{0:X8}</value>
+    <value>0x{0:X8}의 북마크를 지웠습니다</value>
   </data>
   <data name="BookmarkNavigatedFormat" xml:space="preserve">
-    <value>Navegado al marcador en 0x{0:X8}</value>
+    <value>0x{0:X8}의 북마크로 이동했습니다</value>
   </data>
   <data name="BookmarkAllCleared" xml:space="preserve">
-    <value>Todos los marcadores borrados</value>
+    <value>모든 북마크를 지웠습니다</value>
   </data>
   <data name="CopySelectionString" xml:space="preserve">
-    <value>Copiar selección</value>
+    <value>선택 영역 복사</value>
   </data>
   <data name="CutSelectionString" xml:space="preserve">
-    <value>Cortar selección</value>
+    <value>선택 영역 잘라내기</value>
   </data>
   <data name="InsertByteString" xml:space="preserve">
-    <value>Insertar byte...</value>
+    <value>바이트 삽입...</value>
   </data>
   <data name="DeleteByteString" xml:space="preserve">
-    <value>Eliminar byte</value>
+    <value>바이트 삭제</value>
   </data>
   <data name="DeleteSelectionString" xml:space="preserve">
-    <value>Eliminar selección</value>
+    <value>선택 영역 삭제</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>Ir al desplazamiento...</value>
+    <value>Offset으로 이동...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
-    <value>Propiedades</value>
-  </data>
-  <data name="ProgressButtonCancel" xml:space="preserve">
-    <value>Cancelar</value>
-  </data>
-  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
-    <value>Archivo abierto correctamente</value>
-  </data>
-  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
-    <value>Archivo guardado correctamente</value>
-  </data>
-  <data name="ProgressMessageFindingMatches" xml:space="preserve">
-    <value>Buscando coincidencias...</value>
-  </data>
-  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas</value>
-  </data>
-  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
-    <value>Cargando datos del archivo...</value>
-  </data>
-  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
-    <value>Abriendo flujo de archivo...</value>
-  </data>
-  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
-    <value>Preparando para guardar...</value>
-  </data>
-  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
-    <value>{0} ocurrencias reemplazadas</value>
-  </data>
-  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas. Reemplazando...</value>
-  </data>
-  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
-    <value>Buscando... {0} encontradas</value>
-  </data>
-  <data name="ProgressMessageStartingSearch" xml:space="preserve">
-    <value>Iniciando búsqueda...</value>
+    <value>속성</value>
   </data>
   <data name="ProgressTitleOpeningFile" xml:space="preserve">
-    <value>Abriendo archivo</value>
+    <value>파일 열기</value>
   </data>
-  <data name="ProgressTitleReplacing" xml:space="preserve">
-    <value>Reemplazando</value>
+  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
+    <value>파일 스트림 여는 중...</value>
+  </data>
+  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
+    <value>파일 데이터 로드 중...</value>
+  </data>
+  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
+    <value>파일을 성공적으로 열었습니다</value>
   </data>
   <data name="ProgressTitleSavingFile" xml:space="preserve">
-    <value>Guardando archivo</value>
+    <value>파일 저장</value>
+  </data>
+  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
+    <value>저장 준비 중...</value>
+  </data>
+  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
+    <value>파일을 성공적으로 저장했습니다</value>
   </data>
   <data name="ProgressTitleSearching" xml:space="preserve">
-    <value>Buscando</value>
+    <value>검색 중</value>
+  </data>
+  <data name="ProgressMessageStartingSearch" xml:space="preserve">
+    <value>검색 시작 중...</value>
+  </data>
+  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
+    <value>검색 중... {0}개 발견</value>
+  </data>
+  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
+    <value>{0}개의 일치 항목을 찾았습니다</value>
+  </data>
+  <data name="ProgressTitleReplacing" xml:space="preserve">
+    <value>바꾸는 중</value>
+  </data>
+  <data name="ProgressMessageFindingMatches" xml:space="preserve">
+    <value>일치 항목 찾는 중...</value>
+  </data>
+  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
+    <value>{0}개의 일치 항목을 찾았습니다. 바꾸는 중...</value>
+  </data>
+  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
+    <value>{0}개 항목을 바꿨습니다</value>
+  </data>
+  <data name="ProgressButtonCancel" xml:space="preserve">
+    <value>취소</value>
   </data>
 </root>

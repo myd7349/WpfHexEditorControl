@@ -59,216 +59,216 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- Existing resources (109) - Spanish (Spain) translations -->
+  <!-- Arabic (ar-SA) - Translated -->
   <data name="AppendByteConfirmationString" xml:space="preserve">
-    <value>Habéis alcanzado el final del archivo. ¿Queréis añadir un byte? Esta operación no se puede cancelar si continuáis.</value>
+    <value>لقد وصلت إلى نهاية الملف. هل تريد إضافة بايت واحد؟ لا يمكن التراجع عن هذه العملية إذا تابعت.</value>
   </data>
   <data name="BookmarksString" xml:space="preserve">
-    <value>Marcadores</value>
+    <value>الإشارات المرجعية</value>
   </data>
   <data name="ByteActionString" xml:space="preserve">
-    <value>Acción de byte</value>
+    <value>عملية البايت</value>
   </data>
   <data name="ByteString" xml:space="preserve">
-    <value>Byte</value>
+    <value>بايت</value>
   </data>
   <data name="CancelLongProcessString" xml:space="preserve">
-    <value>Cancelar proceso largo</value>
+    <value>إلغاء العملية الطويلة</value>
   </data>
   <data name="CancelLongProcessToolTipString" xml:space="preserve">
-    <value>Haced clic para cancelar el proceso largo.</value>
+    <value>انقر لإلغاء العملية الطويلة.</value>
   </data>
   <data name="CancelString" xml:space="preserve">
-    <value>Cancelar</value>
+    <value>إلغاء</value>
   </data>
   <data name="ClearBookMarkString" xml:space="preserve">
-    <value>Borrar marcador</value>
+    <value>مسح الإشارة المرجعية</value>
   </data>
   <data name="ClearString" xml:space="preserve">
-    <value>Borrar</value>
+    <value>مسح</value>
   </data>
   <data name="ClickToGoAtPositionString" xml:space="preserve">
-    <value>Haced clic para ir a la posición.</value>
+    <value>انقر للانتقال إلى الموضع.</value>
   </data>
   <data name="CloseString" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>إغلاق</value>
   </data>
   <data name="CopyAsASCIIString" xml:space="preserve">
-    <value>Copiar como ASCII</value>
+    <value>نسخ كـ ASCII</value>
   </data>
   <data name="CopyAsDecimalString" xml:space="preserve">
-    <value>Copiar como decimal</value>
+    <value>نسخ كرقم عشري</value>
   </data>
   <data name="CopyAsHexadecimalString" xml:space="preserve">
-    <value>Copiar como hexadecimal</value>
+    <value>نسخ كرقم سداسي عشري</value>
   </data>
   <data name="CopyAsTBLString" xml:space="preserve">
-    <value>Cadena TBL (archivo de caracteres cargado)</value>
+    <value>نص TBL (ملف الأحرف محمل)</value>
   </data>
   <data name="CopySelectionAsString" xml:space="preserve">
-    <value>Copiar selección como...</value>
+    <value>نسخ التحديد كـ...</value>
   </data>
   <data name="CountOfString" xml:space="preserve">
-    <value>Recuento de</value>
+    <value>عدد من</value>
   </data>
   <data name="DefaultTBLString" xml:space="preserve">
-    <value>TBL predeterminado</value>
+    <value>TBL افتراضي</value>
   </data>
   <data name="DeleteString" xml:space="preserve">
-    <value>Eliminar</value>
+    <value>حذف</value>
   </data>
   <data name="DescriptionString" xml:space="preserve">
-    <value>Descripción</value>
+    <value>الوصف</value>
   </data>
   <data name="EndTagString" xml:space="preserve">
-    <value>&lt;fin&gt;</value>
+    <value>&lt;نهاية&gt;</value>
   </data>
   <data name="EnterHexValueMsgString" xml:space="preserve">
-    <value>Introducid valor hexadecimal...</value>
+    <value>أدخل قيمة سداسية عشرية...</value>
   </data>
   <data name="FileDroppingConfirmationString" xml:space="preserve">
-    <value>¿Queréis cerrar el archivo actual y abrir: </value>
+    <value>هل تريد إغلاق الملف الحالي وفتح: </value>
   </data>
   <data name="FillSelectionAloneString" xml:space="preserve">
-    <value>Rellenar selección con byte</value>
+    <value>ملء التحديد بالبايت</value>
   </data>
   <data name="FillSelectionString" xml:space="preserve">
-    <value>Rellenar selección con byte...</value>
+    <value>ملء التحديد بالبايت...</value>
   </data>
   <data name="FindAllString" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>بحث عن الكل</value>
   </data>
   <data name="FindAndReplaceString" xml:space="preserve">
-    <value>Buscar y reemplazar</value>
+    <value>بحث واستبدال</value>
   </data>
   <data name="FindByteString" xml:space="preserve">
-    <value>Byte a buscar</value>
+    <value>البايت المراد البحث عنه</value>
   </data>
   <data name="FindFirstString" xml:space="preserve">
-    <value>Buscar primero</value>
+    <value>بحث عن الأول</value>
   </data>
   <data name="FindLastString" xml:space="preserve">
-    <value>Buscar último</value>
+    <value>بحث عن الأخير</value>
   </data>
   <data name="FindNextString" xml:space="preserve">
-    <value>Buscar siguiente</value>
+    <value>بحث عن التالي</value>
   </data>
   <data name="FindSelectionString" xml:space="preserve">
-    <value>Buscar todas las ocurrencias de la selección</value>
+    <value>بحث عن جميع تكرارات التحديد</value>
   </data>
   <data name="FindString" xml:space="preserve">
-    <value>Buscar</value>
+    <value>بحث</value>
   </data>
   <data name="FindWhatString" xml:space="preserve">
-    <value>Buscar qué:</value>
+    <value>بحث عن:</value>
   </data>
   <data name="FirstByteString" xml:space="preserve">
-    <value>Primer byte</value>
+    <value>البايت الأول</value>
   </data>
   <data name="HexString" xml:space="preserve">
     <value>Hex</value>
   </data>
   <data name="KBTagString" xml:space="preserve">
-    <value>KB</value>
+    <value>كيلوبايت</value>
   </data>
   <data name="LengthString" xml:space="preserve">
-    <value>Longitud</value>
+    <value>الطول</value>
   </data>
   <data name="LineStatusBarTagString" xml:space="preserve">
-    <value>Ln</value>
+    <value>سطر</value>
   </data>
   <data name="LineTagString" xml:space="preserve">
-    <value>&lt;ln&gt;</value>
+    <value>&lt;سطر&gt;</value>
   </data>
   <data name="LongString" xml:space="preserve">
-    <value>Long</value>
+    <value>طويل</value>
   </data>
   <data name="MBTagString" xml:space="preserve">
-    <value>MB</value>
+    <value>ميجابايت</value>
   </data>
   <data name="OkString" xml:space="preserve">
-    <value>Aceptar</value>
+    <value>موافق</value>
   </data>
   <data name="PasteExtendByteConfirmationString" xml:space="preserve">
-    <value>La operación de pegado alcanzó el final del archivo. ¿Queréis extender el archivo para completar la operación? Esta operación no se puede cancelar si continuáis.</value>
+    <value>وصلت عملية اللصق إلى نهاية الملف. هل تريد توسيع الملف لإكمال العملية؟ لا يمكن التراجع عن هذه العملية إذا تابعت.</value>
   </data>
   <data name="PasteFromClipboardString" xml:space="preserve">
-    <value>Pegar desde el portapapeles</value>
+    <value>لصق من الحافظة</value>
   </data>
   <data name="PasteNotInsertString" xml:space="preserve">
-    <value>Pegar sin insertar</value>
+    <value>لصق بدون إدراج</value>
   </data>
   <data name="PositionString" xml:space="preserve">
-    <value>Posición</value>
+    <value>الموضع</value>
   </data>
   <data name="ReplaceAllString" xml:space="preserve">
-    <value>Reemplazar todo</value>
+    <value>استبدال الكل</value>
   </data>
   <data name="ReplaceByByteString" xml:space="preserve">
-    <value>Reemplazar por byte</value>
+    <value>الاستبدال بالبايت</value>
   </data>
   <data name="ReplaceNextString" xml:space="preserve">
-    <value>Reemplazar siguiente</value>
+    <value>استبدال التالي</value>
   </data>
   <data name="ReplaceSelectionString" xml:space="preserve">
-    <value>Reemplazar byte en la selección...</value>
+    <value>استبدال البايت في التحديد...</value>
   </data>
   <data name="ReplaceString" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>استبدال</value>
   </data>
   <data name="ReplaceWithByteString" xml:space="preserve">
-    <value>Reemplazar con byte</value>
+    <value>الاستبدال بالبايت</value>
   </data>
   <data name="ReplaceWithString" xml:space="preserve">
-    <value>Reemplazar con:</value>
+    <value>استبدال بـ:</value>
   </data>
   <data name="SelectAllString" xml:space="preserve">
-    <value>Seleccionar todo</value>
+    <value>تحديد الكل</value>
   </data>
   <data name="SetBookMarkString" xml:space="preserve">
-    <value>Establecer marcador</value>
+    <value>تعيين إشارة مرجعية</value>
   </data>
   <data name="TBLString" xml:space="preserve">
     <value>TBL</value>
   </data>
   <data name="ThisStringAreNotHexString" xml:space="preserve">
-    <value>Esta cadena no es hexadecimal</value>
+    <value>هذا النص ليس سداسي عشري</value>
   </data>
   <data name="UndoString" xml:space="preserve">
-    <value>Deshacer</value>
+    <value>تراجع</value>
   </data>
   <data name="ValueString" xml:space="preserve">
-    <value>Valor</value>
+    <value>القيمة</value>
   </data>
   <data name="WritingErrorExeptionString" xml:space="preserve">
-    <value>Ocurrió un error al escribir.</value>
+    <value>حدث خطأ أثناء الكتابة.</value>
   </data>
   <data name="HighLightSettingString" xml:space="preserve">
-    <value>Resaltar todos los datos encontrados</value>
+    <value>تمييز جميع البيانات المعثور عليها</value>
   </data>
   <data name="ReplaceTrimSettingString" xml:space="preserve">
-    <value>Recortar los datos a la longitud de búsqueda al reemplazar</value>
+    <value>اقتطاع البيانات على طول البحث عند الاستبدال</value>
   </data>
   <data name="ZoomResetString" xml:space="preserve">
-    <value>Restablecer zoom al 100%</value>
+    <value>إعادة تعيين التكبير إلى 100%</value>
   </data>
   <data name="ZoomString" xml:space="preserve">
-    <value>Zoom</value>
+    <value>تكبير</value>
   </data>
   <data name="ConvertStringToLongErrorString" xml:space="preserve">
-    <value>No se puede convertir esta cadena a long</value>
+    <value>لا يمكن تحويل هذا النص إلى عدد طويل</value>
   </data>
   <data name="OpenAsReadOnlyString" xml:space="preserve">
-    <value>El archivo está bloqueado. ¿Queréis abrirlo en modo de solo lectura?</value>
+    <value>الملف مقفل. هل تريد فتحه في وضع القراءة فقط؟</value>
   </data>
   <data name="BytesTagString" xml:space="preserve">
-    <value>Bytes</value>
+    <value>بايتات</value>
   </data>
   <data name="SearchCommandCenterString" xml:space="preserve">
-    <value>CENTRO DE COMANDOS DE BÚSQUEDA</value>
+    <value>مركز أوامر البحث</value>
   </data>
   <data name="SearchTextModeString" xml:space="preserve">
-    <value>Texto</value>
+    <value>نص</value>
   </data>
   <data name="SearchHexModeString" xml:space="preserve">
     <value>Hex</value>
@@ -277,177 +277,178 @@
     <value>Regex</value>
   </data>
   <data name="SearchWildcardModeString" xml:space="preserve">
-    <value>Comodín</value>
+    <value>حرف بدل</value>
   </data>
   <data name="SearchPreviousString" xml:space="preserve">
-    <value>Anterior</value>
+    <value>السابق</value>
   </data>
   <data name="SearchNextString" xml:space="preserve">
-    <value>Siguiente</value>
+    <value>التالي</value>
   </data>
   <data name="SearchFindAllString" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>بحث عن الكل</value>
   </data>
   <data name="SearchMatchesString" xml:space="preserve">
-    <value>coincidencias</value>
+    <value>تطابقات</value>
   </data>
   <data name="SearchInString" xml:space="preserve">
-    <value>en</value>
+    <value>في</value>
   </data>
   <data name="SearchNoMatchesString" xml:space="preserve">
-    <value>No se encontraron coincidencias</value>
+    <value>لم يتم العثور على تطابقات</value>
   </data>
   <data name="SearchV2BadgeString" xml:space="preserve">
-    <value>99% MÁS RÁPIDO CON V2</value>
+    <value>أسرع بنسبة 99% مع V2</value>
   </data>
   <data name="ClearSearchString" xml:space="preserve">
-    <value>Borrar</value>
+    <value>مسح</value>
   </data>
   <data name="CommandPaletteString" xml:space="preserve">
-    <value>Paleta de comandos</value>
+    <value>لوحة الأوامر</value>
   </data>
   <data name="PerformanceDashboardString" xml:space="preserve">
-    <value>Panel de rendimiento</value>
+    <value>لوحة الأداء</value>
   </data>
   <data name="ThemeDarkGlassString" xml:space="preserve">
-    <value>Cristal oscuro</value>
+    <value>زجاج داكن</value>
   </data>
   <data name="ThemeLightString" xml:space="preserve">
-    <value>Claro</value>
+    <value>فاتح</value>
   </data>
   <data name="ThemeCyberpunkString" xml:space="preserve">
-    <value>Ciberpunk</value>
+    <value>سايبربنك</value>
   </data>
   <data name="ThemeMinimalString" xml:space="preserve">
-    <value>Minimalista</value>
+    <value>بسيط</value>
   </data>
   <data name="CopyAsCSharpCodeString" xml:space="preserve">
-    <value>Copiar como código C#</value>
+    <value>نسخ ككود C#</value>
   </data>
   <data name="CopyAsCCodeString" xml:space="preserve">
-    <value>Copiar como código C</value>
+    <value>نسخ ككود C</value>
   </data>
   <data name="CopyAsFormattedViewString" xml:space="preserve">
-    <value>Copiar como vista formateada</value>
+    <value>نسخ كعرض منسق</value>
+  </data>
+  <data name="CopyAsAutoString" xml:space="preserve">
+    <value>نسخ (تلقائي)</value>
   </data>
   <data name="CopyString" xml:space="preserve">
-    <value>Copiar</value>
+    <value>نسخ</value>
   </data>
   <data name="PasteString" xml:space="preserve">
-    <value>Pegar</value>
+    <value>لصق</value>
   </data>
   <data name="FillWithByteString" xml:space="preserve">
-    <value>Rellenar con byte...</value>
+    <value>ملء بالبايت...</value>
   </data>
   <data name="ReplaceByteMenuString" xml:space="preserve">
-    <value>Reemplazar byte...</value>
+    <value>استبدال البايت...</value>
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
-    <value>Invertir selección</value>
+    <value>عكس التحديد</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
-    <value>Mensaje de estado</value>
+    <value>رسالة الحالة</value>
   </data>
   <data name="FileSizeString" xml:space="preserve">
-    <value>Tamaño del archivo</value>
+    <value>حجم الملف</value>
   </data>
   <data name="SelectionInfoString" xml:space="preserve">
-    <value>Información de selección</value>
+    <value>معلومات التحديد</value>
   </data>
   <data name="EditModeString" xml:space="preserve">
-    <value>Modo de edición</value>
+    <value>وضع التحرير</value>
   </data>
   <data name="BytesPerLineString" xml:space="preserve">
-    <value>Bytes por línea</value>
+    <value>بايتات لكل سطر</value>
   </data>
   <data name="RefreshTimeString" xml:space="preserve">
-    <value>Tiempo de actualización</value>
+    <value>وقت التحديث</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
     <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
-    <value>Listo</value>
+    <value>جاهز</value>
   </data>
   <data name="NoSelectionString" xml:space="preserve">
-    <value>Sin selección</value>
+    <value>لا يوجد تحديد</value>
   </data>
   <data name="ModeOverwriteString" xml:space="preserve">
-    <value>Modo: Sobrescribir</value>
+    <value>الوضع: استبدال</value>
   </data>
-
-  <!-- New resources (53) - Spanish (Spain) translations -->
   <data name="FindAndReplaceDialogTitle" xml:space="preserve">
-    <value>Buscar y reemplazar</value>
+    <value>بحث واستبدال</value>
   </data>
   <data name="FindGroupHeader" xml:space="preserve">
-    <value>Buscar</value>
+    <value>بحث</value>
   </data>
   <data name="ReplaceGroupHeader" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>استبدال</value>
   </data>
   <data name="ResultsGroupHeader" xml:space="preserve">
-    <value>Resultados</value>
+    <value>النتائج</value>
   </data>
   <data name="FindTextLabel" xml:space="preserve">
-    <value>Buscar:</value>
+    <value>بحث عن:</value>
   </data>
   <data name="ReplaceTextLabel" xml:space="preserve">
-    <value>Reemplazar con:</value>
+    <value>استبدال بـ:</value>
   </data>
   <data name="FindPreviousButton" xml:space="preserve">
-    <value>Anterior</value>
+    <value>السابق</value>
   </data>
   <data name="FindNextButton" xml:space="preserve">
-    <value>Siguiente</value>
+    <value>التالي</value>
   </data>
   <data name="FindAllButton" xml:space="preserve">
-    <value>Buscar todo</value>
+    <value>بحث عن الكل</value>
   </data>
   <data name="ReplaceButton" xml:space="preserve">
-    <value>Reemplazar</value>
+    <value>استبدال</value>
   </data>
   <data name="ReplaceAllButton" xml:space="preserve">
-    <value>Reemplazar todo</value>
+    <value>استبدال الكل</value>
   </data>
   <data name="CaseSensitiveCheckbox" xml:space="preserve">
-    <value>Distinguir mayúsculas y minúsculas</value>
+    <value>مطابقة حالة الأحرف</value>
   </data>
   <data name="WholeWordCheckbox" xml:space="preserve">
-    <value>Palabra completa</value>
+    <value>الكلمة كاملة</value>
   </data>
   <data name="UseRegexCheckbox" xml:space="preserve">
-    <value>Usar expresiones regulares</value>
+    <value>استخدام التعبيرات النمطية</value>
   </data>
   <data name="SearchInSelectionCheckbox" xml:space="preserve">
-    <value>Buscar solo en la selección</value>
+    <value>البحث في التحديد فقط</value>
   </data>
   <data name="HighlightAllCheckbox" xml:space="preserve">
-    <value>Resaltar todas las coincidencias</value>
+    <value>تمييز جميع التطابقات</value>
   </data>
   <data name="CloseDialogButton" xml:space="preserve">
-    <value>Cerrar</value>
+    <value>إغلاق</value>
   </data>
   <data name="NoResultsFound" xml:space="preserve">
-    <value>No se encontraron resultados</value>
+    <value>لم يتم العثور على نتائج</value>
   </data>
   <data name="MatchesFoundFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas</value>
+    <value>تم العثور على {0} تطابقات</value>
   </data>
   <data name="ReplacedFormat" xml:space="preserve">
-    <value>{0} reemplazados</value>
+    <value>تم استبدال {0}</value>
   </data>
   <data name="SearchPanelTitle" xml:space="preserve">
-    <value>Búsqueda</value>
+    <value>بحث</value>
   </data>
   <data name="SearchFindLabel" xml:space="preserve">
-    <value>Buscar:</value>
+    <value>بحث عن:</value>
   </data>
   <data name="SearchModePlaceholder" xml:space="preserve">
-    <value>Introducid texto de búsqueda...</value>
+    <value>أدخل نص البحث...</value>
   </data>
   <data name="TextModeLabel" xml:space="preserve">
-    <value>Texto</value>
+    <value>نص</value>
   </data>
   <data name="HexModeLabel" xml:space="preserve">
     <value>Hex</value>
@@ -456,204 +457,204 @@
     <value>Regex</value>
   </data>
   <data name="WildcardModeLabel" xml:space="preserve">
-    <value>Comodín</value>
+    <value>حرف بدل</value>
   </data>
   <data name="MatchCaseLabel" xml:space="preserve">
-    <value>Coincidir mayúsculas y minúsculas</value>
+    <value>مطابقة حالة الأحرف</value>
   </data>
   <data name="WholeWordLabel" xml:space="preserve">
-    <value>Palabra completa</value>
+    <value>الكلمة كاملة</value>
   </data>
   <data name="SearchOptionsLabel" xml:space="preserve">
-    <value>Opciones</value>
+    <value>الخيارات</value>
   </data>
   <data name="SearchResultsLabel" xml:space="preserve">
-    <value>Resultados</value>
+    <value>النتائج</value>
   </data>
   <data name="CurrentMatchLabel" xml:space="preserve">
-    <value>Coincidencia actual</value>
+    <value>التطابق الحالي</value>
   </data>
   <data name="TotalMatchesLabel" xml:space="preserve">
-    <value>Total de coincidencias</value>
+    <value>إجمالي التطابقات</value>
   </data>
   <data name="QuickSearchTooltip" xml:space="preserve">
-    <value>Búsqueda rápida (Ctrl+F)</value>
+    <value>بحث سريع (Ctrl+F)</value>
   </data>
   <data name="PreviousMatchTooltip" xml:space="preserve">
-    <value>Coincidencia anterior (Shift+F3)</value>
+    <value>التطابق السابق (Shift+F3)</value>
   </data>
   <data name="NextMatchTooltip" xml:space="preserve">
-    <value>Siguiente coincidencia (F3)</value>
+    <value>التطابق التالي (F3)</value>
   </data>
   <data name="CloseSearchTooltip" xml:space="preserve">
-    <value>Cerrar búsqueda (Esc)</value>
+    <value>إغلاق البحث (Esc)</value>
   </data>
   <data name="SearchOptionsTooltip" xml:space="preserve">
-    <value>Opciones de búsqueda</value>
+    <value>خيارات البحث</value>
   </data>
   <data name="StatusSearching" xml:space="preserve">
-    <value>Buscando...</value>
+    <value>جارٍ البحث...</value>
   </data>
   <data name="StatusSearchComplete" xml:space="preserve">
-    <value>Búsqueda completada</value>
+    <value>اكتمل البحث</value>
   </data>
   <data name="StatusFoundMatchesFormat" xml:space="preserve">
-    <value>Se encontraron {0} coincidencias en {1}ms</value>
+    <value>تم العثور على {0} تطابقات في {1} ملي ثانية</value>
   </data>
   <data name="StatusMatchFoundAtFormat" xml:space="preserve">
-    <value>Coincidencia encontrada en la posición 0x{0:X8}</value>
+    <value>تم العثور على تطابق في الموضع 0x{0:X8}</value>
   </data>
   <data name="StatusNoMoreMatches" xml:space="preserve">
-    <value>No se encontraron más coincidencias</value>
+    <value>لم يتم العثور على مزيد من التطابقات</value>
   </data>
   <data name="StatusReachedEndOfFile" xml:space="preserve">
-    <value>Se alcanzó el final del archivo</value>
+    <value>تم الوصول إلى نهاية الملف</value>
   </data>
   <data name="StatusReachedStartOfFile" xml:space="preserve">
-    <value>Se alcanzó el inicio del archivo</value>
+    <value>تم الوصول إلى بداية الملف</value>
   </data>
   <data name="StatusReplacing" xml:space="preserve">
-    <value>Reemplazando...</value>
+    <value>جارٍ الاستبدال...</value>
   </data>
   <data name="StatusReplaceComplete" xml:space="preserve">
-    <value>Reemplazo completado</value>
+    <value>اكتمل الاستبدال</value>
   </data>
   <data name="StatusReplacedFormat" xml:space="preserve">
-    <value>Se reemplazaron {0} ocurrencias</value>
+    <value>تم استبدال {0} تكرارات</value>
   </data>
   <data name="StatusInvalidSearchPattern" xml:space="preserve">
-    <value>Patrón de búsqueda no válido</value>
+    <value>نمط بحث غير صالح</value>
   </data>
   <data name="StatusInvalidRegex" xml:space="preserve">
-    <value>Expresión regular no válida</value>
+    <value>تعبير نمطي غير صالح</value>
   </data>
   <data name="StatusSearchCancelled" xml:space="preserve">
-    <value>Búsqueda cancelada</value>
+    <value>تم إلغاء البحث</value>
   </data>
   <data name="StatusReplaceCancelled" xml:space="preserve">
-    <value>Reemplazo cancelado</value>
+    <value>تم إلغاء الاستبدال</value>
   </data>
   <data name="StatusCancelling" xml:space="preserve">
-    <value>Cancelando...</value>
+    <value>جارٍ الإلغاء...</value>
   </data>
   <data name="StatusError" xml:space="preserve">
-    <value>Error: {0}</value>
+    <value>خطأ: {0}</value>
   </data>
   <data name="StatusFoundMatchesWithSpeedFormat" xml:space="preserve">
-    <value>Se encontraron {0} coincidencias en {1}ms ({2:F2} MB/s)</value>
+    <value>تم العثور على {0} تطابقات في {1} ملي ثانية ({2:F2} ميجابايت/ثانية)</value>
   </data>
   <data name="StatusMatchFoundAtWrappedFormat" xml:space="preserve">
-    <value>Coincidencia encontrada en la posición 0x{0:X8} (ajustada)</value>
+    <value>تم العثور على تطابق في الموضع 0x{0:X8} (ملتف)</value>
   </data>
   <data name="StatusNoPreviousMatches" xml:space="preserve">
-    <value>No se encontraron coincidencias anteriores</value>
+    <value>لم يتم العثور على تطابقات سابقة</value>
   </data>
   <data name="StatusMatchOfTotalFormat" xml:space="preserve">
-    <value>Coincidencia {0} de {1} en la posición 0x{2:X8}</value>
+    <value>التطابق {0} من {1} في الموضع 0x{2:X8}</value>
   </data>
   <data name="StatusReplacedAtFormat" xml:space="preserve">
-    <value>Reemplazado en la posición 0x{0:X8} (Total: {1})</value>
+    <value>تم الاستبدال في الموضع 0x{0:X8} (الإجمالي: {1})</value>
   </data>
   <data name="StatusReplaceError" xml:space="preserve">
-    <value>Error de reemplazo: {0}</value>
+    <value>خطأ في الاستبدال: {0}</value>
   </data>
   <data name="StatusNoMatchesToReplace" xml:space="preserve">
-    <value>No hay coincidencias para reemplazar</value>
+    <value>لا توجد تطابقات للاستبدال</value>
   </data>
   <data name="StatusInvalidReplacementPattern" xml:space="preserve">
-    <value>Patrón de reemplazo no válido</value>
+    <value>نمط استبدال غير صالح</value>
   </data>
   <data name="StatusReplacedOccurrencesFormat" xml:space="preserve">
-    <value>Se reemplazaron {0} ocurrencia(s). Total de reemplazos: {1}</value>
+    <value>تم استبدال {0} تكرار. إجمالي الاستبدالات: {1}</value>
   </data>
   <data name="StatusReplaceAllError" xml:space="preserve">
-    <value>Error de reemplazar todo: {0}</value>
+    <value>خطأ في استبدال الكل: {0}</value>
   </data>
   <data name="StatusNoMoreBookmarksAfter" xml:space="preserve">
-    <value>No hay más marcadores después de la posición actual</value>
+    <value>لا توجد إشارات مرجعية أخرى بعد الموضع الحالي</value>
   </data>
   <data name="StatusNoMoreBookmarksBefore" xml:space="preserve">
-    <value>No hay más marcadores antes de la posición actual</value>
+    <value>لا توجد إشارات مرجعية أخرى قبل الموضع الحالي</value>
   </data>
   <data name="BookmarkSetFormat" xml:space="preserve">
-    <value>Marcador establecido en 0x{0:X8}</value>
+    <value>تم تعيين إشارة مرجعية في 0x{0:X8}</value>
   </data>
   <data name="BookmarkClearedFormat" xml:space="preserve">
-    <value>Marcador borrado en 0x{0:X8}</value>
+    <value>تم مسح إشارة مرجعية في 0x{0:X8}</value>
   </data>
   <data name="BookmarkNavigatedFormat" xml:space="preserve">
-    <value>Navegado al marcador en 0x{0:X8}</value>
+    <value>تم الانتقال إلى الإشارة المرجعية في 0x{0:X8}</value>
   </data>
   <data name="BookmarkAllCleared" xml:space="preserve">
-    <value>Todos los marcadores borrados</value>
+    <value>تم مسح جميع الإشارات المرجعية</value>
   </data>
   <data name="CopySelectionString" xml:space="preserve">
-    <value>Copiar selección</value>
+    <value>نسخ التحديد</value>
   </data>
   <data name="CutSelectionString" xml:space="preserve">
-    <value>Cortar selección</value>
+    <value>قص التحديد</value>
   </data>
   <data name="InsertByteString" xml:space="preserve">
-    <value>Insertar byte...</value>
+    <value>إدراج بايت...</value>
   </data>
   <data name="DeleteByteString" xml:space="preserve">
-    <value>Eliminar byte</value>
+    <value>حذف بايت</value>
   </data>
   <data name="DeleteSelectionString" xml:space="preserve">
-    <value>Eliminar selección</value>
+    <value>حذف التحديد</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>Ir al desplazamiento...</value>
+    <value>الانتقال إلى Offset...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
-    <value>Propiedades</value>
-  </data>
-  <data name="ProgressButtonCancel" xml:space="preserve">
-    <value>Cancelar</value>
-  </data>
-  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
-    <value>Archivo abierto correctamente</value>
-  </data>
-  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
-    <value>Archivo guardado correctamente</value>
-  </data>
-  <data name="ProgressMessageFindingMatches" xml:space="preserve">
-    <value>Buscando coincidencias...</value>
-  </data>
-  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas</value>
-  </data>
-  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
-    <value>Cargando datos del archivo...</value>
-  </data>
-  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
-    <value>Abriendo flujo de archivo...</value>
-  </data>
-  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
-    <value>Preparando para guardar...</value>
-  </data>
-  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
-    <value>{0} ocurrencias reemplazadas</value>
-  </data>
-  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
-    <value>{0} coincidencias encontradas. Reemplazando...</value>
-  </data>
-  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
-    <value>Buscando... {0} encontradas</value>
-  </data>
-  <data name="ProgressMessageStartingSearch" xml:space="preserve">
-    <value>Iniciando búsqueda...</value>
+    <value>الخصائص</value>
   </data>
   <data name="ProgressTitleOpeningFile" xml:space="preserve">
-    <value>Abriendo archivo</value>
+    <value>فتح الملف</value>
   </data>
-  <data name="ProgressTitleReplacing" xml:space="preserve">
-    <value>Reemplazando</value>
+  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
+    <value>جارٍ فتح تدفق الملف...</value>
+  </data>
+  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
+    <value>جارٍ تحميل بيانات الملف...</value>
+  </data>
+  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
+    <value>تم فتح الملف بنجاح</value>
   </data>
   <data name="ProgressTitleSavingFile" xml:space="preserve">
-    <value>Guardando archivo</value>
+    <value>حفظ الملف</value>
+  </data>
+  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
+    <value>جارٍ التحضير للحفظ...</value>
+  </data>
+  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
+    <value>تم حفظ الملف بنجاح</value>
   </data>
   <data name="ProgressTitleSearching" xml:space="preserve">
-    <value>Buscando</value>
+    <value>البحث</value>
+  </data>
+  <data name="ProgressMessageStartingSearch" xml:space="preserve">
+    <value>جارٍ بدء البحث...</value>
+  </data>
+  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
+    <value>جارٍ البحث... تم العثور على {0}</value>
+  </data>
+  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
+    <value>تم العثور على {0} تطابقات</value>
+  </data>
+  <data name="ProgressTitleReplacing" xml:space="preserve">
+    <value>الاستبدال</value>
+  </data>
+  <data name="ProgressMessageFindingMatches" xml:space="preserve">
+    <value>جارٍ البحث عن التطابقات...</value>
+  </data>
+  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
+    <value>تم العثور على {0} تطابقات. جارٍ الاستبدال...</value>
+  </data>
+  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
+    <value>تم استبدال {0} تكرارات</value>
+  </data>
+  <data name="ProgressButtonCancel" xml:space="preserve">
+    <value>إلغاء</value>
   </data>
 </root>

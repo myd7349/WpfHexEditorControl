@@ -48,38 +48,44 @@ namespace WpfHexaEditor
                 HexEditorViewModel viewModel = null;
 
                 bool success = await _longRunningService.ExecuteOperationAsync(
-                Properties.Resources.ProgressTitleOpeningFile,
-                true, // Can cancel
-                async (progress, cancellationToken) =>
-                {
-                    return await Task.Run(() =>
+                    Properties.Resources.ProgressTitleOpeningFile,
+                    true, // Can cancel
+                    async (progress, cancellationToken) =>
                     {
-                        progress.Report(new OperationProgress
+                        return await Task.Run(() =>
                         {
-                            Percentage = 10,
-                            Message = Properties.Resources.ProgressMessageOpeningFileStream
-                        });
-                        cancellationToken.ThrowIfCancellationRequested();
+                            progress.Report(new OperationProgress
+                            {
+                                Percentage = 10,
+                                Message = Properties.Resources.ProgressMessageOpeningFileStream
+                            });
 
-                        // Open file via ViewModel
-                        viewModel = HexEditorViewModel.OpenFile(filePath);
+                            // Check for cancellation - return false instead of throwing
+                            if (cancellationToken.IsCancellationRequested)
+                                return false;
 
-                        progress.Report(new OperationProgress
-                        {
-                            Percentage = 50,
-                            Message = Properties.Resources.ProgressMessageLoadingFileData
-                        });
-                        cancellationToken.ThrowIfCancellationRequested();
+                            // Open file via ViewModel
+                            viewModel = HexEditorViewModel.OpenFile(filePath);
 
-                        progress.Report(new OperationProgress
-                        {
-                            Percentage = 100,
-                            Message = Properties.Resources.ProgressMessageFileOpenedSuccessfully
-                        });
+                            progress.Report(new OperationProgress
+                            {
+                                Percentage = 50,
+                                Message = Properties.Resources.ProgressMessageLoadingFileData
+                            });
 
-                        return true;
-                    }, cancellationToken);
-                });
+                            // Check for cancellation - return false instead of throwing
+                            if (cancellationToken.IsCancellationRequested)
+                                return false;
+
+                            progress.Report(new OperationProgress
+                            {
+                                Percentage = 100,
+                                Message = Properties.Resources.ProgressMessageFileOpenedSuccessfully
+                            });
+
+                            return true;
+                        }, cancellationToken);
+                    });
 
                 if (success && viewModel != null)
                 {
@@ -163,7 +169,7 @@ namespace WpfHexaEditor
 
             List<long> results = new List<long>();
 
-            await _longRunningService.ExecuteOperationAsync(
+            bool success = await _longRunningService.ExecuteOperationAsync(
                 Properties.Resources.ProgressTitleSearching,
                 true, // Can cancel
                 async (progress, cancellationToken) =>
@@ -175,33 +181,80 @@ namespace WpfHexaEditor
                             Percentage = 0,
                             Message = Properties.Resources.ProgressMessageStartingSearch
                         });
-                        cancellationToken.ThrowIfCancellationRequested();
 
-                        // Manual search with progress reporting
-                        long fileLength = _viewModel.VirtualLength;
-                        long currentPos = startPosition;
+                        if (cancellationToken.IsCancellationRequested)
+                            return false;
+
+                        // Chunk-based search with continuous progress updates
+                        // Uses GetBytes(virtualPosition, count) which respects modifications
+                        var provider = _viewModel.GetByteProvider();
+                        if (provider == null)
+                            return false;
+
+                        long fileLength = provider.VirtualLength;
                         int lastProgressPercent = 0;
 
-                        while (true)
+                        const int CHUNK_SIZE = 256 * 1024; // 256KB chunks for good balance
+                        long currentPos = startPosition;
+
+                        while (currentPos < fileLength)
                         {
-                            cancellationToken.ThrowIfCancellationRequested();
+                            // Check cancellation between chunks (responsive!)
+                            if (cancellationToken.IsCancellationRequested)
+                                return false;
 
-                            // Find next occurrence
-                            long foundPos = _viewModel.Provider.FindFirst(pattern, currentPos);
+                            // CRITICAL: Check if control is being closed (prevents crash on shutdown)
+                            if (_isClosing)
+                                return false;
 
-                            if (foundPos == -1)
-                                break; // No more matches
+                            // Calculate chunk size
+                            long remainingBytes = fileLength - currentPos;
+                            int chunkSize = (int)Math.Min(CHUNK_SIZE, remainingBytes);
+                            int bufferSize = (int)Math.Min(chunkSize + pattern.Length - 1, remainingBytes);
 
-                            results.Add(foundPos);
-                            currentPos = foundPos + 1;
+                            // Read chunk using GetBytes (respects virtual positions)
+                            byte[] buffer;
+                            try
+                            {
+                                buffer = provider.GetBytes(currentPos, bufferSize);
+                            }
+                            catch (Exception ex)
+                            {
+                                // CRITICAL: Provider might be closed/disposed during shutdown
+                                System.Diagnostics.Debug.WriteLine($"GetBytes failed (likely closing): {ex.Message}");
+                                return false; // Stop gracefully
+                            }
 
-                            // Report progress based on search position
-                            int progressPercent = fileLength > 0 ? (int)((currentPos * 100) / fileLength) : 100;
+                            if (buffer == null || buffer.Length == 0)
+                                break;
+
+                            // Search pattern in chunk
+                            for (int i = 0; i <= buffer.Length - pattern.Length; i++)
+                            {
+                                bool match = true;
+                                for (int j = 0; j < pattern.Length; j++)
+                                {
+                                    if (buffer[i + j] != pattern[j])
+                                    {
+                                        match = false;
+                                        break;
+                                    }
+                                }
+
+                                if (match)
+                                    results.Add(currentPos + i);
+                            }
+
+                            // Advance position (with overlap for patterns spanning boundaries)
+                            currentPos += Math.Max(1, chunkSize - pattern.Length + 1);
+
+                            // Update progress (updates every chunk = responsive!)
+                            int progressPercent = (int)((currentPos * 100) / fileLength);
                             if (progressPercent != lastProgressPercent)
                             {
                                 progress.Report(new OperationProgress
                                 {
-                                    Percentage = progressPercent,
+                                    Percentage = Math.Min(progressPercent, 100),
                                     Message = string.Format(Properties.Resources.ProgressMessageSearchingFoundFormat, results.Count)
                                 });
                                 lastProgressPercent = progressPercent;
@@ -217,6 +270,16 @@ namespace WpfHexaEditor
                         return true;
                     }, cancellationToken);
                 });
+
+            // If operation was cancelled, clear search state (like pressing Escape)
+            if (!success)
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    ClearSearchState();
+                });
+                return new List<long>(); // Return empty list
+            }
 
             return results;
         }

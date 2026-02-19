@@ -31,7 +31,7 @@
               <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
               <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
               <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-              <xsd:attribute ref="xml:space" use="preserve" />
+              <xsd:attribute ref="xml:space" />
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="resheader">
@@ -59,1000 +59,926 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- ==== MENU APPLICATION ==== -->
+  <!-- Japanese (ja-JP) -->
   <data name="Menu_File_Open" xml:space="preserve">
-    <value>Ouvrir</value>
+    <value>開く</value>
   </data>
   <data name="Menu_File_Save" xml:space="preserve">
-    <value>Enregistrer</value>
+    <value>保存</value>
   </data>
   <data name="Menu_File_SaveAs" xml:space="preserve">
-    <value>Enregistrer sous...</value>
+    <value>名前を付けて保存...</value>
   </data>
   <data name="Menu_File_Close" xml:space="preserve">
-    <value>Fermer</value>
+    <value>閉じる</value>
   </data>
   <data name="Menu_File_Exit" xml:space="preserve">
-    <value>Quitter</value>
+    <value>終了</value>
   </data>
-
-  <!-- Menu Édition -->
   <data name="Menu_Edit" xml:space="preserve">
-    <value>_Édition</value>
+    <value>編集(_E)</value>
   </data>
   <data name="Menu_Edit_Undo" xml:space="preserve">
-    <value>_Annuler</value>
+    <value>元に戻す(_U)</value>
   </data>
   <data name="Menu_Edit_Redo" xml:space="preserve">
-    <value>_Rétablir</value>
+    <value>やり直す(_R)</value>
   </data>
   <data name="Menu_Edit_Find" xml:space="preserve">
-    <value>_Rechercher...</value>
+    <value>検索(_F)...</value>
   </data>
   <data name="Menu_Edit_FindReplace" xml:space="preserve">
-    <value>Rechercher et _remplacer...</value>
+    <value>検索と置換(_R)...</value>
   </data>
   <data name="Menu_Edit_Copy" xml:space="preserve">
-    <value>Copier</value>
+    <value>コピー</value>
   </data>
   <data name="Menu_Edit_Paste" xml:space="preserve">
-    <value>Coller</value>
+    <value>貼り付け</value>
   </data>
   <data name="Menu_Edit_DeleteSelection" xml:space="preserve">
-    <value>Supprimer la sélection</value>
+    <value>選択範囲を削除</value>
   </data>
   <data name="Menu_Edit_SelectAll" xml:space="preserve">
-    <value>_Sélectionner tout</value>
+    <value>すべて選択(_A)</value>
   </data>
   <data name="Menu_Edit_ClearSelection" xml:space="preserve">
-    <value>_Effacer la sélection</value>
+    <value>選択を解除(_C)</value>
   </data>
   <data name="Menu_Edit_Bookmarks" xml:space="preserve">
-    <value>_Signets</value>
+    <value>ブックマーク(_B)</value>
   </data>
   <data name="Menu_Edit_ToggleBookmark" xml:space="preserve">
-    <value>Activer/Désactiver le signet</value>
+    <value>ブックマークの切り替え</value>
   </data>
   <data name="Menu_Edit_ClearAllBookmarks" xml:space="preserve">
-    <value>_Effacer tous les signets</value>
+    <value>すべてのブックマークを削除(_C)</value>
   </data>
-
-  <!-- Menu Recherche -->
   <data name="Menu_Search" xml:space="preserve">
-    <value>_Recherche</value>
+    <value>検索(_S)</value>
   </data>
   <data name="Menu_Search_FindNext" xml:space="preserve">
-    <value>Rechercher le _suivant</value>
+    <value>次を検索(_N)</value>
   </data>
   <data name="Menu_Search_FindPrevious" xml:space="preserve">
-    <value>Rechercher le _précédent</value>
+    <value>前を検索(_P)</value>
   </data>
-
-  <!-- Menu Outils -->
   <data name="Menu_Tools" xml:space="preserve">
-    <value>_Outils</value>
+    <value>ツール(_T)</value>
   </data>
   <data name="Menu_Tools_Bookmarks" xml:space="preserve">
-    <value>_Signets</value>
+    <value>ブックマーク(_B)</value>
   </data>
   <data name="Menu_Tools_NextBookmark" xml:space="preserve">
-    <value>Signet _suivant</value>
+    <value>次のブックマーク(_N)</value>
   </data>
   <data name="Menu_Tools_PreviousBookmark" xml:space="preserve">
-    <value>Signet _précédent</value>
+    <value>前のブックマーク(_P)</value>
   </data>
   <data name="Menu_Tools_ShowAllBookmarks" xml:space="preserve">
-    <value>_Afficher tous les signets...</value>
+    <value>すべてのブックマークを表示(_S)...</value>
   </data>
-
-  <!-- Menu Position -->
   <data name="Menu_Position" xml:space="preserve">
-    <value>_Position</value>
+    <value>位置(_P)</value>
   </data>
   <data name="Menu_Position_GoTo" xml:space="preserve">
-    <value>_Aller à la position...</value>
+    <value>指定位置へ移動(_G)...</value>
   </data>
-
-  <!-- Menu Affichage -->
   <data name="Menu_View" xml:space="preserve">
-    <value>_Affichage</value>
+    <value>表示(_V)</value>
   </data>
   <data name="Menu_View_DisplayOptions" xml:space="preserve">
-    <value>Options d'affichage</value>
+    <value>表示オプション</value>
   </data>
   <data name="Menu_View_ShowStatusBar" xml:space="preserve">
-    <value>Afficher la barre d'état</value>
+    <value>ステータスバーを表示</value>
   </data>
   <data name="Menu_View_ShowHeader" xml:space="preserve">
-    <value>Afficher l'en-tête</value>
+    <value>ヘッダーを表示</value>
   </data>
   <data name="Menu_View_ShowOffset" xml:space="preserve">
-    <value>Afficher le Offset</value>
+    <value>Offsetを表示</value>
   </data>
   <data name="Menu_View_ShowASCII" xml:space="preserve">
-    <value>Afficher ASCII</value>
+    <value>ASCIIを表示</value>
   </data>
   <data name="Menu_View_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne</value>
+    <value>1行あたりのバイト数</value>
   </data>
-
-  <!-- Menu Options -->
   <data name="Menu_Options" xml:space="preserve">
-    <value>_Options</value>
+    <value>オプション(_O)</value>
   </data>
   <data name="Menu_Options_SettingsPanel" xml:space="preserve">
-    <value>_Panneau de paramètres...</value>
+    <value>設定パネル(_S)...</value>
   </data>
   <data name="Menu_Options_Advanced" xml:space="preserve">
-    <value>Options _avancées (Thème, Langue)...</value>
+    <value>詳細オプション（テーマ、言語）(_A)...</value>
   </data>
   <data name="Menu_Options_ContextMenu" xml:space="preserve">
-    <value>Menu contextuel</value>
+    <value>コンテキストメニュー</value>
   </data>
   <data name="Menu_Options_ShowByteToolTip" xml:space="preserve">
-    <value>Afficher l'info-bulle d'octet</value>
+    <value>バイトツールチップを表示</value>
   </data>
   <data name="Menu_Options_AutoHighlight" xml:space="preserve">
-    <value>Mise en surbrillance automatique</value>
+    <value>選択バイトを自動ハイライト</value>
   </data>
   <data name="Menu_Options_CountSelected" xml:space="preserve">
-    <value>Compter les octets sélectionnés</value>
+    <value>選択バイト数をカウント</value>
   </data>
-
-  <!-- Menu Aide -->
   <data name="Menu_Help" xml:space="preserve">
-    <value>_Aide</value>
+    <value>ヘルプ(_H)</value>
   </data>
   <data name="Menu_Help_About" xml:space="preserve">
-    <value>_À propos</value>
+    <value>バージョン情報(_A)</value>
   </data>
   <data name="Menu_Help_KeyboardShortcuts" xml:space="preserve">
-    <value>_Raccourcis clavier</value>
+    <value>キーボードショートカット(_K)</value>
   </data>
-
-  <!-- Menu Fichier (ajout de l'en-tête manquant) -->
   <data name="Menu_File" xml:space="preserve">
-    <value>_Fichier</value>
+    <value>ファイル(_F)</value>
   </data>
-
-  <!-- ==== BARRE D'OUTILS ==== -->
   <data name="Toolbar_Open" xml:space="preserve">
-    <value>📂 Ouvrir</value>
+    <value>📂 開く</value>
   </data>
   <data name="Toolbar_Open_ToolTip" xml:space="preserve">
-    <value>Ouvrir un fichier (Ctrl+O)</value>
+    <value>ファイルを開く (Ctrl+O)</value>
   </data>
   <data name="Toolbar_Save" xml:space="preserve">
-    <value>💾 Enregistrer</value>
+    <value>💾 保存</value>
   </data>
   <data name="Toolbar_Save_ToolTip" xml:space="preserve">
-    <value>Enregistrer le fichier (Ctrl+S)</value>
+    <value>ファイルを保存 (Ctrl+S)</value>
   </data>
   <data name="Toolbar_Undo" xml:space="preserve">
-    <value>↶ Annuler</value>
+    <value>↶ 元に戻す</value>
   </data>
   <data name="Toolbar_Undo_ToolTip" xml:space="preserve">
-    <value>Annuler (Ctrl+Z)</value>
+    <value>元に戻す (Ctrl+Z)</value>
   </data>
   <data name="Toolbar_Redo" xml:space="preserve">
-    <value>↷ Rétablir</value>
+    <value>↷ やり直す</value>
   </data>
   <data name="Toolbar_Redo_ToolTip" xml:space="preserve">
-    <value>Rétablir (Ctrl+Y)</value>
+    <value>やり直す (Ctrl+Y)</value>
   </data>
   <data name="Toolbar_Insert" xml:space="preserve">
     <value>INS</value>
   </data>
   <data name="Toolbar_Insert_ToolTip" xml:space="preserve">
-    <value>Basculer mode Insertion/Écrasement (Touche Insertion)</value>
+    <value>挿入/上書きモードを切り替え (Insertキー)</value>
   </data>
   <data name="Toolbar_ReadOnly" xml:space="preserve">
-    <value>LEC</value>
+    <value>🔒 RO</value>
   </data>
   <data name="Toolbar_ReadOnly_ToolTip" xml:space="preserve">
-    <value>Basculer mode Lecture seule</value>
+    <value>読み取り専用モードを切り替え</value>
   </data>
-
-  <!-- ==== RUBAN - BARRE D'ACCÈS RAPIDE ==== -->
   <data name="QAT_Save_Label" xml:space="preserve">
-    <value>Enregistrer</value>
+    <value>保存</value>
   </data>
   <data name="QAT_Save_Tooltip" xml:space="preserve">
-    <value>Enregistrer (Ctrl+S)</value>
+    <value>保存 (Ctrl+S)</value>
   </data>
   <data name="QAT_Undo_Label" xml:space="preserve">
-    <value>Annuler</value>
+    <value>元に戻す</value>
   </data>
   <data name="QAT_Undo_Tooltip" xml:space="preserve">
-    <value>Annuler (Ctrl+Z)</value>
+    <value>元に戻す (Ctrl+Z)</value>
   </data>
   <data name="QAT_Redo_Label" xml:space="preserve">
-    <value>Rétablir</value>
+    <value>やり直す</value>
   </data>
   <data name="QAT_Redo_Tooltip" xml:space="preserve">
-    <value>Rétablir (Ctrl+Y)</value>
+    <value>やり直す (Ctrl+Y)</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET ACCUEIL ==== -->
   <data name="Ribbon_Home_Tab" xml:space="preserve">
-    <value>Accueil</value>
+    <value>ホーム</value>
   </data>
   <data name="Ribbon_Home_Clipboard_Group" xml:space="preserve">
-    <value>Presse-papiers</value>
+    <value>クリップボード</value>
   </data>
   <data name="Ribbon_Home_Paste" xml:space="preserve">
-    <value>Coller</value>
+    <value>貼り付け</value>
   </data>
   <data name="Ribbon_Home_Cut" xml:space="preserve">
-    <value>Couper</value>
+    <value>切り取り</value>
   </data>
   <data name="Ribbon_Home_Copy" xml:space="preserve">
-    <value>Copier</value>
+    <value>コピー</value>
   </data>
   <data name="Ribbon_Home_Edit_Group" xml:space="preserve">
-    <value>Édition</value>
+    <value>編集</value>
   </data>
   <data name="Ribbon_Home_Undo" xml:space="preserve">
-    <value>Annuler</value>
+    <value>元に戻す</value>
   </data>
   <data name="Ribbon_Home_Redo" xml:space="preserve">
-    <value>Rétablir</value>
+    <value>やり直す</value>
   </data>
   <data name="Ribbon_Home_Selection_Group" xml:space="preserve">
-    <value>Sélection</value>
+    <value>選択</value>
   </data>
   <data name="Ribbon_Home_SelectAll" xml:space="preserve">
-    <value>Tout sélectionner</value>
+    <value>すべて選択</value>
   </data>
   <data name="Ribbon_Home_Clear" xml:space="preserve">
-    <value>Effacer</value>
+    <value>クリア</value>
   </data>
   <data name="Ribbon_Home_Display_Group" xml:space="preserve">
-    <value>Affichage</value>
+    <value>表示</value>
   </data>
   <data name="Ribbon_Home_16BytesPerLine" xml:space="preserve">
-    <value>16 octets/ligne</value>
+    <value>16バイト/行</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET ÉDITION ==== -->
   <data name="Ribbon_Edit_Tab" xml:space="preserve">
-    <value>Édition</value>
+    <value>編集</value>
   </data>
   <data name="Ribbon_Edit_Find_Group" xml:space="preserve">
-    <value>Rechercher</value>
+    <value>検索</value>
   </data>
   <data name="Ribbon_Edit_Find" xml:space="preserve">
-    <value>Rechercher</value>
+    <value>検索</value>
   </data>
   <data name="Ribbon_Edit_Navigate_Group" xml:space="preserve">
-    <value>Navigation</value>
+    <value>ナビゲート</value>
   </data>
   <data name="Ribbon_Edit_GoTo" xml:space="preserve">
-    <value>Atteindre</value>
+    <value>移動</value>
   </data>
   <data name="Ribbon_Edit_Bookmarks" xml:space="preserve">
-    <value>Signets</value>
+    <value>ブックマーク</value>
   </data>
   <data name="Ribbon_Edit_Modify_Group" xml:space="preserve">
-    <value>Modifier</value>
+    <value>変更</value>
   </data>
   <data name="Ribbon_Edit_InsertByte" xml:space="preserve">
-    <value>Insérer octet</value>
+    <value>バイトを挿入</value>
   </data>
   <data name="Ribbon_Edit_DeleteByte" xml:space="preserve">
-    <value>Supprimer octet</value>
+    <value>バイトを削除</value>
   </data>
   <data name="Ribbon_Edit_FillSelection" xml:space="preserve">
-    <value>Remplir sélection</value>
+    <value>選択範囲を塗りつぶし</value>
   </data>
   <data name="Ribbon_Edit_Mode_Group" xml:space="preserve">
-    <value>Mode</value>
+    <value>モード</value>
   </data>
   <data name="Ribbon_Edit_Overwrite" xml:space="preserve">
-    <value>Remplacer</value>
+    <value>上書き</value>
   </data>
   <data name="Ribbon_Edit_Insert" xml:space="preserve">
-    <value>Insérer</value>
+    <value>挿入</value>
   </data>
   <data name="Ribbon_Edit_ReadOnly" xml:space="preserve">
-    <value>Lecture seule</value>
+    <value>読み取り専用</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET AFFICHAGE ==== -->
   <data name="Ribbon_View_Tab" xml:space="preserve">
-    <value>Affichage</value>
+    <value>表示</value>
   </data>
   <data name="Ribbon_View_Zoom_Group" xml:space="preserve">
-    <value>Zoom</value>
+    <value>ズーム</value>
   </data>
   <data name="Ribbon_View_ZoomIn" xml:space="preserve">
-    <value>Agrandir</value>
+    <value>拡大</value>
   </data>
   <data name="Ribbon_View_ZoomOut" xml:space="preserve">
-    <value>Réduire</value>
+    <value>縮小</value>
   </data>
   <data name="Ribbon_View_Zoom100" xml:space="preserve">
     <value>100%</value>
   </data>
   <data name="Ribbon_View_DisplayOptions_Group" xml:space="preserve">
-    <value>Options d'affichage</value>
+    <value>表示オプション</value>
   </data>
   <data name="Ribbon_View_ShowTooltip" xml:space="preserve">
-    <value>Afficher info-bulle</value>
+    <value>ツールチップを表示</value>
   </data>
   <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>Masquer supprimés</value>
+    <value>削除済みを非表示</value>
   </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
-    <value>Surligner résultats</value>
+    <value>一致をハイライト</value>
   </data>
   <data name="Ribbon_View_Themes_Group" xml:space="preserve">
-    <value>Thèmes</value>
+    <value>テーマ</value>
   </data>
   <data name="Ribbon_View_SelectTheme" xml:space="preserve">
-    <value>Sélectionner thème</value>
+    <value>テーマを選択</value>
   </data>
   <data name="Ribbon_View_Theme_Office" xml:space="preserve">
-    <value>Office (Clair)</value>
+    <value>Office（ライト）</value>
   </data>
   <data name="Ribbon_View_Theme_DarkGlass" xml:space="preserve">
-    <value>Verre sombre</value>
+    <value>ダークグラス</value>
   </data>
   <data name="Ribbon_View_Theme_VisualStudio" xml:space="preserve">
     <value>Visual Studio</value>
   </data>
   <data name="Ribbon_View_Theme_Minimal" xml:space="preserve">
-    <value>Minimal</value>
+    <value>ミニマル</value>
   </data>
   <data name="Ribbon_View_Panels_Group" xml:space="preserve">
-    <value>Panneaux</value>
+    <value>パネル</value>
   </data>
   <data name="Ribbon_View_SettingsPanel" xml:space="preserve">
-    <value>Panneau paramètres</value>
+    <value>設定パネル</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET DONNÉES ==== -->
   <data name="Ribbon_Data_Tab" xml:space="preserve">
-    <value>Données</value>
+    <value>データ</value>
   </data>
   <data name="Ribbon_Data_Export_Group" xml:space="preserve">
-    <value>Exporter</value>
+    <value>エクスポート</value>
   </data>
   <data name="Ribbon_Data_Export" xml:space="preserve">
-    <value>Exporter</value>
+    <value>エクスポート</value>
   </data>
   <data name="Ribbon_Data_ExportAs" xml:space="preserve">
-    <value>Exporter sous</value>
+    <value>形式を指定してエクスポート</value>
   </data>
   <data name="Ribbon_Data_ExportAs_CSharpByteArray" xml:space="preserve">
-    <value>Tableau d'octets C#</value>
+    <value>C# バイト配列</value>
   </data>
   <data name="Ribbon_Data_ExportAs_CCode" xml:space="preserve">
-    <value>Code C</value>
+    <value>Cコード</value>
   </data>
   <data name="Ribbon_Data_ExportAs_JavaCode" xml:space="preserve">
-    <value>Code Java</value>
+    <value>Javaコード</value>
   </data>
   <data name="Ribbon_Data_ExportAs_HexString" xml:space="preserve">
-    <value>Chaîne hexadécimale</value>
+    <value>Hex文字列</value>
   </data>
   <data name="Ribbon_Data_Compare_Group" xml:space="preserve">
-    <value>Comparer</value>
+    <value>比較</value>
   </data>
   <data name="Ribbon_Data_CompareFiles" xml:space="preserve">
-    <value>Comparer fichiers</value>
+    <value>ファイルを比較</value>
   </data>
   <data name="Ribbon_Data_Statistics_Group" xml:space="preserve">
-    <value>Statistiques</value>
+    <value>統計</value>
   </data>
   <data name="Ribbon_Data_ByteCount" xml:space="preserve">
-    <value>Compte octets</value>
+    <value>バイト数</value>
   </data>
   <data name="Ribbon_Data_Statistics" xml:space="preserve">
-    <value>Statistiques</value>
+    <value>統計</value>
   </data>
   <data name="Ribbon_Data_Entropy" xml:space="preserve">
-    <value>Entropie</value>
+    <value>エントロピー</value>
   </data>
   <data name="Ribbon_Data_Advanced_Group" xml:space="preserve">
-    <value>Avancé</value>
+    <value>高度</value>
   </data>
   <data name="Ribbon_Data_Checksum" xml:space="preserve">
-    <value>Somme de contrôle</value>
+    <value>チェックサム</value>
   </data>
   <data name="Ribbon_Data_Hash" xml:space="preserve">
-    <value>Hachage (MD5/SHA)</value>
+    <value>ハッシュ (MD5/SHA)</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET OUTILS ==== -->
   <data name="Ribbon_Tools_Tab" xml:space="preserve">
-    <value>Outils</value>
+    <value>ツール</value>
   </data>
   <data name="Ribbon_Tools_Options_Group" xml:space="preserve">
-    <value>Options</value>
+    <value>オプション</value>
   </data>
   <data name="Ribbon_Tools_Settings" xml:space="preserve">
-    <value>Paramètres</value>
+    <value>設定</value>
   </data>
   <data name="Ribbon_Tools_Language_Group" xml:space="preserve">
-    <value>Langue</value>
+    <value>言語</value>
   </data>
   <data name="Ribbon_Tools_Language" xml:space="preserve">
-    <value>Langue</value>
+    <value>言語</value>
   </data>
   <data name="Ribbon_Tools_Language_Tooltip" xml:space="preserve">
-    <value>Modifier la langue de l'application</value>
+    <value>アプリケーションの表示言語を変更</value>
   </data>
   <data name="Ribbon_Tools_Help_Group" xml:space="preserve">
-    <value>Aide</value>
+    <value>ヘルプ</value>
   </data>
   <data name="Ribbon_Tools_Documentation" xml:space="preserve">
-    <value>Documentation</value>
+    <value>ドキュメント</value>
   </data>
   <data name="Ribbon_Tools_About" xml:space="preserve">
-    <value>À propos</value>
+    <value>バージョン情報</value>
   </data>
-
-  <!-- ==== DIALOGUE OPTIONS ==== -->
   <data name="Options_Title" xml:space="preserve">
-    <value>Options</value>
+    <value>オプション</value>
   </data>
   <data name="Options_Header_Title" xml:space="preserve">
-    <value>Options de l'application</value>
+    <value>アプリケーションオプション</value>
   </data>
   <data name="Options_Header_Subtitle" xml:space="preserve">
-    <value>Configurez vos préférences de l'éditeur hexadécimal</value>
+    <value>Hexエディタの設定を構成</value>
+  </data>
+  <data name="Options_LanguageTab" xml:space="preserve">
+    <value>言語</value>
   </data>
   <data name="Options_Tab_Language" xml:space="preserve">
-    <value>Langue</value>
+    <value>言語</value>
+  </data>
+  <data name="Options_AppearanceTab" xml:space="preserve">
+    <value>外観</value>
   </data>
   <data name="Options_Tab_Appearance" xml:space="preserve">
-    <value>Apparence</value>
+    <value>外観</value>
+  </data>
+  <data name="Options_ClipboardTab" xml:space="preserve">
+    <value>クリップボード</value>
+  </data>
+  <data name="Options_CopyMode_Instructions" xml:space="preserve">
+    <value>クリップボードへのコピーのデフォルト形式を選択:</value>
+  </data>
+  <data name="Options_CopyMode_CurrentLabel" xml:space="preserve">
+    <value>現在のコピー形式</value>
+  </data>
+  <data name="Options_CopyMode_ColumnIcon" xml:space="preserve">
+    <value>アイコン</value>
+  </data>
+  <data name="Options_CopyMode_ColumnName" xml:space="preserve">
+    <value>形式</value>
+  </data>
+  <data name="Options_CopyMode_ColumnDescription" xml:space="preserve">
+    <value>説明</value>
+  </data>
+  <data name="Options_CopyMode_InstantInfo" xml:space="preserve">
+    <value>形式を選択すると即座に反映されます</value>
+  </data>
+  <data name="Options_PerformanceTab" xml:space="preserve">
+    <value>パフォーマンス</value>
   </data>
   <data name="Options_Tab_Performance" xml:space="preserve">
-    <value>Performance</value>
+    <value>パフォーマンス</value>
   </data>
   <data name="Options_Language_Instructions" xml:space="preserve">
-    <value>Sélectionnez votre langue d'affichage préférée :</value>
+    <value>優先する表示言語を選択:</value>
+  </data>
+  <data name="Options_Language_CurrentLabel" xml:space="preserve">
+    <value>現在の言語</value>
   </data>
   <data name="Options_Language_CurrentLanguage" xml:space="preserve">
-    <value>Langue actuelle</value>
+    <value>現在の言語</value>
+  </data>
+  <data name="Options_Language_ColumnLanguage" xml:space="preserve">
+    <value>言語</value>
   </data>
   <data name="Options_Language_ListView_Header_Language" xml:space="preserve">
-    <value>Langue</value>
+    <value>言語</value>
+  </data>
+  <data name="Options_Language_ColumnNativeName" xml:space="preserve">
+    <value>ネイティブ名</value>
   </data>
   <data name="Options_Language_ListView_Header_NativeName" xml:space="preserve">
-    <value>Nom natif</value>
+    <value>ネイティブ名</value>
+  </data>
+  <data name="Options_Language_ColumnCode" xml:space="preserve">
+    <value>コード</value>
   </data>
   <data name="Options_Language_ListView_Header_Code" xml:space="preserve">
-    <value>Code</value>
+    <value>コード</value>
+  </data>
+  <data name="Options_Language_RestartWarning" xml:space="preserve">
+    <value>言語変更は即座に反映されます - 再起動不要です！🚀</value>
   </data>
   <data name="Options_Language_Warning" xml:space="preserve">
-    <value>Veuillez redémarrer l'application après avoir changé la langue.</value>
+    <value>言語を変更した後、アプリケーションを再起動してください。</value>
+  </data>
+  <data name="Options_Theme_Instructions" xml:space="preserve">
+    <value>テーマを選択してアプリケーションの外観を即座に変更</value>
+  </data>
+  <data name="Options_Theme_CurrentLabel" xml:space="preserve">
+    <value>現在のテーマ</value>
+  </data>
+  <data name="Options_Theme_ColumnIcon" xml:space="preserve">
+    <value>アイコン</value>
+  </data>
+  <data name="Options_Theme_ColumnName" xml:space="preserve">
+    <value>名前</value>
+  </data>
+  <data name="Options_Theme_ColumnDescription" xml:space="preserve">
+    <value>説明</value>
+  </data>
+  <data name="Options_Theme_InstantInfo" xml:space="preserve">
+    <value>テーマ変更は即座に反映されます - 再起動不要です！🎨</value>
   </data>
   <data name="Options_ComingSoon" xml:space="preserve">
-    <value>Bientôt disponible...</value>
+    <value>近日公開...</value>
   </data>
   <data name="Options_Button_OK" xml:space="preserve">
     <value>OK</value>
   </data>
   <data name="Options_Button_Cancel" xml:space="preserve">
-    <value>Annuler</value>
+    <value>キャンセル</value>
   </data>
-
-  <!-- ==== PANNEAU PARAMÈTRES ==== -->
+  <data name="Settings_Title" xml:space="preserve">
+    <value>設定</value>
+  </data>
   <data name="Settings_Header" xml:space="preserve">
-    <value>PARAMÈTRES</value>
+    <value>設定</value>
+  </data>
+  <data name="Settings_Theme_Title" xml:space="preserve">
+    <value>🎨 テーマ</value>
   </data>
   <data name="Settings_Theme_Header" xml:space="preserve">
-    <value>🎨 Thème</value>
+    <value>🎨 テーマ</value>
+  </data>
+  <data name="Settings_Language_Title" xml:space="preserve">
+    <value>🌐 言語</value>
   </data>
   <data name="Settings_Language_Header" xml:space="preserve">
-    <value>🌐 Langue</value>
+    <value>🌐 言語</value>
+  </data>
+  <data name="Settings_Search_Title" xml:space="preserve">
+    <value>🔍 検索オプション</value>
   </data>
   <data name="Settings_SearchOptions_Header" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
+    <value>🔍 検索オプション</value>
+  </data>
+  <data name="Settings_Search_EnableParallel" xml:space="preserve">
+    <value>並列検索を有効化（大きなファイルで高速）</value>
   </data>
   <data name="Settings_SearchOptions_ParallelSearch" xml:space="preserve">
-    <value>Activer la recherche parallèle (plus rapide pour les gros fichiers)</value>
+    <value>並列検索を有効化（大きなファイルで高速）</value>
+  </data>
+  <data name="Settings_Search_UseWildcard" xml:space="preserve">
+    <value>ワイルドカード検索を使用（??記法）</value>
   </data>
   <data name="Settings_SearchOptions_WildcardSearch" xml:space="preserve">
-    <value>Utiliser la recherche avec caractères génériques (notation ??)</value>
+    <value>ワイルドカード検索を使用（??記法）</value>
+  </data>
+  <data name="Settings_Search_HighlightMatches" xml:space="preserve">
+    <value>すべての一致をハイライト</value>
   </data>
   <data name="Settings_SearchOptions_HighlightMatches" xml:space="preserve">
-    <value>Surligner tous les résultats</value>
+    <value>すべての一致をハイライト</value>
+  </data>
+  <data name="Settings_Search_ResultLimit" xml:space="preserve">
+    <value>検索結果の上限:</value>
   </data>
   <data name="Settings_SearchOptions_ResultLimit" xml:space="preserve">
-    <value>Limite de résultats de recherche :</value>
+    <value>検索結果の上限:</value>
+  </data>
+  <data name="Settings_Display_Title" xml:space="preserve">
+    <value>📺 表示オプション</value>
   </data>
   <data name="Settings_DisplayOptions_Header" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
+    <value>📺 表示オプション</value>
+  </data>
+  <data name="Settings_Display_ShowLineNumbers" xml:space="preserve">
+    <value>行番号を表示</value>
   </data>
   <data name="Settings_DisplayOptions_LineNumbers" xml:space="preserve">
-    <value>Afficher les numéros de ligne</value>
+    <value>行番号を表示</value>
+  </data>
+  <data name="Settings_Display_ShowScrollMarkers" xml:space="preserve">
+    <value>スクロールマーカーを表示</value>
   </data>
   <data name="Settings_DisplayOptions_ScrollMarkers" xml:space="preserve">
-    <value>Afficher les marqueurs de défilement</value>
+    <value>スクロールマーカーを表示</value>
+  </data>
+  <data name="Settings_Display_ShowStatusBar" xml:space="preserve">
+    <value>ステータスバーを表示</value>
   </data>
   <data name="Settings_DisplayOptions_StatusBar" xml:space="preserve">
-    <value>Afficher la barre d'état</value>
+    <value>ステータスバーを表示</value>
+  </data>
+  <data name="Settings_Display_BytesPerLine" xml:space="preserve">
+    <value>1行あたりのバイト数:</value>
   </data>
   <data name="Settings_DisplayOptions_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne :</value>
+    <value>1行あたりのバイト数:</value>
+  </data>
+  <data name="Settings_Performance_Title" xml:space="preserve">
+    <value>⚡ パフォーマンス</value>
   </data>
   <data name="Settings_Performance_Header" xml:space="preserve">
-    <value>⚡ Performance</value>
+    <value>⚡ パフォーマンス</value>
   </data>
   <data name="Settings_Performance_V2Active" xml:space="preserve">
-    <value>MOTEUR V2 ACTIF</value>
+    <value>V2 エンジン有効</value>
+  </data>
+  <data name="Settings_Performance_Feature1" xml:space="preserve">
+    <value>• Boyer-Moore-Horspoolアルゴリズム</value>
   </data>
   <data name="Settings_Performance_BoyerMoore" xml:space="preserve">
-    <value>• Algorithme de Boyer-Moore-Horspool</value>
+    <value>• Boyer-Moore-Horspoolアルゴリズム</value>
+  </data>
+  <data name="Settings_Performance_Feature2" xml:space="preserve">
+    <value>• 並列処理サポート</value>
   </data>
   <data name="Settings_Performance_Parallel" xml:space="preserve">
-    <value>• Support du traitement parallèle</value>
+    <value>• 並列処理サポート</value>
+  </data>
+  <data name="Settings_Performance_Feature3" xml:space="preserve">
+    <value>• V1より最大99%高速</value>
   </data>
   <data name="Settings_Performance_Faster" xml:space="preserve">
-    <value>• Jusqu'à 99% plus rapide que V1</value>
+    <value>• V1より最大99%高速</value>
   </data>
   <data name="Settings_Button_ResetDefaults" xml:space="preserve">
-    <value>Réinitialiser par défaut</value>
+    <value>デフォルトにリセット</value>
+  </data>
+  <data name="Settings_Button_SaveSettings" xml:space="preserve">
+    <value>設定を保存</value>
   </data>
   <data name="Settings_Button_Save" xml:space="preserve">
-    <value>Enregistrer paramètres</value>
+    <value>設定を保存</value>
   </data>
-
-  <!-- ==== PARAMÈTRES ÉDITEUR HEX ==== -->
+  <data name="HexSettings_Title" xml:space="preserve">
+    <value>HEX エディタ設定</value>
+  </data>
   <data name="HexSettings_Header" xml:space="preserve">
-    <value>PARAMÈTRES DE L'ÉDITEUR HEXADÉCIMAL</value>
+    <value>HEX エディタ設定</value>
+  </data>
+  <data name="HexSettings_Display_Title" xml:space="preserve">
+    <value>📺 表示オプション</value>
   </data>
   <data name="HexSettings_Display_Header" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
+    <value>📺 表示オプション</value>
+  </data>
+  <data name="HexSettings_Display_ShowLineNumbers" xml:space="preserve">
+    <value>行番号を表示（プレースホルダー）</value>
+  </data>
+  <data name="HexSettings_Display_ShowLineNumbers_ToolTip" xml:space="preserve">
+    <value>この機能はV2ではまだ利用できません</value>
   </data>
   <data name="HexSettings_Display_LineNumbers" xml:space="preserve">
-    <value>Afficher numéros de ligne (temporaire)</value>
+    <value>行番号を表示（プレースホルダー）</value>
   </data>
   <data name="HexSettings_Display_LineNumbers_Tooltip" xml:space="preserve">
-    <value>Cette fonctionnalité n'est pas encore disponible dans V2</value>
+    <value>この機能はV2ではまだ利用できません</value>
+  </data>
+  <data name="HexSettings_Display_ShowByteTooltip" xml:space="preserve">
+    <value>バイトツールチップを表示</value>
   </data>
   <data name="HexSettings_Display_ByteTooltip" xml:space="preserve">
-    <value>Afficher info-bulle d'octet</value>
+    <value>バイトツールチップを表示</value>
   </data>
   <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Masquer les octets supprimés</value>
+    <value>削除済みバイトを非表示</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne :</value>
+    <value>1行あたりのバイト数:</value>
   </data>
   <data name="HexSettings_Display_ZoomScale" xml:space="preserve">
-    <value>Échelle de zoom :</value>
+    <value>ズーム倍率:</value>
+  </data>
+  <data name="HexSettings_Editing_Title" xml:space="preserve">
+    <value>✏️ 編集オプション</value>
   </data>
   <data name="HexSettings_Editing_Header" xml:space="preserve">
-    <value>✏️ Options d'édition</value>
+    <value>✏️ 編集オプション</value>
   </data>
   <data name="HexSettings_Editing_ReadOnly" xml:space="preserve">
-    <value>Mode lecture seule</value>
+    <value>読み取り専用モード</value>
+  </data>
+  <data name="HexSettings_Editing_AllowInsertAnywhere" xml:space="preserve">
+    <value>任意の場所への挿入を許可</value>
   </data>
   <data name="HexSettings_Editing_InsertAnywhere" xml:space="preserve">
-    <value>Autoriser insertion n'importe où</value>
+    <value>任意の場所への挿入を許可</value>
+  </data>
+  <data name="HexSettings_Editing_AllowDeleteByte" xml:space="preserve">
+    <value>バイト削除を許可</value>
   </data>
   <data name="HexSettings_Editing_DeleteByte" xml:space="preserve">
-    <value>Autoriser suppression d'octet</value>
+    <value>バイト削除を許可</value>
+  </data>
+  <data name="HexSettings_Editing_AllowExtendFile" xml:space="preserve">
+    <value>ファイル拡張を許可</value>
   </data>
   <data name="HexSettings_Editing_ExtendFile" xml:space="preserve">
-    <value>Autoriser extension du fichier</value>
+    <value>ファイル拡張を許可</value>
+  </data>
+  <data name="HexSettings_Editing_AppendNeedsConfirmation" xml:space="preserve">
+    <value>追加に確認が必要</value>
   </data>
   <data name="HexSettings_Editing_AppendConfirmation" xml:space="preserve">
-    <value>Ajout nécessite confirmation</value>
+    <value>追加に確認が必要</value>
   </data>
   <data name="HexSettings_Editing_EditMode" xml:space="preserve">
-    <value>Mode d'édition :</value>
+    <value>編集モード:</value>
   </data>
   <data name="HexSettings_Editing_Overwrite" xml:space="preserve">
-    <value>Remplacer</value>
+    <value>上書き</value>
   </data>
   <data name="HexSettings_Editing_Insert" xml:space="preserve">
-    <value>Insérer</value>
+    <value>挿入</value>
   </data>
   <data name="HexSettings_Editing_CaretMode" xml:space="preserve">
-    <value>Mode curseur :</value>
+    <value>キャレットモード:</value>
+  </data>
+  <data name="HexSettings_Clipboard_Title" xml:space="preserve">
+    <value>📋 クリップボードオプション</value>
   </data>
   <data name="HexSettings_Clipboard_Header" xml:space="preserve">
-    <value>📋 Options presse-papiers</value>
+    <value>📋 クリップボードオプション</value>
   </data>
   <data name="HexSettings_Clipboard_DefaultCopyMode" xml:space="preserve">
-    <value>Mode de copie par défaut :</value>
+    <value>デフォルトコピーモード:</value>
   </data>
   <data name="HexSettings_Clipboard_HexString" xml:space="preserve">
-    <value>Chaîne hexadécimale</value>
+    <value>Hex文字列</value>
   </data>
   <data name="HexSettings_Clipboard_ByteArray" xml:space="preserve">
-    <value>Tableau d'octets</value>
+    <value>バイト配列</value>
   </data>
   <data name="HexSettings_Clipboard_CSharpCode" xml:space="preserve">
-    <value>Code C#</value>
+    <value>C#コード</value>
   </data>
   <data name="HexSettings_Clipboard_VBCode" xml:space="preserve">
-    <value>Code VB</value>
+    <value>VBコード</value>
   </data>
   <data name="HexSettings_Clipboard_CCode" xml:space="preserve">
-    <value>Code C</value>
+    <value>Cコード</value>
   </data>
   <data name="HexSettings_Clipboard_JavaCode" xml:space="preserve">
-    <value>Code Java</value>
+    <value>Javaコード</value>
+  </data>
+  <data name="HexSettings_DragDrop_Title" xml:space="preserve">
+    <value>📎 ドラッグ＆ドロップオプション</value>
   </data>
   <data name="HexSettings_DragDrop_Header" xml:space="preserve">
-    <value>📎 Options glisser-déposer</value>
+    <value>📎 ドラッグ＆ドロップオプション</value>
+  </data>
+  <data name="HexSettings_DragDrop_AllowFileDrop" xml:space="preserve">
+    <value>ファイルのドロップを許可</value>
   </data>
   <data name="HexSettings_DragDrop_FileDrop" xml:space="preserve">
-    <value>Autoriser dépôt de fichier</value>
+    <value>ファイルのドロップを許可</value>
+  </data>
+  <data name="HexSettings_DragDrop_FileDropConfirmation" xml:space="preserve">
+    <value>ファイルドロップの確認</value>
   </data>
   <data name="HexSettings_DragDrop_FileConfirmation" xml:space="preserve">
-    <value>Confirmation de dépôt de fichier</value>
+    <value>ファイルドロップの確認</value>
+  </data>
+  <data name="HexSettings_DragDrop_AllowTextDrop" xml:space="preserve">
+    <value>テキストのドロップを許可</value>
   </data>
   <data name="HexSettings_DragDrop_TextDrop" xml:space="preserve">
-    <value>Autoriser dépôt de texte</value>
+    <value>テキストのドロップを許可</value>
+  </data>
+  <data name="HexSettings_Highlight_Title" xml:space="preserve">
+    <value>🎨 ハイライトと選択</value>
   </data>
   <data name="HexSettings_Highlight_Header" xml:space="preserve">
-    <value>🎨 Surlignage &amp; Sélection</value>
+    <value>🎨 ハイライトと選択</value>
   </data>
   <data name="HexSettings_Highlight_AutoHighlight" xml:space="preserve">
-    <value>Surligner automatiquement l'octet sélectionné</value>
+    <value>選択バイトを自動ハイライト</value>
+  </data>
+  <data name="HexSettings_Highlight_AutoSelectDoubleClick" xml:space="preserve">
+    <value>同じバイトを自動選択（ダブルクリック）</value>
   </data>
   <data name="HexSettings_Highlight_AutoSelect" xml:space="preserve">
-    <value>Sélection automatique du même octet (double-clic)</value>
+    <value>同じバイトを自動選択（ダブルクリック）</value>
+  </data>
+  <data name="HexSettings_Highlight_AllowMarkerClick" xml:space="preserve">
+    <value>マーカークリックナビゲーションを許可</value>
   </data>
   <data name="HexSettings_Highlight_MarkerNavigation" xml:space="preserve">
-    <value>Autoriser navigation par clic sur marqueur</value>
+    <value>マーカークリックナビゲーションを許可</value>
+  </data>
+  <data name="HexSettings_Highlight_AutoHighlightColor" xml:space="preserve">
+    <value>自動ハイライト色:</value>
   </data>
   <data name="HexSettings_Highlight_Color" xml:space="preserve">
-    <value>Couleur de surlignage automatique :</value>
+    <value>自動ハイライト色:</value>
+  </data>
+  <data name="HexSettings_Search_Title" xml:space="preserve">
+    <value>🔍 検索オプション</value>
   </data>
   <data name="HexSettings_Search_Header" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
+    <value>🔍 検索オプション</value>
+  </data>
+  <data name="HexSettings_Search_EnableParallel" xml:space="preserve">
+    <value>並列検索を有効化</value>
   </data>
   <data name="HexSettings_Search_ParallelSearch" xml:space="preserve">
-    <value>Activer recherche parallèle</value>
+    <value>並列検索を有効化</value>
+  </data>
+  <data name="HexSettings_Search_UseWildcard" xml:space="preserve">
+    <value>ワイルドカード検索を使用（??）</value>
   </data>
   <data name="HexSettings_Search_WildcardSearch" xml:space="preserve">
-    <value>Utiliser recherche avec caractères génériques (??)</value>
+    <value>ワイルドカード検索を使用（??）</value>
   </data>
   <data name="HexSettings_Search_HighlightMatches" xml:space="preserve">
-    <value>Surligner tous les résultats</value>
+    <value>すべての一致をハイライト</value>
   </data>
   <data name="HexSettings_Search_ResultLimit" xml:space="preserve">
-    <value>Limite de résultats de recherche :</value>
+    <value>検索結果の上限:</value>
+  </data>
+  <data name="HexSettings_Statistics_Title" xml:space="preserve">
+    <value>📊 統計</value>
   </data>
   <data name="HexSettings_Statistics_Header" xml:space="preserve">
-    <value>📊 Statistiques</value>
+    <value>📊 統計</value>
+  </data>
+  <data name="HexSettings_Statistics_AllowByteCount" xml:space="preserve">
+    <value>バイト数カウントを許可</value>
   </data>
   <data name="HexSettings_Statistics_ByteCount" xml:space="preserve">
-    <value>Autoriser compte d'octets</value>
+    <value>バイト数カウントを許可</value>
+  </data>
+  <data name="HexSettings_Advanced_Title" xml:space="preserve">
+    <value>高度なオプション</value>
   </data>
   <data name="HexSettings_Advanced_Header" xml:space="preserve">
-    <value>Options avancées</value>
+    <value>高度なオプション</value>
+  </data>
+  <data name="HexSettings_Advanced_ByteShiftLeft" xml:space="preserve">
+    <value>バイト左シフト:</value>
   </data>
   <data name="HexSettings_Advanced_ByteShift" xml:space="preserve">
-    <value>Décalage d'octet à gauche :</value>
+    <value>バイト左シフト:</value>
   </data>
   <data name="HexSettings_Advanced_SaveState" xml:space="preserve">
-    <value>Enregistrer l'état actuel</value>
+    <value>現在の状態を保存</value>
   </data>
   <data name="HexSettings_Advanced_LoadState" xml:space="preserve">
-    <value>Charger l'état enregistré</value>
+    <value>保存された状態を読み込み</value>
+  </data>
+  <data name="HexSettings_ResetButton" xml:space="preserve">
+    <value>🔄 すべてをデフォルトにリセット</value>
   </data>
   <data name="HexSettings_Button_Reset" xml:space="preserve">
-    <value>🔄 Tout réinitialiser par défaut</value>
+    <value>🔄 すべてをデフォルトにリセット</value>
   </data>
-
-  <!-- ==== CENTRE DE COMMANDE RECHERCHE ==== -->
   <data name="Search_Mode_Text" xml:space="preserve">
-    <value>Texte</value>
+    <value>テキスト</value>
   </data>
   <data name="Search_Mode_Hex" xml:space="preserve">
-    <value>Hexadécimal</value>
+    <value>Hex</value>
   </data>
   <data name="Search_Mode_Regex" xml:space="preserve">
     <value>Regex</value>
   </data>
   <data name="Search_Clear_ToolTip" xml:space="preserve">
-    <value>Effacer</value>
+    <value>クリア</value>
   </data>
   <data name="Search_Button_Clear" xml:space="preserve">
-    <value>Effacer</value>
+    <value>クリア</value>
   </data>
   <data name="Search_Previous_ToolTip" xml:space="preserve">
-    <value>Précédent (Shift+F3)</value>
+    <value>前へ (Shift+F3)</value>
   </data>
   <data name="Search_Button_Previous" xml:space="preserve">
-    <value>Précédent (Shift+F3)</value>
+    <value>前へ (Shift+F3)</value>
   </data>
   <data name="Search_Next_ToolTip" xml:space="preserve">
-    <value>Suivant (F3)</value>
+    <value>次へ (F3)</value>
   </data>
   <data name="Search_Button_Next" xml:space="preserve">
-    <value>Suivant (F3)</value>
+    <value>次へ (F3)</value>
   </data>
   <data name="Search_FindAll" xml:space="preserve">
-    <value>Tout rechercher</value>
+    <value>すべて検索</value>
   </data>
   <data name="Search_Button_FindAll" xml:space="preserve">
-    <value>Tout rechercher</value>
+    <value>すべて検索</value>
   </data>
   <data name="Search_FindAll_ToolTip" xml:space="preserve">
-    <value>Rechercher toutes les occurrences</value>
+    <value>すべての出現箇所を検索</value>
   </data>
   <data name="Search_Button_FindAll_Tooltip" xml:space="preserve">
-    <value>Rechercher toutes les occurrences</value>
+    <value>すべての出現箇所を検索</value>
   </data>
   <data name="Search_Matches" xml:space="preserve">
-    <value>correspondances</value>
+    <value>件の一致</value>
   </data>
   <data name="Search_Results_Matches" xml:space="preserve">
-    <value>correspondances</value>
+    <value>件の一致</value>
   </data>
   <data name="Search_Results_V2Badge" xml:space="preserve">
     <value>V2</value>
   </data>
-
-  <!-- ==== MESSAGES ==== -->
   <data name="Message_FileOpenError" xml:space="preserve">
-    <value>Échec de l'ouverture du fichier : {0}</value>
+    <value>ファイルを開けませんでした: {0}</value>
   </data>
   <data name="Message_FileSaveError" xml:space="preserve">
-    <value>Échec de l'enregistrement du fichier : {0}</value>
+    <value>ファイルを保存できませんでした: {0}</value>
   </data>
   <data name="Message_ErrorTitle" xml:space="preserve">
-    <value>Erreur</value>
+    <value>エラー</value>
   </data>
   <data name="Message_LanguageUnchanged_Title" xml:space="preserve">
-    <value>Langue inchangée</value>
+    <value>言語は変更されていません</value>
   </data>
   <data name="Message_LanguageUnchanged_Text" xml:space="preserve">
-    <value>La langue est déjà définie sur {0}.</value>
+    <value>言語はすでに{0}に設定されています。</value>
   </data>
   <data name="Message_LanguageChanged_Title" xml:space="preserve">
-    <value>Langue modifiée</value>
+    <value>言語が変更されました</value>
   </data>
   <data name="Message_LanguageChanged_Text" xml:space="preserve">
-    <value>Langue changée avec succès en {0} !</value>
+    <value>言語を{0}に正常に変更しました！</value>
   </data>
   <data name="Message_NoLanguageSelected_Title" xml:space="preserve">
-    <value>Aucune langue sélectionnée</value>
+    <value>言語が選択されていません</value>
   </data>
   <data name="Message_NoLanguageSelected_Text" xml:space="preserve">
-    <value>Veuillez sélectionner une langue avant de cliquer sur OK.</value>
+    <value>OKをクリックする前に言語を選択してください。</value>
   </data>
-
-  <!-- ==== PARAMÈTRES ÉDITEUR HEX ==== -->
-  <data name="HexSettings_Title" xml:space="preserve">
-    <value>PARAMÈTRES DE L'ÉDITEUR HEX</value>
-  </data>
-  <data name="HexSettings_Display_Title" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
-  </data>
-  <data name="HexSettings_Display_ShowLineNumbers" xml:space="preserve">
-    <value>Afficher les numéros de ligne (placeholder)</value>
-  </data>
-  <data name="HexSettings_Display_ShowLineNumbers_ToolTip" xml:space="preserve">
-    <value>Cette fonctionnalité n'est pas encore disponible dans V2</value>
-  </data>
-  <data name="HexSettings_Display_ShowByteTooltip" xml:space="preserve">
-    <value>Afficher l'info-bulle d'octet</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Masquer les octets supprimés</value>
-  </data>
-  <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne :</value>
-  </data>
-  <data name="HexSettings_Display_ZoomScale" xml:space="preserve">
-    <value>Échelle de zoom :</value>
-  </data>
-  <data name="HexSettings_Editing_Title" xml:space="preserve">
-    <value>✏️ Options d'édition</value>
-  </data>
-  <data name="HexSettings_Editing_ReadOnly" xml:space="preserve">
-    <value>Mode lecture seule</value>
-  </data>
-  <data name="HexSettings_Editing_AllowInsertAnywhere" xml:space="preserve">
-    <value>Permettre l'insertion n'importe où</value>
-  </data>
-  <data name="HexSettings_Editing_AllowDeleteByte" xml:space="preserve">
-    <value>Permettre la suppression d'octet</value>
-  </data>
-  <data name="HexSettings_Editing_AllowExtendFile" xml:space="preserve">
-    <value>Permettre l'extension du fichier</value>
-  </data>
-  <data name="HexSettings_Editing_AppendNeedsConfirmation" xml:space="preserve">
-    <value>L'ajout nécessite une confirmation</value>
-  </data>
-  <data name="HexSettings_Editing_EditMode" xml:space="preserve">
-    <value>Mode d'édition :</value>
-  </data>
-  <data name="HexSettings_Editing_Overwrite" xml:space="preserve">
-    <value>Écraser</value>
-  </data>
-  <data name="HexSettings_Editing_Insert" xml:space="preserve">
-    <value>Insérer</value>
-  </data>
-  <data name="HexSettings_Editing_CaretMode" xml:space="preserve">
-    <value>Mode curseur :</value>
-  </data>
-  <data name="HexSettings_Clipboard_Title" xml:space="preserve">
-    <value>📋 Options du presse-papiers</value>
-  </data>
-  <data name="HexSettings_Clipboard_DefaultCopyMode" xml:space="preserve">
-    <value>Mode de copie par défaut :</value>
-  </data>
-  <data name="HexSettings_Clipboard_HexString" xml:space="preserve">
-    <value>Chaîne hexadécimale</value>
-  </data>
-  <data name="HexSettings_Clipboard_ByteArray" xml:space="preserve">
-    <value>Tableau d'octets</value>
-  </data>
-  <data name="HexSettings_Clipboard_CSharpCode" xml:space="preserve">
-    <value>Code C#</value>
-  </data>
-  <data name="HexSettings_Clipboard_VBCode" xml:space="preserve">
-    <value>Code VB</value>
-  </data>
-  <data name="HexSettings_Clipboard_CCode" xml:space="preserve">
-    <value>Code C</value>
-  </data>
-  <data name="HexSettings_Clipboard_JavaCode" xml:space="preserve">
-    <value>Code Java</value>
-  </data>
-  <data name="HexSettings_DragDrop_Title" xml:space="preserve">
-    <value>📎 Options de glisser-déposer</value>
-  </data>
-  <data name="HexSettings_DragDrop_AllowFileDrop" xml:space="preserve">
-    <value>Permettre le dépôt de fichier</value>
-  </data>
-  <data name="HexSettings_DragDrop_FileDropConfirmation" xml:space="preserve">
-    <value>Confirmation du dépôt de fichier</value>
-  </data>
-  <data name="HexSettings_DragDrop_AllowTextDrop" xml:space="preserve">
-    <value>Permettre le dépôt de texte</value>
-  </data>
-  <data name="HexSettings_Highlight_Title" xml:space="preserve">
-    <value>🎨 Surbrillance et sélection</value>
-  </data>
-  <data name="HexSettings_Highlight_AutoHighlight" xml:space="preserve">
-    <value>Surligner automatiquement l'octet sélectionné</value>
-  </data>
-  <data name="HexSettings_Highlight_AutoSelectDoubleClick" xml:space="preserve">
-    <value>Sélectionner automatiquement le même octet (double-clic)</value>
-  </data>
-  <data name="HexSettings_Highlight_AllowMarkerClick" xml:space="preserve">
-    <value>Permettre la navigation par clic sur marqueur</value>
-  </data>
-  <data name="HexSettings_Highlight_AutoHighlightColor" xml:space="preserve">
-    <value>Couleur de surbrillance automatique :</value>
-  </data>
-  <data name="HexSettings_Search_Title" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
-  </data>
-  <data name="HexSettings_Search_EnableParallel" xml:space="preserve">
-    <value>Activer la recherche parallèle</value>
-  </data>
-  <data name="HexSettings_Search_UseWildcard" xml:space="preserve">
-    <value>Utiliser la recherche par joker (??)</value>
-  </data>
-  <data name="HexSettings_Search_HighlightMatches" xml:space="preserve">
-    <value>Surligner toutes les correspondances</value>
-  </data>
-  <data name="HexSettings_Search_ResultLimit" xml:space="preserve">
-    <value>Limite de résultats de recherche :</value>
-  </data>
-  <data name="HexSettings_Statistics_Title" xml:space="preserve">
-    <value>📊 Statistiques</value>
-  </data>
-  <data name="HexSettings_Statistics_AllowByteCount" xml:space="preserve">
-    <value>Permettre le comptage d'octets</value>
-  </data>
-  <data name="HexSettings_Advanced_Title" xml:space="preserve">
-    <value>Options avancées</value>
-  </data>
-  <data name="HexSettings_Advanced_ByteShiftLeft" xml:space="preserve">
-    <value>Décalage d'octet à gauche :</value>
-  </data>
-  <data name="HexSettings_Advanced_SaveState" xml:space="preserve">
-    <value>Enregistrer l'état actuel</value>
-  </data>
-  <data name="HexSettings_Advanced_LoadState" xml:space="preserve">
-    <value>Charger l'état enregistré</value>
-  </data>
-  <data name="HexSettings_ResetButton" xml:space="preserve">
-    <value>🔄 Réinitialiser tout par défaut</value>
-  </data>
-
-  <!-- ==== PANNEAU DES PARAMÈTRES ==== -->
-  <data name="Settings_Title" xml:space="preserve">
-    <value>PARAMÈTRES</value>
-  </data>
-  <data name="Settings_Theme_Title" xml:space="preserve">
-    <value>🎨 Thème</value>
-  </data>
-  <data name="Settings_Language_Title" xml:space="preserve">
-    <value>🌐 Langue</value>
-  </data>
-  <data name="Settings_Search_Title" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
-  </data>
-  <data name="Settings_Search_EnableParallel" xml:space="preserve">
-    <value>Activer la recherche parallèle (plus rapide pour les gros fichiers)</value>
-  </data>
-  <data name="Settings_Search_UseWildcard" xml:space="preserve">
-    <value>Utiliser la recherche par joker (notation ??)</value>
-  </data>
-  <data name="Settings_Search_HighlightMatches" xml:space="preserve">
-    <value>Surligner toutes les correspondances</value>
-  </data>
-  <data name="Settings_Search_ResultLimit" xml:space="preserve">
-    <value>Limite de résultats de recherche :</value>
-  </data>
-  <data name="Settings_Display_Title" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
-  </data>
-  <data name="Settings_Display_ShowLineNumbers" xml:space="preserve">
-    <value>Afficher les numéros de ligne</value>
-  </data>
-  <data name="Settings_Display_ShowScrollMarkers" xml:space="preserve">
-    <value>Afficher les marqueurs de défilement</value>
-  </data>
-  <data name="Settings_Display_ShowStatusBar" xml:space="preserve">
-    <value>Afficher la barre d'état</value>
-  </data>
-  <data name="Settings_Display_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne :</value>
-  </data>
-  <data name="Settings_Performance_Title" xml:space="preserve">
-    <value>⚡ Performance</value>
-  </data>
-  <data name="Settings_Performance_V2Active" xml:space="preserve">
-    <value>MOTEUR V2 ACTIF</value>
-  </data>
-  <data name="Settings_Performance_Feature1" xml:space="preserve">
-    <value>• Algorithme Boyer-Moore-Horspool</value>
-  </data>
-  <data name="Settings_Performance_Feature2" xml:space="preserve">
-    <value>• Support du traitement parallèle</value>
-  </data>
-  <data name="Settings_Performance_Feature3" xml:space="preserve">
-    <value>• Jusqu'à 99% plus rapide que V1</value>
-  </data>
-  <data name="Settings_Button_ResetDefaults" xml:space="preserve">
-    <value>Réinitialiser par défaut</value>
-  </data>
-  <data name="Settings_Button_SaveSettings" xml:space="preserve">
-    <value>Enregistrer les paramètres</value>
-  </data>
-
-  <!-- ==== BOÎTE DE DIALOGUE OPTIONS ==== -->
-  <data name="Options_LanguageTab" xml:space="preserve">
-    <value>Langue</value>
-  </data>
-  <data name="Options_AppearanceTab" xml:space="preserve">
-    <value>Apparence</value>
-  </data>
-  <data name="Options_PerformanceTab" xml:space="preserve">
-    <value>Performance</value>
-  </data>
-  <data name="Options_Language_CurrentLabel" xml:space="preserve">
-    <value>Langue actuelle</value>
-  </data>
-  <data name="Options_Language_ColumnLanguage" xml:space="preserve">
-    <value>Langue</value>
-  </data>
-  <data name="Options_Language_ColumnNativeName" xml:space="preserve">
-    <value>Nom natif</value>
-  </data>
-  <data name="Options_Language_ColumnCode" xml:space="preserve">
-    <value>Code</value>
-  </data>
-  <data name="Options_Language_RestartWarning" xml:space="preserve">
-    <value>Les changements de langue s'appliquent instantanément - aucun redémarrage requis ! 🚀</value>
-  </data>
-
 </root>

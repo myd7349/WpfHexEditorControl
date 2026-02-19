@@ -31,7 +31,7 @@
               <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
               <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
               <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-              <xsd:attribute ref="xml:space" use="preserve" />
+              <xsd:attribute ref="xml:space" />
             </xsd:complexType>
           </xsd:element>
           <xsd:element name="resheader">
@@ -59,1000 +59,926 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 
-  <!-- ==== MENU APPLICATION ==== -->
+  <!-- Portuguese (Portugal) (pt-PT) -->
   <data name="Menu_File_Open" xml:space="preserve">
-    <value>Ouvrir</value>
+    <value>Abrir</value>
   </data>
   <data name="Menu_File_Save" xml:space="preserve">
-    <value>Enregistrer</value>
+    <value>Guardar</value>
   </data>
   <data name="Menu_File_SaveAs" xml:space="preserve">
-    <value>Enregistrer sous...</value>
+    <value>Guardar Como...</value>
   </data>
   <data name="Menu_File_Close" xml:space="preserve">
-    <value>Fermer</value>
+    <value>Fechar</value>
   </data>
   <data name="Menu_File_Exit" xml:space="preserve">
-    <value>Quitter</value>
+    <value>Sair</value>
   </data>
-
-  <!-- Menu Édition -->
   <data name="Menu_Edit" xml:space="preserve">
-    <value>_Édition</value>
+    <value>_Editar</value>
   </data>
   <data name="Menu_Edit_Undo" xml:space="preserve">
-    <value>_Annuler</value>
+    <value>_Desfazer</value>
   </data>
   <data name="Menu_Edit_Redo" xml:space="preserve">
-    <value>_Rétablir</value>
+    <value>_Refazer</value>
   </data>
   <data name="Menu_Edit_Find" xml:space="preserve">
-    <value>_Rechercher...</value>
+    <value>_Localizar...</value>
   </data>
   <data name="Menu_Edit_FindReplace" xml:space="preserve">
-    <value>Rechercher et _remplacer...</value>
+    <value>Localizar e _Substituir...</value>
   </data>
   <data name="Menu_Edit_Copy" xml:space="preserve">
-    <value>Copier</value>
+    <value>Copiar</value>
   </data>
   <data name="Menu_Edit_Paste" xml:space="preserve">
-    <value>Coller</value>
+    <value>Colar</value>
   </data>
   <data name="Menu_Edit_DeleteSelection" xml:space="preserve">
-    <value>Supprimer la sélection</value>
+    <value>Eliminar Seleção</value>
   </data>
   <data name="Menu_Edit_SelectAll" xml:space="preserve">
-    <value>_Sélectionner tout</value>
+    <value>Selecionar _Tudo</value>
   </data>
   <data name="Menu_Edit_ClearSelection" xml:space="preserve">
-    <value>_Effacer la sélection</value>
+    <value>_Limpar Seleção</value>
   </data>
   <data name="Menu_Edit_Bookmarks" xml:space="preserve">
-    <value>_Signets</value>
+    <value>_Marcadores</value>
   </data>
   <data name="Menu_Edit_ToggleBookmark" xml:space="preserve">
-    <value>Activer/Désactiver le signet</value>
+    <value>Alternar Marcador</value>
   </data>
   <data name="Menu_Edit_ClearAllBookmarks" xml:space="preserve">
-    <value>_Effacer tous les signets</value>
+    <value>_Limpar Todos os Marcadores</value>
   </data>
-
-  <!-- Menu Recherche -->
   <data name="Menu_Search" xml:space="preserve">
-    <value>_Recherche</value>
+    <value>_Pesquisar</value>
   </data>
   <data name="Menu_Search_FindNext" xml:space="preserve">
-    <value>Rechercher le _suivant</value>
+    <value>Localizar _Seguinte</value>
   </data>
   <data name="Menu_Search_FindPrevious" xml:space="preserve">
-    <value>Rechercher le _précédent</value>
+    <value>Localizar _Anterior</value>
   </data>
-
-  <!-- Menu Outils -->
   <data name="Menu_Tools" xml:space="preserve">
-    <value>_Outils</value>
+    <value>_Ferramentas</value>
   </data>
   <data name="Menu_Tools_Bookmarks" xml:space="preserve">
-    <value>_Signets</value>
+    <value>_Marcadores</value>
   </data>
   <data name="Menu_Tools_NextBookmark" xml:space="preserve">
-    <value>Signet _suivant</value>
+    <value>Marcador _Seguinte</value>
   </data>
   <data name="Menu_Tools_PreviousBookmark" xml:space="preserve">
-    <value>Signet _précédent</value>
+    <value>Marcador _Anterior</value>
   </data>
   <data name="Menu_Tools_ShowAllBookmarks" xml:space="preserve">
-    <value>_Afficher tous les signets...</value>
+    <value>_Mostrar Todos os Marcadores...</value>
   </data>
-
-  <!-- Menu Position -->
   <data name="Menu_Position" xml:space="preserve">
-    <value>_Position</value>
+    <value>_Posição</value>
   </data>
   <data name="Menu_Position_GoTo" xml:space="preserve">
-    <value>_Aller à la position...</value>
+    <value>_Ir para Posição...</value>
   </data>
-
-  <!-- Menu Affichage -->
   <data name="Menu_View" xml:space="preserve">
-    <value>_Affichage</value>
+    <value>_Ver</value>
   </data>
   <data name="Menu_View_DisplayOptions" xml:space="preserve">
-    <value>Options d'affichage</value>
+    <value>Opções de Visualização</value>
   </data>
   <data name="Menu_View_ShowStatusBar" xml:space="preserve">
-    <value>Afficher la barre d'état</value>
+    <value>Mostrar Barra de Estado</value>
   </data>
   <data name="Menu_View_ShowHeader" xml:space="preserve">
-    <value>Afficher l'en-tête</value>
+    <value>Mostrar Cabeçalho</value>
   </data>
   <data name="Menu_View_ShowOffset" xml:space="preserve">
-    <value>Afficher le Offset</value>
+    <value>Mostrar Offset</value>
   </data>
   <data name="Menu_View_ShowASCII" xml:space="preserve">
-    <value>Afficher ASCII</value>
+    <value>Mostrar ASCII</value>
   </data>
   <data name="Menu_View_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne</value>
+    <value>Bytes por Linha</value>
   </data>
-
-  <!-- Menu Options -->
   <data name="Menu_Options" xml:space="preserve">
-    <value>_Options</value>
+    <value>_Opções</value>
   </data>
   <data name="Menu_Options_SettingsPanel" xml:space="preserve">
-    <value>_Panneau de paramètres...</value>
+    <value>_Painel de Definições...</value>
   </data>
   <data name="Menu_Options_Advanced" xml:space="preserve">
-    <value>Options _avancées (Thème, Langue)...</value>
+    <value>Opções _Avançadas (Tema, Idioma)...</value>
   </data>
   <data name="Menu_Options_ContextMenu" xml:space="preserve">
-    <value>Menu contextuel</value>
+    <value>Menu de Contexto</value>
   </data>
   <data name="Menu_Options_ShowByteToolTip" xml:space="preserve">
-    <value>Afficher l'info-bulle d'octet</value>
+    <value>Mostrar Sugestão de Byte</value>
   </data>
   <data name="Menu_Options_AutoHighlight" xml:space="preserve">
-    <value>Mise en surbrillance automatique</value>
+    <value>Realçar Automaticamente Byte Selecionado</value>
   </data>
   <data name="Menu_Options_CountSelected" xml:space="preserve">
-    <value>Compter les octets sélectionnés</value>
+    <value>Contar Bytes Selecionados</value>
   </data>
-
-  <!-- Menu Aide -->
   <data name="Menu_Help" xml:space="preserve">
-    <value>_Aide</value>
+    <value>_Ajuda</value>
   </data>
   <data name="Menu_Help_About" xml:space="preserve">
-    <value>_À propos</value>
+    <value>_Acerca de</value>
   </data>
   <data name="Menu_Help_KeyboardShortcuts" xml:space="preserve">
-    <value>_Raccourcis clavier</value>
+    <value>_Atalhos de Teclado</value>
   </data>
-
-  <!-- Menu Fichier (ajout de l'en-tête manquant) -->
   <data name="Menu_File" xml:space="preserve">
-    <value>_Fichier</value>
+    <value>_Ficheiro</value>
   </data>
-
-  <!-- ==== BARRE D'OUTILS ==== -->
   <data name="Toolbar_Open" xml:space="preserve">
-    <value>📂 Ouvrir</value>
+    <value>📂 Abrir</value>
   </data>
   <data name="Toolbar_Open_ToolTip" xml:space="preserve">
-    <value>Ouvrir un fichier (Ctrl+O)</value>
+    <value>Abrir ficheiro (Ctrl+O)</value>
   </data>
   <data name="Toolbar_Save" xml:space="preserve">
-    <value>💾 Enregistrer</value>
+    <value>💾 Guardar</value>
   </data>
   <data name="Toolbar_Save_ToolTip" xml:space="preserve">
-    <value>Enregistrer le fichier (Ctrl+S)</value>
+    <value>Guardar ficheiro (Ctrl+S)</value>
   </data>
   <data name="Toolbar_Undo" xml:space="preserve">
-    <value>↶ Annuler</value>
+    <value>↶ Desfazer</value>
   </data>
   <data name="Toolbar_Undo_ToolTip" xml:space="preserve">
-    <value>Annuler (Ctrl+Z)</value>
+    <value>Desfazer (Ctrl+Z)</value>
   </data>
   <data name="Toolbar_Redo" xml:space="preserve">
-    <value>↷ Rétablir</value>
+    <value>↷ Refazer</value>
   </data>
   <data name="Toolbar_Redo_ToolTip" xml:space="preserve">
-    <value>Rétablir (Ctrl+Y)</value>
+    <value>Refazer (Ctrl+Y)</value>
   </data>
   <data name="Toolbar_Insert" xml:space="preserve">
     <value>INS</value>
   </data>
   <data name="Toolbar_Insert_ToolTip" xml:space="preserve">
-    <value>Basculer mode Insertion/Écrasement (Touche Insertion)</value>
+    <value>Alternar modo Inserir/Substituir (tecla Insert)</value>
   </data>
   <data name="Toolbar_ReadOnly" xml:space="preserve">
-    <value>LEC</value>
+    <value>🔒 SA</value>
   </data>
   <data name="Toolbar_ReadOnly_ToolTip" xml:space="preserve">
-    <value>Basculer mode Lecture seule</value>
+    <value>Alternar modo Só de Leitura</value>
   </data>
-
-  <!-- ==== RUBAN - BARRE D'ACCÈS RAPIDE ==== -->
   <data name="QAT_Save_Label" xml:space="preserve">
-    <value>Enregistrer</value>
+    <value>Guardar</value>
   </data>
   <data name="QAT_Save_Tooltip" xml:space="preserve">
-    <value>Enregistrer (Ctrl+S)</value>
+    <value>Guardar (Ctrl+S)</value>
   </data>
   <data name="QAT_Undo_Label" xml:space="preserve">
-    <value>Annuler</value>
+    <value>Desfazer</value>
   </data>
   <data name="QAT_Undo_Tooltip" xml:space="preserve">
-    <value>Annuler (Ctrl+Z)</value>
+    <value>Desfazer (Ctrl+Z)</value>
   </data>
   <data name="QAT_Redo_Label" xml:space="preserve">
-    <value>Rétablir</value>
+    <value>Refazer</value>
   </data>
   <data name="QAT_Redo_Tooltip" xml:space="preserve">
-    <value>Rétablir (Ctrl+Y)</value>
+    <value>Refazer (Ctrl+Y)</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET ACCUEIL ==== -->
   <data name="Ribbon_Home_Tab" xml:space="preserve">
-    <value>Accueil</value>
+    <value>Início</value>
   </data>
   <data name="Ribbon_Home_Clipboard_Group" xml:space="preserve">
-    <value>Presse-papiers</value>
+    <value>Área de Transferência</value>
   </data>
   <data name="Ribbon_Home_Paste" xml:space="preserve">
-    <value>Coller</value>
+    <value>Colar</value>
   </data>
   <data name="Ribbon_Home_Cut" xml:space="preserve">
-    <value>Couper</value>
+    <value>Cortar</value>
   </data>
   <data name="Ribbon_Home_Copy" xml:space="preserve">
-    <value>Copier</value>
+    <value>Copiar</value>
   </data>
   <data name="Ribbon_Home_Edit_Group" xml:space="preserve">
-    <value>Édition</value>
+    <value>Editar</value>
   </data>
   <data name="Ribbon_Home_Undo" xml:space="preserve">
-    <value>Annuler</value>
+    <value>Desfazer</value>
   </data>
   <data name="Ribbon_Home_Redo" xml:space="preserve">
-    <value>Rétablir</value>
+    <value>Refazer</value>
   </data>
   <data name="Ribbon_Home_Selection_Group" xml:space="preserve">
-    <value>Sélection</value>
+    <value>Seleção</value>
   </data>
   <data name="Ribbon_Home_SelectAll" xml:space="preserve">
-    <value>Tout sélectionner</value>
+    <value>Selecionar Tudo</value>
   </data>
   <data name="Ribbon_Home_Clear" xml:space="preserve">
-    <value>Effacer</value>
+    <value>Limpar</value>
   </data>
   <data name="Ribbon_Home_Display_Group" xml:space="preserve">
-    <value>Affichage</value>
+    <value>Visualização</value>
   </data>
   <data name="Ribbon_Home_16BytesPerLine" xml:space="preserve">
-    <value>16 octets/ligne</value>
+    <value>16 Bytes/Linha</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET ÉDITION ==== -->
   <data name="Ribbon_Edit_Tab" xml:space="preserve">
-    <value>Édition</value>
+    <value>Editar</value>
   </data>
   <data name="Ribbon_Edit_Find_Group" xml:space="preserve">
-    <value>Rechercher</value>
+    <value>Localizar</value>
   </data>
   <data name="Ribbon_Edit_Find" xml:space="preserve">
-    <value>Rechercher</value>
+    <value>Localizar</value>
   </data>
   <data name="Ribbon_Edit_Navigate_Group" xml:space="preserve">
-    <value>Navigation</value>
+    <value>Navegar</value>
   </data>
   <data name="Ribbon_Edit_GoTo" xml:space="preserve">
-    <value>Atteindre</value>
+    <value>Ir Para</value>
   </data>
   <data name="Ribbon_Edit_Bookmarks" xml:space="preserve">
-    <value>Signets</value>
+    <value>Marcadores</value>
   </data>
   <data name="Ribbon_Edit_Modify_Group" xml:space="preserve">
-    <value>Modifier</value>
+    <value>Modificar</value>
   </data>
   <data name="Ribbon_Edit_InsertByte" xml:space="preserve">
-    <value>Insérer octet</value>
+    <value>Inserir Byte</value>
   </data>
   <data name="Ribbon_Edit_DeleteByte" xml:space="preserve">
-    <value>Supprimer octet</value>
+    <value>Eliminar Byte</value>
   </data>
   <data name="Ribbon_Edit_FillSelection" xml:space="preserve">
-    <value>Remplir sélection</value>
+    <value>Preencher Seleção</value>
   </data>
   <data name="Ribbon_Edit_Mode_Group" xml:space="preserve">
-    <value>Mode</value>
+    <value>Modo</value>
   </data>
   <data name="Ribbon_Edit_Overwrite" xml:space="preserve">
-    <value>Remplacer</value>
+    <value>Substituir</value>
   </data>
   <data name="Ribbon_Edit_Insert" xml:space="preserve">
-    <value>Insérer</value>
+    <value>Inserir</value>
   </data>
   <data name="Ribbon_Edit_ReadOnly" xml:space="preserve">
-    <value>Lecture seule</value>
+    <value>Só de Leitura</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET AFFICHAGE ==== -->
   <data name="Ribbon_View_Tab" xml:space="preserve">
-    <value>Affichage</value>
+    <value>Ver</value>
   </data>
   <data name="Ribbon_View_Zoom_Group" xml:space="preserve">
     <value>Zoom</value>
   </data>
   <data name="Ribbon_View_ZoomIn" xml:space="preserve">
-    <value>Agrandir</value>
+    <value>Ampliar</value>
   </data>
   <data name="Ribbon_View_ZoomOut" xml:space="preserve">
-    <value>Réduire</value>
+    <value>Reduzir</value>
   </data>
   <data name="Ribbon_View_Zoom100" xml:space="preserve">
     <value>100%</value>
   </data>
   <data name="Ribbon_View_DisplayOptions_Group" xml:space="preserve">
-    <value>Options d'affichage</value>
+    <value>Opções de Visualização</value>
   </data>
   <data name="Ribbon_View_ShowTooltip" xml:space="preserve">
-    <value>Afficher info-bulle</value>
+    <value>Mostrar Sugestão</value>
   </data>
   <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>Masquer supprimés</value>
+    <value>Ocultar Eliminados</value>
   </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
-    <value>Surligner résultats</value>
+    <value>Realçar Correspondências</value>
   </data>
   <data name="Ribbon_View_Themes_Group" xml:space="preserve">
-    <value>Thèmes</value>
+    <value>Temas</value>
   </data>
   <data name="Ribbon_View_SelectTheme" xml:space="preserve">
-    <value>Sélectionner thème</value>
+    <value>Selecionar Tema</value>
   </data>
   <data name="Ribbon_View_Theme_Office" xml:space="preserve">
-    <value>Office (Clair)</value>
+    <value>Office (Claro)</value>
   </data>
   <data name="Ribbon_View_Theme_DarkGlass" xml:space="preserve">
-    <value>Verre sombre</value>
+    <value>Vidro Escuro</value>
   </data>
   <data name="Ribbon_View_Theme_VisualStudio" xml:space="preserve">
     <value>Visual Studio</value>
   </data>
   <data name="Ribbon_View_Theme_Minimal" xml:space="preserve">
-    <value>Minimal</value>
+    <value>Minimalista</value>
   </data>
   <data name="Ribbon_View_Panels_Group" xml:space="preserve">
-    <value>Panneaux</value>
+    <value>Painéis</value>
   </data>
   <data name="Ribbon_View_SettingsPanel" xml:space="preserve">
-    <value>Panneau paramètres</value>
+    <value>Painel de Definições</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET DONNÉES ==== -->
   <data name="Ribbon_Data_Tab" xml:space="preserve">
-    <value>Données</value>
+    <value>Dados</value>
   </data>
   <data name="Ribbon_Data_Export_Group" xml:space="preserve">
-    <value>Exporter</value>
+    <value>Exportar</value>
   </data>
   <data name="Ribbon_Data_Export" xml:space="preserve">
-    <value>Exporter</value>
+    <value>Exportar</value>
   </data>
   <data name="Ribbon_Data_ExportAs" xml:space="preserve">
-    <value>Exporter sous</value>
+    <value>Exportar Como</value>
   </data>
   <data name="Ribbon_Data_ExportAs_CSharpByteArray" xml:space="preserve">
-    <value>Tableau d'octets C#</value>
+    <value>Matriz de Bytes C#</value>
   </data>
   <data name="Ribbon_Data_ExportAs_CCode" xml:space="preserve">
-    <value>Code C</value>
+    <value>Código C</value>
   </data>
   <data name="Ribbon_Data_ExportAs_JavaCode" xml:space="preserve">
-    <value>Code Java</value>
+    <value>Código Java</value>
   </data>
   <data name="Ribbon_Data_ExportAs_HexString" xml:space="preserve">
-    <value>Chaîne hexadécimale</value>
+    <value>Cadeia Hex</value>
   </data>
   <data name="Ribbon_Data_Compare_Group" xml:space="preserve">
-    <value>Comparer</value>
+    <value>Comparar</value>
   </data>
   <data name="Ribbon_Data_CompareFiles" xml:space="preserve">
-    <value>Comparer fichiers</value>
+    <value>Comparar Ficheiros</value>
   </data>
   <data name="Ribbon_Data_Statistics_Group" xml:space="preserve">
-    <value>Statistiques</value>
+    <value>Estatísticas</value>
   </data>
   <data name="Ribbon_Data_ByteCount" xml:space="preserve">
-    <value>Compte octets</value>
+    <value>Contagem de Bytes</value>
   </data>
   <data name="Ribbon_Data_Statistics" xml:space="preserve">
-    <value>Statistiques</value>
+    <value>Estatísticas</value>
   </data>
   <data name="Ribbon_Data_Entropy" xml:space="preserve">
-    <value>Entropie</value>
+    <value>Entropia</value>
   </data>
   <data name="Ribbon_Data_Advanced_Group" xml:space="preserve">
-    <value>Avancé</value>
+    <value>Avançado</value>
   </data>
   <data name="Ribbon_Data_Checksum" xml:space="preserve">
-    <value>Somme de contrôle</value>
+    <value>Soma de Verificação</value>
   </data>
   <data name="Ribbon_Data_Hash" xml:space="preserve">
-    <value>Hachage (MD5/SHA)</value>
+    <value>Hash (MD5/SHA)</value>
   </data>
-
-  <!-- ==== RUBAN - ONGLET OUTILS ==== -->
   <data name="Ribbon_Tools_Tab" xml:space="preserve">
-    <value>Outils</value>
+    <value>Ferramentas</value>
   </data>
   <data name="Ribbon_Tools_Options_Group" xml:space="preserve">
-    <value>Options</value>
+    <value>Opções</value>
   </data>
   <data name="Ribbon_Tools_Settings" xml:space="preserve">
-    <value>Paramètres</value>
+    <value>Definições</value>
   </data>
   <data name="Ribbon_Tools_Language_Group" xml:space="preserve">
-    <value>Langue</value>
+    <value>Idioma</value>
   </data>
   <data name="Ribbon_Tools_Language" xml:space="preserve">
-    <value>Langue</value>
+    <value>Idioma</value>
   </data>
   <data name="Ribbon_Tools_Language_Tooltip" xml:space="preserve">
-    <value>Modifier la langue de l'application</value>
+    <value>Alterar idioma de visualização da aplicação</value>
   </data>
   <data name="Ribbon_Tools_Help_Group" xml:space="preserve">
-    <value>Aide</value>
+    <value>Ajuda</value>
   </data>
   <data name="Ribbon_Tools_Documentation" xml:space="preserve">
-    <value>Documentation</value>
+    <value>Documentação</value>
   </data>
   <data name="Ribbon_Tools_About" xml:space="preserve">
-    <value>À propos</value>
+    <value>Acerca de</value>
   </data>
-
-  <!-- ==== DIALOGUE OPTIONS ==== -->
   <data name="Options_Title" xml:space="preserve">
-    <value>Options</value>
+    <value>Opções</value>
   </data>
   <data name="Options_Header_Title" xml:space="preserve">
-    <value>Options de l'application</value>
+    <value>Opções da Aplicação</value>
   </data>
   <data name="Options_Header_Subtitle" xml:space="preserve">
-    <value>Configurez vos préférences de l'éditeur hexadécimal</value>
+    <value>Configure as suas preferências do editor hexadecimal</value>
+  </data>
+  <data name="Options_LanguageTab" xml:space="preserve">
+    <value>Idioma</value>
   </data>
   <data name="Options_Tab_Language" xml:space="preserve">
-    <value>Langue</value>
+    <value>Idioma</value>
+  </data>
+  <data name="Options_AppearanceTab" xml:space="preserve">
+    <value>Aparência</value>
   </data>
   <data name="Options_Tab_Appearance" xml:space="preserve">
-    <value>Apparence</value>
+    <value>Aparência</value>
+  </data>
+  <data name="Options_ClipboardTab" xml:space="preserve">
+    <value>Área de Transferência</value>
+  </data>
+  <data name="Options_CopyMode_Instructions" xml:space="preserve">
+    <value>Selecione o formato predefinido para copiar dados para a área de transferência:</value>
+  </data>
+  <data name="Options_CopyMode_CurrentLabel" xml:space="preserve">
+    <value>FORMATO DE CÓPIA ATUAL</value>
+  </data>
+  <data name="Options_CopyMode_ColumnIcon" xml:space="preserve">
+    <value>Ícone</value>
+  </data>
+  <data name="Options_CopyMode_ColumnName" xml:space="preserve">
+    <value>Formato</value>
+  </data>
+  <data name="Options_CopyMode_ColumnDescription" xml:space="preserve">
+    <value>Descrição</value>
+  </data>
+  <data name="Options_CopyMode_InstantInfo" xml:space="preserve">
+    <value>As alterações têm efeito imediato ao selecionar um formato</value>
+  </data>
+  <data name="Options_PerformanceTab" xml:space="preserve">
+    <value>Desempenho</value>
   </data>
   <data name="Options_Tab_Performance" xml:space="preserve">
-    <value>Performance</value>
+    <value>Desempenho</value>
   </data>
   <data name="Options_Language_Instructions" xml:space="preserve">
-    <value>Sélectionnez votre langue d'affichage préférée :</value>
+    <value>Selecione o seu idioma de visualização preferido:</value>
+  </data>
+  <data name="Options_Language_CurrentLabel" xml:space="preserve">
+    <value>Idioma Atual</value>
   </data>
   <data name="Options_Language_CurrentLanguage" xml:space="preserve">
-    <value>Langue actuelle</value>
+    <value>Idioma Atual</value>
+  </data>
+  <data name="Options_Language_ColumnLanguage" xml:space="preserve">
+    <value>Idioma</value>
   </data>
   <data name="Options_Language_ListView_Header_Language" xml:space="preserve">
-    <value>Langue</value>
+    <value>Idioma</value>
+  </data>
+  <data name="Options_Language_ColumnNativeName" xml:space="preserve">
+    <value>Nome Nativo</value>
   </data>
   <data name="Options_Language_ListView_Header_NativeName" xml:space="preserve">
-    <value>Nom natif</value>
+    <value>Nome Nativo</value>
+  </data>
+  <data name="Options_Language_ColumnCode" xml:space="preserve">
+    <value>Código</value>
   </data>
   <data name="Options_Language_ListView_Header_Code" xml:space="preserve">
-    <value>Code</value>
+    <value>Código</value>
+  </data>
+  <data name="Options_Language_RestartWarning" xml:space="preserve">
+    <value>As alterações de idioma aplicam-se instantaneamente - não é necessário reiniciar! 🚀</value>
   </data>
   <data name="Options_Language_Warning" xml:space="preserve">
-    <value>Veuillez redémarrer l'application après avoir changé la langue.</value>
+    <value>Por favor, reinicie a aplicação após alterar o idioma.</value>
+  </data>
+  <data name="Options_Theme_Instructions" xml:space="preserve">
+    <value>Selecione um tema para alterar instantaneamente a aparência da aplicação</value>
+  </data>
+  <data name="Options_Theme_CurrentLabel" xml:space="preserve">
+    <value>Tema Atual</value>
+  </data>
+  <data name="Options_Theme_ColumnIcon" xml:space="preserve">
+    <value>Ícone</value>
+  </data>
+  <data name="Options_Theme_ColumnName" xml:space="preserve">
+    <value>Nome</value>
+  </data>
+  <data name="Options_Theme_ColumnDescription" xml:space="preserve">
+    <value>Descrição</value>
+  </data>
+  <data name="Options_Theme_InstantInfo" xml:space="preserve">
+    <value>As alterações de tema aplicam-se instantaneamente - não é necessário reiniciar! 🎨</value>
   </data>
   <data name="Options_ComingSoon" xml:space="preserve">
-    <value>Bientôt disponible...</value>
+    <value>Brevemente...</value>
   </data>
   <data name="Options_Button_OK" xml:space="preserve">
     <value>OK</value>
   </data>
   <data name="Options_Button_Cancel" xml:space="preserve">
-    <value>Annuler</value>
+    <value>Cancelar</value>
   </data>
-
-  <!-- ==== PANNEAU PARAMÈTRES ==== -->
+  <data name="Settings_Title" xml:space="preserve">
+    <value>DEFINIÇÕES</value>
+  </data>
   <data name="Settings_Header" xml:space="preserve">
-    <value>PARAMÈTRES</value>
+    <value>DEFINIÇÕES</value>
+  </data>
+  <data name="Settings_Theme_Title" xml:space="preserve">
+    <value>🎨 Tema</value>
   </data>
   <data name="Settings_Theme_Header" xml:space="preserve">
-    <value>🎨 Thème</value>
+    <value>🎨 Tema</value>
+  </data>
+  <data name="Settings_Language_Title" xml:space="preserve">
+    <value>🌐 Idioma</value>
   </data>
   <data name="Settings_Language_Header" xml:space="preserve">
-    <value>🌐 Langue</value>
+    <value>🌐 Idioma</value>
+  </data>
+  <data name="Settings_Search_Title" xml:space="preserve">
+    <value>🔍 Opções de Pesquisa</value>
   </data>
   <data name="Settings_SearchOptions_Header" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
+    <value>🔍 Opções de Pesquisa</value>
+  </data>
+  <data name="Settings_Search_EnableParallel" xml:space="preserve">
+    <value>Ativar pesquisa paralela (mais rápido para ficheiros grandes)</value>
   </data>
   <data name="Settings_SearchOptions_ParallelSearch" xml:space="preserve">
-    <value>Activer la recherche parallèle (plus rapide pour les gros fichiers)</value>
+    <value>Ativar pesquisa paralela (mais rápido para ficheiros grandes)</value>
+  </data>
+  <data name="Settings_Search_UseWildcard" xml:space="preserve">
+    <value>Usar pesquisa com caracteres universais (notação ??)</value>
   </data>
   <data name="Settings_SearchOptions_WildcardSearch" xml:space="preserve">
-    <value>Utiliser la recherche avec caractères génériques (notation ??)</value>
+    <value>Usar pesquisa com caracteres universais (notação ??)</value>
+  </data>
+  <data name="Settings_Search_HighlightMatches" xml:space="preserve">
+    <value>Realçar todas as correspondências</value>
   </data>
   <data name="Settings_SearchOptions_HighlightMatches" xml:space="preserve">
-    <value>Surligner tous les résultats</value>
+    <value>Realçar todas as correspondências</value>
+  </data>
+  <data name="Settings_Search_ResultLimit" xml:space="preserve">
+    <value>Limite de resultados de pesquisa:</value>
   </data>
   <data name="Settings_SearchOptions_ResultLimit" xml:space="preserve">
-    <value>Limite de résultats de recherche :</value>
+    <value>Limite de resultados de pesquisa:</value>
+  </data>
+  <data name="Settings_Display_Title" xml:space="preserve">
+    <value>📺 Opções de Visualização</value>
   </data>
   <data name="Settings_DisplayOptions_Header" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
+    <value>📺 Opções de Visualização</value>
+  </data>
+  <data name="Settings_Display_ShowLineNumbers" xml:space="preserve">
+    <value>Mostrar números de linha</value>
   </data>
   <data name="Settings_DisplayOptions_LineNumbers" xml:space="preserve">
-    <value>Afficher les numéros de ligne</value>
+    <value>Mostrar números de linha</value>
+  </data>
+  <data name="Settings_Display_ShowScrollMarkers" xml:space="preserve">
+    <value>Mostrar marcadores de deslocamento</value>
   </data>
   <data name="Settings_DisplayOptions_ScrollMarkers" xml:space="preserve">
-    <value>Afficher les marqueurs de défilement</value>
+    <value>Mostrar marcadores de deslocamento</value>
+  </data>
+  <data name="Settings_Display_ShowStatusBar" xml:space="preserve">
+    <value>Mostrar barra de estado</value>
   </data>
   <data name="Settings_DisplayOptions_StatusBar" xml:space="preserve">
-    <value>Afficher la barre d'état</value>
+    <value>Mostrar barra de estado</value>
+  </data>
+  <data name="Settings_Display_BytesPerLine" xml:space="preserve">
+    <value>Bytes por linha:</value>
   </data>
   <data name="Settings_DisplayOptions_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne :</value>
+    <value>Bytes por linha:</value>
+  </data>
+  <data name="Settings_Performance_Title" xml:space="preserve">
+    <value>⚡ Desempenho</value>
   </data>
   <data name="Settings_Performance_Header" xml:space="preserve">
-    <value>⚡ Performance</value>
+    <value>⚡ Desempenho</value>
   </data>
   <data name="Settings_Performance_V2Active" xml:space="preserve">
-    <value>MOTEUR V2 ACTIF</value>
+    <value>MOTOR V2 ATIVO</value>
+  </data>
+  <data name="Settings_Performance_Feature1" xml:space="preserve">
+    <value>• Algoritmo Boyer-Moore-Horspool</value>
   </data>
   <data name="Settings_Performance_BoyerMoore" xml:space="preserve">
-    <value>• Algorithme de Boyer-Moore-Horspool</value>
+    <value>• Algoritmo Boyer-Moore-Horspool</value>
+  </data>
+  <data name="Settings_Performance_Feature2" xml:space="preserve">
+    <value>• Suporte de processamento paralelo</value>
   </data>
   <data name="Settings_Performance_Parallel" xml:space="preserve">
-    <value>• Support du traitement parallèle</value>
+    <value>• Suporte de processamento paralelo</value>
+  </data>
+  <data name="Settings_Performance_Feature3" xml:space="preserve">
+    <value>• Até 99% mais rápido que V1</value>
   </data>
   <data name="Settings_Performance_Faster" xml:space="preserve">
-    <value>• Jusqu'à 99% plus rapide que V1</value>
+    <value>• Até 99% mais rápido que V1</value>
   </data>
   <data name="Settings_Button_ResetDefaults" xml:space="preserve">
-    <value>Réinitialiser par défaut</value>
+    <value>Repor Predefinições</value>
+  </data>
+  <data name="Settings_Button_SaveSettings" xml:space="preserve">
+    <value>Guardar Definições</value>
   </data>
   <data name="Settings_Button_Save" xml:space="preserve">
-    <value>Enregistrer paramètres</value>
+    <value>Guardar Definições</value>
   </data>
-
-  <!-- ==== PARAMÈTRES ÉDITEUR HEX ==== -->
+  <data name="HexSettings_Title" xml:space="preserve">
+    <value>DEFINIÇÕES DO EDITOR HEX</value>
+  </data>
   <data name="HexSettings_Header" xml:space="preserve">
-    <value>PARAMÈTRES DE L'ÉDITEUR HEXADÉCIMAL</value>
+    <value>DEFINIÇÕES DO EDITOR HEX</value>
+  </data>
+  <data name="HexSettings_Display_Title" xml:space="preserve">
+    <value>📺 Opções de Visualização</value>
   </data>
   <data name="HexSettings_Display_Header" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
+    <value>📺 Opções de Visualização</value>
+  </data>
+  <data name="HexSettings_Display_ShowLineNumbers" xml:space="preserve">
+    <value>Mostrar Números de Linha (marcador de posição)</value>
+  </data>
+  <data name="HexSettings_Display_ShowLineNumbers_ToolTip" xml:space="preserve">
+    <value>Esta funcionalidade ainda não está disponível em V2</value>
   </data>
   <data name="HexSettings_Display_LineNumbers" xml:space="preserve">
-    <value>Afficher numéros de ligne (temporaire)</value>
+    <value>Mostrar Números de Linha (marcador de posição)</value>
   </data>
   <data name="HexSettings_Display_LineNumbers_Tooltip" xml:space="preserve">
-    <value>Cette fonctionnalité n'est pas encore disponible dans V2</value>
+    <value>Esta funcionalidade ainda não está disponível em V2</value>
+  </data>
+  <data name="HexSettings_Display_ShowByteTooltip" xml:space="preserve">
+    <value>Mostrar Sugestão de Byte</value>
   </data>
   <data name="HexSettings_Display_ByteTooltip" xml:space="preserve">
-    <value>Afficher info-bulle d'octet</value>
+    <value>Mostrar Sugestão de Byte</value>
   </data>
   <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Masquer les octets supprimés</value>
+    <value>Ocultar Bytes Eliminados</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne :</value>
+    <value>Bytes por Linha:</value>
   </data>
   <data name="HexSettings_Display_ZoomScale" xml:space="preserve">
-    <value>Échelle de zoom :</value>
+    <value>Escala de Zoom:</value>
+  </data>
+  <data name="HexSettings_Editing_Title" xml:space="preserve">
+    <value>✏️ Opções de Edição</value>
   </data>
   <data name="HexSettings_Editing_Header" xml:space="preserve">
-    <value>✏️ Options d'édition</value>
+    <value>✏️ Opções de Edição</value>
   </data>
   <data name="HexSettings_Editing_ReadOnly" xml:space="preserve">
-    <value>Mode lecture seule</value>
+    <value>Modo Só de Leitura</value>
+  </data>
+  <data name="HexSettings_Editing_AllowInsertAnywhere" xml:space="preserve">
+    <value>Permitir Inserir em Qualquer Lugar</value>
   </data>
   <data name="HexSettings_Editing_InsertAnywhere" xml:space="preserve">
-    <value>Autoriser insertion n'importe où</value>
+    <value>Permitir Inserir em Qualquer Lugar</value>
+  </data>
+  <data name="HexSettings_Editing_AllowDeleteByte" xml:space="preserve">
+    <value>Permitir Eliminar Byte</value>
   </data>
   <data name="HexSettings_Editing_DeleteByte" xml:space="preserve">
-    <value>Autoriser suppression d'octet</value>
+    <value>Permitir Eliminar Byte</value>
+  </data>
+  <data name="HexSettings_Editing_AllowExtendFile" xml:space="preserve">
+    <value>Permitir Expandir Ficheiro</value>
   </data>
   <data name="HexSettings_Editing_ExtendFile" xml:space="preserve">
-    <value>Autoriser extension du fichier</value>
+    <value>Permitir Expandir Ficheiro</value>
+  </data>
+  <data name="HexSettings_Editing_AppendNeedsConfirmation" xml:space="preserve">
+    <value>Anexar Requer Confirmação</value>
   </data>
   <data name="HexSettings_Editing_AppendConfirmation" xml:space="preserve">
-    <value>Ajout nécessite confirmation</value>
+    <value>Anexar Requer Confirmação</value>
   </data>
   <data name="HexSettings_Editing_EditMode" xml:space="preserve">
-    <value>Mode d'édition :</value>
+    <value>Modo de Edição:</value>
   </data>
   <data name="HexSettings_Editing_Overwrite" xml:space="preserve">
-    <value>Remplacer</value>
+    <value>Substituir</value>
   </data>
   <data name="HexSettings_Editing_Insert" xml:space="preserve">
-    <value>Insérer</value>
+    <value>Inserir</value>
   </data>
   <data name="HexSettings_Editing_CaretMode" xml:space="preserve">
-    <value>Mode curseur :</value>
+    <value>Modo do Cursor:</value>
+  </data>
+  <data name="HexSettings_Clipboard_Title" xml:space="preserve">
+    <value>📋 Opções da Área de Transferência</value>
   </data>
   <data name="HexSettings_Clipboard_Header" xml:space="preserve">
-    <value>📋 Options presse-papiers</value>
+    <value>📋 Opções da Área de Transferência</value>
   </data>
   <data name="HexSettings_Clipboard_DefaultCopyMode" xml:space="preserve">
-    <value>Mode de copie par défaut :</value>
+    <value>Modo de Cópia Predefinido:</value>
   </data>
   <data name="HexSettings_Clipboard_HexString" xml:space="preserve">
-    <value>Chaîne hexadécimale</value>
+    <value>Cadeia Hex</value>
   </data>
   <data name="HexSettings_Clipboard_ByteArray" xml:space="preserve">
-    <value>Tableau d'octets</value>
+    <value>Matriz de Bytes</value>
   </data>
   <data name="HexSettings_Clipboard_CSharpCode" xml:space="preserve">
-    <value>Code C#</value>
+    <value>Código C#</value>
   </data>
   <data name="HexSettings_Clipboard_VBCode" xml:space="preserve">
-    <value>Code VB</value>
+    <value>Código VB</value>
   </data>
   <data name="HexSettings_Clipboard_CCode" xml:space="preserve">
-    <value>Code C</value>
+    <value>Código C</value>
   </data>
   <data name="HexSettings_Clipboard_JavaCode" xml:space="preserve">
-    <value>Code Java</value>
+    <value>Código Java</value>
+  </data>
+  <data name="HexSettings_DragDrop_Title" xml:space="preserve">
+    <value>📎 Opções de Arrastar e Largar</value>
   </data>
   <data name="HexSettings_DragDrop_Header" xml:space="preserve">
-    <value>📎 Options glisser-déposer</value>
+    <value>📎 Opções de Arrastar e Largar</value>
+  </data>
+  <data name="HexSettings_DragDrop_AllowFileDrop" xml:space="preserve">
+    <value>Permitir Largar Ficheiros</value>
   </data>
   <data name="HexSettings_DragDrop_FileDrop" xml:space="preserve">
-    <value>Autoriser dépôt de fichier</value>
+    <value>Permitir Largar Ficheiros</value>
+  </data>
+  <data name="HexSettings_DragDrop_FileDropConfirmation" xml:space="preserve">
+    <value>Confirmação ao Largar Ficheiro</value>
   </data>
   <data name="HexSettings_DragDrop_FileConfirmation" xml:space="preserve">
-    <value>Confirmation de dépôt de fichier</value>
+    <value>Confirmação ao Largar Ficheiro</value>
+  </data>
+  <data name="HexSettings_DragDrop_AllowTextDrop" xml:space="preserve">
+    <value>Permitir Largar Texto</value>
   </data>
   <data name="HexSettings_DragDrop_TextDrop" xml:space="preserve">
-    <value>Autoriser dépôt de texte</value>
+    <value>Permitir Largar Texto</value>
+  </data>
+  <data name="HexSettings_Highlight_Title" xml:space="preserve">
+    <value>🎨 Realce e Seleção</value>
   </data>
   <data name="HexSettings_Highlight_Header" xml:space="preserve">
-    <value>🎨 Surlignage &amp; Sélection</value>
+    <value>🎨 Realce e Seleção</value>
   </data>
   <data name="HexSettings_Highlight_AutoHighlight" xml:space="preserve">
-    <value>Surligner automatiquement l'octet sélectionné</value>
+    <value>Realçar Automaticamente Byte Selecionado</value>
+  </data>
+  <data name="HexSettings_Highlight_AutoSelectDoubleClick" xml:space="preserve">
+    <value>Selecionar Automaticamente Byte Igual (Duplo Clique)</value>
   </data>
   <data name="HexSettings_Highlight_AutoSelect" xml:space="preserve">
-    <value>Sélection automatique du même octet (double-clic)</value>
+    <value>Selecionar Automaticamente Byte Igual (Duplo Clique)</value>
+  </data>
+  <data name="HexSettings_Highlight_AllowMarkerClick" xml:space="preserve">
+    <value>Permitir Navegação por Clique no Marcador</value>
   </data>
   <data name="HexSettings_Highlight_MarkerNavigation" xml:space="preserve">
-    <value>Autoriser navigation par clic sur marqueur</value>
+    <value>Permitir Navegação por Clique no Marcador</value>
+  </data>
+  <data name="HexSettings_Highlight_AutoHighlightColor" xml:space="preserve">
+    <value>Cor de Realce Automático:</value>
   </data>
   <data name="HexSettings_Highlight_Color" xml:space="preserve">
-    <value>Couleur de surlignage automatique :</value>
+    <value>Cor de Realce Automático:</value>
+  </data>
+  <data name="HexSettings_Search_Title" xml:space="preserve">
+    <value>🔍 Opções de Pesquisa</value>
   </data>
   <data name="HexSettings_Search_Header" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
+    <value>🔍 Opções de Pesquisa</value>
+  </data>
+  <data name="HexSettings_Search_EnableParallel" xml:space="preserve">
+    <value>Ativar Pesquisa Paralela</value>
   </data>
   <data name="HexSettings_Search_ParallelSearch" xml:space="preserve">
-    <value>Activer recherche parallèle</value>
+    <value>Ativar Pesquisa Paralela</value>
+  </data>
+  <data name="HexSettings_Search_UseWildcard" xml:space="preserve">
+    <value>Usar Pesquisa com Caracteres Universais (??)</value>
   </data>
   <data name="HexSettings_Search_WildcardSearch" xml:space="preserve">
-    <value>Utiliser recherche avec caractères génériques (??)</value>
+    <value>Usar Pesquisa com Caracteres Universais (??)</value>
   </data>
   <data name="HexSettings_Search_HighlightMatches" xml:space="preserve">
-    <value>Surligner tous les résultats</value>
+    <value>Realçar Todas as Correspondências</value>
   </data>
   <data name="HexSettings_Search_ResultLimit" xml:space="preserve">
-    <value>Limite de résultats de recherche :</value>
+    <value>Limite de Resultados de Pesquisa:</value>
+  </data>
+  <data name="HexSettings_Statistics_Title" xml:space="preserve">
+    <value>📊 Estatísticas</value>
   </data>
   <data name="HexSettings_Statistics_Header" xml:space="preserve">
-    <value>📊 Statistiques</value>
+    <value>📊 Estatísticas</value>
+  </data>
+  <data name="HexSettings_Statistics_AllowByteCount" xml:space="preserve">
+    <value>Permitir Contagem de Bytes</value>
   </data>
   <data name="HexSettings_Statistics_ByteCount" xml:space="preserve">
-    <value>Autoriser compte d'octets</value>
+    <value>Permitir Contagem de Bytes</value>
+  </data>
+  <data name="HexSettings_Advanced_Title" xml:space="preserve">
+    <value>Opções Avançadas</value>
   </data>
   <data name="HexSettings_Advanced_Header" xml:space="preserve">
-    <value>Options avancées</value>
+    <value>Opções Avançadas</value>
+  </data>
+  <data name="HexSettings_Advanced_ByteShiftLeft" xml:space="preserve">
+    <value>Deslocamento de Byte à Esquerda:</value>
   </data>
   <data name="HexSettings_Advanced_ByteShift" xml:space="preserve">
-    <value>Décalage d'octet à gauche :</value>
+    <value>Deslocamento de Byte à Esquerda:</value>
   </data>
   <data name="HexSettings_Advanced_SaveState" xml:space="preserve">
-    <value>Enregistrer l'état actuel</value>
+    <value>Guardar Estado Atual</value>
   </data>
   <data name="HexSettings_Advanced_LoadState" xml:space="preserve">
-    <value>Charger l'état enregistré</value>
+    <value>Carregar Estado Guardado</value>
+  </data>
+  <data name="HexSettings_ResetButton" xml:space="preserve">
+    <value>🔄 Repor Todas as Predefinições</value>
   </data>
   <data name="HexSettings_Button_Reset" xml:space="preserve">
-    <value>🔄 Tout réinitialiser par défaut</value>
+    <value>🔄 Repor Todas as Predefinições</value>
   </data>
-
-  <!-- ==== CENTRE DE COMMANDE RECHERCHE ==== -->
   <data name="Search_Mode_Text" xml:space="preserve">
-    <value>Texte</value>
+    <value>Texto</value>
   </data>
   <data name="Search_Mode_Hex" xml:space="preserve">
-    <value>Hexadécimal</value>
+    <value>Hex</value>
   </data>
   <data name="Search_Mode_Regex" xml:space="preserve">
     <value>Regex</value>
   </data>
   <data name="Search_Clear_ToolTip" xml:space="preserve">
-    <value>Effacer</value>
+    <value>Limpar</value>
   </data>
   <data name="Search_Button_Clear" xml:space="preserve">
-    <value>Effacer</value>
+    <value>Limpar</value>
   </data>
   <data name="Search_Previous_ToolTip" xml:space="preserve">
-    <value>Précédent (Shift+F3)</value>
+    <value>Anterior (Shift+F3)</value>
   </data>
   <data name="Search_Button_Previous" xml:space="preserve">
-    <value>Précédent (Shift+F3)</value>
+    <value>Anterior (Shift+F3)</value>
   </data>
   <data name="Search_Next_ToolTip" xml:space="preserve">
-    <value>Suivant (F3)</value>
+    <value>Seguinte (F3)</value>
   </data>
   <data name="Search_Button_Next" xml:space="preserve">
-    <value>Suivant (F3)</value>
+    <value>Seguinte (F3)</value>
   </data>
   <data name="Search_FindAll" xml:space="preserve">
-    <value>Tout rechercher</value>
+    <value>Localizar Tudo</value>
   </data>
   <data name="Search_Button_FindAll" xml:space="preserve">
-    <value>Tout rechercher</value>
+    <value>Localizar Tudo</value>
   </data>
   <data name="Search_FindAll_ToolTip" xml:space="preserve">
-    <value>Rechercher toutes les occurrences</value>
+    <value>Localizar Todas as Ocorrências</value>
   </data>
   <data name="Search_Button_FindAll_Tooltip" xml:space="preserve">
-    <value>Rechercher toutes les occurrences</value>
+    <value>Localizar Todas as Ocorrências</value>
   </data>
   <data name="Search_Matches" xml:space="preserve">
-    <value>correspondances</value>
+    <value>correspondências</value>
   </data>
   <data name="Search_Results_Matches" xml:space="preserve">
-    <value>correspondances</value>
+    <value>correspondências</value>
   </data>
   <data name="Search_Results_V2Badge" xml:space="preserve">
     <value>V2</value>
   </data>
-
-  <!-- ==== MESSAGES ==== -->
   <data name="Message_FileOpenError" xml:space="preserve">
-    <value>Échec de l'ouverture du fichier : {0}</value>
+    <value>Falha ao abrir ficheiro: {0}</value>
   </data>
   <data name="Message_FileSaveError" xml:space="preserve">
-    <value>Échec de l'enregistrement du fichier : {0}</value>
+    <value>Falha ao guardar ficheiro: {0}</value>
   </data>
   <data name="Message_ErrorTitle" xml:space="preserve">
-    <value>Erreur</value>
+    <value>Erro</value>
   </data>
   <data name="Message_LanguageUnchanged_Title" xml:space="preserve">
-    <value>Langue inchangée</value>
+    <value>Idioma Inalterado</value>
   </data>
   <data name="Message_LanguageUnchanged_Text" xml:space="preserve">
-    <value>La langue est déjà définie sur {0}.</value>
+    <value>O idioma já está definido como {0}.</value>
   </data>
   <data name="Message_LanguageChanged_Title" xml:space="preserve">
-    <value>Langue modifiée</value>
+    <value>Idioma Alterado</value>
   </data>
   <data name="Message_LanguageChanged_Text" xml:space="preserve">
-    <value>Langue changée avec succès en {0} !</value>
+    <value>Idioma alterado com sucesso para {0}!</value>
   </data>
   <data name="Message_NoLanguageSelected_Title" xml:space="preserve">
-    <value>Aucune langue sélectionnée</value>
+    <value>Nenhum Idioma Selecionado</value>
   </data>
   <data name="Message_NoLanguageSelected_Text" xml:space="preserve">
-    <value>Veuillez sélectionner une langue avant de cliquer sur OK.</value>
+    <value>Por favor, selecione um idioma antes de clicar em OK.</value>
   </data>
-
-  <!-- ==== PARAMÈTRES ÉDITEUR HEX ==== -->
-  <data name="HexSettings_Title" xml:space="preserve">
-    <value>PARAMÈTRES DE L'ÉDITEUR HEX</value>
-  </data>
-  <data name="HexSettings_Display_Title" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
-  </data>
-  <data name="HexSettings_Display_ShowLineNumbers" xml:space="preserve">
-    <value>Afficher les numéros de ligne (placeholder)</value>
-  </data>
-  <data name="HexSettings_Display_ShowLineNumbers_ToolTip" xml:space="preserve">
-    <value>Cette fonctionnalité n'est pas encore disponible dans V2</value>
-  </data>
-  <data name="HexSettings_Display_ShowByteTooltip" xml:space="preserve">
-    <value>Afficher l'info-bulle d'octet</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Masquer les octets supprimés</value>
-  </data>
-  <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne :</value>
-  </data>
-  <data name="HexSettings_Display_ZoomScale" xml:space="preserve">
-    <value>Échelle de zoom :</value>
-  </data>
-  <data name="HexSettings_Editing_Title" xml:space="preserve">
-    <value>✏️ Options d'édition</value>
-  </data>
-  <data name="HexSettings_Editing_ReadOnly" xml:space="preserve">
-    <value>Mode lecture seule</value>
-  </data>
-  <data name="HexSettings_Editing_AllowInsertAnywhere" xml:space="preserve">
-    <value>Permettre l'insertion n'importe où</value>
-  </data>
-  <data name="HexSettings_Editing_AllowDeleteByte" xml:space="preserve">
-    <value>Permettre la suppression d'octet</value>
-  </data>
-  <data name="HexSettings_Editing_AllowExtendFile" xml:space="preserve">
-    <value>Permettre l'extension du fichier</value>
-  </data>
-  <data name="HexSettings_Editing_AppendNeedsConfirmation" xml:space="preserve">
-    <value>L'ajout nécessite une confirmation</value>
-  </data>
-  <data name="HexSettings_Editing_EditMode" xml:space="preserve">
-    <value>Mode d'édition :</value>
-  </data>
-  <data name="HexSettings_Editing_Overwrite" xml:space="preserve">
-    <value>Écraser</value>
-  </data>
-  <data name="HexSettings_Editing_Insert" xml:space="preserve">
-    <value>Insérer</value>
-  </data>
-  <data name="HexSettings_Editing_CaretMode" xml:space="preserve">
-    <value>Mode curseur :</value>
-  </data>
-  <data name="HexSettings_Clipboard_Title" xml:space="preserve">
-    <value>📋 Options du presse-papiers</value>
-  </data>
-  <data name="HexSettings_Clipboard_DefaultCopyMode" xml:space="preserve">
-    <value>Mode de copie par défaut :</value>
-  </data>
-  <data name="HexSettings_Clipboard_HexString" xml:space="preserve">
-    <value>Chaîne hexadécimale</value>
-  </data>
-  <data name="HexSettings_Clipboard_ByteArray" xml:space="preserve">
-    <value>Tableau d'octets</value>
-  </data>
-  <data name="HexSettings_Clipboard_CSharpCode" xml:space="preserve">
-    <value>Code C#</value>
-  </data>
-  <data name="HexSettings_Clipboard_VBCode" xml:space="preserve">
-    <value>Code VB</value>
-  </data>
-  <data name="HexSettings_Clipboard_CCode" xml:space="preserve">
-    <value>Code C</value>
-  </data>
-  <data name="HexSettings_Clipboard_JavaCode" xml:space="preserve">
-    <value>Code Java</value>
-  </data>
-  <data name="HexSettings_DragDrop_Title" xml:space="preserve">
-    <value>📎 Options de glisser-déposer</value>
-  </data>
-  <data name="HexSettings_DragDrop_AllowFileDrop" xml:space="preserve">
-    <value>Permettre le dépôt de fichier</value>
-  </data>
-  <data name="HexSettings_DragDrop_FileDropConfirmation" xml:space="preserve">
-    <value>Confirmation du dépôt de fichier</value>
-  </data>
-  <data name="HexSettings_DragDrop_AllowTextDrop" xml:space="preserve">
-    <value>Permettre le dépôt de texte</value>
-  </data>
-  <data name="HexSettings_Highlight_Title" xml:space="preserve">
-    <value>🎨 Surbrillance et sélection</value>
-  </data>
-  <data name="HexSettings_Highlight_AutoHighlight" xml:space="preserve">
-    <value>Surligner automatiquement l'octet sélectionné</value>
-  </data>
-  <data name="HexSettings_Highlight_AutoSelectDoubleClick" xml:space="preserve">
-    <value>Sélectionner automatiquement le même octet (double-clic)</value>
-  </data>
-  <data name="HexSettings_Highlight_AllowMarkerClick" xml:space="preserve">
-    <value>Permettre la navigation par clic sur marqueur</value>
-  </data>
-  <data name="HexSettings_Highlight_AutoHighlightColor" xml:space="preserve">
-    <value>Couleur de surbrillance automatique :</value>
-  </data>
-  <data name="HexSettings_Search_Title" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
-  </data>
-  <data name="HexSettings_Search_EnableParallel" xml:space="preserve">
-    <value>Activer la recherche parallèle</value>
-  </data>
-  <data name="HexSettings_Search_UseWildcard" xml:space="preserve">
-    <value>Utiliser la recherche par joker (??)</value>
-  </data>
-  <data name="HexSettings_Search_HighlightMatches" xml:space="preserve">
-    <value>Surligner toutes les correspondances</value>
-  </data>
-  <data name="HexSettings_Search_ResultLimit" xml:space="preserve">
-    <value>Limite de résultats de recherche :</value>
-  </data>
-  <data name="HexSettings_Statistics_Title" xml:space="preserve">
-    <value>📊 Statistiques</value>
-  </data>
-  <data name="HexSettings_Statistics_AllowByteCount" xml:space="preserve">
-    <value>Permettre le comptage d'octets</value>
-  </data>
-  <data name="HexSettings_Advanced_Title" xml:space="preserve">
-    <value>Options avancées</value>
-  </data>
-  <data name="HexSettings_Advanced_ByteShiftLeft" xml:space="preserve">
-    <value>Décalage d'octet à gauche :</value>
-  </data>
-  <data name="HexSettings_Advanced_SaveState" xml:space="preserve">
-    <value>Enregistrer l'état actuel</value>
-  </data>
-  <data name="HexSettings_Advanced_LoadState" xml:space="preserve">
-    <value>Charger l'état enregistré</value>
-  </data>
-  <data name="HexSettings_ResetButton" xml:space="preserve">
-    <value>🔄 Réinitialiser tout par défaut</value>
-  </data>
-
-  <!-- ==== PANNEAU DES PARAMÈTRES ==== -->
-  <data name="Settings_Title" xml:space="preserve">
-    <value>PARAMÈTRES</value>
-  </data>
-  <data name="Settings_Theme_Title" xml:space="preserve">
-    <value>🎨 Thème</value>
-  </data>
-  <data name="Settings_Language_Title" xml:space="preserve">
-    <value>🌐 Langue</value>
-  </data>
-  <data name="Settings_Search_Title" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
-  </data>
-  <data name="Settings_Search_EnableParallel" xml:space="preserve">
-    <value>Activer la recherche parallèle (plus rapide pour les gros fichiers)</value>
-  </data>
-  <data name="Settings_Search_UseWildcard" xml:space="preserve">
-    <value>Utiliser la recherche par joker (notation ??)</value>
-  </data>
-  <data name="Settings_Search_HighlightMatches" xml:space="preserve">
-    <value>Surligner toutes les correspondances</value>
-  </data>
-  <data name="Settings_Search_ResultLimit" xml:space="preserve">
-    <value>Limite de résultats de recherche :</value>
-  </data>
-  <data name="Settings_Display_Title" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
-  </data>
-  <data name="Settings_Display_ShowLineNumbers" xml:space="preserve">
-    <value>Afficher les numéros de ligne</value>
-  </data>
-  <data name="Settings_Display_ShowScrollMarkers" xml:space="preserve">
-    <value>Afficher les marqueurs de défilement</value>
-  </data>
-  <data name="Settings_Display_ShowStatusBar" xml:space="preserve">
-    <value>Afficher la barre d'état</value>
-  </data>
-  <data name="Settings_Display_BytesPerLine" xml:space="preserve">
-    <value>Octets par ligne :</value>
-  </data>
-  <data name="Settings_Performance_Title" xml:space="preserve">
-    <value>⚡ Performance</value>
-  </data>
-  <data name="Settings_Performance_V2Active" xml:space="preserve">
-    <value>MOTEUR V2 ACTIF</value>
-  </data>
-  <data name="Settings_Performance_Feature1" xml:space="preserve">
-    <value>• Algorithme Boyer-Moore-Horspool</value>
-  </data>
-  <data name="Settings_Performance_Feature2" xml:space="preserve">
-    <value>• Support du traitement parallèle</value>
-  </data>
-  <data name="Settings_Performance_Feature3" xml:space="preserve">
-    <value>• Jusqu'à 99% plus rapide que V1</value>
-  </data>
-  <data name="Settings_Button_ResetDefaults" xml:space="preserve">
-    <value>Réinitialiser par défaut</value>
-  </data>
-  <data name="Settings_Button_SaveSettings" xml:space="preserve">
-    <value>Enregistrer les paramètres</value>
-  </data>
-
-  <!-- ==== BOÎTE DE DIALOGUE OPTIONS ==== -->
-  <data name="Options_LanguageTab" xml:space="preserve">
-    <value>Langue</value>
-  </data>
-  <data name="Options_AppearanceTab" xml:space="preserve">
-    <value>Apparence</value>
-  </data>
-  <data name="Options_PerformanceTab" xml:space="preserve">
-    <value>Performance</value>
-  </data>
-  <data name="Options_Language_CurrentLabel" xml:space="preserve">
-    <value>Langue actuelle</value>
-  </data>
-  <data name="Options_Language_ColumnLanguage" xml:space="preserve">
-    <value>Langue</value>
-  </data>
-  <data name="Options_Language_ColumnNativeName" xml:space="preserve">
-    <value>Nom natif</value>
-  </data>
-  <data name="Options_Language_ColumnCode" xml:space="preserve">
-    <value>Code</value>
-  </data>
-  <data name="Options_Language_RestartWarning" xml:space="preserve">
-    <value>Les changements de langue s'appliquent instantanément - aucun redémarrage requis ! 🚀</value>
-  </data>
-
 </root>
