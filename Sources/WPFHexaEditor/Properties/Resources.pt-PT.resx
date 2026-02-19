@@ -367,7 +367,7 @@
     <value>Tempo de Actualização</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
-    <value>Deslocamento</value>
+    <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
     <value>Pronto</value>
@@ -604,7 +604,7 @@
     <value>Eliminar Selecção</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>Ir para Deslocamento...</value>
+    <value>Ir para Offset...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
     <value>Propriedades</value>

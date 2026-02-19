@@ -367,7 +367,7 @@
     <value>रीफ्रेश समय</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
-    <value>ऑफसेट</value>
+    <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
     <value>तैयार</value>
@@ -604,7 +604,7 @@
     <value>चयन हटाएँ</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>ऑफसेट पर जाएँ...</value>
+    <value>Offset पर जाएँ...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
     <value>गुण</value>

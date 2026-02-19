@@ -367,7 +367,7 @@
     <value>Yenileme Süresi</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
-    <value>Ofset</value>
+    <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
     <value>Hazır</value>
@@ -604,7 +604,7 @@
     <value>Seçimi Sil</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>Ofsete Git...</value>
+    <value>Offsete Git...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
     <value>Özellikler</value>

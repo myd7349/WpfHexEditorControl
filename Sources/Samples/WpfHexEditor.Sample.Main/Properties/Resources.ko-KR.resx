@@ -157,7 +157,7 @@
     <value>헤더 표시</value>
   </data>
   <data name="Menu_View_ShowOffset" xml:space="preserve">
-    <value>오프셋 표시</value>
+    <value>Offset 표시</value>
   </data>
   <data name="Menu_View_ShowASCII" xml:space="preserve">
     <value>ASCII 표시</value>

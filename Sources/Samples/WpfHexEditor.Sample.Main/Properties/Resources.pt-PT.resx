@@ -157,7 +157,7 @@
     <value>Mostrar Cabeçalho</value>
   </data>
   <data name="Menu_View_ShowOffset" xml:space="preserve">
-    <value>Mostrar Deslocamento</value>
+    <value>Mostrar Offset</value>
   </data>
   <data name="Menu_View_ShowASCII" xml:space="preserve">
     <value>Mostrar ASCII</value>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -367,7 +367,7 @@
     <value>更新時間</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
-    <value>オフセット</value>
+    <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
     <value>準備完了</value>
@@ -604,7 +604,7 @@
     <value>選択範囲を削除</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>オフセットに移動...</value>
+    <value>Offsetに移動...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
     <value>プロパティ</value>

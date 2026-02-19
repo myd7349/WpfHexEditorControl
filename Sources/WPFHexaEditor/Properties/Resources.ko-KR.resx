@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -367,7 +367,7 @@
     <value>새로 고침 시간</value>
   </data>
   <data name="OffsetString" xml:space="preserve">
-    <value>오프셋</value>
+    <value>Offset</value>
   </data>
   <data name="ReadyString" xml:space="preserve">
     <value>준비</value>
@@ -604,7 +604,7 @@
     <value>선택 영역 삭제</value>
   </data>
   <data name="GoToOffsetString" xml:space="preserve">
-    <value>오프셋으로 이동...</value>
+    <value>Offset으로 이동...</value>
   </data>
   <data name="PropertiesString" xml:space="preserve">
     <value>속성</value>

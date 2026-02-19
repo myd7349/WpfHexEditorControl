@@ -157,7 +157,7 @@
     <value>Başlığı Göster</value>
   </data>
   <data name="Menu_View_ShowOffset" xml:space="preserve">
-    <value>Ofseti Göster</value>
+    <value>Offseti Göster</value>
   </data>
   <data name="Menu_View_ShowASCII" xml:space="preserve">
     <value>ASCII Göster</value>

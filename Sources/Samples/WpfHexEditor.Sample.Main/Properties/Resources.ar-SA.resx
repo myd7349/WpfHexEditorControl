@@ -157,7 +157,7 @@
     <value>إظهار الرأسية</value>
   </data>
   <data name="Menu_View_ShowOffset" xml:space="preserve">
-    <value>إظهار الإزاحة</value>
+    <value>إظهار Offset</value>
   </data>
   <data name="Menu_View_ShowASCII" xml:space="preserve">
     <value>إظهار ASCII</value>
