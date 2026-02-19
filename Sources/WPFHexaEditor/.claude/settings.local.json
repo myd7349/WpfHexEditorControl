@@ -60,7 +60,8 @@
       "Bash(do basename:*)",
       "Read(//c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/**)",
       "Bash(python:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(dotnet test:*)"
     ]
   }
 }
