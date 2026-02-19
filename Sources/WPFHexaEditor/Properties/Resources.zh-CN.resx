@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>替换为：</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>仅替换所选内容</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>显示确认对话框</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>预览：</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>无效的十六进制值</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>值是必需的</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>找到 {0} 个匹配项</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>已替换 {0} 个匹配项</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>未找到匹配项</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>在选择中</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>在文件中</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>全选</value>
   </data>
@@ -343,6 +373,9 @@
     <value>替换字节...</value>
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
+    <value>反转选择</value>
+  </data>
+  <data name="InvertSelectionString" xml:space="preserve">
     <value>反转选择</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">

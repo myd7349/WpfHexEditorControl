@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>Ersätt med:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>Ersätt endast i markering</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>Visa bekräftelsedialog</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>Förhandsgranskning:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>Ogiltigt hexadecimalt värde</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>Värde krävs</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>{0} förekomster hittades</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>{0} förekomster ersatta</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>Inga förekomster hittades</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>i markering</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>i fil</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>Markera allt</value>
   </data>
@@ -347,6 +377,9 @@
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>Vänd markering</value>
+  </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>Invertera markering</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>Statusmeddelande</value>

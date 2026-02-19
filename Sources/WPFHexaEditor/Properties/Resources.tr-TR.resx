@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>Bununla değiştir:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>Yalnızca seçimde değiştir</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>Onay iletişim kutusunu göster</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>Önizleme:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>Geçersiz onaltılık değer</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>Değer gerekli</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>{0} oluşum bulundu</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>{0} oluşum değiştirildi</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>Hiçbir oluşum bulunamadı</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>seçimde</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>dosyada</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>Tümünü seç</value>
   </data>
@@ -347,6 +377,9 @@
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>Seçimi Ters Çevir</value>
+  </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>Seçimi tersine çevir</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>Durum Mesajı</value>

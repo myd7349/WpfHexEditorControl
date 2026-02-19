@@ -76,4 +76,44 @@ namespace WpfHexaEditor.Converters
             throw new NotImplementedException();
         }
     }
+
+    /// <summary>
+    /// Converts bool (isValid) to Border background color for validation indicators
+    /// </summary>
+    public class BoolToValidationColorConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool isValid)
+            {
+                return new SolidColorBrush(isValid ? Color.FromRgb(76, 175, 80) : Colors.Transparent); // Green #4CAF50
+            }
+            return new SolidColorBrush(Colors.Transparent);
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Converts bool (isValid) to icon text (✓ when valid, empty when invalid)
+    /// </summary>
+    public class BoolToValidationIconConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            if (value is bool isValid)
+            {
+                return isValid ? "✓" : "";
+            }
+            return "";
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

@@ -286,6 +286,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>Replace with:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>Replace in selection only</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>Show confirmation dialog</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>Preview:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>Invalid hexadecimal value</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>Value required</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>{0} occurrences found</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>Replaced {0} occurrences</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>No occurrences found</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>in selection</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>in file</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>Select all</value>
   </data>
@@ -411,6 +441,9 @@
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>Reverse Selection</value>
+  </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>Invert Selection</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>Status Message</value>

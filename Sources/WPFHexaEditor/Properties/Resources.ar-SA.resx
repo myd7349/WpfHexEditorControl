@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>استبدال بـ:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>استبدال في التحديد فقط</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>إظهار مربع حوار التأكيد</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>معاينة:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>قيمة ست عشرية غير صالحة</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>القيمة مطلوبة</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>تم العثور على {0} حالات</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>تم استبدال {0} حالات</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>لم يتم العثور على حالات</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>في التحديد</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>في الملف</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>تحديد الكل</value>
   </data>
@@ -346,6 +376,9 @@
     <value>استبدال البايت...</value>
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
+    <value>عكس التحديد</value>
+  </data>
+  <data name="InvertSelectionString" xml:space="preserve">
     <value>عكس التحديد</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">

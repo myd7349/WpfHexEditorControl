@@ -463,42 +463,145 @@ namespace WpfHexaEditor
 
         private void FillByteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Show dialog to get byte value
+            // Show modern MVVM dialog to get byte value
             var dialog = new Dialog.GiveByteWindow
             {
                 Owner = Window.GetWindow(this)
             };
 
+            // If there's a selection, pre-fill the current byte value
+            if (SelectionLength == 1)
+            {
+                try
+                {
+                    var selectedByte = GetByte(SelectionStart);
+                    dialog.HexTextBox.LongValue = selectedByte;
+                    dialog.ViewModel.ByteValue = selectedByte;
+                }
+                catch
+                {
+                    // Ignore errors reading byte
+                }
+            }
+
             if (dialog.ShowDialog() == true)
             {
-                byte fillByte = (byte)dialog.HexTextBox.LongValue;
-                FillWithByte(fillByte, SelectionStart, SelectionLength);
-                StatusText.Text = $"Filled {SelectionLength} bytes with 0x{fillByte:X2}";
+                byte fillByte = dialog.ByteValue;
+                long fillStart = _viewModel.SelectionStart.Value;
+                long fillLength = SelectionLength;
+
+                FillWithByte(fillByte, fillStart, fillLength);
+                StatusText.Text = $"Filled {fillLength} bytes with 0x{fillByte:X2}";
             }
         }
 
         private void ReplaceByteMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            // Show dialog to get find/replace byte values
+            // Show modern MVVM dialog to get find/replace byte values
             var dialog = new Dialog.ReplaceByteWindow
             {
                 Owner = Window.GetWindow(this)
             };
 
+            // Pre-fill options if a selection exists
+            if (SelectionLength > 0)
+            {
+                dialog.ViewModel.ReplaceInSelectionOnly = true;
+
+                // If the selection is a single byte, pre-fill it as the value to find
+                if (SelectionLength == 1)
+                {
+                    try
+                    {
+                        var selectedByte = GetByte(SelectionStart);
+                        dialog.HexTextBox.LongValue = selectedByte;
+                        dialog.ViewModel.FindByte = selectedByte;
+                    }
+                    catch
+                    {
+                        // Ignore errors reading byte
+                    }
+                }
+            }
+
             if (dialog.ShowDialog() == true)
             {
-                byte findByte = (byte)dialog.HexTextBox.LongValue;
-                byte replaceByte = (byte)dialog.ReplaceHexTextBox.LongValue;
+                byte findByte = dialog.FindByte;
+                byte replaceByte = dialog.ReplaceByte;
                 byte[] findData = new byte[] { findByte };
                 byte[] replaceData = new byte[] { replaceByte };
-                var replaced = ReplaceAll(findData, replaceData, false, false);
-                StatusText.Text = $"Replaced {replaced.Count()} occurrences (0x{findByte:X2} → 0x{replaceByte:X2})";
+
+                bool inSelectionOnly = dialog.ReplaceInSelectionOnly;
+                int replacedCount = 0;
+
+                if (inSelectionOnly && SelectionLength > 0)
+                {
+                    // Replace only within selection - use ViewModel directly for accurate positions
+                    long selStart = _viewModel.SelectionStart.Value;
+                    long selLength = SelectionLength;
+
+                    // Use BeginUpdate/EndUpdate to batch all modifications
+                    _viewModel.BeginUpdate();
+                    try
+                    {
+                        // Search and replace within selection only
+                        // Start from selection start and search only within selection bounds
+                        long searchPos = selStart;
+                        long selEnd = selStart + selLength;
+
+                        while (searchPos < selEnd)
+                        {
+                            // Find next occurrence starting from searchPos
+                            long foundPos = FindFirst(findData, searchPos);
+
+                            // If found and within selection bounds
+                            if (foundPos >= 0 && foundPos < selEnd)
+                            {
+                                // Replace the byte at this position
+                                SetByte(foundPos, replaceByte);
+                                replacedCount++;
+
+                                // Move search position past this occurrence
+                                searchPos = foundPos + 1;
+                            }
+                            else
+                            {
+                                // No more occurrences within selection
+                                break;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        // EndUpdate will refresh display once
+                        _viewModel.EndUpdate();
+                    }
+
+                }
+                else
+                {
+                    // Replace in entire file
+                    var replaced = ReplaceAll(findData, replaceData, false, false);
+                    replacedCount = replaced.Count();
+                }
+
+                // Clear selection after replacement
+                ClearSelection();
+
+                // Enhanced status message with scope information
+                string scope = inSelectionOnly ? "in selection" : "in file";
+                StatusText.Text = $"Replaced {replacedCount} occurrences (0x{findByte:X2} → 0x{replaceByte:X2}) {scope}";
             }
         }
 
         private void ReverseSelectionMenuItem_Click(object sender, RoutedEventArgs e)
         {
             ReverseSelection();
+        }
+
+        private void InvertSelectionMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            InvertSelection();
         }
 
         private void SetBookmarkMenuItem_Click(object sender, RoutedEventArgs e)

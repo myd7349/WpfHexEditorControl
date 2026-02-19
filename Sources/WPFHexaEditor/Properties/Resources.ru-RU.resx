@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>Заменить на:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>Заменить только в выделении</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>Показать диалог подтверждения</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>Предпросмотр:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>Недопустимое шестнадцатеричное значение</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>Требуется значение</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>Найдено вхождений: {0}</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>Заменено вхождений: {0}</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>Вхождений не найдено</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>в выделении</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>в файле</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>Выделить все</value>
   </data>
@@ -344,6 +374,9 @@
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>Обратить выделение</value>
+  </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>Инвертировать выделение</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>Сообщение о состоянии</value>

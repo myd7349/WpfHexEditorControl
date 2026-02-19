@@ -10,7 +10,7 @@
   [![C#](https://img.shields.io/badge/C%23-12.0-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
   [![Languages](https://img.shields.io/badge/Languages-19-success?logo=googletranslate&logoColor=white)](#-why-choose-v2)
-  [![V2 Architecture](https://img.shields.io/badge/Architecture-V2%20MVVM-orange?logo=github)](ARCHITECTURE.md)
+  [![V2 Architecture](https://img.shields.io/badge/Architecture-V2%20MVVM-orange?logo=github)](docs/architecture/Overview.md)
 
   <br/>
 
@@ -215,11 +215,10 @@ dotnet add package WPFHexaEditor
 
 | Document | Description |
 |----------|-------------|
-| **[Architecture Overview](docs/architecture/overview.md)** | 🏗️ Complete system architecture with diagrams |
+| **[Architecture Overview](docs/architecture/Overview.md)** | 🏗️ Complete system architecture with diagrams |
 | **[Core Systems](docs/architecture/core-systems/)** | ⚙️ ByteProvider, Position Mapping, Edit Tracking, Undo/Redo, Rendering, Services |
 | **[Data Flow](docs/architecture/data-flow/)** | 🔄 File operations, Edit operations, Search, Save sequences |
 | **[API Reference](docs/api-reference/)** | 📖 Complete API documentation with examples |
-| **[Performance Guide](PERFORMANCE_GUIDE.md)** | ⚡ Optimization details and benchmarks |
 
 ### Code Organization
 
@@ -323,7 +322,7 @@ This project is developed in **free time** by passionate contributors. If you fi
 
 We welcome contributions! The comprehensive documentation makes it easy to understand the codebase:
 
-- **[Architecture Guide](ARCHITECTURE.md)** - Service-based design overview
+- **[Architecture Guide](docs/architecture/Overview.md)** - Service-based design overview
 - **[19 READMEs](Sources/)** - Every component documented
 - **ByteProvider Tests** - Core functionality tested
 - **[7+ Samples](Sources/Samples/)** - Working examples
@@ -331,7 +330,7 @@ We welcome contributions! The comprehensive documentation makes it easy to under
 **How to contribute:**
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes (see [ARCHITECTURE.md](ARCHITECTURE.md) for design patterns)
+3. Make your changes (see [Architecture Guide](docs/architecture/Overview.md) for design patterns)
 4. Test your changes
 5. Submit a pull request
 

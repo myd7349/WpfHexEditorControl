@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>Ersetzen durch:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>Nur in Auswahl ersetzen</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>Bestätigungsdialog anzeigen</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>Vorschau:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>Ungültiger Hexadezimalwert</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>Wert erforderlich</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>{0} Vorkommen gefunden</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>{0} Vorkommen ersetzt</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>Keine Vorkommen gefunden</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>in Auswahl</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>in Datei</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>Alles auswählen</value>
   </data>
@@ -347,6 +377,9 @@
   </data>
   <data name="ReverseSelectionString" xml:space="preserve">
     <value>Auswahl umkehren</value>
+  </data>
+  <data name="InvertSelectionString" xml:space="preserve">
+    <value>Auswahl invertieren</value>
   </data>
   <data name="StatusMessageString" xml:space="preserve">
     <value>Statusmeldung</value>

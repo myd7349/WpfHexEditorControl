@@ -22,7 +22,9 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Event fired when culture is changed, allowing control to refresh UI
         /// </summary>
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         public static event EventHandler<CultureChangedEventArgs>? CultureChanged;
+#pragma warning restore CS8632
 
         private static CultureInfo _currentCulture = CultureInfo.CurrentUICulture;
 
@@ -67,7 +69,9 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Handles culture change events by updating all resources
         /// </summary>
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         private void OnCultureChanged(object? sender, CultureChangedEventArgs e)
+#pragma warning restore CS8632
         {
             System.Diagnostics.Debug.WriteLine(
                 $"[LocalizedResourceDictionary] OnCultureChanged: '{e.OldCulture.Name}' -> '{e.NewCulture.Name}'");

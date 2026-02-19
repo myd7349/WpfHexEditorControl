@@ -77,7 +77,7 @@
             MaxLines="1"
             PreviewKeyDown="HexTextBox_PreviewKeyDown"
             TabIndex="1"
-            Text="{Binding DisplayValue, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+            Text="{Binding DisplayValue, UpdateSourceTrigger=LostFocus, Mode=TwoWay}"
             ToolTip="{Binding LongValue}">
             <TextBox.ContextMenu>
                 <ContextMenu>

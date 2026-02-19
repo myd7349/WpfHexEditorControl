@@ -255,6 +255,13 @@
                 </MenuItem.Icon>
             </MenuItem>
 
+            <!-- Invert Selection -->
+            <MenuItem x:Name="InvertSelectionMenuItem" Header="{DynamicResource InvertSelectionString}" Click="InvertSelectionMenuItem_Click">
+                <MenuItem.Icon>
+                    <TextBlock Text="⊕" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
+
             <Separator/>
 
             <!-- Select All -->
