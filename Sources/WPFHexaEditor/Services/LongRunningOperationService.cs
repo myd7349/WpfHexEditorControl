@@ -104,11 +104,14 @@ namespace WpfHexaEditor.Services
                 // Execute the operation
                 bool success = await operation(progress, _currentCts.Token);
 
+                // Check if operation was cancelled (token was signaled but no exception thrown)
+                bool wasCancelled = _currentCts.Token.IsCancellationRequested && !success;
+
                 // Raise completion event
                 OnOperationCompleted(new OperationCompletedEventArgs
                 {
                     Success = success,
-                    WasCancelled = false
+                    WasCancelled = wasCancelled
                 });
 
                 return success;
