@@ -777,6 +777,60 @@ namespace WpfHexEditor.Sample.Main
             }
         }
 
+        private void ReplaceByte_Click(object sender, RoutedEventArgs e)
+        {
+            if (!HexEditor.IsFileLoaded || HexEditor.ReadOnlyMode) return;
+
+            // Use the modern MVVM ReplaceByteWindow dialog
+            var dialog = new WpfHexaEditor.Dialog.ReplaceByteWindow
+            {
+                Owner = this
+            };
+
+            // Pre-fill options if a selection exists
+            if (HexEditor.HasSelection)
+            {
+                dialog.ViewModel.ReplaceInSelectionOnly = true;
+
+                // If the selection is a single byte, pre-fill it as the value to find
+                if (HexEditor.SelectionLength == 1)
+                {
+                    try
+                    {
+                        var selectedByte = HexEditor.GetByte(HexEditor.SelectionStart);
+                        dialog.ViewModel.FindByte = selectedByte;
+                    }
+                    catch { /* Ignore errors */ }
+                }
+            }
+
+            if (dialog.ShowDialog() == true)
+            {
+                try
+                {
+                    byte findByte = dialog.FindByte;
+                    byte replaceByte = dialog.ReplaceByte;
+                    byte[] findData = new byte[] { findByte };
+                    byte[] replaceData = new byte[] { replaceByte };
+                    bool inSelectionOnly = dialog.ReplaceInSelectionOnly;
+
+                    // Use HexEditor's ReplaceAll method
+                    var replaced = HexEditor.ReplaceAll(findData, replaceData, false, inSelectionOnly);
+                    int replacedCount = replaced.Count();
+
+                    // Show status message
+                    string scope = inSelectionOnly ? "in selection" : "in file";
+                    MessageBox.Show($"Replaced {replacedCount} occurrences (0x{findByte:X2} → 0x{replaceByte:X2}) {scope}",
+                        "Replace Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Replace failed: {ex.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         private void GetByte_Click(object sender, RoutedEventArgs e)
         {
             if (!HexEditor.IsFileLoaded) return;
@@ -1439,6 +1493,10 @@ namespace WpfHexEditor.Sample.Main
             CopyAsciiMenuItem.IsEnabled = hasSelection; // Read-only, always enabled
             PasteMenuItem.IsEnabled = fileLoaded && canModify;
 
+            // Edit menu - Selection operations
+            ReverseSelectionMenuItem.IsEnabled = hasSelection && canModify;
+            InvertSelectionMenuItem.IsEnabled = hasSelection && canModify;
+
             // Search menu
             FindMenuItem.IsEnabled = fileLoaded && canPerformFileOp;
             FindNextMenuItem.IsEnabled = fileLoaded && _lastFindData != null && canPerformFileOp;
@@ -1449,7 +1507,8 @@ namespace WpfHexEditor.Sample.Main
             ReplaceAllAsyncMenuItem.IsEnabled = fileLoaded && !isReadOnly;
 
             // Tools > Byte Operations
-            FillWithByteMenuItem.IsEnabled = fileLoaded && !isReadOnly;
+            FillWithByteMenuItem.IsEnabled = fileLoaded && canModify;
+            ReplaceByteMenuItem.IsEnabled = fileLoaded && canModify;
             GetByteMenuItem.IsEnabled = fileLoaded;
             SetByteMenuItem.IsEnabled = fileLoaded && !isReadOnly;
 
@@ -1548,6 +1607,21 @@ namespace WpfHexEditor.Sample.Main
         {
             if (HexEditor == null) return;
             HexEditor.ReverseSelection();
+        }
+
+        private void InvertSelection_Click(object sender, RoutedEventArgs e)
+        {
+            if (HexEditor == null || !HexEditor.HasSelection) return;
+
+            try
+            {
+                HexEditor.InvertSelection();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Invert selection failed: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void FindAllOccurrence_Click(object sender, RoutedEventArgs e)

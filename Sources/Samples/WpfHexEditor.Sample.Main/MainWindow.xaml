@@ -51,6 +51,7 @@
                 <MenuItem Header="Replace All (Async)..." x:Name="ReplaceAllAsyncMenuItem" Click="ReplaceAllAsync_Click" IsEnabled="False" ToolTip="Replace with progress overlay"/>
                 <Separator/>
                 <MenuItem Header="Reverse Selection" x:Name="ReverseSelectionMenuItem" Click="ReverseSelection_Click" IsEnabled="False"/>
+                <MenuItem Header="Invert Selection" x:Name="InvertSelectionMenuItem" Click="InvertSelection_Click" IsEnabled="False"/>
                 <Separator/>
                 <MenuItem Header="Read Only" x:Name="ReadOnlyMenuItemEdit" IsCheckable="True"
                           Checked="ReadOnly_Changed"
@@ -90,6 +91,7 @@
             <MenuItem Header="_Tools" SubmenuOpened="Menu_SubmenuOpened">
                 <MenuItem Header="_Byte Operations">
                     <MenuItem Header="_Fill with Byte..." x:Name="FillWithByteMenuItem" Click="FillWithByte_Click" IsEnabled="False"/>
+                    <MenuItem Header="_Replace Byte..." x:Name="ReplaceByteMenuItem" Click="ReplaceByte_Click" IsEnabled="False"/>
                     <MenuItem Header="_Get Byte at Position..." x:Name="GetByteMenuItem" Click="GetByte_Click" IsEnabled="False"/>
                     <MenuItem Header="_Set Byte at Position..." x:Name="SetByteMenuItem" Click="SetByte_Click" IsEnabled="False"/>
                 </MenuItem>
