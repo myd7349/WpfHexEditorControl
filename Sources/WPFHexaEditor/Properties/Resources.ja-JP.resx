@@ -1,0 +1,660 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Japanese (ja-JP) - Translated to natural Japanese -->
+  <data name="AppendByteConfirmationString" xml:space="preserve">
+    <value>ファイルの末尾に達しました。1バイト追加しますか？続行すると、この操作はキャンセルできません。</value>
+  </data>
+  <data name="BookmarksString" xml:space="preserve">
+    <value>ブックマーク</value>
+  </data>
+  <data name="ByteActionString" xml:space="preserve">
+    <value>バイト操作</value>
+  </data>
+  <data name="ByteString" xml:space="preserve">
+    <value>バイト</value>
+  </data>
+  <data name="CancelLongProcessString" xml:space="preserve">
+    <value>長時間処理をキャンセル</value>
+  </data>
+  <data name="CancelLongProcessToolTipString" xml:space="preserve">
+    <value>クリックして長時間処理をキャンセルします。</value>
+  </data>
+  <data name="CancelString" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="ClearBookMarkString" xml:space="preserve">
+    <value>ブックマークをクリア</value>
+  </data>
+  <data name="ClearString" xml:space="preserve">
+    <value>クリア</value>
+  </data>
+  <data name="ClickToGoAtPositionString" xml:space="preserve">
+    <value>クリックして位置に移動します。</value>
+  </data>
+  <data name="CloseString" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="CopyAsASCIIString" xml:space="preserve">
+    <value>ASCIIとしてコピー</value>
+  </data>
+  <data name="CopyAsDecimalString" xml:space="preserve">
+    <value>10進数としてコピー</value>
+  </data>
+  <data name="CopyAsHexadecimalString" xml:space="preserve">
+    <value>16進数としてコピー</value>
+  </data>
+  <data name="CopyAsTBLString" xml:space="preserve">
+    <value>TBL文字列（キャラクターファイルが読み込まれています）</value>
+  </data>
+  <data name="CopySelectionAsString" xml:space="preserve">
+    <value>選択範囲を次の形式でコピー...</value>
+  </data>
+  <data name="CountOfString" xml:space="preserve">
+    <value>個数</value>
+  </data>
+  <data name="DefaultTBLString" xml:space="preserve">
+    <value>デフォルト TBL</value>
+  </data>
+  <data name="DeleteString" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="DescriptionString" xml:space="preserve">
+    <value>説明</value>
+  </data>
+  <data name="EndTagString" xml:space="preserve">
+    <value>&lt;終了&gt;</value>
+  </data>
+  <data name="EnterHexValueMsgString" xml:space="preserve">
+    <value>16進数値を入力してください...</value>
+  </data>
+  <data name="FileDroppingConfirmationString" xml:space="preserve">
+    <value>現在のファイルを閉じて次のファイルを開きますか：</value>
+  </data>
+  <data name="FillSelectionAloneString" xml:space="preserve">
+    <value>選択範囲をバイトで埋める</value>
+  </data>
+  <data name="FillSelectionString" xml:space="preserve">
+    <value>選択範囲をバイトで埋める...</value>
+  </data>
+  <data name="FindAllString" xml:space="preserve">
+    <value>すべて検索</value>
+  </data>
+  <data name="FindAndReplaceString" xml:space="preserve">
+    <value>検索と置換</value>
+  </data>
+  <data name="FindByteString" xml:space="preserve">
+    <value>検索するバイト</value>
+  </data>
+  <data name="FindFirstString" xml:space="preserve">
+    <value>最初を検索</value>
+  </data>
+  <data name="FindLastString" xml:space="preserve">
+    <value>最後を検索</value>
+  </data>
+  <data name="FindNextString" xml:space="preserve">
+    <value>次を検索</value>
+  </data>
+  <data name="FindSelectionString" xml:space="preserve">
+    <value>選択範囲のすべての出現を検索</value>
+  </data>
+  <data name="FindString" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="FindWhatString" xml:space="preserve">
+    <value>検索する文字列:</value>
+  </data>
+  <data name="FirstByteString" xml:space="preserve">
+    <value>最初のバイト</value>
+  </data>
+  <data name="HexString" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="KBTagString" xml:space="preserve">
+    <value>KB</value>
+  </data>
+  <data name="LengthString" xml:space="preserve">
+    <value>長さ</value>
+  </data>
+  <data name="LineStatusBarTagString" xml:space="preserve">
+    <value>行</value>
+  </data>
+  <data name="LineTagString" xml:space="preserve">
+    <value>&lt;行&gt;</value>
+  </data>
+  <data name="LongString" xml:space="preserve">
+    <value>Long</value>
+  </data>
+  <data name="MBTagString" xml:space="preserve">
+    <value>MB</value>
+  </data>
+  <data name="OkString" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="PasteExtendByteConfirmationString" xml:space="preserve">
+    <value>貼り付け操作がファイルの末尾に達しました。操作を完了するためにファイルを拡張しますか？続行すると、この操作はキャンセルできません。</value>
+  </data>
+  <data name="PasteFromClipboardString" xml:space="preserve">
+    <value>クリップボードから貼り付け</value>
+  </data>
+  <data name="PasteNotInsertString" xml:space="preserve">
+    <value>挿入せずに貼り付け</value>
+  </data>
+  <data name="PositionString" xml:space="preserve">
+    <value>位置</value>
+  </data>
+  <data name="ReplaceAllString" xml:space="preserve">
+    <value>すべて置換</value>
+  </data>
+  <data name="ReplaceByByteString" xml:space="preserve">
+    <value>バイトで置換</value>
+  </data>
+  <data name="ReplaceNextString" xml:space="preserve">
+    <value>次を置換</value>
+  </data>
+  <data name="ReplaceSelectionString" xml:space="preserve">
+    <value>選択範囲のバイトを置換...</value>
+  </data>
+  <data name="ReplaceString" xml:space="preserve">
+    <value>置換</value>
+  </data>
+  <data name="ReplaceWithByteString" xml:space="preserve">
+    <value>置換後のバイト</value>
+  </data>
+  <data name="ReplaceWithString" xml:space="preserve">
+    <value>置換後の文字列:</value>
+  </data>
+  <data name="SelectAllString" xml:space="preserve">
+    <value>すべて選択</value>
+  </data>
+  <data name="SetBookMarkString" xml:space="preserve">
+    <value>ブックマークを設定</value>
+  </data>
+  <data name="TBLString" xml:space="preserve">
+    <value>TBL</value>
+  </data>
+  <data name="ThisStringAreNotHexString" xml:space="preserve">
+    <value>この文字列は16進数ではありません</value>
+  </data>
+  <data name="UndoString" xml:space="preserve">
+    <value>元に戻す</value>
+  </data>
+  <data name="ValueString" xml:space="preserve">
+    <value>値</value>
+  </data>
+  <data name="WritingErrorExeptionString" xml:space="preserve">
+    <value>書き込み中にエラーが発生しました。</value>
+  </data>
+  <data name="HighLightSettingString" xml:space="preserve">
+    <value>検索結果をすべてハイライト</value>
+  </data>
+  <data name="ReplaceTrimSettingString" xml:space="preserve">
+    <value>置換時に検索された長さでデータをトリム</value>
+  </data>
+  <data name="ZoomResetString" xml:space="preserve">
+    <value>ズームを100%にリセット</value>
+  </data>
+  <data name="ZoomString" xml:space="preserve">
+    <value>ズーム</value>
+  </data>
+  <data name="ConvertStringToLongErrorString" xml:space="preserve">
+    <value>この文字列をlong型に変換できません</value>
+  </data>
+  <data name="OpenAsReadOnlyString" xml:space="preserve">
+    <value>ファイルがロックされています。読み取り専用モードで開きますか？</value>
+  </data>
+  <data name="BytesTagString" xml:space="preserve">
+    <value>バイト</value>
+  </data>
+  <data name="SearchCommandCenterString" xml:space="preserve">
+    <value>検索コマンドセンター</value>
+  </data>
+  <data name="SearchTextModeString" xml:space="preserve">
+    <value>テキスト</value>
+  </data>
+  <data name="SearchHexModeString" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="SearchRegexModeString" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="SearchWildcardModeString" xml:space="preserve">
+    <value>ワイルドカード</value>
+  </data>
+  <data name="SearchPreviousString" xml:space="preserve">
+    <value>前へ</value>
+  </data>
+  <data name="SearchNextString" xml:space="preserve">
+    <value>次へ</value>
+  </data>
+  <data name="SearchFindAllString" xml:space="preserve">
+    <value>すべて検索</value>
+  </data>
+  <data name="SearchMatchesString" xml:space="preserve">
+    <value>件の一致</value>
+  </data>
+  <data name="SearchInString" xml:space="preserve">
+    <value>で</value>
+  </data>
+  <data name="SearchNoMatchesString" xml:space="preserve">
+    <value>一致が見つかりませんでした</value>
+  </data>
+  <data name="SearchV2BadgeString" xml:space="preserve">
+    <value>V2で99%高速化</value>
+  </data>
+  <data name="ClearSearchString" xml:space="preserve">
+    <value>クリア</value>
+  </data>
+  <data name="CommandPaletteString" xml:space="preserve">
+    <value>コマンドパレット</value>
+  </data>
+  <data name="PerformanceDashboardString" xml:space="preserve">
+    <value>パフォーマンスダッシュボード</value>
+  </data>
+  <data name="ThemeDarkGlassString" xml:space="preserve">
+    <value>ダークグラス</value>
+  </data>
+  <data name="ThemeLightString" xml:space="preserve">
+    <value>ライト</value>
+  </data>
+  <data name="ThemeCyberpunkString" xml:space="preserve">
+    <value>サイバーパンク</value>
+  </data>
+  <data name="ThemeMinimalString" xml:space="preserve">
+    <value>ミニマル</value>
+  </data>
+  <data name="CopyAsCSharpCodeString" xml:space="preserve">
+    <value>C#コードとしてコピー</value>
+  </data>
+  <data name="CopyAsCCodeString" xml:space="preserve">
+    <value>Cコードとしてコピー</value>
+  </data>
+  <data name="CopyAsFormattedViewString" xml:space="preserve">
+    <value>フォーマット表示でコピー</value>
+  </data>
+  <data name="CopyAsAutoString" xml:space="preserve">
+    <value>コピー（自動）</value>
+  </data>
+  <data name="CopyString" xml:space="preserve">
+    <value>コピー</value>
+  </data>
+  <data name="PasteString" xml:space="preserve">
+    <value>貼り付け</value>
+  </data>
+  <data name="FillWithByteString" xml:space="preserve">
+    <value>バイトで埋める...</value>
+  </data>
+  <data name="ReplaceByteMenuString" xml:space="preserve">
+    <value>バイトを置換...</value>
+  </data>
+  <data name="ReverseSelectionString" xml:space="preserve">
+    <value>選択範囲を反転</value>
+  </data>
+  <data name="StatusMessageString" xml:space="preserve">
+    <value>ステータスメッセージ</value>
+  </data>
+  <data name="FileSizeString" xml:space="preserve">
+    <value>ファイルサイズ</value>
+  </data>
+  <data name="SelectionInfoString" xml:space="preserve">
+    <value>選択情報</value>
+  </data>
+  <data name="EditModeString" xml:space="preserve">
+    <value>編集モード</value>
+  </data>
+  <data name="BytesPerLineString" xml:space="preserve">
+    <value>1行あたりのバイト数</value>
+  </data>
+  <data name="RefreshTimeString" xml:space="preserve">
+    <value>更新時間</value>
+  </data>
+  <data name="OffsetString" xml:space="preserve">
+    <value>オフセット</value>
+  </data>
+  <data name="ReadyString" xml:space="preserve">
+    <value>準備完了</value>
+  </data>
+  <data name="NoSelectionString" xml:space="preserve">
+    <value>選択なし</value>
+  </data>
+  <data name="ModeOverwriteString" xml:space="preserve">
+    <value>モード：上書き</value>
+  </data>
+  <data name="FindAndReplaceDialogTitle" xml:space="preserve">
+    <value>検索と置換</value>
+  </data>
+  <data name="FindGroupHeader" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="ReplaceGroupHeader" xml:space="preserve">
+    <value>置換</value>
+  </data>
+  <data name="ResultsGroupHeader" xml:space="preserve">
+    <value>結果</value>
+  </data>
+  <data name="FindTextLabel" xml:space="preserve">
+    <value>検索:</value>
+  </data>
+  <data name="ReplaceTextLabel" xml:space="preserve">
+    <value>置換後:</value>
+  </data>
+  <data name="FindPreviousButton" xml:space="preserve">
+    <value>前へ</value>
+  </data>
+  <data name="FindNextButton" xml:space="preserve">
+    <value>次へ</value>
+  </data>
+  <data name="FindAllButton" xml:space="preserve">
+    <value>すべて検索</value>
+  </data>
+  <data name="ReplaceButton" xml:space="preserve">
+    <value>置換</value>
+  </data>
+  <data name="ReplaceAllButton" xml:space="preserve">
+    <value>すべて置換</value>
+  </data>
+  <data name="CaseSensitiveCheckbox" xml:space="preserve">
+    <value>大文字と小文字を区別</value>
+  </data>
+  <data name="WholeWordCheckbox" xml:space="preserve">
+    <value>単語単位で検索</value>
+  </data>
+  <data name="UseRegexCheckbox" xml:space="preserve">
+    <value>正規表現を使用</value>
+  </data>
+  <data name="SearchInSelectionCheckbox" xml:space="preserve">
+    <value>選択範囲内のみを検索</value>
+  </data>
+  <data name="HighlightAllCheckbox" xml:space="preserve">
+    <value>すべての一致をハイライト</value>
+  </data>
+  <data name="CloseDialogButton" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="NoResultsFound" xml:space="preserve">
+    <value>結果が見つかりませんでした</value>
+  </data>
+  <data name="MatchesFoundFormat" xml:space="preserve">
+    <value>{0}件の一致が見つかりました</value>
+  </data>
+  <data name="ReplacedFormat" xml:space="preserve">
+    <value>{0}件を置換しました</value>
+  </data>
+  <data name="SearchPanelTitle" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="SearchFindLabel" xml:space="preserve">
+    <value>検索:</value>
+  </data>
+  <data name="SearchModePlaceholder" xml:space="preserve">
+    <value>検索文字列を入力してください...</value>
+  </data>
+  <data name="TextModeLabel" xml:space="preserve">
+    <value>テキスト</value>
+  </data>
+  <data name="HexModeLabel" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="RegexModeLabel" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="WildcardModeLabel" xml:space="preserve">
+    <value>ワイルドカード</value>
+  </data>
+  <data name="MatchCaseLabel" xml:space="preserve">
+    <value>大文字と小文字を区別</value>
+  </data>
+  <data name="WholeWordLabel" xml:space="preserve">
+    <value>単語単位で検索</value>
+  </data>
+  <data name="SearchOptionsLabel" xml:space="preserve">
+    <value>オプション</value>
+  </data>
+  <data name="SearchResultsLabel" xml:space="preserve">
+    <value>結果</value>
+  </data>
+  <data name="CurrentMatchLabel" xml:space="preserve">
+    <value>現在の一致</value>
+  </data>
+  <data name="TotalMatchesLabel" xml:space="preserve">
+    <value>合計一致数</value>
+  </data>
+  <data name="QuickSearchTooltip" xml:space="preserve">
+    <value>クイック検索（Ctrl+F）</value>
+  </data>
+  <data name="PreviousMatchTooltip" xml:space="preserve">
+    <value>前の一致（Shift+F3）</value>
+  </data>
+  <data name="NextMatchTooltip" xml:space="preserve">
+    <value>次の一致（F3）</value>
+  </data>
+  <data name="CloseSearchTooltip" xml:space="preserve">
+    <value>検索を閉じる（Esc）</value>
+  </data>
+  <data name="SearchOptionsTooltip" xml:space="preserve">
+    <value>検索オプション</value>
+  </data>
+  <data name="StatusSearching" xml:space="preserve">
+    <value>検索中...</value>
+  </data>
+  <data name="StatusSearchComplete" xml:space="preserve">
+    <value>検索完了</value>
+  </data>
+  <data name="StatusFoundMatchesFormat" xml:space="preserve">
+    <value>{0}件の一致が{1}ミリ秒で見つかりました</value>
+  </data>
+  <data name="StatusMatchFoundAtFormat" xml:space="preserve">
+    <value>位置 0x{0:X8} で一致が見つかりました</value>
+  </data>
+  <data name="StatusNoMoreMatches" xml:space="preserve">
+    <value>これ以上一致が見つかりませんでした</value>
+  </data>
+  <data name="StatusReachedEndOfFile" xml:space="preserve">
+    <value>ファイルの末尾に達しました</value>
+  </data>
+  <data name="StatusReachedStartOfFile" xml:space="preserve">
+    <value>ファイルの先頭に達しました</value>
+  </data>
+  <data name="StatusReplacing" xml:space="preserve">
+    <value>置換中...</value>
+  </data>
+  <data name="StatusReplaceComplete" xml:space="preserve">
+    <value>置換完了</value>
+  </data>
+  <data name="StatusReplacedFormat" xml:space="preserve">
+    <value>{0}箇所を置換しました</value>
+  </data>
+  <data name="StatusInvalidSearchPattern" xml:space="preserve">
+    <value>無効な検索パターンです</value>
+  </data>
+  <data name="StatusInvalidRegex" xml:space="preserve">
+    <value>無効な正規表現です</value>
+  </data>
+  <data name="StatusSearchCancelled" xml:space="preserve">
+    <value>検索がキャンセルされました</value>
+  </data>
+  <data name="StatusReplaceCancelled" xml:space="preserve">
+    <value>置換がキャンセルされました</value>
+  </data>
+  <data name="StatusCancelling" xml:space="preserve">
+    <value>キャンセル中...</value>
+  </data>
+  <data name="StatusError" xml:space="preserve">
+    <value>エラー：{0}</value>
+  </data>
+  <data name="StatusFoundMatchesWithSpeedFormat" xml:space="preserve">
+    <value>{0}件の一致が{1}ミリ秒で見つかりました（{2:F2} MB/秒）</value>
+  </data>
+  <data name="StatusMatchFoundAtWrappedFormat" xml:space="preserve">
+    <value>位置 0x{0:X8} で一致が見つかりました（折り返し）</value>
+  </data>
+  <data name="StatusNoPreviousMatches" xml:space="preserve">
+    <value>前の一致が見つかりませんでした</value>
+  </data>
+  <data name="StatusMatchOfTotalFormat" xml:space="preserve">
+    <value>位置 0x{2:X8} に {1}件中{0}件目の一致</value>
+  </data>
+  <data name="StatusReplacedAtFormat" xml:space="preserve">
+    <value>位置 0x{0:X8} で置換しました（合計：{1}件）</value>
+  </data>
+  <data name="StatusReplaceError" xml:space="preserve">
+    <value>置換エラー：{0}</value>
+  </data>
+  <data name="StatusNoMatchesToReplace" xml:space="preserve">
+    <value>置換する一致が見つかりませんでした</value>
+  </data>
+  <data name="StatusInvalidReplacementPattern" xml:space="preserve">
+    <value>無効な置換パターンです</value>
+  </data>
+  <data name="StatusReplacedOccurrencesFormat" xml:space="preserve">
+    <value>{0}箇所を置換しました。合計置換数：{1}</value>
+  </data>
+  <data name="StatusReplaceAllError" xml:space="preserve">
+    <value>すべて置換エラー：{0}</value>
+  </data>
+  <data name="StatusNoMoreBookmarksAfter" xml:space="preserve">
+    <value>現在の位置より後にブックマークがありません</value>
+  </data>
+  <data name="StatusNoMoreBookmarksBefore" xml:space="preserve">
+    <value>現在の位置より前にブックマークがありません</value>
+  </data>
+  <data name="BookmarkSetFormat" xml:space="preserve">
+    <value>0x{0:X8} にブックマークを設定しました</value>
+  </data>
+  <data name="BookmarkClearedFormat" xml:space="preserve">
+    <value>0x{0:X8} のブックマークをクリアしました</value>
+  </data>
+  <data name="BookmarkNavigatedFormat" xml:space="preserve">
+    <value>0x{0:X8} のブックマークに移動しました</value>
+  </data>
+  <data name="BookmarkAllCleared" xml:space="preserve">
+    <value>すべてのブックマークをクリアしました</value>
+  </data>
+  <data name="CopySelectionString" xml:space="preserve">
+    <value>選択範囲をコピー</value>
+  </data>
+  <data name="CutSelectionString" xml:space="preserve">
+    <value>選択範囲を切り取り</value>
+  </data>
+  <data name="InsertByteString" xml:space="preserve">
+    <value>バイトを挿入...</value>
+  </data>
+  <data name="DeleteByteString" xml:space="preserve">
+    <value>バイトを削除</value>
+  </data>
+  <data name="DeleteSelectionString" xml:space="preserve">
+    <value>選択範囲を削除</value>
+  </data>
+  <data name="GoToOffsetString" xml:space="preserve">
+    <value>オフセットに移動...</value>
+  </data>
+  <data name="PropertiesString" xml:space="preserve">
+    <value>プロパティ</value>
+  </data>
+  <data name="ProgressTitleOpeningFile" xml:space="preserve">
+    <value>ファイルを開いています</value>
+  </data>
+  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
+    <value>ファイルストリームを開いています...</value>
+  </data>
+  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
+    <value>ファイルデータを読み込んでいます...</value>
+  </data>
+  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
+    <value>ファイルを正常に開きました</value>
+  </data>
+  <data name="ProgressTitleSavingFile" xml:space="preserve">
+    <value>ファイルを保存しています</value>
+  </data>
+  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
+    <value>保存の準備をしています...</value>
+  </data>
+  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
+    <value>ファイルを正常に保存しました</value>
+  </data>
+  <data name="ProgressTitleSearching" xml:space="preserve">
+    <value>検索しています</value>
+  </data>
+  <data name="ProgressMessageStartingSearch" xml:space="preserve">
+    <value>検索を開始しています...</value>
+  </data>
+  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
+    <value>検索中...{0}件が見つかりました</value>
+  </data>
+  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
+    <value>{0}件の一致が見つかりました</value>
+  </data>
+  <data name="ProgressTitleReplacing" xml:space="preserve">
+    <value>置換しています</value>
+  </data>
+  <data name="ProgressMessageFindingMatches" xml:space="preserve">
+    <value>一致を検索しています...</value>
+  </data>
+  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
+    <value>{0}件の一致が見つかりました。置換しています...</value>
+  </data>
+  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
+    <value>{0}箇所を置換しました</value>
+  </data>
+  <data name="ProgressButtonCancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+</root>

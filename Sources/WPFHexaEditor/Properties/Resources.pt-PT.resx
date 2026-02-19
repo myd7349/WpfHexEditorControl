@@ -1,0 +1,660 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Portuguese (Portugal) (pt-PT) - Tradução Portuguesa Europeia -->
+  <data name="AppendByteConfirmationString" xml:space="preserve">
+    <value>Chegou ao fim do ficheiro. Deseja acrescentar um byte? Esta operação não pode ser cancelada se continuar.</value>
+  </data>
+  <data name="BookmarksString" xml:space="preserve">
+    <value>Marcadores</value>
+  </data>
+  <data name="ByteActionString" xml:space="preserve">
+    <value>Acção de byte</value>
+  </data>
+  <data name="ByteString" xml:space="preserve">
+    <value>Byte</value>
+  </data>
+  <data name="CancelLongProcessString" xml:space="preserve">
+    <value>Cancelar processo longo</value>
+  </data>
+  <data name="CancelLongProcessToolTipString" xml:space="preserve">
+    <value>Clique para cancelar o processo longo.</value>
+  </data>
+  <data name="CancelString" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="ClearBookMarkString" xml:space="preserve">
+    <value>Limpar marcador</value>
+  </data>
+  <data name="ClearString" xml:space="preserve">
+    <value>Limpar</value>
+  </data>
+  <data name="ClickToGoAtPositionString" xml:space="preserve">
+    <value>Clique para ir à posição.</value>
+  </data>
+  <data name="CloseString" xml:space="preserve">
+    <value>Fechar</value>
+  </data>
+  <data name="CopyAsASCIIString" xml:space="preserve">
+    <value>Copiar como ASCII</value>
+  </data>
+  <data name="CopyAsDecimalString" xml:space="preserve">
+    <value>Copiar como decimal</value>
+  </data>
+  <data name="CopyAsHexadecimalString" xml:space="preserve">
+    <value>Copiar como hexadecimal</value>
+  </data>
+  <data name="CopyAsTBLString" xml:space="preserve">
+    <value>String TBL (ficheiro de caracteres carregado)</value>
+  </data>
+  <data name="CopySelectionAsString" xml:space="preserve">
+    <value>Copiar selecção como...</value>
+  </data>
+  <data name="CountOfString" xml:space="preserve">
+    <value>Contagem de</value>
+  </data>
+  <data name="DefaultTBLString" xml:space="preserve">
+    <value>TBL predefinido</value>
+  </data>
+  <data name="DeleteString" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="DescriptionString" xml:space="preserve">
+    <value>Descrição</value>
+  </data>
+  <data name="EndTagString" xml:space="preserve">
+    <value>&lt;fim&gt;</value>
+  </data>
+  <data name="EnterHexValueMsgString" xml:space="preserve">
+    <value>Introduza o valor hexadecimal...</value>
+  </data>
+  <data name="FileDroppingConfirmationString" xml:space="preserve">
+    <value>Deseja fechar o ficheiro actual e abrir: </value>
+  </data>
+  <data name="FillSelectionAloneString" xml:space="preserve">
+    <value>Preencher selecção com byte</value>
+  </data>
+  <data name="FillSelectionString" xml:space="preserve">
+    <value>Preencher selecção com byte...</value>
+  </data>
+  <data name="FindAllString" xml:space="preserve">
+    <value>Localizar Tudo</value>
+  </data>
+  <data name="FindAndReplaceString" xml:space="preserve">
+    <value>Localizar e Substituir</value>
+  </data>
+  <data name="FindByteString" xml:space="preserve">
+    <value>Byte a procurar</value>
+  </data>
+  <data name="FindFirstString" xml:space="preserve">
+    <value>Localizar Primeiro</value>
+  </data>
+  <data name="FindLastString" xml:space="preserve">
+    <value>Localizar Último</value>
+  </data>
+  <data name="FindNextString" xml:space="preserve">
+    <value>Localizar Seguinte</value>
+  </data>
+  <data name="FindSelectionString" xml:space="preserve">
+    <value>Localizar todas as ocorrências da selecção</value>
+  </data>
+  <data name="FindString" xml:space="preserve">
+    <value>Localizar</value>
+  </data>
+  <data name="FindWhatString" xml:space="preserve">
+    <value>Localizar:</value>
+  </data>
+  <data name="FirstByteString" xml:space="preserve">
+    <value>Primeiro byte</value>
+  </data>
+  <data name="HexString" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="KBTagString" xml:space="preserve">
+    <value>Kb</value>
+  </data>
+  <data name="LengthString" xml:space="preserve">
+    <value>Comprimento</value>
+  </data>
+  <data name="LineStatusBarTagString" xml:space="preserve">
+    <value>Ln</value>
+  </data>
+  <data name="LineTagString" xml:space="preserve">
+    <value>&lt;ln&gt;</value>
+  </data>
+  <data name="LongString" xml:space="preserve">
+    <value>Long</value>
+  </data>
+  <data name="MBTagString" xml:space="preserve">
+    <value>Mb</value>
+  </data>
+  <data name="OkString" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="PasteExtendByteConfirmationString" xml:space="preserve">
+    <value>A operação de colar atingiu o fim do ficheiro. Deseja estender o ficheiro para completar a operação? Esta operação não pode ser cancelada se continuar.</value>
+  </data>
+  <data name="PasteFromClipboardString" xml:space="preserve">
+    <value>Colar da área de transferência</value>
+  </data>
+  <data name="PasteNotInsertString" xml:space="preserve">
+    <value>Colar sem inserir</value>
+  </data>
+  <data name="PositionString" xml:space="preserve">
+    <value>Posição</value>
+  </data>
+  <data name="ReplaceAllString" xml:space="preserve">
+    <value>Substituir Tudo</value>
+  </data>
+  <data name="ReplaceByByteString" xml:space="preserve">
+    <value>Substituir por byte</value>
+  </data>
+  <data name="ReplaceNextString" xml:space="preserve">
+    <value>Substituir Seguinte</value>
+  </data>
+  <data name="ReplaceSelectionString" xml:space="preserve">
+    <value>Substituir byte na selecção...</value>
+  </data>
+  <data name="ReplaceString" xml:space="preserve">
+    <value>Substituir</value>
+  </data>
+  <data name="ReplaceWithByteString" xml:space="preserve">
+    <value>Substituir por byte</value>
+  </data>
+  <data name="ReplaceWithString" xml:space="preserve">
+    <value>Substituir por:</value>
+  </data>
+  <data name="SelectAllString" xml:space="preserve">
+    <value>Seleccionar tudo</value>
+  </data>
+  <data name="SetBookMarkString" xml:space="preserve">
+    <value>Definir marcador</value>
+  </data>
+  <data name="TBLString" xml:space="preserve">
+    <value>TBL</value>
+  </data>
+  <data name="ThisStringAreNotHexString" xml:space="preserve">
+    <value>Esta string não é hexadecimal</value>
+  </data>
+  <data name="UndoString" xml:space="preserve">
+    <value>Anular</value>
+  </data>
+  <data name="ValueString" xml:space="preserve">
+    <value>Valor</value>
+  </data>
+  <data name="WritingErrorExeptionString" xml:space="preserve">
+    <value>Ocorreu um erro ao escrever.</value>
+  </data>
+  <data name="HighLightSettingString" xml:space="preserve">
+    <value>Realçar todos os dados encontrados</value>
+  </data>
+  <data name="ReplaceTrimSettingString" xml:space="preserve">
+    <value>Ajustar os dados ao comprimento encontrado ao substituir</value>
+  </data>
+  <data name="ZoomResetString" xml:space="preserve">
+    <value>Repor zoom para 100%</value>
+  </data>
+  <data name="ZoomString" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="ConvertStringToLongErrorString" xml:space="preserve">
+    <value>Não é possível converter esta string para long</value>
+  </data>
+  <data name="OpenAsReadOnlyString" xml:space="preserve">
+    <value>O ficheiro está bloqueado. Deseja abri-lo em modo só de leitura?</value>
+  </data>
+  <data name="BytesTagString" xml:space="preserve">
+    <value>Bytes</value>
+  </data>
+  <data name="SearchCommandCenterString" xml:space="preserve">
+    <value>CENTRO DE COMANDO DE PESQUISA</value>
+  </data>
+  <data name="SearchTextModeString" xml:space="preserve">
+    <value>Texto</value>
+  </data>
+  <data name="SearchHexModeString" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="SearchRegexModeString" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="SearchWildcardModeString" xml:space="preserve">
+    <value>Wildcard</value>
+  </data>
+  <data name="SearchPreviousString" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="SearchNextString" xml:space="preserve">
+    <value>Seguinte</value>
+  </data>
+  <data name="SearchFindAllString" xml:space="preserve">
+    <value>Localizar Tudo</value>
+  </data>
+  <data name="SearchMatchesString" xml:space="preserve">
+    <value>correspondências</value>
+  </data>
+  <data name="SearchInString" xml:space="preserve">
+    <value>em</value>
+  </data>
+  <data name="SearchNoMatchesString" xml:space="preserve">
+    <value>Nenhuma correspondência encontrada</value>
+  </data>
+  <data name="SearchV2BadgeString" xml:space="preserve">
+    <value>99% MAIS RÁPIDO COM V2</value>
+  </data>
+  <data name="ClearSearchString" xml:space="preserve">
+    <value>Limpar</value>
+  </data>
+  <data name="CommandPaletteString" xml:space="preserve">
+    <value>Paleta de Comandos</value>
+  </data>
+  <data name="PerformanceDashboardString" xml:space="preserve">
+    <value>Painel de Desempenho</value>
+  </data>
+  <data name="ThemeDarkGlassString" xml:space="preserve">
+    <value>Vidro Escuro</value>
+  </data>
+  <data name="ThemeLightString" xml:space="preserve">
+    <value>Claro</value>
+  </data>
+  <data name="ThemeCyberpunkString" xml:space="preserve">
+    <value>Cyberpunk</value>
+  </data>
+  <data name="ThemeMinimalString" xml:space="preserve">
+    <value>Minimalista</value>
+  </data>
+  <data name="CopyAsCSharpCodeString" xml:space="preserve">
+    <value>Copiar como Código C#</value>
+  </data>
+  <data name="CopyAsCCodeString" xml:space="preserve">
+    <value>Copiar como Código C</value>
+  </data>
+  <data name="CopyAsFormattedViewString" xml:space="preserve">
+    <value>Copiar como Vista Formatada</value>
+  </data>
+  <data name="CopyAsAutoString" xml:space="preserve">
+    <value>Copiar (Automático)</value>
+  </data>
+  <data name="CopyString" xml:space="preserve">
+    <value>Copiar</value>
+  </data>
+  <data name="PasteString" xml:space="preserve">
+    <value>Colar</value>
+  </data>
+  <data name="FillWithByteString" xml:space="preserve">
+    <value>Preencher com Byte...</value>
+  </data>
+  <data name="ReplaceByteMenuString" xml:space="preserve">
+    <value>Substituir Byte...</value>
+  </data>
+  <data name="ReverseSelectionString" xml:space="preserve">
+    <value>Inverter Selecção</value>
+  </data>
+  <data name="StatusMessageString" xml:space="preserve">
+    <value>Mensagem de Estado</value>
+  </data>
+  <data name="FileSizeString" xml:space="preserve">
+    <value>Tamanho do Ficheiro</value>
+  </data>
+  <data name="SelectionInfoString" xml:space="preserve">
+    <value>Informação da Selecção</value>
+  </data>
+  <data name="EditModeString" xml:space="preserve">
+    <value>Modo de Edição</value>
+  </data>
+  <data name="BytesPerLineString" xml:space="preserve">
+    <value>Bytes por Linha</value>
+  </data>
+  <data name="RefreshTimeString" xml:space="preserve">
+    <value>Tempo de Actualização</value>
+  </data>
+  <data name="OffsetString" xml:space="preserve">
+    <value>Deslocamento</value>
+  </data>
+  <data name="ReadyString" xml:space="preserve">
+    <value>Pronto</value>
+  </data>
+  <data name="NoSelectionString" xml:space="preserve">
+    <value>Sem selecção</value>
+  </data>
+  <data name="ModeOverwriteString" xml:space="preserve">
+    <value>Modo: Sobrescrever</value>
+  </data>
+  <data name="FindAndReplaceDialogTitle" xml:space="preserve">
+    <value>Localizar e Substituir</value>
+  </data>
+  <data name="FindGroupHeader" xml:space="preserve">
+    <value>Localizar</value>
+  </data>
+  <data name="ReplaceGroupHeader" xml:space="preserve">
+    <value>Substituir</value>
+  </data>
+  <data name="ResultsGroupHeader" xml:space="preserve">
+    <value>Resultados</value>
+  </data>
+  <data name="FindTextLabel" xml:space="preserve">
+    <value>Localizar:</value>
+  </data>
+  <data name="ReplaceTextLabel" xml:space="preserve">
+    <value>Substituir por:</value>
+  </data>
+  <data name="FindPreviousButton" xml:space="preserve">
+    <value>Anterior</value>
+  </data>
+  <data name="FindNextButton" xml:space="preserve">
+    <value>Seguinte</value>
+  </data>
+  <data name="FindAllButton" xml:space="preserve">
+    <value>Localizar Tudo</value>
+  </data>
+  <data name="ReplaceButton" xml:space="preserve">
+    <value>Substituir</value>
+  </data>
+  <data name="ReplaceAllButton" xml:space="preserve">
+    <value>Substituir Tudo</value>
+  </data>
+  <data name="CaseSensitiveCheckbox" xml:space="preserve">
+    <value>Maiúsculas/minúsculas</value>
+  </data>
+  <data name="WholeWordCheckbox" xml:space="preserve">
+    <value>Palavra completa</value>
+  </data>
+  <data name="UseRegexCheckbox" xml:space="preserve">
+    <value>Usar expressões regulares</value>
+  </data>
+  <data name="SearchInSelectionCheckbox" xml:space="preserve">
+    <value>Procurar apenas na selecção</value>
+  </data>
+  <data name="HighlightAllCheckbox" xml:space="preserve">
+    <value>Realçar todas as correspondências</value>
+  </data>
+  <data name="CloseDialogButton" xml:space="preserve">
+    <value>Fechar</value>
+  </data>
+  <data name="NoResultsFound" xml:space="preserve">
+    <value>Nenhum resultado encontrado</value>
+  </data>
+  <data name="MatchesFoundFormat" xml:space="preserve">
+    <value>Encontradas {0} correspondências</value>
+  </data>
+  <data name="ReplacedFormat" xml:space="preserve">
+    <value>{0} substituídas</value>
+  </data>
+  <data name="SearchPanelTitle" xml:space="preserve">
+    <value>Pesquisa</value>
+  </data>
+  <data name="SearchFindLabel" xml:space="preserve">
+    <value>Localizar:</value>
+  </data>
+  <data name="SearchModePlaceholder" xml:space="preserve">
+    <value>Introduza o texto a pesquisar...</value>
+  </data>
+  <data name="TextModeLabel" xml:space="preserve">
+    <value>Texto</value>
+  </data>
+  <data name="HexModeLabel" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="RegexModeLabel" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="WildcardModeLabel" xml:space="preserve">
+    <value>Wildcard</value>
+  </data>
+  <data name="MatchCaseLabel" xml:space="preserve">
+    <value>Diferenciar maiúsculas/minúsculas</value>
+  </data>
+  <data name="WholeWordLabel" xml:space="preserve">
+    <value>Palavra completa</value>
+  </data>
+  <data name="SearchOptionsLabel" xml:space="preserve">
+    <value>Opções</value>
+  </data>
+  <data name="SearchResultsLabel" xml:space="preserve">
+    <value>Resultados</value>
+  </data>
+  <data name="CurrentMatchLabel" xml:space="preserve">
+    <value>Correspondência actual</value>
+  </data>
+  <data name="TotalMatchesLabel" xml:space="preserve">
+    <value>Total de correspondências</value>
+  </data>
+  <data name="QuickSearchTooltip" xml:space="preserve">
+    <value>Pesquisa rápida (Ctrl+F)</value>
+  </data>
+  <data name="PreviousMatchTooltip" xml:space="preserve">
+    <value>Correspondência anterior (Shift+F3)</value>
+  </data>
+  <data name="NextMatchTooltip" xml:space="preserve">
+    <value>Correspondência seguinte (F3)</value>
+  </data>
+  <data name="CloseSearchTooltip" xml:space="preserve">
+    <value>Fechar pesquisa (Esc)</value>
+  </data>
+  <data name="SearchOptionsTooltip" xml:space="preserve">
+    <value>Opções de pesquisa</value>
+  </data>
+  <data name="StatusSearching" xml:space="preserve">
+    <value>A pesquisar...</value>
+  </data>
+  <data name="StatusSearchComplete" xml:space="preserve">
+    <value>Pesquisa concluída</value>
+  </data>
+  <data name="StatusFoundMatchesFormat" xml:space="preserve">
+    <value>Encontradas {0} correspondências em {1}ms</value>
+  </data>
+  <data name="StatusMatchFoundAtFormat" xml:space="preserve">
+    <value>Correspondência encontrada na posição 0x{0:X8}</value>
+  </data>
+  <data name="StatusNoMoreMatches" xml:space="preserve">
+    <value>Não foram encontradas mais correspondências</value>
+  </data>
+  <data name="StatusReachedEndOfFile" xml:space="preserve">
+    <value>Chegou ao fim do ficheiro</value>
+  </data>
+  <data name="StatusReachedStartOfFile" xml:space="preserve">
+    <value>Chegou ao início do ficheiro</value>
+  </data>
+  <data name="StatusReplacing" xml:space="preserve">
+    <value>A substituir...</value>
+  </data>
+  <data name="StatusReplaceComplete" xml:space="preserve">
+    <value>Substituição concluída</value>
+  </data>
+  <data name="StatusReplacedFormat" xml:space="preserve">
+    <value>Substituídas {0} ocorrências</value>
+  </data>
+  <data name="StatusInvalidSearchPattern" xml:space="preserve">
+    <value>Padrão de pesquisa inválido</value>
+  </data>
+  <data name="StatusInvalidRegex" xml:space="preserve">
+    <value>Expressão regular inválida</value>
+  </data>
+  <data name="StatusSearchCancelled" xml:space="preserve">
+    <value>Pesquisa cancelada</value>
+  </data>
+  <data name="StatusReplaceCancelled" xml:space="preserve">
+    <value>Substituição cancelada</value>
+  </data>
+  <data name="StatusCancelling" xml:space="preserve">
+    <value>A cancelar...</value>
+  </data>
+  <data name="StatusError" xml:space="preserve">
+    <value>Erro: {0}</value>
+  </data>
+  <data name="StatusFoundMatchesWithSpeedFormat" xml:space="preserve">
+    <value>Encontradas {0} correspondências em {1}ms ({2:F2} MB/s)</value>
+  </data>
+  <data name="StatusMatchFoundAtWrappedFormat" xml:space="preserve">
+    <value>Correspondência encontrada na posição 0x{0:X8} (reiniciado)</value>
+  </data>
+  <data name="StatusNoPreviousMatches" xml:space="preserve">
+    <value>Não foram encontradas correspondências anteriores</value>
+  </data>
+  <data name="StatusMatchOfTotalFormat" xml:space="preserve">
+    <value>Correspondência {0} de {1} na posição 0x{2:X8}</value>
+  </data>
+  <data name="StatusReplacedAtFormat" xml:space="preserve">
+    <value>Substituído na posição 0x{0:X8} (Total: {1})</value>
+  </data>
+  <data name="StatusReplaceError" xml:space="preserve">
+    <value>Erro de substituição: {0}</value>
+  </data>
+  <data name="StatusNoMatchesToReplace" xml:space="preserve">
+    <value>Não há correspondências para substituir</value>
+  </data>
+  <data name="StatusInvalidReplacementPattern" xml:space="preserve">
+    <value>Padrão de substituição inválido</value>
+  </data>
+  <data name="StatusReplacedOccurrencesFormat" xml:space="preserve">
+    <value>Substituída(s) {0} ocorrência(s). Total de substituições: {1}</value>
+  </data>
+  <data name="StatusReplaceAllError" xml:space="preserve">
+    <value>Erro ao substituir tudo: {0}</value>
+  </data>
+  <data name="StatusNoMoreBookmarksAfter" xml:space="preserve">
+    <value>Não há mais marcadores após a posição actual</value>
+  </data>
+  <data name="StatusNoMoreBookmarksBefore" xml:space="preserve">
+    <value>Não há mais marcadores antes da posição actual</value>
+  </data>
+  <data name="BookmarkSetFormat" xml:space="preserve">
+    <value>Marcador definido em 0x{0:X8}</value>
+  </data>
+  <data name="BookmarkClearedFormat" xml:space="preserve">
+    <value>Marcador limpo em 0x{0:X8}</value>
+  </data>
+  <data name="BookmarkNavigatedFormat" xml:space="preserve">
+    <value>Navegado para marcador em 0x{0:X8}</value>
+  </data>
+  <data name="BookmarkAllCleared" xml:space="preserve">
+    <value>Todos os marcadores limpos</value>
+  </data>
+  <data name="CopySelectionString" xml:space="preserve">
+    <value>Copiar Selecção</value>
+  </data>
+  <data name="CutSelectionString" xml:space="preserve">
+    <value>Cortar Selecção</value>
+  </data>
+  <data name="InsertByteString" xml:space="preserve">
+    <value>Inserir Byte...</value>
+  </data>
+  <data name="DeleteByteString" xml:space="preserve">
+    <value>Eliminar Byte</value>
+  </data>
+  <data name="DeleteSelectionString" xml:space="preserve">
+    <value>Eliminar Selecção</value>
+  </data>
+  <data name="GoToOffsetString" xml:space="preserve">
+    <value>Ir para Deslocamento...</value>
+  </data>
+  <data name="PropertiesString" xml:space="preserve">
+    <value>Propriedades</value>
+  </data>
+  <data name="ProgressTitleOpeningFile" xml:space="preserve">
+    <value>A abrir ficheiro</value>
+  </data>
+  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
+    <value>A abrir fluxo de ficheiro...</value>
+  </data>
+  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
+    <value>A carregar dados do ficheiro...</value>
+  </data>
+  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
+    <value>Ficheiro aberto com sucesso</value>
+  </data>
+  <data name="ProgressTitleSavingFile" xml:space="preserve">
+    <value>A guardar ficheiro</value>
+  </data>
+  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
+    <value>A preparar para guardar...</value>
+  </data>
+  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
+    <value>Ficheiro guardado com sucesso</value>
+  </data>
+  <data name="ProgressTitleSearching" xml:space="preserve">
+    <value>A pesquisar</value>
+  </data>
+  <data name="ProgressMessageStartingSearch" xml:space="preserve">
+    <value>A iniciar pesquisa...</value>
+  </data>
+  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
+    <value>A pesquisar... {0} encontradas</value>
+  </data>
+  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
+    <value>Encontradas {0} correspondências</value>
+  </data>
+  <data name="ProgressTitleReplacing" xml:space="preserve">
+    <value>A substituir</value>
+  </data>
+  <data name="ProgressMessageFindingMatches" xml:space="preserve">
+    <value>A localizar correspondências...</value>
+  </data>
+  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
+    <value>Encontradas {0} correspondências. A substituir...</value>
+  </data>
+  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
+    <value>Substituídas {0} ocorrências</value>
+  </data>
+  <data name="ProgressButtonCancel" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+</root>

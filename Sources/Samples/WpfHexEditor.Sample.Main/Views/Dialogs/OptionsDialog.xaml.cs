@@ -37,7 +37,7 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
 
         private void LoadLanguages()
         {
-            // Current 9 languages supported in V2
+            // All 19 languages supported
             var languages = new List<LanguageInfo>
             {
                 new LanguageInfo { Flag = "🇺🇸", Code = "en", Name = "English", NativeName = "English" },
@@ -50,8 +50,7 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
                 new LanguageInfo { Flag = "🇷🇺", Code = "ru-RU", Name = "Russian", NativeName = "Русский" },
                 new LanguageInfo { Flag = "🇨🇳", Code = "zh-CN", Name = "Chinese (Simplified)", NativeName = "简体中文" },
 
-                // Future languages (Phase 3 - will be added when resources are ready)
-                /*
+                // New languages added in localization expansion
                 new LanguageInfo { Flag = "🇩🇪", Code = "de-DE", Name = "German", NativeName = "Deutsch" },
                 new LanguageInfo { Flag = "🇮🇹", Code = "it-IT", Name = "Italian", NativeName = "Italiano" },
                 new LanguageInfo { Flag = "🇯🇵", Code = "ja-JP", Name = "Japanese", NativeName = "日本語" },
@@ -61,7 +60,7 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
                 new LanguageInfo { Flag = "🇹🇷", Code = "tr-TR", Name = "Turkish", NativeName = "Türkçe" },
                 new LanguageInfo { Flag = "🇮🇳", Code = "hi-IN", Name = "Hindi", NativeName = "हिन्दी" },
                 new LanguageInfo { Flag = "🇦🇪", Code = "ar-SA", Name = "Arabic", NativeName = "العربية" },
-                */
+                new LanguageInfo { Flag = "🇵🇹", Code = "pt-PT", Name = "Portuguese (Portugal)", NativeName = "Português (Portugal)" },
             };
 
             // Sort by name for easy navigation

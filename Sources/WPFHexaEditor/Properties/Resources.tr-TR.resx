@@ -1,0 +1,660 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Turkish (tr-TR) - Türkçe çeviri -->
+  <data name="AppendByteConfirmationString" xml:space="preserve">
+    <value>Dosyanın sonuna ulaştınız. Bir bayt eklemek istiyor musunuz? Devam ederseniz bu işlem iptal edilemez.</value>
+  </data>
+  <data name="BookmarksString" xml:space="preserve">
+    <value>Yer İşaretleri</value>
+  </data>
+  <data name="ByteActionString" xml:space="preserve">
+    <value>Bayt işlemi</value>
+  </data>
+  <data name="ByteString" xml:space="preserve">
+    <value>Bayt</value>
+  </data>
+  <data name="CancelLongProcessString" xml:space="preserve">
+    <value>Uzun işlemi iptal et</value>
+  </data>
+  <data name="CancelLongProcessToolTipString" xml:space="preserve">
+    <value>Uzun işlemi iptal etmek için tıklayın.</value>
+  </data>
+  <data name="CancelString" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="ClearBookMarkString" xml:space="preserve">
+    <value>Yer işaretini temizle</value>
+  </data>
+  <data name="ClearString" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="ClickToGoAtPositionString" xml:space="preserve">
+    <value>Konuma gitmek için tıklayın.</value>
+  </data>
+  <data name="CloseString" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="CopyAsASCIIString" xml:space="preserve">
+    <value>ASCII olarak kopyala</value>
+  </data>
+  <data name="CopyAsDecimalString" xml:space="preserve">
+    <value>Ondalık olarak kopyala</value>
+  </data>
+  <data name="CopyAsHexadecimalString" xml:space="preserve">
+    <value>Onaltılık olarak kopyala</value>
+  </data>
+  <data name="CopyAsTBLString" xml:space="preserve">
+    <value>TBL dizesi (karakter dosyası yüklendi)</value>
+  </data>
+  <data name="CopySelectionAsString" xml:space="preserve">
+    <value>Seçimi farklı kopyala...</value>
+  </data>
+  <data name="CountOfString" xml:space="preserve">
+    <value>Sayısı</value>
+  </data>
+  <data name="DefaultTBLString" xml:space="preserve">
+    <value>Varsayılan TBL</value>
+  </data>
+  <data name="DeleteString" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="DescriptionString" xml:space="preserve">
+    <value>Açıklama</value>
+  </data>
+  <data name="EndTagString" xml:space="preserve">
+    <value>&lt;son&gt;</value>
+  </data>
+  <data name="EnterHexValueMsgString" xml:space="preserve">
+    <value>Onaltılık değer girin...</value>
+  </data>
+  <data name="FileDroppingConfirmationString" xml:space="preserve">
+    <value>Mevcut dosyayı kapatıp şunu açmak istiyor musunuz: </value>
+  </data>
+  <data name="FillSelectionAloneString" xml:space="preserve">
+    <value>Seçimi bayt ile doldur</value>
+  </data>
+  <data name="FillSelectionString" xml:space="preserve">
+    <value>Seçimi bayt ile doldur...</value>
+  </data>
+  <data name="FindAllString" xml:space="preserve">
+    <value>Tümünü Bul</value>
+  </data>
+  <data name="FindAndReplaceString" xml:space="preserve">
+    <value>Bul ve Değiştir</value>
+  </data>
+  <data name="FindByteString" xml:space="preserve">
+    <value>Aranacak bayt</value>
+  </data>
+  <data name="FindFirstString" xml:space="preserve">
+    <value>İlkini Bul</value>
+  </data>
+  <data name="FindLastString" xml:space="preserve">
+    <value>Sonuncuyu Bul</value>
+  </data>
+  <data name="FindNextString" xml:space="preserve">
+    <value>Sonrakini Bul</value>
+  </data>
+  <data name="FindSelectionString" xml:space="preserve">
+    <value>Seçimin tüm tekrarlarını bul</value>
+  </data>
+  <data name="FindString" xml:space="preserve">
+    <value>Bul</value>
+  </data>
+  <data name="FindWhatString" xml:space="preserve">
+    <value>Ne bulunacak:</value>
+  </data>
+  <data name="FirstByteString" xml:space="preserve">
+    <value>İlk bayt</value>
+  </data>
+  <data name="HexString" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="KBTagString" xml:space="preserve">
+    <value>Kb</value>
+  </data>
+  <data name="LengthString" xml:space="preserve">
+    <value>Uzunluk</value>
+  </data>
+  <data name="LineStatusBarTagString" xml:space="preserve">
+    <value>Sat</value>
+  </data>
+  <data name="LineTagString" xml:space="preserve">
+    <value>&lt;sat&gt;</value>
+  </data>
+  <data name="LongString" xml:space="preserve">
+    <value>Uzun</value>
+  </data>
+  <data name="MBTagString" xml:space="preserve">
+    <value>Mb</value>
+  </data>
+  <data name="OkString" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="PasteExtendByteConfirmationString" xml:space="preserve">
+    <value>Yapıştırma işlemi dosyanın sonuna ulaştı. İşlemi tamamlamak için dosyayı genişletmek istiyor musunuz? Devam ederseniz bu işlem iptal edilemez.</value>
+  </data>
+  <data name="PasteFromClipboardString" xml:space="preserve">
+    <value>Panodan yapıştır</value>
+  </data>
+  <data name="PasteNotInsertString" xml:space="preserve">
+    <value>Eklemeden yapıştır</value>
+  </data>
+  <data name="PositionString" xml:space="preserve">
+    <value>Konum</value>
+  </data>
+  <data name="ReplaceAllString" xml:space="preserve">
+    <value>Tümünü Değiştir</value>
+  </data>
+  <data name="ReplaceByByteString" xml:space="preserve">
+    <value>Bayt ile değiştir</value>
+  </data>
+  <data name="ReplaceNextString" xml:space="preserve">
+    <value>Sonrakini Değiştir</value>
+  </data>
+  <data name="ReplaceSelectionString" xml:space="preserve">
+    <value>Seçimdeki baytı değiştir...</value>
+  </data>
+  <data name="ReplaceString" xml:space="preserve">
+    <value>Değiştir</value>
+  </data>
+  <data name="ReplaceWithByteString" xml:space="preserve">
+    <value>Bayt ile değiştir</value>
+  </data>
+  <data name="ReplaceWithString" xml:space="preserve">
+    <value>Bununla değiştir:</value>
+  </data>
+  <data name="SelectAllString" xml:space="preserve">
+    <value>Tümünü seç</value>
+  </data>
+  <data name="SetBookMarkString" xml:space="preserve">
+    <value>Yer işareti ekle</value>
+  </data>
+  <data name="TBLString" xml:space="preserve">
+    <value>TBL</value>
+  </data>
+  <data name="ThisStringAreNotHexString" xml:space="preserve">
+    <value>Bu dizi onaltılık değil</value>
+  </data>
+  <data name="UndoString" xml:space="preserve">
+    <value>Geri al</value>
+  </data>
+  <data name="ValueString" xml:space="preserve">
+    <value>Değer</value>
+  </data>
+  <data name="WritingErrorExeptionString" xml:space="preserve">
+    <value>Yazma sırasında bir hata oluştu.</value>
+  </data>
+  <data name="HighLightSettingString" xml:space="preserve">
+    <value>Bulunan tüm verileri vurgula</value>
+  </data>
+  <data name="ReplaceTrimSettingString" xml:space="preserve">
+    <value>Değiştirirken veriyi bulma uzunluğuna göre kırp</value>
+  </data>
+  <data name="ZoomResetString" xml:space="preserve">
+    <value>Yakınlaştırmayı %100'e sıfırla</value>
+  </data>
+  <data name="ZoomString" xml:space="preserve">
+    <value>Yakınlaştır</value>
+  </data>
+  <data name="ConvertStringToLongErrorString" xml:space="preserve">
+    <value>Bu dizi uzun tam sayıya dönüştürülemiyor</value>
+  </data>
+  <data name="OpenAsReadOnlyString" xml:space="preserve">
+    <value>Dosya kilitli. Salt okunur modda açmak istiyor musunuz?</value>
+  </data>
+  <data name="BytesTagString" xml:space="preserve">
+    <value>Bayt</value>
+  </data>
+  <data name="SearchCommandCenterString" xml:space="preserve">
+    <value>ARAMA KOMUT MERKEZİ</value>
+  </data>
+  <data name="SearchTextModeString" xml:space="preserve">
+    <value>Metin</value>
+  </data>
+  <data name="SearchHexModeString" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="SearchRegexModeString" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="SearchWildcardModeString" xml:space="preserve">
+    <value>Joker karakter</value>
+  </data>
+  <data name="SearchPreviousString" xml:space="preserve">
+    <value>Önceki</value>
+  </data>
+  <data name="SearchNextString" xml:space="preserve">
+    <value>Sonraki</value>
+  </data>
+  <data name="SearchFindAllString" xml:space="preserve">
+    <value>Tümünü Bul</value>
+  </data>
+  <data name="SearchMatchesString" xml:space="preserve">
+    <value>eşleşme</value>
+  </data>
+  <data name="SearchInString" xml:space="preserve">
+    <value>içinde</value>
+  </data>
+  <data name="SearchNoMatchesString" xml:space="preserve">
+    <value>Eşleşme bulunamadı</value>
+  </data>
+  <data name="SearchV2BadgeString" xml:space="preserve">
+    <value>V2 İLE %99 DAHA HIZLI</value>
+  </data>
+  <data name="ClearSearchString" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="CommandPaletteString" xml:space="preserve">
+    <value>Komut Paleti</value>
+  </data>
+  <data name="PerformanceDashboardString" xml:space="preserve">
+    <value>Performans Panosu</value>
+  </data>
+  <data name="ThemeDarkGlassString" xml:space="preserve">
+    <value>Koyu Cam</value>
+  </data>
+  <data name="ThemeLightString" xml:space="preserve">
+    <value>Açık</value>
+  </data>
+  <data name="ThemeCyberpunkString" xml:space="preserve">
+    <value>Siberpunk</value>
+  </data>
+  <data name="ThemeMinimalString" xml:space="preserve">
+    <value>Minimal</value>
+  </data>
+  <data name="CopyAsCSharpCodeString" xml:space="preserve">
+    <value>C# Kodu olarak kopyala</value>
+  </data>
+  <data name="CopyAsCCodeString" xml:space="preserve">
+    <value>C Kodu olarak kopyala</value>
+  </data>
+  <data name="CopyAsFormattedViewString" xml:space="preserve">
+    <value>Biçimlendirilmiş Görünüm olarak kopyala</value>
+  </data>
+  <data name="CopyAsAutoString" xml:space="preserve">
+    <value>Kopyala (Otomatik)</value>
+  </data>
+  <data name="CopyString" xml:space="preserve">
+    <value>Kopyala</value>
+  </data>
+  <data name="PasteString" xml:space="preserve">
+    <value>Yapıştır</value>
+  </data>
+  <data name="FillWithByteString" xml:space="preserve">
+    <value>Bayt ile Doldur...</value>
+  </data>
+  <data name="ReplaceByteMenuString" xml:space="preserve">
+    <value>Baytı Değiştir...</value>
+  </data>
+  <data name="ReverseSelectionString" xml:space="preserve">
+    <value>Seçimi Ters Çevir</value>
+  </data>
+  <data name="StatusMessageString" xml:space="preserve">
+    <value>Durum Mesajı</value>
+  </data>
+  <data name="FileSizeString" xml:space="preserve">
+    <value>Dosya Boyutu</value>
+  </data>
+  <data name="SelectionInfoString" xml:space="preserve">
+    <value>Seçim Bilgisi</value>
+  </data>
+  <data name="EditModeString" xml:space="preserve">
+    <value>Düzenleme Modu</value>
+  </data>
+  <data name="BytesPerLineString" xml:space="preserve">
+    <value>Satır Başına Bayt</value>
+  </data>
+  <data name="RefreshTimeString" xml:space="preserve">
+    <value>Yenileme Süresi</value>
+  </data>
+  <data name="OffsetString" xml:space="preserve">
+    <value>Ofset</value>
+  </data>
+  <data name="ReadyString" xml:space="preserve">
+    <value>Hazır</value>
+  </data>
+  <data name="NoSelectionString" xml:space="preserve">
+    <value>Seçim yok</value>
+  </data>
+  <data name="ModeOverwriteString" xml:space="preserve">
+    <value>Mod: Üzerine Yaz</value>
+  </data>
+  <data name="FindAndReplaceDialogTitle" xml:space="preserve">
+    <value>Bul ve Değiştir</value>
+  </data>
+  <data name="FindGroupHeader" xml:space="preserve">
+    <value>Bul</value>
+  </data>
+  <data name="ReplaceGroupHeader" xml:space="preserve">
+    <value>Değiştir</value>
+  </data>
+  <data name="ResultsGroupHeader" xml:space="preserve">
+    <value>Sonuçlar</value>
+  </data>
+  <data name="FindTextLabel" xml:space="preserve">
+    <value>Bul:</value>
+  </data>
+  <data name="ReplaceTextLabel" xml:space="preserve">
+    <value>Bununla değiştir:</value>
+  </data>
+  <data name="FindPreviousButton" xml:space="preserve">
+    <value>Önceki</value>
+  </data>
+  <data name="FindNextButton" xml:space="preserve">
+    <value>Sonraki</value>
+  </data>
+  <data name="FindAllButton" xml:space="preserve">
+    <value>Tümünü Bul</value>
+  </data>
+  <data name="ReplaceButton" xml:space="preserve">
+    <value>Değiştir</value>
+  </data>
+  <data name="ReplaceAllButton" xml:space="preserve">
+    <value>Tümünü Değiştir</value>
+  </data>
+  <data name="CaseSensitiveCheckbox" xml:space="preserve">
+    <value>Büyük/küçük harf duyarlı</value>
+  </data>
+  <data name="WholeWordCheckbox" xml:space="preserve">
+    <value>Tam sözcük</value>
+  </data>
+  <data name="UseRegexCheckbox" xml:space="preserve">
+    <value>Düzenli ifadeler kullan</value>
+  </data>
+  <data name="SearchInSelectionCheckbox" xml:space="preserve">
+    <value>Yalnızca seçimde ara</value>
+  </data>
+  <data name="HighlightAllCheckbox" xml:space="preserve">
+    <value>Tüm eşleşmeleri vurgula</value>
+  </data>
+  <data name="CloseDialogButton" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="NoResultsFound" xml:space="preserve">
+    <value>Sonuç bulunamadı</value>
+  </data>
+  <data name="MatchesFoundFormat" xml:space="preserve">
+    <value>{0} eşleşme bulundu</value>
+  </data>
+  <data name="ReplacedFormat" xml:space="preserve">
+    <value>{0} değiştirildi</value>
+  </data>
+  <data name="SearchPanelTitle" xml:space="preserve">
+    <value>Ara</value>
+  </data>
+  <data name="SearchFindLabel" xml:space="preserve">
+    <value>Bul:</value>
+  </data>
+  <data name="SearchModePlaceholder" xml:space="preserve">
+    <value>Arama metni girin...</value>
+  </data>
+  <data name="TextModeLabel" xml:space="preserve">
+    <value>Metin</value>
+  </data>
+  <data name="HexModeLabel" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="RegexModeLabel" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="WildcardModeLabel" xml:space="preserve">
+    <value>Joker karakter</value>
+  </data>
+  <data name="MatchCaseLabel" xml:space="preserve">
+    <value>Büyük/küçük harf eşleştir</value>
+  </data>
+  <data name="WholeWordLabel" xml:space="preserve">
+    <value>Tam sözcük</value>
+  </data>
+  <data name="SearchOptionsLabel" xml:space="preserve">
+    <value>Seçenekler</value>
+  </data>
+  <data name="SearchResultsLabel" xml:space="preserve">
+    <value>Sonuçlar</value>
+  </data>
+  <data name="CurrentMatchLabel" xml:space="preserve">
+    <value>Geçerli eşleşme</value>
+  </data>
+  <data name="TotalMatchesLabel" xml:space="preserve">
+    <value>Toplam eşleşme</value>
+  </data>
+  <data name="QuickSearchTooltip" xml:space="preserve">
+    <value>Hızlı arama (Ctrl+F)</value>
+  </data>
+  <data name="PreviousMatchTooltip" xml:space="preserve">
+    <value>Önceki eşleşme (Shift+F3)</value>
+  </data>
+  <data name="NextMatchTooltip" xml:space="preserve">
+    <value>Sonraki eşleşme (F3)</value>
+  </data>
+  <data name="CloseSearchTooltip" xml:space="preserve">
+    <value>Aramayı kapat (Esc)</value>
+  </data>
+  <data name="SearchOptionsTooltip" xml:space="preserve">
+    <value>Arama seçenekleri</value>
+  </data>
+  <data name="StatusSearching" xml:space="preserve">
+    <value>Aranıyor...</value>
+  </data>
+  <data name="StatusSearchComplete" xml:space="preserve">
+    <value>Arama tamamlandı</value>
+  </data>
+  <data name="StatusFoundMatchesFormat" xml:space="preserve">
+    <value>{1}ms içinde {0} eşleşme bulundu</value>
+  </data>
+  <data name="StatusMatchFoundAtFormat" xml:space="preserve">
+    <value>Konum 0x{0:X8}'de eşleşme bulundu</value>
+  </data>
+  <data name="StatusNoMoreMatches" xml:space="preserve">
+    <value>Başka eşleşme bulunamadı</value>
+  </data>
+  <data name="StatusReachedEndOfFile" xml:space="preserve">
+    <value>Dosyanın sonuna ulaşıldı</value>
+  </data>
+  <data name="StatusReachedStartOfFile" xml:space="preserve">
+    <value>Dosyanın başına ulaşıldı</value>
+  </data>
+  <data name="StatusReplacing" xml:space="preserve">
+    <value>Değiştiriliyor...</value>
+  </data>
+  <data name="StatusReplaceComplete" xml:space="preserve">
+    <value>Değiştirme tamamlandı</value>
+  </data>
+  <data name="StatusReplacedFormat" xml:space="preserve">
+    <value>{0} tekrar değiştirildi</value>
+  </data>
+  <data name="StatusInvalidSearchPattern" xml:space="preserve">
+    <value>Geçersiz arama deseni</value>
+  </data>
+  <data name="StatusInvalidRegex" xml:space="preserve">
+    <value>Geçersiz düzenli ifade</value>
+  </data>
+  <data name="StatusSearchCancelled" xml:space="preserve">
+    <value>Arama iptal edildi</value>
+  </data>
+  <data name="StatusReplaceCancelled" xml:space="preserve">
+    <value>Değiştirme iptal edildi</value>
+  </data>
+  <data name="StatusCancelling" xml:space="preserve">
+    <value>İptal ediliyor...</value>
+  </data>
+  <data name="StatusError" xml:space="preserve">
+    <value>Hata: {0}</value>
+  </data>
+  <data name="StatusFoundMatchesWithSpeedFormat" xml:space="preserve">
+    <value>{1}ms içinde {0} eşleşme bulundu ({2:F2} MB/s)</value>
+  </data>
+  <data name="StatusMatchFoundAtWrappedFormat" xml:space="preserve">
+    <value>Konum 0x{0:X8}'de eşleşme bulundu (döndü)</value>
+  </data>
+  <data name="StatusNoPreviousMatches" xml:space="preserve">
+    <value>Önceki eşleşme bulunamadı</value>
+  </data>
+  <data name="StatusMatchOfTotalFormat" xml:space="preserve">
+    <value>Konum 0x{2:X8}'deki {1} eşleşmeden {0}. eşleşme</value>
+  </data>
+  <data name="StatusReplacedAtFormat" xml:space="preserve">
+    <value>Konum 0x{0:X8}'de değiştirildi (Toplam: {1})</value>
+  </data>
+  <data name="StatusReplaceError" xml:space="preserve">
+    <value>Değiştirme hatası: {0}</value>
+  </data>
+  <data name="StatusNoMatchesToReplace" xml:space="preserve">
+    <value>Değiştirilecek eşleşme yok</value>
+  </data>
+  <data name="StatusInvalidReplacementPattern" xml:space="preserve">
+    <value>Geçersiz değiştirme deseni</value>
+  </data>
+  <data name="StatusReplacedOccurrencesFormat" xml:space="preserve">
+    <value>{0} tekrar değiştirildi. Toplam değişiklik: {1}</value>
+  </data>
+  <data name="StatusReplaceAllError" xml:space="preserve">
+    <value>Tümünü değiştirme hatası: {0}</value>
+  </data>
+  <data name="StatusNoMoreBookmarksAfter" xml:space="preserve">
+    <value>Mevcut konumdan sonra yer işareti yok</value>
+  </data>
+  <data name="StatusNoMoreBookmarksBefore" xml:space="preserve">
+    <value>Mevcut konumdan önce yer işareti yok</value>
+  </data>
+  <data name="BookmarkSetFormat" xml:space="preserve">
+    <value>0x{0:X8} konumunda yer işareti eklendi</value>
+  </data>
+  <data name="BookmarkClearedFormat" xml:space="preserve">
+    <value>0x{0:X8} konumundaki yer işareti temizlendi</value>
+  </data>
+  <data name="BookmarkNavigatedFormat" xml:space="preserve">
+    <value>0x{0:X8} konumundaki yer işaretine gidildi</value>
+  </data>
+  <data name="BookmarkAllCleared" xml:space="preserve">
+    <value>Tüm yer işaretleri temizlendi</value>
+  </data>
+  <data name="CopySelectionString" xml:space="preserve">
+    <value>Seçimi Kopyala</value>
+  </data>
+  <data name="CutSelectionString" xml:space="preserve">
+    <value>Seçimi Kes</value>
+  </data>
+  <data name="InsertByteString" xml:space="preserve">
+    <value>Bayt Ekle...</value>
+  </data>
+  <data name="DeleteByteString" xml:space="preserve">
+    <value>Bayt Sil</value>
+  </data>
+  <data name="DeleteSelectionString" xml:space="preserve">
+    <value>Seçimi Sil</value>
+  </data>
+  <data name="GoToOffsetString" xml:space="preserve">
+    <value>Ofsete Git...</value>
+  </data>
+  <data name="PropertiesString" xml:space="preserve">
+    <value>Özellikler</value>
+  </data>
+  <data name="ProgressTitleOpeningFile" xml:space="preserve">
+    <value>Dosya açılıyor</value>
+  </data>
+  <data name="ProgressMessageOpeningFileStream" xml:space="preserve">
+    <value>Dosya akışı açılıyor...</value>
+  </data>
+  <data name="ProgressMessageLoadingFileData" xml:space="preserve">
+    <value>Dosya verileri yükleniyor...</value>
+  </data>
+  <data name="ProgressMessageFileOpenedSuccessfully" xml:space="preserve">
+    <value>Dosya başarıyla açıldı</value>
+  </data>
+  <data name="ProgressTitleSavingFile" xml:space="preserve">
+    <value>Dosya kaydediliyor</value>
+  </data>
+  <data name="ProgressMessagePreparingToSave" xml:space="preserve">
+    <value>Kaydetmeye hazırlanıyor...</value>
+  </data>
+  <data name="ProgressMessageFileSavedSuccessfully" xml:space="preserve">
+    <value>Dosya başarıyla kaydedildi</value>
+  </data>
+  <data name="ProgressTitleSearching" xml:space="preserve">
+    <value>Aranıyor</value>
+  </data>
+  <data name="ProgressMessageStartingSearch" xml:space="preserve">
+    <value>Arama başlatılıyor...</value>
+  </data>
+  <data name="ProgressMessageSearchingFoundFormat" xml:space="preserve">
+    <value>Aranıyor... {0} bulundu</value>
+  </data>
+  <data name="ProgressMessageFoundMatchesFormat" xml:space="preserve">
+    <value>{0} eşleşme bulundu</value>
+  </data>
+  <data name="ProgressTitleReplacing" xml:space="preserve">
+    <value>Değiştiriliyor</value>
+  </data>
+  <data name="ProgressMessageFindingMatches" xml:space="preserve">
+    <value>Eşleşmeler bulunuyor...</value>
+  </data>
+  <data name="ProgressMessageReplacingFormat" xml:space="preserve">
+    <value>{0} eşleşme bulundu. Değiştiriliyor...</value>
+  </data>
+  <data name="ProgressMessageReplacedFormat" xml:space="preserve">
+    <value>{0} tekrar değiştirildi</value>
+  </data>
+  <data name="ProgressButtonCancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+</root>
