@@ -486,7 +486,7 @@ namespace WpfHexaEditor
                     _scrollMarkers.ClearSelection();
                 }
             }
-            catch (Exception _)
+            catch (Exception)
             {
             }
         }

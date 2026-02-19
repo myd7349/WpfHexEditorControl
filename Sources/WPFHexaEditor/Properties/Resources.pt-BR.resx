@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>Substituir por:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>Substituir apenas na seleção</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>Mostrar diálogo de confirmação</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>Visualização:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>Valor hexadecimal inválido</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>Valor obrigatório</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>{0} ocorrências encontradas</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>{0} ocorrências substituídas</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>Nenhuma ocorrência encontrada</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>na seleção</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>no arquivo</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>Selecionar tudo</value>
   </data>

@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>置換後の文字列:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>選択範囲内のみ置換</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>確認ダイアログを表示</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>プレビュー：</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>無効な16進数値</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>値が必要です</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>{0}件見つかりました</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>{0}件置換しました</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>見つかりませんでした</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>選択範囲内</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>ファイル内</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>すべて選択</value>
   </data>

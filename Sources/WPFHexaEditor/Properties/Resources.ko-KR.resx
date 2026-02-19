@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>바꿀 내용:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>선택 영역에서만 바꾸기</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>확인 대화 상자 표시</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>미리보기:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>잘못된 16진수 값</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>값이 필요합니다</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>{0}개 항목을 찾았습니다</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>{0}개 항목을 바꿨습니다</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>항목을 찾지 못했습니다</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>선택 영역</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>파일</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>모두 선택</value>
   </data>

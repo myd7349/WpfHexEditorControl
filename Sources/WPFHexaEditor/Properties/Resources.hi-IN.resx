@@ -222,6 +222,36 @@
   <data name="ReplaceWithString" xml:space="preserve">
     <value>इससे बदलें:</value>
   </data>
+  <data name="ReplaceInSelectionOnlyString" xml:space="preserve">
+    <value>केवल चयन में बदलें</value>
+  </data>
+  <data name="ShowConfirmationString" xml:space="preserve">
+    <value>पुष्टि संवाद दिखाएं</value>
+  </data>
+  <data name="PreviewString" xml:space="preserve">
+    <value>पूर्वावलोकन:</value>
+  </data>
+  <data name="ValidationInvalidHexString" xml:space="preserve">
+    <value>अमान्य हेक्साडेसिमल मान</value>
+  </data>
+  <data name="ValidationRequiredString" xml:space="preserve">
+    <value>मान आवश्यक है</value>
+  </data>
+  <data name="OccurrencesFoundString" xml:space="preserve">
+    <value>{0} घटनाएं मिलीं</value>
+  </data>
+  <data name="ReplacementCompleteString" xml:space="preserve">
+    <value>{0} घटनाओं को बदल दिया गया</value>
+  </data>
+  <data name="NoOccurrencesFoundString" xml:space="preserve">
+    <value>कोई घटना नहीं मिली</value>
+  </data>
+  <data name="InSelectionString" xml:space="preserve">
+    <value>चयन में</value>
+  </data>
+  <data name="InFileString" xml:space="preserve">
+    <value>फ़ाइल में</value>
+  </data>
   <data name="SelectAllString" xml:space="preserve">
     <value>सभी चुनें</value>
   </data>

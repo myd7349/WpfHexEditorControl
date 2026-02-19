@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using WpfHexaEditor.Core;
 using WpfHexaEditor.ViewModels;
@@ -233,13 +234,29 @@ namespace WpfHexaEditor
         {
             if (e.Key == Key.Up && ViewModel.IncrementCommand.CanExecute(null))
             {
+                // Force binding update before increment
+                var binding = HexTextBox.GetBindingExpression(TextBox.TextProperty);
+                binding?.UpdateSource();
+
                 ViewModel.IncrementCommand.Execute(null);
                 HexTextBox.Focus();
             }
             else if (e.Key == Key.Down && ViewModel.DecrementCommand.CanExecute(null))
             {
+                // Force binding update before decrement
+                var binding = HexTextBox.GetBindingExpression(TextBox.TextProperty);
+                binding?.UpdateSource();
+
                 ViewModel.DecrementCommand.Execute(null);
                 HexTextBox.Focus();
+            }
+            else if (e.Key == Key.Enter)
+            {
+                // Force binding update and move focus
+                var binding = HexTextBox.GetBindingExpression(TextBox.TextProperty);
+                binding?.UpdateSource();
+                HexTextBox.SelectAll();
+                e.Handled = true;
             }
         }
 

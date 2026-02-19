@@ -47,7 +47,7 @@ namespace WpfHexaEditor.Services
 
                 return true;
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 return false;
             }
@@ -72,7 +72,7 @@ namespace WpfHexaEditor.Services
                     return serializer.Deserialize(reader) as EditorState;
                 }
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 return null;
             }

@@ -65,17 +65,24 @@ namespace WpfHexaEditor.ViewModels
             get
             {
                 var hex = ByteConverters.LongToHex(_longValue);
-                return hex == "00000000" ? "0" : hex.TrimStart('0');
+                var trimmed = hex.TrimStart('0');
+                return string.IsNullOrEmpty(trimmed) ? "0" : trimmed;
             }
             set
             {
-                if (!string.IsNullOrWhiteSpace(value))
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    // Empty input defaults to 0
+                    LongValue = 0;
+                }
+                else
                 {
                     var (success, val) = ByteConverters.HexLiteralToLong(value);
                     if (success)
                     {
                         LongValue = val;
                     }
+                    // If parsing fails, keep current value (no update)
                 }
             }
         }
@@ -89,7 +96,8 @@ namespace WpfHexaEditor.ViewModels
             get
             {
                 var hex = ByteConverters.LongToHex(_longValue);
-                return hex == "00000000" ? "0" : hex.TrimStart('0').ToUpperInvariant();
+                var trimmed = hex.TrimStart('0');
+                return string.IsNullOrEmpty(trimmed) ? "0" : trimmed.ToUpperInvariant();
             }
             set
             {
