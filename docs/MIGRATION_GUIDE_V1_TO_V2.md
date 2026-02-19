@@ -522,7 +522,7 @@ Après migration vers V2, vous devriez observer :
 - [COMPATIBILITY_LAYER_FOUND.md](COMPATIBILITY_LAYER_FOUND.md) - Détails de la couche de compatibilité
 
 ### Tests
-- [Phase1_DataRetrievalTests.cs](Sources/WPFHexaEditor.Tests/Phase1_DataRetrievalTests.cs) - Exemples de tests unitaires
+- [Phase1_DataRetrievalTests.cs](../Sources/WPFHexaEditor.Tests/Phase1_DataRetrievalTests.cs) - Exemples de tests unitaires
 
 ### Support
 - GitHub Issues : [https://github.com/abbaye/WPFHexEditorControl/issues](https://github.com/abbaye/WPFHexEditorControl/issues)
