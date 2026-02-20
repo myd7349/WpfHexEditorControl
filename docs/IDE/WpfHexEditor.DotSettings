@@ -1,0 +1,40 @@
+<![CDATA[<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+
+	<!--
+	  WPF HexEditor Live Templates for JetBrains Rider
+
+	  How to import:
+	  1. Open Rider
+	  2. File -> Manage IDE Settings -> Import Settings...
+	  3. Select this WpfHexEditor.DotSettings file
+	  4. Check "Live templates" option
+	  5. Click "Import"
+
+	  Templates available after import:
+	  - hexns      -> Namespace declaration
+	  - hexed      -> Basic HexEditor control
+	  - hexedfull  -> HexEditor with common properties
+	  - hexednamed -> Named HexEditor with events
+	  - hexedbind  -> HexEditor with MVVM bindings
+	  - hexedgrid  -> HexEditor in Grid layout
+	-->
+
+	<!-- Template 1: Namespace declaration (hexns) -->
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=A1B2C3D4E5F6A7B8/@EntryIndexedValue">&lt;Template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Shortcut="hexns" Description="WpfHexEditor namespace declaration" Text="xmlns:hex=&amp;quot;clr-namespace:WpfHexaEditor;assembly=WPFHexaEditor&amp;quot;" Reformat="True" ShortenQualifiedReferences="True"&gt;&lt;Context&gt;&lt;XamlContext /&gt;&lt;/Context&gt;&lt;Categories /&gt;&lt;/Template&gt;</s:String>
+
+	<!-- Template 2: Basic HexEditor control (hexed) -->
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=B2C3D4E5F6A7B8C9/@EntryIndexedValue">&lt;Template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Shortcut="hexed" Description="Basic WpfHexEditor control" Text="&amp;lt;hex:HexEditor FileName=&amp;quot;$FILE$&amp;quot; /&amp;gt;$END$" Reformat="True" ShortenQualifiedReferences="True"&gt;&lt;Context&gt;&lt;XamlContext /&gt;&lt;/Context&gt;&lt;Fields&gt;&lt;Field Name="FILE" /&gt;&lt;/Fields&gt;&lt;Categories /&gt;&lt;/Template&gt;</s:String>
+
+	<!-- Template 3: Full HexEditor with properties (hexedfull) -->
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=C3D4E5F6A7B8C9D1/@EntryIndexedValue">&lt;Template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Shortcut="hexedfull" Description="WpfHexEditor control with common properties" Text="&amp;lt;hex:HexEditor&#xD;&#xA;    FileName=&amp;quot;$FILE$&amp;quot;&#xD;&#xA;    ReadOnlyMode=&amp;quot;$READONLY$&amp;quot;&#xD;&#xA;    BytePerLine=&amp;quot;16&amp;quot;&#xD;&#xA;    AllowExtend=&amp;quot;False&amp;quot; /&amp;gt;$END$" Reformat="True" ShortenQualifiedReferences="True"&gt;&lt;Context&gt;&lt;XamlContext /&gt;&lt;/Context&gt;&lt;Fields&gt;&lt;Field Name="FILE" /&gt;&lt;Field Name="READONLY" /&gt;&lt;/Fields&gt;&lt;Categories /&gt;&lt;/Template&gt;</s:String>
+
+	<!-- Template 4: Named HexEditor with events (hexednamed) -->
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=D4E5F6A7B8C9D1E2/@EntryIndexedValue">&lt;Template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Shortcut="hexednamed" Description="Named WpfHexEditor with event handlers" Text="&amp;lt;hex:HexEditor x:Name=&amp;quot;$NAME$&amp;quot;&#xD;&#xA;                FileName=&amp;quot;$FILE$&amp;quot;&#xD;&#xA;                ReadOnlyMode=&amp;quot;$READONLY$&amp;quot;&#xD;&#xA;                SelectionChanged=&amp;quot;$NAME$_OnSelectionChanged&amp;quot;&#xD;&#xA;                DataCopied=&amp;quot;$NAME$_OnDataCopied&amp;quot; /&amp;gt;$END$" Reformat="True" ShortenQualifiedReferences="True"&gt;&lt;Context&gt;&lt;XamlContext /&gt;&lt;/Context&gt;&lt;Fields&gt;&lt;Field Name="NAME" /&gt;&lt;Field Name="FILE" /&gt;&lt;Field Name="READONLY" /&gt;&lt;/Fields&gt;&lt;Categories /&gt;&lt;/Template&gt;</s:String>
+
+	<!-- Template 5: HexEditor with MVVM bindings (hexedbind) -->
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=E5F6A7B8C9D1E2F3/@EntryIndexedValue">&lt;Template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Shortcut="hexedbind" Description="WpfHexEditor with MVVM bindings" Text="&amp;lt;hex:HexEditor x:Name=&amp;quot;$NAME$&amp;quot;&#xD;&#xA;                FileName=&amp;quot;{Binding $FILEPROP$}&amp;quot;&#xD;&#xA;                ReadOnlyMode=&amp;quot;{Binding $READONLYPROP$}&amp;quot;&#xD;&#xA;                SelectionStart=&amp;quot;{Binding SelectionStart, Mode=TwoWay}&amp;quot;&#xD;&#xA;                SelectionStop=&amp;quot;{Binding SelectionStop, Mode=TwoWay}&amp;quot; /&amp;gt;$END$" Reformat="True" ShortenQualifiedReferences="True"&gt;&lt;Context&gt;&lt;XamlContext /&gt;&lt;/Context&gt;&lt;Fields&gt;&lt;Field Name="NAME" /&gt;&lt;Field Name="FILEPROP" /&gt;&lt;Field Name="READONLYPROP" /&gt;&lt;/Fields&gt;&lt;Categories /&gt;&lt;/Template&gt;</s:String>
+
+	<!-- Template 6: HexEditor in Grid (hexedgrid) -->
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=F6A7B8C9D1E2F3A4/@EntryIndexedValue">&lt;Template xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Shortcut="hexedgrid" Description="WpfHexEditor in Grid layout" Text="&amp;lt;Grid&amp;gt;&#xD;&#xA;    &amp;lt;hex:HexEditor FileName=&amp;quot;$FILE$&amp;quot; /&amp;gt;&#xD;&#xA;&amp;lt;/Grid&amp;gt;$END$" Reformat="True" ShortenQualifiedReferences="True"&gt;&lt;Context&gt;&lt;XamlContext /&gt;&lt;/Context&gt;&lt;Fields&gt;&lt;Field Name="FILE" /&gt;&lt;/Fields&gt;&lt;Categories /&gt;&lt;/Template&gt;</s:String>
+
+</wpf:ResourceDictionary>]]>

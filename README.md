@@ -53,6 +53,8 @@ dotnet add package WPFHexaEditor
 
 **3. Done! 🎉**
 
+> **💡 JetBrains Rider Users:** No visual toolbox? No problem! See the **[Rider Guide](docs/IDE/RIDER_GUIDE.md)** for IntelliSense tips, Live Templates, and sample projects.
+
 👉 **[Complete Tutorial](GETTING_STARTED.md)** | **[7+ Sample Apps](Sources/Samples/)** | **[API Docs](Sources/WPFHexaEditor/README.md)**
 
 ---
