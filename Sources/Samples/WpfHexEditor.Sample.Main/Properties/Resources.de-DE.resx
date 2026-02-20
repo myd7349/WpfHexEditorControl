@@ -354,9 +354,6 @@
   <data name="Ribbon_View_ShowTooltip" xml:space="preserve">
     <value>QuickInfo anzeigen</value>
   </data>
-  <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>Gelöschte ausblenden</value>
-  </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
     <value>Treffer hervorheben</value>
   </data>
@@ -713,9 +710,6 @@
   </data>
   <data name="HexSettings_Display_ByteTooltip" xml:space="preserve">
     <value>Byte-QuickInfo anzeigen</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Gelöschte Bytes ausblenden</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>Bytes pro Zeile:</value>

@@ -228,10 +228,6 @@
     <value>Pokazuj podpowiedzi</value>
     <comment>Ribbon - View tab - Show Tooltip checkbox</comment>
   </data>
-  <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>Ukryj usunięte</value>
-    <comment>Ribbon - View tab - Hide Deleted checkbox</comment>
-  </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
     <value>Wyróżnij dopasowania</value>
     <comment>Ribbon - View tab - Highlight Matches checkbox</comment>
@@ -541,10 +537,6 @@
   <data name="HexSettings_Display_ByteTooltip" xml:space="preserve">
     <value>Pokazuj podpowiedź bajtu</value>
     <comment>Hex editor settings - Show byte tooltip checkbox</comment>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Ukryj usunięte bajty</value>
-    <comment>Hex editor settings - Hide deleted bytes checkbox</comment>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>Bajtów na linię:</value>

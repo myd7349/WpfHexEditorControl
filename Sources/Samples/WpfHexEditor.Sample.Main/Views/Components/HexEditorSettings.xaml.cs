@@ -298,7 +298,6 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             }
 
             // Editing Settings
-            if (settings.TryGetValue("HideByteDeleted", out val)) HexEditorControl.HideByteDeleted = val.GetBoolean();
             if (settings.TryGetValue("ReadOnlyMode", out val)) HexEditorControl.ReadOnlyMode = val.GetBoolean();
             if (settings.TryGetValue("CanInsertAnywhere", out val)) HexEditorControl.CanInsertAnywhere = val.GetBoolean();
             if (settings.TryGetValue("AllowDeleteByte", out val)) HexEditorControl.AllowDeleteByte = val.GetBoolean();
@@ -391,7 +390,6 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                     ["ZoomLevel"] = HexEditorControl.LayoutTransform is ScaleTransform scale ? scale.ScaleX : 1.0,
 
                     // Editing Settings
-                    ["HideByteDeleted"] = HexEditorControl.HideByteDeleted,
                     ["ReadOnlyMode"] = HexEditorControl.ReadOnlyMode,
                     ["CanInsertAnywhere"] = HexEditorControl.CanInsertAnywhere,
                     ["AllowDeleteByte"] = HexEditorControl.AllowDeleteByte,
@@ -516,7 +514,6 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                 }
 
                 // Editing Settings
-                if (settings.TryGetValue("HideByteDeleted", out val)) HexEditorControl.HideByteDeleted = val.GetBoolean();
                 if (settings.TryGetValue("ReadOnlyMode", out val)) HexEditorControl.ReadOnlyMode = val.GetBoolean();
                 if (settings.TryGetValue("CanInsertAnywhere", out val)) HexEditorControl.CanInsertAnywhere = val.GetBoolean();
                 if (settings.TryGetValue("AllowDeleteByte", out val)) HexEditorControl.AllowDeleteByte = val.GetBoolean();
@@ -736,7 +733,6 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             {
                 // Reset to defaults
                 HexEditorControl.ShowByteToolTip = false;
-                HexEditorControl.HideByteDeleted = false;
                 HexEditorControl.BytePerLine = 16;
                 HexEditorControl.ReadOnlyMode = false;
                 HexEditorControl.CanInsertAnywhere = false;

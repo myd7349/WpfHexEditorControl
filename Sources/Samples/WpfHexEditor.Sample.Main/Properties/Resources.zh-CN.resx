@@ -228,10 +228,6 @@
     <value>显示工具提示</value>
     <comment>Ribbon - View tab - Show Tooltip checkbox</comment>
   </data>
-  <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>隐藏已删除</value>
-    <comment>Ribbon - View tab - Hide Deleted checkbox</comment>
-  </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
     <value>高亮匹配项</value>
     <comment>Ribbon - View tab - Highlight Matches checkbox</comment>
@@ -542,10 +538,6 @@
     <value>显示字节工具提示</value>
     <comment>Hex editor settings - Show byte tooltip checkbox</comment>
   </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>隐藏已删除的字节</value>
-    <comment>Hex editor settings - Hide deleted bytes checkbox</comment>
-  </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>每行字节数：</value>
     <comment>Hex editor settings - Bytes per line label</comment>
@@ -826,9 +818,6 @@
   </data>
   <data name="HexSettings_Display_ShowByteTooltip" xml:space="preserve">
     <value>显示字节工具提示</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>隐藏已删除的字节</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>每行字节数：</value>

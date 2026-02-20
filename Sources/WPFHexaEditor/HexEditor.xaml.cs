@@ -2269,22 +2269,6 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// HideByteDeleted DependencyProperty for XAML binding
-        /// </summary>
-        public static readonly DependencyProperty HideByteDeletedProperty =
-            DependencyProperty.Register(nameof(HideByteDeleted), typeof(bool), typeof(HexEditor),
-                new PropertyMetadata(false, OnHideByteDeletedChanged));
-
-        private static void OnHideByteDeletedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is HexEditor editor)
-            {
-                // Refresh viewport to show/hide deleted bytes
-                editor.HexViewport?.InvalidateVisual();
-            }
-        }
-
-        /// <summary>
         /// DefaultCopyToClipboardMode DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty DefaultCopyToClipboardModeProperty =

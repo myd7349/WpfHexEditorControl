@@ -354,9 +354,6 @@
   <data name="Ribbon_View_ShowTooltip" xml:space="preserve">
     <value>टूलटिप दिखाएं</value>
   </data>
-  <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>हटाए गए छुपाएं</value>
-  </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
     <value>मैच हाइलाइट करें</value>
   </data>
@@ -713,9 +710,6 @@
   </data>
   <data name="HexSettings_Display_ByteTooltip" xml:space="preserve">
     <value>बाइट टूलटिप दिखाएं</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>हटाए गए बाइट्स छुपाएं</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>प्रति पंक्ति बाइट्स:</value>

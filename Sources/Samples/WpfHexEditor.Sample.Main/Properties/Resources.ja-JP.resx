@@ -354,9 +354,6 @@
   <data name="Ribbon_View_ShowTooltip" xml:space="preserve">
     <value>ツールチップを表示</value>
   </data>
-  <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>削除済みを非表示</value>
-  </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
     <value>一致をハイライト</value>
   </data>
@@ -713,9 +710,6 @@
   </data>
   <data name="HexSettings_Display_ByteTooltip" xml:space="preserve">
     <value>バイトツールチップを表示</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>削除済みバイトを非表示</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>1行あたりのバイト数:</value>
