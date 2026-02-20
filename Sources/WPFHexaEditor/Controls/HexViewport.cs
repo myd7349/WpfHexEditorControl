@@ -818,7 +818,7 @@ namespace WpfHexaEditor.Controls
 
                     // Draw ASCII bytes with byte spacers
                     double asciiX = separatorX + SeparatorWidth;
-                    for (int i = 0; i < line.Bytes.Count; i++)
+                    for (int i = 0; i < line.Bytes.Count; )
                     {
                         // Draw byte spacer before this byte if needed
                         // Only draw separators if BytePerLine is large enough to have multiple groups
@@ -832,9 +832,16 @@ namespace WpfHexaEditor.Controls
                         }
 
                         var byteData = line.Bytes[i];
+
+                        // Get how many bytes this character consumes (1 for ASCII, 2 for DTE/MTE)
+                        int bytesConsumed = GetCharacterByteCount(line, i);
+
                         // DrawAsciiByte now returns the actual width used (for TBL auto-sizing)
                         double usedWidth = DrawAsciiByte(dc, line, i, asciiX, y);
                         asciiX += usedWidth;
+
+                        // Skip the consumed bytes (for DTE/MTE, this skips the second byte)
+                        i += bytesConsumed;
                     }
                 }
 
@@ -1328,6 +1335,56 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
+        /// Get how many bytes this character consumes (1 for ASCII, 2+ for DTE/MTE)
+        /// CRITICAL: Must be called before GetDisplayCharacter to know if we should skip next bytes
+        /// </summary>
+        private int GetCharacterByteCount(HexLine line, int byteIndex)
+        {
+            if (_tblStream == null || byteIndex >= line.Bytes.Count)
+                return 1;
+
+            try
+            {
+                var byteData = line.Bytes[byteIndex];
+                string hexByte = byteData.Value.ToString("X2");
+
+                // Check for multi-byte (DTE/MTE) match first if there's a next byte
+                if (byteIndex < line.Bytes.Count - 1)
+                {
+                    var nextByte = line.Bytes[byteIndex + 1];
+                    string hexNext = nextByte.Value.ToString("X2");
+                    string multiByteHex = hexByte + hexNext;
+
+                    var (mteText, mteType) = _tblStream.FindMatch(multiByteHex, showSpecialValue: true);
+
+                    // Check if this TBL type is enabled for display
+                    bool shouldShow = mteType switch
+                    {
+                        Core.CharacterTable.DteType.DualTitleEncoding => _showTblDte,
+                        Core.CharacterTable.DteType.MultipleTitleEncoding => _showTblMte,
+                        Core.CharacterTable.DteType.EndBlock => _showTblEndBlock,
+                        Core.CharacterTable.DteType.EndLine => _showTblEndLine,
+                        Core.CharacterTable.DteType.Japonais => _showTblJaponais,
+                        _ => false
+                    };
+
+                    // If multi-byte match found and type is enabled, return 2 (DTE consumes 2 bytes)
+                    if (mteText != "#" && shouldShow)
+                    {
+                        return 2; // DTE/MTE always consumes 2 bytes
+                    }
+                }
+
+                // Single byte character
+                return 1;
+            }
+            catch
+            {
+                return 1; // Fallback to single byte on error
+            }
+        }
+
+        /// <summary>
         /// Get the actual rendered width of a character (accounts for TBL auto-sizing)
         /// CRITICAL for hit testing - must match DrawAsciiByte width calculation
         /// </summary>
@@ -1608,7 +1665,7 @@ namespace WpfHexaEditor.Controls
             double asciiX = separatorX + SeparatorWidth;
 
             // Iterate through bytes in ASCII area (spacers added in loop, not pre-calculated)
-            for (int i = 0; i < line.Bytes.Count; i++)
+            for (int i = 0; i < line.Bytes.Count; )
             {
                 // Add ByteSpacer width if needed (matches drawing logic)
                 if (_bytesPerLine >= (int)ByteGrouping &&
@@ -1618,6 +1675,9 @@ namespace WpfHexaEditor.Controls
                 {
                     asciiX += (int)ByteSpacerWidthTickness;
                 }
+
+                // Get how many bytes this character consumes (1 for ASCII, 2 for DTE/MTE)
+                int bytesConsumed = GetCharacterByteCount(line, i);
 
                 // CRITICAL: Calculate actual character width (accounts for TBL auto-sizing)
                 double charWidth = GetCharacterDisplayWidth(line, i);
@@ -1630,6 +1690,9 @@ namespace WpfHexaEditor.Controls
                 }
 
                 asciiX += charWidth;
+
+                // Skip the consumed bytes (for DTE/MTE, this skips the second byte)
+                i += bytesConsumed;
             }
 
             return (null, true);

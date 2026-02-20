@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,6 +8,7 @@ using System.Windows.Media;
 using WpfHexaEditor;
 using WpfHexaEditor.Core;
 using WpfHexaEditor.Models;
+using WpfHexEditor.Sample.Main.Helpers;
 
 namespace WpfHexEditor.Sample.Main.Views.Components
 {
@@ -368,6 +370,14 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             if (settings.TryGetValue("BarChartColor", out val)) HexEditorControl.BarChartColor = HexToColor(val.GetString());
             if (settings.TryGetValue("AutoHighLiteSelectionByteBrush", out val)) HexEditorControl.AutoHighLiteSelectionByteBrush = HexToColor(val.GetString());
 
+            // Load Recent Colors
+            if (settings.TryGetValue("RecentColors", out val))
+            {
+                var colorHexArray = val.EnumerateArray().Select(e => e.GetString()).ToList();
+                var colors = colorHexArray.Select(hex => HexToColor(hex)).ToList();
+                RecentColorManager.SaveRecentColors(colors); // Save to persistent storage
+            }
+
             // Refresh ColorPickers with new values
             InitializeColorPickers();
         }
@@ -450,7 +460,10 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                     ["TblEndLineColor"] = ColorToHex(HexEditorControl.TblEndLineColor),
                     ["TblDefaultColor"] = ColorToHex(HexEditorControl.TblDefaultColor),
                     ["BarChartColor"] = ColorToHex(HexEditorControl.BarChartColor),
-                    ["AutoHighLiteSelectionByteBrush"] = ColorToHex(HexEditorControl.AutoHighLiteSelectionByteBrush)
+                    ["AutoHighLiteSelectionByteBrush"] = ColorToHex(HexEditorControl.AutoHighLiteSelectionByteBrush),
+
+                    // ColorPicker Recent Colors
+                    ["RecentColors"] = RecentColorManager.LoadRecentColors().Select(c => ColorToHex(c)).ToArray()
                 };
 
                 // Serialize to JSON
@@ -583,6 +596,14 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                 if (settings.TryGetValue("TblDefaultColor", out val)) HexEditorControl.TblDefaultColor = HexToColor(val.GetString());
                 if (settings.TryGetValue("BarChartColor", out val)) HexEditorControl.BarChartColor = HexToColor(val.GetString());
                 if (settings.TryGetValue("AutoHighLiteSelectionByteBrush", out val)) HexEditorControl.AutoHighLiteSelectionByteBrush = HexToColor(val.GetString());
+
+                // Load Recent Colors
+                if (settings.TryGetValue("RecentColors", out val))
+                {
+                    var colorHexArray = val.EnumerateArray().Select(e => e.GetString()).ToList();
+                    var colors = colorHexArray.Select(hex => HexToColor(hex)).ToList();
+                    RecentColorManager.SaveRecentColors(colors); // Save to persistent storage
+                }
 
                 // Refresh ColorPickers with new values
                 InitializeColorPickers();

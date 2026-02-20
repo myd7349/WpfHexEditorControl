@@ -1,160 +1,327 @@
+/*
+    Apache 2.0 2026
+    Advanced Color Picker Control - Code Behind
+    Author: Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Sonnet 4.5
+*/
+
 using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Sample.Main.Helpers;
+using WpfHexEditor.Sample.Main.ViewModels;
 
 namespace WpfHexEditor.Sample.Main.Views.Components
 {
     /// <summary>
-    /// Simple Color Picker Control with rich color palette
+    /// Advanced ColorPicker control with HSV selector, RGB sliders, hex input, and color palettes.
     /// </summary>
     public partial class ColorPicker : UserControl
     {
-        public static readonly DependencyProperty SelectedColorProperty =
-            DependencyProperty.Register(
-                nameof(SelectedColor),
-                typeof(Color),
-                typeof(ColorPicker),
-                new PropertyMetadata(Color.FromRgb(0x40, 0x40, 0xFF), OnSelectedColorChanged));
+        private bool _isDraggingHsv;
+        private DateTime _lastHsvUpdate = DateTime.MinValue;
+        private Color _originalColor; // Color before popup opens
 
+        #region Dependency Properties
+
+        /// <summary>
+        /// The currently selected color (ARGB)
+        /// </summary>
         public Color SelectedColor
         {
             get => (Color)GetValue(SelectedColorProperty);
             set => SetValue(SelectedColorProperty, value);
         }
 
+        public static readonly DependencyProperty SelectedColorProperty =
+            DependencyProperty.Register(
+                nameof(SelectedColor),
+                typeof(Color),
+                typeof(ColorPicker),
+                new FrameworkPropertyMetadata(
+                    Color.FromRgb(64, 64, 255),
+                    FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                    OnSelectedColorChanged));
+
+        private static void OnSelectedColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ColorPicker picker && e.NewValue is Color newColor)
+            {
+                picker.ViewModel.SetColor(newColor);
+                picker.UpdateHexDisplay();
+                picker.UpdateHsvThumbPosition();
+                picker.RaiseColorChanged(newColor);
+            }
+        }
+
+        /// <summary>
+        /// Whether to show the alpha channel slider
+        /// </summary>
+        public bool ShowAlphaChannel
+        {
+            get => (bool)GetValue(ShowAlphaChannelProperty);
+            set => SetValue(ShowAlphaChannelProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowAlphaChannelProperty =
+            DependencyProperty.Register(
+                nameof(ShowAlphaChannel),
+                typeof(bool),
+                typeof(ColorPicker),
+                new PropertyMetadata(true, OnShowAlphaChannelChanged));
+
+        private static void OnShowAlphaChannelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ColorPicker picker)
+            {
+                picker.AlphaSliderGrid.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// ViewModel for color manipulation
+        /// </summary>
+        public ColorPickerViewModel ViewModel { get; private set; }
+
+        /// <summary>
+        /// Recent colors collection
+        /// </summary>
+        public ObservableCollection<Color> RecentColors { get; private set; }
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Raised when the selected color changes
+        /// </summary>
         public event EventHandler<Color> ColorChanged;
+
+        private void RaiseColorChanged(Color newColor)
+        {
+            ColorChanged?.Invoke(this, newColor);
+        }
+
+        #endregion
+
+        #region Constructor
 
         public ColorPicker()
         {
             InitializeComponent();
-            UpdateColorDisplay();
+
+            // Initialize ViewModel
+            ViewModel = new ColorPickerViewModel();
+            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+            DataContext = ViewModel;
+
+            // Load recent colors
+            RecentColors = new ObservableCollection<Color>(RecentColorManager.LoadRecentColors());
+            RecentColorsPanel.ItemsSource = RecentColors;
+
+            // Initialize standard colors palette
+            InitializeStandardColors();
+
+            // Set initial color
+            ViewModel.SetColor(SelectedColor);
+            UpdateHexDisplay();
         }
 
-        private static void OnSelectedColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        #endregion
+
+        #region Standard Colors Palette
+
+        private void InitializeStandardColors()
         {
-            if (d is ColorPicker picker)
+            var colors = new[]
             {
-                picker.UpdateColorDisplay();
-                picker.ColorChanged?.Invoke(picker, (Color)e.NewValue);
+                // Row 1: Grayscale + Primary colors
+                Colors.Transparent, Colors.Black, Colors.DarkGray, Colors.Gray,
+                Colors.LightGray, Colors.White, Colors.Maroon, Colors.Red,
+
+                // Row 2: Warm colors
+                Colors.Orange, Colors.Yellow, Colors.Olive, Colors.Green,
+                Colors.Teal, Colors.Cyan, Colors.Navy, Colors.Blue,
+
+                // Row 3: Semi-transparent overlays (for HexEditor highlights)
+                Color.FromArgb(102, 0, 120, 212),   // Blue
+                Color.FromArgb(102, 255, 165, 0),   // Orange
+                Color.FromArgb(102, 76, 175, 80),   // Green
+                Color.FromArgb(102, 244, 67, 54),   // Red
+                Color.FromArgb(96, 255, 255, 0),    // Yellow
+                Color.FromArgb(102, 156, 39, 176),  // Purple
+                Color.FromArgb(102, 0, 188, 212),   // Cyan
+                Color.FromArgb(102, 255, 87, 34),   // Deep Orange
+
+                // Row 4: Additional colors
+                Colors.Pink, Colors.Brown, Colors.Purple, Colors.DarkCyan,
+                Colors.Lime, Colors.Indigo, Colors.Gold, Colors.DarkViolet
+            };
+
+            StandardColorsPanel.ItemsSource = colors;
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void ViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ViewModel.SelectedColor))
+            {
+                SelectedColor = ViewModel.SelectedColor;
+            }
+            else if (e.PropertyName == nameof(ViewModel.Hue))
+            {
+                UpdateHsvCanvasBackground();
+            }
+            else if (e.PropertyName == nameof(ViewModel.Saturation) || e.PropertyName == nameof(ViewModel.Value))
+            {
+                UpdateHsvThumbPosition();
             }
         }
 
-        private void UpdateColorDisplay()
+        private void Border_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            ColorPreview.Background = new SolidColorBrush(SelectedColor);
-            HexColorText.Text = $"#{SelectedColor.R:X2}{SelectedColor.G:X2}{SelectedColor.B:X2}";
+            // Only open on left button
+            if (e.ChangedButton != MouseButton.Left)
+                return;
+
+            // Save original color
+            _originalColor = SelectedColor;
+            OriginalColorPreview.Background = new SolidColorBrush(_originalColor);
+
+            // Open popup
+            ColorPickerPopup.IsOpen = true;
         }
 
-        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
+        private void HsvCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            ShowColorPalette();
-        }
-
-        private void ShowColorPalette()
-        {
-            // Create a popup window with color palette
-            var paletteWindow = new Window
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
-                Title = "Select Color",
-                Width = 320,
-                Height = 400,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner = Window.GetWindow(this),
-                ResizeMode = ResizeMode.NoResize,
-                Background = new SolidColorBrush(Color.FromRgb(0xF3, 0xF3, 0xF3))
-            };
-
-            var stackPanel = new StackPanel { Margin = new Thickness(12) };
-
-            // Predefined colors palette
-            var colorGroups = new[]
-            {
-                new { Name = "Highlight Colors", Colors = new[]
-                {
-                    Color.FromRgb(0xFF, 0xFF, 0x00), // Yellow
-                    Color.FromRgb(0xFF, 0xA5, 0x00), // Orange
-                    Color.FromRgb(0xFF, 0x00, 0x00), // Red
-                    Color.FromRgb(0xFF, 0x00, 0xFF), // Magenta
-                    Color.FromRgb(0x40, 0x40, 0xFF), // Blue (default)
-                    Color.FromRgb(0x00, 0xFF, 0xFF), // Cyan
-                    Color.FromRgb(0x00, 0xFF, 0x00), // Green
-                    Color.FromRgb(0x80, 0x00, 0x80)  // Purple
-                }},
-                new { Name = "Standard Colors", Colors = new[]
-                {
-                    Colors.Black, Colors.DarkGray, Colors.Gray, Colors.Silver,
-                    Colors.LightGray, Colors.White, Colors.Maroon, Colors.Red,
-                    Colors.Orange, Colors.Yellow, Colors.Olive, Colors.Green,
-                    Colors.Teal, Colors.Cyan, Colors.Navy, Colors.Blue
-                }}
-            };
-
-            foreach (var group in colorGroups)
-            {
-                // Group label
-                stackPanel.Children.Add(new TextBlock
-                {
-                    Text = group.Name,
-                    FontWeight = FontWeights.SemiBold,
-                    FontSize = 12,
-                    Margin = new Thickness(0, 12, 0, 6),
-                    Foreground = new SolidColorBrush(Color.FromRgb(0x32, 0x31, 0x30))
-                });
-
-                // Color buttons grid
-                var uniformGrid = new UniformGrid
-                {
-                    Columns = 8,
-                    Rows = (group.Colors.Length + 7) / 8
-                };
-
-                foreach (var color in group.Colors)
-                {
-                    var colorButton = new Border
-                    {
-                        Width = 32,
-                        Height = 32,
-                        Margin = new Thickness(2),
-                        Background = new SolidColorBrush(color),
-                        BorderBrush = new SolidColorBrush(Color.FromRgb(0xD1, 0xD1, 0xD1)),
-                        BorderThickness = new Thickness(1),
-                        CornerRadius = new CornerRadius(3),
-                        Cursor = Cursors.Hand
-                    };
-
-                    colorButton.MouseDown += (s, e) =>
-                    {
-                        SelectedColor = color;
-                        paletteWindow.Close();
-                    };
-
-                    // Highlight selected color
-                    if (color == SelectedColor)
-                    {
-                        colorButton.BorderBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x78, 0xD4));
-                        colorButton.BorderThickness = new Thickness(3);
-                    }
-
-                    uniformGrid.Children.Add(colorButton);
-                }
-
-                stackPanel.Children.Add(uniformGrid);
+                _isDraggingHsv = true;
+                ((IInputElement)sender).CaptureMouse();
+                UpdateColorFromCanvasPosition(e.GetPosition(HsvCanvas));
             }
-
-            // Custom color button (removed - would require System.Windows.Forms reference)
-            // Users can pick from the comprehensive palette above
-
-            var scrollViewer = new ScrollViewer
-            {
-                Content = stackPanel,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
-            };
-
-            paletteWindow.Content = scrollViewer;
-            paletteWindow.ShowDialog();
         }
+
+        private void HsvCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_isDraggingHsv && e.LeftButton == MouseButtonState.Pressed)
+            {
+                // Throttle updates to 60 FPS (16ms)
+                var now = DateTime.Now;
+                if ((now - _lastHsvUpdate).TotalMilliseconds < 16)
+                    return;
+
+                _lastHsvUpdate = now;
+                UpdateColorFromCanvasPosition(e.GetPosition(HsvCanvas));
+            }
+        }
+
+        private void HsvCanvas_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isDraggingHsv)
+            {
+                _isDraggingHsv = false;
+                ((IInputElement)sender).ReleaseMouseCapture();
+
+                // Add to recent colors when done dragging
+                AddToRecentColors(ViewModel.SelectedColor);
+            }
+        }
+
+        private void PaletteColor_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is Color color)
+            {
+                ViewModel.SetColor(color);
+                AddToRecentColors(color);
+                ColorPickerPopup.IsOpen = false;
+            }
+        }
+
+        private void RecentColor_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is Color color)
+            {
+                ViewModel.SetColor(color);
+                ColorPickerPopup.IsOpen = false;
+            }
+        }
+
+        #endregion
+
+        #region HSV Canvas Manipulation
+
+        private void UpdateColorFromCanvasPosition(Point position)
+        {
+            if (HsvCanvas.ActualWidth == 0 || HsvCanvas.ActualHeight == 0)
+                return;
+
+            // Calculate saturation and value from mouse position
+            double saturation = Math.Clamp(position.X / HsvCanvas.ActualWidth, 0, 1);
+            double value = Math.Clamp(1 - (position.Y / HsvCanvas.ActualHeight), 0, 1);
+
+            // Update ViewModel (will trigger color update)
+            ViewModel.Saturation = saturation;
+            ViewModel.Value = value;
+        }
+
+        private void UpdateHsvThumbPosition()
+        {
+            if (HsvCanvas.ActualWidth == 0 || HsvCanvas.ActualHeight == 0)
+                return;
+
+            // Calculate position from saturation and value
+            double x = ViewModel.Saturation * HsvCanvas.ActualWidth - 6;  // -6 to center thumb
+            double y = (1 - ViewModel.Value) * HsvCanvas.ActualHeight - 6;
+
+            Canvas.SetLeft(HsvThumb, Math.Clamp(x, 0, HsvCanvas.ActualWidth - 12));
+            Canvas.SetTop(HsvThumb, Math.Clamp(y, 0, HsvCanvas.ActualHeight - 12));
+        }
+
+        private void UpdateHsvCanvasBackground()
+        {
+            // Convert hue to RGB for canvas background
+            var (r, g, b) = ColorSpaceConverter.HsvToRgb(ViewModel.Hue, 1, 1);
+            HsvCanvas.Background = new SolidColorBrush(Color.FromRgb(r, g, b));
+        }
+
+        #endregion
+
+        #region Recent Colors Management
+
+        private void AddToRecentColors(Color color)
+        {
+            var updatedList = RecentColorManager.AddRecentColor(color, RecentColors.ToList());
+
+            // Update ObservableCollection
+            RecentColors.Clear();
+            foreach (var c in updatedList)
+            {
+                RecentColors.Add(c);
+            }
+        }
+
+        #endregion
+
+        #region UI Updates
+
+        private void UpdateHexDisplay()
+        {
+            var color = SelectedColor;
+            HexColorText.Text = $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}";
+        }
+
+        #endregion
     }
 }
