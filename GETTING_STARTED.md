@@ -26,6 +26,29 @@ Install-Package WPFHexaEditor
 
 ---
 
+## 🛠️ IDE Support
+
+WpfHexEditor works with all major .NET IDEs:
+
+### Visual Studio (2019, 2022)
+✅ **Full toolbox support** - Drag-n-drop controls from the toolbox
+✅ **Visual XAML designer** - See your layout in real-time
+✅ **IntelliSense** - Auto-completion for properties and events
+
+### JetBrains Rider
+⚠️ **No visual toolbox** (Rider limitation, not WpfHexEditor)
+✅ **Full XAML IntelliSense** - Type `<hex:` and see all controls
+✅ **XAML Preview** - Real-time visual preview
+✅ **Live Templates** - Quick insertion with snippets
+
+**📖 Complete Rider Guide:** [docs/IDE/RIDER_GUIDE.md](docs/IDE/RIDER_GUIDE.md)
+
+### Visual Studio Code
+✅ **XAML extension** - Syntax highlighting and IntelliSense
+✅ **Manual XAML editing** - Full control over markup
+
+---
+
 ## ⚡ 5-Minute Quick Start
 
 ### Step 1: Add the Namespace

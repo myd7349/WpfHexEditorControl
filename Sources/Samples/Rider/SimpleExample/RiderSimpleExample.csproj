@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>RiderSimpleExample</AssemblyName>
+    <RootNamespace>RiderSimpleExample</RootNamespace>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Reference to WpfHexEditor control -->
+    <ProjectReference Include="..\..\..\WPFHexaEditor\WpfHexEditorCore.csproj" />
+
+    <!-- For NuGet package usage (alternative), uncomment this line instead: -->
+    <!-- <PackageReference Include="WPFHexaEditor" Version="2.6.0" /> -->
+  </ItemGroup>
+
+</Project>

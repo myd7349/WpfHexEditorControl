@@ -79,6 +79,11 @@
     <IncludeSource>true</IncludeSource>
     <IncludeSymbols>false</IncludeSymbols>
     <NeutralLanguage>en-US</NeutralLanguage>
+
+    <!-- Generate XML documentation for improved IntelliSense in all IDEs (Visual Studio, Rider, VS Code) -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Suppress warnings for missing XML comments (only document public API as needed) -->
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp3.1|AnyCPU'">
