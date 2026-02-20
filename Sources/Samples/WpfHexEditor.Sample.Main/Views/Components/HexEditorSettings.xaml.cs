@@ -306,6 +306,154 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             }
         }
 
+        /// <summary>
+        /// Auto-saves HexEditor settings silently (called from MainWindow.Closing)
+        /// </summary>
+        public void AutoSaveState()
+        {
+            if (HexEditorControl == null) return;
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[AutoSave] Saving settings on application close...");
+
+                // Use the same save logic as SaveStateButton_Click but without MessageBox
+                SaveStateButton_Click(null, null);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AutoSave] Failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Auto-loads HexEditor settings silently (called from MainWindow.Loaded)
+        /// </summary>
+        public void AutoLoadState()
+        {
+            if (HexEditorControl == null) return;
+
+            try
+            {
+                var json = Properties.Settings.Default.HexEditorSettings;
+                if (!string.IsNullOrEmpty(json))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AutoLoad] Loading settings on application start... ({json.Length} chars)");
+
+                    // Call LoadState but suppress the MessageBox
+                    LoadStateInternal();
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[AutoLoad] No saved settings found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AutoLoad] Failed: {ex.Message}");
+            }
+        }
+
+        private void LoadStateInternal()
+        {
+            // Load JSON from Properties.Settings
+            var json = Properties.Settings.Default.HexEditorSettings;
+            if (string.IsNullOrEmpty(json)) return;
+
+            // Deserialize settings
+            var settings = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
+            if (settings == null) return;
+
+            // Apply all settings (same logic as LoadStateButton_Click but without MessageBox)
+            if (settings.TryGetValue("ShowByteToolTip", out var val)) HexEditorControl.ShowByteToolTip = val.GetBoolean();
+            if (settings.TryGetValue("ShowOffset", out val)) HexEditorControl.ShowOffset = val.GetBoolean();
+            if (settings.TryGetValue("ShowAscii", out val)) HexEditorControl.ShowAscii = val.GetBoolean();
+            if (settings.TryGetValue("ShowHeader", out val)) HexEditorControl.ShowHeader = val.GetBoolean();
+            if (settings.TryGetValue("ShowColumnSeparator", out val)) HexEditorControl.ShowColumnSeparator = val.GetBoolean();
+            if (settings.TryGetValue("ShowStatusMessage", out val)) HexEditorControl.ShowStatusMessage = val.GetBoolean();
+            if (settings.TryGetValue("BytePerLine", out val)) HexEditorControl.BytePerLine = val.GetInt32();
+
+            // Apply zoom
+            if (settings.TryGetValue("ZoomLevel", out val))
+            {
+                var zoom = val.GetDouble();
+                HexEditorControl.LayoutTransform = new ScaleTransform(zoom, zoom);
+            }
+
+            // Editing Settings
+            if (settings.TryGetValue("HideByteDeleted", out val)) HexEditorControl.HideByteDeleted = val.GetBoolean();
+            if (settings.TryGetValue("ReadOnlyMode", out val)) HexEditorControl.ReadOnlyMode = val.GetBoolean();
+            if (settings.TryGetValue("CanInsertAnywhere", out val)) HexEditorControl.CanInsertAnywhere = val.GetBoolean();
+            if (settings.TryGetValue("AllowDeleteByte", out val)) HexEditorControl.AllowDeleteByte = val.GetBoolean();
+            if (settings.TryGetValue("AllowExtend", out val)) HexEditorControl.AllowExtend = val.GetBoolean();
+            if (settings.TryGetValue("AppendNeedConfirmation", out val)) HexEditorControl.AppendNeedConfirmation = val.GetBoolean();
+
+            if (settings.TryGetValue("EditMode", out val) && Enum.TryParse<EditMode>(val.GetString(), out var editMode))
+                HexEditorControl.EditMode = editMode;
+            if (settings.TryGetValue("VisualCaretMode", out val) && Enum.TryParse<WpfHexaEditor.Core.CaretMode>(val.GetString(), out var caretMode))
+                HexEditorControl.VisualCaretMode = caretMode;
+
+            // Clipboard & Drag/Drop
+            if (settings.TryGetValue("DefaultCopyToClipboardMode", out val) && Enum.TryParse<CopyPasteMode>(val.GetString(), out var copyMode))
+                HexEditorControl.DefaultCopyToClipboardMode = copyMode;
+            if (settings.TryGetValue("AllowFileDrop", out val)) HexEditorControl.AllowFileDrop = val.GetBoolean();
+            if (settings.TryGetValue("FileDroppingConfirmation", out val)) HexEditorControl.FileDroppingConfirmation = val.GetBoolean();
+            if (settings.TryGetValue("AllowTextDrop", out val)) HexEditorControl.AllowTextDrop = val.GetBoolean();
+
+            // Selection & Highlighting
+            if (settings.TryGetValue("AllowAutoHighLightSelectionByte", out val)) HexEditorControl.AllowAutoHighLightSelectionByte = val.GetBoolean();
+            if (settings.TryGetValue("AllowAutoSelectSameByteAtDoubleClick", out val)) HexEditorControl.AllowAutoSelectSameByteAtDoubleClick = val.GetBoolean();
+            if (settings.TryGetValue("AllowMarkerClickNavigation", out val)) HexEditorControl.AllowMarkerClickNavigation = val.GetBoolean();
+
+            // Status Bar
+            if (settings.TryGetValue("ShowFileSizeInStatusBar", out val)) HexEditorControl.ShowFileSizeInStatusBar = val.GetBoolean();
+            if (settings.TryGetValue("AllowByteCount", out val)) HexEditorControl.AllowByteCount = val.GetBoolean();
+
+            // Keyboard Shortcuts
+            if (settings.TryGetValue("AllowBuildinCtrla", out val)) HexEditorControl.AllowBuildinCtrla = val.GetBoolean();
+            if (settings.TryGetValue("AllowBuildinCtrlc", out val)) HexEditorControl.AllowBuildinCtrlc = val.GetBoolean();
+            if (settings.TryGetValue("AllowBuildinCtrlv", out val)) HexEditorControl.AllowBuildinCtrlv = val.GetBoolean();
+            if (settings.TryGetValue("AllowBuildinCtrlz", out val)) HexEditorControl.AllowBuildinCtrlz = val.GetBoolean();
+            if (settings.TryGetValue("AllowBuildinCtrly", out val)) HexEditorControl.AllowBuildinCtrly = val.GetBoolean();
+
+            // Context Menu
+            if (settings.TryGetValue("AllowContextMenu", out val)) HexEditorControl.AllowContextMenu = val.GetBoolean();
+
+            // Byte Spacer
+            if (settings.TryGetValue("ByteSpacerPositioning", out val) && Enum.TryParse<ByteSpacerPosition>(val.GetString(), out var spacerPos))
+                HexEditorControl.ByteSpacerPositioning = spacerPos;
+            if (settings.TryGetValue("ByteSpacerWidthTickness", out val) && Enum.TryParse<ByteSpacerWidth>(val.GetString(), out var spacerWidth))
+                HexEditorControl.ByteSpacerWidthTickness = spacerWidth;
+            if (settings.TryGetValue("ByteGrouping", out val) && Enum.TryParse<ByteSpacerGroup>(val.GetString(), out var spacerGroup))
+                HexEditorControl.ByteGrouping = spacerGroup;
+            if (settings.TryGetValue("ByteSpacerVisualStyle", out val) && Enum.TryParse<ByteSpacerVisual>(val.GetString(), out var spacerVisual))
+                HexEditorControl.ByteSpacerVisualStyle = spacerVisual;
+
+            // Advanced
+            if (settings.TryGetValue("ByteShiftLeft", out val)) HexEditorControl.ByteShiftLeft = val.GetInt64();
+
+            // Colors
+            if (settings.TryGetValue("SelectionFirstColor", out val)) HexEditorControl.SelectionFirstColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("SelectionSecondColor", out val)) HexEditorControl.SelectionSecondColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("ByteModifiedColor", out val)) HexEditorControl.ByteModifiedColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("ByteDeletedColor", out val)) HexEditorControl.ByteDeletedColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("ByteAddedColor", out val)) HexEditorControl.ByteAddedColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("HighLightColor", out val)) HexEditorControl.HighLightColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("MouseOverColor", out val)) HexEditorControl.MouseOverColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("ForegroundSecondColor", out val)) HexEditorControl.ForegroundSecondColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("ForegroundContrast", out val)) HexEditorControl.ForegroundContrast = HexToColor(val.GetString());
+            if (settings.TryGetValue("TblDteColor", out val)) HexEditorControl.TblDteColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("TblMteColor", out val)) HexEditorControl.TblMteColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("TblEndBlockColor", out val)) HexEditorControl.TblEndBlockColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("TblEndLineColor", out val)) HexEditorControl.TblEndLineColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("TblDefaultColor", out val)) HexEditorControl.TblDefaultColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("BarChartColor", out val)) HexEditorControl.BarChartColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("AutoHighLiteSelectionByteBrush", out val)) HexEditorControl.AutoHighLiteSelectionByteBrush = HexToColor(val.GetString());
+
+            // Refresh ColorPickers with new values
+            InitializeColorPickers();
+        }
+
         private void SaveStateButton_Click(object sender, RoutedEventArgs e)
         {
             if (HexEditorControl == null) return;
@@ -390,13 +538,19 @@ namespace WpfHexEditor.Sample.Main.Views.Components
 
                 // Serialize to JSON
                 var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                System.Diagnostics.Debug.WriteLine($"[SaveState] JSON length: {json.Length} chars");
 
                 // Save to Properties.Settings
                 Properties.Settings.Default.HexEditorSettings = json;
                 Properties.Settings.Default.Save();
+                System.Diagnostics.Debug.WriteLine("[SaveState] Settings.Default.Save() called");
+
+                // Verify it was saved
+                var saved = Properties.Settings.Default.HexEditorSettings;
+                System.Diagnostics.Debug.WriteLine($"[SaveState] Verification - saved length: {saved?.Length ?? 0}");
 
                 MessageBox.Show(
-                    "HexEditor settings saved successfully!",
+                    $"HexEditor settings saved successfully!\n\nJSON length: {json.Length} chars\nSaved: {!string.IsNullOrEmpty(saved)}",
                     "Success",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
@@ -417,13 +571,16 @@ namespace WpfHexEditor.Sample.Main.Views.Components
 
             try
             {
+                System.Diagnostics.Debug.WriteLine("[LoadState] Starting load...");
+
                 // Load JSON from Properties.Settings
                 var json = Properties.Settings.Default.HexEditorSettings;
+                System.Diagnostics.Debug.WriteLine($"[LoadState] JSON length: {json?.Length ?? 0} chars");
 
                 if (string.IsNullOrEmpty(json))
                 {
                     MessageBox.Show(
-                        "No saved settings found.",
+                        "No saved settings found.\n\nClick 'Save State' first to save your configuration.",
                         "Info",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
