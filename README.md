@@ -257,7 +257,7 @@ dotnet add package WPFHexaEditor
 - 🔍 **LRU Search Cache** - 10-100x faster repeated searches
 - ⚡ **SIMD Vectorization** - Hardware-accelerated search (AVX2/SSE2)
 - 🔄 **Parallel Multi-Core** - Automatic for files > 100MB
-- 📍 **Scrollbar Markers** - Visual indicators for search/bookmarks/changes
+- 📍 **Scrollbar Markers** - Visual indicators for search/bookmarks/changes and selection!
 - 📊 **BarChart View** - Byte frequency visualization
 - 🪟 **AvalonDock Support** - Professional IDE integration
 - 🌍 **9 Languages** - English, Spanish, French, Polish, Portuguese, Russian, Chinese
