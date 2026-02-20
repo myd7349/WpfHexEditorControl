@@ -34,6 +34,11 @@ namespace WpfHexaEditor.Core.CharacterTable
         /// </summary>
         private string _endBlock = string.Empty;
         private string _endLine = string.Empty;
+
+        /// <summary>
+        /// Maximum byte length for multi-byte sequences (8 bytes = 16 hex chars)
+        /// </summary>
+        private const int MAX_BYTE_LENGTH = 8;
         #endregion
 
         #region Constructors
@@ -247,12 +252,13 @@ namespace WpfHexaEditor.Core.CharacterTable
                 else
                 {
                     // Determine type based on entry length
+                    // Support 1-8 bytes (2-16 hex chars)
                     if (entry.Length == 2)
                         type = value.Length == 1 ? DteType.Ascii : DteType.DualTitleEncoding;
-                    else if (entry.Length == 4)
-                        type = DteType.MultipleTitleEncoding;
+                    else if (entry.Length % 2 == 0 && entry.Length >= 4 && entry.Length <= 16)
+                        type = DteType.MultipleTitleEncoding;  // 2-8 bytes (4-16 hex chars)
                     else
-                        type = DteType.Invalid;
+                        type = DteType.Invalid;  // Reject odd-length or > 16 chars
                 }
 
                 if (type != DteType.Invalid)
