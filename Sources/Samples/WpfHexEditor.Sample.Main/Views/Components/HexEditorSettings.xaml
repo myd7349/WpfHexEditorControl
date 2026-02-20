@@ -15,6 +15,12 @@
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="400">
 
+    <UserControl.Resources>
+        <components:EnumToComboBoxConverter x:Key="EnumToComboBoxConverter"/>
+        <components:BytesPerLineToIndexConverter x:Key="BytesPerLineToIndexConverter"/>
+        <components:ZoomToPercentConverter x:Key="ZoomToPercentConverter"/>
+    </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="16">
 
@@ -53,9 +59,8 @@
 
                     <TextBlock Text="{DynamicResource HexSettings_Display_BytesPerLine}" FontSize="11" Margin="0,8,0,4"/>
                     <ComboBox x:Name="BytesPerLineComboBox"
-                             SelectedIndex="1"
-                             Margin="0,0,0,8"
-                             SelectionChanged="BytesPerLineComboBox_SelectionChanged">
+                             SelectedIndex="{Binding Path=BytePerLine, Converter={StaticResource BytesPerLineToIndexConverter}, Mode=TwoWay}"
+                             Margin="0,0,0,8">
                         <ComboBoxItem Content="8" Tag="8"/>
                         <ComboBoxItem Content="16" Tag="16"/>
                         <ComboBoxItem Content="32" Tag="32"/>
@@ -68,7 +73,13 @@
                            Maximum="3"
                            Value="1"
                            TickFrequency="0.1"
-                           ValueChanged="ZoomSlider_ValueChanged"/>
+                           ValueChanged="ZoomSlider_ValueChanged"
+                           Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding ElementName=ZoomSlider, Path=Value, Converter={StaticResource ZoomToPercentConverter}}"
+                              FontSize="11"
+                              HorizontalAlignment="Center"
+                              Foreground="{DynamicResource ForegroundBrush}"
+                              Margin="0,0,0,8"/>
                 </StackPanel>
             </Expander>
 
@@ -117,17 +128,17 @@
 
                     <TextBlock Text="{DynamicResource HexSettings_Editing_EditMode}" FontSize="11" Margin="0,8,0,4"/>
                     <ComboBox x:Name="EditModeComboBox"
-                             SelectedIndex="0"
-                             Margin="0,0,0,8"
-                             SelectionChanged="EditModeComboBox_SelectionChanged">
+                             SelectedValue="{Binding Path=EditMode, Converter={StaticResource EnumToComboBoxConverter}, Mode=TwoWay}"
+                             SelectedValuePath="Tag"
+                             Margin="0,0,0,8">
                         <ComboBoxItem Content="{DynamicResource HexSettings_Editing_Overwrite}" Tag="Overwrite"/>
                         <ComboBoxItem Content="{DynamicResource HexSettings_Editing_Insert}" Tag="Insert"/>
                     </ComboBox>
 
                     <TextBlock Text="{DynamicResource HexSettings_Editing_CaretMode}" FontSize="11" Margin="0,8,0,4"/>
                     <ComboBox x:Name="CaretModeComboBox"
-                             SelectedIndex="0"
-                             SelectionChanged="CaretModeComboBox_SelectionChanged">
+                             SelectedValue="{Binding Path=VisualCaretMode, Converter={StaticResource EnumToComboBoxConverter}, Mode=TwoWay}"
+                             SelectedValuePath="Tag">
                         <ComboBoxItem Content="{DynamicResource HexSettings_Editing_Insert}" Tag="Insert"/>
                         <ComboBoxItem Content="{DynamicResource HexSettings_Editing_Overwrite}" Tag="Overwrite"/>
                     </ComboBox>
@@ -139,9 +150,9 @@
                 <StackPanel Margin="16,8,0,0">
                     <TextBlock Text="{DynamicResource HexSettings_Clipboard_DefaultCopyMode}" FontSize="11" Margin="0,0,0,4"/>
                     <ComboBox x:Name="CopyModeComboBox"
-                             SelectedIndex="0"
-                             Margin="0,0,0,8"
-                             SelectionChanged="CopyModeComboBox_SelectionChanged">
+                             SelectedValue="{Binding Path=DefaultCopyToClipboardMode, Converter={StaticResource EnumToComboBoxConverter}, Mode=TwoWay}"
+                             SelectedValuePath="Tag"
+                             Margin="0,0,0,8">
                         <ComboBoxItem Content="{DynamicResource HexSettings_Clipboard_HexString}" Tag="HexaString"/>
                         <ComboBoxItem Content="{DynamicResource HexSettings_Clipboard_ByteArray}" Tag="ByteArray"/>
                         <ComboBoxItem Content="{DynamicResource HexSettings_Clipboard_CSharpCode}" Tag="CSharpCode"/>
@@ -203,38 +214,46 @@
                 <StackPanel Margin="16,8,0,0">
                     <TextBlock Text="Byte Spacer Positioning" FontSize="11" Margin="0,0,0,4"/>
                     <ComboBox x:Name="ByteSpacerPositioningComboBox"
-                             SelectedIndex="0"
+                             SelectedValue="{Binding Path=ByteSpacerPositioning, Converter={StaticResource EnumToComboBoxConverter}, Mode=TwoWay}"
+                             SelectedValuePath="Tag"
                              Margin="0,0,0,8">
                         <ComboBoxItem Content="Both Panels" Tag="Both"/>
-                        <ComboBoxItem Content="Hex Panel Only" Tag="HexDataPanel"/>
-                        <ComboBoxItem Content="ASCII Panel Only" Tag="StringDataPanel"/>
+                        <ComboBoxItem Content="Hex Panel Only" Tag="HexBytePanel"/>
+                        <ComboBoxItem Content="ASCII Panel Only" Tag="StringBytePanel"/>
+                        <ComboBoxItem Content="None" Tag="Nothing"/>
                     </ComboBox>
 
                     <TextBlock Text="Byte Spacer Width" FontSize="11" Margin="0,8,0,4"/>
                     <ComboBox x:Name="ByteSpacerWidthComboBox"
-                             SelectedIndex="1"
+                             SelectedValue="{Binding Path=ByteSpacerWidthTickness, Converter={StaticResource EnumToComboBoxConverter}, Mode=TwoWay}"
+                             SelectedValuePath="Tag"
                              Margin="0,0,0,8">
-                        <ComboBoxItem Content="Thinner" Tag="Thinner"/>
+                        <ComboBoxItem Content="Very Small" Tag="VerySmall"/>
+                        <ComboBoxItem Content="Small" Tag="Small"/>
                         <ComboBoxItem Content="Normal" Tag="Normal"/>
                         <ComboBoxItem Content="Large" Tag="Large"/>
+                        <ComboBoxItem Content="Very Large" Tag="VeryLarge"/>
                     </ComboBox>
 
                     <TextBlock Text="Byte Grouping" FontSize="11" Margin="0,8,0,4"/>
                     <ComboBox x:Name="ByteSpacerGroupComboBox"
-                             SelectedIndex="1"
+                             SelectedValue="{Binding Path=ByteGrouping, Converter={StaticResource EnumToComboBoxConverter}, Mode=TwoWay}"
+                             SelectedValuePath="Tag"
                              Margin="0,0,0,8">
-                        <ComboBoxItem Content="2 Bytes" Tag="TwoBytes"/>
-                        <ComboBoxItem Content="4 Bytes" Tag="FourBytes"/>
-                        <ComboBoxItem Content="8 Bytes" Tag="EightBytes"/>
+                        <ComboBoxItem Content="2 Bytes" Tag="TwoByte"/>
+                        <ComboBoxItem Content="4 Bytes" Tag="FourByte"/>
+                        <ComboBoxItem Content="6 Bytes" Tag="SixByte"/>
+                        <ComboBoxItem Content="8 Bytes" Tag="EightByte"/>
                     </ComboBox>
 
                     <TextBlock Text="Visual Style" FontSize="11" Margin="0,8,0,4"/>
                     <ComboBox x:Name="ByteSpacerVisualStyleComboBox"
-                             SelectedIndex="0"
+                             SelectedValue="{Binding Path=ByteSpacerVisualStyle, Converter={StaticResource EnumToComboBoxConverter}, Mode=TwoWay}"
+                             SelectedValuePath="Tag"
                              Margin="0,0,0,8">
-                        <ComboBoxItem Content="Solid Line" Tag="Solid"/>
+                        <ComboBoxItem Content="Empty Space" Tag="Empty"/>
+                        <ComboBoxItem Content="Solid Line" Tag="Line"/>
                         <ComboBoxItem Content="Dashed Line" Tag="Dash"/>
-                        <ComboBoxItem Content="Dotted Line" Tag="Dot"/>
                     </ComboBox>
                 </StackPanel>
             </Expander>
@@ -310,9 +329,8 @@
                 <StackPanel Margin="16,8,0,0">
                     <TextBlock Text="{DynamicResource HexSettings_Advanced_ByteShiftLeft}" FontSize="11" Margin="0,0,0,4"/>
                     <TextBox x:Name="ByteShiftLeftTextBox"
-                            Text="0"
+                            Text="{Binding Path=ByteShiftLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                             Style="{StaticResource ModernTextBoxStyle}"
-                            TextChanged="ByteShiftLeftTextBox_TextChanged"
                             Margin="0,0,0,12"/>
 
                     <Button Content="{DynamicResource HexSettings_Advanced_SaveState}"
