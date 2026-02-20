@@ -228,10 +228,6 @@
     <value>Показать подсказку</value>
     <comment>Ribbon - View tab - Show Tooltip checkbox</comment>
   </data>
-  <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>Скрыть удаленные</value>
-    <comment>Ribbon - View tab - Hide Deleted checkbox</comment>
-  </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
     <value>Выделить совпадения</value>
     <comment>Ribbon - View tab - Highlight Matches checkbox</comment>
@@ -542,10 +538,6 @@
     <value>Показывать подсказку байта</value>
     <comment>Hex editor settings - Show byte tooltip checkbox</comment>
   </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Скрыть удаленные байты</value>
-    <comment>Hex editor settings - Hide deleted bytes checkbox</comment>
-  </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>Байтов в строке:</value>
     <comment>Hex editor settings - Bytes per line label</comment>
@@ -826,9 +818,6 @@
   </data>
   <data name="HexSettings_Display_ShowByteTooltip" xml:space="preserve">
     <value>Показать подсказку байта</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Скрыть удаленные байты</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>Байт в строке:</value>

@@ -354,9 +354,6 @@
   <data name="Ribbon_View_ShowTooltip" xml:space="preserve">
     <value>도구 설명 표시</value>
   </data>
-  <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>삭제된 항목 숨기기</value>
-  </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
     <value>일치 항목 강조</value>
   </data>
@@ -713,9 +710,6 @@
   </data>
   <data name="HexSettings_Display_ByteTooltip" xml:space="preserve">
     <value>바이트 도구 설명 표시</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>삭제된 바이트 숨기기</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>줄당 바이트 수:</value>

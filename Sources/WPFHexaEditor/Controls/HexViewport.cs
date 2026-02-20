@@ -465,6 +465,46 @@ namespace WpfHexaEditor.Controls
         public bool ShowAscii { get; set; } = true;
 
         /// <summary>
+        /// Gets the actual offset column width (0 if ShowOffset is false, 110 if true)
+        /// </summary>
+        public double ActualOffsetWidth => ShowOffset ? OffsetWidth : 0;
+
+        /// <summary>
+        /// Gets the starting X position for hex bytes panel
+        /// </summary>
+        public double HexPanelStartX => ActualOffsetWidth;
+
+        /// <summary>
+        /// Gets the starting X position for separator (after hex bytes)
+        /// Accounts for bytes per line and byte spacers
+        /// </summary>
+        public double SeparatorStartX
+        {
+            get
+            {
+                double hexStartX = ActualOffsetWidth;
+
+                // Calculate number of byte spacers for a full line
+                int numSpacers = 0;
+                if (_bytesPerLine >= (int)ByteGrouping)
+                {
+                    numSpacers = (_bytesPerLine % (int)ByteGrouping == 0)
+                        ? (_bytesPerLine / (int)ByteGrouping) - 1
+                        : _bytesPerLine / (int)ByteGrouping;
+                }
+                double spacersWidth = numSpacers * (int)ByteSpacerWidthTickness;
+
+                // Separator position (matching OnRender line 693)
+                return hexStartX + (_bytesPerLine * (HexByteWidth + HexByteSpacing)) + spacersWidth + 4;
+            }
+        }
+
+        /// <summary>
+        /// Gets the starting X position for ASCII panel
+        /// </summary>
+        public double AsciiPanelStartX => SeparatorStartX + SeparatorWidth;
+
+        /// <summary>
         /// Gets or sets the active panel (Hex or ASCII)
         /// </summary>
         public ActivePanelType ActivePanel

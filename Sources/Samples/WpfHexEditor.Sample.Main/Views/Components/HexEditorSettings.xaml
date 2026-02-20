@@ -41,9 +41,6 @@
                     <CheckBox Content="{DynamicResource HexSettings_Display_ShowByteTooltip}"
                              IsChecked="{Binding Path=ShowByteToolTip, Mode=TwoWay}"
                              Margin="0,0,0,8"/>
-                    <CheckBox Content="{DynamicResource HexSettings_Display_HideDeleted}"
-                             IsChecked="{Binding Path=HideByteDeleted, Mode=TwoWay}"
-                             Margin="0,0,0,8"/>
                     <CheckBox Content="Show Offset Column"
                              IsChecked="{Binding Path=ShowOffset, Mode=TwoWay}"
                              Margin="0,0,0,8"/>

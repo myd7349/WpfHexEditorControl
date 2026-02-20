@@ -188,9 +188,6 @@
   <data name="Ribbon_View_ShowTooltip" xml:space="preserve">
     <value>Afficher info-bulle</value>
   </data>
-  <data name="Ribbon_View_HideDeleted" xml:space="preserve">
-    <value>Masquer supprimés</value>
-  </data>
   <data name="Ribbon_View_HighlightMatches" xml:space="preserve">
     <value>Surligner résultats</value>
   </data>
@@ -426,9 +423,6 @@
   <data name="HexSettings_Display_ByteTooltip" xml:space="preserve">
     <value>Afficher info-bulle d'octet</value>
   </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Masquer les octets supprimés</value>
-  </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>Octets par ligne :</value>
   </data>
@@ -647,9 +641,6 @@
   </data>
   <data name="HexSettings_Display_ShowByteTooltip" xml:space="preserve">
     <value>Afficher l'info-bulle d'octet</value>
-  </data>
-  <data name="HexSettings_Display_HideDeleted" xml:space="preserve">
-    <value>Masquer les octets supprimés</value>
   </data>
   <data name="HexSettings_Display_BytesPerLine" xml:space="preserve">
     <value>Octets par ligne :</value>

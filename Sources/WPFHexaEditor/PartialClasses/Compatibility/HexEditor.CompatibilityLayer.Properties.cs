@@ -42,15 +42,6 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Hide bytes that are marked as deleted  - DependencyProperty
-        /// </summary>
-        public bool HideByteDeleted
-        {
-            get => (bool)GetValue(HideByteDeletedProperty);
-            set => SetValue(HideByteDeletedProperty, value);
-        }
-
-        /// <summary>
         /// Default clipboard copy/paste mode  - DependencyProperty
         /// </summary>
         public CopyPasteMode DefaultCopyToClipboardMode
