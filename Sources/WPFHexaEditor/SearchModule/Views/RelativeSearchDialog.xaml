@@ -179,7 +179,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBox Grid.Row="0"
-                         Text="{Binding PreviewText}"
+                         Text="{Binding PreviewText, Mode=OneWay}"
                          IsReadOnly="True"
                          TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto"
