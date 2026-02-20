@@ -100,42 +100,43 @@ namespace WpfHexaEditor.Core.CharacterTable
         {
             if (data == null || data.Length == 0) return string.Empty;
 
-            // OPTIMIZED: Pre-allocate StringBuilder capacity and reuse hex conversion results
+            // OPTIMIZED: Pre-allocate StringBuilder capacity
             var sb = new StringBuilder(data.Length * 2);
 
-            for (var i = 0; i < data.Length; i++)
+            // GREEDY MATCHING: Try longest matches first (8 bytes down to 1 byte)
+            for (var i = 0; i < data.Length; )
             {
-                // Try multi-byte (MTE/DTE) match first
-                if (i < data.Length - 1)
-                {
-                    // Build 4-char hex string (e.g., "8899")
-                    var hex1 = ByteConverters.ByteToHex(data[i]);
-                    var hex2 = ByteConverters.ByteToHex(data[i + 1]);
-                    var mteKey = hex1 + hex2;
+                bool matchFound = false;
 
-                    if (_dteList.TryGetValue(mteKey, out var mte))
+                // Try multi-byte matches from longest to shortest (8 bytes down to 2 bytes)
+                int maxLen = Math.Min(MAX_BYTE_LENGTH, data.Length - i);
+                for (int len = maxLen; len >= 2; len--)
+                {
+                    // Build hex string for this length
+                    var hexKey = new StringBuilder(len * 2);
+                    for (int j = 0; j < len; j++)
+                        hexKey.Append(ByteConverters.ByteToHex(data[i + j]));
+
+                    if (_dteList.TryGetValue(hexKey.ToString(), out var dte))
                     {
-                        sb.Append(mte.Value); // FIX: Append .Value not tuple
-                        i++; // Skip next byte since we consumed it
-                        continue;
-                    }
-
-                    // If no MTE match, check single byte with hex1 we already computed
-                    if (_dteList.TryGetValue(hex1, out var dte1))
-                        sb.Append(dte1.Value);
-                    else
-                        sb.Append('#'); // No match found
-                }
-                else
-                {
-                    // Last byte - single byte match only
-                    var key = ByteConverters.ByteToHex(data[i]);
-
-                    if (_dteList.TryGetValue(key, out var dte))
                         sb.Append(dte.Value);
-                    else
-                        sb.Append('#'); // No match found
+                        i += len; // Skip consumed bytes
+                        matchFound = true;
+                        break;
+                    }
                 }
+
+                if (matchFound)
+                    continue;
+
+                // Fall back to single byte match
+                var singleKey = ByteConverters.ByteToHex(data[i]);
+                if (_dteList.TryGetValue(singleKey, out var single))
+                    sb.Append(single.Value);
+                else
+                    sb.Append('#'); // No match found
+
+                i++; // Move to next byte
             }
 
             return sb.ToString();
@@ -468,6 +469,11 @@ namespace WpfHexaEditor.Core.CharacterTable
         public int TotalJaponais => _dteList.Count(l => l.Value.Type == DteType.Japonais);
         public int TotalEndLine => _dteList.Count(l => l.Value.Type == DteType.EndLine);
         public int TotalEndBlock => _dteList.Count(l => l.Value.Type == DteType.EndBlock);
+
+        // Multi-byte statistics (by byte count)
+        public int Total3Byte => _dteList.Count(l => l.Value.Entry.Length == 6);  // 3 bytes = 6 hex chars
+        public int Total4Byte => _dteList.Count(l => l.Value.Entry.Length == 8);  // 4 bytes = 8 hex chars
+        public int Total5PlusByte => _dteList.Count(l => l.Value.Entry.Length >= 10);  // 5+ bytes = 10+ hex chars
 
         /// <summary>
         /// Get the end block char (cached for performance)
