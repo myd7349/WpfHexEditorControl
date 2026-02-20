@@ -95,6 +95,8 @@ namespace WpfHexaEditor.Controls
         private Brush _tblMteBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xD8, 0xE6)); // LightBlue
         private Brush _tblEndBlockBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0x00)); // Red
         private Brush _tblEndLineBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xA5, 0x00)); // Orange
+        private Brush _tblAsciiBrush = new SolidColorBrush(Color.FromRgb(0x90, 0xEE, 0x90)); // LightGreen
+        private Brush _tblJaponaisBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xC0, 0xCB)); // Pink
 
         // Debug counter to avoid spamming logs every frame
         private int _debugRenderCount = 0;
@@ -670,6 +672,24 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
+        /// TBL ASCII color
+        /// </summary>
+        public Color TblAsciiColor
+        {
+            get => (_tblAsciiBrush as SolidColorBrush)?.Color ?? Colors.LightGreen;
+            set { _tblAsciiBrush = new SolidColorBrush(value); _tblAsciiBrush.Freeze(); InvalidateVisual(); }
+        }
+
+        /// <summary>
+        /// TBL Japanese color
+        /// </summary>
+        public Color TblJaponaisColor
+        {
+            get => (_tblJaponaisBrush as SolidColorBrush)?.Color ?? Colors.Pink;
+            set { _tblJaponaisBrush = new SolidColorBrush(value); _tblJaponaisBrush.Freeze(); InvalidateVisual(); }
+        }
+
+        /// <summary>
         /// TBL Default color - Phase 7.5 V1 Compatibility
         /// </summary>
         public Color TblDefaultColor
@@ -1182,8 +1202,10 @@ namespace WpfHexaEditor.Controls
                         // Select brush based on DTE type
                         Brush tblBrush = dteType switch
                         {
+                            Core.CharacterTable.DteType.Ascii => _tblAsciiBrush,
                             Core.CharacterTable.DteType.DualTitleEncoding => _tblDteBrush,
                             Core.CharacterTable.DteType.MultipleTitleEncoding => _tblMteBrush,
+                            Core.CharacterTable.DteType.Japonais => _tblJaponaisBrush,
                             Core.CharacterTable.DteType.EndBlock => _tblEndBlockBrush,
                             Core.CharacterTable.DteType.EndLine => _tblEndLineBrush,
                             _ => _tblDefaultBrush

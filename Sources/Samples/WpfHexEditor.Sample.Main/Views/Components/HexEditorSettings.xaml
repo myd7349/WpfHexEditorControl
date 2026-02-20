@@ -445,6 +445,14 @@
                     <components:ColorPicker x:Name="TblMteColorPicker"
                                            ColorChanged="TblMteColorPicker_ColorChanged"
                                            Margin="0,0,0,8"/>
+                    <TextBlock Text="TBL ASCII Color" FontSize="11" Margin="0,0,0,4"/>
+                    <components:ColorPicker x:Name="TblAsciiColorPicker"
+                                           ColorChanged="TblAsciiColorPicker_ColorChanged"
+                                           Margin="0,0,0,8"/>
+                    <TextBlock Text="TBL Japanese Color" FontSize="11" Margin="0,0,0,4"/>
+                    <components:ColorPicker x:Name="TblJaponaisColorPicker"
+                                           ColorChanged="TblJaponaisColorPicker_ColorChanged"
+                                           Margin="0,0,0,8"/>
                     <TextBlock Text="TBL End Block Color" FontSize="11" Margin="0,0,0,4"/>
                     <components:ColorPicker x:Name="TblEndBlockColorPicker"
                                            ColorChanged="TblEndBlockColorPicker_ColorChanged"

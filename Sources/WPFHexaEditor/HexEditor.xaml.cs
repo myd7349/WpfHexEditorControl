@@ -855,6 +855,24 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
+        /// ASCII color for TBL - DependencyProperty
+        /// </summary>
+        public System.Windows.Media.Color TblAsciiColor
+        {
+            get => (System.Windows.Media.Color)GetValue(TblAsciiColorProperty);
+            set => SetValue(TblAsciiColorProperty, value);
+        }
+
+        /// <summary>
+        /// Japanese characters color for TBL - DependencyProperty
+        /// </summary>
+        public System.Windows.Media.Color TblJaponaisColor
+        {
+            get => (System.Windows.Media.Color)GetValue(TblJaponaisColorProperty);
+            set => SetValue(TblJaponaisColorProperty, value);
+        }
+
+        /// <summary>
         /// Default color for TBL - DependencyProperty
         /// </summary>
         public System.Windows.Media.Color TblDefaultColor
@@ -2273,6 +2291,20 @@ namespace WpfHexaEditor
         public static readonly DependencyProperty TblEndLineColorProperty =
             DependencyProperty.Register(nameof(TblEndLineColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
                 new PropertyMetadata(Colors.Orange, OnTblColorChanged));
+
+        /// <summary>
+        /// TblAsciiColor DependencyProperty for XAML binding
+        /// </summary>
+        public static readonly DependencyProperty TblAsciiColorProperty =
+            DependencyProperty.Register(nameof(TblAsciiColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
+                new PropertyMetadata(Colors.LightGreen, OnTblColorChanged));
+
+        /// <summary>
+        /// TblJaponaisColor DependencyProperty for XAML binding
+        /// </summary>
+        public static readonly DependencyProperty TblJaponaisColorProperty =
+            DependencyProperty.Register(nameof(TblJaponaisColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
+                new PropertyMetadata(Colors.Pink, OnTblColorChanged));
 
         /// <summary>
         /// TblDefaultColor DependencyProperty for XAML binding
