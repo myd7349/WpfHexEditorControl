@@ -8,6 +8,8 @@ Complete step-by-step guide to integrating and using the WPF HexEditor control i
 
 ### Via NuGet (Recommended)
 
+Nuget version have actually only the V1 (Legacy) version. V2 will coming soon as possible.
+
 ```bash
 # Using .NET CLI
 dotnet add package WPFHexaEditor

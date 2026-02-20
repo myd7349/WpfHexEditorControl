@@ -16,7 +16,7 @@
 
   <img src="Images/SampleV2_001.png?raw=true" alt="WPF HexEditor V2" width="700"/>
   <br/>
-  <sub><i>Screenshot from bran new V2 version</i></sub>
+  <sub><i>Screenshot from brand new V2 version</i></sub>
 
   <p>
     <a href="#-quick-start"><b>Quick Start</b></a> •
@@ -39,7 +39,7 @@
 
 ## ⚡ Quick Start
 
-**1. Install via NuGet:**
+**1. Install via NuGet (V1 only):**
 ```bash
 dotnet add package WPFHexaEditor
 ```
@@ -57,7 +57,7 @@ dotnet add package WPFHexaEditor
 
 ---
 
-## 🎯 Why Choose V2?
+## 🎯 Why Choose the brand new V2?
 
 <table>
 <tr>
@@ -74,7 +74,7 @@ dotnet add package WPFHexaEditor
 
 ### 🏗️ Architecture
 - **MVVM** + Services
-- **15 specialized** services
+- **16 specialized** services
 - **100% testable**
 - **Zero dependencies**
 
@@ -82,8 +82,8 @@ dotnet add package WPFHexaEditor
 <td width="33%">
 
 ### ✅ Production Ready
-- **Issue #145** fixed
-- **Save data loss** fixed
+- **Solide MVVM architecture** fixed
+- **Insert byte anywhere** fixed
 - **Scroll markers**
 - **Async operations**
 
@@ -101,9 +101,9 @@ dotnet add package WPFHexaEditor
 </td>
 <td width="33%">
 
-### 🔄 100% Compatible
+### 🔄 100% Retro-Compatible
 - **Drop-in** replacement
-- **Same API** as V1
+- **Same but bonified API** as V1
 - **Zero breaking** changes
 - **Multi-targeting**
 
@@ -257,7 +257,7 @@ dotnet add package WPFHexaEditor
 - 🔍 **LRU Search Cache** - 10-100x faster repeated searches
 - ⚡ **SIMD Vectorization** - Hardware-accelerated search (AVX2/SSE2)
 - 🔄 **Parallel Multi-Core** - Automatic for files > 100MB
-- 📍 **Scrollbar Markers** - Visual indicators for search/bookmarks/changes
+- 📍 **Scrollbar Markers** - Visual indicators for search/bookmarks/changes and selection!
 - 📊 **BarChart View** - Byte frequency visualization
 - 🪟 **AvalonDock Support** - Professional IDE integration
 - 🌍 **9 Languages** - English, Spanish, French, Polish, Portuguese, Russian, Chinese
