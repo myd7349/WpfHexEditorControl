@@ -7,6 +7,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
@@ -564,9 +565,39 @@ namespace WpfHexEditor.Sample.Main.ViewModels
                     byte[] findData = new byte[] { findByte };
                     byte[] replaceData = new byte[] { replaceByte };
                     bool inSelectionOnly = dialog.ReplaceInSelectionOnly;
+                    int replacedCount = 0;
 
-                    var replaced = _hexEditor.ReplaceAll(findData, replaceData, false, inSelectionOnly);
-                    int replacedCount = replaced.Count();
+                    if (inSelectionOnly && _hexEditor.HasSelection)
+                    {
+                        // Replace only within selection using FindFirst approach
+                        long selStart = _hexEditor.SelectionStart;
+                        long selLength = _hexEditor.SelectionLength;
+                        long selEnd = selStart + selLength;
+                        long searchPos = selStart;
+
+                        while (searchPos < selEnd)
+                        {
+                            long foundPos = _hexEditor.FindFirst(findData, searchPos);
+                            if (foundPos >= 0 && foundPos < selEnd)
+                            {
+                                _hexEditor.SetByte(foundPos, replaceByte);
+                                replacedCount++;
+                                searchPos = foundPos + 1;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Replace in entire file
+                        var replaced = _hexEditor.ReplaceAll(findData, replaceData, false, false);
+                        replacedCount = replaced.Count();
+                    }
+
+                    _hexEditor.ClearSelection();
 
                     string scope = inSelectionOnly ? "in selection" : "in file";
                     StatusMessage = $"Replaced {replacedCount} occurrences (0x{findByte:X2} → 0x{replaceByte:X2}) {scope}";
