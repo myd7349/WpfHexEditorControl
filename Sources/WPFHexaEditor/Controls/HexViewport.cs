@@ -1140,8 +1140,52 @@ namespace WpfHexaEditor.Controls
         {
             var byteData = line.Bytes[byteIndex];
 
-            // STEP 1: Calculate display character and width FIRST (needed for TBL auto-sizing)
+            // STEP 1: Calculate display character and determine TBL type/color FIRST
             var displayChar = GetDisplayCharacter(line, byteIndex);
+
+            // Determine text color based on TBL type
+            Brush textBrush = _asciiBrush; // Default
+            Core.CharacterTable.DteType dteType = Core.CharacterTable.DteType.Invalid;
+
+            if (_tblStream != null)
+            {
+                try
+                {
+                    string hexByte = byteData.Value.ToString("X2");
+                    var (text, type) = _tblStream.FindMatch(hexByte, showSpecialValue: true);
+                    dteType = type;
+
+                    // Select TEXT color based on TBL type (only if type is visible)
+                    bool shouldShow = dteType switch
+                    {
+                        Core.CharacterTable.DteType.Ascii => _showTblAscii,
+                        Core.CharacterTable.DteType.DualTitleEncoding => _showTblDte,
+                        Core.CharacterTable.DteType.MultipleTitleEncoding => _showTblMte,
+                        Core.CharacterTable.DteType.EndBlock => _showTblEndBlock,
+                        Core.CharacterTable.DteType.EndLine => _showTblEndLine,
+                        Core.CharacterTable.DteType.Japonais => _showTblJaponais,
+                        _ => false
+                    };
+
+                    if (shouldShow && text != "#")
+                    {
+                        textBrush = dteType switch
+                        {
+                            Core.CharacterTable.DteType.Ascii => _tblAsciiBrush,
+                            Core.CharacterTable.DteType.DualTitleEncoding => _tblDteBrush,
+                            Core.CharacterTable.DteType.MultipleTitleEncoding => _tblMteBrush,
+                            Core.CharacterTable.DteType.Japonais => _tblJaponaisBrush,
+                            Core.CharacterTable.DteType.EndBlock => _tblEndBlockBrush,
+                            Core.CharacterTable.DteType.EndLine => _tblEndLineBrush,
+                            _ => _asciiBrush
+                        };
+                    }
+                }
+                catch
+                {
+                    // Fall back to default brush on error
+                }
+            }
 
             var formattedText = new FormattedText(
                 displayChar,
@@ -1149,7 +1193,7 @@ namespace WpfHexaEditor.Controls
                 FlowDirection.LeftToRight,
                 _typeface,
                 13,
-                _asciiBrush,
+                textBrush, // Use TBL color for text
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
             // TBL AUTO-SIZING: Use larger width if TBL character is wider (V1 Legacy compatible)
@@ -1175,52 +1219,43 @@ namespace WpfHexaEditor.Controls
                 }
             }
 
-            // Phase 7.5: Draw TBL color background (respecting type visibility flags)
-            if (_tblStream != null)
+            // Phase 7.5: Draw TBL background ONLY for special types (EndBlock, EndLine, Japonais)
+            if (_tblStream != null && dteType != Core.CharacterTable.DteType.Invalid)
             {
-                try
-                {
-                    // Convert byte to hex string for TBL lookup
-                    string hexByte = byteData.Value.ToString("X2");
-                    var (text, dteType) = _tblStream.FindMatch(hexByte, showSpecialValue: true);
+                // Only special types get background color (in addition to text color)
+                bool isSpecialType = dteType == Core.CharacterTable.DteType.EndBlock ||
+                                     dteType == Core.CharacterTable.DteType.EndLine ||
+                                     dteType == Core.CharacterTable.DteType.Japonais;
 
-                    // Check if this TBL type should be shown
+                if (isSpecialType)
+                {
                     bool shouldShow = dteType switch
                     {
-                        Core.CharacterTable.DteType.Ascii => _showTblAscii,
-                        Core.CharacterTable.DteType.DualTitleEncoding => _showTblDte,
-                        Core.CharacterTable.DteType.MultipleTitleEncoding => _showTblMte,
                         Core.CharacterTable.DteType.EndBlock => _showTblEndBlock,
                         Core.CharacterTable.DteType.EndLine => _showTblEndLine,
                         Core.CharacterTable.DteType.Japonais => _showTblJaponais,
                         _ => false
                     };
 
-                    // Only draw color background if type is enabled
                     if (shouldShow)
                     {
-                        // Select brush based on DTE type
-                        Brush tblBrush = dteType switch
+                        // Select background brush for special types
+                        Brush bgBrush = dteType switch
                         {
-                            Core.CharacterTable.DteType.Ascii => _tblAsciiBrush,
-                            Core.CharacterTable.DteType.DualTitleEncoding => _tblDteBrush,
-                            Core.CharacterTable.DteType.MultipleTitleEncoding => _tblMteBrush,
                             Core.CharacterTable.DteType.Japonais => _tblJaponaisBrush,
                             Core.CharacterTable.DteType.EndBlock => _tblEndBlockBrush,
                             Core.CharacterTable.DteType.EndLine => _tblEndLineBrush,
-                            _ => _tblDefaultBrush
+                            _ => null
                         };
 
-                        // Draw TBL color background
-                        if (tblBrush != _tblDefaultBrush || dteType != Core.CharacterTable.DteType.Invalid)
+                        // Draw semi-transparent background for special types
+                        if (bgBrush != null)
                         {
-                            dc.DrawRectangle(tblBrush, null, rect);
+                            var semiBrush = bgBrush.Clone();
+                            semiBrush.Opacity = 0.3; // Semi-transparent background
+                            dc.DrawRectangle(semiBrush, null, rect);
                         }
                     }
-                }
-                catch
-                {
-                    // Silently ignore TBL lookup errors
                 }
             }
 
