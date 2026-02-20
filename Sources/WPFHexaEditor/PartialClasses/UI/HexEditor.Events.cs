@@ -131,46 +131,25 @@ namespace WpfHexaEditor
 
         /// <summary>
         /// Get which area was clicked at mouse position
+        /// Uses HexViewport's calculated layout dimensions for accurate hit-testing
         /// </summary>
         private ClickArea GetClickAreaAtMouse(Point mousePosition)
         {
-            if (_viewModel == null)
+            if (_viewModel == null || HexViewport == null)
                 return ClickArea.Other;
-
-            // Layout constants (must match HexViewport.cs)
-            const double OffsetWidth = 110;
-            const double HexByteWidth = 24;
-            const double HexByteSpacing = 2;
-            const double SeparatorWidth = 20;
-            const int ByteGrouping = 4;
-            const double ByteSpacerWidthTickness = 6;
 
             double x = mousePosition.X;
 
-            // Check if in hex area
-            double hexStartX = OffsetWidth;
+            // Use HexViewport's actual calculated dimensions
+            double hexStartX = HexViewport.HexPanelStartX;
+            double separatorX = HexViewport.SeparatorStartX;
+            double asciiStartX = HexViewport.AsciiPanelStartX;
 
-            // Calculate hexEndX accounting for byte spacers
-            int numSpacers = 0;
-            if (_viewModel.BytePerLine >= ByteGrouping)
-            {
-                numSpacers = (_viewModel.BytePerLine / ByteGrouping) - 1;
-                // If not evenly divisible, we have one less spacer
-                if (_viewModel.BytePerLine % ByteGrouping == 0)
-                    numSpacers = (_viewModel.BytePerLine / ByteGrouping) - 1;
-                else
-                    numSpacers = _viewModel.BytePerLine / ByteGrouping;
-            }
-            double spacersWidth = numSpacers * ByteSpacerWidthTickness;
-            double hexEndX = OffsetWidth + (_viewModel.BytePerLine * (HexByteWidth + HexByteSpacing)) + spacersWidth;
-
-            if (x >= hexStartX && x < hexEndX)
+            // Check if in hex area (between hex start and separator)
+            if (x >= hexStartX && x < separatorX)
                 return ClickArea.Hex;
 
-            // Check if in ASCII area
-            double separatorX = hexEndX + 4; // Match rendering code (was +8, now +4)
-            double asciiStartX = separatorX + SeparatorWidth;
-
+            // Check if in ASCII area (after ASCII start)
             if (x >= asciiStartX)
                 return ClickArea.Ascii;
 
@@ -179,7 +158,7 @@ namespace WpfHexaEditor
 
         private VirtualPosition GetVirtualPositionAtMouse(Point mousePosition)
         {
-            if (_viewModel == null || _viewModel.Lines.Count == 0)
+            if (_viewModel == null || _viewModel.Lines.Count == 0 || HexViewport == null)
                 return VirtualPosition.Invalid;
 
             // Use HexViewport's actual LineHeight (calculated from font metrics)
@@ -187,15 +166,18 @@ namespace WpfHexaEditor
             if (lineHeight <= 0)
                 return VirtualPosition.Invalid;
 
-            // Layout constants (must match HexViewport.cs)
-            const double OffsetWidth = 110;
+            // Layout constants from HexViewport (must match rendering)
             const double HexByteWidth = 24;
             const double HexByteSpacing = 2;
             const double TopMargin = 2;
-            const double SeparatorWidth = 20;
             const double AsciiCharWidth = 10;
             const int ByteGrouping = 4;
             const double ByteSpacerWidthTickness = 6;
+
+            // Use HexViewport's actual calculated dimensions
+            double hexStartX = HexViewport.HexPanelStartX;
+            double separatorX = HexViewport.SeparatorStartX;
+            double asciiStartX = HexViewport.AsciiPanelStartX;
 
             // Calculate line number from Y coordinate
             double y = mousePosition.Y - TopMargin;
@@ -215,25 +197,13 @@ namespace WpfHexaEditor
             double x = mousePosition.X;
 
             // Check if clicked in offset area - select first byte
-            if (x < OffsetWidth)
+            if (x < hexStartX)
             {
                 return line.Bytes[0].VirtualPos;
             }
 
-            // Calculate hex area dimensions WITH byte spacers
-            double hexStartX = OffsetWidth;
-            int numSpacers = 0;
-            if (_viewModel.BytePerLine >= ByteGrouping)
-            {
-                numSpacers = (_viewModel.BytePerLine % ByteGrouping == 0)
-                    ? (_viewModel.BytePerLine / ByteGrouping) - 1
-                    : _viewModel.BytePerLine / ByteGrouping;
-            }
-            double spacersWidth = numSpacers * ByteSpacerWidthTickness;
-            double hexEndX = OffsetWidth + (_viewModel.BytePerLine * (HexByteWidth + HexByteSpacing)) + spacersWidth;
-
             // Check if click is in hex area
-            if (x >= hexStartX && x < hexEndX)
+            if (x >= hexStartX && x < separatorX)
             {
                 // Click in hex area - need to account for byte spacers
                 double relativeX = x - hexStartX;
@@ -267,21 +237,7 @@ namespace WpfHexaEditor
             }
 
             // Check if click is in ASCII area
-            double separatorX = hexEndX + 4;
-            double asciiStartX = separatorX + SeparatorWidth;
-
-            // Calculate ASCII area width WITH spacers (full width for all bytes per line)
-            int numAsciiSpacers = 0;
-            if (_viewModel.BytePerLine >= ByteGrouping)
-            {
-                numAsciiSpacers = (_viewModel.BytePerLine % ByteGrouping == 0)
-                    ? (_viewModel.BytePerLine / ByteGrouping) - 1
-                    : _viewModel.BytePerLine / ByteGrouping;
-            }
-            double asciiSpacersWidth = numAsciiSpacers * ByteSpacerWidthTickness;
-            double asciiEndX = asciiStartX + (_viewModel.BytePerLine * AsciiCharWidth) + asciiSpacersWidth;
-
-            if (x >= asciiStartX && x < asciiEndX)
+            if (x >= asciiStartX)
             {
                 // Click in ASCII area - need to account for byte spacers
                 double relativeX = x - asciiStartX;
