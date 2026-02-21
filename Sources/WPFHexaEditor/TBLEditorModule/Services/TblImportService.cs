@@ -374,12 +374,22 @@ namespace WpfHexaEditor.TBLEditorModule.Services
                 ".csv" => ImportFromCsv(filePath),
                 ".json" => ImportFromJson(filePath),
                 ".tbl" => ImportFromTbl(filePath),
+                ".tblx" => ImportFromTblx(filePath),
                 _ => new TblImportResult
                 {
                     Success = false,
                     Errors = new List<string> { $"Unsupported file format: {extension}" }
                 }
             };
+        }
+
+        /// <summary>
+        /// Import from .tblx file
+        /// </summary>
+        public TblImportResult ImportFromTblx(string filePath)
+        {
+            var tblxService = new TblxService();
+            return tblxService.ImportToTblStream(filePath);
         }
 
         private TblImportResult ImportFromTbl(string filePath)

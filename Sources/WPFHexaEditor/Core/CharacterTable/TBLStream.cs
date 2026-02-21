@@ -881,14 +881,14 @@ namespace WpfHexaEditor.Core.CharacterTable
         }
 
         /// <summary>
-        /// Save TBL to file with format based on extension (supports .tbl, .csv, .json)
+        /// Save TBL to file with format based on extension (supports .tbl, .csv, .json, .tblx)
         /// </summary>
-        public void SaveToFile(string filePath, CsvExportOptions csvOptions = null, JsonExportOptions jsonOptions = null)
+        public void SaveToFile(string filePath, CsvExportOptions csvOptions = null, JsonExportOptions jsonOptions = null, TblxMetadata tblxMetadata = null)
         {
             var exportService = new TblExportService();
             var entries = GetAllEntries();
 
-            exportService.ExportToFile(entries, filePath, csvOptions, jsonOptions);
+            exportService.ExportToFile(entries, filePath, csvOptions, jsonOptions, tblxMetadata);
 
             _fileName = filePath;
             _isModified = false;
@@ -917,6 +917,42 @@ namespace WpfHexaEditor.Core.CharacterTable
             var entries = GetAllEntries();
 
             exportService.ExportToJsonFile(entries, filePath, options);
+
+            _fileName = filePath;
+            _isModified = false;
+        }
+
+        /// <summary>
+        /// Load TBL from .tblx file
+        /// </summary>
+        public TblImportResult LoadFromTblx(string filePath)
+        {
+            var importService = new TblImportService();
+            var result = importService.ImportFromTblx(filePath);
+
+            if (result.Success)
+            {
+                _dteList.Clear();
+                foreach (var entry in result.Entries)
+                    Add(entry);
+
+                _fileName = filePath;
+                _isModified = false;
+                _modificationCount = 0;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Save TBL to .tblx file
+        /// </summary>
+        public void SaveToTblx(string filePath, TblxMetadata metadata = null)
+        {
+            var exportService = new TblExportService();
+            var entries = GetAllEntries();
+
+            exportService.ExportToTblxFile(entries, filePath, metadata);
 
             _fileName = filePath;
             _isModified = false;

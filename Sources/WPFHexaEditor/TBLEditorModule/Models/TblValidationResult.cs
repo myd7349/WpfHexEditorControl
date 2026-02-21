@@ -4,6 +4,8 @@
 // Contributors: Claude Sonnet 4.5
 //////////////////////////////////////////////
 
+using System.Collections.Generic;
+
 namespace WpfHexaEditor.TBLEditorModule.Models
 {
     /// <summary>
@@ -25,6 +27,16 @@ namespace WpfHexaEditor.TBLEditorModule.Models
         /// Warning message (non-critical issues)
         /// </summary>
         public string WarningMessage { get; set; }
+
+        /// <summary>
+        /// Multiple error messages (for document-level validation)
+        /// </summary>
+        public List<string> Errors { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Multiple warning messages (for document-level validation)
+        /// </summary>
+        public List<string> Warnings { get; set; } = new List<string>();
 
         /// <summary>
         /// Create successful validation result

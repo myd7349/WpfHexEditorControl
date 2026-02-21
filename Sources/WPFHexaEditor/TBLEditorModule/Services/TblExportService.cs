@@ -288,7 +288,8 @@ namespace WpfHexaEditor.TBLEditorModule.Services
         /// </summary>
         public void ExportToFile(IEnumerable<Dte> entries, string filePath,
             CsvExportOptions csvOptions = null,
-            JsonExportOptions jsonOptions = null)
+            JsonExportOptions jsonOptions = null,
+            TblxMetadata tblxMetadata = null)
         {
             var extension = Path.GetExtension(filePath)?.ToLowerInvariant();
 
@@ -306,8 +307,47 @@ namespace WpfHexaEditor.TBLEditorModule.Services
                     ExportToTblFile(entries, filePath);
                     break;
 
+                case ".tblx":
+                    ExportToTblxFile(entries, filePath, tblxMetadata);
+                    break;
+
                 default:
                     throw new NotSupportedException($"Unsupported export format: {extension}");
+            }
+        }
+
+        #endregion
+
+        #region TBLX Export
+
+        /// <summary>
+        /// Export to .tblx file
+        /// </summary>
+        public void ExportToTblxFile(IEnumerable<Dte> entries, string filePath, TblxMetadata metadata = null)
+        {
+            try
+            {
+                var tblxService = new TblxService();
+                var doc = new TblxDocument
+                {
+                    Metadata = metadata ?? new TblxMetadata
+                    {
+                        CreatedDate = DateTime.Now,
+                        Version = "1.0"
+                    }
+                };
+
+                // Convert entries
+                foreach (var dte in entries)
+                {
+                    doc.Entries.Add(TblxEntry.FromDte(dte));
+                }
+
+                tblxService.SaveToFile(doc, filePath);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to export to .tblx file: {ex.Message}", ex);
             }
         }
 
