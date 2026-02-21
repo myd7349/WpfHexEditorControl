@@ -1607,7 +1607,16 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty ShowColumnSeparatorProperty =
             DependencyProperty.Register(nameof(ShowColumnSeparator), typeof(bool), typeof(HexEditor),
-                new PropertyMetadata(true));
+                new PropertyMetadata(true, OnShowColumnSeparatorChanged));
+
+        private static void OnShowColumnSeparatorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && editor.HexViewport != null)
+            {
+                // Force viewport redraw to show/hide column separator
+                editor.HexViewport.InvalidateVisual();
+            }
+        }
 
         #endregion
 
