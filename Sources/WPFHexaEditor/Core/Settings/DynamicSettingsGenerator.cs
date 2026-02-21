@@ -61,13 +61,24 @@ namespace WpfHexaEditor.Core.Settings
         /// </summary>
         private TextBlock CreateHeader()
         {
-            return new TextBlock
+            var header = new TextBlock
             {
-                Text = TryFindResource("HexSettings_Title") as string ?? "Hex Editor Settings",
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(0, 0, 0, 16)
             };
+
+            // Use DynamicResource for Text so it updates when language changes
+            try
+            {
+                header.SetResourceReference(TextBlock.TextProperty, "HexSettings_Title");
+            }
+            catch
+            {
+                header.Text = "Hex Editor Settings";
+            }
+
+            return header;
         }
 
         /// <summary>
@@ -77,12 +88,25 @@ namespace WpfHexaEditor.Core.Settings
         {
             var expander = new Expander
             {
-                Header = GetCategoryHeader(category),
                 IsExpanded = (category == "Display"), // First expander (Display) open by default
                 Margin = new Thickness(0, 0, 0, 8),
                 BorderThickness = new Thickness(1),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(200, 200, 200))
             };
+
+            // Use DynamicResource for Header so it updates when language changes
+            var resourceKey = $"HexSettings_{category}_Title";
+            try
+            {
+                expander.SetResourceReference(Expander.HeaderProperty, resourceKey);
+                System.Diagnostics.Debug.WriteLine($"[Localization] Expander '{category}': Using DynamicResource '{resourceKey}'");
+            }
+            catch
+            {
+                // Fallback if resource doesn't exist
+                expander.Header = GetCategoryHeader(category);
+                System.Diagnostics.Debug.WriteLine($"[Localization] Expander '{category}': Using fallback (resource not found)");
+            }
 
             var contentPanel = new StackPanel
             {
@@ -306,31 +330,34 @@ namespace WpfHexaEditor.Core.Settings
                 HorizontalAlignment = HorizontalAlignment.Left
             };
 
-            // Save State button
+            // Save State button - Use DynamicResource for Content
             var saveButton = new Button
             {
-                Content = TryFindResource("HexSettings_SaveButton") as string ?? "Save State",
                 Margin = new Thickness(0, 0, 8, 0),
                 Padding = new Thickness(12, 6, 12, 6),
                 Name = "SaveStateButton"
             };
+            try { saveButton.SetResourceReference(Button.ContentProperty, "HexSettings_SaveButton"); }
+            catch { saveButton.Content = "Save State"; }
 
-            // Load State button
+            // Load State button - Use DynamicResource for Content
             var loadButton = new Button
             {
-                Content = TryFindResource("HexSettings_LoadButton") as string ?? "Load State",
                 Margin = new Thickness(0, 0, 8, 0),
                 Padding = new Thickness(12, 6, 12, 6),
                 Name = "LoadStateButton"
             };
+            try { loadButton.SetResourceReference(Button.ContentProperty, "HexSettings_LoadButton"); }
+            catch { loadButton.Content = "Load State"; }
 
-            // Reset button
+            // Reset button - Use DynamicResource for Content
             var resetButton = new Button
             {
-                Content = TryFindResource("HexSettings_ResetButton") as string ?? "Reset to Defaults",
                 Padding = new Thickness(12, 6, 12, 6),
                 Name = "ResetButton"
             };
+            try { resetButton.SetResourceReference(Button.ContentProperty, "HexSettings_ResetButton"); }
+            catch { resetButton.Content = "Reset to Defaults"; }
 
             // Apply ModernButtonStyle if available
             var buttonStyle = TryFindResource("ModernButtonStyle") as Style;
