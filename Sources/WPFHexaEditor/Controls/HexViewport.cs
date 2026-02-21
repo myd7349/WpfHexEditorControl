@@ -1608,28 +1608,14 @@ namespace WpfHexaEditor.Controls
 
         /// <summary>
         /// Get the actual rendered width of a character (accounts for TBL auto-sizing AND multi-byte mode)
-        /// CRITICAL for hit testing - must match DrawAsciiByte width calculation
+        /// CRITICAL for hit testing - must match DrawAsciiByte width calculation EXACTLY
         /// </summary>
         private double GetCharacterDisplayWidth(HexLine line, int byteIndex)
         {
-            var byteData = line.Bytes[byteIndex];
-
-            // Phase 4: In multi-byte mode (Bit16/32), width = stride * AsciiCharWidth
-            // Each ByteData displays multiple ASCII characters
-            if (byteData.Values != null && byteData.Values.Length > 1)
-            {
-                // Multi-byte mode: width is proportional to number of bytes in group
-                return byteData.Values.Length * AsciiCharWidth;
-            }
-
-            // If no TBL loaded, use fixed ASCII width for single byte
-            if (_tblStream == null)
-                return AsciiCharWidth;
-
-            // Get the display character using the same logic as rendering (for TBL)
+            // Get the display character using the same logic as rendering
             var displayChar = GetDisplayCharacter(line, byteIndex);
 
-            // Create FormattedText to measure actual width (same as DrawAsciiByte)
+            // Create FormattedText to measure actual width (EXACT SAME as DrawAsciiByte)
             var formattedText = new FormattedText(
                 displayChar,
                 System.Globalization.CultureInfo.CurrentCulture,
@@ -1639,7 +1625,8 @@ namespace WpfHexaEditor.Controls
                 _asciiBrush,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-            // TBL AUTO-SIZING: Use larger width if TBL character is wider (matches DrawAsciiByte logic)
+            // AUTO-SIZING: Use larger width if text is wider (matches DrawAsciiByte logic)
+            // This works for both multi-byte mode AND TBL
             return formattedText.Width > AsciiCharWidth
                 ? formattedText.Width
                 : AsciiCharWidth;
