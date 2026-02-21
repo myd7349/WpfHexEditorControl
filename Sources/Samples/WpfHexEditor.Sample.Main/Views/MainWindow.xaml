@@ -32,7 +32,7 @@
         <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenFileCommand}"/>
         <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveFileCommand}"/>
         <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseFileCommand}"/>
-        <KeyBinding Key="F" Modifiers="Control" Command="{Binding ToggleSearchPanelCommand}"/>
+        <KeyBinding Key="F" Modifiers="Control" Command="{Binding OpenAdvancedSearchCommand}"/>
         <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}"/>
         <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}"/>
         <KeyBinding Key="C" Modifiers="Control" Command="{Binding CopyCommand}"/>
@@ -41,6 +41,7 @@
         <KeyBinding Key="A" Modifiers="Control" Command="{Binding SelectAllCommand}"/>
         <KeyBinding Key="G" Modifiers="Control" Command="{Binding GoToPositionCommand}"/>
         <KeyBinding Key="B" Modifiers="Control" Command="{Binding ToggleBookmarkCommand}"/>
+        <KeyBinding Key="T" Modifiers="Control" Command="{Binding OpenTblEditorCommand}"/>
         <KeyBinding Key="OemComma" Modifiers="Control" Command="{Binding ToggleSettingsPanelCommand}"/>
     </Window.InputBindings>
 
@@ -112,23 +113,6 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="↷ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Edit_Redo}"/>
-                        </StackPanel>
-                    </MenuItem.Header>
-                </MenuItem>
-                <Separator/>
-                <MenuItem Command="{Binding ToggleSearchPanelCommand}" InputGestureText="Ctrl+F">
-                    <MenuItem.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔍 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
-                            <TextBlock Text="{DynamicResource Menu_Edit_Find}"/>
-                        </StackPanel>
-                    </MenuItem.Header>
-                </MenuItem>
-                <MenuItem Command="{Binding ToggleSearchPanelCommand}" InputGestureText="Ctrl+H">
-                    <MenuItem.Header>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔎 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
-                            <TextBlock Text="{DynamicResource Menu_Edit_FindReplace}"/>
                         </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
@@ -219,6 +203,15 @@
             </MenuItem>
 
             <MenuItem Header="{DynamicResource Menu_Search}">
+                <MenuItem Click="AdvancedSearchMenuItem_Click" InputGestureText="Ctrl+F">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔍 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="Advanced Search..."/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Command="{Binding FindNextCommand}" InputGestureText="F3">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
@@ -326,6 +319,16 @@
                             </StackPanel>
                         </MenuItem.Header>
                     </MenuItem>
+                    <MenuItem Command="{Binding OpenTblEditorCommand}"
+                              InputGestureText="Ctrl+T">
+                        <MenuItem.Header>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📝 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="TBL Editor..."/>
+                            </StackPanel>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <Separator/>
                     <MenuItem x:Name="CloseTblMenuItem"
                               Click="CloseTblMenuItem_Click"
                               IsEnabled="False">

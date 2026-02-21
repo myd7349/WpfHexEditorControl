@@ -23,6 +23,18 @@ namespace WpfHexaEditor.SearchModule.Models
         /// </summary>
         public byte[] MatchedBytes { get; set; }
 
+        /// <summary>
+        /// Gets or sets the context bytes before the match (up to 8 bytes).
+        /// Null if at the beginning of the file.
+        /// </summary>
+        public byte[] ContextBefore { get; set; }
+
+        /// <summary>
+        /// Gets or sets the context bytes after the match (up to 8 bytes).
+        /// Null if at the end of the file.
+        /// </summary>
+        public byte[] ContextAfter { get; set; }
+
         public override string ToString()
         {
             return $"Match at position 0x{Position:X8} (length: {Length})";

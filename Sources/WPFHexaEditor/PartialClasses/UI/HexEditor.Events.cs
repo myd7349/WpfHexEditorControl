@@ -720,6 +720,13 @@ namespace WpfHexaEditor
                     UpdatePositionInfo();
                     // Update HexViewport selection anchor
                     HexViewport.SelectionStart = _viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : -1;
+                    // Sync DependencyProperties for TwoWay binding in settings panel
+                    var newStart = _viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : -1L;
+                    if (SelectionStart != newStart)
+                        SetValue(SelectionStartProperty, newStart);
+                    // Position is an alias for SelectionStart, sync it too
+                    if (newStart >= 0 && GetValue(PositionProperty) is long currentPos && currentPos != newStart)
+                        SetValue(PositionProperty, newStart);
                     // Update auto-highlight to match the byte at the new selection
                     UpdateAutoHighlightByte();
                     // Update scroll markers selection bar
@@ -734,6 +741,10 @@ namespace WpfHexaEditor
                     HexViewport.CursorPosition = _viewModel.SelectionStop.IsValid ? _viewModel.SelectionStop.Value :
                                                  (_viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : 0);
                     HexViewport.SelectionStop = _viewModel.SelectionStop.IsValid ? _viewModel.SelectionStop.Value : -1;
+                    // Sync DependencyProperty for TwoWay binding in settings panel
+                    var newStop = _viewModel.SelectionStop.IsValid ? _viewModel.SelectionStop.Value : -1L;
+                    if (SelectionStop != newStop)
+                        SetValue(SelectionStopProperty, newStop);
                     // Update scroll markers selection bar
                     UpdateScrollMarkersSelection();
                     break;
@@ -760,11 +771,17 @@ namespace WpfHexaEditor
 
                 case nameof(HexEditorViewModel.EditMode):
                     EditModeText.Text = $"Mode: {_viewModel.EditMode}";
+                    // Sync DependencyProperty for TwoWay binding in settings panel
+                    if (EditMode != _viewModel.EditMode)
+                        SetValue(EditModeProperty, _viewModel.EditMode);
                     break;
 
                 case nameof(HexEditorViewModel.BytePerLine):
                     BytesPerLineText.Text = $"Bytes/Line: {_viewModel.BytePerLine}";
                     HexViewport.BytesPerLine = _viewModel.BytePerLine;
+                    // Sync DependencyProperty for TwoWay binding in settings panel
+                    if (BytePerLine != _viewModel.BytePerLine)
+                        SetValue(BytePerLineProperty, _viewModel.BytePerLine);
                     RefreshColumnHeader(); // Regenerate headers to match new BytesPerLine
                     break;
             }

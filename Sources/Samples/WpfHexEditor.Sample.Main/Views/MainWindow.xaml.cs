@@ -88,6 +88,9 @@ namespace WpfHexEditor.Sample.Main.Views
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // Save UI state BEFORE auto-saving HexEditor settings
+            _viewModel?.SaveUIState();
+
             // Auto-save HexEditor settings for next session
             HexEditorSettingsPanel?.AutoSaveState();
         }
@@ -211,6 +214,16 @@ namespace WpfHexEditor.Sample.Main.Views
         {
             // Show the Relative Search dialog (HexEditor API)
             HexEditorControl.ShowRelativeSearchDialog();
+        }
+
+        /// <summary>
+        /// Opens the Advanced Search dialog with 5 modes (TEXT, HEX, WILDCARD, TBL TEXT, RELATIVE)
+        /// </summary>
+        private void AdvancedSearchMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // Show the Advanced Search dialog (HexEditor API)
+            // Supports ultra-performant searching with TBL support and encoding discovery
+            HexEditorControl.ShowAdvancedSearchDialog(this);
         }
 
         #endregion

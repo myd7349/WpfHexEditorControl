@@ -100,12 +100,7 @@ namespace WpfHexaEditor.SearchModule.Services
 
                     if (IsMatchAt(pos, pattern, options.UseWildcard, options.WildcardByte))
                     {
-                        matches.Add(new SearchMatch
-                        {
-                            Position = pos,
-                            Length = patternLength,
-                            MatchedBytes = GetBytesAt(pos, patternLength)
-                        });
+                        matches.Add(CreateSearchMatch(pos, patternLength, options.ContextRadius));
 
                         if (options.MaxResults > 0 && matches.Count >= options.MaxResults)
                             break;
@@ -133,12 +128,7 @@ namespace WpfHexaEditor.SearchModule.Services
 
                     if (IsMatchAt(pos, pattern, options.UseWildcard, options.WildcardByte))
                     {
-                        matches.Add(new SearchMatch
-                        {
-                            Position = pos,
-                            Length = patternLength,
-                            MatchedBytes = GetBytesAt(pos, patternLength)
-                        });
+                        matches.Add(CreateSearchMatch(pos, patternLength, options.ContextRadius));
 
                         if (options.MaxResults > 0 && matches.Count >= options.MaxResults)
                             break;
@@ -311,6 +301,41 @@ namespace WpfHexaEditor.SearchModule.Services
 
             int actualLength = (int)Math.Min(length, _byteProvider.VirtualLength - position);
             return _byteProvider.GetBytes(position, actualLength);
+        }
+
+        /// <summary>
+        /// Creates a SearchMatch with context bytes captured.
+        /// </summary>
+        private SearchMatch CreateSearchMatch(long position, int length, int contextRadius)
+        {
+            // Get matched bytes
+            byte[] matchedBytes = GetBytesAt(position, length);
+
+            // Get context before (up to contextRadius bytes)
+            byte[] contextBefore = null;
+            if (contextRadius > 0 && position > 0)
+            {
+                long beforeStart = Math.Max(0, position - contextRadius);
+                int beforeLength = (int)(position - beforeStart);
+                contextBefore = GetBytesAt(beforeStart, beforeLength);
+            }
+
+            // Get context after (up to contextRadius bytes)
+            byte[] contextAfter = null;
+            if (contextRadius > 0 && position + length < _byteProvider.VirtualLength)
+            {
+                long afterLength = Math.Min(contextRadius, _byteProvider.VirtualLength - position - length);
+                contextAfter = GetBytesAt(position + length, (int)afterLength);
+            }
+
+            return new SearchMatch
+            {
+                Position = position,
+                Length = length,
+                MatchedBytes = matchedBytes,
+                ContextBefore = contextBefore,
+                ContextAfter = contextAfter
+            };
         }
 
         /// <summary>

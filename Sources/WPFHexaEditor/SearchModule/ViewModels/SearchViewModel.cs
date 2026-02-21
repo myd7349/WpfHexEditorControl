@@ -661,12 +661,6 @@ namespace WpfHexaEditor.SearchModule.ViewModels
     /// <summary>
     /// Search mode enumeration.
     /// </summary>
-    public enum SearchMode
-    {
-        Text,
-        Hex
-    }
-
     /// <summary>
     /// Encoding information for UI binding.
     /// </summary>

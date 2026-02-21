@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using WpfHexaEditor.SearchModule.Models;
 using WpfHexaEditor.SearchModule.ViewModels;
 
 namespace WpfHexaEditor.SearchModule.Views

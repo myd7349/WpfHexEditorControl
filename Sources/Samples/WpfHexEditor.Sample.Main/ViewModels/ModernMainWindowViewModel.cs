@@ -168,6 +168,7 @@ namespace WpfHexEditor.Sample.Main.ViewModels
         public ICommand SearchCommand { get; }
         public ICommand ToggleSettingsPanelCommand { get; }
         public ICommand ToggleSearchPanelCommand { get; }
+        public ICommand OpenAdvancedSearchCommand { get; }
         public ICommand ShowAboutCommand { get; }
         public ICommand ShowKeyboardShortcutsCommand { get; }
         public ICommand OpenGitHubCommand { get; }
@@ -175,6 +176,7 @@ namespace WpfHexEditor.Sample.Main.ViewModels
         public ICommand InvertSelectionCommand { get; }
         public ICommand FillWithByteCommand { get; }
         public ICommand ReplaceByteCommand { get; }
+        public ICommand OpenTblEditorCommand { get; }
 
         #endregion
 
@@ -182,8 +184,19 @@ namespace WpfHexEditor.Sample.Main.ViewModels
 
         public ModernMainWindowViewModel()
         {
+            // Load UI state FIRST
+            LoadUIState();
+
             SettingsViewModel = new SettingsPanelViewModel();
             SearchViewModel = new SearchCommandCenterViewModel();
+
+            // Apply loaded search mode
+            var settings = Properties.Settings.Default;
+            if (!string.IsNullOrEmpty(settings.SelectedSearchMode) &&
+                Enum.TryParse<SearchMode>(settings.SelectedSearchMode, out var mode))
+            {
+                SearchViewModel.SelectedSearchMode = mode;
+            }
 
             // Wire up settings events
             SettingsViewModel.ThemeChanged += OnThemeChanged;
@@ -223,6 +236,7 @@ namespace WpfHexEditor.Sample.Main.ViewModels
             SearchCommand = new RelayCommand(Search, () => IsFileLoaded && !IsOperationActive && !string.IsNullOrWhiteSpace(SearchQuery));
             ToggleSettingsPanelCommand = new RelayCommand(ToggleSettingsPanel);
             ToggleSearchPanelCommand = new RelayCommand(ToggleSearchPanel);
+            OpenAdvancedSearchCommand = new RelayCommand(OpenAdvancedSearch, () => IsFileLoaded);
             ShowAboutCommand = new RelayCommand(ShowAbout);
             ShowKeyboardShortcutsCommand = new RelayCommand(ShowKeyboardShortcuts);
             OpenGitHubCommand = new RelayCommand(OpenGitHub);
@@ -232,6 +246,9 @@ namespace WpfHexEditor.Sample.Main.ViewModels
             InvertSelectionCommand = new RelayCommand(InvertSelection, () => IsFileLoaded && _hexEditor?.HasSelection == true && !IsOperationActive);
             FillWithByteCommand = new RelayCommand(FillWithByte, () => IsFileLoaded && _hexEditor?.HasSelection == true && !IsOperationActive);
             ReplaceByteCommand = new RelayCommand(ReplaceByte, () => IsFileLoaded && !IsOperationActive);
+
+            // TBL Editor - Can open without TBL loaded to create new or open existing
+            OpenTblEditorCommand = new RelayCommand(OpenTblEditor, () => !IsOperationActive);
         }
 
         #endregion
@@ -803,6 +820,16 @@ namespace WpfHexEditor.Sample.Main.ViewModels
             IsSearchPanelVisible = !IsSearchPanelVisible;
         }
 
+        private void OpenAdvancedSearch()
+        {
+            if (_hexEditor == null) return;
+
+            // Open Advanced Search dialog
+            // Note: Owner window not passed, so dialog won't be centered on parent
+            // To fix this, use an event pattern or pass Window reference to ViewModel
+            _hexEditor.ShowAdvancedSearchDialog();
+        }
+
         private void ShowAbout()
         {
             MessageBox.Show(
@@ -834,6 +861,22 @@ namespace WpfHexEditor.Sample.Main.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to open GitHub link: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void OpenTblEditor()
+        {
+            try
+            {
+                if (_hexEditor != null)
+                {
+                    _hexEditor.OpenTblEditor();
+                    StatusMessage = "TBL Editor opened";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to open TBL Editor: {ex.Message}";
             }
         }
 
@@ -874,6 +917,35 @@ namespace WpfHexEditor.Sample.Main.ViewModels
         public void OnOperationStateChanged(bool isActive)
         {
             IsOperationActive = isActive;
+        }
+
+        private void LoadUIState()
+        {
+            var settings = Properties.Settings.Default;
+            _isSettingsPanelVisible = settings.IsSettingsPanelVisible;
+            _isSearchPanelVisible = settings.IsSearchPanelVisible;
+
+            // Load last file path (if user opted in)
+            if (settings.RememberLastFilePath && !string.IsNullOrEmpty(settings.LastFilePath))
+            {
+                _currentFilePath = settings.LastFilePath;
+            }
+        }
+
+        public void SaveUIState()
+        {
+            var settings = Properties.Settings.Default;
+            settings.IsSettingsPanelVisible = IsSettingsPanelVisible;
+            settings.IsSearchPanelVisible = IsSearchPanelVisible;
+            settings.SelectedSearchMode = SearchViewModel?.SelectedSearchMode.ToString() ?? "Text";
+
+            if (settings.RememberLastFilePath)
+            {
+                settings.LastFilePath = CurrentFilePath ?? "";
+            }
+
+            settings.Save();
+            System.Diagnostics.Debug.WriteLine("[ModernMainWindowViewModel] UI state saved");
         }
 
         protected void OnPropertyChanged(string propertyName)
