@@ -326,6 +326,18 @@ namespace WpfHexaEditor
         /// </summary>
         private void HexViewport_KeyboardNavigation(object sender, Controls.KeyboardNavigationEventArgs e)
         {
+            // TEMP DEBUG: Confirm handler is being called (ALWAYS show for Left/Right)
+            if (e.Key == System.Windows.Input.Key.Left || e.Key == System.Windows.Input.Key.Right)
+            {
+                System.Windows.MessageBox.Show(
+                    $"✅ HANDLER CALLED!\n\n" +
+                    $"Key: {e.Key}\n" +
+                    $"ViewModel null? {_viewModel == null}",
+                    "🔍 Handler Entry Point",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+
             if (_viewModel == null)
                 return;
 
