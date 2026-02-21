@@ -213,6 +213,16 @@ namespace WpfHexEditor.Sample.Main.Views
             HexEditorControl.ShowRelativeSearchDialog();
         }
 
+        /// <summary>
+        /// Opens the Advanced Search dialog with 5 modes (TEXT, HEX, WILDCARD, TBL TEXT, RELATIVE)
+        /// </summary>
+        private void AdvancedSearchMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            // Show the Advanced Search dialog (HexEditor API)
+            // Supports ultra-performant searching with TBL support and encoding discovery
+            HexEditorControl.ShowAdvancedSearchDialog(this);
+        }
+
         #endregion
     }
 }

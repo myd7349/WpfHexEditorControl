@@ -168,6 +168,7 @@ namespace WpfHexEditor.Sample.Main.ViewModels
         public ICommand SearchCommand { get; }
         public ICommand ToggleSettingsPanelCommand { get; }
         public ICommand ToggleSearchPanelCommand { get; }
+        public ICommand OpenAdvancedSearchCommand { get; }
         public ICommand ShowAboutCommand { get; }
         public ICommand ShowKeyboardShortcutsCommand { get; }
         public ICommand OpenGitHubCommand { get; }
@@ -223,6 +224,7 @@ namespace WpfHexEditor.Sample.Main.ViewModels
             SearchCommand = new RelayCommand(Search, () => IsFileLoaded && !IsOperationActive && !string.IsNullOrWhiteSpace(SearchQuery));
             ToggleSettingsPanelCommand = new RelayCommand(ToggleSettingsPanel);
             ToggleSearchPanelCommand = new RelayCommand(ToggleSearchPanel);
+            OpenAdvancedSearchCommand = new RelayCommand(OpenAdvancedSearch, () => IsFileLoaded);
             ShowAboutCommand = new RelayCommand(ShowAbout);
             ShowKeyboardShortcutsCommand = new RelayCommand(ShowKeyboardShortcuts);
             OpenGitHubCommand = new RelayCommand(OpenGitHub);
@@ -801,6 +803,16 @@ namespace WpfHexEditor.Sample.Main.ViewModels
         private void ToggleSearchPanel()
         {
             IsSearchPanelVisible = !IsSearchPanelVisible;
+        }
+
+        private void OpenAdvancedSearch()
+        {
+            if (_hexEditor == null) return;
+
+            // Open Advanced Search dialog
+            // Note: Owner window not passed, so dialog won't be centered on parent
+            // To fix this, use an event pattern or pass Window reference to ViewModel
+            _hexEditor.ShowAdvancedSearchDialog();
         }
 
         private void ShowAbout()

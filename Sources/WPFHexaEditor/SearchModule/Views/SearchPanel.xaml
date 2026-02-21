@@ -12,7 +12,7 @@
              xmlns:local="clr-namespace:WpfHexaEditor.SearchModule.Views"
              mc:Ignorable="d"
              d:DesignHeight="120" d:DesignWidth="800"
-             Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+             Background="{DynamicResource BackgroundBrush}">
 
     <UserControl.Resources>
         <!-- Value Converters -->
@@ -20,10 +20,17 @@
         <local:EnumToBoolConverter x:Key="EnumToBoolConverter"/>
         <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
+        <!-- Local derived brushes for theme adaptation -->
+        <SolidColorBrush x:Key="LocalButtonBackgroundBrush" Color="{DynamicResource BackgroundColor}" Opacity="0.9"/>
+        <SolidColorBrush x:Key="LocalButtonBorderBrush" Color="{DynamicResource BackgroundColor}" Opacity="0.5"/>
+        <SolidColorBrush x:Key="LocalButtonHoverBrush" Color="{DynamicResource AccentColor}" Opacity="0.2"/>
+        <SolidColorBrush x:Key="LocalButtonPressedBrush" Color="{DynamicResource AccentColor}" Opacity="0.4"/>
+
         <!-- Modern flat button style -->
         <Style x:Key="FlatButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#E1E1E1"/>
-            <Setter Property="BorderBrush" Value="#ACACAC"/>
+            <Setter Property="Background" Value="{DynamicResource LocalButtonBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LocalButtonBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,5"/>
             <Setter Property="Margin" Value="2"/>
@@ -39,10 +46,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#BEE6FD"/>
+                                <Setter Property="Background" Value="{DynamicResource LocalButtonHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#80CFFC"/>
+                                <Setter Property="Background" Value="{DynamicResource LocalButtonPressedBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.5"/>

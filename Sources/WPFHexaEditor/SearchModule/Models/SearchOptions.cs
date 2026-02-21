@@ -63,6 +63,12 @@ namespace WpfHexaEditor.SearchModule.Models
         public bool WrapAround { get; set; } = false;
 
         /// <summary>
+        /// Gets or sets the number of context bytes to capture before and after each match.
+        /// Default is 8 bytes. Set to 0 to disable context capture.
+        /// </summary>
+        public int ContextRadius { get; set; } = 8;
+
+        /// <summary>
         /// Validates the search options.
         /// </summary>
         public bool IsValid()

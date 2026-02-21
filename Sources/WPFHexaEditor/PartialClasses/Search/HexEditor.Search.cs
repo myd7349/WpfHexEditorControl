@@ -5,6 +5,7 @@
 //////////////////////////////////////////////
 
 using System.Collections.Generic;
+using System.Linq;
 using WpfHexaEditor.Models;
 
 namespace WpfHexaEditor
@@ -160,6 +161,116 @@ namespace WpfHexaEditor
         public Core.Bytes.ByteProvider GetByteProvider()
         {
             return _viewModel?.GetByteProvider();
+        }
+
+        /// <summary>
+        /// Opens the Advanced Search Dialog bound to this HexEditor.
+        /// Supports 5 modes: TEXT, HEX, WILDCARD, TBL TEXT (if TBL loaded), RELATIVE (encoding discovery).
+        /// </summary>
+        /// <param name="owner">Owner window for centering the dialog (optional)</param>
+        public void ShowAdvancedSearchDialog(System.Windows.Window owner = null)
+        {
+            // Verify file/stream is loaded by checking ByteProvider
+            var provider = GetByteProvider();
+            if (provider == null || provider.Length == 0)
+            {
+                System.Windows.MessageBox.Show(
+                    "No file or stream loaded. Please open a file first.",
+                    "Advanced Search",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+
+            var dialog = new SearchModule.Views.AdvancedSearchDialog();
+            var vm = new SearchModule.ViewModels.AdvancedSearchViewModel();
+
+            // ⚠️ BINDING CRITIQUE: Lier le ViewModel à CE HexEditor
+            vm.BindToHexEditor(this);
+
+            // Wire navigation event: double-click result → scroll and select in HexEditor
+            vm.ResultNavigationRequested += (s, result) =>
+            {
+                if (result != null)
+                {
+                    // Navigate and select in THIS HexEditor
+                    FindSelect(result.Position, result.Length);
+                    // Ensure visible in viewport
+                    SetPosition(result.Position);
+                }
+            };
+
+            // Wire highlight event: show all results with yellow highlight
+            vm.HighlightResultsRequested += (s, matches) =>
+            {
+                if (matches == null) return;
+
+                // Clear existing highlights
+                ClearCustomBackgroundBlock();
+
+                // Create highlight brush
+                var highlightBrush = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Colors.Yellow)
+                { Opacity = 0.3 };
+
+                // Add highlight for each match
+                foreach (var match in matches.Take(10000)) // Limit to 10K for performance
+                {
+                    AddCustomBackgroundBlock(new Core.CustomBackgroundBlock(
+                        match.Position,
+                        match.Length,
+                        highlightBrush,
+                        "AdvancedSearchResult"));
+                }
+            };
+
+            // Wire clear highlights event
+            vm.HighlightClearRequested += (s, e) =>
+            {
+                ClearCustomBackgroundBlock();
+            };
+
+            // Wire TBL load event: when user applies discovered encoding from Relative Search or loads TBL file
+            vm.TblLoadRequested += (s, newTbl) =>
+            {
+                if (newTbl == null) return;
+
+                // Load the newly discovered TBL into THIS HexEditor
+                _tblStream = newTbl;
+                _characterTableType = Core.CharacterTableType.TblFile;
+
+                // Update viewport to show TBL
+                if (HexViewport != null)
+                {
+                    HexViewport.TblStream = newTbl;
+                    HexViewport.TblShowMte = true;
+                }
+
+                // Update status bar
+                StatusText.Text = $"TBL loaded: {newTbl.FileName}";
+                TblStatusIcon.Visibility = System.Windows.Visibility.Visible;
+            };
+
+            // Wire TBL close event: when user closes TBL from Advanced Search
+            vm.TblCloseRequested += (s, e) =>
+            {
+                // Close the TBL in THIS HexEditor
+                CloseTBL();
+            };
+
+            // Cleanup when dialog closes
+            dialog.Closed += (s, e) =>
+            {
+                // Clear all highlights
+                ClearCustomBackgroundBlock();
+                // Dispose ViewModel (unsubscribe events, clear references)
+                vm.Dispose();
+            };
+
+            // Set DataContext and show modal dialog
+            dialog.DataContext = vm;
+            dialog.Owner = owner;
+            dialog.ShowDialog();
         }
 
         #endregion
