@@ -2575,14 +2575,49 @@ namespace WpfHexaEditor
         /// </summary>
         public static readonly DependencyProperty ByteOrderProperty =
             DependencyProperty.Register(nameof(ByteOrder), typeof(ByteOrderType), typeof(HexEditor),
-                new PropertyMetadata(ByteOrderType.LoHi));
+                new PropertyMetadata(ByteOrderType.LoHi, OnByteOrderChanged));
+
+        private static void OnByteOrderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is ByteOrderType byteOrder)
+            {
+                // CRITICAL FIX: Prevent infinite loop - only update ViewModel if value actually changed
+                if (editor._viewModel != null && editor._viewModel.ByteOrder == byteOrder)
+                    return; // Already synced, avoid recursion
+
+                if (editor._viewModel != null)
+                {
+                    editor._viewModel.ByteOrder = byteOrder;
+                    // ByteOrder change triggers automatic RefreshVisibleLines() in ViewModel
+                    // No need to call RefreshColumnHeader() - headers don't depend on ByteOrder
+                }
+            }
+        }
 
         /// <summary>
         /// ByteSize DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty ByteSizeProperty =
             DependencyProperty.Register(nameof(ByteSize), typeof(ByteSizeType), typeof(HexEditor),
-                new PropertyMetadata(ByteSizeType.Bit8));
+                new PropertyMetadata(ByteSizeType.Bit8, OnByteSizeChanged));
+
+        private static void OnByteSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is ByteSizeType byteSize)
+            {
+                // CRITICAL FIX: Prevent infinite loop - only update ViewModel if value actually changed
+                if (editor._viewModel != null && editor._viewModel.ByteSize == byteSize)
+                    return; // Already synced, avoid recursion
+
+                if (editor._viewModel != null)
+                {
+                    editor._viewModel.ByteSize = byteSize;
+                    // ByteSize change triggers automatic ClearLineCache() + RefreshVisibleLines() in ViewModel
+                    editor.RefreshColumnHeader(); // Update headers to reflect new stride
+                    editor.HexViewport.InvalidateVisual(); // Force viewport redraw
+                }
+            }
+        }
 
         /// <summary>
         /// BarChartPanelVisibility DependencyProperty for XAML binding

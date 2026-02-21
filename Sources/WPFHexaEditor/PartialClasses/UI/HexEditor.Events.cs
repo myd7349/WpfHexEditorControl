@@ -784,6 +784,20 @@ namespace WpfHexaEditor
                         SetValue(BytePerLineProperty, _viewModel.BytePerLine);
                     RefreshColumnHeader(); // Regenerate headers to match new BytesPerLine
                     break;
+
+                case nameof(HexEditorViewModel.ByteSize):
+                    // Phase 5: Sync ByteSize DP for TwoWay binding in settings panel
+                    if (ByteSize != _viewModel.ByteSize)
+                        SetValue(ByteSizeProperty, _viewModel.ByteSize);
+                    RefreshColumnHeader(); // Update headers for new stride
+                    break;
+
+                case nameof(HexEditorViewModel.ByteOrder):
+                    // Phase 5: Sync ByteOrder DP for TwoWay binding in settings panel
+                    if (ByteOrder != _viewModel.ByteOrder)
+                        SetValue(ByteOrderProperty, _viewModel.ByteOrder);
+                    // ByteOrder change is visual only, no header update needed
+                    break;
             }
 
             // FIX: Update IsModified DP after any property change (in case edits happened)
