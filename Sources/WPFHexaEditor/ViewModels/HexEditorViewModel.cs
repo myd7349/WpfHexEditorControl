@@ -130,7 +130,9 @@ namespace WpfHexaEditor.ViewModels
                     _byteOrder = value;
                     OnPropertyChanged();
 
-                    // Refresh lines to apply new byte order (no cache clear needed, just visual change)
+                    // FIX: Must clear cache because ByteOrder is stored in each ByteData
+                    // Cached ByteData objects have old ByteOrder, need to recreate them
+                    ClearLineCache();
                     RefreshVisibleLines();
                 }
             }
