@@ -997,35 +997,14 @@ namespace WpfHexaEditor.Controls
                 // Draw separator and ASCII (if visible)
                 if (ShowAscii)
                 {
-                    // Phase 6: Calculate separator position with dynamic cell widths
-                    // Must account for ByteSize (Bit8/16/32) to get correct total hex area width
-                    double hexStartX = ShowOffset ? OffsetWidth : 0;
-
-                    // Get dynamic cell width based on font/size (uses FormattedText measurement)
-                    double cellWidth = line.Bytes.Count > 0 ? GetDynamicCellWidth(line.Bytes[0]) : CalculateCellWidth(1);
-                    // Note: Reuse 'stride' variable from hex loop above (already calculated)
-
-                    // Calculate number of cells for full line (e.g., 16 bytes / 2 = 8 cells in Bit16)
-                    int numCells = (_bytesPerLine + stride - 1) / stride; // Ceiling division
-                    double totalHexWidth = numCells * (cellWidth + HexByteSpacing);
-
-                    // Calculate number of byte spacers for a full line
-                    int numSpacers = 0;
-                    if (_bytesPerLine >= (int)ByteGrouping)
-                    {
-                        numSpacers = (_bytesPerLine % (int)ByteGrouping == 0)
-                            ? (_bytesPerLine / (int)ByteGrouping) - 1
-                            : _bytesPerLine / (int)ByteGrouping;
-                    }
-                    double spacersWidth = numSpacers * (int)ByteSpacerWidthTickness;
-
-                    // Separator is always at fixed position (full line width + margin)
-                    double separatorX = hexStartX + totalHexWidth + spacersWidth + 4;
+                    // Phase 4: Calculate separator position using actual hexX position (same as hit testing!)
+                    // hexX now contains the end of hex area after iterating through all bytes
+                    double separatorX = hexX + 4; // Small margin before separator (same as hit testing)
                     dc.DrawRectangle(_separatorBrush, null, new Rect(separatorX, y, 1, _lineHeight));
 
-                    // Draw ASCII bytes with byte spacers
+                    // Phase 4: Draw ASCII bytes - SAME LOGIC as hit testing (simple loop)
                     double asciiX = separatorX + SeparatorWidth;
-                    for (int i = 0; i < line.Bytes.Count; )
+                    for (int i = 0; i < line.Bytes.Count; i++)
                     {
                         // Calculate byte position from group index (matches hex area logic)
                         int bytePosition = i * stride;
@@ -1041,17 +1020,12 @@ namespace WpfHexaEditor.Controls
                             asciiX += (int)ByteSpacerWidthTickness;
                         }
 
-                        var byteData = line.Bytes[i];
-
-                        // Get how many bytes this character consumes (1 for ASCII, 2 for DTE/MTE)
-                        int bytesConsumed = GetCharacterByteCount(line, i);
-
-                        // DrawAsciiByte now returns the actual width used (for TBL auto-sizing)
+                        // Draw this ByteData's ASCII character(s)
+                        // DrawAsciiByte returns the actual width used
                         double usedWidth = DrawAsciiByte(dc, line, i, asciiX, y);
                         asciiX += usedWidth;
 
-                        // Skip the consumed bytes (for DTE/MTE, this skips the second byte)
-                        i += bytesConsumed;
+                        // Simple increment (no skipping) - same as Hex and hit testing
                     }
                 }
 
@@ -1436,8 +1410,9 @@ namespace WpfHexaEditor.Controls
                 textBrush, // Use TBL color for text
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-            // TBL AUTO-SIZING: Use larger width if TBL character is wider (V1 Legacy compatible)
-            double cellWidth = _tblStream != null && formattedText.Width > AsciiCharWidth
+            // Phase 4: AUTO-SIZING for TBL and multi-byte mode
+            // Use actual text width if larger than single char width
+            double cellWidth = formattedText.Width > AsciiCharWidth
                 ? formattedText.Width
                 : AsciiCharWidth;
 
@@ -1568,13 +1543,26 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
-        /// Get how many bytes this character consumes (1 for ASCII, 2-8 for multi-byte)
+        /// Get how many ByteData this character consumes (1 for ASCII, 2-8 for TBL multi-byte)
         /// CRITICAL: Must be called before GetDisplayCharacter to know if we should skip next bytes
         /// Uses greedy matching - tries longest matches first (8 bytes down to 2)
+        /// Phase 4: In multi-byte mode (Bit16/32), always returns 1 (each ByteData is independent)
         /// </summary>
         private int GetCharacterByteCount(HexLine line, int byteIndex)
         {
-            if (_tblStream == null || byteIndex >= line.Bytes.Count)
+            if (byteIndex >= line.Bytes.Count)
+                return 1;
+
+            // Phase 4: In multi-byte mode (Bit16/32), each ByteData is already a group
+            // Don't try to match across multiple ByteData for TBL - just display each group independently
+            var byteData = line.Bytes[byteIndex];
+            if (byteData.Values != null && byteData.Values.Length > 1)
+            {
+                // Multi-byte mode: each ByteData displays independently
+                return 1;
+            }
+
+            if (_tblStream == null)
                 return 1;
 
             try
@@ -1619,16 +1607,26 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
-        /// Get the actual rendered width of a character (accounts for TBL auto-sizing)
+        /// Get the actual rendered width of a character (accounts for TBL auto-sizing AND multi-byte mode)
         /// CRITICAL for hit testing - must match DrawAsciiByte width calculation
         /// </summary>
         private double GetCharacterDisplayWidth(HexLine line, int byteIndex)
         {
-            // If no TBL loaded, use fixed ASCII width
+            var byteData = line.Bytes[byteIndex];
+
+            // Phase 4: In multi-byte mode (Bit16/32), width = stride * AsciiCharWidth
+            // Each ByteData displays multiple ASCII characters
+            if (byteData.Values != null && byteData.Values.Length > 1)
+            {
+                // Multi-byte mode: width is proportional to number of bytes in group
+                return byteData.Values.Length * AsciiCharWidth;
+            }
+
+            // If no TBL loaded, use fixed ASCII width for single byte
             if (_tblStream == null)
                 return AsciiCharWidth;
 
-            // Get the display character using the same logic as rendering
+            // Get the display character using the same logic as rendering (for TBL)
             var displayChar = GetDisplayCharacter(line, byteIndex);
 
             // Create FormattedText to measure actual width (same as DrawAsciiByte)
@@ -1716,7 +1714,22 @@ namespace WpfHexaEditor.Controls
                 }
             }
 
-            // Default: Use standard ASCII conversion
+            // Phase 4: In multi-byte mode (Bit16/32), display ALL bytes in the group as ASCII
+            // Each ByteData.Values contains 'stride' bytes that should all be displayed
+            if (byteData.Values != null && byteData.Values.Length > 1)
+            {
+                // Multi-byte mode: show all bytes in the group
+                var sb = new StringBuilder(byteData.Values.Length);
+                foreach (var b in byteData.Values)
+                {
+                    char c = (b >= 0x20 && b < 0x7F) ? (char)b : '.';
+                    sb.Append(c);
+                }
+                string result = sb.ToString();
+                return result;
+            }
+
+            // Default: Single byte mode (Bit8) - Use standard ASCII conversion
             return byteData.AsciiChar.ToString();
         }
 
@@ -1790,33 +1803,68 @@ namespace WpfHexaEditor.Controls
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            base.OnMouseDown(e);
-            Focus();
-
-            // Double-check the click position to ensure we're not clicking on a ByteSpacer or empty area
-            var mousePos = e.GetPosition(this);
-            var hitTestResult = HitTestByteWithArea(mousePos);
-
-            // Only process click if we have a valid byte position (not on ByteSpacer or empty area)
-            if (hitTestResult.Position.HasValue)
+            try
             {
-                long clickedPosition = hitTestResult.Position.Value;
+                System.Diagnostics.Debug.WriteLine($"[CLICK] === OnMouseDown START ===");
+                base.OnMouseDown(e);
+                Focus();
 
-                // Handle double-click for auto-select same bytes (V1 compatible)
-                if (e.ClickCount == 2 && e.ChangedButton == MouseButton.Left)
-                {
-                    ByteDoubleClicked?.Invoke(this, clickedPosition);
-                }
-                else if (e.ChangedButton == MouseButton.Left)
-                {
-                    // Single LEFT click only - start selection drag
-                    // Right-click is handled separately in OnMouseRightButtonDown to preserve selection
-                    _isMouseDown = true;
-                    _dragStartPosition = clickedPosition;
-                    CaptureMouse();
+                // Double-check the click position to ensure we're not clicking on a ByteSpacer or empty area
+                var mousePos = e.GetPosition(this);
+                System.Diagnostics.Debug.WriteLine($"[CLICK] Mouse position: {mousePos}");
 
-                    ByteClicked?.Invoke(this, clickedPosition);
+                var hitTestResult = HitTestByteWithArea(mousePos);
+                System.Diagnostics.Debug.WriteLine($"[CLICK] HitTest completed");
+
+                // DEBUG: Log click position
+                System.Diagnostics.Debug.WriteLine($"[CLICK] Position.HasValue = {hitTestResult.Position.HasValue}");
+                System.Diagnostics.Debug.WriteLine($"[CLICK] Position: {(hitTestResult.Position.HasValue ? $"0x{hitTestResult.Position.Value:X}" : "NULL")}, IsHex: {hitTestResult.IsHexArea}");
+
+                // Only process click if we have a valid byte position (not on ByteSpacer or empty area)
+                System.Diagnostics.Debug.WriteLine($"[CLICK] About to check if condition...");
+                if (hitTestResult.Position.HasValue)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CLICK] INSIDE IF BLOCK!");
+                    long clickedPosition = hitTestResult.Position.Value;
+
+                    System.Diagnostics.Debug.WriteLine($"[CLICK] Processing click at 0x{clickedPosition:X}");
+
+                    // Handle double-click for auto-select same bytes (V1 compatible)
+                    if (e.ClickCount == 2 && e.ChangedButton == MouseButton.Left)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[CLICK] Double-click detected");
+                        ByteDoubleClicked?.Invoke(this, clickedPosition);
+                    }
+                    else if (e.ChangedButton == MouseButton.Left)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[CLICK] Single left-click detected");
+                        // Single LEFT click only - start selection drag
+                        // Right-click is handled separately in OnMouseRightButtonDown to preserve selection
+                        _isMouseDown = true;
+                        _dragStartPosition = clickedPosition;
+                        CaptureMouse();
+
+                        System.Diagnostics.Debug.WriteLine($"[CLICK] About to raise ByteClicked event for 0x{clickedPosition:X}");
+                        ByteClicked?.Invoke(this, clickedPosition);
+                        System.Diagnostics.Debug.WriteLine($"[CLICK] ByteClicked event raised successfully");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[CLICK] Not left button, button was: {e.ChangedButton}");
+                    }
                 }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CLICK] Position.HasValue is FALSE - no byte clicked");
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[CLICK] === OnMouseDown END ===");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CLICK] EXCEPTION: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[CLICK] Stack trace: {ex.StackTrace}");
+                throw;
             }
         }
 
@@ -1831,8 +1879,9 @@ namespace WpfHexaEditor.Controls
 
         /// <summary>
         /// Hit test to determine which byte position was clicked and which area (hex or ASCII)
+        /// Phase 4: Changed to internal so HexEditor can use it for consistent hit testing
         /// </summary>
-        private (long? Position, bool IsHexArea) HitTestByteWithArea(Point mousePos)
+        internal (long? Position, bool IsHexArea) HitTestByteWithArea(Point mousePos)
         {
             if (_linesCached == null || _linesCached.Count == 0)
                 return (null, true);
@@ -1903,8 +1952,9 @@ namespace WpfHexaEditor.Controls
             double separatorX = hexX + 4; // Small margin before separator
             double asciiX = separatorX + SeparatorWidth;
 
-            // Iterate through bytes in ASCII area (spacers added in loop, not pre-calculated)
-            for (int i = 0; i < line.Bytes.Count; )
+            // Phase 4: ASCII hit testing - SAME LOGIC as Hex (simple and works for all cases)
+            // Iterate through bytes in ASCII area - simple loop like Hex panel
+            for (int i = 0; i < line.Bytes.Count; i++)
             {
                 // Calculate byte position from group index (matches drawing logic)
                 int bytePosition = i * stride;
@@ -1918,23 +1968,19 @@ namespace WpfHexaEditor.Controls
                     asciiX += (int)ByteSpacerWidthTickness;
                 }
 
-                // Get how many bytes this character consumes (1 for ASCII, 2 for DTE/MTE)
-                int bytesConsumed = GetCharacterByteCount(line, i);
-
-                // CRITICAL: Calculate actual character width (accounts for TBL auto-sizing)
+                // Get ByteData and calculate character width (same approach as Hex)
+                var byteData = line.Bytes[i];
                 double charWidth = GetCharacterDisplayWidth(line, i);
 
-                // Check if click is within this ASCII character's rect (using actual width)
+                // Check if click is within this ASCII character's rect
                 if (x >= asciiX && x < asciiX + charWidth)
                 {
                     // Click is within this ASCII character's visual rect
-                    return (line.Bytes[i].VirtualPos.Value, false);
+                    return (byteData.VirtualPos.Value, false);
                 }
 
+                // Advance position (simple, no skipping - same as Hex)
                 asciiX += charWidth;
-
-                // Skip the consumed bytes (for DTE/MTE, this skips the second byte)
-                i += bytesConsumed;
             }
 
             return (null, true);
@@ -1948,6 +1994,12 @@ namespace WpfHexaEditor.Controls
             var hitTestResult = HitTestByteWithArea(mousePos);
             var position = hitTestResult.Position;
             var isHexArea = hitTestResult.IsHexArea;
+
+            // DEBUG: Log mouseover position
+            if (position.HasValue)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MOUSEOVER] Position: 0x{position.Value:X}, IsHex: {isHexArea}");
+            }
 
             // Always show standard arrow cursor in editing area (user preference)
             this.Cursor = Cursors.Arrow;

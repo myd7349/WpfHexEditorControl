@@ -82,14 +82,18 @@ namespace WpfHexaEditor
                 {
                     _viewModel.ScrollPosition = newScrollPos;
 
-                    // Update selection to the byte at the current mouse position
-                    var position = GetVirtualPositionAtMouse(_lastMousePosition);
-
-                    // Only update selection if position actually changed (avoid redundant updates)
-                    if (position.IsValid && position != _lastAutoScrollPosition)
+                    // Phase 4: Use HexViewport's HitTestByteWithArea (same as mouseover - guaranteed consistent!)
+                    var hitResult = HexViewport.HitTestByteWithArea(_lastMousePosition);
+                    if (hitResult.Position.HasValue)
                     {
-                        _viewModel.SetSelectionRange(_mouseDownPosition, position);
-                        _lastAutoScrollPosition = position;
+                        var position = new VirtualPosition(hitResult.Position.Value);
+
+                        // Only update selection if position actually changed (avoid redundant updates)
+                        if (position != _lastAutoScrollPosition)
+                        {
+                            _viewModel.SetSelectionRange(_mouseDownPosition, position);
+                            _lastAutoScrollPosition = position;
+                        }
                     }
                 }
                 finally
