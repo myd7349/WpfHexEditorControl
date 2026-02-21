@@ -665,6 +665,9 @@ namespace WpfHexaEditor.SearchModule.ViewModels
             UpdateFromParent();
             LoadSearchHistory();
 
+            // Force command state update after binding
+            UpdateCommandStates();
+
             OnPropertyChanged(nameof(IsTblLoaded));
             OnPropertyChanged(nameof(TblInfo));
             OnPropertyChanged(nameof(FileLength));
@@ -705,7 +708,8 @@ namespace WpfHexaEditor.SearchModule.ViewModels
 
         private bool CanSearch()
         {
-            return !IsSearching && _byteProvider != null && !string.IsNullOrEmpty(SearchInput);
+            // ByteProvider check is done before dialog opens, so we only check SearchInput here
+            return !IsSearching && !string.IsNullOrEmpty(SearchInput);
         }
 
         private bool CanNavigate()

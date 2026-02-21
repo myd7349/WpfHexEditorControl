@@ -184,7 +184,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <!-- Zone A: Search Input -->
-            <RowDefinition Height="220"/>
+            <RowDefinition Height="Auto"/>
             <!-- Zone B: Action Bar -->
             <RowDefinition Height="60"/>
             <!-- Zone C: Results List -->
@@ -194,7 +194,7 @@
         </Grid.RowDefinitions>
 
         <!-- ========================================
-             ZONE A: SEARCH INPUT (~220px fixe)
+             ZONE A: SEARCH INPUT (Auto height - expands with Advanced Options)
              ======================================== -->
         <Border Grid.Row="0" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="0,0,0,1" Padding="15">
             <Grid>
