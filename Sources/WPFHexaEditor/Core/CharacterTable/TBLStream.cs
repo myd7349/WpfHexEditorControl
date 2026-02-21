@@ -6,15 +6,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using WpfHexaEditor.Core.Bytes;
 
 namespace WpfHexaEditor.Core.CharacterTable
 {
     /// <summary>
-    /// Used to manage Thingy TBL file (entry=value)
+    /// Used to manage Thingy TBL file (entry=value) with full standard format support
     /// </summary>
     public sealed class TblStream : IDisposable
     {
@@ -25,7 +27,7 @@ namespace WpfHexaEditor.Core.CharacterTable
         private string _fileName = string.Empty;
 
         /// <summary>
-        /// Represente the whole TBL file
+        /// Represents the whole TBL file
         /// </summary>
         private Dictionary<string, Dte> _dteList = new();
 
@@ -39,16 +41,41 @@ namespace WpfHexaEditor.Core.CharacterTable
         /// Maximum byte length for multi-byte sequences (8 bytes = 16 hex chars)
         /// </summary>
         private const int MAX_BYTE_LENGTH = 8;
+
+        /// <summary>
+        /// Modification tracking
+        /// </summary>
+        private int _modificationCount = 0;
+        private bool _isModified = false;
+
+        /// <summary>
+        /// Statistics cache
+        /// </summary>
+        private TblStatistics _cachedStatistics;
+        private bool _statisticsDirty = true;
+
+        #endregion
+
+        #region Events
+        /// <summary>
+        /// Event raised when TBL is modified
+        /// </summary>
+        public event EventHandler Modified;
+
+        /// <summary>
+        /// Raise the Modified event
+        /// </summary>
+        private void OnModified() => Modified?.Invoke(this, EventArgs.Empty);
         #endregion
 
         #region Constructors
         /// <summary>
-        /// Constructeur perm�tant de charg?le fichier DTE
+        /// Constructor to load the DTE file
         /// </summary>
         public TblStream(string fileName) => FileName = fileName;
 
         /// <summary>
-        /// Constructeur perm�tant de charg�le fichier DTE
+        /// Constructor to load the DTE file
         /// </summary>
         public TblStream() { }
         #endregion
@@ -72,7 +99,7 @@ namespace WpfHexaEditor.Core.CharacterTable
         /// Find entry in TBL file
         /// </summary>
         /// <param name="hex">Hex value to find match</param>
-        /// <param name="showSpecialValue">Fin the Endblock and EndLine</param>
+        /// <param name="showSpecialValue">Find the Endblock and EndLine</param>
         public (string text, DteType dteType) FindMatch(string hex, bool showSpecialValue)
         {
             // OPTIMIZED: Use TryGetValue instead of ContainsKey+indexer to reduce Dictionary lookups by 50%
@@ -84,9 +111,10 @@ namespace WpfHexaEditor.Core.CharacterTable
                     return (Properties.Resources.LineTagString, DteType.EndLine);
             }
 
+            // Return standard format raw hex if no match (conformity with standard)
             return _dteList.TryGetValue(hex, out var dte)
                 ? (dte.Value, dte.Type)
-                : ("#", DteType.Invalid);
+                : ($"[${hex}]", DteType.Invalid);
         }
 
         /// <summary>
@@ -134,7 +162,7 @@ namespace WpfHexaEditor.Core.CharacterTable
                 if (_dteList.TryGetValue(singleKey, out var single))
                     sb.Append(single.Value);
                 else
-                    sb.Append('#'); // No match found
+                    sb.Append($"[${singleKey}]"); // Standard format raw hex
 
                 i++; // Move to next byte
             }
@@ -154,7 +182,7 @@ namespace WpfHexaEditor.Core.CharacterTable
         }
 
         /// <summary>
-        /// Load the TBL file
+        /// Load the TBL file with full standard format support
         /// </summary>
         public void Load(string tblString)
         {
@@ -174,8 +202,10 @@ namespace WpfHexaEditor.Core.CharacterTable
             // Single-pass parsing (both DTEs and bookmarks)
             foreach (var rawLine in lines)
             {
-                var line = rawLine.TrimEnd('\r', '\n');
-                if (string.IsNullOrWhiteSpace(line))
+                var line = rawLine.TrimEnd('\r', '\n').Trim();
+
+                // NEW: Skip comment lines (start with #) or empty lines
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
                     continue;
 
                 // Parse bookmark lines (start with '(')
@@ -195,6 +225,11 @@ namespace WpfHexaEditor.Core.CharacterTable
 
             // Update cached EndBlock/EndLine values
             UpdateEndBlockAndEndLineCache();
+
+            // Reset modification tracking after load
+            _isModified = false;
+            _modificationCount = 0;
+            _statisticsDirty = true;
         }
 
         /// <summary>
@@ -219,19 +254,33 @@ namespace WpfHexaEditor.Core.CharacterTable
         }
 
         /// <summary>
-        /// Try to parse a DTE entry from a line
+        /// Try to parse a DTE entry from a line with enhanced validation
         /// </summary>
         private void TryParseDteEntry(string line, int equalIndex)
         {
             try
             {
-                var entry = line.Substring(0, equalIndex);
+                var entry = line.Substring(0, equalIndex).Trim();
                 var valueStart = equalIndex + 1;
                 var value = valueStart < line.Length ? line.Substring(valueStart) : string.Empty;
 
                 // Remove trailing carriage return if present
                 if (value.EndsWith("\r"))
                     value = value.Substring(0, value.Length - 1);
+
+                // NEW: Parse inline comment (format: entry=value # comment)
+                string inlineComment = string.Empty;
+                int commentIndex = value.IndexOf('#');
+                if (commentIndex >= 0)
+                {
+                    inlineComment = value.Substring(commentIndex + 1).Trim();
+                    value = value.Substring(0, commentIndex).TrimEnd();
+                }
+
+                // NEW: Parse escape sequences (\n, \r, \t)
+                value = value.Replace("\\n", "\n")
+                             .Replace("\\r", "\r")
+                             .Replace("\\t", "\t");
 
                 // Determine DTE type based on entry length and prefix
                 DteType type;
@@ -252,6 +301,13 @@ namespace WpfHexaEditor.Core.CharacterTable
                 }
                 else
                 {
+                    // NEW: Strict validation
+                    if (!IsValidHexEntry(entry, out string validationError))
+                    {
+                        Debug.WriteLine($"Skipping invalid entry: {line} - {validationError}");
+                        return;
+                    }
+
                     // Determine type based on entry length
                     // Support 1-8 bytes (2-16 hex chars)
                     if (entry.Length == 2)
@@ -265,6 +321,9 @@ namespace WpfHexaEditor.Core.CharacterTable
                 if (type != DteType.Invalid)
                 {
                     var dte = new Dte(entry, value, type);
+                    // Add inline comment if found
+                    if (!string.IsNullOrEmpty(inlineComment))
+                        dte.Comment = inlineComment;
                     // Add to dictionary, avoiding duplicates (Issue #105)
                     if (!_dteList.ContainsKey(dte.Entry))
                         _dteList.Add(dte.Entry, dte);
@@ -274,6 +333,37 @@ namespace WpfHexaEditor.Core.CharacterTable
             {
                 // Silently ignore malformed entries
             }
+        }
+
+        /// <summary>
+        /// Validate hex entry format (strict validation for standard conformity)
+        /// </summary>
+        private static bool IsValidHexEntry(string hex, out string error)
+        {
+            error = null;
+
+            // Must be even length (2, 4, 6, 8, ..., 16)
+            if (hex.Length % 2 != 0)
+            {
+                error = "Hex entry must have even number of characters";
+                return false;
+            }
+
+            // Length limits: 2-16 chars (1-8 bytes)
+            if (hex.Length < 2 || hex.Length > 16)
+            {
+                error = $"Hex entry length must be 2-16 characters (1-8 bytes), got {hex.Length}";
+                return false;
+            }
+
+            // All chars must be hex digits (0-9, A-F, case-insensitive)
+            if (!Regex.IsMatch(hex, "^[0-9A-Fa-f]+$"))
+            {
+                error = "Hex entry must contain only hex digits (0-9, A-F)";
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -319,11 +409,11 @@ namespace WpfHexaEditor.Core.CharacterTable
         }
 
         /// <summary>
-        /// Load TBL file
+        /// Load TBL file with UTF-8 BOM support
         /// </summary>
         public void Load()
         {
-            //ouverture du fichier
+            //opening the file
             if (!File.Exists(_fileName))
             {
                 var fs = File.Create(_fileName);
@@ -333,7 +423,8 @@ namespace WpfHexaEditor.Core.CharacterTable
             StreamReader tblFile;
             try
             {
-                tblFile = new StreamReader(_fileName, Encoding.ASCII);
+                // NEW: Use UTF-8 encoding with BOM detection for standard conformity
+                tblFile = new StreamReader(_fileName, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
             }
             catch
             {
@@ -347,22 +438,37 @@ namespace WpfHexaEditor.Core.CharacterTable
         }
 
         /// <summary>
-        /// Save tbl file
+        /// Save tbl file with escape sequences and UTF-8 encoding
         /// </summary>
         public void Save()
         {
             var myFile = new FileStream(_fileName, FileMode.Create, FileAccess.Write);
-            var tblFile = new StreamWriter(myFile, Encoding.Unicode); //ASCII
+            // Use UTF-8 for standard conformity
+            var tblFile = new StreamWriter(myFile, Encoding.UTF8);
 
             if (tblFile.BaseStream.CanWrite)
             {
                 //Save tbl set
                 foreach (var dte in _dteList)
-                    if (dte.Value.Type != DteType.EndBlock &&
-                        dte.Value.Type != DteType.EndLine)
-                        tblFile.WriteLine(dte.Value.Entry + "=" + dte.Value);
+                {
+                    if (dte.Value.Type != DteType.EndBlock && dte.Value.Type != DteType.EndLine)
+                    {
+                        // NEW: Escape special characters
+                        string escapedValue = dte.Value.Value
+                            .Replace("\n", "\\n")
+                            .Replace("\r", "\\r")
+                            .Replace("\t", "\\t");
+
+                        // NEW: Add inline comment if present
+                        string line = dte.Value.Entry + "=" + escapedValue;
+                        if (!string.IsNullOrWhiteSpace(dte.Value.Comment))
+                            line += " # " + dte.Value.Comment;
+
+                        tblFile.WriteLine(line);
+                    }
                     else
                         tblFile.WriteLine(dte.Value.Entry);
+                }
 
                 //Save bookmark
                 tblFile.WriteLine();
@@ -376,10 +482,14 @@ namespace WpfHexaEditor.Core.CharacterTable
 
             //close file
             tblFile.Close();
+
+            // Reset modified flag after save
+            _isModified = false;
+            OnModified();
         }
 
         /// <summary>
-        /// Add a DTE/MTE in TBL
+        /// Add a DTE/MTE in TBL with modification tracking
         /// </summary>
         public void Add(Dte dte)
         {
@@ -392,16 +502,63 @@ namespace WpfHexaEditor.Core.CharacterTable
                 _endBlock = dte.Entry;
             else if (dte.Type == DteType.EndLine)
                 _endLine = dte.Entry;
+
+            // Track modification
+            _modificationCount++;
+            _isModified = true;
+            _statisticsDirty = true;
+            OnModified();
         }
 
         /// <summary>
-        /// Remove TBL entry
+        /// Remove TBL entry with modification tracking
         /// </summary>
         public void Remove(Dte dte)
         {
             if (dte is null) return;
 
             _dteList.Remove(dte.Entry);
+
+            // Track modification
+            _modificationCount++;
+            _isModified = true;
+            _statisticsDirty = true;
+            OnModified();
+        }
+
+        /// <summary>
+        /// Clear all entries
+        /// </summary>
+        public void Clear()
+        {
+            _dteList.Clear();
+            _endBlock = string.Empty;
+            _endLine = string.Empty;
+            BookMarks.Clear();
+            _modificationCount++;
+            _isModified = true;
+            _statisticsDirty = true;
+            OnModified();
+        }
+
+        /// <summary>
+        /// Reset TBL to empty state without tracking modification
+        /// </summary>
+        public void Reset()
+        {
+            Clear();
+            _modificationCount = 0;
+            _isModified = false;
+        }
+
+        /// <summary>
+        /// Reset modified flag (call after save or when accepting changes)
+        /// </summary>
+        public void ResetModifiedFlag()
+        {
+            _isModified = false;
+            _modificationCount = 0;
+            OnModified();
         }
 
         /// <summary>
@@ -413,11 +570,19 @@ namespace WpfHexaEditor.Core.CharacterTable
 
             //Save tbl set
             foreach (var dte in _dteList)
-                if (dte.Value.Type != DteType.EndBlock &&
-                    dte.Value.Type != DteType.EndLine)
-                    sb.AppendLine(dte.Value.Entry + "=" + dte.Value);
+            {
+                if (dte.Value.Type != DteType.EndBlock && dte.Value.Type != DteType.EndLine)
+                {
+                    // Escape special characters
+                    string escapedValue = dte.Value.Value
+                        .Replace("\n", "\\n")
+                        .Replace("\r", "\\r")
+                        .Replace("\t", "\\t");
+                    sb.AppendLine(dte.Value.Entry + "=" + escapedValue);
+                }
                 else
                     sb.AppendLine(dte.Value.Entry);
+            }
 
             //Save bookmark
             sb.AppendLine();
@@ -429,6 +594,113 @@ namespace WpfHexaEditor.Core.CharacterTable
             sb.AppendLine();
 
             return sb.ToString();
+        }
+
+        #endregion
+
+        #region Enumeration API for TBL Editor
+
+        /// <summary>
+        /// Get read-only dictionary of all entries
+        /// </summary>
+        public IReadOnlyDictionary<string, Dte> Entries => _dteList;
+
+        /// <summary>
+        /// Get all entries as enumerable
+        /// </summary>
+        public IEnumerable<Dte> GetAllEntries() => _dteList.Values;
+
+        /// <summary>
+        /// Get entries by type
+        /// </summary>
+        public IEnumerable<Dte> GetEntriesByType(DteType type) =>
+            _dteList.Values.Where(d => d.Type == type);
+
+        /// <summary>
+        /// Get entries by byte length
+        /// </summary>
+        public IEnumerable<Dte> GetEntriesByLength(int byteLength) =>
+            _dteList.Values.Where(d => d.Entry.Length == byteLength * 2);
+
+        /// <summary>
+        /// Check if entry exists in TBL
+        /// </summary>
+        public bool ContainsEntry(string hex) =>
+            _dteList.ContainsKey(hex?.ToUpperInvariant() ?? string.Empty);
+
+        /// <summary>
+        /// Get entry by hex key
+        /// </summary>
+        public Dte GetEntry(string hex) =>
+            _dteList.TryGetValue(hex?.ToUpperInvariant() ?? string.Empty, out var dte) ? dte : null;
+
+        #endregion
+
+        #region Statistics with caching
+
+        /// <summary>
+        /// Get cached statistics (recompute if dirty)
+        /// </summary>
+        public TblStatistics GetStatistics()
+        {
+            if (!_statisticsDirty && _cachedStatistics != null)
+                return _cachedStatistics;
+
+            var stats = new TblStatistics
+            {
+                TotalCount = _dteList.Count
+            };
+
+            foreach (var dte in _dteList.Values)
+            {
+                switch (dte.Type)
+                {
+                    case DteType.Ascii:
+                        stats.AsciiCount++;
+                        break;
+                    case DteType.DualTitleEncoding:
+                        stats.DteCount++;
+                        if (dte.Entry.Length == 4) stats.Byte2Count++;
+                        break;
+                    case DteType.MultipleTitleEncoding:
+                        stats.MteCount++;
+                        int byteLen = dte.Entry.Length / 2;
+                        if (byteLen == 3) stats.Byte3Count++;
+                        else if (byteLen == 4) stats.Byte4Count++;
+                        else stats.Byte5PlusCount++;
+                        break;
+                    case DteType.Japonais:
+                        stats.JapaneseCount++;
+                        break;
+                    case DteType.EndBlock:
+                        stats.EndBlockCount++;
+                        break;
+                    case DteType.EndLine:
+                        stats.EndLineCount++;
+                        break;
+                }
+            }
+
+            // Calculate coverage (single-byte only)
+            var singleByteEntries = _dteList.Values
+                .Where(d => d.Entry.Length == 2)
+                .Select(d => d.Entry)
+                .Distinct()
+                .Count();
+            stats.CoveragePercent = (singleByteEntries / 256.0) * 100;
+
+            _cachedStatistics = stats;
+            _statisticsDirty = false;
+
+            return stats;
+        }
+
+        /// <summary>
+        /// Invalidate statistics cache (called on modification)
+        /// </summary>
+        private void InvalidateStatistics()
+        {
+            _statisticsDirty = true;
         }
 
         #endregion
@@ -458,9 +730,24 @@ namespace WpfHexaEditor.Core.CharacterTable
         public int Length => _dteList.Count;
 
         /// <summary>
+        /// Get the count of DTE/MTE in the TBL (alias for Length)
+        /// </summary>
+        public int Count => _dteList.Count;
+
+        /// <summary>
         /// Get of set bookmarks
         /// </summary>
         public List<BookMark> BookMarks { get; set; } = new();
+
+        /// <summary>
+        /// Get modification count
+        /// </summary>
+        public int ModificationCount => _modificationCount;
+
+        /// <summary>
+        /// Get whether TBL has been modified
+        /// </summary>
+        public bool IsModified => _isModified;
 
         public int TotalDte => _dteList.Count(l => l.Value.Type == DteType.DualTitleEncoding);
         public int TotalMte => _dteList.Count(l => l.Value.Type == DteType.MultipleTitleEncoding);
