@@ -461,45 +461,76 @@ namespace WpfHexaEditor
 
                         if (_viewModel.HasSelection)
                         {
-                            // Selection exists: Expand to group boundaries if multi-byte mode
+                            long start = Math.Min(_viewModel.SelectionStart.Value, _viewModel.SelectionStop.Value);
+                            long stop = Math.Max(_viewModel.SelectionStart.Value, _viewModel.SelectionStop.Value);
+
+                            // Multi-byte mode: Expand to group boundaries
                             if (stride > 1)
                             {
-                                long start = Math.Min(_viewModel.SelectionStart.Value, _viewModel.SelectionStop.Value);
-                                long stop = Math.Max(_viewModel.SelectionStart.Value, _viewModel.SelectionStop.Value);
-
                                 // Snap start DOWN to group boundary (floor division)
-                                long alignedStart = (start / stride) * stride;
+                                start = (start / stride) * stride;
 
-                                // Snap stop UP to group boundary (ceiling division)
-                                // Add stride-1 to include the full group containing 'stop'
-                                long alignedStop = ((stop + stride - 1) / stride) * stride - 1;
+                                // Snap stop UP to include full group (ceiling division)
+                                stop = ((stop + stride - 1) / stride) * stride - 1;
 
                                 // Ensure we don't go past file end
-                                alignedStop = Math.Min(alignedStop, _viewModel.VirtualLength - 1);
-
-                                // Update selection to aligned boundaries
-                                _viewModel.SetSelectionRange(
-                                    new VirtualPosition(alignedStart),
-                                    new VirtualPosition(alignedStop));
+                                stop = Math.Min(stop, _viewModel.VirtualLength - 1);
                             }
 
-                            DeleteSelection();
+                            // Direct deletion with calculated start/length
+                            long length = stop - start + 1;
+
+                            _viewModel.BeginUpdate();
+                            try
+                            {
+                                for (long i = 0; i < length; i++)
+                                {
+                                    _viewModel.DeleteByte(new VirtualPosition(start));
+                                }
+                            }
+                            finally
+                            {
+                                _viewModel.EndUpdate();
+                            }
+
+                            // Position cursor after deletion
+                            long newPosition = Math.Min(start, Math.Max(0, _viewModel.VirtualLength - 1));
+                            if (_viewModel.VirtualLength > 0)
+                            {
+                                _viewModel.SelectionStart = new VirtualPosition(newPosition);
+                                _viewModel.SelectionStop = VirtualPosition.Invalid;
+                            }
                         }
                         else if (_viewModel.SelectionStart.IsValid)
                         {
-                            // No selection: Create selection of stride bytes at cursor position
+                            // No selection: Delete stride bytes at cursor position (direct deletion)
                             long cursorPos = _viewModel.SelectionStart.Value;
 
                             // Snap cursor to group boundary
                             long alignedStart = (cursorPos / stride) * stride;
-                            long alignedStop = Math.Min(alignedStart + stride - 1, _viewModel.VirtualLength - 1);
+                            int bytesToDelete = (int)Math.Min(stride, _viewModel.VirtualLength - alignedStart);
 
-                            // Create selection for the group
-                            _viewModel.SetSelectionRange(
-                                new VirtualPosition(alignedStart),
-                                new VirtualPosition(alignedStop));
+                            // Direct deletion: Delete stride bytes starting at aligned position
+                            _viewModel.BeginUpdate();
+                            try
+                            {
+                                for (int i = 0; i < bytesToDelete; i++)
+                                {
+                                    _viewModel.DeleteByte(new VirtualPosition(alignedStart));
+                                }
+                            }
+                            finally
+                            {
+                                _viewModel.EndUpdate();
+                            }
 
-                            DeleteSelection();
+                            // Position cursor after deletion
+                            long newPosition = Math.Min(alignedStart, Math.Max(0, _viewModel.VirtualLength - 1));
+                            if (_viewModel.VirtualLength > 0)
+                            {
+                                _viewModel.SelectionStart = new VirtualPosition(newPosition);
+                                _viewModel.SelectionStop = VirtualPosition.Invalid;
+                            }
                         }
 
                         // CRITICAL UX FIX: After deletion, position cursor (with scroll) and restore focus
