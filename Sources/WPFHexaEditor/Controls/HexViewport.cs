@@ -1734,33 +1734,21 @@ namespace WpfHexaEditor.Controls
                 }
 
                 // Check if click is within this byte's rect
-                // Include full spacing to avoid gaps between bytes (but ByteSpacers are still excluded)
-                double byteHitWidth = HexByteWidth + HexByteSpacing;
+                // Phase 6: Use dynamic CellWidth instead of fixed HexByteWidth
+                var byteData = line.Bytes[i];
+                double byteHitWidth = byteData.CellWidth + HexByteSpacing;
                 if (x >= hexX && x < hexX + byteHitWidth)
                 {
                     // Click is within this byte's area (including spacing after it)
-                    return (line.Bytes[i].VirtualPos.Value, true);
+                    return (byteData.VirtualPos.Value, true);
                 }
 
                 hexX += byteHitWidth;
             }
 
-            // Check if click is in ASCII area
-            // Must account for ByteSpacers to get accurate byte position
-            // Calculate number of spacers in the hex area
-            int numSpacers = 0;
-            if (_bytesPerLine >= (int)ByteGrouping &&
-                (ByteSpacerPositioning == ByteSpacerPosition.Both ||
-                 ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel))
-            {
-                numSpacers = ByteSpacerPositioning == ByteSpacerPosition.Both
-                    ? (_bytesPerLine / (int)ByteGrouping) - 1
-                    : _bytesPerLine / (int)ByteGrouping;
-            }
-            double hexSpacersWidth = numSpacers * (int)ByteSpacerWidthTickness;
-
-            // Calculate separator position (matches drawing logic exactly)
-            double separatorX = hexStartX + (_bytesPerLine * (HexByteWidth + HexByteSpacing)) + hexSpacersWidth + 4;
+            // Phase 6: Use hexX final position as separator start (already accounts for dynamic widths)
+            // hexX now contains the end of the hex area (after all bytes + spacers)
+            double separatorX = hexX + 4; // Small margin before separator
             double asciiX = separatorX + SeparatorWidth;
 
             // Iterate through bytes in ASCII area (spacers added in loop, not pre-calculated)
