@@ -328,14 +328,25 @@ namespace WpfHexaEditor
             var currentPos = _viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : 0;
             long newPos = currentPos;
 
+            // Bug fix: Calculate stride based on ByteSize for Left/Right navigation
+            int stride = _viewModel.ByteSize switch
+            {
+                Core.ByteSizeType.Bit8 => 1,
+                Core.ByteSizeType.Bit16 => 2,
+                Core.ByteSizeType.Bit32 => 4,
+                _ => 1
+            };
+
             switch (e.Key)
             {
                 case System.Windows.Input.Key.Left:
-                    newPos = Math.Max(0, currentPos - 1);
+                    // Move by stride (1 byte in Bit8, 2 in Bit16, 4 in Bit32)
+                    newPos = Math.Max(0, currentPos - stride);
                     break;
 
                 case System.Windows.Input.Key.Right:
-                    newPos = Math.Min(_viewModel.VirtualLength - 1, currentPos + 1);
+                    // Move by stride
+                    newPos = Math.Min(_viewModel.VirtualLength - 1, currentPos + stride);
                     break;
 
                 case System.Windows.Input.Key.Up:

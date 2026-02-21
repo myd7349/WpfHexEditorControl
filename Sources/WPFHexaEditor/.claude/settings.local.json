@@ -89,7 +89,8 @@
       "Bash(for:*)",
       "Bash(do sed -i '/<Color x:Key=\"\"HexEditor_ByteDeletedColor\"\">/,/<\\\\/Color>/d' \"$file\")",
       "Bash(git log origin/master..Dev&Test --oneline)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(la navigation key left/right non plus mais key up/down fonctionne bien\":*)"
     ]
   }
 }
