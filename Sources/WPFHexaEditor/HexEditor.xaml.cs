@@ -359,13 +359,8 @@ namespace WpfHexaEditor
                     System.Windows.MessageBoxImage.Information);
             }
 
-            // CRITICAL: Snap current position to group boundary FIRST
-            // This ensures navigation always moves forward/backward correctly
-            if (stride > 1)
-            {
-                currentPos = (currentPos / stride) * stride;
-                System.Diagnostics.Debug.WriteLine($"[KeyNav] After snap: currentPos={currentPos}");
-            }
+            // REMOVED: Don't snap currentPos before calculation - this causes "press twice" issue
+            // Just calculate newPos from current position and snap result with direction awareness
 
             switch (e.Key)
             {
@@ -417,13 +412,27 @@ namespace WpfHexaEditor
             // DEBUG: Log newPos before final snap
             System.Diagnostics.Debug.WriteLine($"[KeyNav] After key {e.Key}: newPos={newPos}");
 
-            // CRITICAL: Snap newPos to group boundary for multi-byte modes
-            // This ensures cursor is always aligned on first byte of a group
-            // Example in Bit16: position 3 → snaps to 2 (start of group)
+            // CRITICAL FIX: Direction-aware snapping for multi-byte modes
+            // This fixes the "press twice" issue by snapping in the direction of movement
             if (stride > 1)
             {
-                newPos = (newPos / stride) * stride;
-                System.Diagnostics.Debug.WriteLine($"[KeyNav] After final snap: newPos={newPos}");
+                bool movingForward = (e.Key == System.Windows.Input.Key.Right ||
+                                      e.Key == System.Windows.Input.Key.Down ||
+                                      e.Key == System.Windows.Input.Key.PageDown);
+
+                if (movingForward)
+                {
+                    // Moving forward: Snap UP to next boundary (or stay if already aligned)
+                    // Formula: ceiling division = (n + stride - 1) / stride * stride
+                    newPos = ((newPos + stride - 1) / stride) * stride;
+                    System.Diagnostics.Debug.WriteLine($"[KeyNav] Snap UP: newPos={newPos}");
+                }
+                else
+                {
+                    // Moving backward: Snap DOWN to previous boundary (or stay if already aligned)
+                    newPos = (newPos / stride) * stride;
+                    System.Diagnostics.Debug.WriteLine($"[KeyNav] Snap DOWN: newPos={newPos}");
+                }
             }
 
             // Update selection based on Shift key
