@@ -477,60 +477,21 @@ namespace WpfHexaEditor
                                 stop = Math.Min(stop, _viewModel.VirtualLength - 1);
                             }
 
-                            // Direct deletion with calculated start/length
+                            // OPTIMIZED: Use bulk deletion instead of loop
                             long length = stop - start + 1;
-
-                            _viewModel.BeginUpdate();
-                            try
-                            {
-                                for (long i = 0; i < length; i++)
-                                {
-                                    _viewModel.DeleteByte(new VirtualPosition(start));
-                                }
-                            }
-                            finally
-                            {
-                                _viewModel.EndUpdate();
-                            }
-
-                            // Position cursor after deletion
-                            long newPosition = Math.Min(start, Math.Max(0, _viewModel.VirtualLength - 1));
-                            if (_viewModel.VirtualLength > 0)
-                            {
-                                _viewModel.SelectionStart = new VirtualPosition(newPosition);
-                                _viewModel.SelectionStop = VirtualPosition.Invalid;
-                            }
+                            _viewModel.DeleteBytes(start, length);
                         }
                         else if (_viewModel.SelectionStart.IsValid)
                         {
-                            // No selection: Delete stride bytes at cursor position (direct deletion)
+                            // No selection: Delete stride bytes at cursor position
                             long cursorPos = _viewModel.SelectionStart.Value;
 
                             // Snap cursor to group boundary
                             long alignedStart = (cursorPos / stride) * stride;
                             int bytesToDelete = (int)Math.Min(stride, _viewModel.VirtualLength - alignedStart);
 
-                            // Direct deletion: Delete stride bytes starting at aligned position
-                            _viewModel.BeginUpdate();
-                            try
-                            {
-                                for (int i = 0; i < bytesToDelete; i++)
-                                {
-                                    _viewModel.DeleteByte(new VirtualPosition(alignedStart));
-                                }
-                            }
-                            finally
-                            {
-                                _viewModel.EndUpdate();
-                            }
-
-                            // Position cursor after deletion
-                            long newPosition = Math.Min(alignedStart, Math.Max(0, _viewModel.VirtualLength - 1));
-                            if (_viewModel.VirtualLength > 0)
-                            {
-                                _viewModel.SelectionStart = new VirtualPosition(newPosition);
-                                _viewModel.SelectionStop = VirtualPosition.Invalid;
-                            }
+                            // OPTIMIZED: Use bulk deletion instead of loop
+                            _viewModel.DeleteBytes(alignedStart, bytesToDelete);
                         }
 
                         // CRITICAL UX FIX: After deletion, position cursor (with scroll) and restore focus

@@ -519,6 +519,42 @@ namespace WpfHexaEditor.ViewModels
         }
 
         /// <summary>
+        /// Delete multiple bytes starting at a virtual position (OPTIMIZED bulk operation)
+        /// </summary>
+        /// <param name="startVirtualPos">Starting position</param>
+        /// <param name="count">Number of bytes to delete</param>
+        public void DeleteBytes(long startVirtualPos, long count)
+        {
+            if (ReadOnlyMode || count <= 0) return;
+
+            // ByteProvider V2 handles bulk deletions internally with single cache invalidation
+            _provider.DeleteBytes(startVirtualPos, count);
+
+            // Notify Undo/Redo state changed
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
+
+            // UX FIX: Position cursor at the byte after deletion (or at end if deleted last bytes)
+            long virtualLen = VirtualLength;
+            if (virtualLen > 0)
+            {
+                long newPosition = Math.Min(startVirtualPos, Math.Max(0, virtualLen - 1));
+                SelectionStart = new VirtualPosition(newPosition);
+                SelectionStop = VirtualPosition.Invalid; // Clear selection range
+            }
+            else
+            {
+                // File is empty after deletion
+                SelectionStart = VirtualPosition.Invalid;
+                SelectionStop = VirtualPosition.Invalid;
+            }
+
+            // OPTIMIZATION: Since delete shifts all following bytes, we need full refresh
+            ClearLineCache();
+            RefreshVisibleLines();
+        }
+
+        /// <summary>
         /// Delete selection (optimized to batch deletions)
         /// </summary>
         public void DeleteSelection()
