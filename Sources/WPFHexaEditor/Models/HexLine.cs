@@ -160,15 +160,30 @@ namespace WpfHexaEditor.Models
         }
 
         /// <summary>
-        /// Get cell width in pixels based on ByteSize - Phase 1: ByteSize/ByteOrder
+        /// Get cell width in pixels based on actual byte count (handles partial groups)
+        /// Phase 1: ByteSize/ByteOrder | Phase 6: Partial group support
         /// </summary>
-        public double CellWidth => ByteSize switch
+        public double CellWidth
         {
-            Core.ByteSizeType.Bit8 => 24,      // 2 hex chars: "FF" = 24px
-            Core.ByteSizeType.Bit16 => 52,     // 4 hex chars: "FFFF" = 52px (approx 2*24 + padding)
-            Core.ByteSizeType.Bit32 => 106,    // 8 hex chars: "FFFFFFFF" = 106px (approx 4*24 + padding)
-            _ => 24
-        };
+            get
+            {
+                // For Bit8 or empty, always 24px (1 byte = 2 hex chars)
+                if (ByteSize == Core.ByteSizeType.Bit8 || Values == null || Values.Length == 0)
+                    return 24;
+
+                // Dynamic width based on actual bytes in this group
+                // This handles partial groups at end of file correctly
+                // Example: Bit16 with 15 bytes = 7 full groups (52px) + 1 partial (24px)
+                return Values.Length switch
+                {
+                    1 => 24,   // 1 byte = 2 hex chars = 24px
+                    2 => 52,   // 2 bytes = 4 hex chars = 52px
+                    3 => 79,   // 3 bytes = 6 hex chars = 79px (approx 3*26 + small padding)
+                    4 => 106,  // 4 bytes = 8 hex chars = 106px
+                    _ => 24    // Fallback
+                };
+            }
+        }
 
         #region INotifyPropertyChanged
 
