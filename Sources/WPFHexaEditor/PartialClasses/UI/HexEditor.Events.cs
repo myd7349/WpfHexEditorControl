@@ -720,10 +720,13 @@ namespace WpfHexaEditor
                     UpdatePositionInfo();
                     // Update HexViewport selection anchor
                     HexViewport.SelectionStart = _viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : -1;
-                    // Sync DependencyProperty for TwoWay binding in settings panel
+                    // Sync DependencyProperties for TwoWay binding in settings panel
                     var newStart = _viewModel.SelectionStart.IsValid ? _viewModel.SelectionStart.Value : -1L;
                     if (SelectionStart != newStart)
                         SetValue(SelectionStartProperty, newStart);
+                    // Position is an alias for SelectionStart, sync it too
+                    if (newStart >= 0 && GetValue(PositionProperty) is long currentPos && currentPos != newStart)
+                        SetValue(PositionProperty, newStart);
                     // Update auto-highlight to match the byte at the new selection
                     UpdateAutoHighlightByte();
                     // Update scroll markers selection bar

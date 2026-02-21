@@ -205,7 +205,11 @@ namespace WpfHexaEditor.Core.Settings
                         intControl.PopulateAllowedValues(comboBox, metadata);
                     }
 
-                    // Use SelectedIndex binding (converter will be added in HexEditorSettings if needed)
+                    // Apply BytesPerLineToIndexConverter for TwoWay binding
+                    var converter = TryFindResource("BytesPerLineToIndexConverter") as IValueConverter;
+                    if (converter != null)
+                        binding.Converter = converter;
+
                     comboBox.SetBinding(ComboBox.SelectedIndexProperty, binding);
                 }
                 else
