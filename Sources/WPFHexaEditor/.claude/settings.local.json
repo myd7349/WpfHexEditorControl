@@ -90,7 +90,9 @@
       "Bash(do sed -i '/<Color x:Key=\"\"HexEditor_ByteDeletedColor\"\">/,/<\\\\/Color>/d' \"$file\")",
       "Bash(git log origin/master..Dev&Test --oneline)",
       "Bash(git log:*)",
-      "Bash(la navigation key left/right non plus mais key up/down fonctionne bien\":*)"
+      "Bash(la navigation key left/right non plus mais key up/down fonctionne bien\":*)",
+      "Bash(mais en multi-byte par exemple je dois appuyer deux fois a gauche/droite)",
+      "Bash(pour voir le changement dans l 'éditeur\":*)"
     ]
   }
 }

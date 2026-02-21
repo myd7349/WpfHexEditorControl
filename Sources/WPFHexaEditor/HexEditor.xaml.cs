@@ -308,10 +308,30 @@ namespace WpfHexaEditor
             if (_viewModel == null)
                 return;
 
+            // CRITICAL: Snap positions to group boundaries for multi-byte modes
+            // Calculate stride
+            int stride = _viewModel.ByteSize switch
+            {
+                Core.ByteSizeType.Bit8 => 1,
+                Core.ByteSizeType.Bit16 => 2,
+                Core.ByteSizeType.Bit32 => 4,
+                _ => 1
+            };
+
+            // Snap start and end positions to group boundaries
+            long startPos = e.StartPosition;
+            long endPos = e.EndPosition;
+
+            if (stride > 1)
+            {
+                startPos = (startPos / stride) * stride;
+                endPos = (endPos / stride) * stride;
+            }
+
             // Update selection range in ViewModel
             _viewModel.SetSelectionRange(
-                new VirtualPosition(e.StartPosition),
-                new VirtualPosition(e.EndPosition));
+                new VirtualPosition(startPos),
+                new VirtualPosition(endPos));
 
             // Update UI
             UpdateSelectionInfo();
@@ -382,6 +402,14 @@ namespace WpfHexaEditor
                         newPos = Math.Min(_viewModel.VirtualLength - 1, lineStart + _viewModel.BytePerLine - 1);
                     }
                     break;
+            }
+
+            // CRITICAL: Snap newPos to group boundary for multi-byte modes
+            // This ensures cursor is always aligned on first byte of a group
+            // Example in Bit16: position 3 → snaps to 2 (start of group)
+            if (stride > 1)
+            {
+                newPos = (newPos / stride) * stride;
             }
 
             // Update selection based on Shift key
