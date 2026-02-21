@@ -271,7 +271,13 @@ namespace WpfHexaEditor.Core.Settings
                     // Mark with property name for later replacement
                     border.Tag = $"ColorPicker:{metadata.PropertyName}";
                     System.Diagnostics.Debug.WriteLine($"  ✓ Set Border Tag to '{border.Tag}'");
-                    return CreateControlWithLabel(propertyControl.CreateLabel(metadata), border);
+
+                    var wrapper = CreateControlWithLabel(propertyControl.CreateLabel(metadata), border);
+
+                    // VERIFY: Tag still exists after wrapping
+                    System.Diagnostics.Debug.WriteLine($"  🔍 After CreateControlWithLabel: Border.Tag={border.Tag}");
+
+                    return wrapper;
                 }
                 else
                 {

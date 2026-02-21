@@ -1651,6 +1651,16 @@ namespace WpfHexaEditor
             {
                 var color = (Color)e.NewValue;
                 editor.Resources["SelectionBrush"] = new SolidColorBrush(color) { Opacity = 0.4 };
+
+                // Update HexViewport color
+                if (editor.HexViewport != null)
+                {
+                    editor.HexViewport.SelectionColor = color;
+
+                    // CRITICAL: Also update SelectionActiveBrush which is used in rendering
+                    editor.SelectionActiveBrush = new SolidColorBrush(color);
+                    editor.HexViewport.SelectionActiveBrush = editor.SelectionActiveBrush;
+                }
             }
         }
 
@@ -1666,7 +1676,20 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty SelectionSecondColorProperty =
             DependencyProperty.Register(nameof(SelectionSecondColor), typeof(Color), typeof(HexEditor),
-                new PropertyMetadata(Color.FromArgb(102, 0, 120, 212)));
+                new PropertyMetadata(Color.FromArgb(102, 0, 120, 212), OnSelectionSecondColorChanged));
+
+        private static void OnSelectionSecondColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && editor.HexViewport != null)
+            {
+                var color = (Color)e.NewValue;
+
+                // SelectionSecondColor updates the inactive selection brush
+                editor.SelectionInactiveBrush = new SolidColorBrush(color);
+                editor.HexViewport.SelectionInactiveBrush = editor.SelectionInactiveBrush;
+                editor.HexViewport.SelectionColor = color;
+            }
+        }
 
         /// <summary>
         /// Color for modified bytes
@@ -1686,7 +1709,12 @@ namespace WpfHexaEditor
         {
             if (d is HexEditor editor)
             {
-                editor.Resources["ModifiedBrush"] = new SolidColorBrush((Color)e.NewValue);
+                var color = (Color)e.NewValue;
+                editor.Resources["ModifiedBrush"] = new SolidColorBrush(color);
+
+                // Update HexViewport color
+                if (editor.HexViewport != null)
+                    editor.HexViewport.ModifiedByteColor = color;
             }
         }
 
@@ -1708,7 +1736,12 @@ namespace WpfHexaEditor
         {
             if (d is HexEditor editor)
             {
-                editor.Resources["DeletedBrush"] = new SolidColorBrush((Color)e.NewValue);
+                var color = (Color)e.NewValue;
+                editor.Resources["DeletedBrush"] = new SolidColorBrush(color);
+
+                // Update HexViewport color
+                if (editor.HexViewport != null)
+                    editor.HexViewport.DeletedByteColor = color;
             }
         }
 
@@ -1730,7 +1763,12 @@ namespace WpfHexaEditor
         {
             if (d is HexEditor editor)
             {
-                editor.Resources["AddedBrush"] = new SolidColorBrush((Color)e.NewValue);
+                var color = (Color)e.NewValue;
+                editor.Resources["AddedBrush"] = new SolidColorBrush(color);
+
+                // Update HexViewport color
+                if (editor.HexViewport != null)
+                    editor.HexViewport.AddedByteColor = color;
             }
         }
 
@@ -1746,7 +1784,16 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty HighLightColorProperty =
             DependencyProperty.Register(nameof(HighLightColor), typeof(Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.Gold));
+                new PropertyMetadata(Colors.Gold, OnHighLightColorChanged));
+
+        private static void OnHighLightColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && editor.HexViewport != null)
+            {
+                var color = (Color)e.NewValue;
+                editor.HexViewport.HighlightColor = color;
+            }
+        }
 
         /// <summary>
         /// Mouse over color
@@ -1825,7 +1872,12 @@ namespace WpfHexaEditor
         {
             if (d is HexEditor editor)
             {
-                editor.Resources["OffsetBrush"] = new SolidColorBrush((Color)e.NewValue);
+                var color = (Color)e.NewValue;
+                editor.Resources["OffsetBrush"] = new SolidColorBrush(color);
+
+                // Update HexViewport offset foreground color
+                if (editor.HexViewport != null)
+                    editor.HexViewport.OffsetForegroundColor = color;
             }
         }
 
@@ -1841,7 +1893,17 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty ForegroundHighLightOffSetHeaderColorProperty =
             DependencyProperty.Register(nameof(ForegroundHighLightOffSetHeaderColor), typeof(Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.DarkBlue));
+                new PropertyMetadata(Colors.DarkBlue, OnForegroundHighLightOffSetHeaderColorChanged));
+
+        private static void OnForegroundHighLightOffSetHeaderColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && editor.HexViewport != null)
+            {
+                // This color is used for highlighted offset headers
+                // Currently not directly used in HexViewport rendering, but keep for future use
+                editor.HexViewport.InvalidateVisual();
+            }
+        }
 
         /// <summary>
         /// Foreground contrast color
@@ -1855,7 +1917,17 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty ForegroundContrastProperty =
             DependencyProperty.Register(nameof(ForegroundContrast), typeof(Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.Black));
+                new PropertyMetadata(Colors.Black, OnForegroundContrastChanged));
+
+        private static void OnForegroundContrastChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && editor.HexViewport != null)
+            {
+                // This color is used for high contrast foreground
+                // Currently not directly used in HexViewport rendering, but keep for future use
+                editor.HexViewport.InvalidateVisual();
+            }
+        }
 
         #endregion
 

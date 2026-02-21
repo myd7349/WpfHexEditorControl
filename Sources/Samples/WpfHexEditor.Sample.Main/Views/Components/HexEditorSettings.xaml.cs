@@ -92,17 +92,35 @@ namespace WpfHexEditor.Sample.Main.Views.Components
 
                 // Generate the complete UI
                 var panel = _generator.GenerateSettingsPanel();
+
+                // VERIFY: Check Tags immediately after panel generation
+                System.Diagnostics.Debug.WriteLine("🔍 [VERIFY] Tags immediately after GenerateSettingsPanel:");
+                VerifyBorderTags(panel);
+
                 panel.DataContext = HexEditorControl;
+
+                // VERIFY: Check Tags after DataContext set
+                System.Diagnostics.Debug.WriteLine("🔍 [VERIFY] Tags after DataContext set:");
+                VerifyBorderTags(panel);
 
                 // Set as ScrollViewer content FIRST so visual tree is built
                 SettingsScrollViewer.Content = panel;
 
+                // VERIFY: Check Tags after adding to ScrollViewer
+                System.Diagnostics.Debug.WriteLine("🔍 [VERIFY] Tags after adding to ScrollViewer (logical tree):");
+                VerifyBorderTags(panel);
+
                 // Force layout update to ensure visual tree is constructed
                 SettingsScrollViewer.UpdateLayout();
 
+                // VERIFY: Check Tags after UpdateLayout (logical tree - this is where they are!)
+                System.Diagnostics.Debug.WriteLine("🔍 [VERIFY] Tags after UpdateLayout (logical tree - where they actually exist):");
+                VerifyBorderTags(panel);
+
                 // NOW replace ColorPicker placeholders with actual ColorPicker controls
-                // IMPORTANT: Search from ScrollViewer (visual tree root), not panel (logical tree)
-                ReplaceColorPickerPlaceholders(SettingsScrollViewer);
+                // IMPORTANT: Search the LOGICAL tree from panel, not visual tree!
+                // Reason: Expander ControlTemplate creates new visual elements, losing our Tags
+                ReplaceColorPickerPlaceholders(panel);
 
                 // Wire up button handlers
                 WireUpButtonHandlers(panel);
@@ -116,12 +134,89 @@ namespace WpfHexEditor.Sample.Main.Views.Components
         }
 
         /// <summary>
+        /// Debug helper: Verify Border Tags in logical tree
+        /// </summary>
+        private void VerifyBorderTags(DependencyObject parent)
+        {
+            int count = 0;
+            var borders = FindBordersInLogicalTree(parent);
+            foreach (var border in borders)
+            {
+                var tag = border.Tag as string;
+                if (tag != null && tag.StartsWith("ColorPicker:"))
+                {
+                    count++;
+                    System.Diagnostics.Debug.WriteLine($"  ✓ Found Border with Tag='{tag}'");
+                }
+            }
+            System.Diagnostics.Debug.WriteLine($"  Total ColorPicker Borders found in logical tree: {count}");
+        }
+
+        /// <summary>
+        /// Debug helper: Verify Border Tags in visual tree
+        /// </summary>
+        private void VerifyBorderTagsVisualTree(DependencyObject parent)
+        {
+            int count = 0;
+            var borders = FindBordersInVisualTree(parent);
+            foreach (var border in borders)
+            {
+                var tag = border.Tag as string;
+                if (tag != null && tag.StartsWith("ColorPicker:"))
+                {
+                    count++;
+                    System.Diagnostics.Debug.WriteLine($"  ✓ Found Border with Tag='{tag}'");
+                }
+            }
+            System.Diagnostics.Debug.WriteLine($"  Total ColorPicker Borders found in visual tree: {count}");
+        }
+
+        /// <summary>
+        /// Find all Borders in logical tree
+        /// </summary>
+        private List<Border> FindBordersInLogicalTree(DependencyObject parent)
+        {
+            var result = new List<Border>();
+
+            if (parent is Border border)
+                result.Add(border);
+
+            foreach (var child in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>())
+            {
+                result.AddRange(FindBordersInLogicalTree(child));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Find all Borders in visual tree
+        /// </summary>
+        private List<Border> FindBordersInVisualTree(DependencyObject parent)
+        {
+            var result = new List<Border>();
+
+            if (parent is Border border)
+                result.Add(border);
+
+            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                result.AddRange(FindBordersInVisualTree(child));
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// Replaces Border placeholders with actual ColorPicker controls.
         /// DynamicSettingsGenerator creates Border with Tag="ColorPicker:PropertyName" for color properties.
+        /// IMPORTANT: Searches logical tree because Expander ControlTemplate creates separate visual tree.
         /// </summary>
         private void ReplaceColorPickerPlaceholders(DependencyObject root)
         {
-            System.Diagnostics.Debug.WriteLine($"[ColorPicker] Starting search from {root.GetType().Name}");
+            System.Diagnostics.Debug.WriteLine($"[ColorPicker] Starting logical tree search from {root.GetType().Name}");
             var placeholders = FindColorPickerPlaceholders(root);
             System.Diagnostics.Debug.WriteLine($"[ColorPicker] Found {placeholders.Count} placeholders");
 
@@ -129,19 +224,108 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             {
                 try
                 {
-                    // Create ColorPicker
+                    // Get current color value from HexEditor
+                    var propInfo = HexEditorControl.GetType().GetProperty(propertyName);
+                    if (propInfo == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  ✗ Property {propertyName} not found on HexEditor");
+                        continue;
+                    }
+
+                    var currentValue = propInfo.GetValue(HexEditorControl);
+                    if (!(currentValue is Color currentColor))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  ✗ Property {propertyName} is not a Color (is {currentValue?.GetType().Name ?? "null"})");
+                        continue;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"  [ColorPicker] {propertyName} current value: {currentColor}");
+
+                    // Create ColorPicker with initial value
                     var colorPicker = new ColorPicker
                     {
-                        Margin = border.Margin
+                        Margin = border.Margin,
+                        SelectedColor = currentColor // Set initial value BEFORE binding
                     };
 
                     // Bind SelectedColor to HexEditor property
+                    // IMPORTANT: Use explicit Source to bypass ColorPicker's internal DataContext
                     var binding = new System.Windows.Data.Binding(propertyName)
                     {
+                        Source = HexEditorControl, // Explicitly bind to HexEditor instead of inherited DataContext
                         Mode = System.Windows.Data.BindingMode.TwoWay,
                         UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged
                     };
                     colorPicker.SetBinding(ColorPicker.SelectedColorProperty, binding);
+
+                    // Get the DependencyProperty field (e.g., "SelectionFirstColor" → "SelectionFirstColorProperty")
+                    var dpFieldName = $"{propertyName}Property";
+                    var dpField = HexEditorControl.GetType().GetField(dpFieldName,
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+                    if (dpField == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  ✗ DependencyProperty field {dpFieldName} not found");
+                        continue;
+                    }
+
+                    var dependencyProperty = dpField.GetValue(null) as DependencyProperty;
+                    if (dependencyProperty == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"  ✗ {dpFieldName} is not a DependencyProperty");
+                        continue;
+                    }
+
+                    // Wire up ColorChanged event using proper DependencyProperty.SetValue()
+                    // This triggers PropertyChangedCallbacks which update Resources and repaint
+                    var dpForHandler = dependencyProperty; // Capture for closure
+                    var propNameForHandler = propertyName;
+                    colorPicker.ColorChanged += (s, e) =>
+                    {
+                        try
+                        {
+                            var newColor = ((ColorPicker)s).SelectedColor;
+                            var oldColor = (Color)HexEditorControl.GetValue(dpForHandler);
+
+                            System.Diagnostics.Debug.WriteLine($"\n[ColorChanged] {propNameForHandler}: {oldColor} → {newColor}");
+
+                            // Use DependencyObject.SetValue() to trigger PropertyChangedCallbacks
+                            HexEditorControl.SetValue(dpForHandler, newColor);
+
+                            // Verify the value was actually set
+                            var verifyColor = (Color)HexEditorControl.GetValue(dpForHandler);
+                            System.Diagnostics.Debug.WriteLine($"[Verified] {propNameForHandler} = {verifyColor}");
+
+                            // Check Resources that might have been updated
+                            var resourceMap = new Dictionary<string, string>
+                            {
+                                { "SelectionFirstColor", "SelectionBrush" },
+                                { "ByteModifiedColor", "ModifiedBrush" },
+                                { "ByteDeletedColor", "DeletedBrush" },
+                                { "ByteAddedColor", "AddedBrush" },
+                                { "MouseOverColor", "ByteHoverBrush" },
+                                { "ForegroundSecondColor", "AlternateByteForegroundBrush" },
+                                { "ForegroundOffSetHeaderColor", "OffsetBrush" }
+                            };
+
+                            if (resourceMap.TryGetValue(propNameForHandler, out var resourceKey))
+                            {
+                                if (HexEditorControl.Resources.Contains(resourceKey))
+                                {
+                                    var brush = HexEditorControl.Resources[resourceKey] as SolidColorBrush;
+                                    System.Diagnostics.Debug.WriteLine($"[Resource] {resourceKey} = {brush?.Color}");
+                                }
+                                else
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[Resource] {resourceKey} NOT FOUND in Resources");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[ColorChanged ERROR] {ex.Message}\n{ex.StackTrace}");
+                        }
+                    };
 
                     // Replace Border with ColorPicker in parent
                     if (border.Parent is Panel parent)
@@ -149,43 +333,39 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                         int index = parent.Children.IndexOf(border);
                         parent.Children.RemoveAt(index);
                         parent.Children.Insert(index, colorPicker);
-                        System.Diagnostics.Debug.WriteLine($"  Replaced ColorPicker placeholder for {propertyName}");
+                        System.Diagnostics.Debug.WriteLine($"  ✓ Replaced ColorPicker for {propertyName} with color {currentColor}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"  Failed to replace ColorPicker for {propertyName}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"  ✗ Failed to replace ColorPicker for {propertyName}: {ex.Message}");
                 }
             }
         }
 
         /// <summary>
-        /// Recursively finds all Border elements tagged as ColorPicker placeholders.
+        /// Recursively finds all Border elements tagged as ColorPicker placeholders in LOGICAL tree.
+        /// We use logical tree because visual tree is created by ControlTemplate and loses our Tags.
         /// </summary>
         private List<(Border border, string propertyName)> FindColorPickerPlaceholders(DependencyObject parent)
         {
             var result = new List<(Border, string)>();
 
-            int childCount = VisualTreeHelper.GetChildrenCount(parent);
-            for (int i = 0; i < childCount; i++)
+            // Check if this element is a Border with ColorPicker tag
+            if (parent is Border border)
             {
-                var child = VisualTreeHelper.GetChild(parent, i);
-
-                // Debug: Check if it's a Border
-                if (child is Border border)
+                var tag = border.Tag as string;
+                if (tag != null && tag.StartsWith("ColorPicker:"))
                 {
-                    var tag = border.Tag as string;
-                    System.Diagnostics.Debug.WriteLine($"  [ColorPicker] Found Border with Tag={tag ?? "null"}");
-
-                    if (tag != null && tag.StartsWith("ColorPicker:"))
-                    {
-                        string propertyName = tag.Substring("ColorPicker:".Length);
-                        System.Diagnostics.Debug.WriteLine($"  [ColorPicker] ✓ Found ColorPicker placeholder: {propertyName}");
-                        result.Add((border, propertyName));
-                    }
+                    string propertyName = tag.Substring("ColorPicker:".Length);
+                    System.Diagnostics.Debug.WriteLine($"  [ColorPicker] ✓ Found placeholder: {propertyName}");
+                    result.Add((border, propertyName));
                 }
+            }
 
-                // Recurse
+            // Recurse through logical tree children
+            foreach (var child in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>())
+            {
                 result.AddRange(FindColorPickerPlaceholders(child));
             }
 

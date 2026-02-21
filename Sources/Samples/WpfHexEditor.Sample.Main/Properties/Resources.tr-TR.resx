@@ -1030,4 +1030,4 @@
   <data name="HexSettings_TBL_Title" xml:space="preserve">
     <value>Karakter Tablosu</value>
   </data>
-</root>
+<data name="HexSettings_SaveButton" xml:space="preserve"><value>Durumu Kaydet</value></data><data name="HexSettings_LoadButton" xml:space="preserve"><value>Durumu Yükle</value></data></root>

@@ -1054,4 +1054,4 @@
   <data name="HexSettings_TBL_Title" xml:space="preserve">
     <value>Table de caracteres</value>
   </data>
-</root>
+<data name="HexSettings_SaveButton" xml:space="preserve"><value>Sauvegarder l'état</value></data><data name="HexSettings_LoadButton" xml:space="preserve"><value>Charger l'état</value></data></root>

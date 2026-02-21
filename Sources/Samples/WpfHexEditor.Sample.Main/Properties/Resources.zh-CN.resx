@@ -1229,4 +1229,4 @@
   <data name="HexSettings_TBL_Title" xml:space="preserve">
     <value>字符表</value>
   </data>
-</root>
+<data name="HexSettings_SaveButton" xml:space="preserve"><value>保存状态</value></data><data name="HexSettings_LoadButton" xml:space="preserve"><value>加载状态</value></data></root>

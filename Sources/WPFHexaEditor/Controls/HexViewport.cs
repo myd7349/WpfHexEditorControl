@@ -710,6 +710,60 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
+        /// Color for modified bytes
+        /// </summary>
+        public Color ModifiedByteColor
+        {
+            get => (_modifiedBrush as SolidColorBrush)?.Color ?? Color.FromRgb(0xFF, 0xA5, 0x00);
+            set { _modifiedBrush = new SolidColorBrush(value); _modifiedBrush.Freeze(); InvalidateVisual(); }
+        }
+
+        /// <summary>
+        /// Color for added bytes
+        /// </summary>
+        public Color AddedByteColor
+        {
+            get => (_addedBrush as SolidColorBrush)?.Color ?? Color.FromRgb(0x4C, 0xAF, 0x50);
+            set { _addedBrush = new SolidColorBrush(value); _addedBrush.Freeze(); InvalidateVisual(); }
+        }
+
+        /// <summary>
+        /// Color for deleted bytes
+        /// </summary>
+        public Color DeletedByteColor
+        {
+            get => (_deletedBrush as SolidColorBrush)?.Color ?? Color.FromRgb(0xF4, 0x43, 0x36);
+            set { _deletedBrush = new SolidColorBrush(value); _deletedBrush.Freeze(); InvalidateVisual(); }
+        }
+
+        /// <summary>
+        /// Color for selected bytes
+        /// </summary>
+        public Color SelectionColor
+        {
+            get => (_selectedBrush as SolidColorBrush)?.Color ?? Color.FromArgb(0x66, 0x00, 0x78, 0xD4);
+            set { _selectedBrush = new SolidColorBrush(value); _selectedBrush.Freeze(); InvalidateVisual(); }
+        }
+
+        /// <summary>
+        /// Color for highlighted bytes (double-click highlight)
+        /// </summary>
+        public Color HighlightColor
+        {
+            get => (_doubleClickHighlightBrush as SolidColorBrush)?.Color ?? Color.FromArgb(0x80, 0xFF, 0xFF, 0x00);
+            set { _doubleClickHighlightBrush = new SolidColorBrush(value); _doubleClickHighlightBrush.Freeze(); InvalidateVisual(); }
+        }
+
+        /// <summary>
+        /// Color for offset header foreground
+        /// </summary>
+        public Color OffsetForegroundColor
+        {
+            get => (_offsetBrush as SolidColorBrush)?.Color ?? Color.FromRgb(0x75, 0x75, 0x75);
+            set { _offsetBrush = new SolidColorBrush(value); _offsetBrush.Freeze(); InvalidateVisual(); }
+        }
+
+        /// <summary>
         /// TBL Stream for character type detection - Phase 7.5 V1 Compatibility
         /// </summary>
         public Core.CharacterTable.TblStream TblStream

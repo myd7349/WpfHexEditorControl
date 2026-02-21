@@ -1030,4 +1030,4 @@
   <data name="HexSettings_TBL_Title" xml:space="preserve">
     <value>문자 테이블</value>
   </data>
-</root>
+<data name="HexSettings_SaveButton" xml:space="preserve"><value>상태 저장</value></data><data name="HexSettings_LoadButton" xml:space="preserve"><value>상태 불러오기</value></data></root>

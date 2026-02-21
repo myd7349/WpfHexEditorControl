@@ -1178,4 +1178,4 @@
   <data name="HexSettings_TBL_Title" xml:space="preserve">
     <value>Tabela znakow</value>
   </data>
-</root>
+<data name="HexSettings_SaveButton" xml:space="preserve"><value>Zapisz stan</value></data><data name="HexSettings_LoadButton" xml:space="preserve"><value>Wczytaj stan</value></data></root>

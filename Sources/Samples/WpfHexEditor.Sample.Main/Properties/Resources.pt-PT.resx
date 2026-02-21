@@ -1030,4 +1030,4 @@
   <data name="HexSettings_TBL_Title" xml:space="preserve">
     <value>Tabela de caracteres</value>
   </data>
-</root>
+<data name="HexSettings_SaveButton" xml:space="preserve"><value>Guardar estado</value></data><data name="HexSettings_LoadButton" xml:space="preserve"><value>Carregar estado</value></data></root>

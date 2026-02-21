@@ -1030,4 +1030,4 @@
   <data name="HexSettings_TBL_Title" xml:space="preserve">
     <value>वर्ण तालिका</value>
   </data>
-</root>
+<data name="HexSettings_SaveButton" xml:space="preserve"><value>स्थिति सहेजें</value></data><data name="HexSettings_LoadButton" xml:space="preserve"><value>स्थिति लोड करें</value></data></root>
