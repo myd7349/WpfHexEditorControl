@@ -192,6 +192,8 @@ namespace WpfHexaEditor.TBLEditorModule.ViewModels
         public ICommand SaveTemplateCommand { get; }
         public ICommand AddEndBlockCommand { get; }
         public ICommand AddEndLineCommand { get; }
+        public ICommand ImportCommand { get; }
+        public ICommand ExportCommand { get; }
 
         #endregion
 
@@ -230,6 +232,8 @@ namespace WpfHexaEditor.TBLEditorModule.ViewModels
             SaveTemplateCommand = new RelayCommand(() => ExecuteSaveTemplate(null), () => CanExecuteSaveTemplate(null));
             AddEndBlockCommand = new RelayCommand(() => ExecuteAddEndBlock(null), () => CanExecuteAddEndBlock(null));
             AddEndLineCommand = new RelayCommand(() => ExecuteAddEndLine(null), () => CanExecuteAddEndLine(null));
+            ImportCommand = new RelayCommand(() => ExecuteImport(null), () => CanExecuteImport(null));
+            ExportCommand = new RelayCommand(() => ExecuteExport(null), () => CanExecuteExport(null));
 
             // Load initial data
             LoadFromTblStream();
@@ -422,6 +426,109 @@ namespace WpfHexaEditor.TBLEditorModule.ViewModels
                 }
             }
         }
+
+        private void ExecuteImport(object parameter)
+        {
+            var openDialog = new OpenFileDialog
+            {
+                Filter = "All Supported Formats|*.tbl;*.tblx;*.csv;*.json|" +
+                         "TBL Files (*.tbl)|*.tbl|" +
+                         "Extended TBL Files (*.tblx)|*.tblx|" +
+                         "CSV Files (*.csv)|*.csv|" +
+                         "JSON Files (*.json)|*.json|" +
+                         "All Files (*.*)|*.*",
+                Title = "Import TBL from File"
+            };
+
+            if (openDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    IsLoading = true;
+                    StatusMessage = "Importing...";
+
+                    var result = _tblStream.LoadFromFile(openDialog.FileName);
+
+                    if (result.Success)
+                    {
+                        // Reload UI
+                        LoadFromTblStream();
+
+                        StatusMessage = $"Imported {result.ImportedCount} entries";
+
+                        if (result.Warnings.Count > 0)
+                        {
+                            StatusMessage += $" ({result.SkippedCount} skipped)";
+                        }
+
+                        IsDirty = true;
+                    }
+                    else
+                    {
+                        var errors = string.Join("\n", result.Errors);
+                        StatusMessage = $"Import failed: {errors}";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Import error: {ex.Message}";
+                }
+                finally
+                {
+                    IsLoading = false;
+                }
+            }
+        }
+
+        private bool CanExecuteImport(object parameter) => !IsLoading;
+
+        private void ExecuteExport(object parameter)
+        {
+            var saveDialog = new SaveFileDialog
+            {
+                Filter = "TBL Files (*.tbl)|*.tbl|" +
+                         "Extended TBL Files (*.tblx)|*.tblx|" +
+                         "CSV Files (*.csv)|*.csv|" +
+                         "JSON Files (*.json)|*.json|" +
+                         "All Files (*.*)|*.*",
+                DefaultExt = ".tbl",
+                Title = "Export TBL to File"
+            };
+
+            if (saveDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    SyncToTblStream();
+
+                    var extension = System.IO.Path.GetExtension(saveDialog.FileName)?.ToLowerInvariant();
+
+                    // Create metadata for .tblx export
+                    TblxMetadata metadata = null;
+                    if (extension == ".tblx")
+                    {
+                        metadata = new TblxMetadata
+                        {
+                            Name = System.IO.Path.GetFileNameWithoutExtension(saveDialog.FileName),
+                            CreatedDate = DateTime.Now,
+                            Author = Environment.UserName,
+                            Description = "Exported from WPF Hex Editor"
+                        };
+                    }
+
+                    _tblStream.SaveToFile(saveDialog.FileName, tblxMetadata: metadata);
+
+                    StatusMessage = $"Exported to {saveDialog.FileName}";
+                    IsDirty = false;
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Export error: {ex.Message}";
+                }
+            }
+        }
+
+        private bool CanExecuteExport(object parameter) => !IsLoading && Entries.Count > 0;
 
         #endregion
 
