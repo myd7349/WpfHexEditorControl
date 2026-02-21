@@ -1,51 +1,51 @@
-<?xml version="1.0" encoding="utf-8"?>
-<root>
-  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
-    <xsd:element name="root" msdata:IsDataSet="true">
-      <xsd:complexType>
-        <xsd:choice maxOccurs="unbounded">
-          <xsd:element name="metadata">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" />
-              </xsd:sequence>
-              <xsd:attribute name="name" use="required" type="xsd:string" />
-              <xsd:attribute name="type" type="xsd:string" />
-              <xsd:attribute name="mimetype" type="xsd:string" />
-              <xsd:attribute ref="xml:space" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="assembly">
-            <xsd:complexType>
-              <xsd:attribute name="alias" type="xsd:string" />
-              <xsd:attribute name="name" type="xsd:string" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="data">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
-              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
-              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
-              <xsd:attribute ref="xml:space" use="preserve" />
-            </xsd:complexType>
-          </xsd:element>
-          <xsd:element name="resheader">
-            <xsd:complexType>
-              <xsd:sequence>
-                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
-              </xsd:sequence>
-              <xsd:attribute name="name" type="xsd:string" use="required" />
-            </xsd:complexType>
-          </xsd:element>
-        </xsd:choice>
-      </xsd:complexType>
-    </xsd:element>
-  </xsd:schema>
+<?xml version='1.0' encoding='utf-8'?>
+<root xmlns:ns1="urn:schemas-microsoft-com:xml-msdata" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:schema id="root">
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xs:element name="root" ns1:IsDataSet="true">
+      <xs:complexType>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element name="metadata">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" />
+              </xs:sequence>
+              <xs:attribute name="name" use="required" type="xsd:string" />
+              <xs:attribute name="type" type="xsd:string" />
+              <xs:attribute name="mimetype" type="xsd:string" />
+              <xs:attribute ref="xml:space" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="assembly">
+            <xs:complexType>
+              <xs:attribute name="alias" type="xsd:string" />
+              <xs:attribute name="name" type="xsd:string" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="data">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+                <xs:element name="comment" type="xsd:string" minOccurs="0" ns1:Ordinal="2" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" use="required" ns1:Ordinal="1" />
+              <xs:attribute name="type" type="xsd:string" ns1:Ordinal="3" />
+              <xs:attribute name="mimetype" type="xsd:string" ns1:Ordinal="4" />
+              <xs:attribute ref="xml:space" use="preserve" />
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="resheader">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="value" type="xsd:string" minOccurs="0" ns1:Ordinal="1" />
+              </xs:sequence>
+              <xs:attribute name="name" type="xsd:string" use="required" />
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+    </xs:element>
+  </xs:schema>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
   </resheader>
@@ -58,8 +58,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-
-  <!-- ==== APPLICATION MENU ==== -->
   <data name="Menu_File_Open" xml:space="preserve">
     <value>Open</value>
     <comment>File menu - Open file command</comment>
@@ -80,8 +78,6 @@
     <value>Exit</value>
     <comment>File menu - Exit application command</comment>
   </data>
-
-  <!-- Edit Menu -->
   <data name="Menu_Edit" xml:space="preserve">
     <value>Edit</value>
     <comment>Edit menu header</comment>
@@ -134,8 +130,6 @@
     <value>Clear All Bookmarks</value>
     <comment>Edit menu - Clear All Bookmarks command</comment>
   </data>
-
-  <!-- Search Menu -->
   <data name="Menu_Search" xml:space="preserve">
     <value>Search</value>
     <comment>Search menu header</comment>
@@ -148,8 +142,6 @@
     <value>Find Previous</value>
     <comment>Search menu - Find Previous command</comment>
   </data>
-
-  <!-- Tools Menu -->
   <data name="Menu_Tools" xml:space="preserve">
     <value>Tools</value>
     <comment>Tools menu header</comment>
@@ -170,8 +162,6 @@
     <value>Show All Bookmarks...</value>
     <comment>Tools menu - Show All Bookmarks command</comment>
   </data>
-
-  <!-- Position Menu -->
   <data name="Menu_Position" xml:space="preserve">
     <value>Position</value>
     <comment>Position menu header</comment>
@@ -180,8 +170,6 @@
     <value>Go to Position...</value>
     <comment>Position menu - Go to Position command</comment>
   </data>
-
-  <!-- View Menu -->
   <data name="Menu_View" xml:space="preserve">
     <value>View</value>
     <comment>View menu header</comment>
@@ -210,8 +198,6 @@
     <value>Bytes Per Line</value>
     <comment>View menu - Bytes Per Line submenu</comment>
   </data>
-
-  <!-- Options Menu -->
   <data name="Menu_Options" xml:space="preserve">
     <value>Options</value>
     <comment>Options menu header</comment>
@@ -240,8 +226,6 @@
     <value>Count Selected Bytes</value>
     <comment>Options menu - Count Selected Bytes checkbox</comment>
   </data>
-
-  <!-- Help Menu -->
   <data name="Menu_Help" xml:space="preserve">
     <value>Help</value>
     <comment>Help menu header</comment>
@@ -258,14 +242,10 @@
     <value>GitHub Project</value>
     <comment>Help menu - Open GitHub repository</comment>
   </data>
-
-  <!-- File Menu (adding missing header) -->
   <data name="Menu_File" xml:space="preserve">
     <value>File</value>
     <comment>File menu header</comment>
   </data>
-
-  <!-- ==== TOOLBAR ==== -->
   <data name="Toolbar_Open" xml:space="preserve">
     <value>📂 Open</value>
     <comment>Toolbar - Open button</comment>
@@ -314,8 +294,6 @@
     <value>Toggle Read-Only mode</value>
     <comment>Toolbar - Read-Only mode tooltip</comment>
   </data>
-
-  <!-- ==== RIBBON - QUICK ACCESS TOOLBAR ==== -->
   <data name="QAT_Save_Label" xml:space="preserve">
     <value>Save</value>
     <comment>Quick Access Toolbar - Save button label</comment>
@@ -340,8 +318,6 @@
     <value>Redo (Ctrl+Y)</value>
     <comment>Quick Access Toolbar - Redo button tooltip</comment>
   </data>
-
-  <!-- ==== RIBBON - HOME TAB ==== -->
   <data name="Ribbon_Home_Tab" xml:space="preserve">
     <value>Home</value>
     <comment>Ribbon - Home tab header</comment>
@@ -394,8 +370,6 @@
     <value>16 Bytes/Line</value>
     <comment>Ribbon - Home tab - 16 Bytes per line display option</comment>
   </data>
-
-  <!-- ==== RIBBON - EDIT TAB ==== -->
   <data name="Ribbon_Edit_Tab" xml:space="preserve">
     <value>Edit</value>
     <comment>Ribbon - Edit tab header</comment>
@@ -452,8 +426,6 @@
     <value>Read Only</value>
     <comment>Ribbon - Edit tab - Read Only mode</comment>
   </data>
-
-  <!-- ==== RIBBON - VIEW TAB ==== -->
   <data name="Ribbon_View_Tab" xml:space="preserve">
     <value>View</value>
     <comment>Ribbon - View tab header</comment>
@@ -518,8 +490,6 @@
     <value>Settings Panel</value>
     <comment>Ribbon - View tab - Settings Panel checkbox</comment>
   </data>
-
-  <!-- ==== RIBBON - DATA TAB ==== -->
   <data name="Ribbon_Data_Tab" xml:space="preserve">
     <value>Data</value>
     <comment>Ribbon - Data tab header</comment>
@@ -588,8 +558,6 @@
     <value>Hash (MD5/SHA)</value>
     <comment>Ribbon - Data tab - Hash (MD5/SHA) command</comment>
   </data>
-
-  <!-- ==== RIBBON - TOOLS TAB ==== -->
   <data name="Ribbon_Tools_Tab" xml:space="preserve">
     <value>Tools</value>
     <comment>Ribbon - Tools tab header</comment>
@@ -626,8 +594,6 @@
     <value>About</value>
     <comment>Ribbon - Tools tab - About command</comment>
   </data>
-
-  <!-- ==== OPTIONS DIALOG ==== -->
   <data name="Options_Title" xml:space="preserve">
     <value>Options</value>
     <comment>Options dialog - Window title</comment>
@@ -772,8 +738,6 @@
     <value>Cancel</value>
     <comment>Options dialog - Cancel button</comment>
   </data>
-
-  <!-- ==== SETTINGS PANEL ==== -->
   <data name="Settings_Title" xml:space="preserve">
     <value>SETTINGS</value>
     <comment>Settings panel - Main header</comment>
@@ -926,8 +890,6 @@
     <value>Save Settings</value>
     <comment>Settings panel - Save Settings button</comment>
   </data>
-
-  <!-- ==== HEX EDITOR SETTINGS ==== -->
   <data name="HexSettings_Title" xml:space="preserve">
     <value>HEX EDITOR SETTINGS</value>
     <comment>Hex editor settings - Main header</comment>
@@ -1220,8 +1182,6 @@
     <value>🔄 Reset All to Defaults</value>
     <comment>Hex editor settings - Reset all to defaults button</comment>
   </data>
-
-  <!-- ==== SEARCH COMMAND CENTER ==== -->
   <data name="Search_Mode_Text" xml:space="preserve">
     <value>Text</value>
     <comment>Search command center - Text mode option</comment>
@@ -1286,8 +1246,6 @@
     <value>V2</value>
     <comment>Search command center - V2 engine badge</comment>
   </data>
-
-  <!-- ==== MESSAGE BOX STRINGS (from code-behind) ==== -->
   <data name="Message_FileOpenError" xml:space="preserve">
     <value>Failed to open file: {0}</value>
     <comment>Error message when file open fails</comment>
@@ -1324,9 +1282,6 @@
     <value>Please select a language before clicking OK.</value>
     <comment>No language selected message text</comment>
   </data>
-
-
-  <!-- ColorPicker Localizations -->
   <data name="ColorPicker_Tab_Custom" xml:space="preserve">
     <value>Custom</value>
     <comment>ColorPicker - Tab Custom</comment>
@@ -1363,5 +1318,25 @@
     <value>Recent Colors</value>
     <comment>ColorPicker - Section RecentColors</comment>
   </data>
-
+  <data name="HexSettings_StatusBar_Title" xml:space="preserve">
+    <value>Status Bar</value>
+  </data>
+  <data name="HexSettings_Colors_Title" xml:space="preserve">
+    <value>Colors</value>
+  </data>
+  <data name="HexSettings_Behavior_Title" xml:space="preserve">
+    <value>Behavior</value>
+  </data>
+  <data name="HexSettings_Data_Title" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="HexSettings_Visual_Title" xml:space="preserve">
+    <value>Visual</value>
+  </data>
+  <data name="HexSettings_Keyboard_Title" xml:space="preserve">
+    <value>Keyboard</value>
+  </data>
+  <data name="HexSettings_TBL_Title" xml:space="preserve">
+    <value>Character Table</value>
+  </data>
 </root>

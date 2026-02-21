@@ -70,7 +70,21 @@
       "Bash(for file in *.resx)",
       "Bash(do sed -i '/<data name=\"\"HexSettings_Display_HideDeleted\"\"/,/<\\\\/data>/d' \"$file\")",
       "Bash(do sed -i '/<data name=\"\"Ribbon_View_HideDeleted\"\"/,/<\\\\/data>/d' \"$file\")",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" WpfHexEditorCore.csproj /t:Clean,Build /p:Configuration=Debug)",
+      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" WpfHexEditorCore.csproj //t:Clean //p:Configuration=Debug)",
+      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" WpfHexEditorCore.csproj //t:Build //p:Configuration=Debug)",
+      "WebFetch(domain:transcorp.romhacking.net)",
+      "Bash(do)",
+      "Bash(if grep -q \"HexSettings_Advanced_Title\" \"$file\")",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(*.tbl)",
+      "Bash(*.tblx)",
+      "Bash(*.csv)",
+      "Bash(*.json\":*)",
+      "Bash(TBL from CSV, JSON, or TBLX\":*)",
+      "Bash(c:/Users/khens/source/repos/WpfHexEditorControl/add_tbl_translations.py:*)"
     ]
   }
 }

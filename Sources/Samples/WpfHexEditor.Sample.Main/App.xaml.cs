@@ -1,5 +1,6 @@
 using System.Windows;
 using WpfHexEditor.Sample.Main.Services;
+using Props = WpfHexEditor.Sample.Main.Properties;
 
 namespace WpfHexEditor.Sample.Main
 {
@@ -25,7 +26,7 @@ namespace WpfHexEditor.Sample.Main
 
         private void MigrateSettings()
         {
-            var settings = Properties.Settings.Default;
+            var settings = Props.Settings.Default;
 
             // Check if this is first run or needs migration
             if (settings.SettingsVersion < 2)

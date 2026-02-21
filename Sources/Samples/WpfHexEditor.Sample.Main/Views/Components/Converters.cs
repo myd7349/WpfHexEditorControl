@@ -261,8 +261,8 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             {
                 _cachedBrush = new LinearGradientBrush
                 {
-                    StartPoint = new Point(0, 0),
-                    EndPoint = new Point(0, 1)
+                    StartPoint = new Point(0, 1),  // Start from bottom
+                    EndPoint = new Point(0, 0)     // End at top
                 };
 
                 _cachedBrush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 0, 0), 0.0));      // Red (0°)

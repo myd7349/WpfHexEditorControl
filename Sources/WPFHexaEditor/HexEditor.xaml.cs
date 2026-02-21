@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -667,8 +668,9 @@ namespace WpfHexaEditor
         #region Configuration Properties
 
         /// <summary>
-        /// Allow context menu  - DependencyProperty
+        /// Allow context menu - DependencyProperty
         /// </summary>
+        [Category("Behavior")]
         public bool AllowContextMenu
         {
             get => (bool)GetValue(AllowContextMenuProperty);
@@ -676,8 +678,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Allow zoom  - DependencyProperty
+        /// Allow zoom - DependencyProperty
         /// </summary>
+        [Category("Behavior")]
         public bool AllowZoom
         {
             get => (bool)GetValue(AllowZoomProperty);
@@ -685,8 +688,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Mouse wheel scroll speed  - DependencyProperty
+        /// Mouse wheel scroll speed - DependencyProperty
         /// </summary>
+        [Category("Visual")]
         public MouseWheelSpeed MouseWheelSpeed
         {
             get => (MouseWheelSpeed)GetValue(MouseWheelSpeedProperty);
@@ -696,6 +700,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Data string display format (Hex/Decimal/Octal/Binary) - DependencyProperty
         /// </summary>
+        [Category("Display")]
         public DataVisualType DataStringVisual
         {
             get => (DataVisualType)GetValue(DataStringVisualProperty);
@@ -705,6 +710,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Offset string display format (Hex/Decimal/Octal/Binary) - DependencyProperty
         /// </summary>
+        [Category("Display")]
         public DataVisualType OffSetStringVisual
         {
             get => (DataVisualType)GetValue(OffSetStringVisualProperty);
@@ -714,6 +720,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Byte order (Lo-Hi / Hi-Lo) - DependencyProperty
         /// </summary>
+        [Category("Visual")]
         public ByteOrderType ByteOrder
         {
             get => (ByteOrderType)GetValue(ByteOrderProperty);
@@ -723,6 +730,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Byte size display (8/16/32-bit) - DependencyProperty
         /// </summary>
+        [Category("Visual")]
         public ByteSizeType ByteSize
         {
             get => (ByteSizeType)GetValue(ByteSizeProperty);
@@ -747,6 +755,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Preload byte strategy - DependencyProperty
         /// </summary>
+        [Category("Data")]
         public PreloadByteInEditor PreloadByteInEditorMode
         {
             get => (PreloadByteInEditor)GetValue(PreloadByteInEditorModeProperty);
@@ -756,17 +765,9 @@ namespace WpfHexaEditor
         // TBL Advanced Features  - DependencyProperties
 
         /// <summary>
-        /// Show MTE (Multi-Title Encoding) in TBL - DependencyProperty
-        /// </summary>
-        public bool TblShowMte
-        {
-            get => (bool)GetValue(TblShowMteProperty);
-            set => SetValue(TblShowMteProperty, value);
-        }
-
-        /// <summary>
         /// Show ASCII characters in TBL - DependencyProperty
         /// </summary>
+        [Category("TBL")]
         public bool ShowTblAscii
         {
             get => (bool)GetValue(ShowTblAsciiProperty);
@@ -776,6 +777,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show DTE (Dual-Title Encoding) in TBL - DependencyProperty
         /// </summary>
+        [Category("TBL")]
         public bool ShowTblDte
         {
             get => (bool)GetValue(ShowTblDteProperty);
@@ -785,6 +787,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show MTE (Multi-Title Encoding) in TBL - DependencyProperty (renamed for consistency)
         /// </summary>
+        [Category("TBL")]
         public bool ShowTblMte
         {
             get => (bool)GetValue(ShowTblMteProperty);
@@ -794,6 +797,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show Japanese characters in TBL - DependencyProperty
         /// </summary>
+        [Category("TBL")]
         public bool ShowTblJaponais
         {
             get => (bool)GetValue(ShowTblJaponaisProperty);
@@ -803,6 +807,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show End Block markers in TBL - DependencyProperty
         /// </summary>
+        [Category("TBL")]
         public bool ShowTblEndBlock
         {
             get => (bool)GetValue(ShowTblEndBlockProperty);
@@ -812,6 +817,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show End Line markers in TBL - DependencyProperty
         /// </summary>
+        [Category("TBL")]
         public bool ShowTblEndLine
         {
             get => (bool)GetValue(ShowTblEndLineProperty);
@@ -821,6 +827,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// DTE (Dual-Tile Encoding) color - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color TblDteColor
         {
             get => (System.Windows.Media.Color)GetValue(TblDteColorProperty);
@@ -830,6 +837,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// MTE (Multi-Title Encoding) color - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color TblMteColor
         {
             get => (System.Windows.Media.Color)GetValue(TblMteColorProperty);
@@ -839,6 +847,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// End block color for TBL - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color TblEndBlockColor
         {
             get => (System.Windows.Media.Color)GetValue(TblEndBlockColorProperty);
@@ -848,6 +857,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// End line color for TBL - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color TblEndLineColor
         {
             get => (System.Windows.Media.Color)GetValue(TblEndLineColorProperty);
@@ -857,6 +867,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// ASCII color for TBL - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color TblAsciiColor
         {
             get => (System.Windows.Media.Color)GetValue(TblAsciiColorProperty);
@@ -866,6 +877,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Japanese characters color for TBL - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color TblJaponaisColor
         {
             get => (System.Windows.Media.Color)GetValue(TblJaponaisColorProperty);
@@ -875,6 +887,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// 3-byte sequences color for TBL - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color Tbl3ByteColor
         {
             get => (System.Windows.Media.Color)GetValue(Tbl3ByteColorProperty);
@@ -884,6 +897,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// 4+ byte sequences color for TBL - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color Tbl4PlusByteColor
         {
             get => (System.Windows.Media.Color)GetValue(Tbl4PlusByteColorProperty);
@@ -893,6 +907,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Default color for TBL - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color TblDefaultColor
         {
             get => (System.Windows.Media.Color)GetValue(TblDefaultColorProperty);
@@ -904,6 +919,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Bar chart color - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public System.Windows.Media.Color BarChartColor
         {
             get => (System.Windows.Media.Color)GetValue(BarChartColorProperty);
@@ -913,6 +929,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Selection brush for the active panel (Hex or ASCII) - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public Brush SelectionActiveBrush
         {
             get => (Brush)GetValue(SelectionActiveBrushProperty);
@@ -922,6 +939,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Selection brush for the inactive panel (Hex or ASCII) - DependencyProperty
         /// </summary>
+        [Category("Colors")]
         public Brush SelectionInactiveBrush
         {
             get => (Brush)GetValue(SelectionInactiveBrushProperty);
@@ -941,6 +959,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Is a file or stream currently loaded?
         /// </summary>
+        [Category("Data")]
         public bool IsFileOrStreamLoaded
         {
             get => (bool)GetValue(IsFileOrStreamLoadedProperty);
@@ -952,6 +971,7 @@ namespace WpfHexaEditor
         /// When true, commands and menu items should be disabled to prevent concurrent operations.
         /// This property is automatically set by the LongRunningOperationService.
         /// </summary>
+        [Category("Data")]
         public bool IsOperationActive
         {
             get => (bool)GetValue(IsOperationActiveProperty);
@@ -961,6 +981,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Current edit mode - DependencyProperty for XAML binding
         /// </summary>
+        [Category("Data")]
         public EditMode EditMode
         {
             get => (EditMode)GetValue(EditModeProperty);
@@ -991,6 +1012,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Is a long process currently running? Set to false to cancel.
         /// </summary>
+        [Category("Data")]
         public bool IsOnLongProcess
         {
             get => _isOnLongProcess;
@@ -1001,6 +1023,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Progress of current long process (0.0 to 1.0)
         /// </summary>
+        [Category("Data")]
         public double LongProcessProgress
         {
             get => _longProcessProgress;
@@ -1027,6 +1050,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Is the file locked (read-only)?
         /// </summary>
+        [Category("Data")]
         public bool IsLockedFile
         {
             get
@@ -1042,6 +1066,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Is selection start position visible in viewport?
         /// </summary>
+        [Category("Data")]
         public bool SelectionStartIsVisible
         {
             get
@@ -1076,6 +1101,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Selected bytes as hex string (e.g., "48 65 6C 6C 6F")
         /// </summary>
+        [Category("Data")]
         public string SelectionHex
         {
             get
@@ -1094,6 +1120,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Selected bytes as ASCII string
         /// </summary>
+        [Category("Data")]
         public string SelectionString
         {
             get
@@ -1117,6 +1144,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Current selection line number (0-based)
         /// </summary>
+        [Category("Data")]
         public long SelectionLine
         {
             get
@@ -1146,6 +1174,7 @@ namespace WpfHexaEditor
         /// Current file name (full path)
         /// Uses DependencyProperty for XAML binding support
         /// </summary>
+        [Category("Data")]
         public string FileName
         {
             get => (string)GetValue(FileNameProperty);
@@ -1156,6 +1185,7 @@ namespace WpfHexaEditor
         /// Has the file been modified?
         /// Uses DependencyProperty for XAML binding support
         /// </summary>
+        [Category("Data")]
         public bool IsModified
         {
             get => (bool)GetValue(IsModifiedProperty);
@@ -1165,6 +1195,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Current cursor position (virtual)
         /// </summary>
+        [Category("Data")]
         public long Position
         {
             get => _viewModel?.SelectionStart.Value ?? 0;
@@ -1184,6 +1215,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Selection start position (virtual) (DependencyProperty for XAML binding)
         /// </summary>
+        [Category("Data")]
         public long SelectionStart
         {
             get => (long)GetValue(SelectionStartProperty);
@@ -1193,6 +1225,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Selection stop position (virtual) (DependencyProperty for XAML binding)
         /// </summary>
+        [Category("Data")]
         public long SelectionStop
         {
             get => (long)GetValue(SelectionStopProperty);
@@ -1202,6 +1235,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Read-only mode (DependencyProperty for XAML binding)
         /// </summary>
+        [Category("Data")]
         public bool ReadOnlyMode
         {
             get => (bool)GetValue(ReadOnlyModeProperty);
@@ -1209,8 +1243,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Show or hide the status bar 
+        /// Show or hide the status bar
         /// </summary>
+        [Category("StatusBar")]
         public bool ShowStatusBar
         {
             get => StatusBar.Visibility == Visibility.Visible;
@@ -1222,6 +1257,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show or hide status message in status bar
         /// </summary>
+        [Category("StatusBar")]
         public bool ShowStatusMessage
         {
             get => (bool)GetValue(ShowStatusMessageProperty);
@@ -1235,6 +1271,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show or hide file size in status bar
         /// </summary>
+        [Category("StatusBar")]
         public bool ShowFileSizeInStatusBar
         {
             get => (bool)GetValue(ShowFileSizeInStatusBarProperty);
@@ -1248,6 +1285,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show or hide selection info in status bar
         /// </summary>
+        [Category("StatusBar")]
         public bool ShowSelectionInStatusBar
         {
             get => (bool)GetValue(ShowSelectionInStatusBarProperty);
@@ -1261,6 +1299,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show or hide position info in status bar
         /// </summary>
+        [Category("StatusBar")]
         public bool ShowPositionInStatusBar
         {
             get => (bool)GetValue(ShowPositionInStatusBarProperty);
@@ -1274,6 +1313,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show or hide edit mode in status bar
         /// </summary>
+        [Category("StatusBar")]
         public bool ShowEditModeInStatusBar
         {
             get => (bool)GetValue(ShowEditModeInStatusBarProperty);
@@ -1287,6 +1327,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show or hide bytes per line in status bar
         /// </summary>
+        [Category("StatusBar")]
         public bool ShowBytesPerLineInStatusBar
         {
             get => (bool)GetValue(ShowBytesPerLineInStatusBarProperty);
@@ -1300,6 +1341,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show or hide refresh time in status bar
         /// </summary>
+        [Category("StatusBar")]
         public bool ShowRefreshTimeInStatusBar
         {
             get => (bool)GetValue(ShowRefreshTimeInStatusBarProperty);
@@ -1313,8 +1355,9 @@ namespace WpfHexaEditor
         #endregion
 
         /// <summary>
-        /// Show or hide the column header 
+        /// Show or hide the column header
         /// </summary>
+        [Category("Display")]
         public bool ShowHeader
         {
             get => _headerBorder?.Visibility == Visibility.Visible;
@@ -1326,9 +1369,10 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Show or hide the offset column 
+        /// Show or hide the offset column
         /// Note: Requires re-creating lines for template changes
         /// </summary>
+        [Category("Display")]
         public bool ShowOffset
         {
             get => (bool)GetValue(ShowOffsetProperty);
@@ -1374,9 +1418,10 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Show or hide the ASCII column 
+        /// Show or hide the ASCII column
         /// Note: Requires re-creating lines for template changes
         /// </summary>
+        [Category("Display")]
         public bool ShowAscii
         {
             get => (bool)GetValue(ShowAsciiProperty);
@@ -1429,6 +1474,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Number of bytes per line (8, 16, 32, etc.) - DependencyProperty for XAML binding
         /// </summary>
+        [Category("Data")]
         public int BytePerLine
         {
             get => (int)GetValue(BytePerLineProperty);
@@ -1448,6 +1494,7 @@ namespace WpfHexaEditor
         /// Number of visible lines in the viewport
         /// Increasing this value shows more bytes at once but may impact performance
         /// </summary>
+        [Category("Data")]
         public int VisibleLines
         {
             get => _viewModel?.VisibleLines ?? 20;
@@ -1485,6 +1532,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show column separator between hex and ASCII
         /// </summary>
+        [Category("Display")]
         public bool ShowColumnSeparator
         {
             get => (bool)GetValue(ShowColumnSeparatorProperty);
@@ -1500,8 +1548,9 @@ namespace WpfHexaEditor
         #region Byte Spacer Properties
 
         /// <summary>
-        /// Get or set the byte spacing position 
+        /// Get or set the byte spacing position
         /// </summary>
+        [Category("Visual")]
         public ByteSpacerPosition ByteSpacerPositioning
         {
             get => (ByteSpacerPosition)GetValue(ByteSpacerPositioningProperty);
@@ -1513,8 +1562,9 @@ namespace WpfHexaEditor
                 new FrameworkPropertyMetadata(ByteSpacerPosition.HexBytePanel, ByteSpacer_Changed));
 
         /// <summary>
-        /// Get or set the byte spacer width 
+        /// Get or set the byte spacer width
         /// </summary>
+        [Category("Visual")]
         public ByteSpacerWidth ByteSpacerWidthTickness
         {
             get => (ByteSpacerWidth)GetValue(ByteSpacerWidthTicknessProperty);
@@ -1526,8 +1576,9 @@ namespace WpfHexaEditor
                 new FrameworkPropertyMetadata(ByteSpacerWidth.Normal, ByteSpacer_Changed));
 
         /// <summary>
-        /// Get or set the byte grouping 
+        /// Get or set the byte grouping
         /// </summary>
+        [Category("Visual")]
         public ByteSpacerGroup ByteGrouping
         {
             get => (ByteSpacerGroup)GetValue(ByteGroupingProperty);
@@ -1539,8 +1590,9 @@ namespace WpfHexaEditor
                 new FrameworkPropertyMetadata(ByteSpacerGroup.FourByte, ByteSpacer_Changed));
 
         /// <summary>
-        /// Get or set the visual of byte spacer 
+        /// Get or set the visual of byte spacer
         /// </summary>
+        [Category("Visual")]
         public ByteSpacerVisual ByteSpacerVisualStyle
         {
             get => (ByteSpacerVisual)GetValue(ByteSpacerVisualStyleProperty);
@@ -1580,8 +1632,9 @@ namespace WpfHexaEditor
         #region Color Properties
 
         /// <summary>
-        /// First selection gradient color 
+        /// First selection gradient color
         /// </summary>
+        [Category("Colors")]
         public Color SelectionFirstColor
         {
             get => (Color)GetValue(SelectionFirstColorProperty);
@@ -1602,8 +1655,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Second selection gradient color 
+        /// Second selection gradient color
         /// </summary>
+        [Category("Colors")]
         public Color SelectionSecondColor
         {
             get => (Color)GetValue(SelectionSecondColorProperty);
@@ -1615,8 +1669,9 @@ namespace WpfHexaEditor
                 new PropertyMetadata(Color.FromArgb(102, 0, 120, 212)));
 
         /// <summary>
-        /// Color for modified bytes 
+        /// Color for modified bytes
         /// </summary>
+        [Category("Colors")]
         public Color ByteModifiedColor
         {
             get => (Color)GetValue(ByteModifiedColorProperty);
@@ -1636,8 +1691,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Color for deleted bytes 
+        /// Color for deleted bytes
         /// </summary>
+        [Category("Colors")]
         public Color ByteDeletedColor
         {
             get => (Color)GetValue(ByteDeletedColorProperty);
@@ -1657,8 +1713,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Color for added bytes 
+        /// Color for added bytes
         /// </summary>
+        [Category("Colors")]
         public Color ByteAddedColor
         {
             get => (Color)GetValue(ByteAddedColorProperty);
@@ -1678,8 +1735,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Color for highlighted bytes 
+        /// Color for highlighted bytes
         /// </summary>
+        [Category("Colors")]
         public Color HighLightColor
         {
             get => (Color)GetValue(HighLightColorProperty);
@@ -1691,8 +1749,9 @@ namespace WpfHexaEditor
                 new PropertyMetadata(Colors.Gold));
 
         /// <summary>
-        /// Mouse over color 
+        /// Mouse over color
         /// </summary>
+        [Category("Colors")]
         public Color MouseOverColor
         {
             get => (Color)GetValue(MouseOverColorProperty);
@@ -1721,6 +1780,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Foreground color for alternate bytes (uses Color instead of Brush)
         /// </summary>
+        [Category("Colors")]
         public Color ForegroundSecondColor
         {
             get => (Color)GetValue(ForegroundSecondColorProperty);
@@ -1748,8 +1808,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Foreground color for offset header 
+        /// Foreground color for offset header
         /// </summary>
+        [Category("Colors")]
         public Color ForegroundOffSetHeaderColor
         {
             get => (Color)GetValue(ForegroundOffSetHeaderColorProperty);
@@ -1769,8 +1830,9 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Foreground highlight offset header color 
+        /// Foreground highlight offset header color
         /// </summary>
+        [Category("Colors")]
         public Color ForegroundHighLightOffSetHeaderColor
         {
             get => (Color)GetValue(ForegroundHighLightOffSetHeaderColorProperty);
@@ -1782,8 +1844,9 @@ namespace WpfHexaEditor
                 new PropertyMetadata(Colors.DarkBlue));
 
         /// <summary>
-        /// Foreground contrast color 
+        /// Foreground contrast color
         /// </summary>
+        [Category("Colors")]
         public Color ForegroundContrast
         {
             get => (Color)GetValue(ForegroundContrastProperty);
@@ -2209,19 +2272,6 @@ namespace WpfHexaEditor
                 new PropertyMetadata(true));
 
         /// <summary>
-        /// TblShowMte DependencyProperty for XAML binding
-        /// </summary>
-        public static readonly DependencyProperty TblShowMteProperty =
-            DependencyProperty.Register(nameof(TblShowMte), typeof(bool), typeof(HexEditor),
-                new PropertyMetadata(false, OnTblShowMteChanged));
-
-        private static void OnTblShowMteChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is HexEditor editor)
-                editor.HexViewport?.InvalidateVisual();
-        }
-
-        /// <summary>
         /// ShowTblAscii DependencyProperty - Show ASCII characters in TBL
         /// </summary>
         public static readonly DependencyProperty ShowTblAsciiProperty =
@@ -2575,6 +2625,7 @@ namespace WpfHexaEditor
         /// <remarks>
         /// This property is provided for V1 compatibility. New code should use the Color-based property.
         /// </remarks>
+        [Category("Colors")]
         [Obsolete("Use SelectionFirstColor (Color property) instead. This Brush wrapper is for V1 compatibility only.", false)]
         public Brush SelectionFirstColorBrush
         {
@@ -2589,6 +2640,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Selection second color as Brush. Use SelectionSecondColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush SelectionSecondColorBrush
         {
             get => new SolidColorBrush(SelectionSecondColor);
@@ -2602,6 +2654,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Modified byte color as Brush. Use ByteModifiedColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush ByteModifiedColorBrush
         {
             get => new SolidColorBrush(ByteModifiedColor);
@@ -2615,6 +2668,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Deleted byte color as Brush. Use ByteDeletedColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush ByteDeletedColorBrush
         {
             get => new SolidColorBrush(ByteDeletedColor);
@@ -2628,6 +2682,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Added byte color as Brush. Use ByteAddedColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush ByteAddedColorBrush
         {
             get => new SolidColorBrush(ByteAddedColor);
@@ -2641,6 +2696,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Highlight color as Brush. Use HighLightColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush HighLightColorBrush
         {
             get => new SolidColorBrush(HighLightColor);
@@ -2654,6 +2710,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Mouse over color as Brush. Use MouseOverColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush MouseOverColorBrush
         {
             get => new SolidColorBrush(MouseOverColor);
@@ -2667,6 +2724,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Foreground second color as Brush. Use ForegroundSecondColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush ForegroundSecondColorBrush
         {
             get => new SolidColorBrush(ForegroundSecondColor);
@@ -2680,6 +2738,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Offset header foreground color as Brush. Use ForegroundOffSetHeaderColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush ForegroundOffSetHeaderColorBrush
         {
             get => new SolidColorBrush(ForegroundOffSetHeaderColor);
@@ -2693,6 +2752,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Highlighted offset header foreground color as Brush. Use ForegroundHighLightOffSetHeaderColor (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush ForegroundHighLightOffSetHeaderColorBrush
         {
             get => new SolidColorBrush(ForegroundHighLightOffSetHeaderColor);
@@ -2706,6 +2766,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Foreground contrast color as Brush. Use ForegroundContrast (Color) for V2 code.
         /// </summary>
+        [Category("Colors")]
         public Brush ForegroundContrastBrush
         {
             get => new SolidColorBrush(ForegroundContrast);
@@ -2721,8 +2782,9 @@ namespace WpfHexaEditor
         #region Keyboard Shortcuts Properties
 
         /// <summary>
-        /// Allow builtin Ctrl+C 
+        /// Allow builtin Ctrl+C
         /// </summary>
+        [Category("Keyboard")]
         public bool AllowBuildinCtrlc
         {
             get => (bool)GetValue(AllowBuildinCtrlcProperty);
@@ -2734,8 +2796,9 @@ namespace WpfHexaEditor
                 new PropertyMetadata(true));
 
         /// <summary>
-        /// Allow builtin Ctrl+V 
+        /// Allow builtin Ctrl+V
         /// </summary>
+        [Category("Keyboard")]
         public bool AllowBuildinCtrlv
         {
             get => (bool)GetValue(AllowBuildinCtrlvProperty);
@@ -2747,8 +2810,9 @@ namespace WpfHexaEditor
                 new PropertyMetadata(true));
 
         /// <summary>
-        /// Allow builtin Ctrl+A 
+        /// Allow builtin Ctrl+A
         /// </summary>
+        [Category("Keyboard")]
         public bool AllowBuildinCtrla
         {
             get => (bool)GetValue(AllowBuildinCtrlaProperty);
@@ -2760,8 +2824,9 @@ namespace WpfHexaEditor
                 new PropertyMetadata(true));
 
         /// <summary>
-        /// Allow builtin Ctrl+Z 
+        /// Allow builtin Ctrl+Z
         /// </summary>
+        [Category("Keyboard")]
         public bool AllowBuildinCtrlz
         {
             get => (bool)GetValue(AllowBuildinCtrlzProperty);
@@ -2773,8 +2838,9 @@ namespace WpfHexaEditor
                 new PropertyMetadata(true));
 
         /// <summary>
-        /// Allow builtin Ctrl+Y 
+        /// Allow builtin Ctrl+Y
         /// </summary>
+        [Category("Keyboard")]
         public bool AllowBuildinCtrly
         {
             get => (bool)GetValue(AllowBuildinCtrlyProperty);
@@ -2792,6 +2858,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Header visibility. Use ShowHeader (bool) for V2 code.
         /// </summary>
+        [Category("Display")]
         public Visibility HeaderVisibility
         {
             get => ShowHeader ? Visibility.Visible : Visibility.Collapsed;
@@ -2801,6 +2868,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Status bar visibility. Use ShowStatusBar (bool) for V2 code.
         /// </summary>
+        [Category("Display")]
         public Visibility StatusBarVisibility
         {
             get => ShowStatusBar ? Visibility.Visible : Visibility.Collapsed;
@@ -2810,6 +2878,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Line info (offset column) visibility. Use ShowOffset (bool) for V2 code.
         /// </summary>
+        [Category("Display")]
         public Visibility LineInfoVisibility
         {
             get => ShowOffset ? Visibility.Visible : Visibility.Collapsed;
@@ -2819,6 +2888,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// String data (ASCII) panel visibility. Use ShowAscii (bool) for V2 code.
         /// </summary>
+        [Category("Display")]
         public Visibility StringDataVisibility
         {
             get => ShowAscii ? Visibility.Visible : Visibility.Collapsed;
@@ -2828,6 +2898,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Hex data panel visibility. Always Visible in V2 (cannot be hidden).
         /// </summary>
+        [Category("Display")]
         public Visibility HexDataVisibility
         {
             get => Visibility.Visible;
@@ -2837,6 +2908,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Bar chart panel visibility
         /// </summary>
+        [Category("Display")]
         public Visibility BarChartPanelVisibility
         {
             get => (Visibility)GetValue(BarChartPanelVisibilityProperty);

@@ -33,7 +33,7 @@ namespace WpfHexaEditor
                 if (HexViewport != null)
                 {
                     HexViewport.TblStream = _tblStream;
-                    HexViewport.TblShowMte = true;
+                    HexViewport.ShowTblMte = true;
                 }
 
                 // Update status bar
@@ -85,7 +85,7 @@ namespace WpfHexaEditor
                 if (HexViewport != null)
                 {
                     HexViewport.TblStream = null;
-                    HexViewport.TblShowMte = false;
+                    HexViewport.ShowTblMte = false;
                 }
 
                 // Hide TBL status icon
@@ -110,7 +110,7 @@ namespace WpfHexaEditor
             if (HexViewport != null)
             {
                 HexViewport.TblStream = null;
-                HexViewport.TblShowMte = false;
+                HexViewport.ShowTblMte = false;
             }
 
             // Update status bar
@@ -182,7 +182,7 @@ namespace WpfHexaEditor
                         if (HexViewport != null)
                         {
                             HexViewport.TblStream = _tblStream;
-                            HexViewport.TblShowMte = true;
+                            HexViewport.ShowTblMte = true;
                         }
 
                         // Show TBL status icon

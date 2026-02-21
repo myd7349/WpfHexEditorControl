@@ -81,9 +81,6 @@ namespace WpfHexaEditor.Controls
         private Brush _separatorBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
         private Brush _asciiBrush = new SolidColorBrush(Color.FromRgb(0x42, 0x42, 0x42));
 
-        // TBL (Character Table) colors - Phase 7.5 V1 Compatibility
-        private bool _tblShowMte = false;
-
         // TBL type visibility flags (all true by default)
         private bool _showTblAscii = true;
         private bool _showTblDte = true;
@@ -575,15 +572,6 @@ namespace WpfHexaEditor.Controls
         public List<HexLine> GetVisibleLinesForHighlight()
         {
             return _linesCached ?? new List<HexLine>();
-        }
-
-        /// <summary>
-        /// Show MTE (Multi-Title Encoding) in TBL - Phase 7.5 V1 Compatibility
-        /// </summary>
-        public bool TblShowMte
-        {
-            get => _tblShowMte;
-            set { _tblShowMte = value; InvalidateVisual(); }
         }
 
         /// <summary>

@@ -54,7 +54,7 @@ namespace WpfHexaEditor
         /// <summary>
         /// Show or not Multi Title Enconding (MTE) are loaded in TBL file
         /// </summary>
-        public bool TblShowMte
+        public bool ShowTblMte
         {
             get => _tblShowMte;
             set
@@ -107,7 +107,7 @@ namespace WpfHexaEditor
 
                             var content = "#";
 
-                            if (TblShowMte && ByteNext.HasValue)
+                            if (ShowTblMte && ByteNext.HasValue)
                                 (content, dteType) = TblCharacterTable.FindMatch(ByteConverters.ByteToHex(Byte.Byte[0]) +
                                                                       ByteConverters.ByteToHex(ByteNext.Value), true);
 

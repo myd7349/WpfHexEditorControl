@@ -243,7 +243,7 @@ namespace WpfHexaEditor
                 if (HexViewport != null)
                 {
                     HexViewport.TblStream = newTbl;
-                    HexViewport.TblShowMte = true;
+                    HexViewport.ShowTblMte = true;
                 }
 
                 // Update status bar
