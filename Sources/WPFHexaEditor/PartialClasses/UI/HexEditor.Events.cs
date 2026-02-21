@@ -459,7 +459,7 @@ namespace WpfHexaEditor
                         // Use stride calculated at method start (lines 298-305)
                         // No need to recalculate - already available in scope
 
-                        if (_viewModel.HasSelection)
+                        if (_viewModel.HasSelection && _viewModel.SelectionStart != _viewModel.SelectionStop)
                         {
                             long start = Math.Min(_viewModel.SelectionStart.Value, _viewModel.SelectionStop.Value);
                             long stop = Math.Max(_viewModel.SelectionStart.Value, _viewModel.SelectionStop.Value);
