@@ -184,8 +184,19 @@ namespace WpfHexEditor.Sample.Main.ViewModels
 
         public ModernMainWindowViewModel()
         {
+            // Load UI state FIRST
+            LoadUIState();
+
             SettingsViewModel = new SettingsPanelViewModel();
             SearchViewModel = new SearchCommandCenterViewModel();
+
+            // Apply loaded search mode
+            var settings = Properties.Settings.Default;
+            if (!string.IsNullOrEmpty(settings.SelectedSearchMode) &&
+                Enum.TryParse<SearchMode>(settings.SelectedSearchMode, out var mode))
+            {
+                SearchViewModel.SelectedSearchMode = mode;
+            }
 
             // Wire up settings events
             SettingsViewModel.ThemeChanged += OnThemeChanged;
@@ -906,6 +917,35 @@ namespace WpfHexEditor.Sample.Main.ViewModels
         public void OnOperationStateChanged(bool isActive)
         {
             IsOperationActive = isActive;
+        }
+
+        private void LoadUIState()
+        {
+            var settings = Properties.Settings.Default;
+            _isSettingsPanelVisible = settings.IsSettingsPanelVisible;
+            _isSearchPanelVisible = settings.IsSearchPanelVisible;
+
+            // Load last file path (if user opted in)
+            if (settings.RememberLastFilePath && !string.IsNullOrEmpty(settings.LastFilePath))
+            {
+                _currentFilePath = settings.LastFilePath;
+            }
+        }
+
+        public void SaveUIState()
+        {
+            var settings = Properties.Settings.Default;
+            settings.IsSettingsPanelVisible = IsSettingsPanelVisible;
+            settings.IsSearchPanelVisible = IsSearchPanelVisible;
+            settings.SelectedSearchMode = SearchViewModel?.SelectedSearchMode.ToString() ?? "Text";
+
+            if (settings.RememberLastFilePath)
+            {
+                settings.LastFilePath = CurrentFilePath ?? "";
+            }
+
+            settings.Save();
+            System.Diagnostics.Debug.WriteLine("[ModernMainWindowViewModel] UI state saved");
         }
 
         protected void OnPropertyChanged(string propertyName)

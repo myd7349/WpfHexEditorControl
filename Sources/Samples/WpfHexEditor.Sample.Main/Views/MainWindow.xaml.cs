@@ -88,6 +88,9 @@ namespace WpfHexEditor.Sample.Main.Views
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // Save UI state BEFORE auto-saving HexEditor settings
+            _viewModel?.SaveUIState();
+
             // Auto-save HexEditor settings for next session
             HexEditorSettingsPanel?.AutoSaveState();
         }

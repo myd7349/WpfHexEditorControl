@@ -29,8 +29,6 @@ namespace WpfHexEditor.Sample.Main.ViewModels
         private bool _highlightAllMatches = true;
         private bool _showLineNumbers = true;
         private bool _showScrollMarkers = true;
-        private int _bytesPerLine = 16;
-        private bool _showStatusBar = true;
 
         #endregion
 
@@ -186,32 +184,6 @@ namespace WpfHexEditor.Sample.Main.ViewModels
             }
         }
 
-        /// <summary>
-        /// Bytes per line (8, 16, 32, 64)
-        /// </summary>
-        public int BytesPerLine
-        {
-            get => _bytesPerLine;
-            set
-            {
-                _bytesPerLine = value;
-                OnPropertyChanged(nameof(BytesPerLine));
-            }
-        }
-
-        /// <summary>
-        /// Show status bar
-        /// </summary>
-        public bool ShowStatusBar
-        {
-            get => _showStatusBar;
-            set
-            {
-                _showStatusBar = value;
-                OnPropertyChanged(nameof(ShowStatusBar));
-            }
-        }
-
         #endregion
 
         #region Commands
@@ -227,6 +199,9 @@ namespace WpfHexEditor.Sample.Main.ViewModels
         {
             ResetToDefaultsCommand = new RelayCommand(ResetToDefaults);
             SaveSettingsCommand = new RelayCommand(SaveSettings);
+
+            // Load persisted settings
+            LoadSettings();
 
             // Initialize theme from ThemeManager
             _selectedTheme = Services.ThemeManager.CurrentTheme;
@@ -255,6 +230,23 @@ namespace WpfHexEditor.Sample.Main.ViewModels
             }
         }
 
+        private void LoadSettings()
+        {
+            var settings = Properties.Settings.Default;
+
+            EnableParallelSearch = settings.EnableParallelSearch;
+            UseWildcardSearch = settings.UseWildcardSearch;
+            SearchResultLimit = settings.SearchResultLimit;
+            HighlightAllMatches = settings.HighlightAllMatches;
+            ShowLineNumbers = settings.ShowLineNumbers;
+            ShowScrollMarkers = settings.ShowScrollMarkers;
+
+            if (!string.IsNullOrEmpty(settings.PreferredCulture))
+            {
+                _selectedLanguage = settings.PreferredCulture;
+            }
+        }
+
         private void ResetToDefaults()
         {
             SelectedTheme = "DarkGlass";
@@ -265,14 +257,21 @@ namespace WpfHexEditor.Sample.Main.ViewModels
             HighlightAllMatches = true;
             ShowLineNumbers = true;
             ShowScrollMarkers = true;
-            BytesPerLine = 16;
-            ShowStatusBar = true;
         }
 
         private void SaveSettings()
         {
-            // In a real application, save to app settings or config file
-            System.Diagnostics.Debug.WriteLine("Settings saved");
+            var settings = Properties.Settings.Default;
+
+            settings.EnableParallelSearch = EnableParallelSearch;
+            settings.UseWildcardSearch = UseWildcardSearch;
+            settings.SearchResultLimit = SearchResultLimit;
+            settings.HighlightAllMatches = HighlightAllMatches;
+            settings.ShowLineNumbers = ShowLineNumbers;
+            settings.ShowScrollMarkers = ShowScrollMarkers;
+
+            settings.Save();
+            System.Diagnostics.Debug.WriteLine("[SettingsPanelViewModel] Settings saved");
         }
 
         protected void OnPropertyChanged(string propertyName)

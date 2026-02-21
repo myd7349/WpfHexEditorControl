@@ -219,15 +219,6 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             System.Diagnostics.Debug.WriteLine($"[HexEditorSettings] Updated {bindingsUpdated} bindings");
         }
 
-        private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (HexEditorControl == null) return;
-
-            // Apply zoom via ScaleTransform
-            var scaleTransform = new ScaleTransform(e.NewValue, e.NewValue);
-            HexEditorControl.LayoutTransform = scaleTransform;
-            System.Diagnostics.Debug.WriteLine($"[HexEditorSettings] Zoom changed to {e.NewValue:P0}");
-        }
 
         /// <summary>
         /// Auto-saves HexEditor settings silently (called from MainWindow.Closing)
@@ -299,8 +290,7 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             // Apply zoom
             if (settings.TryGetValue("ZoomLevel", out val))
             {
-                var zoom = val.GetDouble();
-                HexEditorControl.LayoutTransform = new ScaleTransform(zoom, zoom);
+                HexEditorControl.ZoomScale = val.GetDouble();
             }
 
             // Editing Settings
@@ -372,6 +362,31 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             if (settings.TryGetValue("BarChartColor", out val)) HexEditorControl.BarChartColor = HexToColor(val.GetString());
             if (settings.TryGetValue("AutoHighLiteSelectionByteBrush", out val)) HexEditorControl.AutoHighLiteSelectionByteBrush = HexToColor(val.GetString());
 
+            // Additional TBL Colors
+            if (settings.TryGetValue("TblAsciiColor", out val)) HexEditorControl.TblAsciiColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("TblJaponaisColor", out val)) HexEditorControl.TblJaponaisColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("Tbl3ByteColor", out val)) HexEditorControl.Tbl3ByteColor = HexToColor(val.GetString());
+            if (settings.TryGetValue("Tbl4PlusByteColor", out val)) HexEditorControl.Tbl4PlusByteColor = HexToColor(val.GetString());
+
+            // TBL Display Filters
+            if (settings.TryGetValue("ShowTblAscii", out val)) HexEditorControl.ShowTblAscii = val.GetBoolean();
+            if (settings.TryGetValue("ShowTblDte", out val)) HexEditorControl.ShowTblDte = val.GetBoolean();
+            if (settings.TryGetValue("ShowTblMte", out val)) HexEditorControl.ShowTblMte = val.GetBoolean();
+            if (settings.TryGetValue("ShowTblJaponais", out val)) HexEditorControl.ShowTblJaponais = val.GetBoolean();
+            if (settings.TryGetValue("ShowTblEndBlock", out val)) HexEditorControl.ShowTblEndBlock = val.GetBoolean();
+            if (settings.TryGetValue("ShowTblEndLine", out val)) HexEditorControl.ShowTblEndLine = val.GetBoolean();
+
+            // Status Bar Visibility Options
+            if (settings.TryGetValue("ShowStatusBar", out val)) HexEditorControl.ShowStatusBar = val.GetBoolean();
+            if (settings.TryGetValue("ShowSelectionInStatusBar", out val)) HexEditorControl.ShowSelectionInStatusBar = val.GetBoolean();
+            if (settings.TryGetValue("ShowPositionInStatusBar", out val)) HexEditorControl.ShowPositionInStatusBar = val.GetBoolean();
+            if (settings.TryGetValue("ShowEditModeInStatusBar", out val)) HexEditorControl.ShowEditModeInStatusBar = val.GetBoolean();
+            if (settings.TryGetValue("ShowBytesPerLineInStatusBar", out val)) HexEditorControl.ShowBytesPerLineInStatusBar = val.GetBoolean();
+            if (settings.TryGetValue("ShowRefreshTimeInStatusBar", out val)) HexEditorControl.ShowRefreshTimeInStatusBar = val.GetBoolean();
+
+            // UI Options
+            if (settings.TryGetValue("AllowZoom", out val)) HexEditorControl.AllowZoom = val.GetBoolean();
+
             // Load Recent Colors
             if (settings.TryGetValue("RecentColors", out val))
             {
@@ -401,7 +416,7 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                     ["ShowColumnSeparator"] = HexEditorControl.ShowColumnSeparator,
                     ["ShowStatusMessage"] = HexEditorControl.ShowStatusMessage,
                     ["BytePerLine"] = HexEditorControl.BytePerLine,
-                    ["ZoomLevel"] = HexEditorControl.LayoutTransform is ScaleTransform scale ? scale.ScaleX : 1.0,
+                    ["ZoomLevel"] = HexEditorControl.ZoomScale,
 
                     // Editing Settings
                     ["ReadOnlyMode"] = HexEditorControl.ReadOnlyMode,
@@ -463,6 +478,31 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                     ["TblDefaultColor"] = ColorToHex(HexEditorControl.TblDefaultColor),
                     ["BarChartColor"] = ColorToHex(HexEditorControl.BarChartColor),
                     ["AutoHighLiteSelectionByteBrush"] = ColorToHex(HexEditorControl.AutoHighLiteSelectionByteBrush),
+
+                    // Additional TBL Colors
+                    ["TblAsciiColor"] = ColorToHex(HexEditorControl.TblAsciiColor),
+                    ["TblJaponaisColor"] = ColorToHex(HexEditorControl.TblJaponaisColor),
+                    ["Tbl3ByteColor"] = ColorToHex(HexEditorControl.Tbl3ByteColor),
+                    ["Tbl4PlusByteColor"] = ColorToHex(HexEditorControl.Tbl4PlusByteColor),
+
+                    // TBL Display Filters
+                    ["ShowTblAscii"] = HexEditorControl.ShowTblAscii,
+                    ["ShowTblDte"] = HexEditorControl.ShowTblDte,
+                    ["ShowTblMte"] = HexEditorControl.ShowTblMte,
+                    ["ShowTblJaponais"] = HexEditorControl.ShowTblJaponais,
+                    ["ShowTblEndBlock"] = HexEditorControl.ShowTblEndBlock,
+                    ["ShowTblEndLine"] = HexEditorControl.ShowTblEndLine,
+
+                    // Status Bar Visibility Options
+                    ["ShowStatusBar"] = HexEditorControl.ShowStatusBar,
+                    ["ShowSelectionInStatusBar"] = HexEditorControl.ShowSelectionInStatusBar,
+                    ["ShowPositionInStatusBar"] = HexEditorControl.ShowPositionInStatusBar,
+                    ["ShowEditModeInStatusBar"] = HexEditorControl.ShowEditModeInStatusBar,
+                    ["ShowBytesPerLineInStatusBar"] = HexEditorControl.ShowBytesPerLineInStatusBar,
+                    ["ShowRefreshTimeInStatusBar"] = HexEditorControl.ShowRefreshTimeInStatusBar,
+
+                    // UI Options
+                    ["AllowZoom"] = HexEditorControl.AllowZoom,
 
                     // ColorPicker Recent Colors
                     ["RecentColors"] = RecentColorManager.LoadRecentColors().Select(c => ColorToHex(c)).ToArray()
@@ -598,6 +638,31 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                 if (settings.TryGetValue("TblDefaultColor", out val)) HexEditorControl.TblDefaultColor = HexToColor(val.GetString());
                 if (settings.TryGetValue("BarChartColor", out val)) HexEditorControl.BarChartColor = HexToColor(val.GetString());
                 if (settings.TryGetValue("AutoHighLiteSelectionByteBrush", out val)) HexEditorControl.AutoHighLiteSelectionByteBrush = HexToColor(val.GetString());
+
+                // Additional TBL Colors
+                if (settings.TryGetValue("TblAsciiColor", out val)) HexEditorControl.TblAsciiColor = HexToColor(val.GetString());
+                if (settings.TryGetValue("TblJaponaisColor", out val)) HexEditorControl.TblJaponaisColor = HexToColor(val.GetString());
+                if (settings.TryGetValue("Tbl3ByteColor", out val)) HexEditorControl.Tbl3ByteColor = HexToColor(val.GetString());
+                if (settings.TryGetValue("Tbl4PlusByteColor", out val)) HexEditorControl.Tbl4PlusByteColor = HexToColor(val.GetString());
+
+                // TBL Display Filters
+                if (settings.TryGetValue("ShowTblAscii", out val)) HexEditorControl.ShowTblAscii = val.GetBoolean();
+                if (settings.TryGetValue("ShowTblDte", out val)) HexEditorControl.ShowTblDte = val.GetBoolean();
+                if (settings.TryGetValue("ShowTblMte", out val)) HexEditorControl.ShowTblMte = val.GetBoolean();
+                if (settings.TryGetValue("ShowTblJaponais", out val)) HexEditorControl.ShowTblJaponais = val.GetBoolean();
+                if (settings.TryGetValue("ShowTblEndBlock", out val)) HexEditorControl.ShowTblEndBlock = val.GetBoolean();
+                if (settings.TryGetValue("ShowTblEndLine", out val)) HexEditorControl.ShowTblEndLine = val.GetBoolean();
+
+                // Status Bar Visibility Options
+                if (settings.TryGetValue("ShowStatusBar", out val)) HexEditorControl.ShowStatusBar = val.GetBoolean();
+                if (settings.TryGetValue("ShowSelectionInStatusBar", out val)) HexEditorControl.ShowSelectionInStatusBar = val.GetBoolean();
+                if (settings.TryGetValue("ShowPositionInStatusBar", out val)) HexEditorControl.ShowPositionInStatusBar = val.GetBoolean();
+                if (settings.TryGetValue("ShowEditModeInStatusBar", out val)) HexEditorControl.ShowEditModeInStatusBar = val.GetBoolean();
+                if (settings.TryGetValue("ShowBytesPerLineInStatusBar", out val)) HexEditorControl.ShowBytesPerLineInStatusBar = val.GetBoolean();
+                if (settings.TryGetValue("ShowRefreshTimeInStatusBar", out val)) HexEditorControl.ShowRefreshTimeInStatusBar = val.GetBoolean();
+
+                // UI Options
+                if (settings.TryGetValue("AllowZoom", out val)) HexEditorControl.AllowZoom = val.GetBoolean();
 
                 // Load Recent Colors
                 if (settings.TryGetValue("RecentColors", out val))
@@ -799,10 +864,10 @@ namespace WpfHexEditor.Sample.Main.Views.Components
                 HexEditorControl.AllowMarkerClickNavigation = true;
                 HexEditorControl.AllowByteCount = true;
                 HexEditorControl.ByteShiftLeft = 0;
+                HexEditorControl.ZoomScale = 1.0;
 
                 // Reset UI controls
                 BytesPerLineComboBox.SelectedIndex = 1; // 16 bytes
-                ZoomSlider.Value = 1.0;
                 EditModeComboBox.SelectedIndex = 0;
                 CaretModeComboBox.SelectedIndex = 0;
                 CopyModeComboBox.SelectedIndex = 0;
