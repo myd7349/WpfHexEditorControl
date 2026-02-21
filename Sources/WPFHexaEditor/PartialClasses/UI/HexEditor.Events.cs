@@ -452,14 +452,57 @@ namespace WpfHexaEditor
                         : EditMode.Insert;
                     break;
 
-                // Delete key: Delete selection
+                // Delete key: Delete selection (multi-byte aware)
                 case Key.Delete:
-                    if (_viewModel.HasSelection && !_viewModel.ReadOnlyMode)
+                    if (!_viewModel.ReadOnlyMode)
                     {
-                        DeleteSelection();
+                        // Use stride calculated at method start (lines 298-305)
+                        // No need to recalculate - already available in scope
+
+                        if (_viewModel.HasSelection)
+                        {
+                            // Selection exists: Expand to group boundaries if multi-byte mode
+                            if (stride > 1)
+                            {
+                                long start = Math.Min(_viewModel.SelectionStart.Value, _viewModel.SelectionStop.Value);
+                                long stop = Math.Max(_viewModel.SelectionStart.Value, _viewModel.SelectionStop.Value);
+
+                                // Snap start DOWN to group boundary (floor division)
+                                long alignedStart = (start / stride) * stride;
+
+                                // Snap stop UP to group boundary (ceiling division)
+                                // Add stride-1 to include the full group containing 'stop'
+                                long alignedStop = ((stop + stride - 1) / stride) * stride - 1;
+
+                                // Ensure we don't go past file end
+                                alignedStop = Math.Min(alignedStop, _viewModel.VirtualLength - 1);
+
+                                // Update selection to aligned boundaries
+                                _viewModel.SetSelectionRange(
+                                    new VirtualPosition(alignedStart),
+                                    new VirtualPosition(alignedStop));
+                            }
+
+                            DeleteSelection();
+                        }
+                        else if (_viewModel.SelectionStart.IsValid)
+                        {
+                            // No selection: Create selection of stride bytes at cursor position
+                            long cursorPos = _viewModel.SelectionStart.Value;
+
+                            // Snap cursor to group boundary
+                            long alignedStart = (cursorPos / stride) * stride;
+                            long alignedStop = Math.Min(alignedStart + stride - 1, _viewModel.VirtualLength - 1);
+
+                            // Create selection for the group
+                            _viewModel.SetSelectionRange(
+                                new VirtualPosition(alignedStart),
+                                new VirtualPosition(alignedStop));
+
+                            DeleteSelection();
+                        }
 
                         // CRITICAL UX FIX: After deletion, position cursor (with scroll) and restore focus
-                        // This ensures immediate keyboard responsiveness and visibility
                         if (_viewModel.SelectionStart.IsValid)
                         {
                             SetPosition(_viewModel.SelectionStart.Value);
