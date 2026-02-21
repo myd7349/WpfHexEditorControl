@@ -414,6 +414,7 @@ namespace WpfHexaEditor
 
             // CRITICAL FIX: Direction-aware snapping for multi-byte modes
             // This fixes the "press twice" issue by snapping in the direction of movement
+            long oldNewPos = newPos; // Save for diagnostic
             if (stride > 1)
             {
                 bool movingForward = (e.Key == System.Windows.Input.Key.Right ||
@@ -425,13 +426,30 @@ namespace WpfHexaEditor
                     // Moving forward: Snap UP to next boundary (or stay if already aligned)
                     // Formula: ceiling division = (n + stride - 1) / stride * stride
                     newPos = ((newPos + stride - 1) / stride) * stride;
-                    System.Diagnostics.Debug.WriteLine($"[KeyNav] Snap UP: newPos={newPos}");
+                    System.Diagnostics.Debug.WriteLine($"[KeyNav] Snap UP: {oldNewPos} → {newPos}");
                 }
                 else
                 {
                     // Moving backward: Snap DOWN to previous boundary (or stay if already aligned)
                     newPos = (newPos / stride) * stride;
-                    System.Diagnostics.Debug.WriteLine($"[KeyNav] Snap DOWN: newPos={newPos}");
+                    System.Diagnostics.Debug.WriteLine($"[KeyNav] Snap DOWN: {oldNewPos} → {newPos}");
+                }
+
+                // TEMP DEBUG: Show movement details for Left/Right
+                if (e.Key == System.Windows.Input.Key.Left || e.Key == System.Windows.Input.Key.Right)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Navigation Step Details:\n\n" +
+                        $"Started at position: {currentPos}\n" +
+                        $"Key pressed: {e.Key}\n" +
+                        $"Stride (bytes per group): {stride}\n" +
+                        $"After ±stride: {oldNewPos}\n" +
+                        $"After snapping: {newPos}\n" +
+                        $"Net movement: {newPos - currentPos} bytes\n\n" +
+                        $"Expected movement: ~{stride} bytes",
+                        "🔍 DEBUG: Navigation Step",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
                 }
             }
 
