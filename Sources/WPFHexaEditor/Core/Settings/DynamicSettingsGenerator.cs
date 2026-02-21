@@ -263,14 +263,24 @@ namespace WpfHexaEditor.Core.Settings
             }
 
             // Border placeholder for ColorPicker (will be replaced in HexEditorSettings.xaml.cs)
-            if (control is Border border && border.Tag?.ToString() == "ColorPicker")
+            if (control is Border border)
             {
-                // Mark with property name for later replacement
-                border.Tag = $"ColorPicker:{metadata.PropertyName}";
-                return CreateControlWithLabel(propertyControl.CreateLabel(metadata), border);
+                System.Diagnostics.Debug.WriteLine($"  Found Border! Tag={border.Tag}, checking if == 'ColorPicker'...");
+                if (border.Tag?.ToString() == "ColorPicker")
+                {
+                    // Mark with property name for later replacement
+                    border.Tag = $"ColorPicker:{metadata.PropertyName}";
+                    System.Diagnostics.Debug.WriteLine($"  ✓ Set Border Tag to '{border.Tag}'");
+                    return CreateControlWithLabel(propertyControl.CreateLabel(metadata), border);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"  ✗ Border Tag didn't match! Tag='{border.Tag}' != 'ColorPicker'");
+                }
             }
 
             // Default: just return the control
+            System.Diagnostics.Debug.WriteLine($"  Returning control as-is (Default)");
             return control;
         }
 
