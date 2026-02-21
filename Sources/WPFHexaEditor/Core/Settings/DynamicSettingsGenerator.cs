@@ -1,6 +1,7 @@
 // Apache 2.0 - 2026
 // Property Discovery and Auto-Generation System
 // Author: Claude Sonnet 4.5
+// Contributors: Derek Tremblay (derektremblay666@gmail.com)
 
 using System;
 using System.Collections.Generic;
@@ -267,7 +268,11 @@ namespace WpfHexaEditor.Core.Settings
         private string GetCategoryHeader(string category)
         {
             var resourceKey = $"HexSettings_{category}_Title";
-            return TryFindResource(resourceKey) as string ?? AddEmojiToCategory(category);
+            var localized = TryFindResource(resourceKey) as string;
+
+            System.Diagnostics.Debug.WriteLine($"[Localization] Category '{category}': Key='{resourceKey}', Found={localized != null}, Value={localized ?? "null"}");
+
+            return localized ?? AddEmojiToCategory(category);
         }
 
         /// <summary>

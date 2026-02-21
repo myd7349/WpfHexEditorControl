@@ -84,7 +84,8 @@
       "Bash(*.csv)",
       "Bash(*.json\":*)",
       "Bash(TBL from CSV, JSON, or TBLX\":*)",
-      "Bash(c:/Users/khens/source/repos/WpfHexEditorControl/add_tbl_translations.py:*)"
+      "Bash(c:/Users/khens/source/repos/WpfHexEditorControl/add_tbl_translations.py:*)",
+      "Bash(git config:*)"
     ]
   }
 }

@@ -1,6 +1,7 @@
 // Apache 2.0 - 2026
 // Property Discovery and Auto-Generation System
 // Author: Claude Sonnet 4.5
+// Contributors: Derek Tremblay (derektremblay666@gmail.com)
 
 using System;
 using System.ComponentModel;

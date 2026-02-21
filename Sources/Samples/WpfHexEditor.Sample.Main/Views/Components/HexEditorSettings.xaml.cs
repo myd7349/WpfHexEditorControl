@@ -1,3 +1,11 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// HexEditor V2 - Complete Settings Panel
+// All HexEditor properties exposed for testing
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.5
+//////////////////////////////////////////////
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -113,7 +121,9 @@ namespace WpfHexEditor.Sample.Main.Views.Components
         /// </summary>
         private void ReplaceColorPickerPlaceholders(DependencyObject root)
         {
+            System.Diagnostics.Debug.WriteLine($"[ColorPicker] Starting search from {root.GetType().Name}");
             var placeholders = FindColorPickerPlaceholders(root);
+            System.Diagnostics.Debug.WriteLine($"[ColorPicker] Found {placeholders.Count} placeholders");
 
             foreach (var (border, propertyName) in placeholders)
             {
@@ -161,10 +171,18 @@ namespace WpfHexEditor.Sample.Main.Views.Components
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
 
-                if (child is Border border && border.Tag is string tag && tag.StartsWith("ColorPicker:"))
+                // Debug: Check if it's a Border
+                if (child is Border border)
                 {
-                    string propertyName = tag.Substring("ColorPicker:".Length);
-                    result.Add((border, propertyName));
+                    var tag = border.Tag as string;
+                    System.Diagnostics.Debug.WriteLine($"  [ColorPicker] Found Border with Tag={tag ?? "null"}");
+
+                    if (tag != null && tag.StartsWith("ColorPicker:"))
+                    {
+                        string propertyName = tag.Substring("ColorPicker:".Length);
+                        System.Diagnostics.Debug.WriteLine($"  [ColorPicker] ✓ Found ColorPicker placeholder: {propertyName}");
+                        result.Add((border, propertyName));
+                    }
                 }
 
                 // Recurse
