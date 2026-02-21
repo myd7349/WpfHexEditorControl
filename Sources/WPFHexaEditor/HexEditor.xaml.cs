@@ -357,6 +357,13 @@ namespace WpfHexaEditor
                 _ => 1
             };
 
+            // CRITICAL: Snap current position to group boundary FIRST
+            // This ensures navigation always moves forward/backward correctly
+            if (stride > 1)
+            {
+                currentPos = (currentPos / stride) * stride;
+            }
+
             switch (e.Key)
             {
                 case System.Windows.Input.Key.Left:
