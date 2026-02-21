@@ -139,9 +139,11 @@ namespace WpfHexaEditor.Core.Settings
             {
                 // 1. Create control via Factory
                 var propertyControl = PropertyControlFactory.Create(metadata);
+                System.Diagnostics.Debug.WriteLine($"[PropertyControl] {metadata.PropertyName} ({metadata.PropertyType.Name}): Using {propertyControl.GetType().Name}");
 
                 // 2. Create the WPF control
                 var control = propertyControl.CreateControl();
+                System.Diagnostics.Debug.WriteLine($"  Created control: {control.GetType().Name}, Tag={control.Tag}");
 
                 // 3. Create binding
                 var binding = propertyControl.CreateBinding(metadata);
