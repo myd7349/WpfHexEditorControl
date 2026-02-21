@@ -873,9 +873,23 @@ namespace WpfHexaEditor.Controls
                 // Draw separator and ASCII (if visible)
                 if (ShowAscii)
                 {
-                    // CRITICAL FIX: Separator must ALWAYS be at the same X position
-                    // Calculate position as if line had full _bytesPerLine bytes (accounting for byte spacers)
+                    // Phase 6: Calculate separator position with dynamic cell widths
+                    // Must account for ByteSize (Bit8/16/32) to get correct total hex area width
                     double hexStartX = ShowOffset ? OffsetWidth : 0;
+
+                    // Get cell width and stride from first byte (all bytes in line have same ByteSize)
+                    double cellWidth = line.Bytes.Count > 0 ? line.Bytes[0].CellWidth : 24;
+                    int stride = line.Bytes.Count > 0 ? (line.Bytes[0].ByteSize switch
+                    {
+                        Core.ByteSizeType.Bit8 => 1,
+                        Core.ByteSizeType.Bit16 => 2,
+                        Core.ByteSizeType.Bit32 => 4,
+                        _ => 1
+                    }) : 1;
+
+                    // Calculate number of cells for full line (e.g., 16 bytes / 2 = 8 cells in Bit16)
+                    int numCells = (_bytesPerLine + stride - 1) / stride; // Ceiling division
+                    double totalHexWidth = numCells * (cellWidth + HexByteSpacing);
 
                     // Calculate number of byte spacers for a full line
                     int numSpacers = 0;
@@ -888,7 +902,7 @@ namespace WpfHexaEditor.Controls
                     double spacersWidth = numSpacers * (int)ByteSpacerWidthTickness;
 
                     // Separator is always at fixed position (full line width + margin)
-                    double separatorX = hexStartX + (_bytesPerLine * (HexByteWidth + HexByteSpacing)) + spacersWidth + 4;
+                    double separatorX = hexStartX + totalHexWidth + spacersWidth + 4;
                     dc.DrawRectangle(_separatorBrush, null, new Rect(separatorX, y, 1, _lineHeight));
 
                     // Draw ASCII bytes with byte spacers
