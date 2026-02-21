@@ -1024,50 +1024,34 @@ namespace WpfHexaEditor.Controls
                     dc.DrawRectangle(_separatorBrush, null, new Rect(separatorX, y, 1, _lineHeight));
 
                     // Draw ASCII bytes with byte spacers
-                    // CRITICAL: In multi-byte mode, must draw ALL individual bytes, not just groups
                     double asciiX = separatorX + SeparatorWidth;
-                    int absoluteBytePosition = 0; // Track absolute byte position for spacers
-
-                    for (int groupIndex = 0; groupIndex < line.Bytes.Count; groupIndex++)
+                    for (int i = 0; i < line.Bytes.Count; )
                     {
-                        var byteData = line.Bytes[groupIndex];
+                        // Calculate byte position from group index (matches hex area logic)
+                        int bytePosition = i * stride;
 
-                        // In multi-byte mode, iterate through each byte in the group
-                        int bytesInGroup = (byteData.ByteSize == Core.ByteSizeType.Bit8 || byteData.Values == null) ? 1 : byteData.Values.Length;
-
-                        for (int byteOffset = 0; byteOffset < bytesInGroup; byteOffset++)
+                        // Draw byte spacer before this byte if needed
+                        // Only draw separators if BytePerLine is large enough to have multiple groups
+                        if (_bytesPerLine >= (int)ByteGrouping &&
+                            (ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                             ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
+                            bytePosition % (int)ByteGrouping == 0 && i > 0)
                         {
-                            // Draw byte spacer before this byte if needed
-                            if (_bytesPerLine >= (int)ByteGrouping &&
-                                (ByteSpacerPositioning == ByteSpacerPosition.Both ||
-                                 ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
-                                absoluteBytePosition % (int)ByteGrouping == 0 && absoluteBytePosition > 0)
-                            {
-                                DrawByteSpacer(dc, asciiX, y);
-                                asciiX += (int)ByteSpacerWidthTickness;
-                            }
-
-                            // Draw individual byte from group
-                            byte byteValue = (byteData.ByteSize == Core.ByteSizeType.Bit8 || byteData.Values == null)
-                                ? byteData.Value
-                                : byteData.Values[byteOffset];
-
-                            char asciiChar = (byteValue >= 32 && byteValue <= 126) ? (char)byteValue : '.';
-
-                            // Draw the character
-                            var formattedText = new FormattedText(
-                                asciiChar.ToString(),
-                                System.Globalization.CultureInfo.CurrentCulture,
-                                FlowDirection.LeftToRight,
-                                _typeface,
-                                13,
-                                _asciiBrush,
-                                VisualTreeHelper.GetDpi(this).PixelsPerDip);
-
-                            dc.DrawText(formattedText, new Point(asciiX, y));
-                            asciiX += AsciiCharWidth;
-                            absoluteBytePosition++;
+                            DrawByteSpacer(dc, asciiX, y);
+                            asciiX += (int)ByteSpacerWidthTickness;
                         }
+
+                        var byteData = line.Bytes[i];
+
+                        // Get how many bytes this character consumes (1 for ASCII, 2 for DTE/MTE)
+                        int bytesConsumed = GetCharacterByteCount(line, i);
+
+                        // DrawAsciiByte now returns the actual width used (for TBL auto-sizing)
+                        double usedWidth = DrawAsciiByte(dc, line, i, asciiX, y);
+                        asciiX += usedWidth;
+
+                        // Skip the consumed bytes (for DTE/MTE, this skips the second byte)
+                        i += bytesConsumed;
                     }
                 }
 
@@ -1919,39 +1903,38 @@ namespace WpfHexaEditor.Controls
             double separatorX = hexX + 4; // Small margin before separator
             double asciiX = separatorX + SeparatorWidth;
 
-            // Iterate through bytes in ASCII area (matches drawing logic)
-            // CRITICAL: In multi-byte mode, must hit-test ALL individual bytes, not just groups
-            int absoluteBytePosition = 0;
-
-            for (int groupIndex = 0; groupIndex < line.Bytes.Count; groupIndex++)
+            // Iterate through bytes in ASCII area (spacers added in loop, not pre-calculated)
+            for (int i = 0; i < line.Bytes.Count; )
             {
-                var byteData = line.Bytes[groupIndex];
+                // Calculate byte position from group index (matches drawing logic)
+                int bytePosition = i * stride;
 
-                // In multi-byte mode, iterate through each byte in the group
-                int bytesInGroup = (byteData.ByteSize == Core.ByteSizeType.Bit8 || byteData.Values == null) ? 1 : byteData.Values.Length;
-
-                for (int byteOffset = 0; byteOffset < bytesInGroup; byteOffset++)
+                // Add ByteSpacer width if needed (matches drawing logic)
+                if (_bytesPerLine >= (int)ByteGrouping &&
+                    (ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                     ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
+                    bytePosition % (int)ByteGrouping == 0 && i > 0)
                 {
-                    // Add ByteSpacer width if needed (matches drawing logic)
-                    if (_bytesPerLine >= (int)ByteGrouping &&
-                        (ByteSpacerPositioning == ByteSpacerPosition.Both ||
-                         ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
-                        absoluteBytePosition % (int)ByteGrouping == 0 && absoluteBytePosition > 0)
-                    {
-                        asciiX += (int)ByteSpacerWidthTickness;
-                    }
-
-                    // Check if click is within this ASCII character's rect
-                    if (x >= asciiX && x < asciiX + AsciiCharWidth)
-                    {
-                        // Calculate virtual position for this specific byte
-                        long virtualPos = byteData.VirtualPos.Value + byteOffset;
-                        return (virtualPos, false);
-                    }
-
-                    asciiX += AsciiCharWidth;
-                    absoluteBytePosition++;
+                    asciiX += (int)ByteSpacerWidthTickness;
                 }
+
+                // Get how many bytes this character consumes (1 for ASCII, 2 for DTE/MTE)
+                int bytesConsumed = GetCharacterByteCount(line, i);
+
+                // CRITICAL: Calculate actual character width (accounts for TBL auto-sizing)
+                double charWidth = GetCharacterDisplayWidth(line, i);
+
+                // Check if click is within this ASCII character's rect (using actual width)
+                if (x >= asciiX && x < asciiX + charWidth)
+                {
+                    // Click is within this ASCII character's visual rect
+                    return (line.Bytes[i].VirtualPos.Value, false);
+                }
+
+                asciiX += charWidth;
+
+                // Skip the consumed bytes (for DTE/MTE, this skips the second byte)
+                i += bytesConsumed;
             }
 
             return (null, true);
