@@ -851,14 +851,30 @@ namespace WpfHexaEditor.Controls
 
                 // Draw hex bytes with byte spacers
                 double hexX = ShowOffset ? OffsetWidth : 0;
+
+                // Get stride for byte position calculation (in multi-byte mode, i represents groups, not bytes)
+                int stride = line.Bytes.Count > 0 ? (line.Bytes[0].ByteSize switch
+                {
+                    Core.ByteSizeType.Bit8 => 1,
+                    Core.ByteSizeType.Bit16 => 2,
+                    Core.ByteSizeType.Bit32 => 4,
+                    _ => 1
+                }) : 1;
+
                 for (int i = 0; i < line.Bytes.Count; i++)
                 {
+                    // Calculate byte position from group index (i) and stride
+                    // In Bit8: bytePos = i (1:1 mapping)
+                    // In Bit16: bytePos = i * 2 (each group represents 2 bytes)
+                    // In Bit32: bytePos = i * 4 (each group represents 4 bytes)
+                    int bytePosition = i * stride;
+
                     // Draw byte spacer before this byte if needed
                     // Only draw separators if BytePerLine is large enough to have multiple groups
                     if (_bytesPerLine >= (int)ByteGrouping &&
                         (ByteSpacerPositioning == ByteSpacerPosition.Both ||
                          ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel) &&
-                        i % (int)ByteGrouping == 0 && i > 0)
+                        bytePosition % (int)ByteGrouping == 0 && i > 0)
                     {
                         DrawByteSpacer(dc, hexX, y);
                         hexX += (int)ByteSpacerWidthTickness;
@@ -909,12 +925,15 @@ namespace WpfHexaEditor.Controls
                     double asciiX = separatorX + SeparatorWidth;
                     for (int i = 0; i < line.Bytes.Count; )
                     {
+                        // Calculate byte position from group index (matches hex area logic)
+                        int bytePosition = i * stride;
+
                         // Draw byte spacer before this byte if needed
                         // Only draw separators if BytePerLine is large enough to have multiple groups
                         if (_bytesPerLine >= (int)ByteGrouping &&
                             (ByteSpacerPositioning == ByteSpacerPosition.Both ||
                              ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
-                            i % (int)ByteGrouping == 0 && i > 0)
+                            bytePosition % (int)ByteGrouping == 0 && i > 0)
                         {
                             DrawByteSpacer(dc, asciiX, y);
                             asciiX += (int)ByteSpacerWidthTickness;
@@ -1736,13 +1755,25 @@ namespace WpfHexaEditor.Controls
             // Must account for ByteSpacers to get accurate byte position
             double hexX = hexStartX;
 
+            // Get stride for byte position calculation (matches drawing logic)
+            int stride = line.Bytes.Count > 0 ? (line.Bytes[0].ByteSize switch
+            {
+                Core.ByteSizeType.Bit8 => 1,
+                Core.ByteSizeType.Bit16 => 2,
+                Core.ByteSizeType.Bit32 => 4,
+                _ => 1
+            }) : 1;
+
             for (int i = 0; i < line.Bytes.Count; i++)
             {
+                // Calculate byte position from group index (matches drawing logic)
+                int bytePosition = i * stride;
+
                 // Add ByteSpacer width if needed (matches drawing logic)
                 if (_bytesPerLine >= (int)ByteGrouping &&
                     (ByteSpacerPositioning == ByteSpacerPosition.Both ||
                      ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel) &&
-                    i % (int)ByteGrouping == 0 && i > 0)
+                    bytePosition % (int)ByteGrouping == 0 && i > 0)
                 {
                     hexX += (int)ByteSpacerWidthTickness;
                 }
@@ -1768,11 +1799,14 @@ namespace WpfHexaEditor.Controls
             // Iterate through bytes in ASCII area (spacers added in loop, not pre-calculated)
             for (int i = 0; i < line.Bytes.Count; )
             {
+                // Calculate byte position from group index (matches drawing logic)
+                int bytePosition = i * stride;
+
                 // Add ByteSpacer width if needed (matches drawing logic)
                 if (_bytesPerLine >= (int)ByteGrouping &&
                     (ByteSpacerPositioning == ByteSpacerPosition.Both ||
                      ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
-                    i % (int)ByteGrouping == 0 && i > 0)
+                    bytePosition % (int)ByteGrouping == 0 && i > 0)
                 {
                     asciiX += (int)ByteSpacerWidthTickness;
                 }
