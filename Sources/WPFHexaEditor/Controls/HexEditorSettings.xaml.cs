@@ -43,12 +43,7 @@ namespace WpfHexaEditor.Controls
                 // Generate UI if control is already loaded
                 if (value != null && IsLoaded)
                 {
-                    System.Diagnostics.Debug.WriteLine("[HexEditorSettings] Control already loaded, regenerating UI immediately");
                     RegenerateUI();
-                }
-                else if (value != null)
-                {
-                    System.Diagnostics.Debug.WriteLine("[HexEditorSettings] Control not yet loaded, will regenerate UI in Loaded event");
                 }
             }
         }
@@ -64,10 +59,8 @@ namespace WpfHexaEditor.Controls
             // Generate UI when control is loaded
             Loaded += (s, e) =>
             {
-                System.Diagnostics.Debug.WriteLine("[HexEditorSettings] Loaded event fired");
                 if (HexEditorControl != null)
                 {
-                    System.Diagnostics.Debug.WriteLine("[HexEditorSettings] HexEditorControl exists, calling RegenerateUI from Loaded event");
                     RegenerateUI();
                 }
             };
@@ -81,14 +74,11 @@ namespace WpfHexaEditor.Controls
         {
             if (HexEditorControl == null)
             {
-                System.Diagnostics.Debug.WriteLine("[HexEditorSettings] RegenerateUI called but HexEditorControl is null");
                 return;
             }
 
             try
             {
-                System.Diagnostics.Debug.WriteLine("[HexEditorSettings] Generating settings panel...");
-
                 // Generate the complete panel
                 var panel = _generator.GenerateSettingsPanel();
                 panel.DataContext = HexEditorControl;
@@ -99,12 +89,10 @@ namespace WpfHexaEditor.Controls
 
                 // Connect button handlers
                 WireUpButtonHandlers(panel);
-
-                System.Diagnostics.Debug.WriteLine("[HexEditorSettings] UI generation complete");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[HexEditorSettings] Error: {ex.Message}");
+                // Silently ignore errors
             }
         }
 
@@ -121,19 +109,16 @@ namespace WpfHexaEditor.Controls
             if (saveButton != null)
             {
                 saveButton.Click += SaveStateButton_Click;
-                System.Diagnostics.Debug.WriteLine("  Wired SaveStateButton");
             }
 
             if (loadButton != null)
             {
                 loadButton.Click += LoadStateButton_Click;
-                System.Diagnostics.Debug.WriteLine("  Wired LoadStateButton");
             }
 
             if (resetButton != null)
             {
                 resetButton.Click += ResetButton_Click;
-                System.Diagnostics.Debug.WriteLine("  Wired ResetButton");
             }
         }
 
@@ -211,12 +196,9 @@ namespace WpfHexaEditor.Controls
                     "Settings Saved",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
-
-                System.Diagnostics.Debug.WriteLine($"[SaveState] Generated JSON ({json.Length} chars)");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SaveState] ERROR: {ex.Message}");
                 MessageBox.Show(
                     $"Failed to generate settings JSON:\n{ex.Message}",
                     "Error",
@@ -276,12 +258,11 @@ namespace WpfHexaEditor.Controls
                             if (propInfo != null && propInfo.CanWrite && metadata.DefaultValue != null)
                             {
                                 propInfo.SetValue(HexEditorControl, metadata.DefaultValue);
-                                System.Diagnostics.Debug.WriteLine($"  Reset {metadata.PropertyName} to {metadata.DefaultValue}");
                             }
                         }
                         catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"  Failed to reset {metadata.PropertyName}: {ex.Message}");
+                            // Silently ignore property reset errors
                         }
                     }
 

@@ -126,7 +126,10 @@
       "Bash(\"/c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/FormatDefinitions/Disk/BTRFS.json\":*)",
       "Bash(\"/c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/FormatDefinitions/Disk/ZFS.json\":*)",
       "Bash(\"/c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/FormatDefinitions/Disk/F2FS.json\":*)",
-      "Bash(\"/c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/FormatDefinitions/Fonts/EOT.json\":*)"
+      "Bash(\"/c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/FormatDefinitions/Fonts/EOT.json\":*)",
+      "Bash(do if grep -q \"name=\"\"$key\"\"\" \"Properties/Resources.resx\")",
+      "Bash(then sed -i \"/<data name=\"\"$key\"\"/,/<\\\\/data>/d\" \"Properties/Resources.resx\")",
+      "Bash(git status:*)"
     ]
   }
 }

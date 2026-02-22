@@ -195,13 +195,10 @@
     </Content>
   </ItemGroup>
 
-  <!-- Copy FormatDefinitions folder to output directory (400 formats available) -->
-  <!-- Formats are loaded from external directory for easier customization -->
+  <!-- Embed all FormatDefinitions JSON files as resources (400 formats built-in) -->
+  <!-- Embedded resources are compiled into the DLL for portability -->
   <ItemGroup>
-    <None Include="FormatDefinitions\**\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>FormatDefinitions\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </None>
+    <EmbeddedResource Include="FormatDefinitions\**\*.json" />
   </ItemGroup>
 
   <!-- Span<T> and System.Text.Json support for .NET Framework 4.8 -->

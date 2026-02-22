@@ -15,13 +15,9 @@ namespace WpfHexEditor.Sample.Main
             // DynamicResourceManager handles culture loading from settings and application-wide culture management
             DynamicResourceManager.Initialize();
 
-            System.Diagnostics.Debug.WriteLine($"[App.Constructor] DynamicResourceManager initialized with culture: {DynamicResourceManager.CurrentCulture.Name}");
-
             // Initialize theme system AFTER culture
             // ThemeManager handles theme loading from settings and application-wide theme management
             ThemeManager.Initialize();
-
-            System.Diagnostics.Debug.WriteLine($"[App.Constructor] ThemeManager initialized with theme: {ThemeManager.CurrentTheme}");
         }
 
         private void MigrateSettings()

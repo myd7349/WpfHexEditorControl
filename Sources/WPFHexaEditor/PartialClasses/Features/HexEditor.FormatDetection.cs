@@ -327,6 +327,15 @@ namespace WpfHexaEditor
             try
             {
                 var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+
+                // Debug: List ALL resource names to understand the naming pattern
+                var allResourceNames = assembly.GetManifestResourceNames();
+                System.Diagnostics.Debug.WriteLine($"═══ Total manifest resources: {allResourceNames.Length} ═══");
+                foreach (var name in allResourceNames.Take(10))
+                {
+                    System.Diagnostics.Debug.WriteLine($"  Resource: {name}");
+                }
+
                 var resourceNames = assembly.GetManifestResourceNames()
                     .Where(r => r.Contains("FormatDefinitions") && r.EndsWith(".json"))
                     .ToList();
