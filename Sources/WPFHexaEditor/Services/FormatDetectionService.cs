@@ -473,8 +473,30 @@ namespace WpfHexaEditor.Services
 
             // Programming
             if (lower.Contains("java") || lower.Contains("class") || lower.Contains("dex") ||
-                lower.Contains("bytecode"))
+                lower.Contains("bytecode") || lower.Contains("wasm") || lower.Contains("lua") ||
+                lower.Contains("python") || lower.Contains("script"))
                 return "Programming";
+
+            // Game
+            if (lower.Contains("game") || lower.Contains("unity") || lower.Contains("unreal") ||
+                lower.Contains("rom") || lower.Contains("pak") || lower.Contains("bsp") ||
+                lower.Contains("wad") || lower.Contains("minecraft"))
+                return "Game";
+
+            // CAD
+            if (lower.Contains("cad") || lower.Contains("dwg") || lower.Contains("dxf") ||
+                lower.Contains("step") || lower.Contains("iges") || lower.Contains("stl"))
+                return "CAD";
+
+            // Medical
+            if (lower.Contains("medical") || lower.Contains("dicom") || lower.Contains("nifti") ||
+                lower.Contains("imaging"))
+                return "Medical";
+
+            // Science
+            if (lower.Contains("science") || lower.Contains("fits") || lower.Contains("hdf") ||
+                lower.Contains("netcdf") || lower.Contains("matlab") || lower.Contains("scientific"))
+                return "Science";
 
             // Certificates
             if (lower.Contains("certificate") || lower.Contains("der") || lower.Contains("p12") ||
@@ -483,7 +505,7 @@ namespace WpfHexaEditor.Services
 
             // System
             if (lower.Contains("system") || lower.Contains("dmp") || lower.Contains("reg") ||
-                lower.Contains("dump") || lower.Contains("registry"))
+                lower.Contains("dump") || lower.Contains("registry") || lower.Contains("evt"))
                 return "System";
 
             // Crypto
@@ -492,7 +514,8 @@ namespace WpfHexaEditor.Services
                 return "Crypto";
 
             // Data
-            if (lower.Contains("json") || lower.Contains("data"))
+            if (lower.Contains("json") || lower.Contains("data") || lower.Contains("yaml") ||
+                lower.Contains("toml") || lower.Contains("csv"))
                 return "Data";
 
             return "Other";
