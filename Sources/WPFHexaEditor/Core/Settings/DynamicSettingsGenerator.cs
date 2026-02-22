@@ -408,9 +408,9 @@ namespace WpfHexaEditor.Core.Settings
             }
 
             // ColorPicker (Color properties)
-            if (control is ColorPicker.ColorPicker colorPicker)
+            if (control is ColorPicker colorPicker)
             {
-                colorPicker.SetBinding(ColorPicker.ColorPicker.SelectedColorProperty, binding);
+                colorPicker.SetBinding(ColorPicker.SelectedColorProperty, binding);
                 return CreateControlWithLabel(propertyControl.CreateLabel(metadata), colorPicker);
             }
 

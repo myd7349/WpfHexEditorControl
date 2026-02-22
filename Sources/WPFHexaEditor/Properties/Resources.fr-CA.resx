@@ -870,12 +870,6 @@
     <value>Couleurs récentes</value>
     <comment>ColorPicker - Section RecentColors</comment>
   </data>
-<data name="HexSettings_Header" xml:space="preserve">
-    <value>PARAMÈTRES DE L'ÉDITEUR HEXADÉCIMAL</value>
-  </data>
-<data name="HexSettings_Display_Header" xml:space="preserve">
-    <value>📺 Options d'affichage</value>
-  </data>
 <data name="HexSettings_Display_LineNumbers" xml:space="preserve">
     <value>Afficher numéros de ligne (temporaire)</value>
   </data>
@@ -890,9 +884,6 @@
   </data>
 <data name="HexSettings_Display_ZoomScale" xml:space="preserve">
     <value>Échelle de zoom :</value>
-  </data>
-<data name="HexSettings_Editing_Header" xml:space="preserve">
-    <value>✏️ Options d'édition</value>
   </data>
 <data name="HexSettings_Editing_ReadOnly" xml:space="preserve">
     <value>Mode lecture seule</value>
@@ -921,9 +912,6 @@
 <data name="HexSettings_Editing_CaretMode" xml:space="preserve">
     <value>Mode curseur :</value>
   </data>
-<data name="HexSettings_Clipboard_Header" xml:space="preserve">
-    <value>📋 Options presse-papiers</value>
-  </data>
 <data name="HexSettings_Clipboard_DefaultCopyMode" xml:space="preserve">
     <value>Mode de copie par défaut :</value>
   </data>
@@ -945,9 +933,6 @@
 <data name="HexSettings_Clipboard_JavaCode" xml:space="preserve">
     <value>Code Java</value>
   </data>
-<data name="HexSettings_DragDrop_Header" xml:space="preserve">
-    <value>📎 Options glisser-déposer</value>
-  </data>
 <data name="HexSettings_DragDrop_FileDrop" xml:space="preserve">
     <value>Autoriser dépôt de fichier</value>
   </data>
@@ -956,9 +941,6 @@
   </data>
 <data name="HexSettings_DragDrop_TextDrop" xml:space="preserve">
     <value>Autoriser dépôt de texte</value>
-  </data>
-<data name="HexSettings_Highlight_Header" xml:space="preserve">
-    <value>🎨 Surlignage &amp; Sélection</value>
   </data>
 <data name="HexSettings_Highlight_AutoHighlight" xml:space="preserve">
     <value>Surligner automatiquement l'octet sélectionné</value>
@@ -972,9 +954,6 @@
 <data name="HexSettings_Highlight_Color" xml:space="preserve">
     <value>Couleur de surlignage automatique :</value>
   </data>
-<data name="HexSettings_Search_Header" xml:space="preserve">
-    <value>🔍 Options de recherche</value>
-  </data>
 <data name="HexSettings_Search_ParallelSearch" xml:space="preserve">
     <value>Activer recherche parallèle</value>
   </data>
@@ -987,14 +966,8 @@
 <data name="HexSettings_Search_ResultLimit" xml:space="preserve">
     <value>Limite de résultats de recherche :</value>
   </data>
-<data name="HexSettings_Statistics_Header" xml:space="preserve">
-    <value>📊 Statistiques</value>
-  </data>
 <data name="HexSettings_Statistics_ByteCount" xml:space="preserve">
     <value>Autoriser compte d'octets</value>
-  </data>
-<data name="HexSettings_Advanced_Header" xml:space="preserve">
-    <value>⚙️ Options avancées</value>
   </data>
 <data name="HexSettings_Advanced_ByteShift" xml:space="preserve">
     <value>Décalage d'octet à gauche :</value>
@@ -1004,9 +977,6 @@
   </data>
 <data name="HexSettings_Advanced_LoadState" xml:space="preserve">
     <value>Charger l'état enregistré</value>
-  </data>
-<data name="HexSettings_Button_Reset" xml:space="preserve">
-    <value>🔄 Tout réinitialiser par défaut</value>
   </data>
 <data name="HexSettings_Title" xml:space="preserve">
     <value>PARAMÈTRES DE L'ÉDITEUR HEX</value>

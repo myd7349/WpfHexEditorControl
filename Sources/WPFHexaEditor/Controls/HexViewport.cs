@@ -1825,65 +1825,38 @@ namespace WpfHexaEditor.Controls
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"[CLICK] === OnMouseDown START ===");
                 base.OnMouseDown(e);
                 Focus();
 
                 // Double-check the click position to ensure we're not clicking on a ByteSpacer or empty area
                 var mousePos = e.GetPosition(this);
-                System.Diagnostics.Debug.WriteLine($"[CLICK] Mouse position: {mousePos}");
 
                 var hitTestResult = HitTestByteWithArea(mousePos);
-                System.Diagnostics.Debug.WriteLine($"[CLICK] HitTest completed");
-
-                // DEBUG: Log click position
-                System.Diagnostics.Debug.WriteLine($"[CLICK] Position.HasValue = {hitTestResult.Position.HasValue}");
-                System.Diagnostics.Debug.WriteLine($"[CLICK] Position: {(hitTestResult.Position.HasValue ? $"0x{hitTestResult.Position.Value:X}" : "NULL")}, IsHex: {hitTestResult.IsHexArea}");
 
                 // Only process click if we have a valid byte position (not on ByteSpacer or empty area)
-                System.Diagnostics.Debug.WriteLine($"[CLICK] About to check if condition...");
                 if (hitTestResult.Position.HasValue)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[CLICK] INSIDE IF BLOCK!");
                     long clickedPosition = hitTestResult.Position.Value;
-
-                    System.Diagnostics.Debug.WriteLine($"[CLICK] Processing click at 0x{clickedPosition:X}");
 
                     // Handle double-click for auto-select same bytes (V1 compatible)
                     if (e.ClickCount == 2 && e.ChangedButton == MouseButton.Left)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[CLICK] Double-click detected");
                         ByteDoubleClicked?.Invoke(this, clickedPosition);
                     }
                     else if (e.ChangedButton == MouseButton.Left)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[CLICK] Single left-click detected");
                         // Single LEFT click only - start selection drag
                         // Right-click is handled separately in OnMouseRightButtonDown to preserve selection
                         _isMouseDown = true;
                         _dragStartPosition = clickedPosition;
                         CaptureMouse();
 
-                        System.Diagnostics.Debug.WriteLine($"[CLICK] About to raise ByteClicked event for 0x{clickedPosition:X}");
                         ByteClicked?.Invoke(this, clickedPosition);
-                        System.Diagnostics.Debug.WriteLine($"[CLICK] ByteClicked event raised successfully");
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[CLICK] Not left button, button was: {e.ChangedButton}");
                     }
                 }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"[CLICK] Position.HasValue is FALSE - no byte clicked");
-                }
-
-                System.Diagnostics.Debug.WriteLine($"[CLICK] === OnMouseDown END ===");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[CLICK] EXCEPTION: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"[CLICK] Stack trace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -1936,8 +1909,6 @@ namespace WpfHexaEditor.Controls
                 _ => 1
             }) : 1;
 
-            System.Diagnostics.Debug.WriteLine($"[HitTest] MouseX={x:F1}, LineIndex={lineIndex}, Stride={stride}, ByteCount={line.Bytes.Count}");
-
             for (int i = 0; i < line.Bytes.Count; i++)
             {
                 // Calculate byte position from group index (matches drawing logic)
@@ -1960,7 +1931,6 @@ namespace WpfHexaEditor.Controls
                 if (x >= hexX && x < hexX + byteHitWidth)
                 {
                     // Click is within this byte's area (including spacing after it)
-                    System.Diagnostics.Debug.WriteLine($"[HitTest] HIT! i={i}, VirtualPos={byteData.VirtualPos.Value}, hexX={hexX:F1}, width={byteHitWidth:F1}");
                     return (byteData.VirtualPos.Value, true);
                 }
 
@@ -2017,12 +1987,6 @@ namespace WpfHexaEditor.Controls
             var hitTestResult = HitTestByteWithArea(mousePos);
             var position = hitTestResult.Position;
             var isHexArea = hitTestResult.IsHexArea;
-
-            // DEBUG: Log mouseover position
-            if (position.HasValue)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MOUSEOVER] Position: 0x{position.Value:X}, IsHex: {isHexArea}");
-            }
 
             // Always show standard arrow cursor in editing area (user preference)
             this.Cursor = Cursors.Arrow;

@@ -72,6 +72,7 @@ namespace WpfHexaEditor
         private VariableContext _variableContext;
         private ExpressionEvaluator _expressionEvaluator;
         private readonly FormattedValueCache _formattedValueCache = new FormattedValueCache();
+        private BufferedFileReader _bufferedReader;
 
         // Performance tracking
         private int _parsedFieldCount;
@@ -301,6 +302,10 @@ namespace WpfHexaEditor
                     _parsedFieldCount = 0; // Reset performance counter
                     _formattedValueCache.Clear(); // Clear cache for new parsing session
 
+                    // Initialize buffered reader for efficient file access
+                    _bufferedReader?.Dispose();
+                    _bufferedReader = new BufferedFileReader(Stream, 65536); // 64KB buffer
+
                     // Load format-defined variables
                     if (_detectedFormat.Variables != null)
                     {
@@ -325,6 +330,12 @@ namespace WpfHexaEditor
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error parsing fields: {ex.Message}");
+            }
+            finally
+            {
+                // Cleanup buffered reader after parsing
+                _bufferedReader?.Dispose();
+                _bufferedReader = null;
             }
         }
 
@@ -605,7 +616,7 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Read the raw value from the file for a given field
+        /// Read the raw value from the file for a given field (using buffered reader for performance)
         /// </summary>
         private void ReadFieldValue(ParsedFieldViewModel field)
         {
@@ -614,12 +625,25 @@ namespace WpfHexaEditor
 
             try
             {
-                // Read bytes from stream
-                var buffer = new byte[field.Length];
-                Stream.Position = field.Offset;
-                int bytesRead = Stream.Read(buffer, 0, field.Length);
+                // Use buffered reader if available (much faster for sequential reads)
+                byte[] buffer;
+                if (_bufferedReader != null)
+                {
+                    buffer = _bufferedReader.ReadBytes(field.Offset, field.Length);
+                    if (buffer == null || buffer.Length != field.Length)
+                        return; // Read failed
+                }
+                else
+                {
+                    // Fallback to direct stream read
+                    buffer = new byte[field.Length];
+                    Stream.Position = field.Offset;
+                    int bytesRead = Stream.Read(buffer, 0, field.Length);
+                    if (bytesRead != field.Length)
+                        return; // Read failed
+                }
 
-                if (bytesRead == field.Length)
+                if (buffer.Length == field.Length)
                 {
                     // Use FieldValueReader to parse the value
                     bool bigEndian = FieldValueReader.ShouldUseBigEndian(_detectedFormat?.FormatName);
