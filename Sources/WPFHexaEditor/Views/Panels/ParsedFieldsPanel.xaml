@@ -8,6 +8,9 @@
              Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
 
     <UserControl.Resources>
+        <!-- Converter -->
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+
         <!-- Style for field items -->
         <Style x:Key="FieldItemStyle" TargetType="ListBoxItem">
             <Setter Property="Padding" Value="8,4"/>

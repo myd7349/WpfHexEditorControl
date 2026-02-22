@@ -44,6 +44,22 @@ namespace WpfHexaEditor
             }
         }
 
+        /// <summary>
+        /// Enable or disable auto-refresh of parsed fields when bytes are modified
+        /// </summary>
+        public static readonly DependencyProperty AutoRefreshParsedFieldsProperty =
+            DependencyProperty.Register(
+                nameof(AutoRefreshParsedFields),
+                typeof(bool),
+                typeof(HexEditor),
+                new PropertyMetadata(true));
+
+        public bool AutoRefreshParsedFields
+        {
+            get => (bool)GetValue(AutoRefreshParsedFieldsProperty);
+            set => SetValue(AutoRefreshParsedFieldsProperty, value);
+        }
+
         #endregion
 
         #region Fields
@@ -60,6 +76,11 @@ namespace WpfHexaEditor
         private int _parsedFieldCount;
         private const int MaxFieldsLimit = 10000; // Safety limit to prevent UI freeze
         private const int DepthLimit = 10; // Maximum recursion depth
+
+        // Auto-refresh throttling
+        private System.Windows.Threading.DispatcherTimer _autoRefreshTimer;
+        private bool _pendingAutoRefresh;
+        private const int AutoRefreshDelayMs = 500; // Delay before auto-refresh triggers
 
         #endregion
 
@@ -78,13 +99,24 @@ namespace WpfHexaEditor
             _variableContext = new VariableContext();
             _expressionEvaluator = new ExpressionEvaluator(_variableContext);
 
+            // Initialize auto-refresh timer (throttle mechanism)
+            _autoRefreshTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(AutoRefreshDelayMs)
+            };
+            _autoRefreshTimer.Tick += AutoRefreshTimer_Tick;
+
             // Wire up events
             if (ParsedFieldsPanel != null)
             {
                 ParsedFieldsPanel.FieldSelected += ParsedFieldsPanel_FieldSelected;
                 ParsedFieldsPanel.RefreshRequested += ParsedFieldsPanel_RefreshRequested;
                 ParsedFieldsPanel.FormatterChanged += ParsedFieldsPanel_FormatterChanged;
+                ParsedFieldsPanel.FieldValueEdited += ParsedFieldsPanel_FieldValueEdited;
             }
+
+            // Subscribe to byte modification events for auto-refresh
+            ByteModified += HexEditor_ByteModified;
         }
 
         private void UpdateParsedFieldsPanelState(Visibility visibility)
@@ -166,6 +198,80 @@ namespace WpfHexaEditor
                 {
                     FormatFieldValue(field);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Handle field value edited in the parsed fields panel
+        /// Write the new value back to the file
+        /// </summary>
+        private void ParsedFieldsPanel_FieldValueEdited(object sender, FieldEditedEventArgs e)
+        {
+            if (e == null || e.Field == null || e.NewBytes == null || Stream == null)
+                return;
+
+            try
+            {
+                // Verify length matches
+                if (e.NewBytes.Length != e.Field.Length)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Byte length mismatch. Expected {e.Field.Length} bytes, got {e.NewBytes.Length} bytes.",
+                        "Edit Error",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Error);
+                    return;
+                }
+
+                // Write bytes to stream
+                Stream.Position = e.Field.Offset;
+                Stream.Write(e.NewBytes, 0, e.NewBytes.Length);
+                Stream.Flush();
+
+                // Refresh view to show changes
+                RefreshView();
+
+                // Auto-refresh will trigger from ByteModified event
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Error writing value to file: {ex.Message}",
+                    "Edit Error",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Handle byte modification event for auto-refresh
+        /// Uses throttling to avoid excessive refreshes
+        /// </summary>
+        private void HexEditor_ByteModified(object sender, Events.ByteModifiedEventArgs e)
+        {
+            if (!AutoRefreshParsedFields || _detectedFormat == null)
+                return;
+
+            // Mark that a refresh is pending
+            _pendingAutoRefresh = true;
+
+            // Restart the timer (throttle)
+            _autoRefreshTimer.Stop();
+            _autoRefreshTimer.Start();
+        }
+
+        /// <summary>
+        /// Timer tick for auto-refresh throttling
+        /// Triggers the actual refresh after the delay period
+        /// </summary>
+        private void AutoRefreshTimer_Tick(object sender, EventArgs e)
+        {
+            _autoRefreshTimer.Stop();
+
+            if (_pendingAutoRefresh && AutoRefreshParsedFields)
+            {
+                _pendingAutoRefresh = false;
+                ParseFieldsAsync();
             }
         }
 
