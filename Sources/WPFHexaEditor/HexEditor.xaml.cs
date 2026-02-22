@@ -93,6 +93,9 @@ namespace WpfHexaEditor
             // Initialize format detection system
             InitializeFormatDetection();
 
+            // Initialize parsed fields panel (Issue #111)
+            InitializeParsedFieldsPanel();
+
             // Initialize auto-scroll timer
             _autoScrollTimer = new DispatcherTimer
             {
@@ -140,6 +143,10 @@ namespace WpfHexaEditor
 
                 // Initialize mouse hover brush
                 HexViewport.MouseHoverBrush = new SolidColorBrush(MouseOverColor);
+
+                // Initialize data visual format settings
+                HexViewport.DataStringVisual = DataStringVisual;
+                HexViewport.OffSetStringVisual = OffSetStringVisual;
 
                 // Bug 4: Subscribe to FontSize/FontFamily changes to update dynamic CellWidth cache
                 var fontSizeDescriptor = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(
@@ -2675,14 +2682,40 @@ namespace WpfHexaEditor
         /// </summary>
         public static readonly DependencyProperty DataStringVisualProperty =
             DependencyProperty.Register(nameof(DataStringVisual), typeof(DataVisualType), typeof(HexEditor),
-                new PropertyMetadata(DataVisualType.Hexadecimal));
+                new PropertyMetadata(DataVisualType.Hexadecimal, OnDataStringVisualChanged));
+
+        private static void OnDataStringVisualChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is DataVisualType visualType)
+            {
+                // Update HexViewport's DataStringVisual property
+                if (editor.HexViewport != null)
+                {
+                    editor.HexViewport.DataStringVisual = visualType;
+                    editor.HexViewport.InvalidateVisual();
+                }
+            }
+        }
 
         /// <summary>
         /// OffSetStringVisual DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty OffSetStringVisualProperty =
             DependencyProperty.Register(nameof(OffSetStringVisual), typeof(DataVisualType), typeof(HexEditor),
-                new PropertyMetadata(DataVisualType.Hexadecimal));
+                new PropertyMetadata(DataVisualType.Hexadecimal, OnOffSetStringVisualChanged));
+
+        private static void OnOffSetStringVisualChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is DataVisualType visualType)
+            {
+                // Update HexViewport's OffSetStringVisual property
+                if (editor.HexViewport != null)
+                {
+                    editor.HexViewport.OffSetStringVisual = visualType;
+                    editor.HexViewport.InvalidateVisual();
+                }
+            }
+        }
 
         /// <summary>
         /// ByteOrder DependencyProperty for XAML binding

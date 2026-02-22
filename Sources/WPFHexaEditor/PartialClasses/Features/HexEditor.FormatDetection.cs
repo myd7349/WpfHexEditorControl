@@ -327,6 +327,12 @@ namespace WpfHexaEditor
                         AddCustomBackgroundBlock(block);
                     }
 
+                    // Store the detected format for parsed fields panel
+                    _detectedFormat = result.Format;
+
+                    // Parse fields for the parsed fields panel (Issue #111)
+                    RefreshParsedFields();
+
                     // Raise event
                     FormatDetected?.Invoke(this, new FormatDetectedEventArgs
                     {
@@ -406,6 +412,12 @@ namespace WpfHexaEditor
                     {
                         AddCustomBackgroundBlock(block);
                     }
+
+                    // Store the detected format for parsed fields panel
+                    _detectedFormat = format;
+
+                    // Parse fields for the parsed fields panel (Issue #111)
+                    RefreshParsedFields();
 
                     return true;
                 }

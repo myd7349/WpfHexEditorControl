@@ -131,7 +131,7 @@
                 Padding="12,8"
                 BorderThickness="0,0,0,1"
                 BorderBrush="#E0E0E0"
-                Visibility="{Binding FormatInfo.IsDetected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                Visibility="{Binding FormatInfo.IsDetected, Converter={StaticResource BoolToVisibilityConverter}}">
             <StackPanel>
                 <TextBlock FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4">
                     <Run Text="Format:"/>
