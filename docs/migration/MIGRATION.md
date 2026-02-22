@@ -136,16 +136,26 @@ While your code doesn't change, here's what's better in V2:
 
 ### Performance Improvements
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│  🎨 Rendering         99% faster (5-10x)                       │
-│  🔍 Search            10-100x faster (LRU + Parallel + SIMD)   │
-│  💾 Memory            80-90% reduction (Span<T> + ArrayPool)   │
-│  📍 Position Mapping  100-5,882x faster (true binary search)   │
-│  ⚡ UI Responsiveness 100% (async operations)                  │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Perf["⚡ Performance Gains"]
+        Render["🎨 Rendering<br/>99% faster (5-10x)"]
+        Search["🔍 Search<br/>10-100x faster<br/>(LRU + Parallel + SIMD)"]
+        Memory["💾 Memory<br/>80-90% reduction<br/>(Span<T> + ArrayPool)"]
+        Position["📍 Position Mapping<br/>100-5,882x faster<br/>(true binary search)"]
+        UI["⚡ UI Responsiveness<br/>100% async operations"]
+    end
 
-Combined: Up to 6,000x faster for large edited files!
+    Summary["🚀 Combined Result:<br/>Up to 6,000x faster<br/>for large edited files!"]
+
+    Perf --> Summary
+
+    style Render fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
+    style Search fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style Memory fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style Position fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style UI fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style Summary fill:#fff9c4,stroke:#f57f17,stroke-width:4px
 ```
 
 ### Critical Bug Fixes
