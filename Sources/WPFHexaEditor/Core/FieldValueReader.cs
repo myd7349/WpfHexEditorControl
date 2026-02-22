@@ -167,12 +167,32 @@ namespace WpfHexaEditor.Core
 
             // Check for null terminator
             int actualLength = length;
-            for (int i = 0; i < length; i++)
+
+            // For UTF-16 encodings, check for double-null (0x00 0x00)
+            bool isUtf16 = encoding is UnicodeEncoding;
+
+            if (isUtf16)
             {
-                if (data[offset + i] == 0)
+                // UTF-16: check for 0x00 0x00 (null character in UTF-16)
+                for (int i = 0; i < length - 1; i += 2)
                 {
-                    actualLength = i;
-                    break;
+                    if (data[offset + i] == 0 && data[offset + i + 1] == 0)
+                    {
+                        actualLength = i;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // ASCII/UTF-8: check for single 0x00
+                for (int i = 0; i < length; i++)
+                {
+                    if (data[offset + i] == 0)
+                    {
+                        actualLength = i;
+                        break;
+                    }
                 }
             }
 
@@ -373,7 +393,9 @@ namespace WpfHexaEditor.Core
             var upper = formatName.ToUpperInvariant();
 
             // Network formats typically use big-endian (network byte order)
-            if (upper.Contains("NETWORK") || upper.Contains("TCP") || upper.Contains("IP") ||
+            // Use word boundaries to avoid false matches (e.g., ZIP containing "IP")
+            if (upper.Contains("NETWORK") || upper.Contains("TCP") ||
+                upper.Contains(" IP ") || upper.StartsWith("IP ") || upper.EndsWith(" IP") ||
                 upper.Contains("PCAP"))
                 return true;
 
