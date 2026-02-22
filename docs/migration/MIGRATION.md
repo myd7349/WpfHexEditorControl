@@ -1,6 +1,18 @@
 # 🔄 Migrating from V1 to V2
 
-**TL;DR:** V2 is 100% backward compatible. Your code works without changes. Just update the NuGet package and enjoy the performance gains!
+---
+> **📚 HISTORICAL DOCUMENT**
+>
+> This migration guide describes the V1→V2 transition completed in February 2026.
+> As of **v2.6.0**, V1 Legacy code has been **completely removed** (17,093 LOC deleted).
+>
+> **Current Status:** All projects use V2 architecture (`HexEditor` control).
+>
+> **For new users:** Simply use `HexEditor` - no migration needed!
+> This document is kept for historical reference and to help users understand the evolution.
+---
+
+**Historical TL;DR:** V2 was 100% backward compatible during the migration period. Code worked without changes.
 
 ---
 

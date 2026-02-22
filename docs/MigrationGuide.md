@@ -1,8 +1,20 @@
 # Migration Guide: V1 → V2
 
+---
+> **📚 HISTORICAL DOCUMENT**
+>
+> This document describes the V1→V2 migration that was completed in February 2026.
+> As of **v2.6.0 (Feb 2026)**, the V1 Legacy code has been **completely removed** (17,093 LOC deleted).
+>
+> **Current Status:** All projects now use the V2 architecture under the name `HexEditor`.
+>
+> **Purpose:** This document is kept for historical reference and to help understand the project's evolution.
+> If you're starting a new project, simply use `HexEditor` - no migration needed!
+---
+
 ## Overview
 
-HexEditorV2 maintains 100% backward compatibility with V1 while providing modern architecture and significant performance improvements. This guide helps you migrate existing V1 applications to leverage V2 features.
+HexEditorV2 maintained 100% backward compatibility with V1 while providing modern architecture and significant performance improvements. This guide documented the migration process for existing V1 applications.
 
 ## Quick Summary
 

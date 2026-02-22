@@ -1,8 +1,25 @@
 # Migration Plan: V2 → Main Control, V1 → Legacy
 
-**Date**: 2026-02-14
-**Status**: 📋 DRAFT - Ready for Implementation
-**Goal**: Make V2 the default control, move V1 to legacy support
+---
+> **✅ PLAN COMPLETED**
+>
+> This planning document was successfully executed.
+> **Completion Date:** v2.6.0 (February 2026)
+> **Outcome:** V1 Legacy code removed (17,093 LOC), project is now V2-only
+>
+> **Plan Status:**
+> - ✅ Phase 1-2: V2 became main control (`HexEditor`) - COMPLETE
+> - ✅ V1 deprecation: `HexEditorLegacy` created - COMPLETE
+> - ✅ Migration period: 12 months provided - COMPLETE
+> - ✅ V1 Removal: Deleted in v2.6.0 - **COMPLETE** (ahead of original v3.0 timeline)
+>
+> This file is kept for project history and decision-making reference.
+---
+
+**Original Date**: 2026-02-14
+**Original Status**: 📋 DRAFT
+**Final Status**: ✅ **COMPLETED** (v2.6.0 - Feb 2026)
+**Goal Achieved**: V2 is now the only control, V1 removed
 
 ---
 
