@@ -40,6 +40,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
@@ -57,8 +58,17 @@
                            VerticalAlignment="Center"
                            ToolTip="{Binding ValueType}"/>
 
+                <!-- Bookmark indicator -->
+                <TextBlock Grid.Row="0" Grid.RowSpan="3" Grid.Column="2"
+                           Text="⭐"
+                           FontSize="12"
+                           Margin="0,0,6,0"
+                           VerticalAlignment="Center"
+                           ToolTip="Bookmarked"
+                           Visibility="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
                 <!-- Field name -->
-                <TextBlock Grid.Row="0" Grid.Column="2"
+                <TextBlock Grid.Row="0" Grid.Column="3"
                            Text="{Binding Name}"
                            FontWeight="SemiBold"
                            FontSize="13"
@@ -67,7 +77,7 @@
                            ToolTip="{Binding DetailedTooltip}"/>
 
                 <!-- Field value -->
-                <Grid Grid.Row="1" Grid.Column="2" Margin="0,2,0,0">
+                <Grid Grid.Row="1" Grid.Column="3" Margin="0,2,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -88,7 +98,7 @@
                 </Grid>
 
                 <!-- Field details -->
-                <TextBlock Grid.Row="2" Grid.Column="2"
+                <TextBlock Grid.Row="2" Grid.Column="3"
                            Margin="0,2,0,0"
                            FontSize="10"
                            Foreground="#999999">
@@ -127,6 +137,14 @@
                            VerticalAlignment="Center"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <ToggleButton x:Name="ShowBookmarksButton"
+                                  Content="⭐"
+                                  Width="30" Height="30"
+                                  Margin="4,0,0,0"
+                                  ToolTip="Show bookmarked fields only"
+                                  Checked="ShowBookmarksButton_Checked"
+                                  Unchecked="ShowBookmarksButton_Unchecked"
+                                  Style="{DynamicResource {x:Static ToolBar.ToggleButtonStyleKey}}"/>
                     <Button x:Name="RefreshButton"
                             Content="🔄"
                             Width="30" Height="30"
@@ -244,6 +262,21 @@
                             <TextBlock Text="✏️" FontSize="14"/>
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem Header="Toggle Bookmark" Click="ToggleBookmark_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="⭐" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Copy Offset" Click="CopyOffset_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="📌" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Jump to Offset..." Click="JumpToOffset_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="🔍" FontSize="14"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <Separator/>
                     <MenuItem Header="Copy Value" Click="CopyValue_Click">
                         <MenuItem.Icon>
@@ -278,6 +311,16 @@
                         <MenuItem Header="As XML" Click="ExportAsXml_Click">
                             <MenuItem.Icon>
                                 <TextBlock Text="📋" FontSize="12"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="As HTML" Click="ExportAsHtml_Click">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🌐" FontSize="12"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="As Markdown" Click="ExportAsMarkdown_Click">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📝" FontSize="12"/>
                             </MenuItem.Icon>
                         </MenuItem>
                     </MenuItem>

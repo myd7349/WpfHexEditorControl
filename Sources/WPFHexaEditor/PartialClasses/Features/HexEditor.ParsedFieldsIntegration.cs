@@ -187,7 +187,7 @@ namespace WpfHexaEditor
                 "hex" => new HexValueFormatter(),
                 "decimal" => new DecimalValueFormatter(),
                 "string" => new StringValueFormatter(),
-                "mixed" => new HexValueFormatter(), // TODO: Implement mixed formatter
+                "mixed" => new MixedValueFormatter(),
                 _ => _currentFormatter
             };
 

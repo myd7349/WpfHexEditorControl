@@ -30,6 +30,7 @@ namespace WpfHexaEditor.ViewModels
         private string _fieldIcon;
         private bool _isEditable;
         private string _editableValue;
+        private bool _isBookmarked;
 
         /// <summary>
         /// Name of the field (e.g., "Image Width", "File Signature")
@@ -233,6 +234,22 @@ namespace WpfHexaEditor.ViewModels
                     _editableValue = value;
                     OnPropertyChanged();
                     OnValueEdited();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Whether this field is bookmarked/favorited by the user
+        /// </summary>
+        public bool IsBookmarked
+        {
+            get => _isBookmarked;
+            set
+            {
+                if (_isBookmarked != value)
+                {
+                    _isBookmarked = value;
+                    OnPropertyChanged();
                 }
             }
         }
