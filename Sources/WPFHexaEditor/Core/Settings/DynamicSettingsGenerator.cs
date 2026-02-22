@@ -447,11 +447,13 @@ namespace WpfHexaEditor.Core.Settings
                 "StatusBar" => "📊 Status Bar",
                 "Display" => "🖥️ Display",
                 "Colors" => "🌈 Colors",
+                "ScrollMarkers" => "📍 Scroll Markers",
                 "Behavior" => "⚙️ Behavior",
                 "Data" => "💾 Data",
                 "Visual" => "👁️ Visual",
                 "Keyboard" => "⌨️ Keyboard & Mouse",
                 "TBL" => "📝 Character Table",
+                "BarChart" => "📈 Bar Chart",
                 _ => category
             };
         }

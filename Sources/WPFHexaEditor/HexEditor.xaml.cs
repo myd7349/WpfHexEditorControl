@@ -90,6 +90,9 @@ namespace WpfHexaEditor
             // Initialize custom background blocks system
             InitializeCustomBackgroundBlocks();
 
+            // Initialize format detection system
+            InitializeFormatDetection();
+
             // Initialize auto-scroll timer
             _autoScrollTimer = new DispatcherTimer
             {
@@ -985,7 +988,8 @@ namespace WpfHexaEditor
         /// <summary>
         /// Bar chart color - DependencyProperty
         /// </summary>
-        [Category("Colors.Charts")]
+        [Category("BarChart")]
+        [DisplayName("Bar Color")]
         public System.Windows.Media.Color BarChartColor
         {
             get => (System.Windows.Media.Color)GetValue(BarChartColorProperty);
@@ -995,7 +999,8 @@ namespace WpfHexaEditor
         /// <summary>
         /// Inline bar chart color (for ASCII panel bar visualization) - DependencyProperty
         /// </summary>
-        [Category("Colors.Charts")]
+        [Category("BarChart")]
+        [DisplayName("Inline Bar Color")]
         public System.Windows.Media.Color InlineBarChartColor
         {
             get => (System.Windows.Media.Color)GetValue(InlineBarChartColorProperty);
@@ -1553,7 +1558,8 @@ namespace WpfHexaEditor
         /// Show inline bar chart in ASCII panel (replaces ASCII chars with vertical bars representing byte values)
         /// V1 Legacy feature compatibility
         /// </summary>
-        [Category("Display")]
+        [Category("BarChart")]
+        [DisplayName("Show Inline Bar Chart")]
         public bool ShowInlineBarChart
         {
             get => (bool)GetValue(ShowInlineBarChartProperty);
@@ -2749,6 +2755,155 @@ namespace WpfHexaEditor
             }
         }
 
+        #region Bar Chart Properties
+
+        /// <summary>
+        /// Bar chart panel height in pixels
+        /// </summary>
+        [Category("BarChart")]
+        [DisplayName("Panel Height")]
+        [Description("Height of the bar chart panel in pixels")]
+        public int BarChartPanelHeight
+        {
+            get => (int)GetValue(BarChartPanelHeightProperty);
+            set => SetValue(BarChartPanelHeightProperty, value);
+        }
+
+        public static readonly DependencyProperty BarChartPanelHeightProperty =
+            DependencyProperty.Register(nameof(BarChartPanelHeight), typeof(int), typeof(HexEditor),
+                new PropertyMetadata(200, OnBarChartPanelHeightChanged));
+
+        private static void OnBarChartPanelHeightChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is int height)
+            {
+                if (editor._barChartPanel != null)
+                    editor._barChartPanel.Height = height;
+            }
+        }
+
+        /// <summary>
+        /// Bar chart background color
+        /// </summary>
+        [Category("BarChart")]
+        [DisplayName("Background Color")]
+        public Color BarChartBackgroundColor
+        {
+            get => (Color)GetValue(BarChartBackgroundColorProperty);
+            set => SetValue(BarChartBackgroundColorProperty, value);
+        }
+
+        public static readonly DependencyProperty BarChartBackgroundColorProperty =
+            DependencyProperty.Register(nameof(BarChartBackgroundColor), typeof(Color), typeof(HexEditor),
+                new PropertyMetadata(Colors.White, OnBarChartBackgroundColorChanged));
+
+        private static void OnBarChartBackgroundColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is Color color && editor._barChartPanel != null)
+            {
+                editor._barChartPanel.BackgroundColor = color;
+                editor._barChartPanel.InvalidateVisual();
+            }
+        }
+
+        /// <summary>
+        /// Bar chart text color for labels and statistics
+        /// </summary>
+        [Category("BarChart")]
+        [DisplayName("Text Color")]
+        public Color BarChartTextColor
+        {
+            get => (Color)GetValue(BarChartTextColorProperty);
+            set => SetValue(BarChartTextColorProperty, value);
+        }
+
+        public static readonly DependencyProperty BarChartTextColorProperty =
+            DependencyProperty.Register(nameof(BarChartTextColor), typeof(Color), typeof(HexEditor),
+                new PropertyMetadata(Color.FromRgb(0x42, 0x42, 0x42), OnBarChartTextColorChanged));
+
+        private static void OnBarChartTextColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is Color color && editor._barChartPanel != null)
+            {
+                editor._barChartPanel.TextColor = color;
+                editor._barChartPanel.InvalidateVisual();
+            }
+        }
+
+        /// <summary>
+        /// Show bar chart axis labels (00-FF)
+        /// </summary>
+        [Category("BarChart")]
+        [DisplayName("Show Axis Labels")]
+        public bool BarChartShowAxisLabels
+        {
+            get => (bool)GetValue(BarChartShowAxisLabelsProperty);
+            set => SetValue(BarChartShowAxisLabelsProperty, value);
+        }
+
+        public static readonly DependencyProperty BarChartShowAxisLabelsProperty =
+            DependencyProperty.Register(nameof(BarChartShowAxisLabels), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(true, OnBarChartShowAxisLabelsChanged));
+
+        private static void OnBarChartShowAxisLabelsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is bool show && editor._barChartPanel != null)
+            {
+                editor._barChartPanel.ShowAxisLabels = show;
+                editor._barChartPanel.InvalidateVisual();
+            }
+        }
+
+        /// <summary>
+        /// Show bar chart grid lines
+        /// </summary>
+        [Category("BarChart")]
+        [DisplayName("Show Grid Lines")]
+        public bool BarChartShowGridLines
+        {
+            get => (bool)GetValue(BarChartShowGridLinesProperty);
+            set => SetValue(BarChartShowGridLinesProperty, value);
+        }
+
+        public static readonly DependencyProperty BarChartShowGridLinesProperty =
+            DependencyProperty.Register(nameof(BarChartShowGridLines), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(false, OnBarChartShowGridLinesChanged));
+
+        private static void OnBarChartShowGridLinesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is bool show && editor._barChartPanel != null)
+            {
+                editor._barChartPanel.ShowGridLines = show;
+                editor._barChartPanel.InvalidateVisual();
+            }
+        }
+
+        /// <summary>
+        /// Show bar chart statistics overlay
+        /// </summary>
+        [Category("BarChart")]
+        [DisplayName("Show Statistics")]
+        public bool BarChartShowStatistics
+        {
+            get => (bool)GetValue(BarChartShowStatisticsProperty);
+            set => SetValue(BarChartShowStatisticsProperty, value);
+        }
+
+        public static readonly DependencyProperty BarChartShowStatisticsProperty =
+            DependencyProperty.Register(nameof(BarChartShowStatistics), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(true, OnBarChartShowStatisticsChanged));
+
+        private static void OnBarChartShowStatisticsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor && e.NewValue is bool show && editor._barChartPanel != null)
+            {
+                editor._barChartPanel.ShowStatistics = show;
+                editor._barChartPanel.InvalidateVisual();
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// DefaultCopyToClipboardMode DependencyProperty for XAML binding
         /// </summary>
@@ -3018,6 +3173,92 @@ namespace WpfHexaEditor
 
         #endregion
 
+        #region Scroll Markers Properties
+
+        /// <summary>
+        /// Show bookmark markers on the scrollbar
+        /// </summary>
+        [Category("ScrollMarkers")]
+        public bool ShowBookmarkMarkers
+        {
+            get => (bool)GetValue(ShowBookmarkMarkersProperty);
+            set => SetValue(ShowBookmarkMarkersProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowBookmarkMarkersProperty =
+            DependencyProperty.Register(nameof(ShowBookmarkMarkers), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(true, OnScrollMarkerVisibilityChanged));
+
+        /// <summary>
+        /// Show modified byte markers on the scrollbar
+        /// </summary>
+        [Category("ScrollMarkers")]
+        public bool ShowModifiedMarkers
+        {
+            get => (bool)GetValue(ShowModifiedMarkersProperty);
+            set => SetValue(ShowModifiedMarkersProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowModifiedMarkersProperty =
+            DependencyProperty.Register(nameof(ShowModifiedMarkers), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(true, OnScrollMarkerVisibilityChanged));
+
+        /// <summary>
+        /// Show inserted byte markers on the scrollbar
+        /// </summary>
+        [Category("ScrollMarkers")]
+        public bool ShowInsertedMarkers
+        {
+            get => (bool)GetValue(ShowInsertedMarkersProperty);
+            set => SetValue(ShowInsertedMarkersProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowInsertedMarkersProperty =
+            DependencyProperty.Register(nameof(ShowInsertedMarkers), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(true, OnScrollMarkerVisibilityChanged));
+
+        /// <summary>
+        /// Show deleted byte markers on the scrollbar
+        /// </summary>
+        [Category("ScrollMarkers")]
+        public bool ShowDeletedMarkers
+        {
+            get => (bool)GetValue(ShowDeletedMarkersProperty);
+            set => SetValue(ShowDeletedMarkersProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowDeletedMarkersProperty =
+            DependencyProperty.Register(nameof(ShowDeletedMarkers), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(true, OnScrollMarkerVisibilityChanged));
+
+        /// <summary>
+        /// Show search result markers on the scrollbar
+        /// </summary>
+        [Category("ScrollMarkers")]
+        public bool ShowSearchResultMarkers
+        {
+            get => (bool)GetValue(ShowSearchResultMarkersProperty);
+            set => SetValue(ShowSearchResultMarkersProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowSearchResultMarkersProperty =
+            DependencyProperty.Register(nameof(ShowSearchResultMarkers), typeof(bool), typeof(HexEditor),
+                new PropertyMetadata(true, OnScrollMarkerVisibilityChanged));
+
+        /// <summary>
+        /// Callback when any scroll marker visibility changes
+        /// </summary>
+        private static void OnScrollMarkerVisibilityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is HexEditor editor)
+            {
+                // Force update of scroll markers panel
+                editor.UpdateScrollMarkersVisibility();
+            }
+        }
+
+        #endregion
+
         #region Keyboard Shortcuts Properties
 
         /// <summary>
@@ -3147,7 +3388,8 @@ namespace WpfHexaEditor
         /// <summary>
         /// Bar chart panel visibility
         /// </summary>
-        [Category("Display")]
+        [Category("BarChart")]
+        [DisplayName("Panel Visibility")]
         public Visibility BarChartPanelVisibility
         {
             get => (Visibility)GetValue(BarChartPanelVisibilityProperty);

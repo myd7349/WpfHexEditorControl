@@ -756,5 +756,45 @@ namespace WpfHexaEditor
         }
 
         #endregion
+
+        #region Scroll Markers Management
+
+        /// <summary>
+        /// Update scroll markers visibility based on ShowXxxxMarkers properties
+        /// </summary>
+        internal void UpdateScrollMarkersVisibility()
+        {
+            if (_scrollMarkers == null)
+                return;
+
+            // Temporarily store marker data
+            var bookmarks = ShowBookmarkMarkers ? _scrollMarkers.BookmarkPositions : new HashSet<long>();
+            var modified = ShowModifiedMarkers ? _scrollMarkers.ModifiedPositions : new HashSet<long>();
+            var inserted = ShowInsertedMarkers ? _scrollMarkers.InsertedPositions : new HashSet<long>();
+            var deleted = ShowDeletedMarkers ? _scrollMarkers.DeletedPositions : new HashSet<long>();
+            var searchResults = ShowSearchResultMarkers ? _scrollMarkers.SearchResultPositions : new HashSet<long>();
+
+            // Clear and restore only visible markers
+            // This forces a redraw with only the enabled marker types
+            if (!ShowBookmarkMarkers)
+                _scrollMarkers.ClearMarkers(ScrollMarkerType.Bookmark);
+
+            if (!ShowModifiedMarkers)
+                _scrollMarkers.ClearMarkers(ScrollMarkerType.Modified);
+
+            if (!ShowInsertedMarkers)
+                _scrollMarkers.ClearMarkers(ScrollMarkerType.Inserted);
+
+            if (!ShowDeletedMarkers)
+                _scrollMarkers.ClearMarkers(ScrollMarkerType.Deleted);
+
+            if (!ShowSearchResultMarkers)
+                _scrollMarkers.ClearMarkers(ScrollMarkerType.SearchResult);
+
+            // Force visual refresh
+            _scrollMarkers.InvalidateVisual();
+        }
+
+        #endregion
     }
 }
