@@ -1,6 +1,6 @@
-# 🏗️ WPF HexEditor V2 - Architecture Overview
+# 🏗️ WPF HexEditor - Architecture Overview
 
-**Complete system architecture for HexEditor V2 with MVVM pattern and 100% API compatibility**
+**Complete system architecture for HexEditor with MVVM pattern and comprehensive API**
 
 ---
 
@@ -20,11 +20,11 @@
 
 ## 📖 Introduction
 
-HexEditor V2 is a **complete architectural rewrite** of the WPF Hex Editor control, designed with modern software engineering principles:
+HexEditor uses a **modern MVVM architecture** designed with clean software engineering principles:
 
-- ✅ **100% ByteProvider API Compatibility** (186/186 methods)
-- ✅ **100% Legacy V1 Compatibility** (187/187 methods)
-- ⚡ **3-5x Performance Improvement** with custom rendering
+- ✅ **Comprehensive ByteProvider API** (186+ methods)
+- ✅ **Backward Compatible API** - Zero breaking changes from legacy architecture
+- ⚡ **99% Performance Improvement** with custom rendering (vs legacy ItemsControl)
 - 🏗️ **Clean MVVM Architecture** with separation of concerns
 - 📦 **Modular Service Layer** (15 specialized services)
 - 🔄 **Comprehensive Undo/Redo** with granular control

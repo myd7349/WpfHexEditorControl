@@ -1,6 +1,6 @@
-# WPF HexEditor V2 - Architecture Documentation
+# WPF HexEditor - Architecture Documentation
 
-This document provides comprehensive architecture documentation for the HexEditorV2 control, including visual diagrams, data flow analysis, and detailed component descriptions.
+This document provides comprehensive architecture documentation for the HexEditor control, including visual diagrams, data flow analysis, and detailed component descriptions.
 
 ## 📋 Table of Contents
 
@@ -28,7 +28,7 @@ This document provides comprehensive architecture documentation for the HexEdito
 
 ## 📖 Overview
 
-HexEditorV2 represents a complete architectural rewrite of the WpfHexEditor control, focusing on:
+HexEditor uses a modern MVVM architecture (rewritten from legacy monolithic design), focusing on:
 
 - **Performance**: 2-5x faster rendering with custom DrawingContext
 - **Memory Efficiency**: 80-90% reduction with custom viewport

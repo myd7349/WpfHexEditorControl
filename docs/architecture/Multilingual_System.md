@@ -225,14 +225,14 @@ Si une ressource n'existe pas dans une langue, le système **fallback** automati
 
 - **Total langues** : 6
 - **Total ressources** : 109 par langue
-- **Couverture V2** : 100% (tous les menus et labels traduits)
-- **Couverture V1** : 100% (legacy HexEditorLegacy)
+- **Couverture actuelle** : 100% (tous les menus et labels traduits)
+- **Historique V1** : 100% couverture maintenue pendant migration (V1 removed v2.6.0)
 
 ## 🚀 Nouveautés (Février 2026)
 
-### Ajout de 16 nouvelles ressources pour V2
+### Ajout de 16 nouvelles ressources (Février 2026)
 
-Toutes les chaînes du nouveau HexEditor (V2) utilisent maintenant le système de ressources :
+Toutes les chaînes du HexEditor utilisent maintenant le système de ressources :
 
 - ✅ Menu contextuel de l'éditeur entièrement localisé
 - ✅ Menu contextuel de la StatusBar localisé
