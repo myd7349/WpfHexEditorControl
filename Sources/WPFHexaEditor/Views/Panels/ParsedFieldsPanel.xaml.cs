@@ -146,11 +146,35 @@ namespace WpfHexaEditor.Views.Panels
 
         private void ExportAll_Click(object sender, RoutedEventArgs e)
         {
+            // This will be handled by submenu items
+        }
+
+        private void ExportAsText_Click(object sender, RoutedEventArgs e)
+        {
+            ExportToClipboard(ExportFieldsAsText(), "Text");
+        }
+
+        private void ExportAsJson_Click(object sender, RoutedEventArgs e)
+        {
+            ExportToClipboard(ExportFieldsAsJson(), "JSON");
+        }
+
+        private void ExportAsCsv_Click(object sender, RoutedEventArgs e)
+        {
+            ExportToClipboard(ExportFieldsAsCsv(), "CSV");
+        }
+
+        private void ExportAsXml_Click(object sender, RoutedEventArgs e)
+        {
+            ExportToClipboard(ExportFieldsAsXml(), "XML");
+        }
+
+        private void ExportToClipboard(string content, string formatName)
+        {
             try
             {
-                var exported = ExportFieldsAsText();
-                System.Windows.Clipboard.SetText(exported);
-                System.Windows.MessageBox.Show("All fields exported to clipboard!", "Export Complete",
+                System.Windows.Clipboard.SetText(content);
+                System.Windows.MessageBox.Show($"All fields exported as {formatName} to clipboard!", "Export Complete",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -281,6 +305,154 @@ namespace WpfHexaEditor.Views.Panels
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Export all fields to JSON format
+        /// </summary>
+        public string ExportFieldsAsJson()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("{");
+
+            if (FormatInfo.IsDetected)
+            {
+                sb.AppendLine("  \"format\": {");
+                sb.AppendLine($"    \"name\": \"{EscapeJson(FormatInfo.Name)}\",");
+                sb.AppendLine($"    \"description\": \"{EscapeJson(FormatInfo.Description)}\"");
+                sb.AppendLine("  },");
+            }
+
+            sb.AppendLine("  \"fields\": [");
+
+            for (int i = 0; i < ParsedFields.Count; i++)
+            {
+                var field = ParsedFields[i];
+                sb.AppendLine("    {");
+                sb.AppendLine($"      \"name\": \"{EscapeJson(field.Name)}\",");
+                sb.AppendLine($"      \"value\": \"{EscapeJson(field.FormattedValue)}\",");
+                sb.AppendLine($"      \"offset\": {field.Offset},");
+                sb.AppendLine($"      \"length\": {field.Length},");
+                sb.AppendLine($"      \"type\": \"{EscapeJson(field.ValueType)}\",");
+                sb.AppendLine($"      \"description\": \"{EscapeJson(field.Description)}\",");
+                sb.AppendLine($"      \"indentLevel\": {field.IndentLevel}");
+                sb.Append("    }");
+
+                if (i < ParsedFields.Count - 1)
+                    sb.AppendLine(",");
+                else
+                    sb.AppendLine();
+            }
+
+            sb.AppendLine("  ]");
+            sb.AppendLine("}");
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Export all fields to CSV format
+        /// </summary>
+        public string ExportFieldsAsCsv()
+        {
+            var sb = new System.Text.StringBuilder();
+
+            // Header
+            sb.AppendLine("Name,Value,Offset,Length,Type,Description,IndentLevel");
+
+            // Rows
+            foreach (var field in ParsedFields)
+            {
+                sb.AppendLine($"\"{EscapeCsv(field.Name)}\"," +
+                             $"\"{EscapeCsv(field.FormattedValue)}\"," +
+                             $"{field.Offset}," +
+                             $"{field.Length}," +
+                             $"\"{EscapeCsv(field.ValueType)}\"," +
+                             $"\"{EscapeCsv(field.Description)}\"," +
+                             $"{field.IndentLevel}");
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Export all fields to XML format
+        /// </summary>
+        public string ExportFieldsAsXml()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            sb.AppendLine("<ParsedFields>");
+
+            if (FormatInfo.IsDetected)
+            {
+                sb.AppendLine("  <Format>");
+                sb.AppendLine($"    <Name>{EscapeXml(FormatInfo.Name)}</Name>");
+                sb.AppendLine($"    <Description>{EscapeXml(FormatInfo.Description)}</Description>");
+                sb.AppendLine("  </Format>");
+            }
+
+            sb.AppendLine("  <Fields>");
+
+            foreach (var field in ParsedFields)
+            {
+                sb.AppendLine("    <Field>");
+                sb.AppendLine($"      <Name>{EscapeXml(field.Name)}</Name>");
+                sb.AppendLine($"      <Value>{EscapeXml(field.FormattedValue)}</Value>");
+                sb.AppendLine($"      <Offset>{field.Offset}</Offset>");
+                sb.AppendLine($"      <Length>{field.Length}</Length>");
+                sb.AppendLine($"      <Type>{EscapeXml(field.ValueType)}</Type>");
+                sb.AppendLine($"      <Description>{EscapeXml(field.Description)}</Description>");
+                sb.AppendLine($"      <IndentLevel>{field.IndentLevel}</IndentLevel>");
+                sb.AppendLine("    </Field>");
+            }
+
+            sb.AppendLine("  </Fields>");
+            sb.AppendLine("</ParsedFields>");
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Escape string for JSON
+        /// </summary>
+        private string EscapeJson(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return string.Empty;
+
+            return input.Replace("\\", "\\\\")
+                        .Replace("\"", "\\\"")
+                        .Replace("\n", "\\n")
+                        .Replace("\r", "\\r")
+                        .Replace("\t", "\\t");
+        }
+
+        /// <summary>
+        /// Escape string for CSV
+        /// </summary>
+        private string EscapeCsv(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return string.Empty;
+
+            // Escape quotes by doubling them
+            return input.Replace("\"", "\"\"");
+        }
+
+        /// <summary>
+        /// Escape string for XML
+        /// </summary>
+        private string EscapeXml(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return string.Empty;
+
+            return input.Replace("&", "&amp;")
+                        .Replace("<", "&lt;")
+                        .Replace(">", "&gt;")
+                        .Replace("\"", "&quot;")
+                        .Replace("'", "&apos;");
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
