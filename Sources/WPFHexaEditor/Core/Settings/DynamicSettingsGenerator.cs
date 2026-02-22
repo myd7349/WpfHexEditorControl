@@ -297,7 +297,26 @@ namespace WpfHexaEditor.Core.Settings
             if (control is CheckBox checkBox)
             {
                 checkBox.SetBinding(CheckBox.IsCheckedProperty, binding);
-                checkBox.Content = metadata.GetDisplayName();
+
+                // Try to use localized resource for CheckBox content
+                var resourceKey = $"HexSettings_{metadata.PropertyName}";
+                try
+                {
+                    var resource = TryFindResource(resourceKey);
+                    if (resource != null)
+                    {
+                        checkBox.SetResourceReference(System.Windows.Controls.ContentControl.ContentProperty, resourceKey);
+                    }
+                    else
+                    {
+                        checkBox.Content = metadata.GetDisplayName();
+                    }
+                }
+                catch
+                {
+                    checkBox.Content = metadata.GetDisplayName();
+                }
+
                 return checkBox;
             }
 

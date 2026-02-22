@@ -1,0 +1,227 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Contributors: Claude Sonnet 4.5
+//////////////////////////////////////////////
+
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using WpfHexaEditor.Core.FormatDetection;
+
+namespace WpfHexaEditor.ViewModels
+{
+    /// <summary>
+    /// ViewModel representing a single parsed field from a format definition
+    /// Displays field name, offset, length, value, and formatting information
+    /// </summary>
+    public class ParsedFieldViewModel : INotifyPropertyChanged
+    {
+        private string _name;
+        private long _offset;
+        private int _length;
+        private object _rawValue;
+        private string _formattedValue;
+        private string _valueType;
+        private string _description;
+        private string _color;
+        private bool _isSelected;
+        private bool _isValid;
+        private string _validationMessage;
+
+        /// <summary>
+        /// Name of the field (e.g., "Image Width", "File Signature")
+        /// </summary>
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Absolute offset where this field starts in the file
+        /// </summary>
+        public long Offset
+        {
+            get => _offset;
+            set
+            {
+                _offset = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(OffsetHex));
+                OnPropertyChanged(nameof(OffsetDisplay));
+            }
+        }
+
+        /// <summary>
+        /// Length of the field in bytes
+        /// </summary>
+        public int Length
+        {
+            get => _length;
+            set
+            {
+                _length = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(EndOffset));
+                OnPropertyChanged(nameof(RangeDisplay));
+            }
+        }
+
+        /// <summary>
+        /// Raw value read from the file (before formatting)
+        /// </summary>
+        public object RawValue
+        {
+            get => _rawValue;
+            set
+            {
+                _rawValue = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Formatted value for display (hex, decimal, string, etc.)
+        /// </summary>
+        public string FormattedValue
+        {
+            get => _formattedValue;
+            set
+            {
+                _formattedValue = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Type of value (uint8, uint16, uint32, int16, int32, string, etc.)
+        /// </summary>
+        public string ValueType
+        {
+            get => _valueType;
+            set
+            {
+                _valueType = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Description of this field
+        /// </summary>
+        public string Description
+        {
+            get => _description;
+            set
+            {
+                _description = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Color for highlighting this field (hex format: #RRGGBB)
+        /// </summary>
+        public string Color
+        {
+            get => _color;
+            set
+            {
+                _color = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Whether this field is currently selected
+        /// </summary>
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Whether this field's value is valid
+        /// </summary>
+        public bool IsValid
+        {
+            get => _isValid;
+            set
+            {
+                _isValid = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Validation message if field is invalid
+        /// </summary>
+        public string ValidationMessage
+        {
+            get => _validationMessage;
+            set
+            {
+                _validationMessage = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Offset formatted as hexadecimal (e.g., "0x0010")
+        /// </summary>
+        public string OffsetHex => $"0x{Offset:X8}";
+
+        /// <summary>
+        /// Display string for offset (e.g., "0x0010 (16)")
+        /// </summary>
+        public string OffsetDisplay => $"{OffsetHex} ({Offset})";
+
+        /// <summary>
+        /// End offset of this field
+        /// </summary>
+        public long EndOffset => Offset + Length;
+
+        /// <summary>
+        /// Display string for byte range (e.g., "0x10-0x13 (4 bytes)")
+        /// </summary>
+        public string RangeDisplay => $"{OffsetHex}-0x{EndOffset:X8} ({Length} byte{(Length != 1 ? "s" : "")})";
+
+        /// <summary>
+        /// The block definition this field was parsed from
+        /// </summary>
+        public BlockDefinition BlockDefinition { get; set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Create a ParsedFieldViewModel from a BlockDefinition and file data
+        /// </summary>
+        public static ParsedFieldViewModel FromBlockDefinition(BlockDefinition block, long offset, int length)
+        {
+            return new ParsedFieldViewModel
+            {
+                Name = block.Name ?? "Unnamed Field",
+                Offset = offset,
+                Length = length,
+                ValueType = block.ValueType ?? "bytes",
+                Description = block.Description ?? string.Empty,
+                Color = block.Color ?? "#CCCCCC",
+                BlockDefinition = block,
+                IsValid = true
+            };
+        }
+    }
+}
