@@ -56,7 +56,7 @@ namespace WpfHexaEditor.Services
         /// Check if copy operation is possible
         /// </summary>
         /// <param name="selectionLength">Length of selection in bytes</param>
-        /// <param name="provider">ByteProviderLegacy instance</param>
+        /// <param name="provider">ByteProvider instance</param>
         /// <returns>True if copy is possible</returns>
         /// <example>
         /// <code>
@@ -67,7 +67,7 @@ namespace WpfHexaEditor.Services
         /// }
         /// </code>
         /// </example>
-        public bool CanCopy(long selectionLength, ByteProviderLegacy provider)
+        public bool CanCopy(long selectionLength, ByteProvider provider)
         {
             return selectionLength >= 1 && provider != null && provider.IsOpen;
         }
@@ -75,7 +75,7 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Check if delete operation is possible
         /// </summary>
-        public bool CanDelete(long selectionLength, ByteProviderLegacy provider, bool readOnlyMode, bool allowDeleteByte)
+        public bool CanDelete(long selectionLength, ByteProvider provider, bool readOnlyMode, bool allowDeleteByte)
         {
             return CanCopy(selectionLength, provider) && !readOnlyMode && allowDeleteByte;
         }
@@ -83,7 +83,7 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Copy to clipboard with default mode
         /// </summary>
-        public void CopyToClipboard(ByteProviderLegacy provider, long selectionStart, long selectionStop, TblStream tbl = null)
+        public void CopyToClipboard(ByteProvider provider, long selectionStart, long selectionStop, TblStream tbl = null)
         {
             CopyToClipboard(provider, DefaultCopyMode, selectionStart, selectionStop, true, tbl);
         }
@@ -91,7 +91,7 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Copy to clipboard with specified mode
         /// </summary>
-        public void CopyToClipboard(ByteProviderLegacy provider, CopyPasteMode mode, long selectionStart, long selectionStop, TblStream tbl = null)
+        public void CopyToClipboard(ByteProvider provider, CopyPasteMode mode, long selectionStart, long selectionStop, TblStream tbl = null)
         {
             CopyToClipboard(provider, mode, selectionStart, selectionStop, true, tbl);
         }
@@ -99,7 +99,7 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Copy to clipboard with full parameters
         /// </summary>
-        public void CopyToClipboard(ByteProviderLegacy provider, CopyPasteMode mode, long selectionStart, long selectionStop, bool copyChange, TblStream tbl)
+        public void CopyToClipboard(ByteProvider provider, CopyPasteMode mode, long selectionStart, long selectionStop, bool copyChange, TblStream tbl)
         {
             if (provider == null || !provider.IsOpen) return;
             if (selectionStart < 0 || selectionStop < selectionStart) return;
@@ -110,7 +110,7 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Copy selection to a stream
         /// </summary>
-        public void CopyToStream(ByteProviderLegacy provider, Stream output, long selectionStart, long selectionStop, bool copyChange)
+        public void CopyToStream(ByteProvider provider, Stream output, long selectionStart, long selectionStop, bool copyChange)
         {
             if (provider == null || !provider.IsOpen) return;
             if (output == null) return;
@@ -122,7 +122,7 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Get copy data as byte array
         /// </summary>
-        public byte[] GetCopyData(ByteProviderLegacy provider, long selectionStart, long selectionStop, bool copyChange)
+        public byte[] GetCopyData(ByteProvider provider, long selectionStart, long selectionStop, bool copyChange)
         {
             if (provider == null || !provider.IsOpen) return null;
             if (selectionStart < 0 || selectionStop < selectionStart) return null;
@@ -133,7 +133,7 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Get all bytes from provider
         /// </summary>
-        public byte[] GetAllBytes(ByteProviderLegacy provider, bool copyChange = true)
+        public byte[] GetAllBytes(ByteProvider provider, bool copyChange = true)
         {
             if (provider == null || !provider.IsOpen) return null;
 
@@ -143,7 +143,7 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Fill selection with a specific byte value
         /// </summary>
-        public void FillWithByte(ByteProviderLegacy provider, long startPosition, long length, byte value, bool readOnlyMode)
+        public void FillWithByte(ByteProvider provider, long startPosition, long length, byte value, bool readOnlyMode)
         {
             if (provider == null || !provider.IsOpen) return;
             if (startPosition < 0 || length <= 0) return;
