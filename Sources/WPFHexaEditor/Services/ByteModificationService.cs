@@ -70,13 +70,15 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return false;
 
-            if (provider.ReadOnlyMode || readOnlyMode)
+            if (provider.IsReadOnly || readOnlyMode)
                 return false;
 
-            if (bytePositionInStream < 0 || bytePositionInStream >= provider.Length)
+            if (bytePositionInStream < 0 || bytePositionInStream >= provider.VirtualLength)
                 return false;
 
-            provider.AddByteModified(@byte, bytePositionInStream, undoLength);
+            // V2: AddByteModified requires non-nullable byte
+            if (@byte.HasValue)
+                provider.AddByteModified(@byte.Value, bytePositionInStream, undoLength);
             return true;
         }
 
@@ -123,7 +125,7 @@ namespace WpfHexaEditor.Services
                 return false;
 
             for (var i = 0; i < length; i++)
-                provider.AddByteAdded(@byte, bytePositionInStream + i);
+                provider.InsertByte(bytePositionInStream + i, @byte);
 
             return true;
         }
@@ -156,7 +158,7 @@ namespace WpfHexaEditor.Services
 
             foreach (var @byte in bytes)
             {
-                provider.AddByteAdded(@byte, position++);
+                provider.InsertByte(position++, @byte);
                 count++;
             }
 
@@ -182,10 +184,10 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return -1;
 
-            if (provider.ReadOnlyMode || readOnlyMode || !allowDelete)
+            if (provider.IsReadOnly || readOnlyMode || !allowDelete)
                 return -1;
 
-            if (bytePositionInStream < 0 || bytePositionInStream >= provider.Length)
+            if (bytePositionInStream < 0 || bytePositionInStream >= provider.VirtualLength)
                 return -1;
 
             if (length <= 0)
@@ -237,7 +239,7 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return false;
 
-            return !provider.ReadOnlyMode && !readOnlyMode;
+            return !provider.IsReadOnly && !readOnlyMode;
         }
 
         /// <summary>
@@ -266,7 +268,7 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return false;
 
-            return !provider.ReadOnlyMode && !readOnlyMode && allowDelete;
+            return !provider.IsReadOnly && !readOnlyMode && allowDelete;
         }
 
         #endregion
@@ -453,7 +455,7 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return false;
 
-            return !provider.ReadOnlyMode;
+            return !provider.IsReadOnly;
         }
 
         #endregion

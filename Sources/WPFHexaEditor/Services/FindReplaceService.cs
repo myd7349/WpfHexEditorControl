@@ -76,14 +76,29 @@ namespace WpfHexaEditor.Services
             if (data == null || provider == null || !provider.IsOpen)
                 return -1;
 
+            if (data.Length == 0)
+                return -1;
+
             try
             {
-                var position = provider.FindIndexOf(data, startPosition).FirstOrDefault();
-
-                if (position == 0 && !provider.FindIndexOf(data, startPosition).Any())
-                    position = -1;
-
-                return position;
+                // V2: Simple loop-based search instead of FindIndexOf
+                var maxPos = provider.VirtualLength - data.Length;
+                for (long pos = startPosition; pos <= maxPos; pos++)
+                {
+                    bool match = true;
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        var (value, success) = provider.GetByte(pos + i);
+                        if (!success || value != data[i])
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match)
+                        return pos;
+                }
+                return -1;
             }
             catch
             {
@@ -92,8 +107,8 @@ namespace WpfHexaEditor.Services
         }
 
         /// <summary>
-        /// HIGH-PERFORMANCE: Find first occurrence using Span&lt;byte&gt; and ArrayPool.
-        /// 2-5x faster than FindFirst() with 90% less memory allocation.
+        /// HIGH-PERFORMANCE: Find first occurrence using chunked search.
+        /// Uses GetBytes for better performance than single-byte reads.
         /// </summary>
         /// <param name="provider">ByteProvider instance</param>
         /// <param name="data">Pattern to search for</param>
@@ -104,9 +119,45 @@ namespace WpfHexaEditor.Services
             if (data == null || provider == null || !provider.IsOpen)
                 return -1;
 
+            if (data.Length == 0)
+                return -1;
+
             try
             {
-                return provider.FindFirstOptimized(data, startPosition);
+                // V2: Use chunked GetBytes for better performance
+                const int chunkSize = 65536; // 64KB chunks
+                var maxPos = provider.VirtualLength - data.Length;
+
+                for (long pos = startPosition; pos <= maxPos; )
+                {
+                    // Read chunk
+                    var remaining = maxPos - pos + data.Length;
+                    var readSize = (int)Math.Min(chunkSize, remaining);
+                    var chunk = provider.GetBytes(pos, readSize);
+
+                    if (chunk == null || chunk.Length == 0)
+                        break;
+
+                    // Search within chunk
+                    for (int i = 0; i <= chunk.Length - data.Length; i++)
+                    {
+                        bool match = true;
+                        for (int j = 0; j < data.Length; j++)
+                        {
+                            if (chunk[i + j] != data[j])
+                            {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match)
+                            return pos + i;
+                    }
+
+                    // Move to next chunk (overlap by pattern length - 1)
+                    pos += readSize - data.Length + 1;
+                }
+                return -1;
             }
             catch
             {
@@ -153,9 +204,34 @@ namespace WpfHexaEditor.Services
         public IEnumerable<long> FindAll(ByteProvider provider, byte[] data, long startPosition = 0)
         {
             if (data == null || provider == null || !provider.IsOpen)
-                return null;
+                return new List<long>();
 
-            return provider.FindIndexOf(data, startPosition);
+            if (data.Length == 0)
+                return new List<long>();
+
+            // V2: Simple loop-based search
+            var results = new List<long>();
+            var maxPos = provider.VirtualLength - data.Length;
+
+            for (long pos = startPosition; pos <= maxPos; pos++)
+            {
+                bool match = true;
+                for (int i = 0; i < data.Length; i++)
+                {
+                    var (value, success) = provider.GetByte(pos + i);
+                    if (!success || value != data[i])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match)
+                {
+                    results.Add(pos);
+                }
+            }
+
+            return results;
         }
 
         /// <summary>
@@ -164,14 +240,14 @@ namespace WpfHexaEditor.Services
         public IEnumerable<long> FindAllCached(ByteProvider provider, byte[] data, long startPosition = 0)
         {
             if (data == null || provider == null || !provider.IsOpen)
-                return null;
+                return new List<long>();
 
             return GetCachedOrFreshResults(provider, data, startPosition);
         }
 
         /// <summary>
-        /// HIGH-PERFORMANCE: Find all occurrences using Span&lt;byte&gt; and ArrayPool.
-        /// 2-5x faster than FindAll() with 90% less memory allocation.
+        /// HIGH-PERFORMANCE: Find all occurrences using chunked search.
+        /// Uses GetBytes for better performance than single-byte reads.
         /// Recommended for large files or frequent searches.
         /// </summary>
         /// <param name="provider">ByteProvider instance</param>
@@ -181,24 +257,65 @@ namespace WpfHexaEditor.Services
         public IEnumerable<long> FindAllOptimized(ByteProvider provider, byte[] data, long startPosition = 0)
         {
             if (data == null || provider == null || !provider.IsOpen)
-                return null;
+                return new List<long>();
 
-            return provider.FindIndexOfOptimized(data, startPosition);
+            if (data.Length == 0)
+                return new List<long>();
+
+            // V2: Use chunked GetBytes for better performance
+            var results = new List<long>();
+            const int chunkSize = 65536; // 64KB chunks
+            var maxPos = provider.VirtualLength - data.Length;
+
+            for (long pos = startPosition; pos <= maxPos; )
+            {
+                // Read chunk
+                var remaining = maxPos - pos + data.Length;
+                var readSize = (int)Math.Min(chunkSize, remaining);
+                var chunk = provider.GetBytes(pos, readSize);
+
+                if (chunk == null || chunk.Length == 0)
+                    break;
+
+                // Search within chunk
+                for (int i = 0; i <= chunk.Length - data.Length; i++)
+                {
+                    bool match = true;
+                    for (int j = 0; j < data.Length; j++)
+                    {
+                        if (chunk[i + j] != data[j])
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match)
+                    {
+                        results.Add(pos + i);
+                    }
+                }
+
+                // Move to next chunk (overlap by pattern length - 1)
+                pos += readSize - data.Length + 1;
+                if (readSize < chunkSize)
+                    break; // Last chunk processed
+            }
+
+            return results;
         }
 
         /// <summary>
-        /// HIGH-PERFORMANCE: Find all occurrences with LRU caching support using optimized Span-based search.
+        /// HIGH-PERFORMANCE: Find all occurrences with LRU caching support using optimized chunked search.
         /// Best of both worlds: fast search + LRU result caching for repeated operations.
         /// Cache automatically evicts least recently used results when capacity is reached.
-        /// ULTRA FAST: Automatically uses parallel search for files > 100MB (2-4x faster).
         /// </summary>
         public IEnumerable<long> FindAllCachedOptimized(ByteProvider provider, byte[] data, long startPosition = 0)
         {
             if (data == null || provider == null || !provider.IsOpen)
-                return null;
+                return new List<long>();
 
             // Create cache key
-            var cacheKey = new SearchCacheKey(data, startPosition, provider.Length);
+            var cacheKey = new SearchCacheKey(data, startPosition, provider.VirtualLength);
 
             // Check LRU cache
             if (_searchCache.TryGet(cacheKey, out var cachedResults))
@@ -206,19 +323,16 @@ namespace WpfHexaEditor.Services
                 return cachedResults;
             }
 
-            // Perform optimized search with automatic parallel selection for large files
-            // Files > 100MB: Uses all CPU cores (2-4x faster)
-            // Files < 100MB: Uses standard optimized search (avoids parallel overhead)
-            var results = provider.FindAllParallel(data, startPosition);
+            // V2: Perform optimized search using FindAllOptimized
+            var results = FindAllOptimized(provider, data, startPosition).ToList();
             _searchCache.Put(cacheKey, results);
 
             return results;
         }
 
         /// <summary>
-        /// HIGH-PERFORMANCE: Count occurrences without allocating result list.
+        /// HIGH-PERFORMANCE: Count occurrences without allocating full result list.
         /// Fastest way to count matches when you don't need the positions.
-        /// ULTRA FAST: Automatically uses parallel counting for files > 100MB (2-4x faster).
         /// </summary>
         /// <param name="provider">ByteProvider instance</param>
         /// <param name="data">Pattern to search for</param>
@@ -229,10 +343,49 @@ namespace WpfHexaEditor.Services
             if (data == null || provider == null || !provider.IsOpen)
                 return 0;
 
-            // Automatic parallel selection based on file size
-            // Files > 100MB: Uses all CPU cores (2-4x faster)
-            // Files < 100MB: Uses standard optimized counting (avoids parallel overhead)
-            return provider.CountOccurrencesParallel(data, startPosition);
+            if (data.Length == 0)
+                return 0;
+
+            // V2: Count without storing all positions
+            int count = 0;
+            const int chunkSize = 65536; // 64KB chunks
+            var maxPos = provider.VirtualLength - data.Length;
+
+            for (long pos = startPosition; pos <= maxPos; )
+            {
+                // Read chunk
+                var remaining = maxPos - pos + data.Length;
+                var readSize = (int)Math.Min(chunkSize, remaining);
+                var chunk = provider.GetBytes(pos, readSize);
+
+                if (chunk == null || chunk.Length == 0)
+                    break;
+
+                // Count matches within chunk
+                for (int i = 0; i <= chunk.Length - data.Length; i++)
+                {
+                    bool match = true;
+                    for (int j = 0; j < data.Length; j++)
+                    {
+                        if (chunk[i + j] != data[j])
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match)
+                    {
+                        count++;
+                    }
+                }
+
+                // Move to next chunk (overlap by pattern length - 1)
+                pos += readSize - data.Length + 1;
+                if (readSize < chunkSize)
+                    break; // Last chunk processed
+            }
+
+            return count;
         }
 
         #endregion
@@ -261,8 +414,8 @@ namespace WpfHexaEditor.Services
 
             try
             {
-                var results = await provider.FindAllAsync(data, startPosition, progress, cancellationToken);
-                return results?.FirstOrDefault() ?? -1;
+                // V2: Use Task.Run with FindFirst for async operation
+                return await Task.Run(() => FindFirst(provider, data, startPosition), cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -313,7 +466,8 @@ namespace WpfHexaEditor.Services
 
             try
             {
-                return await provider.FindAllAsync(data, startPosition, progress, cancellationToken);
+                // V2: Use Task.Run with FindAll for async operation
+                return await Task.Run(() => FindAll(provider, data, startPosition).ToList(), cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -347,8 +501,8 @@ namespace WpfHexaEditor.Services
 
             try
             {
-                var results = await provider.FindAllAsync(data, startPosition, progress, cancellationToken);
-                return results?.Count ?? 0;
+                // V2: Use Task.Run with CountOccurrences for async operation
+                return await Task.Run(() => CountOccurrences(provider, data, startPosition), cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -373,7 +527,15 @@ namespace WpfHexaEditor.Services
             if (startPosition < 0 || length <= 0) return;
             if (readOnlyMode) return;
 
-            provider.ReplaceByte(startPosition, length, original, replace);
+            // V2: Implement ReplaceByte using GetByte + AddByteModified
+            for (long pos = startPosition; pos < startPosition + length; pos++)
+            {
+                var (value, success) = provider.GetByte(pos);
+                if (success && value == original)
+                {
+                    provider.AddByteModified(replace, pos, 1);
+                }
+            }
         }
 
         /// <summary>
@@ -492,12 +654,9 @@ namespace WpfHexaEditor.Services
             try
             {
                 // Phase 1: Find all occurrences (0-50% progress)
-                var findProgress = new Progress<int>(percent =>
-                {
-                    progress?.Report(percent / 2); // Map 0-100% to 0-50%
-                });
-
-                var positions = await provider.FindAllAsync(findData, 0, findProgress, cancellationToken);
+                progress?.Report(0);
+                var positions = await Task.Run(() => FindAll(provider, findData, 0).ToList(), cancellationToken);
+                progress?.Report(50);
 
                 if (positions == null || positions.Count == 0)
                     return 0;
@@ -548,7 +707,7 @@ namespace WpfHexaEditor.Services
         private IEnumerable<long> GetCachedOrFreshResults(ByteProvider provider, byte[] data, long startPosition)
         {
             // Create cache key
-            var cacheKey = new SearchCacheKey(data, startPosition, provider.Length);
+            var cacheKey = new SearchCacheKey(data, startPosition, provider.VirtualLength);
 
             // Check LRU cache
             if (_searchCache.TryGet(cacheKey, out var cachedResults))
@@ -556,8 +715,8 @@ namespace WpfHexaEditor.Services
                 return cachedResults;
             }
 
-            // Perform fresh search and cache results
-            var results = provider.FindIndexOf(data, startPosition).ToList();
+            // V2: Perform fresh search using FindAll and cache results
+            var results = FindAll(provider, data, startPosition).ToList();
             _searchCache.Put(cacheKey, results);
 
             return results;

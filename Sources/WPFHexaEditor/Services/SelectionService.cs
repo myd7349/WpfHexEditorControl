@@ -87,11 +87,11 @@ namespace WpfHexaEditor.Services
             var start = Math.Max(-1, selectionStart);
             var stop = Math.Max(-1, selectionStop);
 
-            if (start >= 0 && start >= provider.Length)
-                start = provider.Length - 1;
+            if (start >= 0 && start >= provider.VirtualLength)
+                start = provider.VirtualLength - 1;
 
-            if (stop >= 0 && stop >= provider.Length)
-                stop = provider.Length - 1;
+            if (stop >= 0 && stop >= provider.VirtualLength)
+                stop = provider.VirtualLength - 1;
 
             return (start, stop);
         }
@@ -107,9 +107,9 @@ namespace WpfHexaEditor.Services
             if (!IsValidSelection(selectionStart, selectionStop))
                 return null;
 
-            using var ms = new MemoryStream();
-            provider.CopyToStream(ms, selectionStart, selectionStop, copyChange);
-            return ms.ToArray();
+            // V2: Use GetBytes directly instead of CopyToStream
+            var length = (int)(selectionStop - selectionStart + 1);
+            return provider.GetBytes(selectionStart, length);
         }
 
         /// <summary>
@@ -120,7 +120,8 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return null;
 
-            return provider.GetAllBytes(copyChange);
+            // V2: Use GetBytes(0, VirtualLength) instead of GetAllBytes
+            return provider.GetBytes(0, (int)provider.VirtualLength);
         }
 
         /// <summary>
@@ -142,7 +143,7 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return -1;
 
-            return provider.Length;
+            return provider.VirtualLength;
         }
 
         /// <summary>
@@ -153,7 +154,7 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return false;
 
-            return selectionStart == 0 && selectionStop >= provider.Length - 1;
+            return selectionStart == 0 && selectionStop >= provider.VirtualLength - 1;
         }
 
         /// <summary>
@@ -177,8 +178,8 @@ namespace WpfHexaEditor.Services
             // Clamp to provider bounds
             if (newPosition < 0)
                 newPosition = 0;
-            else if (newPosition >= provider.Length)
-                newPosition = provider.Length - 1;
+            else if (newPosition >= provider.VirtualLength)
+                newPosition = provider.VirtualLength - 1;
 
             // Respect visual byte address if set
             if (visualStart >= 0 && newPosition < visualStart)
@@ -198,11 +199,12 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen)
                 return null;
 
-            if (position < 0 || position >= provider.Length)
+            if (position < 0 || position >= provider.VirtualLength)
                 return null;
 
-            var result = provider.GetByte(position);
-            return result.succes ? result.singleByte : (byte?)null;
+            // V2: Fix tuple usage - GetByte returns (byte value, bool success)
+            var (value, success) = provider.GetByte(position);
+            return success ? value : (byte?)null;
         }
 
         #endregion

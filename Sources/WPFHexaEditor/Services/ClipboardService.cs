@@ -104,7 +104,21 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen) return;
             if (selectionStart < 0 || selectionStop < selectionStart) return;
 
-            provider.CopyToClipboard(mode, selectionStart, selectionStop, copyChange, tbl);
+            // V2: Use GetBytes directly and convert to clipboard format
+            var length = (int)(selectionStop - selectionStart + 1);
+            var bytes = provider.GetBytes(selectionStart, length);
+            if (bytes == null || bytes.Length == 0) return;
+
+            // Convert to appropriate clipboard format
+            string clipboardData = mode switch
+            {
+                CopyPasteMode.HexaString => BitConverter.ToString(bytes).Replace("-", " "),
+                CopyPasteMode.AsciiString => System.Text.Encoding.ASCII.GetString(bytes),
+                CopyPasteMode.TblString when tbl != null => ByteConverters.BytesToString(bytes),
+                _ => BitConverter.ToString(bytes).Replace("-", " ")
+            };
+
+            System.Windows.Clipboard.SetText(clipboardData);
         }
 
         /// <summary>
@@ -116,7 +130,13 @@ namespace WpfHexaEditor.Services
             if (output == null) return;
             if (selectionStart < 0 || selectionStop < selectionStart) return;
 
-            provider.CopyToStream(output, selectionStart, selectionStop, copyChange);
+            // V2: Use GetBytes + stream.Write instead of CopyToStream
+            var length = (int)(selectionStop - selectionStart + 1);
+            var bytes = provider.GetBytes(selectionStart, length);
+            if (bytes != null && bytes.Length > 0)
+            {
+                output.Write(bytes, 0, bytes.Length);
+            }
         }
 
         /// <summary>
@@ -127,7 +147,9 @@ namespace WpfHexaEditor.Services
             if (provider == null || !provider.IsOpen) return null;
             if (selectionStart < 0 || selectionStop < selectionStart) return null;
 
-            return provider.GetCopyData(selectionStart, selectionStop, copyChange);
+            // V2: Use GetBytes directly instead of GetCopyData
+            var length = (int)(selectionStop - selectionStart + 1);
+            return provider.GetBytes(selectionStart, length);
         }
 
         /// <summary>
@@ -137,7 +159,8 @@ namespace WpfHexaEditor.Services
         {
             if (provider == null || !provider.IsOpen) return null;
 
-            return provider.GetAllBytes(copyChange);
+            // V2: Use GetBytes(0, VirtualLength) instead of GetAllBytes
+            return provider.GetBytes(0, (int)provider.VirtualLength);
         }
 
         /// <summary>
