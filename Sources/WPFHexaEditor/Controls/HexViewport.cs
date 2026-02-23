@@ -363,8 +363,9 @@ namespace WpfHexaEditor.Controls
 
                     if (_cursorPosition >= lineStart && _cursorPosition <= lineEnd)
                     {
-                        // Find byte in line (replicate OnRender layout logic exactly)
+                        // Find byte in line - track BOTH hex and ASCII positions (like OnRender)
                         double hexX = ShowOffset ? OffsetWidth : 0;
+                        double asciiX = AsciiPanelStartX;
 
                         // Get stride (same as OnRender)
                         int stride = line.Bytes.Count > 0 ? (line.Bytes[0].ByteSize switch
@@ -380,7 +381,7 @@ namespace WpfHexaEditor.Controls
                             // Calculate byte position (same as OnRender)
                             int bytePosition = i * stride;
 
-                            // Add byte spacer width BEFORE this byte if needed (same as OnRender)
+                            // Add HEX byte spacer width BEFORE this byte if needed
                             if (_bytesPerLine >= (int)ByteGrouping &&
                                 (ByteSpacerPositioning == ByteSpacerPosition.Both ||
                                  ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel) &&
@@ -389,58 +390,36 @@ namespace WpfHexaEditor.Controls
                                 hexX += (int)ByteSpacerWidthTickness;
                             }
 
+                            // Add ASCII byte spacer width BEFORE this byte if needed
+                            if (_tblStream == null &&
+                                _bytesPerLine >= (int)ByteGrouping &&
+                                (ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                                 ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
+                                bytePosition % (int)ByteGrouping == 0 && i > 0)
+                            {
+                                asciiX += (int)ByteSpacerWidthTickness;
+                            }
+
                             var byteData = line.Bytes[i];
 
                             if (byteData.VirtualPos.Value == _cursorPosition)
                             {
-                                // Draw cursor blink highlight
-                                double cellWidth = GetDynamicCellWidth(byteData);
-                                double byteWidth = cellWidth - HexByteSpacing;
-                                var rect = new Rect(hexX, y, byteWidth, _lineHeight);
-
-                                // Hex or ASCII panel?
+                                // Found cursor - draw blink highlight
                                 if (_activePanel == ActivePanelType.Hex)
                                 {
+                                    double cellWidth = GetDynamicCellWidth(byteData);
+                                    double byteWidth = cellWidth - HexByteSpacing;
+                                    var rect = new Rect(hexX, y, byteWidth, _lineHeight);
+
                                     var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
                                     blinkBrush.Opacity = 0.5;
                                     dc.DrawRoundedRectangle(blinkBrush, null, rect, 2, 2);
                                 }
                                 else if (_activePanel == ActivePanelType.Ascii)
                                 {
-                                    // Calculate ASCII position - need to account for byte spacers!
-                                    // Replicate OnRender ASCII layout logic
-                                    double asciiX = AsciiPanelStartX;
-
-                                    // Iterate through bytes up to cursor to accumulate spacers
-                                    for (int j = 0; j < i; j++)
-                                    {
-                                        int bytePos = j * stride;
-
-                                        // Add byte spacer width if needed (same logic as OnRender)
-                                        if (_tblStream == null &&
-                                            _bytesPerLine >= (int)ByteGrouping &&
-                                            (ByteSpacerPositioning == ByteSpacerPosition.Both ||
-                                             ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
-                                            bytePos % (int)ByteGrouping == 0 && j > 0)
-                                        {
-                                            asciiX += (int)ByteSpacerWidthTickness;
-                                        }
-
-                                        // Add character width (simplified - assumes single byte chars)
-                                        asciiX += _charWidth;
-                                    }
-
-                                    // Add spacer before cursor byte if needed
-                                    if (_tblStream == null &&
-                                        _bytesPerLine >= (int)ByteGrouping &&
-                                        (ByteSpacerPositioning == ByteSpacerPosition.Both ||
-                                         ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
-                                        bytePosition % (int)ByteGrouping == 0 && i > 0)
-                                    {
-                                        asciiX += (int)ByteSpacerWidthTickness;
-                                    }
-
-                                    var asciiRect = new Rect(asciiX, y, _charWidth, _lineHeight);
+                                    // Get actual character width (for TBL support)
+                                    double charWidth = GetAsciiCharacterWidth(line, i);
+                                    var asciiRect = new Rect(asciiX, y, charWidth, _lineHeight);
 
                                     var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
                                     blinkBrush.Opacity = 0.5;
@@ -450,8 +429,9 @@ namespace WpfHexaEditor.Controls
                                 return; // Found and drawn
                             }
 
-                            // Advance X position (same as OnRender)
+                            // Advance positions for next byte (same as OnRender)
                             hexX += GetDynamicCellWidth(byteData) + HexByteSpacing;
+                            asciiX += GetAsciiCharacterWidth(line, i);
                         }
 
                         return; // Cursor position found but not in bytes (shouldn't happen)
@@ -460,6 +440,35 @@ namespace WpfHexaEditor.Controls
                     y += _lineHeight;
                 }
             }
+        }
+
+        /// <summary>
+        /// Calculate the display width of an ASCII character at the given byte index
+        /// Accounts for TBL multi-byte characters and variable-width text
+        /// Returns the same width that DrawAsciiByte would use
+        /// </summary>
+        private double GetAsciiCharacterWidth(HexLine line, int byteIndex)
+        {
+            if (byteIndex >= line.Bytes.Count)
+                return AsciiCharWidth;
+
+            // Get the display character for this byte
+            var displayChar = GetDisplayCharacter(line, byteIndex);
+
+            // Calculate text width using FormattedText (same as DrawAsciiByte)
+            var formattedText = new FormattedText(
+                displayChar,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                _typeface,
+                13,
+                _asciiBrush,
+                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+
+            // Return max of formatted width or single char width (same logic as DrawAsciiByte)
+            return formattedText.Width > AsciiCharWidth
+                ? formattedText.Width
+                : AsciiCharWidth;
         }
 
         #endregion
