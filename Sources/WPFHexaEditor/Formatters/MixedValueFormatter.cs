@@ -170,6 +170,13 @@ namespace WpfHexaEditor.Formatters
             {
                 var hex = string.Join(" ", bytes.Select(b => $"{b:X2}"));
                 var ascii = GetAsciiPreview(bytes);
+
+                // If all bytes are printable ASCII, emphasize the string interpretation
+                if (IsAllPrintableAscii(bytes))
+                {
+                    return $"{ascii} [{hex}]";
+                }
+
                 return $"[{hex}] {ascii}";
             }
 
@@ -179,6 +186,16 @@ namespace WpfHexaEditor.Formatters
             var preview = GetAsciiPreview(bytes.Take(8).ToArray());
 
             return $"[{firstFour} ... {lastFour}] {preview} ({bytes.Length} bytes)";
+        }
+
+        private bool IsAllPrintableAscii(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+                return false;
+
+            // Check if at least 75% of bytes are printable ASCII
+            int printableCount = bytes.Count(b => b >= 32 && b <= 126);
+            return printableCount >= bytes.Length * 0.75;
         }
 
         private string GetAsciiPreview(byte[] bytes)
