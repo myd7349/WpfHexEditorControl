@@ -1,0 +1,71 @@
+{
+    "formatName":  "Xbox One Package",
+    "version":  "1.0",
+    "extensions":  [
+                       ".xvd",
+                       ".msixvc"
+                   ],
+    "description":  "Xbox One XVD (Xbox Virtual Disk) format",
+    "category":  "Game",
+    "author":  "WPFHexaEditor Team",
+    "detection":  {
+                      "signature":  "6D737863",
+                      "offset":  0,
+                      "required":  false
+                  },
+    "variables":  {
+                      "currentOffset":  0
+                  },
+    "blocks":  [
+                   {
+                       "type":  "field",
+                       "name":  "XVD Signature",
+                       "offset":  0,
+                       "length":  4,
+                       "color":  "#FF6B6B",
+                       "opacity":  0.4,
+                       "valueType":  "bytes",
+                       "description":  "XVD magic bytes"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "Format Version",
+                       "offset":  4,
+                       "length":  4,
+                       "color":  "#FFE66D",
+                       "opacity":  0.3,
+                       "valueType":  "uint32",
+                       "description":  "XVD format version"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "Flags",
+                       "offset":  8,
+                       "length":  4,
+                       "color":  "#FFE66D",
+                       "opacity":  0.3,
+                       "valueType":  "uint32",
+                       "description":  "Format flags (encryption, compression)"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "Content Size",
+                       "offset":  16,
+                       "length":  8,
+                       "color":  "#95E1D3",
+                       "opacity":  0.3,
+                       "valueType":  "bytes",
+                       "description":  "Total content size (64-bit)"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "Content ID",
+                       "offset":  32,
+                       "length":  16,
+                       "color":  "#4ECDC4",
+                       "opacity":  0.3,
+                       "valueType":  "bytes",
+                       "description":  "Xbox One content GUID (128-bit)"
+                   }
+               ]
+}

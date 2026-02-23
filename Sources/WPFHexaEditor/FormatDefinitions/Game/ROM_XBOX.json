@@ -1,0 +1,61 @@
+{
+    "formatName":  "Microsoft Xbox (Original) Image",
+    "version":  "1.0",
+    "extensions":  [
+                       ".iso",
+                       ".xiso"
+                   ],
+    "description":  "Microsoft Xbox (original) disc image format (XISO)",
+    "category":  "Game",
+    "author":  "WPFHexaEditor Team",
+    "detection":  {
+                      "signature":  "4D494352",
+                      "offset":  0,
+                      "required":  false
+                  },
+    "variables":  {
+                      "currentOffset":  0
+                  },
+    "blocks":  [
+                   {
+                       "type":  "field",
+                       "name":  "Xbox Magic",
+                       "offset":  0,
+                       "length":  20,
+                       "color":  "#FF6B6B",
+                       "opacity":  0.4,
+                       "valueType":  "ascii",
+                       "description":  "MICROSOFT*XBOX*MEDIA magic string"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "Root Directory Sector",
+                       "offset":  20,
+                       "length":  4,
+                       "color":  "#4ECDC4",
+                       "opacity":  0.3,
+                       "valueType":  "uint32",
+                       "description":  "Root directory sector offset"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "Root Directory Size",
+                       "offset":  24,
+                       "length":  4,
+                       "color":  "#95E1D3",
+                       "opacity":  0.3,
+                       "valueType":  "uint32",
+                       "description":  "Root directory size in bytes"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "File Time",
+                       "offset":  28,
+                       "length":  8,
+                       "color":  "#C7CEEA",
+                       "opacity":  0.3,
+                       "valueType":  "bytes",
+                       "description":  "Image creation timestamp (FILETIME)"
+                   }
+               ]
+}
