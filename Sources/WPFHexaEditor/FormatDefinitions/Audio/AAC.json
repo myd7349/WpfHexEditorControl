@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "AAC Audio",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "MPEG-2 Part 7 Specification",
       "AAC ADTS Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.iso.org/standard/43345.html",
       "https://en.wikipedia.org/wiki/Advanced_Audio_Coding",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000036.shtml",
@@ -81,5 +81,34 @@
     ],
     "max_channels": 48,
     "bitrates": "8-529 kbps"
+  },
+  "MimeTypes": [
+    "audio/aac",
+    "audio/x-aac",
+    "audio/mp4"
+  ],
+  "Software": [
+    "iTunes",
+    "VLC",
+    "Smartphones",
+    "Streaming services"
+  ],
+  "UseCases": [
+    "Apple Music",
+    "YouTube audio",
+    "Mobile audio",
+    "Podcasts"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 77,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-11",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

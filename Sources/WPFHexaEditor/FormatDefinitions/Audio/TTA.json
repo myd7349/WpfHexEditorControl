@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "True Audio",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "TTA Codec Specification",
       "True Audio Compression Algorithm"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.hydrogenaudio.org/index.php?title=TTA",
       "http://www.audiodope.org/en/help/trueAudioFormat.html",
       "https://sourceforge.net/projects/tta/",
@@ -70,5 +70,33 @@
     "audio_format": true,
     "primary_extension": ".tta",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/tta"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

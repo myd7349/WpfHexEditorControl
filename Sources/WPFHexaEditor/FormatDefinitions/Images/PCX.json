@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PCX Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "PC Paintbrush (PCX) Format Specification",
       "PCX RLE Compression Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.fileformat.info/format/pcx/egff.htm",
       "http://fileformats.archiveteam.org/wiki/PCX",
       "https://en.wikipedia.org/wiki/PCX",
@@ -99,5 +99,34 @@
     "images_format": true,
     "primary_extension": ".pcx",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "image/pcx"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

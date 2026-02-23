@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Atari 7800 ROM",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "ProSystem ROM Header Format",
       "Atari 7800 Programming Reference"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://7800.8bitdev.org/index.php/A78_Header_Specification",
       "https://sites.google.com/site/atari7800wiki/a78-header",
       "https://docs.libretro.com/library/prosystem/",
@@ -180,5 +180,33 @@
   "technical_details": {
     "primary_extension": ".a78",
     "defined_fields": 11
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

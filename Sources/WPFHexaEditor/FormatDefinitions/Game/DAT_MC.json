@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Minecraft DAT",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Minecraft NBT Specification",
       "Mojang NBT Reference Implementation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.vg/NBT",
       "https://minecraft.fandom.com/wiki/NBT_format",
       "https://wiki.bedrock.dev/nbt/nbt-in-depth",
@@ -68,5 +68,33 @@
   "technical_details": {
     "primary_extension": ".dat",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

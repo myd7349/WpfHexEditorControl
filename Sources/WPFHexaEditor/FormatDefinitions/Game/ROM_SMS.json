@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Sega Master System ROM",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "TMR SEGA Header Format",
       "Sega Master System Technical Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.smspower.org/Development/ROMHeader",
       "https://www.chibiakumas.com/z80/MasterSystemGameGear.php",
       "https://www.copetti.org/writings/consoles/master-system/",
@@ -126,5 +126,33 @@
   "technical_details": {
     "primary_extension": ".sms",
     "defined_fields": 6
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

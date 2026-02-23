@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Windows Executable (PE)",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "Microsoft PE and COFF Specification",
       "Portable Executable Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/debug/pe-format",
       "https://en.wikipedia.org/wiki/Portable_Executable"
     ]
@@ -199,5 +199,30 @@
   "technical_details": {
     "primary_extension": ".exe",
     "defined_fields": 15
+  },
+  "MimeTypes": [
+    "application/x-msdownload",
+    "application/x-dosexec"
+  ],
+  "Software": [
+    "Windows"
+  ],
+  "UseCases": [
+    "Windows executables",
+    "Programs",
+    "Applications"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 85,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-12",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ExecutablesFormat": true,
+    "Platform": "Windows"
   }
 }

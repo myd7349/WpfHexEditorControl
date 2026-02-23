@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "BMP Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Microsoft BMP File Format",
       "Windows Bitmap Format Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/gdi/bitmap-storage",
       "https://en.wikipedia.org/wiki/BMP_file_format"
     ]
@@ -127,5 +127,33 @@
     "images_format": true,
     "primary_extension": ".bmp",
     "defined_fields": 7
+  },
+  "MimeTypes": [
+    "image/bmp",
+    "image/x-ms-bmp"
+  ],
+  "Software": [
+    "Microsoft Paint",
+    "Photoshop",
+    "GIMP",
+    "All image viewers"
+  ],
+  "UseCases": [
+    "Simple graphics",
+    "Windows bitmaps",
+    "Uncompressed images"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-08",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "Platform": "Windows"
   }
 }

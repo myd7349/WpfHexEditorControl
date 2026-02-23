@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Canon Raw Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Inside the Canon RAW Format Version 2",
       "Canon CR2 EXIF and Metadata Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://lclevy.free.fr/cr2/",
       "http://fileformats.archiveteam.org/wiki/Canon_RAW_2",
       "https://docs.fileformat.com/image/cr2/",
@@ -73,5 +73,34 @@
     "images_format": true,
     "primary_extension": ".cr2",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "image/cr2"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

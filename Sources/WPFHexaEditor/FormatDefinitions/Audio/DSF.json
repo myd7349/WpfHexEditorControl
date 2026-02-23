@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "DSD Stream File",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "DSD Stream File Format",
       "Direct Stream Digital Audio Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://dsd-guide.com/sites/default/files/white-papers/DSFFileFormatSpec_E.pdf",
       "https://dsd-guide.com/sonys-dsf-file-format-spec",
       "https://en.wikipedia.org/wiki/Direct_Stream_Digital",
@@ -72,5 +72,33 @@
     "audio_format": true,
     "primary_extension": ".dsf",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/dsf"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

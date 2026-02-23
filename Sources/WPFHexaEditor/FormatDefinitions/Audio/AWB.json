@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "AMR-WB Audio",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "3GPP TS 26.171 - AMR-WB General Description",
       "Adaptive Multi-Rate Wideband Audio Codec"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.tech-invite.com/3m26/tinv-3gpp-26-173.html",
       "https://www.tech-invite.com/3m26/tinv-3gpp-26-171.html",
       "https://en.wikipedia.org/wiki/Adaptive_Multi-Rate_Wideband",
@@ -70,5 +70,33 @@
     "audio_format": true,
     "primary_extension": ".awb",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/awb"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

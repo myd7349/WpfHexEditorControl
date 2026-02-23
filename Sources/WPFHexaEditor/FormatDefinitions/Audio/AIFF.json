@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "AIFF Audio",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "AIFF-C Specification - IFF-AIFC",
       "Audio Interchange File Format - Apple Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/AIFF/Docs/AIFF-1.3.pdf",
       "https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/AIFF/AIFF.html",
       "https://en.wikipedia.org/wiki/Audio_Interchange_File_Format",
@@ -95,5 +95,33 @@
     "audio_format": true,
     "primary_extension": ".aiff",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "audio/aiff"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

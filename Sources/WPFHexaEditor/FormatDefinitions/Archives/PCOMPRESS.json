@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Parallel Compression Archive",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "PCompress Archive Format",
       "Chunk-Based Parallel Compression"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://github.com/moinakg/pcompress",
       "https://moinakg.github.io/pcompress/",
       "https://encode.su/threads/1639-pcompress-a-deduplication-compression-utility"
@@ -96,5 +96,34 @@
     "archives_format": true,
     "primary_extension": ".pz",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "application/x-pcompress-compressed"
+  ],
+  "Software": [
+    "7-Zip",
+    "WinRAR",
+    "WinZip",
+    "PeaZip",
+    "The Unarchiver"
+  ],
+  "UseCases": [
+    "File compression",
+    "Archive storage",
+    "Backup",
+    "Distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ArchivesFormat": true,
+    "SupportsEncryption": false
   }
 }

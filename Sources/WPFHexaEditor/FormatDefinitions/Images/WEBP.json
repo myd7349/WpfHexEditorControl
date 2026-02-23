@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "WebP Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "WebP Lossy Bitstream Specification",
       "WebP Lossless Bitstream Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developers.google.com/speed/webp/docs/riff_container",
       "https://developers.google.com/speed/webp/docs/webp_lossless_bitstream_specification",
       "https://en.wikipedia.org/wiki/WebP"
@@ -92,5 +92,33 @@
     "images_format": true,
     "primary_extension": ".webp",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "image/webp"
+  ],
+  "Software": [
+    "Chrome",
+    "Firefox",
+    "Edge",
+    "Photoshop 2023+",
+    "GIMP"
+  ],
+  "UseCases": [
+    "Web images",
+    "Modern compression",
+    "Google images"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-12",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "CompressionMethod": "VP8/VP9 based"
   }
 }

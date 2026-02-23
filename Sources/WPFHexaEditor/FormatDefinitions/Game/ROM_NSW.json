@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Nintendo Switch Package",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "NSP (Nintendo Submission Package) Format",
       "XCI (Game Cartridge) & NCA (Content Archive) Formats"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.retroreversing.com/SwitchFileFormats",
       "https://www.oreateai.com/blog/understanding-the-differences-between-xci-and-nsp-formats-for-nintendo-switch/0fcbf59b792ceae77f660eac57a435d8",
       "https://github.com/jakcron/nstool",
@@ -114,5 +114,33 @@
   "technical_details": {
     "primary_extension": ".nsp",
     "defined_fields": 5
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

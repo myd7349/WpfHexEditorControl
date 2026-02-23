@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Musepack Audio",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "Musepack Audio Codec Standard",
       "MPC Format Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://trac.musepack.net/musepack/wiki/SV8Specification",
       "https://mutagen-specs.readthedocs.io/en/latest/mpc/sv8.html",
       "https://en.wikipedia.org/wiki/Musepack",
@@ -74,5 +74,33 @@
     "audio_format": true,
     "primary_extension": ".mpc",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/mpc"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

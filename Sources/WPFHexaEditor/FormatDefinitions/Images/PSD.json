@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Photoshop Document",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "PSD Format Technical Documentation",
       "Adobe PSD File Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.adobe.com/devnet-apps/photoshop/fileformatashtml/",
       "https://www.fileformat.info/format/psd/egff.htm",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000523.shtml",
@@ -134,5 +134,31 @@
       "16",
       "32-bit"
     ]
+  },
+  "MimeTypes": [
+    "image/vnd.adobe.photoshop",
+    "application/photoshop"
+  ],
+  "Software": [
+    "Adobe Photoshop",
+    "GIMP (partial)",
+    "Affinity Photo"
+  ],
+  "UseCases": [
+    "Professional image editing",
+    "Layered graphics",
+    "Digital art"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-11",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true
   }
 }

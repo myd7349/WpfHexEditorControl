@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "ICO Icon",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Microsoft Icon Format",
       "ICO/CUR File Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/ICO_(file_format)",
       "https://formats.kaitai.io/ico/",
       "https://docs.fileformat.com/image/ico/",
@@ -102,5 +102,33 @@
       "32-bit"
     ],
     "transparency": true
+  },
+  "MimeTypes": [
+    "image/x-icon",
+    "image/vnd.microsoft.icon"
+  ],
+  "Software": [
+    "Paint.NET",
+    "GIMP",
+    "IcoFX",
+    "Browsers"
+  ],
+  "UseCases": [
+    "Favicons",
+    "Windows icons",
+    "Application icons"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-06",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "Platform": "Windows"
   }
 }

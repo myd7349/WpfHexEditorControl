@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PostScript Document",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
     "specifications": [
       "PostScript Document Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/PS"
     ]
   },
@@ -68,5 +68,33 @@
   "technical_details": {
     "primary_extension": ".ps",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "application/ps"
+  ],
+  "Software": [
+    "Adobe Acrobat",
+    "Microsoft Office",
+    "LibreOffice",
+    "FoxIt Reader",
+    "Calibre"
+  ],
+  "UseCases": [
+    "Document viewing",
+    "Reading",
+    "Publishing",
+    "Archival"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true
   }
 }

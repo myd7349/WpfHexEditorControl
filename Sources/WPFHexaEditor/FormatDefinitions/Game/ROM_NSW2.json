@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Nintendo Switch 2 Package",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "NSP/XCI/NCA Format Evolution",
       "Next-Gen Nintendo Format Standards"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.retroreversing.com/SwitchFileFormats",
       "https://www.oreateai.com/blog/understanding-the-differences-between-xci-and-nsp-formats-for-nintendo-switch/",
       "https://switchrom101.com/what-file-formats-are-switch-roms-nsp-vs-xci-explained-simply/",
@@ -178,5 +178,33 @@
   "technical_details": {
     "primary_extension": ".nsp",
     "defined_fields": 11
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

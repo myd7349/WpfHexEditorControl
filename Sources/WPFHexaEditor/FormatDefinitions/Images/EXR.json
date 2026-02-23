@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "OpenEXR Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "OpenEXR HDR Image File Format",
       "Academy Software Foundation OpenEXR"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.openexr.com/",
       "https://github.com/AcademySoftwareFoundation/openexr",
       "https://developer.nvidia.com/gpugems/gpugems/part-iv-image-processing/chapter-26-openexr-image-file-format",
@@ -79,5 +79,34 @@
     "images_format": true,
     "primary_extension": ".exr",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "image/exr"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

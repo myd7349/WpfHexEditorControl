@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "MPEG Video",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "ISO/IEC 13818-2 - MPEG-2 Video Standard",
       "MPEG Video Coding"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/MPEG-1",
       "https://en.wikipedia.org/wiki/MPEG-2",
       "https://blog.ansi.org/ansi/iso-iec-11172-mpeg-1-coding-15-mbits/",
@@ -86,5 +86,33 @@
     "primary_extension": ".mpg",
     "defined_fields": 2,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/mpeg"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

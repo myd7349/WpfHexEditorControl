@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Valve Package",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Source Engine VPK Archive",
       "Valve Pak File Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.valvesoftware.com/wiki/VPK",
       "https://developer.valvesoftware.com/wiki/VPK_(file_format)",
       "https://github.com/craftablescience/VPKEdit",
@@ -68,5 +68,33 @@
   "technical_details": {
     "primary_extension": ".vpk",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Excel Workbook",
   "version": "1.0",
   "extensions": [
@@ -11,7 +11,7 @@
     "specifications": [
       "Excel Workbook Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/XLSX"
     ]
   },
@@ -77,5 +77,33 @@
   "technical_details": {
     "primary_extension": ".xlsx",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  ],
+  "Software": [
+    "Microsoft Excel",
+    "LibreOffice Calc",
+    "Google Sheets",
+    "Numbers"
+  ],
+  "UseCases": [
+    "Spreadsheets",
+    "Data analysis",
+    "Finance",
+    "Budgets"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 5,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-11",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true,
+    "Container": "ZIP (Office Open XML)"
   }
 }

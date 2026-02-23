@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "DLL Library",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
       "Microsoft PE Format Specification",
       "Windows DLL Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
       "https://en.wikipedia.org/wiki/Dynamic-link_library"
     ]
@@ -96,5 +96,29 @@
   "technical_details": {
     "primary_extension": ".dll",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "application/x-msdownload"
+  ],
+  "Software": [
+    "Windows"
+  ],
+  "UseCases": [
+    "Windows libraries",
+    "System files",
+    "Shared libraries"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-12",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ExecutablesFormat": true,
+    "Platform": "Windows"
   }
 }

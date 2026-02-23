@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "NIfTI Medical Image",
   "version": "1.0",
   "extensions": [
@@ -11,7 +11,7 @@
     "specifications": [
       "NIfTI Medical Image Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/NII"
     ]
   },
@@ -68,5 +68,28 @@
     "3d_4d_volumes": true,
     "orientation_info": true,
     "nifti_1_and_2": true
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Hex Editor",
+    "File Viewer",
+    "Archive Manager"
+  ],
+  "UseCases": [
+    "File storage",
+    "Data exchange",
+    "Archive"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

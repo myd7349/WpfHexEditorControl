@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PEM Certificate",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "Textual Encodings of PKIX, PKCS, and CMS Structures - RFC 7468",
       "X.509 Certificate Format - RFC 5280"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail",
       "https://www.rfc-editor.org/rfc/rfc7468",
       "https://datatracker.ietf.org/doc/html/rfc5280",
@@ -108,5 +108,28 @@
   "technical_details": {
     "primary_extension": ".pem",
     "defined_fields": 5
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Hex Editor",
+    "File Viewer",
+    "Archive Manager"
+  ],
+  "UseCases": [
+    "File storage",
+    "Data exchange",
+    "Archive"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

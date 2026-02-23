@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Monkey's Audio",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "APE File Format Specification",
       "APEv2 Tagging Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.monkeysaudio.com/",
       "https://en.wikipedia.org/wiki/Monkey's_Audio",
       "https://wiki.hydrogenaudio.org/index.php?title=Monkey's_Audio",
@@ -89,5 +89,33 @@
       "Insane"
     ],
     "slower_than": "FLAC"
+  },
+  "MimeTypes": [
+    "audio/ape"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

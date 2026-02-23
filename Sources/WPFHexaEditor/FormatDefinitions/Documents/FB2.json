@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "FictionBook 2.0",
   "version": "1.0",
   "extensions": [
@@ -11,7 +11,7 @@
     "specifications": [
       "FictionBook 2.0 Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/FB2"
     ]
   },
@@ -82,5 +82,33 @@
   "technical_details": {
     "primary_extension": ".fb2",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/fb2"
+  ],
+  "Software": [
+    "Adobe Acrobat",
+    "Microsoft Office",
+    "LibreOffice",
+    "FoxIt Reader",
+    "Calibre"
+  ],
+  "UseCases": [
+    "Document viewing",
+    "Reading",
+    "Publishing",
+    "Archival"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true
   }
 }

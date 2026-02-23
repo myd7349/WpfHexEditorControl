@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "IPS Patch",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "IPS Binary Patch Format",
       "Classic ROM Patching Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://justsolve.archiveteam.org/wiki/IPS_(binary_patch_format)",
       "https://docs.fileformat.com/game/ips/",
       "https://consolemods.org/wiki/Applying_ROM_Patches",
@@ -101,5 +101,33 @@
   "technical_details": {
     "primary_extension": ".ips",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

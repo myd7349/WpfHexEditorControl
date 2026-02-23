@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Material Exchange Format",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "SMPTE 377M - Material Exchange Format",
       "RFC 4539 - SMPTE MXF Media Type Registration"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://pub.smpte.org/latest/st377-1/st377-1-2019.pdf",
       "https://en.wikipedia.org/wiki/Material_Exchange_Format",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000013.shtml",
@@ -75,5 +75,33 @@
     "frame_accurate": true,
     "multi_track": true,
     "broadcast_standard": true
+  },
+  "MimeTypes": [
+    "video/mxf"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

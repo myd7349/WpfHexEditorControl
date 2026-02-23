@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PlayStation EXE",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "PSX-SPX CDROM File Documentation",
       "PlayStation Executable Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://psx-spx.consoledev.net/cdromfileformats/",
       "https://www.retroreversing.com/ps1-exe",
       "https://www.zanneth.com/2018/11/01/psx-exe-file-format.html",
@@ -188,5 +188,33 @@
   "technical_details": {
     "primary_extension": ".exe",
     "defined_fields": 12
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

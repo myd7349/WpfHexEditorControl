@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "EA BIG Archive",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "BIG File Format Specification",
       "Electronic Arts Game Resource Package"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://rewiki.miraheze.org/wiki/EA_BIG_BIGF_Archive",
       "https://github.com/TheAssemblyArmada/Thyme-Wiki/blob/master/BIG-File-Format.md",
       "https://chipgw.com/2014/12/19/the-big-file-format/",
@@ -95,5 +95,33 @@
   "technical_details": {
     "primary_extension": ".big",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

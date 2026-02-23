@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Portable Pixmap",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Portable Pixmap Format (PPM) - Plain/Raw",
       "PPM RGB Color Image Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://netpbm.sourceforge.net/doc/ppm.html",
       "https://en.wikipedia.org/wiki/Netpbm",
       "http://justsolve.archiveteam.org/wiki/Netpbm_formats",
@@ -79,5 +79,34 @@
     "images_format": true,
     "primary_extension": ".ppm",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "image/ppm"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

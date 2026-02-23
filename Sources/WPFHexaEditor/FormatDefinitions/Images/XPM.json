@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "X PixMap",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "XPM C Source Code Pixmap Format",
       "X11 PixMap Format Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/X_PixMap",
       "https://www.xfree86.org/current/xpm.pdf",
       "http://fileformats.archiveteam.org/wiki/XPM",
@@ -70,5 +70,34 @@
     "images_format": true,
     "primary_extension": ".xpm",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "image/xpm"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

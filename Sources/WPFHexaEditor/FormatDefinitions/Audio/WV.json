@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "WavPack Audio",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
       "Microsoft WAVE Audio File Format",
       "RFC 2361 - WAVE and AVI Codec Registries"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/multimedia/waveform-audio-file-format",
       "https://www.ietf.org/rfc/rfc2361.txt",
       "https://en.wikipedia.org/wiki/WAV"
@@ -68,5 +68,33 @@
     "audio_format": true,
     "primary_extension": ".wv",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/wv"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

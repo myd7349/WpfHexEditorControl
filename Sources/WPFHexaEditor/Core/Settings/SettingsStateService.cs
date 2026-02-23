@@ -31,6 +31,7 @@ namespace WpfHexaEditor.Core.Settings
         /// </summary>
         public string SaveState(object hexEditorInstance)
         {
+            System.Diagnostics.Debug.WriteLine(">>> [SettingsStateService.SaveState] METHOD BODY ENTERED <<<");
             if (hexEditorInstance == null)
                 throw new ArgumentNullException(nameof(hexEditorInstance));
 
@@ -85,6 +86,7 @@ namespace WpfHexaEditor.Core.Settings
         /// </summary>
         public void LoadState(object hexEditorInstance, string json)
         {
+            System.Diagnostics.Debug.WriteLine(">>> [SettingsStateService.LoadState] METHOD BODY ENTERED <<<");
             if (hexEditorInstance == null)
                 throw new ArgumentNullException(nameof(hexEditorInstance));
 

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "XFS Filesystem",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "The SGI XFS Filesystem - Linux Kernel",
       "XFS Journaling and Metadata"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/XFS",
       "https://docs.kernel.org/admin-guide/xfs.html",
       "https://wiki.osdev.org/XFS",
@@ -68,5 +68,31 @@
   "technical_details": {
     "primary_extension": ".xfs",
     "defined_fields": 1
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "DiskInternals",
+    "R-Studio",
+    "HxD",
+    "FTK Imager",
+    "Autopsy"
+  ],
+  "UseCases": [
+    "Disk imaging",
+    "Forensics",
+    "Data recovery",
+    "Analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

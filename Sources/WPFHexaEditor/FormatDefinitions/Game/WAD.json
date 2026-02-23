@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Doom WAD File",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "IWAD/PWAD Specification",
       "id Software WAD Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://doomwiki.org/wiki/WAD",
       "https://moddingwiki.shikadi.net/wiki/WAD_Format",
       "https://coleton.io/posts/wad/",
@@ -68,5 +68,33 @@
   "technical_details": {
     "primary_extension": ".wad",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

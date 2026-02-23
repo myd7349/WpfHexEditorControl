@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "TGA Image",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "TARGA Raster Graphics Format",
       "TGA Image Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/Truevision_TGA",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000180.shtml",
       "https://formats.kaitai.io/tga/",
@@ -92,5 +92,34 @@
     "images_format": true,
     "primary_extension": ".tga",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "image/tga"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

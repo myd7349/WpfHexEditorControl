@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "ELF Executable",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "System V Application Binary Interface",
       "Tool Interface Standard (TIS)"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://refspecs.linuxfoundation.org/elf/elf.pdf",
       "https://en.wikipedia.org/wiki/Executable_and_Linkable_Format"
     ]
@@ -116,5 +116,32 @@
   "technical_details": {
     "primary_extension": "",
     "defined_fields": 6
+  },
+  "MimeTypes": [
+    "application/x-executable",
+    "application/x-elf"
+  ],
+  "Software": [
+    "Linux",
+    "Unix",
+    "FreeBSD"
+  ],
+  "UseCases": [
+    "Linux executables",
+    "Unix binaries",
+    "Embedded systems"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-11",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ExecutablesFormat": true,
+    "Platform": "Linux/Unix"
   }
 }

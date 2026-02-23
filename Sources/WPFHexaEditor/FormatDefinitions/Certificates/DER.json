@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "DER Certificate",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "X.509 Certificate Format - RFC 5280",
       "ASN.1 Distinguished Encoding Rules"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://datatracker.ietf.org/doc/html/rfc5280",
       "https://en.wikipedia.org/wiki/X.509",
       "https://www.oss.com/asn1/resources/asn1-made-simple/asn1-quick-reference/distinguished-encoding-rules.html",
@@ -81,5 +81,28 @@
   "technical_details": {
     "primary_extension": ".der",
     "defined_fields": 2
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Hex Editor",
+    "File Viewer",
+    "Archive Manager"
+  ],
+  "UseCases": [
+    "File storage",
+    "Data exchange",
+    "Archive"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

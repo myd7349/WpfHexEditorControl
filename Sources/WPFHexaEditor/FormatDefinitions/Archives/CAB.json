@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Cabinet Archive",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "GNU tar Format Documentation",
       "UStar Format Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.gnu.org/software/tar/manual/",
       "https://en.wikipedia.org/wiki/Tar_(computing)",
       "https://pubs.opengroup.org/onlinepubs/9699919799/utilities/pax.html"
@@ -100,5 +100,33 @@
     "archives_format": true,
     "primary_extension": ".cab",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "application/vnd.ms-cab-compressed"
+  ],
+  "Software": [
+    "Windows",
+    "7-Zip",
+    "WinRAR",
+    "cabextract"
+  ],
+  "UseCases": [
+    "Windows installers",
+    "Driver packages",
+    "System updates"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-07",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "LZX, Quantum",
+    "ArchivesFormat": true,
+    "Platform": "Windows"
   }
 }

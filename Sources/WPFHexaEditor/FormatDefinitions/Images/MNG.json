@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Multiple-image Network Graphics",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "MNG Animation Format Specification",
       "PNG-based Animation Container Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://www.libpng.org/pub/mng/spec/",
       "http://www.libpng.org/pub/mng/",
       "https://en.wikipedia.org/wiki/Multiple-image_Network_Graphics",
@@ -79,5 +79,34 @@
     "images_format": true,
     "primary_extension": ".mng",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "image/mng"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Quake 3 BSP",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Unofficial Quake 3 Map Specs",
       "id Software Quake III BSP"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://www.mralligator.com/q3/",
       "https://gist.github.com/Polda18/e491dca3b8fa3be2c83c29ae32c8bb87",
       "https://github.com/id-Software/Quake-III-Arena/blob/master/common/qfiles.h",
@@ -86,5 +86,33 @@
   "technical_details": {
     "primary_extension": ".bsp",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

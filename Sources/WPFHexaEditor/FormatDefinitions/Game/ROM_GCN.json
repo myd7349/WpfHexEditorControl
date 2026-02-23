@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Nintendo GameCube Disc",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "GameCube Disc Image Format Specification",
       "GCM File Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.gc-forever.com/yagcd/",
       "https://hitmen.c02.at/files/yagcd/yagcd/chap14.html",
       "https://www.retroreversing.com/gamecube-file-formats",
@@ -177,5 +177,33 @@
   "technical_details": {
     "primary_extension": ".gcm",
     "defined_fields": 11
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

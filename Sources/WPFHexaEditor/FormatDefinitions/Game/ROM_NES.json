@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "NES ROM",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
       "iNES ROM Format Specification",
       "NES 2.0 Format Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.nesdev.com/w/index.php/INES",
       "https://wiki.nesdev.com/w/index.php/NES_2.0",
       "https://en.wikipedia.org/wiki/INES"
@@ -162,5 +162,33 @@
   "technical_details": {
     "primary_extension": ".nes",
     "defined_fields": 9
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

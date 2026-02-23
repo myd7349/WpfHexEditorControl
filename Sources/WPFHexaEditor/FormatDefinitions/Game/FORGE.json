@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Ubisoft FORGE",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Ubisoft ANVIL Engine Archive",
       "FORGE scimage Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://fileinfo.com/extension/forge",
       "https://github.com/gentlegiantJGC/ACExplorer",
       "https://www.zenhax.com/viewtopic.php@t=9138.html",
@@ -86,5 +86,33 @@
   "technical_details": {
     "primary_extension": ".forge",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

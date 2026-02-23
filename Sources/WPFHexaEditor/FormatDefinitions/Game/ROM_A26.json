@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Atari 2600 ROM",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "6507 CPU Programming Reference",
       "Atari 2600 ROM Cartridge Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.atarihq.com/danb/a2600.shtml",
       "https://problemkaputt.de/2k6specs.htm",
       "https://www.randomterrain.com/atari-2600-memories-tutorial-andrew-davie-05.html",
@@ -91,5 +91,33 @@
   "technical_details": {
     "primary_extension": ".a26",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

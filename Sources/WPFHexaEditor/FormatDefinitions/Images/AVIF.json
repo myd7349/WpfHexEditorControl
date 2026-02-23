@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "AVIF Image",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
       "Microsoft AVI RIFF File Format",
       "Audio Video Interleave Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/directshow/avi-riff-file-reference",
       "https://en.wikipedia.org/wiki/Audio_Video_Interleave"
     ]
@@ -89,5 +89,34 @@
     "images_format": true,
     "primary_extension": ".avif",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "image/avif"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

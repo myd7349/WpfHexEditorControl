@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Minecraft Anvil Region",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Anvil Chunk Storage Format",
       "Region File Format (32×32 chunks)"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://minecraft.fandom.com/wiki/Anvil_file_format",
       "https://minecraft.fandom.com/wiki/Region_file_format",
       "https://wiki.vg/Map_Format",
@@ -77,5 +77,33 @@
   "technical_details": {
     "primary_extension": ".mca",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

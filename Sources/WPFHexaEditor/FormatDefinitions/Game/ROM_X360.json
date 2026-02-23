@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Xbox 360 Disc Image",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "Xbox 360 Executable Container Specification",
       "Free60 XEX Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://free60.org/System-Software/Formats/XEX/",
       "https://docs.fileformat.com/executable/xex/",
       "http://www.noxa.org/blog/2011/08/13/building-an-xbox-360-emulator-part-5-xex-files/",
@@ -112,5 +112,33 @@
   "technical_details": {
     "primary_extension": ".iso",
     "defined_fields": 5
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

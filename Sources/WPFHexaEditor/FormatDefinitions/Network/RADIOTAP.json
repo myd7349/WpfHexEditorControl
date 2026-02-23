@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Radiotap 802.11",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
     "specifications": [
       "Radiotap 802.11 Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/PCAP"
     ]
   },
@@ -146,5 +146,31 @@
   "technical_details": {
     "primary_extension": ".pcap",
     "defined_fields": 10
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Wireshark",
+    "tcpdump",
+    "NetworkMiner",
+    "Fiddler",
+    "Charles Proxy"
+  ],
+  "UseCases": [
+    "Network analysis",
+    "Packet capture",
+    "Debugging",
+    "Security analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

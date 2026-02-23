@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "QOI Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "QOI Lossless Image Format - Dominic Szablewski",
       "Fast Lossless Compression Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://qoiformat.org/",
       "https://qoiformat.org/qoi-specification.pdf",
       "https://github.com/phoboslab/qoi",
@@ -106,5 +106,34 @@
     "images_format": true,
     "primary_extension": ".qoi",
     "defined_fields": 5
+  },
+  "MimeTypes": [
+    "image/qoi"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

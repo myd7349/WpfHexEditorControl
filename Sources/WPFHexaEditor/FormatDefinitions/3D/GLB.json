@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Binary glTF",
   "version": "1.0",
   "extensions": [
@@ -11,7 +11,7 @@
     "specifications": [
       "Binary glTF Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/GLB"
     ]
   },
@@ -86,5 +86,31 @@
     "primary_extension": ".glb",
     "defined_fields": 3,
     "binary_format": true
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Blender",
+    "3ds Max",
+    "Maya",
+    "Cinema 4D",
+    "MeshLab"
+  ],
+  "UseCases": [
+    "3D modeling",
+    "Rendering",
+    "Animation",
+    "Game development"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

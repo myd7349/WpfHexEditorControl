@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PlayStation 4 Package",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "OrbisOS PKG/PFS Structure",
       "LibOrbisPkg - PS4 PKG/SFO/PFS Library"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.psdevwiki.com/ps4/PKG_files",
       "https://github.com/maxton/LibOrbisPkg",
       "https://github.com/pearlxcore/PS4-PKG-Tool",
@@ -129,5 +129,33 @@
   "technical_details": {
     "primary_extension": ".pkg",
     "defined_fields": 7
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "TIFF Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "TIFF Revision 6.0 Specification",
       "RFC 3302 - Tag Image File Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.adobe.io/open/standards/TIFF.html",
       "https://www.ietf.org/rfc/rfc3302.txt",
       "https://en.wikipedia.org/wiki/TIFF"
@@ -92,5 +92,34 @@
     "images_format": true,
     "primary_extension": ".tif",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "image/tiff"
+  ],
+  "Software": [
+    "Adobe Photoshop",
+    "GIMP",
+    "Preview",
+    "IrfanView"
+  ],
+  "UseCases": [
+    "Professional photography",
+    "Scanning",
+    "Print",
+    "Medical imaging"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 5,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-10",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 16,
+    "ColorSpace": "RGB, CMYK, Lab"
   }
 }

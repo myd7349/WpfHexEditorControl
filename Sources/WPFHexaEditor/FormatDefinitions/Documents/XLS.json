@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Excel Workbook (Legacy)",
   "version": "1.0",
   "extensions": [
@@ -11,7 +11,7 @@
     "specifications": [
       "Excel Workbook (Legacy) Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/XLS"
     ]
   },
@@ -75,5 +75,33 @@
   "technical_details": {
     "primary_extension": ".xls",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "application/xls"
+  ],
+  "Software": [
+    "Adobe Acrobat",
+    "Microsoft Office",
+    "LibreOffice",
+    "FoxIt Reader",
+    "Calibre"
+  ],
+  "UseCases": [
+    "Document viewing",
+    "Reading",
+    "Publishing",
+    "Archival"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true
   }
 }

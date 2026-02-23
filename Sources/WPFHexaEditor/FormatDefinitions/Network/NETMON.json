@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Microsoft Network Monitor",
   "version": "1.0",
   "extensions": [
@@ -11,7 +11,7 @@
     "specifications": [
       "Microsoft Network Monitor Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/CAP"
     ]
   },
@@ -117,5 +117,31 @@
   "technical_details": {
     "primary_extension": ".cap",
     "defined_fields": 7
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Wireshark",
+    "tcpdump",
+    "NetworkMiner",
+    "Fiddler",
+    "Charles Proxy"
+  ],
+  "UseCases": [
+    "Network analysis",
+    "Packet capture",
+    "Debugging",
+    "Security analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Python Compiled Bytecode",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
     "specifications": [
       "Python Compiled Bytecode Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/PYC"
     ]
   },
@@ -84,5 +84,31 @@
     "python_version_specific": true,
     "faster_loading": true,
     "not_obfuscation": true
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Visual Studio",
+    "GCC",
+    "LLVM",
+    "IDA Pro",
+    "Ghidra"
+  ],
+  "UseCases": [
+    "Software development",
+    "Compilation",
+    "Linking",
+    "Analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

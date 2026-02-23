@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "ARJ Archive",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "ARJ File Format Technical Documentation",
       "ARJ Compression Algorithm"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/ARJ",
       "http://fileformats.archiveteam.org/wiki/ARJ",
       "https://github.com/FarGroup/FarManager/blob/master/plugins/multiarc/arc.doc/arj.txt",
@@ -82,5 +82,34 @@
     "archives_format": true,
     "primary_extension": ".arj",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "application/x-arj-compressed"
+  ],
+  "Software": [
+    "7-Zip",
+    "WinRAR",
+    "WinZip",
+    "PeaZip",
+    "The Unarchiver"
+  ],
+  "UseCases": [
+    "File compression",
+    "Archive storage",
+    "Backup",
+    "Distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ArchivesFormat": true,
+    "SupportsEncryption": false
   }
 }

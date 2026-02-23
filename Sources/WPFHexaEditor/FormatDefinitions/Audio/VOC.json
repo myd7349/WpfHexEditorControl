@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Creative Voice File",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Creative Sound Blaster VOC Format",
       "VOC Audio File Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.multimedia.cx/index.php/Creative_Voice",
       "https://en.wikipedia.org/wiki/Creative_Voice_file",
       "https://moddingwiki.shikadi.net/wiki/VOC_Format",
@@ -71,5 +71,33 @@
     "audio_format": true,
     "primary_extension": ".voc",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/voc"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

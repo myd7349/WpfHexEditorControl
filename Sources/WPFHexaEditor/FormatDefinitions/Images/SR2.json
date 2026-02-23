@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Sony SR2 RAW",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "SR2 DSLR Camera RAW Format",
       "Sony Raw File Formats (SRF, SR2, ARW)"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://github.com/lclevy/sony_raw",
       "https://github.com/lclevy/sony_raw/blob/main/readme.md",
       "https://www.online-convert.com/file-format/sr2",
@@ -80,5 +80,34 @@
     "images_format": true,
     "primary_extension": ".sr2",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "image/sr2"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

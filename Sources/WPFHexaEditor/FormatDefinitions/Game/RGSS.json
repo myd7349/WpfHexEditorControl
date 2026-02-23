@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "RPG Maker Encrypted Archive",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "RGSS2A/RGSS3A Format Specification",
       "RPG Maker VX/VX Ace Archive"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://github.com/uuksu/RPGMakerDecrypter",
       "https://deepwiki.com/uuksu/RPGMakerDecrypter/4.1-rgssad-library",
       "https://github.com/RPG-Maker-Translation-Tools/rpgm-archive-decrypter",
@@ -81,5 +81,33 @@
   "technical_details": {
     "primary_extension": ".rgssad",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

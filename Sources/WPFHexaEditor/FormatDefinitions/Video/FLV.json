@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Flash Video",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "FLV Container Format",
       "Flash Video Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://download.macromedia.com/f4v/video_file_format_spec_v10_1.pdf",
       "https://en.wikipedia.org/wiki/Flash_Video",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000131.shtml",
@@ -113,5 +113,30 @@
     ],
     "streaming": true,
     "obsolete": true
+  },
+  "MimeTypes": [
+    "video/x-flv"
+  ],
+  "Software": [
+    "VLC",
+    "MPC-HC",
+    "Flash Player (legacy)"
+  ],
+  "UseCases": [
+    "Flash video",
+    "Legacy web video",
+    "Old streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-06",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "APNG Animated Image",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "ISO/IEC 15948:2004 - PNG Standard",
       "W3C PNG Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.w3.org/TR/PNG/",
       "https://www.ietf.org/rfc/rfc2083.txt",
       "https://en.wikipedia.org/wiki/Portable_Network_Graphics"
@@ -89,5 +89,34 @@
     "images_format": true,
     "primary_extension": ".apng",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "image/apng"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

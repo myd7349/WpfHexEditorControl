@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "CriWare CPK",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "CRI Middleware Resource Package",
       "CPK File Structure Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.vg-resource.com/CPK",
       "https://amicitia.miraheze.org/wiki/CPK",
       "https://github.com/esperknight/CriPakTools",
@@ -86,5 +86,33 @@
   "technical_details": {
     "primary_extension": ".cpk",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

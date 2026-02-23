@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "GIMP Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "GIMP Native Image Format Specification",
       "XCF Layered Image File Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://gimp-web-devel-afedc3.pages.gitlab.gnome.org/01-core-development/standards/xcf/",
       "https://en.wikipedia.org/wiki/XCF_(file_format)",
       "https://github.com/j-jorge/xcftools/blob/master/xcfspec.txt",
@@ -81,5 +81,34 @@
     "images_format": true,
     "primary_extension": ".xcf",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "image/xcf"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

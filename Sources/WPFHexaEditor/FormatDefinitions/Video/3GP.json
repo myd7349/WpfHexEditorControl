@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "3GPP Multimedia",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "ISO/IEC 14496-12 - ISO Base Media File Format",
       "MPEG-4 Part 12 Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/3GP_and_3G2",
       "https://standards.globalspec.com/std/14494053/iso-iec-14496-12",
       "https://www.3gpp.org/ftp/tsg_sa/tsg_sa/tsgs_22/docs/pdf/SP-030672.pdf",
@@ -94,5 +94,33 @@
     "primary_extension": ".3gp",
     "defined_fields": 3,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/3gp"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

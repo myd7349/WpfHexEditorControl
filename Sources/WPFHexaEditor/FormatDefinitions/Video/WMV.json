@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Windows Media Video",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "Microsoft AVI RIFF File Format",
       "Audio Video Interleave Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/directshow/avi-riff-file-reference",
       "https://en.wikipedia.org/wiki/Audio_Video_Interleave"
     ]
@@ -83,5 +83,31 @@
     "primary_extension": ".wmv",
     "defined_fields": 2,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/x-ms-wmv"
+  ],
+  "Software": [
+    "Windows Media Player",
+    "VLC",
+    "Groove Music"
+  ],
+  "UseCases": [
+    "Windows video",
+    "Streaming",
+    "Legacy video"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-09",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true,
+    "Platform": "Windows"
   }
 }

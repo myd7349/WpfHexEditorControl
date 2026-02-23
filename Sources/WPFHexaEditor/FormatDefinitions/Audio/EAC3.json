@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Dolby Digital Plus",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "ETSI TS 102 366 - E-AC-3 Standard",
       "Dolby Digital Plus Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.atsc.org/atsc-documents/a522012-digital-audio-compression-ac-3-e-ac-3-standard-12172012/",
       "https://en.wikipedia.org/wiki/Dolby_Digital_Plus",
       "http://www.atsc.org/wp-content/uploads/2015/03/A52-201212-17.pdf"
@@ -72,5 +72,33 @@
     "audio_format": true,
     "primary_extension": ".eac3",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/eac3"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

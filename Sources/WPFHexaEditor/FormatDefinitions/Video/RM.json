@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "RealMedia",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "RealNetworks Proprietary Format",
       "RealVideo and RealAudio Codec Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/RealMedia",
       "https://wiki.multimedia.cx/index.php/RealMedia",
       "https://docs.fileformat.com/video/rm/",
@@ -73,5 +73,33 @@
     "primary_extension": ".rm",
     "defined_fields": 1,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/rm"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PlayStation Vita Package",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "PS Vita PKG Format with NoNpDrm",
       "Vita SDK and Homebrew Packaging"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.psdevwiki.com/vita/VPK",
       "https://www.retroreversing.com/playstation-vita-file-formats",
       "https://vitasdk.org/",
@@ -111,5 +111,33 @@
   "technical_details": {
     "primary_extension": ".vpk",
     "defined_fields": 5
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Nintendo Wii Disc",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "WBFS (Wii Backup File System) Format",
       "Wiimms ISO Tools Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wit.wiimm.de/info/iso-images.html",
       "https://cadence.moe/blog/2022-05-24-explanation-of-wii-disc-image-formats",
       "https://wit.wiimm.de/",
@@ -197,5 +197,33 @@
   "technical_details": {
     "primary_extension": ".iso",
     "defined_fields": 13
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

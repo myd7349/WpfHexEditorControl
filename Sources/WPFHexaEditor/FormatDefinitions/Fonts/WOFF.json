@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Web Open Font Format",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
       "WOFF File Format 1.0",
       "W3C Recommendation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.w3.org/TR/WOFF/",
       "https://en.wikipedia.org/wiki/Web_Open_Font_Format"
     ]
@@ -92,5 +92,28 @@
   "technical_details": {
     "primary_extension": ".woff",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "font/woff"
+  ],
+  "Software": [
+    "Web browsers",
+    "Font editors"
+  ],
+  "UseCases": [
+    "Web fonts",
+    "Online typography"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-08",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "WOFF compression"
   }
 }

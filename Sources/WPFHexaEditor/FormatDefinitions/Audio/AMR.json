@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Adaptive Multi-Rate",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "3GPP TS 26.071 - AMR Speech Codec General Description",
       "Adaptive Multi-Rate Audio Codec Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.tech-invite.com/3m26/tinv-3gpp-26-073.html",
       "https://www.tech-invite.com/3m26/tinv-3gpp-26-071.html",
       "https://en.wikipedia.org/wiki/Adaptive_Multi-Rate_audio_codec",
@@ -71,5 +71,33 @@
     "audio_format": true,
     "primary_extension": ".amr",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/amr"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

@@ -133,6 +133,28 @@ namespace WpfHexaEditor.Views.Panels
         public event EventHandler RefreshRequested;
 
         /// <summary>
+        /// Set the format definition for enriched metadata display
+        /// </summary>
+        public void SetEnrichedFormat(Core.FormatDetection.FormatDefinition format)
+        {
+            if (EnrichedFormatPanel != null)
+            {
+                EnrichedFormatPanel.SetFormat(format);
+            }
+        }
+
+        /// <summary>
+        /// Clear the enriched format information
+        /// </summary>
+        public void ClearEnrichedFormat()
+        {
+            if (EnrichedFormatPanel != null)
+            {
+                EnrichedFormatPanel.ClearFormat();
+            }
+        }
+
+        /// <summary>
         /// Event fired when the formatter selection changes
         /// </summary>
         public event EventHandler<string> FormatterChanged;
@@ -256,6 +278,32 @@ namespace WpfHexaEditor.Views.Panels
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
             RefreshRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Open Actions context menu
+        /// </summary>
+        private void ActionsMenuButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.ContextMenu != null)
+            {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                button.ContextMenu.IsOpen = true;
+            }
+        }
+
+        /// <summary>
+        /// Open Export context menu
+        /// </summary>
+        private void ExportMenuButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.ContextMenu != null)
+            {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                button.ContextMenu.IsOpen = true;
+            }
         }
 
         private void QuickNavigate_Click(object sender, RoutedEventArgs e)
@@ -511,74 +559,6 @@ namespace WpfHexaEditor.Views.Panels
         {
             _showBookmarksOnly = false;
             ApplyFilter();
-        }
-
-        /// <summary>
-        /// Handler for clicking hyperlinks in references section
-        /// Opens the URL in the default browser
-        /// </summary>
-        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = e.Uri.AbsoluteUri,
-                    UseShellExecute = true
-                });
-                e.Handled = true;
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Could not open link: {ex.Message}",
-                    "Error", System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error);
-            }
-        }
-
-        /// <summary>
-        /// Handler for Copy References button
-        /// Copies specifications and web links to clipboard
-        /// </summary>
-        private void CopyReferences_Click(object sender, RoutedEventArgs e)
-        {
-            if (FormatInfo?.References == null)
-                return;
-
-            try
-            {
-                var sb = new System.Text.StringBuilder();
-                sb.AppendLine($"Format: {FormatInfo.Name}");
-                sb.AppendLine($"Category: {FormatInfo.Category}");
-                sb.AppendLine();
-
-                if (FormatInfo.References.Specifications?.Count > 0)
-                {
-                    sb.AppendLine("Specifications:");
-                    foreach (var spec in FormatInfo.References.Specifications)
-                        sb.AppendLine($"  - {spec}");
-                    sb.AppendLine();
-                }
-
-                if (FormatInfo.References.WebLinks?.Count > 0)
-                {
-                    sb.AppendLine("Web Links:");
-                    foreach (var link in FormatInfo.References.WebLinks)
-                        sb.AppendLine($"  - {link}");
-                }
-
-                System.Windows.Clipboard.SetText(sb.ToString());
-                System.Windows.MessageBox.Show("References copied to clipboard!",
-                    "Copied", System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error copying references: {ex.Message}");
-                System.Windows.MessageBox.Show($"Error copying references: {ex.Message}",
-                    "Error", System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error);
-            }
         }
 
         /// <summary>

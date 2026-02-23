@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Dolby Digital AC-3",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Dolby Digital Specification",
       "AC-3 Audio Codec Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.atsc.org/atsc-documents/a522012-digital-audio-compression-ac-3-e-ac-3-standard-12172012/",
       "https://en.wikipedia.org/wiki/Dolby_Digital",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000209.shtml",
@@ -71,5 +71,33 @@
     "audio_format": true,
     "primary_extension": ".ac3",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/ac3"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

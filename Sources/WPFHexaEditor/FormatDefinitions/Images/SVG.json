@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "SVG Vector Image",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "Scalable Vector Graphics Recommendation",
       "SVG 1.1 (Second Edition) W3C Recommendation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.w3.org/TR/SVG2/",
       "https://www.w3.org/Graphics/SVG/About.html",
       "https://developer.mozilla.org/en-US/docs/Web/SVG",
@@ -83,5 +83,32 @@
     "scripting": "JavaScript",
     "styling": "CSS",
     "animation": "SMIL"
+  },
+  "MimeTypes": [
+    "image/svg+xml"
+  ],
+  "Software": [
+    "Inkscape",
+    "Adobe Illustrator",
+    "Web browsers",
+    "Sketch"
+  ],
+  "UseCases": [
+    "Vector graphics",
+    "Logos",
+    "Icons",
+    "Web graphics"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 70,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 2,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-07",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true
   }
 }

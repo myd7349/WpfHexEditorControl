@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Meridian Lossless Packing",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "MLP DVD-Audio Standard",
       "Packed PCM Audio Codec"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.ambisonic.net/pdf/mlp_pr.pdf",
       "https://en.wikipedia.org/wiki/Meridian_Lossless_Packing",
       "https://wiki.hydrogenaudio.org/index.php?title=Meridian_Lossless_Packing",
@@ -70,5 +70,33 @@
     "audio_format": true,
     "primary_extension": ".mlp",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/mlp"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

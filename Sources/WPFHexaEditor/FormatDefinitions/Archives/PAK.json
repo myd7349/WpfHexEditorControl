@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PAK Archive",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Unreal Engine PAK Container",
       "id Software PAK Archive Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://quakewiki.org/wiki/.pak",
       "http://fileformats.archiveteam.org/wiki/Quake_PAK",
       "https://unrealpak.com/",
@@ -89,5 +89,34 @@
     "archives_format": true,
     "primary_extension": ".pak",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/x-pak-compressed"
+  ],
+  "Software": [
+    "7-Zip",
+    "WinRAR",
+    "WinZip",
+    "PeaZip",
+    "The Unarchiver"
+  ],
+  "UseCases": [
+    "File compression",
+    "Archive storage",
+    "Backup",
+    "Distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ArchivesFormat": true,
+    "SupportsEncryption": false
   }
 }

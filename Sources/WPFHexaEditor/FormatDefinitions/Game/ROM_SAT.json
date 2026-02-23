@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Sega Saturn Disc Image",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "Saturn IP.BIN Format",
       "Sega Saturn File Formats"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.retroreversing.com/sega-saturn-file-formats/",
       "https://segaxtreme.net/threads/about-ip-bin.6229/",
       "https://antime.kapsi.fi/sega/docs.html",
@@ -167,5 +167,33 @@
   "technical_details": {
     "primary_extension": ".iso",
     "defined_fields": 10
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

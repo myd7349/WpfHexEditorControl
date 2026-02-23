@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Ogg Video",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "RFC 3533 - The Ogg Encapsulation Format",
       "Ogg Bitstream Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.ietf.org/rfc/rfc3533.txt",
       "https://xiph.org/ogg/doc/",
       "https://en.wikipedia.org/wiki/Ogg"
@@ -72,5 +72,33 @@
     "primary_extension": ".ogv",
     "defined_fields": 1,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/ogv"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Snappy Compression",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "Google Snappy Compression Algorithm",
       "Snappy Stream Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://github.com/google/snappy/blob/main/framing_format.txt",
       "http://google.github.io/snappy/",
       "https://en.wikipedia.org/wiki/Snappy_(compression)",
@@ -91,5 +91,34 @@
     "archives_format": true,
     "primary_extension": ".snappy",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/x-snappy-compressed"
+  ],
+  "Software": [
+    "7-Zip",
+    "WinRAR",
+    "WinZip",
+    "PeaZip",
+    "The Unarchiver"
+  ],
+  "UseCases": [
+    "File compression",
+    "Archive storage",
+    "Backup",
+    "Distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ArchivesFormat": true,
+    "SupportsEncryption": false
   }
 }

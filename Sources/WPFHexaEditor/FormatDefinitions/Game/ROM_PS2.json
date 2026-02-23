@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PlayStation 2 Disc Image",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "ISO 9660 Standard for PS2",
       "PS2 Disc Image Technical Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/PlayStation_2_technical_specifications",
       "https://wiki.vg-resource.com/PlayStation_2",
       "https://consolemods.org/wiki/PS2:Creating_Game_Backups",
@@ -101,5 +101,33 @@
   "technical_details": {
     "primary_extension": ".iso",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "LZMA Compression",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "LZMA SDK Documentation",
       "XZ Utils File Format Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.7-zip.org/sdk.html",
       "https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm",
       "https://tukaani.org/xz/xz-file-format.txt",
@@ -92,5 +92,34 @@
     "primary_extension": ".lzma",
     "defined_fields": 3,
     "compression_method": "LZMA"
+  },
+  "MimeTypes": [
+    "application/x-lzma-compressed"
+  ],
+  "Software": [
+    "7-Zip",
+    "WinRAR",
+    "WinZip",
+    "PeaZip",
+    "The Unarchiver"
+  ],
+  "UseCases": [
+    "File compression",
+    "Archive storage",
+    "Backup",
+    "Distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ArchivesFormat": true,
+    "SupportsEncryption": false
   }
 }

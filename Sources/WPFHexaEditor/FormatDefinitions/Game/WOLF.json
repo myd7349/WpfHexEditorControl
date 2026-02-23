@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "RPG Maker WOLF",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "SmokingWOLF WOLF Encryption",
       "Wolf RPG Editor Data.wolf Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://rpgm.fandom.com/wiki/Wolf_RPG_Editor",
       "https://fileinfo.com/extension/wolf",
       "https://www.moddb.com/engines/wolf-rpg-editor",
@@ -77,5 +77,33 @@
   "technical_details": {
     "primary_extension": ".wolf",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

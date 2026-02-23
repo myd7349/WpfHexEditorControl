@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Btrfs Filesystem",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "B-tree Filesystem Design - Copy-on-Write",
       "BTRFS: The Linux B-Tree Filesystem"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://btrfs.readthedocs.io/en/latest/dev/On-disk-format.html",
       "https://en.wikipedia.org/wiki/Btrfs",
       "https://btrfs.readthedocs.io/en/latest/dev/dev-btrfs-design.html",
@@ -68,5 +68,31 @@
   "technical_details": {
     "primary_extension": ".btrfs",
     "defined_fields": 1
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "DiskInternals",
+    "R-Studio",
+    "HxD",
+    "FTK Imager",
+    "Autopsy"
+  ],
+  "UseCases": [
+    "Disk imaging",
+    "Forensics",
+    "Data recovery",
+    "Analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

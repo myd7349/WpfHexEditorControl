@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "DTS Audio",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "DTS Digital Surround Specification",
       "DTS-HD Master Audio Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000232.shtml",
       "https://en.wikipedia.org/wiki/DTS,_Inc.",
       "https://en.wikipedia.org/wiki/DTS-HD_Master_Audio",
@@ -73,5 +73,33 @@
     "audio_format": true,
     "primary_extension": ".dts",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/dts"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

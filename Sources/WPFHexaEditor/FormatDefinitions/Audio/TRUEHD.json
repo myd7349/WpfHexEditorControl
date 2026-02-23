@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Dolby TrueHD",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "Dolby TrueHD Lossless Audio Codec",
       "MLP for Blu-ray Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.dolby.com/globalassets/technology/dolby-truehd/dolbytruehdhighlevelbitstreamdescription.pdf",
       "https://developer.dolby.com/technology/dolby-audio/dolby-truehd",
       "https://en.wikipedia.org/wiki/Dolby_TrueHD",
@@ -72,5 +72,33 @@
     "audio_format": true,
     "primary_extension": ".thd",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/truehd"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

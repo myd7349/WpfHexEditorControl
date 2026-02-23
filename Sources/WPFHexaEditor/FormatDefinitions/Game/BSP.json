@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Quake BSP Map",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Quake Specs v3.4",
       "Binary Space Partitioning Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://quakewiki.org/wiki/Quake_BSP_Format",
       "https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm",
       "https://developer.valvesoftware.com/wiki/BSP",
@@ -68,5 +68,33 @@
   "technical_details": {
     "primary_extension": ".bsp",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "AU Audio",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "Open Group AU Audio Format Standard",
       "NeXT Soundfile Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://soundfile.sapp.org/doc/NextFormat/",
       "https://pubs.opengroup.org/external/auformat.html",
       "https://en.wikipedia.org/wiki/Au_file_format",
@@ -102,5 +102,33 @@
     "audio_format": true,
     "primary_extension": ".au",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "audio/au"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

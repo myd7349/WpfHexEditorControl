@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Apple Lossless Audio Codec",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "ALAC Open Source Format",
       "Apple Lossless in MPEG-4 Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://macosforge.github.io/alac/",
       "https://github.com/macosforge/alac",
       "https://en.wikipedia.org/wiki/Apple_Lossless_Audio_Codec",
@@ -79,5 +79,33 @@
       "32-bit"
     ],
     "sample_rates": "Up to 384 kHz"
+  },
+  "MimeTypes": [
+    "audio/alac"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

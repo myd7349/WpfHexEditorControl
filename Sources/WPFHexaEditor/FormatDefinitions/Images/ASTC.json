@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "ASTC Texture",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Adaptive Scalable Texture Compression User Guide",
       "OpenGL/Vulkan ASTC Texture Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.arm.com/technologies/graphics-technologies/adaptive-scalable-texture-compression",
       "https://developer.arm.com/documentation/102162/latest/",
       "https://github.com/ARM-software/astc-encoder",
@@ -88,5 +88,34 @@
     "images_format": true,
     "primary_extension": ".astc",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "image/astc"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

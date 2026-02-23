@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "YUV4MPEG2",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "mjpegtools Video Stream Format",
       "Uncompressed YCbCr 4:2:0 Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.multimedia.cx/index.php/YUV4MPEG2",
       "https://linux.die.net/man/5/yuv4mpeg",
       "https://manpages.ubuntu.com/manpages/jammy/man5/yuv4mpeg.5.html"
@@ -71,5 +71,33 @@
     "primary_extension": ".y4m",
     "defined_fields": 1,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/y4m"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

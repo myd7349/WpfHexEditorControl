@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Olympus Raw Image",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "ORF Digital Camera RAW Format",
       "Olympus Proprietary RAW Image Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://fileformats.archiveteam.org/wiki/Olympus_ORF",
       "https://en.wikipedia.org/wiki/ORF_format",
       "https://learnandsupport.getolympus.com/learn-center/photography-tips/basics-of-photography/why-shoot-in-raw",
@@ -73,5 +73,34 @@
     "images_format": true,
     "primary_extension": ".orf",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "image/orf"
+  ],
+  "Software": [
+    "Photoshop",
+    "GIMP",
+    "Paint.NET",
+    "IrfanView",
+    "XnView"
+  ],
+  "UseCases": [
+    "Image viewing",
+    "Photo editing",
+    "Graphics design",
+    "Web publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "BitDepth": 8
   }
 }

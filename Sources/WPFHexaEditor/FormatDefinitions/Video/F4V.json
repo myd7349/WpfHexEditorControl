@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Flash MP4 Video",
   "version": "1.0",
   "extensions": [
@@ -15,7 +15,7 @@
       "ISO/IEC 14496-12 - ISO Base Media File Format",
       "ISO/IEC 14496-14 - MP4 File Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://mpeg.chiariglione.org/standards/mpeg-4",
       "https://en.wikipedia.org/wiki/MPEG-4_Part_14"
     ]
@@ -75,5 +75,33 @@
     "primary_extension": ".f4v",
     "defined_fields": 1,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/f4v"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

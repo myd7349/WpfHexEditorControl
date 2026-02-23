@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "QuickTime Movie",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "ISO/IEC 14496-12 - ISO Base Media File Format",
       "Apple QuickTime Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.apple.com/documentation/quicktime-file-format",
       "https://en.wikipedia.org/wiki/QuickTime_File_Format",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000052.shtml",
@@ -86,5 +86,33 @@
     "codecs": "Any",
     "professional_features": true,
     "timecode_support": true
+  },
+  "MimeTypes": [
+    "video/quicktime"
+  ],
+  "Software": [
+    "QuickTime",
+    "VLC",
+    "iMovie",
+    "Final Cut Pro"
+  ],
+  "UseCases": [
+    "Apple video",
+    "Professional video",
+    "iPhone recordings"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 5,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-11",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true,
+    "Container": "QuickTime",
+    "Platform": "macOS"
   }
 }

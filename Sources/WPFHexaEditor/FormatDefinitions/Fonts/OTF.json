@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "OpenType Font",
   "version": "1.0",
   "extensions": [
@@ -12,7 +12,7 @@
       "OpenType Specification",
       "ISO/IEC 14496-22:2019 - Open Font Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.microsoft.com/en-us/typography/opentype/spec/",
       "https://en.wikipedia.org/wiki/OpenType"
     ]
@@ -84,5 +84,29 @@
   "technical_details": {
     "primary_extension": ".otf",
     "defined_fields": 3
-  }
+  },
+  "MimeTypes": [
+    "font/otf",
+    "application/x-font-opentype"
+  ],
+  "Software": [
+    "All operating systems",
+    "Adobe products",
+    "Font editors"
+  ],
+  "UseCases": [
+    "Professional fonts",
+    "Print design",
+    "Advanced typography"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-09",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {}
 }

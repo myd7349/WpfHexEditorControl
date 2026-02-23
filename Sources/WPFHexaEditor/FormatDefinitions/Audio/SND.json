@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Sound File",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Digital Sound File Format (.snd)",
       "Sun Microsystems Audio File Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://soundfile.sapp.org/doc/NextFormat/",
       "https://en.wikipedia.org/wiki/Digital_sound_file_formats_using_the_.snd_extension",
       "https://www.file-recovery.com/au-signature-format.htm",
@@ -70,5 +70,33 @@
     "audio_format": true,
     "primary_extension": ".snd",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/snd"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

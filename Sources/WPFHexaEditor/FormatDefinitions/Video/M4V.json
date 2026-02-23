@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "iTunes Video",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "ISO/IEC 14496-1 - MPEG-4 Systems",
       "Apple FairPlay DRM Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/MP4_file_format",
       "https://cloudinary.com/guides/video-formats/m4v-format-how-it-works-and-m4v-vs-mp4",
       "https://www.movavi.com/learning-portal/m4v-file.html"
@@ -71,5 +71,33 @@
     "primary_extension": ".m4v",
     "defined_fields": 1,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/m4v"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

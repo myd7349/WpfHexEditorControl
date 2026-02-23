@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Game Boy ROM",
   "version": "1.0",
   "extensions": [
@@ -13,7 +13,7 @@
       "Game Boy Programming Manual",
       "Pan Docs - Game Boy Technical Reference"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://gbdev.io/pandocs/",
       "https://gekkio.fi/files/gb-docs/gbctr.pdf",
       "https://en.wikipedia.org/wiki/Game_Boy"
@@ -222,5 +222,33 @@
   "technical_details": {
     "primary_extension": ".gb",
     "defined_fields": 14
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

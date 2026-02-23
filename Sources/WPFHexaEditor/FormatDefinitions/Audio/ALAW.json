@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "A-law Audio",
   "version": "1.0",
   "extensions": [
@@ -14,7 +14,7 @@
       "A-law Logarithmic Companding Algorithm",
       "G.711 Telephony Codec Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.itu.int/rec/T-REC-G.711/",
       "https://en.wikipedia.org/wiki/G.711",
       "https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-G.711-198811-I!!PDF-E&type=items"
@@ -71,5 +71,33 @@
     "audio_format": true,
     "primary_extension": ".alaw",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/alaw"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }
