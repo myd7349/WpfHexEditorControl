@@ -31,6 +31,7 @@ namespace WpfHexaEditor.ViewModels
         private bool _isEditable;
         private string _editableValue;
         private bool _isBookmarked;
+        private bool _isSearchMatch;
 
         /// <summary>
         /// Name of the field (e.g., "Image Width", "File Signature")
@@ -249,6 +250,22 @@ namespace WpfHexaEditor.ViewModels
                 if (_isBookmarked != value)
                 {
                     _isBookmarked = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Whether this field matches the current search query
+        /// </summary>
+        public bool IsSearchMatch
+        {
+            get => _isSearchMatch;
+            set
+            {
+                if (_isSearchMatch != value)
+                {
+                    _isSearchMatch = value;
                     OnPropertyChanged();
                 }
             }

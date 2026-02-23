@@ -17,6 +17,7 @@
             <Setter Property="Margin" Value="0,1"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <EventSetter Event="MouseDoubleClick" Handler="FieldItem_MouseDoubleClick"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="#E3F2FD"/>
@@ -92,11 +93,21 @@
                         </TextBlock.Style>
                     </TextBlock>
 
+                    <!-- Search match indicator -->
+                    <TextBlock Grid.Row="0" Grid.RowSpan="4" Grid.Column="3"
+                               Text="🔍"
+                               FontSize="11"
+                               Margin="0,0,4,0"
+                               VerticalAlignment="Center"
+                               Foreground="#4CAF50"
+                               ToolTip="Search match"
+                               Visibility="{Binding IsSearchMatch, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
                     <!-- Bookmark indicator -->
                     <TextBlock Grid.Row="0" Grid.RowSpan="4" Grid.Column="3"
                                Text="⭐"
                                FontSize="12"
-                               Margin="0,0,6,0"
+                               Margin="14,0,6,0"
                                VerticalAlignment="Center"
                                ToolTip="Bookmarked"
                                Visibility="{Binding IsBookmarked, Converter={StaticResource BoolToVisibilityConverter}}"/>
@@ -136,9 +147,9 @@
                                Margin="0,2,0,0"
                                FontSize="10"
                                Foreground="#999999">
-                        <Run Text="{Binding RangeDisplay}"/>
+                        <Run Text="{Binding RangeDisplay, Mode=OneWay}"/>
                         <Run Text=" • "/>
-                        <Run Text="{Binding ValueType}"/>
+                        <Run Text="{Binding ValueType, Mode=OneWay}"/>
                     </TextBlock>
 
                     <!-- Validation error message -->
@@ -232,7 +243,7 @@
 
                 <TextBox x:Name="SearchTextBox"
                          Grid.Column="1"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                          FontSize="12"
                          Padding="4"
                          VerticalAlignment="Center"
@@ -296,7 +307,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" FontWeight="SemiBold" FontSize="12">
                         <Run Text="Format:"/>
-                        <Run Text="{Binding FormatInfo.Name}" Foreground="#2196F3"/>
+                        <Run Text="{Binding FormatInfo.Name, Mode=OneWay}" Foreground="#2196F3"/>
                     </TextBlock>
                     <Border Grid.Column="2"
                             Background="#FFE5B4"
@@ -323,6 +334,7 @@
                  ItemTemplate="{StaticResource FieldTemplate}"
                  ItemContainerStyle="{StaticResource FieldItemStyle}"
                  SelectionChanged="FieldsListBox_SelectionChanged"
+                 KeyDown="FieldsListBox_KeyDown"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  BorderThickness="0"
                  VirtualizingPanel.IsVirtualizing="True"
@@ -440,8 +452,11 @@
                 <TextBlock Grid.Column="0"
                            FontSize="11"
                            Foreground="#666666">
+                    <Run Text="{Binding FilteredFields.Count, Mode=OneWay}"/>
+                    <Run Text="/"/>
                     <Run Text="{Binding ParsedFields.Count, Mode=OneWay}"/>
                     <Run Text="field(s)"/>
+                    <Run Text="{Binding SearchResultText, Mode=OneWay}" Foreground="#4CAF50" FontWeight="SemiBold"/>
                 </TextBlock>
 
                 <ComboBox x:Name="FormatterComboBox"
@@ -450,10 +465,10 @@
                           FontSize="11"
                           SelectionChanged="FormatterComboBox_SelectionChanged"
                           ToolTip="Choose value display format">
-                    <ComboBoxItem Content="Hexadecimal" Tag="hex" IsSelected="True"/>
+                    <ComboBoxItem Content="Mixed (Smart)" Tag="mixed" IsSelected="True"/>
+                    <ComboBoxItem Content="Hexadecimal" Tag="hex"/>
                     <ComboBoxItem Content="Decimal" Tag="decimal"/>
                     <ComboBoxItem Content="String" Tag="string"/>
-                    <ComboBoxItem Content="Mixed" Tag="mixed"/>
                 </ComboBox>
             </Grid>
         </Border>

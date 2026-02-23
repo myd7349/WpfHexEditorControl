@@ -60,6 +60,20 @@ namespace WpfHexaEditor.Formatters
 
         private string FormatInteger(byte value)
         {
+            // Add ASCII character if printable
+            if (value >= 32 && value <= 126)
+            {
+                var chr = (char)value;
+                // Escape special display characters
+                var charDisplay = chr switch
+                {
+                    '"' => "\\\"",
+                    '\\' => "\\\\",
+                    _ => chr.ToString()
+                };
+                return $"{value} (0x{value:X2}, '{charDisplay}')";
+            }
+
             return $"{value} (0x{value:X2})";
         }
 

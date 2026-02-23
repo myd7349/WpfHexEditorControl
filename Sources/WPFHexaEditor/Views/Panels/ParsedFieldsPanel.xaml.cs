@@ -25,6 +25,7 @@ namespace WpfHexaEditor.Views.Panels
         private FormatInfo _formatInfo;
         private string _searchText;
         private bool _showBookmarksOnly;
+        private string _searchResultText;
 
         public ParsedFieldsPanel()
         {
@@ -82,6 +83,19 @@ namespace WpfHexaEditor.Views.Panels
         }
 
         /// <summary>
+        /// Search result text (e.g., "- 3 matches")
+        /// </summary>
+        public string SearchResultText
+        {
+            get => _searchResultText;
+            private set
+            {
+                _searchResultText = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
         /// Information about the detected format
         /// </summary>
         public FormatInfo FormatInfo
@@ -122,6 +136,33 @@ namespace WpfHexaEditor.Views.Panels
             }
         }
 
+        private void FieldsListBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (FieldsListBox.SelectedItem is not ParsedFieldViewModel field)
+                return;
+
+            switch (e.Key)
+            {
+                case System.Windows.Input.Key.Enter:
+                    // Enter key opens edit dialog
+                    EditField(field);
+                    e.Handled = true;
+                    break;
+
+                case System.Windows.Input.Key.C when e.KeyboardDevice.Modifiers == System.Windows.Input.ModifierKeys.Control:
+                    // Ctrl+C copies field value
+                    CopyFieldValue(field);
+                    e.Handled = true;
+                    break;
+
+                case System.Windows.Input.Key.Space:
+                    // Space toggles bookmark
+                    field.IsBookmarked = !field.IsBookmarked;
+                    e.Handled = true;
+                    break;
+            }
+        }
+
         private void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
             RefreshRequested?.Invoke(this, EventArgs.Empty);
@@ -140,9 +181,30 @@ namespace WpfHexaEditor.Views.Panels
             SearchText = string.Empty;
         }
 
+        private void FieldItem_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Double-click on a field item opens the edit dialog
+            if (sender is System.Windows.Controls.ListBoxItem item && item.Content is ParsedFieldViewModel field)
+            {
+                EditField(field);
+                e.Handled = true; // Prevent event bubbling
+            }
+        }
+
         private void EditValue_Click(object sender, RoutedEventArgs e)
         {
-            if (FieldsListBox.SelectedItem is not ParsedFieldViewModel field)
+            if (FieldsListBox.SelectedItem is ParsedFieldViewModel field)
+            {
+                EditField(field);
+            }
+        }
+
+        /// <summary>
+        /// Opens the edit dialog for a field
+        /// </summary>
+        private void EditField(ParsedFieldViewModel field)
+        {
+            if (field == null)
                 return;
 
             if (!field.IsEditable)
@@ -194,32 +256,82 @@ namespace WpfHexaEditor.Views.Panels
 
         private void ExportAsText_Click(object sender, RoutedEventArgs e)
         {
-            ExportToClipboard(ExportFieldsAsText(), "Text");
+            ExportWithOptions(ExportFieldsAsText(), "Text", "txt");
         }
 
         private void ExportAsJson_Click(object sender, RoutedEventArgs e)
         {
-            ExportToClipboard(ExportFieldsAsJson(), "JSON");
+            ExportWithOptions(ExportFieldsAsJson(), "JSON", "json");
         }
 
         private void ExportAsCsv_Click(object sender, RoutedEventArgs e)
         {
-            ExportToClipboard(ExportFieldsAsCsv(), "CSV");
+            ExportWithOptions(ExportFieldsAsCsv(), "CSV", "csv");
         }
 
         private void ExportAsXml_Click(object sender, RoutedEventArgs e)
         {
-            ExportToClipboard(ExportFieldsAsXml(), "XML");
+            ExportWithOptions(ExportFieldsAsXml(), "XML", "xml");
         }
 
         private void ExportAsHtml_Click(object sender, RoutedEventArgs e)
         {
-            ExportToClipboard(ExportFieldsAsHtml(), "HTML");
+            ExportWithOptions(ExportFieldsAsHtml(), "HTML", "html");
         }
 
         private void ExportAsMarkdown_Click(object sender, RoutedEventArgs e)
         {
-            ExportToClipboard(ExportFieldsAsMarkdown(), "Markdown");
+            ExportWithOptions(ExportFieldsAsMarkdown(), "Markdown", "md");
+        }
+
+        private void ExportWithOptions(string content, string formatName, string extension)
+        {
+            // Ask user whether to copy to clipboard or save to file
+            var result = System.Windows.MessageBox.Show(
+                $"Export fields as {formatName}?\n\nYes = Save to file\nNo = Copy to clipboard\nCancel = Abort",
+                "Export Options",
+                System.Windows.MessageBoxButton.YesNoCancel,
+                System.Windows.MessageBoxImage.Question);
+
+            switch (result)
+            {
+                case System.Windows.MessageBoxResult.Yes:
+                    ExportToFile(content, formatName, extension);
+                    break;
+                case System.Windows.MessageBoxResult.No:
+                    ExportToClipboard(content, formatName);
+                    break;
+                // Cancel: do nothing
+            }
+        }
+
+        private void ExportToFile(string content, string formatName, string extension)
+        {
+            try
+            {
+                var saveDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Title = $"Save Parsed Fields as {formatName}",
+                    Filter = $"{formatName} Files (*.{extension})|*.{extension}|All Files (*.*)|*.*",
+                    DefaultExt = extension,
+                    FileName = $"ParsedFields_{FormatInfo?.Name?.Replace(" ", "_") ?? "Export"}.{extension}"
+                };
+
+                if (saveDialog.ShowDialog() == true)
+                {
+                    System.IO.File.WriteAllText(saveDialog.FileName, content);
+                    System.Windows.MessageBox.Show(
+                        $"Fields exported successfully to:\n{saveDialog.FileName}",
+                        "Export Complete",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error saving file: {ex.Message}", "Export Error",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
 
         private void ExportToClipboard(string content, string formatName)
@@ -316,6 +428,14 @@ namespace WpfHexaEditor.Views.Panels
         }
 
         /// <summary>
+        /// Refresh the filtered view (useful after updating field values)
+        /// </summary>
+        public void RefreshView()
+        {
+            ApplyFilter();
+        }
+
+        /// <summary>
         /// Apply search filter to fields
         /// </summary>
         private void ApplyFilter()
@@ -329,6 +449,7 @@ namespace WpfHexaEditor.Views.Panels
             // Apply filters
             var hasSearchFilter = !string.IsNullOrWhiteSpace(SearchText);
             var searchLower = hasSearchFilter ? SearchText.ToLowerInvariant() : null;
+            int searchMatchCount = 0;
 
             foreach (var field in ParsedFields)
             {
@@ -337,19 +458,38 @@ namespace WpfHexaEditor.Views.Panels
                     continue;
 
                 // Search filter
+                bool isMatch = true;
                 if (hasSearchFilter)
                 {
-                    if (!(field.Name?.ToLowerInvariant().Contains(searchLower) == true ||
-                          field.FormattedValue?.ToLowerInvariant().Contains(searchLower) == true ||
-                          field.Description?.ToLowerInvariant().Contains(searchLower) == true ||
-                          field.ValueType?.ToLowerInvariant().Contains(searchLower) == true ||
-                          field.OffsetHex?.ToLowerInvariant().Contains(searchLower) == true))
-                    {
+                    isMatch = field.Name?.ToLowerInvariant().Contains(searchLower) == true ||
+                              field.FormattedValue?.ToLowerInvariant().Contains(searchLower) == true ||
+                              field.Description?.ToLowerInvariant().Contains(searchLower) == true ||
+                              field.ValueType?.ToLowerInvariant().Contains(searchLower) == true ||
+                              field.OffsetHex?.ToLowerInvariant().Contains(searchLower) == true;
+
+                    if (!isMatch)
                         continue;
-                    }
                 }
 
+                // Mark search matches for visual indicator
+                field.IsSearchMatch = hasSearchFilter && isMatch;
+
+                if (hasSearchFilter && isMatch)
+                    searchMatchCount++;
+
                 FilteredFields.Add(field);
+            }
+
+            // Update search result text
+            if (hasSearchFilter)
+            {
+                SearchResultText = searchMatchCount > 0
+                    ? $" - {searchMatchCount} match{(searchMatchCount != 1 ? "es" : "")}"
+                    : " - no matches";
+            }
+            else
+            {
+                SearchResultText = string.Empty;
             }
         }
 

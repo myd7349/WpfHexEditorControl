@@ -94,8 +94,8 @@ namespace WpfHexaEditor
         /// </summary>
         private void InitializeParsedFieldsPanel()
         {
-            // Set default formatter
-            _currentFormatter = new HexValueFormatter();
+            // Set default formatter to Mixed (smart format: decimal + hex + ASCII)
+            _currentFormatter = new MixedValueFormatter();
 
             // Initialize variable context and expression evaluator
             _variableContext = new VariableContext();
@@ -203,6 +203,10 @@ namespace WpfHexaEditor
                 {
                     FormatFieldValue(field);
                 }
+
+                // Force UI refresh by rebuilding the FilteredFields collection
+                // This ensures the updated FormattedValue properties are displayed
+                ParsedFieldsPanel.RefreshView();
             }
         }
 
@@ -460,6 +464,7 @@ namespace WpfHexaEditor
             return lengthValue switch
             {
                 int intLength => intLength,
+                long longLength => (int)longLength, // JSON.NET deserializes numbers as Int64
                 string strLength when strLength.StartsWith("var:") =>
                     (int)(_variableContext?.GetVariableAsLong(strLength.Substring(4)) ?? 0),
                 string strLength when strLength.StartsWith("calc:") =>
