@@ -136,6 +136,10 @@ namespace WpfHexaEditor.Controls
         // Cursor overlay visual (separate layer for performance - only redraws cursor, not entire viewport)
         private DrawingVisual _cursorOverlayVisual = null;
 
+        // Captured cursor rects from OnRender (for overlay optimization)
+        private Rect? _cursorHexRect = null;    // Hex panel cursor rect
+        private Rect? _cursorAsciiRect = null;  // ASCII panel cursor rect
+
         // Mouse drag selection support
         private bool _isMouseDown = false;
         private long? _dragStartPosition = null;
@@ -306,18 +310,15 @@ namespace WpfHexaEditor.Controls
 
         /// <summary>
         /// Timer tick handler for cursor cell blink effect (simple on/off toggle)
-        /// Optimized: only redraws if cursor is visible in viewport
         /// </summary>
         private void CursorBlinkTimer_Tick(object sender, EventArgs e)
         {
             // Simple toggle: visible → hidden → visible
             _cursorBlinkVisible = !_cursorBlinkVisible;
 
-            // Optimization: only redraw if cursor is visible in viewport
-            if (IsCursorVisibleInViewport())
-            {
-                UpdateCursorOverlay(); // Redraw only cursor overlay (optimized)
-            }
+            // Redraw viewport (cursor is drawn in OnRender)
+            // At 500ms (2 FPS), performance impact is negligible
+            InvalidateVisual();
         }
 
         /// <summary>
@@ -444,31 +445,32 @@ namespace WpfHexaEditor.Controls
 
         /// <summary>
         /// Calculate the display width of an ASCII character at the given byte index
-        /// Accounts for TBL multi-byte characters and variable-width text
-        /// Returns the same width that DrawAsciiByte would use
+        /// EXACTLY replicates DrawAsciiByte's cellWidth calculation
         /// </summary>
         private double GetAsciiCharacterWidth(HexLine line, int byteIndex)
         {
             if (byteIndex >= line.Bytes.Count)
                 return AsciiCharWidth;
 
-            // Get the display character for this byte
+            // Get display character (EXACT same call as DrawAsciiByte)
             var displayChar = GetDisplayCharacter(line, byteIndex);
 
-            // Calculate text width using FormattedText (same as DrawAsciiByte)
+            // Create FormattedText (EXACT same params as DrawAsciiByte line 1763-1770)
             var formattedText = new FormattedText(
                 displayChar,
                 System.Globalization.CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
                 _typeface,
                 13,
-                _asciiBrush,
+                _asciiBrush, // DrawAsciiByte uses textBrush but for width calculation color doesn't matter
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-            // Return max of formatted width or single char width (same logic as DrawAsciiByte)
-            return formattedText.Width > AsciiCharWidth
+            // Calculate cellWidth (EXACT same logic as DrawAsciiByte line 1774-1776)
+            double cellWidth = formattedText.Width > AsciiCharWidth
                 ? formattedText.Width
                 : AsciiCharWidth;
+
+            return cellWidth;
         }
 
         #endregion
@@ -750,7 +752,6 @@ namespace WpfHexaEditor.Controls
                 {
                     _cursorPosition = value;
                     InvalidateVisual();
-                    UpdateCursorOverlay(); // Update cursor blink position
                 }
             }
         }
@@ -990,7 +991,6 @@ namespace WpfHexaEditor.Controls
             {
                 _activePanel = value;
                 InvalidateVisual();
-                UpdateCursorOverlay(); // Update cursor blink panel
             }
         }
 
@@ -1350,6 +1350,10 @@ namespace WpfHexaEditor.Controls
                 return;
             }
 
+            // Clear cursor rects (will be captured during rendering if cursor is visible)
+            _cursorHexRect = null;
+            _cursorAsciiRect = null;
+
             // Draw white background
             dc.DrawRectangle(Brushes.White, null, new Rect(0, 0, ActualWidth, ActualHeight));
 
@@ -1451,9 +1455,6 @@ namespace WpfHexaEditor.Controls
             _refreshStopwatch.Stop();
             _lastRefreshTimeMs = _refreshStopwatch.ElapsedMilliseconds;
             RefreshTimeUpdated?.Invoke(this, _lastRefreshTimeMs);
-
-            // Update cursor overlay after main render (ensures sync with viewport scroll)
-            UpdateCursorOverlay();
         }
 
         /// <summary>
@@ -1617,7 +1618,16 @@ namespace WpfHexaEditor.Controls
                 }
             }
 
-            // Note: Cursor blink highlight is now drawn in separate overlay (UpdateCursorOverlay) for performance
+            // Draw cursor cell blink highlight (simple on/off on cursor, only in active panel)
+            if (byteData.VirtualPos.Value == _cursorPosition &&
+                _activePanel == ActivePanelType.Hex &&
+                _cursorBlinkVisible)
+            {
+                // Use SelectionActiveBrush with 50% opacity for subtle effect
+                var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
+                blinkBrush.Opacity = 0.5; // 50% opacity for subtle highlight
+                dc.DrawRoundedRectangle(blinkBrush, null, rect, 2, 2);
+            }
 
             // Draw cursor border (thicker, on top)
             if (byteData.VirtualPos.Value == _cursorPosition)
@@ -1884,7 +1894,16 @@ namespace WpfHexaEditor.Controls
                 dc.DrawRoundedRectangle(null, borderPen, rect, 1, 1);
             }
 
-            // Note: Cursor blink highlight is now drawn in separate overlay (UpdateCursorOverlay) for performance
+            // Draw cursor cell blink highlight (simple on/off on cursor, only in active panel)
+            if (byteData.VirtualPos.Value == _cursorPosition &&
+                _activePanel == ActivePanelType.Ascii &&
+                _cursorBlinkVisible)
+            {
+                // Use SelectionActiveBrush with 50% opacity for subtle effect
+                var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
+                blinkBrush.Opacity = 0.5; // 50% opacity for subtle highlight
+                dc.DrawRoundedRectangle(blinkBrush, null, rect, 1, 1);
+            }
 
             // Draw cursor border
             if (byteData.VirtualPos.Value == _cursorPosition)
