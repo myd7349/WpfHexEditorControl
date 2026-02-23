@@ -1,0 +1,308 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// File Comparison Side-by-Side Diff Panel
+// Author : Claude Sonnet 4.5
+//////////////////////////////////////////////
+
+using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Windows;
+using System.Windows.Controls;
+using WpfHexaEditor.Core.FormatDetection;
+
+namespace WpfHexaEditor.Views.Panels
+{
+    public partial class FileComparisonPanel : UserControl
+    {
+        private List<ParsedField> _file1Fields;
+        private List<ParsedField> _file2Fields;
+        private string _file1Path;
+        private string _file2Path;
+
+        public FileComparisonPanel()
+        {
+            InitializeComponent();
+        }
+
+        private void LoadFile1_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Select File 1 to Compare",
+                Filter = "All Files (*.*)|*.*"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                _file1Path = dialog.FileName;
+                File1NameText.Text = $"File 1: {Path.GetFileName(_file1Path)}";
+                LoadFieldsFromFile(_file1Path, out _file1Fields);
+                UpdateComparison();
+            }
+        }
+
+        private void LoadFile2_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Select File 2 to Compare",
+                Filter = "All Files (*.*)|*.*"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                _file2Path = dialog.FileName;
+                File2NameText.Text = $"File 2: {Path.GetFileName(_file2Path)}";
+                LoadFieldsFromFile(_file2Path, out _file2Fields);
+                UpdateComparison();
+            }
+        }
+
+        private void LoadFieldsFromFile(string filePath, out List<ParsedField> fields)
+        {
+            fields = new List<ParsedField>();
+
+            try
+            {
+                var fileBytes = File.ReadAllBytes(filePath);
+                var detector = new FormatDetector();
+                var detectedFormat = detector.DetectFormat(fileBytes, Path.GetExtension(filePath));
+
+                if (detectedFormat != null && detectedFormat.Blocks != null)
+                {
+                    foreach (var block in detectedFormat.Blocks)
+                    {
+                        if (block.Offset >= fileBytes.Length) continue;
+
+                        var length = Math.Min(block.Length, fileBytes.Length - block.Offset);
+                        var data = new byte[length];
+                        Array.Copy(fileBytes, block.Offset, data, 0, length);
+
+                        var value = ParseBlockValue(data, block.ValueType);
+
+                        fields.Add(new ParsedField
+                        {
+                            Name = block.Name,
+                            Value = value,
+                            ValueType = block.ValueType,
+                            Offset = block.Offset,
+                            Length = length
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading file: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private string ParseBlockValue(byte[] data, string valueType)
+        {
+            if (data == null || data.Length == 0) return "";
+
+            try
+            {
+                return valueType?.ToLowerInvariant() switch
+                {
+                    "uint8" or "byte" when data.Length >= 1 => data[0].ToString(),
+                    "uint16" or "ushort" when data.Length >= 2 => BitConverter.ToUInt16(data, 0).ToString(),
+                    "uint32" or "uint" when data.Length >= 4 => BitConverter.ToUInt32(data, 0).ToString(),
+                    "int8" or "sbyte" when data.Length >= 1 => ((sbyte)data[0]).ToString(),
+                    "int16" or "short" when data.Length >= 2 => BitConverter.ToInt16(data, 0).ToString(),
+                    "int32" or "int" when data.Length >= 4 => BitConverter.ToInt32(data, 0).ToString(),
+                    "string" or "ascii" => System.Text.Encoding.ASCII.GetString(data).TrimEnd('\0'),
+                    "utf8" => System.Text.Encoding.UTF8.GetString(data).TrimEnd('\0'),
+                    "hex" => BitConverter.ToString(data).Replace("-", " "),
+                    _ => BitConverter.ToString(data).Replace("-", " ")
+                };
+            }
+            catch
+            {
+                return BitConverter.ToString(data).Replace("-", " ");
+            }
+        }
+
+        private void UpdateComparison()
+        {
+            if (_file1Fields == null && _file2Fields == null)
+            {
+                ComparisonInfoText.Text = "Select files to compare";
+                File1Fields.ItemsSource = null;
+                File2Fields.ItemsSource = null;
+                UpdateStatistics(0, 0, 0, 0);
+                return;
+            }
+
+            if (_file1Fields == null || _file2Fields == null)
+            {
+                ComparisonInfoText.Text = "Select both files to compare";
+                return;
+            }
+
+            // Perform comparison
+            var file1Dict = _file1Fields.ToDictionary(f => f.Name, f => f);
+            var file2Dict = _file2Fields.ToDictionary(f => f.Name, f => f);
+
+            var file1DiffFields = new List<DiffField>();
+            var file2DiffFields = new List<DiffField>();
+
+            int matching = 0;
+            int modified = 0;
+            int added = 0;
+            int removed = 0;
+
+            // Process File 1 fields
+            foreach (var field in _file1Fields)
+            {
+                if (file2Dict.TryGetValue(field.Name, out var field2))
+                {
+                    // Field exists in both
+                    if (field.Value == field2.Value)
+                    {
+                        // Matching
+                        file1DiffFields.Add(new DiffField
+                        {
+                            Name = field.Name,
+                            Value = field.Value,
+                            DiffStatus = DiffStatus.Unchanged
+                        });
+                        matching++;
+                    }
+                    else
+                    {
+                        // Modified
+                        file1DiffFields.Add(new DiffField
+                        {
+                            Name = field.Name,
+                            Value = field.Value,
+                            DiffStatus = DiffStatus.Modified
+                        });
+                        modified++;
+                    }
+                }
+                else
+                {
+                    // Removed in File 2
+                    file1DiffFields.Add(new DiffField
+                    {
+                        Name = field.Name,
+                        Value = field.Value,
+                        DiffStatus = DiffStatus.Removed
+                    });
+                    removed++;
+                }
+            }
+
+            // Process File 2 fields
+            foreach (var field in _file2Fields)
+            {
+                if (file1Dict.TryGetValue(field.Name, out var field1))
+                {
+                    // Field exists in both
+                    if (field.Value == field1.Value)
+                    {
+                        // Matching
+                        file2DiffFields.Add(new DiffField
+                        {
+                            Name = field.Name,
+                            Value = field.Value,
+                            DiffStatus = DiffStatus.Unchanged
+                        });
+                    }
+                    else
+                    {
+                        // Modified
+                        file2DiffFields.Add(new DiffField
+                        {
+                            Name = field.Name,
+                            Value = field.Value,
+                            DiffStatus = DiffStatus.Modified
+                        });
+                    }
+                }
+                else
+                {
+                    // Added in File 2
+                    file2DiffFields.Add(new DiffField
+                    {
+                        Name = field.Name,
+                        Value = field.Value,
+                        DiffStatus = DiffStatus.Added
+                    });
+                    added++;
+                }
+            }
+
+            // Update UI
+            File1Fields.ItemsSource = file1DiffFields;
+            File2Fields.ItemsSource = file2DiffFields;
+
+            ComparisonInfoText.Text = $"Comparing {Path.GetFileName(_file1Path)} ↔ {Path.GetFileName(_file2Path)}";
+            UpdateStatistics(matching, added, modified, removed);
+        }
+
+        private void UpdateStatistics(int matching, int added, int modified, int removed)
+        {
+            MatchingFieldsText.Text = $"Matching: {matching}";
+            AddedFieldsText.Text = $"Added: {added}";
+            ModifiedFieldsText.Text = $"Modified: {modified}";
+            RemovedFieldsText.Text = $"Removed: {removed}";
+        }
+    }
+
+    public class ParsedField
+    {
+        public string Name { get; set; }
+        public string Value { get; set; }
+        public string ValueType { get; set; }
+        public int Offset { get; set; }
+        public int Length { get; set; }
+    }
+
+    public class DiffField : INotifyPropertyChanged
+    {
+        private string _name;
+        private string _value;
+        private DiffStatus _diffStatus;
+
+        public string Name
+        {
+            get => _name;
+            set { _name = value; OnPropertyChanged(); }
+        }
+
+        public string Value
+        {
+            get => _value;
+            set { _value = value; OnPropertyChanged(); }
+        }
+
+        public DiffStatus DiffStatus
+        {
+            get => _diffStatus;
+            set { _diffStatus = value; OnPropertyChanged(); }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+    }
+
+    public enum DiffStatus
+    {
+        Unchanged,
+        Added,
+        Removed,
+        Modified
+    }
+}
