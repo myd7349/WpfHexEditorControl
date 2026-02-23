@@ -67,12 +67,14 @@ namespace WpfHexaEditor
         // Zoom support 
         private ScaleTransform _scaler;
 
-        // Hex editing state
+        // Byte editing state (format-aware for Hex/Decimal/Binary)
         private bool _isEditingByte = false;
         private VirtualPosition _editingPosition = VirtualPosition.Invalid;
         private byte _editingValue = 0;
-        private bool _editingHighNibble = true; // true = high nibble, false = low nibble
-        private bool _isAsciiEditMode = false; // true = editing in ASCII area, false = editing in Hex area
+        private int _editingCharIndex = 0;      // Current character index (0-based) - replaces _editingHighNibble
+        private int _editingMaxChars = 2;       // Max chars for current format (Hex=2, Decimal=3, Binary=8)
+        private string _editingBuffer = "";     // Accumulated input buffer ("2" → "25" → "255")
+        private bool _isAsciiEditMode = false;  // true = editing in ASCII area, false = editing in Hex/Decimal/Binary area
 
         // Auto-scroll during mouse drag selection
         private DispatcherTimer _autoScrollTimer;
@@ -149,7 +151,7 @@ namespace WpfHexaEditor
                 HexViewport.OffSetStringVisual = OffSetStringVisual;
 
                 // Initialize ActualOffsetWidth based on current format
-                ActualOffsetWidth = HexViewport.ActualOffsetWidth;
+                ActualOffsetWidth = new GridLength(HexViewport.ActualOffsetWidth);
 
                 // Bug 4: Subscribe to FontSize/FontFamily changes to update dynamic CellWidth cache
                 var fontSizeDescriptor = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(
@@ -196,7 +198,7 @@ namespace WpfHexaEditor
             HexViewport.UpdateFont(fontFamily, fontSize);
 
             // Update ActualOffsetWidth since it depends on font settings
-            ActualOffsetWidth = HexViewport.ActualOffsetWidth;
+            ActualOffsetWidth = new GridLength(HexViewport.ActualOffsetWidth);
 
             // Refresh column headers with new widths
             RefreshColumnHeader();
@@ -803,9 +805,9 @@ namespace WpfHexaEditor
         /// Actual offset column width (dynamically calculated based on OffSetStringVisual format)
         /// </summary>
         [Category("Display")]
-        public double ActualOffsetWidth
+        public GridLength ActualOffsetWidth
         {
-            get => (double)GetValue(ActualOffsetWidthProperty);
+            get => (GridLength)GetValue(ActualOffsetWidthProperty);
             set => SetValue(ActualOffsetWidthProperty, value);
         }
 
@@ -2704,11 +2706,25 @@ namespace WpfHexaEditor
         {
             if (d is HexEditor editor && e.NewValue is DataVisualType visualType)
             {
+                // Cancel any in-progress byte edit (format-specific editing state no longer valid)
+                if (editor._isEditingByte)
+                {
+                    editor._isEditingByte = false;
+                    editor._editingPosition = VirtualPosition.Invalid;
+                    editor._editingValue = 0;
+                    editor._editingCharIndex = 0;
+                    editor._editingMaxChars = 2;
+                    editor._editingBuffer = "";
+                }
+
                 // Update HexViewport's DataStringVisual property
                 if (editor.HexViewport != null)
                 {
                     editor.HexViewport.DataStringVisual = visualType;
                     editor.HexViewport.InvalidateVisual();
+
+                    // Refresh column headers to match the new format
+                    editor.RefreshColumnHeader();
                 }
             }
         }
@@ -2731,7 +2747,7 @@ namespace WpfHexaEditor
                     editor.HexViewport.InvalidateVisual();
 
                     // Update ActualOffsetWidth to reflect the new format
-                    editor.ActualOffsetWidth = editor.HexViewport.ActualOffsetWidth;
+                    editor.ActualOffsetWidth = new GridLength(editor.HexViewport.ActualOffsetWidth);
                 }
             }
         }
@@ -2740,8 +2756,8 @@ namespace WpfHexaEditor
         /// ActualOffsetWidth DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty ActualOffsetWidthProperty =
-            DependencyProperty.Register(nameof(ActualOffsetWidth), typeof(double), typeof(HexEditor),
-                new PropertyMetadata(110.0)); // Default value matches hexadecimal format
+            DependencyProperty.Register(nameof(ActualOffsetWidth), typeof(GridLength), typeof(HexEditor),
+                new PropertyMetadata(new GridLength(110.0))); // Default value matches hexadecimal format
 
         /// <summary>
         /// ByteOrder DependencyProperty for XAML binding

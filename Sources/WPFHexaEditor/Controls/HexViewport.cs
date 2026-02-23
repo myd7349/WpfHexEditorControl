@@ -356,6 +356,18 @@ namespace WpfHexaEditor.Controls
         /// <returns>Offset column width in pixels (includes padding)</returns>
         private double CalculateOffsetWidth()
         {
+            // Return default width if typeface not initialized yet
+            if (_typeface == null)
+            {
+                return OffSetStringVisual switch
+                {
+                    Core.DataVisualType.Hexadecimal => 110,  // Default for hex
+                    Core.DataVisualType.Decimal => 110,      // Default for decimal
+                    Core.DataVisualType.Binary => 290,       // Approximate for binary
+                    _ => 110
+                };
+            }
+
             // Create cache key based on current font settings and offset visual type
             var key = (_fontSize, _typeface.FontFamily.Source, OffSetStringVisual);
 

@@ -152,11 +152,18 @@ namespace WpfHexaEditor
                     AddByteSpacer(_hexHeaderStackPanel, i, forceEmpty: true);
                 }
 
-                // Add byte position header (00, 02, 04... for Bit16)
+                // Add byte position header (format follows DataStringVisual: 00/0/00000000 for Hex/Decimal/Binary)
                 bool isSelectionColumn = (i == selectionStartColumn);
+                string headerFormat = DataStringVisual switch
+                {
+                    Core.DataVisualType.Hexadecimal => i.ToString("X2"),
+                    Core.DataVisualType.Decimal => i.ToString(),
+                    Core.DataVisualType.Binary => Convert.ToString(i, 2).PadLeft(8, '0'),
+                    _ => i.ToString("X2")
+                };
                 var headerText = new TextBlock
                 {
-                    Text = i.ToString("X2"),
+                    Text = headerFormat,
                     Width = cellWidth, // Phase 4: Dynamic width (24/52/106px)
                     TextAlignment = TextAlignment.Center,
                     FontSize = 11,
