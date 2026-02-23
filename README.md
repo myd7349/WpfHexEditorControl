@@ -120,7 +120,74 @@ dotnet add package WPFHexaEditor
 
 </td>
 </tr>
+<tr>
+<td width="33%">
+
+### 🎨 Advanced Features
+- **Parsed Fields** overlay
+- **Data Inspector** panel
+- **Structure Overlay** visual
+- **File Diff** comparison
+
+</td>
+<td width="33%">
+
+### 🎯 Format Intelligence
+- **400+ formats** auto-detected
+- **Binary templates** support
+- **Checksum validation** auto
+- **Field parsing** with types
+
+</td>
+<td width="33%">
+
+### 📊 Visual Feedback
+- **BarChart** byte distribution
+- **Scroll markers** navigation
+- **Caret blink** animation
+- **Bold nibble** on edit
+
+</td>
+</tr>
+<tr>
+<td width="33%">
+
+### ⚙️ Editing Modes
+- **Insert/Overwrite** modes
+- **Copy/Cut/Paste** operations
+- **Undo/Redo** unlimited
+- **Selection** multi-byte
+
+</td>
+<td width="33%">
+
+### 🎬 Display Modes
+- **Hex/Decimal/Binary** views
+- **ASCII/EBCDIC** encoding
+- **Custom TBL** tables
+- **Byte grouping** configurable
+
+</td>
+<td width="33%">
+
+### 🔍 Search & Navigation
+- **Find/Replace** with patterns
+- **Go to offset** direct
+- **Bookmarks** persistent
+- **Highlight** results
+
+</td>
+</tr>
 </table>
+
+**🆕 Recent Additions (Feb 2026):**
+- **400+ file format** auto-detection with binary templates
+- **Parsed Fields Panel** with structure overlay and field types
+- **Data Inspector** with 15+ data type interpretations
+- **File Diff** for binary comparison side-by-side
+- **BarChart visualization** for byte distribution analysis
+- **Visual editing feedback** (caret blink, bold nibble on edit)
+- **Checksum validation** automatic with error highlighting
 
 **Note:** V1 Legacy code was completely removed in v2.6+ (Feb 2026) after 12-month deprecation. See **[Migration Guide](docs/migration/MIGRATION.md)** for historical reference.
 
@@ -135,10 +202,12 @@ dotnet add package WPFHexaEditor
 | **Rendering** | ItemsControl | DrawingContext | ⚡ **99% faster** |
 | **Search** | Standard | LRU + Parallel + SIMD | ⚡ **10-100x faster** |
 | **Memory** | High | Span&lt;T&gt; + Pooling | ⚡ **80-90% less** |
-| **Architecture** | Monolithic | MVVM + 15 Services | 🏗️ **Service-based** |
+| **Architecture** | Monolithic | MVVM + 16 Services | 🏗️ **Service-based** |
+| **Format Support** | Manual only | **400+ formats** auto-detected | 🎯 **Smart detection** |
+| **Panels** | Basic hex | **6 specialized panels** | 🎨 **Rich analysis** |
 | **Bugs** | Insert Mode ⚠️<br/>Save loss ⚠️ | All fixed ✅ | ✅ **Production ready** |
 
-**[→ See complete feature comparison (163 features)](FEATURES.md)**
+**[→ See complete feature comparison (170+ features)](FEATURES.md)**
 
 ---
 
