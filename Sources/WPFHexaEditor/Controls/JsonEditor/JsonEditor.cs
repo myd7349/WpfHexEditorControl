@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfHexaEditor.Models.JsonEditor;
@@ -67,7 +68,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
 
         #region Fields - Validation (Phase 5)
 
-        private List<ValidationError> _validationErrors = new List<ValidationError>();
+        private List<Models.JsonEditor.ValidationError> _validationErrors = new List<Models.JsonEditor.ValidationError>();
         private FormatSchemaValidator _validator;
         private System.Windows.Threading.DispatcherTimer _validationTimer;
         private bool _enableValidation = true;
@@ -586,6 +587,116 @@ namespace WpfHexaEditor.Controls.JsonEditor
             set => SetValue(EnableAutoClosingQuotesProperty, value);
         }
 
+        // ===== BEHAVIOR - SCROLLING & PERFORMANCE =====
+
+        public static readonly DependencyProperty EnableVirtualScrollingProperty =
+            DependencyProperty.Register(nameof(EnableVirtualScrolling), typeof(bool), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        [Category("Behavior.Scrolling")]
+        [DisplayName("Enable Virtual Scrolling")]
+        [Description("Use virtualization to handle large documents (100K+ lines) efficiently")]
+        public bool EnableVirtualScrolling
+        {
+            get => (bool)GetValue(EnableVirtualScrollingProperty);
+            set => SetValue(EnableVirtualScrollingProperty, value);
+        }
+
+        public static readonly DependencyProperty SmoothScrollingProperty =
+            DependencyProperty.Register(nameof(SmoothScrolling), typeof(bool), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(true));
+
+        [Category("Behavior.Scrolling")]
+        [DisplayName("Smooth Scrolling")]
+        [Description("Enable smooth animated scrolling")]
+        public bool SmoothScrolling
+        {
+            get => (bool)GetValue(SmoothScrollingProperty);
+            set => SetValue(SmoothScrollingProperty, value);
+        }
+
+        public static readonly DependencyProperty ScrollSpeedMultiplierProperty =
+            DependencyProperty.Register(nameof(ScrollSpeedMultiplier), typeof(double), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(1.0));
+
+        [Category("Behavior.Scrolling")]
+        [DisplayName("Scroll Speed Multiplier")]
+        [Description("Multiplier for scroll speed (0.5 = slower, 3.0 = faster)")]
+        [Range(0.5, 3.0, Step = 0.1)]
+        public double ScrollSpeedMultiplier
+        {
+            get => (double)GetValue(ScrollSpeedMultiplierProperty);
+            set => SetValue(ScrollSpeedMultiplierProperty, Math.Max(0.5, Math.Min(3.0, value)));
+        }
+
+        public static readonly DependencyProperty HorizontalScrollSensitivityProperty =
+            DependencyProperty.Register(nameof(HorizontalScrollSensitivity), typeof(double), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(1.0));
+
+        [Category("Behavior.Scrolling")]
+        [DisplayName("Horizontal Scroll Sensitivity")]
+        [Description("Sensitivity for horizontal scrolling (0.5 = less sensitive, 3.0 = more sensitive)")]
+        [Range(0.5, 3.0, Step = 0.1)]
+        public double HorizontalScrollSensitivity
+        {
+            get => (double)GetValue(HorizontalScrollSensitivityProperty);
+            set => SetValue(HorizontalScrollSensitivityProperty, Math.Max(0.5, Math.Min(3.0, value)));
+        }
+
+        public static readonly DependencyProperty ScrollBarVisibilityModeProperty =
+            DependencyProperty.Register(nameof(ScrollBarVisibilityMode), typeof(ScrollBarVisibility), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(ScrollBarVisibility.Auto));
+
+        [Category("Behavior.Scrolling")]
+        [DisplayName("Scroll Bar Visibility")]
+        [Description("When to show scroll bars (Auto, Visible, Hidden, Disabled)")]
+        public ScrollBarVisibility ScrollBarVisibilityMode
+        {
+            get => (ScrollBarVisibility)GetValue(ScrollBarVisibilityModeProperty);
+            set => SetValue(ScrollBarVisibilityModeProperty, value);
+        }
+
+        public static readonly DependencyProperty RenderBufferProperty =
+            DependencyProperty.Register(nameof(RenderBuffer), typeof(int), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(10, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        [Category("Behavior.Scrolling")]
+        [DisplayName("Render Buffer (extra lines)")]
+        [Description("Number of extra lines to render above/below viewport for smooth scrolling")]
+        [Range(5, 50)]
+        public int RenderBuffer
+        {
+            get => (int)GetValue(RenderBufferProperty);
+            set => SetValue(RenderBufferProperty, Math.Max(5, Math.Min(50, value)));
+        }
+
+        public static readonly DependencyProperty MaxCachedLinesProperty =
+            DependencyProperty.Register(nameof(MaxCachedLines), typeof(int), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(1000));
+
+        [Category("Behavior.Scrolling")]
+        [DisplayName("Max Cached Lines")]
+        [Description("Maximum number of tokenized lines to keep in cache")]
+        [Range(100, 10000)]
+        public int MaxCachedLines
+        {
+            get => (int)GetValue(MaxCachedLinesProperty);
+            set => SetValue(MaxCachedLinesProperty, Math.Max(100, Math.Min(10000, value)));
+        }
+
+        public static readonly DependencyProperty UseHardwareAccelerationProperty =
+            DependencyProperty.Register(nameof(UseHardwareAcceleration), typeof(bool), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(true, OnUseHardwareAccelerationChanged));
+
+        [Category("Behavior.Scrolling")]
+        [DisplayName("Use Hardware Acceleration")]
+        [Description("Enable GPU acceleration for rendering (recommended)")]
+        public bool UseHardwareAcceleration
+        {
+            get => (bool)GetValue(UseHardwareAccelerationProperty);
+            set => SetValue(UseHardwareAccelerationProperty, value);
+        }
+
         // ===== SYNTAX HIGHLIGHTING COLORS =====
 
         public static readonly DependencyProperty SyntaxBraceColorProperty =
@@ -809,6 +920,30 @@ namespace WpfHexaEditor.Controls.JsonEditor
                 if (editor._document != null)
                 {
                     editor._document.InvalidateAllCache();
+                }
+
+                editor.InvalidateVisual();
+            }
+        }
+
+        private static void OnUseHardwareAccelerationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is JsonEditor editor)
+            {
+                // Update RenderOptions hints for hardware acceleration
+                bool useAcceleration = (bool)e.NewValue;
+
+                if (useAcceleration)
+                {
+                    // Enable hardware acceleration hints
+                    RenderOptions.SetBitmapScalingMode(editor, BitmapScalingMode.HighQuality);
+                    RenderOptions.SetCachingHint(editor, CachingHint.Cache);
+                }
+                else
+                {
+                    // Disable caching hints (forces software rendering)
+                    RenderOptions.SetBitmapScalingMode(editor, BitmapScalingMode.Linear);
+                    RenderOptions.SetCachingHint(editor, CachingHint.Unspecified);
                 }
 
                 editor.InvalidateVisual();
@@ -2127,7 +2262,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
 
         #region Document Event Handlers
 
-        private void Document_TextChanged(object sender, TextChangedEventArgs e)
+        private void Document_TextChanged(object sender, Models.JsonEditor.TextChangedEventArgs e)
         {
             // Phase 3: Add to undo/redo stack (unless this is an undo/redo operation itself)
             if (!_isInternalEdit)
@@ -2231,7 +2366,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
         /// <summary>
         /// Get current validation errors
         /// </summary>
-        public List<ValidationError> ValidationErrors => _validationErrors;
+        public List<Models.JsonEditor.ValidationError> ValidationErrors => _validationErrors;
 
         #endregion
 
