@@ -33,7 +33,15 @@ namespace WpfHexaEditor
                 if (HexViewport != null)
                 {
                     HexViewport.TblStream = _tblStream;
+                    // Enable ALL TBL types when loading a TBL file (V1 compatibility)
+                    HexViewport.ShowTblAscii = true;
+                    HexViewport.ShowTblDte = true;
                     HexViewport.ShowTblMte = true;
+                    HexViewport.ShowTblJaponais = true;
+                    HexViewport.ShowTblEndBlock = true;
+                    HexViewport.ShowTblEndLine = true;
+                    // Force refresh to apply TBL changes
+                    HexViewport.Refresh();
                 }
 
                 // Update status bar

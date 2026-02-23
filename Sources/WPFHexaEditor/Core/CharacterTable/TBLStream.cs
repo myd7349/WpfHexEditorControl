@@ -104,6 +104,9 @@ namespace WpfHexaEditor.Core.CharacterTable
         /// <param name="showSpecialValue">Find the Endblock and EndLine</param>
         public (string text, DteType dteType) FindMatch(string hex, bool showSpecialValue)
         {
+            // Normalize case to uppercase for consistent matching (TBL files typically use uppercase hex)
+            hex = hex?.ToUpperInvariant() ?? string.Empty;
+
             // OPTIMIZED: Use TryGetValue instead of ContainsKey+indexer to reduce Dictionary lookups by 50%
             if (showSpecialValue)
             {
@@ -217,6 +220,13 @@ namespace WpfHexaEditor.Core.CharacterTable
                     continue;
                 }
 
+                // Parse EndBlock/EndLine in old format (no '=') - Legacy V1 compatibility
+                if (line.StartsWith("/") || line.StartsWith("*"))
+                {
+                    TryParseSpecialMarker(line);
+                    continue;
+                }
+
                 // Parse DTE entry lines (contain '=')
                 var equalIndex = line.IndexOf('=');
                 if (equalIndex > 0)
@@ -256,13 +266,50 @@ namespace WpfHexaEditor.Core.CharacterTable
         }
 
         /// <summary>
+        /// Try to parse EndBlock/EndLine markers in old format (no '=') - Legacy V1 compatibility
+        /// Format: /XX or *XX (where XX is hex value)
+        /// </summary>
+        private void TryParseSpecialMarker(string line)
+        {
+            try
+            {
+                if (line.Length < 2)
+                    return;
+
+                char marker = line[0];
+                string hexValue = line.Substring(1).Trim().ToUpperInvariant(); // Normalize to uppercase
+
+                // Validate hex value (must be valid hex)
+                if (!IsValidHexEntry(hexValue, out string validationError))
+                {
+                    Debug.WriteLine($"Skipping invalid special marker: {line} - {validationError}");
+                    return;
+                }
+
+                // IMPORTANT: Store with marker prefix (/ or *) to match FindMatch expectations
+                // FindMatch searches for "/XX" and "*XX" in the dictionary
+                string entryWithMarker = marker + hexValue;
+                DteType type = marker == '/' ? DteType.EndBlock : DteType.EndLine;
+                var dte = new Dte(entryWithMarker, string.Empty, type);
+
+                // Add to dictionary, avoiding duplicates
+                if (!_dteList.ContainsKey(dte.Entry))
+                    _dteList.Add(dte.Entry, dte);
+            }
+            catch
+            {
+                // Silently ignore malformed markers
+            }
+        }
+
+        /// <summary>
         /// Try to parse a DTE entry from a line with enhanced validation
         /// </summary>
         private void TryParseDteEntry(string line, int equalIndex)
         {
             try
             {
-                var entry = line.Substring(0, equalIndex).Trim();
+                var entry = line.Substring(0, equalIndex).Trim().ToUpperInvariant(); // Normalize hex entry to uppercase
                 var valueStart = equalIndex + 1;
                 var value = valueStart < line.Length ? line.Substring(valueStart) : string.Empty;
 
@@ -289,12 +336,12 @@ namespace WpfHexaEditor.Core.CharacterTable
                 if (entry.StartsWith("/"))
                 {
                     type = DteType.EndBlock;
-                    entry = entry.Substring(1); // Remove '/' prefix
+                    // DO NOT remove prefix - FindMatch searches with prefix (/XX, *XX)
                 }
                 else if (entry.StartsWith("*"))
                 {
                     type = DteType.EndLine;
-                    entry = entry.Substring(1); // Remove '*' prefix
+                    // DO NOT remove prefix - FindMatch searches with prefix (/XX, *XX)
                 }
                 else if (value == "=")
                 {
@@ -310,14 +357,31 @@ namespace WpfHexaEditor.Core.CharacterTable
                         return;
                     }
 
-                    // Determine type based on entry length
+                    // Determine type based on entry length AND value length
                     // Support 1-8 bytes (2-16 hex chars)
+                    // Classification:
+                    //   - 1 byte with 1 char → ASCII (e.g., "CA=f")
+                    //   - 1 byte with 2+ chars → DTE (e.g., "CC=ow", "D0=et")
+                    //   - 2+ bytes → MTE (e.g., "0400=Cecil", "040A=Edge")
                     if (entry.Length == 2)
+                    {
+                        // 1 byte key: Use value length to distinguish Ascii vs compressed DTE
+                        // Single character = regular Ascii (e.g., "CA=f")
+                        // Multiple characters = compressed DTE (e.g., "CC=ow", "D0=et", "BB= c")
+                        // IMPORTANT: Don't trim! Spaces are intentional in TBL files (e.g., "AA= c" = space+c)
                         type = value.Length == 1 ? DteType.Ascii : DteType.DualTitleEncoding;
-                    else if (entry.Length % 2 == 0 && entry.Length >= 4 && entry.Length <= 16)
-                        type = DteType.MultipleTitleEncoding;  // 2-8 bytes (4-16 hex chars)
+                        Debug.WriteLine($"[TBL PARSE] 1-byte: {entry}={value} → {type} (valueLen={value.Length})");
+                    }
+                    else if (entry.Length >= 4 && entry.Length <= 16 && entry.Length % 2 == 0)
+                    {
+                        // 2+ byte key = MTE (Multi-byte tokens like character names, items, etc.)
+                        type = DteType.MultipleTitleEncoding;
+                        Debug.WriteLine($"[TBL PARSE] Multi-byte: {entry}={value} → MTE (entryLen={entry.Length})");
+                    }
                     else
+                    {
                         type = DteType.Invalid;  // Reject odd-length or > 16 chars
+                    }
                 }
 
                 if (type != DteType.Invalid)
@@ -328,7 +392,12 @@ namespace WpfHexaEditor.Core.CharacterTable
                         dte.Comment = inlineComment;
                     // Add to dictionary, avoiding duplicates (Issue #105)
                     if (!_dteList.ContainsKey(dte.Entry))
+                    {
                         _dteList.Add(dte.Entry, dte);
+                        // DEBUG: Log first few entries to verify parsing
+                        if (_dteList.Count <= 10)
+                            Debug.WriteLine($"TBL: Added {dte.Entry}={dte.Value} (Type: {dte.Type}, ValueLen: {value.Length})");
+                    }
                 }
             }
             catch
