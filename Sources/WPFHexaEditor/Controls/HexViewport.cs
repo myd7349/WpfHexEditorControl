@@ -1468,31 +1468,42 @@ namespace WpfHexaEditor.Controls
                         // Calculate ASCII cell width - must match DrawAsciiByte for accuracy
                         double cellWidth = AsciiCharWidth;
 
-                        // Dynamic width calculation (handles TBL and multi-byte mode)
-                        try
+                        // TBL rendering only supported in Bit8 mode
+                        if (_tblStream != null && byteData.ByteSize == Core.ByteSizeType.Bit8)
                         {
-                            var displayChar = GetDisplayCharacter(line, i);
-                            var formattedText = new FormattedText(
-                                displayChar,
-                                System.Globalization.CultureInfo.CurrentCulture,
-                                FlowDirection.LeftToRight,
-                                _typeface,
-                                13,
-                                _asciiBrush,
-                                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                            // TBL loaded in Bit8 mode: measure dynamic width for each character
+                            try
+                            {
+                                var displayChar = GetDisplayCharacter(line, i);
+                                var formattedText = new FormattedText(
+                                    displayChar,
+                                    System.Globalization.CultureInfo.CurrentCulture,
+                                    FlowDirection.LeftToRight,
+                                    _typeface,
+                                    13,
+                                    _asciiBrush,
+                                    VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-                            // Use actual text width if larger than single char width
-                            cellWidth = formattedText.Width > AsciiCharWidth
-                                ? formattedText.Width
-                                : AsciiCharWidth;
+                                // Use actual text width if larger than single char width
+                                cellWidth = formattedText.Width > AsciiCharWidth
+                                    ? formattedText.Width
+                                    : AsciiCharWidth;
+                            }
+                            catch
+                            {
+                                // Fallback to default on error
+                                cellWidth = AsciiCharWidth;
+                            }
                         }
-                        catch
+                        else
                         {
-                            // Fallback: estimate width based on byte count (better than fixed width)
+                            // No TBL or multi-byte mode: fixed uniform width based on byte count
+                            // Bit8: 1 char width, Bit16: 2 char widths, Bit32: 4 char widths
                             if (byteData.Values != null && byteData.Values.Length > 1)
                             {
                                 cellWidth = AsciiCharWidth * byteData.Values.Length;
                             }
+                            // else: cellWidth already set to AsciiCharWidth for Bit8
                         }
 
                         // Populate AsciiRect
@@ -1538,6 +1549,14 @@ namespace WpfHexaEditor.Controls
         {
             if (_linesCached == null || _linesCached.Count == 0 || _tblStream == null || !ShowAscii)
                 return;
+
+            // TBL rendering only supported in Bit8 mode (8-bit)
+            // Check first line's first byte to determine current byte size mode
+            if (_linesCached.Count > 0 && _linesCached[0].Bytes != null && _linesCached[0].Bytes.Count > 0)
+            {
+                if (_linesCached[0].Bytes[0].ByteSize != Core.ByteSizeType.Bit8)
+                    return; // Skip TBL rendering in Bit16/Bit32 modes
+            }
 
             foreach (var line in _linesCached)
             {
@@ -1921,22 +1940,51 @@ namespace WpfHexaEditor.Controls
                 }
             }
 
-            var formattedText = new FormattedText(
-                displayChar,
-                System.Globalization.CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                _typeface,
-                13,
-                textBrush, // Use TBL color for text
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            // STEP 2: Calculate cell width - must match PopulateByteRects logic exactly
+            double cellWidth;
+            FormattedText formattedText;
 
-            // Phase 4: AUTO-SIZING for TBL and multi-byte mode
-            // Use actual text width if larger than single char width
-            double cellWidth = formattedText.Width > AsciiCharWidth
-                ? formattedText.Width
-                : AsciiCharWidth;
+            // TBL rendering only supported in Bit8 mode
+            if (_tblStream != null && byteData.ByteSize == Core.ByteSizeType.Bit8)
+            {
+                // TBL loaded in Bit8 mode: measure dynamic width
+                formattedText = new FormattedText(
+                    displayChar,
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    _typeface,
+                    13,
+                    textBrush,
+                    VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-            // STEP 2: Create rect with dynamic width
+                cellWidth = formattedText.Width > AsciiCharWidth
+                    ? formattedText.Width
+                    : AsciiCharWidth;
+            }
+            else
+            {
+                // No TBL or multi-byte mode: fixed uniform width
+                if (byteData.Values != null && byteData.Values.Length > 1)
+                {
+                    cellWidth = AsciiCharWidth * byteData.Values.Length;
+                }
+                else
+                {
+                    cellWidth = AsciiCharWidth;
+                }
+
+                // Create FormattedText with fixed width
+                formattedText = new FormattedText(
+                    displayChar,
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    _typeface,
+                    13,
+                    textBrush,
+                    VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            }
+
+            // Create rect with calculated width (matches PopulateByteRects)
             var rect = new Rect(x, y, cellWidth, _lineHeight);
 
             // Store rect for CustomBackgroundRenderer (guaranteed accurate)
