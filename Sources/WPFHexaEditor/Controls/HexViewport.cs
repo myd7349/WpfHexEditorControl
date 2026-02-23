@@ -310,15 +310,15 @@ namespace WpfHexaEditor.Controls
 
         /// <summary>
         /// Timer tick handler for cursor cell blink effect (simple on/off toggle)
+        /// Optimized: only redraws cursor overlay using captured rects from OnRender
         /// </summary>
         private void CursorBlinkTimer_Tick(object sender, EventArgs e)
         {
             // Simple toggle: visible → hidden → visible
             _cursorBlinkVisible = !_cursorBlinkVisible;
 
-            // Redraw viewport (cursor is drawn in OnRender)
-            // At 500ms (2 FPS), performance impact is negligible
-            InvalidateVisual();
+            // Update only cursor overlay (uses captured rects - no recalculation needed)
+            UpdateCursorOverlay();
         }
 
         /// <summary>
@@ -338,107 +338,29 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
-        /// Update cursor overlay visual (optimized: only redraws cursor, not entire viewport)
+        /// Update cursor overlay visual (optimized: uses captured rects from OnRender)
+        /// Only redraws cursor blink, not entire viewport
         /// </summary>
         private void UpdateCursorOverlay()
         {
             using (DrawingContext dc = _cursorOverlayVisual.RenderOpen())
             {
-                // Find cursor position in viewport
-                if (!_cursorBlinkVisible || _cursorPosition < 0 || _linesCached == null)
-                    return; // Clear overlay (empty drawing)
+                // Only draw if cursor is blinking and visible, and we have captured rects
+                if (!_cursorBlinkVisible)
+                    return; // Clear overlay (empty drawing - cursor hidden phase)
 
-                // Find the line and byte containing the cursor
-                double y = TopMargin;
-                foreach (var line in _linesCached)
+                // Draw cursor blink using captured rect from OnRender
+                Rect? cursorRect = (_activePanel == ActivePanelType.Hex) ? _cursorHexRect : _cursorAsciiRect;
+
+                if (cursorRect.HasValue)
                 {
-                    if (line.Bytes == null || line.Bytes.Count == 0)
-                    {
-                        y += _lineHeight;
-                        continue;
-                    }
+                    // Use SelectionActiveBrush with 50% opacity for subtle effect
+                    var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
+                    blinkBrush.Opacity = 0.5;
 
-                    // Check if cursor is in this line
-                    long lineStart = line.Bytes[0].VirtualPos;
-                    long lineEnd = line.Bytes[line.Bytes.Count - 1].VirtualPos;
-
-                    if (_cursorPosition >= lineStart && _cursorPosition <= lineEnd)
-                    {
-                        // Find byte in line - track BOTH hex and ASCII positions (like OnRender)
-                        double hexX = ShowOffset ? OffsetWidth : 0;
-                        double asciiX = AsciiPanelStartX;
-
-                        // Get stride (same as OnRender)
-                        int stride = line.Bytes.Count > 0 ? (line.Bytes[0].ByteSize switch
-                        {
-                            Core.ByteSizeType.Bit8 => 1,
-                            Core.ByteSizeType.Bit16 => 2,
-                            Core.ByteSizeType.Bit32 => 4,
-                            _ => 1
-                        }) : 1;
-
-                        for (int i = 0; i < line.Bytes.Count; i++)
-                        {
-                            // Calculate byte position (same as OnRender)
-                            int bytePosition = i * stride;
-
-                            // Add HEX byte spacer width BEFORE this byte if needed
-                            if (_bytesPerLine >= (int)ByteGrouping &&
-                                (ByteSpacerPositioning == ByteSpacerPosition.Both ||
-                                 ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel) &&
-                                bytePosition % (int)ByteGrouping == 0 && i > 0)
-                            {
-                                hexX += (int)ByteSpacerWidthTickness;
-                            }
-
-                            // Add ASCII byte spacer width BEFORE this byte if needed
-                            if (_tblStream == null &&
-                                _bytesPerLine >= (int)ByteGrouping &&
-                                (ByteSpacerPositioning == ByteSpacerPosition.Both ||
-                                 ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
-                                bytePosition % (int)ByteGrouping == 0 && i > 0)
-                            {
-                                asciiX += (int)ByteSpacerWidthTickness;
-                            }
-
-                            var byteData = line.Bytes[i];
-
-                            if (byteData.VirtualPos.Value == _cursorPosition)
-                            {
-                                // Found cursor - draw blink highlight
-                                if (_activePanel == ActivePanelType.Hex)
-                                {
-                                    double cellWidth = GetDynamicCellWidth(byteData);
-                                    double byteWidth = cellWidth - HexByteSpacing;
-                                    var rect = new Rect(hexX, y, byteWidth, _lineHeight);
-
-                                    var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
-                                    blinkBrush.Opacity = 0.5;
-                                    dc.DrawRoundedRectangle(blinkBrush, null, rect, 2, 2);
-                                }
-                                else if (_activePanel == ActivePanelType.Ascii)
-                                {
-                                    // Get actual character width (for TBL support)
-                                    double charWidth = GetAsciiCharacterWidth(line, i);
-                                    var asciiRect = new Rect(asciiX, y, charWidth, _lineHeight);
-
-                                    var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
-                                    blinkBrush.Opacity = 0.5;
-                                    dc.DrawRoundedRectangle(blinkBrush, null, asciiRect, 1, 1);
-                                }
-
-                                return; // Found and drawn
-                            }
-
-                            // Advance positions for next byte (same as OnRender)
-                            hexX += GetDynamicCellWidth(byteData) + HexByteSpacing;
-                            asciiX += GetAsciiCharacterWidth(line, i);
-                        }
-
-                        return; // Cursor position found but not in bytes (shouldn't happen)
-                    }
-
-                    y += _lineHeight;
+                    // Draw with corner radius matching the panel type
+                    double cornerRadius = (_activePanel == ActivePanelType.Hex) ? 2 : 1;
+                    dc.DrawRoundedRectangle(blinkBrush, null, cursorRect.Value, cornerRadius, cornerRadius);
                 }
             }
         }
@@ -1455,6 +1377,9 @@ namespace WpfHexaEditor.Controls
             _refreshStopwatch.Stop();
             _lastRefreshTimeMs = _refreshStopwatch.ElapsedMilliseconds;
             RefreshTimeUpdated?.Invoke(this, _lastRefreshTimeMs);
+
+            // Update cursor overlay after main render (keeps overlay in sync with scroll/changes)
+            UpdateCursorOverlay();
         }
 
         /// <summary>
@@ -1618,20 +1543,14 @@ namespace WpfHexaEditor.Controls
                 }
             }
 
-            // Draw cursor cell blink highlight (simple on/off on cursor, only in active panel)
-            if (byteData.VirtualPos.Value == _cursorPosition &&
-                _activePanel == ActivePanelType.Hex &&
-                _cursorBlinkVisible)
-            {
-                // Use SelectionActiveBrush with 50% opacity for subtle effect
-                var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
-                blinkBrush.Opacity = 0.5; // 50% opacity for subtle highlight
-                dc.DrawRoundedRectangle(blinkBrush, null, rect, 2, 2);
-            }
+            // Note: Cursor blink is drawn in overlay (UpdateCursorOverlay) using captured rect
 
             // Draw cursor border (thicker, on top)
             if (byteData.VirtualPos.Value == _cursorPosition)
             {
+                // Capture cursor rect for overlay optimization
+                _cursorHexRect = rect;
+
                 dc.DrawRoundedRectangle(null, _cursorPen, rect, 2, 2);
             }
 
@@ -1894,20 +1813,14 @@ namespace WpfHexaEditor.Controls
                 dc.DrawRoundedRectangle(null, borderPen, rect, 1, 1);
             }
 
-            // Draw cursor cell blink highlight (simple on/off on cursor, only in active panel)
-            if (byteData.VirtualPos.Value == _cursorPosition &&
-                _activePanel == ActivePanelType.Ascii &&
-                _cursorBlinkVisible)
-            {
-                // Use SelectionActiveBrush with 50% opacity for subtle effect
-                var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
-                blinkBrush.Opacity = 0.5; // 50% opacity for subtle highlight
-                dc.DrawRoundedRectangle(blinkBrush, null, rect, 1, 1);
-            }
+            // Note: Cursor blink is drawn in overlay (UpdateCursorOverlay) using captured rect
 
             // Draw cursor border
             if (byteData.VirtualPos.Value == _cursorPosition)
             {
+                // Capture cursor rect for overlay optimization
+                _cursorAsciiRect = rect;
+
                 dc.DrawRoundedRectangle(null, _cursorPen, rect, 1, 1);
             }
 
