@@ -47,12 +47,7 @@ namespace WpfHexaEditor.Core.FormatDetection
         public List<CustomBackgroundBlock> ExecuteBlocks(List<BlockDefinition> blocks)
         {
             if (blocks == null || blocks.Count == 0)
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteBlocks: blocks is null or empty");
                 return _generatedBlocks;
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteBlocks: Processing {blocks.Count} blocks");
 
             _executionDepth++;
             if (_executionDepth > MaxExecutionDepth)
@@ -72,7 +67,6 @@ namespace WpfHexaEditor.Core.FormatDetection
                 _executionDepth--;
             }
 
-            System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteBlocks: Generated {_generatedBlocks.Count} blocks total");
             return _generatedBlocks;
         }
 
@@ -84,12 +78,7 @@ namespace WpfHexaEditor.Core.FormatDetection
         private void ExecuteBlock(BlockDefinition block)
         {
             if (block == null || !block.IsValid())
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteBlock: block is null or invalid");
                 return;
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteBlock: type='{block.Type}', name='{block.Name}'");
 
             switch (block.Type.ToLowerInvariant())
             {
@@ -111,7 +100,7 @@ namespace WpfHexaEditor.Core.FormatDetection
                     break;
 
                 default:
-                    System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteBlock: Unknown block type '{block.Type}'");
+                    // Unknown block type, skip
                     break;
             }
         }
@@ -121,25 +110,15 @@ namespace WpfHexaEditor.Core.FormatDetection
         /// </summary>
         private void ExecuteFieldBlock(BlockDefinition block)
         {
-            System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteFieldBlock: name='{block.Name}', type='{block.Type}'");
-
             // Resolve offset
             var offset = EvaluateOffset(block.Offset);
-            System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteFieldBlock: EvaluateOffset({block.Offset}) = {offset}");
             if (offset == null || offset < 0 || offset >= _data.Length)
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteFieldBlock: Invalid offset (offset={offset}, dataLength={_data.Length})");
                 return; // Invalid offset
-            }
 
             // Resolve length
             var length = EvaluateLength(block.Length);
-            System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteFieldBlock: EvaluateLength({block.Length}) = {length}");
             if (length == null || length <= 0)
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteFieldBlock: Invalid length (length={length})");
                 return; // Invalid length
-            }
 
             // Parse color
             var brush = ParseColor(block.Color);
@@ -155,7 +134,6 @@ namespace WpfHexaEditor.Core.FormatDetection
                 block.Opacity);
 
             _generatedBlocks.Add(customBlock);
-            System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] ExecuteFieldBlock: Created block '{block.Name}' at offset {offset} with length {length}");
         }
 
         /// <summary>
@@ -259,30 +237,20 @@ namespace WpfHexaEditor.Core.FormatDetection
         private long? EvaluateOffset(object offsetExpr)
         {
             if (offsetExpr == null)
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] EvaluateOffset: offsetExpr is null");
                 return null;
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] EvaluateOffset: offsetExpr type={offsetExpr.GetType().Name}, value={offsetExpr}");
 
             // Handle JsonElement (from System.Text.Json deserialization)
             if (offsetExpr is System.Text.Json.JsonElement jsonElement)
             {
-                System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] EvaluateOffset: JsonElement kind={jsonElement.ValueKind}");
                 if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.Number)
                 {
                     if (jsonElement.TryGetInt64(out long jsonValue))
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] EvaluateOffset: Converted JsonElement to long={jsonValue}");
                         return jsonValue;
-                    }
                 }
                 else if (jsonElement.ValueKind == System.Text.Json.JsonValueKind.String)
                 {
                     // Convert to string and process as string expression
                     offsetExpr = jsonElement.GetString();
-                    System.Diagnostics.Debug.WriteLine($"[FormatScriptInterpreter] EvaluateOffset: Converted JsonElement to string='{offsetExpr}'");
                 }
             }
 

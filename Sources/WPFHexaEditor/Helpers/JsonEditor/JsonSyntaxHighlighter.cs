@@ -88,8 +88,12 @@ namespace WpfHexaEditor.Helpers.JsonEditor
         /// </summary>
         public List<SyntaxToken> HighlightLine(JsonLine line, JsonParserContext context)
         {
+            // Phase 11.4: Return cached tokens if available and update LRU timestamp
             if (!line.IsCacheDirty && line.TokensCache != null)
+            {
+                line.LastAccessTime = System.DateTime.UtcNow;
                 return line.TokensCache;
+            }
 
             var tokens = new List<SyntaxToken>();
             var text = line.Text;
@@ -98,6 +102,7 @@ namespace WpfHexaEditor.Helpers.JsonEditor
             {
                 line.TokensCache = tokens;
                 line.IsCacheDirty = false;
+                line.LastAccessTime = System.DateTime.UtcNow;
                 return tokens;
             }
 

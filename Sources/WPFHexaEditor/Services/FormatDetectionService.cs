@@ -196,7 +196,6 @@ namespace WpfHexaEditor.Services
         {
             if (data == null || data.Length == 0)
             {
-                System.Diagnostics.Debug.WriteLine("[FormatDetection] DetectFormat: No data provided");
                 return new FormatDetectionResult
                 {
                     Success = false,
@@ -204,22 +203,17 @@ namespace WpfHexaEditor.Services
                 };
             }
 
-            System.Diagnostics.Debug.WriteLine($"[FormatDetection] DetectFormat: Data length={data.Length}, fileName={fileName ?? "null"}");
-
             var sw = Stopwatch.StartNew();
 
             // Get candidate formats (by extension if filename provided)
             var candidates = GetCandidateFormats(fileName);
-            System.Diagnostics.Debug.WriteLine($"[FormatDetection] DetectFormat: Found {candidates.Count} candidate formats");
 
             // Try each candidate
             foreach (var format in candidates)
             {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] DetectFormat: Trying format '{format.FormatName}'");
                 if (TryDetectFormat(data, format, out var blocks))
                 {
                     sw.Stop();
-                    System.Diagnostics.Debug.WriteLine($"[FormatDetection] DetectFormat: SUCCESS! Matched '{format.FormatName}' with {blocks.Count} blocks");
                     return new FormatDetectionResult
                     {
                         Success = true,
@@ -231,7 +225,6 @@ namespace WpfHexaEditor.Services
             }
 
             sw.Stop();
-            System.Diagnostics.Debug.WriteLine($"[FormatDetection] DetectFormat: No matching format found after trying {candidates.Count} candidates");
             return new FormatDetectionResult
             {
                 Success = false,
@@ -248,25 +241,13 @@ namespace WpfHexaEditor.Services
             blocks = new List<CustomBackgroundBlock>();
 
             if (format == null || !format.IsValid())
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] TryDetectFormat: Format is null or invalid");
                 return false;
-            }
 
             // Check signature
             if (format.Detection != null && format.Detection.Required)
             {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] TryDetectFormat '{format.FormatName}': Checking signature (required={format.Detection.Required})");
                 if (!CheckSignature(data, format.Detection))
-                {
-                    System.Diagnostics.Debug.WriteLine($"[FormatDetection] TryDetectFormat '{format.FormatName}': Signature check FAILED");
                     return false;
-                }
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] TryDetectFormat '{format.FormatName}': Signature check PASSED");
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] TryDetectFormat '{format.FormatName}': No signature check required (Detection={format.Detection != null}, Required={format.Detection?.Required ?? false})");
             }
 
             // Generate blocks using interpreter
@@ -274,12 +255,11 @@ namespace WpfHexaEditor.Services
             {
                 var interpreter = new FormatScriptInterpreter(data, format.Variables);
                 blocks = interpreter.ExecuteBlocks(format.Blocks);
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] TryDetectFormat '{format.FormatName}': Generated {blocks.Count} blocks");
                 return blocks.Count > 0;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] TryDetectFormat '{format.FormatName}': Error executing format: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[FormatDetection] Error executing format {format.FormatName}: {ex.Message}");
                 return false;
             }
         }
@@ -290,42 +270,23 @@ namespace WpfHexaEditor.Services
         private bool CheckSignature(byte[] data, DetectionRule detection)
         {
             if (detection == null || !detection.IsValid())
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] CheckSignature: Detection rule is null or invalid");
                 return false;
-            }
 
             var signatureBytes = detection.GetSignatureBytes();
             if (signatureBytes == null)
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] CheckSignature: Failed to parse signature bytes from '{detection.Signature}'");
                 return false;
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[FormatDetection] CheckSignature: Looking for signature '{detection.Signature}' ({signatureBytes.Length} bytes) at offset {detection.Offset}");
 
             long offset = detection.Offset;
             if (offset < 0 || offset + signatureBytes.Length > data.Length)
-            {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] CheckSignature: Offset out of range (offset={offset}, sigLen={signatureBytes.Length}, dataLen={data.Length})");
                 return false;
-            }
 
             // Compare bytes
-            var actualBytes = new byte[signatureBytes.Length];
-            Array.Copy(data, offset, actualBytes, 0, signatureBytes.Length);
-
             for (int i = 0; i < signatureBytes.Length; i++)
             {
                 if (data[offset + i] != signatureBytes[i])
-                {
-                    System.Diagnostics.Debug.WriteLine($"[FormatDetection] CheckSignature: Mismatch at byte {i}: expected {signatureBytes[i]:X2}, got {data[offset + i]:X2}");
-                    System.Diagnostics.Debug.WriteLine($"[FormatDetection] CheckSignature: Expected: {BitConverter.ToString(signatureBytes)}, Got: {BitConverter.ToString(actualBytes)}");
                     return false;
-                }
             }
 
-            System.Diagnostics.Debug.WriteLine($"[FormatDetection] CheckSignature: Signature matched! Expected: {BitConverter.ToString(signatureBytes)}, Got: {BitConverter.ToString(actualBytes)}");
             return true;
         }
 

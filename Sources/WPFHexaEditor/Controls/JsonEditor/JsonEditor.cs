@@ -1509,7 +1509,16 @@ namespace WpfHexaEditor.Controls.JsonEditor
 
             // 9. Draw cursor (blinking will be added later)
             RenderCursor(dc);
+
+            // Phase 11.4: Periodically cleanup token cache to respect MaxCachedLines
+            // Only run every ~60 frames to avoid performance impact
+            if (_frameCount++ % 60 == 0)
+            {
+                _document.CleanupTokenCache(MaxCachedLines);
+            }
         }
+
+        private int _frameCount = 0; // Frame counter for periodic cache cleanup
 
         /// <summary>
         /// Measure desired size based on content (all lines)

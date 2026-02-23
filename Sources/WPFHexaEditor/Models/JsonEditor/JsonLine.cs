@@ -67,6 +67,12 @@ namespace WpfHexaEditor.Models.JsonEditor
         public bool IsCacheDirty { get; set; } = true;
 
         /// <summary>
+        /// Last access time for LRU cache eviction (Phase 11.4)
+        /// Updated when tokens are accessed or generated
+        /// </summary>
+        public System.DateTime LastAccessTime { get; set; } = System.DateTime.UtcNow;
+
+        /// <summary>
         /// Length of text in characters
         /// </summary>
         public int Length => _text?.Length ?? 0;

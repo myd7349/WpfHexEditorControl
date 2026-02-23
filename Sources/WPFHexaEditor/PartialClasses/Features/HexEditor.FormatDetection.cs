@@ -417,12 +417,9 @@ namespace WpfHexaEditor
         /// <returns>Detection result</returns>
         public FormatDetectionResult AutoDetectAndApplyFormat(string fileName = null)
         {
-            System.Diagnostics.Debug.WriteLine($"[FormatDetection] AutoDetectAndApplyFormat called with fileName: {fileName ?? "null"}");
-
             // Check if file is loaded
             if (Stream == null || Stream.Length == 0)
             {
-                System.Diagnostics.Debug.WriteLine("[FormatDetection] Stream is null or empty, cannot detect format");
                 return new FormatDetectionResult
                 {
                     Success = false,
@@ -457,12 +454,7 @@ namespace WpfHexaEditor
                 }
 
                 // Detect format
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] Read {bytesRead} bytes from stream (file length: {Stream.Length})");
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] First 16 bytes: {BitConverter.ToString(data.Take(Math.Min(16, data.Length)).ToArray())}");
-
                 var result = _formatDetectionService.DetectFormat(data, fileName);
-
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] DetectFormat returned: Success={result.Success}, Format={result.Format?.FormatName ?? "null"}, BlockCount={result.Blocks?.Count ?? 0}, Error={result.ErrorMessage ?? "none"}");
 
                 if (result.Success && result.Blocks != null && result.Blocks.Count > 0)
                 {

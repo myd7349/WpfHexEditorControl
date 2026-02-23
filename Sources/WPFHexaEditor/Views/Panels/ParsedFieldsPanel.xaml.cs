@@ -33,6 +33,10 @@ namespace WpfHexaEditor.Views.Panels
             // Initialize FilteredFields FIRST to avoid NullReferenceException in ApplyFilter()
             FilteredFields = new ObservableCollection<ParsedFieldViewModel>();
             ParsedFields = new ObservableCollection<ParsedFieldViewModel>();
+
+            // Subscribe to collection changes to automatically update filtered view
+            ParsedFields.CollectionChanged += (s, e) => ApplyFilter();
+
             FormatInfo = new FormatInfo();
         }
 

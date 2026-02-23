@@ -586,6 +586,49 @@ namespace WpfHexaEditor.Models.JsonEditor
         }
 
         #endregion
+
+        #region LineCache Management (Phase 11.4)
+
+        /// <summary>
+        /// Clean up token cache to respect MaxCachedLines limit using LRU eviction.
+        /// Called periodically during rendering or after document changes.
+        /// </summary>
+        public void CleanupTokenCache(int maxCachedLines)
+        {
+            if (maxCachedLines <= 0)
+                return;
+
+            // Count lines with valid cache
+            var cachedLines = Lines.Where(line => line.TokensCache != null && !line.IsCacheDirty).ToList();
+
+            if (cachedLines.Count <= maxCachedLines)
+                return; // Within limit
+
+            // Sort by LastAccessTime (oldest first) and clear oldest caches
+            var linesToEvict = cachedLines
+                .OrderBy(line => line.LastAccessTime)
+                .Take(cachedLines.Count - maxCachedLines);
+
+            foreach (var line in linesToEvict)
+            {
+                line.TokensCache = null;
+                line.IsCacheDirty = true;
+            }
+        }
+
+        /// <summary>
+        /// Get cache statistics for debugging
+        /// </summary>
+        public (int cached, int dirty, int total) GetCacheStatistics()
+        {
+            int cached = Lines.Count(line => line.TokensCache != null && !line.IsCacheDirty);
+            int dirty = Lines.Count(line => line.IsCacheDirty);
+            int total = Lines.Count;
+
+            return (cached, dirty, total);
+        }
+
+        #endregion
     }
 
     #region Event Args

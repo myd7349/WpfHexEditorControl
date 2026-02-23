@@ -290,6 +290,12 @@ namespace WpfHexaEditor.Core.Settings
             PropertyMetadata metadata,
             IPropertyControl propertyControl)
         {
+            // Adjust binding mode for read-only properties
+            if (metadata.IsReadOnly)
+            {
+                binding.Mode = BindingMode.OneWay;
+            }
+
             // Disable control if property is read-only
             if (metadata.IsReadOnly && control is Control ctrl)
             {
