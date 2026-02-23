@@ -45,6 +45,10 @@ namespace WpfHexaEditor.Controls
         private long _cursorPosition = 0;
         private long _selectionStart = -1;
         private long _selectionStop = -1;
+        private long _editingCellPosition = -1;
+        private bool _editingBlinkVisible = false;
+        private System.Windows.Threading.DispatcherTimer _editingBlinkTimer;
+        private System.Windows.Media.Brush _editingCellBrush;
         private HashSet<long> _highlightedPositions = new();
         private List<Core.CustomBackgroundBlock> _customBackgroundBlocks = new();
         private CustomBackgroundRenderer _customBackgroundRenderer = new();
@@ -122,11 +126,10 @@ namespace WpfHexaEditor.Controls
         // Caret for Insert mode (flashing vertical line)
         private Caret _caret;
 
-        // Editing cell blink effect
-        private long _editingCellPosition = -1;      // Position de la cellule en édition (-1 = aucune)
-        private bool _editingBlinkVisible = true;    // État du clignotement (true = fond visible)
-        private System.Windows.Threading.DispatcherTimer _editingBlinkTimer;  // Timer pour le clignotement
-        private Brush _editingCellBrush = new SolidColorBrush(Color.FromArgb(0x55, 0xFF, 0xC0, 0x00)); // Ambre semi-transparent
+        // Cursor cell blink effect (simple on/off on active cursor)
+        private bool _cursorBlinkVisible = true;     // État du clignotement (true = visible, false = caché)
+        private System.Windows.Threading.DispatcherTimer _cursorBlinkTimer;  // Timer pour le clignotement
+        private const int CURSOR_BLINK_INTERVAL = 500; // Intervalle en ms (500ms comme le caret)
 
         // Mouse drag selection support
         private bool _isMouseDown = false;
@@ -137,8 +140,8 @@ namespace WpfHexaEditor.Controls
 
         // Mouse hover preview (shows which byte will be selected)
         private long _mouseHoverPosition = -1; // Position of byte under mouse cursor
-        private bool _mouseHoverInHexArea = true; // True if hovering in hex area, false if in ASCII area
-        private Brush _mouseHoverBrush = new SolidColorBrush(Color.FromRgb(255, 140, 0)); // Dark orange FULLY OPAQUE - HDR compatible
+        private bool _mouseHoverInHexArea = true; // True if hovering in hex area, false in ASCII area
+        private Brush _mouseHoverBrush = new SolidColorBrush(Color.FromArgb(0x50, 100, 150, 255)); // Deep Blue - default from MouseOverColor DP
 
         // Refresh time tracking
         private System.Diagnostics.Stopwatch _refreshStopwatch = new System.Diagnostics.Stopwatch();
@@ -231,6 +234,19 @@ namespace WpfHexaEditor.Controls
             };
             ToolTip = _byteToolTip;
 
+            // Initialize editing blink timer for cursor effect
+            _editingBlinkTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(530)
+            };
+            _editingBlinkTimer.Tick += (s, e) =>
+            {
+                _editingBlinkVisible = !_editingBlinkVisible;
+                InvalidateVisual();
+            };
+            _editingCellBrush = new SolidColorBrush(Color.FromArgb(128, 0, 120, 212));
+            _editingCellBrush.Freeze();
+
             // Freeze brushes for performance
             _offsetBrush.Freeze();
             _normalByteBrush.Freeze();
@@ -262,12 +278,13 @@ namespace WpfHexaEditor.Controls
             AddLogicalChild(_caret);
             _caret.Start(); // Start blinking
 
-            // Initialize editing cell blink timer (synchronized to caret blink period)
-            _editingBlinkTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
+            // Initialize cursor cell blink timer (simple on/off blink)
+            _cursorBlinkTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
             {
-                Interval = TimeSpan.FromMilliseconds(500) // Synchronized with _caret.BlinkPeriod
+                Interval = TimeSpan.FromMilliseconds(CURSOR_BLINK_INTERVAL) // 500ms synchronized with caret
             };
-            _editingBlinkTimer.Tick += EditingBlinkTimer_Tick;
+            _cursorBlinkTimer.Tick += CursorBlinkTimer_Tick;
+            _cursorBlinkTimer.Start(); // Always running for cursor highlight
         }
 
         /// <summary>
@@ -285,17 +302,13 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
-        /// Timer tick handler for editing cell blink effect
+        /// Timer tick handler for cursor cell blink effect (simple on/off toggle)
         /// </summary>
-        private void EditingBlinkTimer_Tick(object sender, EventArgs e)
+        private void CursorBlinkTimer_Tick(object sender, EventArgs e)
         {
-            if (_editingCellPosition < 0)
-            {
-                _editingBlinkTimer.Stop();
-                return;
-            }
-            _editingBlinkVisible = !_editingBlinkVisible;
-            InvalidateVisual(); // Force le redessinage
+            // Simple toggle: visible → hidden → visible
+            _cursorBlinkVisible = !_cursorBlinkVisible;
+            InvalidateVisual(); // Redraw with new state
         }
 
         #endregion
@@ -582,8 +595,7 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
-        /// Position of the byte cell currently being edited (shows blinking background).
-        /// Set to -1 to stop the blink effect.
+        /// Position of the cell currently being edited (for blinking highlight)
         /// </summary>
         public long EditingCellPosition
         {
@@ -836,7 +848,7 @@ namespace WpfHexaEditor.Controls
                 }
                 else
                 {
-                    _mouseHoverBrush = value ?? new SolidColorBrush(Color.FromRgb(255, 140, 0)); // Dark orange fully opaque
+                    _mouseHoverBrush = value ?? new SolidColorBrush(Color.FromArgb(0x50, 100, 150, 255)); // Deep Blue - default from MouseOverColor DP
                 }
                 InvalidateVisual();
             }
@@ -1425,11 +1437,15 @@ namespace WpfHexaEditor.Controls
                 }
             }
 
-            // Draw editing cell blink highlight (below cursor border, above selection)
-            if (_editingBlinkVisible && _editingCellPosition >= 0 &&
-                byteData.VirtualPos.Value == _editingCellPosition)
+            // Draw cursor cell blink highlight (simple on/off on cursor, only in active panel)
+            if (byteData.VirtualPos.Value == _cursorPosition &&
+                _activePanel == ActivePanelType.Hex &&
+                _cursorBlinkVisible)
             {
-                dc.DrawRoundedRectangle(_editingCellBrush, null, rect, 2, 2);
+                // Use SelectionActiveBrush with 50% opacity for subtle effect
+                var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
+                blinkBrush.Opacity = 0.5; // 50% opacity for subtle highlight
+                dc.DrawRoundedRectangle(blinkBrush, null, rect, 2, 2);
             }
 
             // Draw cursor border (thicker, on top)
@@ -1687,11 +1703,15 @@ namespace WpfHexaEditor.Controls
                 dc.DrawRoundedRectangle(null, borderPen, rect, 1, 1);
             }
 
-            // Draw editing cell blink highlight (ASCII panel mirror)
-            if (_editingBlinkVisible && _editingCellPosition >= 0 &&
-                byteData.VirtualPos.Value == _editingCellPosition)
+            // Draw cursor cell blink highlight (simple on/off on cursor, only in active panel)
+            if (byteData.VirtualPos.Value == _cursorPosition &&
+                _activePanel == ActivePanelType.Ascii &&
+                _cursorBlinkVisible)
             {
-                dc.DrawRoundedRectangle(_editingCellBrush, null, rect, 1, 1);
+                // Use SelectionActiveBrush with 50% opacity for subtle effect
+                var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
+                blinkBrush.Opacity = 0.5; // 50% opacity for subtle highlight
+                dc.DrawRoundedRectangle(blinkBrush, null, rect, 1, 1);
             }
 
             // Draw cursor border
@@ -2193,6 +2213,17 @@ namespace WpfHexaEditor.Controls
                         string tooltipText = $"Position: 0x{position.Value:X8} ({position.Value})\n" +
                                            $"Value: 0x{byteValue:X2} ({byteValue})\n" +
                                            $"ASCII: '{asciiChar}'";
+
+                        // Check if this byte is part of a CustomBackgroundBlock (parsed field)
+                        var block = _customBackgroundBlocks?.FirstOrDefault(b =>
+                            position.Value >= b.StartOffset && position.Value < b.StopOffset);
+
+                        if (block != null && !string.IsNullOrWhiteSpace(block.Description))
+                        {
+                            tooltipText += $"\n\n📋 Field: {block.Description}";
+                            tooltipText += $"\nRange: 0x{block.StartOffset:X8} - 0x{block.StopOffset:X8}";
+                            tooltipText += $"\nLength: {block.Length} byte(s)";
+                        }
 
                         // Update tooltip position to follow mouse
                         _byteToolTip.HorizontalOffset = mousePos.X + 15;

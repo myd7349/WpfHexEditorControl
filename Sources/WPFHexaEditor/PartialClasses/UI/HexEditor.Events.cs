@@ -1230,7 +1230,6 @@ namespace WpfHexaEditor
             {
                 _isEditingByte = true;
                 _editingPosition = currentPos;
-                HexViewport.EditingCellPosition = currentPos.Value;
                 _editingCharIndex = 0;
                 _editingMaxChars = 2;  // Hexadecimal: 2 characters
                 _editingBuffer = "";
@@ -1316,7 +1315,6 @@ namespace WpfHexaEditor
                 else
                 {
                     _isEditingByte = false;
-                    HexViewport.EditingCellPosition = -1;
                 }
             }
         }
@@ -1336,7 +1334,6 @@ namespace WpfHexaEditor
                 // Initialize decimal edit
                 _isEditingByte = true;
                 _editingPosition = currentPos;
-                HexViewport.EditingCellPosition = currentPos.Value;
                 _editingCharIndex = 0;
                 _editingMaxChars = 3;  // Decimal: 3 digits (000-255)
                 _editingBuffer = "";
@@ -1412,7 +1409,6 @@ namespace WpfHexaEditor
                 // Initialize binary edit
                 _isEditingByte = true;
                 _editingPosition = currentPos;
-                HexViewport.EditingCellPosition = currentPos.Value;
                 _editingCharIndex = 0;
                 _editingMaxChars = 8;  // Binary: 8 bits
                 _editingBuffer = "";
@@ -1492,7 +1488,6 @@ namespace WpfHexaEditor
 
             // Reset all editing state variables
             _isEditingByte = false;
-            HexViewport.EditingCellPosition = -1;
             _editingPosition = VirtualPosition.Invalid;
             _editingValue = 0;
             _editingCharIndex = 0;

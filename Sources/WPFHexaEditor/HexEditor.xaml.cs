@@ -1905,7 +1905,7 @@ namespace WpfHexaEditor
 
         public static readonly DependencyProperty MouseOverColorProperty =
             DependencyProperty.Register(nameof(MouseOverColor), typeof(Color), typeof(HexEditor),
-                new PropertyMetadata(Color.FromRgb(0, 102, 204), OnMouseOverColorChanged)); // Deep Blue - HDR visible
+                new PropertyMetadata(Color.FromArgb(0x50, 100, 150, 255), OnMouseOverColorChanged)); // Light Blue semi-transparent (31% opacity)
 
         private static void OnMouseOverColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -2712,7 +2712,6 @@ namespace WpfHexaEditor
                 if (editor._isEditingByte)
                 {
                     editor._isEditingByte = false;
-                    editor.HexViewport.EditingCellPosition = -1;
                     editor._editingPosition = VirtualPosition.Invalid;
                     editor._editingValue = 0;
                     editor._editingCharIndex = 0;
