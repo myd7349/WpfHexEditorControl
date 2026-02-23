@@ -708,26 +708,24 @@ namespace WpfHexaEditor
                 _viewModel.ScrollPosition = lineNumber;
                 VerticalScroll.Value = lineNumber; // Sync scrollbar visual
             }
-            // Scroll down if cursor moves beyond the last visible byte (Legacy behavior)
-            // This accounts for status bar and other UI elements that may hide bottom lines
-            // EXCEPT when all content fits in viewport (nothing to scroll)
+            // Scroll down if position is below viewport
             else
             {
-                // Disable adjustment if all content is visible (handles resize dynamically)
-                // Add +4 to account for lines hidden by status bar (extra margin for safety)
-                long maxScroll = Math.Max(0, _viewModel.TotalLines - _viewModel.VisibleLines + 4);
+                long lastVisibleByte = HexViewport.LastVisibleBytePosition;
 
-                // Only apply scroll adjustment if:
-                // 1. Scrolling is possible (maxScroll > 0)
-                // 2. Not already scrolled to the bottom (currentScroll < maxScroll)
-                if (maxScroll > 0 && currentScroll < maxScroll)
+                // Check if position is beyond visible area
+                if (lastVisibleByte >= 0 && bytePosition > lastVisibleByte)
                 {
-                    long lastVisibleByte = HexViewport.LastVisibleBytePosition;
-                    if (lastVisibleByte >= 0 && bytePosition > lastVisibleByte)
-                    {
-                        _viewModel.ScrollPosition = currentScroll + 1;
-                        VerticalScroll.Value = currentScroll + 1; // Sync scrollbar visual
-                    }
+                    // Calculate how many lines we need to scroll to center the position
+                    long visibleLines = _viewModel.VisibleLines;
+                    long targetScroll = lineNumber - visibleLines / 2;
+
+                    // Ensure we don't scroll past the end
+                    long maxScroll = Math.Max(0, _viewModel.TotalLines - visibleLines + 4);
+                    targetScroll = Math.Min(Math.Max(0, targetScroll), maxScroll);
+
+                    _viewModel.ScrollPosition = targetScroll;
+                    VerticalScroll.Value = targetScroll; // Sync scrollbar visual
                 }
             }
         }

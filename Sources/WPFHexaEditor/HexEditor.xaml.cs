@@ -135,6 +135,19 @@ namespace WpfHexaEditor
             {
                 HexViewport.ByteRightClick += HexViewport_ByteRightClick;
                 HexViewport.ByteDoubleClicked += HexViewport_ByteDoubleClicked;
+
+                // CRITICAL: Sync TBL colors from DP defaults to HexViewport on initialization
+                // Without this, the DP default values never propagate because OnTblColorChanged
+                // only fires when values CHANGE, not during initialization
+                HexViewport.TblDteColor = TblDteColor;
+                HexViewport.TblMteColor = TblMteColor;
+                HexViewport.TblAsciiColor = TblAsciiColor;
+                HexViewport.TblJaponaisColor = TblJaponaisColor;
+                HexViewport.TblEndBlockColor = TblEndBlockColor;
+                HexViewport.TblEndLineColor = TblEndLineColor;
+                HexViewport.TblDefaultColor = TblDefaultColor;
+                HexViewport.Tbl3ByteColor = Tbl3ByteColor;
+                HexViewport.Tbl4PlusByteColor = Tbl4PlusByteColor;
                 HexViewport.ByteDragSelection += HexViewport_ByteDragSelection;
                 HexViewport.KeyboardNavigation += HexViewport_KeyboardNavigation;
                 HexViewport.RefreshTimeUpdated += HexViewport_RefreshTimeUpdated;
@@ -2555,56 +2568,56 @@ namespace WpfHexaEditor
         /// </summary>
         public static readonly DependencyProperty TblDteColorProperty =
             DependencyProperty.Register(nameof(TblDteColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.Yellow, OnTblColorChanged));
+                new PropertyMetadata(Colors.Green, OnTblColorChanged)); // TEST: Green to distinguish from MTE
 
         /// <summary>
         /// TblMteColor DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty TblMteColorProperty =
             DependencyProperty.Register(nameof(TblMteColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.LightBlue, OnTblColorChanged));
+                new PropertyMetadata(Colors.Red, OnTblColorChanged)); // V1 compatible: Red
 
         /// <summary>
         /// TblEndBlockColor DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty TblEndBlockColorProperty =
             DependencyProperty.Register(nameof(TblEndBlockColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.Red, OnTblColorChanged));
+                new PropertyMetadata(Colors.Blue, OnTblColorChanged)); // V1 compatible: Blue
 
         /// <summary>
         /// TblEndLineColor DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty TblEndLineColorProperty =
             DependencyProperty.Register(nameof(TblEndLineColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.Orange, OnTblColorChanged));
+                new PropertyMetadata(Colors.Blue, OnTblColorChanged)); // V1 compatible: Blue
 
         /// <summary>
         /// TblAsciiColor DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty TblAsciiColorProperty =
             DependencyProperty.Register(nameof(TblAsciiColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.LightGreen, OnTblColorChanged));
+                new PropertyMetadata(Color.FromRgb(0x42, 0x42, 0x42), OnTblColorChanged)); // V1 compatible: Dark gray (same as normal ASCII)
 
         /// <summary>
         /// TblJaponaisColor DependencyProperty for XAML binding
         /// </summary>
         public static readonly DependencyProperty TblJaponaisColorProperty =
             DependencyProperty.Register(nameof(TblJaponaisColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.Pink, OnTblColorChanged));
+                new PropertyMetadata(Colors.Red, OnTblColorChanged)); // V1 compatible: Red
 
         /// <summary>
         /// Tbl3ByteColor DependencyProperty for XAML binding (3-byte sequences)
         /// </summary>
         public static readonly DependencyProperty Tbl3ByteColorProperty =
             DependencyProperty.Register(nameof(Tbl3ByteColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.Cyan, OnTblColorChanged));
+                new PropertyMetadata(Colors.Red, OnTblColorChanged)); // V1 compatible: Red
 
         /// <summary>
         /// Tbl4PlusByteColor DependencyProperty for XAML binding (4+ byte sequences)
         /// </summary>
         public static readonly DependencyProperty Tbl4PlusByteColorProperty =
             DependencyProperty.Register(nameof(Tbl4PlusByteColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Colors.Magenta, OnTblColorChanged));
+                new PropertyMetadata(Colors.Red, OnTblColorChanged)); // V1 compatible: Red
 
         /// <summary>
         /// TblDefaultColor DependencyProperty for XAML binding

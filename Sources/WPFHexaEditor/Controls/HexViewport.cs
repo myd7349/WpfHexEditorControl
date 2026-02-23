@@ -103,14 +103,15 @@ namespace WpfHexaEditor.Controls
         private bool _showTblEndBlock = true;
         private bool _showTblEndLine = true;
 
-        private Brush _tblDteBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0x00)); // Yellow
-        private Brush _tblMteBrush = new SolidColorBrush(Color.FromRgb(0xAD, 0xD8, 0xE6)); // LightBlue
-        private Brush _tblEndBlockBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0x00)); // Red
-        private Brush _tblEndLineBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xA5, 0x00)); // Orange
-        private Brush _tblAsciiBrush = new SolidColorBrush(Color.FromRgb(0x90, 0xEE, 0x90)); // LightGreen
-        private Brush _tblJaponaisBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xC0, 0xCB)); // Pink
-        private Brush _tbl3ByteBrush = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xFF)); // Cyan
-        private Brush _tbl4PlusByteBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0xFF)); // Magenta
+        // V1 compatible TBL colors: ASCII=Black, DTE=Green (test), MTE=Red, EndBlock/EndLine=Blue
+        private Brush _tblDteBrush = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0x00)); // Green (TEST - to distinguish from MTE)
+        private Brush _tblMteBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0x00)); // Red
+        private Brush _tblEndBlockBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0xFF)); // Blue (V1)
+        private Brush _tblEndLineBrush = new SolidColorBrush(Color.FromRgb(0x00, 0x00, 0xFF)); // Blue (V1)
+        private Brush _tblAsciiBrush = new SolidColorBrush(Color.FromRgb(0x42, 0x42, 0x42)); // Dark gray (same as normal ASCII)
+        private Brush _tblJaponaisBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0x00)); // Red
+        private Brush _tbl3ByteBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0x00)); // Red
+        private Brush _tbl4PlusByteBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x00, 0x00)); // Red
 
         // Debug counter to avoid spamming logs every frame
         private int _debugRenderCount = 0;
@@ -131,6 +132,9 @@ namespace WpfHexaEditor.Controls
         // Nibble editing visual feedback (bold the nibble being edited)
         private long _editingBytePosition = -1;      // Position of byte being edited (-1 = none)
         private int _editingNibbleIndex = 0;         // Which nibble is being edited (0 = first, 1 = second)
+
+        // Cursor overlay visual (separate layer for performance - only redraws cursor, not entire viewport)
+        private DrawingVisual _cursorOverlayVisual = null;
 
         // Mouse drag selection support
         private bool _isMouseDown = false;
@@ -265,6 +269,8 @@ namespace WpfHexaEditor.Controls
             _tblMteBrush.Freeze();
             _tblEndBlockBrush.Freeze();
             _tblEndLineBrush.Freeze();
+            _tblAsciiBrush.Freeze();
+            _tblJaponaisBrush.Freeze();
             _tblDefaultBrush.Freeze();
             _tbl3ByteBrush.Freeze();
             _tbl4PlusByteBrush.Freeze();
@@ -276,29 +282,184 @@ namespace WpfHexaEditor.Controls
             };
             _cursorBlinkTimer.Tick += CursorBlinkTimer_Tick;
             _cursorBlinkTimer.Start(); // Always running for cursor highlight
+
+            // Initialize cursor overlay visual (separate layer for optimized rendering)
+            _cursorOverlayVisual = new DrawingVisual();
+            AddVisualChild(_cursorOverlayVisual);
+            AddLogicalChild(_cursorOverlayVisual);
         }
 
         /// <summary>
-        /// No child visuals (direct rendering only)
+        /// One child visual: cursor overlay for optimized blink rendering
         /// </summary>
-        protected override int VisualChildrenCount => 0;
+        protected override int VisualChildrenCount => 1;
 
         /// <summary>
-        /// No child visuals (direct rendering only)
+        /// Returns the cursor overlay visual child
         /// </summary>
         protected override Visual GetVisualChild(int index)
         {
-            throw new ArgumentOutOfRangeException(nameof(index));
+            if (index != 0)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            return _cursorOverlayVisual;
         }
 
         /// <summary>
         /// Timer tick handler for cursor cell blink effect (simple on/off toggle)
+        /// Optimized: only redraws if cursor is visible in viewport
         /// </summary>
         private void CursorBlinkTimer_Tick(object sender, EventArgs e)
         {
             // Simple toggle: visible → hidden → visible
             _cursorBlinkVisible = !_cursorBlinkVisible;
-            InvalidateVisual(); // Redraw with new state
+
+            // Optimization: only redraw if cursor is visible in viewport
+            if (IsCursorVisibleInViewport())
+            {
+                UpdateCursorOverlay(); // Redraw only cursor overlay (optimized)
+            }
+        }
+
+        /// <summary>
+        /// Check if the cursor position is currently visible in the viewport
+        /// </summary>
+        private bool IsCursorVisibleInViewport()
+        {
+            if (_cursorPosition < 0 || _linesCached == null || _linesCached.Count == 0)
+                return false;
+
+            // Get first and last visible positions
+            long firstVisiblePos = _linesCached[0].Bytes[0].VirtualPos;
+            var lastLine = _linesCached[_linesCached.Count - 1];
+            long lastVisiblePos = lastLine.Bytes[lastLine.Bytes.Count - 1].VirtualPos;
+
+            return _cursorPosition >= firstVisiblePos && _cursorPosition <= lastVisiblePos;
+        }
+
+        /// <summary>
+        /// Update cursor overlay visual (optimized: only redraws cursor, not entire viewport)
+        /// </summary>
+        private void UpdateCursorOverlay()
+        {
+            using (DrawingContext dc = _cursorOverlayVisual.RenderOpen())
+            {
+                // Find cursor position in viewport
+                if (!_cursorBlinkVisible || _cursorPosition < 0 || _linesCached == null)
+                    return; // Clear overlay (empty drawing)
+
+                // Find the line and byte containing the cursor
+                double y = TopMargin;
+                foreach (var line in _linesCached)
+                {
+                    if (line.Bytes == null || line.Bytes.Count == 0)
+                    {
+                        y += _lineHeight;
+                        continue;
+                    }
+
+                    // Check if cursor is in this line
+                    long lineStart = line.Bytes[0].VirtualPos;
+                    long lineEnd = line.Bytes[line.Bytes.Count - 1].VirtualPos;
+
+                    if (_cursorPosition >= lineStart && _cursorPosition <= lineEnd)
+                    {
+                        // Find byte in line (replicate OnRender layout logic exactly)
+                        double hexX = ShowOffset ? OffsetWidth : 0;
+
+                        // Get stride (same as OnRender)
+                        int stride = line.Bytes.Count > 0 ? (line.Bytes[0].ByteSize switch
+                        {
+                            Core.ByteSizeType.Bit8 => 1,
+                            Core.ByteSizeType.Bit16 => 2,
+                            Core.ByteSizeType.Bit32 => 4,
+                            _ => 1
+                        }) : 1;
+
+                        for (int i = 0; i < line.Bytes.Count; i++)
+                        {
+                            // Calculate byte position (same as OnRender)
+                            int bytePosition = i * stride;
+
+                            // Add byte spacer width BEFORE this byte if needed (same as OnRender)
+                            if (_bytesPerLine >= (int)ByteGrouping &&
+                                (ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                                 ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel) &&
+                                bytePosition % (int)ByteGrouping == 0 && i > 0)
+                            {
+                                hexX += (int)ByteSpacerWidthTickness;
+                            }
+
+                            var byteData = line.Bytes[i];
+
+                            if (byteData.VirtualPos.Value == _cursorPosition)
+                            {
+                                // Draw cursor blink highlight
+                                double cellWidth = GetDynamicCellWidth(byteData);
+                                double byteWidth = cellWidth - HexByteSpacing;
+                                var rect = new Rect(hexX, y, byteWidth, _lineHeight);
+
+                                // Hex or ASCII panel?
+                                if (_activePanel == ActivePanelType.Hex)
+                                {
+                                    var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
+                                    blinkBrush.Opacity = 0.5;
+                                    dc.DrawRoundedRectangle(blinkBrush, null, rect, 2, 2);
+                                }
+                                else if (_activePanel == ActivePanelType.Ascii)
+                                {
+                                    // Calculate ASCII position - need to account for byte spacers!
+                                    // Replicate OnRender ASCII layout logic
+                                    double asciiX = AsciiPanelStartX;
+
+                                    // Iterate through bytes up to cursor to accumulate spacers
+                                    for (int j = 0; j < i; j++)
+                                    {
+                                        int bytePos = j * stride;
+
+                                        // Add byte spacer width if needed (same logic as OnRender)
+                                        if (_tblStream == null &&
+                                            _bytesPerLine >= (int)ByteGrouping &&
+                                            (ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                                             ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
+                                            bytePos % (int)ByteGrouping == 0 && j > 0)
+                                        {
+                                            asciiX += (int)ByteSpacerWidthTickness;
+                                        }
+
+                                        // Add character width (simplified - assumes single byte chars)
+                                        asciiX += _charWidth;
+                                    }
+
+                                    // Add spacer before cursor byte if needed
+                                    if (_tblStream == null &&
+                                        _bytesPerLine >= (int)ByteGrouping &&
+                                        (ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                                         ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel) &&
+                                        bytePosition % (int)ByteGrouping == 0 && i > 0)
+                                    {
+                                        asciiX += (int)ByteSpacerWidthTickness;
+                                    }
+
+                                    var asciiRect = new Rect(asciiX, y, _charWidth, _lineHeight);
+
+                                    var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
+                                    blinkBrush.Opacity = 0.5;
+                                    dc.DrawRoundedRectangle(blinkBrush, null, asciiRect, 1, 1);
+                                }
+
+                                return; // Found and drawn
+                            }
+
+                            // Advance X position (same as OnRender)
+                            hexX += GetDynamicCellWidth(byteData) + HexByteSpacing;
+                        }
+
+                        return; // Cursor position found but not in bytes (shouldn't happen)
+                    }
+
+                    y += _lineHeight;
+                }
+            }
         }
 
         #endregion
@@ -580,6 +741,7 @@ namespace WpfHexaEditor.Controls
                 {
                     _cursorPosition = value;
                     InvalidateVisual();
+                    UpdateCursorOverlay(); // Update cursor blink position
                 }
             }
         }
@@ -815,7 +977,12 @@ namespace WpfHexaEditor.Controls
         public ActivePanelType ActivePanel
         {
             get => _activePanel;
-            set { _activePanel = value; InvalidateVisual(); }
+            set
+            {
+                _activePanel = value;
+                InvalidateVisual();
+                UpdateCursorOverlay(); // Update cursor blink panel
+            }
         }
 
         /// <summary>
@@ -925,7 +1092,7 @@ namespace WpfHexaEditor.Controls
         /// </summary>
         public Color TblDteColor
         {
-            get => (_tblDteBrush as SolidColorBrush)?.Color ?? Colors.Yellow;
+            get => (_tblDteBrush as SolidColorBrush)?.Color ?? Colors.Red; // V1: Red
             set { _tblDteBrush = new SolidColorBrush(value); _tblDteBrush.Freeze(); InvalidateVisual(); }
         }
 
@@ -934,7 +1101,7 @@ namespace WpfHexaEditor.Controls
         /// </summary>
         public Color TblMteColor
         {
-            get => (_tblMteBrush as SolidColorBrush)?.Color ?? Colors.LightBlue;
+            get => (_tblMteBrush as SolidColorBrush)?.Color ?? Colors.Red; // V1: Red
             set { _tblMteBrush = new SolidColorBrush(value); _tblMteBrush.Freeze(); InvalidateVisual(); }
         }
 
@@ -943,7 +1110,7 @@ namespace WpfHexaEditor.Controls
         /// </summary>
         public Color TblEndBlockColor
         {
-            get => (_tblEndBlockBrush as SolidColorBrush)?.Color ?? Colors.Red;
+            get => (_tblEndBlockBrush as SolidColorBrush)?.Color ?? Colors.Blue; // V1: Blue
             set { _tblEndBlockBrush = new SolidColorBrush(value); _tblEndBlockBrush.Freeze(); InvalidateVisual(); }
         }
 
@@ -952,7 +1119,7 @@ namespace WpfHexaEditor.Controls
         /// </summary>
         public Color TblEndLineColor
         {
-            get => (_tblEndLineBrush as SolidColorBrush)?.Color ?? Colors.Orange;
+            get => (_tblEndLineBrush as SolidColorBrush)?.Color ?? Colors.Blue; // V1: Blue
             set { _tblEndLineBrush = new SolidColorBrush(value); _tblEndLineBrush.Freeze(); InvalidateVisual(); }
         }
 
@@ -961,7 +1128,7 @@ namespace WpfHexaEditor.Controls
         /// </summary>
         public Color TblAsciiColor
         {
-            get => (_tblAsciiBrush as SolidColorBrush)?.Color ?? Colors.LightGreen;
+            get => (_tblAsciiBrush as SolidColorBrush)?.Color ?? Color.FromRgb(0x42, 0x42, 0x42); // V1: Dark gray
             set { _tblAsciiBrush = new SolidColorBrush(value); _tblAsciiBrush.Freeze(); InvalidateVisual(); }
         }
 
@@ -970,7 +1137,7 @@ namespace WpfHexaEditor.Controls
         /// </summary>
         public Color TblJaponaisColor
         {
-            get => (_tblJaponaisBrush as SolidColorBrush)?.Color ?? Colors.Pink;
+            get => (_tblJaponaisBrush as SolidColorBrush)?.Color ?? Colors.Red; // V1: Red
             set { _tblJaponaisBrush = new SolidColorBrush(value); _tblJaponaisBrush.Freeze(); InvalidateVisual(); }
         }
 
@@ -979,7 +1146,7 @@ namespace WpfHexaEditor.Controls
         /// </summary>
         public Color Tbl3ByteColor
         {
-            get => (_tbl3ByteBrush as SolidColorBrush)?.Color ?? Colors.Cyan;
+            get => (_tbl3ByteBrush as SolidColorBrush)?.Color ?? Colors.Red; // V1: Red
             set { _tbl3ByteBrush = new SolidColorBrush(value); _tbl3ByteBrush.Freeze(); InvalidateVisual(); }
         }
 
@@ -988,7 +1155,7 @@ namespace WpfHexaEditor.Controls
         /// </summary>
         public Color Tbl4PlusByteColor
         {
-            get => (_tbl4PlusByteBrush as SolidColorBrush)?.Color ?? Colors.Magenta;
+            get => (_tbl4PlusByteBrush as SolidColorBrush)?.Color ?? Colors.Red; // V1: Red
             set { _tbl4PlusByteBrush = new SolidColorBrush(value); _tbl4PlusByteBrush.Freeze(); InvalidateVisual(); }
         }
 
@@ -1275,6 +1442,9 @@ namespace WpfHexaEditor.Controls
             _refreshStopwatch.Stop();
             _lastRefreshTimeMs = _refreshStopwatch.ElapsedMilliseconds;
             RefreshTimeUpdated?.Invoke(this, _lastRefreshTimeMs);
+
+            // Update cursor overlay after main render (ensures sync with viewport scroll)
+            UpdateCursorOverlay();
         }
 
         /// <summary>
@@ -1438,16 +1608,7 @@ namespace WpfHexaEditor.Controls
                 }
             }
 
-            // Draw cursor cell blink highlight (simple on/off on cursor, only in active panel)
-            if (byteData.VirtualPos.Value == _cursorPosition &&
-                _activePanel == ActivePanelType.Hex &&
-                _cursorBlinkVisible)
-            {
-                // Use SelectionActiveBrush with 50% opacity for subtle effect
-                var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
-                blinkBrush.Opacity = 0.5; // 50% opacity for subtle highlight
-                dc.DrawRoundedRectangle(blinkBrush, null, rect, 2, 2);
-            }
+            // Note: Cursor blink highlight is now drawn in separate overlay (UpdateCursorOverlay) for performance
 
             // Draw cursor border (thicker, on top)
             if (byteData.VirtualPos.Value == _cursorPosition)
@@ -1577,13 +1738,15 @@ namespace WpfHexaEditor.Controls
                             textBrush = _tblEndBlockBrush;
                         else if (dteType == Core.CharacterTable.DteType.EndLine)
                             textBrush = _tblEndLineBrush;
-                        // For normal types, use color based on byte count
+                        // For normal types, use color based on byte count and type
                         else
                         {
                             textBrush = byteCount switch
                             {
-                                1 => dteType == Core.CharacterTable.DteType.Ascii ? _tblAsciiBrush : _asciiBrush,
-                                2 => dteType == Core.CharacterTable.DteType.DualTitleEncoding ? _tblDteBrush : _tblMteBrush,
+                                // 1 byte: Ascii (dark gray) or DTE (red for compressed text like "CF=it")
+                                1 => dteType == Core.CharacterTable.DteType.Ascii ? _tblAsciiBrush : _tblDteBrush,
+                                // 2+ bytes: MTE (red for multi-byte tokens like "0400=Cecil")
+                                2 => _tblMteBrush,
                                 3 => _tbl3ByteBrush,
                                 >= 4 => _tbl4PlusByteBrush,
                                 _ => _asciiBrush
@@ -1712,16 +1875,7 @@ namespace WpfHexaEditor.Controls
                 dc.DrawRoundedRectangle(null, borderPen, rect, 1, 1);
             }
 
-            // Draw cursor cell blink highlight (simple on/off on cursor, only in active panel)
-            if (byteData.VirtualPos.Value == _cursorPosition &&
-                _activePanel == ActivePanelType.Ascii &&
-                _cursorBlinkVisible)
-            {
-                // Use SelectionActiveBrush with 50% opacity for subtle effect
-                var blinkBrush = SelectionActiveBrush?.Clone() ?? _selectedBrush.Clone();
-                blinkBrush.Opacity = 0.5; // 50% opacity for subtle highlight
-                dc.DrawRoundedRectangle(blinkBrush, null, rect, 1, 1);
-            }
+            // Note: Cursor blink highlight is now drawn in separate overlay (UpdateCursorOverlay) for performance
 
             // Draw cursor border
             if (byteData.VirtualPos.Value == _cursorPosition)
@@ -1782,6 +1936,7 @@ namespace WpfHexaEditor.Controls
                     // Check if this TBL type is enabled for display
                     bool shouldShow = type switch
                     {
+                        Core.CharacterTable.DteType.Ascii => _showTblAscii,
                         Core.CharacterTable.DteType.DualTitleEncoding => _showTblDte,
                         Core.CharacterTable.DteType.MultipleTitleEncoding => _showTblMte,
                         Core.CharacterTable.DteType.EndBlock => _showTblEndBlock,
