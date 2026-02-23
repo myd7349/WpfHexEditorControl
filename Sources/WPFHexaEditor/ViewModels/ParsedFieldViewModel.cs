@@ -177,6 +177,8 @@ namespace WpfHexaEditor.ViewModels
             {
                 _validationMessage = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(ValidationIcon));
+                OnPropertyChanged(nameof(ValidationColor));
             }
         }
 
@@ -206,6 +208,20 @@ namespace WpfHexaEditor.ViewModels
                 OnPropertyChanged();
             }
         }
+
+        /// <summary>
+        /// Validation status icon
+        /// </summary>
+        public string ValidationIcon =>
+            !IsValid && !string.IsNullOrEmpty(ValidationMessage) ? "⚠️" :
+            IsValid ? "✅" : "";
+
+        /// <summary>
+        /// Validation status color
+        /// </summary>
+        public string ValidationColor =>
+            !IsValid && !string.IsNullOrEmpty(ValidationMessage) ? "#FF6B6B" :
+            IsValid ? "#7ED321" : "#CCCCCC";
 
         /// <summary>
         /// Whether this field can be edited by the user
