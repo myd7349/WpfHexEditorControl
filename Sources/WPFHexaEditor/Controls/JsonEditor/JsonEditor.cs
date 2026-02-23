@@ -1090,6 +1090,9 @@ namespace WpfHexaEditor.Controls.JsonEditor
             // Set minimum size
             MinWidth = 200;
             MinHeight = 100;
+
+            // Initialize Context Menu (Phase C)
+            InitializeContextMenu();
         }
 
         private void UpdateTypefacesFromDPs()
@@ -1142,6 +1145,226 @@ namespace WpfHexaEditor.Controls.JsonEditor
             _lineHeight = _charHeight + 4; // Add 4px padding
         }
 
+
+        #endregion
+
+        #region Context Menu (Phase C)
+
+        /// <summary>
+        /// Initialize context menu with standard editing commands
+        /// </summary>
+        private void InitializeContextMenu()
+        {
+            var contextMenu = new ContextMenu();
+
+            // Cut
+            var cutMenuItem = new MenuItem
+            {
+                Header = "Cu_t",
+                InputGestureText = "Ctrl+X",
+                Command = ApplicationCommands.Cut,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(cutMenuItem);
+
+            // Copy
+            var copyMenuItem = new MenuItem
+            {
+                Header = "_Copy",
+                InputGestureText = "Ctrl+C",
+                Command = ApplicationCommands.Copy,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(copyMenuItem);
+
+            // Paste
+            var pasteMenuItem = new MenuItem
+            {
+                Header = "_Paste",
+                InputGestureText = "Ctrl+V",
+                Command = ApplicationCommands.Paste,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(pasteMenuItem);
+
+            // Separator
+            contextMenu.Items.Add(new Separator());
+
+            // Undo
+            var undoMenuItem = new MenuItem
+            {
+                Header = "_Undo",
+                InputGestureText = "Ctrl+Z",
+                Command = ApplicationCommands.Undo,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(undoMenuItem);
+
+            // Redo
+            var redoMenuItem = new MenuItem
+            {
+                Header = "_Redo",
+                InputGestureText = "Ctrl+Y",
+                Command = ApplicationCommands.Redo,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(redoMenuItem);
+
+            // Separator
+            contextMenu.Items.Add(new Separator());
+
+            // Select All
+            var selectAllMenuItem = new MenuItem
+            {
+                Header = "Select _All",
+                InputGestureText = "Ctrl+A",
+                Command = ApplicationCommands.SelectAll,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(selectAllMenuItem);
+
+            // Delete
+            var deleteMenuItem = new MenuItem
+            {
+                Header = "_Delete",
+                InputGestureText = "Del",
+                Command = ApplicationCommands.Delete,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(deleteMenuItem);
+
+            // Separator
+            contextMenu.Items.Add(new Separator());
+
+            // Find
+            var findMenuItem = new MenuItem
+            {
+                Header = "_Find...",
+                InputGestureText = "Ctrl+F",
+                Command = ApplicationCommands.Find,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(findMenuItem);
+
+            // Replace
+            var replaceMenuItem = new MenuItem
+            {
+                Header = "_Replace...",
+                InputGestureText = "Ctrl+H",
+                Command = ApplicationCommands.Replace,
+                CommandTarget = this
+            };
+            contextMenu.Items.Add(replaceMenuItem);
+
+            // Separator
+            contextMenu.Items.Add(new Separator());
+
+            // Format JSON
+            var formatJsonMenuItem = new MenuItem
+            {
+                Header = "F_ormat JSON",
+                InputGestureText = "Ctrl+Shift+F"
+            };
+            formatJsonMenuItem.Click += FormatJsonMenuItem_Click;
+            contextMenu.Items.Add(formatJsonMenuItem);
+
+            // Validate
+            var validateMenuItem = new MenuItem
+            {
+                Header = "_Validate JSON",
+                InputGestureText = "F5"
+            };
+            validateMenuItem.Click += ValidateMenuItem_Click;
+            contextMenu.Items.Add(validateMenuItem);
+
+            // Set context menu
+            ContextMenu = contextMenu;
+
+            // Register command bindings
+            RegisterContextMenuCommands();
+        }
+
+        /// <summary>
+        /// Register command bindings for context menu commands
+        /// </summary>
+        private void RegisterContextMenuCommands()
+        {
+            // Cut
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Cut,
+                (sender, e) => CutToClipboard(),
+                (sender, e) => e.CanExecute = !_selection.IsEmpty));
+
+            // Copy
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Copy,
+                (sender, e) => CopyToClipboard(),
+                (sender, e) => e.CanExecute = !_selection.IsEmpty));
+
+            // Paste
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Paste,
+                (sender, e) => PasteFromClipboard(),
+                (sender, e) => e.CanExecute = Clipboard.ContainsText()));
+
+            // Undo
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Undo,
+                (sender, e) => Undo(),
+                (sender, e) => e.CanExecute = _undoRedoStack.CanUndo));
+
+            // Redo
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Redo,
+                (sender, e) => Redo(),
+                (sender, e) => e.CanExecute = _undoRedoStack.CanRedo));
+
+            // Select All
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.SelectAll,
+                (sender, e) => SelectAll()));
+
+            // Delete
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Delete,
+                (sender, e) => DeleteSelection(),
+                (sender, e) => e.CanExecute = !_selection.IsEmpty));
+
+            // Find
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Find,
+                (sender, e) => ShowFindDialog()));
+
+            // Replace
+            CommandBindings.Add(new CommandBinding(ApplicationCommands.Replace,
+                (sender, e) => ShowReplaceDialog()));
+        }
+
+        private void FormatJsonMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            FormatJson();
+        }
+
+        private void ValidateMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            RunValidation();
+        }
+
+        private void ShowFindDialog()
+        {
+            // TODO: Implement find dialog
+            System.Diagnostics.Debug.WriteLine("ShowFindDialog not yet implemented");
+        }
+
+        private void ShowReplaceDialog()
+        {
+            // TODO: Implement replace dialog
+            System.Diagnostics.Debug.WriteLine("ShowReplaceDialog not yet implemented");
+        }
+
+        private void FormatJson()
+        {
+            // TODO: Implement JSON formatting
+            System.Diagnostics.Debug.WriteLine("FormatJson not yet implemented");
+        }
+
+        private void RunValidation()
+        {
+            // TODO: Implement JSON validation
+            System.Diagnostics.Debug.WriteLine("RunValidation not yet implemented");
+        }
 
         #endregion
 
