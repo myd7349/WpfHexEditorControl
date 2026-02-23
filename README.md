@@ -95,10 +95,12 @@ dotnet add package WPFHexaEditor
 <td width="33%">
 
 ### 🆕 New Features
+- **Data Inspector** ⭐ 40+ formats
+- **Structure Overlay** ⭐ Visual fields
+- **File Diff Mode** ⭐ Side-by-side
+- **Binary Templates** ⭐ Compiler
 - **BarChart** visualization
 - **AvalonDock** support
-- **SIMD** optimization
-- **Progress** reporting
 
 </td>
 <td width="33%">
@@ -253,6 +255,10 @@ dotnet add package WPFHexaEditor
 - ✅ **Copy as code** - Generate byte arrays for C#, VB, Java, Python, etc.
 
 ### Advanced Features
+- 🔍 **Data Inspector Panel** ⭐ - 40+ byte interpretation formats (integers, floats, dates, network, GUID, colors)
+- 📐 **Structure Overlay System** ⭐ - Visual field highlighting with format-based overlays
+- ⚖️ **File Diff/Comparison** ⭐ - Side-by-side comparison with diff navigation (F7/F8)
+- 🔧 **Binary Templates** ⭐ - C-like syntax compiler for structure definitions
 - 🔍 **LRU Search Cache** - 10-100x faster repeated searches
 - ⚡ **SIMD Vectorization** - Hardware-accelerated search (AVX2/SSE2)
 - 🔄 **Parallel Multi-Core** - Automatic for files > 100MB

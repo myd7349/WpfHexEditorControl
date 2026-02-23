@@ -60,7 +60,7 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="80"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
@@ -76,15 +76,16 @@
                          FontFamily="Consolas"
                          FontSize="13"
                          Padding="8"
-                         BorderThickness="1"
-                         BorderBrush="#CCCCCC"
-                         Background="White"
+                         BorderThickness="3"
+                         BorderBrush="Red"
+                         Background="LightYellow"
                          VerticalScrollBarVisibility="Auto"
-                         AcceptsReturn="False"
+                         AcceptsReturn="True"
                          TextWrapping="Wrap"
                          IsReadOnly="False"
                          IsEnabled="True"
-                         MinHeight="60"/>
+                         VerticalAlignment="Stretch"
+                         HorizontalAlignment="Stretch"/>
 
                 <TextBlock Grid.Row="2"
                            Text="{Binding FormatHint}"
