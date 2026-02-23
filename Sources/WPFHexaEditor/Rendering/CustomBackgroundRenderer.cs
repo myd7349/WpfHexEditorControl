@@ -44,6 +44,7 @@ namespace WpfHexaEditor.Rendering
             public bool ShowOffset;
             public bool ShowAscii;
             public bool HasAsciiSpacers; // Whether ASCII area should have spacers
+            public double OffsetWidth; // Dynamic offset column width
 
             public bool Equals(ViewportState other)
             {
@@ -57,7 +58,8 @@ namespace WpfHexaEditor.Rendering
                        ByteSpacerWidth == other.ByteSpacerWidth &&
                        ShowOffset == other.ShowOffset &&
                        ShowAscii == other.ShowAscii &&
-                       HasAsciiSpacers == other.HasAsciiSpacers;
+                       HasAsciiSpacers == other.HasAsciiSpacers &&
+                       Math.Abs(OffsetWidth - other.OffsetWidth) < 0.001;
             }
 
             public override bool Equals(object obj) => obj is ViewportState state && Equals(state);
@@ -72,6 +74,7 @@ namespace WpfHexaEditor.Rendering
                     hash = hash * 31 + (FontFamily?.GetHashCode() ?? 0);
                     hash = hash * 31 + ByteGrouping.GetHashCode();
                     hash = hash * 31 + HasAsciiSpacers.GetHashCode();
+                    hash = hash * 31 + OffsetWidth.GetHashCode();
                     return hash;
                 }
             }
@@ -101,7 +104,6 @@ namespace WpfHexaEditor.Rendering
         private bool _cacheValid = false;
 
         // Layout constants (from HexViewport for independence)
-        private const double OffsetWidth = 110;
         private const double HexByteSpacing = 2;
         private const double SeparatorWidth = 20;
         private const double TopMargin = 2;
@@ -126,6 +128,7 @@ namespace WpfHexaEditor.Rendering
         /// <param name="showOffset">Whether offset column is visible</param>
         /// <param name="showAscii">Whether ASCII column is visible</param>
         /// <param name="hasAsciiSpacers">Whether ASCII area should have spacers (depends on ByteSpacerPositioning and TBL)</param>
+        /// <param name="offsetWidth">Width of offset column (dynamic, depends on format)</param>
         public void PrepareBlocks(
             IEnumerable<CustomBackgroundBlock> blocks,
             int bytesPerLine,
@@ -138,7 +141,8 @@ namespace WpfHexaEditor.Rendering
             int byteSpacerWidth,
             bool showOffset,
             bool showAscii,
-            bool hasAsciiSpacers = false)
+            bool hasAsciiSpacers = false,
+            double offsetWidth = 110)
         {
             var newState = new ViewportState
             {
@@ -152,7 +156,8 @@ namespace WpfHexaEditor.Rendering
                 ByteSpacerWidth = byteSpacerWidth,
                 ShowOffset = showOffset,
                 ShowAscii = showAscii,
-                HasAsciiSpacers = hasAsciiSpacers
+                HasAsciiSpacers = hasAsciiSpacers,
+                OffsetWidth = offsetWidth
             };
 
             // Check if cache is still valid
@@ -212,7 +217,7 @@ namespace WpfHexaEditor.Rendering
                 linesCached == null || linesCached.Count == 0)
                 return;
 
-            double hexStartX = _cachedState.ShowOffset ? OffsetWidth : 0;
+            double hexStartX = _cachedState.ShowOffset ? _cachedState.OffsetWidth : 0;
             double asciiStartX = hexStartX +
                 (_cachedState.BytesPerLine * (_cachedState.HexByteWidth + HexByteSpacing)) +
                 4 + SeparatorWidth;
@@ -353,10 +358,20 @@ namespace WpfHexaEditor.Rendering
                 x += _cachedState.HexByteWidth + HexByteSpacing;
             }
 
+            // Bug fix: Check if startByteIndex itself needs a spacer before it
+            // (the loop above doesn't reach startByteIndex, so we check it separately)
+            if (_cachedState.BytesPerLine >= (int)_cachedState.ByteGrouping &&
+                startByteIndex > 0 && startByteIndex % (int)_cachedState.ByteGrouping == 0)
+            {
+                x += _cachedState.ByteSpacerWidth;
+            }
+
             double startX = x;
             double width = 0;
 
             // Calculate width including spacers
+            // Bug fix: Match the actual rendering logic where each byte rect is (cellWidth - HexByteSpacing)
+            // and bytes are spaced by (cellWidth + HexByteSpacing) between them
             for (int i = startByteIndex; i <= endByteIndex; i++)
             {
                 if (_cachedState.BytesPerLine >= (int)_cachedState.ByteGrouping &&
@@ -364,7 +379,15 @@ namespace WpfHexaEditor.Rendering
                 {
                     width += _cachedState.ByteSpacerWidth;
                 }
-                width += _cachedState.HexByteWidth + HexByteSpacing;
+
+                // Each byte rect has width (cellWidth - HexByteSpacing)
+                width += _cachedState.HexByteWidth - HexByteSpacing;
+
+                // Add gap between bytes (2*HexByteSpacing between rect edges)
+                if (i < endByteIndex)
+                {
+                    width += 2 * HexByteSpacing;
+                }
             }
 
             return new Rect(startX, y, width, _cachedState.LineHeight);
@@ -386,10 +409,10 @@ namespace WpfHexaEditor.Rendering
             }
             else
             {
-                // ASCII area has spacers - use same logic as hex area
+                // ASCII area has spacers - use EXACT same logic as hex area
                 double x = asciiStartX;
 
-                // Account for spacers before start byte
+                // Account for spacers before start byte (same as hex)
                 for (int i = 0; i < startByteIndex; i++)
                 {
                     if (_cachedState.BytesPerLine >= (int)_cachedState.ByteGrouping &&
@@ -400,10 +423,18 @@ namespace WpfHexaEditor.Rendering
                     x += _cachedState.AsciiCharWidth;
                 }
 
+                // Bug fix: Check if startByteIndex itself needs a spacer before it
+                // (same as hex area)
+                if (_cachedState.BytesPerLine >= (int)_cachedState.ByteGrouping &&
+                    startByteIndex > 0 && startByteIndex % (int)_cachedState.ByteGrouping == 0)
+                {
+                    x += _cachedState.ByteSpacerWidth;
+                }
+
                 double startX = x;
                 double width = 0;
 
-                // Calculate width including spacers
+                // Calculate width including spacers (same as hex)
                 for (int i = startByteIndex; i <= endByteIndex; i++)
                 {
                     if (_cachedState.BytesPerLine >= (int)_cachedState.ByteGrouping &&

@@ -1,0 +1,60 @@
+{
+    "formatName":  "IPS Patch",
+    "version":  "1.0",
+    "extensions":  [
+                       ".ips"
+                   ],
+    "description":  "International Patching System (IPS) format - Classic ROM patching format",
+    "category":  "Game",
+    "author":  "WPFHexaEditor Team",
+    "detection":  {
+                      "signature":  "5041544348",
+                      "offset":  0,
+                      "required":  true
+                  },
+    "variables":  {
+                      "currentOffset":  0,
+                      "firstRecordSize":  0
+                  },
+    "blocks":  [
+                   {
+                       "type":  "signature",
+                       "name":  "IPS Header",
+                       "offset":  0,
+                       "length":  5,
+                       "color":  "#FF6B6B",
+                       "opacity":  0.4,
+                       "description":  "PATCH magic identifier - IPS format header"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "First Record Offset",
+                       "offset":  5,
+                       "length":  3,
+                       "color":  "#4ECDC4",
+                       "opacity":  0.3,
+                       "description":  "First patch record: 24-bit big-endian target file offset"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "First Record Size",
+                       "offset":  8,
+                       "length":  2,
+                       "color":  "#FFE66D",
+                       "opacity":  0.3,
+                       "valueType":  "uint16",
+                       "storeAs":  "firstRecordSize",
+                       "description":  "Payload size (0 = RLE record, >0 = raw data record)"
+                   },
+                   {
+                       "type":  "field",
+                       "name":  "First Record Data",
+                       "offset":  10,
+                       "length":  16,
+                       "color":  "#95E1D3",
+                       "opacity":  0.3,
+                       "valueType":  "bytes",
+                       "description":  "Start of patch data (RLE or raw bytes - structure varies by size field)"
+                   }
+               ]
+}

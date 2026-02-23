@@ -4,9 +4,12 @@
 // Contributors: Claude Sonnet 4.5
 //////////////////////////////////////////////
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Media;
 using WpfHexaEditor.Core;
+using WpfHexaEditor.Models.Bookmarks;
 
 namespace WpfHexaEditor.Services
 {
@@ -60,6 +63,16 @@ namespace WpfHexaEditor.Services
         /// Internal list of bookmarks
         /// </summary>
         private readonly List<BookMark> _bookmarks = new();
+
+        /// <summary>
+        /// Category colors for enhanced bookmarks
+        /// </summary>
+        private readonly Dictionary<string, Color> _categoryColors = new();
+
+        /// <summary>
+        /// Registered bookmark groups
+        /// </summary>
+        private readonly List<BookmarkGroup> _groups = new();
 
         #endregion
 
@@ -294,6 +307,272 @@ namespace WpfHexaEditor.Services
 
             bookmark.Description = description ?? string.Empty;
             return true;
+        }
+
+        #endregion
+
+        #region Enhanced Bookmark Operations
+
+        /// <summary>
+        /// Add enhanced bookmark with metadata (category, annotation, tags)
+        /// </summary>
+        /// <param name="position">Position in stream</param>
+        /// <param name="description">Description</param>
+        /// <param name="category">Category name</param>
+        /// <param name="annotation">Optional annotation</param>
+        /// <param name="tags">Optional tags</param>
+        /// <param name="marker">Scroll marker type</param>
+        /// <returns>True if bookmark was added</returns>
+        public bool AddBookmarkWithMetadata(long position, string description = "", string category = "Default",
+            string annotation = "", List<string> tags = null, ScrollMarker marker = ScrollMarker.Bookmark)
+        {
+            if (position < 0)
+                return false;
+
+            // Check if bookmark already exists at this position with same marker
+            if (_bookmarks.Any(b => b.BytePositionInStream == position && b.Marker == marker))
+                return false;
+
+            var bookmark = new EnhancedBookmark(position, description, category, annotation, tags)
+            {
+                Marker = marker
+            };
+            _bookmarks.Add(bookmark);
+            return true;
+        }
+
+        /// <summary>
+        /// Update bookmark category
+        /// </summary>
+        /// <param name="position">Position in stream</param>
+        /// <param name="category">New category</param>
+        /// <param name="marker">Optional marker type filter</param>
+        /// <returns>True if bookmark was updated</returns>
+        public bool UpdateBookmarkCategory(long position, string category, ScrollMarker? marker = null)
+        {
+            var bookmark = GetBookmarkAt(position, marker);
+            if (bookmark is EnhancedBookmark enhanced)
+            {
+                enhanced.Category = category;
+                enhanced.ModifiedDate = DateTime.Now;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Update bookmark annotation
+        /// </summary>
+        /// <param name="position">Position in stream</param>
+        /// <param name="annotation">New annotation</param>
+        /// <param name="marker">Optional marker type filter</param>
+        /// <returns>True if bookmark was updated</returns>
+        public bool UpdateBookmarkAnnotation(long position, string annotation, ScrollMarker? marker = null)
+        {
+            var bookmark = GetBookmarkAt(position, marker);
+            if (bookmark is EnhancedBookmark enhanced)
+            {
+                enhanced.Annotation = annotation;
+                enhanced.ModifiedDate = DateTime.Now;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Add tag to bookmark
+        /// </summary>
+        /// <param name="position">Position in stream</param>
+        /// <param name="tag">Tag to add</param>
+        /// <param name="marker">Optional marker type filter</param>
+        /// <returns>True if tag was added</returns>
+        public bool AddTagToBookmark(long position, string tag, ScrollMarker? marker = null)
+        {
+            var bookmark = GetBookmarkAt(position, marker);
+            if (bookmark is EnhancedBookmark enhanced)
+            {
+                return enhanced.AddTag(tag);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Remove tag from bookmark
+        /// </summary>
+        /// <param name="position">Position in stream</param>
+        /// <param name="tag">Tag to remove</param>
+        /// <param name="marker">Optional marker type filter</param>
+        /// <returns>True if tag was removed</returns>
+        public bool RemoveTagFromBookmark(long position, string tag, ScrollMarker? marker = null)
+        {
+            var bookmark = GetBookmarkAt(position, marker);
+            if (bookmark is EnhancedBookmark enhanced)
+            {
+                return enhanced.RemoveTag(tag);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get all bookmarks in a specific category
+        /// </summary>
+        /// <param name="category">Category name</param>
+        /// <returns>Enumerable of enhanced bookmarks in category</returns>
+        public IEnumerable<EnhancedBookmark> GetBookmarksByGroup(string category)
+        {
+            return _bookmarks
+                .OfType<EnhancedBookmark>()
+                .Where(b => b.Category == category)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Get all enhanced bookmarks
+        /// </summary>
+        /// <returns>Enumerable of enhanced bookmarks</returns>
+        public IEnumerable<EnhancedBookmark> GetAllEnhancedBookmarks()
+        {
+            return _bookmarks.OfType<EnhancedBookmark>().ToList();
+        }
+
+        /// <summary>
+        /// Get bookmarks with specific tag
+        /// </summary>
+        /// <param name="tag">Tag to search for</param>
+        /// <param name="caseSensitive">Case sensitive search</param>
+        /// <returns>Enumerable of enhanced bookmarks with tag</returns>
+        public IEnumerable<EnhancedBookmark> GetBookmarksByTag(string tag, bool caseSensitive = false)
+        {
+            return _bookmarks
+                .OfType<EnhancedBookmark>()
+                .Where(b => b.HasTag(tag, caseSensitive))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Get next bookmark in specific category
+        /// </summary>
+        /// <param name="position">Current position</param>
+        /// <param name="category">Category name</param>
+        /// <returns>Next bookmark in category, or null if none found</returns>
+        public EnhancedBookmark GetNextBookmarkInCategory(long position, string category)
+        {
+            return _bookmarks
+                .OfType<EnhancedBookmark>()
+                .Where(b => b.Category == category && b.BytePositionInStream > position)
+                .OrderBy(b => b.BytePositionInStream)
+                .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Get previous bookmark in specific category
+        /// </summary>
+        /// <param name="position">Current position</param>
+        /// <param name="category">Category name</param>
+        /// <returns>Previous bookmark in category, or null if none found</returns>
+        public EnhancedBookmark GetPreviousBookmarkInCategory(long position, string category)
+        {
+            return _bookmarks
+                .OfType<EnhancedBookmark>()
+                .Where(b => b.Category == category && b.BytePositionInStream < position)
+                .OrderByDescending(b => b.BytePositionInStream)
+                .FirstOrDefault();
+        }
+
+        #endregion
+
+        #region Category/Group Management
+
+        /// <summary>
+        /// Register a bookmark group/category
+        /// </summary>
+        /// <param name="group">Group to register</param>
+        /// <returns>True if group was added</returns>
+        public bool RegisterGroup(BookmarkGroup group)
+        {
+            if (group == null || string.IsNullOrWhiteSpace(group.Name))
+                return false;
+
+            // Check if group already exists
+            if (_groups.Any(g => g.Name == group.Name))
+                return false;
+
+            _groups.Add(group);
+            _categoryColors[group.Name] = group.Color;
+            return true;
+        }
+
+        /// <summary>
+        /// Unregister a bookmark group
+        /// </summary>
+        /// <param name="name">Group name</param>
+        /// <returns>True if group was removed</returns>
+        public bool UnregisterGroup(string name)
+        {
+            var removed = _groups.RemoveAll(g => g.Name == name) > 0;
+            if (removed)
+                _categoryColors.Remove(name);
+            return removed;
+        }
+
+        /// <summary>
+        /// Get all registered groups
+        /// </summary>
+        /// <returns>Enumerable of all groups</returns>
+        public IEnumerable<BookmarkGroup> GetAllGroups()
+        {
+            return _groups.ToList();
+        }
+
+        /// <summary>
+        /// Get group by name
+        /// </summary>
+        /// <param name="name">Group name</param>
+        /// <returns>Group, or null if not found</returns>
+        public BookmarkGroup GetGroup(string name)
+        {
+            return _groups.FirstOrDefault(g => g.Name == name);
+        }
+
+        /// <summary>
+        /// Update group color
+        /// </summary>
+        /// <param name="name">Group name</param>
+        /// <param name="color">New color</param>
+        /// <returns>True if group was updated</returns>
+        public bool UpdateGroupColor(string name, Color color)
+        {
+            var group = GetGroup(name);
+            if (group != null)
+            {
+                group.Color = color;
+                _categoryColors[name] = color;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get category colors dictionary for rendering
+        /// </summary>
+        /// <returns>Dictionary of category names to colors</returns>
+        public Dictionary<string, Color> GetCategoryColors()
+        {
+            return new Dictionary<string, Color>(_categoryColors);
+        }
+
+        /// <summary>
+        /// Get all unique categories from existing bookmarks
+        /// </summary>
+        /// <returns>List of category names</returns>
+        public List<string> GetAllCategories()
+        {
+            return _bookmarks
+                .OfType<EnhancedBookmark>()
+                .Select(b => b.Category)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
         }
 
         #endregion

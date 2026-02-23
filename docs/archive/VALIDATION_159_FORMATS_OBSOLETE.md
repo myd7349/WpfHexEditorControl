@@ -276,10 +276,14 @@ Status: BUILD SUCCESSFUL ✅
 - [x] Build sans erreurs (✅ 0 errors)
 
 ### ✅ Documentation
-- [x] FORMAT_LIBRARY_159.md créé
-- [x] VALIDATION_159_FORMATS.md créé
-- [x] IMPLEMENTATION_COMPLETE.md mis à jour
+- [x] FORMAT_LIBRARY_159.md créé (maintenant: `docs/archive/FORMAT_LIBRARY_159_OBSOLETE.md`)
+- [x] VALIDATION_159_FORMATS.md créé (maintenant: `docs/archive/VALIDATION_159_FORMATS_OBSOLETE.md`)
+- [x] IMPLEMENTATION_COMPLETE.md mis à jour (maintenant: `docs/archive/IMPLEMENTATION_COMPLETE_OBSOLETE.md`)
 - [x] Inline comments à jour
+
+> ⚠️ **NOTE HISTORIQUE (2026-02-22)**: Ce document validait 159 formats.
+> La bibliothèque contient maintenant **400 formats** (×2.5 croissance).
+> Voir documentation à jour: `docs/features/FormatDetection_400.md`
 
 ### ✅ Performance
 - [x] Chargement < 100ms (67ms)

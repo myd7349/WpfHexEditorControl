@@ -10,7 +10,7 @@ namespace WpfHexaEditor.Core
     /// <summary>
     /// BookMark used in hexeditor
     /// </summary>
-    public sealed class BookMark
+    public class BookMark
     {
         public ScrollMarker Marker { get; set; } = ScrollMarker.Nothing;
         public long BytePositionInStream { get; set; }

@@ -2026,11 +2026,11 @@ namespace WpfHexaEditor.Controls.JsonEditor
         /// </summary>
         private void RenderCursor(DrawingContext dc)
         {
-            if (!IsFocused)
-                return;
+            // Show cursor even without focus (but dimmed)
+            bool hasFocus = IsFocused;
 
-            // Check caret visibility for blinking effect
-            if (!_caretVisible)
+            // Check caret visibility for blinking effect (only blink when focused)
+            if (hasFocus && !_caretVisible)
                 return;
 
             if (_cursorLine < _firstVisibleLine || _cursorLine > _lastVisibleLine)
@@ -2044,7 +2044,14 @@ namespace WpfHexaEditor.Controls.JsonEditor
             double x = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + (_cursorColumn * _charWidth);
 
             // Draw cursor as vertical line using DPs for color and width
-            var cursorPen = new Pen(new SolidColorBrush(CaretColor), CaretWidth);
+            // When not focused, use 50% opacity to show inactive cursor
+            Color caretColor = CaretColor;
+            if (!hasFocus)
+            {
+                caretColor = Color.FromArgb(128, caretColor.R, caretColor.G, caretColor.B); // 50% opacity
+            }
+
+            var cursorPen = new Pen(new SolidColorBrush(caretColor), CaretWidth);
             cursorPen.Freeze();
 
             dc.DrawLine(cursorPen,
@@ -2891,11 +2898,20 @@ namespace WpfHexaEditor.Controls.JsonEditor
             if (_caretTimer != null && CaretBlinkRate > 0)
             {
                 _caretVisible = true;
+                _caretTimer.Stop();
                 _caretTimer.Start();
             }
+            else if (_caretTimer != null)
+            {
+                // If blink rate is 0 (always visible), ensure caret is shown
+                _caretVisible = true;
+            }
 
-            // Repaint to show active selection
+            // Force immediate repaint to show caret and active selection
             InvalidateVisual();
+
+            // Force update layout to ensure cursor is visible immediately
+            UpdateLayout();
         }
 
         protected override void OnLostFocus(RoutedEventArgs e)
