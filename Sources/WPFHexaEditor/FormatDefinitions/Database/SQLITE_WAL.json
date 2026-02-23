@@ -1,30 +1,38 @@
 ﻿{
-    "formatName":  "SQLite Write-Ahead Log",
-    "version":  "1.0",
-    "extensions":  [
-                       ".wal",
-                       "-wal"
-                   ],
-    "description":  "SQLite Write-Ahead Logging file for database transactions",
-    "category":  "Database",
-    "author":  "WPFHexaEditor Team",
-    "detection":  {
-                      "signature":  "377F0682",
-                      "offset":  0,
-                      "required":  true
-                  },
-    "variables":  {
-                      "currentOffset":  0
-                  },
-    "blocks":  [
-                   {
-                       "type":  "signature",
-                       "name":  "WAL Magic Number",
-                       "offset":  0,
-                       "length":  4,
-                       "color":  "#4ECDC4",
-                       "opacity":  0.4,
-                       "description":  "WAL file magic number"
-                   }
-               ]
+  "formatName": "SQLite Write-Ahead Log",
+  "version": "1.0",
+  "extensions": [
+    ".wal",
+    "-wal"
+  ],
+  "description": "SQLite Write-Ahead Logging file for database transactions",
+  "category": "Database",
+  "author": "WPFHexaEditor Team",
+  "references": {
+    "specifications": [
+      "SQLite Write-Ahead Log Format"
+    ],
+    "web_links": [
+      "https://en.wikipedia.org/wiki/WAL"
+    ]
+  },
+  "detection": {
+    "signature": "377F0682",
+    "offset": 0,
+    "required": true
+  },
+  "variables": {
+    "currentOffset": 0
+  },
+  "blocks": [
+    {
+      "type": "signature",
+      "name": "WAL Magic Number",
+      "offset": 0,
+      "length": 4,
+      "color": "#4ECDC4",
+      "opacity": 0.4,
+      "description": "WAL file magic number"
+    }
+  ]
 }

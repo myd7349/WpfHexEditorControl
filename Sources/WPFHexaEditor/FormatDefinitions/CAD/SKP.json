@@ -1,29 +1,37 @@
 ﻿{
-    "formatName":  "SketchUp Model",
-    "version":  "1.0",
-    "extensions":  [
-                       ".skp"
-                   ],
-    "description":  "SketchUp 3D model file",
-    "category":  "CAD",
-    "author":  "WPFHexaEditor Team",
-    "detection":  {
-                      "signature":  "FFFE",
-                      "offset":  0,
-                      "required":  false
-                  },
-    "variables":  {
-                      "currentOffset":  0
-                  },
-    "blocks":  [
-                   {
-                       "type":  "field",
-                       "name":  "SKP Header",
-                       "offset":  0,
-                       "length":  2,
-                       "color":  "#FF6B6B",
-                       "opacity":  0.4,
-                       "description":  "SketchUp header"
-                   }
-               ]
+  "formatName": "SketchUp Model",
+  "version": "1.0",
+  "extensions": [
+    ".skp"
+  ],
+  "description": "SketchUp 3D model file",
+  "category": "CAD",
+  "author": "WPFHexaEditor Team",
+  "references": {
+    "specifications": [
+      "SketchUp Model Format"
+    ],
+    "web_links": [
+      "https://en.wikipedia.org/wiki/SKP"
+    ]
+  },
+  "detection": {
+    "signature": "FFFE",
+    "offset": 0,
+    "required": false
+  },
+  "variables": {
+    "currentOffset": 0
+  },
+  "blocks": [
+    {
+      "type": "field",
+      "name": "SKP Header",
+      "offset": 0,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "description": "SketchUp header"
+    }
+  ]
 }
