@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Rich Text Format",
   "version": "1.0",
   "extensions": [
@@ -81,5 +81,32 @@
     "formatting_codes": true,
     "created": "1987",
     "simple_formatting": true
+  },
+  "MimeTypes": [
+    "application/rtf",
+    "text/rtf"
+  ],
+  "Software": [
+    "Microsoft Word",
+    "WordPad",
+    "LibreOffice",
+    "TextEdit"
+  ],
+  "UseCases": [
+    "Cross-platform documents",
+    "Text formatting",
+    "Legacy compatibility"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 65,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-06",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Opus Audio",
   "version": "1.0",
   "extensions": [
@@ -83,5 +83,33 @@
     "bitrates": "6-510 kbps",
     "adaptive": true,
     "best_voip_codec": true
+  },
+  "MimeTypes": [
+    "audio/opus"
+  ],
+  "Software": [
+    "VLC",
+    "Audacity",
+    "Foobar2000",
+    "MediaMonkey",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Music playback",
+    "Audio editing",
+    "Sound production",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

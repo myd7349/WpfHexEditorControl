@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "LZ4 Compressed",
   "version": "1.0",
   "extensions": [
@@ -90,5 +90,34 @@
     "archives_format": true,
     "primary_extension": ".lz4",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/x-lz4-compressed"
+  ],
+  "Software": [
+    "7-Zip",
+    "WinRAR",
+    "WinZip",
+    "PeaZip",
+    "The Unarchiver"
+  ],
+  "UseCases": [
+    "File compression",
+    "Archive storage",
+    "Backup",
+    "Distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ArchivesFormat": true,
+    "SupportsEncryption": false
   }
 }

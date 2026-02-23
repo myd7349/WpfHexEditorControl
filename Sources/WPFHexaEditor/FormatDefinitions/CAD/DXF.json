@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "AutoCAD DXF",
   "version": "1.0",
   "extensions": [
@@ -67,5 +67,28 @@
     "ascii_or_binary": true,
     "human_readable": "ASCII version",
     "universal_cad_exchange": true
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Hex Editor",
+    "File Viewer",
+    "Archive Manager"
+  ],
+  "UseCases": [
+    "File storage",
+    "Data exchange",
+    "Archive"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

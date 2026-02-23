@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Embedded OpenType Font",
   "version": "1.0",
   "extensions": [
@@ -73,5 +73,31 @@
     "compression": "MicroType Express",
     "drm": true,
     "obsolete": true
-  }
+  },
+  "MimeTypes": [
+    "font/eot"
+  ],
+  "Software": [
+    "FontForge",
+    "FontLab",
+    "Glyphs",
+    "Font Creator",
+    "BirdFont"
+  ],
+  "UseCases": [
+    "Typography",
+    "Font installation",
+    "Design work",
+    "Publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "PowerPoint Presentation",
   "version": "1.0",
   "extensions": [
@@ -75,5 +75,33 @@
   "technical_details": {
     "primary_extension": ".pptx",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  ],
+  "Software": [
+    "Microsoft PowerPoint",
+    "LibreOffice Impress",
+    "Google Slides",
+    "Keynote"
+  ],
+  "UseCases": [
+    "Presentations",
+    "Slides",
+    "Lectures",
+    "Business pitches"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 5,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-11",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true,
+    "Container": "ZIP (Office Open XML)"
   }
 }

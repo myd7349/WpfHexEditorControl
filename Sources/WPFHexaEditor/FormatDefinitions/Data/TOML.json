@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "TOML Configuration",
   "version": "1.0",
   "extensions": [
@@ -63,5 +63,28 @@
   "technical_details": {
     "primary_extension": ".toml",
     "defined_fields": 1
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Hex Editor",
+    "File Viewer",
+    "Archive Manager"
+  ],
+  "UseCases": [
+    "File storage",
+    "Data exchange",
+    "Archive"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

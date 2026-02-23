@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "HEIF/HEIC Image",
   "version": "1.0",
   "extensions": [
@@ -96,5 +96,33 @@
     "10_bit_color": true,
     "hdr_support": true,
     "transparency": true
+  },
+  "MimeTypes": [
+    "image/heic",
+    "image/heif"
+  ],
+  "Software": [
+    "iOS Photos",
+    "macOS Preview",
+    "CopyTrans HEIC",
+    "Windows 10+"
+  ],
+  "UseCases": [
+    "iPhone photos",
+    "Modern compression",
+    "Space-saving images"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 73,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true,
+    "CompressionMethod": "HEVC-based"
   }
 }

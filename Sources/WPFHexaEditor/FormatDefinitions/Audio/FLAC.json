@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "FLAC Audio",
   "version": "1.0",
   "extensions": [
@@ -94,5 +94,33 @@
     "primary_extension": ".flac",
     "defined_fields": 3,
     "compression_type": "Lossless"
+  },
+  "MimeTypes": [
+    "audio/flac",
+    "audio/x-flac"
+  ],
+  "Software": [
+    "VLC",
+    "foobar2000",
+    "Audacity",
+    "Winamp"
+  ],
+  "UseCases": [
+    "Lossless audio",
+    "Audiophile music",
+    "Music archiving"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 5,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-12",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true,
+    "CompressionMethod": "Lossless"
   }
 }

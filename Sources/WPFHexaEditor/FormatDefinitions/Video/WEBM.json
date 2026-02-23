@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "WebM Video",
   "version": "1.0",
   "extensions": [
@@ -92,5 +92,33 @@
       "Opus"
     ],
     "royalty_free": true
+  },
+  "MimeTypes": [
+    "video/webm"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Mobipocket eBook",
   "version": "1.0",
   "extensions": [
@@ -83,5 +83,30 @@
     "drm_support": true,
     "reflow": true,
     "mobipocket_format": true
+  },
+  "MimeTypes": [
+    "application/x-mobipocket-ebook"
+  ],
+  "Software": [
+    "Kindle",
+    "Calibre",
+    "FBReader"
+  ],
+  "UseCases": [
+    "Kindle ebooks",
+    "Digital reading",
+    "Legacy ebook format"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 70,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-05",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true
   }
 }

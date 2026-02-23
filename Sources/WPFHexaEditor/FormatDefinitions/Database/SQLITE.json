@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "SQLite Database",
   "version": "1.0",
   "extensions": [
@@ -103,5 +103,31 @@
     "cross_platform": true,
     "no_server": true,
     "public_domain": true
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "SQL Server",
+    "MySQL Workbench",
+    "PostgreSQL",
+    "SQLite Browser",
+    "DBeaver"
+  ],
+  "UseCases": [
+    "Data storage",
+    "Query execution",
+    "Data analysis",
+    "Backup"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Word Document",
   "version": "1.0",
   "extensions": [
@@ -79,5 +79,33 @@
   "technical_details": {
     "primary_extension": ".docx",
     "defined_fields": 2
+  },
+  "MimeTypes": [
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ],
+  "Software": [
+    "Microsoft Word",
+    "LibreOffice Writer",
+    "Google Docs",
+    "Pages"
+  ],
+  "UseCases": [
+    "Word processing",
+    "Reports",
+    "Resumes",
+    "Letters"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 5,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-11",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true,
+    "Container": "ZIP (Office Open XML)"
   }
 }

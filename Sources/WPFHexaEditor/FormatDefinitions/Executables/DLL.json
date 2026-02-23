@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "DLL Library",
   "version": "1.0",
   "extensions": [
@@ -96,5 +96,29 @@
   "technical_details": {
     "primary_extension": ".dll",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "application/x-msdownload"
+  ],
+  "Software": [
+    "Windows"
+  ],
+  "UseCases": [
+    "Windows libraries",
+    "System files",
+    "Shared libraries"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 7,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-12",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ExecutablesFormat": true,
+    "Platform": "Windows"
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "BZIP2 Compressed File",
   "version": "1.0",
   "extensions": [
@@ -85,5 +85,32 @@
     "primary_extension": ".bz2",
     "defined_fields": 2,
     "compression_method": "Deflate"
+  },
+  "MimeTypes": [
+    "application/x-bzip2"
+  ],
+  "Software": [
+    "bzip2",
+    "7-Zip",
+    "PeaZip",
+    "tar"
+  ],
+  "UseCases": [
+    "High compression",
+    "Linux archives",
+    "Source code distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-09",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "Burrows-Wheeler",
+    "ArchivesFormat": true
   }
 }

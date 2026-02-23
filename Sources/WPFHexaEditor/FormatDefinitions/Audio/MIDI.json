@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "MIDI Audio",
   "version": "1.0",
   "extensions": [
@@ -110,5 +110,33 @@
     "audio_format": true,
     "primary_extension": ".mid",
     "defined_fields": 5
+  },
+  "MimeTypes": [
+    "audio/midi",
+    "audio/x-midi"
+  ],
+  "Software": [
+    "FL Studio",
+    "GarageBand",
+    "VLC",
+    "MuseScore"
+  ],
+  "UseCases": [
+    "Music production",
+    "Synthesizers",
+    "Game audio",
+    "MIDI sequencing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 72,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-07",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true
   }
 }

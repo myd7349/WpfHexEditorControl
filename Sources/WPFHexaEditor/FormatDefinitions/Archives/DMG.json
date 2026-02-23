@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Apple Disk Image",
   "version": "1.0",
   "extensions": [
@@ -80,5 +80,34 @@
       "ULFO"
     ],
     "encryption_support": true
+  },
+  "MimeTypes": [
+    "application/x-dmg-compressed"
+  ],
+  "Software": [
+    "7-Zip",
+    "WinRAR",
+    "WinZip",
+    "PeaZip",
+    "The Unarchiver"
+  ],
+  "UseCases": [
+    "File compression",
+    "Archive storage",
+    "Backup",
+    "Distribution"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ArchivesFormat": true,
+    "SupportsEncryption": false
   }
 }

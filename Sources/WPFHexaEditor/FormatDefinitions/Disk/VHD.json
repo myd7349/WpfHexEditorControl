@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Virtual Hard Disk",
   "version": "1.0",
   "extensions": [
@@ -86,5 +86,31 @@
   "technical_details": {
     "primary_extension": ".vhd",
     "defined_fields": 3
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "DiskInternals",
+    "R-Studio",
+    "HxD",
+    "FTK Imager",
+    "Autopsy"
+  ],
+  "UseCases": [
+    "Disk imaging",
+    "Forensics",
+    "Data recovery",
+    "Analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

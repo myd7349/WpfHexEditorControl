@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "DivX Video",
   "version": "1.0",
   "extensions": [
@@ -71,5 +71,33 @@
     "primary_extension": ".divx",
     "defined_fields": 1,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/divx"
+  ],
+  "Software": [
+    "VLC",
+    "Media Player Classic",
+    "HandBrake",
+    "FFmpeg",
+    "MPC-HC"
+  ],
+  "UseCases": [
+    "Video playback",
+    "Video editing",
+    "Encoding",
+    "Streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

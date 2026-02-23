@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Web Open Font Format 2",
   "version": "1.0",
   "extensions": [
@@ -83,5 +83,31 @@
   "technical_details": {
     "primary_extension": ".woff2",
     "defined_fields": 3
-  }
+  },
+  "MimeTypes": [
+    "font/woff2"
+  ],
+  "Software": [
+    "FontForge",
+    "FontLab",
+    "Glyphs",
+    "Font Creator",
+    "BirdFont"
+  ],
+  "UseCases": [
+    "Typography",
+    "Font installation",
+    "Design work",
+    "Publishing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

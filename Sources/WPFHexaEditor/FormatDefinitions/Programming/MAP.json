@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Linker MAP File",
   "version": "1.0",
   "extensions": [
@@ -79,5 +79,31 @@
   "technical_details": {
     "primary_extension": ".map",
     "defined_fields": 3
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Visual Studio",
+    "GCC",
+    "LLVM",
+    "IDA Pro",
+    "Ghidra"
+  ],
+  "UseCases": [
+    "Software development",
+    "Compilation",
+    "Linking",
+    "Analysis"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

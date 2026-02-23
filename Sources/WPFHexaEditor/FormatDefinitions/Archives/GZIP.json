@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "GZIP Compressed File",
   "version": "1.0",
   "extensions": [
@@ -121,5 +121,33 @@
     "primary_extension": ".gz",
     "defined_fields": 6,
     "compression_method": "Deflate"
+  },
+  "MimeTypes": [
+    "application/gzip",
+    "application/x-gzip"
+  ],
+  "Software": [
+    "gzip",
+    "7-Zip",
+    "WinRAR",
+    "tar"
+  ],
+  "UseCases": [
+    "File compression",
+    "Unix archives",
+    "Web content compression"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-10",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "DEFLATE",
+    "ArchivesFormat": true
   }
 }

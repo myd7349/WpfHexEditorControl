@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "DOS COM Executable",
   "version": "1.0",
   "extensions": [
@@ -77,5 +77,33 @@
     "loaded_at": "0x0100",
     "16_bit": true,
     "obsolete": true
+  },
+  "MimeTypes": [
+    "application/x-executable"
+  ],
+  "Software": [
+    "IDA Pro",
+    "Ghidra",
+    "PE Explorer",
+    "Dependency Walker",
+    "CFF Explorer"
+  ],
+  "UseCases": [
+    "Program execution",
+    "Reverse engineering",
+    "Analysis",
+    "Debugging"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "ExecutablesFormat": true
   }
 }

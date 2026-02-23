@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "TrueType Font",
   "version": "1.0",
   "extensions": [
@@ -94,5 +94,29 @@
   "technical_details": {
     "primary_extension": ".ttf",
     "defined_fields": 4
-  }
+  },
+  "MimeTypes": [
+    "font/ttf",
+    "application/x-font-ttf"
+  ],
+  "Software": [
+    "All operating systems",
+    "FontForge",
+    "Font editors"
+  ],
+  "UseCases": [
+    "System fonts",
+    "Web fonts",
+    "Typography"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-10",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {}
 }

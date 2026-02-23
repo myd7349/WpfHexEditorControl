@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "OpenType Font",
   "version": "1.0",
   "extensions": [
@@ -84,5 +84,29 @@
   "technical_details": {
     "primary_extension": ".otf",
     "defined_fields": 3
-  }
+  },
+  "MimeTypes": [
+    "font/otf",
+    "application/x-font-opentype"
+  ],
+  "Software": [
+    "All operating systems",
+    "Adobe products",
+    "Font editors"
+  ],
+  "UseCases": [
+    "Professional fonts",
+    "Print design",
+    "Advanced typography"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-09",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {}
 }

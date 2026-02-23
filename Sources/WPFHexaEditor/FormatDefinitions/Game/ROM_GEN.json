@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Sega Genesis/Mega Drive ROM",
   "version": "1.0",
   "extensions": [
@@ -243,5 +243,33 @@
   "technical_details": {
     "primary_extension": ".md",
     "defined_fields": 17
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

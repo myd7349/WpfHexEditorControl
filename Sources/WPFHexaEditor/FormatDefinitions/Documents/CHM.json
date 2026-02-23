@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Compiled HTML Help",
   "version": "1.0",
   "extensions": [
@@ -88,5 +88,33 @@
     "lzx_compression": true,
     "full_text_search": true,
     "table_of_contents": true
+  },
+  "MimeTypes": [
+    "application/chm"
+  ],
+  "Software": [
+    "Adobe Acrobat",
+    "Microsoft Office",
+    "LibreOffice",
+    "FoxIt Reader",
+    "Calibre"
+  ],
+  "UseCases": [
+    "Document viewing",
+    "Reading",
+    "Publishing",
+    "Archival"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true
   }
 }

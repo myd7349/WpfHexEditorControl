@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "ZBrush Project",
   "version": "1.0",
   "extensions": [
@@ -73,5 +73,31 @@
     "primary_extension": ".zpr",
     "defined_fields": 2,
     "binary_format": true
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Blender",
+    "3ds Max",
+    "Maya",
+    "Cinema 4D",
+    "MeshLab"
+  ],
+  "UseCases": [
+    "3D modeling",
+    "Rendering",
+    "Animation",
+    "Game development"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Flash Video",
   "version": "1.0",
   "extensions": [
@@ -113,5 +113,30 @@
     ],
     "streaming": true,
     "obsolete": true
+  },
+  "MimeTypes": [
+    "video/x-flv"
+  ],
+  "Software": [
+    "VLC",
+    "MPC-HC",
+    "Flash Player (legacy)"
+  ],
+  "UseCases": [
+    "Flash video",
+    "Legacy web video",
+    "Old streaming"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 68,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-06",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true
   }
 }

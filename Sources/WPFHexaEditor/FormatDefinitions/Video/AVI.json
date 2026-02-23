@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "AVI Video",
   "version": "1.0",
   "extensions": [
@@ -90,5 +90,34 @@
     "primary_extension": ".avi",
     "defined_fields": 3,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/x-msvideo",
+    "video/avi"
+  ],
+  "Software": [
+    "VLC",
+    "Windows Media Player",
+    "MPC-HC",
+    "KMPlayer"
+  ],
+  "UseCases": [
+    "Legacy video",
+    "Windows video",
+    "Video editing"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 75,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-10",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true,
+    "Container": "AVI (Audio Video Interleave)",
+    "Platform": "Windows"
   }
 }

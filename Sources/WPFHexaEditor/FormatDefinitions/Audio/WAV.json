@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "WAV Audio",
   "version": "1.0",
   "extensions": [
@@ -101,5 +101,35 @@
     "audio_format": true,
     "primary_extension": ".wav",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "audio/wav",
+    "audio/x-wav",
+    "audio/wave"
+  ],
+  "Software": [
+    "Audacity",
+    "VLC",
+    "Windows Media Player",
+    "Adobe Audition"
+  ],
+  "UseCases": [
+    "Uncompressed audio",
+    "Studio recording",
+    "Sound effects",
+    "CD audio"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 78,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 4,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-10",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true,
+    "SampleRate": 44100
   }
 }

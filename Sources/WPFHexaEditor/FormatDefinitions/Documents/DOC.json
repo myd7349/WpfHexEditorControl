@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Word Document (Legacy)",
   "version": "1.0",
   "extensions": [
@@ -84,5 +84,33 @@
   "technical_details": {
     "primary_extension": ".doc",
     "defined_fields": 3
+  },
+  "MimeTypes": [
+    "application/doc"
+  ],
+  "Software": [
+    "Adobe Acrobat",
+    "Microsoft Office",
+    "LibreOffice",
+    "FoxIt Reader",
+    "Calibre"
+  ],
+  "UseCases": [
+    "Document viewing",
+    "Reading",
+    "Publishing",
+    "Archival"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 55,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "DocumentFormat": true
   }
 }

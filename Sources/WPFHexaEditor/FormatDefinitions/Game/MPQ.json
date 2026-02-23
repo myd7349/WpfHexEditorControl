@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Blizzard MPQ Archive",
   "version": "1.0",
   "extensions": [
@@ -95,5 +95,33 @@
   "technical_details": {
     "primary_extension": ".mpq",
     "defined_fields": 4
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Emulator",
+    "ROM Manager",
+    "RetroArch",
+    "Hex Editor",
+    "Game Debugger"
+  ],
+  "UseCases": [
+    "Gaming",
+    "ROM hacking",
+    "Emulation",
+    "Preservation"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {
+    "Platform": "Various"
   }
 }

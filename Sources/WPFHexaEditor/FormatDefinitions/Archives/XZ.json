@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "XZ Compressed File",
   "version": "1.0",
   "extensions": [
@@ -84,5 +84,31 @@
     "primary_extension": ".xz",
     "defined_fields": 2,
     "compression_method": "LZMA"
+  },
+  "MimeTypes": [
+    "application/x-xz"
+  ],
+  "Software": [
+    "xz-utils",
+    "7-Zip",
+    "PeaZip"
+  ],
+  "UseCases": [
+    "Modern compression",
+    "Linux packages",
+    "Kernel archives"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 70,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-08",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "CompressionMethod": "LZMA2",
+    "ArchivesFormat": true
   }
 }

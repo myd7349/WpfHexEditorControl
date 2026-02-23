@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Windows Media Audio",
   "version": "1.0",
   "extensions": [
@@ -70,5 +70,31 @@
     "audio_format": true,
     "primary_extension": ".wma",
     "defined_fields": 1
+  },
+  "MimeTypes": [
+    "audio/x-ms-wma"
+  ],
+  "Software": [
+    "Windows Media Player",
+    "VLC",
+    "Groove Music"
+  ],
+  "UseCases": [
+    "Windows audio",
+    "Streaming",
+    "Digital music"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 70,
+    "DocumentationLevel": "standard",
+    "BlocksDefined": 3,
+    "ValidationRules": 1,
+    "LastUpdated": "2025-01-08",
+    "PriorityFormat": false,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "AudioFormat": true,
+    "Platform": "Windows"
   }
 }

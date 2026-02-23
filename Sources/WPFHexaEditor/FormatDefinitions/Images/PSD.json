@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Photoshop Document",
   "version": "1.0",
   "extensions": [
@@ -134,5 +134,31 @@
       "16",
       "32-bit"
     ]
+  },
+  "MimeTypes": [
+    "image/vnd.adobe.photoshop",
+    "application/photoshop"
+  ],
+  "Software": [
+    "Adobe Photoshop",
+    "GIMP (partial)",
+    "Affinity Photo"
+  ],
+  "UseCases": [
+    "Professional image editing",
+    "Layered graphics",
+    "Digital art"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 80,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-11",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "ImagesFormat": true
   }
 }

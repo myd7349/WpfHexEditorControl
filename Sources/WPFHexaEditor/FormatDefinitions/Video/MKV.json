@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Matroska Video",
   "version": "1.0",
   "extensions": [
@@ -85,5 +85,33 @@
     "primary_extension": ".mkv",
     "defined_fields": 2,
     "container_format": true
+  },
+  "MimeTypes": [
+    "video/x-matroska"
+  ],
+  "Software": [
+    "VLC",
+    "MPC-HC",
+    "PotPlayer",
+    "Plex"
+  ],
+  "UseCases": [
+    "HD video",
+    "Anime",
+    "Multi-track video",
+    "Subtitles"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 82,
+    "DocumentationLevel": "detailed",
+    "BlocksDefined": 6,
+    "ValidationRules": 2,
+    "LastUpdated": "2025-01-13",
+    "PriorityFormat": true,
+    "AutoRefined": false
+  },
+  "TechnicalDetails": {
+    "VideoFormat": true,
+    "Container": "Matroska"
   }
 }

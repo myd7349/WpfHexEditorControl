@@ -1,4 +1,4 @@
-﻿{
+{
   "formatName": "Syslog Binary Format",
   "version": "1.0",
   "extensions": [
@@ -128,5 +128,28 @@
   "technical_details": {
     "primary_extension": ".syslog",
     "defined_fields": 8
-  }
+  },
+  "MimeTypes": [
+    "application/octet-stream"
+  ],
+  "Software": [
+    "Hex Editor",
+    "File Viewer",
+    "Archive Manager"
+  ],
+  "UseCases": [
+    "File storage",
+    "Data exchange",
+    "Archive"
+  ],
+  "QualityMetrics": {
+    "CompletenessScore": 50,
+    "DocumentationLevel": "basic",
+    "BlocksDefined": 0,
+    "ValidationRules": 0,
+    "LastUpdated": "2026-02-23",
+    "PriorityFormat": false,
+    "AutoRefined": true
+  },
+  "TechnicalDetails": {}
 }
