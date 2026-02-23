@@ -881,6 +881,104 @@ namespace WpfHexaEditor.Controls.JsonEditor
             set => SetValue(SyntaxErrorColorProperty, value);
         }
 
+        public static readonly DependencyProperty SyntaxCommaColorProperty =
+            DependencyProperty.Register(nameof(SyntaxCommaColor), typeof(Brush), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender,
+                    OnSyntaxColorChanged));
+
+        [Category("Syntax Highlighting")]
+        [DisplayName("Comma Color")]
+        [Description("Color for commas in JSON")]
+        public Brush SyntaxCommaColor
+        {
+            get => (Brush)GetValue(SyntaxCommaColorProperty);
+            set => SetValue(SyntaxCommaColorProperty, value);
+        }
+
+        public static readonly DependencyProperty SyntaxColonColorProperty =
+            DependencyProperty.Register(nameof(SyntaxColonColor), typeof(Brush), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender,
+                    OnSyntaxColorChanged));
+
+        [Category("Syntax Highlighting")]
+        [DisplayName("Colon Color")]
+        [Description("Color for colons in JSON (key:value separator)")]
+        public Brush SyntaxColonColor
+        {
+            get => (Brush)GetValue(SyntaxColonColorProperty);
+            set => SetValue(SyntaxColonColorProperty, value);
+        }
+
+        public static readonly DependencyProperty SyntaxEscapeSequenceColorProperty =
+            DependencyProperty.Register(nameof(SyntaxEscapeSequenceColor), typeof(Brush), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(215, 186, 125)),
+                    FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
+
+        [Category("Syntax Highlighting")]
+        [DisplayName("Escape Sequence Color")]
+        [Description("Color for escape sequences in strings (\\n, \\t, \\u0000)")]
+        public Brush SyntaxEscapeSequenceColor
+        {
+            get => (Brush)GetValue(SyntaxEscapeSequenceColorProperty);
+            set => SetValue(SyntaxEscapeSequenceColorProperty, value);
+        }
+
+        public static readonly DependencyProperty SyntaxUrlColorProperty =
+            DependencyProperty.Register(nameof(SyntaxUrlColor), typeof(Brush), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 102, 204)),
+                    FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
+
+        [Category("Syntax Highlighting")]
+        [DisplayName("URL Color")]
+        [Description("Color for URLs detected in string values")]
+        public Brush SyntaxUrlColor
+        {
+            get => (Brush)GetValue(SyntaxUrlColorProperty);
+            set => SetValue(SyntaxUrlColorProperty, value);
+        }
+
+        public static readonly DependencyProperty SyntaxDeprecatedColorProperty =
+            DependencyProperty.Register(nameof(SyntaxDeprecatedColor), typeof(Brush), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(128, 128, 128)),
+                    FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
+
+        [Category("Syntax Highlighting")]
+        [DisplayName("Deprecated Color")]
+        [Description("Color for deprecated properties or values (strikethrough)")]
+        public Brush SyntaxDeprecatedColor
+        {
+            get => (Brush)GetValue(SyntaxDeprecatedColorProperty);
+            set => SetValue(SyntaxDeprecatedColorProperty, value);
+        }
+
+        public static readonly DependencyProperty HighlightMatchColorProperty =
+            DependencyProperty.Register(nameof(HighlightMatchColor), typeof(Brush), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromArgb(80, 255, 255, 0)),
+                    FrameworkPropertyMetadataOptions.AffectsRender));
+
+        [Category("Syntax Highlighting")]
+        [DisplayName("Highlight Match Color")]
+        [Description("Background color for matching brackets/words highlight")]
+        public Brush HighlightMatchColor
+        {
+            get => (Brush)GetValue(HighlightMatchColorProperty);
+            set => SetValue(HighlightMatchColorProperty, value);
+        }
+
+        public static readonly DependencyProperty FindResultColorProperty =
+            DependencyProperty.Register(nameof(FindResultColor), typeof(Brush), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromArgb(100, 255, 165, 0)),
+                    FrameworkPropertyMetadataOptions.AffectsRender));
+
+        [Category("Syntax Highlighting")]
+        [DisplayName("Find Result Color")]
+        [Description("Background color for search/find results")]
+        public Brush FindResultColor
+        {
+            get => (Brush)GetValue(FindResultColorProperty);
+            set => SetValue(FindResultColorProperty, value);
+        }
+
         #endregion
 
         #region Property Changed Callbacks
