@@ -1581,10 +1581,13 @@ namespace WpfHexaEditor.Controls.JsonEditor
         /// </summary>
         private void RenderLineNumbers(DrawingContext dc)
         {
-            double y = TopMargin;
-
             for (int i = _firstVisibleLine; i <= _lastVisibleLine && i < _document.Lines.Count; i++)
             {
+                // Phase 11: Calculate Y position with virtual scrolling support
+                double y = EnableVirtualScrolling && _virtualizationEngine != null
+                    ? TopMargin + _virtualizationEngine.GetLineYPosition(i)
+                    : TopMargin + ((i - _firstVisibleLine) * _lineHeight);
+
                 var lineNumber = (i + 1).ToString(); // Display as 1-based
                 var formattedText = new FormattedText(
                     lineNumber,
@@ -1599,7 +1602,6 @@ namespace WpfHexaEditor.Controls.JsonEditor
                 double x = LineNumberWidth - formattedText.Width - LineNumberMargin;
 
                 dc.DrawText(formattedText, new Point(x, y));
-                y += _lineHeight;
             }
 
             // Draw separator line between line numbers and text
@@ -1616,7 +1618,11 @@ namespace WpfHexaEditor.Controls.JsonEditor
             if (_cursorLine < _firstVisibleLine || _cursorLine > _lastVisibleLine)
                 return;
 
-            double y = TopMargin + (_cursorLine - _firstVisibleLine) * _lineHeight;
+            // Phase 11: Calculate Y position with virtual scrolling support
+            double y = EnableVirtualScrolling && _virtualizationEngine != null
+                ? TopMargin + _virtualizationEngine.GetLineYPosition(_cursorLine)
+                : TopMargin + (_cursorLine - _firstVisibleLine) * _lineHeight;
+
             double x = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
 
             dc.DrawRectangle(CurrentLineBackground, null,
@@ -1639,7 +1645,11 @@ namespace WpfHexaEditor.Controls.JsonEditor
             {
                 if (start.Line >= _firstVisibleLine && start.Line <= _lastVisibleLine)
                 {
-                    double y = TopMargin + (start.Line - _firstVisibleLine) * _lineHeight;
+                    // Phase 11: Calculate Y position with virtual scrolling support
+                    double y = EnableVirtualScrolling && _virtualizationEngine != null
+                        ? TopMargin + _virtualizationEngine.GetLineYPosition(start.Line)
+                        : TopMargin + (start.Line - _firstVisibleLine) * _lineHeight;
+
                     double x1 = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + (start.Column * _charWidth);
                     double x2 = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + (end.Column * _charWidth);
 
@@ -1741,7 +1751,11 @@ namespace WpfHexaEditor.Controls.JsonEditor
             if (_cursorLine < _firstVisibleLine || _cursorLine > _lastVisibleLine)
                 return;
 
-            double y = TopMargin + (_cursorLine - _firstVisibleLine) * _lineHeight;
+            // Phase 11: Calculate Y position with virtual scrolling support
+            double y = EnableVirtualScrolling && _virtualizationEngine != null
+                ? TopMargin + _virtualizationEngine.GetLineYPosition(_cursorLine)
+                : TopMargin + (_cursorLine - _firstVisibleLine) * _lineHeight;
+
             double x = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + (_cursorColumn * _charWidth);
 
             // Draw cursor as vertical line (Insert mode style)
