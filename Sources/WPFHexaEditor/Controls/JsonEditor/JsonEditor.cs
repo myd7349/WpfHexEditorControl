@@ -2278,6 +2278,9 @@ namespace WpfHexaEditor.Controls.JsonEditor
             {
                 _selection.Clear();
             }
+
+            // Phase 11.3: Ensure cursor stays visible when using virtual scrolling
+            EnsureCursorVisible();
         }
 
         private void MoveCursorToLineStart(bool extendSelection)
@@ -2397,6 +2400,24 @@ namespace WpfHexaEditor.Controls.JsonEditor
         #endregion
 
         #region Mouse Input Handling (Phase 3)
+
+        /// <summary>
+        /// Handle mouse wheel for vertical scrolling (Phase 11.3)
+        /// </summary>
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            base.OnMouseWheel(e);
+
+            if (EnableVirtualScrolling && _virtualizationEngine != null)
+            {
+                // Scroll by delta (negative delta = scroll down)
+                double lineScrollAmount = 3; // Scroll 3 lines per wheel notch
+                double pixelDelta = -e.Delta / 120.0 * lineScrollAmount * _lineHeight;
+
+                ScrollVertical(pixelDelta);
+                e.Handled = true;
+            }
+        }
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
