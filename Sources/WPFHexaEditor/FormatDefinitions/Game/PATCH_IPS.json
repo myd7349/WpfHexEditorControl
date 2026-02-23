@@ -75,10 +75,39 @@
     }
   ],
   "quality_metrics": {
-    "completeness_score": 65,
-    "documentation_level": "basic",
+    "completeness_score": 80,
+    "documentation_level": "comprehensive",
     "blocks_defined": 4,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "Lunar IPS",
+    "Floating IPS",
+    "UniPatcher"
+  ],
+  "use_cases": [
+    "ROM patching",
+    "Translation patches",
+    "Bug fixes",
+    "Mods"
+  ],
+  "format_relationships": {
+    "applies_to": [
+      "ROM_NES",
+      "ROM_SNES",
+      "ROM_GB",
+      "ROM_GBA"
+    ],
+    "related_formats": [
+      "UPS",
+      "BPS"
+    ]
+  },
+  "technical_details": {
+    "max_offset": "16MB (24-bit)",
+    "rle_support": true,
+    "simple_format": true
   }
 }

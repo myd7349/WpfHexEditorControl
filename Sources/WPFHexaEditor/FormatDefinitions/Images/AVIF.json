@@ -62,10 +62,33 @@
     "image/avif"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 3,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "Chrome",
+    "Firefox",
+    "Modern image editors"
+  ],
+  "use_cases": [
+    "Next-gen web images",
+    "Maximum compression",
+    "HDR support"
+  ],
+  "format_relationships": {
+    "based_on": "AV1 video codec",
+    "competes_with": [
+      "WEBP",
+      "JPEG-XL"
+    ]
+  },
+  "technical_details": {
+    "compression_method": "AV1",
+    "hdr_support": true,
+    "better_than_webp": true
   }
 }

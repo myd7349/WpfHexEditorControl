@@ -73,10 +73,38 @@
     "video/mp4"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 4,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "VLC",
+    "All modern players",
+    "FFmpeg"
+  ],
+  "use_cases": [
+    "Video distribution",
+    "Streaming",
+    "Mobile video"
+  ],
+  "format_relationships": {
+    "based_on": "MPEG-4 Part 14",
+    "container_for": [
+      "H.264",
+      "H.265",
+      "AAC"
+    ],
+    "related_formats": [
+      "MOV",
+      "M4V"
+    ]
+  },
+  "technical_details": {
+    "container_format": true,
+    "streaming_support": true,
+    "iso_standard": "ISO/IEC 14496-14"
   }
 }

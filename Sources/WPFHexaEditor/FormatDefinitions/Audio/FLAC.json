@@ -63,10 +63,34 @@
     "audio/flac"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 3,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "VLC",
+    "foobar2000",
+    "Audacity"
+  ],
+  "use_cases": [
+    "Lossless music archiving",
+    "Audiophile music",
+    "CD ripping"
+  ],
+  "format_relationships": {
+    "related_formats": [
+      "ALAC",
+      "WavPack",
+      "APE"
+    ],
+    "open_source": true
+  },
+  "technical_details": {
+    "compression_method": "Lossless",
+    "compression_ratio": "50-70%",
+    "streaming_support": true
   }
 }

@@ -59,10 +59,28 @@
     }
   ],
   "quality_metrics": {
-    "completeness_score": 65,
-    "documentation_level": "basic",
+    "completeness_score": 80,
+    "documentation_level": "comprehensive",
     "blocks_defined": 3,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "Modern web browsers"
+  ],
+  "use_cases": [
+    "Next-gen web fonts"
+  ],
+  "format_relationships": {
+    "successor_to": "WOFF",
+    "container_for": [
+      "TTF",
+      "OTF"
+    ]
+  },
+  "technical_details": {
+    "compression_method": "Brotli",
+    "better_compression": "30% over WOFF"
   }
 }

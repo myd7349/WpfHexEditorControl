@@ -55,10 +55,37 @@
     "video/mkv"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 2,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "VLC",
+    "MPC-HC",
+    "PotPlayer"
+  ],
+  "use_cases": [
+    "HD video storage",
+    "Multi-audio tracks",
+    "Subtitle support"
+  ],
+  "format_relationships": {
+    "open_source": true,
+    "container_for": [
+      "H.264",
+      "H.265",
+      "VP9"
+    ],
+    "related_formats": [
+      "WEBM"
+    ]
+  },
+  "technical_details": {
+    "container_format": true,
+    "unlimited_tracks": true,
+    "matroska_family": true
   }
 }

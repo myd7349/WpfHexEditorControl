@@ -66,10 +66,32 @@
     "image/jp2"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 3,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "IrfanView",
+    "XnView",
+    "Medical imaging software"
+  ],
+  "use_cases": [
+    "Medical imaging",
+    "Digital cinema",
+    "Archival"
+  ],
+  "format_relationships": {
+    "successor_to": "JPEG",
+    "related_formats": [
+      "JPEG"
+    ]
+  },
+  "technical_details": {
+    "compression_method": "Wavelet",
+    "lossless_and_lossy": true,
+    "progressive_decoding": true
   }
 }

@@ -90,10 +90,31 @@
     "application/x-executable"
   ],
   "quality_metrics": {
-    "completeness_score": 80,
-    "documentation_level": "moderate",
+    "completeness_score": 95,
+    "documentation_level": "comprehensive",
     "blocks_defined": 6,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "Linux OS",
+    "GCC",
+    "GDB"
+  ],
+  "use_cases": [
+    "Linux/Unix programs",
+    "Embedded systems"
+  ],
+  "format_relationships": {
+    "unix_format": true,
+    "related_formats": [
+      "a.out",
+      "COFF"
+    ]
+  },
+  "technical_details": {
+    "dynamic_linking": true,
+    "sections_and_segments": true
   }
 }

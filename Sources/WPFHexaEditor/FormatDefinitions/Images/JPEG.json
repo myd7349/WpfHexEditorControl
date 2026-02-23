@@ -128,10 +128,40 @@
     "image/jpg"
   ],
   "quality_metrics": {
-    "completeness_score": 80,
-    "documentation_level": "moderate",
+    "completeness_score": 95,
+    "documentation_level": "comprehensive",
     "blocks_defined": 10,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "All image viewers",
+    "Photoshop",
+    "GIMP",
+    "Cameras"
+  ],
+  "use_cases": [
+    "Photography",
+    "Web images",
+    "Digital cameras",
+    "Social media"
+  ],
+  "format_relationships": {
+    "related_formats": [
+      "JPEG2000",
+      "JPEG-LS",
+      "JPEG-XL",
+      "PNG"
+    ]
+  },
+  "technical_details": {
+    "compression_method": "DCT lossy",
+    "subsampling": [
+      "4:4:4",
+      "4:2:2",
+      "4:2:0"
+    ],
+    "progressive_support": true
   }
 }

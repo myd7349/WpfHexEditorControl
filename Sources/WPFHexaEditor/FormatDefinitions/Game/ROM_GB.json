@@ -194,10 +194,37 @@
     }
   ],
   "quality_metrics": {
-    "completeness_score": 80,
-    "documentation_level": "detailed",
+    "completeness_score": 95,
+    "documentation_level": "comprehensive",
     "blocks_defined": 14,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "VisualBoyAdvance",
+    "BGB",
+    "mGBA",
+    "RetroArch"
+  ],
+  "use_cases": [
+    "Game Boy emulation",
+    "Romhacking"
+  ],
+  "format_relationships": {
+    "console": "Game Boy / Game Boy Color",
+    "related_formats": [
+      "ROM_GBC",
+      "ROM_GBA"
+    ]
+  },
+  "technical_details": {
+    "header_offset": "0x100",
+    "max_rom_size": "8MB",
+    "mbc_types": [
+      "MBC1",
+      "MBC3",
+      "MBC5"
+    ]
   }
 }

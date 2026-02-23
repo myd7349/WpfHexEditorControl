@@ -61,10 +61,32 @@
     "application/pdf"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 3,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "Adobe Acrobat",
+    "Web browsers",
+    "Foxit Reader",
+    "Preview (macOS)"
+  ],
+  "use_cases": [
+    "Document distribution",
+    "Forms",
+    "Ebooks",
+    "Print-ready documents"
+  ],
+  "format_relationships": {
+    "adobe_format": true,
+    "iso_standard": "ISO 32000"
+  },
+  "technical_details": {
+    "page_description_language": "PostScript-based",
+    "encryption_support": true,
+    "digital_signatures": true
   }
 }

@@ -53,10 +53,39 @@
     "application/epub"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 2,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "Calibre",
+    "Apple Books",
+    "Adobe Digital Editions",
+    "E-readers"
+  ],
+  "use_cases": [
+    "Ebooks",
+    "Digital publishing",
+    "Reflowable content"
+  ],
+  "format_relationships": {
+    "container_format": "ZIP",
+    "based_on": [
+      "HTML",
+      "CSS",
+      "XML"
+    ],
+    "variants": [
+      "EPUB2",
+      "EPUB3"
+    ]
+  },
+  "technical_details": {
+    "xml_based": true,
+    "reflowable_layout": true,
+    "drm_support": true
   }
 }

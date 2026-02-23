@@ -62,10 +62,37 @@
     "video/avi"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 3,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "VLC",
+    "Windows Media Player",
+    "MPlayer"
+  ],
+  "use_cases": [
+    "Legacy video",
+    "Windows video files"
+  ],
+  "format_relationships": {
+    "based_on": "RIFF",
+    "microsoft_format": true,
+    "replaced_by": [
+      "MP4",
+      "MKV"
+    ]
+  },
+  "technical_details": {
+    "container_format": true,
+    "max_file_size": "2GB (AVI 1.0)",
+    "codecs": [
+      "DivX",
+      "Xvid",
+      "MJPEG"
+    ]
   }
 }

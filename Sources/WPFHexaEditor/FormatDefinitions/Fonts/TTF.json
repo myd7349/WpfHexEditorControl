@@ -69,10 +69,33 @@
     }
   ],
   "quality_metrics": {
-    "completeness_score": 65,
-    "documentation_level": "basic",
+    "completeness_score": 80,
+    "documentation_level": "comprehensive",
     "blocks_defined": 4,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "All operating systems",
+    "Font editors"
+  ],
+  "use_cases": [
+    "Desktop fonts",
+    "Print fonts",
+    "General typography"
+  ],
+  "format_relationships": {
+    "related_formats": [
+      "OTF",
+      "WOFF"
+    ],
+    "variants": [
+      "TrueType Collections (TTC)"
+    ]
+  },
+  "technical_details": {
+    "outline_format": "Quadratic Bezier",
+    "hinting": "TrueType instructions"
   }
 }

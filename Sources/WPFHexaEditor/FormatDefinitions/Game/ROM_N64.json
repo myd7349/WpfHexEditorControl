@@ -165,10 +165,33 @@
     }
   ],
   "quality_metrics": {
-    "completeness_score": 80,
-    "documentation_level": "detailed",
+    "completeness_score": 95,
+    "documentation_level": "comprehensive",
     "blocks_defined": 12,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "Project64",
+    "Mupen64Plus",
+    "RetroArch"
+  ],
+  "use_cases": [
+    "Nintendo 64 emulation",
+    "Romhacking"
+  ],
+  "format_relationships": {
+    "console": "Nintendo 64",
+    "byte_order_variants": [
+      ".z64",
+      ".n64",
+      ".v64"
+    ]
+  },
+  "technical_details": {
+    "byte_order": "Big-endian (z64)",
+    "header_size": "4KB",
+    "crc_check": "CRC1/CRC2"
   }
 }

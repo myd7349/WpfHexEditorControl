@@ -55,10 +55,33 @@
     "application/x-bz2"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 2,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "bzip2",
+    "7-Zip",
+    "PeaZip"
+  ],
+  "use_cases": [
+    "Higher compression than GZIP",
+    "Source code distribution"
+  ],
+  "format_relationships": {
+    "container_for": [
+      "TAR"
+    ],
+    "related_formats": [
+      "GZIP",
+      "XZ"
+    ]
+  },
+  "technical_details": {
+    "compression_method": "Burrows-Wheeler + Huffman",
+    "slower_than_gzip": true
   }
 }

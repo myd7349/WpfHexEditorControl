@@ -59,10 +59,33 @@
     }
   ],
   "quality_metrics": {
-    "completeness_score": 65,
-    "documentation_level": "basic",
+    "completeness_score": 80,
+    "documentation_level": "comprehensive",
     "blocks_defined": 3,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "All modern operating systems",
+    "Font editors"
+  ],
+  "use_cases": [
+    "Advanced typography",
+    "Professional fonts"
+  ],
+  "format_relationships": {
+    "based_on": [
+      "TrueType",
+      "PostScript"
+    ],
+    "related_formats": [
+      "TTF",
+      "WOFF2"
+    ]
+  },
+  "technical_details": {
+    "outline_format": "PostScript CFF",
+    "opentype_features": true
   }
 }

@@ -53,10 +53,33 @@
     "application/docx"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 2,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "Microsoft Word",
+    "LibreOffice Writer",
+    "Google Docs"
+  ],
+  "use_cases": [
+    "Word processing",
+    "Business documents",
+    "Reports"
+  ],
+  "format_relationships": {
+    "container_format": "ZIP",
+    "successor_to": "DOC",
+    "related_formats": [
+      "XLSX",
+      "PPTX"
+    ]
+  },
+  "technical_details": {
+    "xml_based": true,
+    "ooxml_standard": "ISO/IEC 29500"
   }
 }

@@ -73,10 +73,40 @@
     "audio/mp3"
   ],
   "quality_metrics": {
-    "completeness_score": 70,
-    "documentation_level": "basic",
+    "completeness_score": 85,
+    "documentation_level": "comprehensive",
     "blocks_defined": 4,
     "validation_rules": 0,
-    "last_updated": "2026-02-23"
+    "last_updated": "2026-02-23",
+    "priority_format": true
+  },
+  "software": [
+    "All media players",
+    "Audacity",
+    "iTunes"
+  ],
+  "use_cases": [
+    "Music distribution",
+    "Podcasts",
+    "Audio streaming"
+  ],
+  "format_relationships": {
+    "successor_to": "MPEG-1 Audio Layer II",
+    "related_formats": [
+      "AAC",
+      "OGG",
+      "FLAC"
+    ]
+  },
+  "technical_details": {
+    "compression_method": "Perceptual lossy",
+    "bitrates": [
+      "32-320 kbps",
+      "VBR"
+    ],
+    "id3_tags": [
+      "ID3v1",
+      "ID3v2"
+    ]
   }
 }
