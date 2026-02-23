@@ -112,16 +112,24 @@ namespace WpfHexaEditor
 
             // Auto-detect format if enabled
             // Run in background to avoid blocking UI
+            System.Diagnostics.Debug.WriteLine($"[FileOperations] EnableAutoFormatDetection = {EnableAutoFormatDetection}");
             if (EnableAutoFormatDetection)
             {
+                System.Diagnostics.Debug.WriteLine($"[FileOperations] Scheduling format detection for: {filePath}");
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
+                    System.Diagnostics.Debug.WriteLine($"[FileOperations] Executing scheduled format detection");
                     var result = AutoDetectAndApplyFormat(filePath);
+                    System.Diagnostics.Debug.WriteLine($"[FileOperations] Format detection completed. Success: {result.Success}, Format: {result.Format?.FormatName ?? "None"}");
                     if (result.Success && ShowFormatDetectionStatus)
                     {
                         StatusText.Text = $"Format detected: {result.Format?.FormatName ?? "Unknown"}";
                     }
                 }), System.Windows.Threading.DispatcherPriority.Background);
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("[FileOperations] Format detection is disabled (EnableAutoFormatDetection = false)");
             }
 
             // Update bar chart panel in background

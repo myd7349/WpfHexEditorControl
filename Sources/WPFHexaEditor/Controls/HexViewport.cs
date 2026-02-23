@@ -122,6 +122,12 @@ namespace WpfHexaEditor.Controls
         // Caret for Insert mode (flashing vertical line)
         private Caret _caret;
 
+        // Editing cell blink effect
+        private long _editingCellPosition = -1;      // Position de la cellule en édition (-1 = aucune)
+        private bool _editingBlinkVisible = true;    // État du clignotement (true = fond visible)
+        private System.Windows.Threading.DispatcherTimer _editingBlinkTimer;  // Timer pour le clignotement
+        private Brush _editingCellBrush = new SolidColorBrush(Color.FromArgb(0x55, 0xFF, 0xC0, 0x00)); // Ambre semi-transparent
+
         // Mouse drag selection support
         private bool _isMouseDown = false;
         private long? _dragStartPosition = null;
@@ -255,6 +261,13 @@ namespace WpfHexaEditor.Controls
             AddVisualChild(_caret);
             AddLogicalChild(_caret);
             _caret.Start(); // Start blinking
+
+            // Initialize editing cell blink timer (synchronized to caret blink period)
+            _editingBlinkTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
+            {
+                Interval = TimeSpan.FromMilliseconds(500) // Synchronized with _caret.BlinkPeriod
+            };
+            _editingBlinkTimer.Tick += EditingBlinkTimer_Tick;
         }
 
         /// <summary>
@@ -269,6 +282,20 @@ namespace WpfHexaEditor.Controls
         {
             if (index != 0) throw new ArgumentOutOfRangeException(nameof(index));
             return _caret;
+        }
+
+        /// <summary>
+        /// Timer tick handler for editing cell blink effect
+        /// </summary>
+        private void EditingBlinkTimer_Tick(object sender, EventArgs e)
+        {
+            if (_editingCellPosition < 0)
+            {
+                _editingBlinkTimer.Stop();
+                return;
+            }
+            _editingBlinkVisible = !_editingBlinkVisible;
+            InvalidateVisual(); // Force le redessinage
         }
 
         #endregion
@@ -551,6 +578,34 @@ namespace WpfHexaEditor.Controls
                     _cursorPosition = value;
                     InvalidateVisual();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Position of the byte cell currently being edited (shows blinking background).
+        /// Set to -1 to stop the blink effect.
+        /// </summary>
+        public long EditingCellPosition
+        {
+            get => _editingCellPosition;
+            set
+            {
+                if (_editingCellPosition == value) return;
+                _editingCellPosition = value;
+
+                if (value >= 0)
+                {
+                    // Start blinking: immediately show the highlight, then start timer
+                    _editingBlinkVisible = true;
+                    _editingBlinkTimer.Start();
+                }
+                else
+                {
+                    // Stop blinking
+                    _editingBlinkTimer.Stop();
+                    _editingBlinkVisible = false;
+                }
+                InvalidateVisual();
             }
         }
 
@@ -1370,6 +1425,13 @@ namespace WpfHexaEditor.Controls
                 }
             }
 
+            // Draw editing cell blink highlight (below cursor border, above selection)
+            if (_editingBlinkVisible && _editingCellPosition >= 0 &&
+                byteData.VirtualPos.Value == _editingCellPosition)
+            {
+                dc.DrawRoundedRectangle(_editingCellBrush, null, rect, 2, 2);
+            }
+
             // Draw cursor border (thicker, on top)
             if (byteData.VirtualPos.Value == _cursorPosition)
             {
@@ -1623,6 +1685,13 @@ namespace WpfHexaEditor.Controls
 
                 var borderPen = new Pen(borderBrush, 1.5);
                 dc.DrawRoundedRectangle(null, borderPen, rect, 1, 1);
+            }
+
+            // Draw editing cell blink highlight (ASCII panel mirror)
+            if (_editingBlinkVisible && _editingCellPosition >= 0 &&
+                byteData.VirtualPos.Value == _editingCellPosition)
+            {
+                dc.DrawRoundedRectangle(_editingCellBrush, null, rect, 1, 1);
             }
 
             // Draw cursor border

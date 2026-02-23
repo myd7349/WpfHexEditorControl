@@ -135,7 +135,11 @@
       "Bash(csc:*)",
       "Bash(./TestJsonParser.exe:*)",
       "Bash(powershell.exe -ExecutionPolicy Bypass -File find_multiline_strings.ps1)",
-      "Bash(dotnet add:*)"
+      "Bash(dotnet add:*)",
+      "Bash(pwsh -File Add-CategoryToJsonFiles.ps1)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File Add-CategoryToJsonFiles.ps1)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File:*)",
+      "Bash(/tmp/color_dps.txt:*)"
     ]
   }
 }

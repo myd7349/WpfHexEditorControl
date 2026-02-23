@@ -2712,6 +2712,7 @@ namespace WpfHexaEditor
                 if (editor._isEditingByte)
                 {
                     editor._isEditingByte = false;
+                    editor.HexViewport.EditingCellPosition = -1;
                     editor._editingPosition = VirtualPosition.Invalid;
                     editor._editingValue = 0;
                     editor._editingCharIndex = 0;

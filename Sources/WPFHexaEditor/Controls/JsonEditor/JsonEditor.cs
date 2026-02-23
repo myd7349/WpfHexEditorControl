@@ -1098,6 +1098,9 @@ namespace WpfHexaEditor.Controls.JsonEditor
             MinWidth = 200;
             MinHeight = 100;
 
+            // Initialize Virtual Scrolling (Phase 11)
+            InitializeVirtualScrolling();
+
             // Initialize Context Menu (Phase C)
             InitializeContextMenu();
         }
@@ -1375,6 +1378,86 @@ namespace WpfHexaEditor.Controls.JsonEditor
 
         #endregion
 
+        #region Virtual Scrolling (Phase 11)
+
+        /// <summary>
+        /// Initialize virtual scrolling engine
+        /// </summary>
+        private void InitializeVirtualScrolling()
+        {
+            _virtualizationEngine = new VirtualizationEngine
+            {
+                TotalLines = _document?.Lines.Count ?? 0,
+                ViewportHeight = ActualHeight,
+                LineHeight = _lineHeight,
+                ScrollOffset = 0,
+                RenderBuffer = RenderBuffer
+            };
+
+            // Subscribe to size changed for viewport updates
+            SizeChanged += JsonEditor_SizeChanged;
+        }
+
+        private void JsonEditor_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (_virtualizationEngine != null)
+            {
+                _virtualizationEngine.ViewportHeight = ActualHeight;
+                _virtualizationEngine.CalculateVisibleRange();
+                InvalidateVisual();
+            }
+        }
+
+        /// <summary>
+        /// Update virtualization engine when document changes
+        /// </summary>
+        private void UpdateVirtualization()
+        {
+            if (_virtualizationEngine == null || _document == null)
+                return;
+
+            _virtualizationEngine.TotalLines = _document.Lines.Count;
+            _virtualizationEngine.LineHeight = _lineHeight;
+            _virtualizationEngine.RenderBuffer = RenderBuffer;
+            _virtualizationEngine.CalculateVisibleRange();
+        }
+
+        /// <summary>
+        /// Scroll viewport vertically by pixel amount
+        /// </summary>
+        public void ScrollVertical(double delta)
+        {
+            if (_virtualizationEngine == null || !EnableVirtualScrolling)
+                return;
+
+            double newOffset = _virtualizationEngine.ScrollByPixels(delta * ScrollSpeedMultiplier);
+            _verticalScrollOffset = newOffset;
+            _virtualizationEngine.ScrollOffset = newOffset;
+            _virtualizationEngine.CalculateVisibleRange();
+
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Ensure cursor line is visible in viewport
+        /// </summary>
+        private void EnsureCursorVisible()
+        {
+            if (_virtualizationEngine == null || !EnableVirtualScrolling)
+                return;
+
+            double newOffset = _virtualizationEngine.EnsureLineVisible(_cursorLine);
+            if (Math.Abs(newOffset - _verticalScrollOffset) > 0.1)
+            {
+                _verticalScrollOffset = newOffset;
+                _virtualizationEngine.ScrollOffset = newOffset;
+                _virtualizationEngine.CalculateVisibleRange();
+                InvalidateVisual();
+            }
+        }
+
+        #endregion
+
         #region Rendering - OnRender Override
 
         /// <summary>
@@ -1471,9 +1554,26 @@ namespace WpfHexaEditor.Controls.JsonEditor
         /// </summary>
         private void CalculateVisibleLines()
         {
-            _firstVisibleLine = 0; // Phase 1: always start at 0
-            _lastVisibleLine = Math.Min(_document.Lines.Count - 1,
-                (int)((ActualHeight - TopMargin) / _lineHeight));
+            // Phase 11: Use VirtualizationEngine if enabled
+            if (EnableVirtualScrolling && _virtualizationEngine != null)
+            {
+                // Update virtualization state
+                _virtualizationEngine.ViewportHeight = ActualHeight - TopMargin;
+                _virtualizationEngine.LineHeight = _lineHeight;
+                _virtualizationEngine.ScrollOffset = _verticalScrollOffset;
+
+                // Calculate visible range with render buffer
+                var (first, last) = _virtualizationEngine.CalculateVisibleRange();
+                _firstVisibleLine = first;
+                _lastVisibleLine = last;
+            }
+            else
+            {
+                // Phase 1 fallback: Show all lines that fit in viewport (no virtualization)
+                _firstVisibleLine = 0;
+                _lastVisibleLine = Math.Min(_document.Lines.Count - 1,
+                    (int)((ActualHeight - TopMargin) / _lineHeight));
+            }
         }
 
         /// <summary>
@@ -1589,12 +1689,16 @@ namespace WpfHexaEditor.Controls.JsonEditor
         private void RenderTextContent(DrawingContext dc)
         {
             double x = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
-            double y = TopMargin;
 
             var context = new JsonParserContext();
 
             for (int i = _firstVisibleLine; i <= _lastVisibleLine && i < _document.Lines.Count; i++)
             {
+                // Phase 11: Calculate Y position with virtual scrolling support
+                double y = EnableVirtualScrolling && _virtualizationEngine != null
+                    ? TopMargin + _virtualizationEngine.GetLineYPosition(i)
+                    : TopMargin + ((i - _firstVisibleLine) * _lineHeight);
+
                 var line = _document.Lines[i];
 
                 if (!string.IsNullOrEmpty(line.Text))
@@ -1622,8 +1726,6 @@ namespace WpfHexaEditor.Controls.JsonEditor
                         dc.DrawText(formattedText, new Point(tokenX, y));
                     }
                 }
-
-                y += _lineHeight;
             }
         }
 
