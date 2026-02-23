@@ -43,6 +43,11 @@ namespace WpfHexaEditor.Core.Settings
                 if (categoryAttr == null)
                     continue;
 
+                // 2.5. Skip properties marked with [Browsable(false)]
+                var browsableAttr = propInfo.GetCustomAttribute<BrowsableAttribute>();
+                if (browsableAttr != null && !browsableAttr.Browsable)
+                    continue;
+
                 // 3. Verify there's a corresponding DependencyProperty static field
                 // DependencyProperty fields are named "{PropertyName}Property" (e.g., ShowOffsetProperty)
                 var dpField = _targetType.GetField(
