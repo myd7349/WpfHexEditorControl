@@ -14,7 +14,7 @@
       "Qpress Archive Format for MySQL/MariaDB",
       "QuickLZ Algorithm Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.percona.com/blog/the-deprecation-of-qpress-quicklz-compression-algorithm/",
       "https://mariadb.com/kb/en/mariabackup-options/",
       "https://www.percona.com/blog/compression-for-innodb-backup/"

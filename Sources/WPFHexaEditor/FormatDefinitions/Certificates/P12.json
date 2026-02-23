@@ -14,7 +14,7 @@
       "Microsoft PFX (Personal Information Exchange)",
       "PKCS #12 Archive Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://datatracker.ietf.org/doc/html/rfc7292",
       "https://en.wikipedia.org/wiki/PKCS_12",
       "https://learn.microsoft.com/en-us/windows-hardware/drivers/install/personal-information-exchange---pfx--files",

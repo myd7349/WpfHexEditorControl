@@ -14,7 +14,7 @@
       "ALAC Open Source Format",
       "Apple Lossless in MPEG-4 Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://macosforge.github.io/alac/",
       "https://github.com/macosforge/alac",
       "https://en.wikipedia.org/wiki/Apple_Lossless_Audio_Codec",

@@ -14,7 +14,7 @@
       "WebM VP9 Video Codec",
       "Google VP9 Open Source Codec"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.webmproject.org/vp9/",
       "https://developers.google.com/media/vp9",
       "https://en.wikipedia.org/wiki/VP9",

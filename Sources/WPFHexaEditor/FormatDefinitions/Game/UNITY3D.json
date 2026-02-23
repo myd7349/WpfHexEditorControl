@@ -13,7 +13,7 @@
       "UnityFS Archive Structure",
       "Unity Asset Bundle Internal Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.unity3d.com/Manual/assetbundles-file-format.html",
       "https://docs.unity3d.com/Manual/AssetBundlesIntro.html",
       "https://imbushuo.net/blog/archives/505/",

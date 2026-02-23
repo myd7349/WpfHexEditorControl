@@ -14,7 +14,7 @@
       "WBFS (Wii Backup File System) Format",
       "Wiimms ISO Tools Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wit.wiimm.de/info/iso-images.html",
       "https://cadence.moe/blog/2022-05-24-explanation-of-wii-disc-image-formats",
       "https://wit.wiimm.de/",

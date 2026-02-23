@@ -13,7 +13,7 @@
       "Minecraft NBT Specification",
       "Mojang NBT Reference Implementation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.vg/NBT",
       "https://minecraft.fandom.com/wiki/NBT_format",
       "https://wiki.bedrock.dev/nbt/nbt-in-depth",

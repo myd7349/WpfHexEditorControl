@@ -13,7 +13,7 @@
       "Steam Game Cache File (Legacy)",
       "GCF Virtual File System"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.valvesoftware.com/wiki/GCF_archive",
       "https://www.wunderboy.org/documentation/valve-gcf-file-format/",
       "https://developer.valvesoftware.com/wiki/GCFScape",

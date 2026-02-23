@@ -14,7 +14,7 @@
       "ISO/IEC 15948:2004 - PNG Standard",
       "W3C PNG Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.w3.org/TR/PNG/",
       "https://www.ietf.org/rfc/rfc2083.txt",
       "https://en.wikipedia.org/wiki/Portable_Network_Graphics"

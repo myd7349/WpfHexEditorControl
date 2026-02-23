@@ -13,7 +13,7 @@
       "MLP DVD-Audio Standard",
       "Packed PCM Audio Codec"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.ambisonic.net/pdf/mlp_pr.pdf",
       "https://en.wikipedia.org/wiki/Meridian_Lossless_Packing",
       "https://wiki.hydrogenaudio.org/index.php?title=Meridian_Lossless_Packing",

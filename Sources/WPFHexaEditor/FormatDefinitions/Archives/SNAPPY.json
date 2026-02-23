@@ -14,7 +14,7 @@
       "Google Snappy Compression Algorithm",
       "Snappy Stream Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://github.com/google/snappy/blob/main/framing_format.txt",
       "http://google.github.io/snappy/",
       "https://en.wikipedia.org/wiki/Snappy_(compression)",

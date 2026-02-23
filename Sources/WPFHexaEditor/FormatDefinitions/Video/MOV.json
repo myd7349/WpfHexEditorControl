@@ -14,7 +14,7 @@
       "ISO/IEC 14496-12 - ISO Base Media File Format",
       "Apple QuickTime Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.apple.com/documentation/quicktime-file-format",
       "https://en.wikipedia.org/wiki/QuickTime_File_Format",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000052.shtml",

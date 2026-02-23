@@ -13,7 +13,7 @@
       "X3F Proprietary RAW Image Format",
       "Sigma Foveon X3 Camera Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://libopenraw.freedesktop.org/formats/x3f/",
       "http://fileformats.archiveteam.org/wiki/X3F",
       "http://www.sigma-sd.com/SD15/technology-capability.html",

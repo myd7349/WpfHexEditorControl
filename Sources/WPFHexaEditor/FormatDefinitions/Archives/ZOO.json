@@ -13,7 +13,7 @@
       "ZOO LZSS Compression",
       "ZOO Generational Archive Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/Zoo_(file_format)",
       "https://github.com/jduerstock/zoo",
       "https://archive.org/details/zoo-2.10-src",

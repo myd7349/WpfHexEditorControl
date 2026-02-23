@@ -13,7 +13,7 @@
       "SMPTE 377M - Material Exchange Format",
       "RFC 4539 - SMPTE MXF Media Type Registration"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://pub.smpte.org/latest/st377-1/st377-1-2019.pdf",
       "https://en.wikipedia.org/wiki/Material_Exchange_Format",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000013.shtml",

@@ -13,7 +13,7 @@
       "RFC 8251 - Updates to the Opus Audio Codec",
       "IETF Opus Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://datatracker.ietf.org/doc/html/rfc6716",
       "https://opus-codec.org/",
       "https://en.wikipedia.org/wiki/Opus_(audio_format)",

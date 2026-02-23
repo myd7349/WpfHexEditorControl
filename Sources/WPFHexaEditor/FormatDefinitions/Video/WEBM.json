@@ -13,7 +13,7 @@
       "Matroska-based Container for VP8/VP9",
       "WebM Open Media Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.webmproject.org/docs/container/",
       "https://en.wikipedia.org/wiki/WebM",
       "https://www.webmproject.org/about/",

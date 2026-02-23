@@ -204,11 +204,19 @@ namespace WpfHexaEditor.Controls
         /// <exception cref="InvalidOperationException">If EditorControl is not set</exception>
         public string GetSettingsJson()
         {
+            System.Diagnostics.Debug.WriteLine("[BaseEditorSettings.GetSettingsJson] Called");
+
             var editor = _getEditorControl();
+            System.Diagnostics.Debug.WriteLine($"[BaseEditorSettings.GetSettingsJson] Editor: {editor?.GetType().Name ?? "null"}");
+
             if (editor == null)
                 throw new InvalidOperationException("EditorControl is not set");
 
-            return _stateService.SaveState(editor);
+            System.Diagnostics.Debug.WriteLine($"[BaseEditorSettings.GetSettingsJson] Calling SaveState on {_stateService?.GetType().Name ?? "null"}");
+            var result = _stateService.SaveState(editor);
+            System.Diagnostics.Debug.WriteLine($"[BaseEditorSettings.GetSettingsJson] SaveState returned {result?.Length ?? 0} chars");
+
+            return result;
         }
 
         /// <summary>
@@ -219,14 +227,20 @@ namespace WpfHexaEditor.Controls
         /// <exception cref="ArgumentException">If JSON is null or empty</exception>
         public void LoadSettingsJson(string json)
         {
+            System.Diagnostics.Debug.WriteLine($"[BaseEditorSettings.LoadSettingsJson] Called with JSON length: {json?.Length ?? 0}");
+
             var editor = _getEditorControl();
+            System.Diagnostics.Debug.WriteLine($"[BaseEditorSettings.LoadSettingsJson] Editor: {editor?.GetType().Name ?? "null"}");
+
             if (editor == null)
                 throw new InvalidOperationException("EditorControl is not set");
 
             if (string.IsNullOrEmpty(json))
                 throw new ArgumentException("JSON string cannot be null or empty", nameof(json));
 
+            System.Diagnostics.Debug.WriteLine($"[BaseEditorSettings.LoadSettingsJson] Calling LoadState on {_stateService?.GetType().Name ?? "null"}");
             _stateService.LoadState(editor, json);
+            System.Diagnostics.Debug.WriteLine($"[BaseEditorSettings.LoadSettingsJson] LoadState completed");
         }
 
         #endregion

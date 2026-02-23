@@ -13,7 +13,7 @@
       "ZPAQ Compression Algorithm",
       "ZPAQ Journaling Archive Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://mattmahoney.net/dc/zpaqdoc.html",
       "https://mattmahoney.net/dc/zpaq_compression.pdf",
       "https://en.wikipedia.org/wiki/ZPAQ",

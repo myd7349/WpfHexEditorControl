@@ -13,7 +13,7 @@
       "Portable Pixmap Format (PPM) - Plain/Raw",
       "PPM RGB Color Image Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://netpbm.sourceforge.net/doc/ppm.html",
       "https://en.wikipedia.org/wiki/Netpbm",
       "http://justsolve.archiveteam.org/wiki/Netpbm_formats",

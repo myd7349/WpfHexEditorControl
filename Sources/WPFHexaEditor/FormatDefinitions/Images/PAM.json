@@ -12,7 +12,7 @@
       "Netpbm PAM Format Specification",
       "Portable Arbitrary Map (PAM) File Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://netpbm.sourceforge.net/doc/pam.html",
       "https://en.wikipedia.org/wiki/Netpbm#PAM_graphics_format"
     ]

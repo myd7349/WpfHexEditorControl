@@ -13,7 +13,7 @@
       "ZFS vdev Label Structure",
       "Zettabyte File System Architecture"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/ZFS",
       "https://openzfs.github.io/openzfs-docs/",
       "https://github.com/openzfs/zfs/blob/master/module/zfs/vdev_label.c",

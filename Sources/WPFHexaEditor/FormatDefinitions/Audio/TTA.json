@@ -13,7 +13,7 @@
       "TTA Codec Specification",
       "True Audio Compression Algorithm"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.hydrogenaudio.org/index.php?title=TTA",
       "http://www.audiodope.org/en/help/trueAudioFormat.html",
       "https://sourceforge.net/projects/tta/",

@@ -14,7 +14,7 @@
       "AOMedia Video 1 Codec",
       "AV1 Open Source Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://aomedia.org/specifications/av1/",
       "https://aomediacodec.github.io/av1-spec/av1-spec.pdf",
       "https://en.wikipedia.org/wiki/AV1",

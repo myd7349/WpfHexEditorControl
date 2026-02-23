@@ -13,7 +13,7 @@
       "VMDK Sparse Extent File Structure",
       "VMware Virtual Disk API"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/VMDK",
       "https://github.com/libyal/libvmdk/blob/main/documentation/VMWare%20Virtual%20Disk%20Format%20(VMDK).asciidoc",
       "https://formats.kaitai.io/vmware_vmdk/",

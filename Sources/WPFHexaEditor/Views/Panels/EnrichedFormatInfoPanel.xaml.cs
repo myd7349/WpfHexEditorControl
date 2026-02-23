@@ -4,6 +4,7 @@
 // Author : Claude Sonnet 4.5
 //////////////////////////////////////////////
 
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using WpfHexaEditor.Core.FormatDetection;
@@ -76,6 +77,9 @@ namespace WpfHexaEditor.Views.Panels
 
             // Update priority badge visibility
             UpdatePriorityBadge();
+
+            // Update references card
+            UpdateReferencesCard();
         }
 
         /// <summary>
@@ -99,6 +103,118 @@ namespace WpfHexaEditor.Views.Panels
                 PriorityBadge.Visibility = _viewModel.IsPriorityFormat
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Update the references card with specifications and web links
+        /// </summary>
+        private void UpdateReferencesCard()
+        {
+            if (SpecificationsTextBlock == null || WebLinksStackPanel == null || NoReferencesTextBlock == null)
+                return;
+
+            bool hasReferences = _viewModel.HasReferences;
+
+            // Show/hide sections based on available data
+            if (SpecificationsSection != null)
+                SpecificationsSection.Visibility = _viewModel.HasSpecifications ? Visibility.Visible : Visibility.Collapsed;
+
+            if (WebLinksSection != null)
+                WebLinksSection.Visibility = _viewModel.HasWebLinks ? Visibility.Visible : Visibility.Collapsed;
+
+            // Update specifications
+            if (_viewModel.HasSpecifications)
+            {
+                SpecificationsTextBlock.Text = _viewModel.SpecificationsDisplay;
+            }
+
+            // Update web links
+            WebLinksStackPanel.Children.Clear();
+            if (_viewModel.HasWebLinks && _viewModel.WebLinks != null)
+            {
+                foreach (var link in _viewModel.WebLinks)
+                {
+                    var hyperlinkBlock = new System.Windows.Controls.TextBlock
+                    {
+                        Margin = new Thickness(0, 0, 0, 4),
+                        FontSize = 10
+                    };
+
+                    var hyperlink = new System.Windows.Documents.Hyperlink
+                    {
+                        NavigateUri = new System.Uri(link),
+                        ToolTip = link,
+                        Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x21, 0x96, 0xF3)),
+                        Cursor = System.Windows.Input.Cursors.Hand
+                    };
+                    hyperlink.Inlines.Add("🔗 " + GetLinkDisplayName(link));
+                    hyperlink.RequestNavigate += (s, e) =>
+                    {
+                        try
+                        {
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                            {
+                                FileName = e.Uri.ToString(),
+                                UseShellExecute = true
+                            });
+                            e.Handled = true;
+                        }
+                        catch (System.Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error opening link: {ex.Message}");
+                            System.Windows.MessageBox.Show(
+                                $"Could not open link:\n{e.Uri}\n\nError: {ex.Message}",
+                                "Error",
+                                System.Windows.MessageBoxButton.OK,
+                                System.Windows.MessageBoxImage.Warning);
+                            e.Handled = true;
+                        }
+                    };
+
+                    hyperlinkBlock.Inlines.Add(hyperlink);
+                    WebLinksStackPanel.Children.Add(hyperlinkBlock);
+                }
+            }
+
+            // Show "no references" message if no data
+            NoReferencesTextBlock.Visibility = hasReferences ? Visibility.Collapsed : Visibility.Visible;
+            SpecificationsSection.Visibility = hasReferences && _viewModel.HasSpecifications ? Visibility.Visible : Visibility.Collapsed;
+            WebLinksSection.Visibility = hasReferences && _viewModel.HasWebLinks ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// Get a friendly display name from a URL
+        /// </summary>
+        private string GetLinkDisplayName(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+                return "Link";
+
+            try
+            {
+                var uri = new System.Uri(url);
+                var domain = uri.Host.Replace("www.", "");
+
+                // Extract meaningful part from path
+                var path = uri.AbsolutePath.TrimEnd('/');
+                if (!string.IsNullOrEmpty(path) && path != "/")
+                {
+                    var lastSegment = path.Split('/').Last();
+                    if (!string.IsNullOrEmpty(lastSegment))
+                    {
+                        // Remove file extension if present
+                        var withoutExt = System.IO.Path.GetFileNameWithoutExtension(lastSegment);
+                        if (!string.IsNullOrEmpty(withoutExt))
+                            return $"{domain} - {withoutExt}";
+                    }
+                }
+
+                return domain;
+            }
+            catch
+            {
+                return url.Length > 50 ? url.Substring(0, 47) + "..." : url;
             }
         }
 
@@ -129,6 +245,7 @@ namespace WpfHexaEditor.Views.Panels
                 if (MimeTypesCard != null) MimeTypesCard.Visibility = Visibility.Collapsed;
                 if (SoftwareCard != null) SoftwareCard.Visibility = Visibility.Collapsed;
                 if (UseCasesCard != null) UseCasesCard.Visibility = Visibility.Collapsed;
+                if (ReferencesCard != null) ReferencesCard.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -147,6 +264,7 @@ namespace WpfHexaEditor.Views.Panels
                 if (MimeTypesCard != null) MimeTypesCard.Visibility = Visibility.Visible;
                 if (SoftwareCard != null) SoftwareCard.Visibility = Visibility.Visible;
                 if (UseCasesCard != null) UseCasesCard.Visibility = Visibility.Visible;
+                if (ReferencesCard != null) ReferencesCard.Visibility = Visibility.Visible;
             }
         }
 

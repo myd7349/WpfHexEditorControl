@@ -13,7 +13,7 @@
       "FLIF MANIAC Compression Algorithm",
       "Free Lossless Image Format v1.0"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://flif.info/",
       "https://flif.info/spec.html",
       "https://github.com/FLIF-hub/FLIF",

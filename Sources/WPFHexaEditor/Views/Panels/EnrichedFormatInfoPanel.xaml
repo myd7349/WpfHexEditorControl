@@ -231,6 +231,46 @@
                     </StackPanel>
                 </Border>
 
+                <!-- References Card -->
+                <Border Style="{StaticResource CardStyle}" x:Name="ReferencesCard">
+                    <StackPanel>
+                        <TextBlock Text="📚 References &amp; Documentation" Style="{StaticResource SectionHeaderStyle}"/>
+
+                        <!-- Specifications Section -->
+                        <StackPanel x:Name="SpecificationsSection" Margin="0,4,0,0">
+                            <TextBlock Text="Specifications:"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock x:Name="SpecificationsTextBlock"
+                                       Text="N/A"
+                                       Style="{StaticResource InfoValueStyle}"
+                                       Margin="8,0,0,0"/>
+                        </StackPanel>
+
+                        <!-- Web Links Section -->
+                        <StackPanel x:Name="WebLinksSection" Margin="0,8,0,0">
+                            <TextBlock Text="Documentation:"
+                                       FontSize="10"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                       Margin="0,0,0,4"/>
+                            <StackPanel x:Name="WebLinksStackPanel" Margin="8,0,0,0">
+                                <!-- Web links will be added dynamically -->
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- No References Message -->
+                        <TextBlock x:Name="NoReferencesTextBlock"
+                                   Text="No references available for this format"
+                                   FontSize="10"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- No Format Message -->
                 <Border x:Name="NoFormatMessage"
                         Style="{StaticResource CardStyle}"

@@ -13,7 +13,7 @@
       "PCompress Archive Format",
       "Chunk-Based Parallel Compression"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://github.com/moinakg/pcompress",
       "https://moinakg.github.io/pcompress/",
       "https://encode.su/threads/1639-pcompress-a-deduplication-compression-utility"

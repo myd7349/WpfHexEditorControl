@@ -13,7 +13,7 @@
       "OrbisOS PKG/PFS Structure",
       "LibOrbisPkg - PS4 PKG/SFO/PFS Library"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.psdevwiki.com/ps4/PKG_files",
       "https://github.com/maxton/LibOrbisPkg",
       "https://github.com/pearlxcore/PS4-PKG-Tool",

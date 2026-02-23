@@ -15,7 +15,7 @@
       "Microsoft PE and COFF Specification",
       "Portable Executable Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/debug/pe-format",
       "https://en.wikipedia.org/wiki/Portable_Executable"
     ]

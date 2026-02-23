@@ -16,7 +16,7 @@
       "Genesis Technical Overview",
       "MegaDrive ROM Header Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://plutiedev.com/rom-header",
       "https://wiki.megadrive.org/index.php?title=MD_Rom_Header",
       "https://datacrystal.tcrf.net/wiki/Sega_Genesis",

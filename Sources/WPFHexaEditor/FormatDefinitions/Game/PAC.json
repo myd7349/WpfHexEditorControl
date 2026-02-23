@@ -14,7 +14,7 @@
       "PAC/PACK Archive Container",
       "Multi-Platform Game Archive"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.file-extensions.org/pac-file-extension-pacman-data",
       "https://github.com/Ekey/REE.PAK.Tool",
       "https://github.com/shawngmc/game-extraction-toolbox",

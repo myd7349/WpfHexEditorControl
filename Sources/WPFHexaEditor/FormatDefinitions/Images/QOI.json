@@ -13,7 +13,7 @@
       "QOI Lossless Image Format - Dominic Szablewski",
       "Fast Lossless Compression Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://qoiformat.org/",
       "https://qoiformat.org/qoi-specification.pdf",
       "https://github.com/phoboslab/qoi",

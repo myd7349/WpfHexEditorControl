@@ -13,7 +13,7 @@
       "RFC 3533 - The Ogg Encapsulation Format",
       "Ogg Bitstream Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.ietf.org/rfc/rfc3533.txt",
       "https://xiph.org/ogg/doc/",
       "https://en.wikipedia.org/wiki/Ogg"

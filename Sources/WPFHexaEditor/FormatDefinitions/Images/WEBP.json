@@ -13,7 +13,7 @@
       "WebP Lossy Bitstream Specification",
       "WebP Lossless Bitstream Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developers.google.com/speed/webp/docs/riff_container",
       "https://developers.google.com/speed/webp/docs/webp_lossless_bitstream_specification",
       "https://en.wikipedia.org/wiki/WebP"

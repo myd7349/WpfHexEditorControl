@@ -86,14 +86,24 @@ namespace WpfHexEditor.Sample.Main.Views
             try
             {
                 var json = Properties.Settings.Default.HexEditorSettings;
+                System.Diagnostics.Debug.WriteLine($"[MainWindow_Loaded] HexEditorSettings JSON length: {json?.Length ?? 0}");
+
                 if (!string.IsNullOrEmpty(json) && HexEditorSettingsPanel != null)
                 {
+                    System.Diagnostics.Debug.WriteLine("[MainWindow_Loaded] Calling LoadSettingsJson...");
                     HexEditorSettingsPanel.LoadSettingsJson(json);
+                    System.Diagnostics.Debug.WriteLine("[MainWindow_Loaded] LoadSettingsJson completed");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MainWindow_Loaded] Skipping load: json empty={string.IsNullOrEmpty(json)}, panel null={HexEditorSettingsPanel == null}");
                 }
             }
             catch (Exception ex)
             {
-                // Silently ignore settings load errors
+                System.Diagnostics.Debug.WriteLine($"[MainWindow_Loaded] ERROR loading settings: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"  Exception type: {ex.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine($"  Stack trace: {ex.StackTrace}");
             }
         }
 
@@ -105,16 +115,28 @@ namespace WpfHexEditor.Sample.Main.Views
             // Auto-save HexEditor settings for next session
             try
             {
+                System.Diagnostics.Debug.WriteLine($"[MainWindow_Closing] Starting HexEditor settings save...");
+
                 if (HexEditorSettingsPanel != null)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[MainWindow_Closing] Calling GetSettingsJson...");
                     var json = HexEditorSettingsPanel.GetSettingsJson();
+                    System.Diagnostics.Debug.WriteLine($"[MainWindow_Closing] Got JSON ({json?.Length ?? 0} chars)");
+
                     Properties.Settings.Default.HexEditorSettings = json;
                     Properties.Settings.Default.Save();
+                    System.Diagnostics.Debug.WriteLine($"[MainWindow_Closing] Settings saved successfully");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[MainWindow_Closing] HexEditorSettingsPanel is null!");
                 }
             }
             catch (Exception ex)
             {
-                // Silently ignore settings save errors
+                System.Diagnostics.Debug.WriteLine($"[MainWindow_Closing] ERROR saving settings: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"  Exception type: {ex.GetType().Name}");
+                System.Diagnostics.Debug.WriteLine($"  Stack trace: {ex.StackTrace}");
             }
         }
 

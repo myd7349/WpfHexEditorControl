@@ -13,7 +13,7 @@
       "ISO/IEC 13818-3 - MPEG-2 Audio",
       "ID3v2 Tag Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.mp3-tech.org/",
       "https://id3.org/",
       "https://en.wikipedia.org/wiki/MP3"

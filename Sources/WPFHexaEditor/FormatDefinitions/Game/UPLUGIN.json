@@ -13,7 +13,7 @@
       "FPluginDescriptor JSON Format",
       "UE Plugin Configuration Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://dev.epicgames.com/documentation/en-us/unreal-engine/plugins-in-unreal-engine",
       "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Projects/FPluginDescriptor",
       "https://unrealcommunity.wiki/anatomy-of-plugin-q27u0jkc",

@@ -13,7 +13,7 @@
       "PS5 PKG/PFS Structure Documentation",
       "PS5PKGReader and pkgdec5 Tools"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.psdevwiki.com/ps5/PKG_files",
       "https://github.com/seregonwar/PkgToolBox",
       "https://www.ps5pkg.com/",

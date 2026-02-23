@@ -15,7 +15,7 @@
       "Microsoft ASF Container Format",
       "Windows Media Container"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://learn.microsoft.com/en-us/windows/win32/wmformat/overview-of-the-asf-format",
       "https://en.wikipedia.org/wiki/Advanced_Systems_Format",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000067.shtml"

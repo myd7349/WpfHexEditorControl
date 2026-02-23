@@ -13,7 +13,7 @@
       "WAD2 File Specification",
       "Quake Texture Archive Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_7.htm",
       "https://quakewiki.org/wiki/Texture_Wad",
       "https://developer.valvesoftware.com/wiki/.wad",

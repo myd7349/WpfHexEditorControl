@@ -16,7 +16,7 @@
       "Cryptographic Message Syntax (CMS) - RFC 5652",
       "PKCS #7 SignedData Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://tools.ietf.org/html/rfc5652",
       "https://en.wikipedia.org/wiki/PKCS_7",
       "https://datatracker.ietf.org/doc/html/rfc2315",

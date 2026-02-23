@@ -13,7 +13,7 @@
       "IWAD/PWAD Specification",
       "id Software WAD Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://doomwiki.org/wiki/WAD",
       "https://moddingwiki.shikadi.net/wiki/WAD_Format",
       "https://coleton.io/posts/wad/",

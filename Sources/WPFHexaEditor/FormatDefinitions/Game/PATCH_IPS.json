@@ -13,7 +13,7 @@
       "IPS Binary Patch Format",
       "Classic ROM Patching Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://justsolve.archiveteam.org/wiki/IPS_(binary_patch_format)",
       "https://docs.fileformat.com/game/ips/",
       "https://consolemods.org/wiki/Applying_ROM_Patches",

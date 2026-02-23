@@ -15,7 +15,7 @@
       "NSP (Nintendo Submission Package) Format",
       "XCI (Game Cartridge) & NCA (Content Archive) Formats"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.retroreversing.com/SwitchFileFormats",
       "https://www.oreateai.com/blog/understanding-the-differences-between-xci-and-nsp-formats-for-nintendo-switch/0fcbf59b792ceae77f660eac57a435d8",
       "https://github.com/jakcron/nstool",

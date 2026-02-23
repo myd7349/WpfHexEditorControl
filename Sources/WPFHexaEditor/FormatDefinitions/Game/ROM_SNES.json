@@ -14,7 +14,7 @@
       "SNESdev Wiki ROM Header Documentation",
       "Super Nintendo Software Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://snes.nesdev.org/wiki/ROM_header",
       "https://sneslab.net/wiki/SNES_ROM_Header",
       "https://wiki.superfamicom.org/writing-the-header",

@@ -13,7 +13,7 @@
       "Unreal Engine PAK Container",
       "id Software PAK Archive Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://quakewiki.org/wiki/.pak",
       "http://fileformats.archiveteam.org/wiki/Quake_PAK",
       "https://unrealpak.com/",

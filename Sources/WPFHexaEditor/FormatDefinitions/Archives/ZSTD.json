@@ -14,7 +14,7 @@
       "RFC 8478 - Zstandard (Obsolete)",
       "Zstandard Frame Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://datatracker.ietf.org/doc/html/rfc8878",
       "https://datatracker.ietf.org/doc/html/rfc8478",
       "https://en.wikipedia.org/wiki/Zstd",

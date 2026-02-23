@@ -14,7 +14,7 @@
       "LZOP File Format Specification",
       "LZO Real-Time Data Compression"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://www.oberhumer.com/opensource/lzo/",
       "https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Oberhumer",
       "https://github.com/lzoproject/lzop",

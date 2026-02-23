@@ -13,7 +13,7 @@
       "TIFF Revision 6.0 Specification",
       "RFC 3302 - Tag Image File Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.adobe.io/open/standards/TIFF.html",
       "https://www.ietf.org/rfc/rfc3302.txt",
       "https://en.wikipedia.org/wiki/TIFF"

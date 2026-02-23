@@ -13,7 +13,7 @@
       "Unofficial Quake 3 Map Specs",
       "id Software Quake III BSP"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://www.mralligator.com/q3/",
       "https://gist.github.com/Polda18/e491dca3b8fa3be2c83c29ae32c8bb87",
       "https://github.com/id-Software/Quake-III-Arena/blob/master/common/qfiles.h",

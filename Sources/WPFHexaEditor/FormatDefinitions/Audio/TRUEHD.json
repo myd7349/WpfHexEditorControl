@@ -14,7 +14,7 @@
       "Dolby TrueHD Lossless Audio Codec",
       "MLP for Blu-ray Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.dolby.com/globalassets/technology/dolby-truehd/dolbytruehdhighlevelbitstreamdescription.pdf",
       "https://developer.dolby.com/technology/dolby-audio/dolby-truehd",
       "https://en.wikipedia.org/wiki/Dolby_TrueHD",

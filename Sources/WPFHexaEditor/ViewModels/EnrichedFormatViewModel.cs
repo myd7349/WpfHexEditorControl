@@ -29,6 +29,8 @@ namespace WpfHexaEditor.ViewModels
         private int _completenessScore;
         private string _documentationLevel;
         private bool _isPriorityFormat;
+        private List<string> _specifications;
+        private List<string> _webLinks;
 
         public EnrichedFormatViewModel()
         {
@@ -36,6 +38,8 @@ namespace WpfHexaEditor.ViewModels
             _software = new List<string>();
             _useCases = new List<string>();
             _mimeTypes = new List<string>();
+            _specifications = new List<string>();
+            _webLinks = new List<string>();
             _documentationLevel = "basic";
         }
 
@@ -222,6 +226,57 @@ namespace WpfHexaEditor.ViewModels
         }
 
         /// <summary>
+        /// Technical specifications for this format
+        /// </summary>
+        public List<string> Specifications
+        {
+            get => _specifications;
+            set
+            {
+                _specifications = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SpecificationsDisplay));
+                OnPropertyChanged(nameof(HasSpecifications));
+            }
+        }
+
+        /// <summary>
+        /// Display string for specifications
+        /// </summary>
+        public string SpecificationsDisplay => Specifications != null && Specifications.Any()
+            ? string.Join("\n• ", new[] { "" }.Concat(Specifications))
+            : "N/A";
+
+        /// <summary>
+        /// Whether this format has specifications
+        /// </summary>
+        public bool HasSpecifications => Specifications != null && Specifications.Any();
+
+        /// <summary>
+        /// Web links to documentation
+        /// </summary>
+        public List<string> WebLinks
+        {
+            get => _webLinks;
+            set
+            {
+                _webLinks = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasWebLinks));
+            }
+        }
+
+        /// <summary>
+        /// Whether this format has web links
+        /// </summary>
+        public bool HasWebLinks => WebLinks != null && WebLinks.Any();
+
+        /// <summary>
+        /// Whether this format has any references (specs or links)
+        /// </summary>
+        public bool HasReferences => HasSpecifications || HasWebLinks;
+
+        /// <summary>
         /// Technical details summary (varies by format type)
         /// </summary>
         public string TechnicalSummary
@@ -278,6 +333,18 @@ namespace WpfHexaEditor.ViewModels
             UseCases = _currentFormat.UseCases ?? new List<string>();
             MimeTypes = _currentFormat.MimeTypes ?? new List<string>();
 
+            // Extract references
+            if (_currentFormat.References != null)
+            {
+                Specifications = _currentFormat.References.Specifications ?? new List<string>();
+                WebLinks = _currentFormat.References.WebLinks ?? new List<string>();
+            }
+            else
+            {
+                Specifications = new List<string>();
+                WebLinks = new List<string>();
+            }
+
             if (_currentFormat.QualityMetrics != null)
             {
                 CompletenessScore = _currentFormat.QualityMetrics.CompletenessScore;
@@ -307,6 +374,8 @@ namespace WpfHexaEditor.ViewModels
             Software = new List<string>();
             UseCases = new List<string>();
             MimeTypes = new List<string>();
+            Specifications = new List<string>();
+            WebLinks = new List<string>();
             CompletenessScore = 0;
             DocumentationLevel = "basic";
             IsPriorityFormat = false;

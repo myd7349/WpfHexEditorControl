@@ -13,7 +13,7 @@
       "Adaptive Scalable Texture Compression User Guide",
       "OpenGL/Vulkan ASTC Texture Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.arm.com/technologies/graphics-technologies/adaptive-scalable-texture-compression",
       "https://developer.arm.com/documentation/102162/latest/",
       "https://github.com/ARM-software/astc-encoder",

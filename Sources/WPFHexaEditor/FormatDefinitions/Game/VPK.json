@@ -13,7 +13,7 @@
       "Source Engine VPK Archive",
       "Valve Pak File Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.valvesoftware.com/wiki/VPK",
       "https://developer.valvesoftware.com/wiki/VPK_(file_format)",
       "https://github.com/craftablescience/VPKEdit",

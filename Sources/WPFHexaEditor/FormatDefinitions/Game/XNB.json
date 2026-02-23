@@ -13,7 +13,7 @@
       "Microsoft XNB Binary Specification",
       "XNA Content Pipeline Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://github.com/SimonDarksideJ/XNAGameStudio/wiki/Compiled-(XNB)-Content-Format",
       "http://justsolve.archiveteam.org/wiki/Microsoft_XNA_Compiled_Format",
       "https://www.gamedev.net/blog/1046/entry-2250829-xnb-file-format-documentation/",

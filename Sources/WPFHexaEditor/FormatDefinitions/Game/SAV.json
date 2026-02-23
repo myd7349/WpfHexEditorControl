@@ -13,7 +13,7 @@
       "Nintendo DS Save Format",
       "Multi-Platform Save Game Data"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://fileformat.fandom.com/wiki/SAV",
       "https://docs.fileformat.com/game/sav/",
       "https://developer.valvesoftware.com/wiki/Save_Game_Files",

@@ -14,7 +14,7 @@
       "XVC (Xbox Virtual Container) Specification",
       "XanaduXVD Technical Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://xboxoneresearch.github.io/wiki/operating-system/xbox-virtual-drive/",
       "https://github.com/xboxoneresearch/XanaduXVD",
       "https://github.com/xboxoneresearch/wiki/blob/master/docs/operating-system/xbox-virtual-drive.md",

@@ -13,7 +13,7 @@
       "System V Application Binary Interface",
       "Tool Interface Standard (TIS)"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://refspecs.linuxfoundation.org/elf/elf.pdf",
       "https://en.wikipedia.org/wiki/Executable_and_Linkable_Format"
     ]

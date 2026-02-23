@@ -13,7 +13,7 @@
       "DDS Programming Guide - DirectX Graphics",
       "DDS_HEADER and DDS_PIXELFORMAT Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds",
       "https://learn.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide",
       "https://en.wikipedia.org/wiki/DirectDraw_Surface",

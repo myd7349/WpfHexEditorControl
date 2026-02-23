@@ -14,7 +14,7 @@
       "LZMA SDK Documentation",
       "XZ Utils File Format Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.7-zip.org/sdk.html",
       "https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Markov_chain_algorithm",
       "https://tukaani.org/xz/xz-file-format.txt",

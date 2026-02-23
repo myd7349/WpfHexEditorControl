@@ -13,7 +13,7 @@
       "Quake Specs v3.4",
       "Binary Space Partitioning Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://quakewiki.org/wiki/Quake_BSP_Format",
       "https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_4.htm",
       "https://developer.valvesoftware.com/wiki/BSP",

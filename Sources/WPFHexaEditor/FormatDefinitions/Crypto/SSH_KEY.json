@@ -14,7 +14,7 @@
       "Ed25519 and RSA Key Structures",
       "SSH Key Format Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://coolaj86.com/articles/the-openssh-private-key-format/",
       "https://dnaeon.github.io/openssh-private-key-binary-format/",
       "https://peterlyons.com/problog/2017/12/openssh-ed25519-private-key-file-format/",

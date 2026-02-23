@@ -13,7 +13,7 @@
       "B-tree Filesystem Design - Copy-on-Write",
       "BTRFS: The Linux B-Tree Filesystem"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://btrfs.readthedocs.io/en/latest/dev/On-disk-format.html",
       "https://en.wikipedia.org/wiki/Btrfs",
       "https://btrfs.readthedocs.io/en/latest/dev/dev-btrfs-design.html",

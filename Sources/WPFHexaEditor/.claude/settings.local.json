@@ -141,7 +141,12 @@
       "Bash(powershell.exe -ExecutionPolicy Bypass -File:*)",
       "Bash(/tmp/color_dps.txt:*)",
       "Bash(shuf)",
-      "WebFetch(domain:www.romhacking.net)"
+      "WebFetch(domain:www.romhacking.net)",
+      "Bash(git ls-files:*)",
+      "Bash(/c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/Views/Panels/PatternAnalysisPanel.xaml:*)",
+      "Bash(\"c:\\\\Users\\\\khens\\\\source\\\\repos\\\\WpfHexEditorControl\\\\Sources\\\\WPFHexaEditor\\\\Tools\\\\add_references.py\":*)",
+      "Bash(\"c:\\\\Users\\\\khens\\\\source\\\\repos\\\\WpfHexEditorControl\\\\Sources\\\\WPFHexaEditor\\\\Tools\\\\enrich_formats.py\":*)",
+      "Bash(Tools/enrich_top50_extended.py:*)"
     ]
   }
 }

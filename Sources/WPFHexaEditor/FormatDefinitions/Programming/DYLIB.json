@@ -12,7 +12,7 @@
       "Mach-O File Format",
       "Apple Mach Object Format Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.apple.com/documentation/kernel/mach-o",
       "https://en.wikipedia.org/wiki/Mach-O"
     ]

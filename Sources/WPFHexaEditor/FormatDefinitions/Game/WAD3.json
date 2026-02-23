@@ -13,7 +13,7 @@
       "GoldSrc Texture Archive Specification",
       "WAD3 MipTex Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.valvesoftware.com/wiki/WAD",
       "https://twhl.info/wiki/page/Specification:_WAD3",
       "https://developer.valvesoftware.com/wiki/WAD3_Structure",

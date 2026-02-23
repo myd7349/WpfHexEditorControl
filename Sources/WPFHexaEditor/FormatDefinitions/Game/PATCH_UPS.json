@@ -13,7 +13,7 @@
       "UPS Format by byuu",
       "Bidirectional ROM Patch Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.fileformat.com/game/ups/",
       "https://rainbowdevs.com/2008/05/03/ups-patching-specification/",
       "https://www.romhacking.net/utilities/606/",

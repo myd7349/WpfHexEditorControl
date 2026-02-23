@@ -12,7 +12,7 @@
       "Mach-O Programming Topics",
       "OS X ABI Mach-O File Format Reference"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/MachOTopics/",
       "https://en.wikipedia.org/wiki/Mach-O"
     ]

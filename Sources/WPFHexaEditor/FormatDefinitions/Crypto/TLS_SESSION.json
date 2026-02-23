@@ -14,7 +14,7 @@
       "Session Ticket Encryption Key (STEK)",
       "NewSessionTicket TLS Handshake Message"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://datatracker.ietf.org/doc/html/rfc5077",
       "https://www.rfc-editor.org/rfc/rfc5077.html",
       "https://blog.cloudflare.com/tls-session-resumption-full-speed-and-secure/",

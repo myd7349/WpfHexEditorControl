@@ -14,7 +14,7 @@
       "BDAV MPEG-2 Transport Stream",
       "H.264/MPEG-4 AVC Video Codec"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/AVCHD",
       "https://docs.fileformat.com/video/mts/",
       "https://www.winxdvd.com/resource/avchd-video.htm",

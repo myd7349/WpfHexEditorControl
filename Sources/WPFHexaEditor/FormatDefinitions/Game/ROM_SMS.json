@@ -14,7 +14,7 @@
       "TMR SEGA Header Format",
       "Sega Master System Technical Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.smspower.org/Development/ROMHeader",
       "https://www.chibiakumas.com/z80/MasterSystemGameGear.php",
       "https://www.copetti.org/writings/consoles/master-system/",

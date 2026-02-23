@@ -13,7 +13,7 @@
       "LZ4 Block Format Specification",
       "LZ4 Compression Algorithm"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://github.com/lz4/lz4/blob/dev/doc/lz4_Frame_format.md",
       "https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md",
       "https://en.wikipedia.org/wiki/LZ4_(compression_algorithm)",

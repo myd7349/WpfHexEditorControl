@@ -13,7 +13,7 @@
       "UE4/UE5 Binary Asset Structure",
       "Epic Games Asset Serialization"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.fileformat.com/game/uasset/",
       "https://dev.epicgames.com/documentation/en-us/unreal-engine/assets-and-packages",
       "https://docs.rs/uasset",

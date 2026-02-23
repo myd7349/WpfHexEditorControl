@@ -13,7 +13,7 @@
       "Game Boy Programming Manual",
       "Pan Docs - Game Boy Technical Reference"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://gbdev.io/pandocs/",
       "https://gekkio.fi/files/gb-docs/gbctr.pdf",
       "https://en.wikipedia.org/wiki/Game_Boy"

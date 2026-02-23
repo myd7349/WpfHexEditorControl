@@ -13,7 +13,7 @@
       "Windows Driver Model (WDM) Architecture",
       "Kernel-Mode Driver Development"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
       "https://en.wikipedia.org/wiki/Windows_Driver_Model",
       "https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/",

@@ -13,7 +13,7 @@
       "Monolith RFF Resource File",
       "Build Engine RFF Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://moddingwiki.shikadi.net/wiki/RFF_Format",
       "https://blood.sourceforge.net/rebuild.php",
       "https://fileinfo.com/extension/rff",

@@ -13,7 +13,7 @@
       "RAF Proprietary Camera Format",
       "Fuji RAW Image Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://libopenraw.freedesktop.org/formats/raf/",
       "https://docs.fileformat.com/image/raf/",
       "http://fileformats.archiveteam.org/wiki/Fujifilm_RAF",

@@ -13,7 +13,7 @@
       "Half-Life BSP Specification",
       "Valve GoldSrc Engine Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.valvesoftware.com/wiki/BSP_(GoldSrc)",
       "https://hlbsp.sourceforge.net/index.php?content=bspdef",
       "http://abit.g6.cz/game_coding/formats/gold_source/bsp.html",

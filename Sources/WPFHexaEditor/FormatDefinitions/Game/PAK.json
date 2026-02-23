@@ -13,7 +13,7 @@
       "id Software PAK Archive Format",
       "Quake Engine PAK Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://quakewiki.org/wiki/.pak",
       "http://fileformats.archiveteam.org/wiki/Quake_PAK",
       "https://formats.kaitai.io/quake_pak/",

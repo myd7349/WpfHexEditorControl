@@ -14,7 +14,7 @@
       "Open Group AU Audio Format Standard",
       "NeXT Soundfile Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://soundfile.sapp.org/doc/NextFormat/",
       "https://pubs.opengroup.org/external/auformat.html",
       "https://en.wikipedia.org/wiki/Au_file_format",

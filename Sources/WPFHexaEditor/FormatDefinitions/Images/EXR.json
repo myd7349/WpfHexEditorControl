@@ -13,7 +13,7 @@
       "OpenEXR HDR Image File Format",
       "Academy Software Foundation OpenEXR"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.openexr.com/",
       "https://github.com/AcademySoftwareFoundation/openexr",
       "https://developer.nvidia.com/gpugems/gpugems/part-iv-image-processing/chapter-26-openexr-image-file-format",

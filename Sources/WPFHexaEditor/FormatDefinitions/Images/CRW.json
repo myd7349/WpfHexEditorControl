@@ -13,7 +13,7 @@
       "CIFF Specification v1.0 - Canon Proprietary",
       "Canon RAW Format (CRW) Technical Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://exiftool.org/canon_raw.html",
       "http://fileformats.archiveteam.org/wiki/Camera_Image_File_Format",
       "https://en.wikipedia.org/wiki/Camera_Image_File_Format",

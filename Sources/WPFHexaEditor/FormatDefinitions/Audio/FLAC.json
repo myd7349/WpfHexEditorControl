@@ -12,7 +12,7 @@
       "FLAC Format Specification",
       "Free Lossless Audio Codec Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://xiph.org/flac/format.html",
       "https://xiph.org/flac/documentation.html",
       "https://en.wikipedia.org/wiki/FLAC"

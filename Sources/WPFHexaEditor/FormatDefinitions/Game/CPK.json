@@ -13,7 +13,7 @@
       "CRI Middleware Resource Package",
       "CPK File Structure Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.vg-resource.com/CPK",
       "https://amicitia.miraheze.org/wiki/CPK",
       "https://github.com/esperknight/CriPakTools",

@@ -13,7 +13,7 @@
       "Oracle VM VirtualBox Storage Documentation",
       "VDI Dynamic and Fixed Allocation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.oracle.com/en/virtualization/virtualbox/6.0/user/vdidetails.html",
       "https://www.virtualbox.org/manual/ch05.html",
       "https://docs.fileformat.com/disc-and-media/vdi/",

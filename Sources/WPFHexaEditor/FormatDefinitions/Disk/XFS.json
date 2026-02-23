@@ -13,7 +13,7 @@
       "The SGI XFS Filesystem - Linux Kernel",
       "XFS Journaling and Metadata"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/XFS",
       "https://docs.kernel.org/admin-guide/xfs.html",
       "https://wiki.osdev.org/XFS",

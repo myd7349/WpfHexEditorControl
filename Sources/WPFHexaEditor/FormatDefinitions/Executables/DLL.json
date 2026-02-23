@@ -12,7 +12,7 @@
       "Microsoft PE Format Specification",
       "Windows DLL Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
       "https://en.wikipedia.org/wiki/Dynamic-link_library"
     ]

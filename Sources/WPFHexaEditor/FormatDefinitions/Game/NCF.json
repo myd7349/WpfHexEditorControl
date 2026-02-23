@@ -13,7 +13,7 @@
       "Steam NCF Archive Specification",
       "Legacy Steam Content Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://developer.valvesoftware.com/wiki/NCF",
       "https://fileinfo.com/extension/ncf",
       "https://developer.valvesoftware.com/wiki/VPK_(file_format)",

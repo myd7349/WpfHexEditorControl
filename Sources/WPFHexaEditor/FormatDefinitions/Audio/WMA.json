@@ -13,7 +13,7 @@
       "Windows Media Audio Codec Specification",
       "Microsoft WMA Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://learn.microsoft.com/en-us/windows/win32/wmformat/overview-of-the-asf-format",
       "https://en.wikipedia.org/wiki/Windows_Media_Audio",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000027.shtml",

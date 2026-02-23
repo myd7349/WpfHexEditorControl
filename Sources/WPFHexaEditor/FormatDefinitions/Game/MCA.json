@@ -13,7 +13,7 @@
       "Anvil Chunk Storage Format",
       "Region File Format (32×32 chunks)"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://minecraft.fandom.com/wiki/Anvil_file_format",
       "https://minecraft.fandom.com/wiki/Region_file_format",
       "https://wiki.vg/Map_Format",

@@ -12,7 +12,7 @@
       "iNES ROM Format Specification",
       "NES 2.0 Format Specification"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.nesdev.com/w/index.php/INES",
       "https://wiki.nesdev.com/w/index.php/NES_2.0",
       "https://en.wikipedia.org/wiki/INES"

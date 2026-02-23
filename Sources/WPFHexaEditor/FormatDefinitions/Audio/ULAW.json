@@ -15,7 +15,7 @@
       "μ-law (mu-law) Logarithmic Companding Algorithm",
       "G.711 Telephony Codec Standard"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.itu.int/rec/T-REC-G.711/",
       "https://en.wikipedia.org/wiki/G.711",
       "https://en.wikipedia.org/wiki/%CE%9C-law_algorithm",

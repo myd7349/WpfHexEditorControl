@@ -13,7 +13,7 @@
       "Khronos Texture Format for OpenGL/Vulkan",
       "KTX GPU Texture Container Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.khronos.org/ktx/",
       "https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html",
       "https://github.com/KhronosGroup/KTX-Specification",

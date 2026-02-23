@@ -15,7 +15,7 @@
       "Musepack Audio Codec Standard",
       "MPC Format Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "http://trac.musepack.net/musepack/wiki/SV8Specification",
       "https://mutagen-specs.readthedocs.io/en/latest/mpc/sv8.html",
       "https://en.wikipedia.org/wiki/Musepack",

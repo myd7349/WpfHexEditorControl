@@ -13,7 +13,7 @@
       "TAK Lossless Audio Codec Specification",
       "TAK Audio Format Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://wiki.hydrogenaudio.org/index.php?title=TAK",
       "https://wiki.multimedia.cx/index.php/TAK",
       "http://www.audiodope.org/en/help/musepackFormat.html"

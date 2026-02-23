@@ -14,7 +14,7 @@
       "Microsoft AVI RIFF File Format",
       "Audio Video Interleave Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/directshow/avi-riff-file-reference",
       "https://en.wikipedia.org/wiki/Audio_Video_Interleave"
     ]

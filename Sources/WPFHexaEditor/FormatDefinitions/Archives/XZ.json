@@ -13,7 +13,7 @@
       "LZMA2 Compression Algorithm",
       "XZ Utils Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://xz.tukaani.org/format/",
       "https://en.wikipedia.org/wiki/XZ_Utils",
       "https://www.kernel.org/doc/html/latest/staging/xz.html",

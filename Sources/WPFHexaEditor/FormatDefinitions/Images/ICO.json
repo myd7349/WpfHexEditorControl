@@ -13,7 +13,7 @@
       "Microsoft Icon Format",
       "ICO/CUR File Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/ICO_(file_format)",
       "https://formats.kaitai.io/ico/",
       "https://docs.fileformat.com/image/ico/",

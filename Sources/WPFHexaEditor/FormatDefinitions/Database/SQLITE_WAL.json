@@ -12,7 +12,7 @@
     "specifications": [
       "SQLite Write-Ahead Log Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/WAL"
     ]
   },

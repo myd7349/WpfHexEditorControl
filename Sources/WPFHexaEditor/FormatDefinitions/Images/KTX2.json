@@ -13,7 +13,7 @@
       "Khronos Texture 2.0 with Basis Universal",
       "KTX2 Supercompression and GPU Texture Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://registry.khronos.org/KTX/specs/2.0/ktxspec.v2.html",
       "https://www.khronos.org/ktx/",
       "https://github.com/KhronosGroup/KTX-Specification",

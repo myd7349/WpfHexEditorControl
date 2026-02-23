@@ -14,7 +14,7 @@
       "CSO/CISO Compressed ISO Format",
       "UMDGen PSP Backup Tool Documentation"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://www.ppsspp.org/docs/getting-started/dumping-games/",
       "https://www.iso2cso.com/",
       "https://github.com/meoow/cisoplus",

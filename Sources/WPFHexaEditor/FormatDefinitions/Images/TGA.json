@@ -14,7 +14,7 @@
       "TARGA Raster Graphics Format",
       "TGA Image Format"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/Truevision_TGA",
       "https://www.loc.gov/preservation/digital/formats/fdd/fdd000180.shtml",
       "https://formats.kaitai.io/tga/",

@@ -13,7 +13,7 @@
       "UDIF (Universal Disk Image Format)",
       "HFS+ and APFS Disk Image Structure"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://en.wikipedia.org/wiki/Apple_Disk_Image",
       "https://github.com/planetbeing/xpwn/wiki/UDIF",
       "https://developer.apple.com/documentation/diskarbitration",

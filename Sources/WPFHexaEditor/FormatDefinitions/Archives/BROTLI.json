@@ -13,7 +13,7 @@
       "RFC 9841 - Shared Brotli Format",
       "Brotli Compression Algorithm by Google"
     ],
-    "web_links": [
+    "WebLinks": [
       "https://datatracker.ietf.org/doc/html/rfc7932",
       "https://github.com/google/brotli",
       "https://en.wikipedia.org/wiki/Brotli",
