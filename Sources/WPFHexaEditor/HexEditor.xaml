@@ -286,7 +286,7 @@
         <Border x:Name="HeaderBorder" Grid.Row="0" Background="{StaticResource HeaderBrush}" BorderBrush="#D0D0D0" BorderThickness="0,0,0,1" Padding="0,5,0,5">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="110"/> <!-- Offset: matches OffsetWidth -->
+                    <ColumnDefinition Width="{Binding ActualOffsetWidth, RelativeSource={RelativeSource AncestorType=local:HexEditor}}"/> <!-- Offset: dynamic width based on format -->
                     <ColumnDefinition Width="Auto"/>   <!-- Hex: auto-size for all columns with spacers -->
                     <ColumnDefinition Width="20"/> <!-- Separator: matches SeparatorWidth -->
                     <ColumnDefinition Width="Auto"/> <!-- ASCII: auto-size -->

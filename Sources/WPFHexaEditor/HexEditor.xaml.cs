@@ -148,6 +148,9 @@ namespace WpfHexaEditor
                 HexViewport.DataStringVisual = DataStringVisual;
                 HexViewport.OffSetStringVisual = OffSetStringVisual;
 
+                // Initialize ActualOffsetWidth based on current format
+                ActualOffsetWidth = HexViewport.ActualOffsetWidth;
+
                 // Bug 4: Subscribe to FontSize/FontFamily changes to update dynamic CellWidth cache
                 var fontSizeDescriptor = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(
                     Control.FontSizeProperty, typeof(HexEditor));
@@ -191,6 +194,9 @@ namespace WpfHexaEditor
 
             // Update HexViewport font and invalidate CellWidth cache
             HexViewport.UpdateFont(fontFamily, fontSize);
+
+            // Update ActualOffsetWidth since it depends on font settings
+            ActualOffsetWidth = HexViewport.ActualOffsetWidth;
 
             // Refresh column headers with new widths
             RefreshColumnHeader();
@@ -791,6 +797,16 @@ namespace WpfHexaEditor
         {
             get => (DataVisualType)GetValue(OffSetStringVisualProperty);
             set => SetValue(OffSetStringVisualProperty, value);
+        }
+
+        /// <summary>
+        /// Actual offset column width (dynamically calculated based on OffSetStringVisual format)
+        /// </summary>
+        [Category("Display")]
+        public double ActualOffsetWidth
+        {
+            get => (double)GetValue(ActualOffsetWidthProperty);
+            set => SetValue(ActualOffsetWidthProperty, value);
         }
 
         /// <summary>
@@ -2713,9 +2729,19 @@ namespace WpfHexaEditor
                 {
                     editor.HexViewport.OffSetStringVisual = visualType;
                     editor.HexViewport.InvalidateVisual();
+
+                    // Update ActualOffsetWidth to reflect the new format
+                    editor.ActualOffsetWidth = editor.HexViewport.ActualOffsetWidth;
                 }
             }
         }
+
+        /// <summary>
+        /// ActualOffsetWidth DependencyProperty for XAML binding
+        /// </summary>
+        public static readonly DependencyProperty ActualOffsetWidthProperty =
+            DependencyProperty.Register(nameof(ActualOffsetWidth), typeof(double), typeof(HexEditor),
+                new PropertyMetadata(110.0)); // Default value matches hexadecimal format
 
         /// <summary>
         /// ByteOrder DependencyProperty for XAML binding

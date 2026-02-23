@@ -179,7 +179,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
                 new FrameworkPropertyMetadata(new FontFamily("Consolas"), FrameworkPropertyMetadataOptions.AffectsRender,
                     OnFontChanged));
 
-        [Category("Appearance - Fonts")]
+        [Category("Appearance.Fonts")]
         [DisplayName("Editor Font Family")]
         [Description("Font family for editor text (monospace recommended)")]
         public FontFamily EditorFontFamily
@@ -193,7 +193,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
                 new FrameworkPropertyMetadata(12.0, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnFontChanged));
 
-        [Category("Appearance - Fonts")]
+        [Category("Appearance.Fonts")]
         [DisplayName("Editor Font Size")]
         [Description("Font size for editor text (points)")]
         public double EditorFontSize
@@ -206,7 +206,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
             DependencyProperty.Register(nameof(LineNumberFontSize), typeof(double), typeof(JsonEditor),
                 new FrameworkPropertyMetadata(10.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
-        [Category("Appearance - Fonts")]
+        [Category("Appearance.Fonts")]
         [DisplayName("Line Number Font Size")]
         [Description("Font size for line numbers (points)")]
         public double LineNumberFontSize
@@ -215,13 +215,80 @@ namespace WpfHexaEditor.Controls.JsonEditor
             set => SetValue(LineNumberFontSizeProperty, value);
         }
 
+        public static readonly DependencyProperty EditorFontWeightProperty =
+            DependencyProperty.Register(nameof(EditorFontWeight), typeof(FontWeight), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(FontWeights.Normal, FrameworkPropertyMetadataOptions.AffectsRender,
+                    OnFontChanged));
+
+        [Category("Appearance.Fonts")]
+        [DisplayName("Editor Font Weight")]
+        [Description("Font weight for editor text (Normal, Bold, etc.)")]
+        public FontWeight EditorFontWeight
+        {
+            get => (FontWeight)GetValue(EditorFontWeightProperty);
+            set => SetValue(EditorFontWeightProperty, value);
+        }
+
+        public static readonly DependencyProperty LineNumberFontFamilyProperty =
+            DependencyProperty.Register(nameof(LineNumberFontFamily), typeof(FontFamily), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(new FontFamily("Consolas"), FrameworkPropertyMetadataOptions.AffectsRender));
+
+        [Category("Appearance.Fonts")]
+        [DisplayName("Line Number Font Family")]
+        [Description("Font family for line numbers")]
+        public FontFamily LineNumberFontFamily
+        {
+            get => (FontFamily)GetValue(LineNumberFontFamilyProperty);
+            set => SetValue(LineNumberFontFamilyProperty, value);
+        }
+
+        public static readonly DependencyProperty LineHeightMultiplierProperty =
+            DependencyProperty.Register(nameof(LineHeightMultiplier), typeof(double), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(1.3, FrameworkPropertyMetadataOptions.AffectsRender,
+                    OnFontChanged));
+
+        [Category("Appearance.Fonts")]
+        [DisplayName("Line Height Multiplier")]
+        [Description("Line height as a multiple of font size (1.0-3.0)")]
+        public double LineHeightMultiplier
+        {
+            get => (double)GetValue(LineHeightMultiplierProperty);
+            set => SetValue(LineHeightMultiplierProperty, Math.Max(1.0, Math.Min(3.0, value)));
+        }
+
+        public static readonly DependencyProperty BoldKeywordsProperty =
+            DependencyProperty.Register(nameof(BoldKeywords), typeof(bool), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        [Category("Appearance.Fonts")]
+        [DisplayName("Bold Keywords")]
+        [Description("Render keywords (signature, field, etc.) in bold font")]
+        public bool BoldKeywords
+        {
+            get => (bool)GetValue(BoldKeywordsProperty);
+            set => SetValue(BoldKeywordsProperty, value);
+        }
+
+        public static readonly DependencyProperty ItalicCommentsProperty =
+            DependencyProperty.Register(nameof(ItalicComments), typeof(bool), typeof(JsonEditor),
+                new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        [Category("Appearance.Fonts")]
+        [DisplayName("Italic Comments")]
+        [Description("Render comments in italic font")]
+        public bool ItalicComments
+        {
+            get => (bool)GetValue(ItalicCommentsProperty);
+            set => SetValue(ItalicCommentsProperty, value);
+        }
+
         // ===== APPEARANCE - COLORS =====
 
         public static readonly DependencyProperty EditorBackgroundProperty =
             DependencyProperty.Register(nameof(EditorBackground), typeof(Brush), typeof(JsonEditor),
                 new FrameworkPropertyMetadata(Brushes.White, FrameworkPropertyMetadataOptions.AffectsRender));
 
-        [Category("Appearance - Colors")]
+        [Category("Appearance.Colors")]
         [DisplayName("Editor Background")]
         [Description("Background color of the editor")]
         public Brush EditorBackground
@@ -234,7 +301,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
             DependencyProperty.Register(nameof(EditorForeground), typeof(Brush), typeof(JsonEditor),
                 new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender));
 
-        [Category("Appearance - Colors")]
+        [Category("Appearance.Colors")]
         [DisplayName("Editor Foreground")]
         [Description("Default text color")]
         public Brush EditorForeground
@@ -248,7 +315,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(245, 245, 245)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
-        [Category("Appearance - Colors")]
+        [Category("Appearance.Colors")]
         [DisplayName("Line Number Background")]
         [Description("Background color of line number gutter")]
         public Brush LineNumberBackground
@@ -262,7 +329,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(128, 128, 128)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
-        [Category("Appearance - Colors")]
+        [Category("Appearance.Colors")]
         [DisplayName("Line Number Foreground")]
         [Description("Text color of line numbers")]
         public Brush LineNumberForeground
@@ -276,7 +343,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromArgb(30, 0, 120, 215)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
-        [Category("Appearance - Colors")]
+        [Category("Appearance.Colors")]
         [DisplayName("Current Line Background")]
         [Description("Highlight color for current line")]
         public Brush CurrentLineBackground
@@ -290,7 +357,7 @@ namespace WpfHexaEditor.Controls.JsonEditor
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(173, 214, 255)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
-        [Category("Appearance - Colors")]
+        [Category("Appearance.Colors")]
         [DisplayName("Selection Background")]
         [Description("Background color for selected text")]
         public Brush SelectionBackground
@@ -717,6 +784,43 @@ namespace WpfHexaEditor.Controls.JsonEditor
 
             // 9. Draw cursor (blinking will be added later)
             RenderCursor(dc);
+        }
+
+        /// <summary>
+        /// Measure desired size based on content (all lines)
+        /// Required for proper ScrollViewer support
+        /// </summary>
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            if (_document == null || _document.Lines.Count == 0)
+                return new Size(400, 300); // Default size
+
+            // Calculate total height needed for all lines
+            double totalHeight = TopMargin + (_document.Lines.Count * _lineHeight) + 10; // +10 bottom padding
+
+            // Calculate width based on longest line (with a reasonable max)
+            double maxLineWidth = 0;
+            foreach (var line in _document.Lines)
+            {
+                double lineWidth = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) +
+                                  (line.Text.Length * _charWidth) + 20; // +20 right padding
+                maxLineWidth = Math.Max(maxLineWidth, lineWidth);
+            }
+
+            // Use available width if it's larger, otherwise use calculated width
+            double desiredWidth = double.IsInfinity(availableSize.Width) ?
+                Math.Max(800, maxLineWidth) : availableSize.Width;
+
+            return new Size(desiredWidth, totalHeight);
+        }
+
+        /// <summary>
+        /// Arrange the element at the desired size
+        /// Required for proper ScrollViewer support
+        /// </summary>
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            return finalSize;
         }
 
         /// <summary>

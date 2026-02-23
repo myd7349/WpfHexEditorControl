@@ -22,10 +22,13 @@
         <Border Grid.Column="0" BorderBrush="#CCCCCC" BorderThickness="0,0,1,0" Padding="10">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="JSON Editor" FontWeight="Bold" FontSize="16" Margin="0,0,0,10"/>
-                <jsonEditor:JsonEditor x:Name="JsonEditorControl"
-                                      ShowLineNumbers="True"
-                                      EnableIntelliSense="True"
-                                      EnableValidation="True"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto">
+                    <jsonEditor:JsonEditor x:Name="JsonEditorControl"
+                                          ShowLineNumbers="True"
+                                          EnableIntelliSense="True"
+                                          EnableValidation="True"/>
+                </ScrollViewer>
             </DockPanel>
         </Border>
 
