@@ -889,10 +889,15 @@ namespace WpfHexaEditor
 
                 // Clear detected format
                 _detectedFormat = null;
+                _detectionVariables = null; // Clear function execution results
 
-                // Clear variable context
-                _variableContext = null;
-                _expressionEvaluator = null;
+                // Clear variable context (don't set to null - just clear contents to preserve object)
+                _variableContext?.Clear();
+                // Recreate expression evaluator for clean state
+                if (_variableContext != null)
+                {
+                    _expressionEvaluator = new ExpressionEvaluator(_variableContext);
+                }
 
                 // Clear formatted value cache
                 _formattedValueCache?.Clear();
