@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Access 2007+ Database",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".accdb"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "pageSize": 0,
+    "pageCount": 0,
+    "tableCount": 0,
+    "version": 0
   },
   "blocks": [
     {
@@ -36,6 +40,30 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "Standard ACE Databas"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Size",
+      "variable": "pageSize",
+      "description": "Page Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Count",
+      "variable": "pageCount",
+      "description": "Page Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Table Count",
+      "variable": "tableCount",
+      "description": "Table Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -96,5 +124,9 @@
     "commit_count": 9,
     "change_percentage": 262.11,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read DB header",
+    "extractASCIIString": "Read schema"
   }
 }

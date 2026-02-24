@@ -1,6 +1,6 @@
 {
   "formatName": "Free Lossless Image Format",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".flif"
   ],
@@ -29,7 +29,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "dimensions": 0,
+    "dataType": "",
+    "arrayCount": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -48,6 +52,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Format flags"
+    },
+    {
+      "type": "metadata",
+      "name": "Dimensions",
+      "variable": "dimensions",
+      "description": "Dimensions"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Type",
+      "variable": "dataType",
+      "description": "Data Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Array Count",
+      "variable": "arrayCount",
+      "description": "Array Count"
     }
   ],
   "mime_types": [
@@ -113,5 +135,9 @@
     "commit_count": 9,
     "change_percentage": 283.93,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read scientific header",
+    "multiply": "Calculate dimensions"
   }
 }

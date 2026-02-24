@@ -1,6 +1,6 @@
 {
   "formatName": "SQLite Write-Ahead Log",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".wal",
     "-wal"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "pageSize": 0,
+    "pageCount": 0,
+    "tableCount": 0,
+    "version": 0
   },
   "blocks": [
     {
@@ -37,6 +41,30 @@
       "color": "#4ECDC4",
       "opacity": 0.4,
       "description": "WAL file magic number"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Size",
+      "variable": "pageSize",
+      "description": "Page Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Count",
+      "variable": "pageCount",
+      "description": "Page Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Table Count",
+      "variable": "tableCount",
+      "description": "Table Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -96,5 +124,9 @@
     "commit_count": 8,
     "change_percentage": 238.95,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read DB header",
+    "extractASCIIString": "Read schema"
   }
 }

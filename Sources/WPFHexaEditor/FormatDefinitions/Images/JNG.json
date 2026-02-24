@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG Network Graphics",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".jng"
   ],
@@ -28,7 +28,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "packetCount": 0,
+    "snaplen": 0,
+    "linkType": 0,
+    "version": ""
+  },
   "blocks": [
     {
       "type": "signature",
@@ -47,6 +52,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "JHDR chunk size"
+    },
+    {
+      "type": "metadata",
+      "name": "Packet Count",
+      "variable": "packetCount",
+      "description": "Packet Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Snapshot Length",
+      "variable": "snaplen",
+      "description": "Snapshot Length"
+    },
+    {
+      "type": "metadata",
+      "name": "Link Type",
+      "variable": "linkType",
+      "description": "Link Type"
     }
   ],
   "mime_types": [
@@ -112,5 +135,9 @@
     "commit_count": 9,
     "change_percentage": 341.44,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read PCAP header",
+    "divide": "Calculate duration"
   }
 }

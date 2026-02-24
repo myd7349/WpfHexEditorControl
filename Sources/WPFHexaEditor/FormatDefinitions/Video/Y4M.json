@@ -1,6 +1,6 @@
 {
   "formatName": "YUV4MPEG2",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".y4m"
   ],
@@ -28,7 +28,13 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "videoWidth": 0,
+    "videoHeight": 0,
+    "frameRate": 0,
+    "durationSeconds": 0,
+    "codec": ""
+  },
   "blocks": [
     {
       "type": "signature",
@@ -38,6 +44,30 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "YUV4MPEG2 file signature"
+    },
+    {
+      "type": "metadata",
+      "name": "Video Width",
+      "variable": "videoWidth",
+      "description": "Video width in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Video Height",
+      "variable": "videoHeight",
+      "description": "Video height in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Frame Rate",
+      "variable": "frameRate",
+      "description": "Frames per second"
+    },
+    {
+      "type": "metadata",
+      "name": "Duration",
+      "variable": "durationSeconds",
+      "description": "Total duration in seconds"
     }
   ],
   "mime_types": [
@@ -104,5 +134,8 @@
     "commit_count": 10,
     "change_percentage": 268.93,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read video metadata"
   }
 }

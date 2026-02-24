@@ -1,6 +1,6 @@
 {
   "formatName": "Game Boy Advance ROM",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".gba"
   ],
@@ -33,7 +33,10 @@
     "currentOffset": 0,
     "gameTitle": "",
     "gameCode": "",
-    "complement": 0
+    "complement": 0,
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -163,6 +166,24 @@
       "valueType": "bytes",
       "hidden": true,
       "description": "Reserved, must be zero"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Index Offset",
+      "variable": "indexOffset",
+      "description": "Index Offset"
     }
   ],
   "quality_metrics": {
@@ -226,5 +247,9 @@
     "commit_count": 11,
     "change_percentage": 425.33,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header",
+    "extractASCIIString": "Read file list"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Encapsulated Packet",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".encap"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "packetCount": 0,
+    "snaplen": 0,
+    "linkType": 0,
+    "version": ""
   },
   "blocks": [
     {
@@ -99,6 +103,24 @@
       "color": "#98D8C8",
       "opacity": 0.3,
       "description": "Tunnel identifier"
+    },
+    {
+      "type": "metadata",
+      "name": "Packet Count",
+      "variable": "packetCount",
+      "description": "Packet Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Snapshot Length",
+      "variable": "snaplen",
+      "description": "Snapshot Length"
+    },
+    {
+      "type": "metadata",
+      "name": "Link Type",
+      "variable": "linkType",
+      "description": "Link Type"
     }
   ],
   "quality_metrics": {
@@ -157,5 +179,9 @@
     "commit_count": 9,
     "change_percentage": 355.13,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read PCAP header",
+    "divide": "Calculate duration"
   }
 }

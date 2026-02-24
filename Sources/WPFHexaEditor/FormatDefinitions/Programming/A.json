@@ -1,6 +1,6 @@
 {
   "formatName": "Static Library Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".a"
   ],
@@ -26,7 +26,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "fileCount": 0,
+    "totalSize": 0,
+    "compressionMethod": "",
+    "headerCRC": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -90,6 +95,24 @@
       "color": "#74B9FF",
       "opacity": 0.4,
       "description": "File size in bytes (decimal ASCII)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Size",
+      "variable": "totalSize",
+      "description": "Total Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "compressionMethod",
+      "description": "Compression Method"
     }
   ],
   "quality_metrics": {
@@ -148,5 +171,9 @@
     "commit_count": 8,
     "change_percentage": 449.66,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read header",
+    "calculateCRC32": "Validate"
   }
 }

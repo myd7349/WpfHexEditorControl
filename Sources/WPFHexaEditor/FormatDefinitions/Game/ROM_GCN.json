@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo GameCube Disc",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".gcm",
     ".iso"
@@ -34,7 +34,10 @@
     "currentOffset": 0,
     "gameCode": "",
     "makerCode": "",
-    "gameName": ""
+    "gameName": "",
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -149,6 +152,24 @@
       "valueType": "ascii",
       "storeAs": "gameName",
       "description": "Game title (ASCII, null-terminated, max 992 bytes)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Index Offset",
+      "variable": "indexOffset",
+      "description": "Index Offset"
     }
   ],
   "quality_metrics": {
@@ -210,5 +231,9 @@
     "commit_count": 11,
     "change_percentage": 364.11,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header",
+    "extractASCIIString": "Read file list"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Portable Arbitrary Map",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pam"
   ],
@@ -26,7 +26,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "fileCount": 0,
+    "totalSize": 0,
+    "compressionMethod": "",
+    "headerCRC": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -45,6 +50,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "PAM header fields"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Size",
+      "variable": "totalSize",
+      "description": "Total Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "compressionMethod",
+      "description": "Compression Method"
     }
   ],
   "mime_types": [
@@ -110,5 +133,9 @@
     "commit_count": 9,
     "change_percentage": 342.2,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read header",
+    "calculateCRC32": "Validate"
   }
 }

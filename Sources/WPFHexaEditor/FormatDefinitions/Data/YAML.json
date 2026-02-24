@@ -1,6 +1,6 @@
 {
   "formatName": "YAML (Binary)",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".yaml",
     ".yml"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "timestamp": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -37,6 +41,24 @@
       "color": "#CB4B16",
       "opacity": 0.4,
       "description": "YAML serialized data"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine Type",
+      "variable": "machineType",
+      "description": "Machine Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Section Count",
+      "variable": "sectionCount",
+      "description": "Section Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Point",
+      "variable": "entryPoint",
+      "description": "Entry Point"
     }
   ],
   "quality_metrics": {
@@ -96,5 +118,9 @@
     "commit_count": 9,
     "change_percentage": 249.47,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header",
+    "calculateCRC32": "Validate"
   }
 }

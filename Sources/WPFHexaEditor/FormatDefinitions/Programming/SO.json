@@ -1,6 +1,6 @@
 {
   "formatName": "Linux Shared Object",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".so"
   ],
@@ -24,7 +24,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "vertexCount": 0,
+    "faceCount": 0,
+    "materialCount": 0,
+    "fileSize": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -70,6 +75,24 @@
       "color": "#FFEAA7",
       "opacity": 0.4,
       "description": "Target OS/ABI (0=System V, 3=Linux, etc.)"
+    },
+    {
+      "type": "metadata",
+      "name": "Vertex Count",
+      "variable": "vertexCount",
+      "description": "Vertex Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Face Count",
+      "variable": "faceCount",
+      "description": "Face Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Material Count",
+      "variable": "materialCount",
+      "description": "Material Count"
     }
   ],
   "quality_metrics": {
@@ -134,5 +157,9 @@
     "commit_count": 9,
     "change_percentage": 318.05,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read mesh data",
+    "multiply": "Calculate vertices"
   }
 }

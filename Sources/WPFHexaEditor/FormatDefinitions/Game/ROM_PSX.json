@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation EXE",
-  "version": "1.7",
+  "version": "1.8",
   "extensions": [
     ".exe",
     ".psx"
@@ -33,7 +33,11 @@
   "variables": {
     "currentOffset": 0,
     "loadAddress": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "timestamp": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -160,6 +164,24 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "ASCII marker/license text and padding"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine Type",
+      "variable": "machineType",
+      "description": "Machine Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Section Count",
+      "variable": "sectionCount",
+      "description": "Section Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Point",
+      "variable": "entryPoint",
+      "description": "Entry Point"
     }
   ],
   "quality_metrics": {
@@ -221,5 +243,9 @@
     "commit_count": 7,
     "change_percentage": 254.55,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header",
+    "calculateCRC32": "Validate"
   }
 }

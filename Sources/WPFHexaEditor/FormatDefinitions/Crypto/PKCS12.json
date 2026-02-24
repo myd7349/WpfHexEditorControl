@@ -1,6 +1,6 @@
 {
   "formatName": "PKCS#12 (PFX)",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".p12",
     ".pfx"
@@ -31,7 +31,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 0,
+    "serialNumber": "",
+    "issuer": "",
+    "subject": ""
   },
   "blocks": [
     {
@@ -114,6 +118,24 @@
       "color": "#A8E6CF",
       "opacity": 0.3,
       "description": "PKCS#7 content type OID"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Serial Number",
+      "variable": "serialNumber",
+      "description": "Serial Number"
+    },
+    {
+      "type": "metadata",
+      "name": "Subject",
+      "variable": "subject",
+      "description": "Subject"
     }
   ],
   "quality_metrics": {
@@ -170,5 +192,9 @@
     "commit_count": 8,
     "change_percentage": 361.54,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read certificate",
+    "extractASCIIString": "Read subject"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "NumPy Compressed Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".npz"
   ],
@@ -25,7 +25,12 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "calculatedCRC32": 0,
+    "crc32Valid": false,
+    "originalSize": 0,
+    "compressedSize": 0,
+    "compressionRatio": 0
   },
   "blocks": [
     {
@@ -36,6 +41,24 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "NPZ is ZIP archive"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crc32Valid",
+      "description": "CRC Valid"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Original Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Ratio",
+      "variable": "compressionRatio",
+      "description": "Compression Ratio"
     }
   ],
   "quality_metrics": {
@@ -91,5 +114,9 @@
     "commit_count": 8,
     "change_percentage": 206.67,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "calculateCRC32": "Validate CRC",
+    "readUInt32LE": "Read size"
   }
 }

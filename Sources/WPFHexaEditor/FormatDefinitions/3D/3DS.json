@@ -1,6 +1,6 @@
 {
   "formatName": "3D Studio Model",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".3ds"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "vertexCount": 0,
+    "faceCount": 0,
+    "materialCount": 0,
+    "fileSize": 0
   },
   "blocks": [
     {
@@ -45,6 +49,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Length of main chunk"
+    },
+    {
+      "type": "metadata",
+      "name": "Vertex Count",
+      "variable": "vertexCount",
+      "description": "Vertex Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Face Count",
+      "variable": "faceCount",
+      "description": "Face Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Material Count",
+      "variable": "materialCount",
+      "description": "Material Count"
     }
   ],
   "quality_metrics": {
@@ -106,5 +128,9 @@
     "commit_count": 8,
     "change_percentage": 253.64,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read mesh data",
+    "multiply": "Calculate vertices"
   }
 }

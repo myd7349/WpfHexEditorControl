@@ -1,6 +1,6 @@
 {
   "formatName": "Java Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".jar"
   ],
@@ -25,7 +25,13 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "zipFileCount": 0,
+    "zipCentralDirSize": 0,
+    "zipCommentLength": 0,
+    "zipComment": "",
+    "eocdOffset": -1,
+    "isZip64": false
   },
   "blocks": [
     {
@@ -36,6 +42,30 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "PK ZIP header"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Files",
+      "variable": "zipFileCount",
+      "description": "Total Files"
+    },
+    {
+      "type": "metadata",
+      "name": "Central Directory Size",
+      "variable": "zipCentralDirSize",
+      "description": "Central Directory Size"
+    },
+    {
+      "type": "metadata",
+      "name": "EOCD Offset",
+      "variable": "eocdOffset",
+      "description": "EOCD Offset"
+    },
+    {
+      "type": "metadata",
+      "name": "ZIP64 Format",
+      "variable": "isZip64",
+      "description": "ZIP64 Format"
     }
   ],
   "quality_metrics": {
@@ -99,5 +129,8 @@
     "commit_count": 9,
     "change_percentage": 224.49,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "parseZIPArchive": "Parse ZIP archive metadata"
   }
 }

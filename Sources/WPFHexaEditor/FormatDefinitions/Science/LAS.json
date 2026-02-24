@@ -1,6 +1,6 @@
 {
   "formatName": "LAS Well Log",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".las"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "timestamp": 0,
+    "size": 0,
+    "version": "",
+    "type": ""
   },
   "blocks": [
     {
@@ -36,6 +40,24 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "LAS signature (~Version)"
+    },
+    {
+      "type": "metadata",
+      "name": "Timestamp",
+      "variable": "timestamp",
+      "description": "Timestamp"
+    },
+    {
+      "type": "metadata",
+      "name": "Size",
+      "variable": "size",
+      "description": "Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Type",
+      "variable": "type",
+      "description": "Type"
     }
   ],
   "quality_metrics": {
@@ -91,5 +113,9 @@
     "commit_count": 8,
     "change_percentage": 206.67,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read system header",
+    "extractASCIIString": "Read info"
   }
 }

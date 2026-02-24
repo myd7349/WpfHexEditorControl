@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Event Log XML",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".evtx"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "timestamp": 0,
+    "size": 0,
+    "version": "",
+    "type": ""
   },
   "blocks": [
     {
@@ -45,6 +49,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Oldest chunk number"
+    },
+    {
+      "type": "metadata",
+      "name": "Timestamp",
+      "variable": "timestamp",
+      "description": "Timestamp"
+    },
+    {
+      "type": "metadata",
+      "name": "Size",
+      "variable": "size",
+      "description": "Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Type",
+      "variable": "type",
+      "description": "Type"
     }
   ],
   "quality_metrics": {
@@ -104,5 +126,9 @@
     "commit_count": 9,
     "change_percentage": 284.47,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read system header",
+    "extractASCIIString": "Read info"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Syslog Binary Format",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".syslog",
     ".log"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "timestamp": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -100,6 +104,24 @@
       "color": "#98D8C8",
       "opacity": 0.3,
       "description": "Length of log message"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine Type",
+      "variable": "machineType",
+      "description": "Machine Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Section Count",
+      "variable": "sectionCount",
+      "description": "Section Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Point",
+      "variable": "entryPoint",
+      "description": "Entry Point"
     }
   ],
   "quality_metrics": {
@@ -156,5 +178,9 @@
     "commit_count": 9,
     "change_percentage": 355.48,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header",
+    "calculateCRC32": "Validate"
   }
 }

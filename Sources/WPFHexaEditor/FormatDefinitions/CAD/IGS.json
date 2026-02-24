@@ -1,6 +1,6 @@
 {
   "formatName": "IGES",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".igs",
     ".iges"
@@ -26,7 +26,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": "",
+    "entityCount": 0,
+    "layerCount": 0
   },
   "blocks": [
     {
@@ -37,6 +40,24 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "IGES start section (80 chars per line)"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Entity Count",
+      "variable": "entityCount",
+      "description": "Entity Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Layer Count",
+      "variable": "layerCount",
+      "description": "Layer Count"
     }
   ],
   "quality_metrics": {
@@ -93,5 +114,9 @@
     "commit_count": 10,
     "change_percentage": 269.57,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read CAD header",
+    "extractASCIIString": "Read metadata"
   }
 }

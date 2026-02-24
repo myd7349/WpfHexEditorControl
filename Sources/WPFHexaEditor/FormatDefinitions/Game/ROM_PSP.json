@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation Portable ISO",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".iso",
     ".cso"
@@ -31,7 +31,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "sectorSize": 0,
+    "sectorCount": 0,
+    "capacity": 0,
+    "format": ""
   },
   "blocks": [
     {
@@ -83,6 +87,30 @@
       "opacity": 0.3,
       "valueType": "uint8",
       "description": "CSO format version"
+    },
+    {
+      "type": "metadata",
+      "name": "Sector Size",
+      "variable": "sectorSize",
+      "description": "Sector Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Sector Count",
+      "variable": "sectorCount",
+      "description": "Sector Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Capacity",
+      "variable": "capacity",
+      "description": "Capacity"
+    },
+    {
+      "type": "metadata",
+      "name": "Format",
+      "variable": "format",
+      "description": "Format"
     }
   ],
   "quality_metrics": {
@@ -144,5 +172,9 @@
     "commit_count": 10,
     "change_percentage": 395.1,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read disk header",
+    "multiply": "Calculate capacity"
   }
 }

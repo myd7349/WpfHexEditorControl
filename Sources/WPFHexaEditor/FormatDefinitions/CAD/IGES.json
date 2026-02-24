@@ -1,6 +1,6 @@
 {
   "formatName": "IGES 3D Model",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".iges",
     ".igs"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "vertexCount": 0,
+    "faceCount": 0,
+    "materialCount": 0,
+    "fileSize": 0
   },
   "blocks": [
     {
@@ -37,6 +41,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Text-based format starting with S"
+    },
+    {
+      "type": "metadata",
+      "name": "Vertex Count",
+      "variable": "vertexCount",
+      "description": "Vertex Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Face Count",
+      "variable": "faceCount",
+      "description": "Face Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Material Count",
+      "variable": "materialCount",
+      "description": "Material Count"
     }
   ],
   "quality_metrics": {
@@ -93,5 +115,9 @@
     "commit_count": 9,
     "change_percentage": 252.17,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read mesh data",
+    "multiply": "Calculate vertices"
   }
 }

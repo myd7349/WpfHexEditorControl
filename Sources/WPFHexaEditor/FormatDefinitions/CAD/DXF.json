@@ -1,6 +1,6 @@
 {
   "formatName": "AutoCAD DXF",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dxf"
   ],
@@ -25,7 +25,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": "",
+    "entityCount": 0,
+    "layerCount": 0
   },
   "blocks": [
     {
@@ -36,6 +39,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "DXF is text-based"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Entity Count",
+      "variable": "entityCount",
+      "description": "Entity Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Layer Count",
+      "variable": "layerCount",
+      "description": "Layer Count"
     }
   ],
   "quality_metrics": {
@@ -95,5 +116,9 @@
     "commit_count": 9,
     "change_percentage": 227.66,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read CAD header",
+    "extractASCIIString": "Read metadata"
   }
 }

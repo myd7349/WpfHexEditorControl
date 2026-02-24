@@ -1,6 +1,6 @@
 {
   "formatName": "ASN.1 DER Encoding",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".der",
     ".cer"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 0,
+    "serialNumber": "",
+    "issuer": "",
+    "subject": ""
   },
   "blocks": [
     {
@@ -37,6 +41,24 @@
       "color": "#6C757D",
       "opacity": 0.4,
       "description": "ASN.1 DER sequence tag"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Serial Number",
+      "variable": "serialNumber",
+      "description": "Serial Number"
+    },
+    {
+      "type": "metadata",
+      "name": "Subject",
+      "variable": "subject",
+      "description": "Subject"
     }
   ],
   "quality_metrics": {
@@ -93,5 +115,9 @@
     "commit_count": 8,
     "change_percentage": 243.48,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read certificate",
+    "extractASCIIString": "Read subject"
   }
 }

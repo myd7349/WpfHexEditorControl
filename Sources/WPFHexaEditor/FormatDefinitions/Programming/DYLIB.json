@@ -1,6 +1,6 @@
 {
   "formatName": "macOS Dynamic Library",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dylib"
   ],
@@ -26,7 +26,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "fileCount": 0,
+    "totalSize": 0,
+    "compressionMethod": "",
+    "headerCRC": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -63,6 +68,24 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "File type (0x06=dylib, 0x08=bundle)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Size",
+      "variable": "totalSize",
+      "description": "Total Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "compressionMethod",
+      "description": "Compression Method"
     }
   ],
   "quality_metrics": {
@@ -124,5 +147,9 @@
     "commit_count": 9,
     "change_percentage": 400.81,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read header",
+    "calculateCRC32": "Validate"
   }
 }

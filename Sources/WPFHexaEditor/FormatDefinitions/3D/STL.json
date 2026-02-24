@@ -1,6 +1,6 @@
 {
   "formatName": "STL 3D Model",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".stl"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "vertexCount": 0,
+    "faceCount": 0,
+    "materialCount": 0,
+    "fileSize": 0
   },
   "blocks": [
     {
@@ -36,6 +40,24 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "solid keyword (ASCII STL)"
+    },
+    {
+      "type": "metadata",
+      "name": "Vertex Count",
+      "variable": "vertexCount",
+      "description": "Vertex Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Face Count",
+      "variable": "faceCount",
+      "description": "Face Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Material Count",
+      "variable": "materialCount",
+      "description": "Material Count"
     }
   ],
   "quality_metrics": {
@@ -99,5 +121,9 @@
     "commit_count": 8,
     "change_percentage": 244.9,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read mesh data",
+    "multiply": "Calculate vertices"
   }
 }

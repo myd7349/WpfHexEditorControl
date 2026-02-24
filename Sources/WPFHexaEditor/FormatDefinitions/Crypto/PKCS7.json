@@ -1,6 +1,6 @@
 {
   "formatName": "PKCS#7 Certificate",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".p7b",
     ".p7c",
@@ -33,7 +33,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 0,
+    "serialNumber": "",
+    "issuer": "",
+    "subject": ""
   },
   "blocks": [
     {
@@ -125,6 +129,24 @@
       "color": "#FF6B9D",
       "opacity": 0.3,
       "description": "PKCS#7 version (1)"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Serial Number",
+      "variable": "serialNumber",
+      "description": "Serial Number"
+    },
+    {
+      "type": "metadata",
+      "name": "Subject",
+      "variable": "subject",
+      "description": "Subject"
     }
   ],
   "quality_metrics": {
@@ -182,5 +204,9 @@
     "commit_count": 8,
     "change_percentage": 366.3,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read certificate",
+    "extractASCIIString": "Read subject"
   }
 }

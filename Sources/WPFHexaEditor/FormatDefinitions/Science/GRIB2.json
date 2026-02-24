@@ -1,6 +1,6 @@
 {
   "formatName": "GRIB2 Weather Data",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".grib2",
     ".grb2"
@@ -26,7 +26,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "dimensions": 0,
+    "dataType": "",
+    "arrayCount": 0
   },
   "blocks": [
     {
@@ -64,6 +67,24 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "description": "GRIB edition number (2)"
+    },
+    {
+      "type": "metadata",
+      "name": "Dimensions",
+      "variable": "dimensions",
+      "description": "Dimensions"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Type",
+      "variable": "dataType",
+      "description": "Data Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Array Count",
+      "variable": "arrayCount",
+      "description": "Array Count"
     }
   ],
   "quality_metrics": {
@@ -120,5 +141,9 @@
     "commit_count": 8,
     "change_percentage": 232.77,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read scientific header",
+    "multiply": "Calculate dimensions"
   }
 }

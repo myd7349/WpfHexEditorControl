@@ -1,6 +1,6 @@
 {
   "formatName": "PCAPNG Network Capture",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pcapng"
   ],
@@ -29,7 +29,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "packetCount": 0,
+    "snaplen": 0,
+    "linkType": 0,
+    "version": ""
   },
   "blocks": [
     {
@@ -58,6 +62,24 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "0x1A2B3C4D for byte order detection"
+    },
+    {
+      "type": "metadata",
+      "name": "Packet Count",
+      "variable": "packetCount",
+      "description": "Packet Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Snapshot Length",
+      "variable": "snaplen",
+      "description": "Snapshot Length"
+    },
+    {
+      "type": "metadata",
+      "name": "Link Type",
+      "variable": "linkType",
+      "description": "Link Type"
     }
   ],
   "quality_metrics": {
@@ -120,5 +142,9 @@
     "commit_count": 9,
     "change_percentage": 377.31,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read PCAP header",
+    "divide": "Calculate duration"
   }
 }

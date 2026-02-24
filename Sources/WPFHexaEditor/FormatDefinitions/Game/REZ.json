@@ -1,6 +1,6 @@
 {
   "formatName": "Game Resource Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".rez"
   ],
@@ -30,7 +30,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileCount": 0,
+    "totalSize": 0,
+    "compressionMethod": "",
+    "headerCRC": 0
   },
   "blocks": [
     {
@@ -41,6 +45,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "REZ header"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Size",
+      "variable": "totalSize",
+      "description": "Total Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "compressionMethod",
+      "description": "Compression Method"
     }
   ],
   "quality_metrics": {
@@ -101,5 +123,9 @@
     "commit_count": 9,
     "change_percentage": 262.0,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read header",
+    "calculateCRC32": "Validate"
   }
 }

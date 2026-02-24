@@ -1,6 +1,6 @@
 {
   "formatName": "Game Boy ROM",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".gb",
     ".gbc"
@@ -33,7 +33,10 @@
     "cgbFlag": 0,
     "cartType": 0,
     "headerChecksum": 0,
-    "gameTitle": ""
+    "gameTitle": "",
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -191,6 +194,24 @@
       "opacity": 0.3,
       "valueType": "uint16",
       "description": "16-bit big-endian sum of all bytes in ROM (not verified by hardware)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Index Offset",
+      "variable": "indexOffset",
+      "description": "Index Offset"
     }
   ],
   "quality_metrics": {
@@ -255,5 +276,9 @@
     "commit_count": 9,
     "change_percentage": 411.02,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header",
+    "extractASCIIString": "Read file list"
   }
 }

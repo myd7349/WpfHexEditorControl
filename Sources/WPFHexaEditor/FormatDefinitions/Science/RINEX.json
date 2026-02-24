@@ -1,6 +1,6 @@
 {
   "formatName": "RINEX GNSS Data",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".rnx",
     ".obs",
@@ -27,7 +27,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "dimensions": 0,
+    "dataType": "",
+    "arrayCount": 0
   },
   "blocks": [
     {
@@ -47,6 +50,24 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "RINEX version number"
+    },
+    {
+      "type": "metadata",
+      "name": "Dimensions",
+      "variable": "dimensions",
+      "description": "Dimensions"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Type",
+      "variable": "dataType",
+      "description": "Data Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Array Count",
+      "variable": "arrayCount",
+      "description": "Array Count"
     }
   ],
   "quality_metrics": {
@@ -104,5 +125,9 @@
     "commit_count": 8,
     "change_percentage": 216.5,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read scientific header",
+    "multiply": "Calculate dimensions"
   }
 }

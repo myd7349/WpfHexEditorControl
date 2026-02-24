@@ -1,6 +1,6 @@
 {
   "formatName": "Ogg Video",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ogv",
     ".ogm"
@@ -28,7 +28,13 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "sampleRate": 0,
+    "channels": 0,
+    "bitDepth": 0,
+    "durationSeconds": 0,
+    "totalSamples": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -38,6 +44,30 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "OggS - Ogg bitstream format signature"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Rate",
+      "variable": "sampleRate",
+      "description": "Audio sample rate (Hz)"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channels",
+      "description": "Number of audio channels"
+    },
+    {
+      "type": "metadata",
+      "name": "Bit Depth",
+      "variable": "bitDepth",
+      "description": "Bits per sample"
+    },
+    {
+      "type": "metadata",
+      "name": "Duration",
+      "variable": "durationSeconds",
+      "description": "Total duration in seconds"
     }
   ],
   "mime_types": [
@@ -105,5 +135,9 @@
     "commit_count": 9,
     "change_percentage": 298.08,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read audio metadata",
+    "divide": "Calculate duration"
   }
 }

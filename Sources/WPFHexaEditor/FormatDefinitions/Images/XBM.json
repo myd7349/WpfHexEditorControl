@@ -1,6 +1,6 @@
 {
   "formatName": "X BitMap",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".xbm"
   ],
@@ -29,7 +29,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "imageWidth": 0,
+    "imageHeight": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -39,6 +44,30 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "#define keyword"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "imageWidth",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "imageHeight",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Bits Per Pixel",
+      "variable": "bitsPerPixel",
+      "description": "Bits Per Pixel"
     }
   ],
   "mime_types": [
@@ -104,5 +133,9 @@
     "commit_count": 9,
     "change_percentage": 247.57,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Atari 7800 ROM",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".a78"
   ],
@@ -32,7 +32,10 @@
   "variables": {
     "currentOffset": 0,
     "gameTitle": "",
-    "romLength": 0
+    "romLength": 0,
+    "fileCount": 0,
+    "totalSize": 0,
+    "format": ""
   },
   "blocks": [
     {
@@ -153,6 +156,24 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "Start of actual Atari 7800 ROM code (length from ROM Data Length field)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Size",
+      "variable": "totalSize",
+      "description": "Total Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Format",
+      "variable": "format",
+      "description": "Format"
     }
   ],
   "quality_metrics": {
@@ -213,5 +234,9 @@
     "commit_count": 8,
     "change_percentage": 383.96,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "extractASCIIString": "Read filenames",
+    "readUInt32LE": "Read sizes"
   }
 }

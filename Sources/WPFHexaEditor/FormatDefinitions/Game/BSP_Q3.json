@@ -1,6 +1,6 @@
 {
   "formatName": "Quake 3 BSP",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".bsp"
   ],
@@ -30,7 +30,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -59,6 +62,24 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Offset to entities directory entry"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Index Offset",
+      "variable": "indexOffset",
+      "description": "Index Offset"
     }
   ],
   "quality_metrics": {
@@ -119,5 +140,9 @@
     "commit_count": 9,
     "change_percentage": 308.47,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header",
+    "extractASCIIString": "Read file list"
   }
 }

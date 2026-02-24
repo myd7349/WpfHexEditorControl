@@ -1,6 +1,6 @@
 {
   "formatName": "Atari 2600 ROM",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".a26",
     ".bin"
@@ -31,7 +31,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileCount": 0,
+    "totalSize": 0,
+    "format": ""
   },
   "blocks": [
     {
@@ -63,6 +66,24 @@
       "opacity": 0.3,
       "valueType": "uint16",
       "description": "6507 IRQ vector (little-endian)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Size",
+      "variable": "totalSize",
+      "description": "Total Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Format",
+      "variable": "format",
+      "description": "Format"
     }
   ],
   "quality_metrics": {
@@ -124,5 +145,9 @@
     "commit_count": 8,
     "change_percentage": 303.25,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "extractASCIIString": "Read filenames",
+    "readUInt32LE": "Read sizes"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Program Database",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pdb"
   ],
@@ -24,7 +24,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "pageSize": 0,
+    "pageCount": 0,
+    "tableCount": 0,
+    "version": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -61,6 +66,30 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "Total number of pages (little-endian)"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Size",
+      "variable": "pageSize",
+      "description": "Page Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Count",
+      "variable": "pageCount",
+      "description": "Page Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Table Count",
+      "variable": "tableCount",
+      "description": "Table Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -128,5 +157,9 @@
     "commit_count": 9,
     "change_percentage": 301.57,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read DB header",
+    "extractASCIIString": "Read schema"
   }
 }

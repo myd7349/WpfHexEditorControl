@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Access Form",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".maf"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "pageSize": 0,
+    "pageCount": 0,
+    "tableCount": 0,
+    "version": 0
   },
   "blocks": [
     {
@@ -36,6 +40,30 @@
       "color": "#A8DADC",
       "opacity": 0.4,
       "description": "Access form file header"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Size",
+      "variable": "pageSize",
+      "description": "Page Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Count",
+      "variable": "pageCount",
+      "description": "Page Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Table Count",
+      "variable": "tableCount",
+      "description": "Table Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -94,5 +122,9 @@
     "commit_count": 9,
     "change_percentage": 248.39,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read DB header",
+    "extractASCIIString": "Read schema"
   }
 }

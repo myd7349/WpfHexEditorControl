@@ -1,6 +1,6 @@
 {
   "formatName": "Unix Compress",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".z"
   ],
@@ -30,7 +30,12 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "calculatedCRC32": 0,
+    "crc32Valid": false,
+    "originalSize": 0,
+    "compressedSize": 0,
+    "compressionRatio": 0
   },
   "blocks": [
     {
@@ -50,6 +55,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "LZW bits and block mode"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crc32Valid",
+      "description": "CRC Valid"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Original Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Ratio",
+      "variable": "compressionRatio",
+      "description": "Compression Ratio"
     }
   ],
   "mime_types": [
@@ -115,5 +138,9 @@
     "commit_count": 8,
     "change_percentage": 270.18,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "calculateCRC32": "Validate CRC",
+    "readUInt32LE": "Read size"
   }
 }

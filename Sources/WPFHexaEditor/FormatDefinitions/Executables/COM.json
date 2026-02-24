@@ -1,6 +1,6 @@
 {
   "formatName": "DOS COM Executable",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".com"
   ],
@@ -30,7 +30,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "timestamp": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -41,6 +45,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "COM files have no header"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine Type",
+      "variable": "machineType",
+      "description": "Machine Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Section Count",
+      "variable": "sectionCount",
+      "description": "Section Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Point",
+      "variable": "entryPoint",
+      "description": "Entry Point"
     }
   ],
   "mime_types": [
@@ -110,5 +132,9 @@
     "commit_count": 10,
     "change_percentage": 268.81,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header",
+    "calculateCRC32": "Validate"
   }
 }

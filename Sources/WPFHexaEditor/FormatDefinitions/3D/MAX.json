@@ -1,6 +1,6 @@
 {
   "formatName": "3ds Max",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".max"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "vertexCount": 0,
+    "faceCount": 0,
+    "materialCount": 0,
+    "fileSize": 0
   },
   "blocks": [
     {
@@ -54,6 +58,24 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "OLE2 major version"
+    },
+    {
+      "type": "metadata",
+      "name": "Vertex Count",
+      "variable": "vertexCount",
+      "description": "Vertex Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Face Count",
+      "variable": "faceCount",
+      "description": "Face Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Material Count",
+      "variable": "materialCount",
+      "description": "Material Count"
     }
   ],
   "quality_metrics": {
@@ -113,5 +135,9 @@
     "commit_count": 9,
     "change_percentage": 300.0,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read mesh data",
+    "multiply": "Calculate vertices"
   }
 }

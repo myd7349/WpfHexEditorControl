@@ -1,6 +1,6 @@
 {
   "formatName": "Unity Prefab",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".prefab"
   ],
@@ -30,7 +30,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -41,6 +44,24 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "%YAML prefab format"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Index Offset",
+      "variable": "indexOffset",
+      "description": "Index Offset"
     }
   ],
   "quality_metrics": {
@@ -101,5 +122,9 @@
     "commit_count": 9,
     "change_percentage": 268.0,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header",
+    "extractASCIIString": "Read file list"
   }
 }

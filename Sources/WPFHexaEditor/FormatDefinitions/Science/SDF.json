@@ -1,6 +1,6 @@
 {
   "formatName": "Structure Data File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".sdf",
     ".sd"
@@ -26,7 +26,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "dimensions": 0,
+    "dataType": "",
+    "arrayCount": 0
   },
   "blocks": [
     {
@@ -37,6 +40,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "First MOL record (3 header lines)"
+    },
+    {
+      "type": "metadata",
+      "name": "Dimensions",
+      "variable": "dimensions",
+      "description": "Dimensions"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Type",
+      "variable": "dataType",
+      "description": "Data Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Array Count",
+      "variable": "arrayCount",
+      "description": "Array Count"
     }
   ],
   "quality_metrics": {
@@ -93,5 +114,9 @@
     "commit_count": 9,
     "change_percentage": 252.17,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read scientific header",
+    "multiply": "Calculate dimensions"
   }
 }

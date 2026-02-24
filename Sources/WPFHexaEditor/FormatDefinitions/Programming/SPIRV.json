@@ -1,6 +1,6 @@
 {
   "formatName": "SPIR-V Binary",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".spv",
     ".spirv"
@@ -25,7 +25,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "machineType": "",
+    "sectionCount": 0,
+    "timestamp": 0,
+    "entryPoint": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -62,6 +67,24 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "Bound (highest ID used + 1)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine Type",
+      "variable": "machineType",
+      "description": "Machine Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Section Count",
+      "variable": "sectionCount",
+      "description": "Section Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Point",
+      "variable": "entryPoint",
+      "description": "Entry Point"
     }
   ],
   "quality_metrics": {
@@ -121,5 +144,9 @@
     "commit_count": 8,
     "change_percentage": 298.33,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header",
+    "calculateCRC32": "Validate"
   }
 }

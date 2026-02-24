@@ -1,6 +1,6 @@
 {
   "formatName": "DICOM Medical Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dcm",
     ".dicom"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "imageWidth": 0,
+    "imageHeight": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -46,6 +50,30 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "DICM signature"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Width",
+      "variable": "imageWidth",
+      "description": "Image width in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height",
+      "variable": "imageHeight",
+      "description": "Image height in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width × Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Bits Per Pixel",
+      "variable": "bitsPerPixel",
+      "description": "Color depth"
     }
   ],
   "quality_metrics": {
@@ -107,5 +135,9 @@
     "commit_count": 9,
     "change_percentage": 235.85,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read width and height",
+    "multiply": "Calculate total pixels"
   }
 }

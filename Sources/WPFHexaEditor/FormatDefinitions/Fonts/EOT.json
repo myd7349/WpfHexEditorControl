@@ -1,6 +1,6 @@
 {
   "formatName": "Embedded OpenType Font",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".eot"
   ],
@@ -30,7 +30,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "numGlyphs": 0,
+    "unitsPerEm": 0,
+    "fontName": "",
+    "tableCount": 0
   },
   "blocks": [
     {
@@ -41,6 +45,30 @@
       "color": "#5E81AC",
       "opacity": 0.4,
       "description": "EOT font file header"
+    },
+    {
+      "type": "metadata",
+      "name": "Glyph Count",
+      "variable": "numGlyphs",
+      "description": "Glyph Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Units Per EM",
+      "variable": "unitsPerEm",
+      "description": "Units Per EM"
+    },
+    {
+      "type": "metadata",
+      "name": "Font Name",
+      "variable": "fontName",
+      "description": "Font Name"
+    },
+    {
+      "type": "metadata",
+      "name": "Table Count",
+      "variable": "tableCount",
+      "description": "Table Count"
     }
   ],
   "quality_metrics": {
@@ -104,5 +132,9 @@
     "commit_count": 10,
     "change_percentage": 280.58,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read font tables",
+    "extractASCIIString": "Read font name"
   }
 }

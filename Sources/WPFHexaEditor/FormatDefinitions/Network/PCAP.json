@@ -1,6 +1,6 @@
 {
   "formatName": "PCAP Network Capture",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pcap",
     ".cap"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "packetCount": 0,
+    "snaplen": 0,
+    "linkType": 0,
+    "version": ""
   },
   "blocks": [
     {
@@ -91,6 +95,24 @@
       "color": "#FF6B9D",
       "opacity": 0.3,
       "description": "Data link type (Ethernet, etc.)"
+    },
+    {
+      "type": "metadata",
+      "name": "Packet Count",
+      "variable": "packetCount",
+      "description": "Packet Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Snapshot Length",
+      "variable": "snaplen",
+      "description": "Snapshot Length"
+    },
+    {
+      "type": "metadata",
+      "name": "Link Type",
+      "variable": "linkType",
+      "description": "Link Type"
     }
   ],
   "quality_metrics": {
@@ -154,5 +176,9 @@
     "commit_count": 9,
     "change_percentage": 341.83,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read PCAP header",
+    "divide": "Calculate duration"
   }
 }

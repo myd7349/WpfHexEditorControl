@@ -1,6 +1,6 @@
 {
   "formatName": "SQX Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".sqx"
   ],
@@ -28,7 +28,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "fileCount": 0,
+    "totalSize": 0,
+    "compressionMethod": "",
+    "headerCRC": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -65,6 +70,24 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "Main header size (little-endian)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Size",
+      "variable": "totalSize",
+      "description": "Total Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "compressionMethod",
+      "description": "Compression Method"
     }
   ],
   "mime_types": [
@@ -129,5 +152,9 @@
     "commit_count": 8,
     "change_percentage": 300.0,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read header",
+    "calculateCRC32": "Validate"
   }
 }

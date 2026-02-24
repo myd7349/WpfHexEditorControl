@@ -1,6 +1,6 @@
 {
   "formatName": "NIfTI Medical Image",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".nii"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "width": 0,
+    "height": 0,
+    "slices": 0,
+    "bitDepth": 0
   },
   "blocks": [
     {
@@ -36,6 +40,30 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "348 bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Slices",
+      "variable": "slices",
+      "description": "Slices"
+    },
+    {
+      "type": "metadata",
+      "name": "Bit Depth",
+      "variable": "bitDepth",
+      "description": "Bit Depth"
     }
   ],
   "quality_metrics": {
@@ -96,5 +124,9 @@
     "commit_count": 10,
     "change_percentage": 268.42,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read medical header",
+    "extractASCIIString": "Read patient"
   }
 }

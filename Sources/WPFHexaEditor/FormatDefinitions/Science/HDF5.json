@@ -1,6 +1,6 @@
 {
   "formatName": "HDF5 Data File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".h5",
     ".hdf5"
@@ -26,7 +26,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "dimensions": 0,
+    "dataType": "",
+    "arrayCount": 0
   },
   "blocks": [
     {
@@ -37,6 +40,24 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "HDF5 format signature"
+    },
+    {
+      "type": "metadata",
+      "name": "Dimensions",
+      "variable": "dimensions",
+      "description": "Dimensions"
+    },
+    {
+      "type": "metadata",
+      "name": "Data Type",
+      "variable": "dataType",
+      "description": "Data Type"
+    },
+    {
+      "type": "metadata",
+      "name": "Array Count",
+      "variable": "arrayCount",
+      "description": "Array Count"
     }
   ],
   "quality_metrics": {
@@ -102,5 +123,9 @@
     "commit_count": 9,
     "change_percentage": 220.79,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read scientific header",
+    "multiply": "Calculate dimensions"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "GAMESS Output",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".log",
     ".out"
@@ -26,7 +26,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -37,6 +40,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "GAMESS output header"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "fileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Index Offset",
+      "variable": "indexOffset",
+      "description": "Index Offset"
     }
   ],
   "quality_metrics": {
@@ -93,5 +114,9 @@
     "commit_count": 8,
     "change_percentage": 206.52,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header",
+    "extractASCIIString": "Read file list"
   }
 }
