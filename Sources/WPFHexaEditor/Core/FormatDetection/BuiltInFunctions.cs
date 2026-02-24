@@ -333,6 +333,191 @@ namespace WpfHexaEditor.Core.FormatDetection
         }
 
         /// <summary>
+        /// Reads an 8-bit unsigned integer.
+        /// Sets variable: readValue
+        /// </summary>
+        /// <param name="offset">Offset where to read the value</param>
+        /// <returns>The uint8 value</returns>
+        public byte ReadUInt8(long offset)
+        {
+            if (offset < 0 || offset >= _data.Length)
+            {
+                _variables["readValue"] = (byte)0;
+                return 0;
+            }
+
+            try
+            {
+                byte value = _data[offset];
+                _variables["readValue"] = value;
+                return value;
+            }
+            catch
+            {
+                _variables["readValue"] = (byte)0;
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Reads a 16-bit unsigned integer in little-endian format.
+        /// Sets variable: readValue
+        /// </summary>
+        /// <param name="offset">Offset where to read the value</param>
+        /// <returns>The uint16 value</returns>
+        public ushort ReadUInt16LE(long offset)
+        {
+            if (offset < 0 || offset + 2 > _data.Length)
+            {
+                _variables["readValue"] = (ushort)0;
+                return 0;
+            }
+
+            try
+            {
+                ushort value = (ushort)(_data[offset] |
+                                       (_data[offset + 1] << 8));
+
+                _variables["readValue"] = value;
+                return value;
+            }
+            catch
+            {
+                _variables["readValue"] = (ushort)0;
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Reads a 16-bit unsigned integer in big-endian format.
+        /// Sets variable: readValue
+        /// </summary>
+        /// <param name="offset">Offset where to read the value</param>
+        /// <returns>The uint16 value</returns>
+        public ushort ReadUInt16BE(long offset)
+        {
+            if (offset < 0 || offset + 2 > _data.Length)
+            {
+                _variables["readValue"] = (ushort)0;
+                return 0;
+            }
+
+            try
+            {
+                ushort value = (ushort)((_data[offset] << 8) |
+                                        _data[offset + 1]);
+
+                _variables["readValue"] = value;
+                return value;
+            }
+            catch
+            {
+                _variables["readValue"] = (ushort)0;
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Reads a 24-bit unsigned integer in little-endian format.
+        /// Sets variable: readValue
+        /// </summary>
+        /// <param name="offset">Offset where to read the value</param>
+        /// <returns>The uint24 value as uint32</returns>
+        public uint ReadUInt24LE(long offset)
+        {
+            if (offset < 0 || offset + 3 > _data.Length)
+            {
+                _variables["readValue"] = 0u;
+                return 0u;
+            }
+
+            try
+            {
+                uint value = (uint)(_data[offset] |
+                                   (_data[offset + 1] << 8) |
+                                   (_data[offset + 2] << 16));
+
+                _variables["readValue"] = value;
+                return value;
+            }
+            catch
+            {
+                _variables["readValue"] = 0u;
+                return 0u;
+            }
+        }
+
+        /// <summary>
+        /// Reads a 64-bit unsigned integer in little-endian format.
+        /// Sets variable: readValue
+        /// </summary>
+        /// <param name="offset">Offset where to read the value</param>
+        /// <returns>The uint64 value</returns>
+        public ulong ReadUInt64LE(long offset)
+        {
+            if (offset < 0 || offset + 8 > _data.Length)
+            {
+                _variables["readValue"] = 0UL;
+                return 0UL;
+            }
+
+            try
+            {
+                ulong value = (ulong)_data[offset] |
+                             ((ulong)_data[offset + 1] << 8) |
+                             ((ulong)_data[offset + 2] << 16) |
+                             ((ulong)_data[offset + 3] << 24) |
+                             ((ulong)_data[offset + 4] << 32) |
+                             ((ulong)_data[offset + 5] << 40) |
+                             ((ulong)_data[offset + 6] << 48) |
+                             ((ulong)_data[offset + 7] << 56);
+
+                _variables["readValue"] = value;
+                return value;
+            }
+            catch
+            {
+                _variables["readValue"] = 0UL;
+                return 0UL;
+            }
+        }
+
+        /// <summary>
+        /// Reads a 64-bit unsigned integer in big-endian format.
+        /// Sets variable: readValue
+        /// </summary>
+        /// <param name="offset">Offset where to read the value</param>
+        /// <returns>The uint64 value</returns>
+        public ulong ReadUInt64BE(long offset)
+        {
+            if (offset < 0 || offset + 8 > _data.Length)
+            {
+                _variables["readValue"] = 0UL;
+                return 0UL;
+            }
+
+            try
+            {
+                ulong value = ((ulong)_data[offset] << 56) |
+                             ((ulong)_data[offset + 1] << 48) |
+                             ((ulong)_data[offset + 2] << 40) |
+                             ((ulong)_data[offset + 3] << 32) |
+                             ((ulong)_data[offset + 4] << 24) |
+                             ((ulong)_data[offset + 5] << 16) |
+                             ((ulong)_data[offset + 6] << 8) |
+                             (ulong)_data[offset + 7];
+
+                _variables["readValue"] = value;
+                return value;
+            }
+            catch
+            {
+                _variables["readValue"] = 0UL;
+                return 0UL;
+            }
+        }
+
+        /// <summary>
         /// Specialized function to read PNG IHDR dimensions and calculate stats.
         /// Sets variables: imageWidth, imageHeight, totalPixels
         /// </summary>
@@ -1415,6 +1600,54 @@ namespace WpfHexaEditor.Core.FormatDetection
                         return ReadUInt32BE(offset);
                     }
                     return 0u;
+
+                case "readuint8":
+                    if (args.Length >= 1)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        return ReadUInt8(offset);
+                    }
+                    return (byte)0;
+
+                case "readuint16le":
+                    if (args.Length >= 1)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        return ReadUInt16LE(offset);
+                    }
+                    return (ushort)0;
+
+                case "readuint16be":
+                    if (args.Length >= 1)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        return ReadUInt16BE(offset);
+                    }
+                    return (ushort)0;
+
+                case "readuint24le":
+                    if (args.Length >= 1)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        return ReadUInt24LE(offset);
+                    }
+                    return 0u;
+
+                case "readuint64le":
+                    if (args.Length >= 1)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        return ReadUInt64LE(offset);
+                    }
+                    return 0UL;
+
+                case "readuint64be":
+                    if (args.Length >= 1)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        return ReadUInt64BE(offset);
+                    }
+                    return 0UL;
 
                 // Specialized PNG functions
                 case "readpngdimensions":
