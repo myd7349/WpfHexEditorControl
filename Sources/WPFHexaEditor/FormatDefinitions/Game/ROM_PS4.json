@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 4 Package",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".pkg"
   ],
@@ -157,5 +157,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 421.74,
+    "last_updated": "2026-02-24"
   }
 }

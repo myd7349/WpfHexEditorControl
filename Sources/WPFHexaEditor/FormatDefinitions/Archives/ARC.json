@@ -1,6 +1,6 @@
 {
   "formatName": "ARC Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".arc"
   ],
@@ -29,7 +29,15 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32LE": "Read compressed file size (little-endian)",
+    "extractASCIIString": "Extract filename from header"
+  },
+  "variables": {
+    "compressionMethod": 0,
+    "fileName": "",
+    "compressedSize": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -66,6 +74,24 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "Compressed file size (little-endian)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "compressionMethod",
+      "description": "Compression algorithm used (0=stored, 1-9=various)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Name",
+      "variable": "fileName",
+      "description": "Name of first archived file (8.3 format)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compressed Size (bytes)",
+      "variable": "compressedSize",
+      "description": "Size of compressed file data"
     }
   ],
   "mime_types": [
@@ -127,5 +153,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 246.5,
+    "last_updated": "2026-02-24"
   }
 }

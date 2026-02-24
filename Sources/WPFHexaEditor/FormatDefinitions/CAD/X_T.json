@@ -1,6 +1,6 @@
 {
   "formatName": "Parasolid Text",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".x_t"
   ],
@@ -95,5 +95,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 285.86,
+    "last_updated": "2026-02-24"
+  }
 }

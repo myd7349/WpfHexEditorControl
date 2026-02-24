@@ -1,6 +1,6 @@
 {
   "formatName": "XZ Compressed File",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".xz"
   ],
@@ -29,8 +29,15 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 of stream header",
+    "validateCRC32": "Validate stream header integrity"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "streamFlags": 0,
+    "headerCRC": 0,
+    "crcValid": false
   },
   "blocks": [
     {
@@ -50,6 +57,18 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Stream header flags"
+    },
+    {
+      "type": "metadata",
+      "name": "Stream Flags",
+      "variable": "streamFlags",
+      "description": "XZ stream header configuration flags"
+    },
+    {
+      "type": "metadata",
+      "name": "Header CRC Valid",
+      "variable": "crcValid",
+      "description": "Stream header CRC-32 validation result"
     }
   ],
   "mime_types": [
@@ -110,5 +129,10 @@
   "TechnicalDetails": {
     "CompressionMethod": "LZMA2",
     "ArchivesFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 230.08,
+    "last_updated": "2026-02-24"
   }
 }

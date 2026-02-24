@@ -1,6 +1,6 @@
 {
   "formatName": "Comic Book RAR",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".cbr"
   ],
@@ -121,5 +121,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 378.4,
+    "last_updated": "2026-02-24"
   }
 }

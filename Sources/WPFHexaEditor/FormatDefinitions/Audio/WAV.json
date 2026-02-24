@@ -1,6 +1,6 @@
 {
   "formatName": "WAV Audio",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".wav",
     ".wave"
@@ -169,5 +169,10 @@
   "TechnicalDetails": {
     "AudioFormat": true,
     "SampleRate": 44100
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 333.53,
+    "last_updated": "2026-02-24"
   }
 }

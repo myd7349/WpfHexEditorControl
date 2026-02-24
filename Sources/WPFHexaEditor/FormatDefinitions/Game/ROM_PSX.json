@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation EXE",
-  "version": "1.0",
+  "version": "1.7",
   "extensions": [
     ".exe",
     ".psx"
@@ -216,5 +216,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 7,
+    "change_percentage": 254.55,
+    "last_updated": "2026-02-24"
   }
 }

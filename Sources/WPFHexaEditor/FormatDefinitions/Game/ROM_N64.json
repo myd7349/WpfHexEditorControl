@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo 64 ROM",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".n64",
     ".z64",
@@ -221,5 +221,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 402.22,
+    "last_updated": "2026-02-24"
   }
 }

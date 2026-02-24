@@ -1,6 +1,6 @@
 {
   "formatName": "Sound File",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".snd"
   ],
@@ -98,5 +98,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 270.59,
+    "last_updated": "2026-02-24"
   }
 }

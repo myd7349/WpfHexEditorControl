@@ -1,6 +1,6 @@
 {
   "formatName": "Rich Text Format",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".rtf"
   ],
@@ -24,8 +24,19 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "extractASCIIString": "Extract RTF control words and text content",
+    "extractUTF8String": "Extract Unicode text from RTF \\uN keywords",
+    "readUInt8": "Read version number and control word parameters"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 1,
+    "title": "Unknown",
+    "author": "Unknown",
+    "subject": "Unknown",
+    "pages": 0,
+    "defaultFont": 0
   },
   "blocks": [
     {
@@ -108,5 +119,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 245.53,
+    "last_updated": "2026-02-24"
   }
 }

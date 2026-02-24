@@ -1,6 +1,6 @@
 {
   "formatName": "IPS Patch",
-  "version": "1.0",
+  "version": "1.7",
   "extensions": [
     ".ips"
   ],
@@ -129,5 +129,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 7,
+    "change_percentage": 245.86,
+    "last_updated": "2026-02-24"
   }
 }

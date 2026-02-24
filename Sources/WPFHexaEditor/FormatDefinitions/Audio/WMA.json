@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Media Audio",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".wma"
   ],
@@ -29,7 +29,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt64LE": "Read 64-bit little-endian GUID values",
+    "readUInt32LE": "Read object sizes and stream properties",
+    "readUInt16LE": "Read audio configuration (channels, bits per sample)"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "objectSize": 0,
+    "headerObjects": 0,
+    "sampleRate": 0,
+    "channels": 0,
+    "bitrate": 0,
+    "duration": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -96,5 +109,10 @@
   "TechnicalDetails": {
     "AudioFormat": true,
     "Platform": "Windows"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 224.78,
+    "last_updated": "2026-02-24"
   }
 }

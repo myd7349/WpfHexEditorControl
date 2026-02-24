@@ -1,6 +1,6 @@
 {
   "formatName": "LZH Archive",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".lzh",
     ".lha"
@@ -30,8 +30,15 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate header checksum",
+    "extractASCIIString": "Extract compression method ID"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "headerSize": 0,
+    "headerChecksum": 0,
+    "methodID": ""
   },
   "blocks": [
     {
@@ -60,6 +67,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "-lh compression method"
+    },
+    {
+      "type": "metadata",
+      "name": "Header Size",
+      "variable": "headerSize",
+      "description": "Size of the LZH header"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "methodID",
+      "description": "Compression method identifier (e.g., -lh5-, -lh6-)"
     }
   ],
   "mime_types": [
@@ -123,5 +142,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 254.11,
+    "last_updated": "2026-02-24"
   }
 }

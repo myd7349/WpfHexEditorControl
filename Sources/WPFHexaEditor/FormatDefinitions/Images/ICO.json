@@ -1,6 +1,6 @@
 {
   "formatName": "ICO Icon",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".ico"
   ],
@@ -29,8 +29,12 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read image count (little-endian)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "imageCount": 0
   },
   "blocks": [
     {
@@ -59,6 +63,12 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Number of images in file"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Count",
+      "variable": "imageCount",
+      "description": "Number of icon images in the file"
     }
   ],
   "mime_types": [
@@ -130,5 +140,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "Platform": "Windows"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 263.89,
+    "last_updated": "2026-02-24"
   }
 }

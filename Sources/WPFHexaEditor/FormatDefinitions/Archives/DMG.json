@@ -1,6 +1,6 @@
 {
   "formatName": "Apple Disk Image",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dmg"
   ],
@@ -29,8 +29,12 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 for data integrity"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "compressionType": ""
   },
   "blocks": [
     {
@@ -41,6 +45,12 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "DMG files often start with zlib compression"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Type",
+      "variable": "compressionType",
+      "description": "Type of compression used (UDZO, UDBZ, ULFO, etc.)"
     }
   ],
   "mime_types": [
@@ -109,5 +119,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 231.71,
+    "last_updated": "2026-02-24"
   }
 }

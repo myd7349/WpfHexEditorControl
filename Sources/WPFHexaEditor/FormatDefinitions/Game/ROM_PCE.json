@@ -1,6 +1,6 @@
 {
   "formatName": "PC Engine/TurboGrafx-16 ROM",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".pce",
     ".sgx"
@@ -109,5 +109,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 310.62,
+    "last_updated": "2026-02-24"
   }
 }

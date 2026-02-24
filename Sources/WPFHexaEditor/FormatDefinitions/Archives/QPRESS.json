@@ -1,6 +1,6 @@
 {
   "formatName": "Qpress Compression",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".qp",
     ".qpress"
@@ -118,5 +118,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 278.69,
+    "last_updated": "2026-02-24"
   }
 }

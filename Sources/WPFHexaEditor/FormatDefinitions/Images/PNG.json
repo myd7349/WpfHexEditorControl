@@ -1,6 +1,6 @@
 {
   "formatName": "PNG Image",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".png"
   ],
@@ -230,5 +230,10 @@
     "BitDepth": 8,
     "ImagesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 431.62,
+    "last_updated": "2026-02-24"
   }
 }

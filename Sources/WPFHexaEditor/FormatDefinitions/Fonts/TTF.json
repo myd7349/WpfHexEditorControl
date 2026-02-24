@@ -1,6 +1,6 @@
 {
   "formatName": "TrueType Font",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".ttf"
   ],
@@ -118,5 +118,10 @@
     "PriorityFormat": true,
     "AutoRefined": false
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 413.11,
+    "last_updated": "2026-02-24"
+  }
 }

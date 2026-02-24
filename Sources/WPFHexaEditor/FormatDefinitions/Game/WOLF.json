@@ -1,6 +1,6 @@
 {
   "formatName": "RPG Maker WOLF",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".wolf"
   ],
@@ -105,5 +105,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 290.83,
+    "last_updated": "2026-02-24"
   }
 }

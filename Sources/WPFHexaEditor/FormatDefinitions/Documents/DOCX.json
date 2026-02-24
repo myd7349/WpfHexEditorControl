@@ -1,6 +1,6 @@
 {
   "formatName": "Word Document",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".docx"
   ],
@@ -26,8 +26,20 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "parseZIPArchive": "Parse Office document as ZIP archive to extract internal files",
+    "extractUTF8String": "Extract document properties (title, author, subject)",
+    "readUInt32LE": "Read ZIP header fields (signatures, sizes, CRC)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileCount": 0,
+    "title": "Unknown",
+    "author": "Unknown",
+    "subject": "Unknown",
+    "pages": 0,
+    "words": 0,
+    "characters": 0
   },
   "blocks": [
     {
@@ -107,5 +119,10 @@
   "TechnicalDetails": {
     "DocumentFormat": true,
     "Container": "ZIP (Office Open XML)"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 311.38,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "GRIB2 Weather Data",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".grib2",
     ".grb2"
@@ -115,5 +115,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 232.77,
+    "last_updated": "2026-02-24"
+  }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Amazon Kindle eBook",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".azw",
     ".azw3"
@@ -25,8 +25,19 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for PalmDOC/MOBI header fields",
+    "extractASCIIString": "Extract book title and database name",
+    "readUInt16BE": "Read 16-bit values for record count"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "databaseName": "Unknown",
+    "title": "Unknown",
+    "author": "Unknown",
+    "recordCount": 0,
+    "kindleFormat": "AZW",
+    "hasdrm": false
   },
   "blocks": [
     {
@@ -105,5 +116,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 234.17,
+    "last_updated": "2026-02-24"
   }
 }

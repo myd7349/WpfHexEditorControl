@@ -1,6 +1,6 @@
 {
   "formatName": "Musepack Audio",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".mpc",
     ".mp+",
@@ -31,7 +31,19 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt8": "Read packet header and stream version",
+    "readUInt32LE": "Read sample count and duration",
+    "readUInt16LE": "Read audio properties (channels, sample rate)"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "streamVersion": 8,
+    "sampleRate": 44100,
+    "channels": 2,
+    "samples": 0,
+    "profile": "Unknown"
+  },
   "blocks": [
     {
       "type": "signature",
@@ -102,5 +114,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 227.12,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "PCAP Network Capture",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".pcap",
     ".cap"
@@ -149,5 +149,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 341.83,
+    "last_updated": "2026-02-24"
+  }
 }

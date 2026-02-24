@@ -1,6 +1,6 @@
 {
   "formatName": "WavPack Audio",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".wv"
   ],
@@ -27,7 +27,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for block header and sample counts",
+    "readUInt16LE": "Read 16-bit values for version and flags",
+    "calculateCRC32": "Calculate CRC32 for block integrity"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "version": 0,
+    "blockSamples": 0,
+    "totalSamples": 0,
+    "sampleRate": 0,
+    "channels": 0,
+    "bitDepth": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -96,5 +109,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 261.95,
+    "last_updated": "2026-02-24"
   }
 }

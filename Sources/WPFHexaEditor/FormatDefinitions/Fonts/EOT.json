@@ -1,6 +1,6 @@
 {
   "formatName": "Embedded OpenType Font",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".eot"
   ],
@@ -99,5 +99,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 280.58,
+    "last_updated": "2026-02-24"
+  }
 }

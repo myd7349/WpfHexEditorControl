@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 5 Package",
-  "version": "1.0",
+  "version": "1.7",
   "extensions": [
     ".pkg"
   ],
@@ -157,5 +157,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 7,
+    "change_percentage": 239.13,
+    "last_updated": "2026-02-24"
   }
 }

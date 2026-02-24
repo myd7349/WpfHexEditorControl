@@ -1,6 +1,6 @@
 {
   "formatName": "RealMedia",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".rm",
     ".ra"
@@ -101,5 +101,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 254.29,
+    "last_updated": "2026-02-24"
   }
 }

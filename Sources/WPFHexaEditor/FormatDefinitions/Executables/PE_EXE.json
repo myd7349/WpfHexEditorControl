@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Executable (PE)",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".exe",
     ".dll",
@@ -29,7 +29,25 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt16LE": "Read 16-bit little-endian for DOS header fields",
+    "readUInt32LE": "Read 32-bit little-endian for PE header offset and fields",
+    "calculateMD5": "Calculate MD5 hash for file integrity verification",
+    "calculateSHA256": "Calculate SHA256 hash for security analysis",
+    "calculateCRC32": "Calculate CRC32 checksum for validation"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "peOffset": 0,
+    "machine": "Unknown",
+    "subsystem": "Unknown",
+    "sections": 0,
+    "timestamp": 0,
+    "entryPoint": 0,
+    "imageBase": 0,
+    "md5Hash": "Unknown",
+    "sha256Hash": "Unknown"
+  },
   "blocks": [
     {
       "type": "signature",
@@ -224,5 +242,10 @@
   "TechnicalDetails": {
     "ExecutablesFormat": true,
     "Platform": "Windows"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 487.8,
+    "last_updated": "2026-02-24"
   }
 }

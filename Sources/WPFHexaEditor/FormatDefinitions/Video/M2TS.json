@@ -1,6 +1,6 @@
 {
   "formatName": "Blu-ray MPEG-2 Transport Stream",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".m2ts"
   ],
@@ -29,7 +29,21 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt8": "Read 8-bit values for sync byte and header flags",
+    "readUInt16BE": "Read 16-bit PID (Packet Identifier)",
+    "readUInt32BE": "Read 32-bit timestamp prefix for Blu-ray",
+    "bitwiseAnd": "Extract PID and flags from TS header"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "syncByte": 71,
+    "timestampPrefix": 0,
+    "packetPID": 0,
+    "width": 0,
+    "height": 0,
+    "videoCodec": "H.264/H.265"
+  },
   "blocks": [
     {
       "type": "signature",
@@ -100,5 +114,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 215.25,
+    "last_updated": "2026-02-24"
   }
 }

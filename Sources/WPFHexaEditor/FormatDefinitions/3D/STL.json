@@ -1,6 +1,6 @@
 {
   "formatName": "STL 3D Model",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".stl"
   ],
@@ -94,5 +94,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 244.9,
+    "last_updated": "2026-02-24"
+  }
 }

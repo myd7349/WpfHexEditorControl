@@ -1,6 +1,6 @@
 {
   "formatName": "Python Compiled Bytecode",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".pyc",
     ".pyo"
@@ -25,8 +25,19 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for magic number, timestamp, and file size",
+    "readUInt16LE": "Read 16-bit values for Python version identification",
+    "calculateMD5": "Calculate MD5 hash for bytecode verification"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "magicNumber": 0,
+    "pythonVersion": "Unknown",
+    "timestamp": 0,
+    "sourceFileSize": 0,
+    "sourceFile": "Unknown",
+    "codeObjects": 0
   },
   "blocks": [
     {
@@ -110,5 +121,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 284.8,
+    "last_updated": "2026-02-24"
+  }
 }

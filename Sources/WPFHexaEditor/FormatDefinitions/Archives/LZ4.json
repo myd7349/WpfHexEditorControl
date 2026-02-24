@@ -1,6 +1,6 @@
 {
   "formatName": "LZ4 Compressed",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".lz4"
   ],
@@ -29,8 +29,13 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 for frame integrity"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "frameFlags": 0,
+    "blockDescriptor": 0
   },
   "blocks": [
     {
@@ -59,6 +64,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Block descriptor"
+    },
+    {
+      "type": "metadata",
+      "name": "Frame Flags",
+      "variable": "frameFlags",
+      "description": "LZ4 frame configuration flags"
+    },
+    {
+      "type": "metadata",
+      "name": "Block Descriptor",
+      "variable": "blockDescriptor",
+      "description": "Block size and independence flags"
     }
   ],
   "mime_types": [
@@ -119,5 +136,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 252.14,
+    "last_updated": "2026-02-24"
   }
 }

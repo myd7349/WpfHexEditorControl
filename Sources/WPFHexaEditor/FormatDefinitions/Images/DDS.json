@@ -1,6 +1,6 @@
 {
   "formatName": "DirectDraw Surface",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dds"
   ],
@@ -29,8 +29,15 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read width and height (little-endian)",
+    "multiply": "Calculate total pixels (width × height)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "imageWidth": 0,
+    "imageHeight": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -77,6 +84,24 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "description": "Width in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Width (pixels)",
+      "variable": "imageWidth",
+      "description": "Texture width"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height (pixels)",
+      "variable": "imageHeight",
+      "description": "Texture height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width × Height (total pixel count)"
     }
   ],
   "mime_types": [
@@ -145,5 +170,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 268.39,
+    "last_updated": "2026-02-24"
   }
 }

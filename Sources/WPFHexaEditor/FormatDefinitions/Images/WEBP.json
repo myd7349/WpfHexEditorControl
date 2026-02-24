@@ -1,6 +1,6 @@
 {
   "formatName": "WebP Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".webp"
   ],
@@ -28,8 +28,12 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read file size from RIFF header (little-endian)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileSize": 0
   },
   "blocks": [
     {
@@ -58,6 +62,12 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "WEBP format signature"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size (bytes)",
+      "variable": "fileSize",
+      "description": "Total WebP file size (minus 8 bytes)"
     }
   ],
   "mime_types": [
@@ -120,5 +130,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "CompressionMethod": "VP8/VP9 based"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 344.78,
+    "last_updated": "2026-02-24"
   }
 }

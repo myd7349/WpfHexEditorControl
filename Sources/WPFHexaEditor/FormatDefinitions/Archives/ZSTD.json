@@ -1,6 +1,6 @@
 {
   "formatName": "Zstandard Compressed",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".zst",
     ".zstd"
@@ -30,8 +30,12 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 for frame checksum"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "frameMagic": 0
   },
   "blocks": [
     {
@@ -42,6 +46,12 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "Zstandard frame header"
+    },
+    {
+      "type": "metadata",
+      "name": "Frame Magic Number",
+      "variable": "frameMagic",
+      "description": "Zstandard magic number (0x28B52FFD)"
     }
   ],
   "mime_types": [
@@ -103,5 +113,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 226.5,
+    "last_updated": "2026-02-24"
   }
 }

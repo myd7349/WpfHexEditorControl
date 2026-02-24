@@ -1,6 +1,6 @@
 {
   "formatName": "3GPP Multimedia",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".3gp",
     ".3g2"
@@ -30,8 +30,20 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for box sizes and timestamps",
+    "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat, trak)",
+    "readUInt16BE": "Read 16-bit values for video dimensions and audio config"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "majorBrand": "3gp",
+    "minorVersion": 0,
+    "width": 0,
+    "height": 0,
+    "duration": 0,
+    "videoCodec": "H.263/H.264/MPEG-4",
+    "audioCodec": "AMR"
   },
   "blocks": [
     {
@@ -122,5 +134,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 259.42,
+    "last_updated": "2026-02-24"
   }
 }

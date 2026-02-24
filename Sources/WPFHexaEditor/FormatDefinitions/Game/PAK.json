@@ -1,6 +1,6 @@
 {
   "formatName": "Game Package Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".pak"
   ],
@@ -97,5 +97,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 224.75,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "BPS Patch",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".bps"
   ],
@@ -136,5 +136,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 232.86,
+    "last_updated": "2026-02-24"
   }
 }

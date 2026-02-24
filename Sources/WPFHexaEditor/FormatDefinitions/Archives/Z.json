@@ -1,6 +1,6 @@
 {
   "formatName": "Unix Compress",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".z"
   ],
@@ -110,5 +110,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 270.18,
+    "last_updated": "2026-02-24"
   }
 }

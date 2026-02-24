@@ -1,6 +1,6 @@
 {
   "formatName": "Snappy Compression",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".snappy",
     ".sz"
@@ -30,7 +30,13 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 for chunk integrity"
+  },
+  "variables": {
+    "chunkType": 0,
+    "chunkLength": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -58,6 +64,18 @@
       "color": "#45B7D1",
       "opacity": 0.4,
       "description": "Chunk data length (little-endian, 24-bit)"
+    },
+    {
+      "type": "metadata",
+      "name": "Chunk Type",
+      "variable": "chunkType",
+      "description": "Type of data chunk (0x00=compressed, 0x01=uncompressed)"
+    },
+    {
+      "type": "metadata",
+      "name": "Chunk Length (bytes)",
+      "variable": "chunkLength",
+      "description": "Length of chunk data in bytes"
     }
   ],
   "mime_types": [
@@ -120,5 +138,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 245.07,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "MPEG Transport Stream",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".ts",
     ".tsv",
@@ -31,7 +31,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt8": "Read 8-bit values for sync byte and header flags",
+    "readUInt16BE": "Read 16-bit PID (Packet Identifier)",
+    "bitwiseAnd": "Extract transport error, unit start, priority, and PID",
+    "bitwiseShiftRight": "Parse TS packet header fields"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "syncByte": 71,
+    "transportError": false,
+    "payloadStart": false,
+    "packetPID": 0,
+    "continuityCounter": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -104,5 +117,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 216.53,
+    "last_updated": "2026-02-24"
   }
 }

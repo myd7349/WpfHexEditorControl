@@ -984,7 +984,8 @@ namespace WpfHexaEditor.Core.FormatDetection
 
         /// <summary>
         /// Parses ZIP archive by finding and parsing the End of Central Directory (EOCD) record.
-        /// Sets variables: zipFileCount, zipCentralDirSize, zipCommentLength, zipComment, eocdOffset
+        /// Supports both ZIP32 and ZIP64 formats.
+        /// Sets variables: zipFileCount, zipCentralDirSize, zipCommentLength, zipComment, eocdOffset, isZip64
         /// </summary>
         public void ParseZIPArchive()
         {
@@ -993,6 +994,7 @@ namespace WpfHexaEditor.Core.FormatDetection
                 // Search for EOCD signature (0x504B0506) from end of file
                 // EOCD is typically at the end, so search backwards
                 long eocdOffset = -1;
+                bool isZip64 = false;
 
                 // Start from end and search backwards (max 65KB + 22 bytes for comment)
                 long searchStart = Math.Max(0, _data.Length - 65557);
@@ -1008,52 +1010,134 @@ namespace WpfHexaEditor.Core.FormatDetection
                     }
                 }
 
-                if (eocdOffset < 0 || eocdOffset + 22 > _data.Length)
+                // If standard EOCD not found, try ZIP64 EOCD Locator (0x504B0607)
+                if (eocdOffset < 0)
+                {
+                    for (long i = _data.Length - 20; i >= searchStart; i--)
+                    {
+                        if (i + 4 <= _data.Length &&
+                            _data[i] == 0x50 && _data[i + 1] == 0x4B &&
+                            _data[i + 2] == 0x06 && _data[i + 3] == 0x07)
+                        {
+                            // Found ZIP64 EOCD Locator
+                            // The EOCD64 offset is at i+8 (8 bytes, little-endian)
+                            if (i + 16 <= _data.Length)
+                            {
+                                long eocd64Offset = _data[i + 8] | ((long)_data[i + 9] << 8) |
+                                                   ((long)_data[i + 10] << 16) | ((long)_data[i + 11] << 24) |
+                                                   ((long)_data[i + 12] << 32) | ((long)_data[i + 13] << 40) |
+                                                   ((long)_data[i + 14] << 48) | ((long)_data[i + 15] << 56);
+
+                                if (eocd64Offset >= 0 && eocd64Offset + 56 <= _data.Length)
+                                {
+                                    // Verify ZIP64 EOCD signature (0x504B0606)
+                                    if (_data[eocd64Offset] == 0x50 && _data[eocd64Offset + 1] == 0x4B &&
+                                        _data[eocd64Offset + 2] == 0x06 && _data[eocd64Offset + 3] == 0x06)
+                                    {
+                                        eocdOffset = eocd64Offset;
+                                        isZip64 = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (eocdOffset < 0 || eocdOffset + (isZip64 ? 56 : 22) > _data.Length)
                 {
                     _variables["zipFileCount"] = 0;
                     _variables["zipCentralDirSize"] = 0L;
                     _variables["zipCommentLength"] = 0;
                     _variables["eocdOffset"] = -1L;
                     _variables["zipComment"] = string.Empty;
+                    _variables["isZip64"] = false;
                     return;
                 }
 
                 _variables["eocdOffset"] = eocdOffset;
+                _variables["isZip64"] = isZip64;
 
                 // Parse EOCD structure (little-endian)
                 long offset = eocdOffset;
 
-                // Skip signature (4 bytes), disk numbers (4 bytes)
-                offset += 8;
+                long totalEntries;
+                long centralDirSize;
+                int commentLength = 0;
 
-                // Number of entries on this disk (2 bytes)
-                ushort entriesOnDisk = (ushort)(_data[offset] | (_data[offset + 1] << 8));
-                offset += 2;
+                if (isZip64)
+                {
+                    // ZIP64 EOCD structure
+                    // Skip signature (4 bytes)
+                    offset += 4;
 
-                // Total number of entries (2 bytes)
-                ushort totalEntries = (ushort)(_data[offset] | (_data[offset + 1] << 8));
-                offset += 2;
+                    // Size of EOCD64 (8 bytes) - skip
+                    offset += 8;
 
-                // Size of central directory (4 bytes)
-                uint centralDirSize = (uint)(_data[offset] |
-                                             (_data[offset + 1] << 8) |
-                                             (_data[offset + 2] << 16) |
-                                             (_data[offset + 3] << 24));
-                offset += 4;
+                    // Version made by (2 bytes) + version needed (2 bytes) - skip
+                    offset += 4;
 
-                // Offset of central directory (4 bytes) - skip
-                offset += 4;
+                    // Disk numbers (8 bytes) - skip
+                    offset += 8;
 
-                // Comment length (2 bytes)
-                ushort commentLength = (ushort)(_data[offset] | (_data[offset + 1] << 8));
+                    // Total number of entries on this disk (8 bytes)
+                    long entriesOnDisk = _data[offset] | ((long)_data[offset + 1] << 8) |
+                                        ((long)_data[offset + 2] << 16) | ((long)_data[offset + 3] << 24) |
+                                        ((long)_data[offset + 4] << 32) | ((long)_data[offset + 5] << 40) |
+                                        ((long)_data[offset + 6] << 48) | ((long)_data[offset + 7] << 56);
+                    offset += 8;
 
-                _variables["zipFileCount"] = (int)totalEntries;
-                _variables["zipCentralDirSize"] = (long)centralDirSize;
-                _variables["zipCommentLength"] = (int)commentLength;
-                _variables["zipEntriesOnDisk"] = (int)entriesOnDisk;
+                    // Total number of entries (8 bytes)
+                    totalEntries = _data[offset] | ((long)_data[offset + 1] << 8) |
+                                  ((long)_data[offset + 2] << 16) | ((long)_data[offset + 3] << 24) |
+                                  ((long)_data[offset + 4] << 32) | ((long)_data[offset + 5] << 40) |
+                                  ((long)_data[offset + 6] << 48) | ((long)_data[offset + 7] << 56);
+                    offset += 8;
 
-                // Extract comment if present
-                if (commentLength > 0 && eocdOffset + 22 + commentLength <= _data.Length)
+                    // Size of central directory (8 bytes)
+                    centralDirSize = _data[offset] | ((long)_data[offset + 1] << 8) |
+                                    ((long)_data[offset + 2] << 16) | ((long)_data[offset + 3] << 24) |
+                                    ((long)_data[offset + 4] << 32) | ((long)_data[offset + 5] << 40) |
+                                    ((long)_data[offset + 6] << 48) | ((long)_data[offset + 7] << 56);
+
+                    _variables["zipEntriesOnDisk"] = entriesOnDisk;
+                }
+                else
+                {
+                    // ZIP32 EOCD structure
+                    // Skip signature (4 bytes), disk numbers (4 bytes)
+                    offset += 8;
+
+                    // Number of entries on this disk (2 bytes)
+                    ushort entriesOnDisk = (ushort)(_data[offset] | (_data[offset + 1] << 8));
+                    offset += 2;
+
+                    // Total number of entries (2 bytes)
+                    totalEntries = (ushort)(_data[offset] | (_data[offset + 1] << 8));
+                    offset += 2;
+
+                    // Size of central directory (4 bytes)
+                    centralDirSize = (uint)(_data[offset] |
+                                          (_data[offset + 1] << 8) |
+                                          (_data[offset + 2] << 16) |
+                                          (_data[offset + 3] << 24));
+                    offset += 4;
+
+                    // Offset of central directory (4 bytes) - skip
+                    offset += 4;
+
+                    // Comment length (2 bytes)
+                    commentLength = (ushort)(_data[offset] | (_data[offset + 1] << 8));
+
+                    _variables["zipEntriesOnDisk"] = (int)entriesOnDisk;
+                }
+
+                _variables["zipFileCount"] = totalEntries;
+                _variables["zipCentralDirSize"] = centralDirSize;
+                _variables["zipCommentLength"] = commentLength;
+
+                // Extract comment if present (only in ZIP32)
+                if (!isZip64 && commentLength > 0 && eocdOffset + 22 + commentLength <= _data.Length)
                 {
                     byte[] commentBytes = new byte[commentLength];
                     Array.Copy(_data, eocdOffset + 22, commentBytes, 0, commentLength);

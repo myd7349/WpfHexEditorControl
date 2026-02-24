@@ -1,6 +1,6 @@
 {
   "formatName": "AU Audio",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".au",
     ".snd"
@@ -30,8 +30,17 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for data offset, size, encoding, and sample rate",
+    "readUInt16BE": "Read 16-bit values for channels"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "dataOffset": 0,
+    "dataSize": 0,
+    "encoding": 0,
+    "sampleRate": 0,
+    "channels": 0
   },
   "blocks": [
     {
@@ -130,5 +139,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 278.32,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "MP3 Audio",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".mp3"
   ],
@@ -179,5 +179,10 @@
     "SampleRate": 44100,
     "AudioFormat": true,
     "CompressionMethod": "MPEG-1 Audio Layer III (lossy)"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 317.49,
+    "last_updated": "2026-02-24"
   }
 }

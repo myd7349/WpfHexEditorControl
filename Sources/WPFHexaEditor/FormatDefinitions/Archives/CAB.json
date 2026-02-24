@@ -1,6 +1,6 @@
 {
   "formatName": "Cabinet Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".cab"
   ],
@@ -28,8 +28,14 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read cabinet size and file offsets (little-endian)",
+    "calculateCRC32": "Calculate CRC-32 for data integrity"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "cabinetSize": 0,
+    "filesOffset": 0
   },
   "blocks": [
     {
@@ -67,6 +73,18 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "description": "Offset to first file entry"
+    },
+    {
+      "type": "metadata",
+      "name": "Cabinet Size (bytes)",
+      "variable": "cabinetSize",
+      "description": "Total size of the cabinet file"
+    },
+    {
+      "type": "metadata",
+      "name": "Files Offset",
+      "variable": "filesOffset",
+      "description": "Byte offset to first file entry"
     }
   ],
   "mime_types": [
@@ -128,5 +146,10 @@
     "CompressionMethod": "LZX, Quantum",
     "ArchivesFormat": true,
     "Platform": "Windows"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 352.0,
+    "last_updated": "2026-02-24"
   }
 }

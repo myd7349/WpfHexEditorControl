@@ -1,11 +1,25 @@
 {
   "formatName": "Plain Text",
-  "version": "1.0",
-  "extensions": [ ".txt", ".text", ".log", ".md", ".csv", ".json", ".xml", ".html", ".css", ".js", ".cs", ".c", ".cpp", ".h" ],
+  "version": "1.4",
+  "extensions": [
+    ".txt",
+    ".text",
+    ".log",
+    ".md",
+    ".csv",
+    ".json",
+    ".xml",
+    ".html",
+    ".css",
+    ".js",
+    ".cs",
+    ".c",
+    ".cpp",
+    ".h"
+  ],
   "description": "Plain text document with character encoding support (ASCII, UTF-8, UTF-16)",
   "author": "Derek Tremblay",
   "category": "Text Documents",
-
   "detection": {
     "signature": null,
     "offset": 0,
@@ -18,7 +32,6 @@
     ],
     "minConfidenceThreshold": 0.7
   },
-
   "mimeTypes": [
     "text/plain",
     "text/plain; charset=utf-8",
@@ -27,7 +40,6 @@
     "text/markdown",
     "text/csv"
   ],
-
   "software": [
     "Notepad (Windows)",
     "TextEdit (macOS)",
@@ -40,7 +52,6 @@
     "Notepad++",
     "Any text editor"
   ],
-
   "useCases": [
     "Configuration files (.ini, .conf, .cfg)",
     "Log files and debugging output",
@@ -50,7 +61,6 @@
     "Notes and memos",
     "Scripts and batch files"
   ],
-
   "qualityMetrics": {
     "completenessScore": 90,
     "documentationLevel": "Comprehensive",
@@ -60,7 +70,6 @@
     "priorityFormat": false,
     "autoRefined": true
   },
-
   "references": {
     "specifications": [
       "ASCII - ANSI X3.4-1986",
@@ -74,7 +83,6 @@
       "https://www.unicode.org/standard/standard.html"
     ]
   },
-
   "technicalDetails": {
     "encoding": "ASCII, UTF-8, UTF-16LE, UTF-16BE, ISO-8859-1",
     "lineEndings": "LF (\\n), CRLF (\\r\\n), CR (\\r)",
@@ -84,12 +92,22 @@
     "structure": "Linear sequence of characters with line breaks",
     "specialFeatures": "Human-readable, universal compatibility, no proprietary format"
   },
-
   "formatRelationships": {
     "category": "Text",
-    "extensions": [ ".md", ".rst", ".adoc", ".csv", ".tsv", ".json", ".xml", ".yaml", ".yml", ".ini", ".conf" ]
+    "extensions": [
+      ".md",
+      ".rst",
+      ".adoc",
+      ".csv",
+      ".tsv",
+      ".json",
+      ".xml",
+      ".yaml",
+      ".yml",
+      ".ini",
+      ".conf"
+    ]
   },
-
   "variables": {
     "encoding": "UTF-8",
     "bomDetected": false,
@@ -98,7 +116,6 @@
     "lineEnding": "Mixed",
     "textRatio": 1.0
   },
-
   "blocks": [
     {
       "type": "field",
@@ -108,7 +125,9 @@
       "valueType": "utf8",
       "color": "Transparent",
       "description": "Plain text file content",
-      "tags": [ "text" ]
+      "tags": [
+        "text"
+      ]
     },
     {
       "type": "metadata",
@@ -141,10 +160,14 @@
       "description": "Detected line ending style (LF, CRLF, CR, or None)"
     }
   ],
-
   "functions": {
     "detectBOM": "Detects Byte Order Mark (BOM) and sets encoding, bomDetected, and bomSize variables. Supports UTF-8, UTF-16LE/BE, UTF-32LE/BE.",
     "countLines": "Counts the number of lines in the file by counting line feed (LF, 0x0A) characters. Sets lineCount variable.",
     "detectLineEnding": "Analyzes first 8KB to detect predominant line ending style. Sets lineEnding, lfCount, crlfCount, and crCount variables."
+  },
+  "version_history": {
+    "commit_count": 4,
+    "change_percentage": 472.0,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "ISO Disk Image",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".iso"
   ],
@@ -29,8 +29,22 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for volume space size and path table size",
+    "readUInt16LE": "Read 16-bit values for volume set size",
+    "extractASCIIString": "Extract volume identifier, system identifier, publisher",
+    "extractUTF8String": "Extract Joliet extension Unicode names"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "volumeIdentifier": "Unknown",
+    "systemIdentifier": "Unknown",
+    "publisher": "Unknown",
+    "volumeSize": 0,
+    "blockSize": 2048,
+    "pathTableSize": 0,
+    "hasJoliet": false,
+    "hasRockRidge": false
   },
   "blocks": [
     {
@@ -116,5 +130,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 243.28,
+    "last_updated": "2026-02-24"
+  }
 }

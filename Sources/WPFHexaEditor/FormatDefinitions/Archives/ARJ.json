@@ -1,6 +1,6 @@
 {
   "formatName": "ARJ Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".arj"
   ],
@@ -29,8 +29,12 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 for archive integrity"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "headerID": 0
   },
   "blocks": [
     {
@@ -50,6 +54,12 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Basic header ID"
+    },
+    {
+      "type": "metadata",
+      "name": "Header ID",
+      "variable": "headerID",
+      "description": "ARJ basic header identifier"
     }
   ],
   "mime_types": [
@@ -111,5 +121,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 244.0,
+    "last_updated": "2026-02-24"
   }
 }

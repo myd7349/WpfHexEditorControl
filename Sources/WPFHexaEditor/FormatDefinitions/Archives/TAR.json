@@ -1,6 +1,6 @@
 {
   "formatName": "TAR Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".tar"
   ],
@@ -26,8 +26,15 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "extractASCIIString": "Extract file names and metadata from TAR headers",
+    "readUInt32BE": "Read file size and numeric fields (octal/big-endian)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileName": "",
+    "fileSize": 0,
+    "fileMode": 0
   },
   "blocks": [
     {
@@ -74,6 +81,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "ustar indicator"
+    },
+    {
+      "type": "metadata",
+      "name": "File Name",
+      "variable": "fileName",
+      "description": "Name of the first archived file"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size (bytes)",
+      "variable": "fileSize",
+      "description": "Size of the archived file"
     }
   ],
   "mime_types": [
@@ -136,5 +155,10 @@
     "CompressionMethod": "None (often combined with GZIP)",
     "ArchivesFormat": true,
     "Platform": "Unix/Linux"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 366.04,
+    "last_updated": "2026-02-24"
   }
 }

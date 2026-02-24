@@ -1,6 +1,6 @@
 {
   "formatName": "Autodesk FBX",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".fbx"
   ],
@@ -106,5 +106,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 272.73,
+    "last_updated": "2026-02-24"
+  }
 }

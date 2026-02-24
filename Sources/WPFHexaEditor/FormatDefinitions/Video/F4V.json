@@ -1,6 +1,6 @@
 {
   "formatName": "Flash MP4 Video",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".f4v",
     ".f4p",
@@ -29,7 +29,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for box sizes and timestamps",
+    "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat)",
+    "readUInt16BE": "Read 16-bit values for video dimensions"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "majorBrand": "f4v",
+    "width": 0,
+    "height": 0,
+    "duration": 0,
+    "videoCodec": "H.264",
+    "audioCodec": "AAC"
+  },
   "blocks": [
     {
       "type": "signature",
@@ -103,5 +116,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 270.83,
+    "last_updated": "2026-02-24"
   }
 }

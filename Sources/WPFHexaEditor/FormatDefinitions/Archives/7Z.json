@@ -1,6 +1,6 @@
 {
   "formatName": "7-Zip Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".7z"
   ],
@@ -27,8 +27,15 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "validateCRC32": "Validate Start Header CRC-32 integrity",
+    "readUInt32LE": "Read 32-bit Start Header CRC value (little-endian)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "startHeaderCRC": 0,
+    "calculatedCRC": 0,
+    "crcValid": false
   },
   "blocks": [
     {
@@ -66,6 +73,18 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "description": "CRC of start header"
+    },
+    {
+      "type": "metadata",
+      "name": "Start Header CRC-32",
+      "variable": "startHeaderCRC",
+      "description": "CRC-32 checksum of the start header"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Validation",
+      "variable": "crcValid",
+      "description": "Start header CRC-32 integrity check result"
     }
   ],
   "mime_types": [
@@ -130,5 +149,10 @@
     "CompressionMethod": "LZMA, LZMA2, BZIP2, DEFLATE",
     "ArchivesFormat": true,
     "SupportsEncryption": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 341.18,
+    "last_updated": "2026-02-24"
   }
 }

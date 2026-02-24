@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 3 Disc/Package",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".iso",
     ".pkg"
@@ -149,5 +149,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 421.57,
+    "last_updated": "2026-02-24"
   }
 }

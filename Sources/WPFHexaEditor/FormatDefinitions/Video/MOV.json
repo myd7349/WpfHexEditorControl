@@ -1,6 +1,6 @@
 {
   "formatName": "QuickTime Movie",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".mov",
     ".qt"
@@ -30,8 +30,21 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for atom sizes and timestamps",
+    "extractASCIIString": "Extract atom type identifiers (moov, trak, mdia, hdlr)",
+    "readUInt16BE": "Read 16-bit values for video dimensions",
+    "multiply": "Calculate duration from timescale"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "atomSize": 0,
+    "atomType": "Unknown",
+    "width": 0,
+    "height": 0,
+    "duration": 0,
+    "timescale": 0,
+    "videoCodec": "Unknown"
   },
   "blocks": [
     {
@@ -114,5 +127,10 @@
     "VideoFormat": true,
     "Container": "QuickTime",
     "Platform": "macOS"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 254.96,
+    "last_updated": "2026-02-24"
   }
 }

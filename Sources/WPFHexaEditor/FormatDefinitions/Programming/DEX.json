@@ -1,6 +1,6 @@
 {
   "formatName": "Android DEX File",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dex"
   ],
@@ -24,8 +24,23 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for checksum, file size, and counts",
+    "extractASCIIString": "Extract DEX version string",
+    "calculateCRC32": "Verify Adler32 checksum",
+    "calculateSHA256": "Verify SHA-1 signature (20 bytes at offset 12)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": "Unknown",
+    "checksum": 0,
+    "sha1": "Unknown",
+    "fileSize": 0,
+    "headerSize": 112,
+    "stringIds": 0,
+    "typeIds": 0,
+    "methodIds": 0,
+    "classIds": 0
   },
   "blocks": [
     {
@@ -120,5 +135,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 279.14,
+    "last_updated": "2026-02-24"
+  }
 }

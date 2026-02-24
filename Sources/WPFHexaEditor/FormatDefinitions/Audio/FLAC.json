@@ -1,6 +1,6 @@
 {
   "formatName": "FLAC Audio",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".flac"
   ],
@@ -27,8 +27,19 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian unsigned integer for sample rate",
+    "readUInt16BE": "Read 16-bit big-endian unsigned integer for channel info",
+    "readUInt8": "Read 8-bit value for bit depth"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "sampleRate": 0,
+    "channels": 0,
+    "bitDepth": 0,
+    "totalSamples": 0,
+    "minBlockSize": 0,
+    "maxBlockSize": 0
   },
   "blocks": [
     {
@@ -122,5 +133,10 @@
   "TechnicalDetails": {
     "AudioFormat": true,
     "CompressionMethod": "Lossless"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 334.31,
+    "last_updated": "2026-02-24"
   }
 }

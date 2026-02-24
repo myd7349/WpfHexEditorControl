@@ -1,6 +1,6 @@
 {
   "formatName": "RAR Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".rar"
   ],
@@ -26,8 +26,15 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 of RAR header for validation",
+    "readUInt32LE": "Read header CRC value (little-endian)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "headerCRC": 0,
+    "calculatedCRC": 0,
+    "crcValid": false
   },
   "blocks": [
     {
@@ -65,6 +72,18 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "description": "Archive flags"
+    },
+    {
+      "type": "metadata",
+      "name": "Header CRC-32",
+      "variable": "headerCRC",
+      "description": "CRC-32 checksum of the header"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Validation",
+      "variable": "crcValid",
+      "description": "Header CRC-32 integrity check result"
     }
   ],
   "mime_types": [
@@ -129,5 +148,10 @@
     "CompressionMethod": "RAR proprietary",
     "ArchivesFormat": true,
     "SupportsEncryption": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 336.18,
+    "last_updated": "2026-02-24"
   }
 }

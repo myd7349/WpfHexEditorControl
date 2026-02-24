@@ -1,6 +1,6 @@
 {
   "formatName": "Cinema 4D",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".c4d"
   ],
@@ -100,5 +100,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 286.54,
+    "last_updated": "2026-02-24"
+  }
 }

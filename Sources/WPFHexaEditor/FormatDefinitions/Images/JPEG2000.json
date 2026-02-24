@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG 2000 Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".jp2",
     ".j2k",
@@ -124,5 +124,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 359.38,
+    "last_updated": "2026-02-24"
   }
 }

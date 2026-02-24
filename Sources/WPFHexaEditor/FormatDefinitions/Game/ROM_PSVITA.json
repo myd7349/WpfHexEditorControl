@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation Vita Package",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".vpk",
     ".pkg"
@@ -139,5 +139,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 411.89,
+    "last_updated": "2026-02-24"
   }
 }

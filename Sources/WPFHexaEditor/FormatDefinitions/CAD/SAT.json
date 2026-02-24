@@ -1,6 +1,6 @@
 {
   "formatName": "ACIS SAT",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".sat"
   ],
@@ -95,5 +95,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 283.84,
+    "last_updated": "2026-02-24"
+  }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "PKCS#12 Certificate",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".p12",
     ".pfx"
@@ -93,5 +93,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 258.76,
+    "last_updated": "2026-02-24"
+  }
 }

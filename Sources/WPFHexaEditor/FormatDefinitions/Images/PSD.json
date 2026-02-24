@@ -1,6 +1,6 @@
 {
   "formatName": "Photoshop Document",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".psd"
   ],
@@ -29,8 +29,16 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read width and height (big-endian)",
+    "multiply": "Calculate total pixels (width × height)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "imageWidth": 0,
+    "imageHeight": 0,
+    "totalPixels": 0,
+    "channels": 0
   },
   "blocks": [
     {
@@ -86,6 +94,30 @@
       "color": "#B8B8FF",
       "opacity": 0.3,
       "description": "Width in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Width (pixels)",
+      "variable": "imageWidth",
+      "description": "PSD document width"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height (pixels)",
+      "variable": "imageHeight",
+      "description": "PSD document height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width × Height (total pixel count)"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channels",
+      "description": "Number of color channels (1-56)"
     }
   ],
   "mime_types": [
@@ -160,5 +192,10 @@
   },
   "TechnicalDetails": {
     "ImagesFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 261.22,
+    "last_updated": "2026-02-24"
   }
 }

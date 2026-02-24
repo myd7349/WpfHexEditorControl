@@ -1,6 +1,6 @@
 {
   "formatName": "HEIF/HEIC Image",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".heic",
     ".heif"
@@ -30,8 +30,14 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read box sizes (big-endian)",
+    "extractASCIIString": "Extract brand identifiers"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "boxSize": 0,
+    "majorBrand": ""
   },
   "blocks": [
     {
@@ -60,6 +66,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "heic or heif brand"
+    },
+    {
+      "type": "metadata",
+      "name": "Box Size",
+      "variable": "boxSize",
+      "description": "Size of ftyp box"
+    },
+    {
+      "type": "metadata",
+      "name": "Major Brand",
+      "variable": "majorBrand",
+      "description": "HEIC/HEIF brand identifier"
     }
   ],
   "mime_types": [
@@ -124,5 +142,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "CompressionMethod": "HEVC-based"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 258.9,
+    "last_updated": "2026-02-24"
   }
 }

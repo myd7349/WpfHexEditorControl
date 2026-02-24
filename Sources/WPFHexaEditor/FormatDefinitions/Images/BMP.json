@@ -1,6 +1,6 @@
 {
   "formatName": "BMP Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".bmp",
     ".dib"
@@ -27,8 +27,16 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read width, height, and file size (little-endian)",
+    "multiply": "Calculate total pixels (width × height)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "imageWidth": 0,
+    "imageHeight": 0,
+    "totalPixels": 0,
+    "fileSize": 0
   },
   "blocks": [
     {
@@ -93,6 +101,30 @@
       "color": "#FF6B9D",
       "opacity": 0.3,
       "description": "Image height in pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Width (pixels)",
+      "variable": "imageWidth",
+      "description": "BMP image width"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height (pixels)",
+      "variable": "imageHeight",
+      "description": "BMP image height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width × Height (total pixel count)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size (bytes)",
+      "variable": "fileSize",
+      "description": "Total BMP file size"
     }
   ],
   "mime_types": [
@@ -155,5 +187,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "Platform": "Windows"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 372.25,
+    "last_updated": "2026-02-24"
   }
 }

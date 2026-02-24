@@ -1,6 +1,6 @@
 {
   "formatName": "Snoop Capture",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".snoop",
     ".cap"
@@ -109,5 +109,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 323.01,
+    "last_updated": "2026-02-24"
+  }
 }

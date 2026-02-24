@@ -1,6 +1,6 @@
 {
   "formatName": "IBM DB2 Database",
-  "version": "1.0",
+  "version": "2.1",
   "extensions": [
     ".db2"
   ],
@@ -89,5 +89,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 11,
+    "change_percentage": 280.65,
+    "last_updated": "2026-02-24"
+  }
 }
