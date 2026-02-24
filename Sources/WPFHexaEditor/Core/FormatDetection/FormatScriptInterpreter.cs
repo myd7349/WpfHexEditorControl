@@ -69,10 +69,69 @@ namespace WpfHexaEditor.Core.FormatDetection
                 try
                 {
                     System.Diagnostics.Debug.WriteLine($"  Executing function: {function.Key}");
-                    // Simple function call syntax: just the function name
-                    // More complex parsing can be added later if needed
-                    builtInFunctions.Execute(function.Key);
-                    System.Diagnostics.Debug.WriteLine($"  Function {function.Key} completed");
+
+                    // Parse function name and parameters
+                    // Supports: "functionName" or "functionName(arg1, arg2, ...)"
+                    string functionName;
+                    object[] args = Array.Empty<object>();
+
+                    int parenIndex = function.Key.IndexOf('(');
+                    if (parenIndex > 0 && function.Key.EndsWith(")"))
+                    {
+                        // Has parameters
+                        functionName = function.Key.Substring(0, parenIndex).Trim();
+                        string paramsStr = function.Key.Substring(parenIndex + 1, function.Key.Length - parenIndex - 2);
+
+                        if (!string.IsNullOrWhiteSpace(paramsStr))
+                        {
+                            var paramTokens = paramsStr.Split(',');
+                            var argsList = new List<object>();
+
+                            foreach (var token in paramTokens)
+                            {
+                                string param = token.Trim();
+
+                                // Variable reference: "var:name"
+                                if (param.StartsWith("var:"))
+                                {
+                                    string varName = param.Substring(4);
+                                    if (_variables.TryGetValue(varName, out var value))
+                                    {
+                                        argsList.Add(value);
+                                    }
+                                    else
+                                    {
+                                        argsList.Add(0);
+                                    }
+                                }
+                                // Literal number
+                                else if (long.TryParse(param, out long numValue))
+                                {
+                                    argsList.Add(numValue);
+                                }
+                                // Hex literal: "0x1234"
+                                else if (param.StartsWith("0x") && long.TryParse(param.Substring(2),
+                                    System.Globalization.NumberStyles.HexNumber, null, out long hexValue))
+                                {
+                                    argsList.Add(hexValue);
+                                }
+                                else
+                                {
+                                    argsList.Add(param); // String literal
+                                }
+                            }
+
+                            args = argsList.ToArray();
+                        }
+                    }
+                    else
+                    {
+                        // No parameters
+                        functionName = function.Key.Trim();
+                    }
+
+                    builtInFunctions.Execute(functionName, args);
+                    System.Diagnostics.Debug.WriteLine($"  Function {functionName} completed");
                 }
                 catch (Exception ex)
                 {
