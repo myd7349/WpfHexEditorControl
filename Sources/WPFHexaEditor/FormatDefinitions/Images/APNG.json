@@ -1,6 +1,6 @@
 {
   "formatName": "APNG Animated Image",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".apng",
     ".png"
@@ -31,7 +31,8 @@
   },
   "functions": {
     "readPNGDimensions": "Read image width and height from IHDR chunk",
-    "validatePNGIHDR": "Validate IHDR chunk CRC integrity"
+    "validatePNGIHDR": "Validate IHDR chunk CRC integrity",
+    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 8,

@@ -1,6 +1,6 @@
 {
   "formatName": "Android DEX File",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dex"
   ],
@@ -28,7 +28,8 @@
     "readUInt32LE": "Read 32-bit little-endian for checksum, file size, and counts",
     "extractASCIIString": "Extract DEX version string",
     "calculateCRC32": "Verify Adler32 checksum",
-    "calculateSHA256": "Verify SHA-1 signature (20 bytes at offset 12)"
+    "calculateSHA256": "Verify SHA-1 signature (20 bytes at offset 12)",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,8 @@
     "methodIds": 0,
     "classIds": 0,
     "dexMagic": "",
-    "sha1Signature": ""
+    "sha1Signature": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -88,6 +90,12 @@
       "description": "SHA-1 hash of file",
       "storeAs": "sha1Signature",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {

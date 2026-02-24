@@ -1,6 +1,6 @@
 {
   "formatName": "Adaptive Multi-Rate",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".amr"
   ],
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt8": "Read frame type and quality indicator from AMR frames",
     "bitwiseAnd": "Extract frame mode from header byte",
-    "bitwiseShiftRight": "Parse frame header bits"
+    "bitwiseShiftRight": "Parse frame header bits",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -41,7 +42,8 @@
     "bitrate": 0,
     "channels": 1,
     "sampleRate": 8000,
-    "amrHeader": ""
+    "amrHeader": "",
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -54,6 +56,12 @@
       "description": "#!AMR - AMR file signature",
       "storeAs": "amrHeader",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

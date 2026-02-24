@@ -1,6 +1,6 @@
 {
   "formatName": "PNG Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".png"
   ],
@@ -30,7 +30,9 @@
   },
   "functions": {
     "readPNGDimensions": "Read image width and height from IHDR chunk",
-    "validatePNGIHDR": "Validate IHDR chunk CRC integrity"
+    "validatePNGIHDR": "Validate IHDR chunk CRC integrity",
+    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixel count",
+    "interpretColorType(var:colorType, png)": "Interpret color type name"
   },
   "variables": {
     "currentOffset": 8,
@@ -48,7 +50,8 @@
     "compression": 0,
     "filterMethod": 0,
     "interlaceMethod": 0,
-    "ihdrCrc": 0
+    "ihdrCrc": 0,
+    "colorTypeName": ""
   },
   "blocks": [
     {
@@ -193,6 +196,12 @@
       "name": "Total Pixels",
       "variable": "totalPixels",
       "description": "Width × Height (total pixel count)"
+    },
+    {
+      "type": "metadata",
+      "name": "Color Type Name",
+      "variable": "colorTypeName",
+      "description": "Human-readable color type interpretation"
     },
     {
       "type": "metadata",

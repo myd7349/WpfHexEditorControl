@@ -1,6 +1,6 @@
 {
   "formatName": "Advanced Systems Format",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".asf",
     ".wma",
@@ -33,7 +33,8 @@
   "functions": {
     "readUInt64LE": "Read 64-bit little-endian GUID values and object sizes",
     "readUInt32LE": "Read 32-bit values for stream properties",
-    "readUInt16LE": "Read 16-bit values for video dimensions and audio config"
+    "readUInt16LE": "Read 16-bit values for video dimensions and audio config",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -43,7 +44,8 @@
     "height": 0,
     "duration": 0,
     "bitrate": 0,
-    "asfHeaderGuid": ""
+    "asfHeaderGuid": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -56,6 +58,12 @@
       "description": "ASF Header Object GUID",
       "storeAs": "asfHeaderGuid",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

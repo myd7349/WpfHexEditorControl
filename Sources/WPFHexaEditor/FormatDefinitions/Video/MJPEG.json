@@ -1,6 +1,6 @@
 {
   "formatName": "Motion JPEG",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".mjpeg",
     ".mjpg"
@@ -34,7 +34,8 @@
     "jpegHeight": 0,
     "jpegComponents": 0,
     "frameRate": 0,
-    "jpegSoiMarker": ""
+    "jpegSoiMarker": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -59,6 +60,12 @@
       "name": "Frame Height",
       "variable": "jpegHeight",
       "description": "Frame Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [
@@ -128,6 +135,7 @@
     "last_updated": "2026-02-24"
   },
   "functions": {
-    "parseJPEGDimensions": "Extract frame dimensions from JPEG data"
+    "parseJPEGDimensions": "Extract frame dimensions from JPEG data",
+    "computeFromVariables(jpegWidth * jpegHeight, totalPixels)": "Calculate total pixels"
   }
 }

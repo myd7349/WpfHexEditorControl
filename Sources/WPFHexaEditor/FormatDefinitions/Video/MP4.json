@@ -1,6 +1,6 @@
 {
   "formatName": "MP4 Video",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mp4",
     ".m4v",
@@ -32,7 +32,8 @@
     "readUInt32BE": "Read 32-bit big-endian for box sizes and timestamps",
     "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat, trak)",
     "readUInt16BE": "Read 16-bit values for video dimensions and audio config",
-    "multiply": "Calculate duration from timescale"
+    "multiply": "Calculate duration from timescale",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -45,7 +46,8 @@
     "videoCodec": "Unknown",
     "audioCodec": "Unknown",
     "boxSize": 0,
-    "boxType": ""
+    "boxType": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -92,6 +94,12 @@
       "description": "Minor version number",
       "storeAs": "minorVersion",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

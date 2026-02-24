@@ -1,6 +1,6 @@
 {
   "formatName": "WebP Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".webp"
   ],
@@ -29,13 +29,15 @@
     }
   },
   "functions": {
-    "readUInt32LE": "Read file size from RIFF header (little-endian)"
+    "readUInt32LE": "Read file size from RIFF header (little-endian)",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
     "fileSize": 0,
     "riffHeader": 0,
-    "webpSignature": ""
+    "webpSignature": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -76,6 +78,12 @@
       "name": "File Size (bytes)",
       "variable": "fileSize",
       "description": "Total WebP file size (minus 8 bytes)"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [

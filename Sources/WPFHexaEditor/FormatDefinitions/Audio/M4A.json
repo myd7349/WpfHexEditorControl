@@ -1,6 +1,6 @@
 {
   "formatName": "M4A Audio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".m4a",
     ".m4b",
@@ -34,7 +34,9 @@
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian for box sizes and atom headers",
     "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat)",
-    "readUInt16BE": "Read 16-bit values for audio configuration"
+    "readUInt16BE": "Read 16-bit values for audio configuration",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -45,7 +47,9 @@
     "bitDepth": 16,
     "duration": 0,
     "boxSize": 0,
-    "boxType": ""
+    "boxType": "",
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -81,6 +85,18 @@
       "description": "M4A brand identifier",
       "storeAs": "majorBrand",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

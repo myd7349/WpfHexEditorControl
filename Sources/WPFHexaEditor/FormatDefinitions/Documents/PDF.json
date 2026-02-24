@@ -1,6 +1,6 @@
 {
   "formatName": "PDF Document",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".pdf"
   ],
@@ -33,7 +33,10 @@
     "author": "",
     "pdfSignature": "",
     "pdfVersion": "",
-    "binaryMarkerComment": ""
+    "binaryMarkerComment": "",
+    "pdfPageCount": 0,
+    "pdfEncrypted": false,
+    "pdfLinearized": false
   },
   "blocks": [
     {
@@ -80,6 +83,30 @@
       "name": "Title",
       "variable": "title",
       "description": "Title"
+    },
+    {
+      "type": "metadata",
+      "name": "PDF Version",
+      "variable": "pdfVersion",
+      "description": "PDF specification version"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Count",
+      "variable": "pdfPageCount",
+      "description": "Total number of pages in the document"
+    },
+    {
+      "type": "metadata",
+      "name": "Encrypted",
+      "variable": "pdfEncrypted",
+      "description": "true if document is encrypted, false otherwise"
+    },
+    {
+      "type": "metadata",
+      "name": "Linearized",
+      "variable": "pdfLinearized",
+      "description": "true if PDF is linearized for fast web viewing"
     }
   ],
   "mime_types": [
@@ -150,6 +177,7 @@
     "last_updated": "2026-02-24"
   },
   "functions": {
-    "readUInt32LE": "Read document header"
+    "readUInt32LE": "Read document header",
+    "parsePDFTrailer()": "Parse PDF header and trailer"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "AIFF Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".aiff",
     ".aif",
@@ -34,7 +34,9 @@
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian for chunk sizes and sample rate",
     "extractASCIIString": "Extract chunk identifiers (FORM, AIFF, COMM, SSND)",
-    "readUInt16BE": "Read 16-bit values for channels and bit depth"
+    "readUInt16BE": "Read 16-bit values for channels and bit depth",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -46,7 +48,9 @@
     "sampleRate": 0,
     "formChunk": 0,
     "chunkSize": 0,
-    "aiffType": ""
+    "aiffType": "",
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -83,6 +87,18 @@
       "description": "AIFF or AIFC",
       "storeAs": "aiffType",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

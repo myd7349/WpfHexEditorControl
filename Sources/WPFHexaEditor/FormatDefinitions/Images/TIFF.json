@@ -1,6 +1,6 @@
 {
   "formatName": "TIFF Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".tif",
     ".tiff"
@@ -30,14 +30,24 @@
   },
   "functions": {
     "readUInt32LE": "Read IFD offset (little-endian) or readUInt32BE (big-endian)",
-    "readUInt32BE": "Read fields for big-endian TIFF (MM header)"
+    "readUInt32BE": "Read fields for big-endian TIFF (MM header)",
+    "parseTIFFIFD(var:tiffIFDOffset)": "Parse TIFF Image File Directory",
+    "computeFromVariables(tiffWidth * tiffHeight, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
     "ifdOffset": 0,
     "byteOrder": "",
     "version": 42,
-    "byteOrderLittleEndian": 0
+    "byteOrderLittleEndian": 0,
+    "tiffIFDOffset": 0,
+    "tiffWidth": 0,
+    "tiffHeight": 0,
+    "tiffBitsPerSample": 0,
+    "tiffCompression": 0,
+    "tiffCompressionName": "",
+    "tiffPhotometric": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -93,6 +103,42 @@
       "name": "TIFF Version",
       "variable": "version",
       "description": "Always 42 (magic number)"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Width",
+      "variable": "tiffWidth",
+      "description": "TIFF image width from IFD"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height",
+      "variable": "tiffHeight",
+      "description": "TIFF image height from IFD"
+    },
+    {
+      "type": "metadata",
+      "name": "Bits Per Sample",
+      "variable": "tiffBitsPerSample",
+      "description": "Number of bits per color sample"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression",
+      "variable": "tiffCompressionName",
+      "description": "TIFF compression method name"
+    },
+    {
+      "type": "metadata",
+      "name": "Photometric Interpretation",
+      "variable": "tiffPhotometric",
+      "description": "Color space interpretation value"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "tiffWidth x tiffHeight total pixel count"
     }
   ],
   "mime_types": [

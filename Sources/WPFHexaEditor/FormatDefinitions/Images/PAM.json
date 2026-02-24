@@ -1,6 +1,6 @@
 {
   "formatName": "Portable Arbitrary Map",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".pam"
   ],
@@ -32,7 +32,8 @@
     "compressionMethod": "",
     "headerCRC": 0,
     "pamMagic": 0,
-    "header": ""
+    "header": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -74,6 +75,12 @@
       "name": "Compression Method",
       "variable": "compressionMethod",
       "description": "Compression Method"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [
@@ -142,6 +149,7 @@
   },
   "functions": {
     "readUInt32LE": "Read header",
-    "calculateCRC32": "Validate"
+    "calculateCRC32": "Validate",
+    "formatFileSize(var:totalSize)": "Format totalSize as readable size"
   }
 }

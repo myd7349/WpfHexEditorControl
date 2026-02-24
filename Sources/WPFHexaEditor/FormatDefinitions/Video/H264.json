@@ -1,6 +1,6 @@
 {
   "formatName": "Raw H.264/AVC",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".h264",
     ".264",
@@ -36,7 +36,8 @@
     "height": 0,
     "frameRate": 0,
     "duration": 0,
-    "nalUnitStartCode": 0
+    "nalUnitStartCode": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -61,6 +62,12 @@
       "name": "Frame Rate",
       "variable": "frameRate",
       "description": "Frame Rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [
@@ -131,6 +138,7 @@
     "last_updated": "2026-02-24"
   },
   "functions": {
-    "readUInt32LE": "Read video header"
+    "readUInt32LE": "Read video header",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

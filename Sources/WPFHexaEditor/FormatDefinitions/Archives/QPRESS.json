@@ -1,6 +1,6 @@
 {
   "formatName": "Qpress Compression",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".qp",
     ".qpress"
@@ -35,7 +35,8 @@
     "originalSize": 0,
     "compressedSize": 0,
     "compressionRatio": 0,
-    "qpressMagic": ""
+    "qpressMagic": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -84,6 +85,12 @@
       "name": "Compression Ratio",
       "variable": "compressionRatio",
       "description": "Compression Ratio"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [
@@ -153,6 +160,7 @@
   },
   "functions": {
     "calculateCRC32": "Validate CRC",
-    "readUInt32LE": "Read size"
+    "readUInt32LE": "Read size",
+    "formatFileSize(var:compressedSize)": "Format compressedSize as readable size"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation Portable ISO",
-  "version": "2.2",
+  "version": "2.3",
   "extensions": [
     ".iso",
     ".cso"
@@ -40,7 +40,8 @@
     "headerSize": 0,
     "uncompressedSize": 0,
     "blockSize": 0,
-    "version": 0
+    "version": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -121,6 +122,12 @@
       "name": "Format",
       "variable": "format",
       "description": "Format"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -185,6 +192,7 @@
   },
   "functions": {
     "readUInt32LE": "Read disk header",
-    "multiply": "Calculate capacity"
+    "multiply": "Calculate capacity",
+    "formatFileSize(var:uncompressedSize)": "Format uncompressedSize as readable size"
   }
 }

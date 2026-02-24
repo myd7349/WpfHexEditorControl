@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 3 Disc/Package",
-  "version": "2.2",
+  "version": "2.3",
   "extensions": [
     ".iso",
     ".pkg"
@@ -40,7 +40,8 @@
     "packageFlags": 0,
     "dataOffset": 0,
     "dataSize": 0,
-    "contentId": ""
+    "contentId": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -120,6 +121,12 @@
       "name": "Original Size",
       "variable": "originalSize",
       "description": "Original Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -184,6 +191,7 @@
   },
   "functions": {
     "calculateCRC32": "Validate CRC",
-    "readUInt32LE": "Read size"
+    "readUInt32LE": "Read size",
+    "formatFileSize(var:dataSize)": "Format dataSize as readable size"
   }
 }

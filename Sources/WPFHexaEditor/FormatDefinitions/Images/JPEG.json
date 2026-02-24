@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".jpg",
     ".jpeg",
@@ -32,7 +32,8 @@
     }
   },
   "functions": {
-    "parseJPEGDimensions": "Find and parse SOF marker to extract image dimensions"
+    "parseJPEGDimensions": "Find and parse SOF marker to extract image dimensions",
+    "computeFromVariables(jpegWidth * jpegHeight, totalPixels)": "Calculate total pixel count"
   },
   "variables": {
     "jpegWidth": 0,
@@ -50,7 +51,8 @@
     "xDensity": 0,
     "yDensity": 0,
     "thumbnailWidth": 0,
-    "thumbnailHeight": 0
+    "thumbnailHeight": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -204,6 +206,12 @@
       "name": "SOF Marker Offset",
       "variable": "sofOffset",
       "description": "Byte offset where SOF marker was found"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "jpegWidth x jpegHeight total pixel count"
     }
   ],
   "mime_types": [

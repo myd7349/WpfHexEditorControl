@@ -1,6 +1,6 @@
 {
   "formatName": "Apple Lossless Audio Codec",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".alac",
     ".m4a"
@@ -33,7 +33,9 @@
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian for MP4 box sizes and atom headers",
     "extractASCIIString": "Extract box type identifiers (ftyp, alac, moov)",
-    "readUInt16BE": "Read 16-bit values for audio configuration"
+    "readUInt16BE": "Read 16-bit values for audio configuration",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -43,7 +45,9 @@
     "channels": 0,
     "bitDepth": 16,
     "duration": 0,
-    "fileTypeBox": ""
+    "fileTypeBox": "",
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -56,6 +60,18 @@
       "description": "ftyp - MP4 container for ALAC",
       "storeAs": "fileTypeBox",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

@@ -1,6 +1,6 @@
 {
   "formatName": "Open XML Paper Specification",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".oxps"
   ],
@@ -30,7 +30,9 @@
     "bitDepth": 0,
     "durationSeconds": 0,
     "totalSamples": 0,
-    "zipSignature": ""
+    "zipSignature": "",
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -94,6 +96,18 @@
       "name": "Duration",
       "variable": "durationSeconds",
       "description": "Total duration in seconds"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [
@@ -160,6 +174,8 @@
   },
   "functions": {
     "readUInt32BE": "Read audio metadata",
-    "divide": "Calculate duration"
+    "divide": "Calculate duration",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   }
 }

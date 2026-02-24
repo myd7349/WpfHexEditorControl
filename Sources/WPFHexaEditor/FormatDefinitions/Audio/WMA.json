@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Media Audio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".wma"
   ],
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt64LE": "Read 64-bit little-endian GUID values",
     "readUInt32LE": "Read object sizes and stream properties",
-    "readUInt16LE": "Read audio configuration (channels, bits per sample)"
+    "readUInt16LE": "Read audio configuration (channels, bits per sample)",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,8 @@
     "channels": 0,
     "bitrate": 0,
     "duration": 0,
-    "asfHeaderGuid": ""
+    "asfHeaderGuid": "",
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -55,6 +57,12 @@
       "description": "ASF Header Object GUID for WMA",
       "storeAs": "asfHeaderGuid",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

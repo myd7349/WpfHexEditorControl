@@ -1,6 +1,6 @@
 {
   "formatName": "Jupiter Tessellation",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".jt"
   ],
@@ -31,7 +31,9 @@
     "bitDepth": 0,
     "duration": 0,
     "versionHeader": "",
-    "jtVersion": ""
+    "jtVersion": "",
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -67,6 +69,18 @@
       "name": "Channels",
       "variable": "channels",
       "description": "Channels"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "quality_metrics": {
@@ -124,6 +138,8 @@
     "last_updated": "2026-02-24"
   },
   "functions": {
-    "readUInt32BE": "Read audio header"
+    "readUInt32BE": "Read audio header",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   }
 }

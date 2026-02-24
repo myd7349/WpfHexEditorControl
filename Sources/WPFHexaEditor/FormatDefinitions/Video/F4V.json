@@ -1,6 +1,6 @@
 {
   "formatName": "Flash MP4 Video",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".f4v",
     ".f4p",
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian for box sizes and timestamps",
     "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat)",
-    "readUInt16BE": "Read 16-bit values for video dimensions"
+    "readUInt16BE": "Read 16-bit values for video dimensions",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,8 @@
     "duration": 0,
     "videoCodec": "H.264",
     "audioCodec": "AAC",
-    "fileTypeBox": ""
+    "fileTypeBox": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -55,6 +57,12 @@
       "description": "ftypf4v - Flash Video file type",
       "storeAs": "fileTypeBox",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

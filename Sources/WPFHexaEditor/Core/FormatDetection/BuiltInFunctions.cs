@@ -1466,6 +1466,957 @@ namespace WpfHexaEditor.Core.FormatDetection
 
         #endregion
 
+        #region Phase 3 - Utility & Interpretation Functions
+
+        /// <summary>
+        /// Computes a value from an arithmetic expression using existing variables.
+        /// Expression supports: variable names, +, -, *, / operators, and literal numbers.
+        /// Sets the result in the specified target variable.
+        /// Example: ComputeFromVariables("imageWidth * imageHeight", "totalPixels")
+        /// </summary>
+        public void ComputeFromVariables(string expression, string targetVariable)
+        {
+            if (string.IsNullOrWhiteSpace(expression) || string.IsNullOrWhiteSpace(targetVariable))
+                return;
+
+            try
+            {
+                // Tokenize: split on operators while keeping them
+                var tokens = new List<string>();
+                string current = "";
+                foreach (char c in expression)
+                {
+                    if (c == '+' || c == '-' || c == '*' || c == '/')
+                    {
+                        if (current.Trim().Length > 0)
+                            tokens.Add(current.Trim());
+                        tokens.Add(c.ToString());
+                        current = "";
+                    }
+                    else
+                    {
+                        current += c;
+                    }
+                }
+                if (current.Trim().Length > 0)
+                    tokens.Add(current.Trim());
+
+                if (tokens.Count == 0) return;
+
+                // Evaluate: resolve values then compute left-to-right
+                double result = ResolveTokenValue(tokens[0]);
+
+                for (int i = 1; i < tokens.Count - 1; i += 2)
+                {
+                    string op = tokens[i];
+                    double right = ResolveTokenValue(tokens[i + 1]);
+
+                    switch (op)
+                    {
+                        case "+": result += right; break;
+                        case "-": result -= right; break;
+                        case "*": result *= right; break;
+                        case "/": result = right != 0 ? result / right : 0; break;
+                    }
+                }
+
+                // Store as long if integer, otherwise double
+                if (result == Math.Floor(result) && !double.IsInfinity(result))
+                    _variables[targetVariable] = (long)result;
+                else
+                    _variables[targetVariable] = result;
+            }
+            catch
+            {
+                _variables[targetVariable] = 0L;
+            }
+        }
+
+        private double ResolveTokenValue(string token)
+        {
+            // Check if it's a variable reference (with or without var: prefix)
+            string varName = token.StartsWith("var:") ? token.Substring(4) : token;
+
+            if (_variables.TryGetValue(varName, out var val))
+                return Convert.ToDouble(val);
+
+            // Try parse as number
+            if (double.TryParse(token, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out double num))
+                return num;
+
+            // Try hex
+            if (token.StartsWith("0x") && long.TryParse(token.Substring(2),
+                System.Globalization.NumberStyles.HexNumber, null, out long hex))
+                return hex;
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Formats a byte count into human-readable size string.
+        /// Sets variables: formattedSize
+        /// </summary>
+        public void FormatFileSize(long bytes)
+        {
+            string[] units = { "B", "KB", "MB", "GB", "TB" };
+            double size = bytes;
+            int unitIndex = 0;
+
+            while (size >= 1024 && unitIndex < units.Length - 1)
+            {
+                size /= 1024;
+                unitIndex++;
+            }
+
+            _variables["formattedSize"] = unitIndex == 0
+                ? $"{(long)size} {units[unitIndex]}"
+                : $"{size:F1} {units[unitIndex]}";
+        }
+
+        /// <summary>
+        /// Formats seconds into human-readable duration string (MM:SS or HH:MM:SS).
+        /// Sets variables: formattedDuration
+        /// </summary>
+        public void FormatDuration(double seconds)
+        {
+            if (seconds <= 0)
+            {
+                _variables["formattedDuration"] = "0:00";
+                return;
+            }
+
+            var ts = TimeSpan.FromSeconds(seconds);
+            _variables["formattedDuration"] = ts.TotalHours >= 1
+                ? $"{(int)ts.TotalHours}:{ts.Minutes:D2}:{ts.Seconds:D2}"
+                : $"{(int)ts.TotalMinutes}:{ts.Seconds:D2}";
+        }
+
+        /// <summary>
+        /// Interprets a color type code into a human-readable name.
+        /// Supports PNG, BMP, TIFF, and generic color type codes.
+        /// Sets variables: colorTypeName
+        /// </summary>
+        public void InterpretColorType(long colorType, string formatHint)
+        {
+            string name;
+            string hint = (formatHint ?? "").ToLowerInvariant();
+
+            if (hint.Contains("png"))
+            {
+                name = colorType switch
+                {
+                    0 => "Grayscale",
+                    2 => "RGB",
+                    3 => "Indexed (Palette)",
+                    4 => "Grayscale + Alpha",
+                    6 => "RGBA",
+                    _ => $"Unknown ({colorType})"
+                };
+            }
+            else if (hint.Contains("bmp"))
+            {
+                name = colorType switch
+                {
+                    0 => "Uncompressed RGB",
+                    1 => "RLE 8-bit",
+                    2 => "RLE 4-bit",
+                    3 => "Bitfields",
+                    4 => "JPEG",
+                    5 => "PNG",
+                    _ => $"Unknown ({colorType})"
+                };
+            }
+            else
+            {
+                // Generic interpretation
+                name = colorType switch
+                {
+                    0 => "Grayscale",
+                    1 => "Indexed",
+                    2 => "RGB",
+                    3 => "Indexed (Palette)",
+                    4 => "Grayscale + Alpha",
+                    6 => "RGBA",
+                    _ => $"Type {colorType}"
+                };
+            }
+
+            _variables["colorTypeName"] = name;
+        }
+
+        /// <summary>
+        /// Interprets a compression method code into a human-readable name.
+        /// Sets variables: compressionName
+        /// </summary>
+        public void InterpretCompressionMethod(long method, string formatHint)
+        {
+            string name;
+            string hint = (formatHint ?? "").ToLowerInvariant();
+
+            if (hint.Contains("zip") || hint.Contains("pk"))
+            {
+                name = method switch
+                {
+                    0 => "Stored (no compression)",
+                    1 => "Shrunk",
+                    6 => "Imploded",
+                    8 => "Deflated",
+                    9 => "Deflate64",
+                    12 => "BZIP2",
+                    14 => "LZMA",
+                    93 => "Zstandard",
+                    95 => "XZ",
+                    98 => "PPMd",
+                    _ => $"Method {method}"
+                };
+            }
+            else if (hint.Contains("png"))
+            {
+                name = method == 0 ? "Deflate" : $"Unknown ({method})";
+            }
+            else if (hint.Contains("tiff"))
+            {
+                name = method switch
+                {
+                    1 => "Uncompressed",
+                    2 => "CCITT Group 3",
+                    3 => "CCITT T.4",
+                    4 => "CCITT T.6",
+                    5 => "LZW",
+                    6 => "Old-style JPEG",
+                    7 => "JPEG",
+                    8 => "Deflate",
+                    32773 => "PackBits",
+                    _ => $"Method {method}"
+                };
+            }
+            else
+            {
+                name = method switch
+                {
+                    0 => "None / Stored",
+                    1 => "Shrunk",
+                    8 => "Deflate",
+                    _ => $"Method {method}"
+                };
+            }
+
+            _variables["compressionName"] = name;
+        }
+
+        /// <summary>
+        /// Validates that a variable value falls within an expected range.
+        /// Sets variables: fieldValid, fieldValidationMsg
+        /// </summary>
+        public void ValidateFieldRange(string varName, long min, long max)
+        {
+            if (!_variables.TryGetValue(varName, out var val))
+            {
+                _variables["fieldValid"] = false;
+                _variables["fieldValidationMsg"] = $"Variable '{varName}' not found";
+                return;
+            }
+
+            try
+            {
+                long value = Convert.ToInt64(val);
+                bool valid = value >= min && value <= max;
+                _variables["fieldValid"] = valid;
+                _variables["fieldValidationMsg"] = valid
+                    ? $"{varName} = {value} (valid)"
+                    : $"{varName} = {value} (expected {min}-{max})";
+            }
+            catch
+            {
+                _variables["fieldValid"] = false;
+                _variables["fieldValidationMsg"] = $"Cannot validate '{varName}'";
+            }
+        }
+
+        /// <summary>
+        /// Validates that bytes at a given offset match an expected hex signature.
+        /// Sets variables: signatureValid
+        /// </summary>
+        public void ValidateSignatureMatch(long offset, string expectedHex)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(expectedHex))
+                {
+                    _variables["signatureValid"] = false;
+                    return;
+                }
+
+                // Parse hex string to bytes
+                string hex = expectedHex.Replace(" ", "").Replace("0x", "");
+                int byteCount = hex.Length / 2;
+
+                if (offset < 0 || offset + byteCount > _data.Length)
+                {
+                    _variables["signatureValid"] = false;
+                    return;
+                }
+
+                bool match = true;
+                for (int i = 0; i < byteCount; i++)
+                {
+                    byte expected = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+                    if (_data[offset + i] != expected)
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                _variables["signatureValid"] = match;
+            }
+            catch
+            {
+                _variables["signatureValid"] = false;
+            }
+        }
+
+        #endregion
+
+        #region Phase 4 - Additional Specialized Parsers
+
+        /// <summary>
+        /// Parses GIF header to extract dimensions, version, and animation info.
+        /// Sets variables: gifWidth, gifHeight, gifVersion, gifColorTableSize, gifBackgroundColor
+        /// </summary>
+        public void ParseGIFHeader()
+        {
+            try
+            {
+                if (_data.Length < 13)
+                {
+                    SetGIFDefaults();
+                    return;
+                }
+
+                // Bytes 0-2: "GIF", Bytes 3-5: version ("87a" or "89a")
+                string version = System.Text.Encoding.ASCII.GetString(_data, 3, 3);
+                _variables["gifVersion"] = "GIF" + version;
+
+                // Bytes 6-7: width (little-endian)
+                _variables["gifWidth"] = (int)(_data[6] | (_data[7] << 8));
+                // Bytes 8-9: height (little-endian)
+                _variables["gifHeight"] = (int)(_data[8] | (_data[9] << 8));
+
+                // Byte 10: packed field
+                byte packed = _data[10];
+                bool hasGlobalTable = (packed & 0x80) != 0;
+                int colorTableSize = hasGlobalTable ? (1 << ((packed & 0x07) + 1)) : 0;
+                _variables["gifColorTableSize"] = colorTableSize;
+                _variables["gifBackgroundColor"] = (int)_data[11];
+            }
+            catch
+            {
+                SetGIFDefaults();
+            }
+        }
+
+        private void SetGIFDefaults()
+        {
+            _variables["gifWidth"] = 0;
+            _variables["gifHeight"] = 0;
+            _variables["gifVersion"] = "Unknown";
+            _variables["gifColorTableSize"] = 0;
+            _variables["gifBackgroundColor"] = 0;
+        }
+
+        /// <summary>
+        /// Parses BMP BITMAPINFOHEADER at the given offset.
+        /// Sets variables: bmpWidth, bmpHeight, bmpBitCount, bmpCompression, bmpImageSize, bmpCompressionName
+        /// </summary>
+        public void ParseBMPInfoHeader(long offset)
+        {
+            try
+            {
+                if (offset < 0 || offset + 40 > _data.Length)
+                {
+                    SetBMPDefaults();
+                    return;
+                }
+
+                long o = offset;
+                // Skip header size (4 bytes)
+                int width = _data[o + 4] | (_data[o + 5] << 8) | (_data[o + 6] << 16) | (_data[o + 7] << 24);
+                int height = _data[o + 8] | (_data[o + 9] << 8) | (_data[o + 10] << 16) | (_data[o + 11] << 24);
+                int bitCount = _data[o + 14] | (_data[o + 15] << 8);
+                int compression = _data[o + 16] | (_data[o + 17] << 8) | (_data[o + 18] << 16) | (_data[o + 19] << 24);
+                int imageSize = _data[o + 20] | (_data[o + 21] << 8) | (_data[o + 22] << 16) | (_data[o + 23] << 24);
+
+                _variables["bmpWidth"] = Math.Abs(width);
+                _variables["bmpHeight"] = Math.Abs(height);
+                _variables["bmpBitCount"] = bitCount;
+                _variables["bmpCompression"] = compression;
+                _variables["bmpImageSize"] = imageSize;
+                _variables["bmpCompressionName"] = compression switch
+                {
+                    0 => "RGB (uncompressed)",
+                    1 => "RLE 8-bit",
+                    2 => "RLE 4-bit",
+                    3 => "Bitfields",
+                    4 => "JPEG",
+                    5 => "PNG",
+                    _ => $"Unknown ({compression})"
+                };
+            }
+            catch
+            {
+                SetBMPDefaults();
+            }
+        }
+
+        private void SetBMPDefaults()
+        {
+            _variables["bmpWidth"] = 0;
+            _variables["bmpHeight"] = 0;
+            _variables["bmpBitCount"] = 0;
+            _variables["bmpCompression"] = 0;
+            _variables["bmpImageSize"] = 0;
+            _variables["bmpCompressionName"] = "Unknown";
+        }
+
+        /// <summary>
+        /// Parses FLAC STREAMINFO metadata block (mandatory first block after fLaC signature).
+        /// Sets variables: flacSampleRate, flacChannels, flacBitsPerSample, flacTotalSamples, flacDuration
+        /// </summary>
+        public void ParseFLACStreamInfo()
+        {
+            try
+            {
+                // fLaC signature at 0-3, STREAMINFO block header at 4-7, STREAMINFO data at 8-41
+                if (_data.Length < 42)
+                {
+                    SetFLACDefaults();
+                    return;
+                }
+
+                long o = 8; // STREAMINFO data starts at byte 8
+
+                // Bytes 10-13 (from STREAMINFO start): sample rate (20 bits), channels (3 bits), bps (5 bits)
+                // Offset from file start = 8 + 10 = 18
+                uint val = (uint)((_data[o + 10] << 24) | (_data[o + 11] << 16) | (_data[o + 12] << 8) | _data[o + 13]);
+                int sampleRate = (int)(val >> 12);
+                int channels = (int)((val >> 9) & 0x07) + 1;
+                int bitsPerSample = (int)((val >> 4) & 0x1F) + 1;
+
+                // Total samples: 36 bits spanning bytes 13-17 from STREAMINFO start
+                long totalSamples = ((long)(_data[o + 13] & 0x0F) << 32) |
+                                    ((long)_data[o + 14] << 24) |
+                                    ((long)_data[o + 15] << 16) |
+                                    ((long)_data[o + 16] << 8) |
+                                    _data[o + 17];
+
+                _variables["flacSampleRate"] = sampleRate;
+                _variables["flacChannels"] = channels;
+                _variables["flacBitsPerSample"] = bitsPerSample;
+                _variables["flacTotalSamples"] = totalSamples;
+
+                if (sampleRate > 0 && totalSamples > 0)
+                {
+                    double duration = (double)totalSamples / sampleRate;
+                    _variables["flacDuration"] = duration;
+                    FormatDuration(duration);
+                }
+                else
+                {
+                    _variables["flacDuration"] = 0.0;
+                }
+            }
+            catch
+            {
+                SetFLACDefaults();
+            }
+        }
+
+        private void SetFLACDefaults()
+        {
+            _variables["flacSampleRate"] = 0;
+            _variables["flacChannels"] = 0;
+            _variables["flacBitsPerSample"] = 0;
+            _variables["flacTotalSamples"] = 0L;
+            _variables["flacDuration"] = 0.0;
+        }
+
+        /// <summary>
+        /// Parses OGG page header at the given offset.
+        /// Sets variables: oggVersion, oggHeaderType, oggGranulePosition, oggSerialNumber, oggPageSequence
+        /// </summary>
+        public void ParseOGGPageHeader(long offset)
+        {
+            try
+            {
+                if (offset < 0 || offset + 27 > _data.Length)
+                {
+                    SetOGGDefaults();
+                    return;
+                }
+
+                long o = offset;
+                _variables["oggVersion"] = (int)_data[o + 4];
+                _variables["oggHeaderType"] = (int)_data[o + 5];
+
+                // Granule position: 8 bytes little-endian at offset+6
+                long granule = 0;
+                for (int i = 0; i < 8; i++)
+                    granule |= (long)_data[o + 6 + i] << (i * 8);
+                _variables["oggGranulePosition"] = granule;
+
+                // Serial number: 4 bytes LE at offset+14
+                _variables["oggSerialNumber"] = (int)(_data[o + 14] | (_data[o + 15] << 8) |
+                    (_data[o + 16] << 16) | (_data[o + 17] << 24));
+
+                // Page sequence: 4 bytes LE at offset+18
+                _variables["oggPageSequence"] = (int)(_data[o + 18] | (_data[o + 19] << 8) |
+                    (_data[o + 20] << 16) | (_data[o + 21] << 24));
+            }
+            catch
+            {
+                SetOGGDefaults();
+            }
+        }
+
+        private void SetOGGDefaults()
+        {
+            _variables["oggVersion"] = 0;
+            _variables["oggHeaderType"] = 0;
+            _variables["oggGranulePosition"] = 0L;
+            _variables["oggSerialNumber"] = 0;
+            _variables["oggPageSequence"] = 0;
+        }
+
+        /// <summary>
+        /// Parses PE Optional Header to extract key executable metadata.
+        /// Expects offset pointing to the PE signature (typically at the offset stored at 0x3C).
+        /// Sets variables: peSubsystem, peSubsystemName, peEntryPoint, peImageBase, peSectionCount, peIs64Bit, peMachine, peMachineName
+        /// </summary>
+        public void ParsePEOptionalHeader(long peOffset)
+        {
+            try
+            {
+                if (peOffset < 0 || peOffset + 24 > _data.Length)
+                {
+                    SetPEDefaults();
+                    return;
+                }
+
+                long o = peOffset;
+
+                // COFF header starts at PE+4
+                int machine = _data[o + 4] | (_data[o + 5] << 8);
+                int sectionCount = _data[o + 6] | (_data[o + 7] << 8);
+
+                _variables["peMachine"] = machine;
+                _variables["peMachineName"] = machine switch
+                {
+                    0x014C => "x86 (i386)",
+                    0x0200 => "IA-64 (Itanium)",
+                    0x8664 => "x64 (AMD64)",
+                    0xAA64 => "ARM64",
+                    0x01C0 => "ARM",
+                    0x01C4 => "ARM Thumb-2",
+                    _ => $"Unknown (0x{machine:X4})"
+                };
+                _variables["peSectionCount"] = sectionCount;
+
+                // Optional header starts at PE+24
+                long optBase = o + 24;
+                if (optBase + 2 > _data.Length) { SetPEDefaults(); return; }
+
+                int magic = _data[optBase] | (_data[optBase + 1] << 8);
+                bool is64 = magic == 0x020B; // PE32+ = 64-bit
+                _variables["peIs64Bit"] = is64;
+
+                // Entry point at optBase+16 (4 bytes LE)
+                if (optBase + 20 <= _data.Length)
+                {
+                    uint entryPoint = (uint)(_data[optBase + 16] | (_data[optBase + 17] << 8) |
+                        (_data[optBase + 18] << 16) | (_data[optBase + 19] << 24));
+                    _variables["peEntryPoint"] = (long)entryPoint;
+                }
+
+                // ImageBase: at optBase+28 (4 bytes PE32) or optBase+24 (8 bytes PE32+)
+                if (is64 && optBase + 32 <= _data.Length)
+                {
+                    long imageBase = 0;
+                    for (int i = 0; i < 8; i++)
+                        imageBase |= (long)_data[optBase + 24 + i] << (i * 8);
+                    _variables["peImageBase"] = imageBase;
+                }
+                else if (optBase + 32 <= _data.Length)
+                {
+                    uint imageBase = (uint)(_data[optBase + 28] | (_data[optBase + 29] << 8) |
+                        (_data[optBase + 30] << 16) | (_data[optBase + 31] << 24));
+                    _variables["peImageBase"] = (long)imageBase;
+                }
+
+                // Subsystem: at optBase+68 (PE32) or optBase+68 (PE32+) - 2 bytes
+                long subsysOffset = optBase + 68;
+                if (subsysOffset + 2 <= _data.Length)
+                {
+                    int subsystem = _data[subsysOffset] | (_data[subsysOffset + 1] << 8);
+                    _variables["peSubsystem"] = subsystem;
+                    _variables["peSubsystemName"] = subsystem switch
+                    {
+                        1 => "Native",
+                        2 => "Windows GUI",
+                        3 => "Windows Console",
+                        7 => "POSIX Console",
+                        9 => "Windows CE GUI",
+                        10 => "EFI Application",
+                        11 => "EFI Boot Service Driver",
+                        12 => "EFI Runtime Driver",
+                        14 => "Xbox",
+                        _ => $"Unknown ({subsystem})"
+                    };
+                }
+            }
+            catch
+            {
+                SetPEDefaults();
+            }
+        }
+
+        private void SetPEDefaults()
+        {
+            _variables["peSubsystem"] = 0;
+            _variables["peSubsystemName"] = "Unknown";
+            _variables["peEntryPoint"] = 0L;
+            _variables["peImageBase"] = 0L;
+            _variables["peSectionCount"] = 0;
+            _variables["peIs64Bit"] = false;
+            _variables["peMachine"] = 0;
+            _variables["peMachineName"] = "Unknown";
+        }
+
+        /// <summary>
+        /// Parses ELF header to extract architecture, ABI, type, and entry point.
+        /// Sets variables: elfClass, elfArch, elfABI, elfType, elfTypeName, elfEntryPoint, elfIs64Bit
+        /// </summary>
+        public void ParseELFHeader()
+        {
+            try
+            {
+                if (_data.Length < 64)
+                {
+                    SetELFDefaults();
+                    return;
+                }
+
+                // ELF identification
+                int elfClass = _data[4]; // 1=32-bit, 2=64-bit
+                bool is64 = elfClass == 2;
+                _variables["elfClass"] = elfClass;
+                _variables["elfIs64Bit"] = is64;
+
+                int abi = _data[7];
+                _variables["elfABI"] = abi switch
+                {
+                    0 => "System V",
+                    1 => "HP-UX",
+                    2 => "NetBSD",
+                    3 => "Linux",
+                    6 => "Solaris",
+                    9 => "FreeBSD",
+                    12 => "ARM EABI",
+                    97 => "ARM",
+                    _ => $"ABI {abi}"
+                };
+
+                // Type: 2 bytes at offset 16
+                int type = _data[16] | (_data[17] << 8);
+                _variables["elfType"] = type;
+                _variables["elfTypeName"] = type switch
+                {
+                    1 => "Relocatable",
+                    2 => "Executable",
+                    3 => "Shared Object",
+                    4 => "Core Dump",
+                    _ => $"Type {type}"
+                };
+
+                // Machine: 2 bytes at offset 18
+                int machine = _data[18] | (_data[19] << 8);
+                _variables["elfArch"] = machine switch
+                {
+                    3 => "x86",
+                    8 => "MIPS",
+                    20 => "PowerPC",
+                    40 => "ARM",
+                    62 => "x86-64",
+                    183 => "AArch64 (ARM64)",
+                    243 => "RISC-V",
+                    _ => $"Machine {machine}"
+                };
+
+                // Entry point
+                if (is64 && _data.Length >= 32)
+                {
+                    long entry = 0;
+                    for (int i = 0; i < 8; i++)
+                        entry |= (long)_data[24 + i] << (i * 8);
+                    _variables["elfEntryPoint"] = entry;
+                }
+                else if (_data.Length >= 28)
+                {
+                    uint entry = (uint)(_data[24] | (_data[25] << 8) | (_data[26] << 16) | (_data[27] << 24));
+                    _variables["elfEntryPoint"] = (long)entry;
+                }
+            }
+            catch
+            {
+                SetELFDefaults();
+            }
+        }
+
+        private void SetELFDefaults()
+        {
+            _variables["elfClass"] = 0;
+            _variables["elfArch"] = "Unknown";
+            _variables["elfABI"] = "Unknown";
+            _variables["elfType"] = 0;
+            _variables["elfTypeName"] = "Unknown";
+            _variables["elfEntryPoint"] = 0L;
+            _variables["elfIs64Bit"] = false;
+        }
+
+        /// <summary>
+        /// Parses TIFF IFD (Image File Directory) at the given offset.
+        /// Sets variables: tiffWidth, tiffHeight, tiffBitsPerSample, tiffCompression, tiffCompressionName, tiffPhotometric
+        /// </summary>
+        public void ParseTIFFIFD(long ifdOffset)
+        {
+            try
+            {
+                if (ifdOffset < 0 || ifdOffset + 2 > _data.Length)
+                {
+                    SetTIFFDefaults();
+                    return;
+                }
+
+                // Determine endianness from TIFF header
+                bool bigEndian = _data[0] == 0x4D && _data[1] == 0x4D; // "MM"
+
+                int entryCount = bigEndian
+                    ? (_data[ifdOffset] << 8) | _data[ifdOffset + 1]
+                    : _data[ifdOffset] | (_data[ifdOffset + 1] << 8);
+
+                if (entryCount <= 0 || entryCount > 500) { SetTIFFDefaults(); return; }
+
+                int width = 0, height = 0, bps = 0, compression = 1, photometric = 0;
+
+                for (int i = 0; i < entryCount && ifdOffset + 2 + (i + 1) * 12 <= _data.Length; i++)
+                {
+                    long entryBase = ifdOffset + 2 + i * 12;
+                    int tag = bigEndian
+                        ? (_data[entryBase] << 8) | _data[entryBase + 1]
+                        : _data[entryBase] | (_data[entryBase + 1] << 8);
+
+                    // Value at offset+8 (for SHORT/LONG inline values)
+                    int val = bigEndian
+                        ? (_data[entryBase + 8] << 8) | _data[entryBase + 9]
+                        : _data[entryBase + 8] | (_data[entryBase + 9] << 8);
+
+                    int valLong = bigEndian
+                        ? (_data[entryBase + 8] << 24) | (_data[entryBase + 9] << 16) |
+                          (_data[entryBase + 10] << 8) | _data[entryBase + 11]
+                        : _data[entryBase + 8] | (_data[entryBase + 9] << 8) |
+                          (_data[entryBase + 10] << 16) | (_data[entryBase + 11] << 24);
+
+                    switch (tag)
+                    {
+                        case 256: width = valLong; break;      // ImageWidth
+                        case 257: height = valLong; break;     // ImageLength
+                        case 258: bps = val; break;            // BitsPerSample
+                        case 259: compression = val; break;    // Compression
+                        case 262: photometric = val; break;    // PhotometricInterpretation
+                    }
+                }
+
+                _variables["tiffWidth"] = width;
+                _variables["tiffHeight"] = height;
+                _variables["tiffBitsPerSample"] = bps;
+                _variables["tiffCompression"] = compression;
+                _variables["tiffCompressionName"] = compression switch
+                {
+                    1 => "Uncompressed",
+                    2 => "CCITT Group 3",
+                    5 => "LZW",
+                    6 => "Old JPEG",
+                    7 => "JPEG",
+                    8 => "Deflate",
+                    32773 => "PackBits",
+                    _ => $"Method {compression}"
+                };
+                _variables["tiffPhotometric"] = photometric;
+            }
+            catch
+            {
+                SetTIFFDefaults();
+            }
+        }
+
+        private void SetTIFFDefaults()
+        {
+            _variables["tiffWidth"] = 0;
+            _variables["tiffHeight"] = 0;
+            _variables["tiffBitsPerSample"] = 0;
+            _variables["tiffCompression"] = 0;
+            _variables["tiffCompressionName"] = "Unknown";
+            _variables["tiffPhotometric"] = 0;
+        }
+
+        /// <summary>
+        /// Parses PDF to find version and attempt page count extraction.
+        /// Sets variables: pdfVersion, pdfPageCount, pdfEncrypted, pdfLinearized
+        /// </summary>
+        public void ParsePDFTrailer()
+        {
+            try
+            {
+                _variables["pdfVersion"] = "Unknown";
+                _variables["pdfPageCount"] = 0;
+                _variables["pdfEncrypted"] = false;
+                _variables["pdfLinearized"] = false;
+
+                // PDF version from first line: %PDF-1.7
+                if (_data.Length >= 8 && _data[0] == 0x25 && _data[1] == 0x50)
+                {
+                    string header = System.Text.Encoding.ASCII.GetString(_data, 0, Math.Min(20, _data.Length));
+                    int idx = header.IndexOf("%PDF-");
+                    if (idx >= 0 && idx + 8 <= header.Length)
+                        _variables["pdfVersion"] = header.Substring(idx + 5, 3);
+                }
+
+                // Search for /Linearized and /Encrypt in first 4KB
+                int searchLen = Math.Min(_data.Length, 4096);
+                string content = System.Text.Encoding.ASCII.GetString(_data, 0, searchLen);
+
+                if (content.Contains("/Linearized"))
+                    _variables["pdfLinearized"] = true;
+                if (content.Contains("/Encrypt"))
+                    _variables["pdfEncrypted"] = true;
+
+                // Try to find page count: /Count N in Pages dictionary
+                int countIdx = content.IndexOf("/Count ");
+                if (countIdx >= 0)
+                {
+                    string after = content.Substring(countIdx + 7, Math.Min(10, content.Length - countIdx - 7));
+                    string numStr = "";
+                    foreach (char c in after)
+                    {
+                        if (char.IsDigit(c)) numStr += c;
+                        else if (numStr.Length > 0) break;
+                    }
+                    if (int.TryParse(numStr, out int pageCount))
+                        _variables["pdfPageCount"] = pageCount;
+                }
+            }
+            catch
+            {
+                _variables["pdfVersion"] = "Error";
+                _variables["pdfPageCount"] = 0;
+                _variables["pdfEncrypted"] = false;
+                _variables["pdfLinearized"] = false;
+            }
+        }
+
+        /// <summary>
+        /// Parses SQLite database header (first 100 bytes).
+        /// Sets variables: sqlitePageSize, sqlitePageCount, sqliteVersion, sqliteEncoding, sqliteVersionName
+        /// </summary>
+        public void ParseSQLiteHeader()
+        {
+            try
+            {
+                if (_data.Length < 100)
+                {
+                    SetSQLiteDefaults();
+                    return;
+                }
+
+                // Page size: 2 bytes big-endian at offset 16
+                int pageSize = (_data[16] << 8) | _data[17];
+                if (pageSize == 1) pageSize = 65536; // Special case
+                _variables["sqlitePageSize"] = pageSize;
+
+                // Database size in pages: 4 bytes big-endian at offset 28
+                int pageCount = (_data[28] << 24) | (_data[29] << 16) | (_data[30] << 8) | _data[31];
+                _variables["sqlitePageCount"] = pageCount;
+
+                // Text encoding: 4 bytes big-endian at offset 56
+                int encoding = (_data[56] << 24) | (_data[57] << 16) | (_data[58] << 8) | _data[59];
+                _variables["sqliteEncoding"] = encoding switch
+                {
+                    1 => "UTF-8",
+                    2 => "UTF-16LE",
+                    3 => "UTF-16BE",
+                    _ => $"Unknown ({encoding})"
+                };
+
+                // SQLite version at offset 96: 4 bytes big-endian
+                int version = (_data[96] << 24) | (_data[97] << 16) | (_data[98] << 8) | _data[99];
+                _variables["sqliteVersion"] = version;
+                _variables["sqliteVersionName"] = $"{version / 1000000}.{(version / 1000) % 1000}.{version % 1000}";
+            }
+            catch
+            {
+                SetSQLiteDefaults();
+            }
+        }
+
+        private void SetSQLiteDefaults()
+        {
+            _variables["sqlitePageSize"] = 0;
+            _variables["sqlitePageCount"] = 0;
+            _variables["sqliteVersion"] = 0;
+            _variables["sqliteEncoding"] = "Unknown";
+            _variables["sqliteVersionName"] = "Unknown";
+        }
+
+        /// <summary>
+        /// Parses EBML header for MKV/WebM files.
+        /// Sets variables: mkvDocType, mkvDocTypeVersion, mkvEBMLVersion
+        /// </summary>
+        public void ParseMKVHeader()
+        {
+            try
+            {
+                _variables["mkvDocType"] = "Unknown";
+                _variables["mkvDocTypeVersion"] = 0;
+                _variables["mkvEBMLVersion"] = 0;
+
+                if (_data.Length < 40) return;
+
+                // Search for DocType string ("matroska" or "webm") within first 100 bytes
+                int searchLen = Math.Min(_data.Length, 100);
+                string content = System.Text.Encoding.ASCII.GetString(_data, 0, searchLen);
+
+                if (content.Contains("matroska"))
+                    _variables["mkvDocType"] = "Matroska (MKV)";
+                else if (content.Contains("webm"))
+                    _variables["mkvDocType"] = "WebM";
+
+                // EBML version is typically at a fixed early offset
+                // EBML element ID: 0x1A45DFA3, version element ID: 0x4286
+                // Simple heuristic: look for version byte after EBML header
+                if (_data.Length > 5)
+                    _variables["mkvEBMLVersion"] = (int)_data[5] <= 4 ? (int)_data[5] : 1;
+            }
+            catch
+            {
+                _variables["mkvDocType"] = "Unknown";
+                _variables["mkvDocTypeVersion"] = 0;
+                _variables["mkvEBMLVersion"] = 0;
+            }
+        }
+
+        #endregion
+
         #region CRC32 Lookup Table
 
         /// <summary>
@@ -1801,6 +2752,126 @@ namespace WpfHexaEditor.Core.FormatDetection
                         long offset = Convert.ToInt64(args[0]);
                         ParseJPEGSOFMarker(offset);
                     }
+                    return null;
+
+                // Phase 3 - Utility & Interpretation Functions
+                case "computefromvariables":
+                    if (args.Length >= 2)
+                    {
+                        string expression = Convert.ToString(args[0]);
+                        string targetVar = Convert.ToString(args[1]);
+                        ComputeFromVariables(expression, targetVar);
+                    }
+                    return null;
+
+                case "formatfilesize":
+                    if (args.Length >= 1)
+                    {
+                        long bytes = Convert.ToInt64(args[0]);
+                        FormatFileSize(bytes);
+                    }
+                    return null;
+
+                case "formatduration":
+                    if (args.Length >= 1)
+                    {
+                        double seconds = Convert.ToDouble(args[0]);
+                        FormatDuration(seconds);
+                    }
+                    return null;
+
+                case "interpretcolortype":
+                    if (args.Length >= 1)
+                    {
+                        long colorType = Convert.ToInt64(args[0]);
+                        string hint = args.Length >= 2 ? Convert.ToString(args[1]) : "";
+                        InterpretColorType(colorType, hint);
+                    }
+                    return null;
+
+                case "interpretcompressionmethod":
+                    if (args.Length >= 1)
+                    {
+                        long method = Convert.ToInt64(args[0]);
+                        string hint = args.Length >= 2 ? Convert.ToString(args[1]) : "";
+                        InterpretCompressionMethod(method, hint);
+                    }
+                    return null;
+
+                case "validatefieldrange":
+                    if (args.Length >= 3)
+                    {
+                        string varName = Convert.ToString(args[0]);
+                        long min = Convert.ToInt64(args[1]);
+                        long max = Convert.ToInt64(args[2]);
+                        ValidateFieldRange(varName, min, max);
+                    }
+                    return null;
+
+                case "validatesignaturematch":
+                    if (args.Length >= 2)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        string expectedHex = Convert.ToString(args[1]);
+                        ValidateSignatureMatch(offset, expectedHex);
+                    }
+                    return null;
+
+                // Phase 4 - Additional Specialized Parsers
+                case "parsegifheader":
+                    ParseGIFHeader();
+                    return null;
+
+                case "parsebmpinfoheader":
+                    if (args.Length >= 1)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        ParseBMPInfoHeader(offset);
+                    }
+                    return null;
+
+                case "parseflacstreaminfo":
+                    ParseFLACStreamInfo();
+                    return null;
+
+                case "parseoggpageheader":
+                    if (args.Length >= 1)
+                    {
+                        long offset = Convert.ToInt64(args[0]);
+                        ParseOGGPageHeader(offset);
+                    }
+                    return null;
+
+                case "parsepeoptionalheader":
+                    if (args.Length >= 1)
+                    {
+                        long peOffset = Convert.ToInt64(args[0]);
+                        ParsePEOptionalHeader(peOffset);
+                    }
+                    return null;
+
+                case "parseelfheader":
+                    ParseELFHeader();
+                    return null;
+
+                case "parsetiffifd":
+                    if (args.Length >= 1)
+                    {
+                        long ifdOffset = Convert.ToInt64(args[0]);
+                        ParseTIFFIFD(ifdOffset);
+                    }
+                    return null;
+
+                case "parsepdftrailer":
+                    ParsePDFTrailer();
+                    return null;
+
+                case "parsesqliteheader":
+                    ParseSQLiteHeader();
+                    return null;
+
+                case "parsemkvheader":
+                    ParseMKVHeader();
                     return null;
 
                 default:

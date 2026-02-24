@@ -150,6 +150,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Column="0"
@@ -158,12 +159,32 @@
                                    Foreground="#666666"/>
 
                         <TextBlock Grid.Column="1"
-                                   Text="{Binding FormattedValue}"
+                                   Text="{Binding ActiveFormattedValue}"
                                    FontSize="11"
                                    FontFamily="Consolas"
                                    Foreground="#2196F3"
                                    TextWrapping="Wrap"
                                    ToolTip="{Binding DetailedTooltip}"/>
+
+                        <!-- Display mode toggle H/D/B (C7) -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,0,0"
+                                    Visibility="{Binding IsNumericType, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Button Content="H" Tag="hex" Click="DisplayModeButton_Click"
+                                    Width="18" Height="16" FontSize="9" FontFamily="Consolas"
+                                    FontWeight="SemiBold" Padding="0" Margin="1,0"
+                                    ToolTip="Hexadecimal"
+                                    Style="{DynamicResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                            <Button Content="D" Tag="dec" Click="DisplayModeButton_Click"
+                                    Width="18" Height="16" FontSize="9" FontFamily="Consolas"
+                                    FontWeight="SemiBold" Padding="0" Margin="1,0"
+                                    ToolTip="Decimal"
+                                    Style="{DynamicResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                            <Button Content="B" Tag="bin" Click="DisplayModeButton_Click"
+                                    Width="18" Height="16" FontSize="9" FontFamily="Consolas"
+                                    FontWeight="SemiBold" Padding="0" Margin="1,0"
+                                    ToolTip="Binary"
+                                    Style="{DynamicResource {x:Static ToolBar.ButtonStyleKey}}"/>
+                        </StackPanel>
                     </Grid>
 
                     <!-- Field details -->
@@ -206,6 +227,9 @@
             <RowDefinition Height="Auto"/> <!-- Search box -->
             <RowDefinition Height="Auto"/> <!-- Quick Actions -->
             <RowDefinition Height="Auto"/> <!-- Format info -->
+            <RowDefinition Height="Auto"/> <!-- Computed Values spotlight -->
+            <RowDefinition Height="Auto"/> <!-- Key Insights strip -->
+            <RowDefinition Height="Auto"/> <!-- Coverage bar -->
             <RowDefinition Height="*"/>    <!-- Fields list -->
             <RowDefinition Height="Auto"/> <!-- Status bar -->
         </Grid.RowDefinitions>
@@ -234,6 +258,34 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <!-- Validation Summary Badges (C2) -->
+                    <Border x:Name="ValidBadge"
+                            CornerRadius="8"
+                            Padding="6,2"
+                            Margin="0,0,4,0"
+                            Background="#4CAF50"
+                            VerticalAlignment="Center"
+                            Visibility="Collapsed"
+                            ToolTip="Valid fields">
+                        <TextBlock FontSize="10" Foreground="White" FontWeight="SemiBold">
+                            <Run Text="&#x2713; "/>
+                            <Run x:Name="ValidCountRun" Text="0"/>
+                        </TextBlock>
+                    </Border>
+                    <Border x:Name="InvalidBadge"
+                            CornerRadius="8"
+                            Padding="6,2"
+                            Margin="0,0,4,0"
+                            Background="#F44336"
+                            VerticalAlignment="Center"
+                            Visibility="Collapsed"
+                            ToolTip="Fields with validation errors"
+                            MouseLeftButtonDown="InvalidBadge_Click">
+                        <TextBlock FontSize="10" Foreground="White" FontWeight="SemiBold">
+                            <Run Text="&#x26A0; "/>
+                            <Run x:Name="InvalidCountRun" Text="0"/>
+                        </TextBlock>
+                    </Border>
                     <ToggleButton x:Name="ShowBookmarksButton"
                                   Content="⭐"
                                   Width="32" Height="32"
@@ -489,9 +541,129 @@
             </StackPanel>
         </Border>
 
+        <!-- Computed Values Spotlight (C1) -->
+        <Border x:Name="ComputedValuesSection"
+                Grid.Row="4"
+                Background="#E3F2FD"
+                Padding="10,6"
+                BorderThickness="0,0,0,1"
+                BorderBrush="#BBDEFB"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock Text="Computed Values"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="#1565C0"
+                           Margin="0,0,0,4"/>
+                <ItemsControl x:Name="MetadataItemsControl"
+                              ItemsSource="{Binding MetadataFields}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="&#x2139;"
+                                           FontSize="11"
+                                           Foreground="#1976D2"
+                                           Margin="0,0,6,0"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Name}"
+                                           FontSize="11"
+                                           Foreground="#333333"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding FormattedValue}"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           FontFamily="Consolas"
+                                           Foreground="#0D47A1"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- Key Insights Strip (C4) -->
+        <Border x:Name="KeyInsightsSection"
+                Grid.Row="5"
+                Background="#FFFDE7"
+                Padding="10,6"
+                BorderThickness="0,0,0,1"
+                BorderBrush="#FFF9C4"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock Text="Key Insights"
+                           FontSize="10"
+                           FontWeight="SemiBold"
+                           Foreground="#F57F17"
+                           Margin="0,0,0,4"/>
+                <ItemsControl x:Name="InsightsItemsControl"
+                              ItemsSource="{Binding InsightChips}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="10"
+                                    Padding="8,3"
+                                    Margin="0,0,6,4"
+                                    Background="{Binding Background}">
+                                <TextBlock FontSize="11">
+                                    <Run Text="{Binding Icon, Mode=OneWay}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding Value, Mode=OneWay}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- Byte Coverage Bar (C6) -->
+        <Border x:Name="CoverageBarSection"
+                Grid.Row="6"
+                Background="White"
+                Padding="10,4"
+                BorderThickness="0,0,0,1"
+                BorderBrush="#E0E0E0"
+                Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0" Height="8">
+                    <Border CornerRadius="4" Background="#EEEEEE"/>
+                    <ProgressBar x:Name="CoverageProgressBar"
+                                 Height="8"
+                                 Minimum="0" Maximum="100" Value="0"
+                                 Foreground="#42A5F5"
+                                 Background="Transparent"
+                                 BorderThickness="0"/>
+                </Grid>
+                <TextBlock x:Name="CoverageText"
+                           Grid.Column="1"
+                           FontSize="10"
+                           Foreground="#666666"
+                           Margin="8,0,0,0"
+                           VerticalAlignment="Center"
+                           Text="0% parsed"/>
+            </Grid>
+        </Border>
+
         <!-- Fields list -->
         <ListBox x:Name="FieldsListBox"
-                 Grid.Row="4"
+                 Grid.Row="7"
                  ItemsSource="{Binding FilteredFields}"
                  ItemTemplate="{StaticResource FieldTemplate}"
                  ItemContainerStyle="{StaticResource FieldItemStyle}"
@@ -503,6 +675,44 @@
                  VirtualizingPanel.VirtualizationMode="Recycling"
                  VirtualizingPanel.CacheLength="20,20"
                  VirtualizingPanel.CacheLengthUnit="Item">
+            <!-- Group Style for collapsible section headers (C3) -->
+            <ListBox.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.ContainerStyle>
+                        <Style TargetType="{x:Type GroupItem}">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type GroupItem}">
+                                        <Expander IsExpanded="True"
+                                                  BorderThickness="0"
+                                                  Margin="0,2,0,0">
+                                            <Expander.Header>
+                                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontWeight="Bold"
+                                                               FontSize="11"
+                                                               Foreground="#1565C0"
+                                                               VerticalAlignment="Center"/>
+                                                    <Border CornerRadius="8"
+                                                            Background="#E0E0E0"
+                                                            Padding="6,1"
+                                                            Margin="6,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding ItemCount}"
+                                                                   FontSize="10"
+                                                                   Foreground="#666666"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Expander.Header>
+                                            <ItemsPresenter/>
+                                        </Expander>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </GroupStyle.ContainerStyle>
+                </GroupStyle>
+            </ListBox.GroupStyle>
             <ListBox.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Edit Value..." Click="EditValue_Click">
@@ -631,7 +841,7 @@
         </ListBox>
 
         <!-- Status bar -->
-        <Border Grid.Row="5"
+        <Border Grid.Row="8"
                 Background="#F5F5F5"
                 Padding="12,6"
                 BorderThickness="0,1,0,0"
@@ -639,6 +849,7 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
@@ -652,8 +863,23 @@
                     <Run Text="{Binding SearchResultText, Mode=OneWay}" Foreground="#4CAF50" FontWeight="SemiBold"/>
                 </TextBlock>
 
-                <ComboBox x:Name="FormatterComboBox"
+                <ComboBox x:Name="SortComboBox"
                           Grid.Column="1"
+                          Width="110"
+                          FontSize="10"
+                          Margin="0,0,8,0"
+                          SelectedIndex="0"
+                          SelectionChanged="SortComboBox_SelectionChanged"
+                          ToolTip="Sort fields">
+                    <ComboBoxItem Content="Sort: Offset"/>
+                    <ComboBoxItem Content="Sort: Name A-Z"/>
+                    <ComboBoxItem Content="Sort: Name Z-A"/>
+                    <ComboBoxItem Content="Sort: Type"/>
+                    <ComboBoxItem Content="Sort: Size"/>
+                </ComboBox>
+
+                <ComboBox x:Name="FormatterComboBox"
+                          Grid.Column="2"
                           Width="120"
                           FontSize="11"
                           SelectionChanged="FormatterComboBox_SelectionChanged"

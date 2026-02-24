@@ -1,6 +1,6 @@
 {
   "formatName": "NRRD Medical Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".nrrd",
     ".nhdr"
@@ -32,7 +32,8 @@
     "slices": 0,
     "bitDepth": 0,
     "nrrdMagic": "",
-    "version": 0
+    "version": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -80,6 +81,12 @@
       "name": "Bit Depth",
       "variable": "bitDepth",
       "description": "Bit Depth"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "quality_metrics": {
@@ -139,6 +146,7 @@
   },
   "functions": {
     "readUInt32LE": "Read medical header",
-    "extractASCIIString": "Read patient"
+    "extractASCIIString": "Read patient",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

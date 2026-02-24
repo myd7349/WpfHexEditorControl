@@ -1,6 +1,6 @@
 {
   "formatName": "DICOM Structured Report",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".dcm",
     ".sr"
@@ -139,6 +139,7 @@
   },
   "functions": {
     "readUInt32LE": "Read width and height",
-    "multiply": "Calculate total pixels"
+    "multiply": "Calculate total pixels",
+    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixels"
   }
 }

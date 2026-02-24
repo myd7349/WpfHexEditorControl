@@ -1,6 +1,6 @@
 {
   "formatName": "MPEG Video",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mpg",
     ".mpeg",
@@ -35,7 +35,8 @@
     "readUInt32BE": "Read 32-bit big-endian for start codes",
     "readUInt16BE": "Read 16-bit values for picture dimensions",
     "bitwiseAnd": "Extract width, height, aspect ratio, and frame rate",
-    "bitwiseShiftRight": "Parse sequence header fields"
+    "bitwiseShiftRight": "Parse sequence header fields",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -46,7 +47,8 @@
     "bitrate": 0,
     "vbvBufferSize": 0,
     "mpegSequenceHeader": 0,
-    "pictureSize": ""
+    "pictureSize": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -70,6 +72,12 @@
       "description": "Width and height",
       "storeAs": "pictureSize",
       "valueType": "uint32"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

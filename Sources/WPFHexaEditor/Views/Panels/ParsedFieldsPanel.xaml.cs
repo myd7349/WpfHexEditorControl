@@ -10,6 +10,8 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
 using WpfHexaEditor.ViewModels;
 
 namespace WpfHexaEditor.Views.Panels
@@ -22,19 +24,29 @@ namespace WpfHexaEditor.Views.Panels
     {
         private ObservableCollection<ParsedFieldViewModel> _parsedFields;
         private ObservableCollection<ParsedFieldViewModel> _filteredFields;
+        private ObservableCollection<ParsedFieldViewModel> _metadataFields;
+        private ObservableCollection<InsightChip> _insightChips;
         private FormatInfo _formatInfo;
         private string _searchText;
         private bool _showBookmarksOnly;
         private string _searchResultText;
         private bool _hasSelection;
+        private int _sortMode = 0; // 0=offset, 1=nameAZ, 2=nameZA, 3=type, 4=size
+        private long _totalFileSize;
 
         public ParsedFieldsPanel()
         {
             InitializeComponent();
             DataContext = this;
-            // Initialize FilteredFields FIRST to avoid NullReferenceException in ApplyFilter()
+            // Initialize collections FIRST to avoid NullReferenceException in ApplyFilter()
             FilteredFields = new ObservableCollection<ParsedFieldViewModel>();
+            MetadataFields = new ObservableCollection<ParsedFieldViewModel>();
+            InsightChips = new ObservableCollection<InsightChip>();
             ParsedFields = new ObservableCollection<ParsedFieldViewModel>();
+
+            // Set up CollectionView grouping for section headers (C3)
+            var view = CollectionViewSource.GetDefaultView(FilteredFields);
+            view?.GroupDescriptions.Add(new PropertyGroupDescription("GroupName"));
 
             // Subscribe to collection changes to automatically update filtered view
             ParsedFields.CollectionChanged += (s, e) => ApplyFilter();
@@ -65,6 +77,45 @@ namespace WpfHexaEditor.Views.Panels
             private set
             {
                 _filteredFields = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Metadata fields separated for spotlight display (C1)
+        /// </summary>
+        public ObservableCollection<ParsedFieldViewModel> MetadataFields
+        {
+            get => _metadataFields;
+            private set
+            {
+                _metadataFields = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Key insight chips for at-a-glance summary (C4)
+        /// </summary>
+        public ObservableCollection<InsightChip> InsightChips
+        {
+            get => _insightChips;
+            private set
+            {
+                _insightChips = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Total file size in bytes for coverage bar calculation (C6)
+        /// </summary>
+        public long TotalFileSize
+        {
+            get => _totalFileSize;
+            set
+            {
+                _totalFileSize = value;
                 OnPropertyChanged();
             }
         }
@@ -332,6 +383,23 @@ namespace WpfHexaEditor.Views.Panels
         {
             // Trigger filter refresh when search options change
             ApplyFilter();
+        }
+
+        private void SortComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _sortMode = SortComboBox?.SelectedIndex ?? 0;
+            ApplyFilter();
+        }
+
+        private void InvalidBadge_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Click on invalid badge to scroll to first invalid field
+            var firstInvalid = FilteredFields?.FirstOrDefault(f => !f.IsValid);
+            if (firstInvalid != null)
+            {
+                FieldsListBox.SelectedItem = firstInvalid;
+                FieldsListBox.ScrollIntoView(firstInvalid);
+            }
         }
 
         private void FieldItem_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -699,11 +767,12 @@ namespace WpfHexaEditor.Views.Panels
         /// </summary>
         private void ApplyFilter()
         {
-            // Defensive check: ensure FilteredFields is initialized
-            if (FilteredFields == null || ParsedFields == null)
+            // Defensive check: ensure collections are initialized
+            if (FilteredFields == null || ParsedFields == null || MetadataFields == null)
                 return;
 
             FilteredFields.Clear();
+            MetadataFields.Clear();
 
             // Get search options
             var hasSearchFilter = !string.IsNullOrWhiteSpace(SearchText);
@@ -732,9 +801,22 @@ namespace WpfHexaEditor.Views.Panels
             }
 
             int searchMatchCount = 0;
+            int validCount = 0;
+            int invalidCount = 0;
+            var matchedFields = new System.Collections.Generic.List<ParsedFieldViewModel>();
 
             foreach (var field in ParsedFields)
             {
+                // Separate metadata fields into spotlight section (C1)
+                bool isMetadata = field.Offset < 0 ||
+                    string.Equals(field.ValueType, "metadata", System.StringComparison.OrdinalIgnoreCase);
+
+                if (isMetadata && !hasSearchFilter && typeFilter == 0 && !_showBookmarksOnly)
+                {
+                    MetadataFields.Add(field);
+                    continue;
+                }
+
                 // Bookmark filter
                 if (_showBookmarksOnly && !field.IsBookmarked)
                     continue;
@@ -780,8 +862,31 @@ namespace WpfHexaEditor.Views.Panels
                 if (hasSearchFilter && isMatch)
                     searchMatchCount++;
 
-                FilteredFields.Add(field);
+                // Track validation counts (C2)
+                if (field.IsValid)
+                    validCount++;
+                else
+                    invalidCount++;
+
+                // Ensure GroupName is set for section headers (C3)
+                if (string.IsNullOrEmpty(field.GroupName))
+                    field.GroupName = "Fields";
+
+                matchedFields.Add(field);
             }
+
+            // Apply sorting (C5)
+            System.Collections.Generic.IEnumerable<ParsedFieldViewModel> sorted = _sortMode switch
+            {
+                1 => matchedFields.OrderBy(f => f.Name ?? ""),
+                2 => matchedFields.OrderByDescending(f => f.Name ?? ""),
+                3 => matchedFields.OrderBy(f => f.ValueType ?? ""),
+                4 => matchedFields.OrderByDescending(f => f.Length),
+                _ => matchedFields // Default: preserve original offset order
+            };
+
+            foreach (var field in sorted)
+                FilteredFields.Add(field);
 
             // Update search result text
             if (hasSearchFilter)
@@ -794,6 +899,238 @@ namespace WpfHexaEditor.Views.Panels
             {
                 SearchResultText = string.Empty;
             }
+
+            // Update validation badges (C2)
+            UpdateValidationBadges(validCount, invalidCount);
+
+            // Update computed values spotlight visibility (C1)
+            if (ComputedValuesSection != null)
+                ComputedValuesSection.Visibility = MetadataFields.Count > 0
+                    ? Visibility.Visible : Visibility.Collapsed;
+
+            // Build key insight chips (C4)
+            BuildInsightChips();
+
+            // Update byte coverage bar (C6)
+            UpdateCoverageBar();
+        }
+
+        /// <summary>
+        /// Updates the validation summary badges in the header (C2)
+        /// </summary>
+        private void UpdateValidationBadges(int validCount, int invalidCount)
+        {
+            if (ValidBadge == null || InvalidBadge == null) return;
+
+            int total = validCount + invalidCount;
+            if (total > 0)
+            {
+                ValidBadge.Visibility = Visibility.Visible;
+                ValidCountRun.Text = validCount.ToString();
+            }
+            else
+            {
+                ValidBadge.Visibility = Visibility.Collapsed;
+            }
+
+            if (invalidCount > 0)
+            {
+                InvalidBadge.Visibility = Visibility.Visible;
+                InvalidCountRun.Text = invalidCount.ToString();
+            }
+            else
+            {
+                InvalidBadge.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Build key insight chips from parsed fields and metadata (C4)
+        /// </summary>
+        private void BuildInsightChips()
+        {
+            if (InsightChips == null) return;
+            InsightChips.Clear();
+
+            if (ParsedFields == null || ParsedFields.Count == 0)
+            {
+                if (KeyInsightsSection != null)
+                    KeyInsightsSection.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // Look for dimension fields (Width + Height)
+            var widthField = ParsedFields.FirstOrDefault(f =>
+                f.Name?.IndexOf("Width", StringComparison.OrdinalIgnoreCase) >= 0 && f.Offset >= 0);
+            var heightField = ParsedFields.FirstOrDefault(f =>
+                f.Name?.IndexOf("Height", StringComparison.OrdinalIgnoreCase) >= 0 && f.Offset >= 0);
+
+            if (widthField != null && heightField != null &&
+                !string.IsNullOrEmpty(widthField.FormattedValue) && !string.IsNullOrEmpty(heightField.FormattedValue))
+            {
+                InsightChips.Add(new InsightChip
+                {
+                    Icon = "\U0001F5BC", // framed picture
+                    Value = $"{widthField.FormattedValue} x {heightField.FormattedValue}",
+                    Background = HexBrush("#E3F2FD")
+                });
+            }
+
+            // Look for color type in metadata
+            var colorType = MetadataFields?.FirstOrDefault(f =>
+                f.Name?.IndexOf("Color", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (colorType != null && !string.IsNullOrEmpty(colorType.FormattedValue) && colorType.FormattedValue != "0")
+            {
+                InsightChips.Add(new InsightChip
+                {
+                    Icon = "\U0001F3A8", // artist palette
+                    Value = colorType.FormattedValue,
+                    Background = HexBrush("#F3E5F5")
+                });
+            }
+
+            // Look for formatted file size in metadata
+            var sizeField = MetadataFields?.FirstOrDefault(f =>
+                f.Name?.IndexOf("Size", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                f.Name?.IndexOf("Formatted", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (sizeField != null && !string.IsNullOrEmpty(sizeField.FormattedValue) &&
+                sizeField.FormattedValue != "0" && sizeField.FormattedValue != "")
+            {
+                InsightChips.Add(new InsightChip
+                {
+                    Icon = "\U0001F4CA", // bar chart
+                    Value = sizeField.FormattedValue,
+                    Background = HexBrush("#E8F5E9")
+                });
+            }
+
+            // Look for compression name in metadata
+            var compression = MetadataFields?.FirstOrDefault(f =>
+                f.Name?.IndexOf("Compression", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (compression != null && !string.IsNullOrEmpty(compression.FormattedValue) && compression.FormattedValue != "0")
+            {
+                InsightChips.Add(new InsightChip
+                {
+                    Icon = "\U0001F4E6", // package
+                    Value = compression.FormattedValue,
+                    Background = HexBrush("#FFF3E0")
+                });
+            }
+
+            // Look for duration in metadata
+            var duration = MetadataFields?.FirstOrDefault(f =>
+                f.Name?.IndexOf("Duration", StringComparison.OrdinalIgnoreCase) >= 0);
+            if (duration != null && !string.IsNullOrEmpty(duration.FormattedValue) && duration.FormattedValue != "0")
+            {
+                InsightChips.Add(new InsightChip
+                {
+                    Icon = "\U0001F554", // clock
+                    Value = duration.FormattedValue,
+                    Background = HexBrush("#E0F7FA")
+                });
+            }
+
+            // Validation summary chip
+            int totalFields = FilteredFields?.Count ?? 0;
+            int invalidCount = FilteredFields?.Count(f => !f.IsValid) ?? 0;
+            if (totalFields > 0)
+            {
+                if (invalidCount == 0)
+                {
+                    InsightChips.Add(new InsightChip
+                    {
+                        Icon = "\u2713", // check mark
+                        Value = "All Valid",
+                        Background = HexBrush("#E8F5E9")
+                    });
+                }
+                else
+                {
+                    InsightChips.Add(new InsightChip
+                    {
+                        Icon = "\u26A0", // warning
+                        Value = $"{invalidCount} Error{(invalidCount > 1 ? "s" : "")}",
+                        Background = HexBrush("#FFEBEE")
+                    });
+                }
+            }
+
+            // Update visibility
+            if (KeyInsightsSection != null)
+                KeyInsightsSection.Visibility = InsightChips.Count > 0
+                    ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// Update the byte coverage bar (C6)
+        /// </summary>
+        private void UpdateCoverageBar()
+        {
+            if (CoverageBarSection == null || CoverageProgressBar == null) return;
+
+            if (TotalFileSize <= 0 || ParsedFields == null || ParsedFields.Count == 0)
+            {
+                CoverageBarSection.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // Calculate total covered bytes (merge overlapping ranges)
+            var ranges = ParsedFields
+                .Where(f => f.Offset >= 0 && f.Length > 0)
+                .OrderBy(f => f.Offset)
+                .Select(f => (Start: f.Offset, End: f.Offset + f.Length))
+                .ToList();
+
+            long coveredBytes = 0;
+            long currentEnd = -1;
+
+            foreach (var (start, end) in ranges)
+            {
+                if (start > currentEnd)
+                {
+                    coveredBytes += end - start;
+                    currentEnd = end;
+                }
+                else if (end > currentEnd)
+                {
+                    coveredBytes += end - currentEnd;
+                    currentEnd = end;
+                }
+            }
+
+            double percent = (double)coveredBytes / TotalFileSize * 100;
+            percent = Math.Min(percent, 100);
+
+            CoverageProgressBar.Value = percent;
+            CoverageText.Text = $"{percent:F0}% parsed ({coveredBytes:N0} / {TotalFileSize:N0} bytes)";
+            CoverageBarSection.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Handle H/D/B display mode toggle button click (C7)
+        /// </summary>
+        private void DisplayModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn &&
+                btn.DataContext is ParsedFieldViewModel field &&
+                btn.Tag is string mode)
+            {
+                field.DisplayMode = mode switch
+                {
+                    "hex" => FieldDisplayMode.Hex,
+                    "dec" => FieldDisplayMode.Decimal,
+                    "bin" => FieldDisplayMode.Binary,
+                    _ => FieldDisplayMode.Auto
+                };
+            }
+        }
+
+        /// <summary>
+        /// Create a SolidColorBrush from a hex color string
+        /// </summary>
+        private static SolidColorBrush HexBrush(string hex)
+        {
+            return new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
         }
 
         /// <summary>
@@ -1419,5 +1756,15 @@ namespace WpfHexaEditor.Views.Panels
         public long Offset { get; set; }
         public int Length { get; set; }
         public byte[] Data { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a key insight chip for at-a-glance summary (C4)
+    /// </summary>
+    public class InsightChip
+    {
+        public string Icon { get; set; }
+        public string Value { get; set; }
+        public System.Windows.Media.Brush Background { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Photoshop Document",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".psd"
   ],
@@ -31,7 +31,9 @@
   },
   "functions": {
     "readUInt32BE": "Read width and height (big-endian)",
-    "multiply": "Calculate total pixels (width × height)"
+    "multiply": "Calculate total pixels (width × height)",
+    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixels",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,

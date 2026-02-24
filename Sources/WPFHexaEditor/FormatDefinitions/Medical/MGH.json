@@ -1,6 +1,6 @@
 {
   "formatName": "MGH/MGZ Medical Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mgh",
     ".mgz"
@@ -32,7 +32,8 @@
     "slices": 0,
     "bitDepth": 0,
     "version": "",
-    "depth": 0
+    "depth": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -102,6 +103,12 @@
       "name": "Bit Depth",
       "variable": "bitDepth",
       "description": "Bit Depth"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "quality_metrics": {
@@ -161,6 +168,7 @@
   },
   "functions": {
     "readUInt32LE": "Read medical header",
-    "extractASCIIString": "Read patient"
+    "extractASCIIString": "Read patient",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

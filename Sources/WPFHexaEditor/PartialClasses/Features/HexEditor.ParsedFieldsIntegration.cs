@@ -354,6 +354,9 @@ namespace WpfHexaEditor
                     ParsedFieldsPanel.FormatInfo.Category = _detectedFormat.Category ?? "Other";
                     ParsedFieldsPanel.FormatInfo.References = _detectedFormat.References;
 
+                    // Set total file size for coverage bar (C6)
+                    ParsedFieldsPanel.TotalFileSize = Length;
+
                     // Parse all blocks from the format definition
                     if (_detectedFormat.Blocks != null)
                     {
@@ -414,7 +417,8 @@ namespace WpfHexaEditor
                                     Color = "#E3F2FD",  // Light blue background for metadata
                                     IsValid = true,  // Mark as valid (not an error/warning)
                                     FieldIcon = "ℹ️",  // Information icon for metadata
-                                    IndentLevel = depth
+                                    IndentLevel = depth,
+                                    GroupName = "Computed Values"
                                 };
 
                                 ParsedFieldsPanel.ParsedFields.Add(metadataField);
@@ -468,6 +472,13 @@ namespace WpfHexaEditor
 
                     // Create field view model with indentation
                     var fieldVm = ParsedFieldViewModel.FromBlockDefinition(block, offset, length, depth);
+
+                    // Assign group name for section headers (C3)
+                    fieldVm.GroupName = block.Type?.ToLowerInvariant() switch
+                    {
+                        "signature" => "Signature",
+                        _ => depth > 0 ? "Data Fields" : "Header Fields"
+                    };
 
                     // Read and format value
                     ReadFieldValue(fieldVm);

@@ -1,6 +1,6 @@
 {
   "formatName": "PKCS#7 Certificate",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".p7b",
     ".p7c",
@@ -46,7 +46,8 @@
     "contentTag": 0,
     "contentLength": 0,
     "signeddataSequence": 0,
-    "versionTag": 0
+    "versionTag": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -176,6 +177,12 @@
       "name": "Subject",
       "variable": "subject",
       "description": "Subject"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -236,6 +243,7 @@
   },
   "functions": {
     "readUInt32BE": "Read certificate",
-    "extractASCIIString": "Read subject"
+    "extractASCIIString": "Read subject",
+    "formatFileSize(var:contentLength)": "Format contentLength as readable size"
   }
 }

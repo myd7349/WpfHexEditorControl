@@ -1,6 +1,6 @@
 {
   "formatName": "DVD Video Object",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".vob"
   ],
@@ -32,7 +32,8 @@
     "readUInt32BE": "Read 32-bit big-endian for pack start codes",
     "readUInt64BE": "Read System Clock Reference (SCR) fields",
     "readUInt24BE": "Read 24-bit mux rate",
-    "bitwiseAnd": "Extract SCR base and extension"
+    "bitwiseAnd": "Extract SCR base and extension",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -43,7 +44,8 @@
     "height": 0,
     "videoCodec": "MPEG-2",
     "mpegPsPackHeader": 0,
-    "scr": ""
+    "scr": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -67,6 +69,12 @@
       "description": "System Clock Reference",
       "storeAs": "scr",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

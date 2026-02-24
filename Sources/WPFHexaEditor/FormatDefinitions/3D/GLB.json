@@ -1,6 +1,6 @@
 {
   "formatName": "Binary glTF",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".glb"
   ],
@@ -32,7 +32,8 @@
     "fileSize": 0,
     "gltfSignature": "",
     "version": "",
-    "length": 0
+    "length": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -86,6 +87,12 @@
       "name": "Material Count",
       "variable": "materialCount",
       "description": "Material Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -152,6 +159,7 @@
   },
   "functions": {
     "readUInt32LE": "Read mesh data",
-    "multiply": "Calculate vertices"
+    "multiply": "Calculate vertices",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   }
 }

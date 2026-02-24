@@ -1,6 +1,6 @@
 {
   "formatName": "QuickTime Movie",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mov",
     ".qt"
@@ -34,7 +34,8 @@
     "readUInt32BE": "Read 32-bit big-endian for atom sizes and timestamps",
     "extractASCIIString": "Extract atom type identifiers (moov, trak, mdia, hdlr)",
     "readUInt16BE": "Read 16-bit values for video dimensions",
-    "multiply": "Calculate duration from timescale"
+    "multiply": "Calculate duration from timescale",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -44,7 +45,8 @@
     "height": 0,
     "duration": 0,
     "timescale": 0,
-    "videoCodec": "Unknown"
+    "videoCodec": "Unknown",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -69,6 +71,12 @@
       "description": "moov atom identifier",
       "storeAs": "atomType",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

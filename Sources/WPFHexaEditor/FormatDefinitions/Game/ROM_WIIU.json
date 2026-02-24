@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Wii U Image",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".wud",
     ".wux"
@@ -40,7 +40,8 @@
     "formatVersion": "",
     "uncompressedSize": 0,
     "sectorSize": 0,
-    "sectorTable": ""
+    "sectorTable": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -115,6 +116,12 @@
       "name": "Total Pixels",
       "variable": "totalPixels",
       "description": "Total Pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -179,6 +186,8 @@
   },
   "functions": {
     "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels"
+    "multiply": "Calculate pixels",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels",
+    "formatFileSize(var:uncompressedSize)": "Format uncompressedSize as readable size"
   }
 }

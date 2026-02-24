@@ -1,6 +1,6 @@
 {
   "formatName": "Monkey's Audio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ape"
   ],
@@ -32,7 +32,9 @@
   "functions": {
     "readUInt16LE": "Read 16-bit little-endian for version and compression level",
     "readUInt32LE": "Read 32-bit values for sample rate, channels, total frames",
-    "readUInt8": "Read compression flags"
+    "readUInt8": "Read compression flags",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +44,9 @@
     "sampleRate": 0,
     "bitDepth": 0,
     "totalFrames": 0,
-    "apeMagic": ""
+    "apeMagic": "",
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -66,6 +70,18 @@
       "description": "File format version",
       "storeAs": "version",
       "valueType": "uint16"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

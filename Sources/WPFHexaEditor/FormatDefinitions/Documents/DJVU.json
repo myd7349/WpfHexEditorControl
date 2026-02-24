@@ -1,6 +1,6 @@
 {
   "formatName": "DjVu Document",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".djvu",
     ".djv"
@@ -32,7 +32,8 @@
     "author": "",
     "atTForm": 0,
     "fileSize": 0,
-    "djvuType": ""
+    "djvuType": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -79,6 +80,12 @@
       "name": "Title",
       "variable": "title",
       "description": "Title"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [
@@ -145,6 +152,7 @@
     "last_updated": "2026-02-24"
   },
   "functions": {
-    "readUInt32LE": "Read document header"
+    "readUInt32LE": "Read document header",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   }
 }

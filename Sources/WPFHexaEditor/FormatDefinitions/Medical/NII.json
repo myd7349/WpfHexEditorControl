@@ -1,6 +1,6 @@
 {
   "formatName": "NIfTI Medical Image",
-  "version": "2.2",
+  "version": "2.3",
   "extensions": [
     ".nii"
   ],
@@ -30,7 +30,8 @@
     "height": 0,
     "slices": 0,
     "bitDepth": 0,
-    "headerSize": 0
+    "headerSize": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -67,6 +68,12 @@
       "name": "Bit Depth",
       "variable": "bitDepth",
       "description": "Bit Depth"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "quality_metrics": {
@@ -130,6 +137,7 @@
   },
   "functions": {
     "readUInt32LE": "Read medical header",
-    "extractASCIIString": "Read patient"
+    "extractASCIIString": "Read patient",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

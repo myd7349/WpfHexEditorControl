@@ -1,6 +1,6 @@
 {
   "formatName": "Radiance HDR Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".hdr",
     ".pic"
@@ -147,6 +147,7 @@
   },
   "functions": {
     "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels"
+    "multiply": "Calculate pixels",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Saturn Disc Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".iso",
     ".bin"
@@ -239,6 +239,7 @@
   },
   "functions": {
     "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels"
+    "multiply": "Calculate pixels",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

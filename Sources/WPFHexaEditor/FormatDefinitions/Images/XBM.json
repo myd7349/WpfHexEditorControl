@@ -1,6 +1,6 @@
 {
   "formatName": "X BitMap",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".xbm"
   ],
@@ -139,6 +139,7 @@
   },
   "functions": {
     "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels"
+    "multiply": "Calculate pixels",
+    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixels"
   }
 }

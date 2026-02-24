@@ -1,6 +1,6 @@
 {
   "formatName": "ARC Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".arc"
   ],
@@ -31,13 +31,15 @@
   },
   "functions": {
     "readUInt32LE": "Read compressed file size (little-endian)",
-    "extractASCIIString": "Extract filename from header"
+    "extractASCIIString": "Extract filename from header",
+    "formatFileSize(var:compressedSize)": "Format compressedSize as readable size"
   },
   "variables": {
     "compressionMethod": 0,
     "fileName": "",
     "compressedSize": 0,
-    "archiveMarker": 0
+    "archiveMarker": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -95,6 +97,12 @@
       "name": "Compressed Size (bytes)",
       "variable": "compressedSize",
       "description": "Size of compressed file data"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [

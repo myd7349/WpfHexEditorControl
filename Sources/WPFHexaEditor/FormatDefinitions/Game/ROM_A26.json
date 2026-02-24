@@ -1,6 +1,6 @@
 {
   "formatName": "Atari 2600 ROM",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".a26",
     ".bin"
@@ -37,7 +37,8 @@
     "format": "",
     "romData": "",
     "resetVector": 0,
-    "irqVector": 0
+    "irqVector": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -92,6 +93,12 @@
       "name": "Format",
       "variable": "format",
       "description": "Format"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -156,6 +163,7 @@
   },
   "functions": {
     "extractASCIIString": "Read filenames",
-    "readUInt32LE": "Read sizes"
+    "readUInt32LE": "Read sizes",
+    "formatFileSize(var:totalSize)": "Format totalSize as readable size"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "RPG Maker Encrypted Archive",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".rgssad",
     ".rgss2a",
@@ -38,7 +38,8 @@
     "compressionMethod": "",
     "headerCRC": 0,
     "rgssadSignature": "",
-    "version": 0
+    "version": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -80,6 +81,12 @@
       "name": "Compression Method",
       "variable": "compressionMethod",
       "description": "Compression Method"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -145,6 +152,7 @@
   },
   "functions": {
     "readUInt32LE": "Read header",
-    "calculateCRC32": "Validate"
+    "calculateCRC32": "Validate",
+    "formatFileSize(var:totalSize)": "Format totalSize as readable size"
   }
 }

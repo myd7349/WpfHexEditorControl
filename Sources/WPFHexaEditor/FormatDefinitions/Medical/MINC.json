@@ -1,6 +1,6 @@
 {
   "formatName": "MINC Medical Image",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".mnc",
     ".minc"
@@ -31,7 +31,8 @@
     "height": 0,
     "slices": 0,
     "bitDepth": 0,
-    "netcdfMagic": ""
+    "netcdfMagic": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -68,6 +69,12 @@
       "name": "Bit Depth",
       "variable": "bitDepth",
       "description": "Bit Depth"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "quality_metrics": {
@@ -127,6 +134,7 @@
   },
   "functions": {
     "readUInt32LE": "Read medical header",
-    "extractASCIIString": "Read patient"
+    "extractASCIIString": "Read patient",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

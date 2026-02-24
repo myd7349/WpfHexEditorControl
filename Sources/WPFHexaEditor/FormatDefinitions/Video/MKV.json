@@ -1,6 +1,6 @@
 {
   "formatName": "Matroska Video",
-  "version": "1.9",
+  "version": "1.11",
   "extensions": [
     ".mkv",
     ".mka",
@@ -31,7 +31,9 @@
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian for EBML element IDs and sizes",
     "readUInt16BE": "Read 16-bit values for video dimensions",
-    "extractASCIIString": "Extract string values (DocType, CodecID, Title)"
+    "extractASCIIString": "Extract string values (DocType, CodecID, Title)",
+    "parseMKVHeader()": "Parse EBML/MKV header",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -44,7 +46,11 @@
     "videoCodec": "Unknown",
     "audioCodec": "Unknown",
     "ebmlHeader": 0,
-    "headerSize": 0
+    "headerSize": 0,
+    "mkvDocType": "",
+    "mkvDocTypeVersion": 0,
+    "mkvEBMLVersion": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -68,6 +74,24 @@
       "description": "Size of header element",
       "storeAs": "headerSize",
       "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "Container Type",
+      "variable": "mkvDocType",
+      "description": "EBML document type (matroska)"
+    },
+    {
+      "type": "metadata",
+      "name": "EBML Version",
+      "variable": "mkvEBMLVersion",
+      "description": "EBML specification version"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

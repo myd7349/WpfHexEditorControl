@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Xbox (Original) Image",
-  "version": "2.2",
+  "version": "2.3",
   "extensions": [
     ".iso",
     ".xiso"
@@ -167,6 +167,7 @@
   },
   "functions": {
     "readUInt32LE": "Read dimensions",
-    "multiply": "Calculate pixels"
+    "multiply": "Calculate pixels",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

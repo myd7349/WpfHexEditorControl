@@ -1,6 +1,6 @@
 {
   "formatName": "FLAC Audio",
-  "version": "1.9",
+  "version": "1.11",
   "extensions": [
     ".flac"
   ],
@@ -30,7 +30,10 @@
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian unsigned integer for sample rate",
     "readUInt16BE": "Read 16-bit big-endian unsigned integer for channel info",
-    "readUInt8": "Read 8-bit value for bit depth"
+    "readUInt8": "Read 8-bit value for bit depth",
+    "parseFLACStreamInfo()": "Parse FLAC STREAMINFO for audio properties",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +45,15 @@
     "maxBlockSize": 0,
     "flacSignature": "",
     "metadataBlockHeader": 0,
-    "blockLength": ""
+    "blockLength": "",
+    "flacSampleRate": 0,
+    "flacChannels": 0,
+    "flacBitsPerSample": 0,
+    "flacTotalSamples": 0,
+    "flacDuration": 0,
+    "formattedDuration": "",
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -78,6 +89,42 @@
       "storeAs": "blockLength",
       "valueType": "uint32",
       "endianness": "big"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Rate",
+      "variable": "flacSampleRate",
+      "description": "Audio sample rate in Hz"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "flacChannels",
+      "description": "Number of audio channels"
+    },
+    {
+      "type": "metadata",
+      "name": "Bits Per Sample",
+      "variable": "flacBitsPerSample",
+      "description": "Audio bit depth"
+    },
+    {
+      "type": "metadata",
+      "name": "Duration",
+      "variable": "formattedDuration",
+      "description": "Estimated audio duration"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

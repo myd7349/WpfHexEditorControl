@@ -1,6 +1,6 @@
 {
   "formatName": "DSD Interchange File Format",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dff"
   ],
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt64BE": "Read 64-bit big-endian for IFF chunk sizes",
     "readUInt32BE": "Read 32-bit values for sample rate and channel count",
-    "extractASCIIString": "Extract chunk identifiers (FRM8, DSD, FVER, PROP)"
+    "extractASCIIString": "Extract chunk identifiers (FRM8, DSD, FVER, PROP)",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,8 @@
     "sampleRate": 2822400,
     "channels": 2,
     "channelType": "Unknown",
-    "dffHeader": 0
+    "dffHeader": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -55,6 +57,12 @@
       "description": "FRM8 - IFF container for DSD",
       "storeAs": "dffHeader",
       "valueType": "uint32"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

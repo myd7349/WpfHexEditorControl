@@ -1,6 +1,6 @@
 {
   "formatName": "WAV Audio",
-  "version": "1.10",
+  "version": "1.12",
   "extensions": [
     ".wav",
     ".wave"
@@ -29,7 +29,11 @@
     }
   },
   "functions": {
-    "parseWAVFormatChunk(20)": "Parse fmt chunk to extract audio format details"
+    "parseWAVFormatChunk(20)": "Parse fmt chunk to extract audio format details",
+    "computeFromVariables(var:fileSize - 44 / var:byteRate, wavDuration)": "Estimate WAV duration",
+    "formatDuration(var:wavDuration)": "Format duration",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
@@ -41,7 +45,11 @@
     "riffHeader": 0,
     "fileSize": 0,
     "waveFormat": 0,
-    "fmtChunk": 0
+    "fmtChunk": 0,
+    "wavDuration": 0,
+    "formattedDuration": "",
+    "samplesPerSecond": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -117,6 +125,24 @@
       "name": "Bit Depth",
       "variable": "bitDepth",
       "description": "Bits per sample (8, 16, 24, 32, etc.)"
+    },
+    {
+      "type": "metadata",
+      "name": "Duration",
+      "variable": "formattedDuration",
+      "description": "Estimated audio duration"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [

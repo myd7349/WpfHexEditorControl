@@ -1,6 +1,6 @@
 {
   "formatName": "DivX Video",
-  "version": "2.2",
+  "version": "2.3",
   "extensions": [
     ".divx"
   ],
@@ -33,7 +33,8 @@
     "height": 0,
     "frameRate": 0,
     "duration": 0,
-    "riffHeader": 0
+    "riffHeader": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -58,6 +59,12 @@
       "name": "Frame Rate",
       "variable": "frameRate",
       "description": "Frame Rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [
@@ -126,6 +133,7 @@
     "last_updated": "2026-02-24"
   },
   "functions": {
-    "readUInt32LE": "Read video header"
+    "readUInt32LE": "Read video header",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   }
 }

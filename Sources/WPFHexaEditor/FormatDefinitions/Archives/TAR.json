@@ -1,6 +1,6 @@
 {
   "formatName": "TAR Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".tar"
   ],
@@ -28,7 +28,8 @@
   },
   "functions": {
     "extractASCIIString": "Extract file names and metadata from TAR headers",
-    "readUInt32BE": "Read file size and numeric fields (octal/big-endian)"
+    "readUInt32BE": "Read file size and numeric fields (octal/big-endian)",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
@@ -37,7 +38,8 @@
     "fileMode": 0,
     "ownerId": "",
     "groupId": "",
-    "ustarMagic": ""
+    "ustarMagic": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -107,6 +109,12 @@
       "name": "File Size (bytes)",
       "variable": "fileSize",
       "description": "Size of the archived file"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [

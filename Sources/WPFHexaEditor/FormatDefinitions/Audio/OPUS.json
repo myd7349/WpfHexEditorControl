@@ -1,6 +1,6 @@
 {
   "formatName": "Opus Audio",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".opus"
   ],
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt32LE": "Read Ogg page metadata (serial number, sequence)",
     "readUInt8": "Read Opus header fields (version, channels, pre-skip)",
-    "readUInt16LE": "Read 16-bit fields from Opus header"
+    "readUInt16LE": "Read 16-bit fields from Opus header",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,8 @@
     "sampleRate": 48000,
     "outputGain": 0,
     "channelMappingFamily": 0,
-    "oggContainer": 0
+    "oggContainer": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -55,6 +57,12 @@
       "description": "OggS - Ogg container for Opus audio",
       "storeAs": "oggContainer",
       "valueType": "uint32"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

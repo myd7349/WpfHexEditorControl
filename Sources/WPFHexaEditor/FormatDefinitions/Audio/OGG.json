@@ -1,6 +1,6 @@
 {
   "formatName": "OGG Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ogg",
     ".oga",
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt32LE": "Read 32-bit little-endian for serial number and page sequence",
     "readUInt64LE": "Read 64-bit little-endian for granule position",
-    "readUInt8": "Read page flags and segment count"
+    "readUInt8": "Read page flags and segment count",
+    "parseOGGPageHeader(0)": "Parse OGG page header"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,12 @@
     "serialNumber": 0,
     "pageSequence": 0,
     "checksum": 0,
-    "oggSignature": ""
+    "oggSignature": "",
+    "oggVersion": 0,
+    "oggHeaderType": 0,
+    "oggGranulePosition": 0,
+    "oggSerialNumber": 0,
+    "oggPageSequence": 0
   },
   "blocks": [
     {
@@ -88,6 +94,24 @@
       "description": "PCM sample position",
       "storeAs": "granulePosition",
       "valueType": "uint64"
+    },
+    {
+      "type": "metadata",
+      "name": "OGG Version",
+      "variable": "oggVersion",
+      "description": "OGG stream structure version"
+    },
+    {
+      "type": "metadata",
+      "name": "Granule Position",
+      "variable": "oggGranulePosition",
+      "description": "Absolute granule position for the page"
+    },
+    {
+      "type": "metadata",
+      "name": "Serial Number",
+      "variable": "oggSerialNumber",
+      "description": "Logical stream serial number"
     }
   ],
   "mime_types": [

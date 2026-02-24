@@ -1,6 +1,6 @@
 {
   "formatName": "SQLite Database",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".sqlite",
     ".db",
@@ -31,7 +31,8 @@
     "readUInt16BE": "Read 16-bit big-endian for page size",
     "readUInt32BE": "Read 32-bit big-endian for page counts and schema cookie",
     "readUInt8": "Read file format versions and reserved bytes",
-    "extractUTF8String": "Extract database text encoding and user version"
+    "extractUTF8String": "Extract database text encoding and user version",
+    "parseSQLiteHeader()": "Parse SQLite database header"
   },
   "variables": {
     "currentOffset": 0,
@@ -46,7 +47,12 @@
     "applicationID": 0,
     "sqliteHeader": "",
     "fileFormatWriteVersion": 0,
-    "fileFormatReadVersion": 0
+    "fileFormatReadVersion": 0,
+    "sqlitePageSize": 0,
+    "sqlitePageCount": 0,
+    "sqliteVersion": 0,
+    "sqliteEncoding": "",
+    "sqliteVersionName": ""
   },
   "blocks": [
     {
@@ -92,6 +98,30 @@
       "description": "1=legacy, 2=WAL",
       "storeAs": "fileFormatReadVersion",
       "valueType": "uint8"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Size",
+      "variable": "sqlitePageSize",
+      "description": "Database page size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Count",
+      "variable": "sqlitePageCount",
+      "description": "Total number of pages in the database"
+    },
+    {
+      "type": "metadata",
+      "name": "Encoding",
+      "variable": "sqliteEncoding",
+      "description": "Text encoding (UTF-8, UTF-16le, UTF-16be)"
+    },
+    {
+      "type": "metadata",
+      "name": "SQLite Version",
+      "variable": "sqliteVersionName",
+      "description": "SQLite library version that created the database"
     }
   ],
   "quality_metrics": {

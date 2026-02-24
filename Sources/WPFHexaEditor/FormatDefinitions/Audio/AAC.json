@@ -1,6 +1,6 @@
 {
   "formatName": "AAC Audio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".aac"
   ],
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt16BE": "Read 16-bit big-endian for ADTS header parsing",
     "bitwiseAnd": "Extract bitrate and sample rate from ADTS header",
-    "bitwiseShiftRight": "Shift bits to extract audio configuration"
+    "bitwiseShiftRight": "Shift bits to extract audio configuration",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -41,7 +42,8 @@
     "profile": "Unknown",
     "bitrate": 0,
     "frameLength": 0,
-    "adtsSyncWord": 0
+    "adtsSyncWord": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -55,6 +57,12 @@
       "storeAs": "adtsSyncWord",
       "valueType": "uint16",
       "endianness": "big"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

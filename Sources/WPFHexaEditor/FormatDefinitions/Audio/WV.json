@@ -1,6 +1,6 @@
 {
   "formatName": "WavPack Audio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".wv"
   ],
@@ -30,7 +30,9 @@
   "functions": {
     "readUInt32LE": "Read 32-bit little-endian for block header and sample counts",
     "readUInt16LE": "Read 16-bit values for version and flags",
-    "calculateCRC32": "Calculate CRC32 for block integrity"
+    "calculateCRC32": "Calculate CRC32 for block integrity",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -40,7 +42,9 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 0,
-    "wavpackHeader": 0
+    "wavpackHeader": 0,
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -53,6 +57,18 @@
       "description": "wvpk - WavPack file signature",
       "storeAs": "wavpackHeader",
       "valueType": "uint32"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

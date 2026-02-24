@@ -1,6 +1,6 @@
 {
   "formatName": "Ogg Video",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".ogv",
     ".ogm"
@@ -34,7 +34,9 @@
     "bitDepth": 0,
     "durationSeconds": 0,
     "totalSamples": 0,
-    "oggHeader": 0
+    "oggHeader": 0,
+    "byteRate": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -71,6 +73,18 @@
       "name": "Duration",
       "variable": "durationSeconds",
       "description": "Total duration in seconds"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Rate",
+      "variable": "byteRate",
+      "description": "Calculated byte rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [
@@ -141,6 +155,8 @@
   },
   "functions": {
     "readUInt32BE": "Read audio metadata",
-    "divide": "Calculate duration"
+    "divide": "Calculate duration",
+    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "GIF Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".gif"
   ],
@@ -28,7 +28,9 @@
   },
   "functions": {
     "readUInt32LE": "Read logical screen width and height (little-endian)",
-    "multiply": "Calculate canvas size (width × height)"
+    "multiply": "Calculate canvas size (width × height)",
+    "parseGIFHeader()": "Parse GIF header for dimensions and version",
+    "computeFromVariables(gifWidth * gifHeight, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -41,7 +43,12 @@
     "logicalScreenHeight": 0,
     "packedFields": 0,
     "backgroundColor": 0,
-    "pixelAspectRatio": 0
+    "pixelAspectRatio": 0,
+    "gifWidth": 0,
+    "gifHeight": 0,
+    "gifVersion": "",
+    "gifColorTableSize": 0,
+    "gifBackgroundColor": 0
   },
   "blocks": [
     {
@@ -144,6 +151,36 @@
       "name": "Total Pixels",
       "variable": "totalPixels",
       "description": "Canvas width × height"
+    },
+    {
+      "type": "metadata",
+      "name": "GIF Version",
+      "variable": "gifVersion",
+      "description": "GIF format version string"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Dimensions",
+      "variable": "gifWidth",
+      "description": "GIF image width from header"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height",
+      "variable": "gifHeight",
+      "description": "GIF image height from header"
+    },
+    {
+      "type": "metadata",
+      "name": "Color Table Size",
+      "variable": "gifColorTableSize",
+      "description": "Number of entries in global color table"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels (computed)",
+      "variable": "totalPixels",
+      "description": "gifWidth x gifHeight computed total pixels"
     }
   ],
   "mime_types": [

@@ -99,6 +99,7 @@ namespace WpfHexaEditor.ViewModels
             {
                 _formattedValue = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(ActiveFormattedValue));
             }
         }
 
@@ -286,6 +287,67 @@ namespace WpfHexaEditor.ViewModels
                 }
             }
         }
+
+        private string _groupName;
+
+        /// <summary>
+        /// Group name for section headers (C3): Signature, Header Fields, Data Fields
+        /// </summary>
+        public string GroupName
+        {
+            get => _groupName;
+            set
+            {
+                if (_groupName != value)
+                {
+                    _groupName = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private FieldDisplayMode _displayMode = FieldDisplayMode.Auto;
+
+        /// <summary>
+        /// Per-field display mode for toggling Hex/Dec/Bin (C7)
+        /// </summary>
+        public FieldDisplayMode DisplayMode
+        {
+            get => _displayMode;
+            set
+            {
+                if (_displayMode != value)
+                {
+                    _displayMode = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ActiveFormattedValue));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Value formatted according to the current DisplayMode (C7)
+        /// </summary>
+        public string ActiveFormattedValue => DisplayMode switch
+        {
+            FieldDisplayMode.Hex => GetValueAsHex(),
+            FieldDisplayMode.Decimal => GetValueAsDecimal(),
+            FieldDisplayMode.Binary => GetValueAsBinary(),
+            _ => FormattedValue
+        };
+
+        /// <summary>
+        /// Whether this field has a numeric type (for showing H/D/B toggle)
+        /// </summary>
+        public bool IsNumericType => ValueType?.ToLowerInvariant() switch
+        {
+            "uint8" or "byte" or "int8" or "sbyte" => true,
+            "uint16" or "ushort" or "int16" or "short" => true,
+            "uint32" or "uint" or "int32" or "int" => true,
+            "uint64" or "ulong" or "int64" or "long" => true,
+            "float" or "double" => true,
+            _ => false
+        };
 
         /// <summary>
         /// Margin for indentation (calculated from IndentLevel)
@@ -724,6 +786,17 @@ namespace WpfHexaEditor.ViewModels
 
             return "N/A";
         }
+    }
+
+    /// <summary>
+    /// Display mode for per-field value formatting (C7)
+    /// </summary>
+    public enum FieldDisplayMode
+    {
+        Auto,
+        Hex,
+        Decimal,
+        Binary
     }
 
     /// <summary>

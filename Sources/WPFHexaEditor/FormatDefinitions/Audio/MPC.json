@@ -1,6 +1,6 @@
 {
   "formatName": "Musepack Audio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mpc",
     ".mp+",
@@ -34,7 +34,8 @@
   "functions": {
     "readUInt8": "Read packet header and stream version",
     "readUInt32LE": "Read sample count and duration",
-    "readUInt16LE": "Read audio properties (channels, sample rate)"
+    "readUInt16LE": "Read audio properties (channels, sample rate)",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -43,7 +44,8 @@
     "channels": 2,
     "samples": 0,
     "profile": "Unknown",
-    "musepackHeader": ""
+    "musepackHeader": "",
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -56,6 +58,12 @@
       "description": "MP+ - Musepack audio file signature",
       "storeAs": "musepackHeader",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

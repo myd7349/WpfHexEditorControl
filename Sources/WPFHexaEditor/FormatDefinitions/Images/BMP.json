@@ -1,6 +1,6 @@
 {
   "formatName": "BMP Image",
-  "version": "1.9",
+  "version": "1.11",
   "extensions": [
     ".bmp",
     ".dib"
@@ -29,7 +29,10 @@
   },
   "functions": {
     "readUInt32LE": "Read width, height, and file size (little-endian)",
-    "multiply": "Calculate total pixels (width × height)"
+    "multiply": "Calculate total pixels (width × height)",
+    "parseBMPInfoHeader(14)": "Parse BMP info header at offset 14",
+    "computeFromVariables(bmpWidth * bmpHeight, totalPixels)": "Calculate total pixels",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
@@ -41,7 +44,14 @@
     "dataOffset": 0,
     "headerSize": 0,
     "width": "",
-    "height": 0
+    "height": 0,
+    "bmpWidth": 0,
+    "bmpHeight": 0,
+    "bmpBitCount": 0,
+    "bmpCompression": 0,
+    "bmpImageSize": 0,
+    "bmpCompressionName": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -142,6 +152,42 @@
       "name": "File Size (bytes)",
       "variable": "fileSize",
       "description": "Total BMP file size"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Dimensions",
+      "variable": "bmpWidth",
+      "description": "BMP image width from info header"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height",
+      "variable": "bmpHeight",
+      "description": "BMP image height from info header"
+    },
+    {
+      "type": "metadata",
+      "name": "Bits Per Pixel",
+      "variable": "bmpBitCount",
+      "description": "Color depth in bits per pixel"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression",
+      "variable": "bmpCompressionName",
+      "description": "Compression method name"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels (computed)",
+      "variable": "totalPixels",
+      "description": "bmpWidth x bmpHeight computed total pixels"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [

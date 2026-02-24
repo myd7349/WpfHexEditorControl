@@ -1,6 +1,6 @@
 {
   "formatName": "Flash Video",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".flv"
   ],
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt8": "Read 8-bit values for version and type flags",
     "readUInt32BE": "Read 32-bit big-endian for data offset and tag sizes",
-    "bitwiseAnd": "Extract audio/video presence flags"
+    "bitwiseAnd": "Extract audio/video presence flags",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -45,7 +46,8 @@
     "videoCodec": "Unknown",
     "audioCodec": "Unknown",
     "flvSignature": "",
-    "typeFlags": 0
+    "typeFlags": 0,
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -91,6 +93,12 @@
       "description": "Offset to first tag",
       "storeAs": "dataOffset",
       "valueType": "uint32"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

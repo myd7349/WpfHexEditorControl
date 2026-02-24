@@ -1,6 +1,6 @@
 {
   "formatName": "LZMA Compression",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".lzma",
     ".xz"
@@ -31,12 +31,14 @@
     }
   },
   "functions": {
-    "readUInt32LE": "Read dictionary size and uncompressed size (little-endian)"
+    "readUInt32LE": "Read dictionary size and uncompressed size (little-endian)",
+    "formatFileSize(var:uncompressedSize)": "Format uncompressedSize as readable size"
   },
   "variables": {
     "dictionarySize": 0,
     "uncompressedSize": 0,
-    "lzmaProperties": 0
+    "lzmaProperties": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -79,6 +81,12 @@
       "name": "Uncompressed Size (bytes)",
       "variable": "uncompressedSize",
       "description": "Original file size before compression"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [

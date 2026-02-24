@@ -1,6 +1,6 @@
 {
   "formatName": "Universal 3D",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".u3d"
   ],
@@ -32,7 +32,8 @@
     "fileSize": 0,
     "u3dSignature": "",
     "majorVersion": 0,
-    "minorVersion": 0
+    "minorVersion": 0,
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -85,6 +86,12 @@
       "name": "Material Count",
       "variable": "materialCount",
       "description": "Material Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -143,6 +150,7 @@
   },
   "functions": {
     "readUInt32LE": "Read mesh data",
-    "multiply": "Calculate vertices"
+    "multiply": "Calculate vertices",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   }
 }

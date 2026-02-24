@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation EXE",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".exe",
     ".psx"
@@ -44,7 +44,8 @@
     "memfillStart": 0,
     "memfillSize": 0,
     "initialSp": 0,
-    "marker": ""
+    "marker": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -196,6 +197,12 @@
       "name": "Entry Point",
       "variable": "entryPoint",
       "description": "Entry Point"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -260,6 +267,7 @@
   },
   "functions": {
     "readUInt32LE": "Read executable header",
-    "calculateCRC32": "Validate"
+    "calculateCRC32": "Validate",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   }
 }

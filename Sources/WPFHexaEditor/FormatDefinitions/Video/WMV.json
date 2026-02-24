@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Media Video",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".wmv",
     ".wma",
@@ -31,7 +31,8 @@
   "functions": {
     "readUInt64LE": "Read 64-bit little-endian for GUID and object sizes",
     "readUInt32LE": "Read 32-bit values for stream properties",
-    "readUInt16LE": "Read 16-bit values for video dimensions"
+    "readUInt16LE": "Read 16-bit values for video dimensions",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,8 @@
     "duration": 0,
     "bitrate": 0,
     "videoCodec": "WMV",
-    "asfHeaderGuid": ""
+    "asfHeaderGuid": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -66,6 +68,12 @@
       "description": "Size of header object",
       "storeAs": "objectSize",
       "valueType": "uint64"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

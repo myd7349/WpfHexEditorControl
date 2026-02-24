@@ -1,6 +1,6 @@
 {
   "formatName": "MDL Molfile",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".mol"
   ],
@@ -31,7 +31,8 @@
     "format": "",
     "moleculeName": "",
     "headerLine2": "",
-    "comment": ""
+    "comment": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -78,6 +79,12 @@
       "name": "Version",
       "variable": "version",
       "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -135,6 +142,7 @@
     "last_updated": "2026-02-24"
   },
   "functions": {
-    "readUInt32LE": "Read file header"
+    "readUInt32LE": "Read file header",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   }
 }

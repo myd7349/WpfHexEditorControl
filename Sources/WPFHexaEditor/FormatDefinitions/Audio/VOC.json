@@ -1,6 +1,6 @@
 {
   "formatName": "Creative Voice File",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".voc"
   ],
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt16LE": "Read 16-bit little-endian for version and data block offset",
     "readUInt8": "Read block type, sample rate divisor, and codec",
-    "readUInt24LE": "Read 24-bit block size"
+    "readUInt24LE": "Read 24-bit block size",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,8 @@
     "sampleRate": 11025,
     "channels": 1,
     "codec": 0,
-    "vocHeader": ""
+    "vocHeader": "",
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -55,6 +57,12 @@
       "description": "Creative Voice File header",
       "storeAs": "vocHeader",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

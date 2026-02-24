@@ -1,6 +1,6 @@
 {
   "formatName": "3GPP Multimedia",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".3gp",
     ".3g2"
@@ -33,7 +33,8 @@
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian for box sizes and timestamps",
     "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat, trak)",
-    "readUInt16BE": "Read 16-bit values for video dimensions and audio config"
+    "readUInt16BE": "Read 16-bit values for video dimensions and audio config",
+    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
@@ -45,7 +46,8 @@
     "videoCodec": "H.263/H.264/MPEG-4",
     "audioCodec": "AMR",
     "boxSize": 0,
-    "boxType": ""
+    "boxType": "",
+    "totalPixels": 0
   },
   "blocks": [
     {
@@ -81,6 +83,12 @@
       "description": "3gp or 3g2 brand",
       "storeAs": "majorBrand",
       "valueType": "ascii"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Width x Height"
     }
   ],
   "mime_types": [

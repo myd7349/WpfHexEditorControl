@@ -1,6 +1,6 @@
 {
   "formatName": "XFS Filesystem",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".xfs"
   ],
@@ -33,7 +33,8 @@
     "currentOffset": 0,
     "fileSize": 0,
     "version": 0,
-    "format": ""
+    "format": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -56,6 +57,12 @@
       "name": "Version",
       "variable": "version",
       "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "quality_metrics": {
@@ -116,6 +123,7 @@
     "last_updated": "2026-02-24"
   },
   "functions": {
-    "readUInt32LE": "Read file header"
+    "readUInt32LE": "Read file header",
+    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "ZPAQ Archive",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".zpaq"
   ],
@@ -35,7 +35,8 @@
     "totalSize": 0,
     "compressionMethod": "",
     "headerCRC": 0,
-    "zpaqMagic": ""
+    "zpaqMagic": "",
+    "formattedSize": ""
   },
   "blocks": [
     {
@@ -66,6 +67,12 @@
       "name": "Compression Method",
       "variable": "compressionMethod",
       "description": "Compression Method"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size"
     }
   ],
   "mime_types": [
@@ -134,6 +141,7 @@
   },
   "functions": {
     "readUInt32LE": "Read header",
-    "calculateCRC32": "Validate"
+    "calculateCRC32": "Validate",
+    "formatFileSize(var:totalSize)": "Format totalSize as readable size"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Executable (PE)",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".exe",
     ".dll",
@@ -34,7 +34,8 @@
     "readUInt32LE": "Read 32-bit little-endian for PE header offset and fields",
     "calculateMD5": "Calculate MD5 hash for file integrity verification",
     "calculateSHA256": "Calculate SHA256 hash for security analysis",
-    "calculateCRC32": "Calculate CRC32 checksum for validation"
+    "calculateCRC32": "Calculate CRC32 checksum for validation",
+    "parsePEOptionalHeader(var:peHeaderOffset)": "Parse PE Optional Header"
   },
   "variables": {
     "currentOffset": 0,
@@ -61,7 +62,15 @@
     "initialCs": 0,
     "relocTableOffset": 0,
     "overlayNumber": 0,
-    "peHeaderOffset": 0
+    "peHeaderOffset": 0,
+    "peSubsystem": 0,
+    "peSubsystemName": "",
+    "peEntryPoint": 0,
+    "peImageBase": 0,
+    "peSectionCount": 0,
+    "peIs64Bit": false,
+    "peMachine": 0,
+    "peMachineName": ""
   },
   "blocks": [
     {
@@ -228,6 +237,36 @@
       "description": "Offset to PE header (e_lfanew)",
       "storeAs": "peHeaderOffset",
       "valueType": "uint32"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "peMachineName",
+      "description": "Target machine architecture name"
+    },
+    {
+      "type": "metadata",
+      "name": "Subsystem",
+      "variable": "peSubsystemName",
+      "description": "Windows subsystem name"
+    },
+    {
+      "type": "metadata",
+      "name": "64-bit",
+      "variable": "peIs64Bit",
+      "description": "true if PE32+ (64-bit), false if PE32 (32-bit)"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Point",
+      "variable": "peEntryPoint",
+      "description": "Address of entry point (RVA)"
+    },
+    {
+      "type": "metadata",
+      "name": "Section Count",
+      "variable": "peSectionCount",
+      "description": "Number of sections in the PE file"
     }
   ],
   "mime_types": [

@@ -1,6 +1,6 @@
 {
   "formatName": "DTS Audio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dts",
     ".dtshd"
@@ -33,7 +33,8 @@
   "functions": {
     "readUInt32BE": "Read 32-bit big-endian for sync word and frame header",
     "readUInt16BE": "Read 16-bit values for audio configuration",
-    "bitwiseAnd": "Extract frame type, sample rate, and bit rate"
+    "bitwiseAnd": "Extract frame type, sample rate, and bit rate",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -42,7 +43,8 @@
     "bitrate": 0,
     "channels": 0,
     "lfePresent": false,
-    "dtsSyncWord": 0
+    "dtsSyncWord": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -56,6 +58,12 @@
       "storeAs": "dtsSyncWord",
       "valueType": "uint32",
       "endianness": "big"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [

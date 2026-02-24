@@ -1,6 +1,6 @@
 {
   "formatName": "Dolby Digital AC-3",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ac3"
   ],
@@ -32,7 +32,8 @@
   "functions": {
     "readUInt16BE": "Read 16-bit big-endian for sync word and frame header",
     "bitwiseAnd": "Extract sample rate, bitrate, and channel configuration",
-    "bitwiseShiftRight": "Parse AC-3 frame header bits"
+    "bitwiseShiftRight": "Parse AC-3 frame header bits",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
   },
   "variables": {
     "currentOffset": 0,
@@ -41,7 +42,8 @@
     "channels": 0,
     "bsid": 0,
     "frameSize": 0,
-    "ac3SyncWord": 0
+    "ac3SyncWord": 0,
+    "samplesPerSecond": 0
   },
   "blocks": [
     {
@@ -54,6 +56,12 @@
       "description": "AC-3 synchronization word",
       "storeAs": "ac3SyncWord",
       "valueType": "uint16"
+    },
+    {
+      "type": "metadata",
+      "name": "Samples/Second",
+      "variable": "samplesPerSecond",
+      "description": "Total samples per second"
     }
   ],
   "mime_types": [
