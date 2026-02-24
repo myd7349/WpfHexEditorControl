@@ -57,14 +57,34 @@ namespace WpfHexaEditor.Core.FormatDetection
             // Detect specific text formats if it's text
             if (result.IsLikelyText)
             {
+                bool specificFormatFound = false;
+
                 if (LooksLikeYaml(sample))
+                {
                     result.TextFormatHints.Add("YAML");
+                    specificFormatFound = true;
+                }
                 if (LooksLikeJson(sample))
+                {
                     result.TextFormatHints.Add("JSON");
+                    specificFormatFound = true;
+                }
                 if (LooksLikeXml(sample))
+                {
                     result.TextFormatHints.Add("XML");
+                    specificFormatFound = true;
+                }
                 if (LooksLikeCsv(sample))
+                {
                     result.TextFormatHints.Add("CSV");
+                    specificFormatFound = true;
+                }
+
+                // If no specific format detected, mark as generic plain text
+                if (!specificFormatFound)
+                {
+                    result.TextFormatHints.Add("Plain");
+                }
             }
 
             return result;

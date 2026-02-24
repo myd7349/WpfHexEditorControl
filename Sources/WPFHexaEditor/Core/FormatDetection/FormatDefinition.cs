@@ -173,8 +173,11 @@ namespace WpfHexaEditor.Core.FormatDetection
         /// </summary>
         public bool IsValid()
         {
+            // Allow empty signature if not required (for text formats without magic bytes)
             if (string.IsNullOrWhiteSpace(Signature))
-                return false;
+            {
+                return !Required; // Valid if signature is optional
+            }
 
             // Signature must be valid hex string (even number of hex digits)
             if (Signature.Length % 2 != 0)

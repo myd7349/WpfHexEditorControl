@@ -280,7 +280,10 @@ namespace WpfHexaEditor
             // 5. Clear selection state (selection, cursor position)
             ClearSelectionState();
 
-            // 5.5. Clear format detection state (parsed fields, detected format)
+            // 5.5. Clear custom background blocks (visual markers from format detection)
+            ClearCustomBackgroundBlock();
+
+            // 5.6. Clear format detection state (parsed fields, detected format)
             ClearFormatDetectionState();
 
             // 6. Reset file info
