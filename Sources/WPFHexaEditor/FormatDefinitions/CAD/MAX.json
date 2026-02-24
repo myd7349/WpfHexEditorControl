@@ -1,6 +1,6 @@
 {
   "formatName": "3ds Max Scene",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".max"
   ],
@@ -29,7 +29,8 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "ole2Header": 0
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MAX uses OLE2 container"
+      "description": "MAX uses OLE2 container",
+      "storeAs": "ole2Header",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "DOS COM Executable",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".com"
   ],
@@ -34,7 +34,8 @@
     "machineType": "",
     "sectionCount": 0,
     "timestamp": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "codeStart": 0
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "COM files have no header"
+      "description": "COM files have no header",
+      "storeAs": "codeStart",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

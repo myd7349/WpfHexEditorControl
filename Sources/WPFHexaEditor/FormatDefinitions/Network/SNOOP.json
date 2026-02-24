@@ -1,6 +1,6 @@
 {
   "formatName": "Snoop Capture",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".snoop",
     ".cap"
@@ -30,7 +30,9 @@
     "packetCount": 0,
     "snaplen": 0,
     "linkType": 0,
-    "version": ""
+    "version": "",
+    "snoopMagic": "",
+    "datalinkType": ""
   },
   "blocks": [
     {
@@ -40,7 +42,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "snoop magic bytes (ASCII 'snoop\\0\\0\\0')"
+      "description": "snoop magic bytes (ASCII 'snoop\\0\\0\\0')",
+      "storeAs": "snoopMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +53,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Snoop version (2)"
+      "description": "Snoop version (2)",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -58,7 +64,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Network type (0=Ethernet, etc.)"
+      "description": "Network type (0=Ethernet, etc.)",
+      "storeAs": "datalinkType",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

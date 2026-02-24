@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Access 2007+ Database",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".accdb"
   ],
@@ -29,7 +29,8 @@
     "pageSize": 0,
     "pageCount": 0,
     "tableCount": 0,
-    "version": 0
+    "version": 0,
+    "aceDbSignature": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 21,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Standard ACE Databas"
+      "description": "Standard ACE Databas",
+      "storeAs": "aceDbSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

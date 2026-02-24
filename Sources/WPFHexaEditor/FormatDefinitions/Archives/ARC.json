@@ -1,6 +1,6 @@
 {
   "formatName": "ARC Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".arc"
   ],
@@ -36,7 +36,8 @@
   "variables": {
     "compressionMethod": 0,
     "fileName": "",
-    "compressedSize": 0
+    "compressedSize": 0,
+    "archiveMarker": 0
   },
   "blocks": [
     {
@@ -46,7 +47,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Archive marker byte (0x1A)"
+      "description": "Archive marker byte (0x1A)",
+      "storeAs": "archiveMarker",
+      "valueType": "uint8"
     },
     {
       "type": "data",

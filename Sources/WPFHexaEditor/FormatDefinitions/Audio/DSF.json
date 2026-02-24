@@ -1,6 +1,6 @@
 {
   "formatName": "DSD Stream File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dsf"
   ],
@@ -42,7 +42,8 @@
     "channelType": 0,
     "channels": 2,
     "sampleRate": 2822400,
-    "bitDepth": 1
+    "bitDepth": 1,
+    "dsfHeader": 0
   },
   "blocks": [
     {
@@ -52,7 +53,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "DSD - DSF file chunk identifier"
+      "description": "DSD - DSF file chunk identifier",
+      "storeAs": "dsfHeader",
+      "valueType": "uint32"
     }
   ],
   "mime_types": [

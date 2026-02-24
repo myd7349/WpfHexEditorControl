@@ -1,6 +1,6 @@
 {
   "formatName": "BMP Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".bmp",
     ".dib"
@@ -36,7 +36,12 @@
     "imageWidth": 0,
     "imageHeight": 0,
     "totalPixels": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "bmpSignature": 0,
+    "dataOffset": 0,
+    "headerSize": 0,
+    "width": "",
+    "height": 0
   },
   "blocks": [
     {
@@ -46,7 +51,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "BM magic bytes"
+      "description": "BM magic bytes",
+      "storeAs": "bmpSignature",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -55,7 +62,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Total file size in bytes"
+      "description": "Total file size in bytes",
+      "storeAs": "fileSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -73,7 +82,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Offset to pixel data"
+      "description": "Offset to pixel data",
+      "storeAs": "dataOffset",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -82,7 +93,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "DIB header size"
+      "description": "DIB header size",
+      "storeAs": "headerSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -91,7 +104,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Image width in pixels"
+      "description": "Image width in pixels",
+      "storeAs": "width",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -100,7 +115,9 @@
       "length": 4,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Image height in pixels"
+      "description": "Image height in pixels",
+      "storeAs": "height",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

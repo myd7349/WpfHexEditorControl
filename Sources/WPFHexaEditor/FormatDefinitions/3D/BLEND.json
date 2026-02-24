@@ -1,6 +1,6 @@
 {
   "formatName": "Blender 3D File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".blend"
   ],
@@ -29,7 +29,11 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "blenderSignature": "",
+    "pointerSize": 0,
+    "endianness": 0,
+    "version": ""
   },
   "blocks": [
     {
@@ -39,7 +43,9 @@
       "length": 7,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "BLENDER signature"
+      "description": "BLENDER signature",
+      "storeAs": "blenderSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +54,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "_ (32-bit) or - (64-bit)"
+      "description": "_ (32-bit) or - (64-bit)",
+      "storeAs": "pointerSize",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -57,7 +65,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "v (little) or V (big endian)"
+      "description": "v (little) or V (big endian)",
+      "storeAs": "endianness",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -66,7 +76,9 @@
       "length": 3,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Blender version (e.g., 293)"
+      "description": "Blender version (e.g., 293)",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

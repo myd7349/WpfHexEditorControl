@@ -1,6 +1,6 @@
 {
   "formatName": "Portable Bitmap",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pbm"
   ],
@@ -33,7 +33,9 @@
     "extractASCIIString": "Extract width and height from ASCII header"
   },
   "variables": {
-    "magicNumber": ""
+    "magicNumber": "",
+    "pbmMagic": 0,
+    "header": ""
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "P1 or P4 magic number"
+      "description": "P1 or P4 magic number",
+      "storeAs": "pbmMagic",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 32,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "ASCII header (width, height)"
+      "description": "ASCII header (width, height)",
+      "storeAs": "header",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

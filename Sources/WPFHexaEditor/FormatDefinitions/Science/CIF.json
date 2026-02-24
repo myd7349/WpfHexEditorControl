@@ -1,6 +1,6 @@
 {
   "formatName": "Crystallographic Information File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".cif"
   ],
@@ -29,7 +29,8 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "cifDataBlock": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "CIF data_ keyword"
+      "description": "CIF data_ keyword",
+      "storeAs": "cifDataBlock",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

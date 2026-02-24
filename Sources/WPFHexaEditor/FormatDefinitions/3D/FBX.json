@@ -1,6 +1,6 @@
 {
   "formatName": "Autodesk FBX",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".fbx"
   ],
@@ -29,7 +29,9 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "fbxMagic": "",
+    "version": ""
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 11,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Kaydara FBX signature"
+      "description": "Kaydara FBX signature",
+      "storeAs": "fbxMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +52,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "FBX version number"
+      "description": "FBX version number",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

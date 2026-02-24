@@ -1,6 +1,6 @@
 {
   "formatName": "Parallel Compression Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pz"
   ],
@@ -33,7 +33,8 @@
     "crc32Valid": false,
     "originalSize": 0,
     "compressedSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "pcompressMagic": ""
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Magic bytes: 'PCOMP'"
+      "description": "Magic bytes: 'PCOMP'",
+      "storeAs": "pcompressMagic",
+      "valueType": "ascii"
     },
     {
       "type": "data",

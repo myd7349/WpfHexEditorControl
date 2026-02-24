@@ -1,6 +1,6 @@
 {
   "formatName": "DER Certificate",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".der",
     ".cer",
@@ -36,7 +36,9 @@
     "version": 0,
     "serialNumber": "",
     "issuer": "",
-    "subject": ""
+    "subject": "",
+    "asn1Sequence": 0,
+    "length": 0
   },
   "blocks": [
     {
@@ -46,7 +48,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ASN.1 sequence tag"
+      "description": "ASN.1 sequence tag",
+      "storeAs": "asn1Sequence",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -55,7 +59,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Certificate length"
+      "description": "Certificate length",
+      "storeAs": "length",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

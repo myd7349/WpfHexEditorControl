@@ -1,6 +1,6 @@
 {
   "formatName": "DSD Interchange File Format",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dff"
   ],
@@ -41,7 +41,8 @@
     "formatVersion": 0,
     "sampleRate": 2822400,
     "channels": 2,
-    "channelType": "Unknown"
+    "channelType": "Unknown",
+    "dffHeader": 0
   },
   "blocks": [
     {
@@ -51,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "FRM8 - IFF container for DSD"
+      "description": "FRM8 - IFF container for DSD",
+      "storeAs": "dffHeader",
+      "valueType": "uint32"
     }
   ],
   "mime_types": [

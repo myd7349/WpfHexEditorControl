@@ -1,6 +1,6 @@
 {
   "formatName": "GL Transmission Format",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".gltf"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "jsonStart": 0
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Opening brace for JSON"
+      "description": "Opening brace for JSON",
+      "storeAs": "jsonStart",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

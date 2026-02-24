@@ -1,6 +1,6 @@
 {
   "formatName": "ICO Icon",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ico"
   ],
@@ -34,7 +34,8 @@
   },
   "variables": {
     "currentOffset": 0,
-    "imageCount": 0
+    "imageCount": 0,
+    "type": 0
   },
   "blocks": [
     {
@@ -53,7 +54,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "1 for icon, 2 for cursor"
+      "description": "1 for icon, 2 for cursor",
+      "storeAs": "type",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -62,7 +65,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Number of images in file"
+      "description": "Number of images in file",
+      "storeAs": "imageCount",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

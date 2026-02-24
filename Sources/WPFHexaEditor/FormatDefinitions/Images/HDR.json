@@ -1,6 +1,6 @@
 {
   "formatName": "Radiance HDR Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".hdr",
     ".pic"
@@ -34,7 +34,9 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "hdrMagic": "",
+    "headerInfo": ""
   },
   "blocks": [
     {
@@ -44,7 +46,9 @@
       "length": 10,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "#?RADIANCE ASCII header"
+      "description": "#?RADIANCE ASCII header",
+      "storeAs": "hdrMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +57,9 @@
       "length": 64,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "HDR header information"
+      "description": "HDR header information",
+      "storeAs": "headerInfo",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

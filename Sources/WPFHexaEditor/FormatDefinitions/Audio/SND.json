@@ -1,6 +1,6 @@
 {
   "formatName": "Sound File",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".snd"
   ],
@@ -33,7 +33,8 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 0,
-    "duration": 0
+    "duration": 0,
+    "sndHeader": 0
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": ".snd - Sound file header"
+      "description": ".snd - Sound file header",
+      "storeAs": "sndHeader",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

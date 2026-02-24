@@ -1,6 +1,6 @@
 {
   "formatName": "Xbox One Package",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".xvd",
     ".msixvc"
@@ -34,7 +34,12 @@
     "currentOffset": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "xvdSignature": "",
+    "formatVersion": "",
+    "flags": 0,
+    "contentSize": 0,
+    "contentId": ""
   },
   "blocks": [
     {
@@ -44,8 +49,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "bytes",
-      "description": "XVD magic bytes"
+      "valueType": "ascii",
+      "description": "XVD magic bytes",
+      "storeAs": "xvdSignature"
     },
     {
       "type": "field",
@@ -54,8 +60,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "uint32",
-      "description": "XVD format version"
+      "valueType": "ascii",
+      "description": "XVD format version",
+      "storeAs": "formatVersion"
     },
     {
       "type": "field",
@@ -65,7 +72,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Format flags (encryption, compression)"
+      "description": "Format flags (encryption, compression)",
+      "storeAs": "flags"
     },
     {
       "type": "field",
@@ -74,8 +82,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Total content size (64-bit)"
+      "valueType": "uint64",
+      "description": "Total content size (64-bit)",
+      "storeAs": "contentSize"
     },
     {
       "type": "field",
@@ -84,8 +93,9 @@
       "length": 16,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Xbox One content GUID (128-bit)"
+      "valueType": "ascii",
+      "description": "Xbox One content GUID (128-bit)",
+      "storeAs": "contentId"
     },
     {
       "type": "metadata",

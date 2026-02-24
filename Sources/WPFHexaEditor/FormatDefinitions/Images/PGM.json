@@ -1,6 +1,6 @@
 {
   "formatName": "Portable Graymap",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pgm"
   ],
@@ -33,7 +33,9 @@
     "extractASCIIString": "Extract width, height, maxval from ASCII header"
   },
   "variables": {
-    "magicNumber": ""
+    "magicNumber": "",
+    "pgmMagic": 0,
+    "header": ""
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "P2 or P5 magic number"
+      "description": "P2 or P5 magic number",
+      "storeAs": "pgmMagic",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 32,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "ASCII header (width, height, maxval)"
+      "description": "ASCII header (width, height, maxval)",
+      "storeAs": "header",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

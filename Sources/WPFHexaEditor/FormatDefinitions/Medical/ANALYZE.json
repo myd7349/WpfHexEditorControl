@@ -1,6 +1,6 @@
 {
   "formatName": "Analyze 7.5 Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".hdr",
     ".img"
@@ -30,7 +30,10 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "headerSize": 0,
+    "dataType": "",
+    "databaseName": ""
   },
   "blocks": [
     {
@@ -40,7 +43,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Header size (348 bytes)"
+      "description": "Header size (348 bytes)",
+      "storeAs": "headerSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -49,7 +54,9 @@
       "length": 10,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Data type string"
+      "description": "Data type string",
+      "storeAs": "dataType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -58,7 +65,9 @@
       "length": 18,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Database name"
+      "description": "Database name",
+      "storeAs": "databaseName",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

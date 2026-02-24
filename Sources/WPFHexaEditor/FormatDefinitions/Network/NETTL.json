@@ -1,6 +1,6 @@
 {
   "formatName": "HP-UX nettl",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".trc0",
     ".trc1"
@@ -29,7 +29,13 @@
     "currentOffset": 0,
     "subsystem": 0,
     "packetCount": 0,
-    "captureLength": 0
+    "captureLength": 0,
+    "fileMagic": "",
+    "fileType": "",
+    "startTime": 0,
+    "hostnameLength": "",
+    "hostname": "",
+    "timeZone": ""
   },
   "blocks": [
     {
@@ -39,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "nettl file magic number"
+      "description": "nettl file magic number",
+      "storeAs": "fileMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -48,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Trace file type identifier"
+      "description": "Trace file type identifier",
+      "storeAs": "fileType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -57,7 +67,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Trace start time (timeval)"
+      "description": "Trace start time (timeval)",
+      "storeAs": "startTime",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -66,7 +78,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Length of hostname"
+      "description": "Length of hostname",
+      "storeAs": "hostnameLength",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -75,7 +89,9 @@
       "length": 64,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "System hostname"
+      "description": "System hostname",
+      "storeAs": "hostname",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -84,7 +100,9 @@
       "length": 64,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Time zone string"
+      "description": "Time zone string",
+      "storeAs": "timeZone",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

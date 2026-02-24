@@ -1,6 +1,6 @@
 {
   "formatName": "Maya Binary",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mb"
   ],
@@ -29,7 +29,9 @@
     "machineType": "",
     "sectionCount": 0,
     "timestamp": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "mayaBinaryHeader": 0,
+    "versionInfo": ""
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "For signature"
+      "description": "For signature",
+      "storeAs": "mayaBinaryHeader",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -48,7 +52,9 @@
       "length": 16,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Maya version information"
+      "description": "Maya version information",
+      "storeAs": "versionInfo",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

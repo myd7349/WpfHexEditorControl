@@ -1,6 +1,6 @@
 {
   "formatName": "Monkey's Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ape"
   ],
@@ -41,7 +41,8 @@
     "channels": 0,
     "sampleRate": 0,
     "bitDepth": 0,
-    "totalFrames": 0
+    "totalFrames": 0,
+    "apeMagic": ""
   },
   "blocks": [
     {
@@ -51,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MAC (Monkey's Audio Compression)"
+      "description": "MAC (Monkey's Audio Compression)",
+      "storeAs": "apeMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -60,7 +63,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "File format version"
+      "description": "File format version",
+      "storeAs": "version",
+      "valueType": "uint16"
     }
   ],
   "mime_types": [

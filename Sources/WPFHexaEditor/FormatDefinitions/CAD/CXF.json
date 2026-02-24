@@ -1,6 +1,6 @@
 {
   "formatName": "Cloud Point File",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".cxf"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "fileSize": 0,
     "version": 0,
-    "format": ""
+    "format": "",
+    "pointCloudHeader": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 32,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Point cloud file header"
+      "description": "Point cloud file header",
+      "storeAs": "pointCloudHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

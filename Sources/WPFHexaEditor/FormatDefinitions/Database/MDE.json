@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Access Compiled (Legacy)",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mde"
   ],
@@ -29,7 +29,8 @@
     "pageSize": 0,
     "pageCount": 0,
     "tableCount": 0,
-    "version": 0
+    "version": 0,
+    "mdeSignature": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 13,
       "color": "#F4A261",
       "opacity": 0.4,
-      "description": "Standard Jet DB (compiled)"
+      "description": "Standard Jet DB (compiled)",
+      "storeAs": "mdeSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Apple Disk Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dmg"
   ],
@@ -34,7 +34,8 @@
   },
   "variables": {
     "currentOffset": 0,
-    "compressionType": ""
+    "compressionType": "",
+    "compressedHeader": 0
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "DMG files often start with zlib compression"
+      "description": "DMG files often start with zlib compression",
+      "storeAs": "compressedHeader",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

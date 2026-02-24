@@ -1,6 +1,6 @@
 {
   "formatName": "AVCHD Video",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mts",
     ".m2ts"
@@ -34,7 +34,8 @@
     "width": 0,
     "height": 0,
     "frameRate": 0,
-    "duration": 0
+    "duration": 0,
+    "syncByte": 0
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MPEG-TS sync byte for AVCHD format"
+      "description": "MPEG-TS sync byte for AVCHD format",
+      "storeAs": "syncByte",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

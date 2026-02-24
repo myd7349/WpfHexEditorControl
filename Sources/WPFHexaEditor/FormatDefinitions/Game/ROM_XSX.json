@@ -1,6 +1,6 @@
 {
   "formatName": "Xbox Series X/S Package",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".xvd",
     ".msixvc"
@@ -34,7 +34,13 @@
     "currentOffset": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "xvdSignature": "",
+    "formatVersion": "",
+    "packageFlags": 0,
+    "compressionType": "",
+    "contentSize": 0,
+    "contentId": ""
   },
   "blocks": [
     {
@@ -44,8 +50,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "bytes",
-      "description": "Enhanced XVD magic for Series X/S"
+      "valueType": "ascii",
+      "description": "Enhanced XVD magic for Series X/S",
+      "storeAs": "xvdSignature"
     },
     {
       "type": "field",
@@ -54,8 +61,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "uint32",
-      "description": "XVD v2/v3 format version (Series optimized)"
+      "valueType": "ascii",
+      "description": "XVD v2/v3 format version (Series optimized)",
+      "storeAs": "formatVersion"
     },
     {
       "type": "field",
@@ -65,7 +73,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Series X/S specific flags (SSD optimizations, DirectStorage)"
+      "description": "Series X/S specific flags (SSD optimizations, DirectStorage)",
+      "storeAs": "packageFlags"
     },
     {
       "type": "field",
@@ -74,8 +83,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "uint32",
-      "description": "Compression algorithm (BCPack, etc.)"
+      "valueType": "ascii",
+      "description": "Compression algorithm (BCPack, etc.)",
+      "storeAs": "compressionType"
     },
     {
       "type": "field",
@@ -84,8 +94,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Total content size (64-bit)"
+      "valueType": "uint64",
+      "description": "Total content size (64-bit)",
+      "storeAs": "contentSize"
     },
     {
       "type": "field",
@@ -94,8 +105,9 @@
       "length": 16,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Xbox Series content GUID"
+      "valueType": "ascii",
+      "description": "Xbox Series content GUID",
+      "storeAs": "contentId"
     },
     {
       "type": "metadata",

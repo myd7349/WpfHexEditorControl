@@ -1,6 +1,6 @@
 {
   "formatName": "Doom WAD Resource",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".wad"
   ],
@@ -33,7 +33,10 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "wadType": "",
+    "numberOfLumps": 0,
+    "directoryOffset": 0
   },
   "blocks": [
     {
@@ -43,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "IWAD or PWAD signature"
+      "description": "IWAD or PWAD signature",
+      "storeAs": "wadType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +57,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Total number of lumps"
+      "description": "Total number of lumps",
+      "storeAs": "numberOfLumps",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -61,7 +68,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Offset to directory"
+      "description": "Offset to directory",
+      "storeAs": "directoryOffset",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

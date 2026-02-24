@@ -1,6 +1,6 @@
 {
   "formatName": "BREP Format",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".brep"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "brepHeader": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 32,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "BREP file header"
+      "description": "BREP file header",
+      "storeAs": "brepHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

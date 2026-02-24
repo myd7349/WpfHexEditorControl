@@ -1,6 +1,6 @@
 {
   "formatName": "Game Resource Archive",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".rez"
   ],
@@ -34,7 +34,8 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "header": 0
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "REZ header"
+      "description": "REZ header",
+      "storeAs": "header",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

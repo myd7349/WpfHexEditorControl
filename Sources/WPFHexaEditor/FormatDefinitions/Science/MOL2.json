@@ -1,6 +1,6 @@
 {
   "formatName": "Tripos Mol2",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mol2"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "atomCount": 0,
     "bondCount": 0,
-    "moleculeName": ""
+    "moleculeName": "",
+    "mol2Magic": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MOL2 signature (@TRIP)"
+      "description": "MOL2 signature (@TRIP)",
+      "storeAs": "mol2Magic",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

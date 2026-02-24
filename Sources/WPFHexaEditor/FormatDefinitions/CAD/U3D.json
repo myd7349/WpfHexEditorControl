@@ -1,6 +1,6 @@
 {
   "formatName": "Universal 3D",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".u3d"
   ],
@@ -29,7 +29,10 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "u3dSignature": "",
+    "majorVersion": 0,
+    "minorVersion": 0
   },
   "blocks": [
     {
@@ -39,7 +42,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "U3D magic bytes"
+      "description": "U3D magic bytes",
+      "storeAs": "u3dSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +53,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Major version number"
+      "description": "Major version number",
+      "storeAs": "majorVersion",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -57,7 +64,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Minor version number"
+      "description": "Minor version number",
+      "storeAs": "minorVersion",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

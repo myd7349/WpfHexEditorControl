@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Event Log XML",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".evtx"
   ],
@@ -29,7 +29,9 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "evtxMagic": "",
+    "oldestChunk": 0
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ElfFile\\0 signature"
+      "description": "ElfFile\\0 signature",
+      "storeAs": "evtxMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +52,9 @@
       "length": 8,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Oldest chunk number"
+      "description": "Oldest chunk number",
+      "storeAs": "oldestChunk",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

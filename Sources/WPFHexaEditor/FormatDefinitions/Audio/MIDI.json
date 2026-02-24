@@ -1,6 +1,6 @@
 {
   "formatName": "MIDI Audio",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".mid",
     ".midi"
@@ -41,7 +41,8 @@
     "format": 0,
     "tracks": 0,
     "division": 0,
-    "timeDivision": "Ticks per quarter note"
+    "timeDivision": "Ticks per quarter note",
+    "midiHeader": ""
   },
   "blocks": [
     {
@@ -51,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MThd chunk identifier"
+      "description": "MThd chunk identifier",
+      "storeAs": "midiHeader",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -60,7 +63,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Header data length (6)"
+      "description": "Header data length (6)",
+      "storeAs": "headerLength",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -69,7 +75,10 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "0=single, 1=multiple, 2=patterns"
+      "description": "0=single, 1=multiple, 2=patterns",
+      "storeAs": "format",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -78,7 +87,10 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Number of track chunks"
+      "description": "Number of track chunks",
+      "storeAs": "tracks",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -87,7 +99,10 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Time division"
+      "description": "Time division",
+      "storeAs": "division",
+      "valueType": "uint16",
+      "endianness": "big"
     }
   ],
   "mime_types": [

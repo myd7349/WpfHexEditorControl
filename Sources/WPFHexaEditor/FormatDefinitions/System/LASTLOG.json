@@ -1,6 +1,6 @@
 {
   "formatName": "Unix lastlog",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ""
   ],
@@ -29,7 +29,10 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "timestamp": 0,
+    "line": "",
+    "host": ""
   },
   "blocks": [
     {
@@ -39,7 +42,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Last login time (time_t)"
+      "description": "Last login time (time_t)",
+      "storeAs": "timestamp",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -48,7 +53,9 @@
       "length": 32,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Terminal line (tty)"
+      "description": "Terminal line (tty)",
+      "storeAs": "line",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -57,7 +64,9 @@
       "length": 256,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Hostname of remote login"
+      "description": "Hostname of remote login",
+      "storeAs": "host",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

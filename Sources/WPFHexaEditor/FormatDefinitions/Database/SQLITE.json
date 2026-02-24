@@ -1,6 +1,6 @@
 {
   "formatName": "SQLite Database",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".sqlite",
     ".db",
@@ -43,7 +43,10 @@
     "schemaFormat": 0,
     "textEncoding": "UTF-8",
     "userVersion": 0,
-    "applicationID": 0
+    "applicationID": 0,
+    "sqliteHeader": "",
+    "fileFormatWriteVersion": 0,
+    "fileFormatReadVersion": 0
   },
   "blocks": [
     {
@@ -53,7 +56,9 @@
       "length": 16,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "SQLite format 3\\0"
+      "description": "SQLite format 3\\0",
+      "storeAs": "sqliteHeader",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -62,7 +67,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Database page size"
+      "description": "Database page size",
+      "storeAs": "pageSize",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -71,7 +78,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "1=legacy, 2=WAL"
+      "description": "1=legacy, 2=WAL",
+      "storeAs": "fileFormatWriteVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -80,7 +89,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "1=legacy, 2=WAL"
+      "description": "1=legacy, 2=WAL",
+      "storeAs": "fileFormatReadVersion",
+      "valueType": "uint8"
     }
   ],
   "quality_metrics": {

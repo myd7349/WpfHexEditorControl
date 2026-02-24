@@ -1,6 +1,6 @@
 {
   "formatName": "X BitMap",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".xbm"
   ],
@@ -33,7 +33,8 @@
     "imageWidth": 0,
     "imageHeight": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "xbmHeader": ""
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 7,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "#define keyword"
+      "description": "#define keyword",
+      "storeAs": "xbmHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

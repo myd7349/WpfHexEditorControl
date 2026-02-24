@@ -1,6 +1,6 @@
 {
   "formatName": "MGH/MGZ Medical Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mgh",
     ".mgz"
@@ -30,7 +30,9 @@
     "width": 0,
     "height": 0,
     "slices": 0,
-    "bitDepth": 0
+    "bitDepth": 0,
+    "version": "",
+    "depth": 0
   },
   "blocks": [
     {
@@ -40,7 +42,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MGH version (1)"
+      "description": "MGH version (1)",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +53,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Image width"
+      "description": "Image width",
+      "storeAs": "width",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -58,7 +64,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Image height"
+      "description": "Image height",
+      "storeAs": "height",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -67,7 +75,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Image depth"
+      "description": "Image depth",
+      "storeAs": "depth",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

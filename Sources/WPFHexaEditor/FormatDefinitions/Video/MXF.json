@@ -1,6 +1,6 @@
 {
   "formatName": "Material Exchange Format",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".mxf"
   ],
@@ -32,7 +32,8 @@
   "variables": {
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "mxfPartitionPack": ""
   },
   "blocks": [
     {
@@ -42,7 +43,9 @@
       "length": 14,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MXF Universal Label and Partition Pack Key"
+      "description": "MXF Universal Label and Partition Pack Key",
+      "storeAs": "mxfPartitionPack",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

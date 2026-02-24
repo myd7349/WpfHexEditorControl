@@ -1,6 +1,6 @@
 {
   "formatName": "systemd Journal",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".journal"
   ],
@@ -28,7 +28,17 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "journalSignature": "",
+    "compatibleFlags": 0,
+    "incompatibleFlags": 0,
+    "headerState": 0,
+    "fileId": "",
+    "machineId": "",
+    "bootId": "",
+    "sequenceNumberId": "",
+    "headerSize": 0,
+    "arenaSize": 0
   },
   "blocks": [
     {
@@ -38,7 +48,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "LPKSHHRH signature"
+      "description": "LPKSHHRH signature",
+      "storeAs": "journalSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -47,7 +59,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Compatible feature flags"
+      "description": "Compatible feature flags",
+      "storeAs": "compatibleFlags",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -56,7 +70,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Incompatible feature flags"
+      "description": "Incompatible feature flags",
+      "storeAs": "incompatibleFlags",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -65,7 +81,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Journal state (0=offline, 1=online)"
+      "description": "Journal state (0=offline, 1=online)",
+      "storeAs": "headerState",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -74,7 +92,9 @@
       "length": 16,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "128-bit file identifier (UUID)"
+      "description": "128-bit file identifier (UUID)",
+      "storeAs": "fileId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -83,7 +103,9 @@
       "length": 16,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Machine identifier (UUID)"
+      "description": "Machine identifier (UUID)",
+      "storeAs": "machineId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -92,7 +114,9 @@
       "length": 16,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Boot identifier (UUID)"
+      "description": "Boot identifier (UUID)",
+      "storeAs": "bootId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -101,7 +125,9 @@
       "length": 16,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Sequence number ID (UUID)"
+      "description": "Sequence number ID (UUID)",
+      "storeAs": "sequenceNumberId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -110,7 +136,9 @@
       "length": 8,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Size of header structure"
+      "description": "Size of header structure",
+      "storeAs": "headerSize",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -119,7 +147,9 @@
       "length": 8,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Size of data arena"
+      "description": "Size of data arena",
+      "storeAs": "arenaSize",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

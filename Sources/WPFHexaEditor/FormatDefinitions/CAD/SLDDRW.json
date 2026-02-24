@@ -1,6 +1,6 @@
 {
   "formatName": "SolidWorks Drawing",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".slddrw"
   ],
@@ -28,7 +28,10 @@
     "currentOffset": 0,
     "version": "",
     "entityCount": 0,
-    "layerCount": 0
+    "layerCount": 0,
+    "ole2Signature": "",
+    "minorVersion": 0,
+    "majorVersion": 0
   },
   "blocks": [
     {
@@ -38,7 +41,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "OLE2 compound document signature"
+      "description": "OLE2 compound document signature",
+      "storeAs": "ole2Signature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -47,7 +52,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "OLE2 minor version"
+      "description": "OLE2 minor version",
+      "storeAs": "minorVersion",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -56,7 +63,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "OLE2 major version"
+      "description": "OLE2 major version",
+      "storeAs": "majorVersion",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

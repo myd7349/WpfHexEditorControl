@@ -1,6 +1,6 @@
 {
   "formatName": "Jupiter Tessellation",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".jt"
   ],
@@ -29,7 +29,9 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 0,
-    "duration": 0
+    "duration": 0,
+    "versionHeader": "",
+    "jtVersion": ""
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Version marker"
+      "description": "Version marker",
+      "storeAs": "versionHeader",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +52,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "JT format version"
+      "description": "JT format version",
+      "storeAs": "jtVersion",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Maya ASCII",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ma"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "mayaAsciiHeader": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 11,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "//Maya ASC signature"
+      "description": "//Maya ASC signature",
+      "storeAs": "mayaAsciiHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

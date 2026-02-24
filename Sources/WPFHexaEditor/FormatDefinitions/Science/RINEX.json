@@ -1,6 +1,6 @@
 {
   "formatName": "RINEX GNSS Data",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".rnx",
     ".obs",
@@ -30,7 +30,9 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "header": "",
+    "version": ""
   },
   "blocks": [
     {
@@ -40,7 +42,9 @@
       "length": 80,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "First RINEX header line (80 chars)"
+      "description": "First RINEX header line (80 chars)",
+      "storeAs": "header",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +53,9 @@
       "length": 9,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RINEX version number"
+      "description": "RINEX version number",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "GAMESS Output",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".log",
     ".out"
@@ -29,7 +29,8 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "headerBanner": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 80,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "GAMESS output header"
+      "description": "GAMESS output header",
+      "storeAs": "headerBanner",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

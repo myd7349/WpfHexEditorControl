@@ -1,6 +1,6 @@
 {
   "formatName": "OGG Audio",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".ogg",
     ".oga",
@@ -41,7 +41,8 @@
     "granulePosition": 0,
     "serialNumber": 0,
     "pageSequence": 0,
-    "checksum": 0
+    "checksum": 0,
+    "oggSignature": ""
   },
   "blocks": [
     {
@@ -51,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "OggS capture pattern"
+      "description": "OggS capture pattern",
+      "storeAs": "oggSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -60,7 +63,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Always 0"
+      "description": "Always 0",
+      "storeAs": "streamVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -69,7 +74,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Packet flags"
+      "description": "Packet flags",
+      "storeAs": "headerType",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -78,7 +85,9 @@
       "length": 8,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "PCM sample position"
+      "description": "PCM sample position",
+      "storeAs": "granulePosition",
+      "valueType": "uint64"
     }
   ],
   "mime_types": [

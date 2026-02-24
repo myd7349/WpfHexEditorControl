@@ -1,6 +1,6 @@
 {
   "formatName": "Web Application Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".war"
   ],
@@ -29,7 +29,8 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "zipWarSignature": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PK ZIP header"
+      "description": "PK ZIP header",
+      "storeAs": "zipWarSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

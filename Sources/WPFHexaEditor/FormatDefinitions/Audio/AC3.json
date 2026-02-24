@@ -1,6 +1,6 @@
 {
   "formatName": "Dolby Digital AC-3",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ac3"
   ],
@@ -40,7 +40,8 @@
     "bitrate": 0,
     "channels": 0,
     "bsid": 0,
-    "frameSize": 0
+    "frameSize": 0,
+    "ac3SyncWord": 0
   },
   "blocks": [
     {
@@ -50,7 +51,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "AC-3 synchronization word"
+      "description": "AC-3 synchronization word",
+      "storeAs": "ac3SyncWord",
+      "valueType": "uint16"
     }
   ],
   "mime_types": [

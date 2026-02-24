@@ -1,6 +1,6 @@
 {
   "formatName": "Photoshop Document",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".psd"
   ],
@@ -38,7 +38,11 @@
     "imageWidth": 0,
     "imageHeight": 0,
     "totalPixels": 0,
-    "channels": 0
+    "channels": 0,
+    "psdSignature": "",
+    "version": 0,
+    "height": 0,
+    "width": ""
   },
   "blocks": [
     {
@@ -48,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "8BPS signature"
+      "description": "8BPS signature",
+      "storeAs": "psdSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -57,7 +63,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Always 1"
+      "description": "Always 1",
+      "storeAs": "version",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -75,7 +83,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Number of channels (1-56)"
+      "description": "Number of channels (1-56)",
+      "storeAs": "channels",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -84,7 +94,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Height in pixels"
+      "description": "Height in pixels",
+      "storeAs": "height",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -93,7 +105,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Width in pixels"
+      "description": "Width in pixels",
+      "storeAs": "width",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

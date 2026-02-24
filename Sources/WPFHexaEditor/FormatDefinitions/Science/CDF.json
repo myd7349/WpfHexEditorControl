@@ -1,6 +1,6 @@
 {
   "formatName": "Common Data Format",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".cdf"
   ],
@@ -28,7 +28,9 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "cdfMagic": "",
+    "version": ""
   },
   "blocks": [
     {
@@ -38,7 +40,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "CDF3 format signature"
+      "description": "CDF3 format signature",
+      "storeAs": "cdfMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -47,7 +51,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "CDF version identifier"
+      "description": "CDF version identifier",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

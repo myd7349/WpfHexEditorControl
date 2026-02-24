@@ -1,6 +1,6 @@
 {
   "formatName": "IPS Patch",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".ips"
   ],
@@ -34,7 +34,10 @@
     "firstRecordSize": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "ipsHeader": "",
+    "firstRecordOffset": "",
+    "firstRecordData": ""
   },
   "blocks": [
     {
@@ -44,7 +47,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PATCH magic identifier - IPS format header"
+      "description": "PATCH magic identifier - IPS format header",
+      "storeAs": "ipsHeader",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +58,9 @@
       "length": 3,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "First patch record: 24-bit big-endian target file offset"
+      "description": "First patch record: 24-bit big-endian target file offset",
+      "storeAs": "firstRecordOffset",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -73,8 +80,9 @@
       "length": 16,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Start of patch data (RLE or raw bytes - structure varies by size field)"
+      "valueType": "ascii",
+      "description": "Start of patch data (RLE or raw bytes - structure varies by size field)",
+      "storeAs": "firstRecordData"
     },
     {
       "type": "metadata",

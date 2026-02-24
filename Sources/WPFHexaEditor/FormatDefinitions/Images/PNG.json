@@ -1,6 +1,6 @@
 {
   "formatName": "PNG Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".png"
   ],
@@ -39,7 +39,16 @@
     "totalPixels": 0,
     "calculatedCRC32": 0,
     "ihdrCRC": 0,
-    "crc32Valid": false
+    "crc32Valid": false,
+    "pngSignature": "",
+    "ihdrChunkLength": 0,
+    "ihdrChunkType": "",
+    "bitDepth": 0,
+    "colorType": 0,
+    "compression": 0,
+    "filterMethod": 0,
+    "interlaceMethod": 0,
+    "ihdrCrc": 0
   },
   "blocks": [
     {
@@ -49,7 +58,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PNG magic bytes (\\x89PNG\\r\\n\\x1A\\n)"
+      "description": "PNG magic bytes (\\x89PNG\\r\\n\\x1A\\n)",
+      "storeAs": "pngSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -58,7 +69,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "IHDR chunk length (always 13)"
+      "description": "IHDR chunk length (always 13)",
+      "storeAs": "ihdrChunkLength",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -67,7 +81,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "IHDR chunk type identifier"
+      "description": "IHDR chunk type identifier",
+      "storeAs": "ihdrChunkType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -76,7 +92,10 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Image width in pixels"
+      "description": "Image width in pixels",
+      "storeAs": "imageWidth",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -85,7 +104,10 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Image height in pixels"
+      "description": "Image height in pixels",
+      "storeAs": "imageHeight",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -94,7 +116,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Bits per sample (1, 2, 4, 8, 16)"
+      "description": "Bits per sample (1, 2, 4, 8, 16)",
+      "storeAs": "bitDepth",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -103,7 +127,9 @@
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "0=Gray, 2=RGB, 3=Palette, 4=GrayAlpha, 6=RGBA"
+      "description": "0=Gray, 2=RGB, 3=Palette, 4=GrayAlpha, 6=RGBA",
+      "storeAs": "colorType",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -112,7 +138,9 @@
       "length": 1,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Compression method (always 0 for deflate)"
+      "description": "Compression method (always 0 for deflate)",
+      "storeAs": "compression",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -121,7 +149,9 @@
       "length": 1,
       "color": "#C44569",
       "opacity": 0.3,
-      "description": "Filter method (always 0)"
+      "description": "Filter method (always 0)",
+      "storeAs": "filterMethod",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -130,7 +160,9 @@
       "length": 1,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "0=None, 1=Adam7"
+      "description": "0=None, 1=Adam7",
+      "storeAs": "interlaceMethod",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -139,7 +171,10 @@
       "length": 4,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "CRC-32 of IHDR chunk"
+      "description": "CRC-32 of IHDR chunk",
+      "storeAs": "ihdrCrc",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "metadata",

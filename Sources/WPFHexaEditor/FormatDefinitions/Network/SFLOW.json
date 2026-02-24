@@ -1,6 +1,6 @@
 {
   "formatName": "sFlow",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".sflow"
   ],
@@ -29,7 +29,13 @@
     "version": 0,
     "agentAddress": 0,
     "sampleCount": 0,
-    "uptime": 0
+    "uptime": 0,
+    "sflowVersion": "",
+    "agentAddressType": "",
+    "subAgentId": "",
+    "sequenceNumber": 0,
+    "systemUptime": 0,
+    "numberOfSamples": 0
   },
   "blocks": [
     {
@@ -39,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Version 5 (0x00000005)"
+      "description": "Version 5 (0x00000005)",
+      "storeAs": "sflowVersion",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "IP version (1=IPv4, 2=IPv6)"
+      "description": "IP version (1=IPv4, 2=IPv6)",
+      "storeAs": "agentAddressType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -57,7 +67,9 @@
       "length": 16,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "IP address of sFlow agent"
+      "description": "IP address of sFlow agent",
+      "storeAs": "agentAddress",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -66,7 +78,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Sub-agent identifier"
+      "description": "Sub-agent identifier",
+      "storeAs": "subAgentId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -75,7 +89,9 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Datagram sequence number"
+      "description": "Datagram sequence number",
+      "storeAs": "sequenceNumber",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -84,7 +100,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Milliseconds since device boot"
+      "description": "Milliseconds since device boot",
+      "storeAs": "systemUptime",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -93,7 +111,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Number of flow/counter samples"
+      "description": "Number of flow/counter samples",
+      "storeAs": "numberOfSamples",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

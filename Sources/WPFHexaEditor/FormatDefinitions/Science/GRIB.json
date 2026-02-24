@@ -1,6 +1,6 @@
 {
   "formatName": "GRIB Weather Data",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".grib",
     ".grb"
@@ -29,7 +29,10 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "gribMagic": "",
+    "totalLength": "",
+    "edition": 0
   },
   "blocks": [
     {
@@ -39,7 +42,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GRIB format signature"
+      "description": "GRIB format signature",
+      "storeAs": "gribMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -48,7 +53,9 @@
       "length": 3,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Message length in bytes"
+      "description": "Message length in bytes",
+      "storeAs": "totalLength",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -57,7 +64,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "GRIB edition number (1)"
+      "description": "GRIB edition number (1)",
+      "storeAs": "edition",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

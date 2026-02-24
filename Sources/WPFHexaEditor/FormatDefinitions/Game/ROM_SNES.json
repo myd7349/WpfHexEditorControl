@@ -1,6 +1,6 @@
 {
   "formatName": "Super Nintendo ROM",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".smc",
     ".sfc"
@@ -38,7 +38,14 @@
     "checksum": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "gameTitle": "",
+    "romType": 0,
+    "ramSize": 0,
+    "regionCode": 0,
+    "developerId": 0,
+    "nativeModeVectors": "",
+    "emulationModeVectors": ""
   },
   "blocks": [
     {
@@ -49,7 +56,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Internal game title (ASCII padded with spaces)"
+      "description": "Internal game title (ASCII padded with spaces)",
+      "storeAs": "gameTitle"
     },
     {
       "type": "field",
@@ -80,7 +88,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Chipset: 0x00=ROM only, 0x01=ROM+RAM, 0x02=ROM+RAM+Battery, 0x03+=Enhancement chips"
+      "description": "Chipset: 0x00=ROM only, 0x01=ROM+RAM, 0x02=ROM+RAM+Battery, 0x03+=Enhancement chips",
+      "storeAs": "romType"
     },
     {
       "type": "field",
@@ -101,7 +110,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Save RAM size as power of 2 in KB, 0 if no SRAM"
+      "description": "Save RAM size as power of 2 in KB, 0 if no SRAM",
+      "storeAs": "ramSize"
     },
     {
       "type": "field",
@@ -111,7 +121,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Destination: 0x00=Japan, 0x01=USA, 0x02=Europe, 0x0D=Korea"
+      "description": "Destination: 0x00=Japan, 0x01=USA, 0x02=Europe, 0x0D=Korea",
+      "storeAs": "regionCode"
     },
     {
       "type": "field",
@@ -121,7 +132,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0x33 for post-1991 games, old format uses ASCII pair"
+      "description": "0x33 for post-1991 games, old format uses ASCII pair",
+      "storeAs": "developerId"
     },
     {
       "type": "field",
@@ -131,7 +143,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Mask ROM version (0 = first revision)"
+      "description": "Mask ROM version (0 = first revision)",
+      "storeAs": "version"
     },
     {
       "type": "field",
@@ -162,8 +175,9 @@
       "length": 16,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Vectors: COP, BRK, ABORT, NMI, RESET, IRQ (native 65816)"
+      "valueType": "ascii",
+      "description": "Vectors: COP, BRK, ABORT, NMI, RESET, IRQ (native 65816)",
+      "storeAs": "nativeModeVectors"
     },
     {
       "type": "field",
@@ -172,8 +186,9 @@
       "length": 16,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Vectors: COP, -, ABORT, NMI, RESET, IRQ/BRK (emulation 6502)"
+      "valueType": "ascii",
+      "description": "Vectors: COP, -, ABORT, NMI, RESET, IRQ/BRK (emulation 6502)",
+      "storeAs": "emulationModeVectors"
     },
     {
       "type": "metadata",

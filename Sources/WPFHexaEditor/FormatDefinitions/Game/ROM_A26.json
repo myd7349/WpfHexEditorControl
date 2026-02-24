@@ -1,6 +1,6 @@
 {
   "formatName": "Atari 2600 ROM",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".a26",
     ".bin"
@@ -34,7 +34,10 @@
     "currentOffset": 0,
     "fileCount": 0,
     "totalSize": 0,
-    "format": ""
+    "format": "",
+    "romData": "",
+    "resetVector": 0,
+    "irqVector": 0
   },
   "blocks": [
     {
@@ -44,8 +47,9 @@
       "length": 4096,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Raw 2600 ROM code and data (typically 4KB for standard carts)"
+      "valueType": "ascii",
+      "description": "Raw 2600 ROM code and data (typically 4KB for standard carts)",
+      "storeAs": "romData"
     },
     {
       "type": "field",
@@ -55,7 +59,9 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "valueType": "uint16",
-      "description": "6507 CPU reset vector (last 2 bytes for 4KB ROM, little-endian)"
+      "description": "6507 CPU reset vector (last 2 bytes for 4KB ROM, little-endian)",
+      "storeAs": "resetVector",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -65,7 +71,9 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint16",
-      "description": "6507 IRQ vector (little-endian)"
+      "description": "6507 IRQ vector (little-endian)",
+      "storeAs": "irqVector",
+      "endianness": "big"
     },
     {
       "type": "metadata",

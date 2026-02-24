@@ -1,6 +1,6 @@
 {
   "formatName": "Cabinet Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".cab"
   ],
@@ -35,7 +35,8 @@
   "variables": {
     "currentOffset": 0,
     "cabinetSize": 0,
-    "filesOffset": 0
+    "filesOffset": 0,
+    "cabSignature": ""
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MSCF magic bytes"
+      "description": "MSCF magic bytes",
+      "storeAs": "cabSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -63,7 +66,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Total cabinet file size"
+      "description": "Total cabinet file size",
+      "storeAs": "cabinetSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -72,7 +77,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Offset to first file entry"
+      "description": "Offset to first file entry",
+      "storeAs": "filesOffset",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

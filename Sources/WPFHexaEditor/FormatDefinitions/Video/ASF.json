@@ -1,6 +1,6 @@
 {
   "formatName": "Advanced Systems Format",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".asf",
     ".wma",
@@ -42,7 +42,8 @@
     "width": 0,
     "height": 0,
     "duration": 0,
-    "bitrate": 0
+    "bitrate": 0,
+    "asfHeaderGuid": ""
   },
   "blocks": [
     {
@@ -52,7 +53,9 @@
       "length": 16,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ASF Header Object GUID"
+      "description": "ASF Header Object GUID",
+      "storeAs": "asfHeaderGuid",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

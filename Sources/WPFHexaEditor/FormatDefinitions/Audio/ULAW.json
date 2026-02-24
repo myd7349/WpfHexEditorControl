@@ -1,6 +1,6 @@
 {
   "formatName": "μ-law Audio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ulaw",
     ".ul",
@@ -35,7 +35,8 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 0,
-    "duration": 0
+    "duration": 0,
+    "auSndHeader": 0
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": ".snd - Audio file header for μ-law"
+      "description": ".snd - Audio file header for μ-law",
+      "storeAs": "auSndHeader",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

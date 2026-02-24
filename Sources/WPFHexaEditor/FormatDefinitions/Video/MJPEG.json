@@ -1,6 +1,6 @@
 {
   "formatName": "Motion JPEG",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mjpeg",
     ".mjpg"
@@ -33,7 +33,8 @@
     "jpegWidth": 0,
     "jpegHeight": 0,
     "jpegComponents": 0,
-    "frameRate": 0
+    "frameRate": 0,
+    "jpegSoiMarker": ""
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "JPEG Start of Image marker"
+      "description": "JPEG Start of Image marker",
+      "storeAs": "jpegSoiMarker",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

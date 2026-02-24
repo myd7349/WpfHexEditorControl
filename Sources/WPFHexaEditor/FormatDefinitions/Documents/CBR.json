@@ -1,6 +1,6 @@
 {
   "formatName": "Comic Book RAR",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".cbr"
   ],
@@ -30,7 +30,8 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "rarSignature": ""
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RAR archive signature: 'Rar!' 0x1A 0x07 (RAR 4.x)"
+      "description": "RAR archive signature: 'Rar!' 0x1A 0x07 (RAR 4.x)",
+      "storeAs": "rarSignature",
+      "valueType": "ascii"
     },
     {
       "type": "data",

@@ -1,6 +1,6 @@
 {
   "formatName": "Xbox 360 Disc Image",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".iso",
     ".xex"
@@ -35,7 +35,11 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "xex2Magic": "",
+    "moduleFlags": 0,
+    "peDataOffset": 0,
+    "securityInfoOffset": 0
   },
   "blocks": [
     {
@@ -45,8 +49,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "ascii",
-      "description": "XEX2 executable magic (0x58 0x45 0x58 0x32)"
+      "valueType": "uint32",
+      "description": "XEX2 executable magic (0x58 0x45 0x58 0x32)",
+      "storeAs": "xex2Magic"
     },
     {
       "type": "field",
@@ -56,7 +61,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Module flags (title, exports, debugger, etc.)"
+      "description": "Module flags (title, exports, debugger, etc.)",
+      "storeAs": "moduleFlags"
     },
     {
       "type": "field",
@@ -66,7 +72,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Offset to PE executable data"
+      "description": "Offset to PE executable data",
+      "storeAs": "peDataOffset"
     },
     {
       "type": "field",
@@ -87,7 +94,8 @@
       "color": "#FF6B9D",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Offset to security/certificate data"
+      "description": "Offset to security/certificate data",
+      "storeAs": "securityInfoOffset"
     },
     {
       "type": "metadata",

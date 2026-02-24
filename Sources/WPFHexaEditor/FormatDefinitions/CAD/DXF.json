@@ -1,6 +1,6 @@
 {
   "formatName": "AutoCAD DXF",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dxf"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "version": "",
     "entityCount": 0,
-    "layerCount": 0
+    "layerCount": 0,
+    "sectionCode": 0
   },
   "blocks": [
     {
@@ -38,7 +39,10 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "DXF is text-based"
+      "description": "DXF is text-based",
+      "storeAs": "sectionCode",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "metadata",

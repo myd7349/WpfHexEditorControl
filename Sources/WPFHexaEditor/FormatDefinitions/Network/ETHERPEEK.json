@@ -1,6 +1,6 @@
 {
   "formatName": "EtherPeek/OmniPeek",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pkt",
     ".apc",
@@ -30,7 +30,12 @@
     "currentOffset": 0,
     "packetCount": 0,
     "captureLength": 0,
-    "version": 0
+    "version": 0,
+    "fileVersion": 0,
+    "sliceLength": 0,
+    "flags": 0,
+    "status": 0,
+    "timestamp": 0
   },
   "blocks": [
     {
@@ -40,7 +45,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "EtherPeek version (5-7)"
+      "description": "EtherPeek version (5-7)",
+      "storeAs": "fileVersion",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -49,7 +56,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Captured packet length"
+      "description": "Captured packet length",
+      "storeAs": "captureLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -58,7 +67,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Sliced packet length"
+      "description": "Sliced packet length",
+      "storeAs": "sliceLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -67,7 +78,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Packet flags"
+      "description": "Packet flags",
+      "storeAs": "flags",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -76,7 +89,9 @@
       "length": 2,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Status flags"
+      "description": "Status flags",
+      "storeAs": "status",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -85,7 +100,9 @@
       "length": 8,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Packet capture timestamp"
+      "description": "Packet capture timestamp",
+      "storeAs": "timestamp",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

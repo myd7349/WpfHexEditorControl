@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG XL Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".jxl"
   ],
@@ -31,7 +31,10 @@
   "functions": {
     "calculateCRC32": "Calculate CRC-32 for data integrity"
   },
-  "variables": {},
+  "variables": {
+    "jpegXlSignature": 0,
+    "codestreamHeader": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -40,7 +43,10 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "0xFF 0x0A magic bytes"
+      "description": "0xFF 0x0A magic bytes",
+      "storeAs": "jpegXlSignature",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -49,7 +55,10 @@
       "length": 8,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "JPEG XL codestream header"
+      "description": "JPEG XL codestream header",
+      "storeAs": "codestreamHeader",
+      "valueType": "uint64",
+      "endianness": "big"
     }
   ],
   "mime_types": [

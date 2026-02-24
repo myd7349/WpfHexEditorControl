@@ -1,6 +1,6 @@
 {
   "formatName": "VirtualBox Disk Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".vdi"
   ],
@@ -34,7 +34,9 @@
     "sectorSize": 0,
     "sectorCount": 0,
     "capacity": 0,
-    "format": ""
+    "format": "",
+    "vdiSignature": "",
+    "text": ""
   },
   "blocks": [
     {
@@ -44,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "<<< signature"
+      "description": "<<< signature",
+      "storeAs": "vdiSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +57,9 @@
       "length": 32,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Oracle VM VirtualBox text"
+      "description": "Oracle VM VirtualBox text",
+      "storeAs": "text",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

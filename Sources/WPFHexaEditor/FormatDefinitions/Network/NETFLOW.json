@@ -1,6 +1,6 @@
 {
   "formatName": "NetFlow v5",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".nf",
     ".nfcap"
@@ -30,7 +30,15 @@
     "version": 0,
     "flowCount": 0,
     "sysUptime": 0,
-    "unixSecs": 0
+    "unixSecs": 0,
+    "netflowVersion": 0,
+    "systemUptime": 0,
+    "unixSeconds": 0,
+    "unixNanoseconds": 0,
+    "flowSequence": 0,
+    "engineType": 0,
+    "engineId": 0,
+    "samplingInterval": 0
   },
   "blocks": [
     {
@@ -40,7 +48,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Version 5 (0x0005)"
+      "description": "Version 5 (0x0005)",
+      "storeAs": "netflowVersion",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -49,7 +59,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Number of flow records"
+      "description": "Number of flow records",
+      "storeAs": "flowCount",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -58,7 +70,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Milliseconds since device boot"
+      "description": "Milliseconds since device boot",
+      "storeAs": "systemUptime",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -67,7 +81,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Unix timestamp seconds"
+      "description": "Unix timestamp seconds",
+      "storeAs": "unixSeconds",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -76,7 +92,9 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Residual nanoseconds"
+      "description": "Residual nanoseconds",
+      "storeAs": "unixNanoseconds",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -85,7 +103,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Sequence counter"
+      "description": "Sequence counter",
+      "storeAs": "flowSequence",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -94,7 +114,9 @@
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Flow switching engine type"
+      "description": "Flow switching engine type",
+      "storeAs": "engineType",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -103,7 +125,9 @@
       "length": 1,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Slot number of flow switching engine"
+      "description": "Slot number of flow switching engine",
+      "storeAs": "engineId",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -112,7 +136,9 @@
       "length": 2,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Sampling mode and interval"
+      "description": "Sampling mode and interval",
+      "storeAs": "samplingInterval",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

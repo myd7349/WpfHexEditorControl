@@ -1,6 +1,6 @@
 {
   "formatName": "PC Engine/TurboGrafx-16 ROM",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".pce",
     ".sgx"
@@ -34,7 +34,9 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "resetVectorEntry": 0,
+    "romBank0": ""
   },
   "blocks": [
     {
@@ -45,7 +47,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint16",
-      "description": "CPU start address (little-endian)"
+      "description": "CPU start address (little-endian)",
+      "storeAs": "resetVectorEntry"
     },
     {
       "type": "field",
@@ -54,8 +57,9 @@
       "length": 8192,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "First 8KB ROM bank (Bank 0)"
+      "valueType": "ascii",
+      "description": "First 8KB ROM bank (Bank 0)",
+      "storeAs": "romBank0"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "PCAPNG Network Capture",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".pcapng"
   ],
@@ -33,7 +33,10 @@
     "packetCount": 0,
     "snaplen": 0,
     "linkType": 0,
-    "version": ""
+    "version": "",
+    "sectionHeaderBlock": 0,
+    "blockTotalLength": 0,
+    "byteOrderMagic": ""
   },
   "blocks": [
     {
@@ -43,7 +46,10 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PCAPNG section header"
+      "description": "PCAPNG section header",
+      "storeAs": "sectionHeaderBlock",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -52,7 +58,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Length of block"
+      "description": "Length of block",
+      "storeAs": "blockTotalLength",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -61,7 +70,10 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "0x1A2B3C4D for byte order detection"
+      "description": "0x1A2B3C4D for byte order detection",
+      "storeAs": "byteOrderMagic",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "metadata",

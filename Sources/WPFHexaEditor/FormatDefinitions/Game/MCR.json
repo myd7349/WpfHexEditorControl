@@ -1,6 +1,6 @@
 {
   "formatName": "Minecraft Region",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mcr"
   ],
@@ -33,7 +33,9 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "locationTable": "",
+    "timestampTable": ""
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 4096,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Chunk location table"
+      "description": "Chunk location table",
+      "storeAs": "locationTable",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 4096,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Chunk timestamp table"
+      "description": "Chunk timestamp table",
+      "storeAs": "timestampTable",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

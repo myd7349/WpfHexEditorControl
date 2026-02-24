@@ -1,6 +1,6 @@
 {
   "formatName": "Adaptive Multi-Rate",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".amr"
   ],
@@ -40,7 +40,8 @@
     "mode": 0,
     "bitrate": 0,
     "channels": 1,
-    "sampleRate": 8000
+    "sampleRate": 8000,
+    "amrHeader": ""
   },
   "blocks": [
     {
@@ -50,7 +51,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "#!AMR - AMR file signature"
+      "description": "#!AMR - AMR file signature",
+      "storeAs": "amrHeader",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

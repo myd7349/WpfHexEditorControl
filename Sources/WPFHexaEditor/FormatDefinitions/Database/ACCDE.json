@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Access Compiled Database",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".accde"
   ],
@@ -29,7 +29,8 @@
     "pageSize": 0,
     "pageCount": 0,
     "tableCount": 0,
-    "version": 0
+    "version": 0,
+    "accdeSignature": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 21,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Standard ACE Database (compiled)"
+      "description": "Standard ACE Database (compiled)",
+      "storeAs": "accdeSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

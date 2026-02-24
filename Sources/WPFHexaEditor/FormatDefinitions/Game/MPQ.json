@@ -1,6 +1,6 @@
 {
   "formatName": "Blizzard MPQ Archive",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mpq"
   ],
@@ -34,7 +34,11 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "mpqSignature": "",
+    "headerSize": 0,
+    "archiveSize": 0,
+    "formatVersion": 0
   },
   "blocks": [
     {
@@ -44,7 +48,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MPQ archive magic bytes"
+      "description": "MPQ archive magic bytes",
+      "storeAs": "mpqSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +59,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of the archive header"
+      "description": "Size of the archive header",
+      "storeAs": "headerSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -62,7 +70,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Total archive size"
+      "description": "Total archive size",
+      "storeAs": "archiveSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -71,7 +81,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "MPQ format version"
+      "description": "MPQ format version",
+      "storeAs": "formatVersion",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Unreal Engine Asset",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".uasset"
   ],
@@ -33,7 +33,11 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "packageTag": "",
+    "legacyUe3Version": "",
+    "ue4Version": "",
+    "fileVersion": ""
   },
   "blocks": [
     {
@@ -43,7 +47,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Unreal package signature"
+      "description": "Unreal package signature",
+      "storeAs": "packageTag",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +58,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Legacy version from UE3"
+      "description": "Legacy version from UE3",
+      "storeAs": "legacyUe3Version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -61,7 +69,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Unreal Engine 4 version number"
+      "description": "Unreal Engine 4 version number",
+      "storeAs": "ue4Version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -70,7 +80,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Package file version"
+      "description": "Package file version",
+      "storeAs": "fileVersion",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

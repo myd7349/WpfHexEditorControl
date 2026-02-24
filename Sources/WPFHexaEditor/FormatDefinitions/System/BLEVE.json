@@ -1,6 +1,6 @@
 {
   "formatName": "BLF Event Log",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".blf"
   ],
@@ -29,7 +29,14 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "blfSignature": "",
+    "majorVersion": 0,
+    "minorVersion": 0,
+    "fileFlags": 0,
+    "oldestRecord": 0,
+    "newestRecord": 0,
+    "checksum": 0
   },
   "blocks": [
     {
@@ -39,7 +46,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ELF magic bytes"
+      "description": "ELF magic bytes",
+      "storeAs": "blfSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +57,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Major format version"
+      "description": "Major format version",
+      "storeAs": "majorVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -57,7 +68,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Minor format version"
+      "description": "Minor format version",
+      "storeAs": "minorVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -66,7 +79,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Log file flags"
+      "description": "Log file flags",
+      "storeAs": "fileFlags",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -75,7 +90,9 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Offset to oldest record"
+      "description": "Offset to oldest record",
+      "storeAs": "oldestRecord",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -84,7 +101,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Offset to newest record"
+      "description": "Offset to newest record",
+      "storeAs": "newestRecord",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -93,7 +112,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Header checksum"
+      "description": "Header checksum",
+      "storeAs": "checksum",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

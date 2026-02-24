@@ -1,6 +1,6 @@
 {
   "formatName": "OpenSSH Private Key",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     "",
     ".pem"
@@ -35,7 +35,16 @@
     "version": 0,
     "serialNumber": "",
     "issuer": "",
-    "subject": ""
+    "subject": "",
+    "opensshMagic": "",
+    "nullTerminator": 0,
+    "cipherNameLength": "",
+    "cipherName": "",
+    "kdfNameLength": "",
+    "kdfName": "",
+    "kdfOptionsLength": 0,
+    "numberOfKeys": 0,
+    "publicKeyLength": 0
   },
   "blocks": [
     {
@@ -45,7 +54,9 @@
       "length": 15,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "openssh-key-v1 magic bytes"
+      "description": "openssh-key-v1 magic bytes",
+      "storeAs": "opensshMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -54,7 +65,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Magic string null terminator"
+      "description": "Magic string null terminator",
+      "storeAs": "nullTerminator",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -63,7 +76,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Length of cipher name"
+      "description": "Length of cipher name",
+      "storeAs": "cipherNameLength",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -72,7 +87,9 @@
       "length": 16,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Encryption cipher (none/aes256-ctr/etc.)"
+      "description": "Encryption cipher (none/aes256-ctr/etc.)",
+      "storeAs": "cipherName",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -81,7 +98,9 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Length of KDF name"
+      "description": "Length of KDF name",
+      "storeAs": "kdfNameLength",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -90,7 +109,9 @@
       "length": 16,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Key derivation function (none/bcrypt)"
+      "description": "Key derivation function (none/bcrypt)",
+      "storeAs": "kdfName",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -99,7 +120,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Length of KDF options"
+      "description": "Length of KDF options",
+      "storeAs": "kdfOptionsLength",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -108,7 +131,9 @@
       "length": 4,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Number of keys in file (usually 1)"
+      "description": "Number of keys in file (usually 1)",
+      "storeAs": "numberOfKeys",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -117,7 +142,9 @@
       "length": 4,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Length of public key blob"
+      "description": "Length of public key blob",
+      "storeAs": "publicKeyLength",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

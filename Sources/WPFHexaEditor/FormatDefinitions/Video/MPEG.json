@@ -1,6 +1,6 @@
 {
   "formatName": "MPEG Video",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".mpg",
     ".mpeg",
@@ -44,7 +44,9 @@
     "aspectRatio": "Unknown",
     "frameRate": 0,
     "bitrate": 0,
-    "vbvBufferSize": 0
+    "vbvBufferSize": 0,
+    "mpegSequenceHeader": 0,
+    "pictureSize": ""
   },
   "blocks": [
     {
@@ -54,7 +56,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MPEG sequence start code"
+      "description": "MPEG sequence start code",
+      "storeAs": "mpegSequenceHeader",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -63,7 +67,9 @@
       "length": 3,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Width and height"
+      "description": "Width and height",
+      "storeAs": "pictureSize",
+      "valueType": "uint32"
     }
   ],
   "mime_types": [

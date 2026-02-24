@@ -1,6 +1,6 @@
 {
   "formatName": "Flash MP4 Video",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".f4v",
     ".f4p",
@@ -41,7 +41,8 @@
     "height": 0,
     "duration": 0,
     "videoCodec": "H.264",
-    "audioCodec": "AAC"
+    "audioCodec": "AAC",
+    "fileTypeBox": ""
   },
   "blocks": [
     {
@@ -51,7 +52,9 @@
       "length": 7,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ftypf4v - Flash Video file type"
+      "description": "ftypf4v - Flash Video file type",
+      "storeAs": "fileTypeBox",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

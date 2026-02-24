@@ -1,6 +1,6 @@
 {
   "formatName": "Gaussian Cube File",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".cube",
     ".cub"
@@ -30,7 +30,9 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 0,
-    "duration": 0
+    "duration": 0,
+    "commentLine1": "",
+    "commentLine2": ""
   },
   "blocks": [
     {
@@ -40,7 +42,9 @@
       "length": 80,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "First comment line"
+      "description": "First comment line",
+      "storeAs": "commentLine1",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +53,9 @@
       "length": 80,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Second comment line"
+      "description": "Second comment line",
+      "storeAs": "commentLine2",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

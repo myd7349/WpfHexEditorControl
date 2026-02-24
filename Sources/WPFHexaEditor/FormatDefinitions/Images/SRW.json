@@ -1,6 +1,6 @@
 {
   "formatName": "Samsung SRW RAW",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".srw"
   ],
@@ -32,7 +32,9 @@
   "variables": {
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "tiffHeader": 0,
+    "ifdOffset": 0
   },
   "blocks": [
     {
@@ -42,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "TIFF-based RAW"
+      "description": "TIFF-based RAW",
+      "storeAs": "tiffHeader",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -51,7 +55,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "First IFD offset"
+      "description": "First IFD offset",
+      "storeAs": "ifdOffset",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

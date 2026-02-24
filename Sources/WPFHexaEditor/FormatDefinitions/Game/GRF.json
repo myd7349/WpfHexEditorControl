@@ -1,6 +1,6 @@
 {
   "formatName": "Game Resource File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".grf"
   ],
@@ -33,7 +33,10 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "grfSignature": "",
+    "encryptionKey": "",
+    "fileTableOffset": 0
   },
   "blocks": [
     {
@@ -43,7 +46,9 @@
       "length": 15,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Master of Gravity For"
+      "description": "Master of Gravity For",
+      "storeAs": "grfSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +57,9 @@
       "length": 14,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Archive encryption key"
+      "description": "Archive encryption key",
+      "storeAs": "encryptionKey",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -61,7 +68,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Offset to file allocation table"
+      "description": "Offset to file allocation table",
+      "storeAs": "fileTableOffset",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "DjVu Document",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".djvu",
     ".djv"
@@ -29,7 +29,10 @@
     "currentOffset": 0,
     "pageCount": 0,
     "title": "",
-    "author": ""
+    "author": "",
+    "atTForm": 0,
+    "fileSize": 0,
+    "djvuType": ""
   },
   "blocks": [
     {
@@ -39,7 +42,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "AT&TFORM IFF container"
+      "description": "AT&TFORM IFF container",
+      "storeAs": "atTForm",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -48,7 +53,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of file minus 8"
+      "description": "Size of file minus 8",
+      "storeAs": "fileSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -57,7 +64,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "DJVU or DJVM"
+      "description": "DJVU or DJVM",
+      "storeAs": "djvuType",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

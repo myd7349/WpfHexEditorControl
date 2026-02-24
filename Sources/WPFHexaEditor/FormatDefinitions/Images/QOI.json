@@ -1,6 +1,6 @@
 {
   "formatName": "QOI Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".qoi"
   ],
@@ -33,7 +33,10 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "qoiMagic": "",
+    "channels": 0,
+    "colorspace": 0
   },
   "blocks": [
     {
@@ -43,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "qoif magic bytes"
+      "description": "qoif magic bytes",
+      "storeAs": "qoiMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -52,7 +57,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Image width (big-endian)"
+      "description": "Image width (big-endian)",
+      "storeAs": "width",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -61,7 +68,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Image height (big-endian)"
+      "description": "Image height (big-endian)",
+      "storeAs": "height",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -70,7 +79,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "3=RGB, 4=RGBA"
+      "description": "3=RGB, 4=RGBA",
+      "storeAs": "channels",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -79,7 +90,9 @@
       "length": 1,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "0=sRGB, 1=linear"
+      "description": "0=sRGB, 1=linear",
+      "storeAs": "colorspace",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Brotli Compression",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".br"
   ],
@@ -43,7 +43,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "First byte contains window size bits (usually 0xCE for typical files)"
+      "description": "First byte contains window size bits (usually 0xCE for typical files)",
+      "storeAs": "windowBits",
+      "valueType": "uint8"
     },
     {
       "type": "data",

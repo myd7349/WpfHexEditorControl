@@ -1,6 +1,6 @@
 {
   "formatName": "TIFF Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".tif",
     ".tiff"
@@ -36,7 +36,8 @@
     "currentOffset": 0,
     "ifdOffset": 0,
     "byteOrder": "",
-    "version": 42
+    "version": 42,
+    "byteOrderLittleEndian": 0
   },
   "blocks": [
     {
@@ -46,7 +47,10 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "II for little-endian or MM for big-endian"
+      "description": "II for little-endian or MM for big-endian",
+      "storeAs": "byteOrderLittleEndian",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -55,7 +59,10 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Always 42 (0x002A)"
+      "description": "Always 42 (0x002A)",
+      "storeAs": "version",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -64,7 +71,10 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Offset to first Image File Directory"
+      "description": "Offset to first Image File Directory",
+      "storeAs": "ifdOffset",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "metadata",

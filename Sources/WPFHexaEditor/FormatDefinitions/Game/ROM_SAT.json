@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Saturn Disc Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".iso",
     ".bin"
@@ -38,7 +38,14 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "hardwareId": "",
+    "makerId": "",
+    "version": "",
+    "deviceInfo": 0,
+    "areaSymbols": "",
+    "peripherals": "",
+    "bootFilename": ""
   },
   "blocks": [
     {
@@ -49,7 +56,8 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "valueType": "ascii",
-      "description": "SEGA SEGASATURN  - Saturn disc magic identifier"
+      "description": "SEGA SEGASATURN  - Saturn disc magic identifier",
+      "storeAs": "hardwareId"
     },
     {
       "type": "field",
@@ -59,7 +67,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Publisher/licensee identifier"
+      "description": "Publisher/licensee identifier",
+      "storeAs": "makerId"
     },
     {
       "type": "field",
@@ -80,7 +89,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Version string (e.g., V1.000)"
+      "description": "Version string (e.g., V1.000)",
+      "storeAs": "version"
     },
     {
       "type": "field",
@@ -100,8 +110,9 @@
       "length": 8,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "CD type and disc number: CD-1/1 = single disc"
+      "valueType": "uint64",
+      "description": "CD type and disc number: CD-1/1 = single disc",
+      "storeAs": "deviceInfo"
     },
     {
       "type": "field",
@@ -111,7 +122,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Region codes: J=Japan, U=USA, E=Europe (space=not supported)"
+      "description": "Region codes: J=Japan, U=USA, E=Europe (space=not supported)",
+      "storeAs": "areaSymbols"
     },
     {
       "type": "field",
@@ -121,7 +133,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Peripheral support flags: J=joystick, M=mouse, K=keyboard, A=analog"
+      "description": "Peripheral support flags: J=joystick, M=mouse, K=keyboard, A=analog",
+      "storeAs": "peripherals"
     },
     {
       "type": "field",
@@ -142,7 +155,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Executable filename on disc (e.g., 0.PRG)"
+      "description": "Executable filename on disc (e.g., 0.PRG)",
+      "storeAs": "bootFilename"
     },
     {
       "type": "metadata",

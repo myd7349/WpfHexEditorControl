@@ -1,6 +1,6 @@
 {
   "formatName": "Quake 3 BSP",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".bsp"
   ],
@@ -33,7 +33,9 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "bspSignature": "",
+    "entitiesLumpOffset": 0
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "IBSP magic bytes"
+      "description": "IBSP magic bytes",
+      "storeAs": "bspSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "BSP version number (46 for Q3)"
+      "description": "BSP version number (46 for Q3)",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -61,7 +67,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Offset to entities directory entry"
+      "description": "Offset to entities directory entry",
+      "storeAs": "entitiesLumpOffset",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

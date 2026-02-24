@@ -1,6 +1,6 @@
 {
   "formatName": "XML Document",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".xml"
   ],
@@ -29,7 +29,8 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 0,
-    "duration": 0
+    "duration": 0,
+    "xmlDeclaration": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "<?xml declaration"
+      "description": "<?xml declaration",
+      "storeAs": "xmlDeclaration",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

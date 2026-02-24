@@ -1,6 +1,6 @@
 {
   "formatName": "Game Boy ROM",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".gb",
     ".gbc"
@@ -36,7 +36,17 @@
     "gameTitle": "",
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "entryPoint": 0,
+    "nintendoLogo": "",
+    "newLicenseeCode": 0,
+    "sgbFlag": 0,
+    "romSizeCode": 0,
+    "ramSizeCode": 0,
+    "destinationCode": 0,
+    "oldLicenseeCode": 0,
+    "maskRomVersion": 0,
+    "globalChecksum": 0
   },
   "blocks": [
     {
@@ -46,8 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Boot entry point (typically NOP; JP $0150)"
+      "valueType": "uint32",
+      "description": "Boot entry point (typically NOP; JP $0150)",
+      "storeAs": "entryPoint"
     },
     {
       "type": "signature",
@@ -56,7 +67,9 @@
       "length": 48,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Nintendo bootrom logo (48 bytes - must match exactly for hardware to boot)"
+      "description": "Nintendo bootrom logo (48 bytes - must match exactly for hardware to boot)",
+      "storeAs": "nintendoLogo",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -94,8 +107,9 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "Two-character licensee code (used when old code = 0x33)"
+      "valueType": "uint16",
+      "description": "Two-character licensee code (used when old code = 0x33)",
+      "storeAs": "newLicenseeCode"
     },
     {
       "type": "field",
@@ -105,7 +119,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0x03=SGB functions supported, 0x00=no SGB"
+      "description": "0x03=SGB functions supported, 0x00=no SGB",
+      "storeAs": "sgbFlag"
     },
     {
       "type": "field",
@@ -126,7 +141,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "ROM size: 0=32KB, 1=64KB, 2=128KB, 3=256KB, 4=512KB, 5=1MB, 6=2MB, 7=4MB, 8=8MB"
+      "description": "ROM size: 0=32KB, 1=64KB, 2=128KB, 3=256KB, 4=512KB, 5=1MB, 6=2MB, 7=4MB, 8=8MB",
+      "storeAs": "romSizeCode"
     },
     {
       "type": "field",
@@ -136,7 +152,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "External RAM: 0=None, 2=8KB, 3=32KB, 4=128KB, 5=64KB"
+      "description": "External RAM: 0=None, 2=8KB, 3=32KB, 4=128KB, 5=64KB",
+      "storeAs": "ramSizeCode"
     },
     {
       "type": "field",
@@ -152,7 +169,8 @@
           0,
           1
         ]
-      }
+      },
+      "storeAs": "destinationCode"
     },
     {
       "type": "field",
@@ -162,7 +180,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Old licensee (0x33 = use new licensee code at 0x144)"
+      "description": "Old licensee (0x33 = use new licensee code at 0x144)",
+      "storeAs": "oldLicenseeCode"
     },
     {
       "type": "field",
@@ -172,7 +191,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Game revision number (usually 0x00)"
+      "description": "Game revision number (usually 0x00)",
+      "storeAs": "maskRomVersion"
     },
     {
       "type": "field",
@@ -193,7 +213,8 @@
       "color": "#FF6B9D",
       "opacity": 0.3,
       "valueType": "uint16",
-      "description": "16-bit big-endian sum of all bytes in ROM (not verified by hardware)"
+      "description": "16-bit big-endian sum of all bytes in ROM (not verified by hardware)",
+      "storeAs": "globalChecksum"
     },
     {
       "type": "metadata",

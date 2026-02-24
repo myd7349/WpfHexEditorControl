@@ -1,6 +1,6 @@
 {
   "formatName": "RAR Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".rar"
   ],
@@ -34,7 +34,11 @@
     "currentOffset": 0,
     "headerCRC": 0,
     "calculatedCRC": 0,
-    "crcValid": false
+    "crcValid": false,
+    "rarSignature": "",
+    "headerCrc": 0,
+    "headerType": 0,
+    "flags": 0
   },
   "blocks": [
     {
@@ -44,7 +48,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Rar!\\x1A\\x07 magic bytes"
+      "description": "Rar!\\x1A\\x07 magic bytes",
+      "storeAs": "rarSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +59,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "CRC of header"
+      "description": "CRC of header",
+      "storeAs": "headerCrc",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -62,7 +70,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Type of header block"
+      "description": "Type of header block",
+      "storeAs": "headerType",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -71,7 +81,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Archive flags"
+      "description": "Archive flags",
+      "storeAs": "flags",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

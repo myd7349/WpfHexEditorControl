@@ -1,6 +1,6 @@
 {
   "formatName": "MPEG Transport Stream",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".ts",
     ".tsv",
@@ -53,7 +53,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MPEG-TS sync byte (0x47) appears every 188 bytes"
+      "description": "MPEG-TS sync byte (0x47) appears every 188 bytes",
+      "storeAs": "syncByte",
+      "valueType": "uint8"
     }
   ],
   "mime_types": [

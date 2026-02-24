@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 4 Package",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".pkg"
   ],
@@ -33,7 +33,14 @@
     "currentOffset": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "cntMagic": "",
+    "packageType": "",
+    "packageFlags": 0,
+    "fileOffset": 0,
+    "fileCount": 0,
+    "packageSize": 0,
+    "contentId": ""
   },
   "blocks": [
     {
@@ -43,8 +50,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "bytes",
-      "description": "PS4 PKG magic: 0x7F 0x43 0x4E 0x54 (CNT)"
+      "valueType": "uint32",
+      "description": "PS4 PKG magic: 0x7F 0x43 0x4E 0x54 (CNT)",
+      "storeAs": "cntMagic"
     },
     {
       "type": "field",
@@ -53,8 +61,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "uint32",
-      "description": "Package type flags (PS4 specific)"
+      "valueType": "ascii",
+      "description": "Package type flags (PS4 specific)",
+      "storeAs": "packageType"
     },
     {
       "type": "field",
@@ -64,7 +73,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Package flags and encryption info"
+      "description": "Package flags and encryption info",
+      "storeAs": "packageFlags"
     },
     {
       "type": "field",
@@ -74,7 +84,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Offset to file table"
+      "description": "Offset to file table",
+      "storeAs": "fileOffset"
     },
     {
       "type": "field",
@@ -84,7 +95,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Number of files in package"
+      "description": "Number of files in package",
+      "storeAs": "fileCount"
     },
     {
       "type": "field",
@@ -93,8 +105,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Total package size (64-bit big-endian)"
+      "valueType": "uint64",
+      "description": "Total package size (64-bit big-endian)",
+      "storeAs": "packageSize"
     },
     {
       "type": "field",
@@ -104,7 +117,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Content identifier (title ID)"
+      "description": "Content identifier (title ID)",
+      "storeAs": "contentId"
     },
     {
       "type": "metadata",

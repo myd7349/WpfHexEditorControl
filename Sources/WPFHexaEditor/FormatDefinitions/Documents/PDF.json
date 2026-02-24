@@ -1,6 +1,6 @@
 {
   "formatName": "PDF Document",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pdf"
   ],
@@ -30,7 +30,10 @@
   "variables": {
     "pageCount": 0,
     "title": "",
-    "author": ""
+    "author": "",
+    "pdfSignature": "",
+    "pdfVersion": "",
+    "binaryMarkerComment": ""
   },
   "blocks": [
     {
@@ -40,7 +43,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "%PDF magic bytes"
+      "description": "%PDF magic bytes",
+      "storeAs": "pdfSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +54,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "PDF version (e.g., -1.4, -1.7)"
+      "description": "PDF version (e.g., -1.4, -1.7)",
+      "storeAs": "pdfVersion",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -58,7 +65,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Comment with binary chars (usually %âãÏÓ)"
+      "description": "Comment with binary chars (usually %âãÏÓ)",
+      "storeAs": "binaryMarkerComment",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

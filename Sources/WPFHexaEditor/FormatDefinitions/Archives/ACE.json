@@ -1,6 +1,6 @@
 {
   "formatName": "ACE Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ace"
   ],
@@ -35,7 +35,9 @@
   "variables": {
     "currentOffset": 0,
     "headerCRC": 0,
-    "crcValid": false
+    "crcValid": false,
+    "aceSignature": "",
+    "headerCrc": 0
   },
   "blocks": [
     {
@@ -45,7 +47,9 @@
       "length": 7,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "**ACE** signature"
+      "description": "**ACE** signature",
+      "storeAs": "aceSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -54,7 +58,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Header CRC-16"
+      "description": "Header CRC-16",
+      "storeAs": "headerCrc",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Word Document",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".docx"
   ],
@@ -39,7 +39,9 @@
     "subject": "Unknown",
     "pages": 0,
     "words": 0,
-    "characters": 0
+    "characters": 0,
+    "zipSignature": "",
+    "zipHeader": ""
   },
   "blocks": [
     {
@@ -49,7 +51,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "DOCX is a ZIP container"
+      "description": "DOCX is a ZIP container",
+      "storeAs": "zipSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -58,7 +62,9 @@
       "length": 26,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "ZIP local file header"
+      "description": "ZIP local file header",
+      "storeAs": "zipHeader",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

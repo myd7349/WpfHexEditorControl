@@ -1,6 +1,6 @@
 {
   "formatName": "AIX iptrace",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".iptrace"
   ],
@@ -29,7 +29,13 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "iptraceSignature": "",
+    "version": 0,
+    "endianFlag": 0,
+    "packetLength": 0,
+    "packetType": 0,
+    "interfaceType": 0
   },
   "blocks": [
     {
@@ -39,7 +45,9 @@
       "length": 7,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "iptrace ASCII signature"
+      "description": "iptrace ASCII signature",
+      "storeAs": "iptraceSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +56,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "iptrace format version"
+      "description": "iptrace format version",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -57,7 +67,10 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Byte order indicator"
+      "description": "Byte order indicator",
+      "storeAs": "endianFlag",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -66,7 +79,10 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "First packet length"
+      "description": "First packet length",
+      "storeAs": "packetLength",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -75,7 +91,10 @@
       "length": 2,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Packet type identifier"
+      "description": "Packet type identifier",
+      "storeAs": "packetType",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -84,7 +103,10 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Network interface type"
+      "description": "Network interface type",
+      "storeAs": "interfaceType",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "metadata",

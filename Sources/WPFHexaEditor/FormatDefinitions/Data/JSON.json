@@ -1,6 +1,6 @@
 {
   "formatName": "JSON Data",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".json"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "openingBrace": 0
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "JSON object start (may have whitespace)"
+      "description": "JSON object start (may have whitespace)",
+      "storeAs": "openingBrace",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

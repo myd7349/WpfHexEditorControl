@@ -1,6 +1,6 @@
 {
   "formatName": "PCAP Network Capture",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".pcap",
     ".cap"
@@ -30,7 +30,14 @@
     "packetCount": 0,
     "snaplen": 0,
     "linkType": 0,
-    "version": ""
+    "version": "",
+    "pcapMagicLittleEndian": "",
+    "versionMajor": 0,
+    "versionMinor": 0,
+    "timeZoneOffset": 0,
+    "timestampAccuracy": 0,
+    "snapshotLength": 0,
+    "linkLayerType": ""
   },
   "blocks": [
     {
@@ -40,7 +47,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PCAP file magic number"
+      "description": "PCAP file magic number",
+      "storeAs": "pcapMagicLittleEndian",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -49,7 +58,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Major version (2)"
+      "description": "Major version (2)",
+      "storeAs": "versionMajor",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -58,7 +69,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Minor version (4)"
+      "description": "Minor version (4)",
+      "storeAs": "versionMinor",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -67,7 +80,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "GMT to local correction"
+      "description": "GMT to local correction",
+      "storeAs": "timeZoneOffset",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -76,7 +91,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Accuracy of timestamps"
+      "description": "Accuracy of timestamps",
+      "storeAs": "timestampAccuracy",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -85,7 +102,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Max length of captured packets"
+      "description": "Max length of captured packets",
+      "storeAs": "snapshotLength",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -94,7 +113,9 @@
       "length": 4,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Data link type (Ethernet, etc.)"
+      "description": "Data link type (Ethernet, etc.)",
+      "storeAs": "linkLayerType",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

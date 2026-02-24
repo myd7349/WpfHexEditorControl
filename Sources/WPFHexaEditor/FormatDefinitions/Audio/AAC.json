@@ -1,6 +1,6 @@
 {
   "formatName": "AAC Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".aac"
   ],
@@ -40,7 +40,8 @@
     "channels": 0,
     "profile": "Unknown",
     "bitrate": 0,
-    "frameLength": 0
+    "frameLength": 0,
+    "adtsSyncWord": 0
   },
   "blocks": [
     {
@@ -50,7 +51,10 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "AAC ADTS frame sync (12 bits)"
+      "description": "AAC ADTS frame sync (12 bits)",
+      "storeAs": "adtsSyncWord",
+      "valueType": "uint16",
+      "endianness": "big"
     }
   ],
   "mime_types": [

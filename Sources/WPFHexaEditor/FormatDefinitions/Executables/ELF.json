@@ -1,6 +1,6 @@
 {
   "formatName": "ELF Executable",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ""
   ],
@@ -43,7 +43,9 @@
     "type": "Unknown",
     "machine": "Unknown",
     "entryPoint": 0,
-    "sections": 0
+    "sections": 0,
+    "elfMagic": "",
+    "osAbi": 0
   },
   "blocks": [
     {
@@ -53,7 +55,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "\\x7FELF magic bytes"
+      "description": "\\x7FELF magic bytes",
+      "storeAs": "elfMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -62,7 +66,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "1=32-bit, 2=64-bit"
+      "description": "1=32-bit, 2=64-bit",
+      "storeAs": "class",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -71,7 +77,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "1=Little, 2=Big endian"
+      "description": "1=Little, 2=Big endian",
+      "storeAs": "endianness",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -80,7 +88,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "ELF version (1)"
+      "description": "ELF version (1)",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -89,7 +99,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Target OS ABI"
+      "description": "Target OS ABI",
+      "storeAs": "osAbi",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -98,7 +110,9 @@
       "length": 2,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "1=Relocatable, 2=Executable, 3=Shared, 4=Core"
+      "description": "1=Relocatable, 2=Executable, 3=Shared, 4=Core",
+      "storeAs": "type",
+      "valueType": "uint16"
     }
   ],
   "mime_types": [

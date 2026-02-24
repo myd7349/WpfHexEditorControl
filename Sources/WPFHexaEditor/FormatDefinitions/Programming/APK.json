@@ -1,6 +1,6 @@
 {
   "formatName": "Android Package",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".apk"
   ],
@@ -39,7 +39,8 @@
     "targetSDK": 0,
     "dexFiles": 0,
     "nativeLibs": 0,
-    "signed": false
+    "signed": false,
+    "zipApkSignature": ""
   },
   "blocks": [
     {
@@ -49,7 +50,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PK ZIP header"
+      "description": "PK ZIP header",
+      "storeAs": "zipApkSignature",
+      "valueType": "ascii"
     }
   ],
   "quality_metrics": {

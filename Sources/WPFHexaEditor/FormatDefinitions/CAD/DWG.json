@@ -1,6 +1,6 @@
 {
   "formatName": "AutoCAD Drawing",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dwg"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "version": "",
     "entityCount": 0,
-    "layerCount": 0
+    "layerCount": 0,
+    "dwgVersion": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "AC10xx version string"
+      "description": "AC10xx version string",
+      "storeAs": "dwgVersion",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

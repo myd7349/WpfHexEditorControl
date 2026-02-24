@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo 64 ROM",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".n64",
     ".z64",
@@ -37,7 +37,12 @@
     "gameCode": "",
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "piBsdRegister": 0,
+    "clockRate": 0,
+    "releaseOffset": 0,
+    "romVersion": 0,
+    "bootCode": ""
   },
   "blocks": [
     {
@@ -47,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "N64 ROM magic bytes 0x80371240 (big-endian/z64 format)"
+      "description": "N64 ROM magic bytes 0x80371240 (big-endian/z64 format)",
+      "storeAs": "piBsdRegister",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -57,7 +64,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "PI BSD clock rate. 0x0000000F = default clock"
+      "description": "PI BSD clock rate. 0x0000000F = default clock",
+      "storeAs": "clockRate"
     },
     {
       "type": "field",
@@ -78,7 +86,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "SDK release offset"
+      "description": "SDK release offset",
+      "storeAs": "releaseOffset"
     },
     {
       "type": "field",
@@ -154,7 +163,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Mask ROM version (0x00 = first version)"
+      "description": "Mask ROM version (0x00 = first version)",
+      "storeAs": "romVersion"
     },
     {
       "type": "field",
@@ -163,8 +173,9 @@
       "length": 4032,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "IPL3 bootstrap code (4032 bytes, variant depends on cartridge type)"
+      "valueType": "ascii",
+      "description": "IPL3 bootstrap code (4032 bytes, variant depends on cartridge type)",
+      "storeAs": "bootCode"
     },
     {
       "type": "metadata",

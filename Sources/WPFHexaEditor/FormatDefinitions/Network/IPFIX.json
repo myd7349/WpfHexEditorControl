@@ -1,6 +1,6 @@
 {
   "formatName": "IPFIX",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ipfix"
   ],
@@ -29,7 +29,11 @@
     "version": 0,
     "messageLength": 0,
     "exportTime": 0,
-    "sequenceNumber": 0
+    "sequenceNumber": 0,
+    "ipfixVersion": 0,
+    "observationDomainId": "",
+    "setId": 0,
+    "setLength": 0
   },
   "blocks": [
     {
@@ -39,7 +43,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Version 10 (0x000A)"
+      "description": "Version 10 (0x000A)",
+      "storeAs": "ipfixVersion",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -48,7 +54,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Total length of IPFIX message"
+      "description": "Total length of IPFIX message",
+      "storeAs": "messageLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -57,7 +65,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Unix timestamp (seconds)"
+      "description": "Unix timestamp (seconds)",
+      "storeAs": "exportTime",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -66,7 +76,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Incremental sequence counter"
+      "description": "Incremental sequence counter",
+      "storeAs": "sequenceNumber",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -75,7 +87,9 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Source ID for flow data"
+      "description": "Source ID for flow data",
+      "storeAs": "observationDomainId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -84,7 +98,9 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Set identifier (2=template, 3=options, 256+=data)"
+      "description": "Set identifier (2=template, 3=options, 256+=data)",
+      "storeAs": "setId",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -93,7 +109,9 @@
       "length": 2,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Length of this set"
+      "description": "Length of this set",
+      "storeAs": "setLength",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

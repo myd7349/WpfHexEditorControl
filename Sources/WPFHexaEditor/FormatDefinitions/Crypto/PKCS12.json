@@ -1,6 +1,6 @@
 {
   "formatName": "PKCS#12 (PFX)",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".p12",
     ".pfx"
@@ -35,7 +35,15 @@
     "version": 0,
     "serialNumber": "",
     "issuer": "",
-    "subject": ""
+    "subject": "",
+    "asn1Sequence": 0,
+    "totalLength": 0,
+    "versionTag": 0,
+    "versionLength": 0,
+    "authsafeTag": 0,
+    "contentTypeOidTag": 0,
+    "oidLength": 0,
+    "contentTypeOid": ""
   },
   "blocks": [
     {
@@ -45,7 +53,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ASN.1 SEQUENCE tag (0x30)"
+      "description": "ASN.1 SEQUENCE tag (0x30)",
+      "storeAs": "asn1Sequence",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -54,7 +64,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Length of PKCS#12 structure"
+      "description": "Length of PKCS#12 structure",
+      "storeAs": "totalLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -63,7 +75,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Version tag (0x02 = INTEGER)"
+      "description": "Version tag (0x02 = INTEGER)",
+      "storeAs": "versionTag",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -72,7 +86,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Version value length (1)"
+      "description": "Version value length (1)",
+      "storeAs": "versionLength",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -81,7 +97,9 @@
       "length": 1,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "PKCS#12 version (3)"
+      "description": "PKCS#12 version (3)",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -90,7 +108,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "AuthenticatedSafe SEQUENCE tag"
+      "description": "AuthenticatedSafe SEQUENCE tag",
+      "storeAs": "authsafeTag",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -99,7 +119,9 @@
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Content type OID tag (0x06)"
+      "description": "Content type OID tag (0x06)",
+      "storeAs": "contentTypeOidTag",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -108,7 +130,9 @@
       "length": 1,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "OID length (9 for pkcs7-data)"
+      "description": "OID length (9 for pkcs7-data)",
+      "storeAs": "oidLength",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -117,7 +141,9 @@
       "length": 9,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "PKCS#7 content type OID"
+      "description": "PKCS#7 content type OID",
+      "storeAs": "contentTypeOid",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

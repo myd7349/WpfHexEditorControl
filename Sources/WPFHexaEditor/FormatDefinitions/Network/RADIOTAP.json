@@ -1,6 +1,6 @@
 {
   "formatName": "Radiotap 802.11",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pcap",
     ".pcapng"
@@ -29,7 +29,17 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "headerRevision": 0,
+    "headerPad": 0,
+    "headerLength": 0,
+    "presentFlags": 0,
+    "macTimestamp": 0,
+    "flags": 0,
+    "dataRate": 0,
+    "channelFrequency": 0,
+    "channelFlags": 0,
+    "antennaSignal": 0
   },
   "blocks": [
     {
@@ -39,7 +49,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Radiotap version (0)"
+      "description": "Radiotap version (0)",
+      "storeAs": "headerRevision",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -48,7 +60,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Padding byte"
+      "description": "Padding byte",
+      "storeAs": "headerPad",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -57,7 +71,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Total header length"
+      "description": "Total header length",
+      "storeAs": "headerLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -66,7 +82,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Bitmask of present fields"
+      "description": "Bitmask of present fields",
+      "storeAs": "presentFlags",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -75,7 +93,9 @@
       "length": 8,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "802.11 MAC timestamp (optional)"
+      "description": "802.11 MAC timestamp (optional)",
+      "storeAs": "macTimestamp",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -84,7 +104,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Capture flags (optional)"
+      "description": "Capture flags (optional)",
+      "storeAs": "flags",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -93,7 +115,9 @@
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Data rate in 500kbps units (optional)"
+      "description": "Data rate in 500kbps units (optional)",
+      "storeAs": "dataRate",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -102,7 +126,9 @@
       "length": 2,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Channel frequency in MHz (optional)"
+      "description": "Channel frequency in MHz (optional)",
+      "storeAs": "channelFrequency",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -111,7 +137,9 @@
       "length": 2,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Channel properties (optional)"
+      "description": "Channel properties (optional)",
+      "storeAs": "channelFlags",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -120,7 +148,9 @@
       "length": 1,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Signal strength in dBm (optional)"
+      "description": "Signal strength in dBm (optional)",
+      "storeAs": "antennaSignal",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

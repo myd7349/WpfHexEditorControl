@@ -1,6 +1,6 @@
 {
   "formatName": "GIF Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".gif"
   ],
@@ -35,7 +35,13 @@
     "canvasWidth": 0,
     "canvasHeight": 0,
     "totalPixels": 0,
-    "version": ""
+    "version": "",
+    "gifSignature": "",
+    "logicalScreenWidth": 0,
+    "logicalScreenHeight": 0,
+    "packedFields": 0,
+    "backgroundColor": 0,
+    "pixelAspectRatio": 0
   },
   "blocks": [
     {
@@ -45,7 +51,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GIF magic bytes"
+      "description": "GIF magic bytes",
+      "storeAs": "gifSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -54,7 +62,9 @@
       "length": 3,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "89a or 87a"
+      "description": "89a or 87a",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -63,7 +73,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Canvas width in pixels"
+      "description": "Canvas width in pixels",
+      "storeAs": "logicalScreenWidth",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -72,7 +84,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Canvas height in pixels"
+      "description": "Canvas height in pixels",
+      "storeAs": "logicalScreenHeight",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -81,7 +95,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Global color table info"
+      "description": "Global color table info",
+      "storeAs": "packedFields",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -90,7 +106,9 @@
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Index to global color table"
+      "description": "Index to global color table",
+      "storeAs": "backgroundColor",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -99,7 +117,9 @@
       "length": 1,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Pixel aspect ratio"
+      "description": "Pixel aspect ratio",
+      "storeAs": "pixelAspectRatio",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

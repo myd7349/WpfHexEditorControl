@@ -1,6 +1,6 @@
 {
   "formatName": "PAK Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".pak"
   ],
@@ -34,7 +34,8 @@
   },
   "variables": {
     "directoryOffset": 0,
-    "directorySize": 0
+    "directorySize": 0,
+    "pakSignature": ""
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Magic bytes: 'PACK'"
+      "description": "Magic bytes: 'PACK'",
+      "storeAs": "pakSignature",
+      "valueType": "ascii"
     },
     {
       "type": "data",

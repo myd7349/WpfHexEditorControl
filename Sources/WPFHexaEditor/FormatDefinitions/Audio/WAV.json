@@ -1,6 +1,6 @@
 {
   "formatName": "WAV Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".wav",
     ".wave"
@@ -37,7 +37,11 @@
     "channels": 0,
     "sampleRate": 0,
     "byteRate": 0,
-    "bitDepth": 0
+    "bitDepth": 0,
+    "riffHeader": 0,
+    "fileSize": 0,
+    "waveFormat": 0,
+    "fmtChunk": 0
   },
   "blocks": [
     {
@@ -47,7 +51,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RIFF chunk descriptor"
+      "description": "RIFF chunk descriptor",
+      "storeAs": "riffHeader",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -56,7 +62,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "File size minus 8 bytes"
+      "description": "File size minus 8 bytes",
+      "storeAs": "fileSize",
+      "valueType": "uint32"
     },
     {
       "type": "signature",
@@ -65,7 +73,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "WAVE identifier"
+      "description": "WAVE identifier",
+      "storeAs": "waveFormat",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -74,7 +84,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Format chunk marker"
+      "description": "Format chunk marker",
+      "storeAs": "fmtChunk",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

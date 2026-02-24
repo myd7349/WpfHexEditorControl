@@ -1,6 +1,6 @@
 {
   "formatName": "Khronos Texture",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ktx"
   ],
@@ -33,7 +33,9 @@
     "readUInt32LE": "Read KTX header fields (endianness-dependent)"
   },
   "variables": {
-    "endianness": 0
+    "endianness": 0,
+    "ktxIdentifier": "",
+    "glType": ""
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 12,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "KTX 1.0 magic bytes"
+      "description": "KTX 1.0 magic bytes",
+      "storeAs": "ktxIdentifier",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "0x04030201 or 0x01020304"
+      "description": "0x04030201 or 0x01020304",
+      "storeAs": "endianness",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -61,7 +67,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "OpenGL type"
+      "description": "OpenGL type",
+      "storeAs": "glType",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

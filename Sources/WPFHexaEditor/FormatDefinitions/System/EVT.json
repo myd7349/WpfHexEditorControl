@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Event Log",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".evt"
   ],
@@ -29,7 +29,9 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "headerSize": 0,
+    "magic": ""
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of header (0x30)"
+      "description": "Size of header (0x30)",
+      "storeAs": "headerSize",
+      "valueType": "uint32"
     },
     {
       "type": "signature",
@@ -48,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "LfLe signature"
+      "description": "LfLe signature",
+      "storeAs": "magic",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

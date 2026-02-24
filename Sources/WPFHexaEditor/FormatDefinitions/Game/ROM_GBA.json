@@ -1,6 +1,6 @@
 {
   "formatName": "Game Boy Advance ROM",
-  "version": "2.2",
+  "version": "2.3",
   "extensions": [
     ".gba"
   ],
@@ -36,7 +36,14 @@
     "complement": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "entryPoint": 0,
+    "nintendoLogo": "",
+    "makerCode": 0,
+    "fixedValue0x96": 0,
+    "mainUnitCode": 0,
+    "deviceType": 0,
+    "softwareVersion": 0
   },
   "blocks": [
     {
@@ -46,8 +53,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "ARM branch instruction jumping past header (EA xxxxxx = B xxxxxxx)"
+      "valueType": "uint32",
+      "description": "ARM branch instruction jumping past header (EA xxxxxx = B xxxxxxx)",
+      "storeAs": "entryPoint"
     },
     {
       "type": "signature",
@@ -56,7 +64,9 @@
       "length": 156,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GBA Nintendo logo bitmap (156 bytes, verified by boot ROM at 0x04-0x9F)"
+      "description": "GBA Nintendo logo bitmap (156 bytes, verified by boot ROM at 0x04-0x9F)",
+      "storeAs": "nintendoLogo",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -87,8 +97,9 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "2-character licensee/maker code"
+      "valueType": "uint16",
+      "description": "2-character licensee/maker code",
+      "storeAs": "makerCode"
     },
     {
       "type": "signature",
@@ -97,7 +108,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Must be 0x96 for hardware authentication (verified at boot)"
+      "description": "Must be 0x96 for hardware authentication (verified at boot)",
+      "storeAs": "fixedValue0x96",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -112,7 +125,8 @@
         "allowedValues": [
           0
         ]
-      }
+      },
+      "storeAs": "mainUnitCode"
     },
     {
       "type": "field",
@@ -122,7 +136,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0x00=normal, 0x80=DACS debug cartridge"
+      "description": "0x00=normal, 0x80=DACS debug cartridge",
+      "storeAs": "deviceType"
     },
     {
       "type": "field",
@@ -143,7 +158,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Game revision number (0x00 = first version)"
+      "description": "Game revision number (0x00 = first version)",
+      "storeAs": "softwareVersion"
     },
     {
       "type": "field",

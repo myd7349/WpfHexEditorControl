@@ -1,6 +1,6 @@
 {
   "formatName": "XYZ Chemical Format",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".xyz"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "atomCount": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 10,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Number of atoms (first line)"
+      "description": "Number of atoms (first line)",
+      "storeAs": "atomCount",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

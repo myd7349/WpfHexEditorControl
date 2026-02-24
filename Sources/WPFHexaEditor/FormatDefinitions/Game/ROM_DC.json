@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Dreamcast Disc Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".gdi",
     ".cdi",
@@ -39,7 +39,15 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "hardwareId": "",
+    "makerId": "",
+    "deviceInfo": "",
+    "areaSymbols": 0,
+    "peripherals": 0,
+    "version": "",
+    "bootFilename": "",
+    "developerId": ""
   },
   "blocks": [
     {
@@ -50,7 +58,8 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "valueType": "ascii",
-      "description": "SEGA SEGAKATANA  - Dreamcast disc magic identifier"
+      "description": "SEGA SEGAKATANA  - Dreamcast disc magic identifier",
+      "storeAs": "hardwareId"
     },
     {
       "type": "field",
@@ -60,7 +69,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Publisher identifier"
+      "description": "Publisher identifier",
+      "storeAs": "makerId"
     },
     {
       "type": "field",
@@ -70,7 +80,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "GD-ROM disc information and disc count"
+      "description": "GD-ROM disc information and disc count",
+      "storeAs": "deviceInfo"
     },
     {
       "type": "field",
@@ -79,8 +90,9 @@
       "length": 8,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "Region support flags"
+      "valueType": "uint64",
+      "description": "Region support flags",
+      "storeAs": "areaSymbols"
     },
     {
       "type": "field",
@@ -89,8 +101,9 @@
       "length": 8,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "Peripheral support flags"
+      "valueType": "uint64",
+      "description": "Peripheral support flags",
+      "storeAs": "peripherals"
     },
     {
       "type": "field",
@@ -111,7 +124,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Version string (V1.000)"
+      "description": "Version string (V1.000)",
+      "storeAs": "version"
     },
     {
       "type": "field",
@@ -132,7 +146,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Boot executable: 1ST_READ.BIN"
+      "description": "Boot executable: 1ST_READ.BIN",
+      "storeAs": "bootFilename"
     },
     {
       "type": "field",
@@ -142,7 +157,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Developer/studio identifier"
+      "description": "Developer/studio identifier",
+      "storeAs": "developerId"
     },
     {
       "type": "field",

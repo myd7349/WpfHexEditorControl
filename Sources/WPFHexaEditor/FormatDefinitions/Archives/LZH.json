@@ -1,6 +1,6 @@
 {
   "formatName": "LZH Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".lzh",
     ".lha"
@@ -38,7 +38,8 @@
     "currentOffset": 0,
     "headerSize": 0,
     "headerChecksum": 0,
-    "methodID": ""
+    "methodID": "",
+    "methodId": ""
   },
   "blocks": [
     {
@@ -48,7 +49,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of header"
+      "description": "Size of header",
+      "storeAs": "headerSize",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -57,7 +60,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Header checksum"
+      "description": "Header checksum",
+      "storeAs": "headerChecksum",
+      "valueType": "uint8"
     },
     {
       "type": "signature",
@@ -66,7 +71,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "-lh compression method"
+      "description": "-lh compression method",
+      "storeAs": "methodId",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

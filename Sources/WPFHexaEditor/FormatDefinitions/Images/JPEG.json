@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".jpg",
     ".jpeg",
@@ -40,7 +40,17 @@
     "jpegComponents": 0,
     "jpegPrecision": 0,
     "jpegProgressive": false,
-    "sofOffset": -1
+    "sofOffset": -1,
+    "jpegSoiMarker": 0,
+    "app0JfifMarker": 0,
+    "app0Length": 0,
+    "jfifIdentifier": "",
+    "jfifVersion": 0,
+    "densityUnits": 0,
+    "xDensity": 0,
+    "yDensity": 0,
+    "thumbnailWidth": 0,
+    "thumbnailHeight": 0
   },
   "blocks": [
     {
@@ -50,7 +60,10 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Start Of Image (0xFFD8)"
+      "description": "Start Of Image (0xFFD8)",
+      "storeAs": "jpegSoiMarker",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -59,7 +72,10 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "APP0 marker (usually 0xFFE0)"
+      "description": "APP0 marker (usually 0xFFE0)",
+      "storeAs": "app0JfifMarker",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -68,7 +84,10 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Length of APP0 segment"
+      "description": "Length of APP0 segment",
+      "storeAs": "app0Length",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -77,7 +96,9 @@
       "length": 5,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "JFIF identifier (JFIF\\0)"
+      "description": "JFIF identifier (JFIF\\0)",
+      "storeAs": "jfifIdentifier",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -86,7 +107,10 @@
       "length": 2,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "JFIF version (e.g., 1.01)"
+      "description": "JFIF version (e.g., 1.01)",
+      "storeAs": "jfifVersion",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -95,7 +119,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "0=None, 1=DPI, 2=DPCM"
+      "description": "0=None, 1=DPI, 2=DPCM",
+      "storeAs": "densityUnits",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -104,7 +130,10 @@
       "length": 2,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Horizontal pixel density"
+      "description": "Horizontal pixel density",
+      "storeAs": "xDensity",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -113,7 +142,10 @@
       "length": 2,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Vertical pixel density"
+      "description": "Vertical pixel density",
+      "storeAs": "yDensity",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -122,7 +154,9 @@
       "length": 1,
       "color": "#C44569",
       "opacity": 0.3,
-      "description": "Embedded thumbnail width"
+      "description": "Embedded thumbnail width",
+      "storeAs": "thumbnailWidth",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -131,7 +165,9 @@
       "length": 1,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Embedded thumbnail height"
+      "description": "Embedded thumbnail height",
+      "storeAs": "thumbnailHeight",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

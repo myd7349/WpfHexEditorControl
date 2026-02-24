@@ -1,6 +1,6 @@
 {
   "formatName": "FictionBook 2.0",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".fb2"
   ],
@@ -36,7 +36,8 @@
     "publisher": "Unknown",
     "language": "ru",
     "genre": "Unknown",
-    "date": "Unknown"
+    "date": "Unknown",
+    "xmlDeclaration": ""
   },
   "blocks": [
     {
@@ -46,7 +47,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "XML declaration: '<?xml'"
+      "description": "XML declaration: '<?xml'",
+      "storeAs": "xmlDeclaration",
+      "valueType": "ascii"
     },
     {
       "type": "data",

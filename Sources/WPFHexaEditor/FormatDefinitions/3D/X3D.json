@@ -1,6 +1,6 @@
 {
   "formatName": "Extensible 3D",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".x3d"
   ],
@@ -29,7 +29,8 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "xmlDeclaration": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "<?xml header"
+      "description": "<?xml header",
+      "storeAs": "xmlDeclaration",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "M4A Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".m4a",
     ".m4b",
@@ -43,7 +43,9 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 16,
-    "duration": 0
+    "duration": 0,
+    "boxSize": 0,
+    "boxType": ""
   },
   "blocks": [
     {
@@ -53,7 +55,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of ftyp box"
+      "description": "Size of ftyp box",
+      "storeAs": "boxSize",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "signature",
@@ -62,7 +67,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ftyp box identifier"
+      "description": "ftyp box identifier",
+      "storeAs": "boxType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -71,7 +78,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "M4A brand identifier"
+      "description": "M4A brand identifier",
+      "storeAs": "majorBrand",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

@@ -1,6 +1,6 @@
 {
   "formatName": "NIfTI Medical Image",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".nii"
   ],
@@ -29,7 +29,8 @@
     "width": 0,
     "height": 0,
     "slices": 0,
-    "bitDepth": 0
+    "bitDepth": 0,
+    "headerSize": 0
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "348 bytes"
+      "description": "348 bytes",
+      "storeAs": "headerSize",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

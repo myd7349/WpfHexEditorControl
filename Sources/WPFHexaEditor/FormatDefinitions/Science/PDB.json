@@ -1,6 +1,6 @@
 {
   "formatName": "Protein Data Bank",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pdb",
     ".ent"
@@ -29,7 +29,8 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "pdbHeader": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "HEADER keyword"
+      "description": "HEADER keyword",
+      "storeAs": "pdbHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

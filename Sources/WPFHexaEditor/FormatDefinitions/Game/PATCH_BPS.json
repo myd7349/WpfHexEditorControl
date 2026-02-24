@@ -1,6 +1,6 @@
 {
   "formatName": "BPS Patch",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".bps"
   ],
@@ -34,7 +34,10 @@
     "srcSizeByte": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "bpsMagic": "",
+    "patchHeaderData": "",
+    "patchCommandsRegion": ""
   },
   "blocks": [
     {
@@ -44,7 +47,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "BPS1 magic identifier - Beat Patching System format (created by byuu/Near)"
+      "description": "BPS1 magic identifier - Beat Patching System format (created by byuu/Near)",
+      "storeAs": "bpsMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -64,8 +69,9 @@
       "length": 16,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "VLI-encoded target size, metadata length, and metadata content (variable structure)"
+      "valueType": "ascii",
+      "description": "VLI-encoded target size, metadata length, and metadata content (variable structure)",
+      "storeAs": "patchHeaderData"
     },
     {
       "type": "field",
@@ -74,8 +80,9 @@
       "length": 100,
       "color": "#FFE66D",
       "opacity": 0.2,
-      "valueType": "bytes",
-      "description": "Variable-length patch commands: SourceRead(0), TargetRead(1), SourceCopy(2), TargetCopy(3)"
+      "valueType": "ascii",
+      "description": "Variable-length patch commands: SourceRead(0), TargetRead(1), SourceCopy(2), TargetCopy(3)",
+      "storeAs": "patchCommandsRegion"
     },
     {
       "type": "metadata",

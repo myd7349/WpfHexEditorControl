@@ -1,6 +1,6 @@
 {
   "formatName": "Android App Bundle",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".aab"
   ],
@@ -31,7 +31,8 @@
     "zipCommentLength": 0,
     "zipComment": "",
     "eocdOffset": -1,
-    "isZip64": false
+    "isZip64": false,
+    "zipAabSignature": ""
   },
   "blocks": [
     {
@@ -41,7 +42,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PK ZIP header"
+      "description": "PK ZIP header",
+      "storeAs": "zipAabSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

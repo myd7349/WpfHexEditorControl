@@ -1,6 +1,6 @@
 {
   "formatName": "ROOT Data File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".root"
   ],
@@ -28,7 +28,9 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "rootMagic": "",
+    "version": ""
   },
   "blocks": [
     {
@@ -38,7 +40,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ROOT signature (root\\0)"
+      "description": "ROOT signature (root\\0)",
+      "storeAs": "rootMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -47,7 +51,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "ROOT file version"
+      "description": "ROOT file version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

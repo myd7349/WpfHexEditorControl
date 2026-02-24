@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Media Video",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".wmv",
     ".wma",
@@ -41,7 +41,8 @@
     "height": 0,
     "duration": 0,
     "bitrate": 0,
-    "videoCodec": "WMV"
+    "videoCodec": "WMV",
+    "asfHeaderGuid": ""
   },
   "blocks": [
     {
@@ -51,7 +52,9 @@
       "length": 16,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Advanced Systems Format header"
+      "description": "Advanced Systems Format header",
+      "storeAs": "asfHeaderGuid",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -60,7 +63,9 @@
       "length": 8,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of header object"
+      "description": "Size of header object",
+      "storeAs": "objectSize",
+      "valueType": "uint64"
     }
   ],
   "mime_types": [

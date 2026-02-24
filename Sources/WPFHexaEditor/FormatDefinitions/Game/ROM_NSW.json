@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Switch Package",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".nsp",
     ".xci",
@@ -35,7 +35,11 @@
     "currentOffset": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "pfsMagic": "",
+    "fileCount": 0,
+    "stringTableSize": 0,
+    "fileEntryTable": ""
   },
   "blocks": [
     {
@@ -45,8 +49,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "bytes",
-      "description": "PFS0 magic for NSP files (0x50 0x46 0x53 0x30)"
+      "valueType": "uint32",
+      "description": "PFS0 magic for NSP files (0x50 0x46 0x53 0x30)",
+      "storeAs": "pfsMagic"
     },
     {
       "type": "field",
@@ -56,7 +61,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Number of files in the package"
+      "description": "Number of files in the package",
+      "storeAs": "fileCount"
     },
     {
       "type": "field",
@@ -66,7 +72,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Size of filename string table"
+      "description": "Size of filename string table",
+      "storeAs": "stringTableSize"
     },
     {
       "type": "field",
@@ -86,8 +93,9 @@
       "length": 64,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "File entry table (offset, size, string offset for each file)"
+      "valueType": "ascii",
+      "description": "File entry table (offset, size, string offset for each file)",
+      "storeAs": "fileEntryTable"
     },
     {
       "type": "metadata",

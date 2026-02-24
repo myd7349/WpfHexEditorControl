@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Memory Dump",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dmp"
   ],
@@ -29,7 +29,9 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "dumpSignature": "",
+    "validDump": ""
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PAGEDU or PAGEDUMP"
+      "description": "PAGEDU or PAGEDUMP",
+      "storeAs": "dumpSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +52,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Dump validation"
+      "description": "Dump validation",
+      "storeAs": "validDump",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

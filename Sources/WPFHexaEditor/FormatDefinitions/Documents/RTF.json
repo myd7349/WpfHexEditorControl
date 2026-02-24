@@ -1,6 +1,6 @@
 {
   "formatName": "Rich Text Format",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".rtf"
   ],
@@ -36,7 +36,8 @@
     "author": "Unknown",
     "subject": "Unknown",
     "pages": 0,
-    "defaultFont": 0
+    "defaultFont": 0,
+    "rtfHeader": ""
   },
   "blocks": [
     {
@@ -46,7 +47,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "{\\rtf signature"
+      "description": "{\\rtf signature",
+      "storeAs": "rtfHeader",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -55,7 +58,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "RTF version number (ASCII)"
+      "description": "RTF version number (ASCII)",
+      "storeAs": "version",
+      "valueType": "uint8"
     }
   ],
   "mime_types": [

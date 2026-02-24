@@ -1,6 +1,6 @@
 {
   "formatName": "LZO Compression",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".lzo",
     ".lzop"
@@ -35,7 +35,8 @@
     "crc32Valid": false,
     "originalSize": 0,
     "compressedSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "lzoMagic": ""
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Magic bytes: 0x89 'LZO'"
+      "description": "Magic bytes: 0x89 'LZO'",
+      "storeAs": "lzoMagic",
+      "valueType": "uint32"
     },
     {
       "type": "data",

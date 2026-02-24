@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 2 Disc Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".iso",
     ".bin"
@@ -35,7 +35,11 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "volumeId": "",
+    "iso9660Descriptor": "",
+    "systemIdentifier": "",
+    "volumeIdentifier": ""
   },
   "blocks": [
     {
@@ -46,7 +50,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "PS2 volume identifier (often PSDI or blank)"
+      "description": "PS2 volume identifier (often PSDI or blank)",
+      "storeAs": "volumeId"
     },
     {
       "type": "field",
@@ -56,7 +61,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "CD001 ISO 9660 standard identifier at sector 16"
+      "description": "CD001 ISO 9660 standard identifier at sector 16",
+      "storeAs": "iso9660Descriptor"
     },
     {
       "type": "field",
@@ -66,7 +72,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "System identifier (PLAYSTATION for PS2 discs)"
+      "description": "System identifier (PLAYSTATION for PS2 discs)",
+      "storeAs": "systemIdentifier"
     },
     {
       "type": "field",
@@ -76,7 +83,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Game title/volume name"
+      "description": "Game title/volume name",
+      "storeAs": "volumeIdentifier"
     },
     {
       "type": "metadata",

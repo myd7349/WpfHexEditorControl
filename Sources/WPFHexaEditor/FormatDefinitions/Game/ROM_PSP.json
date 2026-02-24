@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation Portable ISO",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".iso",
     ".cso"
@@ -35,7 +35,12 @@
     "sectorSize": 0,
     "sectorCount": 0,
     "capacity": 0,
-    "format": ""
+    "format": "",
+    "csoMagic": "",
+    "headerSize": 0,
+    "uncompressedSize": 0,
+    "blockSize": 0,
+    "version": 0
   },
   "blocks": [
     {
@@ -45,8 +50,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "ascii",
-      "description": "CISO magic for compressed format (0x43 0x49 0x53 0x4F)"
+      "valueType": "uint32",
+      "description": "CISO magic for compressed format (0x43 0x49 0x53 0x4F)",
+      "storeAs": "csoMagic"
     },
     {
       "type": "field",
@@ -56,7 +62,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "CSO header size (typically 0x18 = 24 bytes)"
+      "description": "CSO header size (typically 0x18 = 24 bytes)",
+      "storeAs": "headerSize"
     },
     {
       "type": "field",
@@ -65,8 +72,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Original uncompressed ISO size (64-bit)"
+      "valueType": "uint64",
+      "description": "Original uncompressed ISO size (64-bit)",
+      "storeAs": "uncompressedSize"
     },
     {
       "type": "field",
@@ -76,7 +84,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Compression block size (typically 2048 bytes)"
+      "description": "Compression block size (typically 2048 bytes)",
+      "storeAs": "blockSize"
     },
     {
       "type": "field",
@@ -86,7 +95,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "CSO format version"
+      "description": "CSO format version",
+      "storeAs": "version"
     },
     {
       "type": "metadata",

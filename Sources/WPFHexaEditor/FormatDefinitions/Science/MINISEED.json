@@ -1,6 +1,6 @@
 {
   "formatName": "miniSEED Seismic Data",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mseed",
     ".miniseed"
@@ -29,7 +29,9 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "sequenceNumber": "",
+    "recordIndicator": 0
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ASCII sequence number"
+      "description": "ASCII sequence number",
+      "storeAs": "sequenceNumber",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +52,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Data record indicator (D/R/Q)"
+      "description": "Data record indicator (D/R/Q)",
+      "storeAs": "recordIndicator",
+      "valueType": "uint8"
     },
     {
       "type": "field",

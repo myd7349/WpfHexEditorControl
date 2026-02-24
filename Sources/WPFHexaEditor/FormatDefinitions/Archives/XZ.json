@@ -1,6 +1,6 @@
 {
   "formatName": "XZ Compressed File",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".xz"
   ],
@@ -37,7 +37,8 @@
     "currentOffset": 0,
     "streamFlags": 0,
     "headerCRC": 0,
-    "crcValid": false
+    "crcValid": false,
+    "xzMagic": ""
   },
   "blocks": [
     {
@@ -47,7 +48,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "XZ file magic bytes"
+      "description": "XZ file magic bytes",
+      "storeAs": "xzMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -56,7 +59,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Stream header flags"
+      "description": "Stream header flags",
+      "storeAs": "streamFlags",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

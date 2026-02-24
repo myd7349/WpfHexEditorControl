@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Wii U Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".wud",
     ".wux"
@@ -35,7 +35,12 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "wuxMagic": "",
+    "formatVersion": "",
+    "uncompressedSize": 0,
+    "sectorSize": 0,
+    "sectorTable": ""
   },
   "blocks": [
     {
@@ -45,8 +50,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "bytes",
-      "description": "WUX0 magic for compressed images (0x57 0x55 0x58 0x00)"
+      "valueType": "uint32",
+      "description": "WUX0 magic for compressed images (0x57 0x55 0x58 0x00)",
+      "storeAs": "wuxMagic"
     },
     {
       "type": "field",
@@ -55,8 +61,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "valueType": "uint32",
-      "description": "WUX format version"
+      "valueType": "ascii",
+      "description": "WUX format version",
+      "storeAs": "formatVersion"
     },
     {
       "type": "field",
@@ -65,8 +72,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Original uncompressed WUD size (64-bit)"
+      "valueType": "uint64",
+      "description": "Original uncompressed WUD size (64-bit)",
+      "storeAs": "uncompressedSize"
     },
     {
       "type": "field",
@@ -76,7 +84,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Sector size for compression"
+      "description": "Sector size for compression",
+      "storeAs": "sectorSize"
     },
     {
       "type": "field",
@@ -85,8 +94,9 @@
       "length": 32,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Sector offset table (compressed format)"
+      "valueType": "ascii",
+      "description": "Sector offset table (compressed format)",
+      "storeAs": "sectorTable"
     },
     {
       "type": "metadata",

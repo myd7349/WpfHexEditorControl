@@ -1,6 +1,6 @@
 {
   "formatName": "OpenEXR Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".exr"
   ],
@@ -33,7 +33,9 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "exrMagic": "",
+    "version": ""
   },
   "blocks": [
     {
@@ -43,7 +45,10 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "OpenEXR magic number"
+      "description": "OpenEXR magic number",
+      "storeAs": "exrMagic",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -52,7 +57,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Version and flags"
+      "description": "Version and flags",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "AV1 Video",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".av1",
     ".ivf"
@@ -34,7 +34,8 @@
     "width": 0,
     "height": 0,
     "frameRate": 0,
-    "duration": 0
+    "duration": 0,
+    "ivfHeader": 0
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "DKIF - IVF container header for AV1"
+      "description": "DKIF - IVF container header for AV1",
+      "storeAs": "ivfHeader",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

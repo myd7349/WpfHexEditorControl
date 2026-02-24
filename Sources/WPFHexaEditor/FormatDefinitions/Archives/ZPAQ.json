@@ -1,6 +1,6 @@
 {
   "formatName": "ZPAQ Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".zpaq"
   ],
@@ -34,7 +34,8 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "zpaqMagic": ""
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "zPAQ\\x7E signature"
+      "description": "zPAQ\\x7E signature",
+      "storeAs": "zpaqMagic",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

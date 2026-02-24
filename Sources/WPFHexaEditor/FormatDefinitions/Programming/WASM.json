@@ -1,6 +1,6 @@
 {
   "formatName": "WebAssembly Binary",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".wasm"
   ],
@@ -37,7 +37,8 @@
     "imports": 0,
     "exports": 0,
     "memory": 0,
-    "tables": 0
+    "tables": 0,
+    "wasmMagic": ""
   },
   "blocks": [
     {
@@ -47,7 +48,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "\\0asm magic number"
+      "description": "\\0asm magic number",
+      "storeAs": "wasmMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -56,7 +59,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "WebAssembly version"
+      "description": "WebAssembly version",
+      "storeAs": "version",
+      "valueType": "ascii"
     }
   ],
   "quality_metrics": {

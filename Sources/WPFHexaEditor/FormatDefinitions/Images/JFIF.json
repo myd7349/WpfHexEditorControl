@@ -1,6 +1,6 @@
 {
   "formatName": "JFIF Image",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".jfif",
     ".jpg",
@@ -35,7 +35,10 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "jpegSoiApp0": 0,
+    "app0Length": 0,
+    "jfifIdentifier": ""
   },
   "blocks": [
     {
@@ -45,7 +48,10 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Start of Image + APP0 marker"
+      "description": "Start of Image + APP0 marker",
+      "storeAs": "jpegSoiApp0",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -54,7 +60,10 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "APP0 segment length"
+      "description": "APP0 segment length",
+      "storeAs": "app0Length",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -63,7 +72,9 @@
       "length": 5,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "JFIF\\0 identifier"
+      "description": "JFIF\\0 identifier",
+      "storeAs": "jfifIdentifier",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

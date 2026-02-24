@@ -1,6 +1,6 @@
 {
   "formatName": "Minecraft DAT",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dat"
   ],
@@ -33,7 +33,8 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "nbtCompoundTag": 0
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "NBT compound tag (0x0A)"
+      "description": "NBT compound tag (0x0A)",
+      "storeAs": "nbtCompoundTag",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

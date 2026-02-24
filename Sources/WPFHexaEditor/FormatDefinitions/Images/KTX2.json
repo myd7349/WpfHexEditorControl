@@ -1,6 +1,6 @@
 {
   "formatName": "Khronos Texture 2",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ktx2"
   ],
@@ -33,7 +33,9 @@
     "readUInt32LE": "Read KTX2 header fields (little-endian)"
   },
   "variables": {
-    "vkFormat": 0
+    "vkFormat": 0,
+    "ktx2Identifier": "",
+    "typeSize": ""
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 12,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "KTX 2.0 magic bytes"
+      "description": "KTX 2.0 magic bytes",
+      "storeAs": "ktx2Identifier",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Vulkan format enum"
+      "description": "Vulkan format enum",
+      "storeAs": "vkFormat",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -61,7 +67,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Type size in bytes"
+      "description": "Type size in bytes",
+      "storeAs": "typeSize",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

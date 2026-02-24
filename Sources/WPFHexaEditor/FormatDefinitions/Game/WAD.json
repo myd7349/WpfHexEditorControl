@@ -1,6 +1,6 @@
 {
   "formatName": "Doom WAD File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".wad"
   ],
@@ -33,7 +33,8 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "wadType": ""
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "IWAD or PWAD"
+      "description": "IWAD or PWAD",
+      "storeAs": "wadType",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

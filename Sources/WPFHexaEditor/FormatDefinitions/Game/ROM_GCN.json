@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo GameCube Disc",
-  "version": "2.2",
+  "version": "2.3",
   "extensions": [
     ".gcm",
     ".iso"
@@ -37,7 +37,13 @@
     "gameName": "",
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "discId": 0,
+    "regionCode": 0,
+    "discId6": 0,
+    "audioStreaming": 0,
+    "streamBufferSize": 0,
+    "magicWord": ""
   },
   "blocks": [
     {
@@ -47,8 +53,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "Console ID: G=GameCube, D=Demo disc, P=Promotional disc"
+      "valueType": "uint8",
+      "description": "Console ID: G=GameCube, D=Demo disc, P=Promotional disc",
+      "storeAs": "discId"
     },
     {
       "type": "field",
@@ -68,8 +75,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "Region: E=USA, P=Europe/Australia, J=Japan, K=Korea"
+      "valueType": "uint8",
+      "description": "Region: E=USA, P=Europe/Australia, J=Japan, K=Korea",
+      "storeAs": "regionCode"
     },
     {
       "type": "field",
@@ -90,7 +98,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Disc number (0 for single disc games)"
+      "description": "Disc number (0 for single disc games)",
+      "storeAs": "discId6"
     },
     {
       "type": "field",
@@ -100,7 +109,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Game version/revision number"
+      "description": "Game version/revision number",
+      "storeAs": "version"
     },
     {
       "type": "field",
@@ -110,7 +120,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0=No audio streaming, 1=Audio streaming enabled"
+      "description": "0=No audio streaming, 1=Audio streaming enabled",
+      "storeAs": "audioStreaming"
     },
     {
       "type": "field",
@@ -120,7 +131,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Audio stream buffer size"
+      "description": "Audio stream buffer size",
+      "storeAs": "streamBufferSize"
     },
     {
       "type": "field",
@@ -140,7 +152,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GameCube disc magic: 0xC2339F3D"
+      "description": "GameCube disc magic: 0xC2339F3D",
+      "storeAs": "magicWord",
+      "valueType": "uint32"
     },
     {
       "type": "field",

@@ -1,6 +1,6 @@
 {
   "formatName": "MATLAB Data File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mat"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "matlabHeader": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MATLAB signature"
+      "description": "MATLAB signature",
+      "storeAs": "matlabHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Access Database",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mdb"
   ],
@@ -29,7 +29,8 @@
     "pageSize": 0,
     "pageCount": 0,
     "tableCount": 0,
-    "version": 0
+    "version": 0,
+    "jetDbSignature": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 15,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Standard Jet DB"
+      "description": "Standard Jet DB",
+      "storeAs": "jetDbSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

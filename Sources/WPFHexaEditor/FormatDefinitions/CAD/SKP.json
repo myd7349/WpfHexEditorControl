@@ -1,6 +1,6 @@
 {
   "formatName": "SketchUp Model",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".skp"
   ],
@@ -29,7 +29,8 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "skpHeader": 0
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "SketchUp header"
+      "description": "SketchUp header",
+      "storeAs": "skpHeader",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

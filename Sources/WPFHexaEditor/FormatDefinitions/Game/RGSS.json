@@ -1,6 +1,6 @@
 {
   "formatName": "RPG Maker Encrypted Archive",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".rgssad",
     ".rgss2a",
@@ -36,7 +36,9 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "rgssadSignature": "",
+    "version": 0
   },
   "blocks": [
     {
@@ -46,7 +48,9 @@
       "length": 7,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RGSSAD magic bytes"
+      "description": "RGSSAD magic bytes",
+      "storeAs": "rgssadSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -55,7 +59,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Archive version"
+      "description": "Archive version",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Multiple-image Network Graphics",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mng"
   ],
@@ -33,7 +33,9 @@
     "packetCount": 0,
     "snaplen": 0,
     "linkType": 0,
-    "version": ""
+    "version": "",
+    "mngSignature": "",
+    "mhdrChunkLength": 0
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MNG magic bytes"
+      "description": "MNG magic bytes",
+      "storeAs": "mngSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "MHDR chunk size"
+      "description": "MHDR chunk size",
+      "storeAs": "mhdrChunkLength",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

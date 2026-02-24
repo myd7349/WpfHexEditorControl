@@ -1,6 +1,6 @@
 {
   "formatName": "RealMedia Variable Bitrate",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".rmvb"
   ],
@@ -32,7 +32,8 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 0,
-    "duration": 0
+    "duration": 0,
+    "rmfHeader": 0
   },
   "blocks": [
     {
@@ -42,7 +43,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": ".RMF - RealMedia File header"
+      "description": ".RMF - RealMedia File header",
+      "storeAs": "rmfHeader",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

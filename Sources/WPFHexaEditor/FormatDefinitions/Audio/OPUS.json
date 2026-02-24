@@ -1,6 +1,6 @@
 {
   "formatName": "Opus Audio",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".opus"
   ],
@@ -41,7 +41,8 @@
     "preSkip": 0,
     "sampleRate": 48000,
     "outputGain": 0,
-    "channelMappingFamily": 0
+    "channelMappingFamily": 0,
+    "oggContainer": 0
   },
   "blocks": [
     {
@@ -51,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "OggS - Ogg container for Opus audio"
+      "description": "OggS - Ogg container for Opus audio",
+      "storeAs": "oggContainer",
+      "valueType": "uint32"
     }
   ],
   "mime_types": [

@@ -1,6 +1,6 @@
 {
   "formatName": "Flash Video",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".flv"
   ],
@@ -43,7 +43,9 @@
     "width": 0,
     "height": 0,
     "videoCodec": "Unknown",
-    "audioCodec": "Unknown"
+    "audioCodec": "Unknown",
+    "flvSignature": "",
+    "typeFlags": 0
   },
   "blocks": [
     {
@@ -53,7 +55,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "FLV magic bytes"
+      "description": "FLV magic bytes",
+      "storeAs": "flvSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -62,7 +66,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "FLV version (usually 1)"
+      "description": "FLV version (usually 1)",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -71,7 +77,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Audio/Video presence flags"
+      "description": "Audio/Video presence flags",
+      "storeAs": "typeFlags",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -80,7 +88,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Offset to first tag"
+      "description": "Offset to first tag",
+      "storeAs": "dataOffset",
+      "valueType": "uint32"
     }
   ],
   "mime_types": [

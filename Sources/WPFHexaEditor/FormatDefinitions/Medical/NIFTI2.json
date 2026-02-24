@@ -1,6 +1,6 @@
 {
   "formatName": "NIfTI-2 Medical Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".nii",
     ".hdr",
@@ -31,7 +31,10 @@
     "width": 0,
     "height": 0,
     "slices": 0,
-    "bitDepth": 0
+    "bitDepth": 0,
+    "headerSize": 0,
+    "magic": "",
+    "dataType": 0
   },
   "blocks": [
     {
@@ -41,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Header size (540 bytes)"
+      "description": "Header size (540 bytes)",
+      "storeAs": "headerSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -50,7 +55,9 @@
       "length": 8,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "NIfTI-2 magic string"
+      "description": "NIfTI-2 magic string",
+      "storeAs": "magic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -59,7 +66,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Data type code"
+      "description": "Data type code",
+      "storeAs": "dataType",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

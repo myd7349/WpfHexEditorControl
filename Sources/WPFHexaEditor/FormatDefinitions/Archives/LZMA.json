@@ -1,6 +1,6 @@
 {
   "formatName": "LZMA Compression",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".lzma",
     ".xz"
@@ -35,7 +35,8 @@
   },
   "variables": {
     "dictionarySize": 0,
-    "uncompressedSize": 0
+    "uncompressedSize": 0,
+    "lzmaProperties": 0
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "LZMA properties byte (usually 0x5D)"
+      "description": "LZMA properties byte (usually 0x5D)",
+      "storeAs": "lzmaProperties",
+      "valueType": "uint8"
     },
     {
       "type": "data",

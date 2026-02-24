@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Prefetch File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pf"
   ],
@@ -29,7 +29,8 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "signature": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Prefetch version"
+      "description": "Prefetch version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "signature",
@@ -48,7 +51,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "SCF signature"
+      "description": "SCF signature",
+      "storeAs": "signature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

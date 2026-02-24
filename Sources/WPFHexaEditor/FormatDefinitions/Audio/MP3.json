@@ -1,6 +1,6 @@
 {
   "formatName": "MP3 Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mp3"
   ],
@@ -38,7 +38,11 @@
     "bitrate": 0,
     "sampleRate": 0,
     "channelMode": "Unknown",
-    "frameOffset": -1
+    "frameOffset": -1,
+    "id3Header": "",
+    "version": 0,
+    "flags": 0,
+    "size": 0
   },
   "blocks": [
     {
@@ -48,7 +52,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ID3 tag signature"
+      "description": "ID3 tag signature",
+      "storeAs": "id3Header",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -57,7 +63,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "ID3v2 version"
+      "description": "ID3v2 version",
+      "storeAs": "version",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -66,7 +74,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Tag flags"
+      "description": "Tag flags",
+      "storeAs": "flags",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -75,7 +85,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Tag size (syncsafe integer)"
+      "description": "Tag size (syncsafe integer)",
+      "storeAs": "size",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Ubisoft FORGE",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".forge"
   ],
@@ -34,7 +34,10 @@
     "sectorSize": 0,
     "sectorCount": 0,
     "capacity": 0,
-    "format": ""
+    "format": "",
+    "forgeSignature": "",
+    "version": "",
+    "fileSize": 0
   },
   "blocks": [
     {
@@ -44,7 +47,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "scimage signature"
+      "description": "scimage signature",
+      "storeAs": "forgeSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +58,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "FORGE version"
+      "description": "FORGE version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -62,7 +69,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Total file size"
+      "description": "Total file size",
+      "storeAs": "fileSize",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

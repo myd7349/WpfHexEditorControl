@@ -1,6 +1,6 @@
 {
   "formatName": "NES ROM",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".nes"
   ],
@@ -35,7 +35,11 @@
     "flags7": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "nesMagic": "",
+    "prgRamSize": 0,
+    "tvSystemChrRam": 0,
+    "tvSystemFlags": 0
   },
   "blocks": [
     {
@@ -45,7 +49,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "NES\\x1A magic number - iNES header marker"
+      "description": "NES\\x1A magic number - iNES header marker",
+      "storeAs": "nesMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -103,7 +109,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "PRG RAM size (NES 2.0) or padding (iNES 1.0, must be 0)"
+      "description": "PRG RAM size (NES 2.0) or padding (iNES 1.0, must be 0)",
+      "storeAs": "prgRamSize"
     },
     {
       "type": "field",
@@ -113,7 +120,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "TV system and CHR RAM info (NES 2.0)"
+      "description": "TV system and CHR RAM info (NES 2.0)",
+      "storeAs": "tvSystemChrRam"
     },
     {
       "type": "field",
@@ -123,7 +131,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "TV system and PRG-RAM presence flags"
+      "description": "TV system and PRG-RAM presence flags",
+      "storeAs": "tvSystemFlags"
     },
     {
       "type": "field",

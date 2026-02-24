@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Registry Hive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     "",
     ".hiv"
@@ -30,7 +30,17 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "registrySignature": "",
+    "primarySequence": 0,
+    "secondarySequence": 0,
+    "lastWritten": 0,
+    "majorVersion": "",
+    "minorVersion": "",
+    "fileType": "",
+    "rootCellOffset": 0,
+    "hiveLength": 0,
+    "checksum": 0
   },
   "blocks": [
     {
@@ -40,7 +50,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "regf magic bytes"
+      "description": "regf magic bytes",
+      "storeAs": "registrySignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +61,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Primary sequence number"
+      "description": "Primary sequence number",
+      "storeAs": "primarySequence",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -58,7 +72,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Secondary sequence number"
+      "description": "Secondary sequence number",
+      "storeAs": "secondarySequence",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -67,7 +83,9 @@
       "length": 8,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Last write timestamp (FILETIME)"
+      "description": "Last write timestamp (FILETIME)",
+      "storeAs": "lastWritten",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -76,7 +94,9 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Hive major version"
+      "description": "Hive major version",
+      "storeAs": "majorVersion",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -85,7 +105,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Hive minor version"
+      "description": "Hive minor version",
+      "storeAs": "minorVersion",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -94,7 +116,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "File type (0=normal, 1=log)"
+      "description": "File type (0=normal, 1=log)",
+      "storeAs": "fileType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -103,7 +127,9 @@
       "length": 4,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Offset to root key cell"
+      "description": "Offset to root key cell",
+      "storeAs": "rootCellOffset",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -112,7 +138,9 @@
       "length": 4,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Length of hive in bytes"
+      "description": "Length of hive in bytes",
+      "storeAs": "hiveLength",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -121,7 +149,9 @@
       "length": 4,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Header checksum (XOR of first 508 bytes)"
+      "description": "Header checksum (XOR of first 508 bytes)",
+      "storeAs": "checksum",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

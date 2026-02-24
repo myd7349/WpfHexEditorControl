@@ -1,6 +1,6 @@
 {
   "formatName": "MDL Molfile",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mol"
   ],
@@ -28,7 +28,10 @@
     "currentOffset": 0,
     "fileSize": 0,
     "version": 0,
-    "format": ""
+    "format": "",
+    "moleculeName": "",
+    "headerLine2": "",
+    "comment": ""
   },
   "blocks": [
     {
@@ -38,7 +41,9 @@
       "length": 80,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "First line: molecule name"
+      "description": "First line: molecule name",
+      "storeAs": "moleculeName",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -47,7 +52,9 @@
       "length": 80,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "User/program/date/etc"
+      "description": "User/program/date/etc",
+      "storeAs": "headerLine2",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -56,7 +63,9 @@
       "length": 80,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Comment line"
+      "description": "Comment line",
+      "storeAs": "comment",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

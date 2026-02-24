@@ -1,6 +1,6 @@
 {
   "formatName": "Unreal Map",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".umap"
   ],
@@ -33,7 +33,10 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "packageTag": "",
+    "legacyVersion": "",
+    "engineVersion": ""
   },
   "blocks": [
     {
@@ -43,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Unreal package signature"
+      "description": "Unreal package signature",
+      "storeAs": "packageTag",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +57,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Legacy file version"
+      "description": "Legacy file version",
+      "storeAs": "legacyVersion",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -61,7 +68,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Unreal Engine version"
+      "description": "Unreal Engine version",
+      "storeAs": "engineVersion",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

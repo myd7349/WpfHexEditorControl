@@ -1,6 +1,6 @@
 {
   "formatName": "Virtual Memory Dump",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".vmem",
     ".vmsn"
@@ -30,7 +30,13 @@
     "sectorSize": 0,
     "sectorCount": 0,
     "capacity": 0,
-    "format": ""
+    "format": "",
+    "vmemSignature": "",
+    "version": "",
+    "memorySize": 0,
+    "guestOsType": "",
+    "snapshotTime": 0,
+    "flags": 0
   },
   "blocks": [
     {
@@ -40,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "VMware memory signature"
+      "description": "VMware memory signature",
+      "storeAs": "vmemSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +57,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "VMEM format version"
+      "description": "VMEM format version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -58,7 +68,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Total memory size in bytes"
+      "description": "Total memory size in bytes",
+      "storeAs": "memorySize",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -67,7 +79,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Operating system identifier"
+      "description": "Operating system identifier",
+      "storeAs": "guestOsType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -76,7 +90,9 @@
       "length": 8,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Snapshot creation timestamp"
+      "description": "Snapshot creation timestamp",
+      "storeAs": "snapshotTime",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -85,7 +101,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Memory dump flags"
+      "description": "Memory dump flags",
+      "storeAs": "flags",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

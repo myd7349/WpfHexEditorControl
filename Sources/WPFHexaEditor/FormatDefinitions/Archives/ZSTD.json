@@ -1,6 +1,6 @@
 {
   "formatName": "Zstandard Compressed",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".zst",
     ".zstd"
@@ -35,7 +35,8 @@
   },
   "variables": {
     "currentOffset": 0,
-    "frameMagic": 0
+    "frameMagic": 0,
+    "zstandardMagic": ""
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Zstandard frame header"
+      "description": "Zstandard frame header",
+      "storeAs": "zstandardMagic",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

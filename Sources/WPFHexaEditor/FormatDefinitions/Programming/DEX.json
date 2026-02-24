@@ -1,6 +1,6 @@
 {
   "formatName": "Android DEX File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dex"
   ],
@@ -40,7 +40,9 @@
     "stringIds": 0,
     "typeIds": 0,
     "methodIds": 0,
-    "classIds": 0
+    "classIds": 0,
+    "dexMagic": "",
+    "sha1Signature": ""
   },
   "blocks": [
     {
@@ -50,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "dex\\n signature"
+      "description": "dex\\n signature",
+      "storeAs": "dexMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -59,7 +63,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "DEX format version"
+      "description": "DEX format version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -68,7 +74,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Adler32 checksum"
+      "description": "Adler32 checksum",
+      "storeAs": "checksum",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -77,7 +85,9 @@
       "length": 20,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "SHA-1 hash of file"
+      "description": "SHA-1 hash of file",
+      "storeAs": "sha1Signature",
+      "valueType": "ascii"
     }
   ],
   "quality_metrics": {

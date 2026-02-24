@@ -1,6 +1,6 @@
 {
   "formatName": "YUV4MPEG2",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".y4m"
   ],
@@ -33,7 +33,8 @@
     "videoHeight": 0,
     "frameRate": 0,
     "durationSeconds": 0,
-    "codec": ""
+    "codec": "",
+    "y4mHeader": ""
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 9,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "YUV4MPEG2 file signature"
+      "description": "YUV4MPEG2 file signature",
+      "storeAs": "y4mHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

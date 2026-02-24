@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG Network Graphics",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".jng"
   ],
@@ -32,7 +32,9 @@
     "packetCount": 0,
     "snaplen": 0,
     "linkType": 0,
-    "version": ""
+    "version": "",
+    "jngSignature": "",
+    "jhdrChunkLength": 0
   },
   "blocks": [
     {
@@ -42,7 +44,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "JNG magic bytes"
+      "description": "JNG magic bytes",
+      "storeAs": "jngSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -51,7 +55,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "JHDR chunk size"
+      "description": "JHDR chunk size",
+      "storeAs": "jhdrChunkLength",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "metadata",

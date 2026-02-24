@@ -1,6 +1,6 @@
 {
   "formatName": "TGA Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".tga",
     ".tpic"
@@ -36,7 +36,8 @@
   "variables": {
     "currentOffset": 0,
     "idLength": 0,
-    "imageType": 0
+    "imageType": 0,
+    "colorMapType": 0
   },
   "blocks": [
     {
@@ -46,7 +47,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Length of image ID field"
+      "description": "Length of image ID field",
+      "storeAs": "idLength",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -55,7 +58,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "0=no palette, 1=has palette"
+      "description": "0=no palette, 1=has palette",
+      "storeAs": "colorMapType",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -64,7 +69,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Image type code"
+      "description": "Image type code",
+      "storeAs": "imageType",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

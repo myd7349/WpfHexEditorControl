@@ -1,6 +1,6 @@
 {
   "formatName": "ZBrush Tool",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ztl"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "polyCount": 0,
     "pointCount": 0,
-    "version": 0
+    "version": 0,
+    "zbrushToolSignature": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ZTOOL magic bytes"
+      "description": "ZTOOL magic bytes",
+      "storeAs": "zbrushToolSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -47,7 +50,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Tool version"
+      "description": "Tool version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

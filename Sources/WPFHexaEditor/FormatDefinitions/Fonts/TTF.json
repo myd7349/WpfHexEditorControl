@@ -1,6 +1,6 @@
 {
   "formatName": "TrueType Font",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ttf"
   ],
@@ -32,7 +32,11 @@
     "numGlyphs": 0,
     "unitsPerEm": 0,
     "fontName": "",
-    "tableCount": 0
+    "tableCount": 0,
+    "ttfVersion": "",
+    "numberOfTables": 0,
+    "searchRange": 0,
+    "entrySelector": 0
   },
   "blocks": [
     {
@@ -42,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Version 1.0"
+      "description": "Version 1.0",
+      "storeAs": "ttfVersion",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -51,7 +57,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Number of font tables"
+      "description": "Number of font tables",
+      "storeAs": "numberOfTables",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -60,7 +68,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Binary search range"
+      "description": "Binary search range",
+      "storeAs": "searchRange",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -69,7 +79,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Binary search selector"
+      "description": "Binary search selector",
+      "storeAs": "entrySelector",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

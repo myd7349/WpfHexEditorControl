@@ -1,6 +1,6 @@
 {
   "formatName": "SVG Vector Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".svg",
     ".svgz"
@@ -35,7 +35,8 @@
     "extractUTF8String": "Extract Unicode SVG text content"
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "svgOpeningTag": ""
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "<svg tag (may be preceded by XML declaration)"
+      "description": "<svg tag (may be preceded by XML declaration)",
+      "storeAs": "svgOpeningTag",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

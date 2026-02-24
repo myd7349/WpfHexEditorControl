@@ -1,6 +1,6 @@
 {
   "formatName": "Encapsulated Packet",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".encap"
   ],
@@ -29,7 +29,14 @@
     "packetCount": 0,
     "snaplen": 0,
     "linkType": 0,
-    "version": ""
+    "version": "",
+    "encapsulationType": 0,
+    "flags": 0,
+    "totalLength": 0,
+    "headerLength": 0,
+    "protocolId": 0,
+    "sequenceNumber": 0,
+    "tunnelId": ""
   },
   "blocks": [
     {
@@ -39,7 +46,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Encapsulation protocol identifier"
+      "description": "Encapsulation protocol identifier",
+      "storeAs": "encapsulationType",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -48,7 +57,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Encapsulation version"
+      "description": "Encapsulation version",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -57,7 +68,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Encapsulation flags"
+      "description": "Encapsulation flags",
+      "storeAs": "flags",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -66,7 +79,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Total packet length"
+      "description": "Total packet length",
+      "storeAs": "totalLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -75,7 +90,9 @@
       "length": 2,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Encapsulation header length"
+      "description": "Encapsulation header length",
+      "storeAs": "headerLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -84,7 +101,9 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Inner protocol identifier"
+      "description": "Inner protocol identifier",
+      "storeAs": "protocolId",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -93,7 +112,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Packet sequence number"
+      "description": "Packet sequence number",
+      "storeAs": "sequenceNumber",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -102,7 +123,9 @@
       "length": 4,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Tunnel identifier"
+      "description": "Tunnel identifier",
+      "storeAs": "tunnelId",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

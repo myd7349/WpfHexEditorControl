@@ -1,6 +1,6 @@
 {
   "formatName": "QuickTime Movie",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mov",
     ".qt"
@@ -54,7 +54,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of movie atom"
+      "description": "Size of movie atom",
+      "storeAs": "atomSize",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "signature",
@@ -63,7 +66,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "moov atom identifier"
+      "description": "moov atom identifier",
+      "storeAs": "atomType",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

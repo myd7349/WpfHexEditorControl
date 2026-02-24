@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG-LS Lossless",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".jls"
   ],
@@ -31,7 +31,9 @@
   "variables": {
     "version": 0,
     "serialNumber": "",
-    "subject": ""
+    "subject": "",
+    "jpegLsSoiSof55": 0,
+    "sof55Length": 0
   },
   "blocks": [
     {
@@ -41,7 +43,10 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Start of Image + SOF55 marker"
+      "description": "Start of Image + SOF55 marker",
+      "storeAs": "jpegLsSoiSof55",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -50,7 +55,10 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Start of Frame length"
+      "description": "Start of Frame length",
+      "storeAs": "sof55Length",
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "AVI Video",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".avi"
   ],
@@ -39,7 +39,9 @@
     "frameRate": 0,
     "totalFrames": 0,
     "videoCodec": "Unknown",
-    "audioCodec": "Unknown"
+    "audioCodec": "Unknown",
+    "riffHeader": 0,
+    "aviFormat": 0
   },
   "blocks": [
     {
@@ -49,7 +51,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RIFF chunk descriptor"
+      "description": "RIFF chunk descriptor",
+      "storeAs": "riffHeader",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -58,7 +62,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "File size minus 8 bytes"
+      "description": "File size minus 8 bytes",
+      "storeAs": "fileSize",
+      "valueType": "uint32"
     },
     {
       "type": "signature",
@@ -67,7 +73,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "AVI identifier"
+      "description": "AVI identifier",
+      "storeAs": "aviFormat",
+      "valueType": "uint32"
     }
   ],
   "mime_types": [

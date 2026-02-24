@@ -1,6 +1,6 @@
 {
   "formatName": "Web Open Font Format 2",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".woff2"
   ],
@@ -31,7 +31,10 @@
     "numGlyphs": 0,
     "unitsPerEm": 0,
     "fontName": "",
-    "tableCount": 0
+    "tableCount": 0,
+    "woff2Signature": "",
+    "flavor": 0,
+    "length": 0
   },
   "blocks": [
     {
@@ -41,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "wOF2 signature"
+      "description": "wOF2 signature",
+      "storeAs": "woff2Signature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -50,7 +55,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "TrueType or CFF"
+      "description": "TrueType or CFF",
+      "storeAs": "flavor",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -59,7 +66,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Total WOFF2 file size"
+      "description": "Total WOFF2 file size",
+      "storeAs": "length",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

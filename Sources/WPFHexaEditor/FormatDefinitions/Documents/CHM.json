@@ -1,6 +1,6 @@
 {
   "formatName": "Compiled HTML Help",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".chm"
   ],
@@ -36,7 +36,8 @@
     "totalLength": 0,
     "languageID": 0,
     "title": "Unknown",
-    "files": 0
+    "files": 0,
+    "itsfSignature": ""
   },
   "blocks": [
     {
@@ -46,7 +47,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ITSF magic bytes"
+      "description": "ITSF magic bytes",
+      "storeAs": "itsfSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -55,7 +58,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Format version"
+      "description": "Format version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -64,7 +69,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Length of header"
+      "description": "Length of header",
+      "storeAs": "headerLength",
+      "valueType": "uint32"
     }
   ],
   "mime_types": [

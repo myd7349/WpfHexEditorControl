@@ -1,6 +1,6 @@
 {
   "formatName": "Xvid Video",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".xvid"
   ],
@@ -32,7 +32,8 @@
     "width": 0,
     "height": 0,
     "frameRate": 0,
-    "duration": 0
+    "duration": 0,
+    "riffHeader": 0
   },
   "blocks": [
     {
@@ -42,7 +43,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RIFF container header for Xvid"
+      "description": "RIFF container header for Xvid",
+      "storeAs": "riffHeader",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

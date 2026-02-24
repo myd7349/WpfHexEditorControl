@@ -1,6 +1,6 @@
 {
   "formatName": "dBASE Database",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dbf"
   ],
@@ -29,7 +29,10 @@
     "pageSize": 0,
     "pageCount": 0,
     "tableCount": 0,
-    "version": 0
+    "version": 0,
+    "dbfVersion": 0,
+    "lastUpdateDate": "",
+    "recordCount": 0
   },
   "blocks": [
     {
@@ -39,7 +42,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "dBASE III/IV version marker"
+      "description": "dBASE III/IV version marker",
+      "storeAs": "dbfVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -48,7 +53,9 @@
       "length": 3,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "YY MM DD"
+      "description": "YY MM DD",
+      "storeAs": "lastUpdateDate",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -57,7 +64,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Number of records"
+      "description": "Number of records",
+      "storeAs": "recordCount",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

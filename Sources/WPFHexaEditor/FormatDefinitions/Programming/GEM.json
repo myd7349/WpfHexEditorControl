@@ -1,6 +1,6 @@
 {
   "formatName": "Ruby Gem Package",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".gem"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "gzipHeader": 0
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Gem is tar.gz"
+      "description": "Gem is tar.gz",
+      "storeAs": "gzipHeader",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

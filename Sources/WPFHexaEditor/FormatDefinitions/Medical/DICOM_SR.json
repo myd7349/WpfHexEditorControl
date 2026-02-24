@@ -1,6 +1,6 @@
 {
   "formatName": "DICOM Structured Report",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dcm",
     ".sr"
@@ -30,7 +30,9 @@
     "imageWidth": 0,
     "imageHeight": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "preamble": "",
+    "dicmMagic": ""
   },
   "blocks": [
     {
@@ -40,7 +42,9 @@
       "length": 128,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "128-byte preamble"
+      "description": "128-byte preamble",
+      "storeAs": "preamble",
+      "valueType": "ascii"
     },
     {
       "type": "signature",
@@ -49,7 +53,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "DICM signature"
+      "description": "DICM signature",
+      "storeAs": "dicmMagic",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

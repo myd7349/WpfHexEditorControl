@@ -1,6 +1,6 @@
 {
   "formatName": "HEIF/HEIC Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".heic",
     ".heif"
@@ -37,7 +37,8 @@
   "variables": {
     "currentOffset": 0,
     "boxSize": 0,
-    "majorBrand": ""
+    "majorBrand": "",
+    "boxType": ""
   },
   "blocks": [
     {
@@ -47,7 +48,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of ftyp box"
+      "description": "Size of ftyp box",
+      "storeAs": "boxSize",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "signature",
@@ -56,7 +60,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ftyp box identifier"
+      "description": "ftyp box identifier",
+      "storeAs": "boxType",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -65,7 +71,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "heic or heif brand"
+      "description": "heic or heif brand",
+      "storeAs": "majorBrand",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

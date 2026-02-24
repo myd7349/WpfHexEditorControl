@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Genesis/Mega Drive ROM",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".md",
     ".bin",
@@ -40,7 +40,20 @@
     "romEnd": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "consoleName": "",
+    "copyright": "",
+    "serialNumber": "",
+    "deviceSupport": "",
+    "romStart": 0,
+    "ramStart": 0,
+    "ramEnd": 0,
+    "backupRamInfo": 0,
+    "sramStart": 0,
+    "sramEnd": 0,
+    "modemData": "",
+    "notes": "",
+    "countryCodes": ""
   },
   "blocks": [
     {
@@ -51,7 +64,8 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "valueType": "ascii",
-      "description": "SEGA MEGA DRIVE or SEGA GENESIS (must be one of these)"
+      "description": "SEGA MEGA DRIVE or SEGA GENESIS (must be one of these)",
+      "storeAs": "consoleName"
     },
     {
       "type": "field",
@@ -61,7 +75,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Publisher and year: (C)SEGA YYYY.MMM"
+      "description": "Publisher and year: (C)SEGA YYYY.MMM",
+      "storeAs": "copyright"
     },
     {
       "type": "field",
@@ -93,7 +108,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Product serial number and revision: GM XXXXXXX-XX"
+      "description": "Product serial number and revision: GM XXXXXXX-XX",
+      "storeAs": "serialNumber"
     },
     {
       "type": "field",
@@ -114,7 +130,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Supported controllers: J=3-btn, 6=6-btn, K=keyboard, P=printer, T=tablet"
+      "description": "Supported controllers: J=3-btn, 6=6-btn, K=keyboard, P=printer, T=tablet",
+      "storeAs": "deviceSupport"
     },
     {
       "type": "field",
@@ -124,7 +141,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "ROM address start (0x00000000)"
+      "description": "ROM address start (0x00000000)",
+      "storeAs": "romStart"
     },
     {
       "type": "field",
@@ -145,7 +163,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "RAM start address (0xFF0000)"
+      "description": "RAM start address (0xFF0000)",
+      "storeAs": "ramStart"
     },
     {
       "type": "field",
@@ -155,7 +174,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "RAM end address (0xFFFFFF)"
+      "description": "RAM end address (0xFFFFFF)",
+      "storeAs": "ramEnd"
     },
     {
       "type": "field",
@@ -164,8 +184,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "SRAM type: 'RA' + flags if cartridge has save RAM"
+      "valueType": "uint32",
+      "description": "SRAM type: 'RA' + flags if cartridge has save RAM",
+      "storeAs": "backupRamInfo"
     },
     {
       "type": "field",
@@ -175,7 +196,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "SRAM start address"
+      "description": "SRAM start address",
+      "storeAs": "sramStart"
     },
     {
       "type": "field",
@@ -185,7 +207,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "SRAM end address"
+      "description": "SRAM end address",
+      "storeAs": "sramEnd"
     },
     {
       "type": "field",
@@ -194,8 +217,9 @@
       "length": 12,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Modem support data (empty if no modem)"
+      "valueType": "ascii",
+      "description": "Modem support data (empty if no modem)",
+      "storeAs": "modemData"
     },
     {
       "type": "field",
@@ -206,7 +230,8 @@
       "opacity": 0.3,
       "valueType": "ascii",
       "hidden": true,
-      "description": "Developer notes/memo field"
+      "description": "Developer notes/memo field",
+      "storeAs": "notes"
     },
     {
       "type": "field",
@@ -216,7 +241,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Region support: J=Japan, U=USA, E=Europe"
+      "description": "Region support: J=Japan, U=USA, E=Europe",
+      "storeAs": "countryCodes"
     },
     {
       "type": "metadata",

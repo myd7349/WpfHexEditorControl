@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Registry File",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".reg"
   ],
@@ -29,7 +29,8 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "registryHeader": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 22,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Windows Registry Edit"
+      "description": "Windows Registry Edit",
+      "storeAs": "registryHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

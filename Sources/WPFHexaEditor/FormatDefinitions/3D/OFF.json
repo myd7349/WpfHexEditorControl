@@ -1,6 +1,6 @@
 {
   "formatName": "Object File Format",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".off"
   ],
@@ -29,7 +29,8 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "offHeader": 0
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "OFF\\n signature"
+      "description": "OFF\\n signature",
+      "storeAs": "offHeader",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -48,7 +51,9 @@
       "length": 8,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Number of vertices (ASCII)"
+      "description": "Number of vertices (ASCII)",
+      "storeAs": "vertexCount",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

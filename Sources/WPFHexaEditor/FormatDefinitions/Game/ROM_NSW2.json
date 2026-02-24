@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Switch 2 Package",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".nsp",
     ".xci",
@@ -37,7 +37,15 @@
     "fileCount": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "pfsMagic": "",
+    "stringTableSize": 0,
+    "compressionType": "",
+    "encryptionFlags": 0,
+    "titleId": "",
+    "sdkVersion": "",
+    "contentType": "",
+    "fileEntryTable": ""
   },
   "blocks": [
     {
@@ -47,8 +55,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "bytes",
-      "description": "PFS0/PFS1 magic for Switch 2 NSP files (0x50 0x46 0x53 0x30/0x31)"
+      "valueType": "uint32",
+      "description": "PFS0/PFS1 magic for Switch 2 NSP files (0x50 0x46 0x53 0x30/0x31)",
+      "storeAs": "pfsMagic"
     },
     {
       "type": "field",
@@ -91,7 +100,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Size of filename string table"
+      "description": "Size of filename string table",
+      "storeAs": "stringTableSize"
     },
     {
       "type": "field",
@@ -100,8 +110,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "uint32",
-      "description": "Compression algorithm (0=None, 1=ZSTD, 2=LZ4, 3=Switch 2 enhanced)"
+      "valueType": "ascii",
+      "description": "Compression algorithm (0=None, 1=ZSTD, 2=LZ4, 3=Switch 2 enhanced)",
+      "storeAs": "compressionType"
     },
     {
       "type": "field",
@@ -111,7 +122,8 @@
       "color": "#FF6B9D",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Switch 2 enhanced encryption flags"
+      "description": "Switch 2 enhanced encryption flags",
+      "storeAs": "encryptionFlags"
     },
     {
       "type": "field",
@@ -120,8 +132,9 @@
       "length": 8,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Switch 2 title identifier (64-bit)"
+      "valueType": "ascii",
+      "description": "Switch 2 title identifier (64-bit)",
+      "storeAs": "titleId"
     },
     {
       "type": "field",
@@ -130,8 +143,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "uint32",
-      "description": "Nintendo Switch 2 SDK version used to build package"
+      "valueType": "ascii",
+      "description": "Nintendo Switch 2 SDK version used to build package",
+      "storeAs": "sdkVersion"
     },
     {
       "type": "field",
@@ -140,8 +154,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "uint32",
-      "description": "Content type: 0=Application, 1=Update, 2=DLC, 3=AOC, 4=Switch 2 exclusive"
+      "valueType": "ascii",
+      "description": "Content type: 0=Application, 1=Update, 2=DLC, 3=AOC, 4=Switch 2 exclusive",
+      "storeAs": "contentType"
     },
     {
       "type": "field",
@@ -150,8 +165,9 @@
       "length": 64,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "File entry table (offset, size, hash, string offset for each file)"
+      "valueType": "ascii",
+      "description": "File entry table (offset, size, hash, string offset for each file)",
+      "storeAs": "fileEntryTable"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "STEP 3D Model",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".step",
     ".stp"
@@ -30,7 +30,8 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "stepHeader": ""
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 9,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ISO-10303"
+      "description": "ISO-10303",
+      "storeAs": "stepHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

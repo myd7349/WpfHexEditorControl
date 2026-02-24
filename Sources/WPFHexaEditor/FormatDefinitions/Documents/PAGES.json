@@ -1,6 +1,6 @@
 {
   "formatName": "Apple Pages",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pages"
   ],
@@ -29,7 +29,8 @@
     "zipCentralDirSize": 0,
     "zipComment": "",
     "eocdOffset": -1,
-    "isZip64": false
+    "isZip64": false,
+    "zipSignature": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ZIP archive signature: 'PK' 0x03 0x04 (Pages uses ZIP format)"
+      "description": "ZIP archive signature: 'PK' 0x03 0x04 (Pages uses ZIP format)",
+      "storeAs": "zipSignature",
+      "valueType": "ascii"
     },
     {
       "type": "data",

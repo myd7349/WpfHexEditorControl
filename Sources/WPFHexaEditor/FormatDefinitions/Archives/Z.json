@@ -1,6 +1,6 @@
 {
   "formatName": "Unix Compress",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".z"
   ],
@@ -35,7 +35,9 @@
     "crc32Valid": false,
     "originalSize": 0,
     "compressedSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "compressMagic": 0,
+    "compressionMode": 0
   },
   "blocks": [
     {
@@ -45,7 +47,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Unix compress signature"
+      "description": "Unix compress signature",
+      "storeAs": "compressMagic",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -54,7 +58,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "LZW bits and block mode"
+      "description": "LZW bits and block mode",
+      "storeAs": "compressionMode",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

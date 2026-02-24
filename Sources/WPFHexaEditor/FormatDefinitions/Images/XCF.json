@@ -1,6 +1,6 @@
 {
   "formatName": "GIMP Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".xcf"
   ],
@@ -34,7 +34,8 @@
   },
   "variables": {
     "currentOffset": 0,
-    "version": ""
+    "version": "",
+    "xcfSignature": ""
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 9,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "gimp xcf signature"
+      "description": "gimp xcf signature",
+      "storeAs": "xcfSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "File format version"
+      "description": "File format version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

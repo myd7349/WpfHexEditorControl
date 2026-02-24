@@ -1,6 +1,6 @@
 {
   "formatName": "EA BIG Archive",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".big"
   ],
@@ -34,7 +34,11 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "bigSignature": "",
+    "archiveSize": 0,
+    "numberOfFiles": 0,
+    "firstFileOffset": 0
   },
   "blocks": [
     {
@@ -44,7 +48,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "BIGF magic bytes"
+      "description": "BIGF magic bytes",
+      "storeAs": "bigSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +59,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Total archive size"
+      "description": "Total archive size",
+      "storeAs": "archiveSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -62,7 +70,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Total number of files"
+      "description": "Total number of files",
+      "storeAs": "numberOfFiles",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -71,7 +81,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Offset to first file"
+      "description": "Offset to first file",
+      "storeAs": "firstFileOffset",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

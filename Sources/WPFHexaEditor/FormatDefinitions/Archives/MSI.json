@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Installer Package",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".msi"
   ],
@@ -35,7 +35,8 @@
   },
   "variables": {
     "currentOffset": 0,
-    "minorVersion": 0
+    "minorVersion": 0,
+    "ole2Signature": ""
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Microsoft OLE2/CFB header"
+      "description": "Microsoft OLE2/CFB header",
+      "storeAs": "ole2Signature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -54,7 +57,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Format minor version"
+      "description": "Format minor version",
+      "storeAs": "minorVersion",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

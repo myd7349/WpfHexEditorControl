@@ -1,6 +1,6 @@
 {
   "formatName": "SQLite Write-Ahead Log",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".wal",
     "-wal"
@@ -30,7 +30,8 @@
     "pageSize": 0,
     "pageCount": 0,
     "tableCount": 0,
-    "version": 0
+    "version": 0,
+    "walMagicNumber": ""
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.4,
-      "description": "WAL file magic number"
+      "description": "WAL file magic number",
+      "storeAs": "walMagicNumber",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

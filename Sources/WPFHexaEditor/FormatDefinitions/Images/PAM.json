@@ -1,6 +1,6 @@
 {
   "formatName": "Portable Arbitrary Map",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".pam"
   ],
@@ -30,7 +30,9 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "pamMagic": 0,
+    "header": ""
   },
   "blocks": [
     {
@@ -40,7 +42,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "P7 magic number"
+      "description": "P7 magic number",
+      "storeAs": "pamMagic",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -49,7 +53,9 @@
       "length": 64,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "PAM header fields"
+      "description": "PAM header fields",
+      "storeAs": "header",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Web Open Font Format",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".woff"
   ],
@@ -31,7 +31,11 @@
     "numGlyphs": 0,
     "unitsPerEm": 0,
     "fontName": "",
-    "tableCount": 0
+    "tableCount": 0,
+    "woffSignature": "",
+    "flavor": 0,
+    "length": 0,
+    "numTables": 0
   },
   "blocks": [
     {
@@ -41,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "wOFF signature"
+      "description": "wOFF signature",
+      "storeAs": "woffSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -50,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "TrueType or CFF"
+      "description": "TrueType or CFF",
+      "storeAs": "flavor",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -59,7 +67,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Total WOFF file size"
+      "description": "Total WOFF file size",
+      "storeAs": "length",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -68,7 +78,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Number of font tables"
+      "description": "Number of font tables",
+      "storeAs": "numTables",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

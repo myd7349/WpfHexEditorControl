@@ -1,6 +1,6 @@
 {
   "formatName": "NumPy Compressed Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".npz"
   ],
@@ -30,7 +30,8 @@
     "crc32Valid": false,
     "originalSize": 0,
     "compressedSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "zipSignature": ""
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "NPZ is ZIP archive"
+      "description": "NPZ is ZIP archive",
+      "storeAs": "zipSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

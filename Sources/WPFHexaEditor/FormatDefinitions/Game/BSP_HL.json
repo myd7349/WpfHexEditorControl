@@ -1,6 +1,6 @@
 {
   "formatName": "Half-Life BSP",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".bsp"
   ],
@@ -33,7 +33,10 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "bspVersion": "",
+    "entitiesLumpOffset": 0,
+    "entitiesLumpSize": 0
   },
   "blocks": [
     {
@@ -43,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GoldSrc BSP version (30)"
+      "description": "GoldSrc BSP version (30)",
+      "storeAs": "bspVersion",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +57,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Offset to entities lump"
+      "description": "Offset to entities lump",
+      "storeAs": "entitiesLumpOffset",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -61,7 +68,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Size of entities lump"
+      "description": "Size of entities lump",
+      "storeAs": "entitiesLumpSize",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

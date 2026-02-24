@@ -1,6 +1,6 @@
 {
   "formatName": "Python Compiled Bytecode",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".pyc",
     ".pyo"
@@ -37,7 +37,8 @@
     "timestamp": 0,
     "sourceFileSize": 0,
     "sourceFile": "Unknown",
-    "codeObjects": 0
+    "codeObjects": 0,
+    "fileSize": 0
   },
   "blocks": [
     {
@@ -47,7 +48,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Python version-specific magic"
+      "description": "Python version-specific magic",
+      "storeAs": "magicNumber",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -56,7 +59,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Source file modification time"
+      "description": "Source file modification time",
+      "storeAs": "timestamp",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -65,7 +70,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Source file size"
+      "description": "Source file size",
+      "storeAs": "fileSize",
+      "valueType": "uint32"
     }
   ],
   "quality_metrics": {

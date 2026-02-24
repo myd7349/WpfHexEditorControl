@@ -1,6 +1,6 @@
 {
   "formatName": "ARJ Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".arj"
   ],
@@ -34,7 +34,9 @@
   },
   "variables": {
     "currentOffset": 0,
-    "headerID": 0
+    "headerID": 0,
+    "arjSignature": 0,
+    "headerId": 0
   },
   "blocks": [
     {
@@ -44,7 +46,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ARJ archive marker"
+      "description": "ARJ archive marker",
+      "storeAs": "arjSignature",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -53,7 +57,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Basic header ID"
+      "description": "Basic header ID",
+      "storeAs": "headerId",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

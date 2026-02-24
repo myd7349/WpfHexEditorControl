@@ -1,6 +1,6 @@
 {
   "formatName": "PKCS#12 Certificate",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".p12",
     ".pfx"
@@ -35,7 +35,8 @@
     "version": 0,
     "serialNumber": "",
     "issuer": "",
-    "subject": ""
+    "subject": "",
+    "asn1Sequence": 0
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PKCS#12 structure"
+      "description": "PKCS#12 structure",
+      "storeAs": "asn1Sequence",
+      "valueType": "uint16"
     },
     {
       "type": "metadata",

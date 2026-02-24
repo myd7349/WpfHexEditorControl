@@ -1,6 +1,6 @@
 {
   "formatName": "Sigma X3F RAW",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".x3f"
   ],
@@ -32,7 +32,9 @@
   "variables": {
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "x3fMagic": "",
+    "version": ""
   },
   "blocks": [
     {
@@ -42,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "FOVx signature"
+      "description": "FOVx signature",
+      "storeAs": "x3fMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -51,7 +55,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Format version"
+      "description": "Format version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

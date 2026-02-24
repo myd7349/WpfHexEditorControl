@@ -1,6 +1,6 @@
 {
   "formatName": "DLL Library",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dll"
   ],
@@ -31,7 +31,11 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "dosSignature": 0,
+    "bytesOnLastPage": 0,
+    "pagesInFile": 0,
+    "peHeaderOffset": 0
   },
   "blocks": [
     {
@@ -41,7 +45,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MZ DOS header"
+      "description": "MZ DOS header",
+      "storeAs": "dosSignature",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -50,7 +56,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Bytes in last 512-byte page"
+      "description": "Bytes in last 512-byte page",
+      "storeAs": "bytesOnLastPage",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -59,7 +67,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Number of 512-byte pages"
+      "description": "Number of 512-byte pages",
+      "storeAs": "pagesInFile",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -68,7 +78,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Offset to PE header"
+      "description": "Offset to PE header",
+      "storeAs": "peHeaderOffset",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

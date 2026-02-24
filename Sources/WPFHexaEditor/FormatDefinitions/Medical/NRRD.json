@@ -1,6 +1,6 @@
 {
   "formatName": "NRRD Medical Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".nrrd",
     ".nhdr"
@@ -30,7 +30,9 @@
     "width": 0,
     "height": 0,
     "slices": 0,
-    "bitDepth": 0
+    "bitDepth": 0,
+    "nrrdMagic": "",
+    "version": 0
   },
   "blocks": [
     {
@@ -40,7 +42,9 @@
       "length": 7,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "NRRD signature (NRRD000)"
+      "description": "NRRD signature (NRRD000)",
+      "storeAs": "nrrdMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +53,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "NRRD version number"
+      "description": "NRRD version number",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

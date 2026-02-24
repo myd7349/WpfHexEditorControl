@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Reader",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".lit"
   ],
@@ -36,7 +36,8 @@
     "title": "Unknown",
     "author": "Unknown",
     "hasDRM": false,
-    "encoding": "UTF-8"
+    "encoding": "UTF-8",
+    "itsfSignature": ""
   },
   "blocks": [
     {
@@ -46,7 +47,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ITSF (Info-Tech Storage Format) signature: 'ITSF'"
+      "description": "ITSF (Info-Tech Storage Format) signature: 'ITSF'",
+      "storeAs": "itsfSignature",
+      "valueType": "ascii"
     },
     {
       "type": "data",

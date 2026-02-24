@@ -1,6 +1,6 @@
 {
   "formatName": "Musepack Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mpc",
     ".mp+",
@@ -42,7 +42,8 @@
     "sampleRate": 44100,
     "channels": 2,
     "samples": 0,
-    "profile": "Unknown"
+    "profile": "Unknown",
+    "musepackHeader": ""
   },
   "blocks": [
     {
@@ -52,7 +53,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MP+ - Musepack audio file signature"
+      "description": "MP+ - Musepack audio file signature",
+      "storeAs": "musepackHeader",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

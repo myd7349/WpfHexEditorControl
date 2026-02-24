@@ -1,6 +1,6 @@
 {
   "formatName": "Matroska Video",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".mkv",
     ".mka",
@@ -42,7 +42,9 @@
     "duration": 0,
     "timecodeScale": 1000000,
     "videoCodec": "Unknown",
-    "audioCodec": "Unknown"
+    "audioCodec": "Unknown",
+    "ebmlHeader": 0,
+    "headerSize": 0
   },
   "blocks": [
     {
@@ -52,7 +54,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "EBML signature"
+      "description": "EBML signature",
+      "storeAs": "ebmlHeader",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -61,7 +65,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of header element"
+      "description": "Size of header element",
+      "storeAs": "headerSize",
+      "valueType": "uint8"
     }
   ],
   "mime_types": [

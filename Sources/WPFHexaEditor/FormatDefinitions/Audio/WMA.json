@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Media Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".wma"
   ],
@@ -41,7 +41,8 @@
     "sampleRate": 0,
     "channels": 0,
     "bitrate": 0,
-    "duration": 0
+    "duration": 0,
+    "asfHeaderGuid": ""
   },
   "blocks": [
     {
@@ -51,7 +52,9 @@
       "length": 16,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ASF Header Object GUID for WMA"
+      "description": "ASF Header Object GUID for WMA",
+      "storeAs": "asfHeaderGuid",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

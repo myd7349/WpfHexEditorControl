@@ -1,6 +1,6 @@
 {
   "formatName": "XNA Game Studio",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".xnb"
   ],
@@ -33,7 +33,11 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "xnbSignature": "",
+    "targetPlatform": 0,
+    "formatVersion": 0,
+    "flags": 0
   },
   "blocks": [
     {
@@ -43,7 +47,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "XNB magic bytes"
+      "description": "XNB magic bytes",
+      "storeAs": "xnbSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +58,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "w=Windows, m=Windows Phone, x=Xbox360"
+      "description": "w=Windows, m=Windows Phone, x=Xbox360",
+      "storeAs": "targetPlatform",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -61,7 +69,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "XNB format version"
+      "description": "XNB format version",
+      "storeAs": "formatVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -70,7 +80,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Content flags"
+      "description": "Content flags",
+      "storeAs": "flags",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

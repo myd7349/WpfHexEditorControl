@@ -1,6 +1,6 @@
 {
   "formatName": "Blood RFF",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".rff"
   ],
@@ -33,7 +33,8 @@
     "currentOffset": 0,
     "resourceCount": 0,
     "directoryOffset": 0,
-    "version": 0
+    "version": 0,
+    "rffSignature": ""
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RFF magic bytes"
+      "description": "RFF magic bytes",
+      "storeAs": "rffSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +55,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "RFF format version"
+      "description": "RFF format version",
+      "storeAs": "version",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -61,7 +66,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Offset to file directory"
+      "description": "Offset to file directory",
+      "storeAs": "directoryOffset",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

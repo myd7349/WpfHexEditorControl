@@ -1,6 +1,6 @@
 {
   "formatName": "Polygon File Format",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ply"
   ],
@@ -28,7 +28,9 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "plyHeader": 0,
+    "formatLine": ""
   },
   "blocks": [
     {
@@ -38,7 +40,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ply\\n signature"
+      "description": "ply\\n signature",
+      "storeAs": "plyHeader",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -47,7 +51,9 @@
       "length": 20,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "format ascii/binary 1.0"
+      "description": "format ascii/binary 1.0",
+      "storeAs": "formatLine",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

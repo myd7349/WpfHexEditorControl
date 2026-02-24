@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Shortcut",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".lnk"
   ],
@@ -29,7 +29,10 @@
     "flags": 0,
     "attributes": 0,
     "targetSize": 0,
-    "iconIndex": 0
+    "iconIndex": 0,
+    "headerSize": 0,
+    "linkClsid": "",
+    "linkFlags": 0
   },
   "blocks": [
     {
@@ -39,7 +42,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of header (0x0000004C = 76 bytes)"
+      "description": "Size of header (0x0000004C = 76 bytes)",
+      "storeAs": "headerSize",
+      "valueType": "uint32"
     },
     {
       "type": "signature",
@@ -48,7 +53,9 @@
       "length": 16,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Shell link class identifier"
+      "description": "Shell link class identifier",
+      "storeAs": "linkClsid",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -57,7 +64,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Shortcut flags"
+      "description": "Shortcut flags",
+      "storeAs": "linkFlags",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

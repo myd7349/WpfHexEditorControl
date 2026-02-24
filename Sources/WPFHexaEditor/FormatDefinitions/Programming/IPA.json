@@ -1,6 +1,6 @@
 {
   "formatName": "iOS App Store Package",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ipa"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "zipIpaSignature": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PK ZIP header"
+      "description": "PK ZIP header",
+      "storeAs": "zipIpaSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

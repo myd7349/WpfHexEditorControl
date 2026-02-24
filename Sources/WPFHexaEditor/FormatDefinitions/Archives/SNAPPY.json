@@ -1,6 +1,6 @@
 {
   "formatName": "Snappy Compression",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".snappy",
     ".sz"
@@ -35,7 +35,8 @@
   },
   "variables": {
     "chunkType": 0,
-    "chunkLength": 0
+    "chunkLength": 0,
+    "streamIdentifier": ""
   },
   "blocks": [
     {
@@ -45,7 +46,9 @@
       "length": 10,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Snappy stream identifier: 0xFF 0x06 0x00 0x00 'sNaPpY'"
+      "description": "Snappy stream identifier: 0xFF 0x06 0x00 0x00 'sNaPpY'",
+      "storeAs": "streamIdentifier",
+      "valueType": "ascii"
     },
     {
       "type": "data",

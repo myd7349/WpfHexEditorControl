@@ -1,6 +1,6 @@
 {
   "formatName": "Nikon Raw Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".nef"
   ],
@@ -34,7 +34,8 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "tiffHeader": 0
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "NEF uses TIFF structure"
+      "description": "NEF uses TIFF structure",
+      "storeAs": "tiffHeader",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Mobipocket eBook",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mobi",
     ".prc"
@@ -37,7 +37,8 @@
     "author": "Unknown",
     "recordCount": 0,
     "mobiType": "Unknown",
-    "encoding": "UTF-8"
+    "encoding": "UTF-8",
+    "pdbName": ""
   },
   "blocks": [
     {
@@ -47,7 +48,9 @@
       "length": 32,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Database name"
+      "description": "Database name",
+      "storeAs": "pdbName",
+      "valueType": "ascii"
     },
     {
       "type": "signature",
@@ -56,7 +59,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "BOOKMOBI identifier"
+      "description": "BOOKMOBI identifier",
+      "storeAs": "mobiType",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

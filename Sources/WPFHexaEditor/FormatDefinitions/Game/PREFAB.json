@@ -1,6 +1,6 @@
 {
   "formatName": "Unity Prefab",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".prefab"
   ],
@@ -33,7 +33,8 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "yamlHeader": ""
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "%YAML prefab format"
+      "description": "%YAML prefab format",
+      "storeAs": "yamlHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

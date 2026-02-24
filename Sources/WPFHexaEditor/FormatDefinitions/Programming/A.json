@@ -1,6 +1,6 @@
 {
   "formatName": "Static Library Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".a"
   ],
@@ -30,7 +30,8 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "archiveSignature": ""
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "AR archive magic: '!<arch>' 0x0A"
+      "description": "AR archive magic: '!<arch>' 0x0A",
+      "storeAs": "archiveSignature",
+      "valueType": "ascii"
     },
     {
       "type": "data",

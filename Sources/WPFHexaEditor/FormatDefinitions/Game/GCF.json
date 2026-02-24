@@ -1,6 +1,6 @@
 {
   "formatName": "Steam Game Cache",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".gcf"
   ],
@@ -43,7 +43,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "GCF version"
+      "description": "GCF version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

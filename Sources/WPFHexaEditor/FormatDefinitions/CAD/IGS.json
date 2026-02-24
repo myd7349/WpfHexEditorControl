@@ -1,6 +1,6 @@
 {
   "formatName": "IGES",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".igs",
     ".iges"
@@ -29,7 +29,8 @@
     "currentOffset": 0,
     "version": "",
     "entityCount": 0,
-    "layerCount": 0
+    "layerCount": 0,
+    "startSection": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 80,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "IGES start section (80 chars per line)"
+      "description": "IGES start section (80 chars per line)",
+      "storeAs": "startSection",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

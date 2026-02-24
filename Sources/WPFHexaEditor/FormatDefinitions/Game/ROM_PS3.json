@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 3 Disc/Package",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".iso",
     ".pkg"
@@ -34,7 +34,13 @@
     "currentOffset": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "pkgMagic": "",
+    "packageType": 0,
+    "packageFlags": 0,
+    "dataOffset": 0,
+    "dataSize": 0,
+    "contentId": ""
   },
   "blocks": [
     {
@@ -44,8 +50,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "bytes",
-      "description": "PKG magic: 0x7F 0x50 0x4B 0x47"
+      "valueType": "uint32",
+      "description": "PKG magic: 0x7F 0x50 0x4B 0x47",
+      "storeAs": "pkgMagic"
     },
     {
       "type": "field",
@@ -55,7 +62,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint16",
-      "description": "Package type: 0x0001=PS3, 0x0002=PSP"
+      "description": "Package type: 0x0001=PS3, 0x0002=PSP",
+      "storeAs": "packageType"
     },
     {
       "type": "field",
@@ -65,7 +73,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint16",
-      "description": "Package flags and attributes"
+      "description": "Package flags and attributes",
+      "storeAs": "packageFlags"
     },
     {
       "type": "field",
@@ -75,7 +84,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Offset to package data"
+      "description": "Offset to package data",
+      "storeAs": "dataOffset"
     },
     {
       "type": "field",
@@ -84,8 +94,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Package data size (64-bit big-endian)"
+      "valueType": "uint64",
+      "description": "Package data size (64-bit big-endian)",
+      "storeAs": "dataSize"
     },
     {
       "type": "field",
@@ -95,7 +106,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "Content ID string (title identifier)"
+      "description": "Content ID string (title identifier)",
+      "storeAs": "contentId"
     },
     {
       "type": "metadata",

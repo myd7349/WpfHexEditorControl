@@ -1,6 +1,6 @@
 {
   "formatName": "Blu-ray MPEG-2 Transport Stream",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".m2ts"
   ],
@@ -52,7 +52,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MPEG-TS sync byte for Blu-ray format"
+      "description": "MPEG-TS sync byte for Blu-ray format",
+      "storeAs": "syncByte",
+      "valueType": "uint8"
     }
   ],
   "mime_types": [

@@ -1,6 +1,6 @@
 {
   "formatName": "Digital Video",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dv",
     ".dif"
@@ -34,7 +34,8 @@
     "width": 0,
     "height": 0,
     "frameRate": 0,
-    "duration": 0
+    "duration": 0,
+    "dvHeader": ""
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "DV file header marker"
+      "description": "DV file header marker",
+      "storeAs": "dvHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

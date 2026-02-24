@@ -219,6 +219,7 @@ namespace WpfHexaEditor.Core.FormatDetection
 
         /// <summary>
         /// Execute a field/signature block (creates a CustomBackgroundBlock)
+        /// Also reads and stores field value when StoreAs and ValueType are defined.
         /// </summary>
         private void ExecuteFieldBlock(BlockDefinition block)
         {
@@ -232,20 +233,160 @@ namespace WpfHexaEditor.Core.FormatDetection
             if (length == null || length <= 0)
                 return; // Invalid length
 
+            // Extract and store value if StoreAs is defined
+            if (!string.IsNullOrWhiteSpace(block.StoreAs) && !string.IsNullOrWhiteSpace(block.ValueType))
+            {
+                var extractedValue = ReadFieldValue(offset.Value, length.Value, block.ValueType, block.Endianness);
+                if (extractedValue != null)
+                {
+                    _variables[block.StoreAs] = extractedValue;
+                }
+            }
+
             // Parse color
             var brush = ParseColor(block.Color);
             if (brush == null)
                 brush = Brushes.Gray; // Fallback
+
+            // Build description - include extracted value when available
+            string description = block.Description ?? block.Name ?? "Unknown";
+            if (!string.IsNullOrWhiteSpace(block.StoreAs) && _variables.TryGetValue(block.StoreAs, out var storedVal))
+            {
+                description = $"{block.Name}: {storedVal}";
+                if (!string.IsNullOrWhiteSpace(block.Description))
+                    description += $" ({block.Description})";
+            }
 
             // Create block
             var customBlock = new CustomBackgroundBlock(
                 offset.Value,
                 length.Value,
                 brush,
-                block.Description ?? block.Name ?? "Unknown",
+                description,
                 block.Opacity);
 
             _generatedBlocks.Add(customBlock);
+        }
+
+        /// <summary>
+        /// Read a typed value from file data at the given offset.
+        /// Supports: uint8, uint16, uint32, uint64, int8, int16, int32, int64, ascii, utf8, bytes
+        /// Endianness: "big" or "little" (default: little)
+        /// </summary>
+        private object ReadFieldValue(long offset, int length, string valueType, string endianness)
+        {
+            if (offset < 0 || offset >= _data.Length)
+                return null;
+
+            bool bigEndian = string.Equals(endianness, "big", System.StringComparison.OrdinalIgnoreCase);
+
+            try
+            {
+                switch (valueType.ToLowerInvariant())
+                {
+                    case "uint8":
+                    case "byte":
+                        if (offset < _data.Length)
+                            return (int)_data[offset];
+                        return 0;
+
+                    case "uint16":
+                        if (offset + 2 > _data.Length) return 0;
+                        if (bigEndian)
+                            return (int)((_data[offset] << 8) | _data[offset + 1]);
+                        return (int)(_data[offset] | (_data[offset + 1] << 8));
+
+                    case "uint32":
+                        if (offset + 4 > _data.Length) return 0L;
+                        if (bigEndian)
+                            return (long)(((uint)_data[offset] << 24) | ((uint)_data[offset + 1] << 16) |
+                                         ((uint)_data[offset + 2] << 8) | _data[offset + 3]);
+                        return (long)((uint)_data[offset] | ((uint)_data[offset + 1] << 8) |
+                                     ((uint)_data[offset + 2] << 16) | ((uint)_data[offset + 3] << 24));
+
+                    case "uint64":
+                        if (offset + 8 > _data.Length) return 0L;
+                        if (bigEndian)
+                        {
+                            return (long)(((ulong)_data[offset] << 56) | ((ulong)_data[offset + 1] << 48) |
+                                         ((ulong)_data[offset + 2] << 40) | ((ulong)_data[offset + 3] << 32) |
+                                         ((ulong)_data[offset + 4] << 24) | ((ulong)_data[offset + 5] << 16) |
+                                         ((ulong)_data[offset + 6] << 8) | (ulong)_data[offset + 7]);
+                        }
+                        return (long)((ulong)_data[offset] | ((ulong)_data[offset + 1] << 8) |
+                                     ((ulong)_data[offset + 2] << 16) | ((ulong)_data[offset + 3] << 24) |
+                                     ((ulong)_data[offset + 4] << 32) | ((ulong)_data[offset + 5] << 40) |
+                                     ((ulong)_data[offset + 6] << 48) | ((ulong)_data[offset + 7] << 56));
+
+                    case "int8":
+                    case "sbyte":
+                        if (offset < _data.Length)
+                            return (int)(sbyte)_data[offset];
+                        return 0;
+
+                    case "int16":
+                        if (offset + 2 > _data.Length) return 0;
+                        if (bigEndian)
+                            return (int)(short)((_data[offset] << 8) | _data[offset + 1]);
+                        return (int)(short)(_data[offset] | (_data[offset + 1] << 8));
+
+                    case "int32":
+                        if (offset + 4 > _data.Length) return 0;
+                        if (bigEndian)
+                            return (int)((_data[offset] << 24) | (_data[offset + 1] << 16) |
+                                        (_data[offset + 2] << 8) | _data[offset + 3]);
+                        return (int)(_data[offset] | (_data[offset + 1] << 8) |
+                                    (_data[offset + 2] << 16) | (_data[offset + 3] << 24));
+
+                    case "ascii":
+                    case "string":
+                    {
+                        int actualLen = (int)System.Math.Min(length, _data.Length - offset);
+                        if (actualLen <= 0) return string.Empty;
+                        // Read ASCII, stop at null terminator
+                        var sb = new System.Text.StringBuilder(actualLen);
+                        for (int i = 0; i < actualLen; i++)
+                        {
+                            byte b = _data[offset + i];
+                            if (b == 0) break;
+                            sb.Append(b >= 32 && b <= 126 ? (char)b : '?');
+                        }
+                        return sb.ToString().TrimEnd();
+                    }
+
+                    case "utf8":
+                    {
+                        int actualLen = (int)System.Math.Min(length, _data.Length - offset);
+                        if (actualLen <= 0) return string.Empty;
+                        // Find null terminator
+                        int strLen = actualLen;
+                        for (int i = 0; i < actualLen; i++)
+                        {
+                            if (_data[offset + i] == 0) { strLen = i; break; }
+                        }
+                        byte[] buffer = new byte[strLen];
+                        System.Array.Copy(_data, offset, buffer, 0, strLen);
+                        return System.Text.Encoding.UTF8.GetString(buffer).TrimEnd();
+                    }
+
+                    case "bytes":
+                    case "raw":
+                    {
+                        int actualLen = (int)System.Math.Min(length, _data.Length - offset);
+                        if (actualLen <= 0) return string.Empty;
+                        byte[] bytes = new byte[actualLen];
+                        System.Array.Copy(_data, offset, bytes, 0, actualLen);
+                        return System.BitConverter.ToString(bytes).Replace("-", " ");
+                    }
+
+                    default:
+                        return null;
+                }
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>

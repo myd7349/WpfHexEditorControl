@@ -1,6 +1,6 @@
 {
   "formatName": "Apple Keynote",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".key",
     ".keynote"
@@ -29,7 +29,8 @@
     "version": 0,
     "serialNumber": "",
     "issuer": "",
-    "subject": ""
+    "subject": "",
+    "zipSignature": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ZIP archive signature: 'PK' 0x03 0x04 (Keynote uses ZIP format)"
+      "description": "ZIP archive signature: 'PK' 0x03 0x04 (Keynote uses ZIP format)",
+      "storeAs": "zipSignature",
+      "valueType": "ascii"
     },
     {
       "type": "data",

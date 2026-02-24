@@ -1,6 +1,6 @@
 {
   "formatName": "Dolby TrueHD",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".thd",
     ".truehd"
@@ -34,7 +34,8 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 0,
-    "duration": 0
+    "duration": 0,
+    "truehdSyncWord": 0
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Dolby TrueHD major sync word"
+      "description": "Dolby TrueHD major sync word",
+      "storeAs": "truehdSyncWord",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Pro/ENGINEER Assembly",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".asm"
   ],
@@ -28,7 +28,8 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "assemblyHeader": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 16,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Pro/ENGINEER assembly header"
+      "description": "Pro/ENGINEER assembly header",
+      "storeAs": "assemblyHeader",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

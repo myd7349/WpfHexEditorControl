@@ -1,6 +1,6 @@
 {
   "formatName": "Linux Shared Object",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".so"
   ],
@@ -28,7 +28,8 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "elfMagic": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ELF magic bytes: 0x7F 'ELF'"
+      "description": "ELF magic bytes: 0x7F 'ELF'",
+      "storeAs": "elfMagic",
+      "valueType": "uint32"
     },
     {
       "type": "data",

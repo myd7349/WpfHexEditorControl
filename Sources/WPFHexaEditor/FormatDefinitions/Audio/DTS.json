@@ -1,6 +1,6 @@
 {
   "formatName": "DTS Audio",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dts",
     ".dtshd"
@@ -41,7 +41,8 @@
     "sampleRate": 48000,
     "bitrate": 0,
     "channels": 0,
-    "lfePresent": false
+    "lfePresent": false,
+    "dtsSyncWord": 0
   },
   "blocks": [
     {
@@ -51,7 +52,10 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "DTS core substream sync word"
+      "description": "DTS core substream sync word",
+      "storeAs": "dtsSyncWord",
+      "valueType": "uint32",
+      "endianness": "big"
     }
   ],
   "mime_types": [

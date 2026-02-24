@@ -1,6 +1,6 @@
 {
   "formatName": "PEM Certificate",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".pem",
     ".crt",
@@ -36,7 +36,12 @@
     "version": 0,
     "serialNumber": "",
     "issuer": "",
-    "subject": ""
+    "subject": "",
+    "pemHeader": "",
+    "newline": 0,
+    "base64Line1": "",
+    "newline93": 0,
+    "base64Data": ""
   },
   "blocks": [
     {
@@ -46,7 +51,9 @@
       "length": 27,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "-----BEGIN CERTIFICATE-----"
+      "description": "-----BEGIN CERTIFICATE-----",
+      "storeAs": "pemHeader",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -55,7 +62,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "CRLF line ending"
+      "description": "CRLF line ending",
+      "storeAs": "newline",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -64,7 +73,9 @@
       "length": 64,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "First line of Base64 encoded certificate"
+      "description": "First line of Base64 encoded certificate",
+      "storeAs": "base64Line1",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -73,7 +84,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "CRLF line ending"
+      "description": "CRLF line ending",
+      "storeAs": "newline93",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -82,7 +95,9 @@
       "length": 512,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Base64 encoded DER certificate data"
+      "description": "Base64 encoded DER certificate data",
+      "storeAs": "base64Data",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

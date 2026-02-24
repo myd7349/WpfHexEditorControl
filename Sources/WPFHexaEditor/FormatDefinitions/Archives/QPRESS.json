@@ -1,6 +1,6 @@
 {
   "formatName": "Qpress Compression",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".qp",
     ".qpress"
@@ -34,7 +34,8 @@
     "crc32Valid": false,
     "originalSize": 0,
     "compressedSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "qpressMagic": ""
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Magic bytes: 'qps'"
+      "description": "Magic bytes: 'qps'",
+      "storeAs": "qpressMagic",
+      "valueType": "uint32"
     },
     {
       "type": "data",

@@ -1,6 +1,6 @@
 {
   "formatName": "ECAT PET Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".v",
     ".i"
@@ -30,7 +30,9 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "ecatMagic": "",
+    "version": 0
   },
   "blocks": [
     {
@@ -40,7 +42,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ECAT signature (MATRI)"
+      "description": "ECAT signature (MATRI)",
+      "storeAs": "ecatMagic",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +53,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "ECAT version"
+      "description": "ECAT version",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

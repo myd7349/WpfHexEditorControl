@@ -1,6 +1,6 @@
 {
   "formatName": "LAS Well Log",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".las"
   ],
@@ -29,7 +29,8 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "lasMagic": ""
   },
   "blocks": [
     {
@@ -39,7 +40,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "LAS signature (~Version)"
+      "description": "LAS signature (~Version)",
+      "storeAs": "lasMagic",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

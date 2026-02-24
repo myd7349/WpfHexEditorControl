@@ -1,6 +1,6 @@
 {
   "formatName": "Linker MAP File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".map"
   ],
@@ -27,7 +27,8 @@
   "variables": {
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "textHeader": ""
   },
   "blocks": [
     {
@@ -37,7 +38,9 @@
       "length": 64,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MAP file header (text format, varies by linker)"
+      "description": "MAP file header (text format, varies by linker)",
+      "storeAs": "textHeader",
+      "valueType": "ascii"
     },
     {
       "type": "data",

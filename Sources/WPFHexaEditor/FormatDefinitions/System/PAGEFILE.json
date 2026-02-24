@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Page File",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".sys"
   ],
@@ -28,7 +28,13 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "pageFileSignature": "",
+    "size": 0,
+    "freePages": 0,
+    "usedPages": 0,
+    "pageSize": 0,
+    "creationTime": 0
   },
   "blocks": [
     {
@@ -38,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Page file marker"
+      "description": "Page file marker",
+      "storeAs": "pageFileSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -47,7 +55,9 @@
       "length": 8,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Total page file size"
+      "description": "Total page file size",
+      "storeAs": "size",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -56,7 +66,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Number of free pages"
+      "description": "Number of free pages",
+      "storeAs": "freePages",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -65,7 +77,9 @@
       "length": 8,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Number of used pages"
+      "description": "Number of used pages",
+      "storeAs": "usedPages",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -74,7 +88,9 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Size of each page (4096)"
+      "description": "Size of each page (4096)",
+      "storeAs": "pageSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -83,7 +99,9 @@
       "length": 8,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Page file creation time"
+      "description": "Page file creation time",
+      "storeAs": "creationTime",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

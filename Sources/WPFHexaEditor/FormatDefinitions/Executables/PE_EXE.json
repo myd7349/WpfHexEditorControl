@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Executable (PE)",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".exe",
     ".dll",
@@ -46,7 +46,22 @@
     "entryPoint": 0,
     "imageBase": 0,
     "md5Hash": "Unknown",
-    "sha256Hash": "Unknown"
+    "sha256Hash": "Unknown",
+    "dosMzSignature": 0,
+    "bytesOnLastPage": 0,
+    "pagesInFile": 0,
+    "relocations": 0,
+    "headerParagraphs": 0,
+    "minExtraParagraphs": 0,
+    "maxExtraParagraphs": 0,
+    "initialSs": 0,
+    "initialSp": 0,
+    "checksum": 0,
+    "initialIp": 0,
+    "initialCs": 0,
+    "relocTableOffset": 0,
+    "overlayNumber": 0,
+    "peHeaderOffset": 0
   },
   "blocks": [
     {
@@ -56,7 +71,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MZ magic bytes"
+      "description": "MZ magic bytes",
+      "storeAs": "dosMzSignature",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -65,7 +82,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Bytes on last 512-byte page"
+      "description": "Bytes on last 512-byte page",
+      "storeAs": "bytesOnLastPage",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -74,7 +93,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Number of 512-byte pages"
+      "description": "Number of 512-byte pages",
+      "storeAs": "pagesInFile",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -83,7 +104,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Number of relocation entries"
+      "description": "Number of relocation entries",
+      "storeAs": "relocations",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -92,7 +115,9 @@
       "length": 2,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Size of header in 16-byte paragraphs"
+      "description": "Size of header in 16-byte paragraphs",
+      "storeAs": "headerParagraphs",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -101,7 +126,9 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Minimum extra memory paragraphs"
+      "description": "Minimum extra memory paragraphs",
+      "storeAs": "minExtraParagraphs",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -110,7 +137,9 @@
       "length": 2,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Maximum extra memory paragraphs"
+      "description": "Maximum extra memory paragraphs",
+      "storeAs": "maxExtraParagraphs",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -119,7 +148,9 @@
       "length": 2,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Initial stack segment value"
+      "description": "Initial stack segment value",
+      "storeAs": "initialSs",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -128,7 +159,9 @@
       "length": 2,
       "color": "#C44569",
       "opacity": 0.3,
-      "description": "Initial stack pointer value"
+      "description": "Initial stack pointer value",
+      "storeAs": "initialSp",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -137,7 +170,9 @@
       "length": 2,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "DOS header checksum"
+      "description": "DOS header checksum",
+      "storeAs": "checksum",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -146,7 +181,9 @@
       "length": 2,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Initial instruction pointer"
+      "description": "Initial instruction pointer",
+      "storeAs": "initialIp",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -155,7 +192,9 @@
       "length": 2,
       "color": "#FFDDC1",
       "opacity": 0.3,
-      "description": "Initial code segment value"
+      "description": "Initial code segment value",
+      "storeAs": "initialCs",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -164,7 +203,9 @@
       "length": 2,
       "color": "#FFC8DD",
       "opacity": 0.3,
-      "description": "Offset to relocation table"
+      "description": "Offset to relocation table",
+      "storeAs": "relocTableOffset",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -173,7 +214,9 @@
       "length": 2,
       "color": "#BDB2FF",
       "opacity": 0.3,
-      "description": "Overlay number"
+      "description": "Overlay number",
+      "storeAs": "overlayNumber",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -182,7 +225,9 @@
       "length": 4,
       "color": "#FFC6FF",
       "opacity": 0.4,
-      "description": "Offset to PE header (e_lfanew)"
+      "description": "Offset to PE header (e_lfanew)",
+      "storeAs": "peHeaderOffset",
+      "valueType": "uint32"
     }
   ],
   "mime_types": [

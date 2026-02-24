@@ -1,6 +1,6 @@
 {
   "formatName": "ISO Disk Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".iso"
   ],
@@ -44,7 +44,9 @@
     "blockSize": 2048,
     "pathTableSize": 0,
     "hasJoliet": false,
-    "hasRockRidge": false
+    "hasRockRidge": false,
+    "primaryVolumeDescriptor": "",
+    "volumeDescriptorType": 0
   },
   "blocks": [
     {
@@ -54,7 +56,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "CD001 identifier"
+      "description": "CD001 identifier",
+      "storeAs": "primaryVolumeDescriptor",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -63,7 +67,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Type of volume descriptor"
+      "description": "Type of volume descriptor",
+      "storeAs": "volumeDescriptorType",
+      "valueType": "uint8"
     }
   ],
   "quality_metrics": {

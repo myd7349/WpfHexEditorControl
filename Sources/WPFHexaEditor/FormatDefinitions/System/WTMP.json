@@ -1,6 +1,6 @@
 {
   "formatName": "Unix WTMP",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ""
   ],
@@ -28,7 +28,15 @@
     "currentOffset": 0,
     "timestamp": 0,
     "size": 0,
-    "type": ""
+    "type": "",
+    "pid": "",
+    "line": "",
+    "id": "",
+    "user": "",
+    "host": "",
+    "exitStatus": 0,
+    "sessionId": "",
+    "address": ""
   },
   "blocks": [
     {
@@ -38,7 +46,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Record type (0-8)"
+      "description": "Record type (0-8)",
+      "storeAs": "type",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -47,7 +57,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Process ID"
+      "description": "Process ID",
+      "storeAs": "pid",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -56,7 +68,9 @@
       "length": 32,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Device name (tty line)"
+      "description": "Device name (tty line)",
+      "storeAs": "line",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -65,7 +79,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Terminal ID suffix"
+      "description": "Terminal ID suffix",
+      "storeAs": "id",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -74,7 +90,9 @@
       "length": 32,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Username"
+      "description": "Username",
+      "storeAs": "user",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -83,7 +101,9 @@
       "length": 256,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Hostname for remote login"
+      "description": "Hostname for remote login",
+      "storeAs": "host",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -92,7 +112,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Exit status (termination/exit)"
+      "description": "Exit status (termination/exit)",
+      "storeAs": "exitStatus",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -101,7 +123,9 @@
       "length": 4,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Session ID"
+      "description": "Session ID",
+      "storeAs": "sessionId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -110,7 +134,9 @@
       "length": 8,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Login/logout time (timeval)"
+      "description": "Login/logout time (timeval)",
+      "storeAs": "timestamp",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -119,7 +145,9 @@
       "length": 16,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "IPv4/IPv6 address"
+      "description": "IPv4/IPv6 address",
+      "storeAs": "address",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

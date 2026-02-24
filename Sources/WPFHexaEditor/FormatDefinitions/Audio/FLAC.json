@@ -1,6 +1,6 @@
 {
   "formatName": "FLAC Audio",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".flac"
   ],
@@ -39,7 +39,10 @@
     "bitDepth": 0,
     "totalSamples": 0,
     "minBlockSize": 0,
-    "maxBlockSize": 0
+    "maxBlockSize": 0,
+    "flacSignature": "",
+    "metadataBlockHeader": 0,
+    "blockLength": ""
   },
   "blocks": [
     {
@@ -49,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "fLaC stream marker"
+      "description": "fLaC stream marker",
+      "storeAs": "flacSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -58,7 +63,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "First metadata block type"
+      "description": "First metadata block type",
+      "storeAs": "metadataBlockHeader",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -67,7 +74,10 @@
       "length": 3,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Length of metadata block"
+      "description": "Length of metadata block",
+      "storeAs": "blockLength",
+      "valueType": "uint32",
+      "endianness": "big"
     }
   ],
   "mime_types": [

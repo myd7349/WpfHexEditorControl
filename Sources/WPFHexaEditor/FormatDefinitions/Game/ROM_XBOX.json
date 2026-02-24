@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Xbox (Original) Image",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".iso",
     ".xiso"
@@ -35,7 +35,11 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "xboxMagic": "",
+    "rootDirectorySector": 0,
+    "rootDirectorySize": 0,
+    "fileTime": 0
   },
   "blocks": [
     {
@@ -46,7 +50,8 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "valueType": "ascii",
-      "description": "MICROSOFT*XBOX*MEDIA magic string"
+      "description": "MICROSOFT*XBOX*MEDIA magic string",
+      "storeAs": "xboxMagic"
     },
     {
       "type": "field",
@@ -56,7 +61,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Root directory sector offset"
+      "description": "Root directory sector offset",
+      "storeAs": "rootDirectorySector"
     },
     {
       "type": "field",
@@ -66,7 +72,8 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Root directory size in bytes"
+      "description": "Root directory size in bytes",
+      "storeAs": "rootDirectorySize"
     },
     {
       "type": "field",
@@ -75,8 +82,9 @@
       "length": 8,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Image creation timestamp (FILETIME)"
+      "valueType": "uint64",
+      "description": "Image creation timestamp (FILETIME)",
+      "storeAs": "fileTime"
     },
     {
       "type": "metadata",

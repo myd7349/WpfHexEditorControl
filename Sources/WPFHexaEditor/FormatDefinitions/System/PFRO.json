@@ -1,6 +1,6 @@
 {
   "formatName": "PFRO Registry Data",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ""
   ],
@@ -29,7 +29,13 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "operationCount": 0,
+    "firstSourcePathLength": 0,
+    "firstSourcePath": "",
+    "firstTargetPathLength": 0,
+    "firstTargetPath": "",
+    "operationFlags": 0
   },
   "blocks": [
     {
@@ -39,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Number of pending operations"
+      "description": "Number of pending operations",
+      "storeAs": "operationCount",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -48,7 +56,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Length of first source path"
+      "description": "Length of first source path",
+      "storeAs": "firstSourcePathLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -57,7 +67,9 @@
       "length": 520,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Unicode source file path (MAX_PATH)"
+      "description": "Unicode source file path (MAX_PATH)",
+      "storeAs": "firstSourcePath",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -66,7 +78,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Length of first target path"
+      "description": "Length of first target path",
+      "storeAs": "firstTargetPathLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -75,7 +89,9 @@
       "length": 520,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Unicode target file path (MAX_PATH)"
+      "description": "Unicode target file path (MAX_PATH)",
+      "storeAs": "firstTargetPath",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -84,7 +100,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Operation type flags"
+      "description": "Operation type flags",
+      "storeAs": "operationFlags",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Meridian Lossless Packing",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".mlp"
   ],
@@ -32,7 +32,8 @@
   "variables": {
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "mlpSyncWord": 0
   },
   "blocks": [
     {
@@ -42,7 +43,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MLP major sync word"
+      "description": "MLP major sync word",
+      "storeAs": "mlpSyncWord",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

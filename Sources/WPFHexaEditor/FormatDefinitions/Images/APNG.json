@@ -1,6 +1,6 @@
 {
   "formatName": "APNG Animated Image",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".apng",
     ".png"
@@ -40,7 +40,10 @@
     "totalPixels": 0,
     "calculatedCRC32": 0,
     "ihdrCRC": 0,
-    "crc32Valid": false
+    "crc32Valid": false,
+    "pngSignature": "",
+    "ihdrChunkLength": 0,
+    "ihdrType": ""
   },
   "blocks": [
     {
@@ -50,7 +53,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PNG magic bytes (same as PNG)"
+      "description": "PNG magic bytes (same as PNG)",
+      "storeAs": "pngSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -59,7 +64,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "IHDR chunk size"
+      "description": "IHDR chunk size",
+      "storeAs": "ihdrChunkLength",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -68,7 +76,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "IHDR chunk type"
+      "description": "IHDR chunk type",
+      "storeAs": "ihdrType",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

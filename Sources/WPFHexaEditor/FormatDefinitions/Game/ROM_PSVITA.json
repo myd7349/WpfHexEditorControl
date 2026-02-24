@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation Vita Package",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".vpk",
     ".pkg"
@@ -34,7 +34,12 @@
     "currentOffset": 0,
     "crc32Valid": false,
     "originalSize": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "pkgMagic": "",
+    "packageType": 0,
+    "pkgInfoOffset": 0,
+    "contentSize": 0,
+    "titleId": ""
   },
   "blocks": [
     {
@@ -44,8 +49,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "valueType": "bytes",
-      "description": "PSVita PKG magic: 0x7F 0x50 0x4B 0x47"
+      "valueType": "uint32",
+      "description": "PSVita PKG magic: 0x7F 0x50 0x4B 0x47",
+      "storeAs": "pkgMagic"
     },
     {
       "type": "field",
@@ -55,7 +61,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint16",
-      "description": "Package type: PSVita format"
+      "description": "Package type: PSVita format",
+      "storeAs": "packageType"
     },
     {
       "type": "field",
@@ -65,7 +72,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Offset to package information"
+      "description": "Offset to package information",
+      "storeAs": "pkgInfoOffset"
     },
     {
       "type": "field",
@@ -74,8 +82,9 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "Content data size (64-bit)"
+      "valueType": "uint64",
+      "description": "Content data size (64-bit)",
+      "storeAs": "contentSize"
     },
     {
       "type": "field",
@@ -85,7 +94,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "ascii",
-      "description": "PSVita title identifier"
+      "description": "PSVita title identifier",
+      "storeAs": "titleId"
     },
     {
       "type": "metadata",

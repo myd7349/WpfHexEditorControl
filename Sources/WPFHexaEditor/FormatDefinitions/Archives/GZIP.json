@@ -1,6 +1,6 @@
 {
   "formatName": "GZIP Compressed File",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".gz",
     ".gzip"
@@ -36,7 +36,12 @@
     "currentOffset": 0,
     "modificationTime": 0,
     "originalSize": 0,
-    "compressedCRC": 0
+    "compressedCRC": 0,
+    "gzipMagic": 0,
+    "compressionMethod": 0,
+    "flags": 0,
+    "compressionFlags": 0,
+    "os": 0
   },
   "blocks": [
     {
@@ -46,7 +51,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GZIP identification bytes"
+      "description": "GZIP identification bytes",
+      "storeAs": "gzipMagic",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -55,7 +62,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "0-7 reserved, 8=deflate"
+      "description": "0-7 reserved, 8=deflate",
+      "storeAs": "compressionMethod",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -64,7 +73,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT"
+      "description": "FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT",
+      "storeAs": "flags",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -73,7 +84,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Unix timestamp"
+      "description": "Unix timestamp",
+      "storeAs": "modificationTime",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -82,7 +95,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Extra flags"
+      "description": "Extra flags",
+      "storeAs": "compressionFlags",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -91,7 +106,9 @@
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Operating system ID"
+      "description": "Operating system ID",
+      "storeAs": "os",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

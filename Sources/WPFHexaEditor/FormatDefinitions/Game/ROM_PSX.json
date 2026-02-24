@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation EXE",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".exe",
     ".psx"
@@ -37,7 +37,14 @@
     "machineType": "",
     "sectionCount": 0,
     "timestamp": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "psXExeMagic": "",
+    "initialPc": 0,
+    "initialGp": 0,
+    "memfillStart": 0,
+    "memfillSize": 0,
+    "initialSp": 0,
+    "marker": ""
   },
   "blocks": [
     {
@@ -48,7 +55,8 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "valueType": "ascii",
-      "description": "PlayStation executable magic: PS-X EXE"
+      "description": "PlayStation executable magic: PS-X EXE",
+      "storeAs": "psXExeMagic"
     },
     {
       "type": "field",
@@ -69,7 +77,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Entry point address in RAM"
+      "description": "Entry point address in RAM",
+      "storeAs": "initialPc"
     },
     {
       "type": "field",
@@ -79,7 +88,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Global pointer register initial value"
+      "description": "Global pointer register initial value",
+      "storeAs": "initialGp"
     },
     {
       "type": "field",
@@ -122,7 +132,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "BSS segment start address"
+      "description": "BSS segment start address",
+      "storeAs": "memfillStart"
     },
     {
       "type": "field",
@@ -132,7 +143,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "BSS segment fill size"
+      "description": "BSS segment fill size",
+      "storeAs": "memfillSize"
     },
     {
       "type": "field",
@@ -142,7 +154,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint32",
-      "description": "Initial stack pointer"
+      "description": "Initial stack pointer",
+      "storeAs": "initialSp"
     },
     {
       "type": "field",
@@ -162,8 +175,9 @@
       "length": 1972,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "valueType": "bytes",
-      "description": "ASCII marker/license text and padding"
+      "valueType": "ascii",
+      "description": "ASCII marker/license text and padding",
+      "storeAs": "marker"
     },
     {
       "type": "metadata",

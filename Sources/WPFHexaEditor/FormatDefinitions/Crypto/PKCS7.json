@@ -1,6 +1,6 @@
 {
   "formatName": "PKCS#7 Certificate",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".p7b",
     ".p7c",
@@ -37,7 +37,16 @@
     "version": 0,
     "serialNumber": "",
     "issuer": "",
-    "subject": ""
+    "subject": "",
+    "asn1Sequence": 0,
+    "totalLength": 0,
+    "contentTypeOidTag": 0,
+    "oidLength": 0,
+    "pkcs7Oid": "",
+    "contentTag": 0,
+    "contentLength": 0,
+    "signeddataSequence": 0,
+    "versionTag": 0
   },
   "blocks": [
     {
@@ -47,7 +56,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ASN.1 SEQUENCE tag (0x30)"
+      "description": "ASN.1 SEQUENCE tag (0x30)",
+      "storeAs": "asn1Sequence",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -56,7 +67,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Total structure length (long form)"
+      "description": "Total structure length (long form)",
+      "storeAs": "totalLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -65,7 +78,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "OID tag (0x06)"
+      "description": "OID tag (0x06)",
+      "storeAs": "contentTypeOidTag",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -74,7 +89,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "OID length (9)"
+      "description": "OID length (9)",
+      "storeAs": "oidLength",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -83,7 +100,9 @@
       "length": 9,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "PKCS#7 SignedData OID (1.2.840.113549.1.7.2)"
+      "description": "PKCS#7 SignedData OID (1.2.840.113549.1.7.2)",
+      "storeAs": "pkcs7Oid",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -92,7 +111,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Context-specific tag [0]"
+      "description": "Context-specific tag [0]",
+      "storeAs": "contentTag",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -101,7 +122,9 @@
       "length": 2,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Content length"
+      "description": "Content length",
+      "storeAs": "contentLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -110,7 +133,9 @@
       "length": 1,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "SignedData SEQUENCE tag"
+      "description": "SignedData SEQUENCE tag",
+      "storeAs": "signeddataSequence",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -119,7 +144,9 @@
       "length": 1,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Version INTEGER tag"
+      "description": "Version INTEGER tag",
+      "storeAs": "versionTag",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -128,7 +155,9 @@
       "length": 1,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "PKCS#7 version (1)"
+      "description": "PKCS#7 version (1)",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

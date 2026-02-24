@@ -1,6 +1,6 @@
 {
   "formatName": "VMware Virtual Disk",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".vmdk"
   ],
@@ -34,7 +34,9 @@
     "sectorSize": 0,
     "sectorCount": 0,
     "capacity": 0,
-    "format": ""
+    "format": "",
+    "vmdkSignature": "",
+    "version": ""
   },
   "blocks": [
     {
@@ -44,7 +46,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "KDM magic bytes"
+      "description": "KDM magic bytes",
+      "storeAs": "vmdkSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +57,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "VMDK version"
+      "description": "VMDK version",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

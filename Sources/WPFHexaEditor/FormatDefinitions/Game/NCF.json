@@ -1,6 +1,6 @@
 {
   "formatName": "No Cache File",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ncf"
   ],
@@ -33,7 +33,9 @@
     "currentOffset": 0,
     "machineType": "",
     "sectionCount": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "ncfHeader": 0,
+    "version": ""
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "NCF format signature"
+      "description": "NCF format signature",
+      "storeAs": "ncfHeader",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "NCF version number"
+      "description": "NCF version number",
+      "storeAs": "version",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

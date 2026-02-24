@@ -1,6 +1,6 @@
 {
   "formatName": "macOS Dynamic Library",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dylib"
   ],
@@ -30,7 +30,8 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "machOMagic32Bit": ""
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Mach-O magic: 0xFEEDFACE (32-bit) or 0xFEEDFACF (64-bit)"
+      "description": "Mach-O magic: 0xFEEDFACE (32-bit) or 0xFEEDFACF (64-bit)",
+      "storeAs": "machOMagic32Bit",
+      "valueType": "uint32"
     },
     {
       "type": "data",

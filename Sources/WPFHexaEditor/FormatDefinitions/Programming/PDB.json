@@ -1,6 +1,6 @@
 {
   "formatName": "Program Database",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".pdb"
   ],
@@ -28,7 +28,8 @@
     "pageSize": 0,
     "pageCount": 0,
     "tableCount": 0,
-    "version": 0
+    "version": 0,
+    "pdbSignature": ""
   },
   "blocks": [
     {
@@ -38,7 +39,9 @@
       "length": 32,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PDB 7.0 signature: 'Microsoft C/C++ MSF 7.00\\r\\n\\x1A DS\\0\\0\\0'"
+      "description": "PDB 7.0 signature: 'Microsoft C/C++ MSF 7.00\\r\\n\\x1A DS\\0\\0\\0'",
+      "storeAs": "pdbSignature",
+      "valueType": "ascii"
     },
     {
       "type": "data",

@@ -1,6 +1,6 @@
 {
   "formatName": "Syslog Binary Format",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".syslog",
     ".log"
@@ -30,7 +30,14 @@
     "machineType": "",
     "sectionCount": 0,
     "timestamp": 0,
-    "entryPoint": 0
+    "entryPoint": 0,
+    "priority": 0,
+    "hostnameLength": 0,
+    "hostname": "",
+    "appNameLength": 0,
+    "appName": "",
+    "processId": "",
+    "messageLength": 0
   },
   "blocks": [
     {
@@ -40,7 +47,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Facility (high 3 bits) and severity (low 3 bits)"
+      "description": "Facility (high 3 bits) and severity (low 3 bits)",
+      "storeAs": "priority",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -49,7 +58,9 @@
       "length": 8,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Unix timestamp (64-bit)"
+      "description": "Unix timestamp (64-bit)",
+      "storeAs": "timestamp",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -58,7 +69,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Length of hostname string"
+      "description": "Length of hostname string",
+      "storeAs": "hostnameLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -67,7 +80,9 @@
       "length": 256,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Source hostname"
+      "description": "Source hostname",
+      "storeAs": "hostname",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -76,7 +91,9 @@
       "length": 2,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Length of application name"
+      "description": "Length of application name",
+      "storeAs": "appNameLength",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -85,7 +102,9 @@
       "length": 48,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Application name"
+      "description": "Application name",
+      "storeAs": "appName",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -94,7 +113,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Process identifier"
+      "description": "Process identifier",
+      "storeAs": "processId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -103,7 +124,9 @@
       "length": 4,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Length of log message"
+      "description": "Length of log message",
+      "storeAs": "messageLength",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

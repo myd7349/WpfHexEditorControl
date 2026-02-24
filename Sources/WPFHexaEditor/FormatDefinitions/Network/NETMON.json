@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Network Monitor",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".cap"
   ],
@@ -29,7 +29,14 @@
     "packetCount": 0,
     "snaplen": 0,
     "linkType": 0,
-    "version": ""
+    "version": "",
+    "netmonSignature": "",
+    "versionMinor": 0,
+    "versionMajor": 0,
+    "networkType": 0,
+    "timeDelta": 0,
+    "frameTableOffset": 0,
+    "frameTableLength": 0
   },
   "blocks": [
     {
@@ -39,7 +46,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GMBU signature"
+      "description": "GMBU signature",
+      "storeAs": "netmonSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -48,7 +57,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Minor version number"
+      "description": "Minor version number",
+      "storeAs": "versionMinor",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -57,7 +68,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Major version number"
+      "description": "Major version number",
+      "storeAs": "versionMajor",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -66,7 +79,9 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Link layer type"
+      "description": "Link layer type",
+      "storeAs": "networkType",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -75,7 +90,9 @@
       "length": 8,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Time offset from start"
+      "description": "Time offset from start",
+      "storeAs": "timeDelta",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -84,7 +101,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Offset to frame table"
+      "description": "Offset to frame table",
+      "storeAs": "frameTableOffset",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -93,7 +112,9 @@
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Length of frame table"
+      "description": "Length of frame table",
+      "storeAs": "frameTableLength",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "Unreal Plugin",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".uplugin"
   ],
@@ -33,7 +33,8 @@
     "currentOffset": 0,
     "fileCount": 0,
     "version": "",
-    "indexOffset": 0
+    "indexOffset": 0,
+    "jsonStart": 0
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 1,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Opening brace { for JSON"
+      "description": "Opening brace { for JSON",
+      "storeAs": "jsonStart",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

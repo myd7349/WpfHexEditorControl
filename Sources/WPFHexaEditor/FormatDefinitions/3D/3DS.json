@@ -1,6 +1,6 @@
 {
   "formatName": "3D Studio Model",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".3ds"
   ],
@@ -29,7 +29,9 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "primaryChunkId": 0,
+    "chunkLength": 0
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Main chunk identifier (0x4D4D)"
+      "description": "Main chunk identifier (0x4D4D)",
+      "storeAs": "primaryChunkId",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -48,7 +52,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Length of main chunk"
+      "description": "Length of main chunk",
+      "storeAs": "chunkLength",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

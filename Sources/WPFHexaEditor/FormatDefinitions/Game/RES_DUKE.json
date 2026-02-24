@@ -1,6 +1,6 @@
 {
   "formatName": "Duke Nukem GRP",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".grp"
   ],
@@ -33,7 +33,9 @@
     "currentOffset": 0,
     "fileCount": 0,
     "totalSize": 0,
-    "version": 0
+    "version": 0,
+    "grpSignature": "",
+    "numberOfFiles": 0
   },
   "blocks": [
     {
@@ -43,7 +45,9 @@
       "length": 12,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "KenSilverman signature"
+      "description": "KenSilverman signature",
+      "storeAs": "grpSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -52,7 +56,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Total number of files"
+      "description": "Total number of files",
+      "storeAs": "numberOfFiles",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

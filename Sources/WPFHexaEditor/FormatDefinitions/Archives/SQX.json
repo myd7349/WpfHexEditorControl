@@ -1,6 +1,6 @@
 {
   "formatName": "SQX Archive",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".sqx"
   ],
@@ -32,7 +32,8 @@
     "fileCount": 0,
     "totalSize": 0,
     "compressionMethod": "",
-    "headerCRC": 0
+    "headerCRC": 0,
+    "sqxSignature": ""
   },
   "blocks": [
     {
@@ -42,7 +43,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Magic bytes: 'SQX '"
+      "description": "Magic bytes: 'SQX '",
+      "storeAs": "sqxSignature",
+      "valueType": "ascii"
     },
     {
       "type": "data",

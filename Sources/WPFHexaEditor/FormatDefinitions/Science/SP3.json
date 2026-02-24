@@ -1,6 +1,6 @@
 {
   "formatName": "SP3 Orbit Data",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".sp3",
     ".eph"
@@ -29,7 +29,9 @@
     "currentOffset": 0,
     "dimensions": 0,
     "dataType": "",
-    "arrayCount": 0
+    "arrayCount": 0,
+    "sp3Magic": 0,
+    "version": 0
   },
   "blocks": [
     {
@@ -39,7 +41,9 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "SP3 signature (#)"
+      "description": "SP3 signature (#)",
+      "storeAs": "sp3Magic",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -48,7 +52,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "SP3 version (a/c/d)"
+      "description": "SP3 version (a/c/d)",
+      "storeAs": "version",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

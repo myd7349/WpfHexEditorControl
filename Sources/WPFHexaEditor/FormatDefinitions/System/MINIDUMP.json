@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Minidump",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".dmp",
     ".mdmp"
@@ -30,7 +30,12 @@
     "timestamp": 0,
     "size": 0,
     "version": "",
-    "type": ""
+    "type": "",
+    "minidumpSignature": "",
+    "numberOfStreams": 0,
+    "streamDirectoryRva": 0,
+    "checksum": 0,
+    "flags": 0
   },
   "blocks": [
     {
@@ -40,7 +45,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MDMP magic bytes"
+      "description": "MDMP magic bytes",
+      "storeAs": "minidumpSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -49,7 +56,9 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Minidump version (0x93A7)"
+      "description": "Minidump version (0x93A7)",
+      "storeAs": "version",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -58,7 +67,9 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Count of data streams"
+      "description": "Count of data streams",
+      "storeAs": "numberOfStreams",
+      "valueType": "uint16"
     },
     {
       "type": "field",
@@ -67,7 +78,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Offset to stream directory"
+      "description": "Offset to stream directory",
+      "storeAs": "streamDirectoryRva",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -76,7 +89,9 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "CRC checksum (usually 0)"
+      "description": "CRC checksum (usually 0)",
+      "storeAs": "checksum",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -85,7 +100,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Unix timestamp of dump creation"
+      "description": "Unix timestamp of dump creation",
+      "storeAs": "timestamp",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -94,7 +111,9 @@
       "length": 8,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Dump type flags"
+      "description": "Dump type flags",
+      "storeAs": "flags",
+      "valueType": "uint64"
     },
     {
       "type": "metadata",

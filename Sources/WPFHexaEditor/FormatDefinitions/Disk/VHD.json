@@ -1,6 +1,6 @@
 {
   "formatName": "Virtual Hard Disk",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".vhd"
   ],
@@ -34,7 +34,10 @@
     "sectorSize": 0,
     "sectorCount": 0,
     "capacity": 0,
-    "format": ""
+    "format": "",
+    "vhdCookie": 0,
+    "features": 0,
+    "formatVersion": ""
   },
   "blocks": [
     {
@@ -44,7 +47,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "conectix signature"
+      "description": "conectix signature",
+      "storeAs": "vhdCookie",
+      "valueType": "uint64"
     },
     {
       "type": "field",
@@ -53,7 +58,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Feature flags"
+      "description": "Feature flags",
+      "storeAs": "features",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -62,7 +69,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "File format version"
+      "description": "File format version",
+      "storeAs": "formatVersion",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

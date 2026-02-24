@@ -1,6 +1,6 @@
 {
   "formatName": "Android ODEX",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".odex"
   ],
@@ -30,7 +30,8 @@
     "zipCommentLength": 0,
     "zipComment": "",
     "eocdOffset": -1,
-    "isZip64": false
+    "isZip64": false,
+    "dexMagic": ""
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Magic bytes: 'dey' 0x0A (optimized DEX)"
+      "description": "Magic bytes: 'dey' 0x0A (optimized DEX)",
+      "storeAs": "dexMagic",
+      "valueType": "uint32"
     },
     {
       "type": "data",

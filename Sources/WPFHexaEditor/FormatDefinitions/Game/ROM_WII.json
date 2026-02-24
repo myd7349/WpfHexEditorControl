@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Wii Disc",
-  "version": "2.2",
+  "version": "2.3",
   "extensions": [
     ".iso",
     ".wbfs"
@@ -36,7 +36,14 @@
     "makerCode": "",
     "gameName": "",
     "discNumber": 0,
-    "version": 0
+    "version": 0,
+    "discId": 0,
+    "regionCode": 0,
+    "audioStreaming": 0,
+    "streamBufferSize": 0,
+    "wiiMagic": "",
+    "disableHashVerification": 0,
+    "disableDiscEncryption": 0
   },
   "blocks": [
     {
@@ -46,8 +53,9 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "Console ID: R=Wii, S=Wii (alt)"
+      "valueType": "uint8",
+      "description": "Console ID: R=Wii, S=Wii (alt)",
+      "storeAs": "discId"
     },
     {
       "type": "field",
@@ -67,8 +75,9 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "valueType": "ascii",
-      "description": "Region: E=USA, P=Europe, J=Japan, K=Korea, W=Taiwan"
+      "valueType": "uint8",
+      "description": "Region: E=USA, P=Europe, J=Japan, K=Korea, W=Taiwan",
+      "storeAs": "regionCode"
     },
     {
       "type": "field",
@@ -89,7 +98,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Disc number for multi-disc games (0-based)"
+      "description": "Disc number for multi-disc games (0-based)",
+      "storeAs": "discNumber"
     },
     {
       "type": "field",
@@ -99,7 +109,8 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Game version/revision number"
+      "description": "Game version/revision number",
+      "storeAs": "version"
     },
     {
       "type": "field",
@@ -109,7 +120,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0=No streaming, 1=Streaming enabled"
+      "description": "0=No streaming, 1=Streaming enabled",
+      "storeAs": "audioStreaming"
     },
     {
       "type": "field",
@@ -119,7 +131,8 @@
       "color": "#C7CEEA",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "Audio stream buffer size"
+      "description": "Audio stream buffer size",
+      "storeAs": "streamBufferSize"
     },
     {
       "type": "field",
@@ -139,7 +152,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Wii disc magic: 0x5D1C9EA3"
+      "description": "Wii disc magic: 0x5D1C9EA3",
+      "storeAs": "wiiMagic",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -160,7 +175,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0=Verify hashes, 1=Disable verification (debug)"
+      "description": "0=Verify hashes, 1=Disable verification (debug)",
+      "storeAs": "disableHashVerification"
     },
     {
       "type": "field",
@@ -170,7 +186,8 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint8",
-      "description": "0=Encrypted, 1=Unencrypted (debug/dev)"
+      "description": "0=Encrypted, 1=Unencrypted (debug/dev)",
+      "storeAs": "disableDiscEncryption"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "BZIP2 Compressed File",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".bz2",
     ".bzip2"
@@ -34,7 +34,8 @@
   "variables": {
     "currentOffset": 0,
     "blockSize": 0,
-    "dataCRC": 0
+    "dataCRC": 0,
+    "bzip2Signature": ""
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "BZh magic bytes"
+      "description": "BZh magic bytes",
+      "storeAs": "bzip2Signature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +56,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Block size (1-9) * 100KB"
+      "description": "Block size (1-9) * 100KB",
+      "storeAs": "blockSize",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

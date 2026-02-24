@@ -1,6 +1,6 @@
 {
   "formatName": "DirectDraw Surface",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".dds"
   ],
@@ -37,7 +37,12 @@
     "currentOffset": 0,
     "imageWidth": 0,
     "imageHeight": 0,
-    "totalPixels": 0
+    "totalPixels": 0,
+    "ddsSignature": "",
+    "headerSize": 0,
+    "flags": 0,
+    "height": 0,
+    "width": ""
   },
   "blocks": [
     {
@@ -47,7 +52,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "DDS magic bytes"
+      "description": "DDS magic bytes",
+      "storeAs": "ddsSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -56,7 +63,9 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of header structure (124)"
+      "description": "Size of header structure (124)",
+      "storeAs": "headerSize",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -65,7 +74,9 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Surface description flags"
+      "description": "Surface description flags",
+      "storeAs": "flags",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -74,7 +85,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Height in pixels"
+      "description": "Height in pixels",
+      "storeAs": "height",
+      "valueType": "uint32"
     },
     {
       "type": "field",
@@ -83,7 +96,9 @@
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Width in pixels"
+      "description": "Width in pixels",
+      "storeAs": "width",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

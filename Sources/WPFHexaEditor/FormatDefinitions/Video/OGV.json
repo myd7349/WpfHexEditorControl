@@ -1,6 +1,6 @@
 {
   "formatName": "Ogg Video",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".ogv",
     ".ogm"
@@ -33,7 +33,8 @@
     "channels": 0,
     "bitDepth": 0,
     "durationSeconds": 0,
-    "totalSamples": 0
+    "totalSamples": 0,
+    "oggHeader": 0
   },
   "blocks": [
     {
@@ -43,7 +44,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "OggS - Ogg bitstream format signature"
+      "description": "OggS - Ogg bitstream format signature",
+      "storeAs": "oggHeader",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

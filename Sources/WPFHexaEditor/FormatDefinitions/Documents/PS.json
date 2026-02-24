@@ -1,6 +1,6 @@
 {
   "formatName": "PostScript Document",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".ps",
     ".eps"
@@ -30,7 +30,8 @@
     "width": 0,
     "height": 0,
     "frameRate": 0,
-    "duration": 0
+    "duration": 0,
+    "postscriptHeader": 0
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "%!PS signature"
+      "description": "%!PS signature",
+      "storeAs": "postscriptHeader",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

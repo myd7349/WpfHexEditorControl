@@ -1,6 +1,6 @@
 {
   "formatName": "Apple Lossless Audio Codec",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".alac",
     ".m4a"
@@ -42,7 +42,8 @@
     "sampleRate": 0,
     "channels": 0,
     "bitDepth": 16,
-    "duration": 0
+    "duration": 0,
+    "fileTypeBox": ""
   },
   "blocks": [
     {
@@ -52,7 +53,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ftyp - MP4 container for ALAC"
+      "description": "ftyp - MP4 container for ALAC",
+      "storeAs": "fileTypeBox",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [

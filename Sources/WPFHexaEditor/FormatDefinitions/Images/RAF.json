@@ -1,6 +1,6 @@
 {
   "formatName": "Fujifilm Raw Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".raf"
   ],
@@ -34,7 +34,8 @@
     "width": 0,
     "height": 0,
     "totalPixels": 0,
-    "bitsPerPixel": 0
+    "bitsPerPixel": 0,
+    "rafSignature": ""
   },
   "blocks": [
     {
@@ -44,7 +45,9 @@
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "FUJIFILM signature"
+      "description": "FUJIFILM signature",
+      "storeAs": "rafSignature",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

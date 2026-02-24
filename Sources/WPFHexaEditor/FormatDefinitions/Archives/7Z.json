@@ -1,6 +1,6 @@
 {
   "formatName": "7-Zip Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".7z"
   ],
@@ -35,7 +35,11 @@
     "currentOffset": 0,
     "startHeaderCRC": 0,
     "calculatedCRC": 0,
-    "crcValid": false
+    "crcValid": false,
+    "7zSignature": "",
+    "majorVersion": 0,
+    "minorVersion": 0,
+    "startHeaderCrc": 0
   },
   "blocks": [
     {
@@ -45,7 +49,9 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "7z magic bytes"
+      "description": "7z magic bytes",
+      "storeAs": "7zSignature",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -54,7 +60,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Format major version"
+      "description": "Format major version",
+      "storeAs": "majorVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -63,7 +71,9 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Format minor version"
+      "description": "Format minor version",
+      "storeAs": "minorVersion",
+      "valueType": "uint8"
     },
     {
       "type": "field",
@@ -72,7 +82,9 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "CRC of start header"
+      "description": "CRC of start header",
+      "storeAs": "startHeaderCrc",
+      "valueType": "uint32"
     },
     {
       "type": "metadata",

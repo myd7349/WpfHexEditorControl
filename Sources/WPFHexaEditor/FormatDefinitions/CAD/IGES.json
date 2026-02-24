@@ -1,6 +1,6 @@
 {
   "formatName": "IGES 3D Model",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".iges",
     ".igs"
@@ -30,7 +30,8 @@
     "vertexCount": 0,
     "faceCount": 0,
     "materialCount": 0,
-    "fileSize": 0
+    "fileSize": 0,
+    "startSection": 0
   },
   "blocks": [
     {
@@ -40,7 +41,9 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Text-based format starting with S"
+      "description": "Text-based format starting with S",
+      "storeAs": "startSection",
+      "valueType": "uint8"
     },
     {
       "type": "metadata",

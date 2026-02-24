@@ -1,6 +1,6 @@
 {
   "formatName": "TAR Archive",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".tar"
   ],
@@ -34,7 +34,10 @@
     "currentOffset": 0,
     "fileName": "",
     "fileSize": 0,
-    "fileMode": 0
+    "fileMode": 0,
+    "ownerId": "",
+    "groupId": "",
+    "ustarMagic": ""
   },
   "blocks": [
     {
@@ -44,7 +47,9 @@
       "length": 100,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Name of archived file"
+      "description": "Name of archived file",
+      "storeAs": "fileName",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -53,7 +58,10 @@
       "length": 8,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "File permissions (octal)"
+      "description": "File permissions (octal)",
+      "storeAs": "fileMode",
+      "valueType": "uint64",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -62,7 +70,9 @@
       "length": 8,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "User ID (octal)"
+      "description": "User ID (octal)",
+      "storeAs": "ownerId",
+      "valueType": "ascii"
     },
     {
       "type": "field",
@@ -71,7 +81,9 @@
       "length": 8,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Group ID (octal)"
+      "description": "Group ID (octal)",
+      "storeAs": "groupId",
+      "valueType": "ascii"
     },
     {
       "type": "signature",
@@ -80,7 +92,9 @@
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ustar indicator"
+      "description": "ustar indicator",
+      "storeAs": "ustarMagic",
+      "valueType": "ascii"
     },
     {
       "type": "metadata",

@@ -1,6 +1,6 @@
 {
   "formatName": "AIFF Audio",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".aiff",
     ".aif",
@@ -43,7 +43,10 @@
     "channels": 0,
     "sampleFrames": 0,
     "bitDepth": 0,
-    "sampleRate": 0
+    "sampleRate": 0,
+    "formChunk": 0,
+    "chunkSize": 0,
+    "aiffType": ""
   },
   "blocks": [
     {
@@ -53,7 +56,10 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "IFF FORM identifier"
+      "description": "IFF FORM identifier",
+      "storeAs": "formChunk",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -62,7 +68,10 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of data"
+      "description": "Size of data",
+      "storeAs": "chunkSize",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "signature",
@@ -71,7 +80,9 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "AIFF or AIFC"
+      "description": "AIFF or AIFC",
+      "storeAs": "aiffType",
+      "valueType": "ascii"
     }
   ],
   "mime_types": [
