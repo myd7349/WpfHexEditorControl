@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Dreamcast Disc Image",
-  "version": "1.7",
+  "version": "1.8",
   "extensions": [
     ".gdi",
     ".cdi",
@@ -35,7 +35,11 @@
     "currentOffset": 0,
     "productNumber": "",
     "releaseDate": "",
-    "gameTitle": ""
+    "gameTitle": "",
+    "width": 0,
+    "height": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -150,6 +154,24 @@
       "valueType": "ascii",
       "storeAs": "gameTitle",
       "description": "Full game title"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
     }
   ],
   "quality_metrics": {
@@ -212,5 +234,9 @@
     "commit_count": 7,
     "change_percentage": 251.66,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

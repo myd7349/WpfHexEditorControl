@@ -1,6 +1,6 @@
 {
   "formatName": "DivX Video",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".divx"
   ],
@@ -28,7 +28,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "width": 0,
+    "height": 0,
+    "frameRate": 0,
+    "duration": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -38,6 +43,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "RIFF container header for DivX"
+    },
+    {
+      "type": "metadata",
+      "name": "Resolution",
+      "variable": "width",
+      "description": "Resolution"
+    },
+    {
+      "type": "metadata",
+      "name": "Frame Rate",
+      "variable": "frameRate",
+      "description": "Frame Rate"
     }
   ],
   "mime_types": [
@@ -104,5 +121,8 @@
     "commit_count": 10,
     "change_percentage": 270.87,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read video header"
   }
 }

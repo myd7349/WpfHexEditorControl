@@ -1,6 +1,6 @@
 {
   "formatName": "ECAT PET Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".v",
     ".i"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "width": 0,
+    "height": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -46,6 +50,24 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "ECAT version"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
     }
   ],
   "quality_metrics": {
@@ -102,5 +124,9 @@
     "commit_count": 8,
     "change_percentage": 216.83,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

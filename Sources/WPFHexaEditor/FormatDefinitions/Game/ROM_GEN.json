@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Genesis/Mega Drive ROM",
-  "version": "1.7",
+  "version": "1.8",
   "extensions": [
     ".md",
     ".bin",
@@ -37,7 +37,10 @@
     "domesticTitle": "",
     "overseasTitle": "",
     "checksum": 0,
-    "romEnd": 0
+    "romEnd": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -214,6 +217,18 @@
       "opacity": 0.3,
       "valueType": "ascii",
       "description": "Region support: J=Japan, U=USA, E=Europe"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -276,5 +291,8 @@
     "commit_count": 7,
     "change_percentage": 263.64,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

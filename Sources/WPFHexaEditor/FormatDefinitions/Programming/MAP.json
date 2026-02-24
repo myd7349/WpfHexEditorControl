@@ -1,6 +1,6 @@
 {
   "formatName": "Linker MAP File",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".map"
   ],
@@ -24,7 +24,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -52,6 +56,18 @@
       "color": "#45B7D1",
       "opacity": 0.4,
       "description": "Memory layout and segment information"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -110,5 +126,8 @@
     "commit_count": 8,
     "change_percentage": 283.49,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

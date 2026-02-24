@@ -1,6 +1,6 @@
 {
   "formatName": "Comic Book ZIP",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".cbz"
   ],
@@ -27,7 +27,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "crc32Valid": false,
+    "originalSize": 0,
+    "compressionRatio": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -64,6 +68,18 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "Compression method (0=stored, 8=deflated)"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crc32Valid",
+      "description": "CRC Valid"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Original Size"
     }
   ],
   "mime_types": [
@@ -127,5 +143,9 @@
     "commit_count": 8,
     "change_percentage": 377.78,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "calculateCRC32": "Validate CRC",
+    "readUInt32LE": "Read size"
   }
 }

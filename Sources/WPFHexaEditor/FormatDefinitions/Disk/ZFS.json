@@ -1,6 +1,6 @@
 {
   "formatName": "ZFS Filesystem",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".zfs"
   ],
@@ -30,7 +30,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileSize": 0,
+    "version": 0,
+    "format": ""
   },
   "blocks": [
     {
@@ -41,6 +44,18 @@
       "color": "#00BFFF",
       "opacity": 0.4,
       "description": "ZFS vdev label"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size",
+      "variable": "fileSize",
+      "description": "File Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -99,5 +114,8 @@
     "commit_count": 8,
     "change_percentage": 255.1,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read file header"
   }
 }

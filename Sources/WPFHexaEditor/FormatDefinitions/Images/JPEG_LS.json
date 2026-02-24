@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG-LS Lossless",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".jls"
   ],
@@ -28,7 +28,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "version": 0,
+    "serialNumber": "",
+    "subject": ""
+  },
   "blocks": [
     {
       "type": "signature",
@@ -47,6 +51,18 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Start of Frame length"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Subject",
+      "variable": "subject",
+      "description": "Subject"
     }
   ],
   "mime_types": [
@@ -112,5 +128,8 @@
     "commit_count": 9,
     "change_percentage": 339.64,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read certificate"
   }
 }

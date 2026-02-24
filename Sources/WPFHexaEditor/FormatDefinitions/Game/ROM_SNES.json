@@ -1,6 +1,6 @@
 {
   "formatName": "Super Nintendo ROM",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".smc",
     ".sfc"
@@ -35,7 +35,10 @@
     "romLayout": 0,
     "romSize": 0,
     "checksumComplement": 0,
-    "checksum": 0
+    "checksum": 0,
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -171,6 +174,18 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "Vectors: COP, -, ABORT, NMI, RESET, IRQ/BRK (emulation 6502)"
+    },
+    {
+      "type": "metadata",
+      "name": "Files",
+      "variable": "fileCount",
+      "description": "Files"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -235,5 +250,8 @@
     "commit_count": 10,
     "change_percentage": 289.74,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header"
   }
 }

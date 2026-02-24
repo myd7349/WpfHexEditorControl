@@ -1,6 +1,6 @@
 {
   "formatName": "Cloud Point File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".cxf"
   ],
@@ -25,7 +25,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileSize": 0,
+    "version": 0,
+    "format": ""
   },
   "blocks": [
     {
@@ -36,6 +39,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "Point cloud file header"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size",
+      "variable": "fileSize",
+      "description": "File Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -91,5 +106,8 @@
     "commit_count": 10,
     "change_percentage": 268.89,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read file header"
   }
 }

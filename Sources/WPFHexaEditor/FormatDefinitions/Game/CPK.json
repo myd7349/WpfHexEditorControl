@@ -1,6 +1,6 @@
 {
   "formatName": "CriWare CPK",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".cpk"
   ],
@@ -30,7 +30,12 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "zipFileCount": 0,
+    "zipCentralDirSize": 0,
+    "zipComment": "",
+    "eocdOffset": -1,
+    "isZip64": false
   },
   "blocks": [
     {
@@ -59,6 +64,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Number of files"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "zipFileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Archive Size",
+      "variable": "zipCentralDirSize",
+      "description": "Archive Size"
     }
   ],
   "quality_metrics": {
@@ -119,5 +136,8 @@
     "commit_count": 9,
     "change_percentage": 322.03,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "parseZIPArchive": "Parse ZIP metadata"
   }
 }

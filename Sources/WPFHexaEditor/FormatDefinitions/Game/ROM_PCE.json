@@ -1,6 +1,6 @@
 {
   "formatName": "PC Engine/TurboGrafx-16 ROM",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".pce",
     ".sgx"
@@ -31,7 +31,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -53,6 +56,18 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "First 8KB ROM bank (Bank 0)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -114,5 +129,8 @@
     "commit_count": 10,
     "change_percentage": 310.62,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Analyze 7.5 Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".hdr",
     ".img"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "width": 0,
+    "height": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -55,6 +59,24 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Database name"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
     }
   ],
   "quality_metrics": {
@@ -111,5 +133,9 @@
     "commit_count": 8,
     "change_percentage": 225.45,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

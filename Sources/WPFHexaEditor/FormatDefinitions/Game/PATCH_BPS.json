@@ -1,6 +1,6 @@
 {
   "formatName": "BPS Patch",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".bps"
   ],
@@ -31,7 +31,10 @@
   },
   "variables": {
     "currentOffset": 0,
-    "srcSizeByte": 0
+    "srcSizeByte": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -73,6 +76,18 @@
       "opacity": 0.2,
       "valueType": "bytes",
       "description": "Variable-length patch commands: SourceRead(0), TargetRead(1), SourceCopy(2), TargetCopy(3)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -141,5 +156,8 @@
     "commit_count": 8,
     "change_percentage": 232.86,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

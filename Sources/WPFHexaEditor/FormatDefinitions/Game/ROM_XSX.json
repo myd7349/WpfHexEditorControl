@@ -1,6 +1,6 @@
 {
   "formatName": "Xbox Series X/S Package",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".xvd",
     ".msixvc"
@@ -31,7 +31,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "crc32Valid": false,
+    "originalSize": 0,
+    "compressionRatio": 0
   },
   "blocks": [
     {
@@ -93,6 +96,18 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "Xbox Series content GUID"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crc32Valid",
+      "description": "CRC Valid"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Original Size"
     }
   ],
   "quality_metrics": {
@@ -154,5 +169,9 @@
     "commit_count": 10,
     "change_percentage": 398.04,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "calculateCRC32": "Validate CRC",
+    "readUInt32LE": "Read size"
   }
 }

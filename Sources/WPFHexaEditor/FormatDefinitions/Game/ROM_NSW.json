@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Switch Package",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".nsp",
     ".xci",
@@ -32,7 +32,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "crc32Valid": false,
+    "originalSize": 0,
+    "compressionRatio": 0
   },
   "blocks": [
     {
@@ -85,6 +88,18 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "File entry table (offset, size, string offset for each file)"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crc32Valid",
+      "description": "CRC Valid"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Original Size"
     }
   ],
   "quality_metrics": {
@@ -147,5 +162,9 @@
     "commit_count": 9,
     "change_percentage": 373.97,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "calculateCRC32": "Validate CRC",
+    "readUInt32LE": "Read size"
   }
 }

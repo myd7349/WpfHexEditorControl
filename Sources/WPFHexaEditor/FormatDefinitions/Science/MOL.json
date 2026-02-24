@@ -1,6 +1,6 @@
 {
   "formatName": "MDL Molfile",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mol"
   ],
@@ -25,7 +25,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileSize": 0,
+    "version": 0,
+    "format": ""
   },
   "blocks": [
     {
@@ -54,6 +57,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Comment line"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size",
+      "variable": "fileSize",
+      "description": "File Size"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -109,5 +124,8 @@
     "commit_count": 9,
     "change_percentage": 296.3,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read file header"
   }
 }

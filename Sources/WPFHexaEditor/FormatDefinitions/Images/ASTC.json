@@ -1,6 +1,6 @@
 {
   "formatName": "ASTC Texture",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".astc"
   ],
@@ -29,7 +29,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -57,6 +61,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Image X, Y, Z dimensions (3 bytes each)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "mime_types": [
@@ -122,5 +138,8 @@
     "commit_count": 9,
     "change_percentage": 306.61,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

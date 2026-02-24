@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Xbox (Original) Image",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".iso",
     ".xiso"
@@ -31,7 +31,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "width": 0,
+    "height": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -73,6 +77,24 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "Image creation timestamp (FILETIME)"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
     }
   ],
   "quality_metrics": {
@@ -134,5 +156,9 @@
     "commit_count": 10,
     "change_percentage": 421.8,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Meridian Lossless Packing",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mlp"
   ],
@@ -29,7 +29,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "crc32Valid": false,
+    "originalSize": 0,
+    "compressionRatio": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -39,6 +43,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "MLP major sync word"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crc32Valid",
+      "description": "CRC Valid"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Original Size"
     }
   ],
   "mime_types": [
@@ -103,5 +119,9 @@
     "commit_count": 9,
     "change_percentage": 250.98,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "calculateCRC32": "Validate CRC",
+    "readUInt32LE": "Read size"
   }
 }

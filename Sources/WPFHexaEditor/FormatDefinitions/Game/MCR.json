@@ -1,6 +1,6 @@
 {
   "formatName": "Minecraft Region",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".mcr"
   ],
@@ -30,7 +30,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -50,6 +53,18 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Chunk timestamp table"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -110,5 +125,8 @@
     "commit_count": 9,
     "change_percentage": 283.49,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

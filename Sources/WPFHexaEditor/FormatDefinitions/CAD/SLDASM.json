@@ -1,6 +1,6 @@
 {
   "formatName": "SolidWorks Assembly",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".sldasm"
   ],
@@ -25,7 +25,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": "",
+    "entityCount": 0,
+    "layerCount": 0
   },
   "blocks": [
     {
@@ -54,6 +57,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "OLE2 major version"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Entities",
+      "variable": "entityCount",
+      "description": "Entities"
     }
   ],
   "quality_metrics": {
@@ -109,5 +124,8 @@
     "commit_count": 9,
     "change_percentage": 298.15,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read CAD header"
   }
 }

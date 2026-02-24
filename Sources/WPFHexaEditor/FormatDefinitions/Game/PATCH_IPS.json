@@ -1,6 +1,6 @@
 {
   "formatName": "IPS Patch",
-  "version": "1.7",
+  "version": "1.8",
   "extensions": [
     ".ips"
   ],
@@ -31,7 +31,10 @@
   },
   "variables": {
     "currentOffset": 0,
-    "firstRecordSize": 0
+    "firstRecordSize": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -72,6 +75,18 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "Start of patch data (RLE or raw bytes - structure varies by size field)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -134,5 +149,8 @@
     "commit_count": 7,
     "change_percentage": 245.86,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

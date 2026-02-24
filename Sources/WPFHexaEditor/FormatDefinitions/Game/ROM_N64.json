@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo 64 ROM",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".n64",
     ".z64",
@@ -34,7 +34,10 @@
     "crc1": 0,
     "crc2": 0,
     "gameTitle": "",
-    "gameCode": ""
+    "gameCode": "",
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -162,6 +165,18 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "IPL3 bootstrap code (4032 bytes, variant depends on cartridge type)"
+    },
+    {
+      "type": "metadata",
+      "name": "Files",
+      "variable": "fileCount",
+      "description": "Files"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -226,5 +241,8 @@
     "commit_count": 9,
     "change_percentage": 402.22,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "PDF Document",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".pdf"
   ],
@@ -27,7 +27,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "pageCount": 0,
+    "title": "",
+    "author": ""
+  },
   "blocks": [
     {
       "type": "signature",
@@ -55,6 +59,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Comment with binary chars (usually %âãÏÓ)"
+    },
+    {
+      "type": "metadata",
+      "name": "Pages",
+      "variable": "pageCount",
+      "description": "Pages"
+    },
+    {
+      "type": "metadata",
+      "name": "Title",
+      "variable": "title",
+      "description": "Title"
     }
   ],
   "mime_types": [
@@ -123,5 +139,8 @@
     "commit_count": 8,
     "change_percentage": 357.38,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read document header"
   }
 }

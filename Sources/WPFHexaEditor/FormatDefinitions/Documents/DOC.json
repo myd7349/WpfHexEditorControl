@@ -1,6 +1,6 @@
 {
   "formatName": "Word Document (Legacy)",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".doc"
   ],
@@ -25,7 +25,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -54,6 +57,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Format major version (3 or 4)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "mime_types": [
@@ -117,5 +132,8 @@
     "commit_count": 8,
     "change_percentage": 277.59,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

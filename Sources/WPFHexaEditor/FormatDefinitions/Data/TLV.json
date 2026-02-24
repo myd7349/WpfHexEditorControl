@@ -1,6 +1,6 @@
 {
   "formatName": "Tag-Length-Value",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".tlv"
   ],
@@ -25,7 +25,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -36,6 +39,18 @@
       "color": "#8E44AD",
       "opacity": 0.4,
       "description": "Tag-Length-Value encoded data"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -91,5 +106,8 @@
     "commit_count": 9,
     "change_percentage": 253.33,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

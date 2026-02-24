@@ -1,6 +1,6 @@
 {
   "formatName": "AVCHD Video",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".mts",
     ".m2ts"
@@ -30,7 +30,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "width": 0,
+    "height": 0,
+    "frameRate": 0,
+    "duration": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -40,6 +45,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "MPEG-TS sync byte for AVCHD format"
+    },
+    {
+      "type": "metadata",
+      "name": "Resolution",
+      "variable": "width",
+      "description": "Resolution"
+    },
+    {
+      "type": "metadata",
+      "name": "Frame Rate",
+      "variable": "frameRate",
+      "description": "Frame Rate"
     }
   ],
   "mime_types": [
@@ -107,5 +124,8 @@
     "commit_count": 8,
     "change_percentage": 243.4,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read video header"
   }
 }

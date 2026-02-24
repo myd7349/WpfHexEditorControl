@@ -1,6 +1,6 @@
 {
   "formatName": "Excel Workbook (Legacy)",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".xls"
   ],
@@ -25,7 +25,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -45,6 +48,18 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Format minor version"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "mime_types": [
@@ -108,5 +123,8 @@
     "commit_count": 8,
     "change_percentage": 258.88,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

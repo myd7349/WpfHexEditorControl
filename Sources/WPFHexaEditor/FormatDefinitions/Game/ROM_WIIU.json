@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Wii U Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".wud",
     ".wux"
@@ -31,7 +31,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "width": 0,
+    "height": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -83,6 +87,24 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "Sector offset table (compressed format)"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
     }
   ],
   "quality_metrics": {
@@ -144,5 +166,9 @@
     "commit_count": 9,
     "change_percentage": 371.33,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

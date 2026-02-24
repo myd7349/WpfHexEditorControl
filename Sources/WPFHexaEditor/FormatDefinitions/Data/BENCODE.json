@@ -1,6 +1,6 @@
 {
   "formatName": "BitTorrent Bencode",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".torrent"
   ],
@@ -25,7 +25,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "sampleRate": 0,
+    "channels": 0,
+    "bitDepth": 0,
+    "duration": 0
   },
   "blocks": [
     {
@@ -36,6 +40,18 @@
       "color": "#16A085",
       "opacity": 0.4,
       "description": "Bencoded dictionary start"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Rate",
+      "variable": "sampleRate",
+      "description": "Sample Rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channels",
+      "description": "Channels"
     }
   ],
   "quality_metrics": {
@@ -91,5 +107,8 @@
     "commit_count": 8,
     "change_percentage": 244.44,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read audio header"
   }
 }

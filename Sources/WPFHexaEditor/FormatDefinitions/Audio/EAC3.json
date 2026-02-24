@@ -1,6 +1,6 @@
 {
   "formatName": "Dolby Digital Plus",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".eac3",
     ".ec3"
@@ -29,7 +29,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "sampleRate": 0,
+    "channels": 0,
+    "bitDepth": 0,
+    "duration": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -39,6 +44,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "Enhanced AC-3 synchronization word"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Rate",
+      "variable": "sampleRate",
+      "description": "Sample Rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channels",
+      "description": "Channels"
     }
   ],
   "mime_types": [
@@ -105,5 +122,8 @@
     "commit_count": 9,
     "change_percentage": 250.0,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read audio header"
   }
 }

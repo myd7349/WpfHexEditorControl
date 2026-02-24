@@ -1,6 +1,6 @@
 {
   "formatName": "VASP POSCAR",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".vasp",
     ".poscar",
@@ -27,7 +27,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -38,6 +41,18 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "First line: system name/comment"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -95,5 +110,8 @@
     "commit_count": 9,
     "change_percentage": 253.19,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

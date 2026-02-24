@@ -1,6 +1,6 @@
 {
   "formatName": "Shanda Bambook",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".snb"
   ],
@@ -24,7 +24,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -61,6 +65,18 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "Offset to content data (little-endian)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "mime_types": [
@@ -124,5 +140,8 @@
     "commit_count": 8,
     "change_percentage": 290.24,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "QOI Image",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".qoi"
   ],
@@ -29,7 +29,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "width": 0,
+    "height": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -75,6 +80,24 @@
       "color": "#FFA07A",
       "opacity": 0.3,
       "description": "0=sRGB, 1=linear"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
     }
   ],
   "mime_types": [
@@ -140,5 +163,9 @@
     "commit_count": 9,
     "change_percentage": 337.41,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

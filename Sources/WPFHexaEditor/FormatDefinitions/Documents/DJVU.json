@@ -1,6 +1,6 @@
 {
   "formatName": "DjVu Document",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".djvu",
     ".djv"
@@ -26,7 +26,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "pageCount": 0,
+    "title": "",
+    "author": ""
   },
   "blocks": [
     {
@@ -55,6 +58,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "DJVU or DJVM"
+    },
+    {
+      "type": "metadata",
+      "name": "Pages",
+      "variable": "pageCount",
+      "description": "Pages"
+    },
+    {
+      "type": "metadata",
+      "name": "Title",
+      "variable": "title",
+      "description": "Title"
     }
   ],
   "mime_types": [
@@ -119,5 +134,8 @@
     "commit_count": 8,
     "change_percentage": 276.27,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read document header"
   }
 }

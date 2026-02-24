@@ -1,6 +1,6 @@
 {
   "formatName": "RealMedia Variable Bitrate",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".rmvb"
   ],
@@ -28,7 +28,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "sampleRate": 0,
+    "channels": 0,
+    "bitDepth": 0,
+    "duration": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -38,6 +43,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": ".RMF - RealMedia File header"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Rate",
+      "variable": "sampleRate",
+      "description": "Sample Rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channels",
+      "description": "Channels"
     }
   ],
   "mime_types": [
@@ -104,5 +121,8 @@
     "commit_count": 9,
     "change_percentage": 251.46,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read audio header"
   }
 }

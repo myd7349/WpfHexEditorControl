@@ -1,6 +1,6 @@
 {
   "formatName": "Gaussian Cube File",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".cube",
     ".cub"
@@ -26,7 +26,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "sampleRate": 0,
+    "channels": 0,
+    "bitDepth": 0,
+    "duration": 0
   },
   "blocks": [
     {
@@ -46,6 +50,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Second comment line"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Rate",
+      "variable": "sampleRate",
+      "description": "Sample Rate"
+    },
+    {
+      "type": "metadata",
+      "name": "Channels",
+      "variable": "channels",
+      "description": "Channels"
     }
   ],
   "quality_metrics": {
@@ -102,5 +118,8 @@
     "commit_count": 9,
     "change_percentage": 276.24,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32BE": "Read audio header"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Xbox 360 Disc Image",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".iso",
     ".xex"
@@ -31,7 +31,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "width": 0,
+    "height": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -84,6 +88,24 @@
       "opacity": 0.3,
       "valueType": "uint32",
       "description": "Offset to security/certificate data"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
     }
   ],
   "quality_metrics": {
@@ -145,5 +167,9 @@
     "commit_count": 10,
     "change_percentage": 408.33,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "VP8 Video",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".vp8",
     ".ivf"
@@ -30,7 +30,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "width": 0,
+    "height": 0,
+    "frameRate": 0,
+    "duration": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -40,6 +45,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "DKIF - IVF container header for VP8"
+    },
+    {
+      "type": "metadata",
+      "name": "Resolution",
+      "variable": "width",
+      "description": "Resolution"
+    },
+    {
+      "type": "metadata",
+      "name": "Frame Rate",
+      "variable": "frameRate",
+      "description": "Frame Rate"
     }
   ],
   "mime_types": [
@@ -107,5 +124,8 @@
     "commit_count": 9,
     "change_percentage": 252.83,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read video header"
   }
 }

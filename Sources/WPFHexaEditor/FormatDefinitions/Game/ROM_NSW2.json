@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Switch 2 Package",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".nsp",
     ".xci",
@@ -34,7 +34,10 @@
   "variables": {
     "currentOffset": 0,
     "formatVersion": 0,
-    "fileCount": 0
+    "fileCount": 0,
+    "crc32Valid": false,
+    "originalSize": 0,
+    "compressionRatio": 0
   },
   "blocks": [
     {
@@ -149,6 +152,18 @@
       "opacity": 0.3,
       "valueType": "bytes",
       "description": "File entry table (offset, size, hash, string offset for each file)"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crc32Valid",
+      "description": "CRC Valid"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Original Size"
     }
   ],
   "quality_metrics": {
@@ -211,5 +226,9 @@
     "commit_count": 8,
     "change_percentage": 320.0,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "calculateCRC32": "Validate CRC",
+    "readUInt32LE": "Read size"
   }
 }

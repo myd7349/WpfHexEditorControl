@@ -1,6 +1,6 @@
 {
   "formatName": "MessagePack",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".msgpack",
     ".mp"
@@ -26,7 +26,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "crc32Valid": false,
+    "originalSize": 0,
+    "compressionRatio": 0
   },
   "blocks": [
     {
@@ -37,6 +40,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "MessagePack binary data"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crc32Valid",
+      "description": "CRC Valid"
+    },
+    {
+      "type": "metadata",
+      "name": "Original Size",
+      "variable": "originalSize",
+      "description": "Original Size"
     }
   ],
   "quality_metrics": {
@@ -93,5 +108,9 @@
     "commit_count": 11,
     "change_percentage": 284.78,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "calculateCRC32": "Validate CRC",
+    "readUInt32LE": "Read size"
   }
 }

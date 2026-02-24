@@ -1,6 +1,6 @@
 {
   "formatName": "Apple Pages",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".pages"
   ],
@@ -24,7 +24,13 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "zipFileCount": 0,
+    "zipCentralDirSize": 0,
+    "zipComment": "",
+    "eocdOffset": -1,
+    "isZip64": false
+  },
   "blocks": [
     {
       "type": "signature",
@@ -61,6 +67,18 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "Compression method (0=stored, 8=deflated)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Count",
+      "variable": "zipFileCount",
+      "description": "File Count"
+    },
+    {
+      "type": "metadata",
+      "name": "Archive Size",
+      "variable": "zipCentralDirSize",
+      "description": "Archive Size"
     }
   ],
   "mime_types": [
@@ -124,5 +142,8 @@
     "commit_count": 8,
     "change_percentage": 290.24,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "parseZIPArchive": "Parse ZIP metadata"
   }
 }

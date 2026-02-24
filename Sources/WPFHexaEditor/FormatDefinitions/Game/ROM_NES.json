@@ -1,6 +1,6 @@
 {
   "formatName": "NES ROM",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".nes"
   ],
@@ -32,7 +32,10 @@
     "prgRomSize": 0,
     "chrRomSize": 0,
     "flags6": 0,
-    "flags7": 0
+    "flags7": 0,
+    "fileCount": 0,
+    "version": "",
+    "indexOffset": 0
   },
   "blocks": [
     {
@@ -132,6 +135,18 @@
       "valueType": "bytes",
       "hidden": true,
       "description": "Must be zero - reserved padding bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Files",
+      "variable": "fileCount",
+      "description": "Files"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
     }
   ],
   "quality_metrics": {
@@ -195,5 +210,8 @@
     "commit_count": 9,
     "change_percentage": 392.78,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read game header"
   }
 }

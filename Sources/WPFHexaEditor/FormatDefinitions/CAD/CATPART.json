@@ -1,6 +1,6 @@
 {
   "formatName": "CATIA Part",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".catpart"
   ],
@@ -25,7 +25,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -36,6 +39,18 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "CATIA V5 header"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -91,5 +106,8 @@
     "commit_count": 8,
     "change_percentage": 206.67,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

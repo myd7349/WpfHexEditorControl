@@ -1,6 +1,6 @@
 {
   "formatName": "F2FS (Flash-Friendly File System)",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".f2fs"
   ],
@@ -30,7 +30,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
   },
   "blocks": [
     {
@@ -41,6 +44,18 @@
       "color": "#34A853",
       "opacity": 0.4,
       "description": "F2FS superblock structure"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "quality_metrics": {
@@ -99,5 +114,8 @@
     "commit_count": 8,
     "change_percentage": 255.1,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }

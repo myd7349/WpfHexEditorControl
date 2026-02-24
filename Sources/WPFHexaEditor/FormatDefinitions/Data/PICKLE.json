@@ -1,6 +1,6 @@
 {
   "formatName": "Python Pickle",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".pkl",
     ".pickle"
@@ -26,7 +26,10 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 0,
+    "classCount": 0,
+    "methodCount": 0
   },
   "blocks": [
     {
@@ -37,6 +40,18 @@
       "color": "#FFD43B",
       "opacity": 0.4,
       "description": "Python pickle protocol version"
+    },
+    {
+      "type": "metadata",
+      "name": "Version",
+      "variable": "version",
+      "description": "Version"
+    },
+    {
+      "type": "metadata",
+      "name": "Classes",
+      "variable": "classCount",
+      "description": "Classes"
     }
   ],
   "quality_metrics": {
@@ -93,5 +108,8 @@
     "commit_count": 8,
     "change_percentage": 243.48,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read bytecode header"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Panasonic Raw Image",
-  "version": "1.8",
+  "version": "1.9",
   "extensions": [
     ".rw2"
   ],
@@ -30,7 +30,11 @@
     }
   },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "width": 0,
+    "height": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -41,6 +45,24 @@
       "color": "#FF6B6B",
       "opacity": 0.4,
       "description": "RW2 uses TIFF structure"
+    },
+    {
+      "type": "metadata",
+      "name": "Width",
+      "variable": "width",
+      "description": "Width"
+    },
+    {
+      "type": "metadata",
+      "name": "Height",
+      "variable": "height",
+      "description": "Height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total Pixels"
     }
   ],
   "mime_types": [
@@ -107,5 +129,9 @@
     "commit_count": 8,
     "change_percentage": 215.09,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read dimensions",
+    "multiply": "Calculate pixels"
   }
 }

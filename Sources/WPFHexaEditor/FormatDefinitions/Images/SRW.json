@@ -1,6 +1,6 @@
 {
   "formatName": "Samsung SRW RAW",
-  "version": "1.9",
+  "version": "1.10",
   "extensions": [
     ".srw"
   ],
@@ -29,7 +29,11 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "variables": {
+    "machineType": "",
+    "sectionCount": 0,
+    "entryPoint": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -48,6 +52,18 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "First IFD offset"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine",
+      "variable": "machineType",
+      "description": "Machine"
+    },
+    {
+      "type": "metadata",
+      "name": "Sections",
+      "variable": "sectionCount",
+      "description": "Sections"
     }
   ],
   "mime_types": [
@@ -114,5 +130,8 @@
     "commit_count": 9,
     "change_percentage": 282.3,
     "last_updated": "2026-02-24"
+  },
+  "functions": {
+    "readUInt32LE": "Read executable header"
   }
 }
