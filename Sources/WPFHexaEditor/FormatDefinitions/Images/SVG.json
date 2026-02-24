@@ -1,6 +1,6 @@
 {
   "formatName": "SVG Vector Image",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".svg",
     ".svgz"
@@ -29,6 +29,10 @@
       "min_file_size": 5,
       "max_signature_offset": 1024
     }
+  },
+  "functions": {
+    "extractASCIIString": "Extract SVG XML content and metadata",
+    "extractUTF8String": "Extract Unicode SVG text content"
   },
   "variables": {
     "currentOffset": 0
@@ -110,5 +114,10 @@
   },
   "TechnicalDetails": {
     "ImagesFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 247.46,
+    "last_updated": "2026-02-24"
   }
 }

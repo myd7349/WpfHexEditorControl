@@ -1,6 +1,6 @@
 {
   "formatName": "DSD Stream File",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dsf"
   ],
@@ -29,7 +29,21 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt64LE": "Read 64-bit little-endian for chunk sizes and sample counts",
+    "readUInt32LE": "Read 32-bit values for format version, sample rate, and channels",
+    "readUInt8": "Read format configuration flags"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "chunkSize": 0,
+    "formatVersion": 1,
+    "formatID": 0,
+    "channelType": 0,
+    "channels": 2,
+    "sampleRate": 2822400,
+    "bitDepth": 1
+  },
   "blocks": [
     {
       "type": "signature",
@@ -100,5 +114,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 220.34,
+    "last_updated": "2026-02-24"
   }
 }

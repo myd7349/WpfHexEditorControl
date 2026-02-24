@@ -1,6 +1,6 @@
 {
   "formatName": "Raw H.264/AVC",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".h264",
     ".264",
@@ -104,5 +104,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 253.7,
+    "last_updated": "2026-02-24"
   }
 }

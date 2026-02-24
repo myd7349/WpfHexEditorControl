@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 2 Disc Image",
-  "version": "1.0",
+  "version": "1.7",
   "extensions": [
     ".iso",
     ".bin"
@@ -129,5 +129,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 7,
+    "change_percentage": 223.31,
+    "last_updated": "2026-02-24"
   }
 }

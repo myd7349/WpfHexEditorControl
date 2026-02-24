@@ -1,6 +1,6 @@
 {
   "formatName": "DivX Video",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".divx"
   ],
@@ -99,5 +99,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 270.87,
+    "last_updated": "2026-02-24"
   }
 }

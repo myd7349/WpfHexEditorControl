@@ -1,6 +1,6 @@
 {
   "formatName": "Android Package",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".apk"
   ],
@@ -24,8 +24,22 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "parseZIPArchive": "Parse APK as ZIP archive to extract DEX, manifest, resources",
+    "extractUTF8String": "Extract app package name, version from AndroidManifest.xml",
+    "readUInt32LE": "Read ZIP header fields",
+    "calculateSHA256": "Calculate SHA256 hash for APK signature verification"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "packageName": "Unknown",
+    "versionCode": 0,
+    "versionName": "Unknown",
+    "minSDK": 0,
+    "targetSDK": 0,
+    "dexFiles": 0,
+    "nativeLibs": 0,
+    "signed": false
   },
   "blocks": [
     {
@@ -102,5 +116,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 190.0,
+    "last_updated": "2026-02-24"
+  }
 }

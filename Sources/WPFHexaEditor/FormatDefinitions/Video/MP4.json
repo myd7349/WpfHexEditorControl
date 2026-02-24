@@ -1,6 +1,6 @@
 {
   "formatName": "MP4 Video",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".mp4",
     ".m4v",
@@ -28,8 +28,22 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for box sizes and timestamps",
+    "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat, trak)",
+    "readUInt16BE": "Read 16-bit values for video dimensions and audio config",
+    "multiply": "Calculate duration from timescale"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "majorBrand": "Unknown",
+    "minorVersion": 0,
+    "width": 0,
+    "height": 0,
+    "duration": 0,
+    "timescale": 0,
+    "videoCodec": "Unknown",
+    "audioCodec": "Unknown"
   },
   "blocks": [
     {
@@ -136,5 +150,10 @@
     "Container": "MPEG-4 Part 14",
     "VideoFormat": true,
     "SupportsEncryption": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 342.86,
+    "last_updated": "2026-02-24"
   }
 }

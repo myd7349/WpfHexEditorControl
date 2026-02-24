@@ -1,6 +1,6 @@
 {
   "formatName": "Advanced Systems Format",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".asf",
     ".wma",
@@ -30,7 +30,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt64LE": "Read 64-bit little-endian GUID values and object sizes",
+    "readUInt32LE": "Read 32-bit values for stream properties",
+    "readUInt16LE": "Read 16-bit values for video dimensions and audio config"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "objectSize": 0,
+    "headerObjects": 0,
+    "width": 0,
+    "height": 0,
+    "duration": 0,
+    "bitrate": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -102,5 +115,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 226.89,
+    "last_updated": "2026-02-24"
   }
 }

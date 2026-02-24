@@ -1,6 +1,6 @@
 {
   "formatName": "OGG Audio",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".ogg",
     ".oga",
@@ -29,8 +29,19 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for serial number and page sequence",
+    "readUInt64LE": "Read 64-bit little-endian for granule position",
+    "readUInt8": "Read page flags and segment count"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "streamVersion": 0,
+    "headerType": 0,
+    "granulePosition": 0,
+    "serialNumber": 0,
+    "pageSequence": 0,
+    "checksum": 0
   },
   "blocks": [
     {
@@ -134,5 +145,10 @@
   "TechnicalDetails": {
     "AudioFormat": true,
     "CompressionMethod": "Vorbis codec"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 354.36,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "GIF Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".gif"
   ],
@@ -26,8 +26,16 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read logical screen width and height (little-endian)",
+    "multiply": "Calculate canvas size (width × height)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "canvasWidth": 0,
+    "canvasHeight": 0,
+    "totalPixels": 0,
+    "version": ""
   },
   "blocks": [
     {
@@ -92,6 +100,30 @@
       "color": "#FF6B9D",
       "opacity": 0.3,
       "description": "Pixel aspect ratio"
+    },
+    {
+      "type": "metadata",
+      "name": "GIF Version",
+      "variable": "version",
+      "description": "GIF version (87a or 89a)"
+    },
+    {
+      "type": "metadata",
+      "name": "Canvas Width (pixels)",
+      "variable": "canvasWidth",
+      "description": "Logical screen width"
+    },
+    {
+      "type": "metadata",
+      "name": "Canvas Height (pixels)",
+      "variable": "canvasHeight",
+      "description": "Logical screen height"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Canvas width × height"
     }
   ],
   "mime_types": [
@@ -156,5 +188,10 @@
     "ColorSpace": "Indexed (256 colors)",
     "BitDepth": 8,
     "ImagesFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 367.71,
+    "last_updated": "2026-02-24"
   }
 }

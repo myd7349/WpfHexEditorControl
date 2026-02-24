@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo GameCube Disc",
-  "version": "1.0",
+  "version": "2.1",
   "extensions": [
     ".gcm",
     ".iso"
@@ -205,5 +205,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 11,
+    "change_percentage": 364.11,
+    "last_updated": "2026-02-24"
   }
 }

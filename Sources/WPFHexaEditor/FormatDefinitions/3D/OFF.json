@@ -1,6 +1,6 @@
 {
   "formatName": "Object File Format",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".off"
   ],
@@ -101,5 +101,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 286.67,
+    "last_updated": "2026-02-24"
+  }
 }

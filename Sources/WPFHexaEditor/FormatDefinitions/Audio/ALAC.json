@@ -1,6 +1,6 @@
 {
   "formatName": "Apple Lossless Audio Codec",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".alac",
     ".m4a"
@@ -30,7 +30,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for MP4 box sizes and atom headers",
+    "extractASCIIString": "Extract box type identifiers (ftyp, alac, moov)",
+    "readUInt16BE": "Read 16-bit values for audio configuration"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "boxSize": 0,
+    "majorBrand": "Unknown",
+    "sampleRate": 0,
+    "channels": 0,
+    "bitDepth": 16,
+    "duration": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -107,5 +120,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 234.68,
+    "last_updated": "2026-02-24"
   }
 }

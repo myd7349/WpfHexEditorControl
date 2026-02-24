@@ -1,6 +1,6 @@
 {
   "formatName": "GIMP Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".xcf"
   ],
@@ -29,8 +29,12 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "extractASCIIString": "Extract XCF version string"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": ""
   },
   "blocks": [
     {
@@ -50,6 +54,12 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "File format version"
+    },
+    {
+      "type": "metadata",
+      "name": "XCF Version",
+      "variable": "version",
+      "description": "GIMP XCF format version"
     }
   ],
   "mime_types": [
@@ -110,5 +120,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 241.94,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Saturn Disc Image",
-  "version": "1.0",
+  "version": "1.7",
   "extensions": [
     ".iso",
     ".bin"
@@ -195,5 +195,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 7,
+    "change_percentage": 249.75,
+    "last_updated": "2026-02-24"
   }
 }

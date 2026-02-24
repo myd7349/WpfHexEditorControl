@@ -1,6 +1,6 @@
 {
   "formatName": "Tom's Audio Kompressor",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".tak"
   ],
@@ -97,5 +97,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 250.5,
+    "last_updated": "2026-02-24"
   }
 }

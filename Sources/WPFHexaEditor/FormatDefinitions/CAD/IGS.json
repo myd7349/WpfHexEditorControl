@@ -1,6 +1,6 @@
 {
   "formatName": "IGES",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".igs",
     ".iges"
@@ -88,5 +88,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 269.57,
+    "last_updated": "2026-02-24"
+  }
 }

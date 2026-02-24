@@ -1,6 +1,6 @@
 {
   "formatName": "OpenDocument Text",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".odt"
   ],
@@ -24,8 +24,20 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "parseZIPArchive": "Parse OpenDocument as ZIP archive to extract content.xml and meta.xml",
+    "extractUTF8String": "Extract document metadata (title, author, subject)",
+    "readUInt32LE": "Read ZIP header fields (signatures, sizes, CRC)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileCount": 0,
+    "title": "Unknown",
+    "author": "Unknown",
+    "subject": "Unknown",
+    "pages": 0,
+    "words": 0,
+    "generator": "Unknown"
   },
   "blocks": [
     {
@@ -108,5 +120,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 243.55,
+    "last_updated": "2026-02-24"
   }
 }

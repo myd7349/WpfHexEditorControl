@@ -1,6 +1,6 @@
 {
   "formatName": "Mobipocket eBook",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".mobi",
     ".prc"
@@ -25,8 +25,19 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for PalmDOC header fields",
+    "extractASCIIString": "Extract book title and database name (32 bytes at offset 0)",
+    "readUInt16BE": "Read 16-bit values for record count and attributes"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "databaseName": "Unknown",
+    "title": "Unknown",
+    "author": "Unknown",
+    "recordCount": 0,
+    "mobiType": "Unknown",
+    "encoding": "UTF-8"
   },
   "blocks": [
     {
@@ -108,5 +119,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 247.15,
+    "last_updated": "2026-02-24"
   }
 }

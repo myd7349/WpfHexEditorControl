@@ -1,6 +1,6 @@
 {
   "formatName": "Web Open Font Format",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".woff"
   ],
@@ -115,5 +115,10 @@
   },
   "TechnicalDetails": {
     "CompressionMethod": "WOFF compression"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 414.29,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Dolby TrueHD",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".thd",
     ".truehd"
@@ -100,5 +100,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 248.08,
+    "last_updated": "2026-02-24"
   }
 }

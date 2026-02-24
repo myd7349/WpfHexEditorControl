@@ -1,6 +1,6 @@
 {
   "formatName": "DOS COM Executable",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".com"
   ],
@@ -105,5 +105,10 @@
   },
   "TechnicalDetails": {
     "ExecutablesFormat": true
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 268.81,
+    "last_updated": "2026-02-24"
   }
 }

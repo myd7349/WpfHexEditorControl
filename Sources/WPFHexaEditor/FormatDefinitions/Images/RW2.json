@@ -1,6 +1,6 @@
 {
   "formatName": "Panasonic Raw Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".rw2"
   ],
@@ -102,5 +102,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 215.09,
+    "last_updated": "2026-02-24"
   }
 }

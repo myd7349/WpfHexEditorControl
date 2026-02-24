@@ -1,6 +1,6 @@
 {
   "formatName": "Compiled HTML Help",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".chm"
   ],
@@ -24,8 +24,19 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for ITSF header fields (version, size, timestamp)",
+    "extractUTF8String": "Extract CHM title and topic names from internal files",
+    "readUInt64LE": "Read 64-bit directory and content section offsets"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 3,
+    "headerLength": 0,
+    "totalLength": 0,
+    "languageID": 0,
+    "title": "Unknown",
+    "files": 0
   },
   "blocks": [
     {
@@ -116,5 +127,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 264.12,
+    "last_updated": "2026-02-24"
   }
 }

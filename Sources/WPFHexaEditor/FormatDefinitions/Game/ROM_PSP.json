@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation Portable ISO",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".iso",
     ".cso"
@@ -139,5 +139,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 395.1,
+    "last_updated": "2026-02-24"
   }
 }

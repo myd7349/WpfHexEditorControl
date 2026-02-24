@@ -1,6 +1,6 @@
 {
   "formatName": "WebAssembly Binary",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".wasm"
   ],
@@ -24,8 +24,20 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for magic and version",
+    "readUInt8": "Read section types and LEB128 encoded sizes",
+    "calculateSHA256": "Calculate SHA256 hash for module integrity"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 1,
+    "sections": 0,
+    "functions": 0,
+    "imports": 0,
+    "exports": 0,
+    "memory": 0,
+    "tables": 0
   },
   "blocks": [
     {
@@ -105,5 +117,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 248.76,
+    "last_updated": "2026-02-24"
+  }
 }

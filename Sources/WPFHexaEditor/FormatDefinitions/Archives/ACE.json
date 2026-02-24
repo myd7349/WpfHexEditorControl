@@ -1,6 +1,6 @@
 {
   "formatName": "ACE Archive",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".ace"
   ],
@@ -29,8 +29,13 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "validateCRC32": "Validate header CRC-16 integrity"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "headerCRC": 0,
+    "crcValid": false
   },
   "blocks": [
     {
@@ -50,6 +55,18 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Header CRC-16"
+    },
+    {
+      "type": "metadata",
+      "name": "Header CRC",
+      "variable": "headerCRC",
+      "description": "CRC-16 checksum of header"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC Valid",
+      "variable": "crcValid",
+      "description": "Header integrity validation result"
     }
   ],
   "mime_types": [
@@ -109,5 +126,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 250.0,
+    "last_updated": "2026-02-24"
   }
 }

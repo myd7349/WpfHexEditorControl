@@ -1,6 +1,6 @@
 {
   "formatName": "Apache Avro",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".avro"
   ],
@@ -86,5 +86,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 244.44,
+    "last_updated": "2026-02-24"
+  }
 }

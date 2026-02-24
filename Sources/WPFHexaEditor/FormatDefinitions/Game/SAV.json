@@ -1,6 +1,6 @@
 {
   "formatName": "Game Save File",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".sav"
   ],
@@ -99,5 +99,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 274.76,
+    "last_updated": "2026-02-24"
   }
 }

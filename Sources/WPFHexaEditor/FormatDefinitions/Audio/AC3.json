@@ -1,6 +1,6 @@
 {
   "formatName": "Dolby Digital AC-3",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".ac3"
   ],
@@ -29,7 +29,19 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt16BE": "Read 16-bit big-endian for sync word and frame header",
+    "bitwiseAnd": "Extract sample rate, bitrate, and channel configuration",
+    "bitwiseShiftRight": "Parse AC-3 frame header bits"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "sampleRate": 48000,
+    "bitrate": 0,
+    "channels": 0,
+    "bsid": 0,
+    "frameSize": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -99,5 +111,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 223.48,
+    "last_updated": "2026-02-24"
   }
 }

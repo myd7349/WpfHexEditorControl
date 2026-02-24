@@ -1,6 +1,6 @@
 {
   "formatName": "Brotli Compression",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".br"
   ],
@@ -29,7 +29,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 for data integrity"
+  },
+  "variables": {
+    "windowBits": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -48,6 +53,12 @@
       "color": "#4ECDC4",
       "opacity": 0.4,
       "description": "Brotli compressed data stream (bit-packed format)"
+    },
+    {
+      "type": "metadata",
+      "name": "Window Bits",
+      "variable": "windowBits",
+      "description": "Window size configuration for decompression"
     }
   ],
   "mime_types": [
@@ -112,5 +123,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 237.8,
+    "last_updated": "2026-02-24"
   }
 }

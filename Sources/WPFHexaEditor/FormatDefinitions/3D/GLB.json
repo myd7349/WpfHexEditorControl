@@ -1,6 +1,6 @@
 {
   "formatName": "Binary glTF",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".glb"
   ],
@@ -112,5 +112,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 300.0,
+    "last_updated": "2026-02-24"
+  }
 }

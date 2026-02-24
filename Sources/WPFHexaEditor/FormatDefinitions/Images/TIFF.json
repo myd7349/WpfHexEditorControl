@@ -1,6 +1,6 @@
 {
   "formatName": "TIFF Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".tif",
     ".tiff"
@@ -28,8 +28,15 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read IFD offset (little-endian) or readUInt32BE (big-endian)",
+    "readUInt32BE": "Read fields for big-endian TIFF (MM header)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "ifdOffset": 0,
+    "byteOrder": "",
+    "version": 42
   },
   "blocks": [
     {
@@ -58,6 +65,24 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Offset to first Image File Directory"
+    },
+    {
+      "type": "metadata",
+      "name": "Byte Order",
+      "variable": "byteOrder",
+      "description": "Endianness (II=little-endian, MM=big-endian)"
+    },
+    {
+      "type": "metadata",
+      "name": "IFD Offset",
+      "variable": "ifdOffset",
+      "description": "Byte offset to first Image File Directory"
+    },
+    {
+      "type": "metadata",
+      "name": "TIFF Version",
+      "variable": "version",
+      "description": "Always 42 (magic number)"
     }
   ],
   "mime_types": [
@@ -121,5 +146,10 @@
     "ImagesFormat": true,
     "BitDepth": 16,
     "ColorSpace": "RGB, CMYK, Lab"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 320.67,
+    "last_updated": "2026-02-24"
   }
 }

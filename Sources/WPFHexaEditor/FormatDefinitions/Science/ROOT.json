@@ -1,6 +1,6 @@
 {
   "formatName": "ROOT Data File",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".root"
   ],
@@ -95,5 +95,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 217.17,
+    "last_updated": "2026-02-24"
+  }
 }

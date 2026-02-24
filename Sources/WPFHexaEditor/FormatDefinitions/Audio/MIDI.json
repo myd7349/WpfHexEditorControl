@@ -1,6 +1,6 @@
 {
   "formatName": "MIDI Audio",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".mid",
     ".midi"
@@ -30,8 +30,18 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for chunk sizes",
+    "readUInt16BE": "Read 16-bit big-endian for format type, track count, and division",
+    "extractASCIIString": "Extract chunk identifiers (MThd, MTrk)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "headerLength": 6,
+    "format": 0,
+    "tracks": 0,
+    "division": 0,
+    "timeDivision": "Ticks per quarter note"
   },
   "blocks": [
     {
@@ -138,5 +148,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 288.16,
+    "last_updated": "2026-02-24"
   }
 }

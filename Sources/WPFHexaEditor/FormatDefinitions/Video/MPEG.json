@@ -1,6 +1,6 @@
 {
   "formatName": "MPEG Video",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".mpg",
     ".mpeg",
@@ -31,8 +31,20 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for start codes",
+    "readUInt16BE": "Read 16-bit values for picture dimensions",
+    "bitwiseAnd": "Extract width, height, aspect ratio, and frame rate",
+    "bitwiseShiftRight": "Parse sequence header fields"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "width": 0,
+    "height": 0,
+    "aspectRatio": "Unknown",
+    "frameRate": 0,
+    "bitrate": 0,
+    "vbvBufferSize": 0
   },
   "blocks": [
     {
@@ -114,5 +126,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 240.0,
+    "last_updated": "2026-02-24"
   }
 }

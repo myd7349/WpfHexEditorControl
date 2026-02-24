@@ -1,6 +1,6 @@
 {
   "formatName": "VP9 Video",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".vp9",
     ".ivf"
@@ -102,5 +102,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 252.83,
+    "last_updated": "2026-02-24"
   }
 }

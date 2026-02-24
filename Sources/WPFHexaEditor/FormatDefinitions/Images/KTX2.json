@@ -1,6 +1,6 @@
 {
   "formatName": "Khronos Texture 2",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".ktx2"
   ],
@@ -29,7 +29,12 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32LE": "Read KTX2 header fields (little-endian)"
+  },
+  "variables": {
+    "vkFormat": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -57,6 +62,12 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "Type size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Vulkan Format",
+      "variable": "vkFormat",
+      "description": "Vulkan format enumeration value"
     }
   ],
   "mime_types": [
@@ -117,5 +128,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 279.55,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "macOS Dynamic Library",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dylib"
   ],
@@ -119,5 +119,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 400.81,
+    "last_updated": "2026-02-24"
+  }
 }

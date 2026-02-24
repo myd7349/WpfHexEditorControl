@@ -1,6 +1,6 @@
 {
   "formatName": "BZIP2 Compressed File",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".bz2",
     ".bzip2"
@@ -28,8 +28,13 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 of compressed data blocks"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "blockSize": 0,
+    "dataCRC": 0
   },
   "blocks": [
     {
@@ -49,6 +54,12 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Block size (1-9) * 100KB"
+    },
+    {
+      "type": "metadata",
+      "name": "Block Size (KB)",
+      "variable": "blockSize",
+      "description": "Compression block size in kilobytes (100-900KB)"
     }
   ],
   "mime_types": [
@@ -112,5 +123,10 @@
   "TechnicalDetails": {
     "CompressionMethod": "Burrows-Wheeler",
     "ArchivesFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 310.24,
+    "last_updated": "2026-02-24"
   }
 }

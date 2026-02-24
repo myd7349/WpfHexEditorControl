@@ -1,6 +1,6 @@
 {
   "formatName": "Creative Voice File",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".voc"
   ],
@@ -29,7 +29,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt16LE": "Read 16-bit little-endian for version and data block offset",
+    "readUInt8": "Read block type, sample rate divisor, and codec",
+    "readUInt24LE": "Read 24-bit block size"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "version": 0,
+    "dataBlockOffset": 0,
+    "blockType": 0,
+    "sampleRate": 11025,
+    "channels": 1,
+    "codec": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -99,5 +112,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 221.55,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "AIFF Audio",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".aiff",
     ".aif",
@@ -31,8 +31,19 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for chunk sizes and sample rate",
+    "extractASCIIString": "Extract chunk identifiers (FORM, AIFF, COMM, SSND)",
+    "readUInt16BE": "Read 16-bit values for channels and bit depth"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "formSize": 0,
+    "fileType": "Unknown",
+    "channels": 0,
+    "sampleFrames": 0,
+    "bitDepth": 0,
+    "sampleRate": 0
   },
   "blocks": [
     {
@@ -123,5 +134,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 258.7,
+    "last_updated": "2026-02-24"
   }
 }

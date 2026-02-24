@@ -1,6 +1,6 @@
 {
   "formatName": "Half-Life WAD",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".wad"
   ],
@@ -114,5 +114,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 310.17,
+    "last_updated": "2026-02-24"
   }
 }

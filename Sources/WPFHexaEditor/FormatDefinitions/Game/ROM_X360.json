@@ -1,6 +1,6 @@
 {
   "formatName": "Xbox 360 Disc Image",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".iso",
     ".xex"
@@ -140,5 +140,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 408.33,
+    "last_updated": "2026-02-24"
   }
 }

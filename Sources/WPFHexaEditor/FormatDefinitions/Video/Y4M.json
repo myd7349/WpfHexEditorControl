@@ -1,6 +1,6 @@
 {
   "formatName": "YUV4MPEG2",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".y4m"
   ],
@@ -99,5 +99,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 268.93,
+    "last_updated": "2026-02-24"
   }
 }

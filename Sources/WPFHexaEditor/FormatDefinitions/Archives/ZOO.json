@@ -1,6 +1,6 @@
 {
   "formatName": "ZOO Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".zoo"
   ],
@@ -29,8 +29,12 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read archive start offset (little-endian)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "archiveStart": 0
   },
   "blocks": [
     {
@@ -50,6 +54,12 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Offset to first file"
+    },
+    {
+      "type": "metadata",
+      "name": "Archive Start Offset",
+      "variable": "archiveStart",
+      "description": "Byte offset to first archived file"
     }
   ],
   "mime_types": [
@@ -111,5 +121,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 245.6,
+    "last_updated": "2026-02-24"
   }
 }

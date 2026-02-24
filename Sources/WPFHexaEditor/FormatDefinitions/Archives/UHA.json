@@ -1,6 +1,6 @@
 {
   "formatName": "UHA Archive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".uha"
   ],
@@ -126,5 +126,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 298.46,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Adaptive Multi-Rate",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".amr"
   ],
@@ -29,7 +29,19 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt8": "Read frame type and quality indicator from AMR frames",
+    "bitwiseAnd": "Extract frame mode from header byte",
+    "bitwiseShiftRight": "Parse frame header bits"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "frameType": "Unknown",
+    "mode": 0,
+    "bitrate": 0,
+    "channels": 1,
+    "sampleRate": 8000
+  },
   "blocks": [
     {
       "type": "signature",
@@ -99,5 +111,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 223.48,
+    "last_updated": "2026-02-24"
   }
 }

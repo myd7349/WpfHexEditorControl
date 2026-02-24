@@ -1,6 +1,6 @@
 {
   "formatName": "SQLite Write-Ahead Log",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".wal",
     "-wal"
@@ -91,5 +91,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 238.95,
+    "last_updated": "2026-02-24"
+  }
 }

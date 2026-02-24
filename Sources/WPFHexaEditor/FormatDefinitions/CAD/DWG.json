@@ -1,6 +1,6 @@
 {
   "formatName": "AutoCAD Drawing",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dwg"
   ],
@@ -92,5 +92,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 225.0,
+    "last_updated": "2026-02-24"
+  }
 }

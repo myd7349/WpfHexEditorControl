@@ -1,6 +1,6 @@
 {
   "formatName": "Linker MAP File",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".map"
   ],
@@ -105,5 +105,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 283.49,
+    "last_updated": "2026-02-24"
+  }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Microsoft Reader",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".lit"
   ],
@@ -24,7 +24,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for ITSF header (version, header length)",
+    "extractUTF8String": "Extract book metadata (title, author) from manifest",
+    "readUInt64LE": "Read 64-bit file offsets for content sections"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "version": 3,
+    "headerLength": 0,
+    "title": "Unknown",
+    "author": "Unknown",
+    "hasDRM": false,
+    "encoding": "UTF-8"
+  },
   "blocks": [
     {
       "type": "signature",
@@ -119,5 +132,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 262.5,
+    "last_updated": "2026-02-24"
   }
 }

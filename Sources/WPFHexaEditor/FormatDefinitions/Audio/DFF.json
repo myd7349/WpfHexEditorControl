@@ -1,6 +1,6 @@
 {
   "formatName": "DSD Interchange File Format",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dff"
   ],
@@ -29,7 +29,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt64BE": "Read 64-bit big-endian for IFF chunk sizes",
+    "readUInt32BE": "Read 32-bit values for sample rate and channel count",
+    "extractASCIIString": "Extract chunk identifiers (FRM8, DSD, FVER, PROP)"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "formSize": 0,
+    "formType": "Unknown",
+    "formatVersion": 0,
+    "sampleRate": 2822400,
+    "channels": 2,
+    "channelType": "Unknown"
+  },
   "blocks": [
     {
       "type": "signature",
@@ -100,5 +113,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 222.22,
+    "last_updated": "2026-02-24"
   }
 }

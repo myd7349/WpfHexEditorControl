@@ -1,6 +1,6 @@
 {
   "formatName": "AutoCAD DXF",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dxf"
   ],
@@ -90,5 +90,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 227.66,
+    "last_updated": "2026-02-24"
+  }
 }

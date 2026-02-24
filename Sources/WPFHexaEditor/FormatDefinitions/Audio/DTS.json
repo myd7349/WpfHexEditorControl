@@ -1,6 +1,6 @@
 {
   "formatName": "DTS Audio",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dts",
     ".dtshd"
@@ -30,7 +30,19 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for sync word and frame header",
+    "readUInt16BE": "Read 16-bit values for audio configuration",
+    "bitwiseAnd": "Extract frame type, sample rate, and bit rate"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "frameType": "Unknown",
+    "sampleRate": 48000,
+    "bitrate": 0,
+    "channels": 0,
+    "lfePresent": false
+  },
   "blocks": [
     {
       "type": "signature",
@@ -101,5 +113,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 224.79,
+    "last_updated": "2026-02-24"
   }
 }

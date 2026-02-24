@@ -1,6 +1,6 @@
 {
   "formatName": "Java Class File",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".class"
   ],
@@ -24,8 +24,21 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for magic number",
+    "readUInt16BE": "Read 16-bit big-endian for version numbers and constant pool count",
+    "extractUTF8String": "Extract class name, method names from constant pool",
+    "calculateSHA256": "Calculate SHA256 hash for class file verification"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "minorVersion": 0,
+    "majorVersion": 0,
+    "constantPoolCount": 0,
+    "className": "Unknown",
+    "superClassName": "Unknown",
+    "accessFlags": 0,
+    "methods": 0
   },
   "blocks": [
     {
@@ -110,5 +123,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 269.29,
+    "last_updated": "2026-02-24"
+  }
 }

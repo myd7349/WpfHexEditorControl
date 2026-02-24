@@ -1,6 +1,6 @@
 {
   "formatName": "HDF5 Data File",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".h5",
     ".hdf5"
@@ -97,5 +97,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 220.79,
+    "last_updated": "2026-02-24"
+  }
 }

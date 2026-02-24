@@ -1,6 +1,6 @@
 {
   "formatName": "APNG Animated Image",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".apng",
     ".png"
@@ -154,5 +154,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 307.59,
+    "last_updated": "2026-02-24"
   }
 }

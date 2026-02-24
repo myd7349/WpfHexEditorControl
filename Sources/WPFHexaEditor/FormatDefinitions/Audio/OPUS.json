@@ -1,6 +1,6 @@
 {
   "formatName": "Opus Audio",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".opus"
   ],
@@ -29,7 +29,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32LE": "Read Ogg page metadata (serial number, sequence)",
+    "readUInt8": "Read Opus header fields (version, channels, pre-skip)",
+    "readUInt16LE": "Read 16-bit fields from Opus header"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "opusVersion": 0,
+    "channels": 0,
+    "preSkip": 0,
+    "sampleRate": 48000,
+    "outputGain": 0,
+    "channelMappingFamily": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -111,5 +124,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 225.78,
+    "last_updated": "2026-02-24"
   }
 }

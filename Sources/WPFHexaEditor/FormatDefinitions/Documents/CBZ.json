@@ -1,6 +1,6 @@
 {
   "formatName": "Comic Book ZIP",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".cbz"
   ],
@@ -122,5 +122,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 377.78,
+    "last_updated": "2026-02-24"
   }
 }

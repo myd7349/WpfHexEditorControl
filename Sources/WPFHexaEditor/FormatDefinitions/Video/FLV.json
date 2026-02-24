@@ -1,6 +1,6 @@
 {
   "formatName": "Flash Video",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".flv"
   ],
@@ -29,8 +29,21 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt8": "Read 8-bit values for version and type flags",
+    "readUInt32BE": "Read 32-bit big-endian for data offset and tag sizes",
+    "bitwiseAnd": "Extract audio/video presence flags"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 1,
+    "hasVideo": false,
+    "hasAudio": false,
+    "dataOffset": 9,
+    "width": 0,
+    "height": 0,
+    "videoCodec": "Unknown",
+    "audioCodec": "Unknown"
   },
   "blocks": [
     {
@@ -138,5 +151,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 273.55,
+    "last_updated": "2026-02-24"
   }
 }

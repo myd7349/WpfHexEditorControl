@@ -1,6 +1,6 @@
 {
   "formatName": "Maya ASCII",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".ma"
   ],
@@ -90,5 +90,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 263.83,
+    "last_updated": "2026-02-24"
+  }
 }

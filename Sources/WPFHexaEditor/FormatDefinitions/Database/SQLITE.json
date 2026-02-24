@@ -1,6 +1,6 @@
 {
   "formatName": "SQLite Database",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".sqlite",
     ".db",
@@ -27,8 +27,23 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt16BE": "Read 16-bit big-endian for page size",
+    "readUInt32BE": "Read 32-bit big-endian for page counts and schema cookie",
+    "readUInt8": "Read file format versions and reserved bytes",
+    "extractUTF8String": "Extract database text encoding and user version"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "pageSize": 4096,
+    "writeVersion": 1,
+    "readVersion": 1,
+    "fileChangeCounter": 0,
+    "databaseSize": 0,
+    "schemaFormat": 0,
+    "textEncoding": "UTF-8",
+    "userVersion": 0,
+    "applicationID": 0
   },
   "blocks": [
     {
@@ -129,5 +144,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 272.3,
+    "last_updated": "2026-02-24"
+  }
 }

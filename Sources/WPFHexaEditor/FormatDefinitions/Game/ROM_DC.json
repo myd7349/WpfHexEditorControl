@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Dreamcast Disc Image",
-  "version": "1.0",
+  "version": "1.7",
   "extensions": [
     ".gdi",
     ".cdi",
@@ -207,5 +207,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 7,
+    "change_percentage": 251.66,
+    "last_updated": "2026-02-24"
   }
 }

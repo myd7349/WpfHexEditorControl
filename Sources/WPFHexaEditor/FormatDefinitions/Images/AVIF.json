@@ -1,6 +1,6 @@
 {
   "formatName": "AVIF Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".avif"
   ],
@@ -26,8 +26,14 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read box sizes (big-endian)",
+    "extractASCIIString": "Extract brand identifiers"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "boxSize": 0,
+    "majorBrand": ""
   },
   "blocks": [
     {
@@ -56,6 +62,18 @@
       "color": "#95E1D3",
       "opacity": 0.3,
       "description": "avif brand"
+    },
+    {
+      "type": "metadata",
+      "name": "Box Size",
+      "variable": "boxSize",
+      "description": "Size of ftyp box"
+    },
+    {
+      "type": "metadata",
+      "name": "Major Brand",
+      "variable": "majorBrand",
+      "description": "AVIF brand identifier"
     }
   ],
   "mime_types": [
@@ -118,5 +136,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 318.57,
+    "last_updated": "2026-02-24"
   }
 }

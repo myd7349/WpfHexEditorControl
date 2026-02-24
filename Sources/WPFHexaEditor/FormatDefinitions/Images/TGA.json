@@ -1,6 +1,6 @@
 {
   "formatName": "TGA Image",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".tga",
     ".tpic"
@@ -30,8 +30,13 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "extractASCIIString": "Extract image ID and metadata strings"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "idLength": 0,
+    "imageType": 0
   },
   "blocks": [
     {
@@ -60,6 +65,12 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "description": "Image type code"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Type",
+      "variable": "imageType",
+      "description": "TGA image type code"
     }
   ],
   "mime_types": [
@@ -121,5 +132,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 271.32,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "Material Exchange Format",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".mxf"
   ],
@@ -103,5 +103,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 264.49,
+    "last_updated": "2026-02-24"
   }
 }

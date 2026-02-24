@@ -1,6 +1,6 @@
 {
   "formatName": "JPEG Network Graphics",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".jng"
   ],
@@ -107,5 +107,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 341.44,
+    "last_updated": "2026-02-24"
   }
 }

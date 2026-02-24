@@ -1,6 +1,6 @@
 {
   "formatName": "Super Nintendo ROM",
-  "version": "1.0",
+  "version": "2.0",
   "extensions": [
     ".smc",
     ".sfc"
@@ -230,5 +230,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 10,
+    "change_percentage": 289.74,
+    "last_updated": "2026-02-24"
   }
 }

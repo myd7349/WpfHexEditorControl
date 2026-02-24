@@ -1,6 +1,6 @@
 {
   "formatName": "Atari 2600 ROM",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".a26",
     ".bin"
@@ -119,5 +119,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 303.25,
+    "last_updated": "2026-02-24"
   }
 }

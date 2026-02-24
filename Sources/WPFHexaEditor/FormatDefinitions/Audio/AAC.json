@@ -1,6 +1,6 @@
 {
   "formatName": "AAC Audio",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".aac"
   ],
@@ -29,8 +29,18 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt16BE": "Read 16-bit big-endian for ADTS header parsing",
+    "bitwiseAnd": "Extract bitrate and sample rate from ADTS header",
+    "bitwiseShiftRight": "Shift bits to extract audio configuration"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "sampleRate": 0,
+    "channels": 0,
+    "profile": "Unknown",
+    "bitrate": 0,
+    "frameLength": 0
   },
   "blocks": [
     {
@@ -110,5 +120,10 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 233.87,
+    "last_updated": "2026-02-24"
   }
 }

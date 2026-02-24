@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Installer Package",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".msi"
   ],
@@ -29,8 +29,13 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read OLE2/CFB header fields (little-endian)",
+    "calculateCRC32": "Calculate CRC-32 for integrity validation"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "minorVersion": 0
   },
   "blocks": [
     {
@@ -50,6 +55,12 @@
       "color": "#4ECDC4",
       "opacity": 0.3,
       "description": "Format minor version"
+    },
+    {
+      "type": "metadata",
+      "name": "Minor Version",
+      "variable": "minorVersion",
+      "description": "MSI format minor version"
     }
   ],
   "mime_types": [
@@ -118,5 +129,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 248.12,
+    "last_updated": "2026-02-24"
   }
 }

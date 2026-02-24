@@ -1,6 +1,6 @@
 {
   "formatName": "Motion JPEG",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".mjpeg",
     ".mjpg"
@@ -101,5 +101,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 298.1,
+    "last_updated": "2026-02-24"
   }
 }

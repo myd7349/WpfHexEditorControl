@@ -1,6 +1,6 @@
 {
   "formatName": "DLL Library",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".dll"
   ],
@@ -120,5 +120,10 @@
   "TechnicalDetails": {
     "ExecutablesFormat": true,
     "Platform": "Windows"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 401.61,
+    "last_updated": "2026-02-24"
   }
 }

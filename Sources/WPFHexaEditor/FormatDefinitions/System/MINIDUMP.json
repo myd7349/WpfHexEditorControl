@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Minidump",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".dmp",
     ".mdmp"
@@ -142,5 +142,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 369.86,
+    "last_updated": "2026-02-24"
+  }
 }

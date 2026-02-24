@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Master System ROM",
-  "version": "1.0",
+  "version": "1.7",
   "extensions": [
     ".sms",
     ".gg"
@@ -154,5 +154,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 7,
+    "change_percentage": 236.71,
+    "last_updated": "2026-02-24"
   }
 }

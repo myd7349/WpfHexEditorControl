@@ -1,6 +1,6 @@
 {
   "formatName": "AV1 Video",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".av1",
     ".ivf"
@@ -105,5 +105,10 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 252.29,
+    "last_updated": "2026-02-24"
   }
 }

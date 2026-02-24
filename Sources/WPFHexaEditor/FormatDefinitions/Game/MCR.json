@@ -1,6 +1,6 @@
 {
   "formatName": "Minecraft Region",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".mcr"
   ],
@@ -105,5 +105,10 @@
   },
   "TechnicalDetails": {
     "Platform": "Various"
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 283.49,
+    "last_updated": "2026-02-24"
   }
 }

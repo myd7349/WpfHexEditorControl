@@ -1,6 +1,6 @@
 {
   "formatName": "AVI Video",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".avi"
   ],
@@ -26,8 +26,20 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read 32-bit little-endian for RIFF chunk sizes and frame rates",
+    "extractASCIIString": "Extract chunk identifiers (RIFF, AVI, hdrl, strl, movi)",
+    "readUInt16LE": "Read 16-bit values for video dimensions"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileSize": 0,
+    "width": 0,
+    "height": 0,
+    "frameRate": 0,
+    "totalFrames": 0,
+    "videoCodec": "Unknown",
+    "audioCodec": "Unknown"
   },
   "blocks": [
     {
@@ -119,5 +131,10 @@
     "VideoFormat": true,
     "Container": "AVI (Audio Video Interleave)",
     "Platform": "Windows"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 337.04,
+    "last_updated": "2026-02-24"
   }
 }

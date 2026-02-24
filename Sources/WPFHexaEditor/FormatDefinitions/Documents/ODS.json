@@ -1,6 +1,6 @@
 {
   "formatName": "OpenDocument Spreadsheet",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".ods"
   ],
@@ -24,8 +24,20 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "parseZIPArchive": "Parse OpenDocument as ZIP archive to extract spreadsheet data",
+    "extractUTF8String": "Extract spreadsheet metadata (title, author, subject)",
+    "readUInt32LE": "Read ZIP header fields (signatures, sizes, CRC)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "fileCount": 0,
+    "title": "Unknown",
+    "author": "Unknown",
+    "subject": "Unknown",
+    "sheets": 0,
+    "tables": 0,
+    "generator": "Unknown"
   },
   "blocks": [
     {
@@ -103,5 +115,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 232.77,
+    "last_updated": "2026-02-24"
   }
 }

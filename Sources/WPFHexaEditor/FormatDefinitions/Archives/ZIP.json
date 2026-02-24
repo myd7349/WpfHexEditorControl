@@ -1,6 +1,6 @@
 {
   "formatName": "ZIP Archive",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".zip",
     ".jar",
@@ -42,7 +42,8 @@
     "zipCentralDirSize": 0,
     "zipCommentLength": 0,
     "zipComment": "",
-    "eocdOffset": -1
+    "eocdOffset": -1,
+    "isZip64": false
   },
   "blocks": [
     {
@@ -173,6 +174,12 @@
       "name": "EOCD Offset",
       "variable": "eocdOffset",
       "description": "Byte offset of End of Central Directory record"
+    },
+    {
+      "type": "metadata",
+      "name": "ZIP64 Format",
+      "variable": "isZip64",
+      "description": "true if ZIP64 format (large files/archives), false if standard ZIP"
     }
   ],
   "mime_types": [
@@ -242,5 +249,10 @@
     "CompressionMethod": "DEFLATE, BZIP2, LZMA",
     "ArchivesFormat": true,
     "SupportsEncryption": true
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 418.97,
+    "last_updated": "2026-02-24"
   }
 }

@@ -1,6 +1,6 @@
 {
   "formatName": "PCX Image",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".pcx"
   ],
@@ -29,8 +29,13 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32LE": "Read PCX dimensions and metadata"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "version": 0,
+    "bitsPerPixel": 0
   },
   "blocks": [
     {
@@ -68,6 +73,18 @@
       "color": "#FFE66D",
       "opacity": 0.3,
       "description": "Bits per pixel per plane"
+    },
+    {
+      "type": "metadata",
+      "name": "PCX Version",
+      "variable": "version",
+      "description": "PCX format version number"
+    },
+    {
+      "type": "metadata",
+      "name": "Bits Per Pixel",
+      "variable": "bitsPerPixel",
+      "description": "Color depth (bits per pixel)"
     }
   ],
   "mime_types": [
@@ -128,5 +145,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 267.11,
+    "last_updated": "2026-02-24"
   }
 }

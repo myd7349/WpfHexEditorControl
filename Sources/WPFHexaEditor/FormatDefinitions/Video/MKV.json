@@ -1,6 +1,6 @@
 {
   "formatName": "Matroska Video",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".mkv",
     ".mka",
@@ -28,8 +28,21 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "readUInt32BE": "Read 32-bit big-endian for EBML element IDs and sizes",
+    "readUInt16BE": "Read 16-bit values for video dimensions",
+    "extractASCIIString": "Extract string values (DocType, CodecID, Title)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "ebmlVersion": 1,
+    "docType": "matroska",
+    "width": 0,
+    "height": 0,
+    "duration": 0,
+    "timecodeScale": 1000000,
+    "videoCodec": "Unknown",
+    "audioCodec": "Unknown"
   },
   "blocks": [
     {
@@ -113,5 +126,10 @@
   "TechnicalDetails": {
     "VideoFormat": true,
     "Container": "Matroska"
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 311.54,
+    "last_updated": "2026-02-24"
   }
 }

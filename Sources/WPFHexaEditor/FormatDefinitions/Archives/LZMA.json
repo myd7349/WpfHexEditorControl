@@ -1,6 +1,6 @@
 {
   "formatName": "LZMA Compression",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".lzma",
     ".xz"
@@ -30,7 +30,13 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "readUInt32LE": "Read dictionary size and uncompressed size (little-endian)"
+  },
+  "variables": {
+    "dictionarySize": 0,
+    "uncompressedSize": 0
+  },
   "blocks": [
     {
       "type": "signature",
@@ -58,6 +64,18 @@
       "color": "#45B7D1",
       "opacity": 0.4,
       "description": "Uncompressed file size (little-endian, 0xFFFFFFFFFFFFFFFF if unknown)"
+    },
+    {
+      "type": "metadata",
+      "name": "Dictionary Size (bytes)",
+      "variable": "dictionarySize",
+      "description": "LZMA dictionary size in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Uncompressed Size (bytes)",
+      "variable": "uncompressedSize",
+      "description": "Original file size before compression"
     }
   ],
   "mime_types": [
@@ -121,5 +139,10 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 244.06,
+    "last_updated": "2026-02-24"
   }
 }

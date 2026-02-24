@@ -1,6 +1,6 @@
 {
   "formatName": "GZIP Compressed File",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".gz",
     ".gzip"
@@ -28,8 +28,15 @@
       "max_signature_offset": 1024
     }
   },
+  "functions": {
+    "calculateCRC32": "Calculate CRC-32 of uncompressed data",
+    "readUInt32LE": "Read modification timestamp and file size (little-endian)"
+  },
   "variables": {
-    "currentOffset": 0
+    "currentOffset": 0,
+    "modificationTime": 0,
+    "originalSize": 0,
+    "compressedCRC": 0
   },
   "blocks": [
     {
@@ -85,6 +92,18 @@
       "color": "#B8B8FF",
       "opacity": 0.3,
       "description": "Operating system ID"
+    },
+    {
+      "type": "metadata",
+      "name": "Modification Timestamp",
+      "variable": "modificationTime",
+      "description": "Unix timestamp of file modification time"
+    },
+    {
+      "type": "metadata",
+      "name": "Original File Size",
+      "variable": "originalSize",
+      "description": "Size of original uncompressed file (from footer)"
     }
   ],
   "mime_types": [
@@ -149,5 +168,10 @@
   "TechnicalDetails": {
     "CompressionMethod": "DEFLATE",
     "ArchivesFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 375.0,
+    "last_updated": "2026-02-24"
   }
 }

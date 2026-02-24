@@ -1,6 +1,6 @@
 {
   "formatName": "Windows Registry Hive",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     "",
     ".hiv"
@@ -169,5 +169,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 364.74,
+    "last_updated": "2026-02-24"
+  }
 }

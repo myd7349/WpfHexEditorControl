@@ -1,6 +1,6 @@
 {
   "formatName": "Universal Scene Description",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".usd"
   ],
@@ -102,5 +102,10 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {},
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 279.25,
+    "last_updated": "2026-02-24"
+  }
 }

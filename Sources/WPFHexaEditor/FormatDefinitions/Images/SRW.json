@@ -1,6 +1,6 @@
 {
   "formatName": "Samsung SRW RAW",
-  "version": "1.0",
+  "version": "1.9",
   "extensions": [
     ".srw"
   ],
@@ -109,5 +109,10 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "version_history": {
+    "commit_count": 9,
+    "change_percentage": 282.3,
+    "last_updated": "2026-02-24"
   }
 }

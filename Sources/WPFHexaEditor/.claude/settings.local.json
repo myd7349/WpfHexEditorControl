@@ -146,7 +146,9 @@
       "Bash(/c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/Views/Panels/PatternAnalysisPanel.xaml:*)",
       "Bash(\"c:\\\\Users\\\\khens\\\\source\\\\repos\\\\WpfHexEditorControl\\\\Sources\\\\WPFHexaEditor\\\\Tools\\\\add_references.py\":*)",
       "Bash(\"c:\\\\Users\\\\khens\\\\source\\\\repos\\\\WpfHexEditorControl\\\\Sources\\\\WPFHexaEditor\\\\Tools\\\\enrich_formats.py\":*)",
-      "Bash(Tools/enrich_top50_extended.py:*)"
+      "Bash(Tools/enrich_top50_extended.py:*)",
+      "Bash(do echo \"=== Exemple de fichier version $version ===\")",
+      "Read(//c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/FormatDefinitions/**)"
     ]
   }
 }

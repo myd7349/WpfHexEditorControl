@@ -1,6 +1,6 @@
 {
   "formatName": "FictionBook 2.0",
-  "version": "1.0",
+  "version": "1.8",
   "extensions": [
     ".fb2"
   ],
@@ -24,7 +24,20 @@
       "max_signature_offset": 1024
     }
   },
-  "variables": {},
+  "functions": {
+    "extractUTF8String": "Extract XML elements (title, author, publisher) from FB2 metadata",
+    "extractASCIIString": "Extract XML tag names and attributes",
+    "readUInt8": "Read XML characters for parsing"
+  },
+  "variables": {
+    "currentOffset": 0,
+    "title": "Unknown",
+    "author": "Unknown",
+    "publisher": "Unknown",
+    "language": "ru",
+    "genre": "Unknown",
+    "date": "Unknown"
+  },
   "blocks": [
     {
       "type": "signature",
@@ -110,5 +123,10 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "version_history": {
+    "commit_count": 8,
+    "change_percentage": 245.67,
+    "last_updated": "2026-02-24"
   }
 }
