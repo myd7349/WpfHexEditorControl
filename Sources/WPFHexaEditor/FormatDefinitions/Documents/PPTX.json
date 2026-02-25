@@ -48,14 +48,23 @@
     "uncompressedSize": 0,
     "filenameLength": 0,
     "extraFieldLength": 0,
-    "compressionRatio": 0
+    "compressionRatio": 0,
+    "zipFileCount": 0,
+    "zipCentralDirSize": 0,
+    "zipCommentLength": 0,
+    "zipComment": "",
+    "eocdOffset": -1,
+    "isZip64": false,
+    "formattedSize": "",
+    "zipFirstEntryName": "",
+    "zipEntryList": "",
+    "zipTotalUncompressedSize": 0,
+    "zipEntryCount": 0
   },
   "functions": {
-    "parseZIPArchive": "Walk ZIP local file headers and central directory to enumerate all entries in the OOXML package",
-    "formatFileSize": "Format raw byte counts into human-readable sizes (KB, MB)",
-    "readUInt32LE": "Read 4-byte little-endian unsigned integer from buffer",
-    "readUInt16LE": "Read 2-byte little-endian unsigned integer from buffer",
-    "extractUTF8String": "Extract presentation properties (title, author, subject) from core.xml inside the ZIP"
+    "parseZIPArchive": "Parse End of Central Directory for archive statistics",
+    "parseZipEntries": "Parse Central Directory to extract entry names and total uncompressed size",
+    "formatFileSize(var:zipCentralDirSize)": "Format central directory size"
   },
   "blocks": [
     {
@@ -227,6 +236,42 @@
       "trueLabel": "This PPTX file is encrypted",
       "falseLabel": "This PPTX file is not encrypted",
       "description": "Checks bit 0 of general purpose flags to determine if the archive entry is encrypted"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Files in Archive",
+      "variable": "zipFileCount",
+      "description": "Total number of files/entries in the OOXML package"
+    },
+    {
+      "type": "metadata",
+      "name": "Central Directory Size",
+      "variable": "formattedSize",
+      "description": "Human-readable size of the ZIP central directory"
+    },
+    {
+      "type": "metadata",
+      "name": "ZIP64 Format",
+      "variable": "isZip64",
+      "description": "true if ZIP64 format, false if standard ZIP"
+    },
+    {
+      "type": "metadata",
+      "name": "First Entry Name",
+      "variable": "zipFirstEntryName",
+      "description": "Name of the first file in the ZIP archive (typically [Content_Types].xml for OOXML)"
+    },
+    {
+      "type": "metadata",
+      "name": "Package Contents",
+      "variable": "zipEntryList",
+      "description": "List of all files/entries inside the PPTX package"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Uncompressed Size",
+      "variable": "zipTotalUncompressedSize",
+      "description": "Total uncompressed size of all entries in the package (bytes)"
     }
   ],
   "MimeTypes": [
@@ -247,7 +292,7 @@
   "QualityMetrics": {
     "CompletenessScore": 88,
     "DocumentationLevel": "comprehensive",
-    "BlocksDefined": 13,
+    "BlocksDefined": 19,
     "ValidationRules": 3,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,

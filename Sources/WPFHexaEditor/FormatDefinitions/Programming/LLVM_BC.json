@@ -25,13 +25,7 @@
     }
   },
   "variables": {
-    "sampleRate": 0,
-    "channels": 0,
-    "bitDepth": 0,
-    "duration": 0,
-    "llvmBitcodeMagic": "",
-    "byteRate": 0,
-    "samplesPerSecond": 0
+    "llvmBitcodeMagic": ""
   },
   "blocks": [
     {
@@ -62,30 +56,6 @@
       "color": "#45B7D1",
       "opacity": 0.4,
       "description": "LLVM bitstream data"
-    },
-    {
-      "type": "metadata",
-      "name": "Sample Rate",
-      "variable": "sampleRate",
-      "description": "Sample Rate"
-    },
-    {
-      "type": "metadata",
-      "name": "Channels",
-      "variable": "channels",
-      "description": "Channels"
-    },
-    {
-      "type": "metadata",
-      "name": "Byte Rate",
-      "variable": "byteRate",
-      "description": "Calculated byte rate"
-    },
-    {
-      "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
     }
   ],
   "software": [
@@ -117,16 +87,12 @@
   "QualityMetrics": {
     "CompletenessScore": 26,
     "DocumentationLevel": "standard",
-    "BlocksDefined": 7,
+    "BlocksDefined": 3,
     "ValidationRules": 0,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {},
-  "functions": {
-    "readUInt32BE": "Read audio header",
-    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  }
+  "functions": {}
 }

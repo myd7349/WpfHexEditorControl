@@ -31,13 +31,7 @@
   },
   "variables": {
     "currentOffset": 0,
-    "sampleRate": 0,
-    "channels": 0,
-    "bitDepth": 0,
-    "duration": 0,
-    "tiffHeader": 0,
-    "byteRate": 0,
-    "samplesPerSecond": 0
+    "tiffHeader": 0
   },
   "blocks": [
     {
@@ -50,30 +44,6 @@
       "description": "DNG uses TIFF structure",
       "storeAs": "tiffHeader",
       "valueType": "uint32"
-    },
-    {
-      "type": "metadata",
-      "name": "Sample Rate",
-      "variable": "sampleRate",
-      "description": "Sample Rate"
-    },
-    {
-      "type": "metadata",
-      "name": "Channels",
-      "variable": "channels",
-      "description": "Channels"
-    },
-    {
-      "type": "metadata",
-      "name": "Byte Rate",
-      "variable": "byteRate",
-      "description": "Calculated byte rate"
-    },
-    {
-      "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
     }
   ],
   "software": [
@@ -105,7 +75,7 @@
   "QualityMetrics": {
     "CompletenessScore": 26,
     "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
+    "BlocksDefined": 1,
     "ValidationRules": 0,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
@@ -115,9 +85,5 @@
     "ImagesFormat": true,
     "BitDepth": 8
   },
-  "functions": {
-    "readUInt32BE": "Read audio header",
-    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  }
+  "functions": {}
 }

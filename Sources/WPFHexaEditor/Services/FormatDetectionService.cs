@@ -239,7 +239,7 @@ namespace WpfHexaEditor.Services
             }
 
             // Step 3: Score and rank candidates
-            ScoreAndRankCandidates(candidates, fileName, contentAnalysis);
+            ScoreAndRankCandidates(candidates, fileName, contentAnalysis, data);
 
             // Step 4: Decision logic
             return DecideFormat(candidates, contentAnalysis, sw);
@@ -417,30 +417,56 @@ namespace WpfHexaEditor.Services
         /// <summary>
         /// Score and rank all candidates by confidence
         /// </summary>
-        private void ScoreAndRankCandidates(List<FormatMatchCandidate> candidates, string fileName, ContentAnalysisResult contentAnalysis)
+        private void ScoreAndRankCandidates(List<FormatMatchCandidate> candidates, string fileName, ContentAnalysisResult contentAnalysis, byte[] data = null)
         {
+            // Detect shared signatures: multiple candidates matching the same magic bytes
+            bool hasSharedSignatures = candidates.Count > 1 &&
+                candidates.Select(c => c.Format?.Detection?.Signature).Distinct().Count() <
+                candidates.Count(c => c.Format?.Detection?.Signature != null);
+
+            // For ZIP-based formats, analyze the first entry name to disambiguate
+            string zipFirstEntryName = null;
+            if (hasSharedSignatures && data != null)
+            {
+                zipFirstEntryName = ExtractZipFirstEntryName(data);
+            }
+
             foreach (var candidate in candidates)
             {
                 double score = 0.0;
                 var factors = new List<string>();
 
-                // Signature confidence (40% weight)
+                // Signature confidence (30% weight)
                 if (candidate.SignatureConfidence > 0)
                 {
-                    score += candidate.SignatureConfidence * 0.4;
+                    score += candidate.SignatureConfidence * 0.30;
                     factors.Add($"Signature match ({candidate.SignatureConfidence:P0})");
                 }
 
-                // Extension match (25% weight)
+                // Extension match (30% weight, boosted to 40% for shared signatures)
                 if (MatchesExtension(candidate.Format, fileName))
                 {
-                    candidate.ExtensionConfidence = 0.8;
-                    score += 0.25 * 0.8;
-                    factors.Add("Extension match");
+                    candidate.ExtensionConfidence = 1.0;
+                    double extensionWeight = hasSharedSignatures ? 0.40 : 0.30;
+                    score += extensionWeight;
+                    factors.Add(hasSharedSignatures ? "Extension match (shared sig boost)" : "Extension match");
                 }
 
-                // Content analysis (20% weight)
-                if (candidate.ContentConfidence > 0)
+                // ZIP content analysis (25% weight) - disambiguate ZIP-based formats
+                bool hasZipContentMatch = false;
+                if (zipFirstEntryName != null && candidate.Format?.Detection?.Signature == "504B0304")
+                {
+                    double zipContentScore = ScoreZipContentMatch(candidate.Format, zipFirstEntryName);
+                    if (zipContentScore > 0)
+                    {
+                        score += zipContentScore * 0.25;
+                        hasZipContentMatch = true;
+                        factors.Add($"ZIP content match ({zipFirstEntryName})");
+                    }
+                }
+
+                // Content analysis (20% weight) - skip if already scored via ZIP content
+                if (!hasZipContentMatch && candidate.ContentConfidence > 0)
                 {
                     score += candidate.ContentConfidence * 0.2;
                     factors.Add($"Content pattern ({candidate.ContentConfidence:P0})");
@@ -617,6 +643,110 @@ namespace WpfHexaEditor.Services
 
             return format.Extensions.Any(ext =>
                 ext.Equals(extension, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Extract the first entry filename from a ZIP archive.
+        /// The ZIP Local File Header is 30 bytes, followed by the filename.
+        /// </summary>
+        private string ExtractZipFirstEntryName(byte[] data)
+        {
+            try
+            {
+                // Verify PK signature
+                if (data == null || data.Length < 31 || data[0] != 0x50 || data[1] != 0x4B ||
+                    data[2] != 0x03 || data[3] != 0x04)
+                    return null;
+
+                // Filename length at offset 26 (little-endian uint16)
+                int filenameLength = data[26] | (data[27] << 8);
+                if (filenameLength <= 0 || filenameLength > 256 || 30 + filenameLength > data.Length)
+                    return null;
+
+                return System.Text.Encoding.UTF8.GetString(data, 30, filenameLength);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Score how well a format matches the ZIP first entry content.
+        /// Returns 0.0-1.0 based on how specific the match is.
+        /// </summary>
+        private double ScoreZipContentMatch(FormatDefinition format, string firstEntryName)
+        {
+            if (string.IsNullOrEmpty(firstEntryName) || format == null)
+                return 0.0;
+
+            var name = firstEntryName.ToLowerInvariant();
+            var formatName = format.FormatName?.ToLowerInvariant() ?? "";
+            var category = format.Category?.ToLowerInvariant() ?? "";
+
+            // OOXML detection: [Content_Types].xml is always the first entry
+            if (name.Contains("[content_types].xml") || name.StartsWith("word/") ||
+                name.StartsWith("xl/") || name.StartsWith("ppt/") ||
+                name.StartsWith("_rels/"))
+            {
+                // DOCX/XLSX/PPTX/generic OOXML
+                if (formatName.Contains("word") || formatName.Contains("docx") ||
+                    (category == "documents" && format.Extensions?.Any(e => e == ".docx") == true))
+                {
+                    if (name.StartsWith("word/")) return 1.0;
+                    if (name.Contains("[content_types]")) return 0.8;
+                }
+                if (formatName.Contains("excel") || formatName.Contains("xlsx") ||
+                    (category == "documents" && format.Extensions?.Any(e => e == ".xlsx") == true))
+                {
+                    if (name.StartsWith("xl/")) return 1.0;
+                    if (name.Contains("[content_types]")) return 0.8;
+                }
+                if (formatName.Contains("powerpoint") || formatName.Contains("pptx") ||
+                    (category == "documents" && format.Extensions?.Any(e => e == ".pptx") == true))
+                {
+                    if (name.StartsWith("ppt/")) return 1.0;
+                    if (name.Contains("[content_types]")) return 0.8;
+                }
+
+                // Any OOXML format gets a boost vs plain ZIP
+                if (category == "documents")
+                    return 0.6;
+
+                // Plain ZIP gets penalized for OOXML content
+                if (formatName.Contains("zip") && category.Contains("archive"))
+                    return 0.0;
+            }
+
+            // JAR detection: META-INF/ directory
+            if (name.StartsWith("meta-inf/"))
+            {
+                if (format.Extensions?.Any(e => e == ".jar") == true)
+                    return 1.0;
+                if (formatName.Contains("zip") && category.Contains("archive"))
+                    return 0.0;
+            }
+
+            // APK detection: AndroidManifest.xml or classes.dex
+            if (name == "androidmanifest.xml" || name == "classes.dex")
+            {
+                if (format.Extensions?.Any(e => e == ".apk") == true)
+                    return 1.0;
+                if (formatName.Contains("zip") && category.Contains("archive"))
+                    return 0.0;
+            }
+
+            // EPUB detection: mimetype file (must be first entry, uncompressed)
+            if (name == "mimetype")
+            {
+                if (format.Extensions?.Any(e => e == ".epub") == true)
+                    return 1.0;
+                if (formatName.Contains("zip") && category.Contains("archive"))
+                    return 0.0;
+            }
+
+            // No specific content match
+            return 0.0;
         }
 
         /// <summary>

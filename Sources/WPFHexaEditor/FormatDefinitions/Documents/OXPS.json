@@ -25,14 +25,7 @@
     }
   },
   "variables": {
-    "sampleRate": 0,
-    "channels": 0,
-    "bitDepth": 0,
-    "durationSeconds": 0,
-    "totalSamples": 0,
-    "zipSignature": "",
-    "byteRate": 0,
-    "samplesPerSecond": 0
+    "zipSignature": ""
   },
   "blocks": [
     {
@@ -72,42 +65,6 @@
       "color": "#96CEB4",
       "opacity": 0.4,
       "description": "Compression method (0=stored, 8=deflated)"
-    },
-    {
-      "type": "metadata",
-      "name": "Sample Rate",
-      "variable": "sampleRate",
-      "description": "Audio sample rate (Hz)"
-    },
-    {
-      "type": "metadata",
-      "name": "Channels",
-      "variable": "channels",
-      "description": "Number of audio channels"
-    },
-    {
-      "type": "metadata",
-      "name": "Bit Depth",
-      "variable": "bitDepth",
-      "description": "Bits per sample"
-    },
-    {
-      "type": "metadata",
-      "name": "Duration",
-      "variable": "durationSeconds",
-      "description": "Total duration in seconds"
-    },
-    {
-      "type": "metadata",
-      "name": "Byte Rate",
-      "variable": "byteRate",
-      "description": "Calculated byte rate"
-    },
-    {
-      "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
     }
   ],
   "software": [
@@ -139,7 +96,7 @@
   "QualityMetrics": {
     "CompletenessScore": 26,
     "DocumentationLevel": "standard",
-    "BlocksDefined": 10,
+    "BlocksDefined": 4,
     "ValidationRules": 0,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
@@ -148,10 +105,5 @@
   "TechnicalDetails": {
     "DocumentFormat": true
   },
-  "functions": {
-    "readUInt32BE": "Read audio metadata",
-    "divide": "Calculate duration",
-    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  }
+  "functions": {}
 }

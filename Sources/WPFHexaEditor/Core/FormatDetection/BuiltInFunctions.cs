@@ -1328,6 +1328,156 @@ namespace WpfHexaEditor.Core.FormatDetection
 
 
         /// <summary>
+        /// Parses ZIP Central Directory to extract entry names and sizes.
+        /// Must be called after ParseZIPArchive (needs eocdOffset and zipCentralDirSize).
+        /// Sets variables: zipFirstEntryName, zipEntryList, zipTotalUncompressedSize, zipEntryCount
+        /// </summary>
+        public void ParseZipEntries()
+        {
+            try
+            {
+                // Read first entry filename from Local File Header (offset 30)
+                byte[] header;
+                if (_byteProvider != null && _byteProvider.IsOpen)
+                    header = _byteProvider.GetBytes(0, Math.Min(300, (int)_byteProvider.VirtualLength));
+                else
+                    header = _data;
+
+                string firstEntryName = "";
+                if (header.Length >= 30)
+                {
+                    int fnLen = header[26] | (header[27] << 8);
+                    if (fnLen > 0 && 30 + fnLen <= header.Length)
+                        firstEntryName = Encoding.UTF8.GetString(header, 30, fnLen);
+                }
+                _variables["zipFirstEntryName"] = firstEntryName;
+
+                // Get EOCD info from previous ParseZIPArchive call
+                long eocdOffset = _variables.ContainsKey("eocdOffset") ? Convert.ToInt64(_variables["eocdOffset"]) : -1;
+                long centralDirSize = _variables.ContainsKey("zipCentralDirSize") ? Convert.ToInt64(_variables["zipCentralDirSize"]) : 0;
+
+                if (eocdOffset < 0 || centralDirSize <= 0)
+                {
+                    _variables["zipEntryList"] = firstEntryName;
+                    _variables["zipTotalUncompressedSize"] = 0L;
+                    _variables["zipEntryCount"] = 0;
+                    return;
+                }
+
+                // Read Central Directory offset from EOCD
+                bool isZip64 = _variables.ContainsKey("isZip64") && Convert.ToBoolean(_variables["isZip64"]);
+                byte[] eocdData;
+                if (_byteProvider != null && _byteProvider.IsOpen)
+                    eocdData = _byteProvider.GetBytes(eocdOffset, Math.Min(56, (int)(_byteProvider.VirtualLength - eocdOffset)));
+                else if (eocdOffset + 22 <= _data.Length)
+                    eocdData = _data;
+                else
+                {
+                    _variables["zipEntryList"] = firstEntryName;
+                    _variables["zipTotalUncompressedSize"] = 0L;
+                    _variables["zipEntryCount"] = 0;
+                    return;
+                }
+
+                long centralDirOffset;
+                if (isZip64)
+                {
+                    // ZIP64 EOCD: central dir offset at +48 (8 bytes)
+                    long off = eocdOffset;
+                    byte[] z64buf;
+                    if (_byteProvider != null && _byteProvider.IsOpen)
+                        z64buf = _byteProvider.GetBytes(off + 48, 8);
+                    else if (off + 56 <= _data.Length)
+                        z64buf = new byte[] { _data[off+48], _data[off+49], _data[off+50], _data[off+51],
+                                              _data[off+52], _data[off+53], _data[off+54], _data[off+55] };
+                    else
+                    {
+                        _variables["zipEntryList"] = firstEntryName;
+                        _variables["zipTotalUncompressedSize"] = 0L;
+                        _variables["zipEntryCount"] = 0;
+                        return;
+                    }
+                    centralDirOffset = z64buf[0] | ((long)z64buf[1] << 8) | ((long)z64buf[2] << 16) | ((long)z64buf[3] << 24) |
+                                       ((long)z64buf[4] << 32) | ((long)z64buf[5] << 40) | ((long)z64buf[6] << 48) | ((long)z64buf[7] << 56);
+                }
+                else
+                {
+                    // ZIP32 EOCD: central dir offset at +16 (4 bytes)
+                    long off = eocdOffset;
+                    byte[] z32buf;
+                    if (_byteProvider != null && _byteProvider.IsOpen)
+                        z32buf = _byteProvider.GetBytes(off + 16, 4);
+                    else if (off + 20 <= _data.Length)
+                        z32buf = new byte[] { _data[off+16], _data[off+17], _data[off+18], _data[off+19] };
+                    else
+                    {
+                        _variables["zipEntryList"] = firstEntryName;
+                        _variables["zipTotalUncompressedSize"] = 0L;
+                        _variables["zipEntryCount"] = 0;
+                        return;
+                    }
+                    centralDirOffset = (uint)(z32buf[0] | (z32buf[1] << 8) | (z32buf[2] << 16) | (z32buf[3] << 24));
+                }
+
+                // Read Central Directory entries
+                int cdReadSize = (int)Math.Min(centralDirSize, 65536); // Cap at 64KB
+                byte[] cdData;
+                if (_byteProvider != null && _byteProvider.IsOpen)
+                    cdData = _byteProvider.GetBytes(centralDirOffset, cdReadSize);
+                else if (centralDirOffset + cdReadSize <= _data.Length)
+                {
+                    cdData = new byte[cdReadSize];
+                    Array.Copy(_data, centralDirOffset, cdData, 0, cdReadSize);
+                }
+                else
+                {
+                    _variables["zipEntryList"] = firstEntryName;
+                    _variables["zipTotalUncompressedSize"] = 0L;
+                    _variables["zipEntryCount"] = 0;
+                    return;
+                }
+
+                var entryNames = new System.Collections.Generic.List<string>();
+                long totalUncompressed = 0;
+                int pos = 0;
+                int maxEntries = 50;
+
+                while (pos + 46 <= cdData.Length && entryNames.Count < maxEntries)
+                {
+                    // Verify Central Directory File Header signature: PK\x01\x02
+                    if (cdData[pos] != 0x50 || cdData[pos+1] != 0x4B || cdData[pos+2] != 0x01 || cdData[pos+3] != 0x02)
+                        break;
+
+                    uint uncompSize = (uint)(cdData[pos+24] | (cdData[pos+25] << 8) | (cdData[pos+26] << 16) | (cdData[pos+27] << 24));
+                    ushort fnLen = (ushort)(cdData[pos+28] | (cdData[pos+29] << 8));
+                    ushort extraLen = (ushort)(cdData[pos+30] | (cdData[pos+31] << 8));
+                    ushort commentLen = (ushort)(cdData[pos+32] | (cdData[pos+33] << 8));
+
+                    totalUncompressed += uncompSize;
+
+                    if (fnLen > 0 && pos + 46 + fnLen <= cdData.Length)
+                    {
+                        string name = Encoding.UTF8.GetString(cdData, pos + 46, fnLen);
+                        entryNames.Add(name);
+                    }
+
+                    pos += 46 + fnLen + extraLen + commentLen;
+                }
+
+                _variables["zipEntryList"] = string.Join("; ", entryNames);
+                _variables["zipTotalUncompressedSize"] = totalUncompressed;
+                _variables["zipEntryCount"] = entryNames.Count;
+            }
+            catch (Exception)
+            {
+                _variables["zipFirstEntryName"] = "";
+                _variables["zipEntryList"] = "";
+                _variables["zipTotalUncompressedSize"] = 0L;
+                _variables["zipEntryCount"] = 0;
+            }
+        }
+
+        /// <summary>
         /// Calculates compression ratio as percentage.
         /// Sets variable: compressionRatio
         /// </summary>
@@ -2669,6 +2819,10 @@ namespace WpfHexaEditor.Core.FormatDetection
 
                 case "parseziparchive":
                     ParseZIPArchive();
+                    return null;
+
+                case "parsezipentries":
+                    ParseZipEntries();
                     return null;
 
                 case "calculatecompressionratio":

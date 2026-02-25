@@ -26,14 +26,8 @@
   },
   "variables": {
     "currentOffset": 0,
-    "sampleRate": 0,
-    "channels": 0,
-    "bitDepth": 0,
-    "duration": 0,
     "versionHeader": "",
-    "jtVersion": "",
-    "byteRate": 0,
-    "samplesPerSecond": 0
+    "jtVersion": ""
   },
   "blocks": [
     {
@@ -57,30 +51,6 @@
       "description": "JT format version",
       "storeAs": "jtVersion",
       "valueType": "ascii"
-    },
-    {
-      "type": "metadata",
-      "name": "Sample Rate",
-      "variable": "sampleRate",
-      "description": "Sample Rate"
-    },
-    {
-      "type": "metadata",
-      "name": "Channels",
-      "variable": "channels",
-      "description": "Channels"
-    },
-    {
-      "type": "metadata",
-      "name": "Byte Rate",
-      "variable": "byteRate",
-      "description": "Calculated byte rate"
-    },
-    {
-      "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
     }
   ],
   "software": [
@@ -109,16 +79,12 @@
   "QualityMetrics": {
     "CompletenessScore": 32,
     "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
+    "BlocksDefined": 2,
     "ValidationRules": 0,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {},
-  "functions": {
-    "readUInt32BE": "Read audio header",
-    "computeFromVariables(sampleRate * bitDepth * channels / 8, byteRate)": "Calculate byte rate",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second"
-  }
+  "functions": {}
 }
