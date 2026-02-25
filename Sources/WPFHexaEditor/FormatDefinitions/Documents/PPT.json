@@ -69,8 +69,10 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "Microsoft PowerPoint",
+    "LibreOffice Impress",
+    "Apache OpenOffice Impress",
+    "Google Slides"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -82,11 +84,10 @@
     "application/ppt"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "Microsoft PowerPoint",
+    "LibreOffice Impress",
+    "Apache OpenOffice Impress",
+    "Google Slides"
   ],
   "UseCases": [
     "Document viewing",

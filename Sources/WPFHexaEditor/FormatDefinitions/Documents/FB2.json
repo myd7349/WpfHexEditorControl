@@ -71,8 +71,10 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "FBReader",
+    "Calibre",
+    "Cool Reader",
+    "Sumatra PDF"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -84,11 +86,10 @@
     "application/fb2"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "FBReader",
+    "Calibre",
+    "Cool Reader",
+    "Sumatra PDF"
   ],
   "UseCases": [
     "Document viewing",

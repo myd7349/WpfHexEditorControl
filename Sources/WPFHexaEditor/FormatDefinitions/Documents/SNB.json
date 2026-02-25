@@ -83,8 +83,9 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "Shanda Bambook",
+    "Calibre",
+    "SNB Reader"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -96,11 +97,9 @@
     "application/snb"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "Shanda Bambook",
+    "Calibre",
+    "SNB Reader"
   ],
   "UseCases": [
     "Document viewing",

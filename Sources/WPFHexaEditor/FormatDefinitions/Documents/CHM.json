@@ -75,9 +75,10 @@
     }
   ],
   "software": [
-    "Windows Help Viewer",
-    "7-Zip",
-    "CHM readers"
+    "Microsoft HTML Help Workshop",
+    "xCHM",
+    "CHM Viewer",
+    "Sumatra PDF"
   ],
   "format_relationships": {
     "microsoft_format": true,
@@ -89,11 +90,10 @@
     "application/chm"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "Microsoft HTML Help Workshop",
+    "xCHM",
+    "CHM Viewer",
+    "Sumatra PDF"
   ],
   "UseCases": [
     "Document viewing",

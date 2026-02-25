@@ -89,8 +89,10 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "DjVuLibre",
+    "WinDjView",
+    "Sumatra PDF",
+    "Evince"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -103,11 +105,10 @@
     "application/djvu"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "DjVuLibre",
+    "WinDjView",
+    "Sumatra PDF",
+    "Evince"
   ],
   "UseCases": [
     "Document viewing",

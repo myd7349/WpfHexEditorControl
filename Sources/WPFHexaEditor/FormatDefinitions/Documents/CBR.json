@@ -99,8 +99,10 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "CDisplayEx",
+    "ComicRack",
+    "YACReader",
+    "Calibre"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -112,10 +114,9 @@
     "application/cbr"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
+    "CDisplayEx",
+    "ComicRack",
+    "YACReader",
     "Calibre"
   ],
   "UseCases": [

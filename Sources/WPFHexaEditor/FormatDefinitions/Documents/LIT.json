@@ -80,8 +80,9 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "Microsoft Reader",
+    "Calibre",
+    "ConvertLIT"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -93,11 +94,9 @@
     "application/lit"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "Microsoft Reader",
+    "Calibre",
+    "ConvertLIT"
   ],
   "UseCases": [
     "Document viewing",

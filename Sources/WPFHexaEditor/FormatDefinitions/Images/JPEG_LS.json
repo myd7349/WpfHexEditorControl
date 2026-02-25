@@ -30,8 +30,6 @@
   },
   "variables": {
     "version": 0,
-    "serialNumber": "",
-    "subject": "",
     "jpegLsSoiSof55": 0,
     "sof55Length": 0
   },

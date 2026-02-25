@@ -69,8 +69,10 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "Microsoft Excel",
+    "LibreOffice Calc",
+    "Apache OpenOffice Calc",
+    "Google Sheets"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -82,11 +84,10 @@
     "application/xls"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "Microsoft Excel",
+    "LibreOffice Calc",
+    "Apache OpenOffice Calc",
+    "Google Sheets"
   ],
   "UseCases": [
     "Document viewing",

@@ -81,8 +81,10 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "Microsoft Word",
+    "LibreOffice Writer",
+    "Apache OpenOffice Writer",
+    "Google Docs"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -94,11 +96,10 @@
     "application/doc"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "Microsoft Word",
+    "LibreOffice Writer",
+    "Apache OpenOffice Writer",
+    "Google Docs"
   ],
   "UseCases": [
     "Document viewing",

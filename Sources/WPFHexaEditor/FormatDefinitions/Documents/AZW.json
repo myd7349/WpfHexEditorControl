@@ -66,8 +66,10 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "Amazon Kindle",
+    "Calibre",
+    "Kindle for PC",
+    "Kindle for Mac"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -80,11 +82,10 @@
     "application/azw"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "Amazon Kindle",
+    "Calibre",
+    "Kindle for PC",
+    "Kindle for Mac"
   ],
   "UseCases": [
     "Document viewing",

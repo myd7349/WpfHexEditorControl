@@ -66,8 +66,10 @@
     }
   ],
   "software": [
-    "PDF readers",
-    "Office suites"
+    "Ghostscript",
+    "Adobe Distiller",
+    "Evince",
+    "GSview"
   ],
   "format_relationships": {
     "category": "Documents",
@@ -80,11 +82,10 @@
     "application/ps"
   ],
   "Software": [
-    "Adobe Acrobat",
-    "Microsoft Office",
-    "LibreOffice",
-    "FoxIt Reader",
-    "Calibre"
+    "Ghostscript",
+    "Adobe Distiller",
+    "Evince",
+    "GSview"
   ],
   "UseCases": [
     "Document viewing",
