@@ -1,17 +1,18 @@
 {
   "formatName": "WAV Audio",
-  "version": "1.13",
+  "version": "2.0",
   "extensions": [
     ".wav",
     ".wave"
   ],
-  "description": "Waveform Audio File Format - Uncompressed audio",
+  "description": "Waveform Audio File Format - A RIFF-based container for uncompressed (PCM) and compressed audio. The file begins with a 12-byte RIFF header followed by a mandatory 'fmt ' chunk describing the audio encoding parameters and a 'data' chunk containing the sample payload.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "Microsoft WAVE Audio File Format",
-      "RFC 2361 - WAVE and AVI Codec Registries"
+      "RFC 2361 - WAVE and AVI Codec Registries",
+      "Microsoft Multimedia Programming Interface and Data Specifications 1.0"
     ],
     "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/multimedia/waveform-audio-file-format",
@@ -24,139 +25,261 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 44,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "parseWAVFormatChunk(20)": "Parse fmt chunk to extract audio format details",
-    "computeFromVariables(var:fileSize - 44 / var:byteRate, wavDuration)": "Estimate WAV duration",
-    "formatDuration(var:wavDuration)": "Format duration",
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate samples/second",
-    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
-    "wavFormat": "Unknown",
-    "channels": 0,
+    "riffSignature": 0,
+    "fileSize": 0,
+    "waveType": 0,
+    "fmtChunkId": 0,
+    "fmtChunkSize": 0,
+    "audioFormat": 0,
+    "numChannels": 0,
     "sampleRate": 0,
     "byteRate": 0,
-    "bitDepth": 0,
-    "riffHeader": 0,
-    "fileSize": 0,
-    "waveFormat": 0,
-    "fmtChunk": 0,
+    "blockAlign": 0,
+    "bitsPerSample": 0,
     "wavDuration": 0,
+    "totalSamples": 0,
     "formattedDuration": "",
-    "samplesPerSecond": 0,
-    "formattedSize": ""
+    "formattedSize": "",
+    "audioFormatName": "",
+    "channelDescription": ""
+  },
+  "functions": {
+    "parseWAVFormatChunk(20)": "Parse fmt chunk starting at offset 20 to extract audio format, channels, sample rate, byte rate, block align, and bits per sample",
+    "computeFromVariables(var:fileSize - 44 / var:byteRate, wavDuration)": "Estimate WAV duration in seconds from data chunk size divided by byte rate",
+    "computeFromVariables(var:wavDuration * var:sampleRate, totalSamples)": "Calculate total number of audio samples from duration and sample rate",
+    "formatDuration(var:wavDuration)": "Format computed duration as human-readable HH:MM:SS string",
+    "formatFileSize(var:fileSize)": "Format raw file size value as human-readable string with units"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "RIFF Header",
+      "name": "RIFF Chunk ID",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RIFF chunk descriptor",
-      "storeAs": "riffHeader",
-      "valueType": "uint32"
+      "description": "RIFF container signature identifying this as a Resource Interchange File Format file (ASCII 'RIFF' = 0x52494646)",
+      "storeAs": "riffSignature",
+      "valueType": "uint32",
+      "validation": {
+        "expectedValue": "0x46464952"
+      }
     },
     {
       "type": "field",
-      "name": "File Size",
+      "name": "RIFF Chunk Size",
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "File size minus 8 bytes",
+      "description": "Size of the entire file minus 8 bytes (RIFF ID + this size field). Equals total file size - 8.",
       "storeAs": "fileSize",
       "valueType": "uint32"
     },
     {
       "type": "signature",
-      "name": "WAVE Format",
+      "name": "WAVE Type ID",
       "offset": 8,
       "length": 4,
-      "color": "#FF6B6B",
+      "color": "#FF8C69",
       "opacity": 0.4,
-      "description": "WAVE identifier",
-      "storeAs": "waveFormat",
-      "valueType": "uint32"
+      "description": "RIFF form type identifying the payload as WAVE audio data (ASCII 'WAVE' = 0x57415645)",
+      "storeAs": "waveType",
+      "valueType": "uint32",
+      "validation": {
+        "expectedValue": "0x45564157"
+      }
     },
     {
       "type": "field",
-      "name": "fmt Chunk",
+      "name": "fmt Chunk ID",
       "offset": 12,
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Format chunk marker",
-      "storeAs": "fmtChunk",
+      "description": "Format sub-chunk identifier (ASCII 'fmt ' = 0x666D7420, note trailing space). This chunk describes the audio encoding parameters.",
+      "storeAs": "fmtChunkId",
       "valueType": "uint32"
     },
     {
-      "type": "metadata",
+      "type": "field",
+      "name": "fmt Chunk Size",
+      "offset": 16,
+      "length": 4,
+      "color": "#45B7D1",
+      "opacity": 0.3,
+      "description": "Size of the fmt chunk data that follows (16 for PCM, 18 for non-PCM, 40 for extensible format)",
+      "storeAs": "fmtChunkSize",
+      "valueType": "uint32",
+      "valueMap": {
+        "16": "Standard PCM format",
+        "18": "Non-PCM format (extra params)",
+        "40": "Extensible format (WAVEFORMATEXTENSIBLE)"
+      }
+    },
+    {
+      "type": "field",
       "name": "Audio Format",
-      "variable": "wavFormat",
-      "description": "PCM, IEEE Float, A-law, μ-law, or other"
+      "offset": 20,
+      "length": 2,
+      "color": "#96CEB4",
+      "opacity": 0.3,
+      "description": "Audio encoding format tag as defined by Microsoft. PCM (1) is uncompressed; other values indicate specific codecs.",
+      "storeAs": "audioFormat",
+      "valueType": "uint16",
+      "valueMap": {
+        "1": "PCM (Uncompressed)",
+        "2": "Microsoft ADPCM",
+        "3": "IEEE 754 Float",
+        "6": "ITU G.711 A-law",
+        "7": "ITU G.711 \u00b5-law",
+        "17": "IMA ADPCM",
+        "85": "MPEG Layer III",
+        "65534": "Extensible (WAVEFORMATEXTENSIBLE)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Number of Channels",
+      "offset": 22,
+      "length": 2,
+      "color": "#FFEAA7",
+      "opacity": 0.3,
+      "description": "Number of interleaved audio channels in the stream",
+      "storeAs": "numChannels",
+      "valueType": "uint16",
+      "valueMap": {
+        "1": "Mono",
+        "2": "Stereo",
+        "3": "2.1 Surround",
+        "4": "Quadraphonic",
+        "6": "5.1 Surround",
+        "8": "7.1 Surround"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Sample Rate",
+      "offset": 24,
+      "length": 4,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Number of sample frames per second in Hertz (e.g. 44100, 48000, 96000, 192000)",
+      "storeAs": "sampleRate",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Byte Rate",
+      "offset": 28,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "Average bytes per second = SampleRate * NumChannels * BitsPerSample / 8. Used to estimate buffer sizes and duration.",
+      "storeAs": "byteRate",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Block Align",
+      "offset": 32,
+      "length": 2,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Size in bytes of a single sample frame (all channels combined) = NumChannels * BitsPerSample / 8. Data must be aligned to this boundary.",
+      "storeAs": "blockAlign",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "Bits Per Sample",
+      "offset": 34,
+      "length": 2,
+      "color": "#F7DC6F",
+      "opacity": 0.3,
+      "description": "Number of bits used to represent each audio sample per channel",
+      "storeAs": "bitsPerSample",
+      "valueType": "uint16",
+      "valueMap": {
+        "8": "8-bit (unsigned integer)",
+        "16": "16-bit (signed integer, CD quality)",
+        "24": "24-bit (signed integer, studio quality)",
+        "32": "32-bit (signed integer or IEEE float)"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Estimated Duration",
+      "expression": "byteRate > 0 ? ((fileSize - 36) / byteRate) : 0",
+      "storeAs": "wavDuration",
+      "description": "Estimated audio duration in seconds calculated from (RIFF chunk size - 36 header bytes) / byte rate"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Sample Count",
+      "expression": "sampleRate > 0 ? (wavDuration * sampleRate) : 0",
+      "storeAs": "totalSamples",
+      "description": "Total number of sample frames in the audio stream derived from duration and sample rate"
+    },
+    {
+      "type": "conditional",
+      "name": "PCM Format Check",
+      "condition": "audioFormat == 1",
+      "trueLabel": "Standard uncompressed PCM audio",
+      "falseLabel": "Compressed or extended audio format (non-PCM)",
+      "description": "Checks whether the audio format is standard uncompressed PCM (format tag 1) or a compressed/extensible format"
+    },
+    {
+      "type": "conditional",
+      "name": "CD Quality Check",
+      "condition": "sampleRate == 44100 && bitsPerSample == 16 && numChannels == 2",
+      "trueLabel": "CD-quality audio (44.1 kHz, 16-bit, stereo)",
+      "falseLabel": "Non-standard or high-resolution audio format",
+      "description": "Determines whether the WAV file matches Red Book CD audio specifications"
     },
     {
       "type": "metadata",
-      "name": "Channels",
-      "variable": "channels",
-      "description": "Number of audio channels (1=Mono, 2=Stereo, etc.)"
+      "name": "Audio Format Name",
+      "variable": "audioFormatName",
+      "description": "Human-readable name of the audio encoding format (PCM, IEEE Float, A-law, etc.)"
+    },
+    {
+      "type": "metadata",
+      "name": "Channel Configuration",
+      "variable": "channelDescription",
+      "description": "Description of the channel layout (Mono, Stereo, 5.1 Surround, etc.)"
     },
     {
       "type": "metadata",
       "name": "Sample Rate (Hz)",
       "variable": "sampleRate",
-      "description": "Samples per second (44100, 48000, etc.)"
+      "description": "Audio sample rate in Hertz (samples per second per channel)"
+    },
+    {
+      "type": "metadata",
+      "name": "Bit Depth",
+      "variable": "bitsPerSample",
+      "description": "Number of bits per audio sample (8, 16, 24, or 32)"
     },
     {
       "type": "metadata",
       "name": "Byte Rate",
       "variable": "byteRate",
-      "description": "Bytes per second (SampleRate × Channels × BitsPerSample / 8)"
-    },
-    {
-      "type": "metadata",
-      "name": "Bit Depth",
-      "variable": "bitDepth",
-      "description": "Bits per sample (8, 16, 24, 32, etc.)"
+      "description": "Data throughput in bytes per second (SampleRate x Channels x BitsPerSample / 8)"
     },
     {
       "type": "metadata",
       "name": "Duration",
       "variable": "formattedDuration",
-      "description": "Estimated audio duration"
-    },
-    {
-      "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second"
-    },
-    {
-      "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "description": "Estimated audio duration formatted as HH:MM:SS"
     }
   ],
-  "software": [
-    "All audio software",
-    "Windows",
-    "Audacity"
-  ],
-  "format_relationships": {
-    "category": "Audio",
-    "extensions": [
-      ".wav",
-      ".wave"
-    ]
-  },
   "MimeTypes": [
     "audio/wav",
     "audio/x-wav",
@@ -166,25 +289,33 @@
     "Audacity",
     "VLC",
     "Windows Media Player",
-    "Adobe Audition"
+    "Adobe Audition",
+    "ffmpeg",
+    "SoX"
   ],
   "UseCases": [
     "Uncompressed audio",
     "Studio recording",
     "Sound effects",
-    "CD audio"
+    "CD audio",
+    "Audio editing and mastering"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 12,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 21,
+    "ValidationRules": 3,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "AudioFormat": true,
-    "SampleRate": 44100
+    "Container": "RIFF (Resource Interchange File Format)",
+    "Endianness": "little-endian",
+    "HeaderSize": 44,
+    "SampleRate": 44100,
+    "DefaultBitDepth": 16,
+    "UncompressedPCM": true
   }
 }

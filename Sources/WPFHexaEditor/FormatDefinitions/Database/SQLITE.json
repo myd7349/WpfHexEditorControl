@@ -1,21 +1,25 @@
 {
   "formatName": "SQLite Database",
-  "version": "1.12",
+  "version": "2.0",
   "extensions": [
     ".sqlite",
     ".db",
     ".sqlite3",
     ".db3"
   ],
-  "description": "SQLite database file format",
+  "description": "SQLite database file format. SQLite is a self-contained, serverless, zero-configuration, transactional SQL database engine. The file begins with a 100-byte header containing the magic string, page size, format versions, and database configuration parameters.",
   "category": "Database",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "SQLite Database Format"
+      "SQLite Database File Format",
+      "SQLite Documentation - File Format",
+      "SQLite Source Code - btreeInt.h"
     ],
     "WebLinks": [
-      "https://en.wikipedia.org/wiki/SQLITE"
+      "https://www.sqlite.org/fileformat2.html",
+      "https://en.wikipedia.org/wiki/SQLite",
+      "https://www.sqlite.org/lang.html"
     ]
   },
   "detection": {
@@ -23,48 +27,61 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 16,
-      "max_signature_offset": 1024
+      "minFileSize": 512,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "readUInt16BE": "Read 16-bit big-endian for page size",
-    "readUInt32BE": "Read 32-bit big-endian for page counts and schema cookie",
-    "readUInt8": "Read file format versions and reserved bytes",
-    "extractUTF8String": "Extract database text encoding and user version",
-    "parseSQLiteHeader()": "Parse SQLite database header"
   },
   "variables": {
     "currentOffset": 0,
-    "pageSize": 4096,
-    "writeVersion": 1,
-    "readVersion": 1,
-    "fileChangeCounter": 0,
-    "databaseSize": 0,
-    "schemaFormat": 0,
-    "textEncoding": "UTF-8",
-    "userVersion": 0,
-    "applicationID": 0,
     "sqliteHeader": "",
+    "pageSize": 0,
     "fileFormatWriteVersion": 0,
     "fileFormatReadVersion": 0,
+    "reservedSpace": 0,
+    "maxEmbeddedPayloadFraction": 0,
+    "minEmbeddedPayloadFraction": 0,
+    "leafPayloadFraction": 0,
+    "fileChangeCounter": 0,
+    "databaseSizeInPages": 0,
+    "firstFreelistTrunkPage": 0,
+    "totalFreelistPages": 0,
+    "schemaCookie": 0,
+    "schemaFormatNumber": 0,
+    "defaultPageCacheSize": 0,
+    "largestRootBTreePage": 0,
+    "textEncoding": 0,
+    "userVersion": 0,
+    "incrementalVacuumMode": 0,
+    "applicationId": 0,
+    "sqliteVersionNumber": 0,
+    "databaseSizeBytes": 0,
+    "isWALMode": false,
     "sqlitePageSize": 0,
     "sqlitePageCount": 0,
-    "sqliteVersion": 0,
     "sqliteEncoding": "",
-    "sqliteVersionName": ""
+    "sqliteVersionName": "",
+    "sqliteVersion": 0
+  },
+  "functions": {
+    "parseSQLiteHeader": "Parse SQLite database header and extract all configuration parameters from the 100-byte header",
+    "formatFileSize(var:databaseSizeBytes)": "Format total database size as a human-readable string",
+    "computeFromVariables(pageSize * databaseSizeInPages, databaseSizeBytes)": "Calculate total database size in bytes from page size and page count",
+    "computeFromVariables(fileFormatWriteVersion == 2, isWALMode)": "Determine if the database uses Write-Ahead Logging mode"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "SQLite Header",
+      "name": "SQLite Header String",
       "offset": 0,
       "length": 16,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "SQLite format 3\\0",
+      "description": "Magic string 'SQLite format 3\\000' (16 bytes including null terminator) identifying a valid SQLite database file",
       "storeAs": "sqliteHeader",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "SQLite format 3\\0"
+      }
     },
     {
       "type": "field",
@@ -73,9 +90,21 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Database page size",
+      "description": "Database page size in bytes. Must be a power of 2 between 512 and 65536. A value of 1 represents 65536 bytes.",
       "storeAs": "pageSize",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "1": "65536 bytes (special encoding)",
+        "512": "512 bytes",
+        "1024": "1024 bytes (1 KB)",
+        "2048": "2048 bytes (2 KB)",
+        "4096": "4096 bytes (4 KB, default)",
+        "8192": "8192 bytes (8 KB)",
+        "16384": "16384 bytes (16 KB)",
+        "32768": "32768 bytes (32 KB)",
+        "65536": "65536 bytes (64 KB)"
+      }
     },
     {
       "type": "field",
@@ -84,9 +113,13 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "1=legacy, 2=WAL",
+      "description": "File format write version. Determines the journal mode used for write transactions.",
       "storeAs": "fileFormatWriteVersion",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "Legacy rollback journal mode",
+        "2": "WAL (Write-Ahead Logging) mode"
+      }
     },
     {
       "type": "field",
@@ -95,39 +128,306 @@
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "1=legacy, 2=WAL",
+      "description": "File format read version. Must be 1 or 2. A reader must understand this version to read the database.",
       "storeAs": "fileFormatReadVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "Legacy rollback journal mode",
+        "2": "WAL (Write-Ahead Logging) mode"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Reserved Space per Page",
+      "offset": 20,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Bytes of unused space reserved at the end of each page. Usually 0. Used by extensions like SQLite Encryption Extension (SEE).",
+      "storeAs": "reservedSpace",
       "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Max Embedded Payload Fraction",
+      "offset": 21,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "Maximum embedded payload fraction. Must be 64. Determines maximum payload stored on internal b-tree pages.",
+      "storeAs": "maxEmbeddedPayloadFraction",
+      "valueType": "uint8",
+      "validation": {
+        "expectedValue": "64"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Min Embedded Payload Fraction",
+      "offset": 22,
+      "length": 1,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Minimum embedded payload fraction. Must be 32. Minimum payload stored on internal b-tree pages before overflow.",
+      "storeAs": "minEmbeddedPayloadFraction",
+      "valueType": "uint8",
+      "validation": {
+        "expectedValue": "32"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Leaf Payload Fraction",
+      "offset": 23,
+      "length": 1,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "Leaf payload fraction. Must be 32. Minimum payload stored on leaf b-tree pages before overflow.",
+      "storeAs": "leafPayloadFraction",
+      "valueType": "uint8",
+      "validation": {
+        "expectedValue": "32"
+      }
+    },
+    {
+      "type": "field",
+      "name": "File Change Counter",
+      "offset": 24,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Incremented each time the database file is unlocked after being modified. Used to detect if the file has changed.",
+      "storeAs": "fileChangeCounter",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Database Size in Pages",
+      "offset": 28,
+      "length": 4,
+      "color": "#45B7D1",
+      "opacity": 0.3,
+      "description": "Total number of pages in the database file. If 0, the value is computed from the actual file size.",
+      "storeAs": "databaseSizeInPages",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "First Freelist Trunk Page",
+      "offset": 32,
+      "length": 4,
+      "color": "#96CEB4",
+      "opacity": 0.3,
+      "description": "Page number of the first freelist trunk page. 0 if the freelist is empty.",
+      "storeAs": "firstFreelistTrunkPage",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Total Freelist Pages",
+      "offset": 36,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.3,
+      "description": "Total number of pages on the freelist. These are unused pages available for reuse.",
+      "storeAs": "totalFreelistPages",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Schema Cookie",
+      "offset": 40,
+      "length": 4,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Incremented each time the database schema changes. Used by prepared statements to detect schema changes.",
+      "storeAs": "schemaCookie",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Schema Format Number",
+      "offset": 44,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.3,
+      "description": "Schema format number. Determines the schema syntax and capabilities supported by this database.",
+      "storeAs": "schemaFormatNumber",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "1": "Format 1 (SQLite 3.0.0+)",
+        "2": "Format 2 (SQLite 3.1.3+ - adds CAST and compound SELECT)",
+        "3": "Format 3 (SQLite 3.1.4+ - adds IF NOT EXISTS, RENAME TABLE)",
+        "4": "Format 4 (SQLite 3.3.0+ - adds DESC index, COLLATE in CREATE TABLE)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Default Page Cache Size",
+      "offset": 48,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "Suggested page cache size in pages for the default pager. Set by 'PRAGMA default_cache_size'.",
+      "storeAs": "defaultPageCacheSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Largest Root B-Tree Page",
+      "offset": 52,
+      "length": 4,
+      "color": "#F7DC6F",
+      "opacity": 0.3,
+      "description": "Page number of the largest root b-tree page in auto-vacuum or incremental-vacuum mode. 0 otherwise.",
+      "storeAs": "largestRootBTreePage",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Text Encoding",
+      "offset": 56,
+      "length": 4,
+      "color": "#BB8FCE",
+      "opacity": 0.3,
+      "description": "Text encoding used for all text strings in the database. Set once when the database is created.",
+      "storeAs": "textEncoding",
+      "valueType": "uint32",
+      "endianness": "big",
+      "valueMap": {
+        "1": "UTF-8",
+        "2": "UTF-16le (little-endian)",
+        "3": "UTF-16be (big-endian)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "User Version",
+      "offset": 60,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "User-defined version number. Set and read via 'PRAGMA user_version'. Not used by SQLite internally.",
+      "storeAs": "userVersion",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Incremental Vacuum Mode",
+      "offset": 64,
+      "length": 4,
+      "color": "#FFDDC1",
+      "opacity": 0.3,
+      "description": "Non-zero if incremental vacuum mode is enabled. Set by 'PRAGMA incremental_vacuum'. 0 means auto-vacuum or none.",
+      "storeAs": "incrementalVacuumMode",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Application ID",
+      "offset": 68,
+      "length": 4,
+      "color": "#FFC8DD",
+      "opacity": 0.3,
+      "description": "Application-defined integer set via 'PRAGMA application_id'. Used to identify the database file format for applications (e.g., for file type detection).",
+      "storeAs": "applicationId",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "SQLite Version Number",
+      "offset": 92,
+      "length": 4,
+      "color": "#FF4444",
+      "opacity": 0.35,
+      "description": "SQLite library version that most recently modified the database. Encoded as MAJOR*1000000 + MINOR*1000 + RELEASE (e.g., 3039004 = 3.39.4).",
+      "storeAs": "sqliteVersionNumber",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Database Size (bytes)",
+      "expression": "pageSize * databaseSizeInPages",
+      "storeAs": "databaseSizeBytes",
+      "description": "Calculate the total database file size in bytes by multiplying page size by total number of pages"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "WAL Mode Flag",
+      "expression": "fileFormatWriteVersion == 2",
+      "storeAs": "isWALMode",
+      "description": "Determine if the database is configured for Write-Ahead Logging (WAL) mode based on the write version byte"
+    },
+    {
+      "type": "conditional",
+      "name": "WAL Mode Detection",
+      "condition": "fileFormatWriteVersion == 2",
+      "trueLabel": "Database uses WAL (Write-Ahead Logging) mode for concurrent reads/writes",
+      "falseLabel": "Database uses legacy rollback journal mode",
+      "description": "Checks the file format write version to determine if WAL journaling is enabled (version 2) or legacy rollback journal (version 1)"
+    },
+    {
+      "type": "conditional",
+      "name": "Incremental Vacuum Check",
+      "condition": "incrementalVacuumMode != 0",
+      "trueLabel": "Incremental vacuum mode is enabled",
+      "falseLabel": "Incremental vacuum mode is disabled (auto-vacuum or none)",
+      "description": "Checks whether incremental vacuum mode is active, which allows the application to control when freed pages are returned to the filesystem"
     },
     {
       "type": "metadata",
       "name": "Page Size",
-      "variable": "sqlitePageSize",
-      "description": "Database page size in bytes"
+      "variable": "pageSize",
+      "description": "Database page size in bytes (power of 2, typically 4096)"
     },
     {
       "type": "metadata",
-      "name": "Page Count",
-      "variable": "sqlitePageCount",
-      "description": "Total number of pages in the database"
+      "name": "Database Size (pages)",
+      "variable": "databaseSizeInPages",
+      "description": "Total number of pages in the database file"
     },
     {
       "type": "metadata",
-      "name": "Encoding",
-      "variable": "sqliteEncoding",
-      "description": "Text encoding (UTF-8, UTF-16le, UTF-16be)"
+      "name": "Text Encoding",
+      "variable": "textEncoding",
+      "description": "Text encoding used for all strings: 1=UTF-8, 2=UTF-16le, 3=UTF-16be"
     },
     {
       "type": "metadata",
       "name": "SQLite Version",
-      "variable": "sqliteVersionName",
-      "description": "SQLite library version that created the database"
+      "variable": "sqliteVersionNumber",
+      "description": "SQLite library version that last modified the database (encoded as MAJOR*1000000+MINOR*1000+RELEASE)"
+    },
+    {
+      "type": "metadata",
+      "name": "Schema Version",
+      "variable": "schemaFormatNumber",
+      "description": "Schema format number (1-4) indicating supported SQL features"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Freelist Pages",
+      "variable": "totalFreelistPages",
+      "description": "Number of unused pages on the freelist available for reuse"
     }
   ],
   "software": [
     "SQLite",
     "DB Browser for SQLite",
-    "Most applications"
+    "Most applications",
+    "sqlite3 CLI"
   ],
   "format_relationships": {
     "most_used_db": true,
@@ -136,33 +436,49 @@
     "used_by": [
       "iOS",
       "Android",
-      "Browsers"
+      "Browsers",
+      "macOS",
+      "Windows"
     ]
   },
   "MimeTypes": [
+    "application/vnd.sqlite3",
+    "application/x-sqlite3",
     "application/octet-stream"
   ],
   "Software": [
-    "SQL Server",
-    "MySQL Workbench",
-    "PostgreSQL",
     "SQLite Browser",
-    "DBeaver"
+    "DBeaver",
+    "DataGrip",
+    "DB Browser for SQLite",
+    "sqlite3 CLI"
   ],
   "UseCases": [
     "Data storage",
     "Query execution",
     "Data analysis",
-    "Backup"
+    "Backup",
+    "Mobile app databases",
+    "Browser storage",
+    "Application configuration"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 31,
+    "ValidationRules": 5,
     "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
-    "AutoRefined": true
+    "PriorityFormat": true,
+    "AutoRefined": false
   },
-  "TechnicalDetails": {}
+  "TechnicalDetails": {
+    "DatabaseFormat": true,
+    "Endianness": "big-endian (all multi-byte values in the header)",
+    "HeaderSize": 100,
+    "MinimumFileSize": "512 bytes (one page)",
+    "MaximumPageSize": 65536,
+    "Serverless": true,
+    "ZeroConfiguration": true,
+    "ACID": true
+  }
 }

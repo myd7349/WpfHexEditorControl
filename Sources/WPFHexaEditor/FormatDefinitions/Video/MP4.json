@@ -1,75 +1,86 @@
 {
   "formatName": "MP4 Video",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
-    ".mp4"
+    ".mp4",
+    ".m4v",
+    ".m4a"
   ],
-  "description": "MPEG-4 Part 14 multimedia container",
+  "description": "MPEG-4 Part 14 multimedia container based on ISO Base Media File Format (ISOBMFF). The file begins with a File Type Box (ftyp) that declares the major brand, minor version, and compatible brands. All data is organized in nested boxes (atoms), each prefixed by a 32-bit size and 4-byte type code. The ftyp box is followed by movie metadata (moov) and media data (mdat) boxes.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "ISO/IEC 14496-12 - ISO Base Media File Format",
-      "ISO/IEC 14496-14 - MP4 File Format"
+      "ISO/IEC 14496-14 - MP4 File Format",
+      "ISO/IEC 14496-15 - Carriage of NAL unit structured video in ISOBMFF"
     ],
     "WebLinks": [
       "https://mpeg.chiariglione.org/standards/mpeg-4",
-      "https://en.wikipedia.org/wiki/MPEG-4_Part_14"
+      "https://en.wikipedia.org/wiki/MPEG-4_Part_14",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000155.shtml"
     ]
   },
   "detection": {
-    "signature": "667479706D703432",
+    "signature": "66747970",
     "offset": 4,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "maxSignatureOffset": 4,
+      "expectedValue": "0x66747970"
     }
-  },
-  "functions": {
-    "readUInt32BE": "Read 32-bit big-endian for box sizes and timestamps",
-    "extractASCIIString": "Extract box type identifiers (ftyp, moov, mdat, trak)",
-    "readUInt16BE": "Read 16-bit values for video dimensions and audio config",
-    "multiply": "Calculate duration from timescale",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
-    "majorBrand": "Unknown",
+    "ftypBoxSize": 0,
+    "ftypBoxType": "",
+    "majorBrand": "",
+    "majorBrandName": "",
     "minorVersion": 0,
-    "width": 0,
-    "height": 0,
-    "duration": 0,
-    "timescale": 0,
-    "videoCodec": "Unknown",
-    "audioCodec": "Unknown",
-    "boxSize": 0,
-    "boxType": "",
-    "totalPixels": 0
+    "compatBrand1": "",
+    "compatBrand2": "",
+    "compatBrand3": "",
+    "compatBrand4": "",
+    "nextBoxSize": 0,
+    "nextBoxType": "",
+    "nextBoxTypeName": "",
+    "totalFileSize": 0,
+    "formattedFileSize": "",
+    "payloadSize": 0,
+    "isFragmented": false,
+    "hasExtendedSize": false
+  },
+  "functions": {
+    "formatFileSize(var:totalFileSize)": "Format total file size as human-readable string (KB/MB/GB)",
+    "computeFromVariables(ftypBoxSize - 8, payloadSize)": "Calculate ftyp payload size by subtracting box header overhead"
   },
   "blocks": [
     {
       "type": "field",
-      "name": "Box Size",
+      "name": "ftyp Box Size",
       "offset": 0,
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of ftyp box",
-      "storeAs": "boxSize",
+      "description": "Size of the File Type Box (ftyp) in bytes, stored as a big-endian unsigned 32-bit integer. This includes the 8-byte box header (size + type) plus the payload. A value of 0 means the box extends to end-of-file; a value of 1 means a 64-bit extended size follows the type field.",
+      "storeAs": "ftypBoxSize",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
       "type": "signature",
-      "name": "Box Type",
+      "name": "ftyp Box Type",
       "offset": 4,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ftyp box identifier",
-      "storeAs": "boxType",
-      "valueType": "ascii"
+      "description": "Four-byte ASCII box type code 'ftyp' (0x66747970). The File Type Box must be the first significant box in an ISO Base Media File Format file. It identifies the file's best-use specification and compatible specifications.",
+      "storeAs": "ftypBoxType",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "ftyp"
+      }
     },
     {
       "type": "field",
@@ -78,9 +89,28 @@
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "File format brand (mp42, isom, etc.)",
+      "description": "Four-character code (FourCC) identifying the best-use specification for this file. Determines which features and codecs the file is optimized for. Common MP4 brands include 'isom' (generic ISO), 'mp41'/'mp42' (MPEG-4 v1/v2), and 'dash' (MPEG-DASH).",
       "storeAs": "majorBrand",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "valueMap": {
+        "isom": "ISO Base Media File Format",
+        "iso2": "ISO Base Media File v2",
+        "mp41": "MPEG-4 Part 14 v1 (MP4 v1)",
+        "mp42": "MPEG-4 Part 14 v2 (MP4 v2)",
+        "M4V ": "Apple iTunes Video",
+        "M4A ": "Apple iTunes Audio (AAC)",
+        "M4P ": "Apple iTunes Protected AAC",
+        "M4B ": "Apple iTunes Audiobook",
+        "avc1": "AVC/H.264 Video",
+        "dash": "MPEG-DASH Streaming",
+        "msdh": "MPEG-DASH (Microsoft)",
+        "msix": "MPEG-DASH Index Segment",
+        "f4v ": "Adobe Flash Video",
+        "3gp4": "3GPP Release 4",
+        "3gp5": "3GPP Release 5",
+        "3gp6": "3GPP Release 6"
+      },
+      "mappedValueStoreAs": "majorBrandName"
     },
     {
       "type": "field",
@@ -89,30 +119,166 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Minor version number",
+      "description": "Minor version of the major brand specification, stored as a big-endian unsigned 32-bit integer. This is informational and provides additional versioning detail for the major brand. A value of 0 typically indicates the base version.",
       "storeAs": "minorVersion",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Compatible Brand 1",
+      "offset": 16,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "First compatible brand FourCC. Lists additional specifications with which this file complies. Players use the compatible brands list to determine if they can decode the file even if the major brand is unfamiliar.",
+      "storeAs": "compatBrand1",
+      "valueType": "ascii",
+      "valueMap": {
+        "isom": "ISO Base Media",
+        "iso2": "ISO Base Media v2",
+        "mp41": "MP4 v1",
+        "mp42": "MP4 v2",
+        "avc1": "AVC/H.264",
+        "dash": "MPEG-DASH",
+        "M4V ": "iTunes Video",
+        "M4A ": "iTunes Audio"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Compatible Brand 2",
+      "offset": 20,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "Second compatible brand FourCC. Additional specification with which this file complies. The list of compatible brands typically includes the major brand itself plus broader format families.",
+      "storeAs": "compatBrand2",
       "valueType": "ascii"
     },
     {
+      "type": "field",
+      "name": "Compatible Brand 3",
+      "offset": 24,
+      "length": 4,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Third compatible brand FourCC, if present within the ftyp box payload. The number of compatible brands depends on the ftyp box size: count = (boxSize - 16) / 4.",
+      "storeAs": "compatBrand3",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Compatible Brand 4",
+      "offset": 28,
+      "length": 4,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "Fourth compatible brand FourCC, if present. Many MP4 files include 3-5 compatible brands covering ISO base media, specific MPEG-4 profiles, and codec families.",
+      "storeAs": "compatBrand4",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Next Box Size",
+      "offset": 32,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Size of the second box in the file (at offset = ftyp box size, shown here assuming ftyp is 32 bytes). Typically this is the moov (movie metadata), mdat (media data), or free (free space) box. Note: actual offset depends on ftyp box size.",
+      "storeAs": "nextBoxSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Next Box Type",
+      "offset": 36,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Four-byte ASCII type of the second box. Common second boxes: 'moov' (movie metadata with track info), 'mdat' (actual media data), 'free'/'skip' (padding), 'moof' (movie fragment for fragmented MP4).",
+      "storeAs": "nextBoxType",
+      "valueType": "ascii",
+      "valueMap": {
+        "moov": "Movie Metadata Box",
+        "mdat": "Media Data Box",
+        "free": "Free Space Box",
+        "skip": "Skip Box (Free Space)",
+        "moof": "Movie Fragment Box",
+        "sidx": "Segment Index Box",
+        "styp": "Segment Type Box",
+        "pdin": "Progressive Download Info"
+      },
+      "mappedValueStoreAs": "nextBoxTypeName"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "ftyp Payload Size",
+      "expression": "ftypBoxSize - 8",
+      "storeAs": "payloadSize",
+      "description": "Calculates the ftyp box payload size by subtracting the 8-byte header (4 bytes size + 4 bytes type). The payload contains major brand (4), minor version (4), and compatible brands (variable)."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Fragmented MP4 Detection",
+      "expression": "nextBoxType == 'moof' || nextBoxType == 'styp' ? 1 : 0",
+      "storeAs": "isFragmented",
+      "description": "Determines if the MP4 file is fragmented by checking if the second box is a Movie Fragment (moof) or Segment Type (styp) box. Fragmented MP4 is used for adaptive streaming (DASH, HLS)."
+    },
+    {
+      "type": "conditional",
+      "name": "Extended Size Detection",
+      "condition": "ftypBoxSize == 1",
+      "trueLabel": "This MP4 uses 64-bit extended box sizes (file may exceed 4 GB)",
+      "falseLabel": "This MP4 uses standard 32-bit box sizes",
+      "description": "Checks if the ftyp box uses a 64-bit extended size field. A box size of 1 signals that the real size is stored in the next 8 bytes as a 64-bit big-endian integer. Used for files exceeding 4 GB."
+    },
+    {
+      "type": "conditional",
+      "name": "Streaming Format Detection",
+      "condition": "majorBrand == 'dash' || majorBrand == 'msdh' || majorBrand == 'msix'",
+      "trueLabel": "This MP4 is optimized for MPEG-DASH adaptive streaming",
+      "falseLabel": "This MP4 is a standard non-streaming container",
+      "description": "Detects whether the file is an MPEG-DASH segment based on the major brand. DASH segments use fragmented MP4 with moof/mdat pairs for adaptive bitrate streaming."
+    },
+    {
       "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Width x Height"
+      "name": "Major Brand",
+      "variable": "majorBrand",
+      "description": "Four-character brand code from the ftyp box identifying the file's primary specification"
+    },
+    {
+      "type": "metadata",
+      "name": "Major Brand Description",
+      "variable": "majorBrandName",
+      "description": "Human-readable name of the major brand specification"
+    },
+    {
+      "type": "metadata",
+      "name": "Minor Version",
+      "variable": "minorVersion",
+      "description": "Minor version number of the major brand specification"
+    },
+    {
+      "type": "metadata",
+      "name": "ftyp Box Size",
+      "variable": "ftypBoxSize",
+      "description": "Total size of the File Type Box in bytes, including the 8-byte header"
+    },
+    {
+      "type": "metadata",
+      "name": "Next Box Type",
+      "variable": "nextBoxTypeName",
+      "description": "Human-readable description of the second box following the ftyp box"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted File Size",
+      "variable": "formattedFileSize",
+      "description": "Total file size formatted as a human-readable string (KB/MB/GB)"
     }
   ],
-  "software": [
-    "VLC",
-    "All modern players",
-    "FFmpeg"
-  ],
-  "format_relationships": {
-    "category": "Video",
-    "extensions": [
-      ".mp4",
-      ".m4v",
-      ".m4a"
-    ]
-  },
   "MimeTypes": [
     "video/mp4",
     "audio/mp4"
@@ -122,7 +288,8 @@
     "Windows Media Player",
     "QuickTime",
     "Chrome",
-    "All modern browsers"
+    "All modern browsers",
+    "FFmpeg"
   ],
   "UseCases": [
     "Video streaming",
@@ -132,17 +299,23 @@
     "Social media"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 20,
+    "ValidationRules": 1,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "Container": "MPEG-4 Part 14",
+    "Container": "MPEG-4 Part 14 (ISO Base Media File Format)",
     "VideoFormat": true,
-    "SupportsEncryption": true
+    "Endianness": "big-endian (network byte order)",
+    "HeaderSize": "Variable (ftyp box size, typically 20-40 bytes)",
+    "BoxBasedFormat": true,
+    "SupportsEncryption": true,
+    "SupportsStreaming": true,
+    "SupportsFragmentation": true,
+    "MaxFileSize": "Unlimited (64-bit extended sizes)"
   }
 }

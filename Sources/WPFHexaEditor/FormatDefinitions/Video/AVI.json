@@ -1,20 +1,22 @@
 {
   "formatName": "AVI Video",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".avi"
   ],
-  "description": "Audio Video Interleave - Classic Windows video format",
+  "description": "Audio Video Interleave (AVI) is a RIFF-based multimedia container format developed by Microsoft. The file starts with a RIFF header containing an 'AVI ' form type, followed by a LIST 'hdrl' chunk with the main AVI header (avih) that stores frame rate, dimensions, stream count, and flags. The avih structure is 56 bytes and provides all essential playback parameters.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "Microsoft AVI RIFF File Format",
-      "Audio Video Interleave Format"
+      "Audio Video Interleave Format",
+      "OpenDML AVI File Format Extensions (AVI 2.0)"
     ],
     "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/directshow/avi-riff-file-reference",
-      "https://en.wikipedia.org/wiki/Audio_Video_Interleave"
+      "https://en.wikipedia.org/wiki/Audio_Video_Interleave",
+      "https://www.loc.gov/preservation/digital/formats/fdd/fdd000059.shtml"
     ]
   },
   "detection": {
@@ -22,89 +24,387 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 72,
+      "maxSignatureOffset": 0,
+      "expectedValue": "0x52494646"
     }
-  },
-  "functions": {
-    "readUInt32LE": "Read 32-bit little-endian for RIFF chunk sizes and frame rates",
-    "extractASCIIString": "Extract chunk identifiers (RIFF, AVI, hdrl, strl, movi)",
-    "readUInt16LE": "Read 16-bit values for video dimensions",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels",
-    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
-    "fileSize": 0,
+    "riffSignature": "",
+    "riffFileSize": 0,
+    "aviFormType": "",
+    "listChunkId": "",
+    "listChunkSize": 0,
+    "hdrlType": "",
+    "avihChunkId": "",
+    "avihChunkSize": 0,
+    "microsecondsPerFrame": 0,
+    "maxBytesPerSec": 0,
+    "paddingGranularity": 0,
+    "aviFlags": 0,
+    "totalFrames": 0,
+    "initialFrames": 0,
+    "numberOfStreams": 0,
+    "suggestedBufferSize": 0,
     "width": 0,
     "height": 0,
-    "frameRate": 0,
-    "totalFrames": 0,
-    "videoCodec": "Unknown",
-    "audioCodec": "Unknown",
-    "riffHeader": 0,
-    "aviFormat": 0,
-    "totalPixels": 0,
-    "formattedSize": ""
+    "durationSeconds": 0,
+    "framesPerSecond": 0,
+    "formattedFileSize": "",
+    "formattedDuration": "",
+    "totalPixels": 0
+  },
+  "functions": {
+    "formatFileSize(var:riffFileSize)": "Format RIFF file size as human-readable string (KB/MB/GB)",
+    "computeFromVariables(totalFrames * microsecondsPerFrame / 1000000, durationSeconds)": "Calculate video duration in seconds from total frames and microseconds per frame",
+    "formatDuration(var:durationSeconds)": "Format duration as human-readable time string (HH:MM:SS)"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "RIFF Header",
+      "name": "RIFF Signature",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RIFF chunk descriptor",
-      "storeAs": "riffHeader",
-      "valueType": "uint32"
+      "description": "Four-byte ASCII signature 'RIFF' (0x52494646). The Resource Interchange File Format is a tagged-file structure developed by Microsoft and IBM. All multi-byte values in RIFF are little-endian.",
+      "storeAs": "riffSignature",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "RIFF"
+      }
     },
     {
       "type": "field",
-      "name": "File Size",
+      "name": "RIFF File Size",
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "File size minus 8 bytes",
-      "storeAs": "fileSize",
-      "valueType": "uint32"
+      "description": "Total file size minus 8 bytes (excludes the RIFF signature and this size field), stored as a little-endian unsigned 32-bit integer. Maximum representable size is ~4 GB; OpenDML AVI 2.0 extends this using an 'odml' super index.",
+      "storeAs": "riffFileSize",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
-      "type": "signature",
-      "name": "AVI Format",
+      "type": "field",
+      "name": "AVI Form Type",
       "offset": 8,
       "length": 4,
-      "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "AVI identifier",
-      "storeAs": "aviFormat",
-      "valueType": "uint32"
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Four-byte ASCII form type 'AVI ' (0x41564920, note trailing space). This identifies the RIFF file as an AVI container. Other RIFF form types include 'WAVE' for audio and 'WEBP' for images.",
+      "storeAs": "aviFormType",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "AVI "
+      }
+    },
+    {
+      "type": "field",
+      "name": "LIST Chunk ID",
+      "offset": 12,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Four-byte ASCII chunk identifier 'LIST' (0x4C495354). LIST chunks are RIFF container chunks that hold sub-chunks. The first LIST chunk in an AVI file contains the header list (hdrl).",
+      "storeAs": "listChunkId",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "LIST"
+      }
+    },
+    {
+      "type": "field",
+      "name": "LIST Chunk Size",
+      "offset": 16,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Size of the LIST chunk data in bytes (excludes the 8-byte chunk header), stored as a little-endian unsigned 32-bit integer. This encompasses the hdrl type identifier, the avih chunk, and all stream header (strl) sub-chunks.",
+      "storeAs": "listChunkSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Header List Type (hdrl)",
+      "offset": 20,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "Four-byte ASCII LIST type 'hdrl' (0x6864726C). The header list contains the main AVI header (avih) and one stream list (strl) per audio/video stream, each containing stream header (strh) and format (strf) chunks.",
+      "storeAs": "hdrlType",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "hdrl"
+      }
+    },
+    {
+      "type": "field",
+      "name": "avih Chunk ID",
+      "offset": 24,
+      "length": 4,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Four-byte ASCII chunk identifier 'avih' (0x61766968). The AVI Main Header chunk contains global parameters for the entire AVI file including timing, dimensions, and stream count.",
+      "storeAs": "avihChunkId",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "avih"
+      }
+    },
+    {
+      "type": "field",
+      "name": "avih Chunk Size",
+      "offset": 28,
+      "length": 4,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "Size of the avih chunk data in bytes, stored as a little-endian unsigned 32-bit integer. The standard AVI main header is always 56 bytes (0x38). Values other than 56 may indicate a non-standard or corrupted header.",
+      "storeAs": "avihChunkSize",
+      "valueType": "uint32",
+      "endianness": "little",
+      "validation": {
+        "expectedValue": "0x00000038"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Microseconds Per Frame",
+      "offset": 32,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Time between frames in microseconds, stored as a little-endian unsigned 32-bit integer. This determines the playback frame rate: FPS = 1,000,000 / microsecondsPerFrame. Common values: 33333 (30 fps), 40000 (25 fps), 41708 (23.976 fps), 66667 (15 fps).",
+      "storeAs": "microsecondsPerFrame",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Max Bytes Per Second",
+      "offset": 36,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Approximate maximum data rate of the file in bytes per second, stored as a little-endian unsigned 32-bit integer. Used by players to allocate read buffers. A value of 0 indicates the field is not used.",
+      "storeAs": "maxBytesPerSec",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Padding Granularity",
+      "offset": 40,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "Alignment size for data in bytes, stored as a little-endian unsigned 32-bit integer. Data chunks should be padded to multiples of this value. A value of 0 means no specific alignment requirement beyond the standard 2-byte RIFF pad.",
+      "storeAs": "paddingGranularity",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "AVI Flags",
+      "offset": 44,
+      "length": 4,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Bitfield of AVI file flags stored as a little-endian unsigned 32-bit integer. Controls indexing, interleaving, and data trust behavior. Most well-formed AVI files have HASINDEX and ISINTERLEAVED set.",
+      "storeAs": "aviFlags",
+      "valueType": "uint32",
+      "endianness": "little",
+      "valueMap": {
+        "0": "No flags set",
+        "16": "HASINDEX only",
+        "32": "MUSTUSEINDEX only",
+        "48": "HASINDEX + MUSTUSEINDEX",
+        "272": "HASINDEX + ISINTERLEAVED",
+        "304": "HASINDEX + MUSTUSEINDEX + ISINTERLEAVED",
+        "65808": "HASINDEX + ISINTERLEAVED + TRUSTCKTYPE",
+        "65840": "All flags set"
+      },
+      "bitfields": [
+        {
+          "bit": 4,
+          "name": "AVIF_HASINDEX",
+          "description": "Indicates the AVI file has an index chunk (idx1) at the end for fast seeking",
+          "valueMap": {
+            "0": "No index present",
+            "1": "Index chunk (idx1) present"
+          }
+        },
+        {
+          "bit": 5,
+          "name": "AVIF_MUSTUSEINDEX",
+          "description": "Indicates the index must be used to determine the order of data presentation, not the physical chunk order",
+          "valueMap": {
+            "0": "Physical order is presentation order",
+            "1": "Index determines presentation order"
+          }
+        },
+        {
+          "bit": 8,
+          "name": "AVIF_ISINTERLEAVED",
+          "description": "Indicates the AVI file is interleaved, with audio and video chunks alternating for smoother playback",
+          "valueMap": {
+            "0": "Not interleaved",
+            "1": "Audio/video interleaved"
+          }
+        },
+        {
+          "bit": 16,
+          "name": "AVIF_TRUSTCKTYPE",
+          "description": "Indicates that chunk types can be trusted for determining stream membership",
+          "valueMap": {
+            "0": "Chunk types may be unreliable",
+            "1": "Chunk types are trustworthy"
+          }
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Total Frames",
+      "offset": 48,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "Total number of frames of video data in the file, stored as a little-endian unsigned 32-bit integer. Combined with microsecondsPerFrame, this determines the video duration. For OpenDML AVI 2.0, this may only reflect the first RIFF segment.",
+      "storeAs": "totalFrames",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Initial Frames",
+      "offset": 52,
+      "length": 4,
+      "color": "#F0E68C",
+      "opacity": 0.3,
+      "description": "Number of frames before the initial frame of the AVI sequence for interleaved files, stored as a little-endian unsigned 32-bit integer. Used for audio synchronization. Typically 0 for non-interleaved files.",
+      "storeAs": "initialFrames",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of Streams",
+      "offset": 56,
+      "length": 4,
+      "color": "#E6E6FA",
+      "opacity": 0.3,
+      "description": "Number of data streams in the file, stored as a little-endian unsigned 32-bit integer. Typically 2 (one video stream + one audio stream). Each stream has a corresponding strl LIST chunk in the header.",
+      "storeAs": "numberOfStreams",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Suggested Buffer Size",
+      "offset": 60,
+      "length": 4,
+      "color": "#FFB6C1",
+      "opacity": 0.3,
+      "description": "Suggested buffer size in bytes for reading the file, stored as a little-endian unsigned 32-bit integer. Should be large enough to hold the largest chunk in the file. A value of 0 means the player should determine buffer size automatically.",
+      "storeAs": "suggestedBufferSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Video Width",
+      "offset": 64,
+      "length": 4,
+      "color": "#90EE90",
+      "opacity": 0.3,
+      "description": "Width of the AVI file in pixels, stored as a little-endian unsigned 32-bit integer. This is the width of the main video stream. Standard resolutions: 320x240, 640x480, 720x480 (NTSC DVD), 720x576 (PAL DVD), 1920x1080.",
+      "storeAs": "width",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Video Height",
+      "offset": 68,
+      "length": 4,
+      "color": "#ADD8E6",
+      "opacity": 0.3,
+      "description": "Height of the AVI file in pixels, stored as a little-endian unsigned 32-bit integer. This is the height of the main video stream. AVI supports both top-down (positive) and bottom-up (standard BMP order) video.",
+      "storeAs": "height",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Video Duration (seconds)",
+      "expression": "totalFrames * microsecondsPerFrame / 1000000",
+      "storeAs": "durationSeconds",
+      "description": "Calculates the video duration in seconds by multiplying total frames by the microseconds per frame and converting to seconds. This gives the approximate playback time of the video."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Frames Per Second",
+      "expression": "microsecondsPerFrame > 0 ? 1000000 / microsecondsPerFrame : 0",
+      "storeAs": "framesPerSecond",
+      "description": "Calculates the playback frame rate by dividing 1,000,000 by microseconds per frame. Common results: 23.976, 24, 25, 29.97, 30 fps."
+    },
+    {
+      "type": "conditional",
+      "name": "Index Presence Check",
+      "condition": "(aviFlags & 16) != 0",
+      "trueLabel": "This AVI file has an index (idx1) enabling fast seeking and random access",
+      "falseLabel": "This AVI file lacks an index - seeking may be slow or unavailable",
+      "description": "Checks the AVIF_HASINDEX flag (bit 4) to determine if the file contains an idx1 index chunk. Without an index, players must scan the entire file to locate specific frames."
+    },
+    {
+      "type": "conditional",
+      "name": "Interleaving Check",
+      "condition": "(aviFlags & 256) != 0",
+      "trueLabel": "Audio and video data are interleaved for smooth playback",
+      "falseLabel": "Audio and video data are not interleaved - may require more buffering",
+      "description": "Checks the AVIF_ISINTERLEAVED flag (bit 8) to determine if audio and video chunks alternate. Non-interleaved files store all video followed by all audio, requiring larger read buffers."
     },
     {
       "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Width x Height"
+      "name": "Video Width (pixels)",
+      "variable": "width",
+      "description": "Video frame width in pixels from the avih main header (little-endian uint32 at offset 64)"
     },
     {
       "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "name": "Video Height (pixels)",
+      "variable": "height",
+      "description": "Video frame height in pixels from the avih main header (little-endian uint32 at offset 68)"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Frames",
+      "variable": "totalFrames",
+      "description": "Total number of video frames in the file from the avih main header"
+    },
+    {
+      "type": "metadata",
+      "name": "Number of Streams",
+      "variable": "numberOfStreams",
+      "description": "Number of audio/video streams in the AVI file (typically 2: one video + one audio)"
+    },
+    {
+      "type": "metadata",
+      "name": "Frames Per Second",
+      "variable": "framesPerSecond",
+      "description": "Computed playback frame rate calculated as 1,000,000 / microsecondsPerFrame"
+    },
+    {
+      "type": "metadata",
+      "name": "Duration (seconds)",
+      "variable": "durationSeconds",
+      "description": "Computed video duration in seconds: totalFrames * microsecondsPerFrame / 1,000,000"
     }
   ],
-  "software": [
-    "VLC",
-    "Windows Media Player",
-    "MPlayer"
-  ],
-  "format_relationships": {
-    "category": "Video",
-    "extensions": [
-      ".avi"
-    ]
-  },
   "MimeTypes": [
     "video/x-msvideo",
     "video/avi"
@@ -113,25 +413,34 @@
     "VLC",
     "Windows Media Player",
     "MPC-HC",
-    "KMPlayer"
+    "KMPlayer",
+    "FFmpeg"
   ],
   "UseCases": [
     "Legacy video",
     "Windows video",
-    "Video editing"
+    "Video editing",
+    "DV capture",
+    "Surveillance footage"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 28,
+    "ValidationRules": 6,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
+    "Container": "AVI (Audio Video Interleave / RIFF)",
     "VideoFormat": true,
-    "Container": "AVI (Audio Video Interleave)",
-    "Platform": "Windows"
+    "Endianness": "little-endian",
+    "HeaderSize": "72 bytes (RIFF header + avih main header)",
+    "RIFFBasedFormat": true,
+    "Platform": "Windows",
+    "MaxFileSize": "~2 GB (AVI 1.0), ~256 GB (OpenDML AVI 2.0)",
+    "SupportsInterleaving": true,
+    "SupportsIndex": true
   }
 }

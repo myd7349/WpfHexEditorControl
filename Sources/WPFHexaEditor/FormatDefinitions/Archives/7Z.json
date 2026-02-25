@@ -1,21 +1,22 @@
 {
   "formatName": "7-Zip Archive",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
     ".7z"
   ],
-  "description": "7-Zip archive format with LZMA compression",
+  "description": "7-Zip archive format designed by Igor Pavlov. Uses a 32-byte Start Header containing a 6-byte signature, version info, and pointers to the Next Header which holds the archive metadata (file list, sizes, CRCs, and codec information). Supports LZMA, LZMA2, BZIP2, DEFLATE, and BCJ filter chains with optional AES-256 encryption.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "PKWARE APPNOTE.TXT - ZIP File Format Specification",
-      "ISO/IEC 21320-1:2015 - Document Container File"
+      "7z Format Specification (7zFormat.txt from LZMA SDK)",
+      "7-Zip Source Code - CPP/7zip/Archive/7z",
+      "LZMA SDK Documentation"
     ],
     "WebLinks": [
-      "https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT",
-      "https://en.wikipedia.org/wiki/ZIP_(file_format)",
-      "https://www.iso.org/standard/60101.html"
+      "https://www.7-zip.org/7z.html",
+      "https://en.wikipedia.org/wiki/7z",
+      "https://py7zr.readthedocs.io/en/latest/archive_format.html"
     ]
   },
   "detection": {
@@ -23,35 +24,47 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 6,
-      "max_signature_offset": 1024
+      "minFileSize": 32,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "validateCRC32": "Validate Start Header CRC-32 integrity",
-    "readUInt32LE": "Read 32-bit Start Header CRC value (little-endian)"
   },
   "variables": {
     "currentOffset": 0,
-    "startHeaderCRC": 0,
-    "calculatedCRC": 0,
-    "crcValid": false,
-    "7zSignature": "",
+    "sevenZipSignature": "",
     "majorVersion": 0,
     "minorVersion": 0,
-    "startHeaderCrc": 0
+    "startHeaderCrc": 0,
+    "nextHeaderOffset": 0,
+    "nextHeaderOffsetHigh": 0,
+    "nextHeaderSize": 0,
+    "nextHeaderSizeHigh": 0,
+    "nextHeaderCrc": 0,
+    "versionString": "",
+    "isStandardVersion": false,
+    "dataRegionStart": 32,
+    "nextHeaderAbsoluteOffset": 0,
+    "formattedNextHeaderSize": "",
+    "archiveEndOffset": 0
+  },
+  "functions": {
+    "computeFromVariables(nextHeaderOffset + 32, nextHeaderAbsoluteOffset)": "Calculate the absolute file offset of the Next Header by adding the Start Header size (32 bytes) to the relative Next Header Offset",
+    "computeFromVariables(nextHeaderAbsoluteOffset + nextHeaderSize, archiveEndOffset)": "Calculate the expected end-of-archive offset by adding Next Header Size to its absolute position",
+    "formatFileSize(var:nextHeaderSize)": "Format the Next Header size as a human-readable file size string"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "7z Signature",
+      "name": "7-Zip Signature",
       "offset": 0,
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "7z magic bytes",
-      "storeAs": "7zSignature",
-      "valueType": "ascii"
+      "description": "6-byte magic signature: 0x37 0x7A 0xBC 0xAF 0x27 0x1C, which decodes as '7z' followed by four binary bytes (BC AF 27 1C). This uniquely identifies the file as a 7-Zip archive. The signature was chosen to include the '7z' ASCII prefix for visual identification.",
+      "storeAs": "sevenZipSignature",
+      "valueType": "hex",
+      "validation": {
+        "expectedValue": "0x377ABCAF271C"
+      }
     },
     {
       "type": "field",
@@ -60,9 +73,12 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Format major version",
+      "description": "Format major version number (uint8). Currently always 0x00 for all released versions of 7-Zip. A change in major version would indicate a backwards-incompatible format revision.",
       "storeAs": "majorVersion",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Version 0.x (current standard)"
+      }
     },
     {
       "type": "field",
@@ -71,45 +87,155 @@
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Format minor version",
+      "description": "Format minor version number (uint8). Typically 0x04 for archives created by modern 7-Zip versions. Earlier versions may use 0x02 or 0x03. The minor version indicates which format features are used.",
       "storeAs": "minorVersion",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "Version 0.1 (early format)",
+        "2": "Version 0.2 (basic features)",
+        "3": "Version 0.3 (extended features)",
+        "4": "Version 0.4 (current standard)"
+      }
     },
     {
       "type": "field",
-      "name": "Start Header CRC",
+      "name": "Start Header CRC-32",
       "offset": 8,
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "CRC of start header",
+      "description": "CRC-32 checksum of the Start Header data fields (bytes 12-31, covering NextHeaderOffset, NextHeaderSize, and NextHeaderCRC). Stored as uint32 LE. Used to verify the integrity of the Start Header before trusting the Next Header location pointers.",
       "storeAs": "startHeaderCrc",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Next Header Offset (Low 32)",
+      "offset": 12,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Low 32 bits of the Next Header offset as a uint64 LE value. This is the byte offset from the end of the Start Header (byte 32) to the beginning of the Next Header, which contains the archive metadata (file list, codec info, CRCs). For archives under 4 GiB, this field alone specifies the offset.",
+      "storeAs": "nextHeaderOffset",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Next Header Offset (High 32)",
+      "offset": 16,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "High 32 bits of the Next Header offset (uint64 LE). For archives smaller than 4 GiB of compressed data, this value is 0. Non-zero values indicate the Next Header is located beyond the 4 GiB boundary in very large archives.",
+      "storeAs": "nextHeaderOffsetHigh",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Next Header Size (Low 32)",
+      "offset": 20,
+      "length": 4,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Low 32 bits of the Next Header size in bytes as a uint64 LE value. The Next Header contains encoded archive metadata including the folder/coder structure, file names, sizes, CRCs, and timestamps. A larger Next Header generally indicates more files in the archive.",
+      "storeAs": "nextHeaderSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Next Header Size (High 32)",
+      "offset": 24,
+      "length": 4,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "High 32 bits of the Next Header size (uint64 LE). For most archives this is 0, as Next Header metadata rarely exceeds 4 GiB even for archives containing millions of files.",
+      "storeAs": "nextHeaderSizeHigh",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Next Header CRC-32",
+      "offset": 28,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "CRC-32 checksum of the Next Header data (the encoded metadata block). Stored as uint32 LE. Used to verify the integrity of the archive metadata after reading it from the offset specified by NextHeaderOffset. Critical for detecting corruption in the file index.",
+      "storeAs": "nextHeaderCrc",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Absolute Next Header Position",
+      "expression": "nextHeaderOffset + 32",
+      "storeAs": "nextHeaderAbsoluteOffset",
+      "description": "Calculates the absolute file offset of the Next Header by adding the 32-byte Start Header size to the relative Next Header Offset. This is where the archive metadata (file list, codec info) begins in the file."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Archive End Offset",
+      "expression": "nextHeaderAbsoluteOffset + nextHeaderSize",
+      "storeAs": "archiveEndOffset",
+      "description": "Calculates the expected end-of-archive byte offset by adding the Next Header Size to its absolute position. Data beyond this offset is not part of the 7z archive (may be appended data or padding)."
+    },
+    {
+      "type": "conditional",
+      "name": "Version Compatibility Check",
+      "condition": "majorVersion == 0 && minorVersion <= 4",
+      "trueLabel": "Standard 7-Zip format version (0.x, x <= 4): compatible with all modern 7-Zip implementations",
+      "falseLabel": "Non-standard or future 7-Zip format version: may require a newer version of 7-Zip to extract",
+      "description": "Validates that the format version is within the known range. All released 7-Zip versions use major version 0 with minor version 4 or below."
+    },
+    {
+      "type": "conditional",
+      "name": "Large Archive Detection",
+      "condition": "nextHeaderOffsetHigh > 0 || nextHeaderSizeHigh > 0",
+      "trueLabel": "Large archive detected: Next Header position or size exceeds 4 GiB boundary (64-bit offsets required)",
+      "falseLabel": "Standard-size archive: all offsets fit within 32-bit range",
+      "description": "Checks if the high 32 bits of NextHeaderOffset or NextHeaderSize are non-zero, indicating a very large archive that requires 64-bit offset handling"
+    },
+    {
+      "type": "metadata",
+      "name": "Format Version",
+      "variable": "majorVersion",
+      "description": "7-Zip format major version number (expected: 0)"
+    },
+    {
+      "type": "metadata",
+      "name": "Format Minor Version",
+      "variable": "minorVersion",
+      "description": "7-Zip format minor version number (typically 4 for modern archives)"
     },
     {
       "type": "metadata",
       "name": "Start Header CRC-32",
-      "variable": "startHeaderCRC",
-      "description": "CRC-32 checksum of the start header"
+      "variable": "startHeaderCrc",
+      "description": "CRC-32 checksum of the Start Header data fields for integrity verification"
     },
     {
       "type": "metadata",
-      "name": "CRC Validation",
-      "variable": "crcValid",
-      "description": "Start header CRC-32 integrity check result"
+      "name": "Next Header Offset",
+      "variable": "nextHeaderAbsoluteOffset",
+      "description": "Absolute byte offset where the Next Header (archive metadata) begins in the file"
+    },
+    {
+      "type": "metadata",
+      "name": "Next Header Size",
+      "variable": "nextHeaderSize",
+      "description": "Size of the Next Header metadata block in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Next Header CRC-32",
+      "variable": "nextHeaderCrc",
+      "description": "CRC-32 checksum of the Next Header data for metadata integrity verification"
     }
   ],
-  "software": [
-    "7-Zip",
-    "PeaZip",
-    "Bandizip"
-  ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".7z"
-    ]
-  },
   "MimeTypes": [
     "application/x-7z-compressed"
   ],
@@ -126,17 +252,24 @@
     "Multi-volume archives"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 19,
+    "ValidationRules": 1,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "CompressionMethod": "LZMA, LZMA2, BZIP2, DEFLATE",
     "ArchivesFormat": true,
-    "SupportsEncryption": true
+    "Endianness": "little-endian",
+    "HeaderSize": 32,
+    "CompressionMethod": "LZMA, LZMA2, BZIP2, DEFLATE, PPMd, BCJ filters",
+    "SupportsEncryption": true,
+    "EncryptionMethod": "AES-256",
+    "SupportsSolidArchive": true,
+    "SupportsMultiVolume": true,
+    "MaxFileSize": "Virtually unlimited (64-bit offsets)",
+    "CRCAlgorithm": "CRC-32 (ISO 3309)"
   }
 }

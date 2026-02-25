@@ -1,54 +1,61 @@
 {
   "formatName": "GIF Image",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".gif"
   ],
-  "description": "Graphics Interchange Format - Animated image format",
+  "description": "Graphics Interchange Format (GIF) is an indexed-color raster image format supporting up to 256 colors per frame, lossless LZW compression, animation, and simple transparency. The file begins with a 6-byte header (signature + version), followed by a 7-byte Logical Screen Descriptor containing canvas dimensions, a packed byte with Global Color Table parameters, background color index, and pixel aspect ratio.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "GIF89a Specification",
-      "Graphics Interchange Format Version 89a"
+      "GIF89a Specification - CompuServe Incorporated (1990)",
+      "GIF87a Specification - CompuServe Incorporated (1987)",
+      "W3C GIF89a Specification Reference"
     ],
     "WebLinks": [
       "https://www.w3.org/Graphics/GIF/spec-gif89a.txt",
-      "https://en.wikipedia.org/wiki/GIF"
+      "https://en.wikipedia.org/wiki/GIF",
+      "https://www.fileformat.info/format/gif/egff.htm"
     ]
   },
   "detection": {
-    "signature": "474946383961",
+    "signature": "474946",
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 6,
-      "max_signature_offset": 1024
+      "minFileSize": 13,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "readUInt32LE": "Read logical screen width and height (little-endian)",
-    "multiply": "Calculate canvas size (width × height)",
-    "parseGIFHeader()": "Parse GIF header for dimensions and version",
-    "computeFromVariables(gifWidth * gifHeight, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
-    "canvasWidth": 0,
-    "canvasHeight": 0,
-    "totalPixels": 0,
-    "version": "",
     "gifSignature": "",
+    "gifVersion": "",
     "logicalScreenWidth": 0,
     "logicalScreenHeight": 0,
     "packedFields": 0,
-    "backgroundColor": 0,
+    "backgroundColorIndex": 0,
     "pixelAspectRatio": 0,
+    "globalColorTableFlag": 0,
+    "colorResolution": 0,
+    "sortFlag": 0,
+    "sizeOfGCT": 0,
+    "globalColorTableEntries": 0,
+    "globalColorTableBytes": 0,
+    "hasGlobalColorTable": false,
+    "totalPixels": 0,
+    "actualAspectRatio": 0,
     "gifWidth": 0,
     "gifHeight": 0,
-    "gifVersion": "",
     "gifColorTableSize": 0,
-    "gifBackgroundColor": 0
+    "formattedSize": ""
+  },
+  "functions": {
+    "parseGIFHeader()": "Parse the GIF header to extract dimensions, version string, and Global Color Table parameters from the Logical Screen Descriptor",
+    "computeFromVariables(logicalScreenWidth * logicalScreenHeight, totalPixels)": "Calculate total canvas pixel count from logical screen dimensions",
+    "computeFromVariables(3 * (2 << sizeOfGCT), globalColorTableBytes)": "Calculate Global Color Table size in bytes (3 bytes per entry for RGB triples)",
+    "formatFileSize(var:globalColorTableBytes)": "Format Global Color Table size as human-readable string"
   },
   "blocks": [
     {
@@ -58,20 +65,27 @@
       "length": 3,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GIF magic bytes",
+      "description": "Three-byte ASCII signature 'GIF' (0x47 0x49 0x46) identifying the file as a Graphics Interchange Format image. This is the first part of the 6-byte GIF header; the remaining 3 bytes specify the version.",
       "storeAs": "gifSignature",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "GIF"
+      }
     },
     {
       "type": "field",
-      "name": "Version",
+      "name": "GIF Version",
       "offset": 3,
       "length": 3,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "89a or 87a",
-      "storeAs": "version",
-      "valueType": "ascii"
+      "description": "Three-byte ASCII version string. '87a' is the original 1987 specification supporting basic images and color tables. '89a' (1990) adds application extensions, comment extensions, graphic control extensions (animation/transparency), and plain text extensions.",
+      "storeAs": "gifVersion",
+      "valueType": "ascii",
+      "valueMap": {
+        "87a": "GIF87a (Original - basic images, no animation or transparency)",
+        "89a": "GIF89a (Extended - animation, transparency, comments, app extensions)"
+      }
     },
     {
       "type": "field",
@@ -80,7 +94,7 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Canvas width in pixels",
+      "description": "Width of the logical screen (virtual canvas) in pixels, stored as a little-endian unsigned 16-bit integer. All image frames are rendered within this canvas. Maximum value is 65535 pixels.",
       "storeAs": "logicalScreenWidth",
       "valueType": "uint16"
     },
@@ -91,7 +105,7 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Canvas height in pixels",
+      "description": "Height of the logical screen (virtual canvas) in pixels, stored as a little-endian unsigned 16-bit integer. All image frames are rendered within this canvas. Maximum value is 65535 pixels.",
       "storeAs": "logicalScreenHeight",
       "valueType": "uint16"
     },
@@ -102,19 +116,69 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Global color table info",
+      "description": "Packed byte containing Global Color Table flag (bit 7), Color Resolution (bits 6-4), Sort Flag (bit 3), and Size of Global Color Table (bits 2-0). These fields control the presence and configuration of the Global Color Table that follows this descriptor.",
       "storeAs": "packedFields",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "bitfields": [
+        {
+          "bit": 7,
+          "name": "Global Color Table Flag",
+          "description": "If set (1), a Global Color Table immediately follows the Logical Screen Descriptor. If clear (0), no Global Color Table exists and each image must provide its own Local Color Table.",
+          "valueMap": {
+            "0": "No Global Color Table present",
+            "1": "Global Color Table follows this descriptor"
+          }
+        },
+        {
+          "bits": "6-4",
+          "name": "Color Resolution",
+          "description": "Number of bits per primary color minus 1. Value 0 means 1 bit (2 colors), value 7 means 8 bits (256 shades per channel). Represents the number of significant bits in the original palette, not necessarily the number of colors used.",
+          "valueMap": {
+            "0": "1 bit per primary color (2 shades)",
+            "1": "2 bits per primary color (4 shades)",
+            "2": "3 bits per primary color (8 shades)",
+            "3": "4 bits per primary color (16 shades)",
+            "4": "5 bits per primary color (32 shades)",
+            "5": "6 bits per primary color (64 shades)",
+            "6": "7 bits per primary color (128 shades)",
+            "7": "8 bits per primary color (256 shades)"
+          }
+        },
+        {
+          "bit": 3,
+          "name": "Sort Flag",
+          "description": "If set, the Global Color Table entries are sorted in order of decreasing importance (most important colors first). This helps decoders with limited palettes select the most useful colors.",
+          "valueMap": {
+            "0": "Color table is not sorted",
+            "1": "Color table sorted by decreasing importance"
+          }
+        },
+        {
+          "bits": "2-0",
+          "name": "Size of Global Color Table",
+          "description": "Used to calculate the number of entries in the Global Color Table. The number of entries is 2^(N+1), where N is this 3-bit value. Each entry is 3 bytes (RGB). So the table size ranges from 6 bytes (2 entries) to 768 bytes (256 entries).",
+          "valueMap": {
+            "0": "2 entries (6 bytes)",
+            "1": "4 entries (12 bytes)",
+            "2": "8 entries (24 bytes)",
+            "3": "16 entries (48 bytes)",
+            "4": "32 entries (96 bytes)",
+            "5": "64 entries (192 bytes)",
+            "6": "128 entries (384 bytes)",
+            "7": "256 entries (768 bytes)"
+          }
+        }
+      ]
     },
     {
       "type": "field",
-      "name": "Background Color",
+      "name": "Background Color Index",
       "offset": 11,
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Index to global color table",
-      "storeAs": "backgroundColor",
+      "description": "Index into the Global Color Table for the background color. This color is used for pixels on the logical screen that are not covered by any image frame. Only meaningful when the Global Color Table Flag is set; otherwise this field should be 0.",
+      "storeAs": "backgroundColorIndex",
       "valueType": "uint8"
     },
     {
@@ -124,76 +188,96 @@
       "length": 1,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Pixel aspect ratio",
+      "description": "Pixel aspect ratio approximation. If 0, no aspect ratio information is given. If non-zero, the actual aspect ratio is computed as (value + 15) / 64. A value of 49 gives a 1:1 aspect ratio. Most modern GIFs use square pixels (value 0).",
       "storeAs": "pixelAspectRatio",
       "valueType": "uint8"
     },
     {
-      "type": "metadata",
-      "name": "GIF Version",
-      "variable": "version",
-      "description": "GIF version (87a or 89a)"
+      "type": "computeFromVariables",
+      "name": "Total Canvas Pixels",
+      "expression": "logicalScreenWidth * logicalScreenHeight",
+      "storeAs": "totalPixels",
+      "description": "Calculates total pixel count of the logical screen canvas. For animated GIFs, this represents the per-frame pixel area, not the total data across all frames."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Global Color Table Entry Count",
+      "expression": "(packedFields & 128) != 0 ? (2 << (packedFields & 7)) : 0",
+      "storeAs": "globalColorTableEntries",
+      "description": "Calculates the number of entries in the Global Color Table from the packed fields byte. If Global Color Table Flag is 0, the result is 0 (no table). Formula: 2^(sizeOfGCT + 1)."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Global Color Table Byte Size",
+      "expression": "(packedFields & 128) != 0 ? (3 * (2 << (packedFields & 7))) : 0",
+      "storeAs": "globalColorTableBytes",
+      "description": "Calculates the Global Color Table size in bytes. Each entry is 3 bytes (one byte each for R, G, B). Total size is 3 * 2^(sizeOfGCT + 1). Returns 0 if no GCT is present."
+    },
+    {
+      "type": "conditional",
+      "name": "Global Color Table Presence",
+      "condition": "(packedFields & 128) != 0",
+      "trueLabel": "A Global Color Table is present immediately after the Logical Screen Descriptor",
+      "falseLabel": "No Global Color Table exists; each image frame must include a Local Color Table",
+      "description": "Checks bit 7 of the packed fields byte to determine if a Global Color Table follows the Logical Screen Descriptor"
+    },
+    {
+      "type": "conditional",
+      "name": "GIF Version Feature Check",
+      "condition": "gifVersion == '89a'",
+      "trueLabel": "GIF89a: supports animation, transparency, comments, and application extensions",
+      "falseLabel": "GIF87a: basic format without animation, transparency, or extension blocks",
+      "description": "Checks the GIF version to determine which features are available in this file"
     },
     {
       "type": "metadata",
       "name": "Canvas Width (pixels)",
-      "variable": "canvasWidth",
-      "description": "Logical screen width"
+      "variable": "logicalScreenWidth",
+      "description": "Logical screen width in pixels from the Logical Screen Descriptor at offset 6"
     },
     {
       "type": "metadata",
       "name": "Canvas Height (pixels)",
-      "variable": "canvasHeight",
-      "description": "Logical screen height"
+      "variable": "logicalScreenHeight",
+      "description": "Logical screen height in pixels from the Logical Screen Descriptor at offset 8"
     },
     {
       "type": "metadata",
-      "name": "Total Pixels",
+      "name": "Total Canvas Pixels",
       "variable": "totalPixels",
-      "description": "Canvas width × height"
+      "description": "Total pixel count computed as logicalScreenWidth * logicalScreenHeight"
     },
     {
       "type": "metadata",
       "name": "GIF Version",
       "variable": "gifVersion",
-      "description": "GIF format version string"
+      "description": "GIF format version string (87a or 89a) from offset 3"
     },
     {
       "type": "metadata",
-      "name": "Image Dimensions",
-      "variable": "gifWidth",
-      "description": "GIF image width from header"
+      "name": "Global Color Table Entries",
+      "variable": "globalColorTableEntries",
+      "description": "Number of color entries in the Global Color Table (0 if no GCT present)"
     },
     {
       "type": "metadata",
-      "name": "Image Height",
-      "variable": "gifHeight",
-      "description": "GIF image height from header"
+      "name": "Has Global Color Table",
+      "variable": "hasGlobalColorTable",
+      "description": "true if Global Color Table Flag is set in the packed fields byte, false otherwise"
     },
     {
       "type": "metadata",
-      "name": "Color Table Size",
-      "variable": "gifColorTableSize",
-      "description": "Number of entries in global color table"
+      "name": "Global Color Table Size (bytes)",
+      "variable": "globalColorTableBytes",
+      "description": "Size of the Global Color Table in bytes (3 bytes per RGB entry), or 0 if no GCT present"
     },
     {
       "type": "metadata",
-      "name": "Total Pixels (computed)",
-      "variable": "totalPixels",
-      "description": "gifWidth x gifHeight computed total pixels"
+      "name": "Background Color Index",
+      "variable": "backgroundColorIndex",
+      "description": "Index into the Global Color Table used for screen background (only valid when GCT is present)"
     }
   ],
-  "software": [
-    "Web browsers",
-    "GIMP",
-    "Photoshop"
-  ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".gif"
-    ]
-  },
   "MimeTypes": [
     "image/gif"
   ],
@@ -212,17 +296,26 @@
     "Emojis"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 56,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 16,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 20,
+    "ValidationRules": 1,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "ColorSpace": "Indexed (256 colors)",
-    "BitDepth": 8,
-    "ImagesFormat": true
+    "ImageFormat": true,
+    "Endianness": "little-endian",
+    "HeaderSize": 13,
+    "ColorSpace": "Indexed (palette-based, up to 256 colors per frame)",
+    "CompressionMethod": "LZW (Lempel-Ziv-Welch) - lossless",
+    "LosslessCompression": true,
+    "MaxBitDepth": 8,
+    "MaxColors": 256,
+    "SupportsTransparency": true,
+    "SupportsAnimation": true,
+    "ExtensionBlockBased": true,
+    "GIF89aFeatures": "animation, transparency, comments, application extensions"
   }
 }

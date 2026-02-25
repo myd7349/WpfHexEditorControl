@@ -1,22 +1,25 @@
 {
   "formatName": "OGG Audio",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".ogg",
-    ".oga"
+    ".oga",
+    ".ogv"
   ],
-  "description": "Ogg container format - Often contains Vorbis audio",
+  "description": "Ogg is a free, open container format maintained by the Xiph.Org Foundation. The file is composed of pages, each beginning with the 'OggS' capture pattern. Each page has a 27-byte fixed header followed by a variable-length segment table. Pages carry codec data (typically Vorbis, Opus, or FLAC for audio, Theora for video) multiplexed by serial number.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "RFC 3533 - The Ogg Encapsulation Format",
-      "Ogg Bitstream Format"
+      "RFC 5334 - Ogg Media Types",
+      "Ogg Bitstream Format Specification"
     ],
     "WebLinks": [
       "https://www.ietf.org/rfc/rfc3533.txt",
       "https://xiph.org/ogg/doc/",
-      "https://en.wikipedia.org/wiki/Ogg"
+      "https://en.wikipedia.org/wiki/Ogg",
+      "https://xiph.org/vorbis/doc/Vorbis_I_spec.html"
     ]
   },
   "detection": {
@@ -24,135 +27,337 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 28,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "readUInt32LE": "Read 32-bit little-endian for serial number and page sequence",
-    "readUInt64LE": "Read 64-bit little-endian for granule position",
-    "readUInt8": "Read page flags and segment count",
-    "parseOGGPageHeader(0)": "Parse OGG page header"
   },
   "variables": {
     "currentOffset": 0,
+    "oggSignature": "",
     "streamVersion": 0,
-    "headerType": 0,
+    "headerTypeFlag": 0,
+    "isContinuationPage": false,
+    "isBeginningOfStream": false,
+    "isEndOfStream": false,
+    "granulePositionLow": 0,
+    "granulePositionHigh": 0,
     "granulePosition": 0,
     "serialNumber": 0,
-    "pageSequence": 0,
-    "checksum": 0,
-    "oggSignature": "",
-    "oggVersion": 0,
-    "oggHeaderType": 0,
-    "oggGranulePosition": 0,
-    "oggSerialNumber": 0,
-    "oggPageSequence": 0
+    "pageSequenceNumber": 0,
+    "crcChecksum": 0,
+    "numPageSegments": 0,
+    "segmentTableFirstByte": 0,
+    "totalSegmentSize": 0,
+    "pageHeaderSize": 0,
+    "estimatedBitrate": 0,
+    "codecIdentified": "",
+    "formattedSize": ""
+  },
+  "functions": {
+    "parseOGGPageHeader(0)": "Parse the complete OGG page header starting at the given offset, extracting capture pattern, version, flags, granule position, serial number, sequence number, CRC, and segment table",
+    "computeFromVariables(27 + numPageSegments, pageHeaderSize)": "Calculate the total page header size: 27 fixed header bytes plus the number of entries in the segment table",
+    "formatFileSize(var:totalSegmentSize)": "Format the total segment data size as a human-readable string"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "OGG Signature",
+      "name": "OGG Capture Pattern",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "OggS capture pattern",
+      "description": "Four-byte ASCII capture pattern 'OggS' (0x4F676753). This magic signature identifies the start of every Ogg page. The pattern is designed to be easily identifiable when scanning a stream, enabling resynchronization after data loss.",
       "storeAs": "oggSignature",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "OggS"
+      }
     },
     {
       "type": "field",
-      "name": "Stream Version",
+      "name": "Stream Structure Version",
       "offset": 4,
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Always 0",
+      "description": "Version of the Ogg bitstream structure. Currently only version 0 is defined by RFC 3533. Any other value indicates an incompatible format change. Readers must reject pages with an unknown version.",
       "storeAs": "streamVersion",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "validation": {
+        "expectedValue": "0x00"
+      },
+      "valueMap": {
+        "0": "Version 0 (current/only defined version)"
+      }
     },
     {
       "type": "field",
-      "name": "Header Type",
+      "name": "Header Type Flag",
       "offset": 5,
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Packet flags",
-      "storeAs": "headerType",
+      "description": "Bit-packed flags indicating the page type. Bit 0 (0x01): continuation of previous packet. Bit 1 (0x02): beginning of stream (BOS) - first page of a logical bitstream. Bit 2 (0x04): end of stream (EOS) - last page of a logical bitstream.",
+      "storeAs": "headerTypeFlag",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Normal page (mid-stream data)",
+        "1": "Continuation page (packet spans from previous page)",
+        "2": "Beginning of stream (BOS - first page)",
+        "4": "End of stream (EOS - last page)",
+        "6": "BOS + EOS (single-page stream)"
+      },
+      "bitfields": [
+        {
+          "bit": 0,
+          "name": "Continuation",
+          "description": "When set, the first packet on this page is a continuation of the previous packet from the prior page in the logical bitstream",
+          "valueMap": {
+            "0": "Fresh packet start",
+            "1": "Continuation of previous packet"
+          }
+        },
+        {
+          "bit": 1,
+          "name": "Beginning of Stream (BOS)",
+          "description": "When set, this is the first page of a logical bitstream. The BOS page must contain the codec identification header.",
+          "valueMap": {
+            "0": "Not first page",
+            "1": "First page of logical bitstream"
+          }
+        },
+        {
+          "bit": 2,
+          "name": "End of Stream (EOS)",
+          "description": "When set, this is the last page of a logical bitstream. No more pages with this serial number will follow.",
+          "valueMap": {
+            "0": "Not last page",
+            "1": "Last page of logical bitstream"
+          }
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Granule Position (Low 32 bits)",
+      "offset": 6,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Lower 32 bits of the 64-bit granule position, stored in little-endian byte order. The granule position is a codec-specific timestamp: for Vorbis it represents the total number of PCM audio samples encoded up to and including this page; for Theora it encodes frame number information.",
+      "storeAs": "granulePositionLow",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Granule Position (High 32 bits)",
+      "offset": 10,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Upper 32 bits of the 64-bit granule position. A value of -1 (0xFFFFFFFFFFFFFFFF across both fields) indicates that no packets finish on this page. The full 64-bit value provides sub-second seeking precision for audio streams.",
+      "storeAs": "granulePositionHigh",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Bitstream Serial Number",
+      "offset": 14,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "Unique serial number identifying the logical bitstream this page belongs to. In a multiplexed Ogg stream (e.g., audio + video), each logical stream has a different serial number assigned randomly at stream creation. Demuxers use this to separate interleaved streams.",
+      "storeAs": "serialNumber",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Page Sequence Number",
+      "offset": 18,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Monotonically increasing sequence number for pages within a logical bitstream. Starts at 0 for the BOS page and increments by 1 for each subsequent page. Used to detect lost pages and maintain ordering. Each logical bitstream has its own independent sequence counter.",
+      "storeAs": "pageSequenceNumber",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "CRC-32 Checksum",
+      "offset": 22,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "CRC-32 checksum of the entire page (header + data) using the polynomial 0x04C11DB7 (same as Ethernet CRC). During computation, this field is set to zero. The checksum covers the page header, segment table, and all segment data. Used to detect data corruption.",
+      "storeAs": "crcChecksum",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Number of Page Segments",
+      "offset": 26,
+      "length": 1,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Number of entries in the segment table that follows this byte (range 0-255). Each entry is one byte indicating the size of the corresponding segment. A value of 255 in the segment table means the segment continues into the next table entry. The total page data size is the sum of all segment table values.",
+      "storeAs": "numPageSegments",
       "valueType": "uint8"
     },
     {
       "type": "field",
-      "name": "Granule Position",
-      "offset": 6,
-      "length": 8,
-      "color": "#FFE66D",
+      "name": "Segment Table (First Byte)",
+      "offset": 27,
+      "length": 1,
+      "color": "#C44569",
       "opacity": 0.3,
-      "description": "PCM sample position",
-      "storeAs": "granulePosition",
-      "valueType": "uint64"
+      "description": "First entry of the segment table. Each byte represents the length of one segment (0-255 bytes). A value of 255 indicates the packet continues in the next segment. A value less than 255 terminates the current packet. The Vorbis identification header typically starts immediately after the segment table.",
+      "storeAs": "segmentTableFirstByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Segment Table (Second Byte)",
+      "offset": 28,
+      "length": 1,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Second entry of the segment table, if present. In multi-packet pages, this defines the second segment's length. The lacing mechanism allows multiple variable-length codec packets to be carried in a single Ogg page.",
+      "storeAs": "segmentTableSecondByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Segment Table (Third Byte)",
+      "offset": 29,
+      "length": 1,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Third entry of the segment table, if present. Together with entries 1 and 2, these first few segment table entries typically describe the codec header packets on the BOS page.",
+      "storeAs": "segmentTableThirdByte",
+      "valueType": "uint8"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Page Header Size",
+      "expression": "27 + numPageSegments",
+      "storeAs": "pageHeaderSize",
+      "description": "Calculates the total page header size in bytes: 27 bytes of fixed header fields plus one byte per segment table entry. The actual page data begins immediately after the segment table."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Segment Data Size",
+      "expression": "segmentTableFirstByte + segmentTableSecondByte + segmentTableThirdByte",
+      "storeAs": "totalSegmentSize",
+      "description": "Estimates the total segment data size from the first three segment table entries. The actual total is the sum of all segment table entries (up to numPageSegments entries)."
+    },
+    {
+      "type": "conditional",
+      "name": "Beginning of Stream Detection",
+      "condition": "(headerTypeFlag & 2) == 2",
+      "trueLabel": "This is a BOS (Beginning of Stream) page - contains the codec identification header for this logical bitstream",
+      "falseLabel": "This is not a BOS page - the codec identification header was on an earlier page in this bitstream",
+      "description": "Checks bit 1 of the header type flag to determine if this is the first page of a logical bitstream, which contains codec identification information"
+    },
+    {
+      "type": "conditional",
+      "name": "End of Stream Detection",
+      "condition": "(headerTypeFlag & 4) == 4",
+      "trueLabel": "This is an EOS (End of Stream) page - no more pages will follow for this logical bitstream",
+      "falseLabel": "This is not an EOS page - more pages will follow in this logical bitstream",
+      "description": "Checks bit 2 of the header type flag to determine if this is the last page of a logical bitstream"
     },
     {
       "type": "metadata",
-      "name": "OGG Version",
-      "variable": "oggVersion",
-      "description": "OGG stream structure version"
+      "name": "Stream Version",
+      "variable": "streamVersion",
+      "description": "Ogg bitstream structure version (always 0 for the current specification per RFC 3533)"
+    },
+    {
+      "type": "metadata",
+      "name": "Header Type Flags",
+      "variable": "headerTypeFlag",
+      "description": "Page type flags: bit 0 = continuation, bit 1 = BOS (beginning of stream), bit 2 = EOS (end of stream)"
     },
     {
       "type": "metadata",
       "name": "Granule Position",
-      "variable": "oggGranulePosition",
-      "description": "Absolute granule position for the page"
+      "variable": "granulePositionLow",
+      "description": "Lower 32 bits of the codec-specific granule position (e.g., total PCM samples for Vorbis)"
     },
     {
       "type": "metadata",
       "name": "Serial Number",
-      "variable": "oggSerialNumber",
-      "description": "Logical stream serial number"
+      "variable": "serialNumber",
+      "description": "Unique identifier for the logical bitstream this page belongs to"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Sequence",
+      "variable": "pageSequenceNumber",
+      "description": "Monotonically increasing page counter within this logical bitstream, starting at 0"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC-32 Checksum",
+      "variable": "crcChecksum",
+      "description": "CRC-32 integrity checksum covering the entire page (header + segment table + data)"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Segments",
+      "variable": "numPageSegments",
+      "description": "Number of entries in the segment table (0-255), determining the variable-length portion of the header"
+    },
+    {
+      "type": "metadata",
+      "name": "Page Header Size",
+      "variable": "pageHeaderSize",
+      "description": "Total page header size in bytes (27 fixed + segment table entries)"
     }
   ],
-  "software": [
-    "VLC",
-    "Firefox",
-    "Audacity"
-  ],
-  "format_relationships": {
-    "category": "Audio",
-    "extensions": [
-      ".ogg",
-      ".oga",
-      ".ogv"
-    ]
-  },
   "MimeTypes": [
     "audio/ogg",
-    "application/ogg"
+    "application/ogg",
+    "video/ogg"
   ],
   "Software": [
     "VLC",
     "Firefox",
     "Audacity",
-    "Chrome"
+    "Chrome",
+    "FFmpeg"
   ],
   "UseCases": [
     "Open-source audio",
     "Gaming",
     "Streaming",
-    "Web audio"
+    "Web audio",
+    "Podcast distribution"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 7,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 24,
+    "ValidationRules": 3,
     "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "AudioFormat": true,
-    "CompressionMethod": "Vorbis codec"
+    "Endianness": "little-endian",
+    "PageHeaderSize": "27 bytes fixed + variable segment table",
+    "MaxPageSize": "65535 bytes (255 segments * 255 bytes each)",
+    "CompressionMethod": "Codec-dependent (Vorbis, Opus, FLAC, Theora)",
+    "LossyCompression": true,
+    "StreamingCapable": true,
+    "SupportsMultiplexing": true,
+    "CRCProtected": true,
+    "PageBasedFormat": true
   }
 }

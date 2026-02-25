@@ -1,10 +1,11 @@
 {
   "formatName": "Photoshop Document",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
-    ".psd"
+    ".psd",
+    ".psb"
   ],
-  "description": "Adobe Photoshop native format",
+  "description": "Adobe Photoshop native document format. PSD (Photoshop Document) and PSB (Photoshop Big/Large Document) store layered image data with full editing capabilities. The file begins with a 26-byte header containing a 4-byte '8BPS' signature, version number, reserved bytes, channel count, dimensions, bit depth, and color mode. Version 1 is standard PSD (max 30000x30000), version 2 is PSB (max 300000x300000).",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "references": {
@@ -25,115 +26,264 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 26,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "readUInt32BE": "Read width and height (big-endian)",
-    "multiply": "Calculate total pixels (width × height)",
-    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixels",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
   },
   "variables": {
     "currentOffset": 0,
-    "imageWidth": 0,
-    "imageHeight": 0,
-    "totalPixels": 0,
-    "channels": 0,
     "psdSignature": "",
     "version": 0,
-    "height": 0,
-    "width": ""
+    "reserved1": 0,
+    "reserved2": 0,
+    "reserved3": 0,
+    "reserved4": 0,
+    "reserved5": 0,
+    "reserved6": 0,
+    "channels": 0,
+    "imageHeight": 0,
+    "imageWidth": 0,
+    "bitDepth": 0,
+    "colorMode": 0,
+    "totalPixels": 0,
+    "bitsPerPixel": 0,
+    "isPSB": false,
+    "colorModeName": "",
+    "formattedSize": ""
+  },
+  "functions": {
+    "formatFileSize(var:totalPixels)": "Format total pixel count as a human-readable string with appropriate unit suffix",
+    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixel count from image width and height dimensions",
+    "computeFromVariables(channels * bitDepth, bitsPerPixel)": "Calculate effective bits per pixel from channel count and bit depth"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "PSD Signature",
+      "name": "PSD File Signature",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "8BPS signature",
+      "description": "4-byte ASCII signature '8BPS' (hex 38 42 50 53). This magic number identifies the file as an Adobe Photoshop document. The characters '8B' are Adobe's registered creator code, 'PS' stands for Photoshop.",
       "storeAs": "psdSignature",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "8BPS"
+      }
     },
     {
       "type": "field",
-      "name": "Version",
+      "name": "Format Version",
       "offset": 4,
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Always 1",
+      "description": "Version number stored as a big-endian unsigned 16-bit integer. Version 1 indicates standard PSD format (max dimensions 30000x30000 pixels). Version 2 indicates PSB (Photoshop Big) format supporting documents up to 300000x300000 pixels with larger layer limits.",
       "storeAs": "version",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "1": "PSD (Photoshop Document, max 30000x30000)",
+        "2": "PSB (Large Document Format, max 300000x300000)"
+      }
     },
     {
       "type": "field",
-      "name": "Reserved",
+      "name": "Reserved Byte 1",
       "offset": 6,
-      "length": 6,
-      "color": "#95E1D3",
-      "opacity": 0.3,
-      "description": "Reserved (must be 0)"
+      "length": 1,
+      "color": "#C0C0C0",
+      "opacity": 0.2,
+      "description": "First reserved byte. Must be zero per the PSD specification. These 6 reserved bytes (offsets 6-11) are reserved for future use by Adobe and must all be set to 0x00.",
+      "storeAs": "reserved1",
+      "valueType": "uint8",
+      "validation": {
+        "expectedValue": "0x00"
+      }
     },
     {
       "type": "field",
-      "name": "Channels",
+      "name": "Reserved Byte 2",
+      "offset": 7,
+      "length": 1,
+      "color": "#C0C0C0",
+      "opacity": 0.2,
+      "description": "Second reserved byte. Must be zero per the PSD specification.",
+      "storeAs": "reserved2",
+      "valueType": "uint8",
+      "validation": {
+        "expectedValue": "0x00"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Reserved Bytes 3-6",
+      "offset": 8,
+      "length": 4,
+      "color": "#C0C0C0",
+      "opacity": 0.2,
+      "description": "Remaining four reserved bytes (offsets 8-11). All must be zero. Together with bytes at offsets 6-7, these form the 6-byte reserved block that must be entirely zeroed for a valid PSD/PSB file.",
+      "storeAs": "reserved3",
+      "valueType": "uint32",
+      "endianness": "big",
+      "validation": {
+        "expectedValue": "0x00000000"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Number of Channels",
       "offset": 12,
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Number of channels (1-56)",
+      "description": "The number of channels in the image, including any alpha channels. Stored as a big-endian unsigned 16-bit integer. Supported range is 1 to 56. Common values: 3 for RGB, 4 for CMYK or RGB+Alpha, 5 for CMYK+Alpha.",
       "storeAs": "channels",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "1": "1 channel (Grayscale or Bitmap)",
+        "2": "2 channels (Grayscale + Alpha)",
+        "3": "3 channels (RGB)",
+        "4": "4 channels (CMYK or RGB + Alpha)",
+        "5": "5 channels (CMYK + Alpha)"
+      }
     },
     {
       "type": "field",
-      "name": "Height",
+      "name": "Image Height",
       "offset": 14,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "Height of the image in pixels, stored as a big-endian unsigned 32-bit integer. For PSD (version 1), the valid range is 1 to 30000. For PSB (version 2), the valid range is 1 to 300000.",
+      "storeAs": "imageHeight",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Image Width",
+      "offset": 18,
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Height in pixels",
-      "storeAs": "height",
-      "valueType": "uint32"
+      "description": "Width of the image in pixels, stored as a big-endian unsigned 32-bit integer. For PSD (version 1), the valid range is 1 to 30000. For PSB (version 2), the valid range is 1 to 300000.",
+      "storeAs": "imageWidth",
+      "valueType": "uint32",
+      "endianness": "big"
     },
     {
       "type": "field",
-      "name": "Width",
-      "offset": 18,
-      "length": 4,
+      "name": "Bit Depth",
+      "offset": 22,
+      "length": 2,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Width in pixels",
-      "storeAs": "width",
-      "valueType": "uint32"
+      "description": "The number of bits per channel, stored as a big-endian unsigned 16-bit integer. Determines the color precision of each channel. Higher bit depths provide more tonal range but increase file size proportionally.",
+      "storeAs": "bitDepth",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "1": "1-bit (Bitmap mode only)",
+        "8": "8-bit (256 levels per channel, standard)",
+        "16": "16-bit (65536 levels per channel, high precision)",
+        "32": "32-bit (HDR floating-point per channel)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Color Mode",
+      "offset": 24,
+      "length": 2,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Color mode of the file, stored as a big-endian unsigned 16-bit integer. Determines how pixel color data is organized and interpreted. RGB (3) and CMYK (4) are the most common modes for professional work.",
+      "storeAs": "colorMode",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "0": "Bitmap (1-bit black and white)",
+        "1": "Grayscale",
+        "2": "Indexed Color",
+        "3": "RGB Color",
+        "4": "CMYK Color",
+        "7": "Multichannel",
+        "8": "Duotone",
+        "9": "Lab Color"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Pixel Count",
+      "expression": "imageWidth * imageHeight",
+      "storeAs": "totalPixels",
+      "description": "Calculates the total number of pixels in the flattened image by multiplying width by height. Used to estimate uncompressed data size and memory requirements."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Bits Per Pixel",
+      "expression": "channels * bitDepth",
+      "storeAs": "bitsPerPixel",
+      "description": "Calculates effective bits per pixel by multiplying the number of channels by the bit depth. For example, an 8-bit RGB image with 3 channels yields 24 bits per pixel."
+    },
+    {
+      "type": "conditional",
+      "name": "PSB Large Document Detection",
+      "condition": "version == 2",
+      "trueLabel": "This file is a PSB (Large Document Format) supporting dimensions up to 300000x300000 pixels",
+      "falseLabel": "This file is a standard PSD document with maximum dimensions of 30000x30000 pixels",
+      "description": "Checks the version field to determine if this is a PSB (Photoshop Big) large document format file, which supports higher resolution images and larger layer counts than standard PSD."
+    },
+    {
+      "type": "conditional",
+      "name": "High Bit Depth Detection",
+      "condition": "bitDepth >= 16",
+      "trueLabel": "This PSD uses high bit depth (16-bit or 32-bit HDR) for extended tonal range",
+      "falseLabel": "This PSD uses standard bit depth (1-bit or 8-bit)",
+      "description": "Checks whether the image uses high bit depth channels (16-bit or 32-bit), which provide greater color precision and dynamic range for professional editing workflows."
     },
     {
       "type": "metadata",
       "name": "Image Width (pixels)",
       "variable": "imageWidth",
-      "description": "PSD document width"
+      "description": "Image width in pixels from the PSD header (big-endian uint32 at offset 18)"
     },
     {
       "type": "metadata",
       "name": "Image Height (pixels)",
       "variable": "imageHeight",
-      "description": "PSD document height"
+      "description": "Image height in pixels from the PSD header (big-endian uint32 at offset 14)"
+    },
+    {
+      "type": "metadata",
+      "name": "Number of Channels",
+      "variable": "channels",
+      "description": "Number of image channels (1-56) including alpha channels, from offset 12"
+    },
+    {
+      "type": "metadata",
+      "name": "Bit Depth",
+      "variable": "bitDepth",
+      "description": "Bits per channel (1, 8, 16, or 32) determining color precision"
+    },
+    {
+      "type": "metadata",
+      "name": "Color Mode",
+      "variable": "colorMode",
+      "description": "Color mode identifier: 0=Bitmap, 1=Grayscale, 3=RGB, 4=CMYK, 7=Multichannel, 8=Duotone, 9=Lab"
     },
     {
       "type": "metadata",
       "name": "Total Pixels",
       "variable": "totalPixels",
-      "description": "Width × Height (total pixel count)"
+      "description": "Total pixel count computed as imageWidth * imageHeight"
     },
     {
       "type": "metadata",
-      "name": "Channels",
-      "variable": "channels",
-      "description": "Number of color channels (1-56)"
+      "name": "Bits Per Pixel",
+      "variable": "bitsPerPixel",
+      "description": "Effective bits per pixel computed as channels * bitDepth"
     }
   ],
   "software": [
@@ -165,15 +315,24 @@
     "Digital art"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 53,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 10,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 21,
+    "ValidationRules": 5,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "ImagesFormat": true
+    "ImagesFormat": true,
+    "Endianness": "big-endian",
+    "HeaderSize": 26,
+    "ColorSpaces": "Bitmap, Grayscale, Indexed, RGB, CMYK, Multichannel, Duotone, Lab",
+    "MaxBitDepth": 32,
+    "SupportsLayers": true,
+    "SupportsTransparency": true,
+    "MaxDimensionsPSD": "30000x30000",
+    "MaxDimensionsPSB": "300000x300000",
+    "MaxChannels": 56
   }
 }

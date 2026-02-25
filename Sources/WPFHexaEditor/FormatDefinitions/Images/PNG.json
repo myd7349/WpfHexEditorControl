@@ -1,17 +1,17 @@
 {
   "formatName": "PNG Image",
-  "version": "1.12",
+  "version": "2.0",
   "extensions": [
     ".png"
   ],
-  "description": "Portable Network Graphics image format",
+  "description": "Portable Network Graphics (PNG) is a lossless raster image format that uses DEFLATE compression. The file begins with an 8-byte signature followed by a series of typed chunks. The first chunk must be IHDR, which contains the image dimensions, bit depth, color type, and rendering methods.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "RFC 2325 - Portable Network Graphics (PNG) Specification",
-      "ISO/IEC 15948:2004 - PNG Standard",
-      "W3C PNG Specification"
+      "RFC 2083 - PNG (Portable Network Graphics) Specification Version 1.0",
+      "ISO/IEC 15948:2004 - Portable Network Graphics (PNG) Functional Specification",
+      "W3C PNG Specification (Third Edition)"
     ],
     "WebLinks": [
       "https://www.w3.org/TR/PNG/",
@@ -24,69 +24,83 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 33,
+      "maxSignatureOffset": 0
     }
   },
-  "functions": {
-    "readPNGDimensions": "Read image width and height from IHDR chunk",
-    "validatePNGIHDR": "Validate IHDR chunk CRC integrity",
-    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixel count",
-    "interpretColorType(var:colorType, png)": "Interpret color type name"
-  },
   "variables": {
-    "currentOffset": 8,
-    "imageWidth": 0,
-    "imageHeight": 0,
-    "totalPixels": 0,
-    "calculatedCRC32": 0,
-    "ihdrCRC": 0,
-    "crc32Valid": false,
+    "currentOffset": 0,
     "pngSignature": "",
     "ihdrChunkLength": 0,
     "ihdrChunkType": "",
+    "imageWidth": 0,
+    "imageHeight": 0,
     "bitDepth": 0,
     "colorType": 0,
-    "compression": 0,
+    "compressionMethod": 0,
     "filterMethod": 0,
     "interlaceMethod": 0,
     "ihdrCrc": 0,
-    "colorTypeName": ""
+    "calculatedCRC32": 0,
+    "crc32Valid": false,
+    "totalPixels": 0,
+    "colorTypeName": "",
+    "bitsPerPixel": 0,
+    "hasAlphaChannel": false,
+    "isIndexedColor": false,
+    "samplesPerPixel": 0,
+    "formattedSize": ""
+  },
+  "functions": {
+    "readPNGDimensions": "Read image width and height from IHDR chunk (big-endian uint32 at offsets 16 and 20)",
+    "validatePNGIHDR": "Validate IHDR chunk CRC-32 integrity by computing CRC over chunk type + data bytes (offsets 12-28) and comparing against stored CRC at offset 29",
+    "interpretColorType(var:colorType, png)": "Map color type integer to human-readable name and determine samples per pixel",
+    "computeFromVariables(imageWidth * imageHeight, totalPixels)": "Calculate total pixel count from width and height",
+    "formatFileSize(var:totalPixels)": "Format total pixel count as human-readable string"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "PNG Signature",
+      "name": "PNG File Signature",
       "offset": 0,
       "length": 8,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "PNG magic bytes (\\x89PNG\\r\\n\\x1A\\n)",
+      "description": "8-byte PNG magic signature: 0x89 'P' 'N' 'G' 0x0D 0x0A 0x1A 0x0A. The high bit (0x89) detects transmission systems that strip bit 7, the CR-LF sequence detects line-ending conversion, and 0x1A stops display under DOS.",
       "storeAs": "pngSignature",
-      "valueType": "ascii"
+      "valueType": "hex",
+      "validation": {
+        "expectedValue": "0x89504E470D0A1A0A"
+      }
     },
     {
       "type": "field",
-      "name": "IHDR Chunk Length",
+      "name": "IHDR Chunk Data Length",
       "offset": 8,
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "IHDR chunk length (always 13)",
+      "description": "Length of the IHDR chunk data section in bytes. This value is always 13 (0x0000000D) for a valid PNG, as IHDR contains exactly 13 bytes of image header data.",
       "storeAs": "ihdrChunkLength",
       "valueType": "uint32",
-      "endianness": "big"
+      "endianness": "big",
+      "validation": {
+        "expectedValue": "0x0000000D"
+      }
     },
     {
       "type": "field",
-      "name": "IHDR Chunk Type",
+      "name": "IHDR Chunk Type Code",
       "offset": 12,
       "length": 4,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "IHDR chunk type identifier",
+      "description": "Four-byte ASCII chunk type code 'IHDR' (0x49484452). This is a critical chunk that must appear first. Bit 5 of each byte encodes: ancillary/critical, public/private, reserved, safe-to-copy flags.",
       "storeAs": "ihdrChunkType",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "IHDR"
+      }
     },
     {
       "type": "field",
@@ -95,7 +109,7 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Image width in pixels",
+      "description": "Image width in pixels, stored as a big-endian unsigned 32-bit integer. Valid range is 1 to 2^31 - 1. A value of 0 is invalid per the PNG specification.",
       "storeAs": "imageWidth",
       "valueType": "uint32",
       "endianness": "big"
@@ -107,7 +121,7 @@
       "length": 4,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Image height in pixels",
+      "description": "Image height in pixels, stored as a big-endian unsigned 32-bit integer. Valid range is 1 to 2^31 - 1. A value of 0 is invalid per the PNG specification.",
       "storeAs": "imageHeight",
       "valueType": "uint32",
       "endianness": "big"
@@ -119,9 +133,16 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Bits per sample (1, 2, 4, 8, 16)",
+      "description": "Number of bits per sample or per palette index. Valid values depend on color type: Grayscale allows 1,2,4,8,16; RGB allows 8,16; Indexed allows 1,2,4,8; Gray+Alpha allows 8,16; RGBA allows 8,16.",
       "storeAs": "bitDepth",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "1-bit (2 levels)",
+        "2": "2-bit (4 levels)",
+        "4": "4-bit (16 levels)",
+        "8": "8-bit (256 levels)",
+        "16": "16-bit (65536 levels)"
+      }
     },
     {
       "type": "field",
@@ -130,20 +151,59 @@
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "0=Gray, 2=RGB, 3=Palette, 4=GrayAlpha, 6=RGBA",
+      "description": "Defines the PNG image type. The value is a bitmask: bit 0 = palette used, bit 1 = color used, bit 2 = alpha channel used. Only specific combinations are valid per the specification.",
       "storeAs": "colorType",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Grayscale",
+        "2": "Truecolor (RGB)",
+        "3": "Indexed-color (Palette)",
+        "4": "Grayscale with Alpha",
+        "6": "Truecolor with Alpha (RGBA)"
+      },
+      "bitfields": [
+        {
+          "bit": 0,
+          "name": "Palette Used",
+          "description": "If set, a PLTE chunk is required and pixel values are palette indices",
+          "valueMap": {
+            "0": "No palette",
+            "1": "Palette-based"
+          }
+        },
+        {
+          "bit": 1,
+          "name": "Color Used",
+          "description": "If set, the image uses color (RGB triples); if clear, the image is grayscale",
+          "valueMap": {
+            "0": "Grayscale",
+            "1": "Color (RGB)"
+          }
+        },
+        {
+          "bit": 2,
+          "name": "Alpha Channel",
+          "description": "If set, an alpha channel is included providing per-pixel transparency",
+          "valueMap": {
+            "0": "No alpha channel",
+            "1": "Alpha channel present"
+          }
+        }
+      ]
     },
     {
       "type": "field",
-      "name": "Compression",
+      "name": "Compression Method",
       "offset": 26,
       "length": 1,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Compression method (always 0 for deflate)",
-      "storeAs": "compression",
-      "valueType": "uint8"
+      "description": "Compression method used for image data. Currently only method 0 (deflate/inflate with a sliding window of at most 32768 bytes) is defined in the PNG specification.",
+      "storeAs": "compressionMethod",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Deflate/Inflate (zlib)"
+      }
     },
     {
       "type": "field",
@@ -152,9 +212,12 @@
       "length": 1,
       "color": "#C44569",
       "opacity": 0.3,
-      "description": "Filter method (always 0)",
+      "description": "Preprocessing method applied to image data before compression. Method 0 defines five adaptive filter types (None, Sub, Up, Average, Paeth) selected per scanline to improve compression.",
       "storeAs": "filterMethod",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Adaptive filtering (5 basic filter types)"
+      }
     },
     {
       "type": "field",
@@ -163,65 +226,93 @@
       "length": 1,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "0=None, 1=Adam7",
+      "description": "Transmission order of the image data. Method 0 sends scanlines sequentially from top to bottom. Method 1 (Adam7) transmits in seven passes for progressive display, showing a low-resolution preview early.",
       "storeAs": "interlaceMethod",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "No interlace (sequential scanlines)",
+        "1": "Adam7 interlace (7-pass progressive)"
+      }
     },
     {
       "type": "field",
-      "name": "IHDR CRC",
+      "name": "IHDR Chunk CRC-32",
       "offset": 29,
       "length": 4,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "CRC-32 of IHDR chunk",
+      "description": "CRC-32 checksum computed over the chunk type code and chunk data (bytes 12-28, 17 bytes total). Uses the CRC polynomial defined in ISO 3309 and ITU-T V.42. Used to verify chunk integrity.",
       "storeAs": "ihdrCrc",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
+      "type": "computeFromVariables",
+      "name": "Total Pixel Count",
+      "expression": "imageWidth * imageHeight",
+      "storeAs": "totalPixels",
+      "description": "Calculates the total number of pixels in the image by multiplying width by height. Used to estimate memory requirements and uncompressed data size."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Bits Per Pixel",
+      "expression": "colorType == 0 ? bitDepth : (colorType == 2 ? bitDepth * 3 : (colorType == 3 ? bitDepth : (colorType == 4 ? bitDepth * 2 : bitDepth * 4)))",
+      "storeAs": "bitsPerPixel",
+      "description": "Calculates effective bits per pixel based on color type and bit depth. Grayscale=bitDepth, RGB=bitDepth*3, Indexed=bitDepth, GrayAlpha=bitDepth*2, RGBA=bitDepth*4."
+    },
+    {
+      "type": "conditional",
+      "name": "Alpha Channel Detection",
+      "condition": "colorType == 4 || colorType == 6",
+      "trueLabel": "This PNG image contains an alpha channel for transparency",
+      "falseLabel": "This PNG image does not have an alpha channel (transparency may be provided by tRNS chunk)",
+      "description": "Checks if the color type includes an alpha channel (color types 4 and 6 have per-pixel alpha)"
+    },
+    {
+      "type": "conditional",
+      "name": "Interlace Detection",
+      "condition": "interlaceMethod == 1",
+      "trueLabel": "This PNG uses Adam7 interlacing for progressive rendering",
+      "falseLabel": "This PNG uses standard sequential scanline ordering",
+      "description": "Checks whether the image uses Adam7 interlacing, which allows progressive display during download"
+    },
+    {
       "type": "metadata",
       "name": "Image Width (pixels)",
       "variable": "imageWidth",
-      "description": "Calculated image width from IHDR chunk"
+      "description": "Image width in pixels from the IHDR chunk (big-endian uint32 at offset 16)"
     },
     {
       "type": "metadata",
       "name": "Image Height (pixels)",
       "variable": "imageHeight",
-      "description": "Calculated image height from IHDR chunk"
+      "description": "Image height in pixels from the IHDR chunk (big-endian uint32 at offset 20)"
     },
     {
       "type": "metadata",
       "name": "Total Pixels",
       "variable": "totalPixels",
-      "description": "Width × Height (total pixel count)"
+      "description": "Total pixel count computed as imageWidth * imageHeight"
     },
     {
       "type": "metadata",
       "name": "Color Type Name",
       "variable": "colorTypeName",
-      "description": "Human-readable color type interpretation"
+      "description": "Human-readable color type name interpreted from the color type byte"
     },
     {
       "type": "metadata",
-      "name": "IHDR CRC Valid",
+      "name": "Bits Per Pixel",
+      "variable": "bitsPerPixel",
+      "description": "Effective bits per pixel computed from color type and bit depth"
+    },
+    {
+      "type": "metadata",
+      "name": "IHDR CRC Validation",
       "variable": "crc32Valid",
-      "description": "IHDR chunk integrity validation result"
+      "description": "Result of CRC-32 integrity check: true if computed CRC matches stored CRC at offset 29"
     }
   ],
-  "software": [
-    "Web browsers",
-    "GIMP",
-    "Photoshop",
-    "Paint.NET"
-  ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".png"
-    ]
-  },
   "MimeTypes": [
     "image/png"
   ],
@@ -240,18 +331,24 @@
     "Transparency support"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 65,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 16,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 21,
+    "ValidationRules": 3,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "ColorSpace": "RGB, RGBA, Grayscale, Indexed",
-    "BitDepth": 8,
-    "ImagesFormat": true,
-    "SupportsEncryption": false
+    "ImageFormat": true,
+    "Endianness": "big-endian (network byte order)",
+    "HeaderSize": 33,
+    "ColorSpace": "RGB, RGBA, Grayscale, Grayscale+Alpha, Indexed",
+    "CompressionMethod": "DEFLATE (zlib)",
+    "LosslessCompression": true,
+    "MaxBitDepth": 16,
+    "SupportsTransparency": true,
+    "SupportsAnimation": false,
+    "ChunkBasedFormat": true
   }
 }

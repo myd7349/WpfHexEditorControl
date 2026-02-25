@@ -1,22 +1,24 @@
 {
   "formatName": "WebP Image",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".webp"
   ],
-  "description": "WebP image format - Modern web image format by Google",
+  "description": "WebP is a modern image format developed by Google that provides both lossy and lossless compression. Built on the RIFF container, WebP files begin with a RIFF header followed by 'WEBP' form type. The first data chunk identifies the encoding: 'VP8 ' for lossy (based on VP8 video codec intra-frame), 'VP8L' for lossless, or 'VP8X' for extended format supporting alpha, ICC profiles, EXIF, XMP, and animation.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "WebP Container Specification",
-      "WebP Lossy Bitstream Specification",
-      "WebP Lossless Bitstream Specification"
+      "WebP Lossy Bitstream Specification (VP8)",
+      "WebP Lossless Bitstream Specification (VP8L)",
+      "RIFF (Resource Interchange File Format) Specification"
     ],
     "WebLinks": [
       "https://developers.google.com/speed/webp/docs/riff_container",
       "https://developers.google.com/speed/webp/docs/webp_lossless_bitstream_specification",
-      "https://en.wikipedia.org/wiki/WebP"
+      "https://en.wikipedia.org/wiki/WebP",
+      "https://chromium.googlesource.com/webm/libwebp/"
     ]
   },
   "detection": {
@@ -24,80 +26,285 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "maxSignatureOffset": 0,
+      "expectedValue": "0x52494646"
     }
-  },
-  "functions": {
-    "readUInt32LE": "Read file size from RIFF header (little-endian)",
-    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
-    "fileSize": 0,
-    "riffHeader": 0,
-    "webpSignature": "",
-    "formattedSize": ""
+    "riffSignature": "",
+    "riffFileSize": 0,
+    "webpFormType": "",
+    "chunkFourCC": "",
+    "chunkTypeName": "",
+    "chunkSize": 0,
+    "vp8FrameTag": 0,
+    "vp8StartCode": 0,
+    "vp8Width": 0,
+    "vp8Height": 0,
+    "vp8xFlags": 0,
+    "vp8xCanvasWidth": 0,
+    "vp8xCanvasHeight": 0,
+    "formattedFileSize": "",
+    "totalPixels": 0,
+    "isLossy": false,
+    "isLossless": false,
+    "isExtended": false,
+    "hasAlpha": false,
+    "hasAnimation": false
+  },
+  "functions": {
+    "formatFileSize(var:riffFileSize)": "Format RIFF file size as human-readable string (KB/MB/GB)",
+    "computeFromVariables(vp8Width * vp8Height, totalPixels)": "Calculate total pixel count from width and height (for VP8 lossy frames)"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "RIFF Header",
+      "name": "RIFF Signature",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "RIFF container signature",
-      "storeAs": "riffHeader",
-      "valueType": "uint32"
+      "description": "Four-byte ASCII signature 'RIFF' (0x52494646). WebP uses the RIFF container format, the same underlying structure as WAV audio and AVI video. All multi-byte integers in the RIFF portion are little-endian.",
+      "storeAs": "riffSignature",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "RIFF"
+      }
     },
     {
       "type": "field",
-      "name": "File Size",
+      "name": "RIFF File Size",
       "offset": 4,
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "File size minus 8 bytes",
-      "storeAs": "fileSize",
-      "valueType": "uint32"
+      "description": "Total file size minus 8 bytes (excludes the 4-byte RIFF signature and this 4-byte size field), stored as a little-endian unsigned 32-bit integer. The actual file size on disk equals this value plus 8.",
+      "storeAs": "riffFileSize",
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
-      "type": "signature",
-      "name": "WEBP Signature",
+      "type": "field",
+      "name": "WEBP Form Type",
       "offset": 8,
       "length": 4,
-      "color": "#FF6B6B",
-      "opacity": 0.4,
-      "description": "WEBP format signature",
-      "storeAs": "webpSignature",
-      "valueType": "ascii"
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Four-byte ASCII form type 'WEBP' (0x57454250). This identifies the RIFF file as a WebP image container. This field combined with the RIFF signature uniquely identifies the file format.",
+      "storeAs": "webpFormType",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "WEBP"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Chunk FourCC",
+      "offset": 12,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Four-byte ASCII chunk type identifying the WebP encoding format. 'VP8 ' (with trailing space, 0x56503820) indicates lossy compression using VP8 intra-frame coding. 'VP8L' (0x5650384C) indicates lossless compression. 'VP8X' (0x56503858) indicates extended format with optional features.",
+      "storeAs": "chunkFourCC",
+      "valueType": "ascii",
+      "valueMap": {
+        "VP8 ": "VP8 Lossy Compression",
+        "VP8L": "VP8L Lossless Compression",
+        "VP8X": "VP8X Extended Format"
+      },
+      "mappedValueStoreAs": "chunkTypeName"
+    },
+    {
+      "type": "field",
+      "name": "Chunk Data Size",
+      "offset": 16,
+      "length": 4,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Size of the chunk data in bytes (excludes the 8-byte chunk header), stored as a little-endian unsigned 32-bit integer. For VP8 lossy: size of the compressed bitstream. For VP8X: always 10 bytes (flags + canvas dimensions). For VP8L: size of the lossless bitstream.",
+      "storeAs": "chunkSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "VP8 Frame Tag / VP8X Flags",
+      "offset": 20,
+      "length": 3,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "For VP8 lossy: 3-byte frame tag containing frame type (bit 0: 0=key frame), version (bits 1-3), show_frame (bit 4), and partition size (bits 5-23). For VP8X extended: single flags byte at offset 20 followed by 2 reserved bytes. VP8X flags: bit 1=Animation, bit 2=XMP, bit 3=EXIF, bit 4=Alpha, bit 5=ICC Profile.",
+      "storeAs": "vp8FrameTag",
+      "valueType": "uint24",
+      "endianness": "little",
+      "bitfields": [
+        {
+          "bit": 0,
+          "name": "Frame Type (VP8) / Reserved (VP8X)",
+          "description": "VP8: 0=key frame (intra), 1=inter frame. VP8X: reserved, must be 0",
+          "valueMap": {
+            "0": "Key frame (VP8) / Reserved (VP8X)",
+            "1": "Inter frame (VP8)"
+          }
+        },
+        {
+          "bit": 1,
+          "name": "Animation Flag (VP8X)",
+          "description": "VP8X: If set, file contains animated WebP with ANIM and ANMF chunks",
+          "valueMap": {
+            "0": "Static image",
+            "1": "Animated WebP"
+          }
+        },
+        {
+          "bit": 2,
+          "name": "XMP Metadata (VP8X)",
+          "description": "VP8X: If set, file contains an XMP metadata chunk",
+          "valueMap": {
+            "0": "No XMP metadata",
+            "1": "XMP metadata present"
+          }
+        },
+        {
+          "bit": 3,
+          "name": "EXIF Metadata (VP8X)",
+          "description": "VP8X: If set, file contains an EXIF metadata chunk",
+          "valueMap": {
+            "0": "No EXIF metadata",
+            "1": "EXIF metadata present"
+          }
+        },
+        {
+          "bit": 4,
+          "name": "Alpha Channel (VP8X)",
+          "description": "VP8X: If set, file contains transparency data (ALPH chunk)",
+          "valueMap": {
+            "0": "No alpha channel",
+            "1": "Alpha channel present"
+          }
+        },
+        {
+          "bit": 5,
+          "name": "ICC Profile (VP8X)",
+          "description": "VP8X: If set, file contains an ICC color profile chunk",
+          "valueMap": {
+            "0": "No ICC profile",
+            "1": "ICC profile embedded"
+          }
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "VP8 Start Code / VP8X Reserved",
+      "offset": 23,
+      "length": 3,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "For VP8 lossy: 3-byte start code (0x9D012A) that marks the beginning of the VP8 frame header. This magic number is always present in VP8 key frames. For VP8X: reserved bytes (must be 0). For VP8L: signature byte 0x2F followed by image size data.",
+      "storeAs": "vp8StartCode",
+      "valueType": "uint24",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Image Width (VP8) / Canvas Width-1 Low (VP8X)",
+      "offset": 26,
+      "length": 2,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "For VP8 lossy: image width in pixels stored as little-endian uint16 (lower 14 bits = width, upper 2 bits = horizontal scale). For VP8X extended: lower 16 bits of (canvas width - 1), combined with next byte for full 24-bit value. Maximum VP8 dimension: 16383 pixels.",
+      "storeAs": "vp8Width",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Image Height (VP8) / Canvas Width-1 High + Height Low (VP8X)",
+      "offset": 28,
+      "length": 2,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "For VP8 lossy: image height in pixels stored as little-endian uint16 (lower 14 bits = height, upper 2 bits = vertical scale). For VP8X extended: high byte of canvas width-1 and low bytes of canvas height-1. Maximum VP8 dimension: 16383 pixels.",
+      "storeAs": "vp8Height",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Pixel Count",
+      "expression": "vp8Width * vp8Height",
+      "storeAs": "totalPixels",
+      "description": "Calculates the total number of pixels in the image by multiplying width by height (for VP8 lossy format). For VP8X extended format, the actual canvas dimensions require 24-bit field reconstruction."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Compression Type Detection",
+      "expression": "chunkFourCC == 'VP8 ' ? 1 : (chunkFourCC == 'VP8L' ? 2 : (chunkFourCC == 'VP8X' ? 3 : 0))",
+      "storeAs": "isLossy",
+      "description": "Encodes the compression type as a numeric value: 1=lossy VP8, 2=lossless VP8L, 3=extended VP8X. Used for conditional branching to determine which subsequent fields are valid."
+    },
+    {
+      "type": "conditional",
+      "name": "Compression Format Detection",
+      "condition": "chunkFourCC == 'VP8 '",
+      "trueLabel": "This WebP uses VP8 lossy compression (similar to JPEG quality levels)",
+      "falseLabel": "This WebP uses lossless (VP8L) or extended (VP8X) format",
+      "description": "Determines the primary compression method. VP8 lossy uses transform coding similar to JPEG. VP8L lossless preserves exact pixel values. VP8X extended supports both plus alpha, animation, and metadata."
+    },
+    {
+      "type": "conditional",
+      "name": "Extended Format Feature Detection",
+      "condition": "chunkFourCC == 'VP8X'",
+      "trueLabel": "This WebP uses extended format (VP8X) - may contain alpha, animation, ICC, EXIF, or XMP data",
+      "falseLabel": "This WebP uses simple format (VP8 or VP8L) without extended features",
+      "description": "Checks if the file uses VP8X extended format which enables optional features like transparency (ALPH chunk), animation (ANIM/ANMF chunks), ICC color profiles, EXIF camera data, and XMP metadata."
     },
     {
       "type": "metadata",
-      "name": "File Size (bytes)",
-      "variable": "fileSize",
-      "description": "Total WebP file size (minus 8 bytes)"
+      "name": "Compression Type",
+      "variable": "chunkTypeName",
+      "description": "Human-readable name of the WebP compression format (VP8 Lossy, VP8L Lossless, or VP8X Extended)"
     },
     {
       "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "name": "Image Width (pixels)",
+      "variable": "vp8Width",
+      "description": "Image width in pixels from VP8 frame header (lower 14 bits of uint16 at offset 26)"
+    },
+    {
+      "type": "metadata",
+      "name": "Image Height (pixels)",
+      "variable": "vp8Height",
+      "description": "Image height in pixels from VP8 frame header (lower 14 bits of uint16 at offset 28)"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Pixels",
+      "variable": "totalPixels",
+      "description": "Total pixel count computed as width * height"
+    },
+    {
+      "type": "metadata",
+      "name": "Chunk Data Size",
+      "variable": "chunkSize",
+      "description": "Size of the first data chunk in bytes (compressed image data or VP8X header)"
+    },
+    {
+      "type": "metadata",
+      "name": "RIFF File Size (bytes)",
+      "variable": "riffFileSize",
+      "description": "Total file size minus 8 bytes as reported by the RIFF header (actual file size = this value + 8)"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted File Size",
+      "variable": "formattedFileSize",
+      "description": "Total file size formatted as a human-readable string (KB/MB/GB)"
     }
   ],
-  "software": [
-    "Chrome",
-    "Firefox",
-    "GIMP",
-    "Image viewers"
-  ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".webp"
-    ]
-  },
   "MimeTypes": [
     "image/webp"
   ],
@@ -111,19 +318,29 @@
   "UseCases": [
     "Web images",
     "Modern compression",
-    "Google images"
+    "Google images",
+    "Responsive web design",
+    "Progressive web apps"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 5,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 20,
+    "ValidationRules": 2,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "ImagesFormat": true,
-    "CompressionMethod": "VP8/VP9 based"
+    "Endianness": "little-endian (RIFF container)",
+    "HeaderSize": "20 bytes (RIFF + WEBP + first chunk header)",
+    "RIFFBasedFormat": true,
+    "CompressionMethod": "VP8 (lossy) / VP8L (lossless)",
+    "SupportsTransparency": true,
+    "SupportsAnimation": true,
+    "SupportsICCProfile": true,
+    "MaxDimension": "16383 pixels (VP8), 16777216 pixels (VP8X canvas)",
+    "LossyAndLossless": true
   }
 }

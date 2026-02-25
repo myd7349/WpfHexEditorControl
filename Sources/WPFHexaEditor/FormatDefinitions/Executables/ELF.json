@@ -1,21 +1,25 @@
 {
   "formatName": "ELF Executable",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
-    ""
+    "",
+    ".so",
+    ".o",
+    ".elf"
   ],
-  "description": "Executable and Linkable Format - Linux/Unix executable",
+  "description": "Executable and Linkable Format (ELF) - the standard binary format for executables, object code, shared libraries, and core dumps on Linux, Unix, and many embedded systems. Defined by the System V ABI and Tool Interface Standard (TIS).",
   "category": "Executables",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "ELF-64 Object File Format",
       "System V Application Binary Interface",
-      "Tool Interface Standard (TIS)"
+      "Tool Interface Standard (TIS) Portable Formats Specification v1.2"
     ],
     "WebLinks": [
       "https://refspecs.linuxfoundation.org/elf/elf.pdf",
-      "https://en.wikipedia.org/wiki/Executable_and_Linkable_Format"
+      "https://en.wikipedia.org/wiki/Executable_and_Linkable_Format",
+      "https://man7.org/linux/man-pages/man5/elf.5.html"
     ]
   },
   "detection": {
@@ -23,37 +27,51 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 52,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "readUInt8": "Read 8-bit values for ELF class, endianness, version, OS/ABI",
-    "readUInt16LE": "Read 16-bit little-endian for type and machine fields",
-    "readUInt32LE": "Read 32-bit little-endian for entry point and offsets",
-    "readUInt64LE": "Read 64-bit values in 64-bit ELF files",
-    "calculateSHA256": "Calculate SHA256 hash for integrity verification",
-    "parseELFHeader()": "Parse ELF header for architecture and type"
   },
   "variables": {
     "currentOffset": 0,
-    "class": "Unknown",
-    "endianness": "Unknown",
-    "version": 1,
-    "osABI": "Unknown",
-    "type": "Unknown",
-    "machine": "Unknown",
-    "entryPoint": 0,
-    "sections": 0,
-    "elfMagic": "",
-    "osAbi": 0,
-    "elfClass": "",
+    "elfMagic": 0,
+    "elfClass": 0,
+    "elfData": 0,
+    "elfVersion": 0,
+    "elfOsAbi": 0,
+    "elfAbiVersion": 0,
+    "elfPadding": 0,
+    "elfType": 0,
+    "elfMachine": 0,
+    "elfVersionWord": 0,
+    "elfEntryPoint": 0,
+    "elfPhOffset": 0,
+    "elfShOffset": 0,
+    "elfFlags": 0,
+    "elfEhSize": 0,
+    "elfPhEntSize": 0,
+    "elfPhNum": 0,
+    "elfShEntSize": 0,
+    "elfShNum": 0,
+    "elfShStrNdx": 0,
+    "is64Bit": false,
+    "isLittleEndian": false,
+    "totalHeaderSize": 0,
+    "className": "",
+    "endianName": "",
+    "osAbiName": "",
+    "typeName": "",
+    "machineName": "",
     "elfArch": "",
     "elfABI": "",
-    "elfType": 0,
     "elfTypeName": "",
-    "elfEntryPoint": 0,
-    "elfIs64Bit": false
+    "elfIs64Bit": false,
+    "elfEntryPointVal": 0
+  },
+  "functions": {
+    "parseELFHeader": "Parse complete ELF header including program and section header tables",
+    "formatFileSize(var:elfShOffset)": "Format section header offset as human-readable value",
+    "computeFromVariables(elfEhSize + (elfPhEntSize * elfPhNum), totalHeaderSize)": "Calculate total size of ELF header plus all program headers",
+    "computeFromVariables(elfClass == 2, is64Bit)": "Determine if this is a 64-bit ELF binary from the class field"
   },
   "blocks": [
     {
@@ -63,9 +81,12 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "\\x7FELF magic bytes",
+      "description": "\\x7FELF magic bytes (0x7F followed by ASCII 'ELF') identifying the Executable and Linkable Format",
       "storeAs": "elfMagic",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "validation": {
+        "expectedValue": "0x464C457F"
+      }
     },
     {
       "type": "field",
@@ -74,31 +95,45 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "1=32-bit, 2=64-bit",
-      "storeAs": "class",
-      "valueType": "uint8"
+      "description": "ELF class identifying 32-bit or 64-bit object. Determines address sizes throughout the header.",
+      "storeAs": "elfClass",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "ELFCLASSNONE (Invalid)",
+        "1": "ELFCLASS32 (32-bit objects)",
+        "2": "ELFCLASS64 (64-bit objects)"
+      }
     },
     {
       "type": "field",
-      "name": "Endianness",
+      "name": "Data Encoding",
       "offset": 5,
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "1=Little, 2=Big endian",
-      "storeAs": "endianness",
-      "valueType": "uint8"
+      "description": "Byte order of the processor-specific data in the file. Determines how multi-byte fields are interpreted.",
+      "storeAs": "elfData",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "ELFDATANONE (Invalid encoding)",
+        "1": "ELFDATA2LSB (Little-endian, 2's complement)",
+        "2": "ELFDATA2MSB (Big-endian, 2's complement)"
+      }
     },
     {
       "type": "field",
-      "name": "Version",
+      "name": "ELF Version",
       "offset": 6,
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "ELF version (1)",
-      "storeAs": "version",
-      "valueType": "uint8"
+      "description": "ELF header version number. Must be EV_CURRENT (1) for valid files.",
+      "storeAs": "elfVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "EV_NONE (Invalid version)",
+        "1": "EV_CURRENT (Current version)"
+      }
     },
     {
       "type": "field",
@@ -107,88 +142,341 @@
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Target OS ABI",
-      "storeAs": "osAbi",
+      "description": "Target operating system and ABI. Determines ABI-specific ELF extensions in use.",
+      "storeAs": "elfOsAbi",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "ELFOSABI_NONE / System V",
+        "1": "ELFOSABI_HPUX (HP-UX)",
+        "2": "ELFOSABI_NETBSD (NetBSD)",
+        "3": "ELFOSABI_LINUX (Linux / GNU)",
+        "6": "ELFOSABI_SOLARIS (Sun Solaris)",
+        "7": "ELFOSABI_AIX (IBM AIX)",
+        "8": "ELFOSABI_IRIX (SGI IRIX)",
+        "9": "ELFOSABI_FREEBSD (FreeBSD)",
+        "10": "ELFOSABI_TRU64 (Compaq TRU64 UNIX)",
+        "11": "ELFOSABI_MODESTO (Novell Modesto)",
+        "12": "ELFOSABI_OPENBSD (OpenBSD)",
+        "97": "ELFOSABI_ARM (ARM architecture)",
+        "255": "ELFOSABI_STANDALONE (Standalone / embedded)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "ABI Version",
+      "offset": 8,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "Version of the ABI to which the object is targeted. Interpretation depends on the OS/ABI field.",
+      "storeAs": "elfAbiVersion",
       "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Padding",
+      "offset": 9,
+      "length": 7,
+      "color": "#E0E0E0",
+      "opacity": 0.2,
+      "description": "Reserved padding bytes (EI_PAD through EI_NIDENT-1). Must be zero; reserved for future use.",
+      "storeAs": "elfPadding",
+      "valueType": "bytes"
     },
     {
       "type": "field",
       "name": "Type",
       "offset": 16,
       "length": 2,
-      "color": "#B8B8FF",
+      "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "1=Relocatable, 2=Executable, 3=Shared, 4=Core",
-      "storeAs": "type",
+      "description": "Object file type identifying the purpose of this ELF file",
+      "storeAs": "elfType",
+      "valueType": "uint16",
+      "valueMap": {
+        "0": "ET_NONE (No file type)",
+        "1": "ET_REL (Relocatable file)",
+        "2": "ET_EXEC (Executable file)",
+        "3": "ET_DYN (Shared object / PIE executable)",
+        "4": "ET_CORE (Core dump file)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Machine",
+      "offset": 18,
+      "length": 2,
+      "color": "#45B7D1",
+      "opacity": 0.3,
+      "description": "Required architecture for the ELF file. Determines the instruction set.",
+      "storeAs": "elfMachine",
+      "valueType": "uint16",
+      "valueMap": {
+        "0": "EM_NONE (No machine)",
+        "2": "EM_SPARC (SPARC)",
+        "3": "EM_386 (Intel 80386 / x86)",
+        "4": "EM_68K (Motorola 68000)",
+        "8": "EM_MIPS (MIPS I Architecture)",
+        "20": "EM_PPC (PowerPC)",
+        "21": "EM_PPC64 (PowerPC 64-bit)",
+        "40": "EM_ARM (ARM)",
+        "42": "EM_SH (Hitachi SH)",
+        "43": "EM_SPARCV9 (SPARC V9 64-bit)",
+        "62": "EM_X86_64 (AMD x86-64 / Intel 64)",
+        "164": "EM_OPENRISC (OpenRISC)",
+        "183": "EM_AARCH64 (ARM AArch64 / ARM64)",
+        "243": "EM_RISCV (RISC-V)",
+        "247": "EM_BPF (Linux BPF)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Version (word)",
+      "offset": 20,
+      "length": 4,
+      "color": "#96CEB4",
+      "opacity": 0.3,
+      "description": "Object file version as a 32-bit word. Must be EV_CURRENT (1) for valid files.",
+      "storeAs": "elfVersionWord",
+      "valueType": "uint32",
+      "valueMap": {
+        "0": "EV_NONE (Invalid version)",
+        "1": "EV_CURRENT (Current version)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Entry Point Address",
+      "offset": 24,
+      "length": 4,
+      "color": "#FF4444",
+      "opacity": 0.35,
+      "description": "Virtual address to which the system first transfers control (program entry point). 0 if no entry point. For 32-bit ELF: 4 bytes; for 64-bit ELF: 8 bytes (only lower 4 shown here).",
+      "storeAs": "elfEntryPoint",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Program Header Table Offset",
+      "offset": 28,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.3,
+      "description": "File offset (in bytes) of the program header table. 0 if no program header table. For 32-bit ELF.",
+      "storeAs": "elfPhOffset",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Section Header Table Offset",
+      "offset": 32,
+      "length": 4,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "File offset (in bytes) of the section header table. 0 if no section header table. For 32-bit ELF.",
+      "storeAs": "elfShOffset",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Processor Flags",
+      "offset": 36,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.3,
+      "description": "Processor-specific flags associated with the file. Interpretation depends on the Machine field.",
+      "storeAs": "elfFlags",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "ELF Header Size",
+      "offset": 40,
+      "length": 2,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "Size of the ELF header in bytes (52 for 32-bit, 64 for 64-bit ELF)",
+      "storeAs": "elfEhSize",
       "valueType": "uint16"
     },
     {
-      "type": "metadata",
-      "name": "Architecture",
-      "variable": "elfArch",
-      "description": "Target architecture (e.g., x86_64, ARM)"
+      "type": "field",
+      "name": "Program Header Entry Size",
+      "offset": 42,
+      "length": 2,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Size in bytes of each entry in the program header table. All entries are the same size.",
+      "storeAs": "elfPhEntSize",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "Program Header Entry Count",
+      "offset": 44,
+      "length": 2,
+      "color": "#F7DC6F",
+      "opacity": 0.3,
+      "description": "Number of entries in the program header table (number of segments). 0 if no program headers.",
+      "storeAs": "elfPhNum",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "Section Header Entry Size",
+      "offset": 46,
+      "length": 2,
+      "color": "#BB8FCE",
+      "opacity": 0.3,
+      "description": "Size in bytes of each entry in the section header table. All entries are the same size.",
+      "storeAs": "elfShEntSize",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "Section Header Entry Count",
+      "offset": 48,
+      "length": 2,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Number of entries in the section header table. If >= 0xFF00, the actual count is in section header index 0.",
+      "storeAs": "elfShNum",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "Section Name String Table Index",
+      "offset": 50,
+      "length": 2,
+      "color": "#FFDDC1",
+      "opacity": 0.3,
+      "description": "Section header table index of the entry for the section name string table (.shstrtab). SHN_UNDEF (0) if none.",
+      "storeAs": "elfShStrNdx",
+      "valueType": "uint16"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Header + PH Size",
+      "expression": "elfEhSize + (elfPhEntSize * elfPhNum)",
+      "storeAs": "totalHeaderSize",
+      "description": "Calculate total size occupied by ELF header plus all program header entries"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is 64-bit Binary",
+      "expression": "elfClass == 2",
+      "storeAs": "is64Bit",
+      "description": "Determine if this is a 64-bit ELF from the EI_CLASS identification byte"
+    },
+    {
+      "type": "conditional",
+      "name": "ELF Class Detection",
+      "condition": "elfClass == 2",
+      "trueLabel": "64-bit ELF binary (ELFCLASS64)",
+      "falseLabel": "32-bit ELF binary (ELFCLASS32)",
+      "description": "Checks the EI_CLASS byte to determine if this is a 32-bit or 64-bit ELF file"
+    },
+    {
+      "type": "conditional",
+      "name": "Shared Object Detection",
+      "condition": "elfType == 3",
+      "trueLabel": "This is a shared object (library or PIE executable)",
+      "falseLabel": "This is not a shared object",
+      "description": "Checks the ELF type field to determine if this is a shared object (ET_DYN), which includes both shared libraries and position-independent executables"
     },
     {
       "type": "metadata",
-      "name": "ABI",
-      "variable": "elfABI",
-      "description": "Application Binary Interface"
+      "name": "Class (32/64-bit)",
+      "variable": "elfClass",
+      "description": "ELF class: 1 = 32-bit, 2 = 64-bit"
     },
     {
       "type": "metadata",
-      "name": "Type",
-      "variable": "elfTypeName",
-      "description": "ELF object type name (Executable, Shared, etc.)"
+      "name": "Endianness",
+      "variable": "elfData",
+      "description": "Data encoding: 1 = little-endian, 2 = big-endian"
     },
     {
       "type": "metadata",
-      "name": "64-bit",
-      "variable": "elfIs64Bit",
-      "description": "true if 64-bit ELF, false if 32-bit"
+      "name": "Object Type",
+      "variable": "elfType",
+      "description": "ELF object type (REL, EXEC, DYN, CORE)"
+    },
+    {
+      "type": "metadata",
+      "name": "Machine Architecture",
+      "variable": "elfMachine",
+      "description": "Target CPU architecture (x86, x86-64, ARM, AArch64, etc.)"
     },
     {
       "type": "metadata",
       "name": "Entry Point",
       "variable": "elfEntryPoint",
-      "description": "Virtual address of entry point"
+      "description": "Virtual address of the program entry point"
+    },
+    {
+      "type": "metadata",
+      "name": "Section Count",
+      "variable": "elfShNum",
+      "description": "Number of sections defined in the section header table"
     }
   ],
   "software": [
     "Linux OS",
     "GCC",
-    "GDB"
+    "GDB",
+    "readelf",
+    "objdump",
+    "IDA Pro",
+    "Ghidra"
   ],
   "format_relationships": {
     "category": "Executables",
     "extensions": [
-      ""
+      "",
+      ".so",
+      ".o",
+      ".elf",
+      ".ko"
     ]
   },
   "MimeTypes": [
     "application/x-executable",
-    "application/x-elf"
+    "application/x-elf",
+    "application/x-sharedlib",
+    "application/x-object"
   ],
   "Software": [
     "Linux",
     "Unix",
-    "FreeBSD"
+    "FreeBSD",
+    "GCC",
+    "LLVM/Clang"
   ],
   "UseCases": [
     "Linux executables",
     "Unix binaries",
-    "Embedded systems"
+    "Embedded systems",
+    "Shared libraries",
+    "Kernel modules",
+    "Core dumps"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 53,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 11,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 32,
+    "ValidationRules": 3,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "ExecutablesFormat": true,
-    "Platform": "Linux/Unix"
+    "Platform": "Linux/Unix",
+    "Endianness": "determined by EI_DATA byte (offset 5)",
+    "HeaderSize32": 52,
+    "HeaderSize64": 64,
+    "IdentificationSize": 16,
+    "VariableWidthFields": "Entry point, program header offset, and section header offset are 4 bytes in ELF32 and 8 bytes in ELF64"
   }
 }

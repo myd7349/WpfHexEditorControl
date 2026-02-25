@@ -1,21 +1,23 @@
 {
   "formatName": "BMP Image",
-  "version": "1.12",
+  "version": "2.0",
   "extensions": [
     ".bmp",
     ".dib"
   ],
-  "description": "Windows Bitmap image format",
+  "description": "Windows Bitmap (BMP) is an uncompressed or minimally compressed raster image format. The file consists of a 14-byte BITMAPFILEHEADER followed by a DIB (Device Independent Bitmap) header (commonly the 40-byte BITMAPINFOHEADER), an optional color table, and pixel data. All multi-byte values are stored in little-endian byte order.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "Microsoft BMP File Format",
-      "Windows Bitmap Format Specification"
+      "Microsoft BMP File Format - Windows GDI Bitmap Storage",
+      "BITMAPINFOHEADER Structure - Windows SDK Documentation",
+      "BITMAPV4HEADER / BITMAPV5HEADER - Extended DIB Headers"
     ],
     "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/gdi/bitmap-storage",
-      "https://en.wikipedia.org/wiki/BMP_file_format"
+      "https://en.wikipedia.org/wiki/BMP_file_format",
+      "https://www.fileformat.info/format/bmp/egff.htm"
     ]
   },
   "detection": {
@@ -23,47 +25,58 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 54,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "readUInt32LE": "Read width, height, and file size (little-endian)",
-    "multiply": "Calculate total pixels (width × height)",
-    "parseBMPInfoHeader(14)": "Parse BMP info header at offset 14",
-    "computeFromVariables(bmpWidth * bmpHeight, totalPixels)": "Calculate total pixels",
-    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
-    "imageWidth": 0,
-    "imageHeight": 0,
-    "totalPixels": 0,
-    "fileSize": 0,
     "bmpSignature": 0,
-    "dataOffset": 0,
-    "headerSize": 0,
-    "width": "",
-    "height": 0,
+    "fileSize": 0,
+    "reserved1": 0,
+    "reserved2": 0,
+    "pixelDataOffset": 0,
+    "dibHeaderSize": 0,
     "bmpWidth": 0,
     "bmpHeight": 0,
-    "bmpBitCount": 0,
-    "bmpCompression": 0,
-    "bmpImageSize": 0,
-    "bmpCompressionName": "",
-    "formattedSize": ""
+    "colorPlanes": 0,
+    "bitsPerPixel": 0,
+    "compressionMethod": 0,
+    "imageDataSize": 0,
+    "xPixelsPerMeter": 0,
+    "yPixelsPerMeter": 0,
+    "colorsUsed": 0,
+    "importantColors": 0,
+    "totalPixels": 0,
+    "compressionName": "",
+    "dibHeaderName": "",
+    "formattedSize": "",
+    "rowSizeBytes": 0,
+    "isTopDown": false,
+    "xDPI": 0,
+    "yDPI": 0
+  },
+  "functions": {
+    "parseBMPInfoHeader(14)": "Parse the BITMAPINFOHEADER starting at offset 14 to extract width, height, bit count, compression, and color information",
+    "computeFromVariables(bmpWidth * bmpHeight, totalPixels)": "Calculate total pixel count from parsed dimensions",
+    "computeFromVariables(xPixelsPerMeter * 0.0254, xDPI)": "Convert horizontal resolution from pixels/meter to DPI",
+    "formatFileSize(var:fileSize)": "Format the BMP file size as human-readable string",
+    "formatFileSize(var:imageDataSize)": "Format the raw image data size as human-readable string"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "BMP Signature",
+      "name": "BMP File Signature",
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "BM magic bytes",
+      "description": "ASCII characters 'BM' (0x42 0x4D) identifying a Windows Bitmap file. Other signatures exist (BA, CI, CP, IC, PT) for OS/2 bitmap variants, but BM is the standard Windows format used by virtually all BMP files.",
       "storeAs": "bmpSignature",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "validation": {
+        "expectedValue": "0x4D42"
+      }
     },
     {
       "type": "field",
@@ -72,136 +85,262 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Total file size in bytes",
+      "description": "Total size of the BMP file in bytes, stored as a little-endian uint32. This should equal the actual file size on disk. Some applications set this to 0 which is technically non-compliant but tolerated by most readers.",
       "storeAs": "fileSize",
       "valueType": "uint32"
     },
     {
       "type": "field",
-      "name": "Reserved",
+      "name": "Reserved Field 1",
       "offset": 6,
-      "length": 4,
+      "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Reserved (must be 0)"
+      "description": "Reserved 16-bit field, must be zero in conforming files. Some applications use this field to store application-specific data, but standard BMP readers ignore it.",
+      "storeAs": "reserved1",
+      "valueType": "uint16"
     },
     {
       "type": "field",
-      "name": "Data Offset",
+      "name": "Reserved Field 2",
+      "offset": 8,
+      "length": 2,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Reserved 16-bit field, must be zero in conforming files. Like Reserved1, some applications may use this for custom data but it should be zero for interoperability.",
+      "storeAs": "reserved2",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "Pixel Data Offset",
       "offset": 10,
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Offset to pixel data",
-      "storeAs": "dataOffset",
+      "description": "Byte offset from the beginning of the file to the start of the pixel data array. Typically 54 for 24-bit BMP without color table (14-byte file header + 40-byte info header). Larger values indicate a color table or extended header is present.",
+      "storeAs": "pixelDataOffset",
       "valueType": "uint32"
     },
     {
       "type": "field",
-      "name": "Header Size",
+      "name": "DIB Header Size",
       "offset": 14,
+      "length": 4,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "Size of the DIB (Device Independent Bitmap) header structure in bytes. This value identifies the header version: 12=BITMAPCOREHEADER (OS/2), 40=BITMAPINFOHEADER (Windows 3.x), 108=BITMAPV4HEADER (Windows 95), 124=BITMAPV5HEADER (Windows 98/2000).",
+      "storeAs": "dibHeaderSize",
+      "valueType": "uint32",
+      "valueMap": {
+        "12": "BITMAPCOREHEADER (OS/2 1.x - 12 bytes)",
+        "40": "BITMAPINFOHEADER (Windows 3.x - 40 bytes)",
+        "52": "BITMAPV2INFOHEADER (undocumented - 52 bytes)",
+        "56": "BITMAPV3INFOHEADER (undocumented - 56 bytes)",
+        "108": "BITMAPV4HEADER (Windows 95/NT 4.0 - 108 bytes)",
+        "124": "BITMAPV5HEADER (Windows 98/2000 - 124 bytes)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Image Width",
+      "offset": 18,
       "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "DIB header size",
-      "storeAs": "headerSize",
-      "valueType": "uint32"
+      "description": "Image width in pixels, stored as a signed 32-bit little-endian integer. Positive values indicate left-to-right pixel order. A negative width is not valid in any BMP specification version.",
+      "storeAs": "bmpWidth",
+      "valueType": "int32"
     },
     {
       "type": "field",
-      "name": "Width",
-      "offset": 18,
+      "name": "Image Height",
+      "offset": 22,
       "length": 4,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Image width in pixels",
-      "storeAs": "width",
+      "description": "Image height in pixels, stored as a signed 32-bit little-endian integer. Positive values indicate bottom-up row order (default), negative values indicate top-down row order. Top-down BMPs cannot use RLE compression.",
+      "storeAs": "bmpHeight",
+      "valueType": "int32"
+    },
+    {
+      "type": "field",
+      "name": "Color Planes",
+      "offset": 26,
+      "length": 2,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Number of color planes in the bitmap. This value must always be 1 as per the BMP specification. Multiple color planes were used in early EGA/VGA hardware but are not supported in the BMP file format.",
+      "storeAs": "colorPlanes",
+      "valueType": "uint16",
+      "validation": {
+        "expectedValue": "0x0001"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Bits Per Pixel",
+      "offset": 28,
+      "length": 2,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "Number of bits per pixel, determining the color depth of the image. Lower values require a color table (palette). 24-bit and 32-bit modes store pixel colors directly without a palette.",
+      "storeAs": "bitsPerPixel",
+      "valueType": "uint16",
+      "valueMap": {
+        "1": "Monochrome (2 colors, 1-bit palette indexed)",
+        "4": "16 colors (4-bit palette indexed)",
+        "8": "256 colors (8-bit palette indexed)",
+        "16": "High Color (16-bit, 5-5-5 or 5-6-5 RGB)",
+        "24": "True Color (24-bit, 8-8-8 BGR)",
+        "32": "True Color + Alpha (32-bit, 8-8-8-8 BGRA)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Compression Method",
+      "offset": 30,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Compression method used for the pixel data. Most BMP files use BI_RGB (uncompressed). RLE compression reduces file size for images with large uniform areas. BI_BITFIELDS allows custom channel masks for 16-bit and 32-bit modes.",
+      "storeAs": "compressionMethod",
+      "valueType": "uint32",
+      "valueMap": {
+        "0": "BI_RGB (Uncompressed)",
+        "1": "BI_RLE8 (Run-length encoded, 8 bpp only)",
+        "2": "BI_RLE4 (Run-length encoded, 4 bpp only)",
+        "3": "BI_BITFIELDS (Pixel format defined by color masks)",
+        "4": "BI_JPEG (JPEG compressed, printer drivers)",
+        "5": "BI_PNG (PNG compressed, printer drivers)",
+        "6": "BI_ALPHABITFIELDS (RGBA bit field masks)",
+        "11": "BI_CMYK (Uncompressed CMYK)",
+        "12": "BI_CMYKRLE8 (RLE-8 compressed CMYK)",
+        "13": "BI_CMYKRLE4 (RLE-4 compressed CMYK)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Raw Image Data Size",
+      "offset": 34,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Size of the raw pixel data in bytes (including row padding). For BI_RGB (uncompressed) images this can be 0, in which case the size is calculated as (width * bpp + 31) / 32 * 4 * height. For compressed formats this is the size of the compressed data.",
+      "storeAs": "imageDataSize",
       "valueType": "uint32"
     },
     {
       "type": "field",
-      "name": "Height",
-      "offset": 22,
+      "name": "Horizontal Resolution",
+      "offset": 38,
       "length": 4,
-      "color": "#FF6B9D",
+      "color": "#F7DC6F",
       "opacity": 0.3,
-      "description": "Image height in pixels",
-      "storeAs": "height",
+      "description": "Horizontal print resolution in pixels per meter. Common value is 2835 (approximately 72 DPI) or 3780 (96 DPI). Value 0 means no preference. Used by printers and display systems to determine physical output size.",
+      "storeAs": "xPixelsPerMeter",
+      "valueType": "int32"
+    },
+    {
+      "type": "field",
+      "name": "Vertical Resolution",
+      "offset": 42,
+      "length": 4,
+      "color": "#BB8FCE",
+      "opacity": 0.3,
+      "description": "Vertical print resolution in pixels per meter. Usually matches horizontal resolution for square pixels. Value 0 means no preference. To convert to DPI: dpi = pixelsPerMeter * 0.0254.",
+      "storeAs": "yPixelsPerMeter",
+      "valueType": "int32"
+    },
+    {
+      "type": "field",
+      "name": "Colors Used",
+      "offset": 46,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "Number of color table entries actually used by the image. Value 0 means the default: 2^bitsPerPixel entries for paletted formats, or no color table for 16/24/32 bpp. For 8 bpp, this can be less than 256 to save space.",
+      "storeAs": "colorsUsed",
       "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Important Colors",
+      "offset": 50,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.3,
+      "description": "Number of colors that are considered important for displaying the image. Value 0 means all colors are important. This was used by early display systems with limited palettes to prioritize which palette entries to allocate first.",
+      "storeAs": "importantColors",
+      "valueType": "uint32"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Pixel Count",
+      "expression": "bmpWidth * (bmpHeight < 0 ? -bmpHeight : bmpHeight)",
+      "storeAs": "totalPixels",
+      "description": "Calculates total pixel count using absolute height value (height is negative for top-down BMPs, positive for bottom-up). Used to estimate uncompressed memory requirements."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Row Size with Padding",
+      "expression": "((bmpWidth * bitsPerPixel + 31) / 32) * 4",
+      "storeAs": "rowSizeBytes",
+      "description": "Calculates the size of each pixel data row in bytes including padding. BMP rows are padded to 4-byte boundaries per the specification. This is needed to compute actual image data offsets."
+    },
+    {
+      "type": "conditional",
+      "name": "Row Order Detection",
+      "condition": "bmpHeight < 0",
+      "trueLabel": "Top-down row order (origin at upper-left, negative height value)",
+      "falseLabel": "Bottom-up row order (origin at lower-left, standard BMP layout)",
+      "description": "Determines pixel row ordering from the sign of the height field. Bottom-up (positive height) is the standard BMP layout. Top-down (negative height) cannot be used with RLE compression."
+    },
+    {
+      "type": "conditional",
+      "name": "Compression Detection",
+      "condition": "compressionMethod != 0",
+      "trueLabel": "This BMP uses compressed pixel data encoding",
+      "falseLabel": "This BMP stores uncompressed raw pixel data (BI_RGB)",
+      "description": "Checks whether the BMP file uses any form of compression for its pixel data"
     },
     {
       "type": "metadata",
       "name": "Image Width (pixels)",
-      "variable": "imageWidth",
-      "description": "BMP image width"
+      "variable": "bmpWidth",
+      "description": "Image width in pixels from the BITMAPINFOHEADER at offset 18"
     },
     {
       "type": "metadata",
       "name": "Image Height (pixels)",
-      "variable": "imageHeight",
-      "description": "BMP image height"
+      "variable": "bmpHeight",
+      "description": "Image height in pixels from the BITMAPINFOHEADER at offset 22 (negative = top-down)"
     },
     {
       "type": "metadata",
       "name": "Total Pixels",
       "variable": "totalPixels",
-      "description": "Width × Height (total pixel count)"
-    },
-    {
-      "type": "metadata",
-      "name": "File Size (bytes)",
-      "variable": "fileSize",
-      "description": "Total BMP file size"
-    },
-    {
-      "type": "metadata",
-      "name": "Image Dimensions",
-      "variable": "bmpWidth",
-      "description": "BMP image width from info header"
-    },
-    {
-      "type": "metadata",
-      "name": "Image Height",
-      "variable": "bmpHeight",
-      "description": "BMP image height from info header"
+      "description": "Total pixel count computed as width * abs(height)"
     },
     {
       "type": "metadata",
       "name": "Bits Per Pixel",
-      "variable": "bmpBitCount",
-      "description": "Color depth in bits per pixel"
+      "variable": "bitsPerPixel",
+      "description": "Color depth in bits per pixel (1, 4, 8, 16, 24, or 32)"
     },
     {
       "type": "metadata",
-      "name": "Compression",
-      "variable": "bmpCompressionName",
-      "description": "Compression method name"
+      "name": "Compression Type",
+      "variable": "compressionName",
+      "description": "Human-readable compression method name interpreted from the compression field"
     },
     {
       "type": "metadata",
-      "name": "Total Pixels (computed)",
-      "variable": "totalPixels",
-      "description": "bmpWidth x bmpHeight computed total pixels"
-    },
-    {
-      "type": "metadata",
-      "name": "Formatted Size",
+      "name": "Formatted File Size",
       "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "description": "Human-readable file size string formatted from the file size field"
     }
   ],
-  "software": [
-    "Windows Paint",
-    "Photoshop",
-    "GIMP"
-  ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".bmp",
-      ".dib"
-    ]
-  },
   "MimeTypes": [
     "image/bmp",
     "image/x-ms-bmp"
@@ -218,16 +357,27 @@
     "Uncompressed images"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 56,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 17,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 26,
+    "ValidationRules": 2,
     "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "ImagesFormat": true,
-    "Platform": "Windows"
+    "ImageFormat": true,
+    "Endianness": "little-endian",
+    "HeaderSize": 54,
+    "FileHeaderSize": 14,
+    "DIBHeaderSize": 40,
+    "ColorSpace": "BGR, BGRA, Indexed, Monochrome",
+    "CompressionMethod": "None (BI_RGB), RLE4, RLE8, BITFIELDS",
+    "LosslessCompression": true,
+    "MaxBitDepth": 32,
+    "SupportsTransparency": true,
+    "SupportsAnimation": false,
+    "Platform": "Windows",
+    "RowPadding": "4-byte aligned"
   }
 }

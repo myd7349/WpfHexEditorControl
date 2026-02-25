@@ -1,25 +1,27 @@
 {
   "formatName": "JPEG Image",
-  "version": "1.12",
+  "version": "2.0",
   "extensions": [
     ".jpg",
     ".jpeg",
     ".jpe",
     ".jfif"
   ],
-  "description": "JPEG/JFIF image format",
+  "description": "JPEG (Joint Photographic Experts Group) image using JFIF (JPEG File Interchange Format) container. The file begins with an SOI marker (0xFFD8) followed by APP0/JFIF segment containing version, density, and thumbnail information. Image dimensions and encoding parameters are found in the SOF (Start of Frame) marker located later in the stream.",
   "category": "Images",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "ISO/IEC 10918-1 - Digital Compression and Coding",
-      "JFIF File Format Specification",
-      "ITU-T T.81"
+      "ISO/IEC 10918-1 - Digital Compression and Coding of Continuous-Tone Still Images",
+      "ITU-T T.81 - JPEG Baseline Standard",
+      "JFIF 1.02 - JPEG File Interchange Format Specification",
+      "Exif 2.32 - Exchangeable Image File Format"
     ],
     "WebLinks": [
       "https://www.w3.org/Graphics/JPEG/",
       "https://jpeg.org/jpeg/",
-      "https://en.wikipedia.org/wiki/JPEG"
+      "https://en.wikipedia.org/wiki/JPEG",
+      "https://www.ecma-international.org/publications-and-standards/standards/ecma-tr-098/"
     ]
   },
   "detection": {
@@ -27,32 +29,41 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 3,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "maxSignatureOffset": 0
     }
   },
-  "functions": {
-    "parseJPEGDimensions": "Find and parse SOF marker to extract image dimensions",
-    "computeFromVariables(jpegWidth * jpegHeight, totalPixels)": "Calculate total pixel count"
-  },
   "variables": {
+    "currentOffset": 0,
+    "jpegSoiMarker": 0,
+    "app0Marker": 0,
+    "app0Length": 0,
+    "jfifIdentifier": "",
+    "jfifMajorVersion": 0,
+    "jfifMinorVersion": 0,
+    "densityUnits": 0,
+    "xDensity": 0,
+    "yDensity": 0,
+    "thumbnailWidth": 0,
+    "thumbnailHeight": 0,
+    "thumbnailPixels": 0,
+    "hasThumbnail": false,
     "jpegWidth": 0,
     "jpegHeight": 0,
     "jpegComponents": 0,
     "jpegPrecision": 0,
     "jpegProgressive": false,
     "sofOffset": -1,
-    "jpegSoiMarker": 0,
-    "app0JfifMarker": 0,
-    "app0Length": 0,
-    "jfifIdentifier": "",
-    "jfifVersion": 0,
-    "densityUnits": 0,
-    "xDensity": 0,
-    "yDensity": 0,
-    "thumbnailWidth": 0,
-    "thumbnailHeight": 0,
-    "totalPixels": 0
+    "totalPixels": 0,
+    "densityUnitName": "",
+    "jfifVersionString": "",
+    "formattedSize": ""
+  },
+  "functions": {
+    "parseJPEGDimensions": "Scan the JPEG marker stream to locate the first SOF marker (0xFFC0 baseline or 0xFFC2 progressive), then extract precision, height, width, and component count from the SOF segment data",
+    "computeFromVariables(jpegWidth * jpegHeight, totalPixels)": "Calculate total pixel count from image dimensions found in SOF marker",
+    "computeFromVariables(thumbnailWidth * thumbnailHeight, thumbnailPixels)": "Calculate embedded JFIF thumbnail pixel count",
+    "formatFileSize(var:totalPixels)": "Format total pixel count as human-readable string"
   },
   "blocks": [
     {
@@ -62,89 +73,121 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Start Of Image (0xFFD8)",
+      "description": "Start Of Image marker (0xFFD8). Every JPEG file begins with this two-byte marker. It has no payload and signals the beginning of a JPEG data stream. The 0xFF byte is the marker prefix used throughout JPEG.",
       "storeAs": "jpegSoiMarker",
       "valueType": "uint16",
-      "endianness": "big"
+      "endianness": "big",
+      "validation": {
+        "expectedValue": "0xFFD8"
+      }
     },
     {
       "type": "field",
-      "name": "APP0/JFIF Marker",
+      "name": "APP0 Marker",
       "offset": 2,
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "APP0 marker (usually 0xFFE0)",
-      "storeAs": "app0JfifMarker",
+      "description": "Application-specific marker 0 (0xFFE0). In JFIF files this marker immediately follows SOI and introduces the JFIF application data segment containing format version, pixel density, and optional thumbnail.",
+      "storeAs": "app0Marker",
       "valueType": "uint16",
-      "endianness": "big"
+      "endianness": "big",
+      "validation": {
+        "expectedValue": "0xFFE0"
+      }
     },
     {
       "type": "field",
-      "name": "APP0 Length",
+      "name": "APP0 Segment Length",
       "offset": 4,
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Length of APP0 segment",
+      "description": "Length of the APP0 segment in bytes, including the 2-byte length field itself but excluding the marker bytes. Minimum value is 16 for a JFIF segment without a thumbnail. Larger values indicate embedded thumbnail data.",
       "storeAs": "app0Length",
       "valueType": "uint16",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "JFIF Identifier",
+      "name": "JFIF Identifier String",
       "offset": 6,
       "length": 5,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "JFIF identifier (JFIF\\0)",
+      "description": "Null-terminated ASCII string 'JFIF\\0' (0x4A464946 00) identifying this APP0 segment as JFIF format. This distinguishes JFIF from other APP0 uses and is required for JFIF compliance.",
       "storeAs": "jfifIdentifier",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "JFIF"
+      }
     },
     {
       "type": "field",
-      "name": "JFIF Version",
+      "name": "JFIF Major Version",
       "offset": 11,
-      "length": 2,
+      "length": 1,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "JFIF version (e.g., 1.01)",
-      "storeAs": "jfifVersion",
-      "valueType": "uint16",
-      "endianness": "big"
+      "description": "JFIF major version number. Currently version 1 is the only defined major version. All conforming JFIF files should have major version 1.",
+      "storeAs": "jfifMajorVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "1": "Version 1.x (current standard)"
+      }
     },
     {
       "type": "field",
-      "name": "Density Units",
-      "offset": 13,
+      "name": "JFIF Minor Version",
+      "offset": 12,
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "0=None, 1=DPI, 2=DPCM",
-      "storeAs": "densityUnits",
-      "valueType": "uint8"
+      "description": "JFIF minor version number. Common values: 0 (JFIF 1.00), 1 (JFIF 1.01), 2 (JFIF 1.02). Version 1.02 is the latest revision adding support for thumbnail formats.",
+      "storeAs": "jfifMinorVersion",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "1.00 (original specification)",
+        "1": "1.01 (aspect ratio clarification)",
+        "2": "1.02 (thumbnail extensions)"
+      }
     },
     {
       "type": "field",
-      "name": "X Density",
-      "offset": 14,
-      "length": 2,
+      "name": "Pixel Density Units",
+      "offset": 13,
+      "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Horizontal pixel density",
+      "description": "Units for the X and Y pixel density fields. Determines how to interpret the density values: as unitless aspect ratio, dots per inch (DPI), or dots per centimeter (DPCM).",
+      "storeAs": "densityUnits",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "No units (X:Y defines pixel aspect ratio only)",
+        "1": "Dots per inch (DPI)",
+        "2": "Dots per centimeter (DPCM)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "X Pixel Density",
+      "offset": 14,
+      "length": 2,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Horizontal pixel density. When density units is 0, this specifies the horizontal component of the pixel aspect ratio. When 1, this is DPI. When 2, this is dots per centimeter. Must be non-zero.",
       "storeAs": "xDensity",
       "valueType": "uint16",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "Y Density",
+      "name": "Y Pixel Density",
       "offset": 16,
       "length": 2,
-      "color": "#FF6B9D",
+      "color": "#C44569",
       "opacity": 0.3,
-      "description": "Vertical pixel density",
+      "description": "Vertical pixel density. When density units is 0, this specifies the vertical component of the pixel aspect ratio. When 1, this is DPI. When 2, this is dots per centimeter. Must be non-zero.",
       "storeAs": "yDensity",
       "valueType": "uint16",
       "endianness": "big"
@@ -154,9 +197,9 @@
       "name": "Thumbnail Width",
       "offset": 18,
       "length": 1,
-      "color": "#C44569",
+      "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "Embedded thumbnail width",
+      "description": "Width in pixels of the optional embedded thumbnail image. Value 0 means no thumbnail is embedded. If non-zero, thumbnail data (3 * width * height bytes of 24-bit RGB) follows immediately.",
       "storeAs": "thumbnailWidth",
       "valueType": "uint8"
     },
@@ -165,69 +208,79 @@
       "name": "Thumbnail Height",
       "offset": 19,
       "length": 1,
-      "color": "#98D8C8",
+      "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Embedded thumbnail height",
+      "description": "Height in pixels of the optional embedded thumbnail image. Value 0 means no thumbnail is embedded. The thumbnail data size is 3 * thumbnailWidth * thumbnailHeight bytes in uncompressed 24-bit RGB.",
       "storeAs": "thumbnailHeight",
       "valueType": "uint8"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Image Pixels",
+      "expression": "jpegWidth * jpegHeight",
+      "storeAs": "totalPixels",
+      "description": "Calculates total pixel count from the actual image dimensions extracted from the SOF marker. This represents the full decoded image size."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Thumbnail Pixel Count",
+      "expression": "thumbnailWidth * thumbnailHeight",
+      "storeAs": "thumbnailPixels",
+      "description": "Calculates the embedded JFIF thumbnail size in pixels. A result of 0 means no thumbnail is present in the APP0 segment."
+    },
+    {
+      "type": "conditional",
+      "name": "Embedded Thumbnail Check",
+      "condition": "thumbnailWidth > 0 && thumbnailHeight > 0",
+      "trueLabel": "This JPEG contains an embedded JFIF thumbnail image",
+      "falseLabel": "This JPEG has no embedded JFIF thumbnail",
+      "description": "Checks whether the JFIF APP0 segment contains an embedded thumbnail by examining the thumbnail width and height fields"
+    },
+    {
+      "type": "conditional",
+      "name": "Progressive Encoding Check",
+      "condition": "jpegProgressive == true",
+      "trueLabel": "This JPEG uses progressive encoding (SOF2 marker found)",
+      "falseLabel": "This JPEG uses baseline sequential encoding (SOF0 marker found)",
+      "description": "Checks whether the JPEG uses progressive or baseline encoding based on the SOF marker type found by parseJPEGDimensions"
     },
     {
       "type": "metadata",
       "name": "Image Width (pixels)",
       "variable": "jpegWidth",
-      "description": "Actual image width from SOF marker"
+      "description": "Actual image width extracted from the SOF (Start of Frame) marker segment"
     },
     {
       "type": "metadata",
       "name": "Image Height (pixels)",
       "variable": "jpegHeight",
-      "description": "Actual image height from SOF marker"
-    },
-    {
-      "type": "metadata",
-      "name": "Color Components",
-      "variable": "jpegComponents",
-      "description": "Number of color components (1=Grayscale, 3=RGB, 4=CMYK)"
-    },
-    {
-      "type": "metadata",
-      "name": "Bit Precision",
-      "variable": "jpegPrecision",
-      "description": "Bits per sample (usually 8)"
-    },
-    {
-      "type": "metadata",
-      "name": "Progressive JPEG",
-      "variable": "jpegProgressive",
-      "description": "true if progressive encoding, false if baseline"
-    },
-    {
-      "type": "metadata",
-      "name": "SOF Marker Offset",
-      "variable": "sofOffset",
-      "description": "Byte offset where SOF marker was found"
+      "description": "Actual image height extracted from the SOF (Start of Frame) marker segment"
     },
     {
       "type": "metadata",
       "name": "Total Pixels",
       "variable": "totalPixels",
-      "description": "jpegWidth x jpegHeight total pixel count"
+      "description": "Total pixel count computed as jpegWidth * jpegHeight"
+    },
+    {
+      "type": "metadata",
+      "name": "Color Components",
+      "variable": "jpegComponents",
+      "description": "Number of color components from SOF marker (1=Grayscale, 3=YCbCr/RGB, 4=CMYK)"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Precision (bits)",
+      "variable": "jpegPrecision",
+      "description": "Bits per sample from SOF marker, typically 8 for standard JPEG or 12 for high-precision JPEG"
+    },
+    {
+      "type": "metadata",
+      "name": "Progressive JPEG",
+      "variable": "jpegProgressive",
+      "description": "true if progressive encoding (SOF2), false if baseline sequential (SOF0)"
     }
   ],
-  "software": [
-    "All image viewers",
-    "Photoshop",
-    "GIMP",
-    "Cameras"
-  ],
-  "format_relationships": {
-    "category": "Images",
-    "extensions": [
-      ".jpg",
-      ".jpeg",
-      ".jpe"
-    ]
-  },
   "MimeTypes": [
     "image/jpeg",
     "image/jpg"
@@ -247,18 +300,25 @@
     "Compression"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 65,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 17,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 21,
+    "ValidationRules": 3,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "ColorSpace": "YCbCr, RGB",
-    "BitDepth": 8,
-    "ImagesFormat": true,
-    "CompressionMethod": "DCT (lossy)"
+    "ImageFormat": true,
+    "Endianness": "big-endian (marker-based)",
+    "HeaderSize": 20,
+    "ColorSpace": "YCbCr, RGB, Grayscale, CMYK",
+    "CompressionMethod": "DCT (Discrete Cosine Transform) - lossy",
+    "LosslessCompression": false,
+    "MaxBitDepth": 12,
+    "SupportsTransparency": false,
+    "SupportsAnimation": false,
+    "MarkerBasedFormat": true,
+    "JFIFVersion": "1.02"
   }
 }

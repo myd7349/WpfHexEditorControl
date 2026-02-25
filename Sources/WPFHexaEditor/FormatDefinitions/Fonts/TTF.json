@@ -1,21 +1,24 @@
 {
   "formatName": "TrueType Font",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".ttf"
   ],
-  "description": "TrueType font format",
+  "description": "TrueType Font format - a scalable outline font standard originally developed by Apple and later adopted by Microsoft. The file begins with an Offset Table header containing a scaler type identifier, the number of font tables, and binary search optimization values. Following the header is a Table Directory with 16-byte entries for each table (tag, checksum, offset, length). Common tables include 'cmap' (character mapping), 'glyf' (glyph outlines), 'head' (font header), 'hhea' (horizontal metrics header), 'hmtx' (horizontal metrics), 'loca' (glyph locations), 'maxp' (maximum profile), 'name' (naming), and 'post' (PostScript).",
   "category": "Fonts",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "TrueType Reference Manual",
       "ISO/IEC 14496-22 - Open Font Format",
-      "Apple TrueType Specification"
+      "Apple TrueType Specification",
+      "Microsoft TrueType Specification 1.0"
     ],
     "WebLinks": [
       "https://developer.apple.com/fonts/TrueType-Reference-Manual/",
-      "https://en.wikipedia.org/wiki/TrueType"
+      "https://en.wikipedia.org/wiki/TrueType",
+      "https://docs.microsoft.com/en-us/typography/opentype/spec/otff",
+      "https://formats.kaitai.io/ttf/"
     ]
   },
   "detection": {
@@ -23,32 +26,62 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "min_file_size": 12,
+      "max_signature_offset": 0
     }
   },
   "variables": {
     "currentOffset": 0,
+    "scalerType": 0,
+    "numberOfTables": 0,
+    "searchRange": 0,
+    "entrySelector": 0,
+    "rangeShift": 0,
+    "table1Tag": "",
+    "table1Checksum": 0,
+    "table1Offset": 0,
+    "table1Length": 0,
+    "table2Tag": "",
+    "table2Checksum": 0,
+    "table2Offset": 0,
+    "table2Length": 0,
+    "table3Tag": "",
+    "table3Checksum": 0,
+    "table3Offset": 0,
+    "table3Length": 0,
     "numGlyphs": 0,
     "unitsPerEm": 0,
     "fontName": "",
     "tableCount": 0,
-    "ttfVersion": "",
-    "numberOfTables": 0,
-    "searchRange": 0,
-    "entrySelector": 0
+    "totalTableSize": 0,
+    "formattedTotalSize": ""
+  },
+  "functions": {
+    "formatFileSize(var:totalTableSize)": "Format total size of all font tables as human-readable string with units",
+    "computeFromVariables(table1Length + table2Length + table3Length, totalTableSize)": "Compute combined size of the first three font tables for size overview",
+    "validateFieldRange(numberOfTables, 1, 100)": "Validate table count is within reasonable range (most fonts have 9-25 tables)",
+    "validateFieldRange(entrySelector, 0, 16)": "Validate entry selector is a valid log2 value"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "TTF Version",
+      "name": "Scaler Type (TrueType Version)",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Version 1.0",
-      "storeAs": "ttfVersion",
-      "valueType": "ascii"
+      "description": "Scaler type / sfVersion identifier. Value 0x00010000 (version 1.0) identifies a TrueType font with TrueType outlines. Alternative value 0x74727565 (ASCII 'true') is used by Apple for some TrueType fonts. This field tells the font scaler which rendering engine to use.",
+      "storeAs": "scalerType",
+      "valueType": "uint32",
+      "endianness": "big",
+      "validation": {
+        "expectedValue": "00010000"
+      },
+      "valueMap": {
+        "65536": "TrueType (0x00010000 - version 1.0)",
+        "1953658213": "TrueType (0x74727565 - 'true')",
+        "1954115632": "TrueType (0x74797031 - 'typ1')"
+      }
     },
     {
       "type": "field",
@@ -57,9 +90,14 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Number of font tables",
+      "description": "Total number of font tables in this file. Each table contains specific font data (glyphs, metrics, names, etc.). Typical TrueType fonts have 9-25 tables. The table directory immediately follows this header.",
       "storeAs": "numberOfTables",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big",
+      "validationRules": {
+        "minValue": 1,
+        "maxValue": 100
+      }
     },
     {
       "type": "field",
@@ -68,9 +106,10 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Binary search range",
+      "description": "Binary search optimization value: (maximum power of 2 <= numTables) * 16. Used for efficient binary search of the table directory. For example, if numTables=17, searchRange = 16 * 16 = 256.",
       "storeAs": "searchRange",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big"
     },
     {
       "type": "field",
@@ -79,45 +118,200 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Binary search selector",
+      "description": "Binary search optimization value: log2(maximum power of 2 <= numTables). Represents the number of iterations needed for a binary search of the table directory.",
       "storeAs": "entrySelector",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Range Shift",
+      "offset": 10,
+      "length": 2,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Binary search optimization value: (numTables * 16) - searchRange. Used as the initial comparison offset in the binary search algorithm for table lookup.",
+      "storeAs": "rangeShift",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 1 - Tag",
+      "offset": 12,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "4-byte ASCII tag identifying the first table in the directory. Tables are sorted alphabetically by tag. Common first tables: 'DSIG' (digital signature), 'GDEF' (glyph definition), 'OS/2' (OS/2 and Windows metrics), 'cmap' (character to glyph mapping).",
+      "storeAs": "table1Tag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Table 1 - Checksum",
+      "offset": 16,
+      "length": 4,
+      "color": "#96CEB4",
+      "opacity": 0.3,
+      "description": "Checksum of the first table's data. Computed by treating the table as an array of uint32 values and summing them. The 'head' table uses a special adjustment so that the checksum of the entire file equals 0xB1B0AFBA.",
+      "storeAs": "table1Checksum",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 1 - Offset",
+      "offset": 20,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.3,
+      "description": "Byte offset from the beginning of the font file to the start of the first table's data. Tables are typically aligned to 4-byte boundaries.",
+      "storeAs": "table1Offset",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 1 - Length",
+      "offset": 24,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.3,
+      "description": "Length of the first table's data in bytes. The actual storage may be padded to a 4-byte boundary, but this field records the unpadded length.",
+      "storeAs": "table1Length",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 2 - Tag",
+      "offset": 28,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.35,
+      "description": "4-byte ASCII tag identifying the second table in the directory. Each table tag is a registered identifier (e.g. 'glyf', 'head', 'hhea', 'hmtx', 'loca', 'maxp', 'name', 'post').",
+      "storeAs": "table2Tag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Table 2 - Checksum",
+      "offset": 32,
+      "length": 4,
+      "color": "#96CEB4",
+      "opacity": 0.35,
+      "description": "Checksum of the second table's data. Same algorithm as Table 1 checksum.",
+      "storeAs": "table2Checksum",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 2 - Offset",
+      "offset": 36,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.35,
+      "description": "Byte offset from the beginning of the font file to the start of the second table's data.",
+      "storeAs": "table2Offset",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 2 - Length",
+      "offset": 40,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.35,
+      "description": "Length of the second table's data in bytes (unpadded).",
+      "storeAs": "table2Length",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 3 - Tag",
+      "offset": 44,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.4,
+      "description": "4-byte ASCII tag identifying the third table in the directory.",
+      "storeAs": "table3Tag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Table 3 - Checksum + Offset + Length",
+      "offset": 48,
+      "length": 12,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Checksum (4 bytes), offset (4 bytes), and length (4 bytes) for the third table directory entry. Follows the same format as previous table entries.",
+      "storeAs": "table3Checksum",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Table Directory Size",
+      "expression": "numberOfTables * 16",
+      "storeAs": "totalTableSize",
+      "description": "Total size of the table directory in bytes. Each of the numberOfTables entries is exactly 16 bytes (4-byte tag + 4-byte checksum + 4-byte offset + 4-byte length). The directory starts at byte 12 and extends to byte 12 + (numberOfTables * 16)."
+    },
+    {
+      "type": "conditional",
+      "name": "Font Complexity Check",
+      "condition": "numberOfTables > 15",
+      "trueLabel": "Complex font with extended tables (> 15 tables - likely includes advanced features like GPOS, GSUB, kern)",
+      "falseLabel": "Standard font with core tables (<= 15 tables - basic glyph and metric data)",
+      "description": "Determines whether the font includes extended OpenType layout tables beyond the core TrueType requirement. Complex fonts typically include GPOS (positioning), GSUB (substitution), and GDEF (glyph definition) for advanced typographic features."
+    },
+    {
+      "type": "conditional",
+      "name": "Scaler Type Validation",
+      "condition": "scalerType == 65536",
+      "trueLabel": "Standard TrueType font (scaler type 0x00010000 / version 1.0)",
+      "falseLabel": "Alternate TrueType identifier ('true' or 'typ1' - may be Apple-specific)",
+      "description": "Validates the scaler type identifier. The value 0x00010000 is the standard Windows TrueType identifier. Apple systems also accept 'true' (0x74727565) as a valid TrueType scaler type."
+    },
+    {
+      "type": "metadata",
+      "name": "Number of Tables",
+      "variable": "numberOfTables",
+      "description": "Total number of font tables present in this TrueType file"
     },
     {
       "type": "metadata",
       "name": "Glyph Count",
       "variable": "numGlyphs",
-      "description": "Glyph Count"
+      "description": "Total number of glyphs in the font (from 'maxp' table)"
     },
     {
       "type": "metadata",
-      "name": "Units Per EM",
+      "name": "Units Per Em",
       "variable": "unitsPerEm",
-      "description": "Units Per EM"
+      "description": "Font design units per em square (from 'head' table, typically 1000 or 2048)"
     },
     {
       "type": "metadata",
       "name": "Font Name",
       "variable": "fontName",
-      "description": "Font Name"
+      "description": "Full font name extracted from the 'name' table (name ID 4)"
     },
     {
       "type": "metadata",
-      "name": "Table Count",
-      "variable": "tableCount",
-      "description": "Table Count"
+      "name": "Search Range",
+      "variable": "searchRange",
+      "description": "Binary search optimization: (maxPow2 <= numTables) * 16"
+    },
+    {
+      "type": "metadata",
+      "name": "Table Directory Size",
+      "variable": "formattedTotalSize",
+      "description": "Total size of the table directory region formatted with units"
     }
   ],
-  "software": [
-    "All operating systems",
-    "Font editors"
-  ],
-  "format_relationships": {
-    "category": "Fonts",
-    "extensions": [
-      ".ttf"
-    ]
-  },
   "MimeTypes": [
     "font/ttf",
     "application/x-font-ttf"
@@ -125,25 +319,36 @@
   "Software": [
     "All operating systems",
     "FontForge",
-    "Font editors"
+    "Font editors",
+    "Adobe InDesign",
+    "Microsoft Word"
   ],
   "UseCases": [
     "System fonts",
     "Web fonts",
-    "Typography"
+    "Typography",
+    "Document rendering",
+    "UI design"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 24,
+    "ValidationRules": 4,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
-  "TechnicalDetails": {},
-  "functions": {
-    "readUInt32BE": "Read font tables",
-    "extractASCIIString": "Read font name"
+  "TechnicalDetails": {
+    "FontFormat": true,
+    "primary_extension": ".ttf",
+    "defined_fields": 24,
+    "OutlineType": "TrueType (quadratic B-splines)",
+    "Endianness": "big-endian",
+    "OffsetTableSize": 12,
+    "TableDirEntrySize": 16,
+    "RequiredTables": "cmap, glyf, head, hhea, hmtx, loca, maxp, name, post",
+    "ChecksumAdjustment": "0xB1B0AFBA",
+    "Alignment": "4-byte boundary"
   }
 }

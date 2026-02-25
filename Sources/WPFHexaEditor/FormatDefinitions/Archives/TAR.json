@@ -1,20 +1,22 @@
 {
   "formatName": "TAR Archive",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".tar"
   ],
-  "description": "TAR archive format - Unix tape archive",
+  "description": "POSIX TAR (Tape Archive) format stores files sequentially in 512-byte blocks without compression. Each file entry consists of a 512-byte header followed by the file data padded to 512-byte boundaries. The USTAR (Unix Standard TAR) extension adds a magic string at offset 257, owner/group names, and device number fields. TAR is commonly combined with GZIP (.tar.gz) or BZIP2 (.tar.bz2) for compression.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "POSIX.1-1988 (ustar) Format",
-      "TAR Archive Format"
+      "POSIX.1-1988 (ustar) Format Specification",
+      "POSIX.1-2001 (IEEE Std 1003.1) TAR Header Format",
+      "GNU tar Manual - Basic Tar Format"
     ],
     "WebLinks": [
       "https://www.gnu.org/software/tar/manual/html_node/Standard.html",
-      "https://en.wikipedia.org/wiki/Tar_(computing)"
+      "https://en.wikipedia.org/wiki/Tar_(computing)",
+      "https://pubs.opengroup.org/onlinepubs/9699919799/utilities/pax.html"
     ]
   },
   "detection": {
@@ -22,24 +24,38 @@
     "offset": 257,
     "required": true,
     "validation": {
-      "min_file_size": 5,
-      "max_signature_offset": 1024
+      "minFileSize": 512,
+      "maxSignatureOffset": 262
     }
-  },
-  "functions": {
-    "extractASCIIString": "Extract file names and metadata from TAR headers",
-    "readUInt32BE": "Read file size and numeric fields (octal/big-endian)",
-    "formatFileSize(var:fileSize)": "Format fileSize as readable size"
   },
   "variables": {
     "currentOffset": 0,
     "fileName": "",
-    "fileSize": 0,
-    "fileMode": 0,
-    "ownerId": "",
-    "groupId": "",
+    "fileMode": "",
+    "ownerUID": "",
+    "groupGID": "",
+    "fileSize": "",
+    "lastModTime": "",
+    "headerChecksum": "",
+    "typeFlag": "",
+    "linkName": "",
     "ustarMagic": "",
-    "formattedSize": ""
+    "ustarVersion": "",
+    "ownerUserName": "",
+    "ownerGroupName": "",
+    "devMajor": "",
+    "devMinor": "",
+    "filenamePrefix": "",
+    "isUstarFormat": false,
+    "typeFlagName": "",
+    "formattedSize": "",
+    "headerBlockSize": 512
+  },
+  "functions": {
+    "extractASCIIString(0, 100)": "Extract the null-terminated file name from the first 100 bytes of the TAR header",
+    "extractASCIIString(257, 6)": "Extract USTAR magic identifier string at offset 257 to verify format compliance",
+    "computeFromVariables(ustarMagic == 'ustar' ? 1 : 0, isUstarFormat)": "Determine if the archive uses USTAR format by checking the magic string at offset 257",
+    "formatFileSize(var:fileSize)": "Format the octal file size value as a human-readable size string"
   },
   "blocks": [
     {
@@ -47,9 +63,9 @@
       "name": "File Name",
       "offset": 0,
       "length": 100,
-      "color": "#4ECDC4",
-      "opacity": 0.3,
-      "description": "Name of archived file",
+      "color": "#FF6B6B",
+      "opacity": 0.4,
+      "description": "Null-terminated ASCII string containing the name of the archived file or directory. Limited to 100 bytes in the original TAR format. USTAR extends this with a 155-byte prefix field at offset 345, allowing paths up to 256 characters when combined.",
       "storeAs": "fileName",
       "valueType": "ascii"
     },
@@ -58,22 +74,21 @@
       "name": "File Mode",
       "offset": 100,
       "length": 8,
-      "color": "#95E1D3",
+      "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "File permissions (octal)",
+      "description": "File permission mode stored as an 8-byte null-terminated octal ASCII string (e.g., '0000755\\0'). Encodes Unix permission bits: owner read/write/execute, group read/write/execute, and others read/write/execute, plus setuid, setgid, and sticky bits.",
       "storeAs": "fileMode",
-      "valueType": "uint64",
-      "endianness": "big"
+      "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Owner ID",
+      "name": "Owner User ID",
       "offset": 108,
       "length": 8,
-      "color": "#FFE66D",
+      "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "User ID (octal)",
-      "storeAs": "ownerId",
+      "description": "Numeric owner user ID stored as an 8-byte null-terminated octal ASCII string. Represents the Unix UID of the file owner at the time of archiving. USTAR format supplements this with a human-readable username at offset 265.",
+      "storeAs": "ownerUID",
       "valueType": "ascii"
     },
     {
@@ -81,53 +96,220 @@
       "name": "Group ID",
       "offset": 116,
       "length": 8,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Numeric group ID stored as an 8-byte null-terminated octal ASCII string. Represents the Unix GID of the file's group at the time of archiving. USTAR format supplements this with a human-readable group name at offset 297.",
+      "storeAs": "groupGID",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "File Size",
+      "offset": 124,
+      "length": 12,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Group ID (octal)",
-      "storeAs": "groupId",
+      "description": "File size in bytes stored as a 12-byte null-terminated octal ASCII string. For regular files, this is the actual content size. For directories and links, this is typically 0. The file data follows the header, padded to the next 512-byte boundary.",
+      "storeAs": "fileSize",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Last Modification Time",
+      "offset": 136,
+      "length": 12,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "Last modification time stored as a 12-byte null-terminated octal ASCII string representing a Unix timestamp (seconds since 1970-01-01 00:00:00 UTC). Used to restore the file's modification time during extraction.",
+      "storeAs": "lastModTime",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Header Checksum",
+      "offset": 148,
+      "length": 8,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Header checksum stored as an 8-byte octal ASCII string. Calculated by summing all 512 bytes of the header block, treating the checksum field itself as spaces (0x20). This provides basic integrity verification of the header data.",
+      "storeAs": "headerChecksum",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Type Flag",
+      "offset": 156,
+      "length": 1,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "Single ASCII character indicating the type of the archived entry. Determines how the entry should be interpreted during extraction. The original TAR format used a binary link indicator; USTAR extended this to a broader set of type flags.",
+      "storeAs": "typeFlag",
+      "valueType": "ascii",
+      "valueMap": {
+        "0": "Regular file",
+        "48": "Regular file (ASCII '0')",
+        "49": "Hard link (ASCII '1')",
+        "50": "Symbolic link (ASCII '2')",
+        "51": "Character device (ASCII '3')",
+        "52": "Block device (ASCII '4')",
+        "53": "Directory (ASCII '5')",
+        "54": "FIFO named pipe (ASCII '6')",
+        "55": "Contiguous file (ASCII '7')",
+        "103": "Global extended header (ASCII 'g', pax)",
+        "120": "Extended header for next file (ASCII 'x', pax)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Link Name",
+      "offset": 157,
+      "length": 100,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Null-terminated ASCII string containing the target path for hard links (type '1') or symbolic links (type '2'). Empty for regular files and directories. Limited to 100 bytes.",
+      "storeAs": "linkName",
       "valueType": "ascii"
     },
     {
       "type": "signature",
       "name": "USTAR Magic",
       "offset": 257,
-      "length": 5,
-      "color": "#FF6B6B",
+      "length": 6,
+      "color": "#FFA07A",
       "opacity": 0.4,
-      "description": "ustar indicator",
+      "description": "USTAR format magic identifier: 'ustar\\0' (75 73 74 61 72 00) for POSIX-compliant archives or 'ustar ' (75 73 74 61 72 20) for GNU tar. The presence of this magic confirms USTAR extended header fields are valid. Archives without this magic are old V7 format.",
       "storeAs": "ustarMagic",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "ustar"
+      }
+    },
+    {
+      "type": "field",
+      "name": "USTAR Version",
+      "offset": 263,
+      "length": 2,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "USTAR format version string, typically '00' (ASCII 0x30 0x30) for POSIX-compliant archives. GNU tar may use spaces or null bytes instead. This field is only meaningful when the USTAR magic is present.",
+      "storeAs": "ustarVersion",
       "valueType": "ascii"
     },
     {
+      "type": "field",
+      "name": "Owner User Name",
+      "offset": 265,
+      "length": 32,
+      "color": "#D4A5FF",
+      "opacity": 0.3,
+      "description": "Null-terminated ASCII string containing the human-readable owner username (USTAR extension). Supplements the numeric UID at offset 108. Limited to 32 bytes. Used by extraction tools to map ownership when UIDs differ between systems.",
+      "storeAs": "ownerUserName",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Owner Group Name",
+      "offset": 297,
+      "length": 32,
+      "color": "#FFB347",
+      "opacity": 0.3,
+      "description": "Null-terminated ASCII string containing the human-readable group name (USTAR extension). Supplements the numeric GID at offset 116. Limited to 32 bytes. Used by extraction tools to map group ownership across systems.",
+      "storeAs": "ownerGroupName",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Device Major Number",
+      "offset": 329,
+      "length": 8,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "Major device number stored as an 8-byte octal ASCII string (USTAR extension). Only meaningful for character device (type '3') and block device (type '4') entries. Identifies the device driver.",
+      "storeAs": "devMajor",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Device Minor Number",
+      "offset": 337,
+      "length": 8,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Minor device number stored as an 8-byte octal ASCII string (USTAR extension). Only meaningful for character device (type '3') and block device (type '4') entries. Identifies the specific device instance.",
+      "storeAs": "devMinor",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Filename Prefix",
+      "offset": 345,
+      "length": 155,
+      "color": "#F0E68C",
+      "opacity": 0.3,
+      "description": "USTAR filename prefix for paths longer than 100 characters. When non-empty, the full path is constructed as prefix + '/' + name, allowing paths up to 256 characters total. Not used in V7 or GNU tar long name extensions.",
+      "storeAs": "filenamePrefix",
+      "valueType": "ascii"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "USTAR Format Detection",
+      "expression": "ustarMagic == 'ustar' ? 1 : 0",
+      "storeAs": "isUstarFormat",
+      "description": "Determines if the archive uses the USTAR (POSIX.1-1988) extended format by checking for the 'ustar' magic string at offset 257. USTAR adds owner/group names, device numbers, and filename prefix fields."
+    },
+    {
+      "type": "conditional",
+      "name": "USTAR Format Verification",
+      "condition": "isUstarFormat == 1",
+      "trueLabel": "POSIX USTAR format confirmed: extended header fields (owner name, group name, device numbers, prefix) are valid",
+      "falseLabel": "Legacy V7 TAR format: only basic header fields (name, mode, uid, gid, size, mtime, checksum, type, linkname) are available",
+      "description": "Checks whether the archive conforms to USTAR specification, which determines if extended fields at offsets 265-499 contain valid data"
+    },
+    {
+      "type": "conditional",
+      "name": "Directory Entry Detection",
+      "condition": "typeFlag == '5' || typeFlag == 53",
+      "trueLabel": "This entry is a directory (type flag '5')",
+      "falseLabel": "This entry is not a directory",
+      "description": "Checks the type flag to determine if the first entry in the archive is a directory rather than a regular file"
+    },
+    {
       "type": "metadata",
-      "name": "File Name",
+      "name": "First Entry Name",
       "variable": "fileName",
-      "description": "Name of the first archived file"
+      "description": "Name of the first file or directory entry in the TAR archive header"
     },
     {
       "type": "metadata",
-      "name": "File Size (bytes)",
+      "name": "File Size (octal)",
       "variable": "fileSize",
-      "description": "Size of the archived file"
+      "description": "Size of the first entry in octal ASCII representation"
     },
     {
       "type": "metadata",
-      "name": "Formatted Size",
-      "variable": "formattedSize",
-      "description": "Human-readable file size"
+      "name": "Owner User Name",
+      "variable": "ownerUserName",
+      "description": "Human-readable username of the file owner from the USTAR extended header"
+    },
+    {
+      "type": "metadata",
+      "name": "Owner Group Name",
+      "variable": "ownerGroupName",
+      "description": "Human-readable group name from the USTAR extended header"
+    },
+    {
+      "type": "metadata",
+      "name": "Entry Type",
+      "variable": "typeFlag",
+      "description": "Type flag character indicating the entry type (regular file, directory, symlink, etc.)"
+    },
+    {
+      "type": "metadata",
+      "name": "Is USTAR Format",
+      "variable": "isUstarFormat",
+      "description": "Whether the archive uses the POSIX USTAR extended format (true) or legacy V7 format (false)"
     }
   ],
-  "software": [
-    "tar",
-    "7-Zip",
-    "WinRAR"
-  ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".tar"
-    ]
-  },
   "MimeTypes": [
     "application/x-tar"
   ],
@@ -144,17 +326,22 @@
     "Container images"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 50,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 25,
+    "ValidationRules": 1,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "CompressionMethod": "None (often combined with GZIP)",
     "ArchivesFormat": true,
-    "Platform": "Unix/Linux"
+    "Endianness": "N/A (octal ASCII strings)",
+    "CompressionMethod": "None (often combined with GZIP or BZIP2)",
+    "Platform": "Unix/Linux",
+    "HeaderSize": 512,
+    "BlockAlignment": 512,
+    "MaxPathLength": "256 characters (USTAR: 155 prefix + 100 name)",
+    "MaxFileSize": "8 GiB (octal representation limit)"
   }
 }
