@@ -444,7 +444,8 @@ namespace WpfHexaEditor.Services
                 }
 
                 // Extension match (30% weight, boosted to 40% for shared signatures)
-                if (MatchesExtension(candidate.Format, fileName))
+                bool extensionMatches = MatchesExtension(candidate.Format, fileName);
+                if (extensionMatches)
                 {
                     candidate.ExtensionConfidence = 1.0;
                     double extensionWeight = hasSharedSignatures ? 0.40 : 0.30;
@@ -494,6 +495,17 @@ namespace WpfHexaEditor.Services
                         score *= 0.6;  // Heavy penalty
                         factors.Add("Weak signature");
                         break;
+                }
+
+                // Extension mismatch penalty (applied LAST as final multiplier):
+                // When multiple formats share the same signature (e.g., 504B0304 for ZIP/DOCX/XLSX/Keynote),
+                // a format that doesn't match the file extension is very unlikely to be correct.
+                // This is the most decisive disambiguation factor for shared-signature formats.
+                if (hasSharedSignatures && !extensionMatches && !string.IsNullOrWhiteSpace(fileName))
+                {
+                    candidate.ExtensionConfidence = 0.0;
+                    score *= 0.25;  // Reduce total score to 25%
+                    factors.Add("Extension mismatch penalty (shared signature)");
                 }
 
                 candidate.ConfidenceScore = Math.Min(1.0, score);
@@ -741,6 +753,23 @@ namespace WpfHexaEditor.Services
             {
                 if (format.Extensions?.Any(e => e == ".epub") == true)
                     return 1.0;
+                if (formatName.Contains("zip") && category.Contains("archive"))
+                    return 0.0;
+            }
+
+            // iWork detection: Index/ directory or .iwa files (Keynote, Pages, Numbers)
+            if (name.StartsWith("index/") || name.EndsWith(".iwa") || name.StartsWith("metadata/"))
+            {
+                if (formatName.Contains("keynote") || format.Extensions?.Any(e => e == ".key") == true)
+                    return 0.9;
+                if (formatName.Contains("pages") || format.Extensions?.Any(e => e == ".pages") == true)
+                    return 0.9;
+                if (formatName.Contains("numbers") || format.Extensions?.Any(e => e == ".numbers") == true)
+                    return 0.9;
+                // Generic iWork format
+                if (category == "documents")
+                    return 0.4;
+                // Not a ZIP archive
                 if (formatName.Contains("zip") && category.Contains("archive"))
                     return 0.0;
             }
