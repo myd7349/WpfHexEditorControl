@@ -68,6 +68,11 @@ public class DockControl : ContentControl
     internal DockDragManager? DragManager => _dragManager;
 
     /// <summary>
+    /// The floating window manager, used by DockDragManager to retrieve a newly created window after Float().
+    /// </summary>
+    internal FloatingWindowManager? FloatingManager => _floatingManager;
+
+    /// <summary>
     /// Raised when a tab close is requested.
     /// </summary>
     public event Action<DockItem>? TabCloseRequested;
@@ -242,10 +247,12 @@ public class DockControl : ContentControl
 
     private void OnItemFloated(DockItem item)
     {
-        // Create a floating window for the item
-        var mousePos = System.Windows.Input.Mouse.GetPosition(this);
+        // Create a floating window for the item, positioned near the cursor (DIPs)
+        var mousePos  = System.Windows.Input.Mouse.GetPosition(this);
         var screenPos = PointToScreen(mousePos);
-        _floatingManager?.CreateFloatingWindow(item, new Point(screenPos.X - 50, screenPos.Y - 20));
+        var source    = PresentationSource.FromVisual(this);
+        var dipPos    = source?.CompositionTarget?.TransformFromDevice.Transform(screenPos) ?? screenPos;
+        _floatingManager?.CreateFloatingWindow(item, new Point(dipPos.X - 50, dipPos.Y - 20));
     }
 
     private void OnItemDocked(DockItem item)
