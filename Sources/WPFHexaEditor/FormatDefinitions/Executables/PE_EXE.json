@@ -1,21 +1,23 @@
 {
   "formatName": "Windows Executable (PE)",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".exe",
     ".scr"
   ],
-  "description": "Windows Portable Executable format",
+  "description": "Windows Portable Executable format. The PE format is the standard executable file format on Windows, consisting of a DOS MZ stub header followed by a PE signature, COFF file header, and Optional Header with data directories and section tables.",
   "category": "Executables",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "Microsoft PE and COFF Specification",
-      "Portable Executable Format"
+      "Portable Executable Format",
+      "Microsoft PE Format Documentation (rev 11.0)"
     ],
     "WebLinks": [
       "https://docs.microsoft.com/en-us/windows/win32/debug/pe-format",
-      "https://en.wikipedia.org/wiki/Portable_Executable"
+      "https://en.wikipedia.org/wiki/Portable_Executable",
+      "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format"
     ]
   },
   "detection": {
@@ -23,29 +25,12 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 64,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "readUInt16LE": "Read 16-bit little-endian for DOS header fields",
-    "readUInt32LE": "Read 32-bit little-endian for PE header offset and fields",
-    "calculateMD5": "Calculate MD5 hash for file integrity verification",
-    "calculateSHA256": "Calculate SHA256 hash for security analysis",
-    "calculateCRC32": "Calculate CRC32 checksum for validation",
-    "parsePEOptionalHeader(var:peHeaderOffset)": "Parse PE Optional Header"
   },
   "variables": {
     "currentOffset": 0,
-    "peOffset": 0,
-    "machine": "Unknown",
-    "subsystem": "Unknown",
-    "sections": 0,
-    "timestamp": 0,
-    "entryPoint": 0,
-    "imageBase": 0,
-    "md5Hash": "Unknown",
-    "sha256Hash": "Unknown",
     "dosMzSignature": 0,
     "bytesOnLastPage": 0,
     "pagesInFile": 0,
@@ -55,20 +40,45 @@
     "maxExtraParagraphs": 0,
     "initialSs": 0,
     "initialSp": 0,
-    "checksum": 0,
+    "dosChecksum": 0,
     "initialIp": 0,
     "initialCs": 0,
     "relocTableOffset": 0,
     "overlayNumber": 0,
     "peHeaderOffset": 0,
-    "peSubsystem": 0,
+    "peSignature": 0,
+    "coffMachine": 0,
+    "coffNumberOfSections": 0,
+    "coffTimeDateStamp": 0,
+    "coffPointerToSymbolTable": 0,
+    "coffNumberOfSymbols": 0,
+    "coffSizeOfOptionalHeader": 0,
+    "coffCharacteristics": 0,
+    "optionalMagic": 0,
+    "majorLinkerVersion": 0,
+    "minorLinkerVersion": 0,
+    "sizeOfCode": 0,
+    "sizeOfInitializedData": 0,
+    "addressOfEntryPoint": 0,
+    "headerSizeBytes": 0,
+    "isDLL": false,
+    "is64Bit": false,
+    "machineName": "",
+    "linkerVersionString": "",
+    "peOffset": 0,
+    "peMachineName": "",
     "peSubsystemName": "",
+    "peIs64Bit": false,
     "peEntryPoint": 0,
     "peImageBase": 0,
     "peSectionCount": 0,
-    "peIs64Bit": false,
-    "peMachine": 0,
-    "peMachineName": ""
+    "peMachine": 0
+  },
+  "functions": {
+    "parsePEOptionalHeader(var:peHeaderOffset)": "Parse PE Optional Header including data directories and subsystem info",
+    "formatFileSize(var:sizeOfCode)": "Format the code section size as human-readable string",
+    "computeFromVariables(headerParagraphs * 16, headerSizeBytes)": "Calculate DOS header size in bytes from paragraph count",
+    "computeFromVariables(majorLinkerVersion + '.' + minorLinkerVersion, linkerVersionString)": "Build linker version display string"
   },
   "blocks": [
     {
@@ -78,9 +88,12 @@
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "MZ magic bytes",
+      "description": "MZ magic bytes (0x5A4D LE) identifying a DOS executable stub",
       "storeAs": "dosMzSignature",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "validation": {
+        "expectedValue": "0x5A4D"
+      }
     },
     {
       "type": "field",
@@ -89,7 +102,7 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Bytes on last 512-byte page",
+      "description": "Number of bytes used on the last 512-byte page of the DOS executable (0 means entire page is used)",
       "storeAs": "bytesOnLastPage",
       "valueType": "uint16"
     },
@@ -100,7 +113,7 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Number of 512-byte pages",
+      "description": "Total number of 512-byte pages in the DOS executable including the last partial page",
       "storeAs": "pagesInFile",
       "valueType": "uint16"
     },
@@ -111,18 +124,18 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Number of relocation entries",
+      "description": "Number of relocation entries in the DOS relocation table",
       "storeAs": "relocations",
       "valueType": "uint16"
     },
     {
       "type": "field",
-      "name": "Header Paragraphs",
+      "name": "Header Size in Paragraphs",
       "offset": 8,
       "length": 2,
       "color": "#FFA07A",
       "opacity": 0.3,
-      "description": "Size of header in 16-byte paragraphs",
+      "description": "Size of the DOS header in 16-byte paragraphs (multiply by 16 for byte size)",
       "storeAs": "headerParagraphs",
       "valueType": "uint16"
     },
@@ -133,7 +146,7 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Minimum extra memory paragraphs",
+      "description": "Minimum number of extra 16-byte paragraphs of memory needed beyond the end of the program",
       "storeAs": "minExtraParagraphs",
       "valueType": "uint16"
     },
@@ -144,7 +157,7 @@
       "length": 2,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Maximum extra memory paragraphs",
+      "description": "Maximum number of extra 16-byte paragraphs of memory needed (0xFFFF = as much as available)",
       "storeAs": "maxExtraParagraphs",
       "valueType": "uint16"
     },
@@ -155,7 +168,7 @@
       "length": 2,
       "color": "#FF6B9D",
       "opacity": 0.3,
-      "description": "Initial stack segment value",
+      "description": "Initial stack segment value relative to the start of the loaded program",
       "storeAs": "initialSs",
       "valueType": "uint16"
     },
@@ -166,19 +179,19 @@
       "length": 2,
       "color": "#C44569",
       "opacity": 0.3,
-      "description": "Initial stack pointer value",
+      "description": "Initial stack pointer value set when the DOS program begins execution",
       "storeAs": "initialSp",
       "valueType": "uint16"
     },
     {
       "type": "field",
-      "name": "Checksum",
+      "name": "DOS Checksum",
       "offset": 18,
       "length": 2,
       "color": "#98D8C8",
       "opacity": 0.3,
-      "description": "DOS header checksum",
-      "storeAs": "checksum",
+      "description": "16-bit checksum of the DOS header (rarely verified, usually 0)",
+      "storeAs": "dosChecksum",
       "valueType": "uint16"
     },
     {
@@ -188,7 +201,7 @@
       "length": 2,
       "color": "#A8E6CF",
       "opacity": 0.3,
-      "description": "Initial instruction pointer",
+      "description": "Initial instruction pointer value for the DOS stub entry point",
       "storeAs": "initialIp",
       "valueType": "uint16"
     },
@@ -199,7 +212,7 @@
       "length": 2,
       "color": "#FFDDC1",
       "opacity": 0.3,
-      "description": "Initial code segment value",
+      "description": "Initial code segment value relative to the start of the loaded program",
       "storeAs": "initialCs",
       "valueType": "uint16"
     },
@@ -210,7 +223,7 @@
       "length": 2,
       "color": "#FFC8DD",
       "opacity": 0.3,
-      "description": "Offset to relocation table",
+      "description": "File offset of the DOS relocation table (0x40 or greater for PE files)",
       "storeAs": "relocTableOffset",
       "valueType": "uint16"
     },
@@ -221,63 +234,343 @@
       "length": 2,
       "color": "#BDB2FF",
       "opacity": 0.3,
-      "description": "Overlay number",
+      "description": "Overlay number for DOS overlay management (0 for the main executable)",
       "storeAs": "overlayNumber",
       "valueType": "uint16"
     },
     {
       "type": "field",
-      "name": "PE Header Offset",
+      "name": "PE Header Offset (e_lfanew)",
       "offset": 60,
       "length": 4,
       "color": "#FFC6FF",
       "opacity": 0.4,
-      "description": "Offset to PE header (e_lfanew)",
+      "description": "File offset to the PE signature (e_lfanew). Typical values are 0x80-0x100. This pointer bridges the DOS stub to the PE header.",
       "storeAs": "peHeaderOffset",
       "valueType": "uint32"
     },
     {
-      "type": "metadata",
-      "name": "Machine",
-      "variable": "peMachineName",
-      "description": "Target machine architecture name"
+      "type": "field",
+      "name": "PE Signature",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 0,
+      "length": 4,
+      "color": "#FF4444",
+      "opacity": 0.4,
+      "description": "PE\\0\\0 signature (0x00004550 LE) confirming this is a valid Portable Executable",
+      "storeAs": "peSignature",
+      "valueType": "uint32",
+      "validation": {
+        "expectedValue": "0x00004550"
+      }
+    },
+    {
+      "type": "field",
+      "name": "COFF Machine",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 4,
+      "length": 2,
+      "color": "#45B7D1",
+      "opacity": 0.3,
+      "description": "Target machine architecture for this executable image",
+      "storeAs": "coffMachine",
+      "valueType": "uint16",
+      "valueMap": {
+        "0": "IMAGE_FILE_MACHINE_UNKNOWN",
+        "332": "IMAGE_FILE_MACHINE_I386 (x86)",
+        "512": "IMAGE_FILE_MACHINE_IA64 (Intel Itanium)",
+        "34404": "IMAGE_FILE_MACHINE_AMD64 (x64)",
+        "43620": "IMAGE_FILE_MACHINE_ARM64 (AArch64)",
+        "452": "IMAGE_FILE_MACHINE_ARMNT (ARM Thumb-2 LE)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Number of Sections",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 6,
+      "length": 2,
+      "color": "#96CEB4",
+      "opacity": 0.3,
+      "description": "Number of sections in the section table. Windows loader limits this to 96.",
+      "storeAs": "coffNumberOfSections",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "TimeDateStamp",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 8,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.3,
+      "description": "Unix epoch timestamp indicating when the image was created by the linker",
+      "storeAs": "coffTimeDateStamp",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Pointer to Symbol Table",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 12,
+      "length": 4,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "File offset of the COFF symbol table (0 for PE images, used in COFF object files)",
+      "storeAs": "coffPointerToSymbolTable",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Number of Symbols",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 16,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.3,
+      "description": "Number of entries in the COFF symbol table (0 for PE images)",
+      "storeAs": "coffNumberOfSymbols",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Size of Optional Header",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 20,
+      "length": 2,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "Size of the Optional Header in bytes. Required for PE executables (typically 0xE0 for PE32, 0xF0 for PE32+).",
+      "storeAs": "coffSizeOfOptionalHeader",
+      "valueType": "uint16"
+    },
+    {
+      "type": "field",
+      "name": "Characteristics",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 22,
+      "length": 2,
+      "color": "#F7DC6F",
+      "opacity": 0.3,
+      "description": "Flags indicating attributes of the PE file such as whether it is a DLL, executable, or supports large addresses",
+      "storeAs": "coffCharacteristics",
+      "valueType": "uint16",
+      "bitfields": [
+        {
+          "bit": 0,
+          "name": "RELOCS_STRIPPED",
+          "description": "Relocation information was stripped from the file",
+          "valueMap": {
+            "0": "Relocations present",
+            "1": "Relocations stripped"
+          }
+        },
+        {
+          "bit": 1,
+          "name": "EXECUTABLE_IMAGE",
+          "description": "File is a valid executable image (no unresolved external references)",
+          "valueMap": {
+            "0": "Not executable",
+            "1": "Executable image"
+          }
+        },
+        {
+          "bit": 5,
+          "name": "LARGE_ADDRESS_AWARE",
+          "description": "Application can handle addresses larger than 2 GB",
+          "valueMap": {
+            "0": "Not large-address aware",
+            "1": "Large-address aware"
+          }
+        },
+        {
+          "bit": 8,
+          "name": "32BIT_MACHINE",
+          "description": "Machine is based on a 32-bit word architecture",
+          "valueMap": {
+            "0": "Not 32-bit only",
+            "1": "32-bit machine"
+          }
+        },
+        {
+          "bit": 9,
+          "name": "DEBUG_STRIPPED",
+          "description": "Debugging information has been removed from the image file",
+          "valueMap": {
+            "0": "Debug info may be present",
+            "1": "Debug info stripped"
+          }
+        },
+        {
+          "bit": 13,
+          "name": "DLL",
+          "description": "Image is a Dynamic Link Library (DLL) rather than an executable program",
+          "valueMap": {
+            "0": "Not a DLL",
+            "1": "DLL"
+          }
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Optional Header Magic",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 24,
+      "length": 2,
+      "color": "#FF6B6B",
+      "opacity": 0.35,
+      "description": "Magic number identifying the PE format variant: PE32 (32-bit) or PE32+ (64-bit)",
+      "storeAs": "optionalMagic",
+      "valueType": "uint16",
+      "valueMap": {
+        "267": "PE32 (32-bit executable)",
+        "523": "PE32+ (64-bit executable)",
+        "263": "ROM image"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Major Linker Version",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 26,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "Major version number of the linker that produced the image",
+      "storeAs": "majorLinkerVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Minor Linker Version",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 27,
+      "length": 1,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "Minor version number of the linker that produced the image",
+      "storeAs": "minorLinkerVersion",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Size of Code",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 28,
+      "length": 4,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Total size of all code sections (.text) in bytes, rounded up to a multiple of FileAlignment",
+      "storeAs": "sizeOfCode",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Size of Initialized Data",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 32,
+      "length": 4,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Total size of all initialized data sections (.data, .rdata) in bytes",
+      "storeAs": "sizeOfInitializedData",
+      "valueType": "uint32"
+    },
+    {
+      "type": "field",
+      "name": "Address of Entry Point",
+      "offsetFrom": "peHeaderOffset",
+      "offsetAdd": 40,
+      "length": 4,
+      "color": "#FF4444",
+      "opacity": 0.35,
+      "description": "Relative Virtual Address (RVA) of the entry point function. For executables this is the start address; for DLLs this is DllMain.",
+      "storeAs": "addressOfEntryPoint",
+      "valueType": "uint32"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "DOS Header Size (bytes)",
+      "expression": "headerParagraphs * 16",
+      "storeAs": "headerSizeBytes",
+      "description": "Calculated size of the DOS header in bytes from the paragraph count (paragraphs x 16)"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Is DLL Flag",
+      "expression": "(coffCharacteristics & 8192) != 0",
+      "storeAs": "isDLL",
+      "description": "Determines if the PE file is a DLL by checking bit 13 of the COFF Characteristics flags"
+    },
+    {
+      "type": "conditional",
+      "name": "DLL Detection",
+      "condition": "(coffCharacteristics & 8192) != 0",
+      "trueLabel": "This file is a Dynamic Link Library (DLL)",
+      "falseLabel": "This file is a standard executable (EXE)",
+      "description": "Checks the DLL flag (bit 13) in COFF Characteristics to determine if the image is a DLL or EXE"
+    },
+    {
+      "type": "conditional",
+      "name": "PE Format Detection",
+      "condition": "optionalMagic == 523",
+      "trueLabel": "64-bit PE32+ executable",
+      "falseLabel": "32-bit PE32 executable",
+      "description": "Checks the Optional Header magic number to determine if this is a 32-bit (PE32, 0x10B) or 64-bit (PE32+, 0x20B) image"
     },
     {
       "type": "metadata",
-      "name": "Subsystem",
-      "variable": "peSubsystemName",
-      "description": "Windows subsystem name"
+      "name": "Machine Type",
+      "variable": "coffMachine",
+      "description": "Target CPU architecture for the PE image (e.g., x86, x64, ARM64)"
     },
     {
       "type": "metadata",
-      "name": "64-bit",
+      "name": "Number of Sections",
+      "variable": "coffNumberOfSections",
+      "description": "Total number of sections defined in the PE section table"
+    },
+    {
+      "type": "metadata",
+      "name": "Is DLL",
+      "variable": "isDLL",
+      "description": "true if the PE image is a DLL, false if it is an executable"
+    },
+    {
+      "type": "metadata",
+      "name": "Is 64-bit",
       "variable": "peIs64Bit",
-      "description": "true if PE32+ (64-bit), false if PE32 (32-bit)"
+      "description": "true if PE32+ (64-bit image), false if PE32 (32-bit image)"
     },
     {
       "type": "metadata",
-      "name": "Entry Point",
-      "variable": "peEntryPoint",
-      "description": "Address of entry point (RVA)"
+      "name": "Entry Point (RVA)",
+      "variable": "addressOfEntryPoint",
+      "description": "Relative Virtual Address of the program entry point"
     },
     {
       "type": "metadata",
-      "name": "Section Count",
-      "variable": "peSectionCount",
-      "description": "Number of sections in the PE file"
+      "name": "TimeDateStamp",
+      "variable": "coffTimeDateStamp",
+      "description": "Unix epoch timestamp when the PE image was linked"
     }
   ],
   "software": [
     "Windows OS",
     "Visual Studio",
-    "IDA Pro"
+    "IDA Pro",
+    "PE Explorer",
+    "CFF Explorer"
   ],
   "format_relationships": {
     "category": "Executables",
     "extensions": [
       ".exe",
       ".dll",
-      ".sys"
+      ".sys",
+      ".scr",
+      ".ocx"
     ]
   },
   "MimeTypes": [
@@ -285,24 +578,34 @@
     "application/x-dosexec"
   ],
   "Software": [
-    "Windows"
+    "Windows",
+    "Visual Studio",
+    "IDA Pro",
+    "Ghidra"
   ],
   "UseCases": [
     "Windows executables",
     "Programs",
-    "Applications"
+    "Applications",
+    "Dynamic link libraries",
+    "Device drivers"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 65,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 20,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 38,
+    "ValidationRules": 4,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "ExecutablesFormat": true,
-    "Platform": "Windows"
+    "Platform": "Windows",
+    "Endianness": "little-endian",
+    "DOSHeaderSize": 64,
+    "COFFHeaderSize": 20,
+    "OptionalHeaderMinSize": 96,
+    "VariableOffsetFields": "PE/COFF/Optional headers are located at the offset specified by e_lfanew (offset 60)"
   }
 }

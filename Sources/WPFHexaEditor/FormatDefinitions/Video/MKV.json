@@ -7,7 +7,7 @@
     ".mks",
     ".mk3d"
   ],
-  "description": "Matroska multimedia container (EBML-based) - open standard for video, audio, subtitles",
+  "description": "Matroska is an open-standard multimedia container format based on EBML (Extensible Binary Meta Language). The file begins with an EBML Header element (ID 0x1A45DFA3) containing version information and document type declaration, followed by a Segment element (ID 0x18538067) containing all media data. Each EBML element consists of an Element ID, a VINT-encoded size, and element data.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
   "references": {
@@ -28,8 +28,8 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 32,
-      "max_signature_offset": 0
+      "minFileSize": 32,
+      "maxSignatureOffset": 0
     }
   },
   "variables": {
@@ -37,44 +37,63 @@
     "ebmlSignature": 0,
     "ebmlHeaderSize": 0,
     "ebmlVersionId": 0,
+    "ebmlVersionSizeAndValue": 0,
     "ebmlVersionValue": 0,
     "ebmlReadVersionId": 0,
+    "ebmlReadVersionSizeAndValue": 0,
     "ebmlReadVersionValue": 0,
     "ebmlMaxIdLenId": 0,
+    "ebmlMaxIdLenSizeAndValue": 0,
     "ebmlMaxIdLenValue": 0,
     "ebmlMaxSizeLenId": 0,
+    "ebmlMaxSizeLenSizeAndValue": 0,
     "ebmlMaxSizeLenValue": 0,
     "ebmlDocTypeId": 0,
+    "ebmlDocTypeSize": 0,
+    "ebmlDocTypeVersionId": 0,
+    "ebmlDocTypeVersionSizeAndValue": 0,
+    "ebmlDocTypeReadVersionId": 0,
+    "ebmlDocTypeReadVersionSizeAndValue": 0,
     "mkvDocType": "",
     "mkvDocTypeVersion": 0,
+    "mkvDocTypeReadVersion": 0,
     "mkvEBMLVersion": 0,
-    "totalPixels": 0
+    "mkvEBMLReadVersion": 0,
+    "mkvMaxIdLength": 0,
+    "mkvMaxSizeLength": 0,
+    "totalHeaderBytes": 0,
+    "isWebM": false,
+    "formattedSize": ""
   },
   "functions": {
-    "parseMKVHeader()": "Parse EBML/MKV header structure",
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
+    "parseMKVHeader()": "Parse the complete EBML header structure, extracting all child elements (EBMLVersion, EBMLReadVersion, EBMLMaxIDLength, EBMLMaxSizeLength, DocType, DocTypeVersion, DocTypeReadVersion) using VINT decoding",
+    "computeFromVariables(4 + 1 + ebmlHeaderSize, totalHeaderBytes)": "Calculate total EBML header size including the 4-byte Element ID, VINT-encoded size byte(s), and element data",
+    "formatFileSize(var:totalHeaderBytes)": "Format the total EBML header size as a human-readable string"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "EBML Signature",
+      "name": "EBML Header Element ID",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "EBML magic: 0x1A45DFA3 - identifies Matroska/WebM container",
+      "description": "Four-byte EBML Header Element ID (0x1A45DFA3). This is the root element that must appear at the very beginning of any EBML-based file. It identifies the file as using the EBML framework, which Matroska, WebM, and other formats are built upon.",
       "storeAs": "ebmlSignature",
       "valueType": "uint32",
-      "endianness": "big"
+      "endianness": "big",
+      "validation": {
+        "expectedValue": "0x1A45DFA3"
+      }
     },
     {
       "type": "field",
-      "name": "EBML Header Size",
+      "name": "EBML Header Data Size",
       "offset": 4,
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "VINT-encoded size of EBML header element (variable-length integer)",
+      "description": "VINT-encoded size of the EBML Header element data in bytes. The leading bits indicate the VINT width: 1xxxxxxx = 1 byte, 01xxxxxx xxxxxxxx = 2 bytes, etc. For typical MKV files, this is a single byte with high bit set (e.g., 0x93 = 19 bytes of header data, 0xA3 = 35 bytes).",
       "storeAs": "ebmlHeaderSize",
       "valueType": "uint8"
     },
@@ -85,10 +104,13 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "EBML element ID 0x4286 = EBMLVersion",
+      "description": "EBML element ID 0x4286 identifying the EBMLVersion element. This declares the version of the EBML specification used to create the file. The two-byte ID indicates a Class B element (leading bits 01).",
       "storeAs": "ebmlVersionId",
       "valueType": "uint16",
       "endianness": "big",
+      "validation": {
+        "expectedValue": "0x4286"
+      },
       "valueMap": {
         "17030": "EBMLVersion (0x4286)"
       }
@@ -100,8 +122,8 @@
       "length": 2,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "VINT size (0x81=1 byte) + version number (typically 1)",
-      "storeAs": "ebmlVersionValue",
+      "description": "VINT-encoded size byte followed by the EBMLVersion value. Typically 0x8101: size=0x81 (1 byte of data) followed by value=0x01 (EBML version 1). Version 1 is the only currently defined EBML version.",
+      "storeAs": "ebmlVersionSizeAndValue",
       "valueType": "uint16",
       "endianness": "big"
     },
@@ -112,10 +134,13 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "EBML element ID 0x42F7 = EBMLReadVersion",
+      "description": "EBML element ID 0x42F7 identifying the EBMLReadVersion element. This specifies the minimum EBML version a reader must support to parse this file. Must be less than or equal to EBMLVersion.",
       "storeAs": "ebmlReadVersionId",
       "valueType": "uint16",
       "endianness": "big",
+      "validation": {
+        "expectedValue": "0x42F7"
+      },
       "valueMap": {
         "17143": "EBMLReadVersion (0x42F7)"
       }
@@ -127,8 +152,8 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "VINT size + minimum EBML version to read this file",
-      "storeAs": "ebmlReadVersionValue",
+      "description": "VINT size and EBMLReadVersion value. Typically 0x8101: 1 byte of data with value 1. A reader that supports EBML version 1 can read any file with EBMLReadVersion of 1.",
+      "storeAs": "ebmlReadVersionSizeAndValue",
       "valueType": "uint16",
       "endianness": "big"
     },
@@ -139,10 +164,13 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "EBML element ID 0x42F2 = EBMLMaxIDLength",
+      "description": "EBML element ID 0x42F2 identifying the EBMLMaxIDLength element. This declares the maximum length in octets of the Element IDs used in the file body. The Matroska specification requires this to be 4.",
       "storeAs": "ebmlMaxIdLenId",
       "valueType": "uint16",
-      "endianness": "big"
+      "endianness": "big",
+      "valueMap": {
+        "17138": "EBMLMaxIDLength (0x42F2)"
+      }
     },
     {
       "type": "field",
@@ -151,28 +179,189 @@
       "length": 2,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "VINT size + max element ID length (typically 4 bytes)",
-      "storeAs": "ebmlMaxIdLenValue",
+      "description": "VINT size and EBMLMaxIDLength value. Typically 0x8104: 1 byte of data with value 4, meaning Element IDs can be at most 4 bytes long. This is the standard for Matroska containers.",
+      "storeAs": "ebmlMaxIdLenSizeAndValue",
       "valueType": "uint16",
       "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "EBMLMaxSizeLength Element ID",
+      "offset": 17,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "EBML element ID 0x42F3 identifying the EBMLMaxSizeLength element. This declares the maximum length in octets of Element Data Sizes used in the file body. Matroska requires this to be 8.",
+      "storeAs": "ebmlMaxSizeLenId",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "17139": "EBMLMaxSizeLength (0x42F3)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "EBMLMaxSizeLength Size + Value",
+      "offset": 19,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "VINT size and EBMLMaxSizeLength value. Typically 0x8108: 1 byte of data with value 8, meaning Element Data Sizes can be up to 8 bytes long, allowing elements up to 2^56 - 2 bytes.",
+      "storeAs": "ebmlMaxSizeLenSizeAndValue",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "DocType Element ID",
+      "offset": 21,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "EBML element ID 0x4282 identifying the DocType element. This ASCII string declares the document type contained in the EBML structure: 'matroska' for MKV files, 'webm' for WebM files.",
+      "storeAs": "ebmlDocTypeId",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "17026": "DocType (0x4282)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "DocType Size",
+      "offset": 23,
+      "length": 1,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "VINT-encoded size of the DocType string data. For 'matroska' this is 0x88 (8 bytes), for 'webm' this is 0x84 (4 bytes). The VINT high bit is masked off to get the actual length.",
+      "storeAs": "ebmlDocTypeSize",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "DocTypeVersion Element ID",
+      "offset": 32,
+      "length": 2,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "EBML element ID 0x4287 identifying the DocTypeVersion element. Declares the version of the document type (Matroska specification version) used to create the file. Common values are 1, 2, 3, or 4.",
+      "storeAs": "ebmlDocTypeVersionId",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "17031": "DocTypeVersion (0x4287)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "DocTypeVersion Size + Value",
+      "offset": 34,
+      "length": 2,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "VINT size and DocTypeVersion value. Typically 0x8104 for Matroska v4 or 0x8102 for Matroska v2. Higher versions support more features (e.g., v4 adds WebVTT subtitles, ordered chapters).",
+      "storeAs": "ebmlDocTypeVersionSizeAndValue",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "DocTypeReadVersion Element ID",
+      "offset": 36,
+      "length": 2,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "EBML element ID 0x4285 identifying the DocTypeReadVersion element. The minimum Matroska specification version that a reader must support to play this file. Must be less than or equal to DocTypeVersion.",
+      "storeAs": "ebmlDocTypeReadVersionId",
+      "valueType": "uint16",
+      "endianness": "big",
+      "valueMap": {
+        "17029": "DocTypeReadVersion (0x4285)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "DocTypeReadVersion Size + Value",
+      "offset": 38,
+      "length": 2,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "VINT size and DocTypeReadVersion value. Typically 0x8102 for most MKV files, indicating a reader supporting Matroska v2 or later can parse this file.",
+      "storeAs": "ebmlDocTypeReadVersionSizeAndValue",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total EBML Header Size",
+      "expression": "4 + 1 + ebmlHeaderSize",
+      "storeAs": "totalHeaderBytes",
+      "description": "Calculates the total size of the EBML header in bytes: 4 bytes for the Element ID + VINT size byte(s) + the header data payload. The Segment element begins immediately after this."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "WebM Detection",
+      "expression": "mkvDocType == 'webm' ? 1 : 0",
+      "storeAs": "isWebM",
+      "description": "Determines whether this file is a WebM container (DocType 'webm') rather than standard Matroska (DocType 'matroska'). WebM is a restricted subset of Matroska using only VP8/VP9/AV1 video and Vorbis/Opus audio."
+    },
+    {
+      "type": "conditional",
+      "name": "Container Type Detection",
+      "condition": "isWebM == 1",
+      "trueLabel": "This is a WebM container - a restricted Matroska profile using VP8/VP9/AV1 video with Vorbis/Opus audio, designed for web streaming",
+      "falseLabel": "This is a standard Matroska container supporting any codec combination including H.264, H.265, AV1, AAC, FLAC, and more",
+      "description": "Identifies whether the container is WebM (web-optimized subset) or full Matroska format"
+    },
+    {
+      "type": "conditional",
+      "name": "EBML Version Compatibility",
+      "condition": "mkvEBMLVersion == mkvEBMLReadVersion",
+      "trueLabel": "EBML write version equals read version - maximum compatibility with all EBML parsers",
+      "falseLabel": "EBML write version differs from minimum read version - file may use newer EBML features",
+      "description": "Checks if the EBML version used to write the file matches the minimum required read version"
     },
     {
       "type": "metadata",
       "name": "Container Type",
       "variable": "mkvDocType",
-      "description": "EBML document type (matroska or webm)"
+      "description": "EBML document type string: 'matroska' for MKV or 'webm' for WebM containers"
+    },
+    {
+      "type": "metadata",
+      "name": "DocType Version",
+      "variable": "mkvDocTypeVersion",
+      "description": "Matroska/WebM specification version used to create this file (1-4 for Matroska, 1-4 for WebM)"
+    },
+    {
+      "type": "metadata",
+      "name": "DocType Read Version",
+      "variable": "mkvDocTypeReadVersion",
+      "description": "Minimum Matroska/WebM specification version a reader must support to play this file"
     },
     {
       "type": "metadata",
       "name": "EBML Version",
       "variable": "mkvEBMLVersion",
-      "description": "EBML specification version"
+      "description": "EBML specification version used to create the file (currently always 1)"
     },
     {
       "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Width x Height"
+      "name": "Max Element ID Length",
+      "variable": "mkvMaxIdLength",
+      "description": "Maximum number of bytes used for Element IDs in the file body (Matroska standard: 4)"
+    },
+    {
+      "type": "metadata",
+      "name": "Max Element Size Length",
+      "variable": "mkvMaxSizeLength",
+      "description": "Maximum number of bytes used for Element Data Sizes in the file body (Matroska standard: 8)"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Header Size",
+      "variable": "totalHeaderBytes",
+      "description": "Total size of the EBML header in bytes, after which the Segment element begins"
     }
   ],
   "MimeTypes": [
@@ -195,10 +384,10 @@
     "Blu-ray remux"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 50,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 11,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 27,
+    "ValidationRules": 3,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
@@ -206,8 +395,14 @@
   "TechnicalDetails": {
     "VideoFormat": true,
     "primary_extension": ".mkv",
-    "defined_fields": 11,
-    "Container": "Matroska (EBML)",
-    "max_resolution": "Unlimited"
+    "Endianness": "big-endian (EBML uses network byte order for Element IDs)",
+    "Container": "Matroska (EBML-based)",
+    "VINTEncoding": "Variable-length integer encoding with leading-bit length indicator",
+    "max_resolution": "Unlimited",
+    "SupportsChapters": true,
+    "SupportsSubtitles": true,
+    "SupportsMultipleAudioTracks": true,
+    "SupportsAttachments": true,
+    "StreamingCapable": true
   }
 }

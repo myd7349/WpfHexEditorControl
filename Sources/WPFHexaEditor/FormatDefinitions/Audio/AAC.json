@@ -1,10 +1,10 @@
 {
   "formatName": "AAC Audio",
-  "version": "2.0",
+  "version": "3.0",
   "extensions": [
     ".aac"
   ],
-  "description": "Advanced Audio Coding (ADTS framing) - high-quality lossy audio codec (ISO/IEC 13818-7, MPEG-2/4)",
+  "description": "Advanced Audio Coding with ADTS (Audio Data Transport Stream) framing - high-quality lossy audio codec standardized in ISO/IEC 13818-7 (MPEG-2) and ISO/IEC 14496-3 (MPEG-4). Each ADTS frame begins with a 7-byte header (or 9 bytes with CRC) containing a 12-bit sync word, MPEG version, profile, sample rate, channel configuration, and frame length. AAC achieves better sound quality than MP3 at similar bitrates.",
   "category": "Audio",
   "author": "WPFHexaEditor Team",
   "references": {
@@ -32,7 +32,6 @@
   "variables": {
     "currentOffset": 0,
     "adtsSyncWord": 0,
-    "adtsHeader1": 0,
     "adtsId": 0,
     "adtsLayer": 0,
     "adtsProtection": 0,
@@ -40,90 +39,117 @@
     "adtsProfile": 0,
     "adtsSamplingIndex": 0,
     "adtsPrivate": 0,
-    "adtsChannelConfig": 0,
+    "adtsChannelHigh": 0,
     "adtsHeader3": 0,
-    "adtsFrameLength": 0,
+    "adtsChannelLow": 0,
+    "adtsOriginal": 0,
+    "adtsHome": 0,
+    "adtsCopyrightId": 0,
+    "adtsCopyrightStart": 0,
+    "adtsHeader4": 0,
+    "adtsFrameLenHigh": 0,
+    "adtsHeader5": 0,
+    "adtsFrameLenMid": 0,
+    "adtsHeader6": 0,
+    "adtsBufferFullnessLow": 0,
+    "rawDataBlocks": 0,
+    "crcCheck": 0,
+    "channelConfig": 0,
     "sampleRate": 0,
     "channels": 0,
-    "samplesPerSecond": 0
+    "frameLength": 0,
+    "samplesPerSecond": 0,
+    "estimatedBitrate": 0,
+    "estimatedDuration": 0,
+    "formattedSize": ""
   },
   "functions": {
-    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate total samples per second",
+    "formatFileSize(var:frameLength)": "Format ADTS frame length as human-readable string with units",
+    "computeFromVariables(sampleRate * channels, samplesPerSecond)": "Calculate total samples per second across all channels",
     "validateFieldRange(adtsProfile, 0, 3)": "Validate AAC profile (0=Main, 1=LC, 2=SSR, 3=LTP)",
-    "validateFieldRange(adtsSamplingIndex, 0, 12)": "Validate sampling frequency index"
+    "validateFieldRange(adtsSamplingIndex, 0, 12)": "Validate sampling frequency index (0-12 are defined rates)",
+    "validateFieldRange(channelConfig, 0, 7)": "Validate channel configuration (0-7 are defined layouts)"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "ADTS Sync Word",
+      "name": "ADTS Sync Word + Fixed Header (bytes 0-1)",
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "ADTS frame sync (0xFFF) + header bits",
+      "description": "ADTS fixed header first 16 bits: 12-bit sync word (all 1s = 0xFFF), MPEG ID bit, 2-bit layer (always 00), and protection absent bit. The sync word 0xFFF allows decoders to find frame boundaries in a continuous stream.",
       "storeAs": "adtsSyncWord",
       "valueType": "uint16",
       "endianness": "big",
+      "validation": {
+        "expectedValue": "FFF1"
+      },
       "bitfields": [
+        {
+          "name": "Sync Word",
+          "bits": "15-4",
+          "description": "12-bit synchronization pattern, all bits set to 1 (0xFFF). Decoders scan for this pattern to locate ADTS frame boundaries."
+        },
         {
           "name": "MPEG ID",
           "bits": "3",
           "storeAs": "adtsId",
-          "description": "MPEG version identifier",
+          "description": "MPEG version identifier. Determines which MPEG standard the AAC stream conforms to.",
           "valueMap": {
-            "0": "MPEG-4",
-            "1": "MPEG-2"
+            "0": "MPEG-4 (ISO/IEC 14496-3)",
+            "1": "MPEG-2 (ISO/IEC 13818-7)"
           }
         },
         {
           "name": "Layer",
           "bits": "2-1",
           "storeAs": "adtsLayer",
-          "description": "Must be 00",
+          "description": "MPEG layer. Always set to 00 for AAC. Non-zero values would indicate MP1/MP2/MP3 which use different header formats.",
           "valueMap": {
-            "0": "AAC"
+            "0": "AAC (always 0)"
           }
         },
         {
           "name": "Protection Absent",
           "bits": "0",
           "storeAs": "adtsProtection",
-          "description": "CRC protection",
+          "description": "CRC error protection flag. When 0, a 16-bit CRC follows the header (9-byte header total). When 1, no CRC (7-byte header).",
           "valueMap": {
-            "0": "CRC present",
-            "1": "No CRC"
+            "0": "CRC present (9-byte header)",
+            "1": "No CRC (7-byte header)"
           }
         }
       ]
     },
     {
       "type": "field",
-      "name": "ADTS Header Byte 3",
+      "name": "Profile + Sample Rate + Channel (byte 2)",
       "offset": 2,
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
       "valueType": "uint8",
       "storeAs": "adtsHeader2",
-      "description": "Profile + Sampling Freq Index + Private + Channel (high)",
+      "description": "ADTS fixed header byte 3: AAC profile (bits 7-6), sampling frequency index (bits 5-2), private bit (bit 1), and high bit of channel configuration (bit 0). The profile determines the decoder complexity required.",
       "bitfields": [
         {
-          "name": "AAC Profile",
+          "name": "AAC Profile (Object Type - 1)",
           "bits": "7-6",
           "storeAs": "adtsProfile",
-          "description": "Audio Object Type minus 1",
+          "description": "AAC Audio Object Type minus 1. Determines the encoding tools and complexity level used. LC is the most common profile for streaming and portable devices.",
           "valueMap": {
-            "0": "Main",
-            "1": "LC (Low Complexity)",
-            "2": "SSR (Scalable Sample Rate)",
-            "3": "LTP (Long Term Prediction)"
+            "0": "AAC Main (full complexity)",
+            "1": "AAC LC (Low Complexity - most common)",
+            "2": "AAC SSR (Scalable Sample Rate)",
+            "3": "AAC LTP (Long Term Prediction)"
           }
         },
         {
           "name": "Sampling Frequency Index",
           "bits": "5-2",
           "storeAs": "adtsSamplingIndex",
-          "description": "Sample rate code",
+          "description": "Index into the standard MPEG sampling frequency table. Determines the audio sample rate for all channels in this frame.",
           "valueMap": {
             "0": "96000 Hz",
             "1": "88200 Hz",
@@ -137,87 +163,276 @@
             "9": "12000 Hz",
             "10": "11025 Hz",
             "11": "8000 Hz",
-            "12": "7350 Hz"
+            "12": "7350 Hz",
+            "13": "Reserved",
+            "14": "Reserved",
+            "15": "Explicit frequency (forbidden in ADTS)"
           }
         },
         {
           "name": "Private Bit",
           "bits": "1",
-          "storeAs": "adtsPrivate"
+          "storeAs": "adtsPrivate",
+          "description": "Private bit for application-specific use. Not defined by the MPEG standard."
         },
         {
-          "name": "Channel Config (high bit)",
+          "name": "Channel Configuration (MSB)",
           "bits": "0",
           "storeAs": "adtsChannelHigh",
-          "description": "MSB of channel configuration"
+          "description": "Most significant bit of the 3-bit channel configuration field. Combined with bits 7-6 of the next byte to form the full channel config value."
         }
       ]
     },
     {
       "type": "field",
-      "name": "ADTS Header Byte 4",
+      "name": "Channel Config + Flags (byte 3)",
       "offset": 3,
       "length": 1,
       "color": "#FFE66D",
       "opacity": 0.3,
       "valueType": "uint8",
       "storeAs": "adtsHeader3",
-      "description": "Channel config (low) + originality + home + copyright + frame length (high)",
+      "description": "Channel configuration low bits (7-6), original/copy flag (5), home flag (4), copyright ID bit (3), copyright start (2), and high 2 bits of the 13-bit frame length (1-0). This byte spans both fixed and variable header portions.",
       "bitfields": [
         {
-          "name": "Channel Config (low bits)",
+          "name": "Channel Configuration (low 2 bits)",
           "bits": "7-6",
           "storeAs": "adtsChannelLow",
-          "description": "Lower 2 bits of channel configuration"
+          "description": "Lower 2 bits of the 3-bit channel configuration. Full value (with MSB from previous byte) determines the audio channel layout.",
+          "valueMap": {
+            "0": "(see combined channel config)",
+            "1": "1 channel: Center (Mono)",
+            "2": "2 channels: L + R (Stereo)",
+            "3": "3 channels: L + C + R",
+            "4": "4 channels: L + C + R + Rear",
+            "5": "5 channels: L + C + R + SL + SR",
+            "6": "6 channels: L + C + R + SL + SR + LFE (5.1)",
+            "7": "8 channels: L + C + R + SL + SR + BL + BR + LFE (7.1)"
+          }
+        },
+        {
+          "name": "Originality",
+          "bits": "5",
+          "storeAs": "adtsOriginal",
+          "description": "Set to 1 if this is an original recording, 0 if a copy.",
+          "valueMap": {
+            "0": "Copy",
+            "1": "Original"
+          }
+        },
+        {
+          "name": "Home",
+          "bits": "4",
+          "storeAs": "adtsHome",
+          "description": "Set to 1 if this is a home-use recording (non-broadcast).",
+          "valueMap": {
+            "0": "Not home use",
+            "1": "Home use"
+          }
+        },
+        {
+          "name": "Copyright ID Bit",
+          "bits": "3",
+          "storeAs": "adtsCopyrightId",
+          "description": "One bit of the 72-bit MPEG copyright identification. Transmitted one bit per frame across 72 frames."
+        },
+        {
+          "name": "Copyright Start",
+          "bits": "2",
+          "storeAs": "adtsCopyrightStart",
+          "description": "Set to 1 at the start of the copyright ID transmission sequence.",
+          "valueMap": {
+            "0": "Not start of sequence",
+            "1": "Start of copyright ID sequence"
+          }
+        },
+        {
+          "name": "Frame Length (bits 12-11)",
+          "bits": "1-0",
+          "storeAs": "adtsFrameLenHigh",
+          "description": "Highest 2 bits of the 13-bit ADTS frame length field. Frame length includes header and CRC if present."
         }
       ]
     },
     {
       "type": "field",
-      "name": "Frame Length (high byte)",
+      "name": "Frame Length Middle Byte (byte 4)",
       "offset": 4,
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
       "valueType": "uint8",
-      "storeAs": "frameLenHigh",
-      "description": "Frame length bits 12-5 (13-bit field spans bytes 4-5-6)"
-    },
-    {
-      "type": "field",
-      "name": "Frame Length (low byte) + Buffer Fullness",
-      "offset": 5,
-      "length": 1,
-      "color": "#95E1D3",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "frameLenLow",
-      "description": "Frame length bits 4-0 + buffer fullness bits 10-6"
-    },
-    {
-      "type": "field",
-      "name": "Buffer Fullness + AAC Frames",
-      "offset": 6,
-      "length": 1,
-      "color": "#C7CEEA",
-      "opacity": 0.3,
-      "valueType": "uint8",
-      "storeAs": "bufferAndFrames",
-      "description": "Buffer fullness (low) + number of raw data blocks in frame",
+      "storeAs": "adtsHeader4",
+      "description": "Middle 8 bits (bits 10-3) of the 13-bit frame length. The full frame length spans bytes 3-5 and includes the ADTS header itself plus the raw AAC frame data.",
       "bitfields": [
         {
-          "name": "Raw Data Blocks",
-          "bits": "1-0",
-          "storeAs": "rawDataBlocks",
-          "description": "Number of AAC frames minus 1 (usually 0 = 1 frame)"
+          "name": "Frame Length (bits 10-3)",
+          "bits": "7-0",
+          "storeAs": "adtsFrameLenMid",
+          "description": "Middle 8 bits of the 13-bit frame length field. Combined with bits from bytes 3 and 5 to compute total frame size in bytes."
         }
       ]
     },
     {
+      "type": "field",
+      "name": "Frame Length Low + Buffer Fullness High (byte 5)",
+      "offset": 5,
+      "length": 1,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "valueType": "uint8",
+      "storeAs": "adtsHeader5",
+      "description": "Lowest 3 bits of frame length (bits 7-5) and highest 5 bits of the 11-bit buffer fullness field (bits 4-0). Buffer fullness indicates the state of the bit reservoir at the start of this frame.",
+      "bitfields": [
+        {
+          "name": "Frame Length (bits 2-0)",
+          "bits": "7-5",
+          "description": "Lowest 3 bits of the 13-bit frame length. Full frame length = (byte3[1:0] << 11) | (byte4 << 3) | (byte5[7:5])."
+        },
+        {
+          "name": "Buffer Fullness (bits 10-6)",
+          "bits": "4-0",
+          "description": "Upper 5 bits of the 11-bit ADTS buffer fullness field. Value of 0x7FF indicates variable bitrate (VBR) mode."
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Buffer Fullness Low + Raw Data Blocks (byte 6)",
+      "offset": 6,
+      "length": 1,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "valueType": "uint8",
+      "storeAs": "adtsHeader6",
+      "description": "Lower 6 bits of buffer fullness (bits 7-2) and number of raw data blocks minus 1 (bits 1-0). Most ADTS frames contain exactly 1 raw data block (value = 0).",
+      "bitfields": [
+        {
+          "name": "Buffer Fullness (bits 5-0)",
+          "bits": "7-2",
+          "storeAs": "adtsBufferFullnessLow",
+          "description": "Lower 6 bits of the 11-bit buffer fullness. Value of 0x7FF (all 11 bits set) signals VBR encoding."
+        },
+        {
+          "name": "Number of Raw Data Blocks - 1",
+          "bits": "1-0",
+          "storeAs": "rawDataBlocks",
+          "description": "Number of AAC raw data blocks in this ADTS frame minus 1. Value of 0 means 1 block (1024 samples per channel), value of 3 means 4 blocks (4096 samples).",
+          "valueMap": {
+            "0": "1 raw data block (1024 samples)",
+            "1": "2 raw data blocks (2048 samples)",
+            "2": "3 raw data blocks (3072 samples)",
+            "3": "4 raw data blocks (4096 samples)"
+          }
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "CRC Check (optional)",
+      "offset": 7,
+      "length": 2,
+      "color": "#FF8C69",
+      "opacity": 0.3,
+      "valueType": "uint16",
+      "endianness": "big",
+      "storeAs": "crcCheck",
+      "description": "16-bit CRC error check. Present only when Protection Absent bit (byte 0, bit 0) is 0. Covers the raw data block(s) in the frame. If Protection Absent = 1, this field is absent and raw data begins at byte 7.",
+      "note": "Only present when adtsProtection == 0 (CRC present)"
+    },
+    {
+      "type": "field",
+      "name": "AAC Raw Data Block Start",
+      "offset": 7,
+      "length": 1,
+      "color": "#87CEEB",
+      "opacity": 0.25,
+      "valueType": "uint8",
+      "storeAs": "rawDataStart",
+      "description": "First byte of the AAC raw data block (when no CRC) or first byte after CRC. Contains syntactic element ID (3 bits) identifying the channel element type: SCE (single), CPE (channel pair), CCE (coupling), LFE, DSE (data), PCE (program config), FIL (fill), or END.",
+      "bitfields": [
+        {
+          "name": "Syntactic Element ID",
+          "bits": "7-5",
+          "description": "Identifies the type of AAC syntactic element that follows.",
+          "valueMap": {
+            "0": "SCE - Single Channel Element",
+            "1": "CPE - Channel Pair Element",
+            "2": "CCE - Coupling Channel Element",
+            "3": "LFE - Low Frequency Effects Element",
+            "4": "DSE - Data Stream Element",
+            "5": "PCE - Program Config Element",
+            "6": "FIL - Fill Element",
+            "7": "END - Terminator"
+          }
+        }
+      ]
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Estimated Bitrate",
+      "expression": "frameLength > 0 && sampleRate > 0 ? (frameLength * 8 * sampleRate / 1024) / 1000 : 0",
+      "storeAs": "estimatedBitrate",
+      "description": "Estimated bitrate in kbps computed from frame length and sample rate. Each AAC-LC frame encodes 1024 samples, so bitrate = (frameLength * 8 * sampleRate) / (1024 * 1000)."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Estimated Duration",
+      "expression": "estimatedBitrate > 0 ? (fileSize * 8 / (estimatedBitrate * 1000)) : 0",
+      "storeAs": "estimatedDuration",
+      "description": "Estimated playback duration in seconds from file size and bitrate. Approximate for VBR streams where bitrate varies per frame."
+    },
+    {
+      "type": "conditional",
+      "name": "MPEG Version Check",
+      "condition": "adtsId == 0",
+      "trueLabel": "MPEG-4 AAC (ISO/IEC 14496-3) - supports SBR, PS, and advanced features",
+      "falseLabel": "MPEG-2 AAC (ISO/IEC 13818-7) - original AAC specification",
+      "description": "Determines which MPEG standard this AAC stream conforms to. MPEG-4 AAC adds Spectral Band Replication (SBR/HE-AAC) and Parametric Stereo (PS/HE-AACv2) tools."
+    },
+    {
+      "type": "conditional",
+      "name": "CRC Protection Check",
+      "condition": "adtsProtection == 0",
+      "trueLabel": "CRC protected - 16-bit CRC present after 7-byte header (9 bytes total)",
+      "falseLabel": "No CRC protection - raw data follows 7-byte header directly",
+      "description": "Checks whether the ADTS frame includes a 16-bit CRC for error detection. Most streaming AAC files omit CRC to save bandwidth."
+    },
+    {
       "type": "metadata",
-      "name": "Samples/Second",
-      "variable": "samplesPerSecond",
-      "description": "Total samples per second across all channels"
+      "name": "AAC Profile",
+      "variable": "adtsProfile",
+      "description": "AAC Audio Object Type: Main (full), LC (Low Complexity, most common), SSR (Scalable), or LTP (Long Term Prediction)"
+    },
+    {
+      "type": "metadata",
+      "name": "Sample Rate (Hz)",
+      "variable": "sampleRate",
+      "description": "Audio sample rate in Hertz derived from the sampling frequency index (96000-7350 Hz)"
+    },
+    {
+      "type": "metadata",
+      "name": "Channel Configuration",
+      "variable": "channelConfig",
+      "description": "Audio channel layout: 1=Mono, 2=Stereo, 3=L+C+R, 6=5.1 surround, 7=7.1 surround"
+    },
+    {
+      "type": "metadata",
+      "name": "MPEG Version",
+      "variable": "adtsId",
+      "description": "MPEG specification version: 0=MPEG-4, 1=MPEG-2"
+    },
+    {
+      "type": "metadata",
+      "name": "Estimated Bitrate (kbps)",
+      "variable": "estimatedBitrate",
+      "description": "Estimated audio bitrate in kilobits per second derived from first frame length"
+    },
+    {
+      "type": "metadata",
+      "name": "Frame Length (bytes)",
+      "variable": "frameLength",
+      "description": "Total ADTS frame length in bytes including header, CRC (if present), and raw data block(s)"
     }
   ],
   "MimeTypes": [
@@ -240,10 +455,10 @@
     "Streaming"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 62,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 8,
-    "ValidationRules": 3,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 20,
+    "ValidationRules": 5,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
@@ -251,8 +466,12 @@
   "TechnicalDetails": {
     "AudioFormat": true,
     "primary_extension": ".aac",
-    "defined_fields": 8,
-    "sample_rates": "8000-96000 Hz",
-    "max_channels": "7.1"
+    "defined_fields": 20,
+    "sample_rates": "7350-96000 Hz",
+    "max_channels": "7.1 (8 channels)",
+    "ADTSHeaderSize": "7 bytes (no CRC) or 9 bytes (with CRC)",
+    "SamplesPerFrame": 1024,
+    "Endianness": "big-endian",
+    "SyncPattern": "0xFFF (12 bits)"
   }
 }

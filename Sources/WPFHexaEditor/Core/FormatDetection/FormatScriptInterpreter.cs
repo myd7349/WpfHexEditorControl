@@ -59,11 +59,11 @@ namespace WpfHexaEditor.Core.FormatDetection
         {
             if (functions == null || functions.Count == 0)
             {
-                System.Diagnostics.Debug.WriteLine("[ExecuteFunctions] No functions to execute");
+                //System.Diagnostics.Debug.WriteLine("[ExecuteFunctions] No functions to execute");
                 return;
             }
 
-            System.Diagnostics.Debug.WriteLine($"[ExecuteFunctions] Executing {functions.Count} functions");
+            //System.Diagnostics.Debug.WriteLine($"[ExecuteFunctions] Executing {functions.Count} functions");
 
             var builtInFunctions = new BuiltInFunctions(_data, _variables, _byteProvider);
 
@@ -71,7 +71,7 @@ namespace WpfHexaEditor.Core.FormatDetection
             {
                 try
                 {
-                    System.Diagnostics.Debug.WriteLine($"  Executing function: {function.Key}");
+                    //System.Diagnostics.Debug.WriteLine($"  Executing function: {function.Key}");
 
                     // Parse function name and parameters
                     // Supports: "functionName" or "functionName(arg1, arg2, ...)"
@@ -142,11 +142,11 @@ namespace WpfHexaEditor.Core.FormatDetection
                 }
             }
 
-            System.Diagnostics.Debug.WriteLine($"[ExecuteFunctions] Variables after execution: {_variables.Count}");
-            foreach (var v in _variables)
-            {
-                System.Diagnostics.Debug.WriteLine($"  {v.Key} = {v.Value}");
-            }
+            //System.Diagnostics.Debug.WriteLine($"[ExecuteFunctions] Variables after execution: {_variables.Count}");
+            //foreach (var v in _variables)
+            //{
+            //    System.Diagnostics.Debug.WriteLine($"  {v.Key} = {v.Value}");
+            //}
         }
 
         /// <summary>

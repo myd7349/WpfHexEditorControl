@@ -5,7 +5,7 @@
     ".mov",
     ".qt"
   ],
-  "description": "Apple QuickTime Movie - atom/box-based multimedia container (ISO Base Media File Format ancestor)",
+  "description": "Apple QuickTime Movie format based on the atom/box container structure that became the ancestor of ISO Base Media File Format (ISOBMFF). Files typically begin with a File Type Box (ftyp) with major brand 'qt  ', though legacy MOV files may start with 'moov', 'wide', or 'mdat' atoms. All data is organized in nested atoms, each prefixed by a 32-bit size and 4-byte type code.",
   "category": "Video",
   "author": "WPFHexaEditor Team",
   "references": {
@@ -26,8 +26,9 @@
     "offset": 4,
     "required": false,
     "validation": {
-      "min_file_size": 8,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "maxSignatureOffset": 1024,
+      "expectedValue": "0x6674797071742020"
     }
   },
   "variables": {
@@ -35,12 +36,24 @@
     "firstAtomSize": 0,
     "firstAtomType": "",
     "ftypBrand": "",
+    "brandName": "",
     "ftypMinorVer": 0,
-    "compatBrands": "",
-    "totalPixels": 0
+    "compatBrand1": "",
+    "compatBrand2": "",
+    "compatBrand3": "",
+    "compatBrand4": "",
+    "nextAtomSize": 0,
+    "nextAtomType": "",
+    "nextAtomTypeName": "",
+    "payloadSize": 0,
+    "totalFileSize": 0,
+    "formattedFileSize": "",
+    "isLegacyFormat": false,
+    "hasExtendedSize": false
   },
   "functions": {
-    "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
+    "formatFileSize(var:totalFileSize)": "Format total file size as human-readable string (KB/MB/GB)",
+    "computeFromVariables(firstAtomSize - 8, payloadSize)": "Calculate ftyp atom payload size by subtracting atom header overhead"
   },
   "blocks": [
     {
@@ -50,7 +63,7 @@
       "length": 4,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Size of first atom in bytes (big-endian 32-bit). 0=extends to EOF, 1=64-bit extended size follows.",
+      "description": "Size of the first atom in bytes, stored as a big-endian unsigned 32-bit integer. This includes the 8-byte atom header (size + type) plus payload. A value of 0 means the atom extends to end-of-file; a value of 1 means a 64-bit extended size follows the type field.",
       "storeAs": "firstAtomSize",
       "valueType": "uint32",
       "endianness": "big"
@@ -62,30 +75,40 @@
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Atom type FourCC: 'ftyp'=File Type Box, 'moov'=Movie, 'wide'=Wide, 'mdat'=Media Data",
+      "description": "Four-byte ASCII atom type code. For modern QuickTime files this is 'ftyp' (0x66747970) indicating a File Type Box. Legacy MOV files may start with 'moov' (movie metadata), 'wide' (wide atom placeholder), or 'mdat' (media data) instead.",
       "storeAs": "firstAtomType",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "valueMap": {
+        "ftyp": "File Type Box (modern)",
+        "moov": "Movie Metadata (legacy)",
+        "wide": "Wide Atom Placeholder (legacy)",
+        "mdat": "Media Data (legacy)",
+        "free": "Free Space"
+      }
     },
     {
       "type": "field",
       "name": "Major Brand",
       "offset": 8,
       "length": 4,
-      "color": "#FFE66D",
+      "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "ftyp major brand FourCC identifying the best-use specification",
+      "description": "Four-character brand code (FourCC) identifying the best-use specification for this file. For QuickTime movies this is typically 'qt  ' (0x71742020). Present only when the first atom is ftyp.",
       "storeAs": "ftypBrand",
       "valueType": "ascii",
       "valueMap": {
-        "qt  ": "QuickTime",
-        "isom": "ISO Base Media (MP4)",
-        "mp41": "MP4 v1",
-        "mp42": "MP4 v2",
-        "M4V ": "iTunes Video",
-        "M4A ": "iTunes Audio",
+        "qt  ": "Apple QuickTime",
+        "isom": "ISO Base Media File Format",
+        "iso2": "ISO Base Media v2",
+        "mp41": "MPEG-4 Part 14 v1",
+        "mp42": "MPEG-4 Part 14 v2",
+        "M4V ": "Apple iTunes Video",
+        "M4A ": "Apple iTunes Audio (AAC)",
+        "avc1": "AVC/H.264 Video",
+        "MSNV": "Sony PSP Video",
         "3gp4": "3GPP Release 4",
-        "avc1": "AVC/H.264",
-        "dash": "MPEG-DASH"
+        "3gp5": "3GPP Release 5",
+        "dash": "MPEG-DASH Streaming"
       },
       "mappedValueStoreAs": "brandName"
     },
@@ -94,29 +117,165 @@
       "name": "Minor Version",
       "offset": 12,
       "length": 4,
-      "color": "#95E1D3",
+      "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Minor version of the major brand (informational, big-endian)",
+      "description": "Minor version of the major brand specification, stored as a big-endian unsigned 32-bit integer. For QuickTime brand 'qt  ', Apple uses this to encode the QuickTime version (e.g., 0x00000200 = QuickTime 2.0). A value of 0 typically indicates the base version.",
       "storeAs": "ftypMinorVer",
       "valueType": "uint32",
       "endianness": "big"
     },
     {
       "type": "field",
-      "name": "Compatible Brands",
+      "name": "Compatible Brand 1",
       "offset": 16,
-      "length": 16,
+      "length": 4,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "List of compatible brand FourCCs (4 bytes each, up to 4 shown)",
-      "storeAs": "compatBrands",
+      "description": "First compatible brand FourCC. Lists additional specifications this file complies with. QuickTime files often list 'qt  ' here along with ISO base media brands for broader player compatibility.",
+      "storeAs": "compatBrand1",
+      "valueType": "ascii",
+      "valueMap": {
+        "qt  ": "QuickTime",
+        "isom": "ISO Base Media",
+        "iso2": "ISO Base Media v2",
+        "mp41": "MP4 v1",
+        "mp42": "MP4 v2",
+        "avc1": "AVC/H.264",
+        "M4V ": "iTunes Video",
+        "M4A ": "iTunes Audio"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Compatible Brand 2",
+      "offset": 20,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "Second compatible brand FourCC. QuickTime files exported from professional Apple tools (Final Cut Pro, Compressor) often include multiple compatible brands for cross-platform playback.",
+      "storeAs": "compatBrand2",
       "valueType": "ascii"
     },
     {
+      "type": "field",
+      "name": "Compatible Brand 3",
+      "offset": 24,
+      "length": 4,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Third compatible brand FourCC, if present. The number of compatible brands depends on the ftyp atom size: count = (atomSize - 16) / 4.",
+      "storeAs": "compatBrand3",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Compatible Brand 4",
+      "offset": 28,
+      "length": 4,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "Fourth compatible brand FourCC, if present within the ftyp atom payload. Professional QuickTime files may list ProRes, HEVC, or other codec-specific brands.",
+      "storeAs": "compatBrand4",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Next Atom Size",
+      "offset": 32,
+      "length": 4,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Size of the second atom in the file (at offset = first atom size, shown assuming ftyp is 32 bytes). In QuickTime files this is typically 'moov' (movie metadata with track headers, edit lists, and codec info) or 'wide' (8-byte placeholder preceding a large mdat atom).",
+      "storeAs": "nextAtomSize",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Next Atom Type",
+      "offset": 36,
+      "length": 4,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Four-byte ASCII type of the second atom. Common second atoms in QuickTime: 'moov' (movie metadata), 'wide' (placeholder before large mdat), 'mdat' (media data), 'free' (free space).",
+      "storeAs": "nextAtomType",
+      "valueType": "ascii",
+      "valueMap": {
+        "moov": "Movie Metadata Atom",
+        "mdat": "Media Data Atom",
+        "wide": "Wide Atom (64-bit size placeholder)",
+        "free": "Free Space Atom",
+        "skip": "Skip Atom (Free Space)",
+        "pnot": "Preview Atom (legacy QuickTime)",
+        "uuid": "UUID Extension Atom"
+      },
+      "mappedValueStoreAs": "nextAtomTypeName"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "ftyp Payload Size",
+      "expression": "firstAtomSize - 8",
+      "storeAs": "payloadSize",
+      "description": "Calculates the ftyp atom payload size by subtracting the 8-byte header (4 bytes size + 4 bytes type). The payload contains major brand (4), minor version (4), and compatible brands (variable)."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Legacy Format Detection",
+      "expression": "firstAtomType != 'ftyp' ? 1 : 0",
+      "storeAs": "isLegacyFormat",
+      "description": "Determines if this is a legacy QuickTime file by checking if the first atom is NOT ftyp. Legacy MOV files from older versions of QuickTime may start with moov, wide, or mdat atoms without an ftyp declaration."
+    },
+    {
+      "type": "conditional",
+      "name": "Legacy vs Modern QuickTime",
+      "condition": "firstAtomType == 'ftyp'",
+      "trueLabel": "Modern QuickTime format with ftyp atom declaring brand and compatibility",
+      "falseLabel": "Legacy QuickTime format without ftyp atom - limited brand/version metadata available",
+      "description": "Detects whether this is a modern QuickTime file (with ftyp brand declaration) or a legacy format. Legacy files lack brand information and may not be recognized by non-Apple players."
+    },
+    {
+      "type": "conditional",
+      "name": "Extended Size Detection",
+      "condition": "firstAtomSize == 1",
+      "trueLabel": "This QuickTime file uses 64-bit extended atom sizes (file may exceed 4 GB)",
+      "falseLabel": "This QuickTime file uses standard 32-bit atom sizes",
+      "description": "Checks if the first atom uses a 64-bit extended size field. An atom size of 1 signals that the real size is stored in the next 8 bytes as a 64-bit big-endian integer. Common for large ProRes video files."
+    },
+    {
       "type": "metadata",
-      "name": "Total Pixels",
-      "variable": "totalPixels",
-      "description": "Width x Height (from track header, if parsed)"
+      "name": "Major Brand",
+      "variable": "ftypBrand",
+      "description": "Four-character brand code from the ftyp atom identifying the file's primary specification"
+    },
+    {
+      "type": "metadata",
+      "name": "Brand Description",
+      "variable": "brandName",
+      "description": "Human-readable name of the major brand specification"
+    },
+    {
+      "type": "metadata",
+      "name": "Minor Version",
+      "variable": "ftypMinorVer",
+      "description": "Minor version number of the major brand (encodes QuickTime version for 'qt  ' brand)"
+    },
+    {
+      "type": "metadata",
+      "name": "First Atom Type",
+      "variable": "firstAtomType",
+      "description": "Type of the first atom in the file (ftyp for modern, moov/wide/mdat for legacy)"
+    },
+    {
+      "type": "metadata",
+      "name": "Next Atom Description",
+      "variable": "nextAtomTypeName",
+      "description": "Human-readable description of the second atom following the first atom"
+    },
+    {
+      "type": "metadata",
+      "name": "Formatted File Size",
+      "variable": "formattedFileSize",
+      "description": "Total file size formatted as a human-readable string (KB/MB/GB)"
     }
   ],
   "MimeTypes": [
@@ -136,19 +295,24 @@
     "ProRes workflows"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 47,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 20,
     "ValidationRules": 0,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
+    "Container": "QuickTime (ISO BMFF ancestor)",
     "VideoFormat": true,
-    "primary_extension": ".mov",
-    "defined_fields": 6,
-    "Container": "QuickTime (ISO BMFF)",
-    "Platform": "macOS / iOS"
+    "Endianness": "big-endian (network byte order)",
+    "HeaderSize": "Variable (ftyp atom size, typically 20-40 bytes)",
+    "AtomBasedFormat": true,
+    "Platform": "macOS / iOS",
+    "SupportsProRes": true,
+    "SupportsHEVC": true,
+    "MaxFileSize": "Unlimited (64-bit extended sizes)",
+    "primary_extension": ".mov"
   }
 }

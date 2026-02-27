@@ -1,20 +1,24 @@
 {
   "formatName": "OpenType Font",
-  "version": "1.11",
+  "version": "2.0",
   "extensions": [
     ".otf"
   ],
-  "description": "OpenType font format",
+  "description": "OpenType Font format with CFF (Compact Font Format) outlines - a cross-platform font standard jointly developed by Microsoft and Adobe. Identified by the 'OTTO' signature (0x4F54544F), indicating PostScript/CFF-based outlines (cubic Bezier curves) rather than TrueType quadratic outlines. The file structure mirrors TrueType with an Offset Table header followed by a Table Directory containing 16-byte entries per table. OpenType CFF fonts typically include CFF/CFF2 (outline data), GPOS (glyph positioning for kerning, mark attachment), GSUB (glyph substitution for ligatures, alternates), and GDEF (glyph class definitions) tables for advanced typographic features.",
   "category": "Fonts",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "OpenType Specification",
-      "ISO/IEC 14496-22:2019 - Open Font Format"
+      "OpenType Specification 1.9",
+      "ISO/IEC 14496-22:2019 - Open Font Format",
+      "Adobe CFF (Compact Font Format) Specification",
+      "Microsoft OpenType Font File Specification"
     ],
     "WebLinks": [
       "https://docs.microsoft.com/en-us/typography/opentype/spec/",
-      "https://en.wikipedia.org/wiki/OpenType"
+      "https://en.wikipedia.org/wiki/OpenType",
+      "https://learn.microsoft.com/en-us/typography/opentype/spec/cff",
+      "https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf"
     ]
   },
   "detection": {
@@ -22,31 +26,62 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "min_file_size": 12,
+      "max_signature_offset": 0
     }
   },
   "variables": {
     "currentOffset": 0,
+    "otfSignature": "",
+    "numberOfTables": 0,
+    "searchRange": 0,
+    "entrySelector": 0,
+    "rangeShift": 0,
+    "table1Tag": "",
+    "table1Checksum": 0,
+    "table1Offset": 0,
+    "table1Length": 0,
+    "table2Tag": "",
+    "table2Checksum": 0,
+    "table2Offset": 0,
+    "table2Length": 0,
+    "table3Tag": "",
+    "table3Checksum": 0,
+    "table3Offset": 0,
+    "table3Length": 0,
     "numGlyphs": 0,
     "unitsPerEm": 0,
     "fontName": "",
     "tableCount": 0,
-    "otfSignature": "",
-    "numberOfTables": 0,
-    "searchRange": 0
+    "hasCFF": 0,
+    "hasGPOS": 0,
+    "hasGSUB": 0,
+    "totalTableSize": 0,
+    "formattedTotalSize": ""
+  },
+  "functions": {
+    "formatFileSize(var:totalTableSize)": "Format total size of all font tables as human-readable string with units",
+    "computeFromVariables(table1Length + table2Length + table3Length, totalTableSize)": "Compute combined size of the first three font tables for size overview",
+    "validateFieldRange(numberOfTables, 1, 100)": "Validate table count is within reasonable range (OTF fonts typically have 10-30 tables)",
+    "validateFieldRange(entrySelector, 0, 16)": "Validate entry selector is a valid log2 value"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "OTF Signature",
+      "name": "OpenType Signature (OTTO)",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "OTTO signature",
+      "description": "OpenType CFF signature 'OTTO' (0x4F54544F). This 4-byte ASCII tag identifies the font as an OpenType font with PostScript CFF outlines (cubic Bezier curves). Distinguishes from TrueType-outline OpenType fonts which use 0x00010000.",
       "storeAs": "otfSignature",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "OTTO"
+      },
+      "valueMap": {
+        "OTTO": "OpenType with CFF outlines (PostScript cubic Bezier)"
+      }
     },
     {
       "type": "field",
@@ -55,9 +90,14 @@
       "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "Number of font tables",
+      "description": "Total number of font tables in this OpenType file. OpenType CFF fonts typically contain 10-30 tables including CFF/CFF2 (outlines), GPOS (positioning), GSUB (substitution), GDEF (glyph classes), OS/2, cmap, head, hhea, hmtx, maxp, name, and post.",
       "storeAs": "numberOfTables",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big",
+      "validationRules": {
+        "minValue": 1,
+        "maxValue": 100
+      }
     },
     {
       "type": "field",
@@ -66,45 +106,212 @@
       "length": 2,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Binary search range",
+      "description": "Binary search optimization value: (maximum power of 2 <= numTables) * 16. Identical algorithm to TrueType offset table. Used for efficient binary search of the table directory.",
       "storeAs": "searchRange",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Entry Selector",
+      "offset": 8,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Binary search optimization value: log2(maximum power of 2 <= numTables). Number of binary search iterations needed to search the table directory.",
+      "storeAs": "entrySelector",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Range Shift",
+      "offset": 10,
+      "length": 2,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Binary search optimization value: (numTables * 16) - searchRange. Initial comparison offset for the binary search algorithm over table directory entries.",
+      "storeAs": "rangeShift",
+      "valueType": "uint16",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 1 - Tag",
+      "offset": 12,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "4-byte ASCII tag identifying the first table in the directory. Tables are sorted alphabetically by tag. For OpenType CFF fonts, common early tables include 'CFF ' (CFF outline data), 'DSIG' (digital signature), 'GDEF' (glyph definition), 'GPOS' (glyph positioning), 'GSUB' (glyph substitution).",
+      "storeAs": "table1Tag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Table 1 - Checksum",
+      "offset": 16,
+      "length": 4,
+      "color": "#96CEB4",
+      "opacity": 0.3,
+      "description": "Checksum of the first table's data. Computed by summing the table data as an array of uint32 values (big-endian). The 'head' table uses a special checksumAdjustment field so the entire file checksum equals 0xB1B0AFBA.",
+      "storeAs": "table1Checksum",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 1 - Offset",
+      "offset": 20,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.3,
+      "description": "Byte offset from the beginning of the font file to the start of the first table's data. Tables are padded to 4-byte boundaries in storage.",
+      "storeAs": "table1Offset",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 1 - Length",
+      "offset": 24,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.3,
+      "description": "Length of the first table's data in bytes (unpadded). The CFF table is often the largest, containing all glyph outline data in PostScript format.",
+      "storeAs": "table1Length",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 2 - Tag",
+      "offset": 28,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.35,
+      "description": "4-byte ASCII tag for the second table directory entry. In OpenType CFF fonts, the GPOS table provides glyph positioning data for kerning, mark-to-base attachment, and cursive connections.",
+      "storeAs": "table2Tag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Table 2 - Checksum",
+      "offset": 32,
+      "length": 4,
+      "color": "#96CEB4",
+      "opacity": 0.35,
+      "description": "Checksum of the second table's data, computed using the same uint32 summation algorithm.",
+      "storeAs": "table2Checksum",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 2 - Offset",
+      "offset": 36,
+      "length": 4,
+      "color": "#FFEAA7",
+      "opacity": 0.35,
+      "description": "Byte offset from the beginning of the font file to the start of the second table's data.",
+      "storeAs": "table2Offset",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 2 - Length",
+      "offset": 40,
+      "length": 4,
+      "color": "#FF8C69",
+      "opacity": 0.35,
+      "description": "Length of the second table's data in bytes (unpadded).",
+      "storeAs": "table2Length",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "field",
+      "name": "Table 3 - Tag",
+      "offset": 44,
+      "length": 4,
+      "color": "#87CEEB",
+      "opacity": 0.4,
+      "description": "4-byte ASCII tag for the third table directory entry. The GSUB table contains glyph substitution data for ligatures, contextual alternates, stylistic sets, and other advanced OpenType features.",
+      "storeAs": "table3Tag",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Table 3 - Checksum + Offset + Length",
+      "offset": 48,
+      "length": 12,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Checksum (4 bytes), offset (4 bytes), and length (4 bytes) for the third table directory entry. Same 16-byte structure as all other table directory entries.",
+      "storeAs": "table3Checksum",
+      "valueType": "uint32",
+      "endianness": "big"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Table Directory Size",
+      "expression": "numberOfTables * 16",
+      "storeAs": "totalTableSize",
+      "description": "Total size of the table directory in bytes. Each of the numberOfTables entries is exactly 16 bytes (4-byte tag + 4-byte checksum + 4-byte offset + 4-byte length). The directory occupies bytes 12 through 12 + (numberOfTables * 16) - 1."
+    },
+    {
+      "type": "conditional",
+      "name": "Advanced Typography Check",
+      "condition": "numberOfTables > 15",
+      "trueLabel": "Feature-rich OpenType font (> 15 tables - likely includes GPOS, GSUB, GDEF for advanced layout)",
+      "falseLabel": "Basic OpenType font (<= 15 tables - core tables with limited advanced features)",
+      "description": "Determines whether the OpenType font includes a rich set of advanced typographic tables. Fonts with GPOS/GSUB support kerning, ligatures, contextual alternates, stylistic sets, and complex script shaping."
+    },
+    {
+      "type": "conditional",
+      "name": "CFF Version Check",
+      "condition": "hasCFF == 1",
+      "trueLabel": "Contains CFF outline data (PostScript cubic Bezier curves)",
+      "falseLabel": "CFF table not yet detected - scanning table directory required",
+      "description": "Checks whether the CFF (Compact Font Format) table has been located. CFF contains the PostScript Type 2 charstrings defining glyph outlines using cubic Bezier curves, offering higher precision than TrueType quadratic outlines."
+    },
+    {
+      "type": "metadata",
+      "name": "Number of Tables",
+      "variable": "numberOfTables",
+      "description": "Total number of font tables present in this OpenType CFF file"
     },
     {
       "type": "metadata",
       "name": "Glyph Count",
       "variable": "numGlyphs",
-      "description": "Glyph Count"
+      "description": "Total number of glyphs in the font (from 'maxp' table)"
     },
     {
       "type": "metadata",
-      "name": "Units Per EM",
+      "name": "Units Per Em",
       "variable": "unitsPerEm",
-      "description": "Units Per EM"
+      "description": "Font design units per em square (from 'head' table, typically 1000 for CFF fonts)"
     },
     {
       "type": "metadata",
       "name": "Font Name",
       "variable": "fontName",
-      "description": "Font Name"
+      "description": "Full font name extracted from the 'name' table (name ID 4)"
     },
     {
       "type": "metadata",
-      "name": "Table Count",
-      "variable": "tableCount",
-      "description": "Table Count"
+      "name": "Has CFF Outlines",
+      "variable": "hasCFF",
+      "description": "Whether the font contains a CFF or CFF2 table with PostScript outline data"
+    },
+    {
+      "type": "metadata",
+      "name": "Table Directory Size",
+      "variable": "formattedTotalSize",
+      "description": "Total size of the table directory region formatted with units"
     }
   ],
-  "software": [
-    "All modern operating systems",
-    "Font editors"
-  ],
-  "format_relationships": {
-    "category": "Fonts",
-    "extensions": [
-      ".otf"
-    ]
-  },
   "MimeTypes": [
     "font/otf",
     "application/x-font-opentype"
@@ -112,25 +319,39 @@
   "Software": [
     "All operating systems",
     "Adobe products",
-    "Font editors"
+    "Font editors",
+    "FontForge",
+    "Microsoft Word",
+    "Adobe InDesign"
   ],
   "UseCases": [
     "Professional fonts",
     "Print design",
-    "Advanced typography"
+    "Advanced typography",
+    "Multi-language typesetting",
+    "Web fonts (WOFF/WOFF2)"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 7,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 24,
+    "ValidationRules": 4,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
-  "TechnicalDetails": {},
-  "functions": {
-    "readUInt32BE": "Read font tables",
-    "extractASCIIString": "Read font name"
+  "TechnicalDetails": {
+    "FontFormat": true,
+    "primary_extension": ".otf",
+    "defined_fields": 24,
+    "OutlineType": "CFF/PostScript (cubic Bezier curves)",
+    "Endianness": "big-endian",
+    "OffsetTableSize": 12,
+    "TableDirEntrySize": 16,
+    "Signature": "OTTO (0x4F54544F)",
+    "RequiredTables": "CFF, cmap, head, hhea, hmtx, maxp, name, OS/2, post",
+    "AdvancedTables": "GPOS, GSUB, GDEF, BASE, JSTF, MATH",
+    "ChecksumAdjustment": "0xB1B0AFBA",
+    "Alignment": "4-byte boundary"
   }
 }

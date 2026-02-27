@@ -1,20 +1,24 @@
 {
   "formatName": "EPUB eBook",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
     ".epub"
   ],
-  "description": "Electronic Publication - eBook format",
+  "description": "EPUB (Electronic Publication) is the most widely supported open eBook standard, defined by the IDPF (now part of W3C). An EPUB file is a ZIP archive containing XHTML content, CSS stylesheets, images, fonts, and metadata. The ZIP container starts with a Local File Header (PK signature 0x504B0304), and the first entry must be an uncompressed 'mimetype' file containing 'application/epub+zip'. The META-INF/container.xml file points to the OPF package document.",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "EPUB 3.2 Specification",
-      "ISO/IEC TS 30135 - EPUB File Format"
+      "ISO/IEC TS 30135 - EPUB File Format",
+      "PKWARE ZIP Application Note (APPNOTE.TXT)",
+      "OCF (Open Container Format) 3.2 Specification"
     ],
     "WebLinks": [
       "https://www.w3.org/publishing/epub3/epub-spec.html",
-      "https://en.wikipedia.org/wiki/EPUB"
+      "https://en.wikipedia.org/wiki/EPUB",
+      "https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT",
+      "https://www.w3.org/publishing/epub3/epub-ocf.html"
     ]
   },
   "detection": {
@@ -22,63 +26,342 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 58,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "parseZIPArchive": "Parse EPUB as ZIP archive to extract content and metadata",
-    "extractUTF8String": "Extract book metadata (title, author, publisher)",
-    "readUInt32LE": "Read ZIP header fields (signatures, sizes, CRC)"
   },
   "variables": {
     "currentOffset": 0,
-    "fileCount": 0,
+    "zipSignature": 0,
+    "zipVersionNeeded": 0,
+    "zipGeneralFlags": 0,
+    "zipCompressionMethod": 0,
+    "zipCompressionName": "",
+    "zipLastModTime": 0,
+    "zipLastModDate": 0,
+    "zipCrc32": 0,
+    "zipCompressedSize": 0,
+    "zipUncompressedSize": 0,
+    "zipFileNameLength": 0,
+    "zipExtraFieldLength": 0,
+    "firstFileName": "",
+    "isEncrypted": false,
+    "hasDataDescriptor": false,
+    "totalHeaderSize": 0,
+    "compressionRatio": 0,
     "title": "Unknown",
     "author": "Unknown",
     "publisher": "Unknown",
     "language": "en",
-    "chapters": 0,
-    "images": 0,
-    "zipSignature": "",
-    "zipHeader": ""
+    "fileCount": 0,
+    "formattedCompressedSize": "",
+    "formattedUncompressedSize": ""
+  },
+  "functions": {
+    "parseZIPArchive()": "Parse the EPUB as a ZIP archive, iterating through all Local File Headers and the Central Directory to extract the complete file listing",
+    "parseZipEntries()": "Parse individual ZIP entries to identify EPUB-specific content files: mimetype, META-INF/container.xml, content.opf, XHTML chapters, CSS, images, and fonts",
+    "extractUTF8String(var:firstFileName)": "Extract the filename from the first Local File Header as a UTF-8 string (should be 'mimetype' for valid EPUB files)",
+    "formatFileSize(var:zipCompressedSize)": "Format the compressed size of the first entry as a human-readable string",
+    "computeFromVariables(30 + zipFileNameLength + zipExtraFieldLength, totalHeaderSize)": "Calculate total Local File Header size: 30 fixed bytes + filename length + extra field length"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "ZIP Signature",
+      "name": "ZIP Local File Header Signature",
       "offset": 0,
       "length": 4,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "EPUB is a ZIP container",
+      "description": "ZIP Local File Header signature 'PK' followed by 0x03 0x04 (0x504B0304). Phil Katz's initials 'PK' identify this as a ZIP archive. EPUB files are required to be valid ZIP files per the OCF specification. This signature appears at the start of each local file entry.",
       "storeAs": "zipSignature",
-      "valueType": "ascii"
+      "valueType": "uint32",
+      "endianness": "little",
+      "validation": {
+        "expectedValue": "0x04034B50"
+      }
     },
     {
       "type": "field",
-      "name": "ZIP Header",
+      "name": "Version Needed to Extract",
       "offset": 4,
-      "length": 26,
+      "length": 2,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "ZIP local file header",
-      "storeAs": "zipHeader",
-      "valueType": "ascii"
+      "description": "Minimum ZIP specification version needed to extract this entry. The low byte divided by 10 gives the major version. For EPUB, the first entry (mimetype) must use version 2.0 (0x0014 = 20) with no compression. Higher versions indicate features like ZIP64 or strong encryption.",
+      "storeAs": "zipVersionNeeded",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "10": "1.0 - Default value",
+        "20": "2.0 - Deflate compression",
+        "45": "4.5 - ZIP64 extensions",
+        "51": "5.1 - Strong encryption",
+        "63": "6.3 - Central directory encryption"
+      }
+    },
+    {
+      "type": "field",
+      "name": "General Purpose Bit Flags",
+      "offset": 6,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "Bit flags controlling extraction behavior. Bit 0: encryption. Bit 1-2: compression options for Deflate. Bit 3: data descriptor follows compressed data. Bit 11: UTF-8 filename encoding. EPUB mandates no encryption (bit 0 = 0).",
+      "storeAs": "zipGeneralFlags",
+      "valueType": "uint16",
+      "endianness": "little",
+      "bitfields": [
+        {
+          "bit": 0,
+          "name": "Encryption",
+          "description": "When set, the file data is encrypted. EPUB files must not be encrypted at the ZIP level (DRM uses a separate mechanism).",
+          "valueMap": {
+            "0": "Not encrypted",
+            "1": "Encrypted"
+          }
+        },
+        {
+          "bit": 1,
+          "name": "Compression Option 1",
+          "description": "For Deflate: combined with bit 2 to indicate compression level. 00=Normal, 01=Maximum, 10=Fast, 11=Super Fast.",
+          "valueMap": {
+            "0": "Normal/default",
+            "1": "Maximum/fast (see bit 2)"
+          }
+        },
+        {
+          "bit": 3,
+          "name": "Data Descriptor",
+          "description": "When set, CRC-32 and sizes are in a data descriptor after the compressed data rather than in this header.",
+          "valueMap": {
+            "0": "Sizes in local header",
+            "1": "Sizes in data descriptor"
+          }
+        },
+        {
+          "bit": 11,
+          "name": "Language Encoding (UTF-8)",
+          "description": "When set, the filename and comment are encoded in UTF-8. When clear, the encoding is IBM Code Page 437.",
+          "valueMap": {
+            "0": "IBM CP437 encoding",
+            "1": "UTF-8 encoding"
+          }
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Compression Method",
+      "offset": 8,
+      "length": 2,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "Compression method used for this entry's file data. The EPUB specification requires the first entry (mimetype) to use method 0 (Stored/no compression) so the MIME type string appears at a predictable offset. Subsequent entries typically use method 8 (Deflate).",
+      "storeAs": "zipCompressionMethod",
+      "valueType": "uint16",
+      "endianness": "little",
+      "valueMap": {
+        "0": "Stored (no compression)",
+        "8": "Deflated",
+        "9": "Deflate64",
+        "12": "BZIP2",
+        "14": "LZMA",
+        "93": "Zstandard",
+        "95": "XZ",
+        "98": "PPMd"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Last Modified Time",
+      "offset": 10,
+      "length": 2,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "MS-DOS format time stamp for last modification. Bits 15-11: hours (0-23), bits 10-5: minutes (0-59), bits 4-0: seconds/2 (0-29, representing 0-58 seconds in 2-second increments). Stored in little-endian byte order.",
+      "storeAs": "zipLastModTime",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Last Modified Date",
+      "offset": 12,
+      "length": 2,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "MS-DOS format date stamp for last modification. Bits 15-9: year offset from 1980 (0-127, representing 1980-2107), bits 8-5: month (1-12), bits 4-0: day (1-31). Stored in little-endian byte order.",
+      "storeAs": "zipLastModDate",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "CRC-32 Checksum",
+      "offset": 14,
+      "length": 4,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "CRC-32 checksum of the uncompressed file data using the standard CRC-32 polynomial. For the mimetype entry this covers the string 'application/epub+zip' (20 bytes). If bit 3 of the general flags is set, this field is zero and the actual CRC is in the data descriptor.",
+      "storeAs": "zipCrc32",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Compressed Size",
+      "offset": 18,
+      "length": 4,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Size of the compressed file data in bytes. For uncompressed entries (method 0), this equals the uncompressed size. For the EPUB mimetype entry, this is 20 (the length of 'application/epub+zip'). A value of 0xFFFFFFFF indicates ZIP64 format.",
+      "storeAs": "zipCompressedSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Uncompressed Size",
+      "offset": 22,
+      "length": 4,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "Original uncompressed size of the file data in bytes. For the EPUB mimetype entry, this is always 20 bytes. The ratio of compressed to uncompressed size indicates the effectiveness of the chosen compression method.",
+      "storeAs": "zipUncompressedSize",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "File Name Length",
+      "offset": 26,
+      "length": 2,
+      "color": "#98D8C8",
+      "opacity": 0.3,
+      "description": "Length of the filename field in bytes that follows the fixed header. For the required EPUB mimetype entry, this is 8 (the length of the string 'mimetype'). The filename uses forward slashes as path separators per the ZIP specification.",
+      "storeAs": "zipFileNameLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Extra Field Length",
+      "offset": 28,
+      "length": 2,
+      "color": "#A8E6CF",
+      "opacity": 0.3,
+      "description": "Length of the extra field in bytes. Extra fields contain optional metadata such as ZIP64 extended information, Unix timestamps, or Unicode path information. For the EPUB mimetype entry, this should be 0 (no extra data) to ensure the mimetype string is at offset 38.",
+      "storeAs": "zipExtraFieldLength",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "First Entry Filename",
+      "offset": 30,
+      "length": 8,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Filename of the first entry in the ZIP archive. For a valid EPUB file, this must be exactly 'mimetype' (8 bytes, no path prefix, no extra field). The OCF specification requires this to be the first file in the archive, stored without compression, so that the MIME type is discoverable at a fixed offset.",
+      "storeAs": "firstFileName",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "mimetype"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Mimetype Content",
+      "offset": 38,
+      "length": 20,
+      "color": "#FFB347",
+      "opacity": 0.3,
+      "description": "Content of the mimetype file: the ASCII string 'application/epub+zip' (exactly 20 bytes, no trailing newline). This uncompressed string at offset 38 allows file managers and operating systems to identify EPUB files without parsing the ZIP structure. This is a key requirement of the OCF container specification.",
+      "storeAs": "mimetypeContent",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "application/epub+zip"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Local File Header Size",
+      "expression": "30 + zipFileNameLength + zipExtraFieldLength",
+      "storeAs": "totalHeaderSize",
+      "description": "Calculates the complete Local File Header size: 30 bytes of fixed fields + variable-length filename + variable-length extra field. The compressed file data begins immediately after the header."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Compression Ratio",
+      "expression": "zipUncompressedSize > 0 ? (zipCompressedSize * 100 / zipUncompressedSize) : 100",
+      "storeAs": "compressionRatio",
+      "description": "Calculates the compression ratio as a percentage. 100% means no compression (stored), lower values indicate better compression. For the mimetype entry this is always 100% since it must be stored uncompressed."
+    },
+    {
+      "type": "conditional",
+      "name": "EPUB Mimetype Validation",
+      "condition": "zipCompressionMethod == 0 && zipExtraFieldLength == 0",
+      "trueLabel": "First entry is correctly stored uncompressed with no extra field - valid EPUB container per OCF specification",
+      "falseLabel": "First entry uses compression or has extra fields - this may not be a valid EPUB per OCF requirements",
+      "description": "Validates that the first ZIP entry (mimetype) follows EPUB/OCF requirements: stored without compression and without extra field data, ensuring the MIME type string appears at offset 38"
+    },
+    {
+      "type": "conditional",
+      "name": "Encryption Detection",
+      "condition": "(zipGeneralFlags & 1) == 1",
+      "trueLabel": "This ZIP entry is encrypted - EPUB files should not use ZIP-level encryption (DRM uses separate mechanisms)",
+      "falseLabel": "This ZIP entry is not encrypted at the ZIP level",
+      "description": "Checks the encryption bit in the general purpose flags. Standard EPUB files should not use ZIP encryption; DRM-protected EPUBs use Adobe DRM or Apple FairPlay at a higher level."
+    },
+    {
+      "type": "metadata",
+      "name": "ZIP Version Needed",
+      "variable": "zipVersionNeeded",
+      "description": "Minimum ZIP specification version required to extract (divided by 10 for major.minor version)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "zipCompressionName",
+      "description": "Human-readable name of the compression method used for the first archive entry"
+    },
+    {
+      "type": "metadata",
+      "name": "First Entry Filename",
+      "variable": "firstFileName",
+      "description": "Filename of the first ZIP entry (must be 'mimetype' for valid EPUB files)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compressed Size",
+      "variable": "formattedCompressedSize",
+      "description": "Human-readable compressed data size of the first archive entry"
+    },
+    {
+      "type": "metadata",
+      "name": "Uncompressed Size",
+      "variable": "formattedUncompressedSize",
+      "description": "Human-readable original uncompressed data size of the first archive entry"
+    },
+    {
+      "type": "metadata",
+      "name": "CRC-32",
+      "variable": "zipCrc32",
+      "description": "CRC-32 integrity checksum of the first entry's uncompressed data"
+    },
+    {
+      "type": "metadata",
+      "name": "Local File Header Size",
+      "variable": "totalHeaderSize",
+      "description": "Total size of the first Local File Header including fixed fields, filename, and extra data"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Ratio",
+      "variable": "compressionRatio",
+      "description": "Compression effectiveness as a percentage (100% = no compression, lower = better compression)"
     }
   ],
-  "software": [
-    "Calibre",
-    "Apple Books",
-    "Adobe Digital Editions",
-    "E-readers"
-  ],
-  "format_relationships": {
-    "category": "Documents",
-    "extensions": [
-      ".epub"
-    ]
-  },
   "MimeTypes": [
     "application/epub+zip"
   ],
@@ -86,24 +369,37 @@
     "Calibre",
     "Adobe Digital Editions",
     "Apple Books",
-    "Google Play Books"
+    "Google Play Books",
+    "Kobo",
+    "Sigil"
   ],
   "UseCases": [
     "Ebooks",
     "Digital publishing",
-    "Reading apps"
+    "Reading apps",
+    "Academic publications",
+    "Self-publishing"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 32,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 2,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 25,
+    "ValidationRules": 4,
     "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "DocumentFormat": true,
-    "Container": "ZIP"
+    "Container": "ZIP (PKWARE)",
+    "Endianness": "little-endian (ZIP format)",
+    "LocalFileHeaderSize": "30 bytes fixed + variable filename + variable extra",
+    "RequiredFirstEntry": "mimetype (uncompressed, no extra field)",
+    "ContentFormat": "XHTML, CSS, SVG, images",
+    "MetadataFormat": "Dublin Core via OPF package document",
+    "DRMSupport": "Adobe DRM, Apple FairPlay (not ZIP encryption)",
+    "EPUBVersion": "2.0, 3.0, 3.2",
+    "SupportsFixedLayout": true,
+    "SupportsReflowable": true
   }
 }

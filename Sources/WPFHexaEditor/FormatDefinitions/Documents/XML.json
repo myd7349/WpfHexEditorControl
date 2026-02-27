@@ -4,14 +4,15 @@
   "extensions": [
     ".xml"
   ],
-  "description": "Extensible Markup Language document. XML is a text-based markup language that defines rules for encoding documents in a format readable by both humans and machines. Files begin with the XML declaration <?xml followed by version and encoding attributes.",
+  "description": "Extensible Markup Language (XML) is a text-based markup language that defines rules for encoding documents in a format readable by both humans and machines. Files typically begin with an optional Byte Order Mark (BOM), followed by the XML declaration '<?xml version=\"1.0\" encoding=\"UTF-8\"?>' which specifies the XML version and character encoding. The declaration is a processing instruction that must appear before any other content if present.",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "W3C XML 1.0 (Fifth Edition) Recommendation",
       "W3C XML 1.1 (Second Edition) Recommendation",
-      "W3C Namespaces in XML 1.0 (Third Edition)"
+      "W3C Namespaces in XML 1.0 (Third Edition)",
+      "RFC 3023 - XML Media Types"
     ],
     "WebLinks": [
       "https://www.w3.org/TR/xml/",
@@ -24,6 +25,23 @@
     "signature": "3C3F786D6C",
     "offset": 0,
     "required": true,
+    "alternateSignatures": [
+      {
+        "signature": "EFBBBF3C3F786D6C",
+        "offset": 0,
+        "description": "UTF-8 BOM (EF BB BF) followed by XML declaration <?xml"
+      },
+      {
+        "signature": "FFFE3C003F00",
+        "offset": 0,
+        "description": "UTF-16 LE BOM (FF FE) followed by XML declaration in UTF-16 LE encoding"
+      },
+      {
+        "signature": "FEFF003C003F",
+        "offset": 0,
+        "description": "UTF-16 BE BOM (FE FF) followed by XML declaration in UTF-16 BE encoding"
+      }
+    ],
     "validation": {
       "minFileSize": 6,
       "maxSignatureOffset": 3
@@ -31,48 +49,233 @@
   },
   "variables": {
     "currentOffset": 0,
-    "xmlDeclarationStart": "",
-    "spaceAfterXml": "",
-    "declarationAttributes": ""
+    "bomBytes": "",
+    "hasBOM": false,
+    "bomEncoding": "",
+    "xmlDeclOpen": "",
+    "xmlDeclSpace": "",
+    "versionKeyword": "",
+    "versionValue": "",
+    "encodingKeyword": "",
+    "encodingValue": "",
+    "standaloneRegion": "",
+    "xmlDeclClose": "",
+    "rootElementRegion": "",
+    "detectedEncoding": "",
+    "xmlVersion": "",
+    "lineCount": 0,
+    "lineEnding": "",
+    "formattedSize": "",
+    "isStandalone": false
   },
   "functions": {
-    "parseXMLDeclaration": "Parse the <?xml ... ?> processing instruction to extract version and encoding",
-    "extractUTF8String": "Extract text content from an XML document as UTF-8",
-    "detectBOM": "Detect byte order mark (EF BB BF for UTF-8, FF FE for UTF-16 LE, FE FF for UTF-16 BE) preceding the XML declaration"
+    "detectBOM(0)": "Detect Byte Order Mark at offset 0 to determine encoding: UTF-8 (EF BB BF), UTF-16 LE (FF FE), or UTF-16 BE (FE FF)",
+    "countLines()": "Count the total number of lines in the XML text document",
+    "detectLineEnding()": "Detect the line ending style used in the file: CRLF (Windows), LF (Unix/macOS), or CR (classic Mac)",
+    "extractASCIIString(6, 30)": "Extract the version and encoding attributes region from the XML declaration as ASCII text",
+    "formatFileSize()": "Format the file size as a human-readable string with appropriate unit suffix"
   },
   "blocks": [
     {
+      "type": "field",
+      "name": "Byte Order Mark (BOM)",
+      "offset": 0,
+      "length": 3,
+      "color": "#E8D5B7",
+      "opacity": 0.3,
+      "description": "Optional Byte Order Mark preceding the XML declaration. UTF-8 BOM is 3 bytes (EF BB BF), UTF-16 BOMs are 2 bytes (FF FE for LE, FE FF for BE). When present, all subsequent byte offsets shift accordingly. The W3C recommends against using a BOM for UTF-8, but many tools still generate it.",
+      "storeAs": "bomBytes",
+      "valueType": "hex",
+      "valueMap": {
+        "EFBBBF": "UTF-8 BOM (3 bytes)",
+        "FFFE": "UTF-16 Little-Endian BOM (2 bytes)",
+        "FEFF": "UTF-16 Big-Endian BOM (2 bytes)"
+      }
+    },
+    {
       "type": "signature",
-      "name": "XML Declaration Start",
+      "name": "XML Declaration Opening",
       "offset": 0,
       "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "The opening <?xml sequence that identifies this file as an XML document (hex 3C 3F 78 6D 6C)",
-      "storeAs": "xmlDeclarationStart",
-      "valueType": "ascii"
+      "description": "The opening '<?xml' sequence (hex 3C 3F 78 6D 6C) that begins the XML declaration processing instruction. This is a processing instruction, not an element, and it identifies the file as an XML document. Per specification, if present it must be the very first thing in the document (after optional BOM).",
+      "storeAs": "xmlDeclOpen",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "<?xml"
+      }
     },
     {
       "type": "field",
-      "name": "Space After Declaration",
+      "name": "Declaration Separator",
       "offset": 5,
       "length": 1,
       "color": "#C0C0C0",
       "opacity": 0.2,
-      "description": "Mandatory whitespace character (0x20) separating <?xml from the version attribute",
-      "storeAs": "spaceAfterXml",
+      "description": "Mandatory whitespace character (0x20 space) separating '<?xml' from the version pseudo-attribute. XML specification requires at least one whitespace character here.",
+      "storeAs": "xmlDeclSpace",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": " "
+      }
+    },
+    {
+      "type": "field",
+      "name": "Version Keyword",
+      "offset": 6,
+      "length": 8,
+      "color": "#4ECDC4",
+      "opacity": 0.3,
+      "description": "The 'version=' keyword followed by the opening quote character. This pseudo-attribute is required in the XML declaration and must appear first. Expected value is 'version=' (8 bytes) immediately followed by a quote character.",
+      "storeAs": "versionKeyword",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Version and Encoding Region",
-      "offset": 6,
-      "length": 30,
-      "color": "#4ECDC4",
+      "name": "Version Number",
+      "offset": 14,
+      "length": 4,
+      "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "Region containing version and encoding attributes, e.g. version=\"1.0\" encoding=\"UTF-8\"?>. Actual length varies per file; this captures the typical declaration.",
-      "storeAs": "declarationAttributes",
+      "description": "The XML version number string enclosed in quotes. Most common is '1.0\"' (version 1.0 with closing quote). XML 1.1 exists but is rarely used. The version number determines which characters are legal in element names and content.",
+      "storeAs": "versionValue",
+      "valueType": "ascii",
+      "valueMap": {
+        "1.0\"": "XML 1.0 (most widely used version)",
+        "1.1\"": "XML 1.1 (extended character support, rare)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Encoding Keyword",
+      "offset": 19,
+      "length": 9,
+      "color": "#FFE66D",
+      "opacity": 0.3,
+      "description": "The encoding pseudo-attribute keyword 'encoding=' preceded by a space. This optional attribute declares the character encoding of the document. If omitted, UTF-8 or UTF-16 (detectable by BOM) is assumed.",
+      "storeAs": "encodingKeyword",
       "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "Encoding Value",
+      "offset": 28,
+      "length": 6,
+      "color": "#FFA07A",
+      "opacity": 0.3,
+      "description": "The character encoding value in quotes (e.g., 'UTF-8\"' or 'utf-8\"'). Common encodings include UTF-8 (default), UTF-16, ISO-8859-1 (Latin-1), Windows-1252, and Shift_JIS. The encoding name is case-insensitive per XML specification.",
+      "storeAs": "encodingValue",
+      "valueType": "ascii",
+      "valueMap": {
+        "UTF-8\"": "UTF-8 (Unicode, most common)",
+        "utf-8\"": "UTF-8 (Unicode, lowercase variant)",
+        "UTF-16": "UTF-16 (Unicode, 2-byte)",
+        "ISO-88": "ISO-8859-x (Latin character set)",
+        "window": "Windows-125x (Windows code page)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Standalone Region",
+      "offset": 34,
+      "length": 16,
+      "color": "#C7CEEA",
+      "opacity": 0.3,
+      "description": "Region that may contain the optional standalone pseudo-attribute (e.g., ' standalone=\"yes\"' or ' standalone=\"no\"'). This attribute indicates whether the document relies on external markup declarations (DTD). If 'yes', the document is self-contained. Actual content varies; this captures the typical region.",
+      "storeAs": "standaloneRegion",
+      "valueType": "ascii"
+    },
+    {
+      "type": "field",
+      "name": "XML Declaration Close",
+      "offset": 36,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "The closing '?>' sequence of the XML declaration processing instruction. This marks the end of the declaration. Exact offset varies depending on whether encoding and standalone attributes are present.",
+      "storeAs": "xmlDeclClose",
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "?>"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Root Element Region",
+      "offset": 40,
+      "length": 30,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Region following the XML declaration that contains the beginning of the root element or DOCTYPE declaration. After the declaration close and optional whitespace/newlines, the first element or DOCTYPE appears. Offset and content vary per document structure.",
+      "storeAs": "rootElementRegion",
+      "valueType": "ascii"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "BOM Detection Result",
+      "expression": "bomBytes == 'EFBBBF' || bomBytes == 'FFFE' || bomBytes == 'FEFF'",
+      "storeAs": "hasBOM",
+      "description": "Determines whether a Byte Order Mark is present at the start of the file. The BOM provides encoding information and its presence shifts all subsequent content byte offsets."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Encoding Detection from BOM",
+      "expression": "bomBytes == 'EFBBBF' ? 'UTF-8 (BOM)' : (bomBytes == 'FFFE' ? 'UTF-16 LE (BOM)' : (bomBytes == 'FEFF' ? 'UTF-16 BE (BOM)' : 'UTF-8 (default, no BOM)'))",
+      "storeAs": "detectedEncoding",
+      "description": "Determines the document encoding from BOM bytes. If no BOM is present, defaults to UTF-8 per the XML specification. The encoding attribute in the declaration may override or confirm this detection."
+    },
+    {
+      "type": "conditional",
+      "name": "BOM Presence Check",
+      "condition": "hasBOM == true",
+      "trueLabel": "This XML file contains a Byte Order Mark — encoding detected from BOM takes precedence over the encoding declaration",
+      "falseLabel": "No BOM detected — encoding determined from the encoding declaration attribute or defaults to UTF-8",
+      "description": "Checks whether a Byte Order Mark is present. When both BOM and encoding declaration exist, they must agree; the BOM is considered authoritative."
+    },
+    {
+      "type": "conditional",
+      "name": "XML Version Check",
+      "condition": "versionValue == '1.1\"'",
+      "trueLabel": "This document uses XML 1.1 which has different character handling and line ending normalization rules",
+      "falseLabel": "This document uses XML 1.0, the standard and most widely supported version",
+      "description": "Checks whether the document declares XML version 1.1, which has different rules for allowed characters and line ending normalization compared to version 1.0."
+    },
+    {
+      "type": "metadata",
+      "name": "Detected Encoding",
+      "variable": "detectedEncoding",
+      "description": "Character encoding detected from BOM or assumed from XML specification defaults"
+    },
+    {
+      "type": "metadata",
+      "name": "Has BOM",
+      "variable": "hasBOM",
+      "description": "Whether a Byte Order Mark is present at the beginning of the file"
+    },
+    {
+      "type": "metadata",
+      "name": "Line Count",
+      "variable": "lineCount",
+      "description": "Total number of lines in the XML text document"
+    },
+    {
+      "type": "metadata",
+      "name": "Line Ending Style",
+      "variable": "lineEnding",
+      "description": "Line ending convention used: CRLF (Windows), LF (Unix/macOS), or CR (classic Mac)"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size",
+      "variable": "formattedSize",
+      "description": "Human-readable formatted file size"
+    },
+    {
+      "type": "metadata",
+      "name": "XML Version",
+      "variable": "versionValue",
+      "description": "XML version declared in the processing instruction (1.0 or 1.1)"
     }
   ],
   "MimeTypes": [
@@ -92,10 +295,10 @@
     "Document markup (XHTML, DocBook, SVG)"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 42,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 3,
-    "ValidationRules": 2,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 20,
+    "ValidationRules": 3,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
@@ -104,6 +307,11 @@
     "TextFormat": true,
     "Encoding": "UTF-8 (most common), UTF-16, ISO-8859-1",
     "DeclarationRequired": "Recommended but technically optional in XML 1.0",
-    "CaseSensitive": true
+    "CaseSensitive": true,
+    "W3CStandard": true,
+    "SelfDescribing": true,
+    "SupportsNamespaces": true,
+    "SupportsValidation": true,
+    "ValidatedBy": "DTD, XML Schema (XSD), RELAX NG, Schematron"
   }
 }

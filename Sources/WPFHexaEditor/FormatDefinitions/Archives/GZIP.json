@@ -1,22 +1,23 @@
 {
   "formatName": "GZIP Compressed File",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
     ".gz",
     ".gzip"
   ],
-  "description": "GZIP compression format - Common in Unix/Linux systems",
+  "description": "GZIP compression format defined by RFC 1952. Wraps a single DEFLATE-compressed stream with a 10-byte header containing magic bytes, compression method, flags, modification time, extra flags, and OS identifier. Optional fields (extra data, original filename, comment, header CRC) follow the fixed header when corresponding flag bits are set. An 8-byte trailer contains the CRC-32 and original file size.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "PKWARE APPNOTE.TXT - ZIP File Format Specification",
-      "ISO/IEC 21320-1:2015 - Document Container File"
+      "RFC 1952 - GZIP File Format Specification Version 4.3",
+      "RFC 1951 - DEFLATE Compressed Data Format Specification",
+      "ISO 8859-1 (Latin-1) for GZIP string encoding"
     ],
     "WebLinks": [
-      "https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT",
-      "https://en.wikipedia.org/wiki/ZIP_(file_format)",
-      "https://www.iso.org/standard/60101.html"
+      "https://www.ietf.org/rfc/rfc1952.txt",
+      "https://en.wikipedia.org/wiki/Gzip",
+      "https://www.zlib.net/manual.html"
     ]
   },
   "detection": {
@@ -24,36 +25,50 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 2,
-      "max_signature_offset": 1024
+      "minFileSize": 18,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "calculateCRC32": "Calculate CRC-32 of uncompressed data",
-    "readUInt32LE": "Read modification timestamp and file size (little-endian)"
   },
   "variables": {
     "currentOffset": 0,
-    "modificationTime": 0,
-    "originalSize": 0,
-    "compressedCRC": 0,
     "gzipMagic": 0,
     "compressionMethod": 0,
     "flags": 0,
-    "compressionFlags": 0,
-    "os": 0
+    "modificationTime": 0,
+    "extraFlags": 0,
+    "operatingSystem": 0,
+    "isFTEXT": false,
+    "isFHCRC": false,
+    "isFEXTRA": false,
+    "isFNAME": false,
+    "isFCOMMENT": false,
+    "hasOptionalFields": false,
+    "compressionLevel": "",
+    "osName": "",
+    "methodName": "",
+    "headerSize": 10,
+    "formattedModTime": ""
+  },
+  "functions": {
+    "computeFromVariables((flags & 4) != 0 || (flags & 8) != 0 || (flags & 16) != 0, hasOptionalFields)": "Determine if any optional fields (FEXTRA, FNAME, FCOMMENT) are present after the fixed 10-byte header",
+    "computeFromVariables(10, headerSize)": "Base header size is always 10 bytes; optional fields extend beyond this",
+    "formatFileSize(var:modificationTime)": "Format the modification timestamp value for display"
   },
   "blocks": [
     {
       "type": "signature",
-      "name": "GZIP Magic",
+      "name": "GZIP Magic Number",
       "offset": 0,
       "length": 2,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "GZIP identification bytes",
+      "description": "Two-byte GZIP identification magic: 0x1F 0x8B. The value 0x1F was chosen because it is an uncommon byte in text files, and 0x8B has the high bit set to further distinguish binary GZIP data from ASCII text. These bytes uniquely identify a GZIP member.",
       "storeAs": "gzipMagic",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "big",
+      "validation": {
+        "expectedValue": "0x1F8B"
+      }
     },
     {
       "type": "field",
@@ -62,20 +77,78 @@
       "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "0-7 reserved, 8=deflate",
+      "description": "Compression method identifier (uint8). Currently only method 8 (DEFLATE) is defined by the specification. Methods 0-7 are reserved for future use. A compliant GZIP decompressor must reject unknown compression methods.",
       "storeAs": "compressionMethod",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "Reserved (store/no compression)",
+        "1": "Reserved (compress)",
+        "2": "Reserved (pack)",
+        "3": "Reserved (lzh)",
+        "4": "Reserved",
+        "5": "Reserved",
+        "6": "Reserved",
+        "7": "Reserved",
+        "8": "DEFLATE (standard)"
+      }
     },
     {
       "type": "field",
-      "name": "Flags",
+      "name": "Flags (FLG)",
       "offset": 3,
       "length": 1,
       "color": "#95E1D3",
       "opacity": 0.3,
-      "description": "FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT",
+      "description": "Flag byte controlling the presence of optional header fields. Bits 5-7 are reserved and must be zero in conforming implementations. When any optional field bit is set, the corresponding data appears after the fixed 10-byte header in the order: FEXTRA, FNAME, FCOMMENT, FHCRC.",
       "storeAs": "flags",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "bitfields": [
+        {
+          "bit": 0,
+          "name": "FTEXT",
+          "description": "Hint that the compressed data is probably ASCII text. This is an advisory flag only and does not affect decompression.",
+          "valueMap": {
+            "0": "Binary data (or unknown)",
+            "1": "Probably ASCII text"
+          }
+        },
+        {
+          "bit": 1,
+          "name": "FHCRC",
+          "description": "A CRC-16 of the GZIP header is present immediately before the compressed data. Covers all header bytes including optional fields.",
+          "valueMap": {
+            "0": "No header CRC",
+            "1": "Header CRC-16 present"
+          }
+        },
+        {
+          "bit": 2,
+          "name": "FEXTRA",
+          "description": "An extra field is present after the fixed header. Begins with a 2-byte length (uint16 LE) followed by that many bytes of extra data.",
+          "valueMap": {
+            "0": "No extra field",
+            "1": "Extra field present"
+          }
+        },
+        {
+          "bit": 3,
+          "name": "FNAME",
+          "description": "An original file name is present as a zero-terminated ISO 8859-1 string after the extra field (if any). Used to suggest a filename during decompression.",
+          "valueMap": {
+            "0": "No original filename",
+            "1": "Original filename present"
+          }
+        },
+        {
+          "bit": 4,
+          "name": "FCOMMENT",
+          "description": "A human-readable comment is present as a zero-terminated ISO 8859-1 string after the filename (if any). Intended for informational purposes only.",
+          "valueMap": {
+            "0": "No comment",
+            "1": "Comment present"
+          }
+        }
+      ]
     },
     {
       "type": "field",
@@ -84,57 +157,130 @@
       "length": 4,
       "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Unix timestamp",
+      "description": "Unix timestamp (uint32 LE) representing the modification time of the original uncompressed file, in seconds since 1970-01-01 00:00:00 UTC. A value of 0 means no timestamp is available. Used by decompressors to restore the original file's modification time.",
       "storeAs": "modificationTime",
-      "valueType": "uint32"
+      "valueType": "uint32",
+      "endianness": "little"
     },
     {
       "type": "field",
-      "name": "Compression Flags",
+      "name": "Extra Flags (XFL)",
       "offset": 8,
       "length": 1,
       "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Extra flags",
-      "storeAs": "compressionFlags",
-      "valueType": "uint8"
+      "description": "Extra flags providing compression-specific hints. For DEFLATE (method 8): value 2 indicates maximum compression (slowest algorithm), value 4 indicates fastest compression (least effort). Other values are not defined by the specification.",
+      "storeAs": "extraFlags",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "No extra compression info",
+        "2": "Maximum compression (DEFLATE slowest)",
+        "4": "Fastest compression (DEFLATE fastest)"
+      }
     },
     {
       "type": "field",
-      "name": "OS",
+      "name": "Operating System",
       "offset": 9,
       "length": 1,
       "color": "#B8B8FF",
       "opacity": 0.3,
-      "description": "Operating system ID",
-      "storeAs": "os",
-      "valueType": "uint8"
+      "description": "Identifier of the operating system/filesystem on which the compression was performed. Affects interpretation of the original filename's character set and line endings. Used for cross-platform file restoration.",
+      "storeAs": "operatingSystem",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "FAT filesystem (MS-DOS, OS/2, Windows NT/95)",
+        "1": "Amiga",
+        "2": "VMS (or OpenVMS)",
+        "3": "Unix",
+        "4": "VM/CMS",
+        "5": "Atari TOS",
+        "6": "HPFS filesystem (OS/2, NT)",
+        "7": "Macintosh (HFS)",
+        "8": "Z-System",
+        "9": "CP/M",
+        "10": "TOPS-20",
+        "11": "NTFS filesystem (NT)",
+        "12": "QDOS",
+        "13": "Acorn RISCOS",
+        "255": "Unknown"
+      }
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Optional Fields Detection",
+      "expression": "(flags & 4) != 0 || (flags & 8) != 0 || (flags & 16) != 0",
+      "storeAs": "hasOptionalFields",
+      "description": "Determines if any optional header fields (FEXTRA, FNAME, or FCOMMENT) are present after the fixed 10-byte header. When true, the actual compressed data stream starts beyond offset 10 at a variable position."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Base Header Size",
+      "expression": "10",
+      "storeAs": "headerSize",
+      "description": "The fixed portion of the GZIP header is always 10 bytes (magic + method + flags + mtime + xfl + os). Optional fields (extra, filename, comment, header CRC) extend beyond this base size when their corresponding flag bits are set."
+    },
+    {
+      "type": "conditional",
+      "name": "DEFLATE Method Verification",
+      "condition": "compressionMethod == 8",
+      "trueLabel": "Standard DEFLATE compression (method 8): compatible with all GZIP implementations",
+      "falseLabel": "Non-standard compression method detected: this file may not be decompressible by standard GZIP tools",
+      "description": "Validates that the compression method is DEFLATE (8), which is the only method defined by RFC 1952. Any other value indicates a non-conforming or experimental GZIP file."
+    },
+    {
+      "type": "conditional",
+      "name": "Original Filename Present",
+      "condition": "(flags & 8) != 0",
+      "trueLabel": "Original filename is embedded in the GZIP header (FNAME flag set)",
+      "falseLabel": "No original filename stored (FNAME flag clear): filename must be inferred from the .gz file name",
+      "description": "Checks the FNAME flag (bit 3) to determine if the original uncompressed filename is stored as a null-terminated string after the fixed header and any extra field"
+    },
+    {
+      "type": "conditional",
+      "name": "Maximum Compression Detection",
+      "condition": "extraFlags == 2",
+      "trueLabel": "File was compressed using maximum compression (slowest DEFLATE algorithm for best ratio)",
+      "falseLabel": "File was not compressed with maximum compression setting",
+      "description": "Checks the XFL byte for value 2, which indicates the compressor used the maximum compression level for the smallest output size at the cost of compression speed"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Method",
+      "variable": "compressionMethod",
+      "description": "Compression method identifier (8 = DEFLATE, the only currently defined method)"
+    },
+    {
+      "type": "metadata",
+      "name": "Operating System",
+      "variable": "operatingSystem",
+      "description": "OS identifier indicating the platform where the file was compressed"
     },
     {
       "type": "metadata",
       "name": "Modification Timestamp",
       "variable": "modificationTime",
-      "description": "Unix timestamp of file modification time"
+      "description": "Unix timestamp of the original file's last modification time (0 = not available)"
     },
     {
       "type": "metadata",
-      "name": "Original File Size",
-      "variable": "originalSize",
-      "description": "Size of original uncompressed file (from footer)"
+      "name": "Has Optional Fields",
+      "variable": "hasOptionalFields",
+      "description": "Whether optional header fields (extra data, filename, or comment) are present after the fixed header"
+    },
+    {
+      "type": "metadata",
+      "name": "Flags Byte",
+      "variable": "flags",
+      "description": "Raw flags byte indicating which optional header fields are present (FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT)"
+    },
+    {
+      "type": "metadata",
+      "name": "Compression Level Hint",
+      "variable": "extraFlags",
+      "description": "Extra flags byte hinting at the compression level used (2 = max compression, 4 = fastest)"
     }
   ],
-  "software": [
-    "gzip",
-    "7-Zip",
-    "WinZip"
-  ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".gz",
-      ".gzip"
-    ]
-  },
   "MimeTypes": [
     "application/gzip",
     "application/x-gzip"
@@ -148,19 +294,27 @@
   "UseCases": [
     "File compression",
     "Unix archives",
-    "Web content compression"
+    "Web content compression",
+    "HTTP transfer encoding"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 53,
-    "DocumentationLevel": "detailed",
-    "BlocksDefined": 8,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 17,
+    "ValidationRules": 1,
     "LastUpdated": "2026-02-24",
-    "PriorityFormat": false,
+    "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "CompressionMethod": "DEFLATE",
-    "ArchivesFormat": true
+    "ArchivesFormat": true,
+    "Endianness": "little-endian (except magic bytes)",
+    "HeaderSize": "10 bytes (fixed) + variable optional fields",
+    "TrailerSize": 8,
+    "CompressionMethod": "DEFLATE (RFC 1951)",
+    "CRCAlgorithm": "CRC-32 (ISO 3309)",
+    "MaxUncompressedSize": "Stored as uint32, wraps at 4 GiB (size mod 2^32)",
+    "StringEncoding": "ISO 8859-1 (Latin-1)",
+    "SupportsMultipleMembers": true
   }
 }

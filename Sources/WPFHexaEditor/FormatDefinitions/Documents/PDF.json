@@ -1,21 +1,23 @@
 {
   "formatName": "PDF Document",
-  "version": "1.12",
+  "version": "2.0",
   "extensions": [
     ".pdf"
   ],
-  "description": "Portable Document Format by Adobe",
+  "description": "Portable Document Format by Adobe - A page-description language for representing documents independently of software, hardware, and operating system. The file begins with a '%PDF-' header followed by a version number. The body contains a sequence of indirect objects, followed by a cross-reference table and trailer dictionary that enable random access to any object in the file.",
   "category": "Documents",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
       "ISO 32000-1:2008 - PDF 1.7 Standard",
+      "ISO 32000-2:2020 - PDF 2.0 Standard",
       "PDF Reference, Sixth Edition (Version 1.7)"
     ],
     "WebLinks": [
       "https://www.adobe.com/devnet/pdf/pdf_reference.html",
       "https://www.iso.org/standard/51502.html",
-      "https://en.wikipedia.org/wiki/PDF"
+      "https://en.wikipedia.org/wiki/PDF",
+      "https://www.pdfa.org/resource/iso-32000-2/"
     ]
   },
   "detection": {
@@ -23,104 +25,248 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 4,
-      "max_signature_offset": 1024
+      "minFileSize": 67,
+      "maxSignatureOffset": 0
     }
   },
   "variables": {
-    "pageCount": 0,
-    "title": "",
-    "author": "",
+    "currentOffset": 0,
     "pdfSignature": "",
+    "dashSeparator": "",
+    "versionMajor": "",
+    "versionDot": "",
+    "versionMinor": "",
     "pdfVersion": "",
+    "lineEnding": 0,
     "binaryMarkerComment": "",
+    "binaryByte1": 0,
+    "binaryByte2": 0,
+    "binaryByte3": 0,
+    "binaryByte4": 0,
     "pdfPageCount": 0,
     "pdfEncrypted": false,
-    "pdfLinearized": false
+    "pdfLinearized": false,
+    "pdfProducer": "",
+    "pdfCreator": "",
+    "pdfTitle": "",
+    "xrefOffset": 0,
+    "objectCount": 0,
+    "fileSize": 0,
+    "formattedSize": "",
+    "hasBinaryMarker": false
+  },
+  "functions": {
+    "parsePDFTrailer": "Scan from end of file to locate the startxref keyword, cross-reference table, and trailer dictionary to extract page count, encryption status, linearized flag, and document info",
+    "formatFileSize(var:fileSize)": "Format raw file size as human-readable string with units",
+    "computeFromVariables(var:versionMajor + '.' + var:versionMinor, pdfVersion)": "Construct full PDF version string from major and minor components"
   },
   "blocks": [
     {
       "type": "signature",
       "name": "PDF Signature",
       "offset": 0,
-      "length": 4,
+      "length": 5,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "%PDF magic bytes",
+      "description": "PDF file signature (ASCII '%PDF-' = 0x255044462D). The percent sign makes the first line a PDF comment, and the remaining bytes identify the format.",
       "storeAs": "pdfSignature",
-      "valueType": "ascii"
+      "valueType": "ascii",
+      "validation": {
+        "expectedValue": "%PDF-"
+      }
     },
     {
       "type": "field",
-      "name": "PDF Version",
-      "offset": 4,
-      "length": 4,
+      "name": "Version Major",
+      "offset": 5,
+      "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "PDF version (e.g., -1.4, -1.7)",
-      "storeAs": "pdfVersion",
+      "description": "PDF specification major version number (ASCII digit). '1' for PDF 1.x, '2' for PDF 2.0.",
+      "storeAs": "versionMajor",
+      "valueType": "ascii",
+      "valueMap": {
+        "1": "PDF 1.x (Adobe-era specification)",
+        "2": "PDF 2.0 (ISO 32000-2:2020)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Version Dot",
+      "offset": 6,
+      "length": 1,
+      "color": "#95E1D3",
+      "opacity": 0.2,
+      "description": "Version separator (ASCII '.' = 0x2E)",
+      "storeAs": "versionDot",
       "valueType": "ascii"
     },
     {
       "type": "field",
-      "name": "Binary Marker Comment",
-      "offset": 8,
-      "length": 8,
-      "color": "#95E1D3",
+      "name": "Version Minor",
+      "offset": 7,
+      "length": 1,
+      "color": "#45B7D1",
       "opacity": 0.3,
-      "description": "Comment with binary chars (usually %âãÏÓ)",
+      "description": "PDF specification minor version number (ASCII digit '0'-'9'). Combined with major gives the full version, e.g. 1.4, 1.7, 2.0.",
+      "storeAs": "versionMinor",
+      "valueType": "ascii",
+      "valueMap": {
+        "0": "Version x.0",
+        "1": "Version x.1",
+        "2": "Version x.2",
+        "3": "Version x.3",
+        "4": "Version x.4 (Acrobat 5 features)",
+        "5": "Version x.5 (Acrobat 6 features)",
+        "6": "Version x.6 (Acrobat 7 features)",
+        "7": "Version x.7 (Acrobat 8/9 features, ISO 32000-1)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Line Ending",
+      "offset": 8,
+      "length": 1,
+      "color": "#96CEB4",
+      "opacity": 0.2,
+      "description": "End-of-line marker after the version header. Typically CR (0x0D), LF (0x0A), or CR+LF.",
+      "storeAs": "lineEnding",
+      "valueType": "uint8",
+      "valueMap": {
+        "10": "LF (Unix-style line ending)",
+        "13": "CR (Classic Mac line ending)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Binary Content Marker (Byte 1)",
+      "offset": 9,
+      "length": 1,
+      "color": "#FFEAA7",
+      "opacity": 0.3,
+      "description": "First byte of the optional binary file marker comment. The PDF spec recommends starting the second line with '%' followed by at least 4 bytes with values > 128 (0x80) to signal that the file contains binary data, preventing text-mode file transfer corruption.",
+      "storeAs": "binaryByte1",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Binary Content Marker (Byte 2)",
+      "offset": 10,
+      "length": 1,
+      "color": "#DDA0DD",
+      "opacity": 0.3,
+      "description": "Second byte of the binary marker. Should have value > 128 to indicate binary content.",
+      "storeAs": "binaryByte2",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Binary Content Marker (Byte 3)",
+      "offset": 11,
+      "length": 1,
+      "color": "#FF8C69",
+      "opacity": 0.3,
+      "description": "Third byte of the binary marker. Should have value > 128 to indicate binary content.",
+      "storeAs": "binaryByte3",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Binary Content Marker (Byte 4)",
+      "offset": 12,
+      "length": 1,
+      "color": "#87CEEB",
+      "opacity": 0.3,
+      "description": "Fourth byte of the binary marker. Should have value > 128 to indicate binary content.",
+      "storeAs": "binaryByte4",
+      "valueType": "uint8"
+    },
+    {
+      "type": "field",
+      "name": "Binary Marker (Remaining)",
+      "offset": 13,
+      "length": 2,
+      "color": "#98D8C8",
+      "opacity": 0.2,
+      "description": "Additional bytes from the binary content marker comment line. Typically includes line ending character(s) after the 4 high-value bytes.",
       "storeAs": "binaryMarkerComment",
       "valueType": "ascii"
     },
     {
-      "type": "metadata",
-      "name": "Pages",
-      "variable": "pageCount",
-      "description": "Pages"
+      "type": "computeFromVariables",
+      "name": "Full PDF Version",
+      "expression": "versionMajor + '.' + versionMinor",
+      "storeAs": "pdfVersion",
+      "description": "Concatenated PDF version string from major and minor version fields (e.g. '1.7', '2.0')"
     },
     {
-      "type": "metadata",
-      "name": "Title",
-      "variable": "title",
-      "description": "Title"
+      "type": "computeFromVariables",
+      "name": "Binary Marker Detection",
+      "expression": "binaryByte1 > 128 && binaryByte2 > 128 && binaryByte3 > 128 && binaryByte4 > 128",
+      "storeAs": "hasBinaryMarker",
+      "description": "Determines whether the file includes the recommended binary content marker (4 bytes > 0x80 after the header line)"
+    },
+    {
+      "type": "conditional",
+      "name": "PDF Version Check",
+      "condition": "versionMajor == '2'",
+      "trueLabel": "PDF 2.0 (ISO 32000-2) - latest specification",
+      "falseLabel": "PDF 1.x (ISO 32000-1 or earlier Adobe specification)",
+      "description": "Checks whether the document uses the modern PDF 2.0 specification or the legacy PDF 1.x series"
+    },
+    {
+      "type": "conditional",
+      "name": "Encryption Status",
+      "condition": "pdfEncrypted == true",
+      "trueLabel": "Document is encrypted (password-protected or DRM)",
+      "falseLabel": "Document is not encrypted",
+      "description": "Determines whether the PDF contains an Encrypt dictionary in its trailer, indicating password protection or rights management"
+    },
+    {
+      "type": "conditional",
+      "name": "Linearization Check",
+      "condition": "pdfLinearized == true",
+      "trueLabel": "Linearized (optimized for fast web viewing)",
+      "falseLabel": "Not linearized (standard sequential layout)",
+      "description": "Checks if the PDF is linearized, meaning it is reorganized so the first page can be displayed before the entire file downloads"
     },
     {
       "type": "metadata",
       "name": "PDF Version",
       "variable": "pdfVersion",
-      "description": "PDF specification version"
+      "description": "Full PDF specification version string (e.g. 1.4, 1.7, 2.0)"
     },
     {
       "type": "metadata",
       "name": "Page Count",
       "variable": "pdfPageCount",
-      "description": "Total number of pages in the document"
+      "description": "Total number of pages in the document (extracted from the trailer/catalog)"
     },
     {
       "type": "metadata",
       "name": "Encrypted",
       "variable": "pdfEncrypted",
-      "description": "true if document is encrypted, false otherwise"
+      "description": "Whether the document is encrypted with password protection or DRM"
     },
     {
       "type": "metadata",
       "name": "Linearized",
       "variable": "pdfLinearized",
-      "description": "true if PDF is linearized for fast web viewing"
+      "description": "Whether the PDF is linearized for fast web viewing (first page available before full download)"
+    },
+    {
+      "type": "metadata",
+      "name": "Producer",
+      "variable": "pdfProducer",
+      "description": "Software that converted or produced the PDF document"
+    },
+    {
+      "type": "metadata",
+      "name": "File Size",
+      "variable": "formattedSize",
+      "description": "Human-readable file size with appropriate units"
     }
   ],
-  "software": [
-    "Adobe Acrobat",
-    "Web browsers",
-    "Foxit Reader",
-    "Preview (macOS)"
-  ],
-  "format_relationships": {
-    "category": "Documents",
-    "extensions": [
-      ".pdf"
-    ]
-  },
   "MimeTypes": [
     "application/pdf"
   ],
@@ -129,30 +275,36 @@
     "Foxit Reader",
     "Chrome",
     "Edge",
-    "Preview (macOS)"
+    "Preview (macOS)",
+    "SumatraPDF",
+    "Ghostscript"
   ],
   "UseCases": [
     "Document distribution",
     "Forms",
     "Ebooks",
     "Print-ready files",
-    "Archival"
+    "Archival (PDF/A)",
+    "Legal documents",
+    "Scientific papers"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 38,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 9,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 21,
+    "ValidationRules": 2,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
     "DocumentFormat": true,
-    "SupportsEncryption": true
-  },
-  "functions": {
-    "readUInt32LE": "Read document header",
-    "parsePDFTrailer()": "Parse PDF header and trailer"
+    "SupportsEncryption": true,
+    "TextBased": "hybrid (text header + binary streams)",
+    "HeaderSize": "variable (typically 15 bytes through binary marker)",
+    "CrossReferenceTable": true,
+    "TrailerDictionary": true,
+    "RandomAccess": true,
+    "IncrementalUpdates": true
   }
 }

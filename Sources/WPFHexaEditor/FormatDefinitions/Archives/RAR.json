@@ -1,20 +1,22 @@
 {
   "formatName": "RAR Archive",
-  "version": "1.10",
+  "version": "2.0",
   "extensions": [
     ".rar"
   ],
-  "description": "RAR archive format - High compression ratio archive format",
+  "description": "RAR archive format created by Eugene Roshal. Supports high compression ratios, solid archives, multi-volume spanning, recovery records, and AES encryption. RAR4 uses a 7-byte signature (52 61 72 21 1A 07 00) followed by a structured header block starting with a CRC, type byte, flags, and size fields. RAR5 uses an 8-byte signature (52 61 72 21 1A 07 01 00) with variable-length integer encoding.",
   "category": "Archives",
   "author": "WPFHexaEditor Team",
   "references": {
     "specifications": [
-      "RAR 5.0 Archive Format",
-      "RAR File Format Technical Specification"
+      "RAR 5.0 Archive Format Technical Note",
+      "RAR 4.x Archive Format Specification",
+      "UnRAR Source Code Reference"
     ],
     "WebLinks": [
       "https://www.rarlab.com/technote.htm",
-      "https://en.wikipedia.org/wiki/RAR_(file_format)"
+      "https://en.wikipedia.org/wiki/RAR_(file_format)",
+      "https://codedread.github.io/bitjs/docs/unrar.html"
     ]
   },
   "detection": {
@@ -22,23 +24,37 @@
     "offset": 0,
     "required": true,
     "validation": {
-      "min_file_size": 6,
-      "max_signature_offset": 1024
+      "minFileSize": 20,
+      "maxSignatureOffset": 0
     }
-  },
-  "functions": {
-    "calculateCRC32": "Calculate CRC-32 of RAR header for validation",
-    "readUInt32LE": "Read header CRC value (little-endian)"
   },
   "variables": {
     "currentOffset": 0,
-    "headerCRC": 0,
-    "calculatedCRC": 0,
-    "crcValid": false,
     "rarSignature": "",
+    "rarVersionByte": 0,
+    "isRar5": false,
     "headerCrc": 0,
     "headerType": 0,
-    "flags": 0
+    "headerFlags": 0,
+    "headerSize": 0,
+    "reservedWord1": 0,
+    "reservedDword1": 0,
+    "isVolume": false,
+    "hasComment": false,
+    "isLocked": false,
+    "isSolid": false,
+    "hasNewNames": false,
+    "hasAuthInfo": false,
+    "hasRecoveryRecord": false,
+    "isFirstVolume": false,
+    "archiveTypeName": "",
+    "totalHeaderBytes": 0,
+    "flagsSummary": ""
+  },
+  "functions": {
+    "computeFromVariables(rarVersionByte == 1 ? 1 : 0, isRar5)": "Determine if archive is RAR5 format based on version discriminator byte at offset 6",
+    "computeFromVariables(headerSize + 7, totalHeaderBytes)": "Calculate total header size including the 7-byte signature prefix for RAR4",
+    "formatFileSize(var:totalHeaderBytes)": "Format total header size as human-readable string"
   },
   "blocks": [
     {
@@ -48,67 +64,250 @@
       "length": 6,
       "color": "#FF6B6B",
       "opacity": 0.4,
-      "description": "Rar!\\x1A\\x07 magic bytes",
+      "description": "RAR archive magic bytes: 'Rar!' (52 61 72 21) followed by 1A 07. These six bytes are common to both RAR4 and RAR5 formats. The exclamation mark and 0x1A (EOF marker under DOS) help identify the file as a RAR archive.",
       "storeAs": "rarSignature",
-      "valueType": "ascii"
+      "valueType": "hex",
+      "validation": {
+        "expectedValue": "0x526172211A07"
+      }
     },
     {
       "type": "field",
-      "name": "Header CRC",
+      "name": "RAR Version Discriminator",
       "offset": 6,
-      "length": 2,
+      "length": 1,
       "color": "#4ECDC4",
       "opacity": 0.3,
-      "description": "CRC of header",
+      "description": "Byte that distinguishes RAR4 from RAR5 format. RAR4 archives have 0x00 at this position, while RAR5 archives have 0x01. RAR5 also has an additional 0x00 byte at offset 7, making the RAR5 signature 8 bytes total.",
+      "storeAs": "rarVersionByte",
+      "valueType": "uint8",
+      "valueMap": {
+        "0": "RAR4 (legacy format)",
+        "1": "RAR5 (modern format)"
+      }
+    },
+    {
+      "type": "field",
+      "name": "Archive Header CRC-16",
+      "offset": 7,
+      "length": 2,
+      "color": "#95E1D3",
+      "opacity": 0.3,
+      "description": "CRC-16 checksum of the archive header block (RAR4). Covers bytes from header type through end of header. Used to verify header integrity during extraction. In RAR5, offset shifts due to the 8-byte signature.",
       "storeAs": "headerCrc",
-      "valueType": "uint16"
+      "valueType": "uint16",
+      "endianness": "little"
     },
     {
       "type": "field",
       "name": "Header Type",
-      "offset": 8,
+      "offset": 9,
       "length": 1,
-      "color": "#95E1D3",
+      "color": "#FFE66D",
       "opacity": 0.3,
-      "description": "Type of header block",
+      "description": "RAR4 header block type identifier. The main archive header uses type 0x73 (MAIN_HEAD). Other types include 0x74 (FILE_HEAD), 0x75 (COMM_HEAD), 0x76 (AV_HEAD), 0x77 (SUB_HEAD), 0x78 (PROTECT_HEAD), 0x79 (SIGN_HEAD), and 0x7A (NEWSUB_HEAD).",
       "storeAs": "headerType",
-      "valueType": "uint8"
+      "valueType": "uint8",
+      "valueMap": {
+        "115": "MAIN_HEAD (0x73) - Main archive header",
+        "116": "FILE_HEAD (0x74) - File header",
+        "117": "COMM_HEAD (0x75) - Comment header",
+        "118": "AV_HEAD (0x76) - AV header (old style)",
+        "119": "SUB_HEAD (0x77) - Sub-block header",
+        "120": "PROTECT_HEAD (0x78) - Recovery record header",
+        "121": "SIGN_HEAD (0x79) - Signature header",
+        "122": "NEWSUB_HEAD (0x7A) - Subblock header (new style)"
+      }
     },
     {
       "type": "field",
-      "name": "Flags",
-      "offset": 9,
+      "name": "Archive Flags",
+      "offset": 10,
       "length": 2,
-      "color": "#FFE66D",
+      "color": "#C7CEEA",
       "opacity": 0.3,
-      "description": "Archive flags",
-      "storeAs": "flags",
-      "valueType": "uint16"
+      "description": "RAR4 main archive header flags (uint16 LE). These bits indicate fundamental archive properties such as whether it is a multi-volume archive, contains comments, is locked against modification, uses solid compression, or includes authentication information.",
+      "storeAs": "headerFlags",
+      "valueType": "uint16",
+      "endianness": "little",
+      "bitfields": [
+        {
+          "bit": 0,
+          "name": "MHD_VOLUME",
+          "description": "Archive is part of a multi-volume set",
+          "valueMap": {
+            "0": "Single volume archive",
+            "1": "Multi-volume archive"
+          }
+        },
+        {
+          "bit": 1,
+          "name": "MHD_COMMENT",
+          "description": "Archive contains a comment (stored in a special comment block)",
+          "valueMap": {
+            "0": "No archive comment",
+            "1": "Archive comment present"
+          }
+        },
+        {
+          "bit": 2,
+          "name": "MHD_LOCK",
+          "description": "Archive is locked against modification by WinRAR",
+          "valueMap": {
+            "0": "Archive unlocked",
+            "1": "Archive locked"
+          }
+        },
+        {
+          "bit": 3,
+          "name": "MHD_SOLID",
+          "description": "Solid archive mode where files share compression dictionary for better ratio",
+          "valueMap": {
+            "0": "Non-solid archive",
+            "1": "Solid archive"
+          }
+        },
+        {
+          "bit": 4,
+          "name": "MHD_NEWNUMBERING",
+          "description": "New volume naming scheme (volname.partNN.rar instead of volname.rNN)",
+          "valueMap": {
+            "0": "Old naming scheme (.rNN)",
+            "1": "New naming scheme (.partNN.rar)"
+          }
+        },
+        {
+          "bit": 5,
+          "name": "MHD_AV",
+          "description": "Archive contains authenticity verification (digital signature)",
+          "valueMap": {
+            "0": "No authenticity info",
+            "1": "Authenticity verification present"
+          }
+        },
+        {
+          "bit": 6,
+          "name": "MHD_PROTECT",
+          "description": "Archive contains a recovery record for error correction",
+          "valueMap": {
+            "0": "No recovery record",
+            "1": "Recovery record present"
+          }
+        },
+        {
+          "bit": 8,
+          "name": "MHD_FIRSTVOLUME",
+          "description": "Indicates this is the first volume in a multi-volume set",
+          "valueMap": {
+            "0": "Not first volume (or single volume)",
+            "1": "First volume of set"
+          }
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "name": "Header Size",
+      "offset": 12,
+      "length": 2,
+      "color": "#B8B8FF",
+      "opacity": 0.3,
+      "description": "Total size of the main archive header block in bytes (RAR4, uint16 LE). This value includes the header CRC, type, flags, size, and any reserved or optional fields. Typically 13 bytes for a standard RAR4 main header.",
+      "storeAs": "headerSize",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Reserved Word 1",
+      "offset": 14,
+      "length": 2,
+      "color": "#FF6B9D",
+      "opacity": 0.3,
+      "description": "Reserved 16-bit field in the RAR4 main archive header. Should be zero in well-formed archives. Was intended for future format extensions.",
+      "storeAs": "reservedWord1",
+      "valueType": "uint16",
+      "endianness": "little"
+    },
+    {
+      "type": "field",
+      "name": "Reserved DWord 1",
+      "offset": 16,
+      "length": 4,
+      "color": "#C44569",
+      "opacity": 0.3,
+      "description": "Reserved 32-bit field in the RAR4 main archive header. Should be zero in well-formed archives. Was intended for future format extensions such as extended archive properties.",
+      "storeAs": "reservedDword1",
+      "valueType": "uint32",
+      "endianness": "little"
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "RAR Format Version Detection",
+      "expression": "rarVersionByte == 1 ? 1 : 0",
+      "storeAs": "isRar5",
+      "description": "Determines the RAR format version based on the version discriminator byte at offset 6. A value of 1 indicates RAR5 format with variable-length integer encoding; 0 indicates the legacy RAR4 format with fixed-width header fields."
+    },
+    {
+      "type": "computeFromVariables",
+      "name": "Total Header Size Calculation",
+      "expression": "headerSize + 7",
+      "storeAs": "totalHeaderBytes",
+      "description": "Calculates the total header footprint in the file by adding the 7-byte signature prefix to the declared header size. This gives the byte offset where the first file header block begins in a RAR4 archive."
+    },
+    {
+      "type": "conditional",
+      "name": "RAR Version Check",
+      "condition": "rarVersionByte == 1",
+      "trueLabel": "This is a RAR5 archive using modern variable-length integer encoding and AES-256 encryption support",
+      "falseLabel": "This is a RAR4 (legacy) archive using fixed-width header fields",
+      "description": "Determines the RAR format generation based on the version discriminator byte, which affects header parsing strategy"
+    },
+    {
+      "type": "conditional",
+      "name": "Solid Archive Detection",
+      "condition": "(headerFlags & 8) != 0",
+      "trueLabel": "Solid archive: files share a continuous compression dictionary for improved ratio",
+      "falseLabel": "Non-solid archive: each file is compressed independently",
+      "description": "Checks bit 3 of the archive flags to determine if solid compression mode is enabled"
     },
     {
       "type": "metadata",
-      "name": "Header CRC-32",
-      "variable": "headerCRC",
-      "description": "CRC-32 checksum of the header"
+      "name": "Archive Format Version",
+      "variable": "isRar5",
+      "description": "RAR format generation: true = RAR5 (modern), false = RAR4 (legacy)"
     },
     {
       "type": "metadata",
-      "name": "CRC Validation",
-      "variable": "crcValid",
-      "description": "Header CRC-32 integrity check result"
+      "name": "Header Type Name",
+      "variable": "headerType",
+      "description": "RAR4 header block type identifier (0x73 = MAIN_HEAD for main archive header)"
+    },
+    {
+      "type": "metadata",
+      "name": "Archive Flags Value",
+      "variable": "headerFlags",
+      "description": "Raw archive flags bitmask indicating volume, solid, locked, comment, and recovery record status"
+    },
+    {
+      "type": "metadata",
+      "name": "Header Size (bytes)",
+      "variable": "headerSize",
+      "description": "Declared size of the main archive header block in bytes"
+    },
+    {
+      "type": "metadata",
+      "name": "Total Header Footprint",
+      "variable": "totalHeaderBytes",
+      "description": "Total bytes consumed by signature plus main archive header"
+    },
+    {
+      "type": "metadata",
+      "name": "Header CRC-16 Value",
+      "variable": "headerCrc",
+      "description": "CRC-16 checksum stored in the archive header for integrity verification"
     }
   ],
-  "software": [
-    "WinRAR",
-    "7-Zip",
-    "The Unarchiver"
-  ],
-  "format_relationships": {
-    "category": "Archives",
-    "extensions": [
-      ".rar"
-    ]
-  },
   "MimeTypes": [
     "application/vnd.rar",
     "application/x-rar-compressed"
@@ -126,17 +325,23 @@
     "Backup"
   ],
   "QualityMetrics": {
-    "CompletenessScore": 44,
-    "DocumentationLevel": "standard",
-    "BlocksDefined": 6,
-    "ValidationRules": 0,
+    "CompletenessScore": 88,
+    "DocumentationLevel": "comprehensive",
+    "BlocksDefined": 18,
+    "ValidationRules": 1,
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
   },
   "TechnicalDetails": {
-    "CompressionMethod": "RAR proprietary",
     "ArchivesFormat": true,
-    "SupportsEncryption": true
+    "Endianness": "little-endian",
+    "CompressionMethod": "RAR proprietary (PPMd, LZSS)",
+    "SupportsEncryption": true,
+    "EncryptionMethod": "AES-128 (RAR4), AES-256 (RAR5)",
+    "SupportsSolidArchive": true,
+    "SupportsMultiVolume": true,
+    "SupportsRecoveryRecord": true,
+    "HeaderSize": "Variable (typically 20 bytes for RAR4 main header)"
   }
 }
