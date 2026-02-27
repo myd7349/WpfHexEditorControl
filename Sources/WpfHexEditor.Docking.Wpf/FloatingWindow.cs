@@ -213,6 +213,12 @@ public class FloatingWindow : Window
     {
         Node = node;
         Item = item;
+
+        // Floating windows always use bottom tab placement: the custom title bar
+        // already occupies the top, so tabs at the bottom is the consistent choice
+        // regardless of which side the panel was originally docked to.
+        _tabControl.TabStripPlacement = Dock.Bottom;
+
         _tabControl.Bind(node, contentFactory);
 
         // Hide the tab strip completely when single item (title bar already shows the name)
@@ -427,10 +433,14 @@ public class FloatingWindowManager
 
     /// <summary>
     /// Finds a floating window containing the given item.
+    /// Checks both the primary <see cref="FloatingWindow.Item"/> and all items inside
+    /// <see cref="FloatingWindow.Node"/>, so non-active items in a multi-tab group are found.
     /// </summary>
     public FloatingWindow? FindWindowForItem(DockItem item)
     {
-        return _windows.FirstOrDefault(w => w.Item == item);
+        return _windows.FirstOrDefault(w =>
+            w.Item == item ||
+            (w.Node is not null && w.Node.Items.Contains(item)));
     }
 
     /// <summary>
