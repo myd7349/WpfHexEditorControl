@@ -14,19 +14,26 @@ namespace WpfHexEditor.Docking.Wpf;
 
 /// <summary>
 /// Manages drag and drop operations for dock tabs and floating windows using mouse capture.
-/// Shows a compass rose overlay on the entire dock area and a floating preview window.
-/// Supports two modes: tab drag (from docked tabs) and floating window drag (from title bar).
+/// Shows two overlays simultaneously (VS2022-style):
+/// - Edge overlay: 4 indicators at the edges of the entire dock area (dock to MainDocumentHost)
+/// - Panel compass: 5 indicators on the specific panel being hovered (dock relative to that panel)
+/// Panel compass takes hit-test priority over edge overlay.
 /// </summary>
 public class DockDragManager
 {
     private readonly DockControl _dockControl;
-    private DockOverlayWindow? _overlay;
+    private DockOverlayWindow? _panelOverlay;
+    private DockEdgeOverlayWindow? _edgeOverlay;
     private DragPreviewWindow? _previewWindow;
 
     private DockItem? _draggedItem;
     private DockGroupNode? _originalGroup;
     private DockDirection? _lastDirection;
     private bool _isDragging;
+
+    // Target group tracking
+    private DockGroupNode? _targetGroup;
+    private UIElement? _targetElement;
 
     // Floating window drag state
     private FloatingWindow? _sourceFloatingWindow;
@@ -52,6 +59,109 @@ public class DockDragManager
     }
 
     /// <summary>
+    /// Walks up the visual tree from the element at the given point to find the containing DockTabControl.
+    /// Returns null if no DockTabControl is found (e.g., over a splitter or empty area).
+    /// </summary>
+    private DockTabControl? FindTargetTabControl(Point localPosInCenterHost)
+    {
+        var hit = _dockControl.CenterHost.InputHitTest(localPosInCenterHost) as DependencyObject;
+        while (hit != null)
+        {
+            if (hit is DockTabControl tabControl)
+                return tabControl;
+            hit = VisualTreeHelper.GetParent(hit);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Updates both overlays based on the cursor position.
+    /// Panel compass: shown over the specific panel (hidden for self-drag).
+    /// Edge overlay: always visible when cursor is over CenterHost.
+    /// Priority: panel compass > edge overlay.
+    /// </summary>
+    private void UpdateOverlays(DockTabControl? targetTab, Point screenPos)
+    {
+        if (_panelOverlay is null || _edgeOverlay is null) return;
+
+        var targetNode = targetTab?.Node;
+        var isSelfDrag = targetNode != null && targetNode == _originalGroup;
+
+        // --- Panel overlay ---
+        if (!isSelfDrag && targetTab != null && targetNode != null)
+        {
+            _targetGroup = targetNode;
+
+            // Only reposition when the target element changes
+            if (_targetElement != targetTab)
+            {
+                _targetElement = targetTab;
+                _panelOverlay.ShowOverTarget(targetTab);
+            }
+        }
+        else
+        {
+            // Self-drag or no target: hide panel overlay
+            _targetElement = null;
+            _panelOverlay.HighlightedDirection = null;
+            if (_panelOverlay.IsVisible) _panelOverlay.Hide();
+        }
+
+        // --- Hit test with priority: panel compass first, then edge ---
+
+        // 1. Panel compass (if visible)
+        DockDirection? panelDir = _panelOverlay.IsVisible ? _panelOverlay.HitTest(screenPos) : null;
+        if (panelDir.HasValue && targetNode != null)
+        {
+            _lastDirection = panelDir;
+            _targetGroup = targetNode;
+            _panelOverlay.HighlightedDirection = panelDir;
+            _edgeOverlay.HighlightedDirection = null;
+            return;
+        }
+
+        // Clear panel highlight when not over a panel indicator
+        if (_panelOverlay.IsVisible)
+            _panelOverlay.HighlightedDirection = null;
+
+        // 2. Edge overlay
+        DockDirection? edgeDir = _edgeOverlay.HitTest(screenPos);
+        if (edgeDir.HasValue && _dockControl.Layout != null)
+        {
+            _lastDirection = edgeDir;
+            _targetGroup = _dockControl.Layout.MainDocumentHost;
+            _edgeOverlay.HighlightedDirection = edgeDir;
+            return;
+        }
+
+        // 3. Neither
+        _lastDirection = null;
+        _targetGroup = isSelfDrag ? null : targetNode; // keep for reference but no direction
+        _edgeOverlay.HighlightedDirection = null;
+    }
+
+    /// <summary>
+    /// Hides both overlays and clears tracking state.
+    /// </summary>
+    private void HideAllOverlays()
+    {
+        _lastDirection = null;
+        _targetGroup = null;
+        _targetElement = null;
+
+        if (_panelOverlay != null)
+        {
+            _panelOverlay.HighlightedDirection = null;
+            if (_panelOverlay.IsVisible) _panelOverlay.Hide();
+        }
+        if (_edgeOverlay != null)
+        {
+            _edgeOverlay.HighlightedDirection = null;
+            if (_edgeOverlay.IsVisible) _edgeOverlay.Hide();
+        }
+    }
+
+    /// <summary>
     /// Starts a drag operation for the given item using mouse capture on the DockControl.
     /// Used when dragging a tab from a docked panel.
     /// </summary>
@@ -64,6 +174,8 @@ public class DockDragManager
         _draggedItem = item;
         _originalGroup = item.Owner;
         _lastDirection = null;
+        _targetGroup = null;
+        _targetElement = null;
         _sourceFloatingWindow = null;
 
         // Create the floating preview window
@@ -72,9 +184,10 @@ public class DockDragManager
         _previewWindow.MoveTo(dipPos);
         _previewWindow.Show();
 
-        // Show compass overlay over the entire dock center area
-        _overlay ??= new DockOverlayWindow();
-        _overlay.ShowOverTarget(_dockControl.CenterHost);
+        // Create both overlays (edge overlay shown immediately, panel overlay on hover)
+        _panelOverlay ??= new DockOverlayWindow();
+        _edgeOverlay ??= new DockEdgeOverlayWindow();
+        _edgeOverlay.ShowOverTarget(_dockControl.CenterHost);
 
         // Capture mouse on the DockControl to receive all mouse events
         _dockControl.PreviewMouseMove += OnPreviewMouseMove;
@@ -85,7 +198,7 @@ public class DockDragManager
 
     /// <summary>
     /// Starts a drag operation for a floating window. The window follows the cursor
-    /// and the compass overlay appears when over the dock area.
+    /// and overlays appear when over the dock area.
     /// </summary>
     public void BeginFloatingDrag(DockItem item, FloatingWindow sourceWindow)
     {
@@ -96,6 +209,8 @@ public class DockDragManager
         _draggedItem = item;
         _originalGroup = item.Owner;
         _lastDirection = null;
+        _targetGroup = null;
+        _targetElement = null;
         _sourceFloatingWindow = sourceWindow;
 
         // Record offset from cursor to window corner in DIPs for smooth drag
@@ -103,8 +218,8 @@ public class DockDragManager
         _dragOffset = new Point(cursorDip.X - sourceWindow.Left, cursorDip.Y - sourceWindow.Top);
         _originalWindowPos = new Point(sourceWindow.Left, sourceWindow.Top);
 
-        // Show compass overlay over the dock center area
-        _overlay ??= new DockOverlayWindow();
+        _panelOverlay ??= new DockOverlayWindow();
+        _edgeOverlay ??= new DockEdgeOverlayWindow();
 
         // Capture mouse on the floating window
         sourceWindow.PreviewMouseMove += OnFloatingMouseMove;
@@ -117,7 +232,7 @@ public class DockDragManager
 
     private void OnPreviewMouseMove(object sender, MouseEventArgs e)
     {
-        if (!_isDragging || _overlay is null) return;
+        if (!_isDragging) return;
 
         // Get cursor position in physical pixels (for overlay HitTest) and DIPs (for preview window)
         var screenPos = _dockControl.PointToScreen(e.GetPosition(_dockControl));
@@ -126,25 +241,23 @@ public class DockDragManager
         // Move preview window to follow cursor (DIPs)
         _previewWindow?.MoveTo(dipPos);
 
-        // Check if mouse is within the DockControl bounds (local coords are already in DIPs)
+        // Check if mouse is within the CenterHost bounds
         var localPos = e.GetPosition(_dockControl.CenterHost);
         var bounds = new Rect(0, 0, _dockControl.CenterHost.ActualWidth, _dockControl.CenterHost.ActualHeight);
 
         if (bounds.Contains(localPos))
         {
-            if (!_overlay.IsVisible)
-                _overlay.ShowOverTarget(_dockControl.CenterHost);
+            // Show edge overlay if not visible
+            if (_edgeOverlay != null && !_edgeOverlay.IsVisible)
+                _edgeOverlay.ShowOverTarget(_dockControl.CenterHost);
 
-            // HitTest accepts physical screen pixels and converts internally
-            _lastDirection = _overlay.HitTest(screenPos);
-            _overlay.HighlightedDirection = _lastDirection;
+            // Find the specific group under the cursor and update both overlays
+            var targetTab = FindTargetTabControl(localPos);
+            UpdateOverlays(targetTab, screenPos);
         }
         else
         {
-            _lastDirection = null;
-            _overlay.HighlightedDirection = null;
-            if (_overlay.IsVisible)
-                _overlay.Hide();
+            HideAllOverlays();
         }
     }
 
@@ -160,18 +273,17 @@ public class DockDragManager
             return;
         }
 
-        if (_lastDirection.HasValue)
+        if (_lastDirection.HasValue && _targetGroup != null)
         {
-            engine.Dock(_draggedItem, layout.MainDocumentHost, _lastDirection.Value);
+            engine.Dock(_draggedItem, _targetGroup, _lastDirection.Value);
+            EndDrag();
+            _dockControl.RebuildVisualTree();
         }
         else
         {
-            engine.Float(_draggedItem);
-            _dockControl.RebuildVisualTree();
+            // No compass direction or no valid target → cancel drag
+            EndDrag();
         }
-
-        EndDrag();
-        _dockControl.RebuildVisualTree();
     }
 
     private void OnKeyDown(object sender, KeyEventArgs e)
@@ -200,29 +312,28 @@ public class DockDragManager
         _sourceFloatingWindow.Top = dipPos.Y - _dragOffset.Y;
 
         // Check if cursor is over the dock area using physical pixel bounds
-        // (both endpoints from PointToScreen so units are consistent)
         var topLeft = _dockControl.CenterHost.PointToScreen(new Point(0, 0));
         var bottomRight = _dockControl.CenterHost.PointToScreen(
             new Point(_dockControl.CenterHost.ActualWidth, _dockControl.CenterHost.ActualHeight));
         var dockBounds = new Rect(topLeft, bottomRight);
 
-        _overlay ??= new DockOverlayWindow();
+        _panelOverlay ??= new DockOverlayWindow();
+        _edgeOverlay ??= new DockEdgeOverlayWindow();
 
         if (dockBounds.Contains(screenPos))
         {
-            if (!_overlay.IsVisible)
-                _overlay.ShowOverTarget(_dockControl.CenterHost);
+            // Show edge overlay if not visible
+            if (!_edgeOverlay.IsVisible)
+                _edgeOverlay.ShowOverTarget(_dockControl.CenterHost);
 
-            // HitTest accepts physical screen pixels and converts internally
-            _lastDirection = _overlay.HitTest(screenPos);
-            _overlay.HighlightedDirection = _lastDirection;
+            // Convert screen position to CenterHost local coords for hit testing
+            var localInCenterHost = _dockControl.CenterHost.PointFromScreen(screenPos);
+            var targetTab = FindTargetTabControl(localInCenterHost);
+            UpdateOverlays(targetTab, screenPos);
         }
         else
         {
-            _lastDirection = null;
-            _overlay.HighlightedDirection = null;
-            if (_overlay.IsVisible)
-                _overlay.Hide();
+            HideAllOverlays();
         }
     }
 
@@ -238,9 +349,9 @@ public class DockDragManager
             return;
         }
 
-        if (_lastDirection.HasValue)
+        if (_lastDirection.HasValue && _targetGroup != null)
         {
-            engine.Dock(_draggedItem, layout.MainDocumentHost, _lastDirection.Value);
+            engine.Dock(_draggedItem, _targetGroup, _lastDirection.Value);
             _dockControl.RebuildVisualTree();
             _sourceFloatingWindow.Close();
         }
@@ -267,6 +378,8 @@ public class DockDragManager
         _draggedItem = null;
         _originalGroup = null;
         _lastDirection = null;
+        _targetGroup = null;
+        _targetElement = null;
         _sourceFloatingWindow = null;
 
         Mouse.Capture(null);
@@ -278,7 +391,8 @@ public class DockDragManager
         _previewWindow?.Close();
         _previewWindow = null;
 
-        _overlay?.Hide();
+        _panelOverlay?.Hide();
+        _edgeOverlay?.Hide();
     }
 
     private void EndFloatingDrag()
@@ -289,6 +403,8 @@ public class DockDragManager
         _draggedItem = null;
         _originalGroup = null;
         _lastDirection = null;
+        _targetGroup = null;
+        _targetElement = null;
         _sourceFloatingWindow = null;
 
         Mouse.Capture(null);
@@ -300,6 +416,7 @@ public class DockDragManager
             window.KeyDown -= OnFloatingKeyDown;
         }
 
-        _overlay?.Hide();
+        _panelOverlay?.Hide();
+        _edgeOverlay?.Hide();
     }
 }
