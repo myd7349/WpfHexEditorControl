@@ -19,6 +19,13 @@ public class DockTabControl : TabControl
 {
     public DockGroupNode? Node { get; private set; }
 
+    public DockTabControl()
+    {
+        SetResourceReference(BackgroundProperty, "DockBackgroundBrush");
+        SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
+        SetResourceReference(BorderBrushProperty, "DockBorderBrush");
+    }
+
     public event Action<DockItem>? TabDragStarted;
     public event Action<DockItem>? TabCloseRequested;
     public event Action<DockItem>? TabFloatRequested;

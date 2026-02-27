@@ -10,6 +10,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shell;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 
@@ -53,7 +54,20 @@ public class FloatingWindow : Window
         ShowInTaskbar = false;
         Width = 400;
         Height = 300;
-        ResizeMode = ResizeMode.CanResizeWithGrip;
+        ResizeMode = ResizeMode.CanResize;
+        SetResourceReference(BackgroundProperty, "DockBackgroundBrush");
+
+        // Remove the white DWM caption area that Windows adds even for WindowStyle.None.
+        // CaptionHeight=0 keeps the client area full-height; ResizeBorderThickness keeps
+        // all-edge resizing. Windows 11 DWM then handles drop shadow, rounded corners,
+        // and the accent-color active border natively (VS2022-style look).
+        WindowChrome.SetWindowChrome(this, new WindowChrome
+        {
+            CaptionHeight           = 0,
+            ResizeBorderThickness   = new Thickness(4),
+            GlassFrameThickness     = new Thickness(0),
+            UseAeroCaptionButtons   = false
+        });
 
         // --- Title bar ---
         _titleBlock = new TextBlock
@@ -189,9 +203,8 @@ public class FloatingWindow : Window
         outerBorder.SetResourceReference(Border.BackgroundProperty, "DockBackgroundBrush");
         outerBorder.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
 
-        // Propagate theme foreground to all text content inside the floating window
-        TextElement.SetForeground(outerBorder,
-            TryFindResource("DockMenuForegroundBrush") as Brush ?? Brushes.White);
+        // Propagate theme foreground dynamically to all text content inside the floating window
+        outerBorder.SetResourceReference(TextElement.ForegroundProperty, "DockMenuForegroundBrush");
 
         Content = outerBorder;
     }
@@ -315,6 +328,80 @@ public class FloatingWindowManager
             _dockControl.RebuildVisualTree();
             if (window.Node?.IsEmpty == true)
                 window.Close();
+        };
+
+        _windows.Add(window);
+        window.Owner = Window.GetWindow(_dockControl);
+        window.Show();
+
+        return window;
+    }
+
+    /// <summary>
+    /// Creates a floating window for an existing group (e.g. from a group-drag).
+    /// Unlike <see cref="CreateFloatingWindow"/>, uses the provided group directly.
+    /// </summary>
+    public FloatingWindow CreateFloatingWindowForGroup(DockGroupNode group, Point? position = null)
+    {
+        var item = group.ActiveItem ?? group.Items.FirstOrDefault();
+        if (item is null) return null!;
+
+        var window = new FloatingWindow();
+        window.Bind(group, item, _dockControl.ContentFactory);
+
+        if (position.HasValue)
+        {
+            window.Left = position.Value.X;
+            window.Top  = position.Value.Y;
+        }
+        else
+        {
+            var owner = Window.GetWindow(_dockControl);
+            if (owner is not null)
+            {
+                window.Left = owner.Left + (owner.Width  - window.Width)  / 2;
+                window.Top  = owner.Top  + (owner.Height - window.Height) / 2;
+            }
+        }
+
+        window.Closed += (_, _) =>
+        {
+            _windows.Remove(window);
+            Window.GetWindow(_dockControl)?.Activate();
+        };
+
+        window.TabCloseRequested += i =>
+        {
+            _dockControl.Engine?.Close(i);
+            if (window.Node?.IsEmpty == true) window.Close();
+        };
+
+        window.ReDockRequested += i =>
+        {
+            if (_dockControl.Engine is null) return;
+            var dir = i.LastDockSide switch
+            {
+                Core.DockSide.Left   => DockDirection.Left,
+                Core.DockSide.Right  => DockDirection.Right,
+                Core.DockSide.Top    => DockDirection.Top,
+                Core.DockSide.Bottom => DockDirection.Bottom,
+                _                    => DockDirection.Center
+            };
+            _dockControl.Engine.Dock(i, _dockControl.Layout!.MainDocumentHost, dir);
+            _dockControl.RebuildVisualTree();
+            if (window.Node?.IsEmpty == true) window.Close();
+        };
+
+        window.WindowDragStarted += i =>
+        {
+            _dockControl.DragManager?.BeginFloatingDrag(i, window);
+        };
+
+        window.TabAutoHideRequested += i =>
+        {
+            _dockControl.Engine?.AutoHide(i);
+            _dockControl.RebuildVisualTree();
+            if (window.Node?.IsEmpty == true) window.Close();
         };
 
         _windows.Add(window);

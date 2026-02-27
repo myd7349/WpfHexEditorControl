@@ -6,6 +6,7 @@
 
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 
@@ -68,6 +69,11 @@ public class DockControl : ContentControl
     internal DockDragManager? DragManager => _dragManager;
 
     /// <summary>
+    /// The floating window manager, used by DockDragManager to retrieve a newly created window after Float().
+    /// </summary>
+    internal FloatingWindowManager? FloatingManager => _floatingManager;
+
+    /// <summary>
     /// Raised when a tab close is requested.
     /// </summary>
     public event Action<DockItem>? TabCloseRequested;
@@ -105,6 +111,7 @@ public class DockControl : ContentControl
 
         // Grid with two layers: content + flyout overlay
         _rootGrid = new Grid();
+        _rootGrid.SetResourceReference(Panel.BackgroundProperty, "DockBackgroundBrush");
         _rootGrid.Children.Add(_rootPanel);
         _rootGrid.Children.Add(_autoHideFlyout);
 
@@ -125,9 +132,10 @@ public class DockControl : ContentControl
                 control._engine.LayoutChanged += control.OnLayoutTreeChanged;
 
                 // Wire engine events for float and dock
-                control._engine.ItemFloated += control.OnItemFloated;
-                control._engine.ItemDocked += control.OnItemDocked;
-                control._engine.ItemClosed += control.OnItemClosed;
+                control._engine.ItemFloated  += control.OnItemFloated;
+                control._engine.ItemDocked   += control.OnItemDocked;
+                control._engine.ItemClosed   += control.OnItemClosed;
+                control._engine.GroupFloated += control.OnGroupFloated;
 
                 control._dragManager = new DockDragManager(control);
                 control._floatingManager = new FloatingWindowManager(control);
@@ -200,12 +208,113 @@ public class DockControl : ContentControl
         return host;
     }
 
-    private DockTabControl CreateTabControl(DockGroupNode group)
+    private UIElement CreateTabControl(DockGroupNode group)
     {
         var tabControl = new DockTabControl();
+
+        if (group.Items.FirstOrDefault()?.LastDockSide == DockSide.Bottom)
+        {
+            // VS2026: bottom panels — tab strip at bottom, title bar at top
+            tabControl.TabStripPlacement = Dock.Bottom;
+            tabControl.Bind(group, ContentFactory);
+            WireTabControlEvents(tabControl);
+
+            // Dynamic title block shows the active tab name
+            var titleBlock = new TextBlock
+            {
+                Text              = group.ActiveItem?.Title ?? "",
+                FontWeight        = FontWeights.SemiBold,
+                FontSize          = 11,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin            = new Thickness(8, 2, 8, 2)
+            };
+            titleBlock.SetResourceReference(TextBlock.ForegroundProperty, "DockTabTextBrush");
+
+            // Update title when the active tab changes
+            tabControl.SelectionChanged += (_, _) =>
+            {
+                if (tabControl.SelectedItem is TabItem tab && tab.Tag is DockItem di)
+                    titleBlock.Text = di.Title;
+            };
+
+            var titleBar = new Border { Child = titleBlock, Cursor = Cursors.SizeAll };
+            titleBar.SetResourceReference(Border.BackgroundProperty, "DockMenuBackgroundBrush");
+
+            // Drag threshold state (local to this title bar instance)
+            var titleDragStart   = new Point();
+            var titleDragPending = false;
+
+            titleBar.MouseLeftButtonDown += (_, e) =>
+            {
+                if (e.ClickCount >= 2) return;
+                titleDragStart   = e.GetPosition(titleBar);
+                titleDragPending = true;
+                titleBar.CaptureMouse();
+            };
+
+            titleBar.MouseMove += (_, e) =>
+            {
+                if (!titleDragPending || e.LeftButton != MouseButtonState.Pressed) return;
+                var diff = e.GetPosition(titleBar) - titleDragStart;
+                if (Math.Abs(diff.X) <= SystemParameters.MinimumHorizontalDragDistance &&
+                    Math.Abs(diff.Y) <= SystemParameters.MinimumVerticalDragDistance) return;
+
+                titleDragPending = false;
+                titleBar.ReleaseMouseCapture();
+                var activeItem = group.ActiveItem;
+                if (activeItem is null) return;
+                _dragManager?.BeginGroupDrag(group, activeItem);
+            };
+
+            titleBar.MouseLeftButtonUp += (_, _) =>
+            {
+                titleDragPending = false;
+                titleBar.ReleaseMouseCapture();
+            };
+
+            var layout = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(titleBar, Dock.Top);
+            layout.Children.Add(titleBar);
+            layout.Children.Add(tabControl);
+
+            return CreateFocusBorder(layout);
+        }
+
         tabControl.Bind(group, ContentFactory);
         WireTabControlEvents(tabControl);
-        return tabControl;
+        return CreateFocusBorder(tabControl);
+    }
+
+    /// <summary>
+    /// Wraps any UIElement in a Border that shows a 2 px accent-colored top line
+    /// when any child element has keyboard focus (VS2022-style active panel indicator).
+    /// </summary>
+    private static Border CreateFocusBorder(UIElement content)
+    {
+        var border = new Border
+        {
+            Child           = content,
+            BorderThickness = new Thickness(0, 2, 0, 0)
+        };
+        border.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
+
+        // Turn accent when focus enters; restore when focus leaves the entire group
+        border.AddHandler(
+            UIElement.GotKeyboardFocusEvent,
+            new KeyboardFocusChangedEventHandler((_, _) =>
+                border.SetResourceReference(Border.BorderBrushProperty, "DockTabActiveBrush")),
+            handledEventsToo: true);
+
+        border.AddHandler(
+            UIElement.LostKeyboardFocusEvent,
+            new KeyboardFocusChangedEventHandler((_, _) =>
+            {
+                if (!border.IsKeyboardFocusWithin)
+                    border.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
+            }),
+            handledEventsToo: true);
+
+        return border;
     }
 
     /// <summary>
@@ -242,10 +351,12 @@ public class DockControl : ContentControl
 
     private void OnItemFloated(DockItem item)
     {
-        // Create a floating window for the item
-        var mousePos = System.Windows.Input.Mouse.GetPosition(this);
+        // Create a floating window for the item, positioned near the cursor (DIPs)
+        var mousePos  = System.Windows.Input.Mouse.GetPosition(this);
         var screenPos = PointToScreen(mousePos);
-        _floatingManager?.CreateFloatingWindow(item, new Point(screenPos.X - 50, screenPos.Y - 20));
+        var source    = PresentationSource.FromVisual(this);
+        var dipPos    = source?.CompositionTarget?.TransformFromDevice.Transform(screenPos) ?? screenPos;
+        _floatingManager?.CreateFloatingWindow(item, new Point(dipPos.X - 50, dipPos.Y - 20));
     }
 
     private void OnItemDocked(DockItem item)
@@ -258,6 +369,16 @@ public class DockControl : ContentControl
     {
         // Close the floating window if the item was closed
         _floatingManager?.CloseWindowForItem(item);
+    }
+
+    private void OnGroupFloated(DockGroupNode floatingGroup)
+    {
+        var mousePos  = System.Windows.Input.Mouse.GetPosition(this);
+        var screenPos = PointToScreen(mousePos);
+        var source    = PresentationSource.FromVisual(this);
+        var dipPos    = source?.CompositionTarget?.TransformFromDevice.Transform(screenPos) ?? screenPos;
+        _floatingManager?.CreateFloatingWindowForGroup(floatingGroup,
+            new Point(dipPos.X - 50, dipPos.Y - 20));
     }
 
     /// <summary>
