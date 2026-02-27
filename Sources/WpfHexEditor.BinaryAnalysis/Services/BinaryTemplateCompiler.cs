@@ -55,8 +55,7 @@ namespace WpfHexEditor.BinaryAnalysis.Services
             { "float", "float" },
             { "double", "double" },
 
-            // Windows types
-            { "BYTE", "uint8" },
+            // Windows types (BYTE covered by "byte" via OrdinalIgnoreCase)
             { "WORD", "uint16" },
             { "DWORD", "uint32" },
             { "QWORD", "uint64" },
