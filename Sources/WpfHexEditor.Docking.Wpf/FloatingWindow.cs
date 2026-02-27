@@ -10,6 +10,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shell;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 
@@ -53,8 +54,20 @@ public class FloatingWindow : Window
         ShowInTaskbar = false;
         Width = 400;
         Height = 300;
-        ResizeMode = ResizeMode.CanResizeWithGrip;
+        ResizeMode = ResizeMode.CanResize;
         SetResourceReference(BackgroundProperty, "DockBackgroundBrush");
+
+        // Remove the white DWM caption area that Windows adds even for WindowStyle.None.
+        // CaptionHeight=0 keeps the client area full-height; ResizeBorderThickness keeps
+        // all-edge resizing. Windows 11 DWM then handles drop shadow, rounded corners,
+        // and the accent-color active border natively (VS2022-style look).
+        WindowChrome.SetWindowChrome(this, new WindowChrome
+        {
+            CaptionHeight           = 0,
+            ResizeBorderThickness   = new Thickness(4),
+            GlassFrameThickness     = new Thickness(0),
+            UseAeroCaptionButtons   = false
+        });
 
         // --- Title bar ---
         _titleBlock = new TextBlock
