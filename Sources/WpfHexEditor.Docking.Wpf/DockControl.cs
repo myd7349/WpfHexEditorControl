@@ -6,6 +6,7 @@
 
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 
@@ -205,12 +206,49 @@ public class DockControl : ContentControl
         return host;
     }
 
-    private DockTabControl CreateTabControl(DockGroupNode group)
+    private UIElement CreateTabControl(DockGroupNode group)
     {
         var tabControl = new DockTabControl();
+
+        // VS2022: bottom-docked panels show the tab strip at the bottom
+        if (group.Items.FirstOrDefault()?.LastDockSide == DockSide.Bottom)
+            tabControl.TabStripPlacement = Dock.Bottom;
+
         tabControl.Bind(group, ContentFactory);
         WireTabControlEvents(tabControl);
-        return tabControl;
+        return CreateFocusBorder(tabControl);
+    }
+
+    /// <summary>
+    /// Wraps a DockTabControl in a Border that shows a 2 px accent-colored top line
+    /// when any child element has keyboard focus (VS2022-style active panel indicator).
+    /// </summary>
+    private static Border CreateFocusBorder(DockTabControl content)
+    {
+        var border = new Border
+        {
+            Child = content,
+            BorderThickness = new Thickness(0, 2, 0, 0)
+        };
+        border.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
+
+        // Turn accent when focus enters; restore when focus leaves the entire group
+        border.AddHandler(
+            UIElement.GotKeyboardFocusEvent,
+            new KeyboardFocusChangedEventHandler((_, _) =>
+                border.SetResourceReference(Border.BorderBrushProperty, "DockTabActiveBrush")),
+            handledEventsToo: true);
+
+        border.AddHandler(
+            UIElement.LostKeyboardFocusEvent,
+            new KeyboardFocusChangedEventHandler((_, _) =>
+            {
+                if (!border.IsKeyboardFocusWithin)
+                    border.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
+            }),
+            handledEventsToo: true);
+
+        return border;
     }
 
     /// <summary>
