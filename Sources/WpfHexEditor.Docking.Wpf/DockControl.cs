@@ -6,7 +6,6 @@
 
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 
@@ -23,12 +22,13 @@ public class DockControl : ContentControl
     private DockDragManager? _dragManager;
     private FloatingWindowManager? _floatingManager;
 
+    private readonly Grid _rootGrid;
     private readonly DockPanel _rootPanel;
     private readonly AutoHideBar _autoHideLeft;
     private readonly AutoHideBar _autoHideRight;
     private readonly AutoHideBar _autoHideTop;
     private readonly AutoHideBar _autoHideBottom;
-    private readonly AutoHidePopup _autoHidePopup;
+    private readonly AutoHideFlyout _autoHideFlyout;
     private readonly ContentControl _centerHost;
 
     public static readonly DependencyProperty LayoutProperty =
@@ -68,7 +68,10 @@ public class DockControl : ContentControl
         _autoHideRight = new AutoHideBar(Dock.Right);
         _autoHideTop = new AutoHideBar(Dock.Top);
         _autoHideBottom = new AutoHideBar(Dock.Bottom);
-        _autoHidePopup = new AutoHidePopup();
+        _autoHideFlyout = new AutoHideFlyout();
+        _autoHideFlyout.RestoreRequested += OnAutoHideRestoreRequested;
+        _autoHideFlyout.CloseRequested += OnAutoHideCloseRequested;
+        _autoHideFlyout.FloatRequested += OnAutoHideFloatRequested;
         _centerHost = new ContentControl();
 
         _autoHideLeft.ItemClicked += OnAutoHideItemClicked;
@@ -76,7 +79,7 @@ public class DockControl : ContentControl
         _autoHideTop.ItemClicked += OnAutoHideItemClicked;
         _autoHideBottom.ItemClicked += OnAutoHideItemClicked;
 
-        // Build the root structure: auto-hide bars on edges, content in center
+        // Build the root structure: DockPanel with bars + center, then flyout overlay
         _rootPanel = new DockPanel { LastChildFill = true };
 
         DockPanel.SetDock(_autoHideLeft, Dock.Left);
@@ -90,7 +93,12 @@ public class DockControl : ContentControl
         _rootPanel.Children.Add(_autoHideBottom);
         _rootPanel.Children.Add(_centerHost);
 
-        Content = _rootPanel;
+        // Grid with two layers: content + flyout overlay
+        _rootGrid = new Grid();
+        _rootGrid.Children.Add(_rootPanel);
+        _rootGrid.Children.Add(_autoHideFlyout);
+
+        Content = _rootGrid;
     }
 
     private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -285,30 +293,55 @@ public class DockControl : ContentControl
 
     private void OnAutoHideItemClicked(DockItem item)
     {
-        if (_autoHidePopup.IsOpen && _autoHidePopup.CurrentItem == item)
+        if (_autoHideFlyout.IsOpen && _autoHideFlyout.CurrentItem == item)
         {
             // Toggle off
-            _autoHidePopup.IsOpen = false;
+            _autoHideFlyout.Close();
             return;
         }
 
-        // Find the button and its bar to determine placement
-        UIElement? placementTarget = FindAutoHideButton(item);
-        if (placementTarget is null) return;
-
-        _autoHidePopup.ShowForItem(item, placementTarget, ContentFactory, item.LastDockSide);
+        _autoHideFlyout.ShowForItem(item, ContentFactory, item.LastDockSide);
     }
 
-    private UIElement? FindAutoHideButton(DockItem item)
+    private void OnAutoHideRestoreRequested(DockItem item)
     {
-        foreach (AutoHideBar bar in new[] { _autoHideLeft, _autoHideRight, _autoHideTop, _autoHideBottom })
+        _autoHideFlyout.Close();
+
+        if (_engine is null || Layout is null) return;
+
+        // Re-dock to original side
+        var direction = item.LastDockSide switch
         {
-            foreach (UIElement child in bar.Children)
-            {
-                if (child is Button button && button.Tag == item)
-                    return button;
-            }
-        }
-        return null;
+            Core.DockSide.Left => DockDirection.Left,
+            Core.DockSide.Right => DockDirection.Right,
+            Core.DockSide.Top => DockDirection.Top,
+            Core.DockSide.Bottom => DockDirection.Bottom,
+            _ => DockDirection.Bottom
+        };
+
+        _engine.RestoreFromAutoHide(item, Layout.MainDocumentHost, direction);
+        RebuildVisualTree();
+    }
+
+    private void OnAutoHideCloseRequested(DockItem item)
+    {
+        _autoHideFlyout.Close();
+
+        if (_engine is null) return;
+
+        _engine.Close(item);
+        RebuildVisualTree();
+    }
+
+    private void OnAutoHideFloatRequested(DockItem item)
+    {
+        _autoHideFlyout.Close();
+
+        if (_engine is null || Layout is null) return;
+
+        // Remove from auto-hide, then float
+        _engine.RestoreFromAutoHide(item, Layout.MainDocumentHost, DockDirection.Center);
+        _engine.Float(item);
+        RebuildVisualTree();
     }
 }
