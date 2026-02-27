@@ -14,21 +14,27 @@ namespace WpfHexEditor.Docking.Wpf;
 
 /// <summary>
 /// Transparent overlay window that shows dock direction indicators (compass rose)
-/// during a drag operation.
+/// and a preview zone during a drag operation.
+/// Covers the entire dock content area.
 /// </summary>
 public class DockOverlayWindow : Window
 {
     private readonly Canvas _canvas;
-    private readonly Dictionary<DockDirection, Path> _indicators = new();
     private DockDirection? _highlightedDirection;
+
+    private const double IndicatorSize = 36.0;
+    private const double IndicatorOffset = 44.0;
 
     public DockDirection? HighlightedDirection
     {
         get => _highlightedDirection;
         set
         {
-            _highlightedDirection = value;
-            UpdateHighlights();
+            if (_highlightedDirection != value)
+            {
+                _highlightedDirection = value;
+                Rebuild();
+            }
         }
     }
 
@@ -46,7 +52,7 @@ public class DockOverlayWindow : Window
     }
 
     /// <summary>
-    /// Shows the overlay centered on the given target element.
+    /// Shows the overlay positioned over the given target element (the entire dock area).
     /// </summary>
     public void ShowOverTarget(UIElement target)
     {
@@ -58,7 +64,7 @@ public class DockOverlayWindow : Window
         Width = targetSize.Width;
         Height = targetSize.Height;
 
-        BuildIndicators();
+        Rebuild();
         Show();
     }
 
@@ -70,16 +76,14 @@ public class DockOverlayWindow : Window
         var localPoint = new Point(screenPoint.X - Left, screenPoint.Y - Top);
         var centerX = Width / 2;
         var centerY = Height / 2;
-        var indicatorSize = 32.0;
-        var offset = 40.0;
 
         var zones = new Dictionary<DockDirection, Rect>
         {
-            [DockDirection.Center] = new(centerX - indicatorSize / 2, centerY - indicatorSize / 2, indicatorSize, indicatorSize),
-            [DockDirection.Left] = new(centerX - offset - indicatorSize, centerY - indicatorSize / 2, indicatorSize, indicatorSize),
-            [DockDirection.Right] = new(centerX + offset, centerY - indicatorSize / 2, indicatorSize, indicatorSize),
-            [DockDirection.Top] = new(centerX - indicatorSize / 2, centerY - offset - indicatorSize, indicatorSize, indicatorSize),
-            [DockDirection.Bottom] = new(centerX - indicatorSize / 2, centerY + offset, indicatorSize, indicatorSize),
+            [DockDirection.Center] = new(centerX - IndicatorSize / 2, centerY - IndicatorSize / 2, IndicatorSize, IndicatorSize),
+            [DockDirection.Left] = new(centerX - IndicatorOffset - IndicatorSize, centerY - IndicatorSize / 2, IndicatorSize, IndicatorSize),
+            [DockDirection.Right] = new(centerX + IndicatorOffset, centerY - IndicatorSize / 2, IndicatorSize, IndicatorSize),
+            [DockDirection.Top] = new(centerX - IndicatorSize / 2, centerY - IndicatorOffset - IndicatorSize, IndicatorSize, IndicatorSize),
+            [DockDirection.Bottom] = new(centerX - IndicatorSize / 2, centerY + IndicatorOffset, IndicatorSize, IndicatorSize),
         };
 
         foreach (var (direction, zone) in zones)
@@ -91,35 +95,83 @@ public class DockOverlayWindow : Window
         return null;
     }
 
-    private void BuildIndicators()
+    private void Rebuild()
     {
         _canvas.Children.Clear();
-        _indicators.Clear();
 
+        // Draw preview zone if a direction is highlighted
+        if (_highlightedDirection.HasValue)
+            DrawPreviewZone(_highlightedDirection.Value);
+
+        // Draw compass indicators
         var centerX = Width / 2;
         var centerY = Height / 2;
-        var size = 32.0;
-        var offset = 40.0;
 
-        AddIndicator(DockDirection.Center, centerX - size / 2, centerY - size / 2, size);
-        AddIndicator(DockDirection.Left, centerX - offset - size, centerY - size / 2, size);
-        AddIndicator(DockDirection.Right, centerX + offset, centerY - size / 2, size);
-        AddIndicator(DockDirection.Top, centerX - size / 2, centerY - offset - size, size);
-        AddIndicator(DockDirection.Bottom, centerX - size / 2, centerY + offset, size);
+        AddIndicator(DockDirection.Center, centerX - IndicatorSize / 2, centerY - IndicatorSize / 2);
+        AddIndicator(DockDirection.Left, centerX - IndicatorOffset - IndicatorSize, centerY - IndicatorSize / 2);
+        AddIndicator(DockDirection.Right, centerX + IndicatorOffset, centerY - IndicatorSize / 2);
+        AddIndicator(DockDirection.Top, centerX - IndicatorSize / 2, centerY - IndicatorOffset - IndicatorSize);
+        AddIndicator(DockDirection.Bottom, centerX - IndicatorSize / 2, centerY + IndicatorOffset);
     }
 
-    private void AddIndicator(DockDirection direction, double x, double y, double size)
+    /// <summary>
+    /// Draws a semi-transparent rectangle showing where the panel will be placed.
+    /// </summary>
+    private void DrawPreviewZone(DockDirection direction)
+    {
+        double x = 0, y = 0, w = Width, h = Height;
+
+        switch (direction)
+        {
+            case DockDirection.Left:
+                w = Width * 0.25;
+                break;
+            case DockDirection.Right:
+                x = Width * 0.75;
+                w = Width * 0.25;
+                break;
+            case DockDirection.Top:
+                h = Height * 0.25;
+                break;
+            case DockDirection.Bottom:
+                y = Height * 0.75;
+                h = Height * 0.25;
+                break;
+            case DockDirection.Center:
+                // Full area with lighter overlay
+                break;
+        }
+
+        var preview = new Rectangle
+        {
+            Width = w,
+            Height = h,
+            Fill = new SolidColorBrush(Color.FromArgb(60, 0, 122, 204)),
+            Stroke = new SolidColorBrush(Color.FromArgb(160, 0, 122, 204)),
+            StrokeThickness = 2
+        };
+
+        Canvas.SetLeft(preview, x);
+        Canvas.SetTop(preview, y);
+        _canvas.Children.Add(preview);
+    }
+
+    private void AddIndicator(DockDirection direction, double x, double y)
     {
         var isHighlighted = _highlightedDirection == direction;
+
+        // Background rounded rectangle
         var rect = new Rectangle
         {
-            Width = size,
-            Height = size,
+            Width = IndicatorSize,
+            Height = IndicatorSize,
             Fill = isHighlighted
                 ? new SolidColorBrush(Color.FromArgb(240, 0, 150, 255))
-                : new SolidColorBrush(Color.FromArgb(140, 0, 122, 204)),
-            Stroke = isHighlighted ? Brushes.Yellow : Brushes.White,
-            StrokeThickness = isHighlighted ? 3 : 2,
+                : new SolidColorBrush(Color.FromArgb(200, 45, 45, 48)),
+            Stroke = isHighlighted
+                ? new SolidColorBrush(Color.FromRgb(255, 255, 255))
+                : new SolidColorBrush(Color.FromArgb(200, 100, 100, 100)),
+            StrokeThickness = isHighlighted ? 2 : 1,
             RadiusX = 4,
             RadiusY = 4
         };
@@ -128,7 +180,7 @@ public class DockOverlayWindow : Window
         Canvas.SetTop(rect, y);
         _canvas.Children.Add(rect);
 
-        // Add direction arrow text
+        // Arrow symbol
         var arrow = direction switch
         {
             DockDirection.Left => "\u25C0",
@@ -148,14 +200,8 @@ public class DockOverlayWindow : Window
             VerticalAlignment = VerticalAlignment.Center
         };
         text.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Canvas.SetLeft(text, x + (size - text.DesiredSize.Width) / 2);
-        Canvas.SetTop(text, y + (size - text.DesiredSize.Height) / 2);
+        Canvas.SetLeft(text, x + (IndicatorSize - text.DesiredSize.Width) / 2);
+        Canvas.SetTop(text, y + (IndicatorSize - text.DesiredSize.Height) / 2);
         _canvas.Children.Add(text);
-    }
-
-    private void UpdateHighlights()
-    {
-        // Rebuild with highlight state
-        BuildIndicators();
     }
 }

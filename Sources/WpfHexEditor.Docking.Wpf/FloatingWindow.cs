@@ -6,7 +6,9 @@
 
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 
@@ -14,10 +16,12 @@ namespace WpfHexEditor.Docking.Wpf;
 
 /// <summary>
 /// A floating window that contains a dock group (one or more tabbed items).
+/// Custom dark title bar with chevron dropdown, pin, and close buttons (VS-style).
 /// </summary>
 public class FloatingWindow : Window
 {
     private readonly DockTabControl _tabControl;
+    private readonly TextBlock _titleBlock;
 
     public DockGroupNode? Node { get; private set; }
 
@@ -32,27 +36,161 @@ public class FloatingWindow : Window
     public event Action<DockItem>? TabAutoHideRequested;
 
     /// <summary>
-    /// Raised when the user double-clicks the title bar to re-dock.
+    /// Raised when the user clicks pin or "Dock" in the context menu to re-dock.
     /// </summary>
     public event Action<DockItem>? ReDockRequested;
 
+    /// <summary>
+    /// Raised when the user starts dragging the title bar. The DockDragManager
+    /// will handle the drag-to-dock overlay logic.
+    /// </summary>
+    public event Action<DockItem>? WindowDragStarted;
+
     public FloatingWindow()
     {
-        WindowStyle = WindowStyle.ToolWindow;
+        WindowStyle = WindowStyle.None;
         ShowInTaskbar = false;
         Width = 400;
         Height = 300;
         ResizeMode = ResizeMode.CanResizeWithGrip;
 
+        // Dark theme colors
+        var menuBrush = new SolidColorBrush(Color.FromRgb(45, 45, 48));
+        var menuFgBrush = new SolidColorBrush(Color.FromRgb(241, 241, 241));
+        var menuBorderBrush = new SolidColorBrush(Color.FromRgb(51, 51, 55));
+
+        // --- Title bar ---
+        _titleBlock = new TextBlock
+        {
+            Foreground = Brushes.White,
+            FontWeight = FontWeights.SemiBold,
+            FontSize = 12,
+            Margin = new Thickness(8, 6, 8, 6),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        Button MakeTitleButton(string content, string tooltip) => new()
+        {
+            Content = content,
+            FontSize = 12,
+            Padding = new Thickness(4, 2, 4, 2),
+            Background = Brushes.Transparent,
+            Foreground = Brushes.LightGray,
+            BorderThickness = new Thickness(0),
+            Cursor = Cursors.Hand,
+            VerticalAlignment = VerticalAlignment.Center,
+            ToolTip = tooltip
+        };
+
+        // Close button
+        var closeButton = MakeTitleButton("\u2715", "Close");
+        closeButton.Click += (_, _) =>
+        {
+            if (Item is not null) TabCloseRequested?.Invoke(Item);
+        };
+
+        // Pin button (dock)
+        var pinButton = MakeTitleButton("\uD83D\uDCCC", "Dock");
+        pinButton.Click += (_, _) =>
+        {
+            if (Item is not null) ReDockRequested?.Invoke(Item);
+        };
+
+        // Chevron dropdown button
+        var chevronButton = MakeTitleButton("\u25BC", "Options");
+        chevronButton.FontSize = 9;
+        chevronButton.Click += (sender, _) =>
+        {
+            if (Item is null || sender is not Button btn) return;
+            var item = Item;
+
+            var menu = new ContextMenu
+            {
+                Background = menuBrush,
+                BorderBrush = menuBorderBrush,
+                Foreground = menuFgBrush
+            };
+
+            var dockMenuItem = new MenuItem { Header = "Dock", Foreground = menuFgBrush };
+            dockMenuItem.Click += (_, _) => ReDockRequested?.Invoke(item);
+            menu.Items.Add(dockMenuItem);
+
+            var autoHideMenuItem = new MenuItem { Header = "Auto Hide", Foreground = menuFgBrush };
+            autoHideMenuItem.Click += (_, _) => TabAutoHideRequested?.Invoke(item);
+            menu.Items.Add(autoHideMenuItem);
+
+            var floatMenuItem = new MenuItem
+            {
+                Header = "Float",
+                Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128)),
+                IsEnabled = false
+            };
+            menu.Items.Add(floatMenuItem);
+
+            menu.Items.Add(new Separator());
+
+            var closeMenuItem = new MenuItem { Header = "Close", Foreground = menuFgBrush };
+            closeMenuItem.Click += (_, _) => TabCloseRequested?.Invoke(item);
+            menu.Items.Add(closeMenuItem);
+
+            menu.PlacementTarget = btn;
+            menu.Placement = PlacementMode.Bottom;
+            menu.IsOpen = true;
+        };
+
+        // Title bar layout
+        var titleContent = new DockPanel();
+        DockPanel.SetDock(closeButton, Dock.Right);
+        DockPanel.SetDock(pinButton, Dock.Right);
+        DockPanel.SetDock(chevronButton, Dock.Right);
+        titleContent.Children.Add(closeButton);
+        titleContent.Children.Add(pinButton);
+        titleContent.Children.Add(chevronButton);
+        titleContent.Children.Add(_titleBlock);
+
+        var titleBar = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
+            Child = titleContent
+        };
+
+        // Title bar drag: raise WindowDragStarted instead of DragMove
+        titleBar.MouseLeftButtonDown += (_, e) =>
+        {
+            if (e.ClickCount == 2)
+            {
+                // Double-click title bar → re-dock
+                if (Item is not null) ReDockRequested?.Invoke(Item);
+            }
+            else
+            {
+                // Single click → start drag-to-dock
+                if (Item is not null) WindowDragStarted?.Invoke(Item);
+            }
+        };
+
+        // --- Tab control ---
         _tabControl = new DockTabControl();
         _tabControl.TabCloseRequested += item => TabCloseRequested?.Invoke(item);
         _tabControl.TabDragStarted += item => TabDragStarted?.Invoke(item);
         _tabControl.TabFloatRequested += item => TabFloatRequested?.Invoke(item);
         _tabControl.TabAutoHideRequested += item => TabAutoHideRequested?.Invoke(item);
 
-        Content = _tabControl;
+        // --- Assemble layout ---
+        var innerPanel = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(titleBar, Dock.Top);
+        innerPanel.Children.Add(titleBar);
+        innerPanel.Children.Add(_tabControl);
 
-        MouseDoubleClick += OnMouseDoubleClick;
+        var outerBorder = new Border
+        {
+            Background = new SolidColorBrush(Color.FromRgb(37, 37, 38)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(63, 63, 70)),
+            BorderThickness = new Thickness(1),
+            Child = innerPanel
+        };
+
+        Content = outerBorder;
     }
 
     public void Bind(DockGroupNode node, DockItem item, Func<DockItem, object>? contentFactory = null)
@@ -61,14 +199,18 @@ public class FloatingWindow : Window
         Item = item;
         _tabControl.Bind(node, contentFactory);
 
-        if (node.ActiveItem is not null)
-            Title = node.ActiveItem.Title;
-    }
+        // Hide the tab strip when there's only one item (title bar already shows the name)
+        if (node.Items.Count() <= 1)
+        {
+            foreach (TabItem tab in _tabControl.Items)
+                tab.Header = null;
+        }
 
-    private void OnMouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        if (Item is not null)
-            ReDockRequested?.Invoke(Item);
+        if (node.ActiveItem is not null)
+        {
+            Title = node.ActiveItem.Title;
+            _titleBlock.Text = node.ActiveItem.Title;
+        }
     }
 }
 
@@ -138,10 +280,32 @@ public class FloatingWindowManager
         {
             if (_dockControl.Engine is not null)
             {
-                _dockControl.Engine.Dock(i, _dockControl.Layout!.MainDocumentHost, DockDirection.Center);
+                // Re-dock to the item's previous side, not always Center
+                var direction = i.LastDockSide switch
+                {
+                    Core.DockSide.Left => DockDirection.Left,
+                    Core.DockSide.Right => DockDirection.Right,
+                    Core.DockSide.Top => DockDirection.Top,
+                    Core.DockSide.Bottom => DockDirection.Bottom,
+                    _ => DockDirection.Center
+                };
+                _dockControl.Engine.Dock(i, _dockControl.Layout!.MainDocumentHost, direction);
                 _dockControl.RebuildVisualTree();
                 window.Close();
             }
+        };
+
+        window.WindowDragStarted += i =>
+        {
+            _dockControl.DragManager?.BeginFloatingDrag(i, window);
+        };
+
+        window.TabAutoHideRequested += i =>
+        {
+            _dockControl.Engine?.AutoHide(i);
+            _dockControl.RebuildVisualTree();
+            if (window.Node?.IsEmpty == true)
+                window.Close();
         };
 
         _windows.Add(window);
@@ -175,5 +339,52 @@ public class FloatingWindowManager
     {
         foreach (var window in _windows.ToList())
             window.Close();
+    }
+}
+
+/// <summary>
+/// Semi-transparent preview window shown during a drag operation, following the cursor.
+/// </summary>
+public class DragPreviewWindow : Window
+{
+    private readonly TextBlock _titleBlock;
+
+    public DragPreviewWindow(string title)
+    {
+        WindowStyle = WindowStyle.None;
+        AllowsTransparency = true;
+        ShowInTaskbar = false;
+        Topmost = true;
+        IsHitTestVisible = false;
+        ResizeMode = ResizeMode.NoResize;
+        SizeToContent = SizeToContent.WidthAndHeight;
+        Background = System.Windows.Media.Brushes.Transparent;
+
+        _titleBlock = new TextBlock
+        {
+            Text = title,
+            Foreground = System.Windows.Media.Brushes.White,
+            FontSize = 12,
+            Padding = new Thickness(10, 5, 10, 5)
+        };
+
+        var border = new Border
+        {
+            Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(192, 37, 37, 38)),
+            BorderBrush = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromRgb(0, 122, 204)),
+            BorderThickness = new Thickness(2),
+            CornerRadius = new CornerRadius(3),
+            Child = _titleBlock
+        };
+
+        Content = border;
+    }
+
+    public void MoveTo(Point screenPoint)
+    {
+        Left = screenPoint.X + 12;
+        Top = screenPoint.Y + 12;
     }
 }

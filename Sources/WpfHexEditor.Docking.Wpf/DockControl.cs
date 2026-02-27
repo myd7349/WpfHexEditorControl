@@ -58,6 +58,16 @@ public class DockControl : ContentControl
     public Func<DockItem, object>? ContentFactory { get; set; }
 
     /// <summary>
+    /// The center content host, used by DockDragManager for overlay positioning.
+    /// </summary>
+    internal ContentControl CenterHost => _centerHost;
+
+    /// <summary>
+    /// The drag manager, used by FloatingWindowManager for drag-to-dock operations.
+    /// </summary>
+    internal DockDragManager? DragManager => _dragManager;
+
+    /// <summary>
     /// Raised when a tab close is requested.
     /// </summary>
     public event Action<DockItem>? TabCloseRequested;
@@ -199,11 +209,10 @@ public class DockControl : ContentControl
     }
 
     /// <summary>
-    /// Wires all events and drag-drop handlers on a tab control.
+    /// Wires all events on a tab control.
     /// </summary>
     private void WireTabControlEvents(DockTabControl tabControl)
     {
-        // Tab events
         tabControl.TabCloseRequested += OnTabCloseRequested;
 
         tabControl.TabDragStarted += item =>
@@ -223,33 +232,6 @@ public class DockControl : ContentControl
             if (_engine is null) return;
             _engine.AutoHide(item);
             RebuildVisualTree();
-        };
-
-        // Drag-drop handlers for receiving drops
-        tabControl.AllowDrop = true;
-
-        tabControl.DragEnter += (sender, e) =>
-        {
-            if (sender is DockTabControl target)
-                _dragManager?.OnDragEnter(target, e);
-        };
-
-        tabControl.DragOver += (sender, e) =>
-        {
-            if (sender is DockTabControl target)
-                _dragManager?.OnDragOver(target, e);
-        };
-
-        tabControl.DragLeave += (sender, e) =>
-        {
-            if (sender is DockTabControl target)
-                _dragManager?.OnDragLeave(target, e);
-        };
-
-        tabControl.Drop += (sender, e) =>
-        {
-            if (sender is DockTabControl target)
-                _dragManager?.OnDrop(target, e);
         };
     }
 
