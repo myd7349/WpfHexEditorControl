@@ -7,6 +7,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfHexEditor.Docking.Core;
@@ -54,33 +55,32 @@ public class FloatingWindow : Window
         Height = 300;
         ResizeMode = ResizeMode.CanResizeWithGrip;
 
-        // Dark theme colors
-        var menuBrush = new SolidColorBrush(Color.FromRgb(45, 45, 48));
-        var menuFgBrush = new SolidColorBrush(Color.FromRgb(241, 241, 241));
-        var menuBorderBrush = new SolidColorBrush(Color.FromRgb(51, 51, 55));
-
         // --- Title bar ---
         _titleBlock = new TextBlock
         {
-            Foreground = Brushes.White,
             FontWeight = FontWeights.SemiBold,
             FontSize = 12,
             Margin = new Thickness(8, 6, 8, 6),
             VerticalAlignment = VerticalAlignment.Center
         };
+        _titleBlock.SetResourceReference(TextBlock.ForegroundProperty, "DockTabActiveTextBrush");
 
-        Button MakeTitleButton(string content, string tooltip) => new()
+        Button MakeTitleButton(string content, string tooltip)
         {
-            Content = content,
-            FontSize = 12,
-            Padding = new Thickness(4, 2, 4, 2),
-            Background = Brushes.Transparent,
-            Foreground = Brushes.LightGray,
-            BorderThickness = new Thickness(0),
-            Cursor = Cursors.Hand,
-            VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = tooltip
-        };
+            var btn = new Button
+            {
+                Content = content,
+                FontSize = 12,
+                Padding = new Thickness(4, 2, 4, 2),
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = tooltip
+            };
+            btn.SetResourceReference(Control.ForegroundProperty, "DockTabTextBrush");
+            return btn;
+        }
 
         // Close button
         var closeButton = MakeTitleButton("\u2715", "Close");
@@ -104,32 +104,36 @@ public class FloatingWindow : Window
             if (Item is null || sender is not Button btn) return;
             var item = Item;
 
+            var menuBg = TryFindResource("DockMenuBackgroundBrush") as Brush;
+            var menuFg = TryFindResource("DockMenuForegroundBrush") as Brush;
+            var menuBorder = TryFindResource("DockMenuBorderBrush") as Brush;
+
             var menu = new ContextMenu
             {
-                Background = menuBrush,
-                BorderBrush = menuBorderBrush,
-                Foreground = menuFgBrush
+                Background = menuBg ?? Brushes.DarkGray,
+                BorderBrush = menuBorder ?? Brushes.Gray,
+                Foreground = menuFg ?? Brushes.White
             };
 
-            var dockMenuItem = new MenuItem { Header = "Dock", Foreground = menuFgBrush };
+            var dockMenuItem = new MenuItem { Header = "Dock", Foreground = menuFg };
             dockMenuItem.Click += (_, _) => ReDockRequested?.Invoke(item);
             menu.Items.Add(dockMenuItem);
 
-            var autoHideMenuItem = new MenuItem { Header = "Auto Hide", Foreground = menuFgBrush };
+            var autoHideMenuItem = new MenuItem { Header = "Auto Hide", Foreground = menuFg };
             autoHideMenuItem.Click += (_, _) => TabAutoHideRequested?.Invoke(item);
             menu.Items.Add(autoHideMenuItem);
 
             var floatMenuItem = new MenuItem
             {
                 Header = "Float",
-                Foreground = new SolidColorBrush(Color.FromRgb(128, 128, 128)),
+                Foreground = Brushes.Gray,
                 IsEnabled = false
             };
             menu.Items.Add(floatMenuItem);
 
             menu.Items.Add(new Separator());
 
-            var closeMenuItem = new MenuItem { Header = "Close", Foreground = menuFgBrush };
+            var closeMenuItem = new MenuItem { Header = "Close", Foreground = menuFg };
             closeMenuItem.Click += (_, _) => TabCloseRequested?.Invoke(item);
             menu.Items.Add(closeMenuItem);
 
@@ -148,23 +152,18 @@ public class FloatingWindow : Window
         titleContent.Children.Add(chevronButton);
         titleContent.Children.Add(_titleBlock);
 
-        var titleBar = new Border
-        {
-            Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)),
-            Child = titleContent
-        };
+        var titleBar = new Border { Child = titleContent };
+        titleBar.SetResourceReference(Border.BackgroundProperty, "DockMenuBackgroundBrush");
 
         // Title bar drag: raise WindowDragStarted instead of DragMove
         titleBar.MouseLeftButtonDown += (_, e) =>
         {
             if (e.ClickCount == 2)
             {
-                // Double-click title bar → re-dock
                 if (Item is not null) ReDockRequested?.Invoke(Item);
             }
             else
             {
-                // Single click → start drag-to-dock
                 if (Item is not null) WindowDragStarted?.Invoke(Item);
             }
         };
@@ -184,11 +183,15 @@ public class FloatingWindow : Window
 
         var outerBorder = new Border
         {
-            Background = new SolidColorBrush(Color.FromRgb(37, 37, 38)),
-            BorderBrush = new SolidColorBrush(Color.FromRgb(63, 63, 70)),
             BorderThickness = new Thickness(1),
             Child = innerPanel
         };
+        outerBorder.SetResourceReference(Border.BackgroundProperty, "DockBackgroundBrush");
+        outerBorder.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
+
+        // Propagate theme foreground to all text content inside the floating window
+        TextElement.SetForeground(outerBorder,
+            TryFindResource("DockMenuForegroundBrush") as Brush ?? Brushes.White);
 
         Content = outerBorder;
     }
@@ -199,11 +202,12 @@ public class FloatingWindow : Window
         Item = item;
         _tabControl.Bind(node, contentFactory);
 
-        // Hide the tab strip when there's only one item (title bar already shows the name)
+        // Hide the tab strip completely when single item (title bar already shows the name)
         if (node.Items.Count() <= 1)
         {
-            foreach (TabItem tab in _tabControl.Items)
-                tab.Header = null;
+            var cp = new FrameworkElementFactory(typeof(ContentPresenter));
+            cp.SetValue(ContentPresenter.ContentSourceProperty, "SelectedContent");
+            _tabControl.Template = new ControlTemplate(typeof(TabControl)) { VisualTree = cp };
         }
 
         if (node.ActiveItem is not null)
@@ -256,7 +260,12 @@ public class FloatingWindowManager
             }
         }
 
-        window.Closed += (_, _) => _windows.Remove(window);
+        window.Closed += (_, _) =>
+        {
+            _windows.Remove(window);
+            // Re-activate the main window so it doesn't fall behind other apps
+            Window.GetWindow(_dockControl)?.Activate();
+        };
 
         window.TabCloseRequested += i =>
         {

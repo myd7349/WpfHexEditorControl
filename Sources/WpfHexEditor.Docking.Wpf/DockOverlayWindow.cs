@@ -59,6 +59,11 @@ public class DockOverlayWindow : Window
         var targetPos = target.PointToScreen(new Point(0, 0));
         var targetSize = target.RenderSize;
 
+        // PointToScreen returns physical pixels; Window.Left/Top need DIPs
+        var source = PresentationSource.FromVisual(target);
+        if (source?.CompositionTarget != null)
+            targetPos = source.CompositionTarget.TransformFromDevice.Transform(targetPos);
+
         Left = targetPos.X;
         Top = targetPos.Y;
         Width = targetSize.Width;
@@ -70,9 +75,15 @@ public class DockOverlayWindow : Window
 
     /// <summary>
     /// Performs hit-testing to determine which dock direction the mouse is over.
+    /// Input screenPoint must be in physical screen pixels (from PointToScreen).
     /// </summary>
     public DockDirection? HitTest(Point screenPoint)
     {
+        // Convert from physical pixels to DIPs to match Left/Top/Width/Height
+        var source = PresentationSource.FromVisual(this);
+        if (source?.CompositionTarget != null)
+            screenPoint = source.CompositionTarget.TransformFromDevice.Transform(screenPoint);
+
         var localPoint = new Point(screenPoint.X - Left, screenPoint.Y - Top);
         var centerX = Width / 2;
         var centerY = Height / 2;
