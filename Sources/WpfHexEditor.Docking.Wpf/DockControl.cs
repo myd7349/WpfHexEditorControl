@@ -240,13 +240,36 @@ public class DockControl : ContentControl
             var titleBar = new Border { Child = titleBlock, Cursor = Cursors.SizeAll };
             titleBar.SetResourceReference(Border.BackgroundProperty, "DockMenuBackgroundBrush");
 
-            // Drag the title bar → float the entire group
+            // Drag threshold state (local to this title bar instance)
+            var titleDragStart   = new Point();
+            var titleDragPending = false;
+
             titleBar.MouseLeftButtonDown += (_, e) =>
             {
                 if (e.ClickCount >= 2) return;
+                titleDragStart   = e.GetPosition(titleBar);
+                titleDragPending = true;
+                titleBar.CaptureMouse();
+            };
+
+            titleBar.MouseMove += (_, e) =>
+            {
+                if (!titleDragPending || e.LeftButton != MouseButtonState.Pressed) return;
+                var diff = e.GetPosition(titleBar) - titleDragStart;
+                if (Math.Abs(diff.X) <= SystemParameters.MinimumHorizontalDragDistance &&
+                    Math.Abs(diff.Y) <= SystemParameters.MinimumVerticalDragDistance) return;
+
+                titleDragPending = false;
+                titleBar.ReleaseMouseCapture();
                 var activeItem = group.ActiveItem;
                 if (activeItem is null) return;
                 _dragManager?.BeginGroupDrag(group, activeItem);
+            };
+
+            titleBar.MouseLeftButtonUp += (_, _) =>
+            {
+                titleDragPending = false;
+                titleBar.ReleaseMouseCapture();
             };
 
             var layout = new DockPanel { LastChildFill = true };
