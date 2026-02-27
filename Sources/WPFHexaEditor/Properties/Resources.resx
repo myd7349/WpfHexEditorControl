@@ -1319,14 +1319,6 @@
     <value>Show Statistics</value>
     <comment>Bar Chart - Display statistics overlay (Total, Max, Entropy)</comment>
   </data>
-  <data name="HexSettings_BarChart_InlineBarColor" xml:space="preserve">
-    <value>Inline Bar Color</value>
-    <comment>Bar Chart - Color for inline bar visualization in ASCII panel</comment>
-  </data>
-  <data name="HexSettings_BarChart_ShowInlineBarChart" xml:space="preserve">
-    <value>Show Inline Bar Chart</value>
-    <comment>Bar Chart - Enable inline bar chart in ASCII panel</comment>
-  </data>
 
   <!-- Pattern Analysis Panel -->
   <data name="PatternAnalysis_Title" xml:space="preserve">

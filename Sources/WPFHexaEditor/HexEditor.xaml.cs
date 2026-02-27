@@ -1044,17 +1044,6 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
-        /// Inline bar chart color (for ASCII panel bar visualization) - DependencyProperty
-        /// </summary>
-        [Category("Colors.Charts")]
-        [DisplayName("Inline Bar Color")]
-        public System.Windows.Media.Color InlineBarChartColor
-        {
-            get => (System.Windows.Media.Color)GetValue(InlineBarChartColorProperty);
-            set => SetValue(InlineBarChartColorProperty, value);
-        }
-
-        /// <summary>
         /// Selection brush for the active panel (Hex or ASCII) - DependencyProperty
         /// </summary>
         [Category("Colors.Selection")]
@@ -1597,35 +1586,6 @@ namespace WpfHexaEditor
                             break;
                         }
                     }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Show inline bar chart in ASCII panel (replaces ASCII chars with vertical bars representing byte values)
-        /// V1 Legacy feature compatibility
-        /// </summary>
-        [Category("BarChart")]
-        [DisplayName("Show Inline Bar Chart")]
-        public bool ShowInlineBarChart
-        {
-            get => (bool)GetValue(ShowInlineBarChartProperty);
-            set => SetValue(ShowInlineBarChartProperty, value);
-        }
-
-        public static readonly DependencyProperty ShowInlineBarChartProperty =
-            DependencyProperty.Register(nameof(ShowInlineBarChart), typeof(bool), typeof(HexEditor),
-                new PropertyMetadata(false, OnShowInlineBarChartChanged));
-
-        private static void OnShowInlineBarChartChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is HexEditor editor && e.NewValue is bool showInlineBarChart)
-            {
-                if (editor.HexViewport != null)
-                {
-                    // TODO: ShowInlineBarChart property not yet implemented in HexViewport
-                    // editor.HexViewport.ShowInlineBarChart = showInlineBarChart;
-                    editor.HexViewport.InvalidateVisual();
                 }
             }
         }
@@ -2664,23 +2624,6 @@ namespace WpfHexaEditor
             if (d is HexEditor editor && e.NewValue is Color color && editor._barChartPanel != null)
             {
                 editor._barChartPanel.BarColor = color;
-            }
-        }
-
-        /// <summary>
-        /// InlineBarChartColor DependencyProperty for XAML binding
-        /// </summary>
-        public static readonly DependencyProperty InlineBarChartColorProperty =
-            DependencyProperty.Register(nameof(InlineBarChartColor), typeof(System.Windows.Media.Color), typeof(HexEditor),
-                new PropertyMetadata(Color.FromRgb(0x00, 0x78, 0xD4), OnInlineBarChartColorChanged));
-
-        private static void OnInlineBarChartColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is HexEditor editor && e.NewValue is Color color && editor.HexViewport != null)
-            {
-                // TODO: InlineBarChartColor property not yet implemented in HexViewport
-                // editor.HexViewport.InlineBarChartColor = color;
-                editor.HexViewport.InvalidateVisual();
             }
         }
 
