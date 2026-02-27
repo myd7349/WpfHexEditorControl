@@ -111,6 +111,7 @@ public class DockControl : ContentControl
 
         // Grid with two layers: content + flyout overlay
         _rootGrid = new Grid();
+        _rootGrid.SetResourceReference(Panel.BackgroundProperty, "DockBackgroundBrush");
         _rootGrid.Children.Add(_rootPanel);
         _rootGrid.Children.Add(_autoHideFlyout);
 
