@@ -362,10 +362,10 @@ namespace WpfHexaEditor
                     // Load format-defined variables
                     if (_detectedFormat.Variables != null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[ParseFieldsAsync] Loading {_detectedFormat.Variables.Count} format-defined variables");
+                        //System.Diagnostics.Debug.WriteLine($"[ParseFieldsAsync] Loading {_detectedFormat.Variables.Count} format-defined variables");
                         foreach (var kvp in _detectedFormat.Variables)
                         {
-                            System.Diagnostics.Debug.WriteLine($"  Format var: {kvp.Key} = {kvp.Value}");
+                            //System.Diagnostics.Debug.WriteLine($"  Format var: {kvp.Key} = {kvp.Value}");
                             _variableContext?.SetVariable(kvp.Key, kvp.Value);
                         }
                     }
@@ -373,16 +373,16 @@ namespace WpfHexaEditor
                     // Load variables from detection (includes function execution results)
                     if (_detectionVariables != null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[ParseFieldsAsync] Loading {_detectionVariables.Count} detection variables");
+                        //System.Diagnostics.Debug.WriteLine($"[ParseFieldsAsync] Loading {_detectionVariables.Count} detection variables");
                         foreach (var kvp in _detectionVariables)
                         {
-                            System.Diagnostics.Debug.WriteLine($"  Detection var: {kvp.Key} = {kvp.Value}");
+                            //System.Diagnostics.Debug.WriteLine($"  Detection var: {kvp.Key} = {kvp.Value}");
                             _variableContext?.SetVariable(kvp.Key, kvp.Value);
                         }
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine("[ParseFieldsAsync] WARNING: _detectionVariables is NULL!");
+                        //System.Diagnostics.Debug.WriteLine("[ParseFieldsAsync] WARNING: _detectionVariables is NULL!");
                     }
 
                     // Update format info
@@ -428,7 +428,7 @@ namespace WpfHexaEditor
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error parsing fields: {ex.Message}");
+                //System.Diagnostics.Debug.WriteLine($"Error parsing fields: {ex.Message}");
             }
             finally
             {

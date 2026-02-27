@@ -148,7 +148,19 @@
       "Bash(\"c:\\\\Users\\\\khens\\\\source\\\\repos\\\\WpfHexEditorControl\\\\Sources\\\\WPFHexaEditor\\\\Tools\\\\enrich_formats.py\":*)",
       "Bash(Tools/enrich_top50_extended.py:*)",
       "Bash(do echo \"=== Exemple de fichier version $version ===\")",
-      "Read(//c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/FormatDefinitions/**)"
+      "Read(//c/Users/khens/source/repos/WpfHexEditorControl/Sources/WPFHexaEditor/FormatDefinitions/**)",
+      "Bash(tee:*)",
+      "Bash(while read f)",
+      "Bash(do if grep -q '\"\"functions\"\"' \"$f\")",
+      "Bash(then echo \"$f\")",
+      "Bash(do dirname \"$f\")",
+      "Bash(do echo \"=== $f ===\")",
+      "Bash(do grep -o '\"\"blocks_defined\"\":[[:space:]]*[0-9]*' \"$f\")",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.codeproject.com)",
+      "Bash(dotnet sln:*)",
+      "Bash(do sed -i 's/WpfHexEditor\\\\.Docking\\\\.Demo/WpfHexEditor.App/g' \"$f\")",
+      "Bash(cat:*)"
     ]
   }
 }
