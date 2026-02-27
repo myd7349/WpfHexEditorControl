@@ -7,9 +7,11 @@
 //////////////////////////////////////////////
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using WpfHexEditor.Sample.Main.ViewModels;
 using WpfHexEditor.Sample.Main.Views.Dialogs;
 using Microsoft.Win32;
@@ -23,6 +25,7 @@ namespace WpfHexEditor.Sample.Main.Views
     public partial class MainWindow : Window
     {
         private readonly ModernMainWindowViewModel _viewModel;
+        private double _parsedFieldsPanelSavedWidth = 350;
 
         public MainWindow()
         {
@@ -55,6 +58,13 @@ namespace WpfHexEditor.Sample.Main.Views
 
             // Connect HexEditor to Settings Panel for property bindings
             HexEditorSettingsPanel.HexEditorControl = HexEditorControl;
+
+            // Connecter le ParsedFieldsPanel externe au HexEditor (via DP)
+            HexEditorControl.ConnectParsedFieldsPanel(ParsedFieldsPanelControl);
+
+            // Synchroniser l'état initial des colonnes ParsedFieldsPanel
+            _viewModel.PropertyChanged += ViewModel_ParsedFieldsPanelVisibilityChanged;
+            ApplyParsedFieldsPanelVisibility(_viewModel.IsParsedFieldsPanelVisible);
 
             // Wire up file operations
             _viewModel.FileOpenRequested += OnFileOpenRequested;
@@ -104,6 +114,35 @@ namespace WpfHexEditor.Sample.Main.Views
                 System.Diagnostics.Debug.WriteLine($"[MainWindow_Loaded] ERROR loading settings: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"  Exception type: {ex.GetType().Name}");
                 System.Diagnostics.Debug.WriteLine($"  Stack trace: {ex.StackTrace}");
+            }
+        }
+
+        private void ViewModel_ParsedFieldsPanelVisibilityChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ModernMainWindowViewModel.IsParsedFieldsPanelVisible))
+                ApplyParsedFieldsPanelVisibility(_viewModel.IsParsedFieldsPanelVisible);
+        }
+
+        private void ApplyParsedFieldsPanelVisibility(bool visible)
+        {
+            if (visible)
+            {
+                ParsedFieldsColumn.Width = new GridLength(_parsedFieldsPanelSavedWidth);
+                ParsedFieldsColumn.MinWidth = 150;
+                SplitterColumn.Width = new GridLength(5);
+                ParsedFieldsPanelControl.Visibility = Visibility.Visible;
+                ParsedFieldsSplitter.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // Sauvegarder la largeur actuelle avant de masquer
+                if (ParsedFieldsColumn.ActualWidth > 0)
+                    _parsedFieldsPanelSavedWidth = ParsedFieldsColumn.ActualWidth;
+                ParsedFieldsColumn.Width = new GridLength(0);
+                ParsedFieldsColumn.MinWidth = 0;
+                SplitterColumn.Width = new GridLength(0);
+                ParsedFieldsPanelControl.Visibility = Visibility.Collapsed;
+                ParsedFieldsSplitter.Visibility = Visibility.Collapsed;
             }
         }
 
