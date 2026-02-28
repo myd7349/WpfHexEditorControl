@@ -4,6 +4,7 @@
 // Contributors: Claude Sonnet 4.5
 //////////////////////////////////////////////
 
+using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -28,6 +29,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     private DockKeyboardNavigation? _keyboardNav;
     private readonly List<DockTabEventWirer> _tabWirers = [];
     private readonly Dictionary<string, object> _contentCache = new();
+    internal readonly List<DockItem> ActivationHistory = [];
 
     private readonly Grid _rootGrid;
     private readonly DockPanel _rootPanel;
@@ -60,6 +62,81 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     /// </summary>
     public DockEngine? Engine => _engine;
 
+    // ─── MVVM Source Binding ─────────────────────────────────────────
+
+    public static readonly DependencyProperty DocumentsSourceProperty =
+        DependencyProperty.Register(nameof(DocumentsSource), typeof(IEnumerable), typeof(DockControl),
+            new PropertyMetadata(null, OnDocumentsSourceChanged));
+
+    public static readonly DependencyProperty AnchorablesSourceProperty =
+        DependencyProperty.Register(nameof(AnchorablesSource), typeof(IEnumerable), typeof(DockControl),
+            new PropertyMetadata(null, OnAnchorablesSourceChanged));
+
+    /// <summary>
+    /// Collection of view-model objects to display as document tabs.
+    /// Requires <see cref="ItemMapper"/> to convert VMs to <see cref="DockItem"/>s.
+    /// Supports <see cref="INotifyCollectionChanged"/> for live sync.
+    /// </summary>
+    public IEnumerable? DocumentsSource
+    {
+        get => (IEnumerable?)GetValue(DocumentsSourceProperty);
+        set => SetValue(DocumentsSourceProperty, value);
+    }
+
+    /// <summary>
+    /// Collection of view-model objects to display as anchorable tool panels.
+    /// </summary>
+    public IEnumerable? AnchorablesSource
+    {
+        get => (IEnumerable?)GetValue(AnchorablesSourceProperty);
+        set => SetValue(AnchorablesSourceProperty, value);
+    }
+
+    /// <summary>
+    /// Maps a view-model object to a <see cref="DockItem"/>.
+    /// Required when using <see cref="DocumentsSource"/> or <see cref="AnchorablesSource"/>.
+    /// </summary>
+    public Func<object, DockItem>? ItemMapper { get; set; }
+
+    /// <summary>
+    /// Optional strategy to customize how items are inserted into the layout.
+    /// Consulted by the source synchronizers before default insertion logic.
+    /// </summary>
+    public ILayoutUpdateStrategy? LayoutUpdateStrategy { get; set; }
+
+    private DockItemSourceSynchronizer? _documentsSynchronizer;
+    private DockItemSourceSynchronizer? _anchorablesSynchronizer;
+
+    private static void OnDocumentsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is DockControl dc) dc.ResetDocumentsSynchronizer();
+    }
+
+    private static void OnAnchorablesSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is DockControl dc) dc.ResetAnchorablesSynchronizer();
+    }
+
+    private void ResetDocumentsSynchronizer()
+    {
+        _documentsSynchronizer?.Dispose();
+        _documentsSynchronizer = null;
+
+        if (DocumentsSource is not null && ItemMapper is not null && _engine is not null)
+            _documentsSynchronizer = new DockItemSourceSynchronizer(this, DocumentsSource, ItemMapper, isDocument: true);
+    }
+
+    private void ResetAnchorablesSynchronizer()
+    {
+        _anchorablesSynchronizer?.Dispose();
+        _anchorablesSynchronizer = null;
+
+        if (AnchorablesSource is not null && ItemMapper is not null && _engine is not null)
+            _anchorablesSynchronizer = new DockItemSourceSynchronizer(this, AnchorablesSource, ItemMapper, isDocument: false);
+    }
+
+    // ─── Content Factory ─────────────────────────────────────────────
+
     /// <summary>
     /// Factory to create content for a DockItem. If not set, a default placeholder is shown.
     /// </summary>
@@ -71,14 +148,44 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     /// </summary>
     public Func<DockItem, Task<object>>? AsyncContentFactory { get; set; }
 
+    // ─── Layout Item Templates ──────────────────────────────────────
+
+    /// <summary>
+    /// Default <see cref="DataTemplate"/> used to present document view-model content.
+    /// Applied when <see cref="ContentFactory"/> is null and the item is in a <see cref="DocumentHostNode"/>.
+    /// </summary>
+    public DataTemplate? DocumentTemplate { get; set; }
+
+    /// <summary>
+    /// Selects a <see cref="DataTemplate"/> per document item. Takes precedence over <see cref="DocumentTemplate"/>.
+    /// </summary>
+    public DataTemplateSelector? DocumentTemplateSelector { get; set; }
+
+    /// <summary>
+    /// Default <see cref="DataTemplate"/> used to present anchorable (tool) view-model content.
+    /// Applied when <see cref="ContentFactory"/> is null and the item is in a <see cref="DockGroupNode"/>.
+    /// </summary>
+    public DataTemplate? AnchorableTemplate { get; set; }
+
+    /// <summary>
+    /// Selects a <see cref="DataTemplate"/> per anchorable item. Takes precedence over <see cref="AnchorableTemplate"/>.
+    /// </summary>
+    public DataTemplateSelector? AnchorableTemplateSelector { get; set; }
+
+    // ─── Cached Content Factory ─────────────────────────────────────
+
     /// <summary>
     /// Returns a wrapped content factory that caches results by <see cref="DockItem.ContentId"/>.
-    /// Supports both sync and async factories.
+    /// Supports sync factories, async factories, and DataTemplate-based content.
     /// </summary>
     internal Func<DockItem, object>? CachedContentFactory =>
-        ContentFactory is not null || AsyncContentFactory is not null
+        ContentFactory is not null || AsyncContentFactory is not null || HasTemplateSupport
             ? GetOrCreateContent
             : null;
+
+    private bool HasTemplateSupport =>
+        DocumentTemplate is not null || DocumentTemplateSelector is not null ||
+        AnchorableTemplate is not null || AnchorableTemplateSelector is not null;
 
     private object GetOrCreateContent(DockItem item)
     {
@@ -106,6 +213,23 @@ public class DockControl : ContentControl, IDockHost, IDisposable
             var factory = AsyncContentFactory;
             _ = LoadAsyncContent(item, factory, placeholder);
             return placeholder;
+        }
+
+        // Template-based content: wrap the VM (item.Tag) in a ContentPresenter
+        if (item.Tag is not null && HasTemplateSupport)
+        {
+            var isDocument = item.Owner is DocumentHostNode;
+            var selector = isDocument ? DocumentTemplateSelector : AnchorableTemplateSelector;
+            var template = isDocument ? DocumentTemplate : AnchorableTemplate;
+
+            var presenter = new ContentPresenter { Content = item.Tag };
+            if (selector is not null)
+                presenter.ContentTemplateSelector = selector;
+            else if (template is not null)
+                presenter.ContentTemplate = template;
+
+            _contentCache[item.ContentId] = presenter;
+            return presenter;
         }
 
         return new System.Windows.Controls.TextBlock { Text = $"Content: {item.Title}" };
@@ -339,6 +463,9 @@ public class DockControl : ContentControl, IDockHost, IDisposable
                 control._floatingManager = new FloatingWindowManager(control);
                 control._keyboardNav = new DockKeyboardNavigation(control);
 
+                // Notify strategy that a layout was loaded (e.g. after deserialization)
+                control.LayoutUpdateStrategy?.AfterLayoutDeserialized(newLayout);
+
                 control.RebuildVisualTree();
             }
             else
@@ -364,6 +491,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         _engine.ItemFloated   += OnItemFloated;
         _engine.ItemDocked    += OnItemDocked;
         _engine.ItemClosed    += OnItemClosed;
+        _engine.ItemHidden    += OnItemHidden;
         _engine.GroupFloated  += OnGroupFloated;
     }
 
@@ -377,6 +505,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         _engine.ItemFloated   -= OnItemFloated;
         _engine.ItemDocked    -= OnItemDocked;
         _engine.ItemClosed    -= OnItemClosed;
+        _engine.ItemHidden    -= OnItemHidden;
         _engine.GroupFloated  -= OnGroupFloated;
     }
 
@@ -393,6 +522,8 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     {
         DetachEngine();
         DisposeWirers();
+        _documentsSynchronizer?.Dispose();
+        _anchorablesSynchronizer?.Dispose();
         _keyboardNav?.Detach();
         _floatingManager?.CloseAll();
         _autoHideFlyout.RestoreRequested -= OnAutoHideRestoreRequested;
@@ -605,21 +736,35 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     /// </summary>
     private Border CreateGroupTitleBar(DockGroupNode group, DockTabControl tabControl)
     {
+        // Icon before title (updates with active item)
+        var titleIcon = new ContentPresenter
+        {
+            Width = 16, Height = 16,
+            Margin = new Thickness(4, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = Visibility.Collapsed
+        };
+        UpdateTitleIcon(titleIcon, group.ActiveItem);
+
         var titleBlock = new TextBlock
         {
             Text              = group.ActiveItem?.Title ?? "",
             FontWeight        = FontWeights.SemiBold,
             FontSize          = 11,
             VerticalAlignment = VerticalAlignment.Center,
-            Margin            = new Thickness(8, 2, 8, 2)
+            Margin            = new Thickness(4, 2, 8, 2)
         };
         titleBlock.SetResourceReference(TextBlock.ForegroundProperty, "DockTabTextBrush");
 
-        // Update title when the active tab changes
+        // Update title and icon when the active tab changes, and track MRU
         tabControl.SelectionChanged += (_, _) =>
         {
             if (tabControl.SelectedItem is TabItem tab && tab.Tag is DockItem di)
+            {
                 titleBlock.Text = di.Title;
+                UpdateTitleIcon(titleIcon, di);
+                TrackActivation(di);
+            }
         };
 
         // --- VS-style title bar buttons ---
@@ -713,6 +858,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         titleContent.Children.Add(closeButton);
         titleContent.Children.Add(pinButton);
         titleContent.Children.Add(chevronButton);
+        titleContent.Children.Add(titleIcon);
         titleContent.Children.Add(titleBlock);
 
         var titleBar = new Border
@@ -728,7 +874,18 @@ public class DockControl : ContentControl, IDockHost, IDisposable
 
         titleBar.MouseLeftButtonDown += (_, e) =>
         {
-            if (e.ClickCount >= 2) return;
+            if (e.ClickCount >= 2)
+            {
+                // Double-click title bar: float the entire group (VS-style)
+                var activeItem = group.ActiveItem;
+                if (activeItem is not null && activeItem.CanFloat)
+                {
+                    CaptureDockedSizeForFloat(group);
+                    _engine?.FloatGroup(group);
+                    RebuildVisualTree();
+                }
+                return;
+            }
             titleDragStart   = e.GetPosition(titleBar);
             titleDragPending = true;
             titleBar.CaptureMouse();
@@ -755,6 +912,23 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         };
 
         return titleBar;
+    }
+
+    /// <summary>
+    /// Updates a title bar icon ContentPresenter to reflect the given item's Icon.
+    /// </summary>
+    private static void UpdateTitleIcon(ContentPresenter iconHost, DockItem? item)
+    {
+        if (item?.Icon is null)
+        {
+            iconHost.Visibility = Visibility.Collapsed;
+            iconHost.Content = null;
+            return;
+        }
+        iconHost.Content = item.Icon is ImageSource img
+            ? new Image { Source = img, Width = 16, Height = 16, Stretch = Stretch.Uniform }
+            : item.Icon;
+        iconHost.Visibility = Visibility.Visible;
     }
 
     /// <summary>
@@ -805,6 +979,22 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     private void WireTabControlEvents(DockTabControl tabControl)
     {
         _tabWirers.Add(new DockTabEventWirer(tabControl, this));
+
+        // Track MRU for document tabs (NavigatorWindow)
+        tabControl.SelectionChanged += (_, _) =>
+        {
+            if (tabControl.SelectedItem is TabItem { Tag: DockItem di })
+                TrackActivation(di);
+        };
+    }
+
+    /// <summary>
+    /// Moves the item to the front of the MRU activation history.
+    /// </summary>
+    internal void TrackActivation(DockItem item)
+    {
+        ActivationHistory.Remove(item);
+        ActivationHistory.Insert(0, item);
     }
 
     /// <summary>
@@ -835,6 +1025,12 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     private void OnItemClosed(DockItem item)
     {
         // Close the floating window if the item was closed
+        _floatingManager?.CloseWindowForItem(item);
+    }
+
+    private void OnItemHidden(DockItem item)
+    {
+        // Close the floating window if the item was hidden
         _floatingManager?.CloseWindowForItem(item);
     }
 

@@ -96,6 +96,33 @@ public class DockWorkspace
     }
 
     /// <summary>
+    /// Hides an item (keeps it in memory for re-activation via <see cref="Show"/>).
+    /// </summary>
+    public void Hide(DockItem item)
+    {
+        Engine?.Hide(item);
+        _host.RebuildVisualTree();
+    }
+
+    /// <summary>
+    /// Shows a previously hidden item, docking it to the specified target and direction.
+    /// </summary>
+    public void Show(DockItem item, DockGroupNode? target = null, DockDirection direction = DockDirection.Center)
+    {
+        Engine?.Show(item, target, direction);
+        _host.RebuildVisualTree();
+    }
+
+    /// <summary>
+    /// Docks an item as a tabbed document in the main document host.
+    /// </summary>
+    public void DockAsDocument(DockItem item)
+    {
+        Engine?.DockAsDocument(item);
+        _host.RebuildVisualTree();
+    }
+
+    /// <summary>
     /// Closes an item (respects <see cref="IDockHost.BeforeCloseCallback"/>).
     /// </summary>
     public void Close(DockItem item)

@@ -49,6 +49,7 @@ public static class DockLayoutSerializer
             RootNode = NodeToDto(layout.RootNode),
             FloatingItems = layout.FloatingItems.Select(ItemToDto).ToList(),
             AutoHideItems = layout.AutoHideItems.Select(ItemToDto).ToList(),
+            HiddenItems = layout.HiddenItems.Select(ItemToDto).ToList(),
             WindowState = layout.WindowState,
             WindowLeft = layout.WindowLeft,
             WindowTop = layout.WindowTop,
@@ -59,9 +60,9 @@ public static class DockLayoutSerializer
 
     private static DockNodeDto NodeToDto(DockNode node)
     {
-        return node switch
+        var dto = node switch
         {
-            DocumentHostNode docHost => new DocumentHostNodeDto
+            DocumentHostNode docHost => (DockNodeDto)new DocumentHostNodeDto
             {
                 Type = "DocumentHost",
                 Id = docHost.Id,
@@ -90,6 +91,14 @@ public static class DockLayoutSerializer
             },
             _ => throw new NotSupportedException($"Unknown node type: {node.GetType()}")
         };
+
+        // Serialize min/max size constraints (only when set, i.e. non-NaN)
+        if (!double.IsNaN(node.DockMinWidth))  dto.DockMinWidth  = node.DockMinWidth;
+        if (!double.IsNaN(node.DockMinHeight)) dto.DockMinHeight = node.DockMinHeight;
+        if (!double.IsNaN(node.DockMaxWidth))  dto.DockMaxWidth  = node.DockMaxWidth;
+        if (!double.IsNaN(node.DockMaxHeight)) dto.DockMaxHeight = node.DockMaxHeight;
+
+        return dto;
     }
 
     private static DockItemDto ItemToDto(DockItem item)
@@ -113,7 +122,7 @@ public static class DockLayoutSerializer
     /// <summary>
     /// Current serialization format version. Increment when adding breaking changes.
     /// </summary>
-    private const int CurrentVersion = 1;
+    private const int CurrentVersion = 2;
 
     private static DockLayoutRoot FromDto(DockLayoutRootDto dto)
     {
@@ -122,8 +131,7 @@ public static class DockLayoutSerializer
                 $"Layout version {dto.Version} is not supported. Maximum supported version is {CurrentVersion}. " +
                 "Please update the application to load this layout.");
 
-        // Future migrations go here:
-        // if (dto.Version < 2) { /* migrate v1 → v2 */ }
+        // v1 → v2: HiddenItems added (defaults to empty list, no migration needed)
 
         var layout = new DockLayoutRoot();
 
@@ -145,6 +153,13 @@ public static class DockLayoutSerializer
             layout.AutoHideItems.Add(item);
         }
 
+        foreach (var itemDto in dto.HiddenItems)
+        {
+            var item = ItemFromDto(itemDto);
+            item.State = DockItemState.Hidden;
+            layout.HiddenItems.Add(item);
+        }
+
         // Restore window state
         layout.WindowState = dto.WindowState;
         layout.WindowLeft = dto.WindowLeft;
@@ -157,6 +172,7 @@ public static class DockLayoutSerializer
 
     private static DockNode NodeFromDto(DockNodeDto dto, DocumentHostNode mainHost)
     {
+        DockNode result;
         switch (dto)
         {
             case DocumentHostNodeDto docHostDto:
@@ -167,7 +183,8 @@ public static class DockLayoutSerializer
                     host.AddItem(ItemFromDto(itemDto));
                 if (docHostDto.ActiveItemContentId is not null)
                     host.ActiveItem = host.Items.FirstOrDefault(i => i.ContentId == docHostDto.ActiveItemContentId);
-                return host;
+                result = host;
+                break;
 
             case DockGroupNodeDto groupDto:
                 var group = new DockGroupNode { LockMode = groupDto.LockMode };
@@ -175,7 +192,8 @@ public static class DockLayoutSerializer
                     group.AddItem(ItemFromDto(itemDto));
                 if (groupDto.ActiveItemContentId is not null)
                     group.ActiveItem = group.Items.FirstOrDefault(i => i.ContentId == groupDto.ActiveItemContentId);
-                return group;
+                result = group;
+                break;
 
             case DockSplitNodeDto splitDto:
                 var split = new DockSplitNode
@@ -192,11 +210,20 @@ public static class DockLayoutSerializer
                 // Restore pixel sizes for non-document panels
                 if (splitDto.PixelSizes is { Count: > 0 } && splitDto.PixelSizes.Count == split.Children.Count)
                     split.SetPixelSizes(splitDto.PixelSizes.ToArray());
-                return split;
+                result = split;
+                break;
 
             default:
                 throw new NotSupportedException($"Unknown DTO type: {dto.GetType()}");
         }
+
+        // Restore min/max size constraints
+        if (dto.DockMinWidth.HasValue)  result.DockMinWidth  = dto.DockMinWidth.Value;
+        if (dto.DockMinHeight.HasValue) result.DockMinHeight = dto.DockMinHeight.Value;
+        if (dto.DockMaxWidth.HasValue)  result.DockMaxWidth  = dto.DockMaxWidth.Value;
+        if (dto.DockMaxHeight.HasValue) result.DockMaxHeight = dto.DockMaxHeight.Value;
+
+        return result;
     }
 
     private static DockItem ItemFromDto(DockItemDto dto)

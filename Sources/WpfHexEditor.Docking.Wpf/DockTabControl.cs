@@ -37,6 +37,8 @@ public class DockTabControl : TabControl
     public event Action<DockItem>? TabCloseRequested;
     public event Action<DockItem>? TabFloatRequested;
     public event Action<DockItem>? TabAutoHideRequested;
+    public event Action<DockItem>? TabHideRequested;
+    public event Action<DockItem>? TabDockAsDocumentRequested;
 
     private Func<DockItem, object>? _contentFactory;
 
@@ -84,6 +86,8 @@ public class DockTabControl : TabControl
         header.DragStarted += () => TabDragStarted?.Invoke(item);
         header.FloatRequested += () => TabFloatRequested?.Invoke(item);
         header.AutoHideRequested += () => TabAutoHideRequested?.Invoke(item);
+        header.HideRequested += () => TabHideRequested?.Invoke(item);
+        header.DockAsDocumentRequested += () => TabDockAsDocumentRequested?.Invoke(item);
         header.CloseAllRequested += () => CloseAllItems();
         header.CloseAllButThisRequested += () => CloseAllButItem(item);
 
@@ -152,6 +156,8 @@ public class DockTabHeader : StackPanel
     public event Action? DragStarted;
     public event Action? FloatRequested;
     public event Action? AutoHideRequested;
+    public event Action? HideRequested;
+    public event Action? DockAsDocumentRequested;
     public event Action? CloseAllRequested;
     public event Action? CloseAllButThisRequested;
 
@@ -159,6 +165,22 @@ public class DockTabHeader : StackPanel
     {
         _item = item;
         Orientation = Orientation.Horizontal;
+
+        // Icon (if provided)
+        if (item.Icon is not null)
+        {
+            var iconHost = new ContentPresenter
+            {
+                Content = item.Icon is ImageSource img
+                    ? new Image { Source = img, Width = 16, Height = 16, Stretch = Stretch.Uniform }
+                    : item.Icon,
+                Width = 16,
+                Height = 16,
+                Margin = new Thickness(0, 0, 4, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Children.Add(iconHost);
+        }
 
         var titleBlock = new TextBlock
         {
@@ -227,6 +249,17 @@ public class DockTabHeader : StackPanel
         autoHideItem.Click += (_, _) => AutoHideRequested?.Invoke();
         menu.Items.Add(autoHideItem);
 
+        if (item.Owner is not DocumentHostNode)
+        {
+            var dockAsDocItem = new MenuItem { Header = "Dock as Tabbed Document" };
+            dockAsDocItem.Click += (_, _) => DockAsDocumentRequested?.Invoke();
+            menu.Items.Add(dockAsDocItem);
+        }
+
+        var hideItem = new MenuItem { Header = "Hide" };
+        hideItem.Click += (_, _) => HideRequested?.Invoke();
+        menu.Items.Add(hideItem);
+
         menu.Items.Add(new Separator());
 
         if (item.CanClose)
@@ -249,6 +282,15 @@ public class DockTabHeader : StackPanel
 
     private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        // Double-click: float the item (VS-style)
+        if (e.ClickCount == 2)
+        {
+            if (_item.CanFloat)
+                FloatRequested?.Invoke();
+            e.Handled = true;
+            return;
+        }
+
         _dragStartPoint = e.GetPosition(this);
         _isDragging = false;
         CaptureMouse();

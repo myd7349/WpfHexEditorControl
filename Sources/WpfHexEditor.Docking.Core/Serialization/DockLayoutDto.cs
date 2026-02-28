@@ -14,6 +14,10 @@ public abstract class DockNodeDto
     public required string Type { get; set; }
     public Guid Id { get; set; }
     public DockLockMode LockMode { get; set; }
+    public double? DockMinWidth { get; set; }
+    public double? DockMinHeight { get; set; }
+    public double? DockMaxWidth { get; set; }
+    public double? DockMaxHeight { get; set; }
 }
 
 /// <summary>
@@ -73,10 +77,11 @@ public class DockItemDto
 /// </summary>
 public class DockLayoutRootDto
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
     public required DockNodeDto RootNode { get; set; }
     public List<DockItemDto> FloatingItems { get; set; } = [];
     public List<DockItemDto> AutoHideItems { get; set; } = [];
+    public List<DockItemDto> HiddenItems { get; set; } = [];
 
     /// <summary>
     /// Main window state: 0 = Normal, 1 = Minimized, 2 = Maximized.

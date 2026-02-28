@@ -20,6 +20,8 @@ internal sealed class DockTabEventWirer : IDisposable
     private readonly Action<DockItem> _dragHandler;
     private readonly Action<DockItem> _floatHandler;
     private readonly Action<DockItem> _autoHideHandler;
+    private readonly Action<DockItem> _hideHandler;
+    private readonly Action<DockItem> _dockAsDocumentHandler;
 
     public DockTabEventWirer(DockTabControl tabControl, DockControl host)
     {
@@ -43,17 +45,35 @@ internal sealed class DockTabEventWirer : IDisposable
             host.RebuildVisualTree();
         };
 
-        _tabControl.TabCloseRequested    += _closeHandler;
-        _tabControl.TabDragStarted       += _dragHandler;
-        _tabControl.TabFloatRequested    += _floatHandler;
-        _tabControl.TabAutoHideRequested += _autoHideHandler;
+        _hideHandler = item =>
+        {
+            if (host.Engine is null) return;
+            host.Engine.Hide(item);
+            host.RebuildVisualTree();
+        };
+
+        _dockAsDocumentHandler = item =>
+        {
+            if (host.Engine is null) return;
+            host.Engine.DockAsDocument(item);
+            host.RebuildVisualTree();
+        };
+
+        _tabControl.TabCloseRequested            += _closeHandler;
+        _tabControl.TabDragStarted               += _dragHandler;
+        _tabControl.TabFloatRequested            += _floatHandler;
+        _tabControl.TabAutoHideRequested         += _autoHideHandler;
+        _tabControl.TabHideRequested             += _hideHandler;
+        _tabControl.TabDockAsDocumentRequested   += _dockAsDocumentHandler;
     }
 
     public void Dispose()
     {
-        _tabControl.TabCloseRequested    -= _closeHandler;
-        _tabControl.TabDragStarted       -= _dragHandler;
-        _tabControl.TabFloatRequested    -= _floatHandler;
-        _tabControl.TabAutoHideRequested -= _autoHideHandler;
+        _tabControl.TabCloseRequested            -= _closeHandler;
+        _tabControl.TabDragStarted               -= _dragHandler;
+        _tabControl.TabFloatRequested            -= _floatHandler;
+        _tabControl.TabAutoHideRequested         -= _autoHideHandler;
+        _tabControl.TabHideRequested             -= _hideHandler;
+        _tabControl.TabDockAsDocumentRequested   -= _dockAsDocumentHandler;
     }
 }

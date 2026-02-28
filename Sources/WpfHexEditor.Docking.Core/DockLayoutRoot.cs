@@ -42,6 +42,12 @@ public class DockLayoutRoot
     /// </summary>
     public List<DockItem> AutoHideItems { get; } = [];
 
+    /// <summary>
+    /// All hidden (but not closed) items tracked by the layout.
+    /// Hidden items are kept in memory for re-activation via Show().
+    /// </summary>
+    public List<DockItem> HiddenItems { get; } = [];
+
     // ─── Window state (set by the host before serialization) ────────
 
     /// <summary>
@@ -72,7 +78,8 @@ public class DockLayoutRoot
     {
         return FindItemRecursive(RootNode, itemId)
                ?? FloatingItems.FirstOrDefault(i => i.Id == itemId)
-               ?? AutoHideItems.FirstOrDefault(i => i.Id == itemId);
+               ?? AutoHideItems.FirstOrDefault(i => i.Id == itemId)
+               ?? HiddenItems.FirstOrDefault(i => i.Id == itemId);
     }
 
     /// <summary>
@@ -82,7 +89,8 @@ public class DockLayoutRoot
     {
         return FindItemByContentIdRecursive(RootNode, contentId)
                ?? FloatingItems.FirstOrDefault(i => i.ContentId == contentId)
-               ?? AutoHideItems.FirstOrDefault(i => i.ContentId == contentId);
+               ?? AutoHideItems.FirstOrDefault(i => i.ContentId == contentId)
+               ?? HiddenItems.FirstOrDefault(i => i.ContentId == contentId);
     }
 
     /// <summary>
