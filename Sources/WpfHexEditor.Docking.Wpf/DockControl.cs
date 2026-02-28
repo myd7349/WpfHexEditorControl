@@ -64,20 +64,94 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     public Func<DockItem, object>? ContentFactory { get; set; }
 
     /// <summary>
-    /// Returns a wrapped <see cref="ContentFactory"/> that caches results by <see cref="DockItem.ContentId"/>.
-    /// Content is created once and reused across visual tree rebuilds, preserving scroll position,
-    /// selection state, and other UI state.
+    /// Optional async content factory. When set and <see cref="ContentFactory"/> is null,
+    /// tabs show an indeterminate progress bar until the async factory completes.
+    /// </summary>
+    public Func<DockItem, Task<object>>? AsyncContentFactory { get; set; }
+
+    /// <summary>
+    /// Returns a wrapped content factory that caches results by <see cref="DockItem.ContentId"/>.
+    /// Supports both sync and async factories.
     /// </summary>
     internal Func<DockItem, object>? CachedContentFactory =>
-        ContentFactory is null ? null : GetOrCreateContent;
+        ContentFactory is not null || AsyncContentFactory is not null
+            ? GetOrCreateContent
+            : null;
 
     private object GetOrCreateContent(DockItem item)
     {
         if (_contentCache.TryGetValue(item.ContentId, out var cached))
             return cached;
-        var content = ContentFactory!(item);
-        _contentCache[item.ContentId] = content;
-        return content;
+
+        if (ContentFactory is not null)
+        {
+            var content = ContentFactory(item);
+            _contentCache[item.ContentId] = content;
+            return content;
+        }
+
+        if (AsyncContentFactory is not null)
+        {
+            var placeholder = new System.Windows.Controls.ProgressBar
+            {
+                IsIndeterminate = true,
+                Height = 4,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0)
+            };
+            _contentCache[item.ContentId] = placeholder;
+
+            var factory = AsyncContentFactory;
+            _ = LoadAsyncContent(item, factory, placeholder);
+            return placeholder;
+        }
+
+        return new System.Windows.Controls.TextBlock { Text = $"Content: {item.Title}" };
+    }
+
+    private async Task LoadAsyncContent(DockItem item, Func<DockItem, Task<object>> factory,
+        System.Windows.Controls.ProgressBar placeholder)
+    {
+        var content = await factory(item);
+        await Dispatcher.InvokeAsync(() =>
+        {
+            _contentCache[item.ContentId] = content;
+
+            // Find and replace the placeholder in all tab controls
+            ReplaceContent(placeholder, content);
+        });
+    }
+
+    private void ReplaceContent(object oldContent, object newContent)
+    {
+        if (_centerHost.Content == oldContent)
+        {
+            _centerHost.Content = newContent;
+            return;
+        }
+
+        // Walk visual tree to find ContentControls/TabItems holding the placeholder
+        ReplaceInVisualTree(_rootGrid, oldContent, newContent);
+    }
+
+    private static void ReplaceInVisualTree(DependencyObject parent, object oldContent, object newContent)
+    {
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is System.Windows.Controls.ContentControl cc && cc.Content == oldContent)
+            {
+                cc.Content = newContent;
+                return;
+            }
+            if (child is System.Windows.Controls.TabItem ti && ti.Content == oldContent)
+            {
+                ti.Content = newContent;
+                return;
+            }
+            ReplaceInVisualTree(child, oldContent, newContent);
+        }
     }
 
     /// <summary>

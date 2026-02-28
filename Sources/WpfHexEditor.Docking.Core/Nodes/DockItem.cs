@@ -49,6 +49,18 @@ public class DockItem
     public double? FloatTop { get; set; }
 
     /// <summary>
+    /// Last known width of the floating window (null = use default 400).
+    /// Updated by <see cref="FloatingWindowManager"/> on <c>SizeChanged</c>.
+    /// </summary>
+    public double? FloatWidth { get; set; }
+
+    /// <summary>
+    /// Last known height of the floating window (null = use default 300).
+    /// Updated by <see cref="FloatingWindowManager"/> on <c>SizeChanged</c>.
+    /// </summary>
+    public double? FloatHeight { get; set; }
+
+    /// <summary>
     /// Application-defined data associated with this item. Not serialized.
     /// </summary>
     public object? Tag { get; set; }

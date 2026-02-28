@@ -97,7 +97,9 @@ public static class DockLayoutSerializer
             State = item.State,
             LastDockSide = item.LastDockSide,
             FloatLeft = item.FloatLeft,
-            FloatTop = item.FloatTop
+            FloatTop = item.FloatTop,
+            FloatWidth = item.FloatWidth,
+            FloatHeight = item.FloatHeight
         };
     }
 
@@ -191,7 +193,9 @@ public static class DockLayoutSerializer
             State = dto.State,
             LastDockSide = dto.LastDockSide,
             FloatLeft = dto.FloatLeft,
-            FloatTop = dto.FloatTop
+            FloatTop = dto.FloatTop,
+            FloatWidth = dto.FloatWidth,
+            FloatHeight = dto.FloatHeight
         };
     }
 }

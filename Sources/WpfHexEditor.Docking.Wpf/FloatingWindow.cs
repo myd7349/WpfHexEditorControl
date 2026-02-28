@@ -300,6 +300,13 @@ public class FloatingWindowManager
         var window = new FloatingWindow();
         window.Bind(group, activeItem, _dockControl.CachedContentFactory);
 
+        // Apply saved size if available
+        if (trackPosition)
+        {
+            if (activeItem.FloatWidth.HasValue)  window.Width  = activeItem.FloatWidth.Value;
+            if (activeItem.FloatHeight.HasValue) window.Height = activeItem.FloatHeight.Value;
+        }
+
         // Position: saved location > explicit position > centered relative to owner
         if (trackPosition && activeItem.FloatLeft.HasValue && activeItem.FloatTop.HasValue)
         {
@@ -331,10 +338,17 @@ public class FloatingWindowManager
             positionTimer.Tick += (_, _) =>
             {
                 positionTimer.Stop();
-                activeItem.FloatLeft = window.Left;
-                activeItem.FloatTop  = window.Top;
+                activeItem.FloatLeft   = window.Left;
+                activeItem.FloatTop    = window.Top;
+                activeItem.FloatWidth  = window.Width;
+                activeItem.FloatHeight = window.Height;
             };
             window.LocationChanged += (_, _) =>
+            {
+                positionTimer.Stop();
+                positionTimer.Start();
+            };
+            window.SizeChanged += (_, _) =>
             {
                 positionTimer.Stop();
                 positionTimer.Start();
