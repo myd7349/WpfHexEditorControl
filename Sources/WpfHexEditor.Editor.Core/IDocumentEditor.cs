@@ -11,22 +11,22 @@ using System.Windows.Input;
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>
-/// Contrat commun pour tout éditeur de document embarquable (Hex, TBL, JSON, …).
-/// Implémenté par un UserControl ou FrameworkElement; le host (docking, main window)
-/// interagit via cette interface pour piloter l'éditeur de manière uniforme.
+/// Common contract for any embeddable document editor (Hex, TBL, JSON, …).
+/// Implemented by a UserControl or FrameworkElement; the host (docking, main window)
+/// interacts via this interface to drive the editor uniformly.
 /// </summary>
 public interface IDocumentEditor
 {
-    // ── État ─────────────────────────────────────────────────────────────
+    // ── State ────────────────────────────────────────────────────────────
     bool IsDirty    { get; }
     bool CanUndo    { get; }
     bool CanRedo    { get; }
-    bool IsReadOnly { get; set; }   // DP-backed dans les implémentations WPF
+    bool IsReadOnly { get; set; }   // DP-backed in WPF implementations
 
-    /// <summary>Titre affiché dans l'onglet du host ("file.bin", "file.bin *" si dirty).</summary>
+    /// <summary>Title displayed in the host tab ("file.bin", "file.bin *" if dirty).</summary>
     string Title { get; }
 
-    // ── Commandes bindables (host : MenuItem.Command, toolbar…) ──────────
+    // ── Bindable commands (host: MenuItem.Command, toolbar…) ─────────────
     ICommand UndoCommand      { get; }
     ICommand RedoCommand      { get; }
     ICommand SaveCommand      { get; }
@@ -36,7 +36,7 @@ public interface IDocumentEditor
     ICommand DeleteCommand    { get; }
     ICommand SelectAllCommand { get; }
 
-    // ── Méthodes ─────────────────────────────────────────────────────────
+    // ── Methods ──────────────────────────────────────────────────────────
     void Undo();
     void Redo();
     void Save();
@@ -49,11 +49,11 @@ public interface IDocumentEditor
     void SelectAll();
     void Close();
 
-    // ── Événements (host met à jour son propre menu/statusbar) ────────────
-    event EventHandler?         ModifiedChanged;  // IsDirty a changé
+    // ── Events (host updates its own menu/statusbar) ─────────────────────
+    event EventHandler?         ModifiedChanged;  // IsDirty changed
     event EventHandler?         CanUndoChanged;
     event EventHandler?         CanRedoChanged;
-    event EventHandler<string>? TitleChanged;     // "file.tbl *" — host met à jour l'onglet
-    event EventHandler<string>? StatusMessage;    // toast / statusbar du host
-    event EventHandler?         SelectionChanged; // host re-query CanExecute des commandes
+    event EventHandler<string>? TitleChanged;     // "file.tbl *" — host updates the tab
+    event EventHandler<string>? StatusMessage;    // toast / host statusbar
+    event EventHandler?         SelectionChanged; // host re-queries CanExecute on commands
 }

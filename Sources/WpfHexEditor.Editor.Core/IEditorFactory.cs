@@ -6,32 +6,32 @@
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>
-/// Factory permettant d'enregistrer un éditeur dans le <see cref="IEditorRegistry"/>
-/// pour une intégration plug-in avec le système de docking.
+/// Factory for registering an editor in the <see cref="IEditorRegistry"/>
+/// for plug-in integration with the docking system.
 ///
-/// <para>Usage optionnel : un éditeur peut parfaitement être instancié directement
-/// sans passer par cette interface (<c>new TblEditorControl()</c>). La factory n'est
-/// nécessaire que si l'éditeur doit être découvrable via le registre (ouverture
-/// automatique selon l'extension, menu "Ouvrir avec…", etc.).</para>
+/// <para>Optional usage: an editor can be instantiated directly
+/// without going through this interface (<c>new TblEditorControl()</c>). The factory is
+/// only needed if the editor must be discoverable via the registry (automatic opening
+/// by extension, "Open with…" menu, etc.).</para>
 ///
-/// <para>CONTRAT : les instances retournées par <see cref="Create"/> doivent également
-/// être des <c>System.Windows.FrameworkElement</c> pour être embarquables dans le
-/// système de docking WPF. Le host caste après création.</para>
+/// <para>CONTRACT: instances returned by <see cref="Create"/> must also
+/// be <c>System.Windows.FrameworkElement</c> to be embeddable in the
+/// WPF docking system. The host casts after creation.</para>
 /// </summary>
 public interface IEditorFactory
 {
-    /// <summary>Métadonnées de l'éditeur (id, nom, extensions).</summary>
+    /// <summary>Editor metadata (id, name, extensions).</summary>
     IEditorDescriptor Descriptor { get; }
 
     /// <summary>
-    /// Retourne <c>true</c> si cet éditeur peut ouvrir <paramref name="filePath"/>.
-    /// Basé sur l'extension et/ou une inspection rapide du fichier.
+    /// Returns <c>true</c> if this editor can open <paramref name="filePath"/>.
+    /// Based on the file extension and/or a quick file inspection.
     /// </summary>
     bool CanOpen(string filePath);
 
     /// <summary>
-    /// Crée une nouvelle instance vierge de l'éditeur.
-    /// Appeler <see cref="IDocumentEditor"/> members sur le résultat pour charger un fichier.
+    /// Creates a new blank editor instance.
+    /// Call <see cref="IDocumentEditor"/> members on the result to load a file.
     /// </summary>
     IDocumentEditor Create();
 }

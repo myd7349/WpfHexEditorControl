@@ -8,14 +8,14 @@ using System.Collections.Generic;
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>
-/// Registre centralisé des éditeurs de documents disponibles dans l'application.
+/// Centralized registry of document editors available in the application.
 ///
-/// Usage typique (host au démarrage) :
+/// Typical usage (host at startup):
 /// <code>
 /// registry.Register(new TblEditorFactory());
 /// registry.Register(new JsonEditorFactory());
 /// // …
-/// // Lors de l'ouverture d'un fichier :
+/// // When opening a file:
 /// var factory = registry.FindFactory(filePath) ?? registry.GetFallback();
 /// var editor  = factory.Create();
 /// dockingHost.OpenDocument((FrameworkElement)editor, editor.TitleChanged);
@@ -23,15 +23,15 @@ namespace WpfHexEditor.Editor.Core;
 /// </summary>
 public interface IEditorRegistry
 {
-    /// <summary>Enregistre un éditeur disponible.</summary>
+    /// <summary>Registers an available editor.</summary>
     void Register(IEditorFactory factory);
 
     /// <summary>
-    /// Retourne la factory la plus appropriée pour <paramref name="filePath"/>,
-    /// ou <c>null</c> si aucun éditeur ne supporte ce fichier.
+    /// Returns the most appropriate factory for <paramref name="filePath"/>,
+    /// or <c>null</c> if no editor supports this file.
     /// </summary>
     IEditorFactory? FindFactory(string filePath);
 
-    /// <summary>Retourne toutes les factories enregistrées.</summary>
+    /// <summary>Returns all registered factories.</summary>
     IReadOnlyList<IEditorFactory> GetAll();
 }

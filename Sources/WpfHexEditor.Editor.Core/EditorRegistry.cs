@@ -10,8 +10,8 @@ using System.Linq;
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>
-/// Implémentation de référence de <see cref="IEditorRegistry"/>.
-/// Thread-safe en lecture ; l'enregistrement est prévu au démarrage (single-thread).
+/// Reference implementation of <see cref="IEditorRegistry"/>.
+/// Thread-safe for reads; registration is expected at startup (single-thread).
 /// </summary>
 public sealed class EditorRegistry : IEditorRegistry
 {
