@@ -1,6 +1,6 @@
 using WpfHexEditor.Core.CharacterTable;
 
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Represents a conflict detected in TBL file</summary>
 public class TblConflict

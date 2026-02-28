@@ -1,6 +1,6 @@
 using WpfHexEditor.Core.CharacterTable;
 
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Template for pre-defined TBL character tables</summary>
 public class TblTemplate

@@ -1,4 +1,4 @@
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Options for TBL generation from text</summary>
 public class TblGenerationOptions

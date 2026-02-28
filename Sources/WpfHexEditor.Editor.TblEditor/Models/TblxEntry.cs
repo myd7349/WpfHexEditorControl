@@ -1,6 +1,6 @@
 using WpfHexEditor.Core.CharacterTable;
 
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Extended TBL entry with additional metadata for .tblx format</summary>
 public class TblxEntry

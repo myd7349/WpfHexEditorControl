@@ -1,4 +1,4 @@
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Result of TBL entry validation</summary>
 public class TblValidationResult

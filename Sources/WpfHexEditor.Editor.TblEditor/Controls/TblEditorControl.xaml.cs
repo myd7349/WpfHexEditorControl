@@ -4,10 +4,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexEditor.Core.CharacterTable;
 using WpfHexEditor.Editor.Core;
-using WpfHexEditor.TblEditor.Services;
-using WpfHexEditor.TblEditor.ViewModels;
+using WpfHexEditor.Editor.TblEditor.Services;
+using WpfHexEditor.Editor.TblEditor.ViewModels;
 
-namespace WpfHexEditor.TblEditor.Controls;
+namespace WpfHexEditor.Editor.TblEditor.Controls;
 
 /// <summary>
 /// Standalone document-style TBL editor.

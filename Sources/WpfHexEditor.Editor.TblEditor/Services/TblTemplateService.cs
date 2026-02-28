@@ -1,9 +1,9 @@
 using System.IO;
 using System.Text;
 using WpfHexEditor.Core.CharacterTable;
-using WpfHexEditor.TblEditor.Models;
+using WpfHexEditor.Editor.TblEditor.Models;
 
-namespace WpfHexEditor.TblEditor.Services;
+namespace WpfHexEditor.Editor.TblEditor.Services;
 
 /// <summary>Service for managing TBL templates (built-in and user-defined)</summary>
 public class TblTemplateService

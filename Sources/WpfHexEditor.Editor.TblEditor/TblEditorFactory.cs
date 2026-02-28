@@ -1,8 +1,8 @@
 using System.IO;
 using WpfHexEditor.Editor.Core;
-using WpfHexEditor.TblEditor.Controls;
+using WpfHexEditor.Editor.TblEditor.Controls;
 
-namespace WpfHexEditor.TblEditor;
+namespace WpfHexEditor.Editor.TblEditor;
 
 /// <summary>
 /// Optional <see cref="IEditorFactory"/> for the TBL editor.

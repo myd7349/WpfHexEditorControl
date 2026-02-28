@@ -2,9 +2,9 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using WpfHexEditor.Core.CharacterTable;
-using WpfHexEditor.TblEditor.Models;
+using WpfHexEditor.Editor.TblEditor.Models;
 
-namespace WpfHexEditor.TblEditor.Services;
+namespace WpfHexEditor.Editor.TblEditor.Services;
 
 /// <summary>Service for exporting TBL entries to various formats</summary>
 public class TblExportService

@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
-using WpfHexEditor.TblEditor.Models;
-using WpfHexEditor.TblEditor.ViewModels;
+using WpfHexEditor.Editor.TblEditor.Models;
+using WpfHexEditor.Editor.TblEditor.ViewModels;
 
-namespace WpfHexEditor.TblEditor.Services;
+namespace WpfHexEditor.Editor.TblEditor.Services;
 
 /// <summary>Service for validating TBL entries</summary>
 public class TblValidationService

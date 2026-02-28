@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using WpfHexEditor.Core.CharacterTable;
 
-namespace WpfHexEditor.TblEditor.ViewModels;
+namespace WpfHexEditor.Editor.TblEditor.ViewModels;
 
 /// <summary>ViewModel wrapping a single <see cref="Dte"/> entry for display and editing.</summary>
 public sealed class TblEntryViewModel : INotifyPropertyChanged

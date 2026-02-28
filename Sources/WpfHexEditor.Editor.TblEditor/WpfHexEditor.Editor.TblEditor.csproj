@@ -2,8 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <RootNamespace>WpfHexEditor.TblEditor</RootNamespace>
-    <AssemblyName>WpfHexEditor.TblEditor</AssemblyName>
+    <RootNamespace>WpfHexEditor.Editor.TblEditor</RootNamespace>
+    <AssemblyName>WpfHexEditor.Editor.TblEditor</AssemblyName>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

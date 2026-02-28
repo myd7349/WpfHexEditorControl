@@ -3,10 +3,10 @@ using WpfHexEditor.Core.Bytes;
 using WpfHexEditor.Core.CharacterTable;
 using WpfHexEditor.Core.Search.Models;
 using WpfHexEditor.Core.Search.Services;
-using WpfHexEditor.TblEditor.Models;
-using WpfHexEditor.TblEditor.ViewModels;
+using WpfHexEditor.Editor.TblEditor.Models;
+using WpfHexEditor.Editor.TblEditor.ViewModels;
 
-namespace WpfHexEditor.TblEditor.Services;
+namespace WpfHexEditor.Editor.TblEditor.Services;
 
 /// <summary>Service for generating TBL entries from sample text using RelativeSearchEngine</summary>
 public class TblGeneratorService

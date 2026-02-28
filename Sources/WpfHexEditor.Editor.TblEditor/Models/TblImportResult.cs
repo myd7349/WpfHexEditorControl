@@ -1,6 +1,6 @@
 using WpfHexEditor.Core.CharacterTable;
 
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Result of a TBL import operation</summary>
 public class TblImportResult

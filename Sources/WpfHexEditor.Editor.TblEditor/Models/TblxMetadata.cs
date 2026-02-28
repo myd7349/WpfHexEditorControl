@@ -1,4 +1,4 @@
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Metadata for .tblx extended format</summary>
 public class TblxMetadata

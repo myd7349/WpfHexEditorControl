@@ -1,7 +1,7 @@
 using WpfHexEditor.Core.CharacterTable;
-using WpfHexEditor.TblEditor.ViewModels;
+using WpfHexEditor.Editor.TblEditor.ViewModels;
 
-namespace WpfHexEditor.TblEditor.Services;
+namespace WpfHexEditor.Editor.TblEditor.Services;
 
 /// <summary>Fast search and filter service with hash-based indexing</summary>
 public class TblSearchService

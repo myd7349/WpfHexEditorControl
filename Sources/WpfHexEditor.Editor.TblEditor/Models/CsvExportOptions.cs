@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Options for CSV export</summary>
 public class CsvExportOptions

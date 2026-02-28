@@ -1,9 +1,9 @@
 using System.IO;
 using System.Text.Json;
 using WpfHexEditor.Core.CharacterTable;
-using WpfHexEditor.TblEditor.Models;
+using WpfHexEditor.Editor.TblEditor.Models;
 
-namespace WpfHexEditor.TblEditor.Services;
+namespace WpfHexEditor.Editor.TblEditor.Services;
 
 /// <summary>Service for importing TBL entries from various formats</summary>
 public class TblImportService

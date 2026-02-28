@@ -5,9 +5,9 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 using WpfHexEditor.Core.CharacterTable;
-using WpfHexEditor.TblEditor.Services;
+using WpfHexEditor.Editor.TblEditor.Services;
 
-namespace WpfHexEditor.TblEditor.ViewModels;
+namespace WpfHexEditor.Editor.TblEditor.ViewModels;
 
 /// <summary>
 /// Internal ViewModel for TblEditorControl.

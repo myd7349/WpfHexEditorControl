@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using WpfHexEditor.Core.CharacterTable;
-using WpfHexEditor.TblEditor.Models;
-using WpfHexEditor.TblEditor.ViewModels;
+using WpfHexEditor.Editor.TblEditor.Models;
+using WpfHexEditor.Editor.TblEditor.ViewModels;
 
-namespace WpfHexEditor.TblEditor.Services;
+namespace WpfHexEditor.Editor.TblEditor.Services;
 
 /// <summary>Conflict analyzer using Trie algorithm for prefix detection</summary>
 public class TblConflictAnalyzer

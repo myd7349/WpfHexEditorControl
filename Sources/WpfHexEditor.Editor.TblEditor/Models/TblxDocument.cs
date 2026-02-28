@@ -1,6 +1,6 @@
 using WpfHexEditor.Core.CharacterTable;
 
-namespace WpfHexEditor.TblEditor.Models;
+namespace WpfHexEditor.Editor.TblEditor.Models;
 
 /// <summary>Complete .tblx document structure</summary>
 public class TblxDocument
