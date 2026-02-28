@@ -7,11 +7,11 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using WpfHexaEditor.Commands;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.HexEditor.Commands;
+using WpfHexEditor.HexEditor.ViewModels;
 using WpfHexEditor.HexBox;
 
-namespace WpfHexaEditor.Dialog
+namespace WpfHexEditor.HexEditor.Dialog
 {
     /// <summary>
     /// Modern MVVM dialog for entering a single byte value.

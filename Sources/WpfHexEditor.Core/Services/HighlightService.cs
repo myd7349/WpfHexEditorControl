@@ -7,7 +7,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service responsible for highlight operations (search results, marked bytes, etc.)

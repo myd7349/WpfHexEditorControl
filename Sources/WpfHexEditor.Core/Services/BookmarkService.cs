@@ -8,10 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Models.Bookmarks;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Models.Bookmarks;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service responsible for bookmark management operations

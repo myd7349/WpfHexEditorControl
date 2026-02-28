@@ -6,9 +6,9 @@
 //////////////////////////////////////////////
 
 using System.Collections.Generic;
-using WpfHexaEditor.Core;
+using WpfHexEditor.Core;
 
-namespace WpfHexaEditor.Core.FormatDetection
+namespace WpfHexEditor.Core.FormatDetection
 {
     /// <summary>
     /// Represents a potential format match with confidence scoring.

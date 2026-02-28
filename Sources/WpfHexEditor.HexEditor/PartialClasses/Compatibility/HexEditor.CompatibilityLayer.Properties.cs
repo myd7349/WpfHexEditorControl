@@ -8,10 +8,10 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Models;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Models;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Compatibility Layer Properties

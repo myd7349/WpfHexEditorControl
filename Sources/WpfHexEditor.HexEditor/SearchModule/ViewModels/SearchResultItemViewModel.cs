@@ -8,11 +8,11 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Core.CharacterTable;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.CharacterTable;
 
-namespace WpfHexaEditor.SearchModule.ViewModels
+namespace WpfHexEditor.HexEditor.Search.ViewModels
 {
     /// <summary>
     /// ViewModel for a single search result item in the results list.

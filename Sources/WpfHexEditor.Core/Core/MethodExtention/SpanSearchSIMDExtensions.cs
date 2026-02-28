@@ -12,7 +12,7 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 #endif
 
-namespace WpfHexaEditor.Core.MethodExtention
+namespace WpfHexEditor.Core.Extensions
 {
     /// <summary>
     /// ULTRA HIGH-PERFORMANCE: SIMD-vectorized search extensions using AVX2/SSE2.

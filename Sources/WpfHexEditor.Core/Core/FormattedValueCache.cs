@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace WpfHexaEditor.Core
+namespace WpfHexEditor.Core
 {
     /// <summary>
     /// Cache for formatted field values to avoid redundant formatting operations

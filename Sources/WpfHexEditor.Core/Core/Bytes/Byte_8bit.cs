@@ -6,10 +6,10 @@
 
 using System;
 using System.Collections.Generic;
-using WpfHexaEditor.Core.Interfaces;
+using WpfHexEditor.Core.Interfaces;
 using System.Windows.Input;
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     class Byte_8bit : IByte
     {

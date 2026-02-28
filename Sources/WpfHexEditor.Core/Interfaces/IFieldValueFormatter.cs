@@ -3,7 +3,7 @@
 // Contributors: Claude Sonnet 4.5
 //////////////////////////////////////////////
 
-namespace WpfHexaEditor.Interfaces
+namespace WpfHexEditor.Core.Interfaces
 {
     /// <summary>
     /// Interface for formatting field values for display

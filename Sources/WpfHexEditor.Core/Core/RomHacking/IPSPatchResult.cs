@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace WpfHexaEditor.Core.RomHacking
+namespace WpfHexEditor.Core.RomHacking
 {
     /// <summary>
     /// Result of an IPS patching operation

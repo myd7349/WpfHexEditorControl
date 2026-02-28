@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class — IDocumentEditor implementation.

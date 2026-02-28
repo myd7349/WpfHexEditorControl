@@ -5,7 +5,7 @@
 
 using System;
 
-namespace WpfHexaEditor.Core.MethodExtention
+namespace WpfHexEditor.Core.Extensions
 {
     public static class WithMethodExtention
     {

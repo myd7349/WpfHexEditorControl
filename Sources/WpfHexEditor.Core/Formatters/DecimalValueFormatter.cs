@@ -4,9 +4,9 @@
 //////////////////////////////////////////////
 
 using System;
-using WpfHexaEditor.Interfaces;
+using WpfHexEditor.Core.Interfaces;
 
-namespace WpfHexaEditor.Formatters
+namespace WpfHexEditor.Core.Formatters
 {
     /// <summary>
     /// Formats field values as decimal numbers

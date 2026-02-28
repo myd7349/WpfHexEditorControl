@@ -8,9 +8,9 @@ using System;
 using System.IO;
 using System.Text;
 using System.Windows;
-using WpfHexaEditor.Core;
+using WpfHexEditor.Core;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Clipboard Operations

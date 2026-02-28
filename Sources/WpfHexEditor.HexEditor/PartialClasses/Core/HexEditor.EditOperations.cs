@@ -5,9 +5,9 @@
 //////////////////////////////////////////////
 
 using System;
-using WpfHexaEditor.Models;
+using WpfHexEditor.Core.Models;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Edit Operations

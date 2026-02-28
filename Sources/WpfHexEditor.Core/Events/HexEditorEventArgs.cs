@@ -4,9 +4,9 @@
 //////////////////////////////////////////////
 
 using System;
-using WpfHexaEditor.Core;
+using WpfHexEditor.Core;
 
-namespace WpfHexaEditor.Events
+namespace WpfHexEditor.Core.Events
 {
     /// <summary>
     /// Event args for byte modification events

@@ -6,7 +6,7 @@
 
 using System;
 
-namespace WpfHexaEditor.SearchModule.Models
+namespace WpfHexEditor.Core.Search.Models
 {
     /// <summary>
     /// Configuration options for relative search (encoding discovery).

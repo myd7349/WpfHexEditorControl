@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace WpfHexaEditor.Core.MethodExtention
+namespace WpfHexEditor.Core.Extensions
 {
     /// <summary>
     /// High-performance search extensions for Span&lt;byte&gt; and ReadOnlySpan&lt;byte&gt;

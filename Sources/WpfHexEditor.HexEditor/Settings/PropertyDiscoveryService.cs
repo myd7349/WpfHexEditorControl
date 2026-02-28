@@ -10,7 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 
-namespace WpfHexaEditor.Core.Settings
+namespace WpfHexEditor.Core.Settings
 {
     /// <summary>
     /// Service that discovers properties via reflection.

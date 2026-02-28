@@ -11,9 +11,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Core.CharacterTable
+namespace WpfHexEditor.Core.CharacterTable
 {
     /// <summary>
     /// Used to manage Thingy TBL file (entry=value) with full standard format support

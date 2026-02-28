@@ -9,10 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
-using WpfHexaEditor.Interfaces;
-using WpfHexaEditor.Models.StructureOverlay;
+using WpfHexEditor.Core.Interfaces;
+using WpfHexEditor.Core.Models.StructureOverlay;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Structure Overlay integration

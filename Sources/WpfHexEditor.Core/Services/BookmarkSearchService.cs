@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using WpfHexaEditor.Models.Bookmarks;
+using WpfHexEditor.Core.Models.Bookmarks;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for advanced bookmark search operations

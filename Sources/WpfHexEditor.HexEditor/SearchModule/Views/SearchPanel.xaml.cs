@@ -9,10 +9,10 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using WpfHexaEditor.SearchModule.Models;
-using WpfHexaEditor.SearchModule.ViewModels;
+using WpfHexEditor.Core.Search.Models;
+using WpfHexEditor.HexEditor.Search.ViewModels;
 
-namespace WpfHexaEditor.SearchModule.Views
+namespace WpfHexEditor.HexEditor.Search.Views
 {
     /// <summary>
     /// Interaction logic for SearchPanel.xaml

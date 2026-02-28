@@ -6,9 +6,9 @@
 
 using System;
 using Newtonsoft.Json.Linq;
-using WpfHexaEditor.Models.StructureOverlay;
+using WpfHexEditor.Core.Models.StructureOverlay;
 
-namespace WpfHexaEditor.Interfaces
+namespace WpfHexEditor.Core.Interfaces
 {
     /// <summary>
     /// Contract for a panel that overlays structure information on the hex view.

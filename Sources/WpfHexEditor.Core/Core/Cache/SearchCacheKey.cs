@@ -7,7 +7,7 @@
 using System;
 using System.Linq;
 
-namespace WpfHexaEditor.Core.Cache
+namespace WpfHexEditor.Core.Cache
 {
     /// <summary>
     /// Cache key for search operations.

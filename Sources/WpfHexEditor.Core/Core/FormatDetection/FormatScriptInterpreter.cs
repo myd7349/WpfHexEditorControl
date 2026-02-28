@@ -7,10 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using WpfHexaEditor.Core.FormatDetection;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.FormatDetection;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Core.FormatDetection
+namespace WpfHexEditor.Core.FormatDetection
 {
     /// <summary>
     /// Interpreter for executing format detection scripts

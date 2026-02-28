@@ -10,7 +10,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Core.Settings
+namespace WpfHexEditor.Core.Settings
 {
     /// <summary>
     /// Service for automatic save/load of HexEditor settings via reflection.

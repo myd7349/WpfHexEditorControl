@@ -3,7 +3,7 @@
 // Contributors: Claude Sonnet 4.5
 //////////////////////////////////////////////
 
-namespace WpfHexaEditor.Models.Bookmarks
+namespace WpfHexEditor.Core.Models.Bookmarks
 {
     /// <summary>
     /// Export format options for bookmarks

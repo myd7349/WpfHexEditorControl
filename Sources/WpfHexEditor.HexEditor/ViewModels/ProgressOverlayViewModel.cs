@@ -8,7 +8,7 @@ using System;
 using System.ComponentModel;
 using System.Windows.Input;
 
-namespace WpfHexaEditor.ViewModels
+namespace WpfHexEditor.HexEditor.ViewModels
 {
     /// <summary>
     /// ViewModel for the progress overlay control

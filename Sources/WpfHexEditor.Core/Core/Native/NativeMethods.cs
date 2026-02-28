@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
 
-namespace WpfHexaEditor.Core.Native
+namespace WpfHexEditor.Core.Native
 {
     /// <summary>
     /// Used for key detection

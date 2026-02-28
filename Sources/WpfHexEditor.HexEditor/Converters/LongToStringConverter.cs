@@ -6,7 +6,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace WpfHexaEditor.Core.Converters
+namespace WpfHexEditor.HexEditor.Converters
 {
     /// <summary>
     /// Converts between long and string for TextBox bindings.

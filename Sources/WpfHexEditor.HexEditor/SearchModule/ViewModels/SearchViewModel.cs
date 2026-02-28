@@ -13,11 +13,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Properties;
-using WpfHexaEditor.SearchModule.Models;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.Properties;
+using WpfHexEditor.Core.Search.Models;
 
-namespace WpfHexaEditor.SearchModule.ViewModels
+namespace WpfHexEditor.HexEditor.Search.ViewModels
 {
     /// <summary>
     /// ViewModel for search operations with full MVVM support.

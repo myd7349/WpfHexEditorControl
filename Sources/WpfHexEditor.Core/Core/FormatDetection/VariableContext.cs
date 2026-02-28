@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace WpfHexaEditor.Core.FormatDetection
+namespace WpfHexEditor.Core.FormatDetection
 {
     /// <summary>
     /// Context for storing and retrieving variables during format parsing

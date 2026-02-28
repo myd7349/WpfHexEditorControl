@@ -8,12 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Models;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.Models;
+using WpfHexEditor.HexEditor.ViewModels;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - File Comparison

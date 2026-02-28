@@ -12,7 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Core.Settings.Controls
+namespace WpfHexEditor.HexEditor.Settings.Controls
 {
     /// <summary>
     /// Control generator for FontFamily properties.

@@ -8,10 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Models;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Models;
 
-namespace WpfHexaEditor.Rendering
+namespace WpfHexEditor.HexEditor.Rendering
 {
     /// <summary>
     /// High-performance renderer for CustomBackgroundBlock highlights

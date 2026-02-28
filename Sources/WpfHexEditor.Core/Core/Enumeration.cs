@@ -5,7 +5,7 @@
 
 using System;
 
-namespace WpfHexaEditor.Core
+namespace WpfHexEditor.Core
 {
     /// <summary>
     /// ByteAction used for ByteModified class

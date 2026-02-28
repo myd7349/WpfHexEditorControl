@@ -8,9 +8,9 @@
 using System;
 using System.Linq;
 using System.Windows;
-using WpfHexaEditor.Interfaces;
+using WpfHexEditor.Core.Interfaces;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Data Inspector integration

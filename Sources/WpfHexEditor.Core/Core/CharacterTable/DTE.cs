@@ -6,7 +6,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace WpfHexaEditor.Core.CharacterTable
+namespace WpfHexEditor.Core.CharacterTable
 {
     /// <summary>
     /// Object representing a DTE with validation and metadata

@@ -6,11 +6,11 @@
 
 using System;
 using System.Collections.Generic;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Models;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.Models;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Byte Operations

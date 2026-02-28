@@ -4,13 +4,13 @@
     Contributors: Claude Sonnet 4.5
 -->
 
-<Window x:Class="WpfHexaEditor.SearchModule.Views.RelativeSearchDialog"
+<Window x:Class="WpfHexEditor.HexEditor.Search.Views.RelativeSearchDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfHexaEditor.SearchModule.Views"
-        xmlns:p="clr-namespace:WpfHexaEditor.Properties"
+        xmlns:local="clr-namespace:WpfHexEditor.HexEditor.Search.Views"
+        xmlns:p="clr-namespace:WpfHexEditor.Core.Properties;assembly=WpfHexEditor.Core"
         mc:Ignorable="d"
         Title="{DynamicResource RelativeSearchString}"
         Height="700" Width="900"

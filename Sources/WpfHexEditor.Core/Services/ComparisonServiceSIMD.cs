@@ -6,9 +6,9 @@
 
 using System;
 using System.Numerics;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// SIMD-optimized comparison service using Vector&lt;byte&gt; for ultra-fast byte comparisons.

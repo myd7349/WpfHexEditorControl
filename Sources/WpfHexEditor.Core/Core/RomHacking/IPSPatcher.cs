@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace WpfHexaEditor.Core.RomHacking
+namespace WpfHexEditor.Core.RomHacking
 {
     /// <summary>
     /// IPS (International Patching System) patcher implementation.

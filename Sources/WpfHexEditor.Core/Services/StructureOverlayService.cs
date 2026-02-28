@@ -10,11 +10,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
 using Newtonsoft.Json.Linq;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.FormatDetection;
-using WpfHexaEditor.Models.StructureOverlay;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.FormatDetection;
+using WpfHexEditor.Core.Models.StructureOverlay;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for creating structure overlays from format definitions

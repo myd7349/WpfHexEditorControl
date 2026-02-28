@@ -8,7 +8,7 @@ using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Core.Converters
+namespace WpfHexEditor.HexEditor.Converters
 {
     /// <summary>
     /// Converts hex color string (#RRGGBB) to Color

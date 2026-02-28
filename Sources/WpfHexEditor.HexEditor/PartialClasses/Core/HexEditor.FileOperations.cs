@@ -9,11 +9,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
-using WpfHexaEditor.Controls;
-using WpfHexaEditor.Models;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.HexEditor.Controls;
+using WpfHexEditor.Core.Models;
+using WpfHexEditor.HexEditor.ViewModels;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - File Operations

@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace WpfHexaEditor.Core.FormatDetection
+namespace WpfHexEditor.Core.FormatDetection
 {
     /// <summary>
     /// Represents a complete file format definition loaded from JSON

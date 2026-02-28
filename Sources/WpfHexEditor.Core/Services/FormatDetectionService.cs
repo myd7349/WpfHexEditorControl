@@ -10,12 +10,12 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Core.FormatDetection;
-using WpfHexaEditor.Events;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.FormatDetection;
+using WpfHexEditor.Core.Events;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for detecting file formats and generating custom background blocks
@@ -141,7 +141,7 @@ namespace WpfHexaEditor.Services
         /// Examples:
         /// - "C:/FormatDefinitions/Archives/ZIP.json" -> "Archives"
         /// - "FormatDefinitions/Images/PNG.json" -> "Images"
-        /// - "WpfHexaEditor.FormatDefinitions.Archives.ZIP.json" (embedded) -> "Archives"
+        /// - "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.json" (embedded) -> "Archives"
         /// </summary>
         private string ExtractCategoryFromPath(string path)
         {
@@ -156,7 +156,7 @@ namespace WpfHexaEditor.Services
                 // Check if it's an embedded resource name (contains dots instead of slashes)
                 if (path.Contains("FormatDefinitions.") && path.Count(c => c == '.') >= 3)
                 {
-                    // Embedded resource format: "WpfHexaEditor.FormatDefinitions.Archives.ZIP.json"
+                    // Embedded resource format: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.json"
                     var parts = path.Split('.');
                     var formatDefsIndex = Array.IndexOf(parts, "FormatDefinitions");
                     if (formatDefsIndex >= 0 && formatDefsIndex < parts.Length - 2)

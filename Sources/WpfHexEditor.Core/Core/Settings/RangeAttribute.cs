@@ -5,7 +5,7 @@
 
 using System;
 
-namespace WpfHexaEditor.Core.Settings
+namespace WpfHexEditor.Core.Settings
 {
     /// <summary>
     /// Attribute to specify min/max range for numeric properties.

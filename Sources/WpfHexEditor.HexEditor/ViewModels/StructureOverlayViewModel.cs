@@ -10,9 +10,9 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using WpfHexaEditor.Models.StructureOverlay;
+using WpfHexEditor.Core.Models.StructureOverlay;
 
-namespace WpfHexaEditor.ViewModels
+namespace WpfHexEditor.HexEditor.ViewModels
 {
     /// <summary>
     /// ViewModel for the Structure Overlay panel

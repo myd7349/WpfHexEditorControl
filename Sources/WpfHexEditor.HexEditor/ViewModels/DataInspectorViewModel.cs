@@ -12,7 +12,7 @@ using System.Runtime.CompilerServices;
 using WpfHexEditor.BinaryAnalysis.Models.DataInspector;
 using WpfHexEditor.BinaryAnalysis.Services;
 
-namespace WpfHexaEditor.ViewModels
+namespace WpfHexEditor.HexEditor.ViewModels
 {
     /// <summary>
     /// ViewModel for the Data Inspector panel

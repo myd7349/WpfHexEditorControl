@@ -13,7 +13,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Core
+namespace WpfHexEditor.Core
 {
     /// <summary>
     /// This class represent a visual caret on editor

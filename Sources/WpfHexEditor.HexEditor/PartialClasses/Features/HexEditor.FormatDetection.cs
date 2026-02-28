@@ -9,11 +9,11 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
-using WpfHexaEditor.Core.FormatDetection;
-using WpfHexaEditor.Events;
-using WpfHexaEditor.Services;
+using WpfHexEditor.Core.FormatDetection;
+using WpfHexEditor.Core.Events;
+using WpfHexEditor.Core.Services;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Format Detection
@@ -195,7 +195,7 @@ namespace WpfHexaEditor
         /// Loading Priority:
         /// 1. Embedded resources (351 built-in formats)
         /// 2. External directory next to executable (FormatDefinitions/)
-        /// 3. User custom directory (%AppData%/WpfHexaEditor/FormatDefinitions/)
+        /// 3. User custom directory (%AppData%/WpfHexEditor/FormatDefinitions/)
         /// </summary>
         private void InitializeFormatDetection()
         {
@@ -232,7 +232,7 @@ namespace WpfHexaEditor
                 // Allows users to create personal format definitions
                 var userDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "WpfHexaEditor",
+                    "WpfHexEditor",
                     "FormatDefinitions");
 
                 if (Directory.Exists(userDir))
@@ -347,7 +347,7 @@ namespace WpfHexaEditor
                         if (format != null)
                         {
                             // Extract category from embedded resource name
-                            // Example: "WpfHexaEditor.FormatDefinitions.Archives.ZIP.json" -> "Archives"
+                            // Example: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.json" -> "Archives"
                             if (string.IsNullOrWhiteSpace(format.Category))
                             {
                                 format.Category = ExtractCategoryFromResourceName(resourceName);
@@ -388,7 +388,7 @@ namespace WpfHexaEditor
 
         /// <summary>
         /// Extract category from embedded resource name
-        /// Example: "WpfHexaEditor.FormatDefinitions.Archives.ZIP.json" -> "Archives"
+        /// Example: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.json" -> "Archives"
         /// </summary>
         private string ExtractCategoryFromResourceName(string resourceName)
         {
@@ -397,7 +397,7 @@ namespace WpfHexaEditor
 
             try
             {
-                // Embedded resource format: "WpfHexaEditor.FormatDefinitions.Archives.ZIP.json"
+                // Embedded resource format: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.json"
                 var parts = resourceName.Split('.');
                 var formatDefsIndex = System.Array.IndexOf(parts, "FormatDefinitions");
 

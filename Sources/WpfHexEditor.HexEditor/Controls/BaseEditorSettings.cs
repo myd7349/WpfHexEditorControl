@@ -10,9 +10,9 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using WpfHexaEditor.Core.Settings;
+using WpfHexEditor.Core.Settings;
 
-namespace WpfHexaEditor.Controls
+namespace WpfHexEditor.HexEditor.Controls
 {
     /// <summary>
     /// Helper class for all editor settings panels.

@@ -6,7 +6,7 @@
 using System;
 using System.IO;
 
-namespace WpfHexaEditor.Core
+namespace WpfHexEditor.Core
 {
     /// <summary>
     /// Buffered file reader that reads data in blocks to minimize seek operations

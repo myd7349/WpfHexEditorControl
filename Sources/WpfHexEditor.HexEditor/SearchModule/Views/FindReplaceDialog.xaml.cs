@@ -5,9 +5,9 @@
 //////////////////////////////////////////////
 
 using System.Windows;
-using WpfHexaEditor.SearchModule.ViewModels;
+using WpfHexEditor.HexEditor.Search.ViewModels;
 
-namespace WpfHexaEditor.SearchModule.Views
+namespace WpfHexEditor.HexEditor.Search.Views
 {
     /// <summary>
     /// Interaction logic for FindReplaceDialog.xaml

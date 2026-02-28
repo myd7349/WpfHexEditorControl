@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.FormatDetection;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.FormatDetection;
 
-namespace WpfHexaEditor.Events
+namespace WpfHexEditor.Core.Events
 {
     /// <summary>
     /// Event args for format detection

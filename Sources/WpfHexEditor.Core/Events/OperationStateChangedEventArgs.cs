@@ -6,7 +6,7 @@
 
 using System;
 
-namespace WpfHexaEditor.Events
+namespace WpfHexEditor.Core.Events
 {
     /// <summary>
     /// Event arguments for operation state changes

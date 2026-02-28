@@ -6,7 +6,7 @@ using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace WpfHexaEditor.Core.Converters
+namespace WpfHexEditor.HexEditor.Converters
 {
     /// <summary>
     /// Converts between zoom scale (double 0.5-2.0) and percentage string ("50%" - "200%").

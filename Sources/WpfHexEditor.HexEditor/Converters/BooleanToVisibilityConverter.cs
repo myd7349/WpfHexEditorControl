@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace WpfHexaEditor.Core.Converters
+namespace WpfHexEditor.HexEditor.Converters
 {
     /// <summary>
     /// CODE FROM NUGET PACKAGE EXPLORER : https://github.com/NuGetPackageExplorer/NuGetPackageExplorer

@@ -7,7 +7,7 @@
 using System;
 using System.Text;
 
-namespace WpfHexaEditor.SearchModule.Models
+namespace WpfHexEditor.Core.Search.Models
 {
     /// <summary>
     /// Represents a single entry in the search history.

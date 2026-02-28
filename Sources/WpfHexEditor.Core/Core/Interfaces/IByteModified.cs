@@ -3,9 +3,9 @@
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 //////////////////////////////////////////////
 
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Core.Interfaces
+namespace WpfHexEditor.Core.Interfaces
 {
     public interface IByteModified
     {

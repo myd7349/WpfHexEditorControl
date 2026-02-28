@@ -7,7 +7,7 @@
 using System;
 using System.Windows.Input;
 
-namespace WpfHexaEditor.Commands
+namespace WpfHexEditor.HexEditor.Commands
 {
     /// <summary>
     /// Generic command implementation for MVVM pattern.

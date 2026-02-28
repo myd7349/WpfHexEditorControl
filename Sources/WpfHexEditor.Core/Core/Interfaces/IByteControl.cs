@@ -5,9 +5,9 @@
 //////////////////////////////////////////////
 
 using System;
-using WpfHexaEditor.Core.EventArguments;
+using WpfHexEditor.Core.EventArguments;
 
-namespace WpfHexaEditor.Core.Interfaces
+namespace WpfHexEditor.Core.Interfaces
 {
     /// <summary>
     /// All byte control inherit from this interface.

@@ -4,7 +4,7 @@
     Contributors: Claude Sonnet 4.5
 */
 
-namespace WpfHexaEditor.SearchModule.Models
+namespace WpfHexEditor.Core.Search.Models
 {
     /// <summary>
     /// Defines the available search modes in the hex editor.

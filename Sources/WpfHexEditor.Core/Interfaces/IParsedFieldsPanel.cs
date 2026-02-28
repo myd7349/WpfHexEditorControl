@@ -8,10 +8,10 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using WpfHexaEditor.Core.FormatDetection;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.Core.FormatDetection;
+using WpfHexEditor.Core.ViewModels;
 
-namespace WpfHexaEditor.Interfaces
+namespace WpfHexEditor.Core.Interfaces
 {
     /// <summary>
     /// Contract for a panel that displays parsed format fields.
@@ -31,7 +31,7 @@ namespace WpfHexaEditor.Interfaces
 
         void RefreshView();
         void Clear();
-        void SetEnrichedFormat(WpfHexaEditor.Core.FormatDetection.FormatDefinition format);
+        void SetEnrichedFormat(WpfHexEditor.Core.FormatDetection.FormatDefinition format);
     }
 
     /// <summary>

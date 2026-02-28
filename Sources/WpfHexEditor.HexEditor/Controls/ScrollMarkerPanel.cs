@@ -11,7 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Controls
+namespace WpfHexEditor.HexEditor.Controls
 {
     /// <summary>
     /// Horizontal position for scroll markers

@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows.Data;
 
-namespace WpfHexaEditor.Core.Settings
+namespace WpfHexEditor.Core.Settings
 {
     /// <summary>
     /// Validation constraints for a property.

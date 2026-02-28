@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace WpfHexaEditor.SearchModule.Models
+namespace WpfHexEditor.Core.Search.Models
 {
     /// <summary>
     /// Represents a single search result occurrence.

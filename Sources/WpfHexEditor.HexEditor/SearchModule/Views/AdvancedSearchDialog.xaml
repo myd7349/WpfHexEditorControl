@@ -4,14 +4,14 @@
     Contributors: Claude Sonnet 4.5
 -->
 
-<Window x:Class="WpfHexaEditor.SearchModule.Views.AdvancedSearchDialog"
+<Window x:Class="WpfHexEditor.HexEditor.Search.Views.AdvancedSearchDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfHexaEditor.SearchModule.Views"
-        xmlns:vm="clr-namespace:WpfHexaEditor.SearchModule.ViewModels"
-        xmlns:models="clr-namespace:WpfHexaEditor.SearchModule.Models"
+        xmlns:local="clr-namespace:WpfHexEditor.HexEditor.Search.Views"
+        xmlns:vm="clr-namespace:WpfHexEditor.HexEditor.Search.ViewModels"
+        xmlns:models="clr-namespace:WpfHexEditor.Core.Search.Models;assembly=WpfHexEditor.Core"
         mc:Ignorable="d"
         Title="Advanced Search" Height="680" Width="900"
         MinHeight="520" MinWidth="720"

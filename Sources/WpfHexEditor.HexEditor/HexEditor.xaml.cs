@@ -14,16 +14,16 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using WpfHexaEditor.Controls;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Core.CharacterTable;
-using WpfHexaEditor.Events;
-using WpfHexaEditor.Models;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.HexEditor.Controls;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.CharacterTable;
+using WpfHexEditor.Core.Events;
+using WpfHexEditor.Core.Models;
+using WpfHexEditor.HexEditor.ViewModels;
 using WpfHexEditor.Editor.Core;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor - Modern WPF hex editor with native insert mode support (V2 Architecture)

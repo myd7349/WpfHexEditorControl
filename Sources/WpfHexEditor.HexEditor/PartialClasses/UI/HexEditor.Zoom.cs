@@ -8,9 +8,9 @@ using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
-using WpfHexaEditor.Core.Settings;
+using WpfHexEditor.Core.Settings;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Zoom Support

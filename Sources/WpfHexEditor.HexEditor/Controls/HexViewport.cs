@@ -16,11 +16,11 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Models;
-using WpfHexaEditor.Rendering;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Models;
+using WpfHexEditor.HexEditor.Rendering;
 
-namespace WpfHexaEditor.Controls
+namespace WpfHexEditor.HexEditor.Controls
 {
     /// <summary>
     /// Active panel type for dual-color selection

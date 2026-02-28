@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace WpfHexaEditor.Core.Cache
+namespace WpfHexEditor.Core.Cache
 {
     /// <summary>
     /// Generic LRU (Least Recently Used) Cache implementation.

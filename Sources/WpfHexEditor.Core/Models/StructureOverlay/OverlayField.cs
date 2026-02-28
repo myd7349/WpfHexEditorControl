@@ -9,7 +9,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Models.StructureOverlay
+namespace WpfHexEditor.Core.Models.StructureOverlay
 {
     /// <summary>
     /// Represents a single field in a structure overlay

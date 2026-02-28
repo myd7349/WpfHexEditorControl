@@ -6,7 +6,7 @@
 using System;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     /// <summary>
     /// Used to track a byte difference in a stream vs another stream

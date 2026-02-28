@@ -9,10 +9,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Core.Cache;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.Cache;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service responsible for find and replace operations with LRU caching

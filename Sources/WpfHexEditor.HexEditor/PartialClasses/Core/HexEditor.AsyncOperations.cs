@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using WpfHexaEditor.Models;
-using WpfHexaEditor.Services;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.Core.Models;
+using WpfHexEditor.Core.Services;
+using WpfHexEditor.HexEditor.ViewModels;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Async Operations

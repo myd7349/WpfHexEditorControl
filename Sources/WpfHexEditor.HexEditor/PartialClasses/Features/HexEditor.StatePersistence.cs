@@ -8,7 +8,7 @@ using System;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - State Persistence

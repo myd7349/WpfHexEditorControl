@@ -7,12 +7,12 @@
 using System;
 using System.Threading;
 using System.Windows;
-using WpfHexaEditor.SearchModule.Models;
-using WpfHexaEditor.SearchModule.Services;
-using WpfHexaEditor.SearchModule.ViewModels;
-using WpfHexaEditor.SearchModule.Views;
+using WpfHexEditor.Core.Search.Models;
+using WpfHexEditor.Core.Search.Services;
+using WpfHexEditor.HexEditor.Search.ViewModels;
+using WpfHexEditor.HexEditor.Search.Views;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// Partial class for HexEditor - Relative Search functionality.

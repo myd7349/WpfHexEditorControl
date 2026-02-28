@@ -8,7 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using WpfHexEditor.ColorPicker.Controls;
 
-namespace WpfHexaEditor.Core.Settings.Controls
+namespace WpfHexEditor.HexEditor.Settings.Controls
 {
     /// <summary>
     /// Control generator for Color properties (ColorPicker custom UserControl).

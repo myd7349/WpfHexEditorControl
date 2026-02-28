@@ -10,7 +10,7 @@ using System.Linq;
 
 #nullable enable
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     /// <summary>
     /// Type of undo/redo operation.

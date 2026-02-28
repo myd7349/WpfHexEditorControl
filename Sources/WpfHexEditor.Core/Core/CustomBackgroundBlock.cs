@@ -6,9 +6,9 @@
 
 using System;
 using System.Windows.Media;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Core
+namespace WpfHexEditor.Core
 {
     /// <summary>
     /// Used to create block of custom colors background

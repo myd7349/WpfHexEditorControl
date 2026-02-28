@@ -8,7 +8,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace WpfHexaEditor.Models.Comparison
+namespace WpfHexEditor.Core.Models.Comparison
 {
     /// <summary>
     /// Type of difference between two files

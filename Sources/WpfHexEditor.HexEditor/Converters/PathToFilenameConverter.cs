@@ -8,7 +8,7 @@ using System.Globalization;
 using System.IO;
 using System.Windows.Data;
 
-namespace WpfHexaEditor.Core.Converters
+namespace WpfHexEditor.HexEditor.Converters
 {
     /// <summary>
     /// Used to get the filename with extention.

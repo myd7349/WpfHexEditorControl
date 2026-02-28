@@ -8,7 +8,7 @@
 
 using System.Windows.Controls;
 
-namespace WpfHexaEditor.Controls
+namespace WpfHexEditor.HexEditor.Controls
 {
     /// <summary>
     /// Complete HexEditor Settings Panel - Auto-generated via Reflection.

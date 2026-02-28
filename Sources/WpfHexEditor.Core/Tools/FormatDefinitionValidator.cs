@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using WpfHexaEditor.Core.FormatDetection;
+using WpfHexEditor.Core.FormatDetection;
 
-namespace WpfHexaEditor.Tools
+namespace WpfHexEditor.Core.Tools
 {
     /// <summary>
     /// Validator for format definition JSON files

@@ -7,7 +7,7 @@
 using System.Windows;
 using System.Windows.Media;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     public partial class HexEditor
     {

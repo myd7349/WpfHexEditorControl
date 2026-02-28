@@ -6,9 +6,9 @@
 
 using System;
 using System.IO;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.HexEditor.ViewModels;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Stream Operations

@@ -7,9 +7,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WpfHexaEditor.SearchModule.ViewModels;
+using WpfHexEditor.HexEditor.Search.ViewModels;
 
-namespace WpfHexaEditor.SearchModule.Views
+namespace WpfHexEditor.HexEditor.Search.Views
 {
     /// <summary>
     /// Interaction logic for QuickSearchBar.xaml

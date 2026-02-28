@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for UI virtualization - only creates controls for visible bytes

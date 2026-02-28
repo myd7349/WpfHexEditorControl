@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using WpfHexEditor.BinaryAnalysis.Models.Patterns;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for detecting patterns in binary data

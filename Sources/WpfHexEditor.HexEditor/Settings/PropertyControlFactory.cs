@@ -6,9 +6,9 @@
 using System;
 using System.Windows;
 using System.Windows.Media;
-using WpfHexaEditor.Core.Settings.Controls;
+using WpfHexEditor.HexEditor.Settings.Controls;
 
-namespace WpfHexaEditor.Core.Settings
+namespace WpfHexEditor.Core.Settings
 {
     /// <summary>
     /// Factory that creates the appropriate IPropertyControl based on property type.

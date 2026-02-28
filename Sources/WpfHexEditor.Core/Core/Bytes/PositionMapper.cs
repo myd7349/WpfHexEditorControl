@@ -9,7 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     /// <summary>
     /// Represents a segment in the position mapping with cumulative delta.

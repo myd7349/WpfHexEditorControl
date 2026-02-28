@@ -7,7 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 
-namespace WpfHexaEditor.Core.Settings.Controls
+namespace WpfHexEditor.HexEditor.Settings.Controls
 {
     /// <summary>
     /// Control generator for boolean properties (CheckBox).

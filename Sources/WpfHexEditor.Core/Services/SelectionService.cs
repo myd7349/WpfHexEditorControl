@@ -6,10 +6,10 @@
 
 using System;
 using System.IO;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service responsible for selection operations

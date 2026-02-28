@@ -8,9 +8,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
-using WpfHexaEditor.Core;
+using WpfHexEditor.Core;
 
-namespace WpfHexaEditor.Converters
+namespace WpfHexEditor.HexEditor.Converters
 {
     /// <summary>
     /// Converts bool (IsSelected) to brush

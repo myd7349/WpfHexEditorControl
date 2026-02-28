@@ -6,7 +6,7 @@
 using System;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Models.Bookmarks
+namespace WpfHexEditor.Core.Models.Bookmarks
 {
     /// <summary>
     /// Represents a bookmark category/group with color and description

@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     /// <summary>
     /// ByteProvider - Ultra-optimized byte provider with proper separation of responsibilities.

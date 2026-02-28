@@ -5,10 +5,10 @@
 //////////////////////////////////////////////
 
 using System.Linq;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service responsible for position calculations and conversions

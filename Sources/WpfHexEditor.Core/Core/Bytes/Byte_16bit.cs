@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
-using WpfHexaEditor.Core.Interfaces;
+using WpfHexEditor.Core.Interfaces;
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     class Byte_16bit : IByte
     {

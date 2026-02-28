@@ -7,10 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Media;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.CharacterTable;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.CharacterTable;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Find/Replace Operations

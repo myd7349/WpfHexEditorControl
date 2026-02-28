@@ -8,9 +8,9 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using WpfHexaEditor.Commands;
+using WpfHexEditor.HexEditor.Commands;
 
-namespace WpfHexaEditor.ViewModels
+namespace WpfHexEditor.HexEditor.ViewModels
 {
     /// <summary>
     /// ViewModel for ReplaceByteWindow (V2 MVVM architecture).

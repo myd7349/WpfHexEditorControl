@@ -1,6 +1,6 @@
 using System;
 
-namespace WpfHexaEditor.Core.RomHacking
+namespace WpfHexEditor.Core.RomHacking
 {
     /// <summary>
     /// Represents a single IPS patch record

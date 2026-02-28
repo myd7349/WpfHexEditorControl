@@ -9,7 +9,7 @@ using System.Globalization;
 using System.Resources;
 using System.Windows;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// A ResourceDictionary that automatically updates its resources when the culture changes.

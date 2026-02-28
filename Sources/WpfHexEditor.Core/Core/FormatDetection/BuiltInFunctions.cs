@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Core.FormatDetection
+namespace WpfHexEditor.Core.FormatDetection
 {
     /// <summary>
     /// Built-in functions for format detection scripts.

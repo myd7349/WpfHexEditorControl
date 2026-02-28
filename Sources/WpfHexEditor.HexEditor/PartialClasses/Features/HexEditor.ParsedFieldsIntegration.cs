@@ -8,13 +8,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.FormatDetection;
-using WpfHexaEditor.Formatters;
-using WpfHexaEditor.Interfaces;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.FormatDetection;
+using WpfHexEditor.Core.Formatters;
+using WpfHexEditor.Core.Interfaces;
+using WpfHexEditor.HexEditor.ViewModels;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     public partial class HexEditor
     {

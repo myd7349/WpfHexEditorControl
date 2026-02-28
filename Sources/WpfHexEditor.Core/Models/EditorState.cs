@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Windows.Media;
 using System.Xml.Serialization;
 
-namespace WpfHexaEditor.Models
+namespace WpfHexEditor.Core.Models
 {
     /// <summary>
     /// Represents the persistent state of the hex editor.

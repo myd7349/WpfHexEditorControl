@@ -7,11 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Input;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.CharacterTable;
-using WpfHexaEditor.Models;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.CharacterTable;
+using WpfHexEditor.Core.Models;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Compatibility Layer Methods

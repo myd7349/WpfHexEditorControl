@@ -6,7 +6,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace WpfHexaEditor.Core.FormatDetection
+namespace WpfHexEditor.Core.FormatDetection
 {
     /// <summary>
     /// Validates checksums and CRCs for file integrity verification

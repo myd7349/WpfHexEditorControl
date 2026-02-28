@@ -4,9 +4,9 @@
 //////////////////////////////////////////////
 
 using System;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Core.EventArguments
+namespace WpfHexEditor.Core.EventArguments
 {
     /// <summary>
     /// Custom event arguments used for pass somes informations to delegate

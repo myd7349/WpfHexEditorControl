@@ -5,9 +5,9 @@
 //////////////////////////////////////////////
 
 using System.Windows.Controls;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.HexEditor.ViewModels;
 
-namespace WpfHexaEditor.Controls
+namespace WpfHexEditor.HexEditor.Controls
 {
     /// <summary>
     /// Progress overlay control for displaying long-running operation progress

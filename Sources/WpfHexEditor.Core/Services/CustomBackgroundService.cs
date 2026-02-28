@@ -8,10 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Events;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Events;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service responsible for custom background block management operations

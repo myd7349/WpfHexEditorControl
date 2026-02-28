@@ -5,9 +5,9 @@
 //////////////////////////////////////////////
 
 using System.Collections.Generic;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service responsible for byte modification operations (modify, insert, delete)

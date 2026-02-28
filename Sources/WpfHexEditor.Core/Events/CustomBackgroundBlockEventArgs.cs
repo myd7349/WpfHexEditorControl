@@ -5,9 +5,9 @@
 
 using System;
 using System.Collections.Generic;
-using WpfHexaEditor.Core;
+using WpfHexEditor.Core;
 
-namespace WpfHexaEditor.Events
+namespace WpfHexEditor.Core.Events
 {
     /// <summary>
     /// Describes the type of change that occurred to custom background blocks

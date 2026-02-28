@@ -12,12 +12,12 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using WpfHexaEditor.Controls;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Models;
-using WpfHexaEditor.Properties;
+using WpfHexEditor.HexEditor.Controls;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Models;
+using WpfHexEditor.Core.Properties;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - UI Helpers

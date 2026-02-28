@@ -11,12 +11,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Core.CharacterTable;
-using WpfHexaEditor.SearchModule.Models;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.CharacterTable;
+using WpfHexEditor.Core.Search.Models;
 
-namespace WpfHexaEditor.SearchModule.Services
+namespace WpfHexEditor.Core.Search.Services
 {
     /// <summary>
     /// Search engine for discovering character encodings using relative distance patterns.

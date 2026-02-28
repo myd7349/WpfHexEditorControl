@@ -4,7 +4,7 @@
 // Contributors: Claude Sonnet 4.5
 //////////////////////////////////////////////
 
-namespace WpfHexaEditor.Core.CharacterTable
+namespace WpfHexEditor.Core.CharacterTable
 {
     /// <summary>
     /// Types of conflicts that can occur in TBL files

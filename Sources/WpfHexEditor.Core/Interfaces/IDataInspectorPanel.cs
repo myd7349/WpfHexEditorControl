@@ -4,7 +4,7 @@
 // Decouples HexEditor Core from the concrete WindowPanels implementation
 //////////////////////////////////////////////
 
-namespace WpfHexaEditor.Interfaces
+namespace WpfHexEditor.Core.Interfaces
 {
     /// <summary>
     /// Contract for a panel that interprets bytes in multiple formats.

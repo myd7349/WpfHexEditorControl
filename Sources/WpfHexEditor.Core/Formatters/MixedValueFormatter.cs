@@ -5,9 +5,9 @@
 
 using System;
 using System.Linq;
-using WpfHexaEditor.Interfaces;
+using WpfHexEditor.Core.Interfaces;
 
-namespace WpfHexaEditor.Formatters
+namespace WpfHexEditor.Core.Formatters
 {
     /// <summary>
     /// Formats field values using the most appropriate format for each type

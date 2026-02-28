@@ -10,11 +10,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using WpfHexaEditor.Core.Settings.Controls;
+using WpfHexEditor.HexEditor.Settings.Controls;
 using WpfHexEditor.ColorPicker.Controls;
-using WpfHexaEditor.Converters;
+using WpfHexEditor.HexEditor.Converters;
 
-namespace WpfHexaEditor.Core.Settings
+namespace WpfHexEditor.Core.Settings
 {
     /// <summary>
     /// Dynamically generates the complete settings panel UI via reflection.

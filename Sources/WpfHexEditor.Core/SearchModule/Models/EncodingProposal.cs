@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace WpfHexaEditor.SearchModule.Models
+namespace WpfHexEditor.Core.Search.Models
 {
     /// <summary>
     /// Represents a single encoding proposal (one tested offset).

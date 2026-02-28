@@ -8,12 +8,12 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WpfHexaEditor.Commands;
-using WpfHexaEditor.Properties;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.HexEditor.Commands;
+using WpfHexEditor.Core.Properties;
+using WpfHexEditor.HexEditor.ViewModels;
 using WpfHexEditor.HexBox;
 
-namespace WpfHexaEditor.Dialog
+namespace WpfHexEditor.HexEditor.Dialog
 {
     /// <summary>
     /// Modern MVVM dialog for single-byte find/replace operations.

@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.SearchModule.Models;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.Search.Models;
 
-namespace WpfHexaEditor.SearchModule.Services
+namespace WpfHexEditor.Core.Search.Services
 {
     /// <summary>
     /// Ultra-performant search engine using Boyer-Moore-Horspool algorithm.

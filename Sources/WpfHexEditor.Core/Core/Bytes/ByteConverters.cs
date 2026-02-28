@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using static System.FormattableString;
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     /// <summary>
     /// ByteCharConverter for convert data

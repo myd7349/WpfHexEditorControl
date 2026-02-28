@@ -6,9 +6,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using WpfHexaEditor.Models;
+using WpfHexEditor.Core.Models;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Search and Replace Operations

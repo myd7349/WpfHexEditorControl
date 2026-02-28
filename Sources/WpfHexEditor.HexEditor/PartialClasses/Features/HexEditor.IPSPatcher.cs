@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Windows;
 using Microsoft.Win32;
-using WpfHexaEditor.Core.RomHacking;
+using WpfHexEditor.Core.RomHacking;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     public partial class HexEditor
     {

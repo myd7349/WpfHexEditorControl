@@ -1,6 +1,6 @@
 using System;
 
-namespace WpfHexaEditor.SearchModule.Models
+namespace WpfHexEditor.Core.Search.Models
 {
     /// <summary>
     /// Represents search configuration options for the hex editor.

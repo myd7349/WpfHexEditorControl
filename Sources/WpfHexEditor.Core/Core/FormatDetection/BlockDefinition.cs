@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 
-namespace WpfHexaEditor.Core.FormatDetection
+namespace WpfHexEditor.Core.FormatDetection
 {
     /// <summary>
     /// Represents a single block definition in a format

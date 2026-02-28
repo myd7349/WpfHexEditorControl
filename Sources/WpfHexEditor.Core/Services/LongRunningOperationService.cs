@@ -8,10 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Events;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.Events;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for managing long-running operations with progress reporting and cancellation support

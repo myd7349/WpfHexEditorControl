@@ -7,7 +7,7 @@ using System;
 using System.Linq;
 using System.Text;
 
-namespace WpfHexaEditor.Core
+namespace WpfHexEditor.Core
 {
     /// <summary>
     /// Utility class for reading typed values from byte arrays

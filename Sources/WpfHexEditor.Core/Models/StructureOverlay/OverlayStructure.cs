@@ -9,7 +9,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace WpfHexaEditor.Models.StructureOverlay
+namespace WpfHexEditor.Core.Models.StructureOverlay
 {
     /// <summary>
     /// Represents a complete structure overlay (e.g., PNG header, PE header, etc.)

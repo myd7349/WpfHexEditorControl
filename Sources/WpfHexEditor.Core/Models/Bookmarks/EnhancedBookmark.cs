@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Media;
-using WpfHexaEditor.Core;
+using WpfHexEditor.Core;
 
-namespace WpfHexaEditor.Models.Bookmarks
+namespace WpfHexEditor.Core.Models.Bookmarks
 {
     /// <summary>
     /// Enhanced bookmark with metadata, categories, annotations, and tags

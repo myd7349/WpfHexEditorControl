@@ -5,9 +5,9 @@
 //////////////////////////////////////////////
 
 using System.Collections.Generic;
-using WpfHexaEditor.Core.Bytes;
+using WpfHexEditor.Core.Bytes;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for comparing two hex files and finding differences

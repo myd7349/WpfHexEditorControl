@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Models;
-using WpfHexaEditor.ViewModels;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Models;
+using WpfHexEditor.HexEditor.ViewModels;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Internal Events

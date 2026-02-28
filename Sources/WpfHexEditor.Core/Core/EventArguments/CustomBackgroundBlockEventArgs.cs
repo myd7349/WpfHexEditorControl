@@ -5,7 +5,7 @@
 
 using System;
 
-namespace WpfHexaEditor.Core.EventArguments
+namespace WpfHexEditor.Core.EventArguments
 {
     /// <summary>
     /// Custom event arguments used for pass somes informations to delegate

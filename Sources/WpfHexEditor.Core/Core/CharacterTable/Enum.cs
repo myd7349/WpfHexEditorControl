@@ -3,7 +3,7 @@
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 //////////////////////////////////////////////
 
-namespace WpfHexaEditor.Core.CharacterTable
+namespace WpfHexEditor.Core.CharacterTable
 {
     /// <summary>
     /// Type of DTE used in TBL

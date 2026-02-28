@@ -3,7 +3,7 @@
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 //////////////////////////////////////////////
 
-namespace WpfHexaEditor.Core
+namespace WpfHexEditor.Core
 {
     public static class ConstantReadOnly
     {

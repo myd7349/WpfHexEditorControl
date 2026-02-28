@@ -9,9 +9,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using WpfHexaEditor.SearchModule.ViewModels;
+using WpfHexEditor.HexEditor.Search.ViewModels;
 
-namespace WpfHexaEditor.SearchModule.Views
+namespace WpfHexEditor.HexEditor.Search.Views
 {
     /// <summary>
     /// Advanced Search Dialog - Code-behind (minimal).

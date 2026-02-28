@@ -7,7 +7,7 @@
 using System.Collections.Generic;
 using System.Windows.Input;
 
-namespace WpfHexaEditor.Core.Interfaces
+namespace WpfHexEditor.Core.Interfaces
 {
     public delegate void D_ByteListProp(List<byte> newValue, int index);
 

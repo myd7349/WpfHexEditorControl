@@ -8,11 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Events;
-using WpfHexaEditor.Services;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Events;
+using WpfHexEditor.Core.Services;
 
-namespace WpfHexaEditor
+namespace WpfHexEditor.HexEditor
 {
     /// <summary>
     /// HexEditor partial class - Custom Background Blocks

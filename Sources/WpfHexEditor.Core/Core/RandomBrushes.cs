@@ -7,7 +7,7 @@ using System;
 using System.Reflection;
 using System.Windows.Media;
 
-namespace WpfHexaEditor.Core
+namespace WpfHexEditor.Core
 {
     public static class RandomBrushes
     {

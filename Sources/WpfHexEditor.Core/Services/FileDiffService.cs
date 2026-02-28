@@ -8,10 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Models.Comparison;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.Models.Comparison;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for comparing two files and identifying differences

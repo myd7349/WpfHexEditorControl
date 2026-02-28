@@ -10,10 +10,10 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Models.Bookmarks;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Models.Bookmarks;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for exporting and importing bookmarks in multiple formats

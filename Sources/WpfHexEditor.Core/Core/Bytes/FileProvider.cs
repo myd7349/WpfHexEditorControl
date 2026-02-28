@@ -7,7 +7,7 @@
 using System;
 using System.IO;
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     /// <summary>
     /// FileProvider - Pure file I/O operations with caching.

@@ -11,13 +11,13 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using WpfHexaEditor.Core;
-using WpfHexaEditor.Core.Bytes;
-using WpfHexaEditor.Core.CharacterTable;
-using WpfHexaEditor.Services;
-using WpfHexaEditor.Models;
+using WpfHexEditor.Core;
+using WpfHexEditor.Core.Bytes;
+using WpfHexEditor.Core.CharacterTable;
+using WpfHexEditor.Core.Services;
+using WpfHexEditor.Core.Models;
 
-namespace WpfHexaEditor.ViewModels
+namespace WpfHexEditor.HexEditor.ViewModels
 {
     /// <summary>
     /// ViewModel for HexEditor (V2 architecture) - handles all business logic
@@ -27,7 +27,7 @@ namespace WpfHexaEditor.ViewModels
     {
         #region Fields
 
-        private WpfHexaEditor.Core.Bytes.ByteProvider _provider; // Not readonly - can be reassigned when saving with insertions
+        private WpfHexEditor.Core.Bytes.ByteProvider _provider; // Not readonly - can be reassigned when saving with insertions
         private readonly UndoRedoService _undoRedoService = new();
         private readonly ClipboardService _clipboardService = new();
         private readonly SelectionService _selectionService = new();
@@ -36,7 +36,7 @@ namespace WpfHexaEditor.ViewModels
         /// <summary>
         /// Expose ByteProvider V2 for external configuration
         /// </summary>
-        public WpfHexaEditor.Core.Bytes.ByteProvider Provider => _provider;
+        public WpfHexEditor.Core.Bytes.ByteProvider Provider => _provider;
 
         // ByteProvider V2 handles insertions/deletions internally - no manual tracking needed!
 
@@ -317,7 +317,7 @@ namespace WpfHexaEditor.ViewModels
 
         #region Constructor
 
-        public HexEditorViewModel(WpfHexaEditor.Core.Bytes.ByteProvider provider)
+        public HexEditorViewModel(WpfHexEditor.Core.Bytes.ByteProvider provider)
         {
             _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
@@ -359,7 +359,7 @@ namespace WpfHexaEditor.ViewModels
         /// </summary>
         public static HexEditorViewModel OpenFile(string filePath)
         {
-            var provider = new WpfHexaEditor.Core.Bytes.ByteProvider();
+            var provider = new WpfHexEditor.Core.Bytes.ByteProvider();
             provider.OpenFile(filePath);
             return new HexEditorViewModel(provider);
         }

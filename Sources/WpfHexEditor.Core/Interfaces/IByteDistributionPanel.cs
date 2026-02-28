@@ -1,9 +1,9 @@
-namespace WpfHexaEditor.Interfaces
+namespace WpfHexEditor.Core.Interfaces
 {
     /// <summary>
     /// Interface for an external panel that displays byte frequency distribution.
     /// Implement this interface to connect a custom visualization panel to HexEditor
-    /// via the <see cref="WpfHexaEditor.HexEditor.ByteDistributionPanel"/> dependency property.
+    /// via the <see cref="WpfHexEditor.Core.HexEditor.ByteDistributionPanel"/> dependency property.
     /// </summary>
     public interface IByteDistributionPanel
     {

@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using WpfHexaEditor.Core.FormatDetection;
+using WpfHexEditor.Core.FormatDetection;
 
-namespace WpfHexaEditor.ViewModels
+namespace WpfHexEditor.HexEditor.ViewModels
 {
     /// <summary>
     /// ViewModel for displaying enriched format metadata

@@ -6,10 +6,10 @@
 
 using System;
 using System.Threading;
-using WpfHexaEditor.SearchModule.Models;
-using WpfHexaEditor.SearchModule.Services;
+using WpfHexEditor.Core.Search.Models;
+using WpfHexEditor.Core.Search.Services;
 
-namespace WpfHexaEditor.Core.Bytes
+namespace WpfHexEditor.Core.Bytes
 {
     /// <summary>
     /// ByteProvider partial class - Advanced Search Operations (V2)

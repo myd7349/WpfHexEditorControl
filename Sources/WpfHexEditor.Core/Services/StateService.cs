@@ -8,9 +8,9 @@ using System;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
-using WpfHexaEditor.Models;
+using WpfHexEditor.Core.Models;
 
-namespace WpfHexaEditor.Services
+namespace WpfHexEditor.Core.Services
 {
     /// <summary>
     /// Service for saving and loading editor state to/from XML files.

@@ -7,7 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Windows.Data;
 
-namespace WpfHexaEditor.Core.Settings
+namespace WpfHexEditor.Core.Settings
 {
     /// <summary>
     /// Metadata for a discovered property via reflection.

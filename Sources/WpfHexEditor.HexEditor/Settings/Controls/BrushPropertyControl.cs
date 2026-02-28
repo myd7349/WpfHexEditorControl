@@ -11,7 +11,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using WpfHexEditor.ColorPicker.Controls;
 
-namespace WpfHexaEditor.Core.Settings.Controls
+namespace WpfHexEditor.HexEditor.Settings.Controls
 {
     /// <summary>
     /// Control generator for Brush properties (using ColorPicker with conversion).

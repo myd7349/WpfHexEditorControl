@@ -6,7 +6,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace WpfHexaEditor.Core.FormatDetection
+namespace WpfHexEditor.Core.FormatDetection
 {
     /// <summary>
     /// Validates field values against constraints
