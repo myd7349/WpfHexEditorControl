@@ -21,6 +21,7 @@ using WpfHexaEditor.Core.CharacterTable;
 using WpfHexaEditor.Events;
 using WpfHexaEditor.Models;
 using WpfHexaEditor.ViewModels;
+using WpfHexEditor.Editor.Core;
 
 namespace WpfHexaEditor
 {
@@ -32,11 +33,14 @@ namespace WpfHexaEditor
     /// NOTE: This is the modern V2 implementation - 99% faster with critical bug fixes.
     /// Legacy V1 control (HexEditorLegacy) was removed in v2.6+ (Feb 2026).
     /// </summary>
-    public partial class HexEditor : UserControl
+    public partial class HexEditor : UserControl, IDocumentEditor
     {
         private HexEditorViewModel _viewModel;
         private bool _isMouseDown = false;
         private VirtualPosition _mouseDownPosition = VirtualPosition.Invalid;
+        private bool _isOffsetLineDrag = false;
+        private VirtualPosition _offsetDragAnchorStart = VirtualPosition.Invalid;
+        private VirtualPosition _offsetDragAnchorEnd = VirtualPosition.Invalid;
         private Border _headerBorder;
         private System.Windows.Controls.Primitives.StatusBar _statusBar;
         private StackPanel _hexHeaderStackPanel;
@@ -152,6 +156,8 @@ namespace WpfHexaEditor
                 HexViewport.Tbl3ByteColor = Tbl3ByteColor;
                 HexViewport.Tbl4PlusByteColor = Tbl4PlusByteColor;
                 HexViewport.ByteDragSelection += HexViewport_ByteDragSelection;
+                HexViewport.OffsetLineClicked += HexViewport_OffsetLineSelection;
+                HexViewport.OffsetLineDragSelection += HexViewport_OffsetLineSelection;
                 HexViewport.KeyboardNavigation += HexViewport_KeyboardNavigation;
                 HexViewport.RefreshTimeUpdated += HexViewport_RefreshTimeUpdated;
 
@@ -362,6 +368,29 @@ namespace WpfHexaEditor
         }
 
         /// <summary>
+        /// Handle click/drag on offset column to select entire line(s).
+        /// Also activates auto-scroll support so dragging beyond viewport edges scrolls.
+        /// </summary>
+        private void HexViewport_OffsetLineSelection(object sender, Controls.OffsetLineSelectionEventArgs e)
+        {
+            if (_viewModel == null)
+                return;
+
+            var start = new VirtualPosition(e.StartPosition);
+            var end = new VirtualPosition(e.EndPosition);
+
+            // Activate HexEditor-level mouse-down state so Content_MouseMove triggers auto-scroll
+            _isMouseDown = true;
+            _isOffsetLineDrag = true;
+            _offsetDragAnchorStart = start;
+            _offsetDragAnchorEnd = end;
+            _mouseDownPosition = start;
+
+            _viewModel.SetSelectionRange(start, end);
+            UpdateSelectionInfo();
+        }
+
+        /// <summary>
         /// Handle keyboard navigation (Arrow keys, Page Up/Down, Home/End)
         /// </summary>
         private void HexViewport_KeyboardNavigation(object sender, Controls.KeyboardNavigationEventArgs e)
@@ -541,7 +570,11 @@ namespace WpfHexaEditor
         /// <summary>
         /// Event helper: Raise SelectionChanged event
         /// </summary>
-        protected virtual void OnSelectionChanged(HexSelectionChangedEventArgs e) => SelectionChanged?.Invoke(this, e);
+        protected virtual void OnSelectionChanged(HexSelectionChangedEventArgs e)
+        {
+            SelectionChanged?.Invoke(this, e);
+            RaiseDocumentEditorSelectionChanged();
+        }
 
         /// <summary>
         /// Event helper: Raise PositionChanged event
@@ -2270,6 +2303,10 @@ namespace WpfHexaEditor
                     editor.StatusText.Text = $"Failed to open file: {ex.Message}";
                 }
             }
+
+            // Notify IDocumentEditor subscribers that the title may have changed
+            if (d is HexEditor ed)
+                ed.RaiseDocumentEditorTitleChanged();
         }
 
         /// <summary>

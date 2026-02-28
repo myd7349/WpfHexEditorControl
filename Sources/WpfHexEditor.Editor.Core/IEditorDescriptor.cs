@@ -3,22 +3,24 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Collections.Generic;
+
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>
-/// Metadata d'un éditeur de document (affiché dans les menus "Ouvrir avec…", etc.).
+/// Metadata for a document editor (displayed in "Open with…" menus, etc.).
 /// </summary>
 public interface IEditorDescriptor
 {
-    /// <summary>Identifiant unique : "tbl-editor", "json-editor", etc.</summary>
+    /// <summary>Unique identifier: "tbl-editor", "json-editor", etc.</summary>
     string Id { get; }
 
-    /// <summary>Nom affiché dans l'UI du host : "TBL Character Table Editor".</summary>
+    /// <summary>Display name shown in the host UI: "TBL Character Table Editor".</summary>
     string DisplayName { get; }
 
-    /// <summary>Description courte affichée en tooltip ou panneau de sélection.</summary>
+    /// <summary>Short description shown in tooltip or selection panel.</summary>
     string Description { get; }
 
-    /// <summary>Extensions supportées (ex : ".tbl", ".tblx"). Sensible à la casse : minuscules.</summary>
+    /// <summary>Supported extensions (e.g.: ".tbl", ".tblx"). Case-sensitive: lowercase.</summary>
     IReadOnlyList<string> SupportedExtensions { get; }
 }

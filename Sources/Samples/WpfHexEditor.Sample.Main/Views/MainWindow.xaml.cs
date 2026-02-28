@@ -60,16 +60,16 @@ namespace WpfHexEditor.Sample.Main.Views
             // Connect HexEditor to Settings Panel for property bindings
             HexEditorSettingsPanel.HexEditorControl = HexEditorControl;
 
-            // Connecter le ParsedFieldsPanel externe au HexEditor (via DP)
+            // Connect the external ParsedFieldsPanel to HexEditor (via DP)
             HexEditorControl.ConnectParsedFieldsPanel(ParsedFieldsPanelControl);
 
-            // Connecter le BarChartPanel externe au HexEditor (via DP IByteDistributionPanel)
+            // Connect the external BarChartPanel to HexEditor (via DP IByteDistributionPanel)
             HexEditorControl.ByteDistributionPanel = ByteDistChartPanel;
 
-            // Tear-off flottant style VS2022
+            // VS2022-style floating tear-off
             ParsedFieldsPanelControl.TitleBarDragStarted += ParsedFieldsPanel_TitleBarDragStarted;
 
-            // Synchroniser l'état initial des colonnes ParsedFieldsPanel
+            // Synchronize initial ParsedFieldsPanel column state
             _viewModel.PropertyChanged += ViewModel_ParsedFieldsPanelVisibilityChanged;
             ApplyParsedFieldsPanelVisibility(_viewModel.IsParsedFieldsPanelVisible);
 
@@ -126,20 +126,20 @@ namespace WpfHexEditor.Sample.Main.Views
 
         private void ParsedFieldsPanel_TitleBarDragStarted(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (_parsedFieldsFloatWindow != null) return; // déjà flottant
+            if (_parsedFieldsFloatWindow != null) return; // already floating
 
-            // Position de la souris relative au panel et à l'écran
+            // Mouse position relative to the panel and to the screen
             var mouseInPanel = e.GetPosition(ParsedFieldsPanelControl);
             var screenPos    = ParsedFieldsPanelControl.PointToScreen(mouseInPanel);
 
-            // Masquer la colonne dans le grid
+            // Hide the column in the grid
             ApplyParsedFieldsPanelVisibility(false);
 
-            // Détacher le panel de son parent (grid)
+            // Detach the panel from its parent (grid)
             var parentGrid = ParsedFieldsPanelControl.Parent as Grid;
             parentGrid?.Children.Remove(ParsedFieldsPanelControl);
 
-            // Créer la float window positionnée sous le curseur (header aligné)
+            // Create the float window positioned under the cursor (header aligned)
             _parsedFieldsFloatWindow = new Window
             {
                 Title         = "Parsed Fields",
@@ -157,7 +157,7 @@ namespace WpfHexEditor.Sample.Main.Views
             _parsedFieldsFloatWindow.Closed += ParsedFieldsFloatWindow_Closed;
             _parsedFieldsFloatWindow.Show();
 
-            // DragMove immédiat — le bouton souris est encore pressé
+            // Immediate DragMove — the mouse button is still pressed
             _parsedFieldsFloatWindow.DragMove();
         }
 
@@ -165,11 +165,11 @@ namespace WpfHexEditor.Sample.Main.Views
         {
             _parsedFieldsFloatWindow.Closed -= ParsedFieldsFloatWindow_Closed;
 
-            // Détacher le panel de la float window
+            // Detach the panel from the float window
             _parsedFieldsFloatWindow.Content = null;
             _parsedFieldsFloatWindow = null;
 
-            // Remettre le panel dans le grid (colonne 2)
+            // Put the panel back in the grid (column 2)
             var contentGrid = HexEditorControl.Parent as Grid;
             if (contentGrid != null)
             {
@@ -188,7 +188,7 @@ namespace WpfHexEditor.Sample.Main.Views
 
         private void ApplyParsedFieldsPanelVisibility(bool visible)
         {
-            // Si le panel est en float, ne pas toucher à la colonne
+            // If the panel is floating, do not touch the column
             if (_parsedFieldsFloatWindow != null) return;
 
             if (visible)
@@ -201,7 +201,7 @@ namespace WpfHexEditor.Sample.Main.Views
             }
             else
             {
-                // Sauvegarder la largeur actuelle avant de masquer
+                // Save the current width before hiding
                 if (ParsedFieldsColumn.ActualWidth > 0)
                     _parsedFieldsPanelSavedWidth = ParsedFieldsColumn.ActualWidth;
                 ParsedFieldsColumn.Width = new GridLength(0);
@@ -265,7 +265,7 @@ namespace WpfHexEditor.Sample.Main.Views
 
         private void ShowOptionsDialog()
         {
-            // Open the Options dialog (Thème, Langue)
+            // Open the Options dialog (Theme, Language)
             // Changes happen instantly when user selects from the lists
             var dialog = new OptionsDialog
             {

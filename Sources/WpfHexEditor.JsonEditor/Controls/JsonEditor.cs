@@ -3420,11 +3420,20 @@ namespace WpfHexEditor.JsonEditor.Controls
             set => SetValue(IsReadOnlyProperty, value);
         }
 
+        // ── Title ─────────────────────────────────────────────────────────
+
+        public string Title => BuildTitle();
+
         // ── Commands ──────────────────────────────────────────────────────
 
         public System.Windows.Input.ICommand UndoCommand => new JsonRelayCommand(_ => Undo(), _ => CanUndo);
         public System.Windows.Input.ICommand RedoCommand => new JsonRelayCommand(_ => Redo(), _ => CanRedo);
         public System.Windows.Input.ICommand SaveCommand => new JsonRelayCommand(_ => Save());
+        public System.Windows.Input.ICommand CopyCommand => new JsonRelayCommand(_ => CopyToClipboard(), _ => !_selection.IsEmpty);
+        public System.Windows.Input.ICommand CutCommand => new JsonRelayCommand(_ => CutToClipboard(), _ => !_selection.IsEmpty && !IsReadOnly);
+        public System.Windows.Input.ICommand PasteCommand => new JsonRelayCommand(_ => PasteFromClipboard(), _ => !IsReadOnly && Clipboard.ContainsText());
+        public System.Windows.Input.ICommand DeleteCommand => new JsonRelayCommand(_ => DeleteSelection(), _ => !_selection.IsEmpty && !IsReadOnly);
+        public System.Windows.Input.ICommand SelectAllCommand => new JsonRelayCommand(_ => SelectAll());
 
         // ── Methods ───────────────────────────────────────────────────────
 
@@ -3457,6 +3466,28 @@ namespace WpfHexEditor.JsonEditor.Controls
             StatusMessage?.Invoke(this, $"Saved: {Path.GetFileName(filePath)}");
         }
 
+        // ── Public methods (IDocumentEditor) ─────────────────────────────
+
+        void IDocumentEditor.Copy() => CopyToClipboard();
+        void IDocumentEditor.Cut() => CutToClipboard();
+        void IDocumentEditor.Paste() => PasteFromClipboard();
+        void IDocumentEditor.Delete() => DeleteSelection();
+        void IDocumentEditor.SelectAll() => SelectAll();
+
+        public void Close()
+        {
+            _document = new Models.JsonDocument();
+            _currentFilePath = null;
+            _isDirty = false;
+            _cursorLine = 0;
+            _cursorColumn = 0;
+            _selection.Clear();
+            _undoRedoStack.Clear();
+            InvalidateVisual();
+            ModifiedChanged?.Invoke(this, EventArgs.Empty);
+            TitleChanged?.Invoke(this, BuildTitle());
+        }
+
         // ── Events ────────────────────────────────────────────────────────
 
         public event EventHandler? ModifiedChanged;
@@ -3464,6 +3495,7 @@ namespace WpfHexEditor.JsonEditor.Controls
         public event EventHandler? CanRedoChanged;
         public event EventHandler<string>? TitleChanged;
         public event EventHandler<string>? StatusMessage;
+        public event EventHandler? SelectionChanged;
 
         // ── Helpers ───────────────────────────────────────────────────────
 

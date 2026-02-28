@@ -78,9 +78,25 @@ public partial class TblEditorControl : UserControl, IDocumentEditor
         set => SetValue(IsReadOnlyProperty, value);
     }
 
+    public string Title
+    {
+        get
+        {
+            var name = _currentFilePath != null
+                ? Path.GetFileName(_currentFilePath)
+                : _vm.Source != null ? "untitled.tbl" : "TBL Editor";
+            return _vm.IsDirty ? $"{name} *" : name;
+        }
+    }
+
     public ICommand UndoCommand => _vm.UndoCommand;
     public ICommand RedoCommand => _vm.RedoCommand;
-    public ICommand SaveCommand => new FileRelayCommand(_ => Save());
+    public ICommand SaveCommand => new TblRelayCommand(_ => Save());
+    public ICommand CopyCommand => new TblRelayCommand(_ => Copy(), _ => EntriesGrid.SelectedItems.Count > 0);
+    public ICommand CutCommand => new TblRelayCommand(_ => Cut(), _ => EntriesGrid.SelectedItems.Count > 0 && !IsReadOnly);
+    public ICommand PasteCommand => new TblRelayCommand(_ => Paste(), _ => !IsReadOnly && Clipboard.ContainsText());
+    ICommand IDocumentEditor.DeleteCommand => new TblRelayCommand(_ => Delete(), _ => EntriesGrid.SelectedItems.Count > 0 && !IsReadOnly);
+    public ICommand SelectAllCommand => new TblRelayCommand(_ => SelectAll());
 
     public void Undo() => _vm.Undo();
     public void Redo() => _vm.Redo();
@@ -111,11 +127,47 @@ public partial class TblEditorControl : UserControl, IDocumentEditor
         StatusMessage?.Invoke(this, $"Saved: {Path.GetFileName(filePath)}");
     }
 
+    public void Copy()
+    {
+        if (EntriesGrid.SelectedItems.Count == 0) return;
+        ApplicationCommands.Copy.Execute(null, EntriesGrid);
+    }
+
+    public void Cut()
+    {
+        Copy();
+        DeleteSelectedEntries();
+    }
+
+    public void Paste()
+    {
+        if (!Clipboard.ContainsText()) return;
+        ApplicationCommands.Paste.Execute(null, EntriesGrid);
+    }
+
+    public void Delete() => DeleteSelectedEntries();
+
+    public void Close()
+    {
+        _vm.ClearFilter();
+        Source = null;
+        _currentFilePath = null;
+        NotifyTitle();
+    }
+
     public event EventHandler? ModifiedChanged;
     public event EventHandler? CanUndoChanged;
     public event EventHandler? CanRedoChanged;
     public event EventHandler<string>? TitleChanged;
     public event EventHandler<string>? StatusMessage;
+
+    // Explicit interface implementation — TblEditorControl already has SelectionChanged<Dte?>
+    private EventHandler? _docEditorSelectionChanged;
+    event EventHandler? IDocumentEditor.SelectionChanged
+    {
+        add => _docEditorSelectionChanged += value;
+        remove => _docEditorSelectionChanged -= value;
+    }
 
     // ═══════════════════════════════════════════════════════════════════════
     // TBL-specific public API
@@ -246,6 +298,9 @@ public partial class TblEditorControl : UserControl, IDocumentEditor
             SelectionChanged?.Invoke(this, vm.ToDto());
         }
         else SelectionChanged?.Invoke(this, null);
+
+        // Notify IDocumentEditor subscribers
+        _docEditorSelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -279,11 +334,25 @@ public partial class TblEditorControl : UserControl, IDocumentEditor
     }
 }
 
-// ── File-scoped RelayCommand (SaveCommand only needs a simple wrapper) ────────
+// ── File-scoped RelayCommand for TblEditorControl IDocumentEditor commands ────
 
-file sealed class FileRelayCommand(Action<object?> execute) : ICommand
+file sealed class TblRelayCommand : ICommand
 {
-    public bool CanExecute(object? _) => true;
-    public void Execute(object? p)    => execute(p);
-    public event EventHandler? CanExecuteChanged;
+    private readonly Action<object?> _execute;
+    private readonly Predicate<object?>? _canExecute;
+
+    public TblRelayCommand(Action<object?> execute, Predicate<object?>? canExecute = null)
+    {
+        _execute = execute;
+        _canExecute = canExecute;
+    }
+
+    public bool CanExecute(object? p) => _canExecute?.Invoke(p) ?? true;
+    public void Execute(object? p)    => _execute(p);
+
+    public event EventHandler? CanExecuteChanged
+    {
+        add => CommandManager.RequerySuggested += value;
+        remove => CommandManager.RequerySuggested -= value;
+    }
 }

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
     <!-- UseWPF: required for System.Windows.Input.ICommand (WindowsBase.dll) -->
     <UseWPF>true</UseWPF>
     <RootNamespace>WpfHexEditor.Editor.Core</RootNamespace>
