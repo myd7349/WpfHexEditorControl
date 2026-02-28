@@ -4,8 +4,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <RootNamespace>WpfHexEditor.Sample.Docking</RootNamespace>
-    <AssemblyName>WpfHexEditor.Sample.Docking</AssemblyName>
+    <RootNamespace>WpfHexEditor.App</RootNamespace>
+    <AssemblyName>WpfHexEditor.App</AssemblyName>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

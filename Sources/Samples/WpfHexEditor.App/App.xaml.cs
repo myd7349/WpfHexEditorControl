@@ -6,7 +6,7 @@
 
 using System.Windows;
 
-namespace WpfHexEditor.Sample.Docking;
+namespace WpfHexEditor.App;
 
 public partial class App : Application
 {

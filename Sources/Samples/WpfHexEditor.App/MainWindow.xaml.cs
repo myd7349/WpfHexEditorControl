@@ -9,14 +9,14 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using WpfHexEditor.HexEditor;
+using HexEditorControl = WpfHexEditor.HexEditor.HexEditor;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.Docking.Core.Serialization;
 using WpfHexEditor.Docking.Wpf;
-using WpfHexEditor.Sample.Docking.Controls;
+using WpfHexEditor.App.Controls;
 
-namespace WpfHexEditor.Sample.Docking;
+namespace WpfHexEditor.App;
 
 public partial class MainWindow : Window
 {
@@ -245,7 +245,7 @@ public partial class MainWindow : Window
         // No FilePath metadata → "New Hex Document" with random sample data
         if (filePath is null)
         {
-            var hexEditor = new HexEditor();
+            var hexEditor = new HexEditorControl();
             var data = new byte[1024];
             new Random().NextBytes(data);
             var tempFile = Path.Combine(Path.GetTempPath(), $"hexedit-sample-{Guid.NewGuid():N}.bin");
@@ -258,7 +258,7 @@ public partial class MainWindow : Window
         // FilePath exists → "Open File" or layout restore
         if (File.Exists(filePath))
         {
-            var hexEditor = new HexEditor();
+            var hexEditor = new HexEditorControl();
             hexEditor.OpenFile(filePath);
             OutputLogger.Info($"Opened: {filePath}");
             return hexEditor;
@@ -501,7 +501,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void SyncAllHexEditorThemes()
     {
-        foreach (var editor in FindVisualChildren<HexEditor>(this))
+        foreach (var editor in FindVisualChildren<HexEditorControl>(this))
             editor.ApplyThemeFromResources();
     }
 

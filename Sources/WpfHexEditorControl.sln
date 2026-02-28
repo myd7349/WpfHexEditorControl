@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Docking.Core",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Docking.Wpf", "WpfHexEditor.Docking.Wpf\WpfHexEditor.Docking.Wpf.csproj", "{AF320FF3-6DA4-4F0B-9847-9747A5D1D28C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Sample.Docking", "Samples\WpfHexEditor.Sample.Docking\WpfHexEditor.Sample.Docking.csproj", "{AC792237-B019-47C9-85C7-874A6E0212EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.App", "Samples\WpfHexEditor.App\WpfHexEditor.App.csproj", "{AC792237-B019-47C9-85C7-874A6E0212EF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Docking.Tests", "WpfHexEditor.Docking.Tests\WpfHexEditor.Docking.Tests.csproj", "{E3B2C99D-8506-4B91-A75E-2062F0E2F26D}"
 EndProject

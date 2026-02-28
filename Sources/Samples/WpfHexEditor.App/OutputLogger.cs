@@ -4,9 +4,9 @@
 // Contributors: Claude Opus 4.6
 //////////////////////////////////////////////
 
-using WpfHexEditor.Sample.Docking.Controls;
+using WpfHexEditor.App.Controls;
 
-namespace WpfHexEditor.Sample.Docking;
+namespace WpfHexEditor.App;
 
 /// <summary>
 /// VS-style output logger that writes timestamped messages to the <see cref="OutputPanel"/>.

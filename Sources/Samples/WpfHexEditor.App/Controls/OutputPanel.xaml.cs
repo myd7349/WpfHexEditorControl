@@ -7,7 +7,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace WpfHexEditor.Sample.Docking.Controls;
+namespace WpfHexEditor.App.Controls;
 
 /// <summary>
 /// VS-style Output panel with toolbar (source filter, clear, word wrap, copy, auto-scroll).
