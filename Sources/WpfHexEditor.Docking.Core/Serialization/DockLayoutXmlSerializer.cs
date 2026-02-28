@@ -16,7 +16,7 @@ namespace WpfHexEditor.Docking.Core.Serialization;
 /// </summary>
 public static class DockLayoutXmlSerializer
 {
-    private const int CurrentVersion = 1;
+    private const int CurrentVersion = 2;
 
     public static string Serialize(DockLayoutRoot layout)
     {
@@ -24,7 +24,8 @@ public static class DockLayoutXmlSerializer
             new XAttribute("Version", CurrentVersion),
             new XElement("RootNode", NodeToXml(layout.RootNode)),
             new XElement("FloatingItems", layout.FloatingItems.Select(ItemToXml)),
-            new XElement("AutoHideItems", layout.AutoHideItems.Select(ItemToXml)));
+            new XElement("AutoHideItems", layout.AutoHideItems.Select(ItemToXml)),
+            new XElement("HiddenItems", layout.HiddenItems.Select(ItemToXml)));
 
         // Window state
         if (layout.WindowState is not null)
@@ -70,6 +71,13 @@ public static class DockLayoutXmlSerializer
             layout.AutoHideItems.Add(item);
         }
 
+        foreach (var itemEl in root.Element("HiddenItems")?.Elements("Item") ?? [])
+        {
+            var item = ItemFromXml(itemEl);
+            item.State = DockItemState.Hidden;
+            layout.HiddenItems.Add(item);
+        }
+
         // Window state
         var wsEl = root.Element("WindowState");
         if (wsEl is not null)
@@ -84,33 +92,44 @@ public static class DockLayoutXmlSerializer
         return layout;
     }
 
-    private static XElement NodeToXml(DockNode node) => node switch
+    private static XElement NodeToXml(DockNode node)
     {
-        DocumentHostNode docHost => new XElement("DocumentHost",
-            new XAttribute("Id", docHost.Id),
-            new XAttribute("IsMain", docHost.IsMain),
-            new XAttribute("LockMode", docHost.LockMode),
-            AttrIfNotNull("ActiveItemContentId", docHost.ActiveItem?.ContentId),
-            docHost.Items.Select(ItemToXml)),
+        var el = node switch
+        {
+            DocumentHostNode docHost => new XElement("DocumentHost",
+                new XAttribute("Id", docHost.Id),
+                new XAttribute("IsMain", docHost.IsMain),
+                new XAttribute("LockMode", docHost.LockMode),
+                AttrIfNotNull("ActiveItemContentId", docHost.ActiveItem?.ContentId),
+                docHost.Items.Select(ItemToXml)),
 
-        DockGroupNode group => new XElement("Group",
-            new XAttribute("Id", group.Id),
-            new XAttribute("LockMode", group.LockMode),
-            AttrIfNotNull("ActiveItemContentId", group.ActiveItem?.ContentId),
-            group.Items.Select(ItemToXml)),
+            DockGroupNode group => new XElement("Group",
+                new XAttribute("Id", group.Id),
+                new XAttribute("LockMode", group.LockMode),
+                AttrIfNotNull("ActiveItemContentId", group.ActiveItem?.ContentId),
+                group.Items.Select(ItemToXml)),
 
-        DockSplitNode split => new XElement("Split",
-            new XAttribute("Id", split.Id),
-            new XAttribute("Orientation", split.Orientation),
-            new XAttribute("LockMode", split.LockMode),
-            new XAttribute("Ratios", string.Join(",", split.Ratios.Select(r => r.ToString(CultureInfo.InvariantCulture)))),
-            split.PixelSizes.Any(s => s.HasValue)
-                ? new XAttribute("PixelSizes", string.Join(",", split.PixelSizes.Select(s => s.HasValue ? s.Value.ToString(CultureInfo.InvariantCulture) : "*")))
-                : null,
-            split.Children.Select(NodeToXml)),
+            DockSplitNode split => new XElement("Split",
+                new XAttribute("Id", split.Id),
+                new XAttribute("Orientation", split.Orientation),
+                new XAttribute("LockMode", split.LockMode),
+                new XAttribute("Ratios", string.Join(",", split.Ratios.Select(r => r.ToString(CultureInfo.InvariantCulture)))),
+                split.PixelSizes.Any(s => s.HasValue)
+                    ? new XAttribute("PixelSizes", string.Join(",", split.PixelSizes.Select(s => s.HasValue ? s.Value.ToString(CultureInfo.InvariantCulture) : "*")))
+                    : null,
+                split.Children.Select(NodeToXml)),
 
-        _ => throw new NotSupportedException($"Unknown node type: {node.GetType()}")
-    };
+            _ => throw new NotSupportedException($"Unknown node type: {node.GetType()}")
+        };
+
+        // Serialize min/max size constraints (only when set)
+        if (!double.IsNaN(node.DockMinWidth))  el.Add(new XAttribute("DockMinWidth", node.DockMinWidth.ToString(CultureInfo.InvariantCulture)));
+        if (!double.IsNaN(node.DockMinHeight)) el.Add(new XAttribute("DockMinHeight", node.DockMinHeight.ToString(CultureInfo.InvariantCulture)));
+        if (!double.IsNaN(node.DockMaxWidth))  el.Add(new XAttribute("DockMaxWidth", node.DockMaxWidth.ToString(CultureInfo.InvariantCulture)));
+        if (!double.IsNaN(node.DockMaxHeight)) el.Add(new XAttribute("DockMaxHeight", node.DockMaxHeight.ToString(CultureInfo.InvariantCulture)));
+
+        return el;
+    }
 
     private static XElement ItemToXml(DockItem item)
     {
@@ -142,13 +161,25 @@ public static class DockLayoutXmlSerializer
 
     private static DockNode NodeFromXml(XElement el, DocumentHostNode mainHost)
     {
-        return el.Name.LocalName switch
+        var node = el.Name.LocalName switch
         {
-            "DocumentHost" => ParseDocumentHost(el, mainHost),
+            "DocumentHost" => (DockNode)ParseDocumentHost(el, mainHost),
             "Group" => ParseGroup(el),
             "Split" => ParseSplit(el, mainHost),
             _ => throw new NotSupportedException($"Unknown XML element: {el.Name}")
         };
+
+        // Restore min/max size constraints
+        var minW = ParseNullableDouble(el, "DockMinWidth");
+        var minH = ParseNullableDouble(el, "DockMinHeight");
+        var maxW = ParseNullableDouble(el, "DockMaxWidth");
+        var maxH = ParseNullableDouble(el, "DockMaxHeight");
+        if (minW.HasValue) node.DockMinWidth  = minW.Value;
+        if (minH.HasValue) node.DockMinHeight = minH.Value;
+        if (maxW.HasValue) node.DockMaxWidth  = maxW.Value;
+        if (maxH.HasValue) node.DockMaxHeight = maxH.Value;
+
+        return node;
     }
 
     private static DocumentHostNode ParseDocumentHost(XElement el, DocumentHostNode mainHost)

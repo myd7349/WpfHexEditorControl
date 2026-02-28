@@ -14,6 +14,12 @@ namespace WpfHexEditor.Docking.Wpf.Commands;
 /// </summary>
 public static class DockCommands
 {
+    public static readonly RoutedUICommand Hide = new(
+        "Hide", nameof(Hide), typeof(DockCommands));
+
+    public static readonly RoutedUICommand Show = new(
+        "Show", nameof(Show), typeof(DockCommands));
+
     public static readonly RoutedUICommand Close = new(
         "Close", nameof(Close), typeof(DockCommands));
 
@@ -25,6 +31,9 @@ public static class DockCommands
 
     public static readonly RoutedUICommand Dock = new(
         "Dock", nameof(Dock), typeof(DockCommands));
+
+    public static readonly RoutedUICommand DockAsDocument = new(
+        "Dock as Tabbed Document", nameof(DockAsDocument), typeof(DockCommands));
 
     public static readonly RoutedUICommand CloseAll = new(
         "Close All", nameof(CloseAll), typeof(DockCommands));

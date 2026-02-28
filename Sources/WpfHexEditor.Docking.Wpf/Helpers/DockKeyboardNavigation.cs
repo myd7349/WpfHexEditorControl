@@ -8,12 +8,13 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Docking.Core.Nodes;
 
 namespace WpfHexEditor.Docking.Wpf;
 
 /// <summary>
 /// Keyboard navigation helper for <see cref="DockControl"/>.
-/// Handles Ctrl+Tab (cycle document tabs), Ctrl+Shift+Tab (reverse), Alt+F6 (cycle panels).
+/// Handles Ctrl+Tab (<see cref="NavigatorWindow"/>), Alt+F6 (cycle panels).
 /// </summary>
 internal sealed class DockKeyboardNavigation
 {
@@ -34,33 +35,85 @@ internal sealed class DockKeyboardNavigation
     {
         if (e.Key == Key.Tab && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
         {
-            // Ctrl+Tab / Ctrl+Shift+Tab: cycle tabs in the focused TabControl
-            var reverse = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
-            CycleTabs(reverse);
+            OpenNavigator();
             e.Handled = true;
         }
         else if (e.Key == Key.F6 && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
         {
-            // Alt+F6: move focus to the next panel group
             CyclePanels();
             e.Handled = true;
         }
     }
 
-    private void CycleTabs(bool reverse)
+    private void OpenNavigator()
     {
-        var tabControl = FindFocusedTabControl();
-        if (tabControl is null || tabControl.Items.Count <= 1) return;
+        if (_dockControl.Layout is null) return;
 
-        var index = tabControl.SelectedIndex;
-        var count = tabControl.Items.Count;
-        tabControl.SelectedIndex = reverse
-            ? (index - 1 + count) % count
-            : (index + 1) % count;
+        // Partition items into documents vs tools, ordered by MRU
+        var documents = new List<DockItem>();
+        var tools = new List<DockItem>();
 
-        // Move focus into the newly selected tab content
-        if (tabControl.SelectedItem is TabItem tab)
-            tab.Focus();
+        // Start with MRU order
+        foreach (var item in _dockControl.ActivationHistory)
+        {
+            if (item.State is not (Core.DockItemState.Docked or Core.DockItemState.Float))
+                continue;
+
+            if (item.Owner is DocumentHostNode)
+                documents.Add(item);
+            else
+                tools.Add(item);
+        }
+
+        // Add any items not yet in history
+        foreach (var group in _dockControl.Layout.GetAllGroups())
+        {
+            foreach (var item in group.Items)
+            {
+                if (documents.Contains(item) || tools.Contains(item)) continue;
+                if (group is DocumentHostNode)
+                    documents.Add(item);
+                else
+                    tools.Add(item);
+            }
+        }
+
+        if (documents.Count == 0 && tools.Count == 0) return;
+
+        // Pre-select the second MRU item (the "previous" tab)
+        DockItem? preSelect = _dockControl.ActivationHistory.Count > 1
+            ? _dockControl.ActivationHistory[1]
+            : _dockControl.ActivationHistory.FirstOrDefault();
+
+        var navigator = new NavigatorWindow(documents, tools, preSelect)
+        {
+            Owner = Window.GetWindow(_dockControl),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        navigator.ShowDialog();
+
+        if (navigator.SelectedItem is { } selected)
+            ActivateItem(selected);
+    }
+
+    private void ActivateItem(DockItem item)
+    {
+        var tabControls = new List<DockTabControl>();
+        CollectTabControls(_dockControl, tabControls);
+
+        foreach (var tc in tabControls)
+        {
+            for (var i = 0; i < tc.Items.Count; i++)
+            {
+                if (tc.Items[i] is TabItem { Tag: DockItem di } && di == item)
+                {
+                    tc.SelectedIndex = i;
+                    if (tc.Items[i] is TabItem tab)
+                        tab.Focus();
+                    return;
+                }
+            }
+        }
     }
 
     private void CyclePanels()

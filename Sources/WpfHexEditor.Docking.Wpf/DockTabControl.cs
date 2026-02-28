@@ -37,6 +37,8 @@ public class DockTabControl : TabControl
     public event Action<DockItem>? TabCloseRequested;
     public event Action<DockItem>? TabFloatRequested;
     public event Action<DockItem>? TabAutoHideRequested;
+    public event Action<DockItem>? TabHideRequested;
+    public event Action<DockItem>? TabDockAsDocumentRequested;
 
     private Func<DockItem, object>? _contentFactory;
 
@@ -84,6 +86,8 @@ public class DockTabControl : TabControl
         header.DragStarted += () => TabDragStarted?.Invoke(item);
         header.FloatRequested += () => TabFloatRequested?.Invoke(item);
         header.AutoHideRequested += () => TabAutoHideRequested?.Invoke(item);
+        header.HideRequested += () => TabHideRequested?.Invoke(item);
+        header.DockAsDocumentRequested += () => TabDockAsDocumentRequested?.Invoke(item);
         header.CloseAllRequested += () => CloseAllItems();
         header.CloseAllButThisRequested += () => CloseAllButItem(item);
 
@@ -152,6 +156,8 @@ public class DockTabHeader : StackPanel
     public event Action? DragStarted;
     public event Action? FloatRequested;
     public event Action? AutoHideRequested;
+    public event Action? HideRequested;
+    public event Action? DockAsDocumentRequested;
     public event Action? CloseAllRequested;
     public event Action? CloseAllButThisRequested;
 
@@ -242,6 +248,17 @@ public class DockTabHeader : StackPanel
         var autoHideItem = new MenuItem { Header = "Auto-Hide" };
         autoHideItem.Click += (_, _) => AutoHideRequested?.Invoke();
         menu.Items.Add(autoHideItem);
+
+        if (item.Owner is not DocumentHostNode)
+        {
+            var dockAsDocItem = new MenuItem { Header = "Dock as Tabbed Document" };
+            dockAsDocItem.Click += (_, _) => DockAsDocumentRequested?.Invoke();
+            menu.Items.Add(dockAsDocItem);
+        }
+
+        var hideItem = new MenuItem { Header = "Hide" };
+        hideItem.Click += (_, _) => HideRequested?.Invoke();
+        menu.Items.Add(hideItem);
 
         menu.Items.Add(new Separator());
 

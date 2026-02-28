@@ -110,18 +110,29 @@ public class DockSplitPanel : Grid
                 sizing = new GridLength(ratio, GridUnitType.Star);
             }
 
+            var childNode = node.Children[i];
             if (isHorizontal)
-                ColumnDefinitions.Add(new ColumnDefinition
+            {
+                var colDef = new ColumnDefinition
                 {
                     Width    = sizing,
-                    MinWidth = MinPaneSize
-                });
+                    MinWidth = double.IsNaN(childNode.DockMinWidth) ? MinPaneSize : childNode.DockMinWidth
+                };
+                if (!double.IsNaN(childNode.DockMaxWidth))
+                    colDef.MaxWidth = childNode.DockMaxWidth;
+                ColumnDefinitions.Add(colDef);
+            }
             else
-                RowDefinitions.Add(new RowDefinition
+            {
+                var rowDef = new RowDefinition
                 {
                     Height    = sizing,
-                    MinHeight = MinPaneSize
-                });
+                    MinHeight = double.IsNaN(childNode.DockMinHeight) ? MinPaneSize : childNode.DockMinHeight
+                };
+                if (!double.IsNaN(childNode.DockMaxHeight))
+                    rowDef.MaxHeight = childNode.DockMaxHeight;
+                RowDefinitions.Add(rowDef);
+            }
 
             _contentDefinitionIndices.Add(isHorizontal ? ColumnDefinitions.Count - 1 : RowDefinitions.Count - 1);
 

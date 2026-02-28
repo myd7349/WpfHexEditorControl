@@ -18,6 +18,27 @@ public abstract class DockNode
     public DockLockMode LockMode { get; set; } = DockLockMode.None;
 
     /// <summary>
+    /// Minimum width constraint (in DIPs). NaN = no constraint.
+    /// Applied by <c>DockSplitPanel</c> when building grid column/row definitions.
+    /// </summary>
+    public double DockMinWidth { get; set; } = double.NaN;
+
+    /// <summary>
+    /// Minimum height constraint (in DIPs). NaN = no constraint.
+    /// </summary>
+    public double DockMinHeight { get; set; } = double.NaN;
+
+    /// <summary>
+    /// Maximum width constraint (in DIPs). NaN = no constraint.
+    /// </summary>
+    public double DockMaxWidth { get; set; } = double.NaN;
+
+    /// <summary>
+    /// Maximum height constraint (in DIPs). NaN = no constraint.
+    /// </summary>
+    public double DockMaxHeight { get; set; } = double.NaN;
+
+    /// <summary>
     /// Detaches this node from its parent.
     /// </summary>
     internal void DetachFromParent()

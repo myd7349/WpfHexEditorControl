@@ -31,6 +31,8 @@ public class DockEngine
     public event Action<DockItem>? ItemUndocked;
     public event Action<DockItem>? ItemClosed;
     public event Action<DockItem>? ItemFloated;
+    public event Action<DockItem>? ItemHidden;
+    public event Action<DockItem>? ItemShown;
     public event Action<DockGroupNode>? GroupFloated;
     public event Action? LayoutChanged;
 
@@ -180,6 +182,41 @@ public class DockEngine
     }
 
     /// <summary>
+    /// Hides an item without closing it. The item is removed from the layout tree
+    /// but kept in <see cref="DockLayoutRoot.HiddenItems"/> for later re-activation via <see cref="Show"/>.
+    /// </summary>
+    public void Hide(DockItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        item.Owner?.RemoveItem(item);
+        Layout.FloatingItems.Remove(item);
+        Layout.AutoHideItems.Remove(item);
+
+        item.State = DockItemState.Hidden;
+        if (!Layout.HiddenItems.Contains(item))
+            Layout.HiddenItems.Add(item);
+
+        AutoNormalize();
+        ItemHidden?.Invoke(item);
+        if (!IsInTransaction) LayoutChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Shows a previously hidden item by docking it to the specified target.
+    /// If no target is specified, docks to the <see cref="DockLayoutRoot.MainDocumentHost"/>.
+    /// </summary>
+    public void Show(DockItem item, DockGroupNode? target = null, DockDirection direction = DockDirection.Center)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        Layout.HiddenItems.Remove(item);
+        target ??= Layout.MainDocumentHost;
+        Dock(item, target, direction);
+        ItemShown?.Invoke(item);
+    }
+
+    /// <summary>
     /// Moves an item to auto-hide state.
     /// </summary>
     public void AutoHide(DockItem item)
@@ -210,6 +247,18 @@ public class DockEngine
 
         target ??= Layout.MainDocumentHost;
         Dock(item, target, direction);
+    }
+
+    /// <summary>
+    /// Docks an item as a tabbed document in the main document host (or a specified document host).
+    /// Equivalent to <c>Dock(item, target, DockDirection.Center)</c> targeting a DocumentHostNode.
+    /// </summary>
+    public void DockAsDocument(DockItem item, DocumentHostNode? target = null)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        target ??= Layout.MainDocumentHost;
+        Layout.HiddenItems.Remove(item);
+        Dock(item, target, DockDirection.Center);
     }
 
     /// <summary>
