@@ -94,6 +94,12 @@ namespace WpfHexaEditor.Controls
         private Brush _deletedBrush = new SolidColorBrush(Color.FromRgb(0xF4, 0x43, 0x36)); // Red
         private Pen _cursorPen;
         private Pen _actionPen;
+        // Cached action border pens (avoid allocation per byte per frame)
+        private Pen _modifiedBorderPen;
+        private Pen _addedBorderPen;
+        private Pen _deletedBorderPen;
+        private Pen _spacerLinePen;
+        private Pen _spacerDashPen;
         private Brush _separatorBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0xE0, 0xE0));
         private Brush _asciiBrush = new SolidColorBrush(Color.FromRgb(0x42, 0x42, 0x42));
 
@@ -169,6 +175,26 @@ namespace WpfHexaEditor.Controls
         // Key: (fontSize, fontFamily, offsetVisualType) → Value: calculated width in pixels
         // Invalidated when font settings change or OffSetStringVisual changes
         private Dictionary<(double fontSize, string fontFamily, Core.DataVisualType visualType), double> _offsetWidthCache = new();
+
+        // FormattedText cache for hex byte rendering (avoids ~480 allocations per frame)
+        // Key: (hex text, alternate color flag) → cached FormattedText
+        // Invalidated when font, DPI, DataStringVisual, or brush references change
+        private Dictionary<(string text, bool alternate), FormattedText> _hexTextCache = new();
+        private double _hexTextCacheFontSize;
+        private string _hexTextCacheFontFamily = "";
+        private double _hexTextCacheDpi;
+        private Core.DataVisualType _hexTextCacheVisualType;
+
+        // FormattedText cache for ASCII byte rendering (without TBL: 96 unique chars max)
+        // Key: display character string → cached FormattedText
+        // Only used when _tblStream == null (TBL has variable-width/colored text)
+        private Dictionary<string, FormattedText> _asciiTextCache = new();
+        private double _asciiTextCacheDpi;
+
+        // FormattedText cache for offset rendering (avoids ~30 allocations per frame)
+        // Key: offset text string → cached FormattedText (all use same brush/font)
+        private Dictionary<(string text, bool bold), FormattedText> _offsetTextCache = new();
+        private double _offsetTextCacheDpi;
 
         /// <summary>
         /// Get the last visible byte position in the viewport (matches Legacy behavior)
@@ -281,6 +307,20 @@ namespace WpfHexaEditor.Controls
             _tbl3ByteBrush.Freeze();
             _tbl4PlusByteBrush.Freeze();
 
+            // Pre-create and freeze action border pens (hot path optimization)
+            _modifiedBorderPen = new Pen(_modifiedBrush, 1.5);
+            _modifiedBorderPen.Freeze();
+            _addedBorderPen = new Pen(_addedBrush, 1.5);
+            _addedBorderPen.Freeze();
+            _deletedBorderPen = new Pen(_deletedBrush, 1.5);
+            _deletedBorderPen.Freeze();
+            var spacerDash = new DashStyle(new double[] { 2, 2 }, 0);
+            spacerDash.Freeze();
+            _spacerLinePen = new Pen(_separatorBrush, 1);
+            _spacerLinePen.Freeze();
+            _spacerDashPen = new Pen(_separatorBrush, 1) { DashStyle = spacerDash };
+            _spacerDashPen.Freeze();
+
             // Initialize cursor cell blink timer (simple on/off blink)
             _cursorBlinkTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
             {
@@ -293,6 +333,18 @@ namespace WpfHexaEditor.Controls
             _cursorOverlayVisual = new DrawingVisual();
             AddVisualChild(_cursorOverlayVisual);
             AddLogicalChild(_cursorOverlayVisual);
+        }
+
+        /// <summary>
+        /// Update cached DPI when the control moves to a different DPI context (e.g. monitor change).
+        /// </summary>
+        protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+        {
+            base.OnDpiChanged(oldDpi, newDpi);
+            _dpi = newDpi.PixelsPerDip;
+            _cellWidthCache.Clear();
+            _offsetWidthCache.Clear();
+            InvalidateVisual();
         }
 
         /// <summary>
@@ -387,7 +439,7 @@ namespace WpfHexaEditor.Controls
                 _typeface,
                 13,
                 _asciiBrush, // DrawAsciiByte uses textBrush but for width calculation color doesn't matter
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                _dpi);
 
             // Calculate cellWidth (EXACT same logic as DrawAsciiByte line 1774-1776)
             double cellWidth = formattedText.Width > AsciiCharWidth
@@ -410,7 +462,7 @@ namespace WpfHexaEditor.Controls
                 _typeface,
                 _fontSize,
                 Brushes.Black,
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                _dpi);
 
             _charWidth = formattedText.Width / 2.0;
             _charHeight = formattedText.Height;
@@ -473,6 +525,100 @@ namespace WpfHexaEditor.Controls
                 return CalculateCellWidth(1); // Fallback to 1-byte width
 
             return CalculateCellWidth(byteData.Values.Length);
+        }
+
+        /// <summary>
+        /// Get or create a cached FormattedText for hex byte rendering.
+        /// Cache is invalidated when font, DPI, visual type, or brush references change.
+        /// </summary>
+        private FormattedText GetCachedHexText(string hexText, bool useAlternateColor)
+        {
+            // Check if cache needs invalidation
+            if (_hexTextCacheFontSize != _fontSize ||
+                _hexTextCacheFontFamily != _typeface.FontFamily.Source ||
+                _hexTextCacheDpi != _dpi ||
+                _hexTextCacheVisualType != DataStringVisual)
+            {
+                _hexTextCache.Clear();
+                _hexTextCacheFontSize = _fontSize;
+                _hexTextCacheFontFamily = _typeface.FontFamily.Source;
+                _hexTextCacheDpi = _dpi;
+                _hexTextCacheVisualType = DataStringVisual;
+            }
+
+            var key = (hexText, useAlternateColor);
+            if (_hexTextCache.TryGetValue(key, out var cached))
+                return cached;
+
+            Brush textBrush = useAlternateColor ? _alternateByteBrush : _normalByteBrush;
+            var ft = new FormattedText(
+                hexText,
+                System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                _typeface,
+                _fontSize,
+                textBrush,
+                _dpi);
+
+            _hexTextCache[key] = ft;
+            return ft;
+        }
+
+        /// <summary>
+        /// Get or create a cached FormattedText for ASCII byte rendering (non-TBL only).
+        /// In Bit8 mode without TBL there are at most 96 unique display characters.
+        /// </summary>
+        private FormattedText GetCachedAsciiText(string displayChar)
+        {
+            if (_asciiTextCacheDpi != _dpi)
+            {
+                _asciiTextCache.Clear();
+                _asciiTextCacheDpi = _dpi;
+            }
+
+            if (_asciiTextCache.TryGetValue(displayChar, out var cached))
+                return cached;
+
+            var ft = new FormattedText(
+                displayChar,
+                System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                _typeface,
+                13,
+                _asciiBrush,
+                _dpi);
+
+            _asciiTextCache[displayChar] = ft;
+            return ft;
+        }
+
+        /// <summary>
+        /// Get or create a cached FormattedText for offset rendering.
+        /// Offsets use fixed font/brush, cache invalidated on DPI/font change.
+        /// </summary>
+        private FormattedText GetCachedOffsetText(string offsetText, bool isBold)
+        {
+            if (_offsetTextCacheDpi != _dpi)
+            {
+                _offsetTextCache.Clear();
+                _offsetTextCacheDpi = _dpi;
+            }
+
+            var key = (offsetText, isBold);
+            if (_offsetTextCache.TryGetValue(key, out var cached))
+                return cached;
+
+            var ft = new FormattedText(
+                offsetText,
+                System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                isBold ? _boldTypeface : _typeface,
+                13,
+                _offsetBrush,
+                _dpi);
+
+            _offsetTextCache[key] = ft;
+            return ft;
         }
 
         /// <summary>
@@ -1296,6 +1442,11 @@ namespace WpfHexaEditor.Controls
             // Invalidate offset width cache (format-aware widths)
             _offsetWidthCache.Clear();
 
+            // Invalidate text caches (font/DPI changed)
+            _hexTextCache.Clear();
+            _asciiTextCache.Clear();
+            _offsetTextCache.Clear();
+
             // Invalidate custom background renderer cache
             InvalidateCustomBackgroundCache();
 
@@ -1530,7 +1681,7 @@ namespace WpfHexaEditor.Controls
                                     _typeface,
                                     13,
                                     _asciiBrush,
-                                    VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                                    _dpi);
 
                                 // Use actual text width if larger than single char width
                                 cellWidth = formattedText.Width > AsciiCharWidth
@@ -1766,14 +1917,7 @@ namespace WpfHexaEditor.Controls
             // Format offset according to OffSetStringVisual setting
             string offsetText = FormatOffset(line.StartPosition.Value, OffSetStringVisual);
 
-            var formattedText = new FormattedText(
-                offsetText,
-                System.Globalization.CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                typeface,
-                13,
-                _offsetBrush,
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+            var formattedText = GetCachedOffsetText(offsetText, isSelectionStartLine);
 
             dc.DrawText(formattedText, new Point(LeftMargin, y + 2));
         }
@@ -1794,15 +1938,9 @@ namespace WpfHexaEditor.Controls
 
         private void DrawHexByte(DrawingContext dc, ByteData byteData, double x, double y)
         {
-            // Phase 3: Calculate cell width dynamically based on ByteSize
-            // Bug 4: Use GetDynamicCellWidth() for Font/DPI support
-            // Bit8/16/32 width now adapts to current font size and DPI
-            double cellWidth = GetDynamicCellWidth(byteData);
-            double byteWidth = cellWidth - HexByteSpacing;
-            var rect = new Rect(x, y, byteWidth, _lineHeight);
-
-            // Store rect for CustomBackgroundRenderer (guaranteed accurate)
-            byteData.HexRect = rect;
+            // Use HexRect pre-populated by PopulateByteRects (avoids redundant GetDynamicCellWidth call)
+            var rect = byteData.HexRect ?? new Rect(x, y, GetDynamicCellWidth(byteData) - HexByteSpacing, _lineHeight);
+            double byteWidth = rect.Width;
 
             // Note: Highlights (selection, auto-highlight, search, hover) are now drawn globally
             // via DrawHighlights() for consistency and performance
@@ -1816,16 +1954,16 @@ namespace WpfHexaEditor.Controls
             // Draw action border (slightly inset to show selection underneath)
             if (byteData.Action != ByteAction.Nothing)
             {
-                Brush borderBrush = byteData.Action switch
+                var borderPen = byteData.Action switch
                 {
-                    ByteAction.Modified => _modifiedBrush,
-                    ByteAction.Added => _addedBrush,
-                    ByteAction.Deleted => _deletedBrush,
-                    _ => Brushes.Transparent
+                    ByteAction.Modified => _modifiedBorderPen,
+                    ByteAction.Added => _addedBorderPen,
+                    ByteAction.Deleted => _deletedBorderPen,
+                    _ => (Pen)null
                 };
 
-                var borderPen = new Pen(borderBrush, 1.5);
-                dc.DrawRoundedRectangle(null, borderPen, rect, 2, 2);
+                if (borderPen != null)
+                    dc.DrawRoundedRectangle(null, borderPen, rect, 2, 2);
 
                 // Debug: Log action borders (only for Added/Modified, not every frame)
                 if ((byteData.Action == ByteAction.Added || byteData.Action == ByteAction.Modified) && _debugRenderCount++ % 60 == 0)
@@ -1860,7 +1998,7 @@ namespace WpfHexaEditor.Controls
             if (isBeingEdited && hexText.Length > 0) // For all formats (hex=2, decimal=3, binary=8)
             {
                 // Draw each character separately with the one being edited in bold
-                var boldTypeface = new Typeface(_typeface.FontFamily, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+                var boldTypeface = _boldTypeface;
                 double charX = x;
 
                 for (int i = 0; i < hexText.Length; i++)
@@ -1873,7 +2011,7 @@ namespace WpfHexaEditor.Controls
                         charTypeface,
                         _fontSize,
                         textBrush,
-                        VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                        _dpi);
 
                     double charY = y + (_lineHeight - charText.Height) / 2;
                     dc.DrawText(charText, new Point(charX, charY));
@@ -1882,15 +2020,8 @@ namespace WpfHexaEditor.Controls
             }
             else
             {
-                // Normal rendering: draw full text at once
-                var formattedText = new FormattedText(
-                    hexText,
-                    System.Globalization.CultureInfo.CurrentCulture,
-                    FlowDirection.LeftToRight,
-                    _typeface,
-                    _fontSize,
-                    textBrush,
-                    VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                // Normal rendering: use cached FormattedText (avoids ~480 allocations per frame)
+                var formattedText = GetCachedHexText(hexText, useAlternateColor);
 
                 // Phase 3: Set max width to prevent text overflow in multi-byte cells
                 formattedText.MaxTextWidth = byteWidth;
@@ -2003,7 +2134,7 @@ namespace WpfHexaEditor.Controls
                     _typeface,
                     13,
                     textBrush,
-                    VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                    _dpi);
 
                 cellWidth = formattedText.Width > AsciiCharWidth
                     ? formattedText.Width
@@ -2021,15 +2152,8 @@ namespace WpfHexaEditor.Controls
                     cellWidth = AsciiCharWidth;
                 }
 
-                // Create FormattedText with fixed width
-                formattedText = new FormattedText(
-                    displayChar,
-                    System.Globalization.CultureInfo.CurrentCulture,
-                    FlowDirection.LeftToRight,
-                    _typeface,
-                    13,
-                    textBrush,
-                    VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                // Use cached FormattedText for single-byte ASCII (96 unique chars max)
+                formattedText = GetCachedAsciiText(displayChar);
             }
 
             // Create rect with calculated width (matches PopulateByteRects)
@@ -2054,16 +2178,16 @@ namespace WpfHexaEditor.Controls
             // Draw action border (Modified/Added/Deleted indicator)
             if (byteData.Action != ByteAction.Nothing)
             {
-                Brush borderBrush = byteData.Action switch
+                var borderPen = byteData.Action switch
                 {
-                    ByteAction.Modified => _modifiedBrush,
-                    ByteAction.Added => _addedBrush,
-                    ByteAction.Deleted => _deletedBrush,
-                    _ => Brushes.Transparent
+                    ByteAction.Modified => _modifiedBorderPen,
+                    ByteAction.Added => _addedBorderPen,
+                    ByteAction.Deleted => _deletedBorderPen,
+                    _ => (Pen)null
                 };
 
-                var borderPen = new Pen(borderBrush, 1.5);
-                dc.DrawRoundedRectangle(null, borderPen, rect, 1, 1);
+                if (borderPen != null)
+                    dc.DrawRoundedRectangle(null, borderPen, rect, 1, 1);
             }
 
             // Note: Cursor blink is drawn in overlay (UpdateCursorOverlay) using captured rect
@@ -2169,7 +2293,7 @@ namespace WpfHexaEditor.Controls
                 _typeface,
                 13,
                 _asciiBrush,
-                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+                _dpi);
 
             // AUTO-SIZING: Use larger width if text is wider (matches DrawAsciiByte logic)
             // This works for both multi-byte mode AND TBL
@@ -2320,17 +2444,14 @@ namespace WpfHexaEditor.Controls
 
                 case ByteSpacerVisual.Line:
                     // Solid vertical line
-                    var linePen = new Pen(_separatorBrush, 1);
                     double lineX = x + width / 2.0;
-                    dc.DrawLine(linePen, new Point(lineX, y), new Point(lineX, y + _lineHeight));
+                    dc.DrawLine(_spacerLinePen, new Point(lineX, y), new Point(lineX, y + _lineHeight));
                     break;
 
                 case ByteSpacerVisual.Dash:
                     // Dashed vertical line
-                    var dashPen = new Pen(_separatorBrush, 1);
-                    dashPen.DashStyle = new DashStyle(new double[] { 2, 2 }, 0);
                     double dashX = x + width / 2.0;
-                    dc.DrawLine(dashPen, new Point(dashX, y), new Point(dashX, y + _lineHeight));
+                    dc.DrawLine(_spacerDashPen, new Point(dashX, y), new Point(dashX, y + _lineHeight));
                     break;
             }
         }
