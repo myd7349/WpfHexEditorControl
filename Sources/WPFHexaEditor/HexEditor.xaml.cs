@@ -21,6 +21,7 @@ using WpfHexaEditor.Core.CharacterTable;
 using WpfHexaEditor.Events;
 using WpfHexaEditor.Models;
 using WpfHexaEditor.ViewModels;
+using WpfHexEditor.Editor.Core;
 
 namespace WpfHexaEditor
 {
@@ -32,7 +33,7 @@ namespace WpfHexaEditor
     /// NOTE: This is the modern V2 implementation - 99% faster with critical bug fixes.
     /// Legacy V1 control (HexEditorLegacy) was removed in v2.6+ (Feb 2026).
     /// </summary>
-    public partial class HexEditor : UserControl
+    public partial class HexEditor : UserControl, IDocumentEditor
     {
         private HexEditorViewModel _viewModel;
         private bool _isMouseDown = false;
@@ -541,7 +542,11 @@ namespace WpfHexaEditor
         /// <summary>
         /// Event helper: Raise SelectionChanged event
         /// </summary>
-        protected virtual void OnSelectionChanged(HexSelectionChangedEventArgs e) => SelectionChanged?.Invoke(this, e);
+        protected virtual void OnSelectionChanged(HexSelectionChangedEventArgs e)
+        {
+            SelectionChanged?.Invoke(this, e);
+            RaiseDocumentEditorSelectionChanged();
+        }
 
         /// <summary>
         /// Event helper: Raise PositionChanged event
@@ -2270,6 +2275,10 @@ namespace WpfHexaEditor
                     editor.StatusText.Text = $"Failed to open file: {ex.Message}";
                 }
             }
+
+            // Notify IDocumentEditor subscribers that the title may have changed
+            if (d is HexEditor ed)
+                ed.RaiseDocumentEditorTitleChanged();
         }
 
         /// <summary>

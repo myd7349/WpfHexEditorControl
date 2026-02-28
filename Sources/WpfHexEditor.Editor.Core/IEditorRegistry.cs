@@ -3,6 +3,8 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Collections.Generic;
+
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>

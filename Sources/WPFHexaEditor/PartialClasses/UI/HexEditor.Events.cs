@@ -958,6 +958,9 @@ namespace WpfHexaEditor
                 if (IsModified != isModified)
                     IsModified = isModified;
             }
+
+            // Notify IDocumentEditor subscribers (ModifiedChanged, CanUndoChanged, CanRedoChanged, TitleChanged)
+            RaiseDocumentEditorEvents();
         }
 
         private void UpdateFileSizeDisplay()

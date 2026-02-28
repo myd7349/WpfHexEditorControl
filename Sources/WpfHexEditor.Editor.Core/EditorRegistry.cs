@@ -3,6 +3,10 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>
@@ -11,19 +15,19 @@ namespace WpfHexEditor.Editor.Core;
 /// </summary>
 public sealed class EditorRegistry : IEditorRegistry
 {
-    private readonly List<IEditorFactory> _factories = [];
+    private readonly List<IEditorFactory> _factories = new();
 
     /// <inheritdoc />
     public void Register(IEditorFactory factory)
     {
-        ArgumentNullException.ThrowIfNull(factory);
+        if (factory == null) throw new ArgumentNullException(nameof(factory));
         _factories.Add(factory);
     }
 
     /// <inheritdoc />
     public IEditorFactory? FindFactory(string filePath)
     {
-        ArgumentNullException.ThrowIfNull(filePath);
+        if (filePath == null) throw new ArgumentNullException(nameof(filePath));
         return _factories.FirstOrDefault(f => f.CanOpen(filePath));
     }
 
