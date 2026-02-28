@@ -144,6 +144,9 @@ namespace WpfHexaEditor.Controls
         // Cursor overlay visual (separate layer for performance - only redraws cursor, not entire viewport)
         private DrawingVisual _cursorOverlayVisual = null;
 
+        // Hover overlay visual (separate layer - avoids full re-render on mouse move)
+        private DrawingVisual _hoverOverlayVisual;
+
         // Captured cursor rects from OnRender (for overlay optimization)
         private Rect? _cursorHexRect = null;    // Hex panel cursor rect
         private Rect? _cursorAsciiRect = null;  // ASCII panel cursor rect
@@ -333,6 +336,11 @@ namespace WpfHexaEditor.Controls
             _cursorOverlayVisual = new DrawingVisual();
             AddVisualChild(_cursorOverlayVisual);
             AddLogicalChild(_cursorOverlayVisual);
+
+            // Initialize hover overlay visual (separate layer — avoids full re-render on mouse move)
+            _hoverOverlayVisual = new DrawingVisual();
+            AddVisualChild(_hoverOverlayVisual);
+            AddLogicalChild(_hoverOverlayVisual);
         }
 
         /// <summary>
@@ -348,19 +356,19 @@ namespace WpfHexaEditor.Controls
         }
 
         /// <summary>
-        /// One child visual: cursor overlay for optimized blink rendering
+        /// Two child visuals: cursor overlay (blink) and hover overlay (mouse preview)
         /// </summary>
-        protected override int VisualChildrenCount => 1;
+        protected override int VisualChildrenCount => 2;
 
         /// <summary>
-        /// Returns the cursor overlay visual child
+        /// Returns overlay visual children: 0 = cursor, 1 = hover
         /// </summary>
-        protected override Visual GetVisualChild(int index)
+        protected override Visual GetVisualChild(int index) => index switch
         {
-            if (index != 0)
-                throw new ArgumentOutOfRangeException(nameof(index));
-            return _cursorOverlayVisual;
-        }
+            0 => _cursorOverlayVisual,
+            1 => _hoverOverlayVisual,
+            _ => throw new ArgumentOutOfRangeException(nameof(index))
+        };
 
         /// <summary>
         /// Timer tick handler for cursor cell blink effect (simple on/off toggle)
@@ -417,6 +425,56 @@ namespace WpfHexaEditor.Controls
                     dc.DrawRoundedRectangle(blinkBrush, null, cursorRect.Value, cornerRadius, cornerRadius);
                 }
             }
+        }
+
+        /// <summary>
+        /// Update hover overlay visual — draws the mouse hover highlight without a full re-render.
+        /// Uses HexRect/AsciiRect pre-populated by PopulateByteRects.
+        /// </summary>
+        private void UpdateHoverOverlay()
+        {
+            using var dc = _hoverOverlayVisual.RenderOpen();
+
+            if (_mouseHoverPosition < 0 || _mouseHoverBrush == null || _linesCached == null || _linesCached.Count == 0)
+                return;
+
+            // Fast lookup: calculate line index directly from position
+            var firstLine = _linesCached[0];
+            if (!firstLine.StartPosition.IsValid || firstLine.Bytes == null || firstLine.Bytes.Count == 0)
+                return;
+
+            long firstPos = firstLine.StartPosition.Value;
+            int bytesPerLine = _bytesPerLine > 0 ? _bytesPerLine : firstLine.Bytes.Count;
+            int lineIndex = (int)((_mouseHoverPosition - firstPos) / bytesPerLine);
+
+            if (lineIndex < 0 || lineIndex >= _linesCached.Count)
+                return;
+
+            var line = _linesCached[lineIndex];
+            if (line.Bytes == null) return;
+
+            int byteIndexInLine = (int)((_mouseHoverPosition - firstPos) % bytesPerLine);
+
+            // In multi-byte mode, adjust index by stride
+            int stride = line.Bytes.Count > 0 ? (line.Bytes[0].ByteSize switch
+            {
+                Core.ByteSizeType.Bit8 => 1,
+                Core.ByteSizeType.Bit16 => 2,
+                Core.ByteSizeType.Bit32 => 4,
+                _ => 1
+            }) : 1;
+            int groupIndex = stride > 1 ? byteIndexInLine / stride : byteIndexInLine;
+
+            if (groupIndex < 0 || groupIndex >= line.Bytes.Count)
+                return;
+
+            var byteData = line.Bytes[groupIndex];
+
+            // Draw hover highlight in the appropriate panel
+            if (_mouseHoverInHexArea && byteData.HexRect.HasValue)
+                dc.DrawRoundedRectangle(_mouseHoverBrush, null, byteData.HexRect.Value, 2, 2);
+            else if (!_mouseHoverInHexArea && ShowAscii && byteData.AsciiRect.HasValue)
+                dc.DrawRectangle(_mouseHoverBrush, null, byteData.AsciiRect.Value);
         }
 
         /// <summary>
@@ -1586,8 +1644,9 @@ namespace WpfHexaEditor.Controls
             _lastRefreshTimeMs = _refreshStopwatch.ElapsedMilliseconds;
             RefreshTimeUpdated?.Invoke(this, _lastRefreshTimeMs);
 
-            // Update cursor overlay after main render (keeps overlay in sync with scroll/changes)
+            // Update overlays after main render (keeps them in sync with scroll/changes)
             UpdateCursorOverlay();
+            UpdateHoverOverlay();
         }
 
         /// <summary>
@@ -1875,15 +1934,7 @@ namespace WpfHexaEditor.Controls
                             dc.DrawRectangle(_doubleClickHighlightBrush, null, byteData.AsciiRect.Value);
                     }
 
-                    // Mouse hover preview
-                    if (_mouseHoverPosition >= 0 && bytePos == _mouseHoverPosition && _mouseHoverBrush != null)
-                    {
-                        // Only show in the area where mouse is hovering
-                        if (_mouseHoverInHexArea && byteData.HexRect.HasValue)
-                            dc.DrawRoundedRectangle(_mouseHoverBrush, null, byteData.HexRect.Value, 2, 2);
-                        else if (!_mouseHoverInHexArea && ShowAscii && byteData.AsciiRect.HasValue)
-                            dc.DrawRectangle(_mouseHoverBrush, null, byteData.AsciiRect.Value);
-                    }
+                    // Mouse hover preview is drawn in separate _hoverOverlayVisual (avoids full re-render)
 
                     // Selection highlight (on top of other highlights)
                     if (IsPositionSelected(bytePos))
@@ -2598,12 +2649,13 @@ namespace WpfHexaEditor.Controls
             this.Cursor = Cursors.Arrow;
 
             // Update mouse hover position and area for visual preview (Legacy compatible)
+            // Uses lightweight overlay instead of full re-render
             long newHoverPosition = position.HasValue ? position.Value : -1;
             if (_mouseHoverPosition != newHoverPosition || _mouseHoverInHexArea != isHexArea)
             {
                 _mouseHoverPosition = newHoverPosition;
                 _mouseHoverInHexArea = isHexArea;
-                InvalidateVisual(); // Redraw to show/hide hover highlight
+                UpdateHoverOverlay();
             }
 
             // Tooltip handling (new architecture with DisplayMode and DetailLevel)
@@ -2656,11 +2708,11 @@ namespace WpfHexaEditor.Controls
         {
             base.OnMouseLeave(e);
 
-            // Clear hover highlight when mouse leaves control
+            // Clear hover highlight when mouse leaves control (overlay only, no full re-render)
             if (_mouseHoverPosition != -1)
             {
                 _mouseHoverPosition = -1;
-                InvalidateVisual();
+                UpdateHoverOverlay();
             }
         }
 
