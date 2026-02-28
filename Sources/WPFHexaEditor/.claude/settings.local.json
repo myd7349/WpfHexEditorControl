@@ -162,7 +162,27 @@
       "Bash(do sed -i 's/WpfHexEditor\\\\.Docking\\\\.Demo/WpfHexEditor.App/g' \"$f\")",
       "Bash(cat:*)",
       "Bash(/tmp/migrate_formatscript.ps1:*)",
-      "Bash(powershell.exe -File \"C:/tmp/migrate_window_panels.ps1\")"
+      "Bash(powershell.exe -File \"C:/tmp/migrate_window_panels.ps1\")",
+      "Bash(sed 's/.*namespace //')",
+      "WebFetch(domain:devblogs.microsoft.com)",
+      "WebFetch(domain:freshroastedhosting.com)",
+      "Bash(DEST=\"WpfHexEditor.HexEditor\")",
+      "Bash(SRC=\"WPFHexaEditor\")",
+      "Bash(do git mv \"$f\" \"$DEST/PartialClasses/Compatibility/\")",
+      "Bash(do git mv \"$f\" \"$DEST/PartialClasses/Core/\")",
+      "Bash(do git mv \"$f\" \"$DEST/PartialClasses/Features/\")",
+      "Bash(do git mv \"$f\" \"$DEST/PartialClasses/Search/\")",
+      "Bash(do git mv \"$f\" \"$DEST/PartialClasses/UI/\")",
+      "Bash(do git mv \"$f\" \"$DEST/Controls/\")",
+      "Bash(do git mv \"$f\" \"$DEST/Dialog/\")",
+      "Bash(do git mv \"$f\" \"$DEST/Rendering/\")",
+      "Bash(do git mv \"$f\" \"$DEST/Commands/\")",
+      "Bash(do git mv \"$f\" \"$DEST/ViewModels/\")",
+      "Bash(do git mv \"$f\" \"$DEST/Converters/\")",
+      "Bash(do git mv \"$f\" \"$DEST/SearchModule/Views/\")",
+      "Bash(do git mv \"$f\" \"$DEST/SearchModule/ViewModels/\")",
+      "Bash(do git mv \"$f\" \"$DEST/Resources/Dictionary/\")",
+      "Bash(do git mv \"$f\" \"$DEST/Resources/Icon/\")"
     ]
   }
 }
