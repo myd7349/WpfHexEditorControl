@@ -226,8 +226,9 @@ public class DockDragManager
         _targetElement = null;
         _sourceFloatingWindow = sourceWindow;
 
-        // Record offset from cursor to window corner in DIPs for smooth drag
-        var cursorDip = DpiHelper.ScreenToDip(sourceWindow, sourceWindow.PointToScreen(Mouse.GetPosition(sourceWindow)));
+        // Record offset from cursor to window corner using per-monitor DIPs for smooth cross-monitor drag
+        var cursorScreen = sourceWindow.PointToScreen(Mouse.GetPosition(sourceWindow));
+        var cursorDip = DpiHelper.ScreenToDipForPoint(cursorScreen);
         _dragOffset = new Point(cursorDip.X - sourceWindow.Left, cursorDip.Y - sourceWindow.Top);
         _originalWindowPos = new Point(sourceWindow.Left, sourceWindow.Top);
 
@@ -256,9 +257,9 @@ public class DockDragManager
     {
         if (!_isDragging || _sourceFloatingWindow is null) return;
 
-        // Get cursor in both physical pixels and DIPs
+        // Get cursor in both physical pixels and per-monitor DIPs
         var screenPos = _sourceFloatingWindow.PointToScreen(e.GetPosition(_sourceFloatingWindow));
-        var dipPos = DpiHelper.ScreenToDip(_sourceFloatingWindow, screenPos);
+        var dipPos = DpiHelper.ScreenToDipForPoint(screenPos);
 
         // Move the floating window following cursor (DIPs)
         _sourceFloatingWindow.Left = dipPos.X - _dragOffset.X;

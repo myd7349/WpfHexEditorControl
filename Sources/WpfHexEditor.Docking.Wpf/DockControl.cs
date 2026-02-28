@@ -7,8 +7,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
+using WpfHexEditor.Docking.Wpf.Commands;
 
 namespace WpfHexEditor.Docking.Wpf;
 
@@ -17,7 +19,7 @@ namespace WpfHexEditor.Docking.Wpf;
 /// Renders the <see cref="DockLayoutRoot"/> tree as WPF visual elements,
 /// and integrates drag &amp; drop, floating windows, and auto-hide bars.
 /// </summary>
-public class DockControl : ContentControl, IDisposable
+public class DockControl : ContentControl, IDockHost, IDisposable
 {
     private DockEngine? _engine;
     private DockDragManager? _dragManager;
@@ -150,6 +152,98 @@ public class DockControl : ContentControl, IDisposable
         // Break strong reference cycle: unsubscribe engine events when control leaves the visual tree
         Unloaded += (_, _) => DetachEngine();
         Loaded += (_, _) => AttachEngine();
+
+        // Register routed commands (MVVM-friendly)
+        RegisterDockCommands();
+    }
+
+    private void RegisterDockCommands()
+    {
+        CommandBindings.Add(new CommandBinding(
+            DockCommands.Close,
+            (_, e) => { if (GetCommandItem(e) is { } item) { RaiseTabCloseRequested(item); _engine?.Close(item); RebuildVisualTree(); } },
+            (_, e) => { var item = GetCommandItem(e); e.CanExecute = item is { CanClose: true }; }));
+
+        CommandBindings.Add(new CommandBinding(
+            DockCommands.Float,
+            (_, e) => { if (GetCommandItem(e) is { } item) { _engine?.Float(item); RebuildVisualTree(); } },
+            (_, e) => { var item = GetCommandItem(e); e.CanExecute = item is { CanFloat: true }; }));
+
+        CommandBindings.Add(new CommandBinding(
+            DockCommands.AutoHide,
+            (_, e) => { if (GetCommandItem(e) is { } item) { _engine?.AutoHide(item); RebuildVisualTree(); } },
+            (_, e) => e.CanExecute = GetCommandItem(e) is not null));
+
+        CommandBindings.Add(new CommandBinding(
+            DockCommands.Dock,
+            (_, e) =>
+            {
+                if (GetCommandItem(e) is not { } item || _engine is null || Layout is null) return;
+                var dir = item.LastDockSide switch
+                {
+                    Core.DockSide.Left   => DockDirection.Left,
+                    Core.DockSide.Right  => DockDirection.Right,
+                    Core.DockSide.Top    => DockDirection.Top,
+                    Core.DockSide.Bottom => DockDirection.Bottom,
+                    _                    => DockDirection.Center
+                };
+                _engine.Dock(item, Layout.MainDocumentHost, dir);
+                RebuildVisualTree();
+            },
+            (_, e) => e.CanExecute = GetCommandItem(e) is not null));
+
+        CommandBindings.Add(new CommandBinding(
+            DockCommands.CloseAll,
+            (_, _) => { CloseAllClosableItems(); RebuildVisualTree(); },
+            (_, e) => e.CanExecute = _engine is not null));
+
+        CommandBindings.Add(new CommandBinding(
+            DockCommands.AutoHideAll,
+            (_, _) => { _engine?.AutoHideAll(); RebuildVisualTree(); },
+            (_, e) => e.CanExecute = _engine is not null));
+
+        CommandBindings.Add(new CommandBinding(
+            DockCommands.RestoreAll,
+            (_, _) => { _engine?.RestoreAllFromAutoHide(); RebuildVisualTree(); },
+            (_, e) => e.CanExecute = _engine is not null && Layout?.AutoHideItems.Any() == true));
+    }
+
+    private void CloseAllClosableItems()
+    {
+        if (_engine is null || Layout is null) return;
+        var items = CollectItems(Layout.RootNode);
+        foreach (var item in items)
+            if (item.CanClose) _engine.Close(item);
+    }
+
+    private static List<DockItem> CollectItems(DockNode node) => node switch
+    {
+        DockSplitNode s => s.Children.SelectMany(CollectItems).ToList(),
+        DockGroupNode g => g.Items.ToList(),
+        _ => []
+    };
+
+    /// <summary>
+    /// Resolves the <see cref="DockItem"/> for a command — from explicit parameter or from keyboard focus.
+    /// </summary>
+    private static DockItem? GetCommandItem(ExecutedRoutedEventArgs e) =>
+        e.Parameter as DockItem ?? GetFocusedDockItem();
+
+    private static DockItem? GetCommandItem(CanExecuteRoutedEventArgs e) =>
+        e.Parameter as DockItem ?? GetFocusedDockItem();
+
+    private static DockItem? GetFocusedDockItem()
+    {
+        var focused = Keyboard.FocusedElement as DependencyObject;
+        while (focused is not null)
+        {
+            if (focused is TabItem { Tag: DockItem item })
+                return item;
+            if (focused is DockTabControl tc && tc.SelectedItem is TabItem { Tag: DockItem active })
+                return active;
+            focused = VisualTreeHelper.GetParent(focused);
+        }
+        return null;
     }
 
     private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
