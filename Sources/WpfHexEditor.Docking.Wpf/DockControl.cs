@@ -17,11 +17,13 @@ namespace WpfHexEditor.Docking.Wpf;
 /// Renders the <see cref="DockLayoutRoot"/> tree as WPF visual elements,
 /// and integrates drag &amp; drop, floating windows, and auto-hide bars.
 /// </summary>
-public class DockControl : ContentControl
+public class DockControl : ContentControl, IDisposable
 {
     private DockEngine? _engine;
     private DockDragManager? _dragManager;
     private FloatingWindowManager? _floatingManager;
+    private readonly List<DockTabEventWirer> _tabWirers = [];
+    private readonly Dictionary<string, object> _contentCache = new();
 
     private readonly Grid _rootGrid;
     private readonly DockPanel _rootPanel;
@@ -57,6 +59,23 @@ public class DockControl : ContentControl
     /// Factory to create content for a DockItem. If not set, a default placeholder is shown.
     /// </summary>
     public Func<DockItem, object>? ContentFactory { get; set; }
+
+    /// <summary>
+    /// Returns a wrapped <see cref="ContentFactory"/> that caches results by <see cref="DockItem.ContentId"/>.
+    /// Content is created once and reused across visual tree rebuilds, preserving scroll position,
+    /// selection state, and other UI state.
+    /// </summary>
+    internal Func<DockItem, object>? CachedContentFactory =>
+        ContentFactory is null ? null : GetOrCreateContent;
+
+    private object GetOrCreateContent(DockItem item)
+    {
+        if (_contentCache.TryGetValue(item.ContentId, out var cached))
+            return cached;
+        var content = ContentFactory!(item);
+        _contentCache[item.ContentId] = content;
+        return content;
+    }
 
     /// <summary>
     /// The center content host, used by DockDragManager for overlay positioning.
@@ -116,26 +135,24 @@ public class DockControl : ContentControl
         _rootGrid.Children.Add(_autoHideFlyout);
 
         Content = _rootGrid;
+
+        // Break strong reference cycle: unsubscribe engine events when control leaves the visual tree
+        Unloaded += (_, _) => DetachEngine();
+        Loaded += (_, _) => AttachEngine();
     }
 
     private static void OnLayoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is DockControl control)
         {
-            // Unsubscribe from old engine
-            if (control._engine is not null)
-                control._engine.LayoutChanged -= control.OnLayoutTreeChanged;
+            // Fully detach from old engine (all 5 events)
+            control.DetachEngine();
+            control._contentCache.Clear();
 
             if (e.NewValue is DockLayoutRoot newLayout)
             {
                 control._engine = new DockEngine(newLayout);
-                control._engine.LayoutChanged += control.OnLayoutTreeChanged;
-
-                // Wire engine events for float and dock
-                control._engine.ItemFloated  += control.OnItemFloated;
-                control._engine.ItemDocked   += control.OnItemDocked;
-                control._engine.ItemClosed   += control.OnItemClosed;
-                control._engine.GroupFloated += control.OnGroupFloated;
+                control.AttachEngine();
 
                 control._dragManager = new DockDragManager(control);
                 control._floatingManager = new FloatingWindowManager(control);
@@ -153,6 +170,54 @@ public class DockControl : ContentControl
         }
     }
 
+    /// <summary>
+    /// Subscribes to all engine event handlers. Safe to call multiple times (idempotent).
+    /// </summary>
+    private void AttachEngine()
+    {
+        if (_engine is null) return;
+        // Detach first to avoid double-subscription
+        DetachEngine();
+        _engine.LayoutChanged += OnLayoutTreeChanged;
+        _engine.ItemFloated   += OnItemFloated;
+        _engine.ItemDocked    += OnItemDocked;
+        _engine.ItemClosed    += OnItemClosed;
+        _engine.GroupFloated  += OnGroupFloated;
+    }
+
+    /// <summary>
+    /// Unsubscribes all engine event handlers to prevent leaks.
+    /// </summary>
+    private void DetachEngine()
+    {
+        if (_engine is null) return;
+        _engine.LayoutChanged -= OnLayoutTreeChanged;
+        _engine.ItemFloated   -= OnItemFloated;
+        _engine.ItemDocked    -= OnItemDocked;
+        _engine.ItemClosed    -= OnItemClosed;
+        _engine.GroupFloated  -= OnGroupFloated;
+    }
+
+    /// <summary>
+    /// Disposes all tab event wirers from the previous visual tree.
+    /// </summary>
+    private void DisposeWirers()
+    {
+        foreach (var w in _tabWirers) w.Dispose();
+        _tabWirers.Clear();
+    }
+
+    public void Dispose()
+    {
+        DetachEngine();
+        DisposeWirers();
+        _floatingManager?.CloseAll();
+        _autoHideFlyout.RestoreRequested -= OnAutoHideRestoreRequested;
+        _autoHideFlyout.CloseRequested   -= OnAutoHideCloseRequested;
+        _autoHideFlyout.FloatRequested   -= OnAutoHideFloatRequested;
+        GC.SuppressFinalize(this);
+    }
+
     private void OnLayoutTreeChanged()
     {
         Dispatcher.Invoke(RebuildVisualTree);
@@ -163,6 +228,9 @@ public class DockControl : ContentControl
     /// </summary>
     public void RebuildVisualTree()
     {
+        // Dispose previous tab wirers to prevent event leaks
+        DisposeWirers();
+
         if (Layout is null)
         {
             _centerHost.Content = null;
@@ -219,7 +287,7 @@ public class DockControl : ContentControl
         }
         else
         {
-            host.Bind(docHost, ContentFactory);
+            host.Bind(docHost, CachedContentFactory);
         }
 
         WireTabControlEvents(host);
@@ -228,14 +296,36 @@ public class DockControl : ContentControl
 
     private UIElement CreateTabControl(DockGroupNode group)
     {
+        var tabControl = CreateTabControlForGroup(group);
+        var titleBar   = CreateGroupTitleBar(group, tabControl);
+
+        var layout = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(titleBar, Dock.Top);
+        layout.Children.Add(titleBar);
+        layout.Children.Add(tabControl);
+
+        return CreateFocusBorder(layout);
+    }
+
+    /// <summary>
+    /// Creates and binds a <see cref="DockTabControl"/> for a side panel group
+    /// with bottom tab strip placement (VS-style).
+    /// </summary>
+    private DockTabControl CreateTabControlForGroup(DockGroupNode group)
+    {
         var tabControl = new DockTabControl();
-
-        // All side panels: tab strip at bottom, title bar at top (VS-style)
         tabControl.TabStripPlacement = Dock.Bottom;
-        tabControl.Bind(group, ContentFactory);
+        tabControl.Bind(group, CachedContentFactory);
         WireTabControlEvents(tabControl);
+        return tabControl;
+    }
 
-        // Dynamic title block shows the active tab name
+    /// <summary>
+    /// Creates a draggable title bar for a side panel group.
+    /// Shows the active tab name and supports drag-to-float via <see cref="DockDragManager.BeginGroupDrag"/>.
+    /// </summary>
+    private Border CreateGroupTitleBar(DockGroupNode group, DockTabControl tabControl)
+    {
         var titleBlock = new TextBlock
         {
             Text              = group.ActiveItem?.Title ?? "",
@@ -288,12 +378,7 @@ public class DockControl : ContentControl
             titleBar.ReleaseMouseCapture();
         };
 
-        var layout = new DockPanel { LastChildFill = true };
-        DockPanel.SetDock(titleBar, Dock.Top);
-        layout.Children.Add(titleBar);
-        layout.Children.Add(tabControl);
-
-        return CreateFocusBorder(layout);
+        return titleBar;
     }
 
     /// <summary>
@@ -329,33 +414,17 @@ public class DockControl : ContentControl
     }
 
     /// <summary>
-    /// Wires all events on a tab control.
+    /// Wires all events on a tab control via a disposable wirer (prevents leaks on rebuild).
     /// </summary>
     private void WireTabControlEvents(DockTabControl tabControl)
     {
-        tabControl.TabCloseRequested += OnTabCloseRequested;
-
-        tabControl.TabDragStarted += item =>
-        {
-            _dragManager?.BeginDrag(item);
-        };
-
-        tabControl.TabFloatRequested += item =>
-        {
-            if (_engine is null) return;
-            _engine.Float(item);
-            RebuildVisualTree();
-        };
-
-        tabControl.TabAutoHideRequested += item =>
-        {
-            if (_engine is null) return;
-            _engine.AutoHide(item);
-            RebuildVisualTree();
-        };
+        _tabWirers.Add(new DockTabEventWirer(tabControl, this));
     }
 
-    private void OnTabCloseRequested(DockItem item)
+    /// <summary>
+    /// Raises the <see cref="TabCloseRequested"/> event. Called by <see cref="DockTabEventWirer"/>.
+    /// </summary>
+    internal void RaiseTabCloseRequested(DockItem item)
     {
         TabCloseRequested?.Invoke(item);
     }
@@ -363,10 +432,9 @@ public class DockControl : ContentControl
     private void OnItemFloated(DockItem item)
     {
         // Create a floating window for the item, positioned near the cursor (DIPs)
-        var mousePos  = System.Windows.Input.Mouse.GetPosition(this);
+        var mousePos  = Mouse.GetPosition(this);
         var screenPos = PointToScreen(mousePos);
-        var source    = PresentationSource.FromVisual(this);
-        var dipPos    = source?.CompositionTarget?.TransformFromDevice.Transform(screenPos) ?? screenPos;
+        var dipPos    = DpiHelper.ScreenToDip(this, screenPos);
         _floatingManager?.CreateFloatingWindow(item, new Point(dipPos.X - 50, dipPos.Y - 20));
     }
 
@@ -384,10 +452,9 @@ public class DockControl : ContentControl
 
     private void OnGroupFloated(DockGroupNode floatingGroup)
     {
-        var mousePos  = System.Windows.Input.Mouse.GetPosition(this);
+        var mousePos  = Mouse.GetPosition(this);
         var screenPos = PointToScreen(mousePos);
-        var source    = PresentationSource.FromVisual(this);
-        var dipPos    = source?.CompositionTarget?.TransformFromDevice.Transform(screenPos) ?? screenPos;
+        var dipPos    = DpiHelper.ScreenToDip(this, screenPos);
         _floatingManager?.CreateFloatingWindowForGroup(floatingGroup,
             new Point(dipPos.X - 50, dipPos.Y - 20));
     }
@@ -414,7 +481,7 @@ public class DockControl : ContentControl
             return;
         }
 
-        _autoHideFlyout.ShowForItem(item, ContentFactory, item.LastDockSide);
+        _autoHideFlyout.ShowForItem(item, CachedContentFactory, item.LastDockSide);
     }
 
     private void OnAutoHideRestoreRequested(DockItem item)

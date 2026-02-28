@@ -45,6 +45,7 @@ public static class DockLayoutSerializer
     {
         return new DockLayoutRootDto
         {
+            Version = CurrentVersion,
             RootNode = NodeToDto(layout.RootNode),
             FloatingItems = layout.FloatingItems.Select(ItemToDto).ToList(),
             AutoHideItems = layout.AutoHideItems.Select(ItemToDto).ToList()
@@ -100,8 +101,21 @@ public static class DockLayoutSerializer
         };
     }
 
+    /// <summary>
+    /// Current serialization format version. Increment when adding breaking changes.
+    /// </summary>
+    private const int CurrentVersion = 1;
+
     private static DockLayoutRoot FromDto(DockLayoutRootDto dto)
     {
+        if (dto.Version > CurrentVersion)
+            throw new NotSupportedException(
+                $"Layout version {dto.Version} is not supported. Maximum supported version is {CurrentVersion}. " +
+                "Please update the application to load this layout.");
+
+        // Future migrations go here:
+        // if (dto.Version < 2) { /* migrate v1 → v2 */ }
+
         var layout = new DockLayoutRoot();
 
         // Rebuild the tree from DTO

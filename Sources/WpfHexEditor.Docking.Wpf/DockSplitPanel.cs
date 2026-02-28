@@ -21,6 +21,11 @@ public class DockSplitPanel : Grid
 
     public DockSplitNode? Node { get; private set; }
 
+    /// <summary>
+    /// Minimum pane size in DIPs. Prevents panels from being collapsed to zero.
+    /// </summary>
+    public double MinPaneSize { get; set; } = 60;
+
     public void Bind(DockSplitNode node, Func<DockNode, UIElement> nodeFactory)
     {
         Node = node;
@@ -66,12 +71,20 @@ public class DockSplitPanel : Grid
                 Children.Add(splitter);
             }
 
-            // Add content column/row
+            // Add content column/row with minimum size constraint
             var ratio = i < node.Ratios.Count ? node.Ratios[i] : 1.0 / node.Children.Count;
             if (isHorizontal)
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ratio, GridUnitType.Star) });
+                ColumnDefinitions.Add(new ColumnDefinition
+                {
+                    Width    = new GridLength(ratio, GridUnitType.Star),
+                    MinWidth = MinPaneSize
+                });
             else
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(ratio, GridUnitType.Star) });
+                RowDefinitions.Add(new RowDefinition
+                {
+                    Height    = new GridLength(ratio, GridUnitType.Star),
+                    MinHeight = MinPaneSize
+                });
 
             _contentDefinitionIndices.Add(isHorizontal ? ColumnDefinitions.Count - 1 : RowDefinitions.Count - 1);
 
@@ -109,7 +122,13 @@ public class DockSplitPanel : Grid
 
         if (totalStar <= 0) return;
 
-        // Normalize and write back to the model
-        Node.SetRatios(newRatios.Select(r => r / totalStar).ToArray());
+        // Clamp ratios: never allow less than 5% for any pane
+        const double minRatio = 0.05;
+        for (var i = 0; i < newRatios.Length; i++)
+            newRatios[i] = Math.Max(minRatio, newRatios[i] / totalStar);
+
+        // Re-normalize after clamping
+        var clampedSum = newRatios.Sum();
+        Node.SetRatios(newRatios.Select(r => r / clampedSum).ToArray());
     }
 }

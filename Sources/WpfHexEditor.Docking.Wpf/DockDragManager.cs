@@ -47,17 +47,6 @@ public class DockDragManager
     public bool IsDragging => _isDragging;
 
     /// <summary>
-    /// Converts a physical screen pixel point to WPF DIPs using the given visual's DPI.
-    /// </summary>
-    private static Point ScreenToDip(Visual visual, Point screenPoint)
-    {
-        var source = PresentationSource.FromVisual(visual);
-        if (source?.CompositionTarget != null)
-            return source.CompositionTarget.TransformFromDevice.Transform(screenPoint);
-        return screenPoint;
-    }
-
-    /// <summary>
     /// Walks up the visual tree from the element at the given point to find the containing DockTabControl.
     /// Returns null if no DockTabControl is found (e.g., over a splitter or empty area).
     /// </summary>
@@ -172,7 +161,7 @@ public class DockDragManager
 
         // Capture cursor position in DIPs before the layout changes
         var screenPos = _dockControl.PointToScreen(Mouse.GetPosition(_dockControl));
-        var mouseDip  = ScreenToDip(_dockControl, screenPos);
+        var mouseDip  = DpiHelper.ScreenToDip(_dockControl, screenPos);
 
         // Detach item from dock layout → fires OnItemFloated → FloatingWindowManager creates the window
         _dockControl.Engine.Float(item);
@@ -201,7 +190,7 @@ public class DockDragManager
 
         // Capture cursor position in DIPs before the layout changes
         var screenPos = _dockControl.PointToScreen(Mouse.GetPosition(_dockControl));
-        var mouseDip  = ScreenToDip(_dockControl, screenPos);
+        var mouseDip  = DpiHelper.ScreenToDip(_dockControl, screenPos);
 
         // Float the entire group → fires GroupFloated → FloatingWindowManager.CreateFloatingWindowForGroup
         _dockControl.Engine.FloatGroup(group);
@@ -237,18 +226,27 @@ public class DockDragManager
         _sourceFloatingWindow = sourceWindow;
 
         // Record offset from cursor to window corner in DIPs for smooth drag
-        var cursorDip = ScreenToDip(sourceWindow, sourceWindow.PointToScreen(Mouse.GetPosition(sourceWindow)));
+        var cursorDip = DpiHelper.ScreenToDip(sourceWindow, sourceWindow.PointToScreen(Mouse.GetPosition(sourceWindow)));
         _dragOffset = new Point(cursorDip.X - sourceWindow.Left, cursorDip.Y - sourceWindow.Top);
         _originalWindowPos = new Point(sourceWindow.Left, sourceWindow.Top);
 
         _panelOverlay ??= new DockOverlayWindow();
         _edgeOverlay ??= new DockEdgeOverlayWindow();
 
-        // Capture mouse on the floating window
+        // Wire event handlers first, then capture mouse.
+        // try-finally ensures capture is released if an exception occurs.
         sourceWindow.PreviewMouseMove += OnFloatingMouseMove;
         sourceWindow.PreviewMouseLeftButtonUp += OnFloatingMouseUp;
         sourceWindow.KeyDown += OnFloatingKeyDown;
-        Mouse.Capture(sourceWindow, CaptureMode.SubTree);
+        try
+        {
+            Mouse.Capture(sourceWindow, CaptureMode.SubTree);
+        }
+        catch
+        {
+            EndFloatingDrag();
+            throw;
+        }
     }
 
     #region Floating window drag handlers
@@ -259,7 +257,7 @@ public class DockDragManager
 
         // Get cursor in both physical pixels and DIPs
         var screenPos = _sourceFloatingWindow.PointToScreen(e.GetPosition(_sourceFloatingWindow));
-        var dipPos = ScreenToDip(_sourceFloatingWindow, screenPos);
+        var dipPos = DpiHelper.ScreenToDip(_sourceFloatingWindow, screenPos);
 
         // Move the floating window following cursor (DIPs)
         _sourceFloatingWindow.Left = dipPos.X - _dragOffset.X;

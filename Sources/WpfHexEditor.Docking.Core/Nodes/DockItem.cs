@@ -47,4 +47,9 @@ public class DockItem
 
     /// <inheritdoc cref="FloatLeft"/>
     public double? FloatTop { get; set; }
+
+    /// <summary>
+    /// Application-defined data associated with this item. Not serialized.
+    /// </summary>
+    public object? Tag { get; set; }
 }
