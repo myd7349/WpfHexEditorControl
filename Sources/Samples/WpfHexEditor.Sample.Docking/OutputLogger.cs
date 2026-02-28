@@ -4,24 +4,24 @@
 // Contributors: Claude Opus 4.6
 //////////////////////////////////////////////
 
-using System.Windows.Controls;
+using WpfHexEditor.Sample.Docking.Controls;
 
 namespace WpfHexEditor.Sample.Docking;
 
 /// <summary>
-/// VS-style output logger that writes timestamped messages to the Output panel.
-/// Register the output <see cref="TextBox"/> once, then call static methods from anywhere.
+/// VS-style output logger that writes timestamped messages to the <see cref="OutputPanel"/>.
+/// Register the panel once, then call static methods from anywhere.
 /// </summary>
 internal static class OutputLogger
 {
-    private static TextBox? _output;
+    private static OutputPanel? _panel;
 
     /// <summary>
-    /// Binds the logger to the Output panel's TextBox.
+    /// Binds the logger to an <see cref="OutputPanel"/> instance.
     /// </summary>
-    public static void Register(TextBox outputTextBox)
+    public static void Register(OutputPanel panel)
     {
-        _output = outputTextBox;
+        _panel = panel;
     }
 
     // ─── Public API ────────────────────────────────────────────────────
@@ -44,8 +44,8 @@ internal static class OutputLogger
     /// </summary>
     public static void Clear()
     {
-        if (_output is null) return;
-        _output.Dispatcher.Invoke(() => _output.Clear());
+        if (_panel is null) return;
+        _panel.TextBox.Dispatcher.Invoke(() => _panel.TextBox.Clear());
     }
 
     // ─── Internals ─────────────────────────────────────────────────────
@@ -57,12 +57,12 @@ internal static class OutputLogger
 
     private static void Append(string text)
     {
-        if (_output is null) return;
+        if (_panel is null) return;
 
-        _output.Dispatcher.Invoke(() =>
+        _panel.TextBox.Dispatcher.Invoke(() =>
         {
-            _output.AppendText(text);
-            _output.ScrollToEnd();
+            _panel.TextBox.AppendText(text);
+            _panel.ScrollToEndIfEnabled();
         });
     }
 }

@@ -14,6 +14,7 @@ using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.Docking.Core.Serialization;
 using WpfHexEditor.Docking.Wpf;
+using WpfHexEditor.Sample.Docking.Controls;
 
 namespace WpfHexEditor.Sample.Docking;
 
@@ -194,23 +195,7 @@ public partial class MainWindow : Window
 
     private static UIElement CreateOutputContent()
     {
-        var textBox = new TextBox
-        {
-            IsReadOnly = true,
-            TextWrapping = TextWrapping.Wrap,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Background = System.Windows.Media.Brushes.Transparent,
-            Foreground = System.Windows.Media.Brushes.LightGray,
-            FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono, Consolas, monospace"),
-            FontSize = 12,
-            BorderThickness = new Thickness(0)
-        };
-
-        OutputLogger.Register(textBox);
-        OutputLogger.Section("Output");
-        OutputLogger.Info("Docking system initialized.");
-
-        return textBox;
+        return new OutputPanel();
     }
 
     private static UIElement CreateHexEditorContent(string? filePath)
