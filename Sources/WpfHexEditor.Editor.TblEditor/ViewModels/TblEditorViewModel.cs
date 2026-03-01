@@ -1,3 +1,9 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
+
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -119,7 +125,9 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
 
     public TblEntryViewModel? SelectedEntry { get; set; }
 
-    /// <summary>Marks the document dirty from external callers (e.g. inline cell edits).</summary>
+    /// <summary>
+    /// Marks the document dirty from external callers (e.g. inline cell edits).
+    /// </summary>
     internal void MarkDirty() => IsDirty = true;
 
     // ── Undo / Redo state ──────────────────────────────────────────────────

@@ -1,3 +1,9 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
+
 using System.Diagnostics;
 using WpfHexEditor.Core.CharacterTable;
 using WpfHexEditor.Editor.TblEditor.Models;
@@ -5,7 +11,9 @@ using WpfHexEditor.Editor.TblEditor.ViewModels;
 
 namespace WpfHexEditor.Editor.TblEditor.Services;
 
-/// <summary>Conflict analyzer using Trie algorithm for prefix detection</summary>
+/// <summary>
+/// Conflict analyzer using Trie algorithm for prefix detection
+/// </summary>
 public class TblConflictAnalyzer
 {
     private class TrieNode

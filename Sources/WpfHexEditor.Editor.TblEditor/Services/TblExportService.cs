@@ -1,3 +1,9 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
+
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -6,7 +12,9 @@ using WpfHexEditor.Editor.TblEditor.Models;
 
 namespace WpfHexEditor.Editor.TblEditor.Services;
 
-/// <summary>Service for exporting TBL entries to various formats</summary>
+/// <summary>
+/// Service for exporting TBL entries to various formats
+/// </summary>
 public class TblExportService
 {
     #region CSV Export

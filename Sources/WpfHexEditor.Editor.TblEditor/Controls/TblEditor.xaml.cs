@@ -1,3 +1,9 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
+
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
@@ -48,7 +54,9 @@ public partial class TblEditor : UserControl, IDocumentEditor, IPropertyProvider
         DependencyProperty.Register(nameof(Source), typeof(TblStream), typeof(TblEditor),
             new PropertyMetadata(null, OnSourceChanged));
 
-    /// <summary>TBL stream bound to this editor. Setting it triggers an async reload.</summary>
+    /// <summary>
+    /// TBL stream bound to this editor. Setting it triggers an async reload.
+    /// </summary>
     public TblStream? Source
     {
         get => (TblStream?)GetValue(SourceProperty);
@@ -369,7 +377,9 @@ public partial class TblEditor : UserControl, IDocumentEditor, IPropertyProvider
         NotifyTitle();
     }
 
-    /// <summary>Persists the current entries to <paramref name="filePath"/> using <see cref="TblExportService"/>.</summary>
+    /// <summary>
+    /// Persists the current entries to <paramref name="filePath"/> using <see cref="TblExportService"/>.
+    /// </summary>
     private void PersistToFile(string filePath)
     {
         if (_vm.Source == null) return;

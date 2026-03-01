@@ -1,10 +1,18 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
+
 using System.Text.RegularExpressions;
 using WpfHexEditor.Editor.TblEditor.Models;
 using WpfHexEditor.Editor.TblEditor.ViewModels;
 
 namespace WpfHexEditor.Editor.TblEditor.Services;
 
-/// <summary>Service for validating TBL entries</summary>
+/// <summary>
+/// Service for validating TBL entries
+/// </summary>
 public class TblValidationService
 {
     public TblValidationResult ValidateEntry(string? entry, string? value)

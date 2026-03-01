@@ -1,8 +1,8 @@
-﻿//////////////////////////////////////////////
+//////////////////////////////////////////////
 // Apache 2.0  - 2026
 // Custom JsonEditor - Main Editor Control (Phase 1 - Foundation)
 // Author : Claude Sonnet 4.5
-// Contributors: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 // Inspired by HexViewport.cs custom rendering pattern
 //////////////////////////////////////////////
 
@@ -1494,7 +1494,9 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         private System.Windows.Controls.TextBox? _findTextBox;
         private string? _lastFindQuery;
 
-        /// <summary>Shows the modeless find bar (public entry point for host).</summary>
+        /// <summary>
+        /// Shows the modeless find bar (public entry point for host).
+        /// </summary>
         public void ShowFindBar()
         {
             if (_findWindow?.IsVisible == true)
@@ -1652,7 +1654,9 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             InvalidateVisual();
         }
 
-        /// <summary>Navigates to the next find result (wraps around).</summary>
+        /// <summary>
+        /// Navigates to the next find result (wraps around).
+        /// </summary>
         public void FindNext()
         {
             if (_findResults.Count == 0 && !string.IsNullOrEmpty(_lastFindQuery))
@@ -1662,7 +1666,9 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             NavigateToFindMatch();
         }
 
-        /// <summary>Navigates to the previous find result (wraps around).</summary>
+        /// <summary>
+        /// Navigates to the previous find result (wraps around).
+        /// </summary>
         public void FindPrevious()
         {
             if (_findResults.Count == 0 && !string.IsNullOrEmpty(_lastFindQuery))
@@ -3634,7 +3640,9 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         // ── State ──────────────────────────────────────────────────────────
 
-        /// <summary>True when the document has unsaved changes.</summary>
+        /// <summary>
+        /// True when the document has unsaved changes.
+        /// </summary>
         public bool IsDirty => _isDirty;
 
         // ── IsReadOnly DP ─────────────────────────────────────────────────

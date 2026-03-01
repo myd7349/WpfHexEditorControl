@@ -1,3 +1,9 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
+
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -7,7 +13,9 @@ using WpfHexEditor.Editor.TblEditor.Models;
 
 namespace WpfHexEditor.Editor.TblEditor.Services;
 
-/// <summary>Service for .tblx extended format operations</summary>
+/// <summary>
+/// Service for .tblx extended format operations
+/// </summary>
 public class TblxService
 {
     private static readonly JsonSerializerOptions _jsonOptions = new()
