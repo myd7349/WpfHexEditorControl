@@ -15,7 +15,7 @@
         xmlns:components="clr-namespace:WpfHexEditor.Sample.Main.Views.Components"
         xmlns:hexEditor="clr-namespace:WpfHexEditor.HexEditor;assembly=WpfHexEditor.HexEditor"
         xmlns:hexControls="clr-namespace:WpfHexEditor.HexEditor.Controls;assembly=WpfHexEditor.HexEditor"
-        xmlns:hexPanels="clr-namespace:WpfHexEditor.WindowPanels.Panels;assembly=WpfHexEditor.WindowPanels"
+        xmlns:hexPanels="clr-namespace:WpfHexEditor.Panels.BinaryAnalysis;assembly=WpfHexEditor.Panels.BinaryAnalysis"
         xmlns:barChart="clr-namespace:WpfHexEditor.BarChart.Controls;assembly=WpfHexEditor.BarChart"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}"
