@@ -544,7 +544,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (contentId != null)
         {
             var item = _layout.FindItemByContentId(contentId);
-            if (item != null) _engine.Activate(item);
+            if (item?.Owner != null) item.Owner.ActiveItem = item;
         }
         else
         {
