@@ -11,6 +11,7 @@
 - [System Architecture](#system-architecture)
 - [Layered Architecture](#layered-architecture)
 - [Core Components](#core-components)
+- [Rendering Engine](#rendering-engine)
 - [Data Flow](#data-flow)
 - [Key Innovations](#key-innovations)
 - [Performance Characteristics](#performance-characteristics)
@@ -543,6 +544,217 @@ protected override void OnRender(DrawingContext dc)
 | Scroll update | ~120ms | ~2ms | **98% faster** |
 | Selection change | ~80ms | ~1ms | **99% faster** |
 | Memory (10MB file) | ~950MB | ~85MB | **91% less** |
+
+---
+
+## 🖥️ Rendering Engine
+
+**Location**: [HexViewport.cs](../../Sources/WpfHexEditor.HexEditor/Controls/HexViewport.cs) — 3200+ lines
+
+HexViewport is a **FrameworkElement** that bypasses WPF's template/binding/virtualization overhead entirely. It draws hex content directly via `DrawingContext` (WPF's retained-mode drawing API), achieving **99% faster rendering** than the V1 ItemsControl approach.
+
+### Architecture Overview
+
+```mermaid
+graph TB
+    subgraph "HexViewport (FrameworkElement)"
+        direction TB
+
+        subgraph "Data Layer"
+            HexLines["HexLine[]<br/>(from ViewModel)"]
+            ByteData["ByteData<br/>VirtualPos, Value, Action,<br/>HexRect, AsciiRect"]
+        end
+
+        subgraph "Rendering Pipeline (OnRender)"
+            direction TB
+            BG["1. DrawRectangle<br/>(background)"]
+            Pop["2. PopulateByteRects<br/>(geometry pre-pass)"]
+            CBG["3. DrawCustomBackgroundBlocks<br/>(format structure overlay)"]
+            TBL["4. DrawTblBackgrounds<br/>(TBL character types)"]
+            HL["5. DrawHighlights<br/>(selection, search,<br/>auto-highlight, hover)"]
+            Lines["6. DrawLineContent × N<br/>(offset + hex + ASCII)"]
+            OV["7. UpdateOverlays<br/>(cursor blink + hover preview)"]
+        end
+
+        subgraph "Cache System"
+            CW["CellWidth Cache<br/>(byteCount, fontSize,<br/>fontFamily, visualType)"]
+            OW["OffsetWidth Cache<br/>(fontSize, fontFamily,<br/>visualType)"]
+            HT["HexText Cache<br/>Dictionary&lt;(text,alt),<br/>FormattedText&gt;"]
+            AT["AsciiText Cache<br/>Dictionary&lt;string,<br/>FormattedText&gt;"]
+        end
+
+        subgraph "Visual Layers"
+            Main["Main DrawingGroup<br/>(OnRender — full repaint)"]
+            CursorOV["Cursor Overlay<br/>(DrawingVisual #0)<br/>blink timer, caret/cell"]
+            HoverOV["Hover Overlay<br/>(DrawingVisual #1)<br/>mouse preview"]
+        end
+    end
+
+    HexLines --> Pop
+    ByteData --> Pop
+    BG --> Pop --> CBG --> TBL --> HL --> Lines --> OV
+
+    Pop --> CW
+    Lines --> HT
+    Lines --> AT
+    Lines --> OW
+
+    Lines --> Main
+    OV --> CursorOV
+    OV --> HoverOV
+
+    style BG fill:#f3e5f5,stroke:#7b1fa2
+    style Pop fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style HL fill:#e8f5e9,stroke:#388e3c
+    style Lines fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style OV fill:#fce4ec,stroke:#c2185b
+    style CW fill:#fff9c4,stroke:#f57c00
+    style HT fill:#fff9c4,stroke:#f57c00
+    style AT fill:#fff9c4,stroke:#f57c00
+    style OW fill:#fff9c4,stroke:#f57c00
+    style Main fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+    style CursorOV fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style HoverOV fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+```
+
+### Rendering Pipeline
+
+The `OnRender` method executes **7 sequential passes** on each frame:
+
+| Pass | Method | Purpose |
+|------|--------|---------|
+| 1 | `DrawRectangle` | Fill background |
+| 2 | `PopulateByteRects()` | Pre-compute `HexRect` / `AsciiRect` on each `ByteData` (no drawing) |
+| 3 | `DrawCustomBackgroundBlocks()` | Render format structure overlay (parsed fields colored regions) |
+| 4 | `DrawTblBackgrounds()` | Render TBL character type backgrounds (EndBlock, EndLine, Japonais) |
+| 5 | `DrawHighlights()` | Render selection, search results, auto-highlight, hover highlight |
+| 6 | `DrawLineContent()` × N | For each visible line: `DrawOffset` → `DrawHexByte` × B → `DrawAsciiByte` × B |
+| 7 | `UpdateCursorOverlay()` + `UpdateHoverOverlay()` | Refresh the two independent DrawingVisual layers |
+
+### Column Layout
+
+Each line is rendered left-to-right as four columns:
+
+```
+┌──────────┬──────────────────────────────────────────────┬───┬────────────────┐
+│  Offset  │                 Hex Bytes                     │ │ │  ASCII Bytes   │
+│ 00000000 │ 48 65 6C 6C 6F 20 57 6F  72 6C 64 21 0D 0A  │ │ │ Hello World!.. │
+│ 0000000E │ 54 68 69 73 20 69 73 20  61 20 74 65 73 74  │ │ │ This is a test │
+└──────────┴──────────────────────────────────────────────┴───┴────────────────┘
+              ↑ byte grouping (configurable: 4/8/16)       ↑ separator bar
+```
+
+- **Offset** — Line address (hex), fixed font size 13, togglable via `ShowOffset`
+- **Hex Bytes** — Each byte drawn individually via `DrawHexByte`, colored by `ByteAction` (modified=red, inserted=green, deleted=strikethrough)
+- **Separator** — Vertical line between hex and ASCII columns
+- **ASCII** — Character representation via `DrawAsciiByte`, with TBL multi-byte greedy matching (8→2→1 bytes)
+
+### Cache System
+
+Four dictionaries avoid redundant `FormattedText` creation (the most expensive WPF text operation):
+
+| Cache | Key | Value | Invalidation |
+|-------|-----|-------|--------------|
+| `_cellWidthCache` | `(byteCount, fontSize, fontFamily, visualType)` | `double` (pixel width) | Font/DPI change |
+| `_offsetWidthCache` | `(fontSize, fontFamily, visualType)` | `double` (pixel width) | Font/DPI change |
+| `_hexTextCache` | `(text, isAlternate)` | `FormattedText` | Font, DPI, or VisualType change |
+| `_asciiTextCache` | `string` (display char) | `FormattedText` | DPI change |
+
+All brushes are **frozen** (`Brush.Freeze()`) to enable cross-thread access and reduce GC pressure.
+
+### Dirty-Line Tracking
+
+A `[Flags]` enum tracks **what changed** to enable future partial-render optimization:
+
+```csharp
+[Flags]
+internal enum DirtyReason
+{
+    None             = 0,
+    LinesChanged     = 1,   // Scroll, data reload → ALL lines dirty
+    SelectionChanged = 2,   // Selection range changed → affected lines
+    CursorMoved      = 4,   // Cursor position changed → old + new line
+    ByteModified     = 8,   // Data changed → affected line
+    EditingChanged   = 16,  // Editing state changed → affected line
+    HighlightsChanged= 32,  // Auto-highlight or search results → all lines
+    FullInvalidate   = 64,  // Font, DPI, colors, TBL, layout → ALL lines
+}
+```
+
+> **Note**: Because `FrameworkElement.OnRender` replaces the **entire** DrawingGroup on each call, partial line skipping is not possible today. The dirty tracking is retained for diagnostics (`LastRenderReason`) and as groundwork for a future **DrawingVisual-per-line** architecture.
+
+### Dual Visual Layer (Overlays)
+
+HexViewport declares `VisualChildrenCount = 2` — two independent `DrawingVisual` layers that repaint **without** triggering a full `OnRender`:
+
+```mermaid
+graph LR
+    subgraph "HexViewport Visual Tree"
+        Main["Main Content<br/>(OnRender DrawingGroup)<br/>background, highlights,<br/>offset, hex, ASCII"]
+        Cursor["DrawingVisual #0<br/>Cursor Overlay<br/>blink timer (500ms)<br/>caret line or cell fill"]
+        Hover["DrawingVisual #1<br/>Hover Overlay<br/>mouse position preview<br/>hex + ASCII highlight"]
+    end
+
+    Main -.-> Cursor
+    Main -.-> Hover
+
+    style Main fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Cursor fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Hover fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+```
+
+| Layer | Visual | Update Trigger | Cost |
+|-------|--------|---------------|------|
+| Main content | `OnRender` DrawingGroup | Scroll, selection, data change | Full repaint (~2-5ms) |
+| Cursor overlay | `DrawingVisual #0` | 500ms blink timer | ~0.1ms (single rect) |
+| Hover overlay | `DrawingVisual #1` | `MouseMove` | ~0.1ms (single rect) |
+
+This separation means **cursor blinking and mouse hover never trigger a full re-render** — they only repaint their own lightweight DrawingVisual.
+
+### Data Model
+
+```mermaid
+classDiagram
+    class HexLine {
+        +long LineNumber
+        +VirtualPosition StartPosition
+        +List~ByteData~ Bytes
+        +string OffsetLabel
+    }
+
+    class ByteData {
+        +VirtualPosition VirtualPos
+        +PhysicalPosition? PhysicalPos
+        +byte Value
+        +byte[] Values
+        +ByteSizeType ByteSize
+        +ByteOrderType ByteOrder
+        +ByteAction Action
+        +bool IsSelected
+        +bool IsHighlighted
+        +bool IsCursor
+        +Rect? HexRect
+        +Rect? AsciiRect
+    }
+
+    HexLine "1" --> "*" ByteData : Bytes
+
+    class DirtyReason {
+        <<enumeration>>
+        None
+        LinesChanged
+        SelectionChanged
+        CursorMoved
+        ByteModified
+        EditingChanged
+        HighlightsChanged
+        FullInvalidate
+    }
+```
+
+- `HexLine` is produced by **HexEditorViewModel** and contains a row of `ByteData`
+- `ByteData.HexRect` / `AsciiRect` are populated by `PopulateByteRects()` (pass 2) and consumed by `DrawHighlights()` (pass 5) for precise hit-testing and highlight drawing
+- `ByteAction` drives per-byte colorization: `Nothing` (default), `Modified` (red), `Added` (green), `Deleted` (strikethrough)
 
 ---
 
