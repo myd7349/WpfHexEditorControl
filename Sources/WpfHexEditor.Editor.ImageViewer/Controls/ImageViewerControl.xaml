@@ -1,0 +1,100 @@
+<!--
+    Apache 2.0  2026
+    Author : Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Sonnet 4.6
+-->
+
+<UserControl x:Class="WpfHexEditor.Editor.ImageViewer.Controls.ImageViewerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource TE_Background}"
+             Focusable="True">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <ToolBar Grid.Row="0" Background="{DynamicResource TE_LineNumberBackground}">
+            <Button x:Name="BtnZoomIn"  Content="+"   ToolTip="Zoom In  (Ctrl+="   Click="BtnZoomIn_Click"  Width="26" Height="22"/>
+            <Button x:Name="BtnZoomOut" Content="-"   ToolTip="Zoom Out (Ctrl+-)"  Click="BtnZoomOut_Click" Width="26" Height="22"/>
+            <Button x:Name="BtnZoom100" Content="1:1" ToolTip="Actual Size"        Click="BtnZoom100_Click" Width="30" Height="22"/>
+            <Button x:Name="BtnZoomFit" Content="⤢"  ToolTip="Fit to Window"     Click="BtnZoomFit_Click" Width="26" Height="22"/>
+            <Separator/>
+            <TextBlock x:Name="ZoomText" Text="100%" VerticalAlignment="Center" Padding="4,0"
+                       Foreground="{DynamicResource TE_LineNumberForeground}"/>
+        </ToolBar>
+
+        <!-- Image area with scroll and zoom -->
+        <ScrollViewer x:Name="ImageScroll"
+                      Grid.Row="1"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto"
+                      Background="{DynamicResource TE_Background}"
+                      PreviewMouseWheel="ImageScroll_PreviewMouseWheel"
+                      MouseMove="ImageScroll_MouseMove"
+                      MouseDown="ImageScroll_MouseDown"
+                      MouseUp="ImageScroll_MouseUp">
+            <Grid x:Name="ImageContainer">
+                <!-- Checkerboard pattern for transparency -->
+                <Grid.Background>
+                    <DrawingBrush TileMode="Tile" Viewport="0,0,16,16" ViewportUnits="Absolute">
+                        <DrawingBrush.Drawing>
+                            <DrawingGroup>
+                                <GeometryDrawing Brush="#CCCCCC">
+                                    <GeometryDrawing.Geometry>
+                                        <RectangleGeometry Rect="0,0,16,16"/>
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                                <GeometryDrawing Brush="#AAAAAA">
+                                    <GeometryDrawing.Geometry>
+                                        <GeometryGroup>
+                                            <RectangleGeometry Rect="0,0,8,8"/>
+                                            <RectangleGeometry Rect="8,8,8,8"/>
+                                        </GeometryGroup>
+                                    </GeometryDrawing.Geometry>
+                                </GeometryDrawing>
+                            </DrawingGroup>
+                        </DrawingBrush.Drawing>
+                    </DrawingBrush>
+                </Grid.Background>
+
+                <Image x:Name="ImageDisplay"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       Stretch="None"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Margin="16"/>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Status bar -->
+        <StatusBar Grid.Row="2"
+                   Background="{DynamicResource TE_LineNumberBackground}"
+                   Foreground="{DynamicResource TE_LineNumberForeground}"
+                   Height="22">
+            <StatusBarItem>
+                <TextBlock x:Name="DimensionsText" Text="—" Padding="4,0"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock x:Name="ColorModeText" Text="—" Padding="4,0"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock x:Name="FileSizeText" Text="—" Padding="4,0"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem>
+                <TextBlock x:Name="DpiText" Text="—" Padding="4,0"/>
+            </StatusBarItem>
+            <Separator/>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock x:Name="PixelText" Text="" Padding="4,0"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</UserControl>
