@@ -39,4 +39,12 @@ public interface IErrorPanel
     /// The host should open/activate the file and scroll to the indicated offset/line.
     /// </summary>
     event EventHandler<DiagnosticEntry>? EntryNavigationRequested;
+
+    /// <summary>
+    /// Raised when the user explicitly requests the file be opened in the built-in
+    /// text editor (context menu "Open in Text Editor").
+    /// The host should open the file via the text editor factory and navigate to
+    /// <see cref="DiagnosticEntry.Line"/>/<see cref="DiagnosticEntry.Column"/>.
+    /// </summary>
+    event EventHandler<DiagnosticEntry>? OpenInTextEditorRequested;
 }

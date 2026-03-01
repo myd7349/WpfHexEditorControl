@@ -58,6 +58,7 @@ public interface IDocumentEditor
     event EventHandler?         CanRedoChanged;
     event EventHandler<string>? TitleChanged;     // "file.tbl *" — host updates the tab
     event EventHandler<string>? StatusMessage;    // toast / host statusbar
+    event EventHandler<string>? OutputMessage;   // verbose log → host Output panel
     event EventHandler?         SelectionChanged; // host re-queries CanExecute on commands
 
     // ── Long-running operations ───────────────────────────────────────────
