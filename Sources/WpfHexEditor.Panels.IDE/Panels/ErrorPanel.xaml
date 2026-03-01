@@ -345,6 +345,7 @@
                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
                   MouseDoubleClick="OnEntryDoubleClick"
                   KeyDown="OnEntryKeyDown"
+                  ContextMenuOpening="OnErrListContextMenuOpening"
                   GridViewColumnHeader.Click="OnColumnHeaderClick">
             <ListView.View>
                 <GridView>

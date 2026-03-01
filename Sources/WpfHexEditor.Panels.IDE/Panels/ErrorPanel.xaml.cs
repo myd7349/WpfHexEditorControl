@@ -44,6 +44,13 @@ public partial class ErrorPanel : UserControl, IErrorPanel
 
     public event EventHandler<DiagnosticEntry>? EntryNavigationRequested;
 
+    /// <summary>
+    /// Raised when the user chooses "Open in Text Editor" from the context menu.
+    /// The host should open the file in the built-in text editor and navigate to
+    /// <see cref="DiagnosticEntry.Line"/>/<see cref="DiagnosticEntry.Column"/>.
+    /// </summary>
+    public event EventHandler<DiagnosticEntry>? OpenInTextEditorRequested;
+
     // ── Ctor ─────────────────────────────────────────────────────────────────
     public ErrorPanel()
     {
@@ -214,6 +221,48 @@ public partial class ErrorPanel : UserControl, IErrorPanel
             CopySelectedEntry();
             e.Handled = true;
         }
+    }
+
+    // ── Context menu ──────────────────────────────────────────────────────────
+
+    private void OnErrListContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        // Walk up the visual tree to find the ListViewItem that was right-clicked.
+        DependencyObject? dep = e.OriginalSource as DependencyObject;
+        while (dep != null && dep is not ListViewItem)
+            dep = System.Windows.Media.VisualTreeHelper.GetParent(dep);
+
+        if (dep is not ListViewItem lvi || lvi.DataContext is not DiagnosticEntryVm vm)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        var entry = vm.Entry;
+        var cm    = new ContextMenu();
+
+        AddCtxItem(cm, "Open with Default Editor", () => EntryNavigationRequested?.Invoke(this, entry));
+        AddCtxItem(cm, "Open in Text Editor",       () => OpenInTextEditorRequested?.Invoke(this, entry));
+        cm.Items.Add(new Separator());
+        AddCtxItem(cm, "Copy Message", () =>
+        {
+            var text = string.Join("\t",
+                entry.Severity,
+                entry.Code,
+                entry.Description,
+                entry.FileName ?? "",
+                entry.Line.HasValue ? $"(line {entry.Line})" : "");
+            try { Clipboard.SetText(text); } catch { }
+        });
+
+        lvi.ContextMenu = cm;
+    }
+
+    private static void AddCtxItem(ContextMenu cm, string header, Action action)
+    {
+        var item = new MenuItem { Header = header };
+        item.Click += (_, _) => action();
+        cm.Items.Add(item);
     }
 
     private void OnColumnHeaderClick(object sender, RoutedEventArgs e)

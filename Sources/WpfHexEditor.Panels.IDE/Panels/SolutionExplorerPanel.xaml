@@ -411,7 +411,6 @@
                   ContextMenuOpening="OnContextMenuOpening"
                   AllowDrop="True"
                   PreviewMouseLeftButtonDown="OnTreeMouseLeftButtonDown"
-                  MouseLeftButtonUp="OnTreeMouseLeftButtonUp"
                   MouseMove="OnTreeMouseMove"
                   DragOver="OnTreeDragOver"
                   Drop="OnTreeDrop"
