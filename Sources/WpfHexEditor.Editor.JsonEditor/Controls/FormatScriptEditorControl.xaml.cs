@@ -14,8 +14,8 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using WpfHexEditor.Editor.JsonEditor.Models;
 
 namespace WpfHexEditor.Editor.JsonEditor.Controls
@@ -263,8 +263,8 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             try
             {
                 var jsonText = JsonEditorControl.GetText();
-                var parsed = JToken.Parse(jsonText);
-                var formatted = parsed.ToString(Formatting.Indented);
+                var parsed = JsonNode.Parse(jsonText);
+                var formatted = parsed!.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
                 JsonEditorControl.LoadText(formatted);
                 _isModified = true;
                 UpdateStatusBar();
