@@ -2,6 +2,7 @@
 // Apache 2.0  - 2026
 // Custom Parser Templates System
 // Author : Claude Sonnet 4.5
+// Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
 using Microsoft.Win32;
@@ -19,7 +20,9 @@ using System.Windows.Controls;
 
 namespace WpfHexEditor.Panels.BinaryAnalysis
 {
-    /// <summary>Event args raised when the user clicks "Apply Template".</summary>
+    /// <summary>
+    /// Event args raised when the user clicks "Apply Template".
+    /// </summary>
     public sealed class TemplateApplyEventArgs : EventArgs
     {
         public CustomTemplate Template { get; }

@@ -2,6 +2,7 @@
 // Apache 2.0  - 2026
 // File Comparison Side-by-Side Diff Panel
 // Author : Claude Sonnet 4.5
+// Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
 using Microsoft.Win32;

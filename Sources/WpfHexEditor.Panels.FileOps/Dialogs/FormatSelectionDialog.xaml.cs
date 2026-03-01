@@ -1,8 +1,9 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
 // Format Selection Dialog for Ambiguous Detection
 // Author: Derek Tremblay
-// Contributors: Claude Sonnet 4.5
+// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
 //////////////////////////////////////////////
 
 using System;

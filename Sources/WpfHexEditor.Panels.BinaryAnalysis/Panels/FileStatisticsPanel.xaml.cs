@@ -2,6 +2,7 @@
 // Apache 2.0  - 2026
 // File Statistics Dashboard
 // Author : Claude Sonnet 4.5
+// Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
 using System.Collections.Generic;
