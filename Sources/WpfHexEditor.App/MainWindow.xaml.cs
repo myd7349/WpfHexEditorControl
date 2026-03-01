@@ -551,9 +551,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     hexEditor.LoadFormatDefinition(fmtItem.AbsolutePath);
             }
 
-            hexEditor.OpenFile(filePath);
-            OutputLogger.Info($"Opened: {filePath}");
-            return hexEditor;
+            try
+            {
+                hexEditor.OpenFile(filePath);
+                OutputLogger.Info($"Opened: {filePath}");
+                return hexEditor;
+            }
+            catch (IOException ex)
+            {
+                var msg = $"Cannot open '{Path.GetFileName(filePath)}': {ex.Message}";
+                OutputLogger.Error(msg);
+                return MakeErrorBlock(msg);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                var msg = $"Access denied '{Path.GetFileName(filePath)}': {ex.Message}";
+                OutputLogger.Error(msg);
+                return MakeErrorBlock(msg);
+            }
         }
 
         OutputLogger.Error($"File not found: {filePath}");
@@ -567,6 +582,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             FontSize = 14
         };
     }
+
+    private static TextBlock MakeErrorBlock(string message) => new()
+    {
+        Text                = message,
+        Foreground          = System.Windows.Media.Brushes.OrangeRed,
+        Margin              = new Thickness(8),
+        TextWrapping        = TextWrapping.Wrap,
+        VerticalAlignment   = VerticalAlignment.Top,
+        FontSize            = 13
+    };
 
     private UIElement CreateProjectItemContent(DockItem item)
     {
@@ -997,7 +1022,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnFindNext(object sender, RoutedEventArgs e)
     {
         if (ActiveHexEditor is { } hex)
-            hex.ShowAdvancedSearchDialog(this);          // HexEditor has integrated F3 in the dialog
+            hex.ShowQuickSearchBar();   // F3: show/focus inline bar
         else if (ActiveDocumentEditor is WpfHexEditor.Editor.JsonEditor.Controls.JsonEditor jsonEd)
             jsonEd.FindNext();
     }
@@ -1005,7 +1030,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnFindPrevious(object sender, RoutedEventArgs e)
     {
         if (ActiveHexEditor is { } hex)
-            hex.ShowAdvancedSearchDialog(this);
+            hex.ShowQuickSearchBar();   // Shift+F3: show/focus inline bar
         else if (ActiveDocumentEditor is WpfHexEditor.Editor.JsonEditor.Controls.JsonEditor jsonEd)
             jsonEd.FindPrevious();
     }
@@ -1167,6 +1192,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     ActiveHexEditor      = null;
                     RefreshText.Text     = "";
                 }
+                hex.Close();   // Release the underlying FileStream immediately
             }
 
             // Save EditorConfig for project-item tabs (M6)

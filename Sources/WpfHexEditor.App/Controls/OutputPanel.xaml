@@ -63,20 +63,22 @@
             </StackPanel>
         </Border>
 
-        <!-- Output TextBox -->
-        <TextBox Grid.Row="1"
-                 x:Name="OutputTextBox"
-                 IsReadOnly="True"
-                 TextWrapping="NoWrap"
-                 AcceptsReturn="True"
-                 VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto"
-                 Background="{DynamicResource DockBackgroundBrush}"
-                 Foreground="{DynamicResource DockMenuForegroundBrush}"
-                 CaretBrush="{DynamicResource DockMenuForegroundBrush}"
-                 BorderThickness="0"
-                 FontFamily="Cascadia Mono, Consolas, monospace"
-                 FontSize="12"
-                 Padding="4,2" />
+        <!-- Output RichTextBox (colored per log level) -->
+        <RichTextBox Grid.Row="1"
+                     x:Name="OutputTextBox"
+                     IsReadOnly="True"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"
+                     Background="{DynamicResource DockBackgroundBrush}"
+                     Foreground="{DynamicResource DockMenuForegroundBrush}"
+                     CaretBrush="{DynamicResource DockMenuForegroundBrush}"
+                     BorderThickness="0"
+                     FontFamily="Cascadia Mono, Consolas, monospace"
+                     FontSize="12"
+                     Padding="4,2">
+            <RichTextBox.Document>
+                <FlowDocument PagePadding="0" />
+            </RichTextBox.Document>
+        </RichTextBox>
     </Grid>
 </UserControl>
