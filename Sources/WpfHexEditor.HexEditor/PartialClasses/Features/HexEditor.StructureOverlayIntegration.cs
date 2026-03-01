@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Media;
 using WpfHexEditor.Core.Interfaces;
@@ -188,9 +190,9 @@ namespace WpfHexEditor.HexEditor
 
             UpdateStructureOverlayFileBytes();
 
-            // Convert FormatDefinition to JObject for the panel
-            var jobj = Newtonsoft.Json.Linq.JObject.FromObject(_detectedFormat);
-            _structureOverlayPanel.AddOverlayFromFormat(jobj);
+            // Convert FormatDefinition to JsonObject for the panel
+            var jsonObj = JsonSerializer.SerializeToNode(_detectedFormat)!.AsObject();
+            _structureOverlayPanel.AddOverlayFromFormat(jsonObj);
         }
 
         #endregion

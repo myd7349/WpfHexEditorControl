@@ -9,7 +9,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using Newtonsoft.Json.Linq;
+using System.Text.Json.Nodes;
 using WpfHexEditor.Core.Interfaces;
 using WpfHexEditor.Core.Models.StructureOverlay;
 using WpfHexEditor.Core.Services;
@@ -62,7 +62,7 @@ namespace WpfHexEditor.Panels.BinaryAnalysis
         /// <summary>
         /// Add a structure overlay from format definition
         /// </summary>
-        public void AddOverlayFromFormat(JObject formatDefinition)
+        public void AddOverlayFromFormat(JsonObject formatDefinition)
         {
             if (_currentFileBytes == null || formatDefinition == null)
                 return;
@@ -153,7 +153,7 @@ namespace WpfHexEditor.Panels.BinaryAnalysis
                 try
                 {
                     var json = System.IO.File.ReadAllText(dialog.FileName);
-                    var formatDef = JObject.Parse(json);
+                    var formatDef = JsonNode.Parse(json)!.AsObject();
                     AddOverlayFromFormat(formatDef);
                 }
                 catch (Exception ex)
