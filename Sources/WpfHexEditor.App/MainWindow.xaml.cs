@@ -1070,13 +1070,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnSEFolderFromDiskRequested(object? sender, FolderFromDiskRequestedEventArgs e)
     {
-        var dlg = new System.Windows.Forms.FolderBrowserDialog
+        var dlg = new Microsoft.Win32.OpenFolderDialog
         {
-            Description  = "Select the folder to import",
-            UseDescriptionForTitle = true,
+            Title = "Select the folder to import",
         };
-        if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
-        _ = ImportFolderFromDiskAsync(e.Project, dlg.SelectedPath, e.ParentFolderId);
+        if (dlg.ShowDialog() != true) return;
+        _ = ImportFolderFromDiskAsync(e.Project, dlg.FolderName, e.ParentFolderId);
     }
 
     private async Task ImportFolderFromDiskAsync(IProject project, string physicalPath, string? parentId)

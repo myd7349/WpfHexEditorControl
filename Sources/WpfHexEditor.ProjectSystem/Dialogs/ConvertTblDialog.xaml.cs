@@ -6,7 +6,6 @@
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Input;
 
 namespace WpfHexEditor.ProjectSystem.Dialogs;
@@ -104,16 +103,15 @@ public partial class ConvertTblDialog : Window
 
     private void OnBrowseCustomFolder(object sender, RoutedEventArgs e)
     {
-        using var dlg = new FolderBrowserDialog
+        var dlg = new Microsoft.Win32.OpenFolderDialog
         {
-            Description         = "Select output folder for the converted TBLX file",
-            UseDescriptionForTitle = true,
-            SelectedPath        = _targetFolder,
+            Title             = "Select output folder for the converted TBLX file",
+            InitialDirectory  = _targetFolder,
         };
-        if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        if (dlg.ShowDialog() == true)
         {
-            CustomFolderBox.Text = dlg.SelectedPath;
-            _targetFolder = dlg.SelectedPath;
+            CustomFolderBox.Text = dlg.FolderName;
+            _targetFolder = dlg.FolderName;
             RefreshTargetText();
         }
     }

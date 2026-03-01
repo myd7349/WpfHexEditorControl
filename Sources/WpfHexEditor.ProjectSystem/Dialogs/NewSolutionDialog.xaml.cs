@@ -5,7 +5,6 @@
 
 using System.IO;
 using System.Windows;
-using System.Windows.Forms;
 
 namespace WpfHexEditor.ProjectSystem.Dialogs;
 
@@ -43,13 +42,13 @@ public partial class NewSolutionDialog : Window
 
     private void OnBrowseLocation(object sender, RoutedEventArgs e)
     {
-        using var dlg = new FolderBrowserDialog
+        var dlg = new Microsoft.Win32.OpenFolderDialog
         {
-            Description  = "Select parent folder for the new solution",
-            SelectedPath = LocationBox.Text,
+            Title            = "Select parent folder for the new solution",
+            InitialDirectory = LocationBox.Text,
         };
-        if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            LocationBox.Text = dlg.SelectedPath;
+        if (dlg.ShowDialog() == true)
+            LocationBox.Text = dlg.FolderName;
     }
 
     private void OnOk(object sender, RoutedEventArgs e)

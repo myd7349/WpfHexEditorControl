@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Forms;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.ProjectSystem.Templates;
 
@@ -129,13 +128,13 @@ public partial class NewFileDialog : Window
 
     private void OnBrowseLocation(object sender, RoutedEventArgs e)
     {
-        using var dlg = new FolderBrowserDialog
+        var dlg = new Microsoft.Win32.OpenFolderDialog
         {
-            Description  = "Select folder for the new file",
-            SelectedPath = LocationBox.Text
+            Title            = "Select folder for the new file",
+            InitialDirectory = LocationBox.Text,
         };
-        if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            LocationBox.Text = dlg.SelectedPath;
+        if (dlg.ShowDialog() == true)
+            LocationBox.Text = dlg.FolderName;
     }
 
     private void OnOk(object sender, RoutedEventArgs e)
