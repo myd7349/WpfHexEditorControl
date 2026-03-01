@@ -217,4 +217,10 @@
     <SolidColorBrush x:Key="PP_DescriptionForegroundBrush"   Color="#AAAAAA"/>
     <SolidColorBrush x:Key="PP_EditableForegroundBrush"      Color="#9CDCFE"/>
     <SolidColorBrush x:Key="PP_BorderBrush"                  Color="#3F3F46"/>
+
+    <!-- Generic Dialog Resources (AdvancedSearch, ProjectDialogs, etc.) -->
+    <Color x:Key="AccentColor">#1176D2</Color>
+    <SolidColorBrush x:Key="BackgroundBrush"  Color="{StaticResource DockWindowBackgroundColor}"/>
+    <SolidColorBrush x:Key="ForegroundBrush"  Color="{StaticResource DockMenuForegroundColor}"/>
+    <SolidColorBrush x:Key="AccentBrush"      Color="{StaticResource AccentColor}"/>
 </ResourceDictionary>
