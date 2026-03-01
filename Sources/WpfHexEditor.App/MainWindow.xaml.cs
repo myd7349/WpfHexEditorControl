@@ -111,6 +111,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ErrorPanel? _errorPanel;
     private const string ErrorPanelContentId = "panel-errors";
 
+    // Output Panel (persistent singleton — pre-created so OutputLogger works from startup)
+    private OutputPanel? _outputPanel;
+
     // SolutionManager
     private readonly ISolutionManager _solutionManager = SolutionManager.Instance;
 
@@ -231,6 +234,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Register VS-style project templates
         ProjectTemplateRegistry.RegisterDefaults();
+
+        // Pre-create OutputPanel so OutputLogger.Register is called before any Info/Error calls
+        _outputPanel = new OutputPanel();
 
         LoadSavedLayoutOrDefault();
         PopulateRecentMenus();
@@ -665,7 +671,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return _customParserPanel;
     }
 
-    private static UIElement CreateOutputContent() => new OutputPanel();
+    private UIElement CreateOutputContent()
+    {
+        _outputPanel ??= new OutputPanel();
+        return _outputPanel;
+    }
 
     private UIElement CreateParsedFieldsContent()
     {
@@ -986,20 +996,45 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             initialContent:  dlg.SelectedTemplate.CreateContent());
     }
 
-    private void OnSEAddExistingItem(object? sender, AddItemRequestedEventArgs e)
+    private async void OnSEAddExistingItem(object? sender, AddItemRequestedEventArgs e)
     {
-        var dlg = new OpenFileDialog
-        {
-            Title  = "Add Existing Item",
-            Filter = "All Files (*.*)|*.*" +
-                     "|Binary Files (*.bin;*.rom)|*.bin;*.rom" +
-                     "|TBL Files (*.tbl;*.tblx;*.csv)|*.tbl;*.tblx;*.csv" +
-                     "|IPS/BPS/xDelta Patches (*.ips;*.bps;*.xdelta)|*.ips;*.bps;*.xdelta" +
-                     "|JSON Files (*.json;*.whjson)|*.json;*.whjson"
-        };
+        var dlg = new AddExistingItemDialog(e.Project) { Owner = this };
         if (dlg.ShowDialog() != true) return;
 
-        _ = _solutionManager.AddItemAsync(e.Project, dlg.FileName, e.TargetFolderId);
+        var projDir = Path.GetDirectoryName(e.Project.ProjectFilePath) ?? "";
+
+        foreach (var srcPath in dlg.SelectedFilePaths)
+        {
+            var itemType  = ProjectItemTypeHelper.FromExtension(Path.GetExtension(srcPath));
+            var finalPath = srcPath;
+            var folderId  = dlg.SelectedVirtualFolderId ?? e.TargetFolderId;
+
+            // ── 1. Physical copy ──────────────────────────────────────────────
+            if (dlg.CopyToProject)
+            {
+                var destDir = projDir;
+                if (dlg.UseTypeSubfolder)
+                    destDir = Path.Combine(destDir, AddExistingItemDialog.TypeSubfolderName(itemType));
+                Directory.CreateDirectory(destDir);
+                finalPath = Path.Combine(destDir, Path.GetFileName(srcPath));
+                if (!string.Equals(finalPath, srcPath, StringComparison.OrdinalIgnoreCase))
+                    File.Copy(srcPath, finalPath, overwrite: false);
+            }
+
+            // ── 2. Virtual folder ─────────────────────────────────────────────
+            if (dlg.CreateVirtualFolder && dlg.UseTypeSubfolder && folderId is null)
+            {
+                var folderName = AddExistingItemDialog.TypeSubfolderName(itemType);
+                var existing   = e.Project.RootFolders
+                    .FirstOrDefault(f => string.Equals(f.Name, folderName,
+                                        StringComparison.OrdinalIgnoreCase));
+                folderId = existing?.Id
+                    ?? (await _solutionManager.CreateFolderAsync(e.Project, folderName)).Id;
+            }
+
+            // ── 3. Register in project ────────────────────────────────────────
+            await _solutionManager.AddItemAsync(e.Project, finalPath, folderId);
+        }
     }
 
     private void OnSEImportFormatDefinition(object? sender, AddItemRequestedEventArgs e)
@@ -2456,12 +2491,5 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return IntPtr.Zero;
     }
 
-    // ─── Status bar ────────────────────────────────────────────────────
-
-    private void UpdateStatusBar()
-    {
-        var panelCount = _layout.GetAllGroups().Sum(g => g.Items.Count);
-        var lockState  = _isLocked ? " [LOCKED]" : "";
-        PanelCountText.Text = $"Panels: {panelCount}{lockState}";
-    }
+    private void UpdateStatusBar() { }
 }

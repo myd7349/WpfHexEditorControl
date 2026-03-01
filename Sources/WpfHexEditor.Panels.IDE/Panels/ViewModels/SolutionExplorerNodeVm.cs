@@ -84,7 +84,26 @@ public sealed class ProjectNodeVm : SolutionExplorerNodeVm
     }
 
     public override string DisplayName => _isModified ? $"{_project.Name} *" : _project.Name;
-    public override string Icon => "\uE8F1"; // Fluent: Code
+
+    public override string Icon => _project.ProjectType switch
+    {
+        "rom-hacking"          => "\uE7FC", // Gamepad
+        "patch-development"    => "\uE8AD", // Repair
+        "translation"          => "\uE8C1", // Globe
+        "binary-analysis"      => "\uE773", // Search
+        "forensics"            => "\uEADF", // BugAdd
+        "firmware-analysis"    => "\uE8B8", // Chips (Circuit)
+        "network-capture"      => "\uE839", // Network (Wireless)
+        "scientific-data"      => "\uE9D9", // Beaker
+        "media-inspection"     => "\uE8B9", // Pictures
+        "reverse-engineering"  => "\uE8A2", // Library (Disassemble)
+        "decompilation"        => "\uE8F1", // Code
+        "crypto-analysis"      => "\uE1F6", // Lock
+        "format-definition"    => "\uE8D6", // Dictionary
+        "text-script"          => "\uE8F1", // Code
+        "scratch"              => "\uE70F", // Edit
+        _                      => "\uE8F1", // Code (default / "empty")
+    };
 
     public bool IsModified
     {
@@ -165,12 +184,17 @@ public sealed class FileNodeVm : SolutionExplorerNodeVm
 
     public override string Icon => _item.ItemType switch
     {
-        ProjectItemType.FormatDefinition => "\uE8A5", // Page (document icon)
+        ProjectItemType.FormatDefinition => "\uE8A5", // Page
         ProjectItemType.Patch            => "\uE8AD", // Repair
         ProjectItemType.Tbl              => "\uE8FD", // TableGroup
         ProjectItemType.Json             => "\uE8A5", // Page
         ProjectItemType.Text             => "\uE8A5", // Page
-        _                                => "\uE8A5", // Binary → Page
+        ProjectItemType.Script           => "\uE8F1", // Code
+        ProjectItemType.Image            => "\uEB9F", // Photo2
+        ProjectItemType.Tile             => "\uE80A", // Tiles2
+        ProjectItemType.Audio            => "\uE768", // Play (audio)
+        ProjectItemType.Comparison       => "\uE8C9", // SyncFolder (diff)
+        _                                => "\uE8A5", // Page (Binary default)
     };
 
     /// <summary>

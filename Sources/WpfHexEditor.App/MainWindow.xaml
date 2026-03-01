@@ -846,7 +846,6 @@
                 <StackPanel Orientation="Horizontal">
                     <TextBlock x:Name="SolutionText" Text="" Foreground="{DynamicResource DockTabActiveTextBrush}" Margin="0,0,12,0"/>
                     <TextBlock x:Name="RefreshText" Text="" Foreground="{DynamicResource DockTabActiveTextBrush}" Margin="0,0,12,0"/>
-                    <TextBlock x:Name="PanelCountText" Text="Panels: 0" Foreground="{DynamicResource DockTabActiveTextBrush}" />
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>

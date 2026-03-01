@@ -111,13 +111,17 @@
         </Grid>
 
         <!-- ── Section: Copy options ─────────────────────────────────────── -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,6">
-            <Rectangle Width="1" Fill="{DynamicResource Panel_ToolbarBorderBrush}"
-                       VerticalAlignment="Center" Height="1" Width="1" />
-            <TextBlock Text="Copy options" FontWeight="SemiBold" Margin="0,0,10,0" />
-            <Rectangle Height="1" Fill="{DynamicResource Panel_ToolbarBorderBrush}"
-                       VerticalAlignment="Center" HorizontalAlignment="Stretch" />
-        </StackPanel>
+        <Grid Grid.Row="4" Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Copy options" FontWeight="SemiBold" Margin="0,0,8,0"
+                       VerticalAlignment="Center" />
+            <Rectangle Grid.Column="1" Height="1"
+                       Fill="{DynamicResource Panel_ToolbarBorderBrush}"
+                       VerticalAlignment="Center" />
+        </Grid>
 
         <StackPanel Grid.Row="5" Margin="0,0,0,0">
             <RadioButton x:Name="KeepOriginalRadio"
@@ -146,11 +150,17 @@
         </StackPanel>
 
         <!-- ── Section: Project placement ──────────────────────────────── -->
-        <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="0,0,0,6">
-            <TextBlock Text="Project placement" FontWeight="SemiBold" Margin="0,0,10,0" />
-            <Rectangle Height="1" Fill="{DynamicResource Panel_ToolbarBorderBrush}"
-                       VerticalAlignment="Center" HorizontalAlignment="Stretch" />
-        </StackPanel>
+        <Grid Grid.Row="7" Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Project placement" FontWeight="SemiBold" Margin="0,0,8,0"
+                       VerticalAlignment="Center" />
+            <Rectangle Grid.Column="1" Height="1"
+                       Fill="{DynamicResource Panel_ToolbarBorderBrush}"
+                       VerticalAlignment="Center" />
+        </Grid>
 
         <Grid Grid.Row="8">
             <Grid.RowDefinitions>
@@ -176,11 +186,17 @@
         </Grid>
 
         <!-- ── Section: Preview ──────────────────────────────────────────── -->
-        <StackPanel Grid.Row="10" Orientation="Horizontal" Margin="0,0,0,6">
-            <TextBlock Text="Preview" FontWeight="SemiBold" Margin="0,0,10,0" />
-            <Rectangle Height="1" Fill="{DynamicResource Panel_ToolbarBorderBrush}"
-                       VerticalAlignment="Center" HorizontalAlignment="Stretch" />
-        </StackPanel>
+        <Grid Grid.Row="10" Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Preview" FontWeight="SemiBold" Margin="0,0,8,0"
+                       VerticalAlignment="Center" />
+            <Rectangle Grid.Column="1" Height="1"
+                       Fill="{DynamicResource Panel_ToolbarBorderBrush}"
+                       VerticalAlignment="Center" />
+        </Grid>
 
         <StackPanel x:Name="PreviewPanel" Grid.Row="11" Margin="0,0,0,0"
                     Visibility="Collapsed">
