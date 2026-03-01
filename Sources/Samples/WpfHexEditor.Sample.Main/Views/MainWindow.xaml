@@ -3,7 +3,7 @@
     HexEditor V2 - Main Window (Classic Menu + Toolbar Style)
     Based on original MainWindow.xaml structure
     Author : Derek Tremblay (derektremblay666@gmail.com)
-    Contributors: Claude Sonnet 4.5
+    Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
 -->
 
 <Window x:Class="WpfHexEditor.Sample.Main.Views.MainWindow"
