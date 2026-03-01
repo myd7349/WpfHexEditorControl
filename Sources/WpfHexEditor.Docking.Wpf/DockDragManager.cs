@@ -74,7 +74,9 @@ public class DockDragManager
                 }
             }
 
-            hit = VisualTreeHelper.GetParent(hit);
+            hit = hit is Visual or Visual3D
+                ? VisualTreeHelper.GetParent(hit)
+                : (hit as FrameworkContentElement)?.Parent as DependencyObject;
         }
         return null;
     }
