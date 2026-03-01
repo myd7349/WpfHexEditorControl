@@ -1,5 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
@@ -29,7 +30,9 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
 
     private static EmbeddedFormatCatalog? _instance;
 
-    /// <summary>The singleton instance.</summary>
+    /// <summary>
+    /// The singleton instance.
+    /// </summary>
     public static EmbeddedFormatCatalog Instance
         => _instance ??= new EmbeddedFormatCatalog();
 

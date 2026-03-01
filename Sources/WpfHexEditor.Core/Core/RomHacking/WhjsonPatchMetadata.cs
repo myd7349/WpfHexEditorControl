@@ -1,3 +1,9 @@
+//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
+
 using System;
 using System.IO;
 using System.Text.Json;
@@ -26,19 +32,29 @@ namespace WpfHexEditor.Core.RomHacking
         // Properties
         // ------------------------------------------------------------------
 
-        /// <summary>Patch format: "IPS", "BPS" or "xdelta".</summary>
+        /// <summary>
+        /// Patch format: "IPS", "BPS" or "xdelta".
+        /// </summary>
         public string Format      { get; set; }
 
-        /// <summary>Tool that created the patch (e.g. "WpfHexEditor 2.8.0").</summary>
+        /// <summary>
+        /// Tool that created the patch (e.g. "WpfHexEditor 2.8.0").
+        /// </summary>
         public string ToolVersion { get; set; }
 
-        /// <summary>ISO-8601 UTC creation date/time.</summary>
+        /// <summary>
+        /// ISO-8601 UTC creation date/time.
+        /// </summary>
         public string Created     { get; set; }
 
-        /// <summary>Optional author name.</summary>
+        /// <summary>
+        /// Optional author name.
+        /// </summary>
         public string Author      { get; set; }
 
-        /// <summary>Optional human-readable description of the patch.</summary>
+        /// <summary>
+        /// Optional human-readable description of the patch.
+        /// </summary>
         public string Description { get; set; }
 
         public PatchFileInfo SourceFile { get; set; }
@@ -135,16 +151,24 @@ namespace WpfHexEditor.Core.RomHacking
         }
     }
 
-    /// <summary>Source or target file information stored in <see cref="WhjsonPatchMetadata"/>.</summary>
+    /// <summary>
+    /// Source or target file information stored in <see cref="WhjsonPatchMetadata"/>.
+    /// </summary>
     public class PatchFileInfo
     {
-        /// <summary>Original file name (without path).</summary>
+        /// <summary>
+        /// Original file name (without path).
+        /// </summary>
         public string Name  { get; set; }
 
-        /// <summary>File size in bytes.</summary>
+        /// <summary>
+        /// File size in bytes.
+        /// </summary>
         public long   Size  { get; set; }
 
-        /// <summary>CRC-32 checksum as 8-character uppercase hex string (e.g. "A1B2C3D4").</summary>
+        /// <summary>
+        /// CRC-32 checksum as 8-character uppercase hex string (e.g. "A1B2C3D4").
+        /// </summary>
         public string Crc32 { get; set; }
     }
 }
