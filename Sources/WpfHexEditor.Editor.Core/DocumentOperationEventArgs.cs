@@ -12,11 +12,11 @@ namespace WpfHexEditor.Editor.Core;
 /// </summary>
 public class DocumentOperationEventArgs : EventArgs
 {
-    public string Title           { get; init; } = "";
-    public string Message         { get; init; } = "";
-    public int    Percentage      { get; init; }
-    public bool   IsIndeterminate { get; init; }
-    public bool   CanCancel       { get; init; }
+    public string Title           { get; set; } = "";
+    public string Message         { get; set; } = "";
+    public int    Percentage      { get; set; }
+    public bool   IsIndeterminate { get; set; }
+    public bool   CanCancel       { get; set; }
 }
 
 /// <summary>
@@ -25,7 +25,7 @@ public class DocumentOperationEventArgs : EventArgs
 /// </summary>
 public class DocumentOperationCompletedEventArgs : EventArgs
 {
-    public bool   Success      { get; init; }
-    public bool   WasCancelled { get; init; }
-    public string ErrorMessage { get; init; } = "";
+    public bool   Success      { get; set; }
+    public bool   WasCancelled { get; set; }
+    public string ErrorMessage { get; set; } = "";
 }
