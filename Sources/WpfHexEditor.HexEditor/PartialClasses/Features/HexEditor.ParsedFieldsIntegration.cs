@@ -13,6 +13,7 @@ using WpfHexEditor.Core.Events;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.Formatters;
 using WpfHexEditor.Core.Interfaces;
+using WpfHexEditor.Core.Models;
 using WpfHexEditor.Core.ViewModels;
 
 namespace WpfHexEditor.HexEditor
@@ -162,18 +163,15 @@ namespace WpfHexEditor.HexEditor
                     return;
                 }
 
-                // Set selection in hex editor to match the field
-                // SetPosition automatically scrolls to make position visible
-                SetPosition(field.Offset, 1);
+                // Scroll to make the field visible first (without touching selection state)
+                EnsurePositionVisible(new VirtualPosition(field.Offset));
+
+                // Set selection range to cover the full field
                 SelectionStart = field.Offset;
                 SelectionStop = field.Offset + field.Length - 1;
 
-                // Optionally highlight with a custom background block
-                if (field.Color != null)
-                {
-                    // The CustomBackground system will handle visual highlighting
-                    RefreshView();
-                }
+                // Force visual refresh so the selection highlight is always rendered
+                RefreshView();
             }
             catch (Exception ex)
             {
@@ -349,8 +347,13 @@ namespace WpfHexEditor.HexEditor
             {
                 await Dispatcher.InvokeAsync(() =>
                 {
+                    // Capture once: the DP getter is re-evaluated on each access; a tab switch
+                    // between the pre-check and any subsequent use would yield null mid-lambda.
+                    var panel = ParsedFieldsPanel;
+                    if (panel == null) return;
+
                     // Clear existing fields and variables
-                    ParsedFieldsPanel.ParsedFields.Clear();
+                    panel.ParsedFields.Clear();
                     _variableContext?.Clear();
                     _parsedFieldCount = 0; // Reset performance counter
                     _formattedValueCache.Clear(); // Clear cache for new parsing session
@@ -362,38 +365,27 @@ namespace WpfHexEditor.HexEditor
                     // Load format-defined variables
                     if (_detectedFormat.Variables != null)
                     {
-                        //System.Diagnostics.Debug.WriteLine($"[ParseFieldsAsync] Loading {_detectedFormat.Variables.Count} format-defined variables");
                         foreach (var kvp in _detectedFormat.Variables)
-                        {
-                            //System.Diagnostics.Debug.WriteLine($"  Format var: {kvp.Key} = {kvp.Value}");
                             _variableContext?.SetVariable(kvp.Key, kvp.Value);
-                        }
                     }
 
                     // Load variables from detection (includes function execution results)
                     if (_detectionVariables != null)
                     {
-                        //System.Diagnostics.Debug.WriteLine($"[ParseFieldsAsync] Loading {_detectionVariables.Count} detection variables");
                         foreach (var kvp in _detectionVariables)
-                        {
-                            //System.Diagnostics.Debug.WriteLine($"  Detection var: {kvp.Key} = {kvp.Value}");
                             _variableContext?.SetVariable(kvp.Key, kvp.Value);
-                        }
-                    }
-                    else
-                    {
-                        //System.Diagnostics.Debug.WriteLine("[ParseFieldsAsync] WARNING: _detectionVariables is NULL!");
                     }
 
                     // Update format info
-                    ParsedFieldsPanel.FormatInfo.IsDetected = true;
-                    ParsedFieldsPanel.FormatInfo.Name = _detectedFormat.FormatName;
-                    ParsedFieldsPanel.FormatInfo.Description = _detectedFormat.Description;
-                    ParsedFieldsPanel.FormatInfo.Category = _detectedFormat.Category ?? "Other";
-                    ParsedFieldsPanel.FormatInfo.References = _detectedFormat.References;
+                    panel.FormatInfo.IsDetected = true;
+                    panel.FormatInfo.Name = _detectedFormat.FormatName;
+                    panel.FormatInfo.Description = _detectedFormat.Description;
+                    panel.FormatInfo.Category = _detectedFormat.Category ?? "Other";
+                    panel.FormatInfo.References = _detectedFormat.References;
 
-                    // Populate format candidates dropdown (only on initial detection, not on switch)
-                    if (_detectionCandidates?.Count > 1 && ParsedFieldsPanel.FormatInfo.Candidates == null)
+                    // Populate format candidates dropdown — suppress ComboBox SelectionChanged
+                    // events during programmatic updates to avoid re-entrant RefreshParsedFields.
+                    if (_detectionCandidates?.Count > 1 && panel.FormatInfo.Candidates == null)
                     {
                         var items = new ObservableCollection<FormatCandidateItem>();
                         foreach (var c in _detectionCandidates.Take(8))
@@ -404,26 +396,30 @@ namespace WpfHexEditor.HexEditor
                                 Candidate = c
                             });
                         }
-                        ParsedFieldsPanel.FormatInfo.Candidates = items;
-                        ParsedFieldsPanel.FormatInfo.SetSelectedCandidateSilently(items[0]);
+                        panel.SuppressFormatCandidateEvents = true;
+                        panel.FormatInfo.Candidates = items;
+                        panel.FormatInfo.SetSelectedCandidateSilently(items[0]);
+                        panel.SuppressFormatCandidateEvents = false;
                     }
                     else if (_detectionCandidates?.Count > 1)
                     {
                         // Update selected candidate to match current format (after switch)
-                        var match = ParsedFieldsPanel.FormatInfo.Candidates?
+                        var match = panel.FormatInfo.Candidates?
                             .FirstOrDefault(c => c.Candidate?.Format?.FormatName == _detectedFormat.FormatName);
                         if (match != null)
-                            ParsedFieldsPanel.FormatInfo.SetSelectedCandidateSilently(match);
+                        {
+                            panel.SuppressFormatCandidateEvents = true;
+                            panel.FormatInfo.SetSelectedCandidateSilently(match);
+                            panel.SuppressFormatCandidateEvents = false;
+                        }
                     }
 
                     // Set total file size for coverage bar (C6)
-                    ParsedFieldsPanel.TotalFileSize = Length;
+                    panel.TotalFileSize = Length;
 
                     // Parse all blocks from the format definition
                     if (_detectedFormat.Blocks != null)
-                    {
-                        ParseBlocks(_detectedFormat.Blocks, 0);
-                    }
+                        ParseBlocks(_detectedFormat.Blocks, 0, panel);
                 });
             }
             catch (Exception ex)
@@ -441,7 +437,7 @@ namespace WpfHexEditor.HexEditor
         /// <summary>
         /// Recursively parse blocks and their nested children
         /// </summary>
-        private void ParseBlocks(System.Collections.Generic.List<BlockDefinition> blocks, int depth)
+        private void ParseBlocks(System.Collections.Generic.List<BlockDefinition> blocks, int depth, IParsedFieldsPanel panel)
         {
             // Performance safeguards
             if (blocks == null || depth > DepthLimit)
@@ -483,7 +479,7 @@ namespace WpfHexEditor.HexEditor
                                     GroupName = "Computed Values"
                                 };
 
-                                ParsedFieldsPanel.ParsedFields.Add(metadataField);
+                                panel.ParsedFields.Add(metadataField);
                                 _parsedFieldCount++;
                             }
                         }
@@ -496,12 +492,12 @@ namespace WpfHexEditor.HexEditor
                         if (EvaluateCondition(block.Condition))
                         {
                             if (block.Then != null)
-                                ParseBlocks(block.Then, depth + 1);
+                                ParseBlocks(block.Then, depth + 1, panel);
                         }
                         else
                         {
                             if (block.Else != null)
-                                ParseBlocks(block.Else, depth + 1);
+                                ParseBlocks(block.Else, depth + 1, panel);
                         }
                         continue;
                     }
@@ -516,7 +512,7 @@ namespace WpfHexEditor.HexEditor
                             _variableContext?.SetVariable("i", i);
                             _variableContext?.SetVariable("index", i);
 
-                            ParseBlocks(block.Body, depth + 1);
+                            ParseBlocks(block.Body, depth + 1, panel);
                         }
                         continue;
                     }
@@ -578,7 +574,7 @@ namespace WpfHexEditor.HexEditor
                     // Add to panel (skip hidden fields)
                     if (block.Hidden != true)
                     {
-                        ParsedFieldsPanel.ParsedFields.Add(fieldVm);
+                        panel.ParsedFields.Add(fieldVm);
                         _parsedFieldCount++;
 
                     // Process bitfield extractions (create sub-field ViewModels)
@@ -620,7 +616,7 @@ namespace WpfHexEditor.HexEditor
                                     IsValid = true,
                                     FieldIcon = "\U0001f527"
                                 };
-                                ParsedFieldsPanel.ParsedFields.Add(subField);
+                                panel.ParsedFields.Add(subField);
                                 _parsedFieldCount++;
                             }
                         }

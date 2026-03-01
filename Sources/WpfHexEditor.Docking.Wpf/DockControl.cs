@@ -310,6 +310,11 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     /// </summary>
     public event Action<DockItem>? TabCloseRequested;
 
+    /// <summary>
+    /// Raised when the active (focused) item changes.
+    /// </summary>
+    public event Action<DockItem>? ActiveItemChanged;
+
     public DockControl()
     {
         _autoHideLeft = new AutoHideBar(Dock.Left);
@@ -995,6 +1000,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     {
         ActivationHistory.Remove(item);
         ActivationHistory.Insert(0, item);
+        ActiveItemChanged?.Invoke(item);
     }
 
     /// <summary>

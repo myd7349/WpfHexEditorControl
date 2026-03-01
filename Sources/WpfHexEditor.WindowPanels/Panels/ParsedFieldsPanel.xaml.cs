@@ -234,8 +234,16 @@ namespace WpfHexEditor.WindowPanels.Panels
         /// </summary>
         public event EventHandler<FormatCandidateSelectedEventArgs> FormatCandidateSelected;
 
+        /// <summary>
+        /// When true, <see cref="FormatCandidateCombo_SelectionChanged"/> does not fire
+        /// <see cref="FormatCandidateSelected"/>. Set by the HexEditor during programmatic
+        /// candidate selection to avoid re-entrant RefreshParsedFields calls.
+        /// </summary>
+        public bool SuppressFormatCandidateEvents { get; set; }
+
         private void FormatCandidateCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (SuppressFormatCandidateEvents) return;
             if (FormatInfo?.SelectedCandidate?.Candidate != null && e.AddedItems.Count > 0)
             {
                 FormatCandidateSelected?.Invoke(this,
@@ -1000,7 +1008,8 @@ namespace WpfHexEditor.WindowPanels.Panels
                 {
                     Icon = "\U0001F5BC", // framed picture
                     Value = $"{widthField.FormattedValue} x {heightField.FormattedValue}",
-                    Background = HexBrush("#E3F2FD")
+                    Background = HexBrush("#E3F2FD"),
+                    TextForeground = HexBrush("#2B2B2B")
                 });
             }
 
@@ -1013,7 +1022,8 @@ namespace WpfHexEditor.WindowPanels.Panels
                 {
                     Icon = "\U0001F3A8", // artist palette
                     Value = colorType.FormattedValue,
-                    Background = HexBrush("#F3E5F5")
+                    Background = HexBrush("#F3E5F5"),
+                    TextForeground = HexBrush("#2B2B2B")
                 });
             }
 
@@ -1028,7 +1038,8 @@ namespace WpfHexEditor.WindowPanels.Panels
                 {
                     Icon = "\U0001F4CA", // bar chart
                     Value = sizeField.FormattedValue,
-                    Background = HexBrush("#E8F5E9")
+                    Background = HexBrush("#E8F5E9"),
+                    TextForeground = HexBrush("#2B2B2B")
                 });
             }
 
@@ -1041,7 +1052,8 @@ namespace WpfHexEditor.WindowPanels.Panels
                 {
                     Icon = "\U0001F4E6", // package
                     Value = compression.FormattedValue,
-                    Background = HexBrush("#FFF3E0")
+                    Background = HexBrush("#FFF3E0"),
+                    TextForeground = HexBrush("#2B2B2B")
                 });
             }
 
@@ -1054,7 +1066,8 @@ namespace WpfHexEditor.WindowPanels.Panels
                 {
                     Icon = "\U0001F554", // clock
                     Value = duration.FormattedValue,
-                    Background = HexBrush("#E0F7FA")
+                    Background = HexBrush("#E0F7FA"),
+                    TextForeground = HexBrush("#2B2B2B")
                 });
             }
 
@@ -1069,7 +1082,8 @@ namespace WpfHexEditor.WindowPanels.Panels
                     {
                         Icon = "\u2713", // check mark
                         Value = "All Valid",
-                        Background = HexBrush("#E8F5E9")
+                        Background = HexBrush("#E8F5E9"),
+                        TextForeground = HexBrush("#2B2B2B")
                     });
                 }
                 else
@@ -1078,7 +1092,8 @@ namespace WpfHexEditor.WindowPanels.Panels
                     {
                         Icon = "\u26A0", // warning
                         Value = $"{invalidCount} Error{(invalidCount > 1 ? "s" : "")}",
-                        Background = HexBrush("#FFEBEE")
+                        Background = HexBrush("#FFEBEE"),
+                        TextForeground = HexBrush("#2B2B2B")
                     });
                 }
             }
@@ -1699,6 +1714,7 @@ namespace WpfHexEditor.WindowPanels.Panels
         public string Icon { get; set; }
         public string Value { get; set; }
         public System.Windows.Media.Brush Background { get; set; }
+        public System.Windows.Media.Brush TextForeground { get; set; }
     }
 
     /// <summary>

@@ -23,6 +23,13 @@ namespace WpfHexEditor.Core.Interfaces
         FormatInfo FormatInfo { get; set; }
         long TotalFileSize { get; set; }
 
+        /// <summary>
+        /// When true, programmatic candidate selection does not fire
+        /// <see cref="FormatCandidateSelected"/>. Set by HexEditor during
+        /// <c>ParseFieldsAsync</c> to avoid re-entrant RefreshParsedFields calls.
+        /// </summary>
+        bool SuppressFormatCandidateEvents { get; set; }
+
         event EventHandler<ParsedFieldViewModel> FieldSelected;
         event EventHandler RefreshRequested;
         event EventHandler<string> FormatterChanged;

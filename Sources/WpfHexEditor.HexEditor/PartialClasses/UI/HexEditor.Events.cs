@@ -919,6 +919,7 @@ namespace WpfHexEditor.HexEditor
                     // Sync DependencyProperty for TwoWay binding in settings panel
                     if (EditMode != _viewModel.EditMode)
                         SetValue(EditModeProperty, _viewModel.EditMode);
+                    RaiseHexStatusChanged();
                     break;
 
                 case nameof(HexEditorViewModel.BytePerLine):
@@ -928,6 +929,7 @@ namespace WpfHexEditor.HexEditor
                     if (BytePerLine != _viewModel.BytePerLine)
                         SetValue(BytePerLineProperty, _viewModel.BytePerLine);
                     RefreshColumnHeader(); // Regenerate headers to match new BytesPerLine
+                    RaiseHexStatusChanged();
                     break;
 
                 case nameof(HexEditorViewModel.ByteSize):
@@ -976,6 +978,7 @@ namespace WpfHexEditor.HexEditor
                 // Show VirtualLength (includes insertions in Insert mode)
                 long displayLength = _viewModel.VirtualLength;
                 FileSizeText.Text = $"Size: {FormatFileSize(displayLength)}";
+                RaiseHexStatusChanged();
             }
         }
 

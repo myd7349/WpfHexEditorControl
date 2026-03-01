@@ -17,6 +17,7 @@
     <Color x:Key="DockMenuForegroundColor">#1E1E1E</Color>
     <Color x:Key="DockMenuHighlightColor">#C9DEF5</Color>
     <Color x:Key="DockMenuBorderColor">#CCCEDB</Color>
+    <Color x:Key="DockMenuHighlightBorderColor">#0078D4</Color>
     <Color x:Key="DockToolBarBackgroundColor">#EEEEF2</Color>
     <Color x:Key="DockWindowBackgroundColor">#F0F0F0</Color>
 
@@ -52,6 +53,7 @@
     <SolidColorBrush x:Key="DockMenuForegroundBrush" Color="{StaticResource DockMenuForegroundColor}" />
     <SolidColorBrush x:Key="DockMenuHighlightBrush" Color="{StaticResource DockMenuHighlightColor}" />
     <SolidColorBrush x:Key="DockMenuBorderBrush" Color="{StaticResource DockMenuBorderColor}" />
+    <SolidColorBrush x:Key="DockMenuHighlightBorderBrush" Color="{StaticResource DockMenuHighlightBorderColor}" />
     <SolidColorBrush x:Key="DockToolBarBackgroundBrush" Color="{StaticResource DockToolBarBackgroundColor}" />
     <SolidColorBrush x:Key="DockWindowBackgroundBrush" Color="{StaticResource DockWindowBackgroundColor}" />
 
@@ -143,4 +145,73 @@
         </Setter>
     </Style>
 
+    <!-- ParsedFieldsPanel (PFP) Theme Resources -->
+    <Color x:Key="PFP_TitleBarStartColor">#1E88E5</Color>
+    <Color x:Key="PFP_TitleBarEndColor">#1976D2</Color>
+    <Color x:Key="PFP_ItemSelectedStartColor">#E1F5FE</Color>
+    <Color x:Key="PFP_ItemSelectedEndColor">#B3E5FC</Color>
+    <Color x:Key="PFP_ItemSelectedHoverStartColor">#B3E5FC</Color>
+    <Color x:Key="PFP_ItemSelectedHoverEndColor">#81D4FA</Color>
+    <LinearGradientBrush x:Key="PFP_TitleBarBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="{StaticResource PFP_TitleBarStartColor}" Offset="0"/>
+        <GradientStop Color="{StaticResource PFP_TitleBarEndColor}" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PFP_ItemSelectedBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="{StaticResource PFP_ItemSelectedStartColor}" Offset="0"/>
+        <GradientStop Color="{StaticResource PFP_ItemSelectedEndColor}" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PFP_ItemSelectedHoverBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="{StaticResource PFP_ItemSelectedHoverStartColor}" Offset="0"/>
+        <GradientStop Color="{StaticResource PFP_ItemSelectedHoverEndColor}" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="PFP_PanelBackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="PFP_SectionBackgroundBrush" Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="PFP_BorderBrush" Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="PFP_ItemSeparatorBrush" Color="#EEEEEE"/>
+    <SolidColorBrush x:Key="PFP_TextBrush" Color="#212121"/>
+    <SolidColorBrush x:Key="PFP_SubTextBrush" Color="#666666"/>
+    <SolidColorBrush x:Key="PFP_PlaceholderBrush" Color="#999999"/>
+    <SolidColorBrush x:Key="PFP_ValueBrush" Color="#2196F3"/>
+    <SolidColorBrush x:Key="PFP_AccentBrush" Color="#1976D2"/>
+    <SolidColorBrush x:Key="PFP_ItemHoverBrush" Color="#FAFAFA"/>
+    <SolidColorBrush x:Key="PFP_ItemSelectedForegroundBrush" Color="#01579B"/>
+    <SolidColorBrush x:Key="PFP_ItemSelectedBorderBrush" Color="#81D4FA"/>
+    <SolidColorBrush x:Key="PFP_ComputedSectionBackgroundBrush" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="PFP_ComputedSectionBorderBrush" Color="#BBDEFB"/>
+    <SolidColorBrush x:Key="PFP_ComputedTitleBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="PFP_ComputedIconBrush" Color="#1976D2"/>
+    <SolidColorBrush x:Key="PFP_ComputedValueBrush" Color="#0D47A1"/>
+    <SolidColorBrush x:Key="PFP_InsightSectionBackgroundBrush" Color="#FFFDE7"/>
+    <SolidColorBrush x:Key="PFP_InsightSectionBorderBrush" Color="#FFF9C4"/>
+    <SolidColorBrush x:Key="PFP_InsightTitleBrush" Color="#F57F17"/>
+    <SolidColorBrush x:Key="PFP_InputBorderBrush" Color="#CCCCCC"/>
+    <SolidColorBrush x:Key="PFP_GroupBadgeBackgroundBrush" Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="PFP_CoverageTrackBrush" Color="#EEEEEE"/>
+    <SolidColorBrush x:Key="PFP_CoverageProgressBrush" Color="#42A5F5"/>
+
+
+    <!-- Solution Explorer (SE) Theme Resources -->
+    <SolidColorBrush x:Key="SE_BackgroundBrush"            Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="SE_ForegroundBrush"            Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="SE_SelectedBrush"              Color="#CCE8FF"/>
+    <SolidColorBrush x:Key="SE_HoverBrush"                 Color="#E5F3FB"/>
+    <SolidColorBrush x:Key="SE_SelectionBorderBrush"       Color="#007ACC"/>
+    <SolidColorBrush x:Key="SE_ModifiedIndicatorBrush"     Color="#CA5100"/>
+    <SolidColorBrush x:Key="SE_SearchBoxBrush"             Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SE_SearchBoxForegroundBrush"   Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="SE_TitleBarBrush"              Color="#EEEEF2"/>
+    <SolidColorBrush x:Key="SE_ToolbarBrush"               Color="#EEEEF2"/>
+    <SolidColorBrush x:Key="SE_GroupHeaderBrush"           Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="SE_SeparatorBrush"             Color="#CCCEDB"/>
+
+    <!-- Properties Panel (PP) Theme Resources -->
+    <SolidColorBrush x:Key="PP_BackgroundBrush"              Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="PP_ForegroundBrush"              Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="PP_CategoryHeaderBackgroundBrush" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="PP_CategoryHeaderForegroundBrush" Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="PP_SelectedEntryBrush"           Color="#E8F1FB"/>
+    <SolidColorBrush x:Key="PP_DescriptionBackgroundBrush"   Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="PP_DescriptionForegroundBrush"   Color="#555555"/>
+    <SolidColorBrush x:Key="PP_EditableForegroundBrush"      Color="#0000FF"/>
+    <SolidColorBrush x:Key="PP_BorderBrush"                  Color="#CCCEDB"/>
 </ResourceDictionary>

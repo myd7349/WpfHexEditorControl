@@ -9,6 +9,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using WpfHexEditor.Core.Events;
 using WpfHexEditor.Editor.Core;
 
 namespace WpfHexEditor.HexEditor
@@ -21,11 +22,22 @@ namespace WpfHexEditor.HexEditor
     public partial class HexEditor
     {
         // ═══════════════════════════════════════════════════════════════════
+        // IDocumentEditor — New-file state (Phase 12)
+        // ═══════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// True after <see cref="OpenNew"/> is called; cleared once saved to disk.
+        /// The editor is backed by a memory buffer (no file path yet).
+        /// </summary>
+        internal bool   _isNewUnsavedFile;
+        internal string _newFileDisplayName = "";
+
+        // ═══════════════════════════════════════════════════════════════════
         // IDocumentEditor — State
         // ═══════════════════════════════════════════════════════════════════
 
         /// <inheritdoc />
-        bool IDocumentEditor.IsDirty => IsModified;
+        bool IDocumentEditor.IsDirty => IsModified || _isNewUnsavedFile;
 
         /// <inheritdoc />
         bool IDocumentEditor.IsReadOnly
@@ -39,10 +51,10 @@ namespace WpfHexEditor.HexEditor
         {
             get
             {
-                var name = string.IsNullOrEmpty(FileName)
-                    ? "Untitled"
-                    : Path.GetFileName(FileName);
-                return IsModified ? $"{name} *" : name;
+                var name = _isNewUnsavedFile && _newFileDisplayName.Length > 0
+                    ? _newFileDisplayName
+                    : (string.IsNullOrEmpty(FileName) ? "Untitled" : Path.GetFileName(FileName));
+                return (IsModified || _isNewUnsavedFile) ? $"{name} *" : name;
             }
         }
 
@@ -61,35 +73,37 @@ namespace WpfHexEditor.HexEditor
 
         /// <inheritdoc />
         ICommand IDocumentEditor.UndoCommand =>
-            _docEditorUndoCommand ?? (_docEditorUndoCommand = new HexEditorRelayCommand(_ => Undo(), _ => CanUndo));
+            _docEditorUndoCommand ?? (_docEditorUndoCommand = new HexEditorRelayCommand(_ => Undo(), _ => CanUndo && !IsOperationActive));
 
         /// <inheritdoc />
         ICommand IDocumentEditor.RedoCommand =>
-            _docEditorRedoCommand ?? (_docEditorRedoCommand = new HexEditorRelayCommand(_ => Redo(), _ => CanRedo));
+            _docEditorRedoCommand ?? (_docEditorRedoCommand = new HexEditorRelayCommand(_ => Redo(), _ => CanRedo && !IsOperationActive));
 
         /// <inheritdoc />
         ICommand IDocumentEditor.SaveCommand =>
-            _docEditorSaveCommand ?? (_docEditorSaveCommand = new HexEditorRelayCommand(_ => Save(), _ => IsModified && _viewModel != null));
+            _docEditorSaveCommand ?? (_docEditorSaveCommand = new HexEditorRelayCommand(
+                _ => SaveOrSaveAs(),
+                _ => (IsModified || _isNewUnsavedFile) && _viewModel != null && !IsOperationActive));
 
         /// <inheritdoc />
         ICommand IDocumentEditor.CopyCommand =>
-            _docEditorCopyCommand ?? (_docEditorCopyCommand = new HexEditorRelayCommand(_ => ((IDocumentEditor)this).Copy(), _ => HasSelection));
+            _docEditorCopyCommand ?? (_docEditorCopyCommand = new HexEditorRelayCommand(_ => ((IDocumentEditor)this).Copy(), _ => HasSelection && !IsOperationActive));
 
         /// <inheritdoc />
         ICommand IDocumentEditor.CutCommand =>
-            _docEditorCutCommand ?? (_docEditorCutCommand = new HexEditorRelayCommand(_ => ((IDocumentEditor)this).Cut(), _ => HasSelection && !ReadOnlyMode));
+            _docEditorCutCommand ?? (_docEditorCutCommand = new HexEditorRelayCommand(_ => ((IDocumentEditor)this).Cut(), _ => HasSelection && !ReadOnlyMode && !IsOperationActive));
 
         /// <inheritdoc />
         ICommand IDocumentEditor.PasteCommand =>
-            _docEditorPasteCommand ?? (_docEditorPasteCommand = new HexEditorRelayCommand(_ => ((IDocumentEditor)this).Paste(), _ => !ReadOnlyMode && _viewModel != null));
+            _docEditorPasteCommand ?? (_docEditorPasteCommand = new HexEditorRelayCommand(_ => ((IDocumentEditor)this).Paste(), _ => !ReadOnlyMode && _viewModel != null && !IsOperationActive));
 
         /// <inheritdoc />
         ICommand IDocumentEditor.DeleteCommand =>
-            _docEditorDeleteCommand ?? (_docEditorDeleteCommand = new HexEditorRelayCommand(_ => ((IDocumentEditor)this).Delete(), _ => HasSelection && !ReadOnlyMode));
+            _docEditorDeleteCommand ?? (_docEditorDeleteCommand = new HexEditorRelayCommand(_ => ((IDocumentEditor)this).Delete(), _ => HasSelection && !ReadOnlyMode && !IsOperationActive));
 
         /// <inheritdoc />
         ICommand IDocumentEditor.SelectAllCommand =>
-            _docEditorSelectAllCommand ?? (_docEditorSelectAllCommand = new HexEditorRelayCommand(_ => SelectAll(), _ => _viewModel != null));
+            _docEditorSelectAllCommand ?? (_docEditorSelectAllCommand = new HexEditorRelayCommand(_ => SelectAll(), _ => _viewModel != null && !IsOperationActive));
 
         // ═══════════════════════════════════════════════════════════════════
         // IDocumentEditor — Methods
@@ -115,8 +129,50 @@ namespace WpfHexEditor.HexEditor
             return Task.Run(() =>
             {
                 ct.ThrowIfCancellationRequested();
-                Dispatcher.Invoke(() => Save());
+                Dispatcher.Invoke(SaveOrSaveAs);
             }, ct);
+        }
+
+        /// <summary>
+        /// Routes to <see cref="SaveAsNewFile"/> for new in-memory documents,
+        /// or to <see cref="Save"/> for normal file-backed documents.
+        /// </summary>
+        private void SaveOrSaveAs()
+        {
+            if (_isNewUnsavedFile)
+                SaveAsNewFile();
+            else
+                Save();
+        }
+
+        /// <summary>
+        /// Shows a SaveFileDialog, then writes the in-memory buffer to disk and
+        /// transitions the document from "new unsaved" to a normal file-backed document.
+        /// </summary>
+        private void SaveAsNewFile()
+        {
+            var ext    = Path.GetExtension(_newFileDisplayName);
+            var filter = string.IsNullOrEmpty(ext)
+                ? "All Files (*.*)|*.*"
+                : $"{ext.TrimStart('.').ToUpperInvariant()} Files (*{ext})|*{ext}|All Files (*.*)|*.*";
+
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName   = _newFileDisplayName,
+                DefaultExt = ext,
+                Filter     = filter
+            };
+
+            if (dlg.ShowDialog() != true) return;
+            if (_viewModel == null) return;
+
+            _viewModel.SaveAs(dlg.FileName, overwrite: true);
+            FileName            = dlg.FileName;
+            _isNewUnsavedFile   = false;
+            _newFileDisplayName = "";
+            IsModified          = false;
+            RaiseDocumentEditorTitleChanged();
+            RaiseHexStatusChanged();
         }
 
         /// <inheritdoc />
@@ -149,6 +205,10 @@ namespace WpfHexEditor.HexEditor
         private EventHandler<string> _docEditorTitleChanged;
         private EventHandler<string> _docEditorStatusMessage;
         private EventHandler _docEditorSelectionChanged;
+
+        private EventHandler<DocumentOperationEventArgs>?          _docEditorOperationStarted;
+        private EventHandler<DocumentOperationEventArgs>?          _docEditorOperationProgress;
+        private EventHandler<DocumentOperationCompletedEventArgs>? _docEditorOperationCompleted;
 
         event EventHandler IDocumentEditor.ModifiedChanged
         {
@@ -185,6 +245,65 @@ namespace WpfHexEditor.HexEditor
             add => _docEditorSelectionChanged += value;
             remove => _docEditorSelectionChanged -= value;
         }
+
+        // ── IDocumentEditor — Long-running operation ──────────────────────
+
+        /// <inheritdoc />
+        bool IDocumentEditor.IsBusy => IsOperationActive;
+
+        /// <inheritdoc />
+        void IDocumentEditor.CancelOperation() => _longRunningService.CancelCurrentOperation();
+
+        event EventHandler<DocumentOperationEventArgs> IDocumentEditor.OperationStarted
+        {
+            add    => _docEditorOperationStarted += value;
+            remove => _docEditorOperationStarted -= value;
+        }
+
+        event EventHandler<DocumentOperationEventArgs> IDocumentEditor.OperationProgress
+        {
+            add    => _docEditorOperationProgress += value;
+            remove => _docEditorOperationProgress -= value;
+        }
+
+        event EventHandler<DocumentOperationCompletedEventArgs> IDocumentEditor.OperationCompleted
+        {
+            add    => _docEditorOperationCompleted += value;
+            remove => _docEditorOperationCompleted -= value;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // IDocumentEditor — Long-running operation relay helpers
+        // Called from LongRunningService_Operation* handlers in HexEditor.xaml.cs
+        // ═══════════════════════════════════════════════════════════════════
+
+        internal void RaiseDocEditorOperationStarted(OperationProgressEventArgs e)
+            => _docEditorOperationStarted?.Invoke(this, new DocumentOperationEventArgs
+            {
+                Title           = e.OperationTitle  ?? "",
+                Message         = e.StatusMessage   ?? "",
+                Percentage      = e.ProgressPercentage,
+                IsIndeterminate = e.IsIndeterminate,
+                CanCancel       = e.CanCancel
+            });
+
+        internal void RaiseDocEditorOperationProgress(OperationProgressEventArgs e)
+            => _docEditorOperationProgress?.Invoke(this, new DocumentOperationEventArgs
+            {
+                Title           = e.OperationTitle ?? "",
+                Message         = e.StatusMessage  ?? "",
+                Percentage      = e.ProgressPercentage,
+                IsIndeterminate = e.IsIndeterminate,
+                CanCancel       = e.CanCancel
+            });
+
+        internal void RaiseDocEditorOperationCompleted(OperationCompletedEventArgs e)
+            => _docEditorOperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs
+            {
+                Success      = e.Success,
+                WasCancelled = e.WasCancelled,
+                ErrorMessage = e.ErrorMessage ?? ""
+            });
 
         // ═══════════════════════════════════════════════════════════════════
         // IDocumentEditor — Event wiring (called from existing event handlers)
@@ -246,6 +365,32 @@ namespace WpfHexEditor.HexEditor
         {
             _docEditorSelectionChanged?.Invoke(this, EventArgs.Empty);
         }
+
+        /// <summary>
+        /// Fires IDocumentEditor.StatusMessage with the current aggregated status bar content.
+        /// Called after key status bar updates so that host applications (e.g. WpfHexEditor.App)
+        /// can mirror the active editor's status without displaying HexEditor's own status bar.
+        /// </summary>
+        internal void RaiseHexStatusChanged()
+        {
+            var parts = new System.Collections.Generic.List<string>(6);
+            if (StatusText?.Text      is { Length: > 0 } st)  parts.Add(st);
+            if (FileSizeText?.Text    is { Length: > 0 } fs)  parts.Add(fs);
+            if (EditModeText?.Text    is { Length: > 0 } em)  parts.Add(em);
+            if (BytesPerLineText?.Text is { Length: > 0 } bpl) parts.Add(bpl);
+            if (RefreshTimeText?.Text  is { Length: > 0 } rt)  parts.Add(rt);
+            if (parts.Count > 0)
+                _docEditorStatusMessage?.Invoke(this, string.Join("  |  ", parts));
+
+            // Sync interactive status bar items (IStatusBarContributor)
+            RefreshStatusBarItemValues();
+        }
+
+        /// <summary>
+        /// Called by the host (e.g. docking window) when this editor becomes the active document,
+        /// so that the host's status bar is refreshed immediately on tab switch.
+        /// </summary>
+        public void RefreshDocumentStatus() => RaiseHexStatusChanged();
     }
 
     /// <summary>
