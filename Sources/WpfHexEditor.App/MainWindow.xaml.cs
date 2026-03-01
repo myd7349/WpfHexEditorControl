@@ -28,6 +28,7 @@ using WpfHexEditor.Editor.TblEditor.Services;
 using WpfHexEditor.Editor.JsonEditor;
 using WpfHexEditor.Panels.IDE;
 using WpfHexEditor.Panels.BinaryAnalysis;
+using WpfHexEditor.WindowPanels.Panels;
 using WpfHexEditor.Core.Services;
 using WpfHexEditor.ProjectSystem;
 using WpfHexEditor.ProjectSystem.Dialogs;
@@ -480,6 +481,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         panel.AddExistingItemRequested         += OnSEAddExistingItem;
         panel.ImportFormatDefinitionRequested  += OnSEImportFormatDefinition;
         panel.ConvertTblRequested              += OnSEConvertTbl;
+        panel.FolderCreateRequested            += OnSEFolderCreateRequested;
+        panel.FolderRenameRequested            += OnSEFolderRenameRequested;
+        panel.FolderDeleteRequested            += OnSEFolderDeleteRequested;
+        panel.FolderFromDiskRequested          += OnSEFolderFromDiskRequested;
         // Sync current solution if already loaded
         panel.SetSolution(_solutionManager.CurrentSolution);
         return panel;
@@ -1025,6 +1030,60 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ? $"project root of '{e.Project.Name}'"
             : $"folder '{e.TargetFolderId}' in '{e.Project.Name}'";
         OutputLogger.Info($"Moved '{e.Item.Name}' → {destination}");
+    }
+
+    // ─── Folder management ──────────────────────────────────────────────
+
+    private void OnSEFolderCreateRequested(object? sender, FolderCreateRequestedEventArgs e)
+        => _ = CreateFolderAndBeginRenameAsync(e.Project, e.ParentFolderId, e.CreatePhysical);
+
+    private async Task CreateFolderAndBeginRenameAsync(IProject project, string? parentId, bool physical)
+    {
+        var baseName = physical ? "New Physical Folder" : "New Folder";
+        var folder   = await _solutionManager.CreateFolderAsync(project, baseName, parentId, physical);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        _solutionExplorerPanel?.BeginFolderRename(folder);
+        OutputLogger.Info($"Folder created in '{project.Name}'{(physical ? " (physical)" : "")}");
+    }
+
+    private void OnSEFolderRenameRequested(object? sender, FolderRenameEventArgs e)
+    {
+        _ = _solutionManager.RenameFolderAsync(e.Project, e.Folder, e.NewName);
+        OutputLogger.Info($"Folder renamed to '{e.NewName}'");
+    }
+
+    private void OnSEFolderDeleteRequested(object? sender, FolderDeleteEventArgs e)
+    {
+        var result = MessageBox.Show(
+            $"Remove folder '{e.Folder.Name}' from the project?\n" +
+            "Items inside will be kept at the project root. The physical directory will not be deleted.",
+            "Remove folder",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        _ = _solutionManager.DeleteFolderAsync(e.Project, e.Folder);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        OutputLogger.Info($"Folder '{e.Folder.Name}' removed from '{e.Project.Name}'");
+    }
+
+    private void OnSEFolderFromDiskRequested(object? sender, FolderFromDiskRequestedEventArgs e)
+    {
+        var dlg = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description  = "Select the folder to import",
+            UseDescriptionForTitle = true,
+        };
+        if (dlg.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+        _ = ImportFolderFromDiskAsync(e.Project, dlg.SelectedPath, e.ParentFolderId);
+    }
+
+    private async Task ImportFolderFromDiskAsync(IProject project, string physicalPath, string? parentId)
+    {
+        await _solutionManager.AddFolderFromDiskAsync(project, physicalPath, parentId);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        OutputLogger.Info($"Imported folder '{Path.GetFileName(physicalPath)}' into '{project.Name}'");
     }
 
     // ─── Active document tracking ───────────────────────────────────────
