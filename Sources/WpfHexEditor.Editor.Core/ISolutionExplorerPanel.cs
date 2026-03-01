@@ -36,4 +36,7 @@ public interface ISolutionExplorerPanel
 
     /// <summary>Fired when the user requests to delete an item via the context menu.</summary>
     event EventHandler<ProjectItemEventArgs>? ItemDeleteRequested;
+
+    /// <summary>Fired when the user drags a file node to a new folder or the project root.</summary>
+    event EventHandler<ItemMoveRequestedEventArgs>? ItemMoveRequested;
 }

@@ -31,10 +31,23 @@ public sealed class ProjectItemEventArgs : EventArgs
 {
     public IProjectItem Item    { get; set; } = null!;
     public IProject     Project { get; set; } = null!;
+    /// <summary>Set by the inline-rename path; <see langword="null"/> means "ask via dialog".</summary>
+    public string?      NewName { get; set; }
 }
 
 public sealed class ProjectItemActivatedEventArgs : EventArgs
 {
     public IProjectItem Item    { get; set; } = null!;
     public IProject     Project { get; set; } = null!;
+}
+
+// ── Item move (DragDrop) ──────────────────────────────────────────────────
+
+/// <summary>Fired when the user drags a file node to a new folder in the Solution Explorer.</summary>
+public sealed class ItemMoveRequestedEventArgs : EventArgs
+{
+    public IProjectItem Item           { get; set; } = null!;
+    public IProject     Project        { get; set; } = null!;
+    /// <summary>Id of the target virtual folder, or <see langword="null"/> for the project root.</summary>
+    public string?      TargetFolderId { get; set; }
 }

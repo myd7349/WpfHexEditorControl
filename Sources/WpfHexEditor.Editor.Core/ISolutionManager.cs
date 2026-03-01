@@ -39,6 +39,11 @@ public interface ISolutionManager
     Task<IProjectItem> CreateItemAsync(IProject project, string name, ProjectItemType type, string? virtualFolderId = null, byte[]? initialContent = null, CancellationToken ct = default);
     Task RemoveItemAsync(IProject project, IProjectItem item, bool deleteFromDisk = false, CancellationToken ct = default);
     Task RenameItemAsync(IProject project, IProjectItem item, string newName, CancellationToken ct = default);
+    /// <summary>
+    /// Moves <paramref name="item"/> to <paramref name="targetFolderId"/> within the same project.
+    /// Pass <see langword="null"/> for <paramref name="targetFolderId"/> to move to the project root (no folder).
+    /// </summary>
+    Task MoveItemToFolderAsync(IProject project, IProjectItem item, string? targetFolderId, CancellationToken ct = default);
 
     // ── TBL helpers ──────────────────────────────────────────────────────
     /// <summary>Designates <paramref name="tblItem"/> as the default TBL for <paramref name="project"/>.

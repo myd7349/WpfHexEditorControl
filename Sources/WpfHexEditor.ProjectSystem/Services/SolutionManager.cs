@@ -202,6 +202,28 @@ public sealed class SolutionManager : ISolutionManager
         return SaveProjectAsync(project, ct);
     }
 
+    public Task MoveItemToFolderAsync(IProject project, IProjectItem item, string? targetFolderId, CancellationToken ct = default)
+    {
+        if (project is not Project proj || item is not ProjectItem pi) return Task.CompletedTask;
+
+        // Remove item from all folders it currently belongs to
+        foreach (var folder in proj.RootFoldersMutable)
+            RemoveFromFolder(folder, pi.Id);
+
+        // Add to target folder (null = project root = no folder assignment)
+        if (targetFolderId is not null)
+        {
+            foreach (var folder in proj.RootFoldersMutable)
+            {
+                if (AddToFolder(folder, pi.Id, targetFolderId))
+                    break;
+            }
+        }
+
+        proj.IsModified = true;
+        return SaveProjectAsync(project, ct);
+    }
+
     // ── TBL helpers ──────────────────────────────────────────────────────
 
     public void SetDefaultTbl(IProject project, IProjectItem? tblItem)

@@ -134,6 +134,45 @@ public sealed class FileNodeVm : SolutionExplorerNodeVm
 
     public bool IsModified => _item.IsModified;
 
+    // ── Inline rename ───────────────────────────────────────────────────────
+
+    private bool   _isEditing;
+    private string _editingName = string.Empty;
+
+    /// <summary>True while the inline-rename TextBox is active.</summary>
+    public bool IsEditing
+    {
+        get => _isEditing;
+        private set { _isEditing = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>Bound to the inline-rename TextBox text.</summary>
+    public string EditingName
+    {
+        get => _editingName;
+        set { _editingName = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>Enters inline-rename mode, pre-filling the box with the current name.</summary>
+    public void BeginEdit()
+    {
+        EditingName = _item.Name;
+        IsEditing   = true;
+    }
+
+    /// <summary>Leaves rename mode and returns the trimmed new name.</summary>
+    public string CommitEdit()
+    {
+        var name  = _editingName.Trim();
+        IsEditing = false;
+        return name;
+    }
+
+    /// <summary>Cancels rename mode without applying any change.</summary>
+    public void CancelEdit() => IsEditing = false;
+
+    // ────────────────────────────────────────────────────────────────────────
+
     public IProjectItem Source => _item;
     public IProject?   Project { get; init; }
 }

@@ -403,6 +403,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         panel.ItemSelected             += OnSolutionExplorerItemSelected;
         panel.ItemRenameRequested      += OnSolutionExplorerItemRenameRequested;
         panel.ItemDeleteRequested      += OnSolutionExplorerItemDeleteRequested;
+        panel.ItemMoveRequested        += OnSolutionExplorerItemMoveRequested;
         panel.DefaultTblChangeRequested += OnDefaultTblChangeRequested;
         // Sync current solution if already loaded
         panel.SetSolution(_solutionManager.CurrentSolution);
@@ -551,44 +552,55 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (e.Project is null) return;
 
-        // Simple programmatic rename dialog
-        var win = new Window
+        string newName;
+
+        if (e.NewName is not null)
         {
-            Title                  = "Rename",
-            Owner                  = this,
-            Width                  = 380,
-            Height                 = 120,
-            WindowStartupLocation  = WindowStartupLocation.CenterOwner,
-            ResizeMode             = ResizeMode.NoResize,
-            ShowInTaskbar          = false,
-        };
-
-        var tb = new System.Windows.Controls.TextBox
+            // Inline rename path — name was already validated by the panel
+            newName = e.NewName;
+        }
+        else
         {
-            Text              = e.Item.Name,
-            Margin            = new Thickness(10, 12, 10, 0),
-            VerticalAlignment = VerticalAlignment.Top,
-        };
-        tb.SelectAll();
+            // Fallback: programmatic dialog (context menu without inline editing)
+            var win = new Window
+            {
+                Title                 = "Rename",
+                Owner                 = this,
+                Width                 = 380,
+                Height                = 120,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ResizeMode            = ResizeMode.NoResize,
+                ShowInTaskbar         = false,
+            };
 
-        var okBtn = new System.Windows.Controls.Button
-        {
-            Content            = "OK",
-            IsDefault          = true,
-            Width              = 75,
-            Margin             = new Thickness(0, 0, 10, 10),
-            HorizontalAlignment = HorizontalAlignment.Right,
-            VerticalAlignment  = VerticalAlignment.Bottom,
-        };
-        okBtn.Click += (_, _) => win.DialogResult = true;
+            var tb = new System.Windows.Controls.TextBox
+            {
+                Text              = e.Item.Name,
+                Margin            = new Thickness(10, 12, 10, 0),
+                VerticalAlignment = VerticalAlignment.Top,
+            };
+            tb.SelectAll();
 
-        var grid = new System.Windows.Controls.Grid();
-        grid.Children.Add(tb);
-        grid.Children.Add(okBtn);
-        win.Content = grid;
+            var okBtn = new System.Windows.Controls.Button
+            {
+                Content             = "OK",
+                IsDefault           = true,
+                Width               = 75,
+                Margin              = new Thickness(0, 0, 10, 10),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment   = VerticalAlignment.Bottom,
+            };
+            okBtn.Click += (_, _) => win.DialogResult = true;
 
-        if (win.ShowDialog() != true) return;
-        var newName = tb.Text.Trim();
+            var grid = new System.Windows.Controls.Grid();
+            grid.Children.Add(tb);
+            grid.Children.Add(okBtn);
+            win.Content = grid;
+
+            if (win.ShowDialog() != true) return;
+            newName = tb.Text.Trim();
+        }
+
         if (newName.Length == 0 || newName == e.Item.Name) return;
 
         _ = _solutionManager.RenameItemAsync(e.Project, e.Item, newName);
@@ -609,6 +621,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         _ = _solutionManager.RemoveItemAsync(e.Project, e.Item, deleteFromDisk: false);
         OutputLogger.Info($"Removed '{e.Item.Name}' from project '{e.Project.Name}'");
+    }
+
+    private void OnSolutionExplorerItemMoveRequested(object? sender, ItemMoveRequestedEventArgs e)
+    {
+        _ = _solutionManager.MoveItemToFolderAsync(e.Project, e.Item, e.TargetFolderId);
+
+        var destination = e.TargetFolderId is null
+            ? $"project root of '{e.Project.Name}'"
+            : $"folder '{e.TargetFolderId}' in '{e.Project.Name}'";
+        OutputLogger.Info($"Moved '{e.Item.Name}' → {destination}");
     }
 
     // ─── Active document tracking ───────────────────────────────────────

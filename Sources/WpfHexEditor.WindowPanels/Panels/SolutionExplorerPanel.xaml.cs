@@ -6,6 +6,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.WindowPanels.Panels.ViewModels;
 
@@ -41,8 +42,9 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     public event EventHandler<ProjectItemEventArgs>?          ItemSelected;
     public event EventHandler<ProjectItemEventArgs>?          ItemRenameRequested;
     public event EventHandler<ProjectItemEventArgs>?          ItemDeleteRequested;
+    public event EventHandler<ItemMoveRequestedEventArgs>?    ItemMoveRequested;
 
-    // ── Tree events ──────────────────────────────────────────────────────────
+    // ── Tree events ───────────────────────────────────────────────────────────
 
     private void OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
@@ -58,7 +60,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
             ItemActivated?.Invoke(this, new ProjectItemActivatedEventArgs { Item = fn.Source, Project = fn.Project });
     }
 
-    // ── Toolbar ──────────────────────────────────────────────────────────────
+    // ── Toolbar ───────────────────────────────────────────────────────────────
 
     private void OnCollapseAll(object sender, RoutedEventArgs e)
     {
@@ -74,7 +76,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     private void OnRefresh(object sender, RoutedEventArgs e)
         => _vm.Rebuild();
 
-    // ── Search box ───────────────────────────────────────────────────────────
+    // ── Search box ────────────────────────────────────────────────────────────
 
     private void SearchBox_GotFocus(object sender, RoutedEventArgs e)
         => SearchPlaceholder.Visibility = Visibility.Collapsed;
@@ -83,13 +85,12 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         => SearchPlaceholder.Visibility =
             string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
 
-    // ── Context menu ─────────────────────────────────────────────────────────
+    // ── Context menu ──────────────────────────────────────────────────────────
 
     private void UpdateContextMenu(SolutionExplorerNodeVm? node)
     {
         _contextMenuTarget = node;
-        bool isFile = node is FileNodeVm;
-        bool isTbl  = node is FileNodeVm fn && fn.Source.ItemType == ProjectItemType.Tbl;
+        bool isTbl = node is FileNodeVm fn && fn.Source.ItemType == ProjectItemType.Tbl;
 
         SetDefaultTblMenuItem.Visibility   = isTbl ? Visibility.Visible : Visibility.Collapsed;
         ClearDefaultTblMenuItem.Visibility = isTbl ? Visibility.Visible : Visibility.Collapsed;
@@ -129,8 +130,9 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     private void OnRename(object sender, RoutedEventArgs e)
     {
-        if (_contextMenuTarget is FileNodeVm fn && fn.Project is not null)
-            ItemRenameRequested?.Invoke(this, new ProjectItemEventArgs { Item = fn.Source, Project = fn.Project });
+        // Context menu rename → use inline editing
+        if (_contextMenuTarget is FileNodeVm fn)
+            StartInlineEdit(fn);
     }
 
     private void OnRemove(object sender, RoutedEventArgs e)
@@ -144,12 +146,223 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         // Raised to host
     }
 
-    // ── Additional public events ──────────────────────────────────────────────
+    // ── Additional public events ───────────────────────────────────────────────
 
     /// <summary>Raised when the user requests a change to the project default TBL.</summary>
     public event EventHandler<DefaultTblChangeEventArgs>? DefaultTblChangeRequested;
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // ── F2 Inline rename ──────────────────────────────────────────────────────
+
+    private void OnTreePreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.F2 && SolutionTree.SelectedItem is FileNodeVm fn)
+        {
+            StartInlineEdit(fn);
+            e.Handled = true;
+        }
+    }
+
+    private void StartInlineEdit(FileNodeVm fn)
+    {
+        fn.BeginEdit();
+        // Wait for the DataTemplate to swap to the TextBox before trying to focus it
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, () =>
+        {
+            if (FindTreeViewItem(SolutionTree, fn) is TreeViewItem tvi)
+            {
+                if (FindChild<TextBox>(tvi, "InlineEditBox") is TextBox tb)
+                {
+                    tb.Focus();
+                    tb.SelectAll();
+                }
+            }
+        });
+    }
+
+    private void OnInlineEditKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox tb) return;
+        var fn = tb.DataContext as FileNodeVm;
+
+        if (e.Key == Key.Return)
+        {
+            CommitInlineEdit(fn);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            fn?.CancelEdit();
+            SolutionTree.Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void OnInlineEditLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox tb)
+            CommitInlineEdit(tb.DataContext as FileNodeVm);
+    }
+
+    private void CommitInlineEdit(FileNodeVm? fn)
+    {
+        if (fn is null || !fn.IsEditing) return;
+
+        var oldName = fn.Source.Name;
+        var newName = fn.CommitEdit();
+
+        if (!string.IsNullOrWhiteSpace(newName)
+            && !string.Equals(newName, oldName, StringComparison.OrdinalIgnoreCase)
+            && fn.Project is not null)
+        {
+            ItemRenameRequested?.Invoke(this, new ProjectItemEventArgs
+            {
+                Item    = fn.Source,
+                Project = fn.Project,
+                NewName = newName,
+            });
+        }
+
+        SolutionTree.Focus();
+    }
+
+    // ── DragDrop ──────────────────────────────────────────────────────────────
+
+    private const string DragDataFormat = "SolutionExplorerFileNode";
+    private Point       _dragStartPoint;
+    private FileNodeVm? _draggedNode;
+
+    private void OnTreeMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _dragStartPoint = e.GetPosition(null);
+        _draggedNode    = null;
+
+        if (e.OriginalSource is DependencyObject src)
+        {
+            var tvi = FindAncestor<TreeViewItem>(src);
+            if (tvi?.DataContext is FileNodeVm fn)
+                _draggedNode = fn;
+        }
+    }
+
+    private void OnTreeMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _draggedNode is null) return;
+
+        var pos  = e.GetPosition(null);
+        var diff = _dragStartPoint - pos;
+        if (Math.Abs(diff.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(diff.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+
+        // Don't start drag if we're currently editing inline
+        if (_draggedNode.IsEditing) return;
+
+        var data = new DataObject(DragDataFormat, _draggedNode);
+        DragDrop.DoDragDrop(SolutionTree, data, DragDropEffects.Move);
+        _draggedNode = null;
+    }
+
+    private void OnTreeDragOver(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DragDataFormat))
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+
+        var dragged = e.Data.GetData(DragDataFormat) as FileNodeVm;
+        var target  = GetDropTarget(e.OriginalSource as DependencyObject);
+
+        // Must have a valid target that belongs to the same project
+        e.Effects = (target is not null && dragged?.Project is not null)
+            ? DragDropEffects.Move
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void OnTreeDrop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DragDataFormat)) return;
+        if (e.Data.GetData(DragDataFormat) is not FileNodeVm draggedFile) return;
+        if (draggedFile.Project is null) return;
+
+        var target = GetDropTarget(e.OriginalSource as DependencyObject);
+        if (target is null) return;
+
+        string? targetFolderId = target switch
+        {
+            FolderNodeVm fv => fv.Folder.Id,
+            ProjectNodeVm   => null,    // drop on project root
+            _               => null,
+        };
+
+        // Refuse dropping a file onto the same folder it is already in
+        // (this is a best-effort check; SolutionManager will handle edge-cases)
+        ItemMoveRequested?.Invoke(this, new ItemMoveRequestedEventArgs
+        {
+            Item           = draggedFile.Source,
+            Project        = draggedFile.Project,
+            TargetFolderId = targetFolderId,
+        });
+
+        // Rebuild the view to reflect the new tree structure
+        _vm.Rebuild();
+    }
+
+    /// <summary>Returns the nearest <see cref="FolderNodeVm"/> or <see cref="ProjectNodeVm"/>
+    /// that is a valid drop target, or <see langword="null"/>.</summary>
+    private static SolutionExplorerNodeVm? GetDropTarget(DependencyObject? source)
+    {
+        if (source is null) return null;
+        var tvi = FindAncestor<TreeViewItem>(source);
+        return tvi?.DataContext switch
+        {
+            FolderNodeVm  fv => fv,
+            ProjectNodeVm pv => pv,
+            _                => null,
+        };
+    }
+
+    // ── Visual-tree helpers ───────────────────────────────────────────────────
+
+    private static TreeViewItem? FindTreeViewItem(ItemsControl container, object item)
+    {
+        if (container.ItemContainerGenerator.ContainerFromItem(item) is TreeViewItem tvi)
+            return tvi;
+
+        foreach (var child in container.Items)
+        {
+            if (container.ItemContainerGenerator.ContainerFromItem(child) is not TreeViewItem c) continue;
+            var found = FindTreeViewItem(c, item);
+            if (found is not null) return found;
+        }
+        return null;
+    }
+
+    private static T? FindChild<T>(DependencyObject parent, string name) where T : FrameworkElement
+    {
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T el && el.Name == name) return el;
+            var found = FindChild<T>(child, name);
+            if (found is not null) return found;
+        }
+        return null;
+    }
+
+    private static T? FindAncestor<T>(DependencyObject source) where T : DependencyObject
+    {
+        while (source is not null)
+        {
+            if (source is T t) return t;
+            source = VisualTreeHelper.GetParent(source);
+        }
+        return null;
+    }
+
+    // ── Tree helpers ──────────────────────────────────────────────────────────
 
     private static void CollapseAll(SolutionExplorerNodeVm node)
     {
