@@ -83,36 +83,85 @@ Bidirectional conversion between virtual and physical positions:
 
 ## 🏗️ System Architecture
 
+### Multi-Project Structure
+
+The codebase is split into **independent projects** with clear dependency boundaries:
+
+```mermaid
+graph LR
+    subgraph "Core & Data"
+        Core["WpfHexEditor.Core<br/>(ByteProvider, Services,<br/>Data Layer)"]
+    end
+
+    subgraph "UI Controls"
+        HexEditor["WpfHexEditor.HexEditor<br/>(HexEditor Control,<br/>ViewModel, HexViewport)"]
+        WindowPanels["WpfHexEditor.WindowPanels<br/>(ParsedFieldsPanel,<br/>FileDiffDialog)"]
+    end
+
+    subgraph "Editors (Plugin)"
+        EditorCore["WpfHexEditor.Editor.Core<br/>(IDocumentEditor,<br/>IEditorFactory)"]
+        JsonEditor["WpfHexEditor.Editor.JsonEditor"]
+        TblEditor["WpfHexEditor.Editor.TblEditor"]
+    end
+
+    subgraph "Standalone"
+        BarChart["WpfHexEditor.BarChart"]
+        BinaryAnalysis["WpfHexEditor.BinaryAnalysis"]
+        ColorPicker["WpfHexEditor.ColorPicker"]
+        HexBox["WpfHexEditor.HexBox"]
+        DockingCore["WpfHexEditor.Docking.Core"]
+        DockingWpf["WpfHexEditor.Docking.Wpf"]
+    end
+
+    HexEditor --> Core
+    WindowPanels --> Core
+    JsonEditor --> Core
+    JsonEditor --> EditorCore
+    TblEditor --> Core
+    TblEditor --> EditorCore
+    BarChart --> Core
+    BinaryAnalysis --> Core
+    DockingWpf --> DockingCore
+    HexEditor --> ColorPicker
+    HexEditor --> HexBox
+
+    style Core fill:#ffccbc,stroke:#d84315,stroke-width:3px
+    style HexEditor fill:#fff9c4,stroke:#f57c00,stroke-width:3px
+    style EditorCore fill:#e0f2f1,stroke:#00796b,stroke-width:2px
+```
+
 ### High-Level Component Diagram
 
 ```mermaid
 graph TB
-    subgraph "🎨 Presentation Layer"
-        HexEditor["HexEditor Control<br/>(Main API)"]
+    subgraph "🎨 Presentation Layer (WpfHexEditor.HexEditor)"
         HexEditor["HexEditor<br/>(UserControl)"]
         HexViewport["HexViewport<br/>(Custom Rendering)"]
     end
 
-    subgraph "🧠 Business Logic Layer"
+    subgraph "🧠 Business Logic (WpfHexEditor.HexEditor)"
         ViewModel["HexEditorViewModel<br/>(MVVM Pattern)"]
     end
 
-    subgraph "🔧 Service Layer"
+    subgraph "🔧 Service Layer (WpfHexEditor.Core)"
         SearchService["SearchService<br/>(Find/Replace)"]
         ClipboardService["ClipboardService<br/>(Copy/Paste)"]
         BookmarkService["BookmarkService<br/>(Navigation)"]
         HighlightService["HighlightService<br/>(Visual Markers)"]
         SelectionService["SelectionService<br/>(Text Selection)"]
         FormatDetectionService["FormatDetectionService<br/>(400+ Formats)"]
-        DataInspectorService["DataInspectorService<br/>(Type Interpretation)"]
         Others["+ 9 More Services"]
     end
 
-    subgraph "💾 Data Access Layer"
+    subgraph "📊 Analysis (WpfHexEditor.BinaryAnalysis)"
+        DataInspectorService["DataInspectorService<br/>(Type Interpretation)"]
+    end
+
+    subgraph "💾 Data Access (WpfHexEditor.Core)"
         ByteProvider["ByteProvider<br/>(Coordinator & API)"]
     end
 
-    subgraph "⚙️ Core Processing Layer"
+    subgraph "⚙️ Core Processing (WpfHexEditor.Core)"
         ByteReader["ByteReader<br/>(Virtual View)"]
         EditsManager["EditsManager<br/>(Track Changes)"]
         PositionMapper["PositionMapper<br/>(Virtual↔Physical)"]
@@ -212,14 +261,16 @@ graph LR
 
 ### Layer Details
 
-| Layer | Components | Responsibility | Thread Safety |
-|-------|-----------|----------------|---------------|
-| **1. UI** | HexEditor, HexViewport, ParsedFieldsPanel | User interaction, rendering | UI thread only |
-| **2. Presentation** | HexEditorViewModel | Business logic, state management | UI thread only |
-| **3. Services** | 16 specialized services | Feature implementation (search, format detection, data inspection, etc.) | UI thread only |
-| **4. Data Access** | ByteProvider | API coordination, caching | UI thread only |
-| **5. Core** | ByteReader, EditsManager, etc. | Low-level operations | Thread-safe |
-| **6. Storage** | FileProvider, FileSystem | File I/O, persistence | Async-safe |
+| Layer | Project(s) | Components | Responsibility |
+|-------|-----------|-----------|----------------|
+| **1. UI** | `WpfHexEditor.HexEditor` | HexEditor, HexViewport | User interaction, rendering |
+| **1. UI** | `WpfHexEditor.WindowPanels` | ParsedFieldsPanel, FileDiffDialog | Standalone panels |
+| **2. Presentation** | `WpfHexEditor.HexEditor` | HexEditorViewModel | Business logic, state management |
+| **3. Services** | `WpfHexEditor.Core` | 16 specialized services | Search, format detection, clipboard, etc. |
+| **3. Services** | `WpfHexEditor.BinaryAnalysis` | DataInspectorService | Multi-type interpretation |
+| **4. Data Access** | `WpfHexEditor.Core` | ByteProvider | API coordination, caching |
+| **5. Core** | `WpfHexEditor.Core` | ByteReader, EditsManager, etc. | Low-level byte operations |
+| **6. Storage** | `WpfHexEditor.Core` | FileProvider, FileSystem | File I/O, persistence |
 
 ---
 
@@ -227,7 +278,7 @@ graph LR
 
 ### 1. HexEditor (Main Control)
 
-**Location**: [HexEditor.cs](../../Sources/WPFHexaEditor/HexEditor.cs)
+**Location**: [HexEditor.xaml.cs](../../Sources/WpfHexEditor.HexEditor/HexEditor.xaml.cs)
 
 **Purpose**: Public API surface with partial classes organized by functionality.
 
@@ -285,7 +336,7 @@ public void ClearDeletions()
 
 ### 2. HexEditorViewModel
 
-**Location**: [HexEditorViewModel.cs](../../Sources/WPFHexaEditor/Core/ViewModels/HexEditorViewModel.cs)
+**Location**: [HexEditorViewModel.cs](../../Sources/WpfHexEditor.HexEditor/ViewModels/HexEditorViewModel.cs)
 
 **Purpose**: MVVM pattern business logic layer, coordinates services and ByteProvider.
 
@@ -313,7 +364,7 @@ public bool IsModified { get; }
 
 ### 3. ByteProvider (Data Access Coordinator)
 
-**Location**: [ByteProvider.cs](../../Sources/WPFHexaEditor/Core/Bytes/ByteProvider.cs)
+**Location**: [ByteProvider.cs](../../Sources/WpfHexEditor.Core/Core/Bytes/ByteProvider.cs)
 
 **Purpose**: Coordinates core components and provides 186-method public API.
 
@@ -345,7 +396,7 @@ public class ByteProvider
 
 ### 4. ByteReader (Virtual View Engine)
 
-**Location**: [ByteReader.cs](../../Sources/WPFHexaEditor/Core/Bytes/ByteReader.cs)
+**Location**: [ByteReader.cs](../../Sources/WpfHexEditor.Core/Core/Bytes/ByteReader.cs)
 
 **Purpose**: Reads bytes from the **virtual view** (showing all edits applied).
 
@@ -375,7 +426,7 @@ public byte ReadByte(long virtualPosition)
 
 ### 5. EditsManager (Change Tracking)
 
-**Location**: [EditsManager.cs](../../Sources/WPFHexaEditor/Core/Bytes/EditsManager.cs)
+**Location**: [EditsManager.cs](../../Sources/WpfHexEditor.Core/Core/Bytes/EditsManager.cs)
 
 **Purpose**: Tracks all modifications, insertions, and deletions.
 
@@ -408,7 +459,7 @@ Insert 'C' at position 5:  [... C B A ...]  // C pushed before B
 
 ### 6. PositionMapper (Coordinate Transformation)
 
-**Location**: [PositionMapper.cs](../../Sources/WPFHexaEditor/Core/Bytes/PositionMapper.cs)
+**Location**: [PositionMapper.cs](../../Sources/WpfHexEditor.Core/Core/Bytes/PositionMapper.cs)
 
 **Purpose**: Bidirectional mapping between virtual and physical positions.
 
@@ -452,7 +503,7 @@ PhysicalToVirtual(5) = 8   // Account for 3 insertions
 
 ### 7. HexViewport (Custom Rendering)
 
-**Location**: [HexViewport.cs](../../Sources/WPFHexaEditor/Core/Controls/HexViewport.cs)
+**Location**: [HexViewport.cs](../../Sources/WpfHexEditor.HexEditor/Controls/HexViewport.cs)
 
 **Purpose**: High-performance custom rendering using DrawingContext.
 
@@ -498,7 +549,7 @@ protected override void OnRender(DrawingContext dc)
 
 ### 8. FormatDetectionService (File Format Intelligence)
 
-**Location**: [FormatDetectionService.cs](../../Sources/WPFHexaEditor/Services/FormatDetectionService.cs)
+**Location**: [FormatDetectionService.cs](../../Sources/WpfHexEditor.Core/Services/FormatDetectionService.cs)
 
 **Purpose**: Automatic detection of 400+ file formats using binary signatures and templates.
 
@@ -536,7 +587,7 @@ var fields = formatDetectionService.ParseFields(byteProvider);
 
 ### 9. DataInspectorService (Multi-Type Interpretation)
 
-**Location**: [DataInspectorService.cs](../../Sources/WPFHexaEditor/Services/DataInspectorService.cs)
+**Location**: [DataInspectorService.cs](../../Sources/WpfHexEditor.BinaryAnalysis/Services/DataInspectorService.cs)
 
 **Purpose**: Interprets selected bytes as multiple data types simultaneously.
 
@@ -571,7 +622,7 @@ var interpretations = dataInspectorService.Interpret(byteProvider, position: 100
 
 ### 10. ParsedFieldsPanel (Structure Visualization)
 
-**Location**: [ParsedFieldsPanel.xaml](../../Sources/WPFHexaEditor/Controls/ParsedFieldsPanel.xaml)
+**Location**: [ParsedFieldsPanel.xaml](../../Sources/WpfHexEditor.WindowPanels/Panels/ParsedFieldsPanel.xaml)
 
 **Purpose**: Displays parsed file structure in a hierarchical tree view.
 
@@ -603,7 +654,7 @@ var interpretations = dataInspectorService.Interpret(byteProvider, position: 100
 
 ### 11. FileDiffService (Binary Comparison)
 
-**Location**: [FileDiffService.cs](../../Sources/WPFHexaEditor/Services/FileDiffService.cs)
+**Location**: [FileDiffService.cs](../../Sources/WpfHexEditor.Core/Services/FileDiffService.cs)
 
 **Purpose**: Side-by-side comparison of two binary files with highlighting.
 
@@ -620,11 +671,11 @@ var interpretations = dataInspectorService.Interpret(byteProvider, position: 100
 - 🐛 Debugging binary protocol changes
 - 🎮 ROM hacking comparison
 
-### 12. FormatScriptEditor (Custom JsonEditor)
+### 12. JsonEditor (Format Script Editor)
 
-**Location**: [FormatScriptEditor/](../../Sources/WPFHexaEditor/Controls/FormatScriptEditor/)
+**Location**: [WpfHexEditor.Editor.JsonEditor/Controls/](../../Sources/WpfHexEditor.Editor.JsonEditor/Controls/)
 
-**Purpose**: Professional JSON editor for creating binary format definitions.
+**Purpose**: Professional JSON editor for creating binary format definitions. Standalone project implementing `IDocumentEditor`.
 
 **JsonEditor Features** (61 Dependency Properties):
 - 🎨 **Syntax Highlighting** - 13+ token types (keys, values, keywords, etc.)
@@ -881,19 +932,19 @@ finally
 
 ### Related Documentation
 - [API Reference](../api-reference/) - Complete method documentation
-- [PartialClasses README](../../Sources/WPFHexaEditor/PartialClasses/README.md) - Code organization
-- [Services README](../../Sources/WPFHexaEditor/Services/README.md) - Service layer details
+- [PartialClasses](../../Sources/WpfHexEditor.HexEditor/PartialClasses/) - HexEditor code organization (Core, Features, Search, UI)
+- [Core Services](../../Sources/WpfHexEditor.Core/Services/) - Service layer (22 services)
 - [Performance Guide](../performance/) - Optimization tips
 - [Main README](../../README.md) - Project overview
 
 ---
 
-**Last Updated**: 2026-02-22
-**Version**: 2.0+ (V2 architecture with Advanced Features)
+**Last Updated**: 2026-02-28
+**Version**: 2.0+ (V2 multi-project architecture)
 **Status**: ✅ Production Ready
+- ✅ Multi-project split: Core, HexEditor, WindowPanels, Editors, Docking, BinaryAnalysis
 - ✅ 100% ByteProvider API (186 methods)
-- ✅ 100% Legacy V1 API compatibility
 - ✅ 400+ file format auto-detection
-- ✅ 16 specialized services
-- ✅ JsonEditor with 61 Dependency Properties
+- ✅ Custom Docking system (VS-style, no third-party dependency)
+- ✅ Plugin editor system (IDocumentEditor: JsonEditor, TblEditor)
 - ✅ Data Inspector, Parsed Fields, File Diff
