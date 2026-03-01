@@ -66,3 +66,19 @@ public sealed class FolderDeleteEventArgs : EventArgs
     public IVirtualFolder Folder  { get; init; } = null!;
     public IProject       Project { get; init; } = null!;
 }
+
+public sealed class FolderCreateRequestedEventArgs : EventArgs
+{
+    public IProject Project        { get; init; } = null!;
+    /// <summary>Id of the parent virtual folder, or <see langword="null"/> for the project root.</summary>
+    public string?  ParentFolderId { get; init; }
+    /// <summary><see langword="true"/> to also create the corresponding physical directory on disk.</summary>
+    public bool     CreatePhysical { get; init; }
+}
+
+public sealed class FolderFromDiskRequestedEventArgs : EventArgs
+{
+    public IProject Project        { get; init; } = null!;
+    /// <summary>Id of the parent virtual folder, or <see langword="null"/> for the project root.</summary>
+    public string?  ParentFolderId { get; init; }
+}

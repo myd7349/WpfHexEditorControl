@@ -72,4 +72,22 @@ public interface ISolutionExplorerPanel
 
     /// <summary>Fired when the user requests to delete a virtual folder.</summary>
     event EventHandler<FolderDeleteEventArgs>? FolderDeleteRequested;
+
+    /// <summary>Fired when the user requests creation of a new virtual (or physical) folder.</summary>
+    event EventHandler<FolderCreateRequestedEventArgs>?  FolderCreateRequested;
+
+    /// <summary>Fired when the user chooses "Add Existing Folder…" to import a directory from disk.</summary>
+    event EventHandler<FolderFromDiskRequestedEventArgs>? FolderFromDiskRequested;
+
+    /// <summary>
+    /// Enters inline-rename mode on the tree node that corresponds to <paramref name="folder"/>.
+    /// Call this immediately after creating a new folder to give it a VS-like creation-rename flow.
+    /// </summary>
+    void BeginFolderRename(IVirtualFolder folder);
+
+    /// <summary>
+    /// Gets or sets whether the tree displays the physical file system under the project directory
+    /// instead of the virtual folder organisation.
+    /// </summary>
+    bool ShowAllFiles { get; set; }
 }
