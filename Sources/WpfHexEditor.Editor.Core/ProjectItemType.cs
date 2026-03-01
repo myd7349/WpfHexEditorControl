@@ -54,6 +54,16 @@ public enum ProjectItemType
     Image,
 
     /// <summary>
+    /// Tile graphics file (.chr, .til, .gfx) opened by the TileEditor.
+    /// </summary>
+    Tile,
+
+    /// <summary>
+    /// Audio file (.wav, .mp3, .ogg, …) opened by the AudioViewer.
+    /// </summary>
+    Audio,
+
+    /// <summary>
     /// A saved file-comparison pair referencing two <see cref="Binary"/> items.
     /// Not a physical file on disk — represents a named comparison configuration.
     /// </summary>

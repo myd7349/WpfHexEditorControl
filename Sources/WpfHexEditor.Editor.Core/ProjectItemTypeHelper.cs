@@ -29,6 +29,12 @@ public static class ProjectItemTypeHelper
             "png" or "bmp" or "jpg" or "jpeg" or "gif"
                 or "ico" or "tiff" or "tif" or "webp"
                 or "dds" or "tga"           => ProjectItemType.Image,
+            "chr" or "til" or "gfx"         => ProjectItemType.Tile,
+            "wav" or "mp3" or "ogg" or "flac"
+                or "xm" or "mod" or "it" or "s3m" or "aiff" => ProjectItemType.Audio,
+            "asm" or "s" or "lua" or "py" or "rb" or "pl"
+                or "sh" or "bat" or "ps1" or "whlang"
+                or "scr" or "msg" or "evt" or "script" or "dec" => ProjectItemType.Script,
             _                               => ProjectItemType.Binary,
         };
     }

@@ -21,6 +21,7 @@ public static class FileTemplateRegistry
         new JsonFileTemplate(),
         new WhjsonFileTemplate(),
         new TextFileTemplate(),
+        new AsmFileTemplate(),
     ];
 
     /// <summary>

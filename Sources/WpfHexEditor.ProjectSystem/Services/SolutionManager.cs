@@ -547,6 +547,10 @@ public sealed class SolutionManager : ISolutionManager
         ".png" or ".bmp" or ".jpg" or ".jpeg" or ".gif"
             or ".ico" or ".tiff" or ".tif" or ".webp"
             or ".dds" or ".tga"                              => ProjectItemType.Image,
+        ".chr" or ".til" or ".gfx"                          => ProjectItemType.Tile,
+        ".wav" or ".mp3" or ".ogg" or ".flac"
+            or ".xm" or ".mod" or ".it" or ".s3m" or ".aiff" => ProjectItemType.Audio,
+        ".scr" or ".msg" or ".evt" or ".script" or ".dec"   => ProjectItemType.Script,
         _                                                    => ProjectItemType.Binary,
     };
 
