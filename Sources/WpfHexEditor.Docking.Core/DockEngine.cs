@@ -1,7 +1,7 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5
+// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
 //////////////////////////////////////////////
 
 using WpfHexEditor.Docking.Core.Nodes;
@@ -23,7 +23,9 @@ public class DockEngine
 
     public DockLayoutRoot Layout { get; }
 
-    /// <summary>True when inside a transaction (NormalizeTree deferred).</summary>
+    /// <summary>
+    /// True when inside a transaction (NormalizeTree deferred).
+    /// </summary>
     public bool IsInTransaction => _transactionDepth > 0;
 
     // Events
