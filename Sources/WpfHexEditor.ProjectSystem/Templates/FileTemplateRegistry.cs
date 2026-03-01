@@ -18,6 +18,7 @@ public static class FileTemplateRegistry
         new BinaryFileTemplate(),
         new TblFileTemplate(),
         new JsonFileTemplate(),
+        new WhjsonFileTemplate(),
         new TextFileTemplate(),
     ];
 

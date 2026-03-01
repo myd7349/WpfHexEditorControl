@@ -226,6 +226,32 @@ namespace WpfHexEditor.HexEditor
             }
         }
 
+        /// <summary>
+        /// Opens the editor on a new empty in-memory buffer.
+        /// The document is considered unsaved; the first Save (Ctrl+S) triggers a SaveFileDialog.
+        /// </summary>
+        /// <param name="displayName">
+        /// Logical name shown in the title bar and used as the default file name in
+        /// the save dialog (e.g. "New1.bin").
+        /// </param>
+        public void OpenNew(string displayName = "New1.bin")
+        {
+            // Reuse OpenMemory with an empty buffer
+            OpenMemory([], readOnly: false);
+
+            // Mark as new unsaved file — flags declared in HexEditor.DocumentEditor.cs
+            _isNewUnsavedFile   = true;
+            _newFileDisplayName = displayName;
+
+            // Override the status-bar text set by OpenMemory
+            StatusText.Text = $"New: {displayName}";
+            RaiseHexStatusChanged();
+
+            // Notify consumers (title bar, dirty indicators)
+            _docEditorModifiedChanged?.Invoke(this, EventArgs.Empty);
+            RaiseDocumentEditorTitleChanged();
+        }
+
         #endregion
     }
 }

@@ -103,10 +103,7 @@
                     <Setter.Value>
                         <!-- Horizontal template -->
                         <ControlTemplate TargetType="{x:Type ScrollBar}">
-                            <Border SnapsToDevicePixels="True">
-                                <Border.Background>
-                                    <SolidColorBrush Color="{StaticResource HexEditor_ScrollBarBackgroundColor}"/>
-                                </Border.Background>
+                            <Border SnapsToDevicePixels="True" Background="#F0F0F0">
                                 <Track x:Name="PART_Track" IsDirectionReversed="False">
                                     <Track.DecreaseRepeatButton>
                                         <RepeatButton Style="{StaticResource DockScrollBarPageButtonStyle}"

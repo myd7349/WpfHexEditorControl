@@ -141,9 +141,9 @@ namespace WpfHexEditor.Core.Services
         /// <summary>
         /// Extract category from file path
         /// Examples:
-        /// - "C:/FormatDefinitions/Archives/ZIP.json" -> "Archives"
-        /// - "FormatDefinitions/Images/PNG.json" -> "Images"
-        /// - "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.json" (embedded) -> "Archives"
+        /// - "C:/FormatDefinitions/Archives/ZIP.whjson" -> "Archives"
+        /// - "FormatDefinitions/Images/PNG.whjson" -> "Images"
+        /// - "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whjson" (embedded) -> "Archives"
         /// </summary>
         private string ExtractCategoryFromPath(string path)
         {
@@ -158,7 +158,7 @@ namespace WpfHexEditor.Core.Services
                 // Check if it's an embedded resource name (contains dots instead of slashes)
                 if (path.Contains("FormatDefinitions.") && path.Count(c => c == '.') >= 3)
                 {
-                    // Embedded resource format: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.json"
+                    // Embedded resource format: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whjson"
                     var parts = path.Split('.');
                     var formatDefsIndex = Array.IndexOf(parts, "FormatDefinitions");
                     if (formatDefsIndex >= 0 && formatDefsIndex < parts.Length - 2)
@@ -168,7 +168,7 @@ namespace WpfHexEditor.Core.Services
                 }
                 else
                 {
-                    // File path format: "C:/FormatDefinitions/Archives/ZIP.json"
+                    // File path format: "C:/FormatDefinitions/Archives/ZIP.whjson"
                     var parts = path.Split('/');
                     var formatDefsIndex = Array.FindIndex(parts, p => p.Equals("FormatDefinitions", StringComparison.OrdinalIgnoreCase));
                     if (formatDefsIndex >= 0 && formatDefsIndex < parts.Length - 2)

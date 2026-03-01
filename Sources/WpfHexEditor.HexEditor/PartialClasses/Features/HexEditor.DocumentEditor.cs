@@ -21,11 +21,22 @@ namespace WpfHexEditor.HexEditor
     public partial class HexEditor
     {
         // ═══════════════════════════════════════════════════════════════════
+        // IDocumentEditor — New-file state (Phase 12)
+        // ═══════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// True after <see cref="OpenNew"/> is called; cleared once saved to disk.
+        /// The editor is backed by a memory buffer (no file path yet).
+        /// </summary>
+        internal bool   _isNewUnsavedFile;
+        internal string _newFileDisplayName = "";
+
+        // ═══════════════════════════════════════════════════════════════════
         // IDocumentEditor — State
         // ═══════════════════════════════════════════════════════════════════
 
         /// <inheritdoc />
-        bool IDocumentEditor.IsDirty => IsModified;
+        bool IDocumentEditor.IsDirty => IsModified || _isNewUnsavedFile;
 
         /// <inheritdoc />
         bool IDocumentEditor.IsReadOnly
@@ -39,10 +50,10 @@ namespace WpfHexEditor.HexEditor
         {
             get
             {
-                var name = string.IsNullOrEmpty(FileName)
-                    ? "Untitled"
-                    : Path.GetFileName(FileName);
-                return IsModified ? $"{name} *" : name;
+                var name = _isNewUnsavedFile && _newFileDisplayName.Length > 0
+                    ? _newFileDisplayName
+                    : (string.IsNullOrEmpty(FileName) ? "Untitled" : Path.GetFileName(FileName));
+                return (IsModified || _isNewUnsavedFile) ? $"{name} *" : name;
             }
         }
 
@@ -69,7 +80,9 @@ namespace WpfHexEditor.HexEditor
 
         /// <inheritdoc />
         ICommand IDocumentEditor.SaveCommand =>
-            _docEditorSaveCommand ?? (_docEditorSaveCommand = new HexEditorRelayCommand(_ => Save(), _ => IsModified && _viewModel != null));
+            _docEditorSaveCommand ?? (_docEditorSaveCommand = new HexEditorRelayCommand(
+                _ => SaveOrSaveAs(),
+                _ => (IsModified || _isNewUnsavedFile) && _viewModel != null));
 
         /// <inheritdoc />
         ICommand IDocumentEditor.CopyCommand =>
@@ -115,8 +128,50 @@ namespace WpfHexEditor.HexEditor
             return Task.Run(() =>
             {
                 ct.ThrowIfCancellationRequested();
-                Dispatcher.Invoke(() => Save());
+                Dispatcher.Invoke(SaveOrSaveAs);
             }, ct);
+        }
+
+        /// <summary>
+        /// Routes to <see cref="SaveAsNewFile"/> for new in-memory documents,
+        /// or to <see cref="Save"/> for normal file-backed documents.
+        /// </summary>
+        private void SaveOrSaveAs()
+        {
+            if (_isNewUnsavedFile)
+                SaveAsNewFile();
+            else
+                Save();
+        }
+
+        /// <summary>
+        /// Shows a SaveFileDialog, then writes the in-memory buffer to disk and
+        /// transitions the document from "new unsaved" to a normal file-backed document.
+        /// </summary>
+        private void SaveAsNewFile()
+        {
+            var ext    = Path.GetExtension(_newFileDisplayName);
+            var filter = string.IsNullOrEmpty(ext)
+                ? "All Files (*.*)|*.*"
+                : $"{ext.TrimStart('.').ToUpperInvariant()} Files (*{ext})|*{ext}|All Files (*.*)|*.*";
+
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName   = _newFileDisplayName,
+                DefaultExt = ext,
+                Filter     = filter
+            };
+
+            if (dlg.ShowDialog() != true) return;
+            if (_viewModel == null) return;
+
+            _viewModel.SaveAs(dlg.FileName, overwrite: true);
+            FileName            = dlg.FileName;
+            _isNewUnsavedFile   = false;
+            _newFileDisplayName = "";
+            IsModified          = false;
+            RaiseDocumentEditorTitleChanged();
+            RaiseHexStatusChanged();
         }
 
         /// <inheritdoc />

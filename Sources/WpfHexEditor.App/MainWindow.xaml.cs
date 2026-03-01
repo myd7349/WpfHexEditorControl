@@ -349,7 +349,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ParsedFieldsPanelContentId => CreateParsedFieldsContent(),
             "panel-properties"         => CreatePropertiesContent(),
             _ when item.ContentId.StartsWith("doc-hex-") => CreateHexEditorContent(
-                item.Metadata.TryGetValue("FilePath", out var fp) ? fp : null),
+                item.Metadata.TryGetValue("FilePath",    out var fp)   ? fp   : null,
+                item.Metadata.TryGetValue("DisplayName", out var dn)   ? dn   : null,
+                item.Metadata.TryGetValue("IsNewFile",   out var isNew) && isNew == "true"),
             _ => CreateDocumentContent(item)
         };
 
@@ -385,7 +387,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return _parsedFieldsPanel;
     }
 
-    private UIElement CreateHexEditorContent(string? filePath)
+    private UIElement CreateHexEditorContent(
+        string? filePath,
+        string? displayName = null,
+        bool    isNewFile   = false)
     {
         var hexEditor = new HexEditorControl();
         hexEditor.ShowStatusBar = false;
@@ -398,8 +403,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ActiveHexEditor      = hexEditor;
         }
 
+        // ── Phase 12: in-memory new document ──────────────────────────
+        if (isNewFile)
+        {
+            hexEditor.OpenNew(displayName ?? "New1.bin");
+            OutputLogger.Info($"New in-memory document: {displayName}");
+            return hexEditor;
+        }
+
+        // ── File-backed document ───────────────────────────────────────
         if (filePath is null)
         {
+            // Legacy fallback: unnamed temp document (e.g. Welcome tab)
             var data = new byte[1024];
             new Random().NextBytes(data);
             var tempFile = Path.Combine(Path.GetTempPath(), $"hexedit-sample-{Guid.NewGuid():N}.bin");
@@ -703,39 +718,56 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (dlg.ShowDialog() != true) return;
 
-        var template = dlg.SelectedTemplate!;
-        var filePath = dlg.FullPath;
+        _documentCounter++;
 
-        try
+        if (dlg.SaveLater)
         {
-            // Write the file to disk
-            Directory.CreateDirectory(dlg.FileDirectory);
-            File.WriteAllBytes(filePath, template.CreateContent());
-
-            // Optionally add to project
-            if (dlg.TargetProject is { } project)
-                _ = _solutionManager.AddItemAsync(project, filePath);
-
-            // Open in a hex editor tab
-            _documentCounter++;
+            // ── In-memory (Phase 12): file written on first Ctrl+S ─────
             var item = new DockItem
             {
                 Title     = dlg.FileName,
                 ContentId = $"doc-hex-{_documentCounter}",
-                Metadata  = { ["FilePath"] = filePath }
+                Metadata  =
+                {
+                    ["IsNewFile"]    = "true",
+                    ["DisplayName"]  = dlg.FileName
+                }
             };
             _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
             DockHost.RebuildVisualTree();
             UpdateStatusBar();
-            _solutionManager.PushRecentFile(filePath);
-            PopulateRecentMenus();
-            OutputLogger.Info($"New file created: {filePath}");
+            OutputLogger.Info($"New in-memory document: {dlg.FileName}");
         }
-        catch (Exception ex)
+        else
         {
-            OutputLogger.Error($"Failed to create file: {ex.Message}");
-            MessageBox.Show($"Failed to create file:\n{ex.Message}", "Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            // ── Write to disk immediately ──────────────────────────────
+            try
+            {
+                Directory.CreateDirectory(dlg.FileDirectory);
+                File.WriteAllBytes(dlg.FullPath, dlg.SelectedTemplate!.CreateContent());
+
+                if (dlg.TargetProject is { } project)
+                    _ = _solutionManager.AddItemAsync(project, dlg.FullPath);
+
+                var item = new DockItem
+                {
+                    Title     = dlg.FileName,
+                    ContentId = $"doc-hex-{_documentCounter}",
+                    Metadata  = { ["FilePath"] = dlg.FullPath }
+                };
+                _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+                DockHost.RebuildVisualTree();
+                UpdateStatusBar();
+                _solutionManager.PushRecentFile(dlg.FullPath);
+                PopulateRecentMenus();
+                OutputLogger.Info($"New file created: {dlg.FullPath}");
+            }
+            catch (Exception ex)
+            {
+                OutputLogger.Error($"Failed to create file: {ex.Message}");
+                MessageBox.Show($"Failed to create file:\n{ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 

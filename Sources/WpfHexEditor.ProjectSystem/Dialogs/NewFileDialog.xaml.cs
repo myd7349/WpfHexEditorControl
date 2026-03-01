@@ -18,20 +18,27 @@ namespace WpfHexEditor.ProjectSystem.Dialogs;
 /// After <see cref="System.Windows.Window.ShowDialog"/> returns <c>true</c>, read:
 /// <list type="bullet">
 ///   <item><see cref="FileName"/> — chosen file name (no path)</item>
-///   <item><see cref="FileDirectory"/> — chosen directory</item>
-///   <item><see cref="FullPath"/> — combined full path</item>
+///   <item><see cref="FileDirectory"/> — chosen directory (empty when <see cref="SaveLater"/> is true)</item>
+///   <item><see cref="FullPath"/> — combined full path (empty when <see cref="SaveLater"/> is true)</item>
 ///   <item><see cref="SelectedTemplate"/> — the chosen <see cref="IFileTemplate"/></item>
 ///   <item><see cref="TargetProject"/> — project to add to, or <c>null</c></item>
+///   <item><see cref="SaveLater"/> — when true, caller should use <c>HexEditor.OpenNew()</c></item>
 /// </list>
 /// </summary>
 public partial class NewFileDialog : Window
 {
     // ── Output properties ──────────────────────────────────────────────
-    public string        FileName         { get; private set; } = "";
-    public string        FileDirectory    { get; private set; } = "";
-    public string        FullPath         => Path.Combine(FileDirectory, FileName);
+    public string         FileName         { get; private set; } = "";
+    public string         FileDirectory    { get; private set; } = "";
+    /// <summary>Non-empty only when <see cref="SaveLater"/> is <c>false</c>.</summary>
+    public string         FullPath         => SaveLater ? "" : Path.Combine(FileDirectory, FileName);
     public IFileTemplate? SelectedTemplate { get; private set; }
-    public IProject?     TargetProject    { get; private set; }
+    public IProject?      TargetProject    { get; private set; }
+    /// <summary>
+    /// When <c>true</c>, the host should open the document in-memory via <c>HexEditor.OpenNew()</c>;
+    /// the save-file dialog will appear on the first Ctrl+S.
+    /// </summary>
+    public bool           SaveLater        { get; private set; }
 
     // ── Constructor ────────────────────────────────────────────────────
     /// <param name="defaultDirectory">Initial location shown in the Location box.</param>
@@ -106,6 +113,14 @@ public partial class NewFileDialog : Window
 
     private void OnInputChanged(object sender, TextChangedEventArgs e) => Refresh();
 
+    private void OnSaveLaterChanged(object sender, RoutedEventArgs e)
+    {
+        var saveLater = SaveLaterCheck.IsChecked == true;
+        LocationBox.IsEnabled  = !saveLater;
+        BrowseButton.IsEnabled = !saveLater;
+        Refresh();
+    }
+
     private void OnAddToProjectChanged(object sender, RoutedEventArgs e)
     {
         ProjectCombo.IsEnabled = AddToProjectCheck.IsChecked == true;
@@ -125,8 +140,9 @@ public partial class NewFileDialog : Window
 
     private void OnOk(object sender, RoutedEventArgs e)
     {
-        FileName      = NameBox.Text.Trim();
-        FileDirectory = LocationBox.Text.Trim();
+        SaveLater        = SaveLaterCheck.IsChecked == true;
+        FileName         = NameBox.Text.Trim();
+        FileDirectory    = SaveLater ? "" : LocationBox.Text.Trim();
         SelectedTemplate = (TemplateList.SelectedItem as ListBoxItem)?.Tag as IFileTemplate;
 
         if (AddToProjectCheck.IsChecked == true
@@ -140,12 +156,14 @@ public partial class NewFileDialog : Window
 
     private void Refresh()
     {
-        var name = NameBox.Text.Trim();
-        var loc  = LocationBox.Text.Trim();
+        var name     = NameBox.Text.Trim();
+        var saveLater = SaveLaterCheck.IsChecked == true;
+        var loc      = LocationBox.Text.Trim();
+
         var valid = name.Length > 0
-                    && loc.Length  > 0
                     && TemplateList.SelectedItem is not null
-                    && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+                    && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0
+                    && (saveLater || loc.Length > 0);
 
         OkButton.IsEnabled = valid;
     }

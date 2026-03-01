@@ -65,11 +65,18 @@
         <TextBox x:Name="NameBox" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3"
                  TextChanged="OnInputChanged" />
 
-        <!-- Location -->
-        <Label Grid.Row="4" Grid.Column="0" Content="_Location:" Target="{Binding ElementName=LocationBox}" />
+        <!-- Location (optional — disabled when "save later" is checked) -->
+        <CheckBox x:Name="SaveLaterCheck"
+                  Grid.Row="4" Grid.Column="0"
+                  Content="_Save later"
+                  ToolTip="Create document in memory; save location chosen on first Ctrl+S"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  VerticalAlignment="Center"
+                  Checked="OnSaveLaterChanged"
+                  Unchecked="OnSaveLaterChanged" />
         <TextBox x:Name="LocationBox" Grid.Row="4" Grid.Column="1"
                  TextChanged="OnInputChanged" />
-        <Button Grid.Row="4" Grid.Column="3" Content="..." Width="30" Padding="0"
+        <Button x:Name="BrowseButton" Grid.Row="4" Grid.Column="3" Content="..." Width="30" Padding="0"
                 Click="OnBrowseLocation" ToolTip="Browse for folder" />
 
         <!-- Add to project row -->

@@ -398,7 +398,7 @@ namespace WpfHexEditor.HexEditor
 
             try
             {
-                // Embedded resource format: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.json"
+                // Embedded resource format: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whjson"
                 var parts = resourceName.Split('.');
                 var formatDefsIndex = System.Array.IndexOf(parts, "FormatDefinitions");
 
