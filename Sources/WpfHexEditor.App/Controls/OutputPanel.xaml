@@ -1,4 +1,4 @@
-<!--
+﻿<!--
     Apache 2.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
@@ -30,8 +30,7 @@
                           Width="140"
                           SelectedIndex="0"
                           VerticalAlignment="Center"
-                          FontSize="12"
-                          Style="{DynamicResource DockComboBoxStyle}">
+                          FontSize="12">
                     <ComboBoxItem Content="Debug" />
                     <ComboBoxItem Content="Build" />
                     <ComboBoxItem Content="General" />

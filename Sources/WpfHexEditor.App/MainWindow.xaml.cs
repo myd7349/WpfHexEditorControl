@@ -21,6 +21,7 @@ using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.Docking.Core.Serialization;
 using WpfHexEditor.Docking.Wpf;
 using WpfHexEditor.App.Controls;
+using WpfHexEditor.App.Services;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.TblEditor;
 using WpfHexEditor.Editor.TblEditor.Models;
@@ -111,6 +112,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ErrorPanel? _errorPanel;
     private const string ErrorPanelContentId = "panel-errors";
 
+    // Background file monitor (watches project files for external changes)
+    private readonly FileMonitorDiagnosticSource _fileMonitorSource = new();
+    private FileMonitorService? _fileMonitorService;
+
     // Output Panel (persistent singleton — pre-created so OutputLogger works from startup)
     private OutputPanel? _outputPanel;
 
@@ -133,6 +138,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _activeDocumentEditor.TitleChanged       -= OnEditorTitleChanged;
                 _activeDocumentEditor.ModifiedChanged    -= OnEditorModifiedChanged;
                 _activeDocumentEditor.StatusMessage      -= OnEditorStatusMessage;
+                _activeDocumentEditor.OutputMessage      -= OnEditorOutputMessage;
                 _activeDocumentEditor.OperationStarted   -= OnDocumentOperationStarted;
                 _activeDocumentEditor.OperationProgress  -= OnDocumentOperationProgress;
                 _activeDocumentEditor.OperationCompleted -= OnDocumentOperationCompleted;
@@ -143,6 +149,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _activeDocumentEditor.TitleChanged       += OnEditorTitleChanged;
                 _activeDocumentEditor.ModifiedChanged    += OnEditorModifiedChanged;
                 _activeDocumentEditor.StatusMessage      += OnEditorStatusMessage;
+                _activeDocumentEditor.OutputMessage      += OnEditorOutputMessage;
                 _activeDocumentEditor.OperationStarted   += OnDocumentOperationStarted;
                 _activeDocumentEditor.OperationProgress  += OnDocumentOperationProgress;
                 _activeDocumentEditor.OperationCompleted += OnDocumentOperationCompleted;
@@ -176,6 +183,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // ── Long-running operation state (per active document) ───────────────
     private bool _isDocumentBusy;
+    private bool _isClosingForced;
     /// <summary>
     /// True while the currently active document is performing a long-running operation.
     /// Switches instantly when the active tab changes.
@@ -246,7 +254,62 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnWindowClosing(object? sender, CancelEventArgs e)
     {
+        if (_isClosingForced)
+        {
+            _fileMonitorService?.Dispose();
+            AutoSaveLayout();
+            return;
+        }
+
+        // Collect all dirty items: solution/project files + open document editors
+        var allDirty = CollectDirtySolutionItems();
+
+        var dirtyDocs = _layout.GetAllGroups()
+            .SelectMany(g => g.Items)
+            .Where(i => !i.ContentId.StartsWith("panel-") &&
+                        _contentCache.TryGetValue(i.ContentId, out var c) &&
+                        c is IDocumentEditor { IsDirty: true })
+            .ToList();
+
+        allDirty.AddRange(dirtyDocs.Select(i => (i.ContentId, i.Title.TrimEnd('*', ' '))));
+
+        if (allDirty.Count == 0)
+        {
+            AutoSaveLayout();
+            return;
+        }
+
+        e.Cancel = true;
+        _ = ConfirmAndCloseAsync(allDirty, dirtyDocs);
+    }
+
+    private async Task ConfirmAndCloseAsync(
+        List<(string ContentId, string Title)> allDirty,
+        List<DockItem> dirtyDocs)
+    {
+        var dlg = new Dialogs.SaveChangesDialog
+        {
+            DirtyItems = allDirty,
+            Owner      = this
+        };
+        if (dlg.ShowDialog() != true || dlg.Choice == Dialogs.SaveChangesChoice.Cancel) return;
+
+        if (dlg.Choice == Dialogs.SaveChangesChoice.Save)
+        {
+            var toSave = new HashSet<string>(dlg.SelectedContentIds);
+            await SaveSelectedSolutionItemsAsync(dlg.SelectedContentIds);
+            foreach (var doc in dirtyDocs)
+            {
+                if (toSave.Contains(doc.ContentId) &&
+                    _contentCache.TryGetValue(doc.ContentId, out var c) &&
+                    c is IDocumentEditor editor)
+                    editor.SaveCommand?.Execute(null);
+            }
+        }
+
+        _isClosingForced = true;
         AutoSaveLayout();
+        Close();
     }
 
     // ─── SolutionManager event handlers ────────────────────────────────
@@ -257,9 +320,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
         PopulateRecentMenus();
 
+        // Start or stop the background file monitor
+        if (_solutionManager.CurrentSolution is { } sol)
+        {
+            _fileMonitorService ??= new FileMonitorService(_editorRegistry, _fileMonitorSource);
+            var dirs = sol.Projects
+                .Select(p => Path.GetDirectoryName(p.ProjectFilePath))
+                .Where(d => d is not null)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Cast<string>();
+            _fileMonitorService.StartWatching(dirs);
+        }
+        else
+        {
+            _fileMonitorService?.StopWatching();
+        }
+
         // Update window title
-        Title = _solutionManager.CurrentSolution is { } sol
-            ? $"WpfHexEditor — {sol.Name}"
+        Title = _solutionManager.CurrentSolution is { } titleSol
+            ? $"WpfHexEditor — {titleSol.Name}"
             : "WpfHexEditor";
 
         // Update status bar
@@ -649,6 +728,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         panel.FolderRenameRequested            += OnSEFolderRenameRequested;
         panel.FolderDeleteRequested            += OnSEFolderDeleteRequested;
         panel.FolderFromDiskRequested          += OnSEFolderFromDiskRequested;
+        panel.ProjectRenameRequested           += OnSEProjectRenameRequested;
+        panel.CloseSolutionRequested           += OnSECloseSolutionRequested;
         _solutionManager.ItemRenamed           += OnProjectItemRenamed;
         // Sync current solution if already loaded
         panel.SetSolution(_solutionManager.CurrentSolution);
@@ -688,11 +769,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_errorPanel is null)
         {
             _errorPanel = new ErrorPanel();
-            _errorPanel.EntryNavigationRequested += OnErrorEntryNavigation;
+            _errorPanel.EntryNavigationRequested  += OnErrorEntryNavigation;
+            _errorPanel.OpenInTextEditorRequested += OnOpenInTextEditorRequested;
 
             // Register solution manager as a permanent diagnostic source if it implements IDiagnosticSource
             if (_solutionManager is IDiagnosticSource sm)
                 _errorPanel.AddSource(sm);
+
+            // Background file monitor source (always registered — stays empty when no solution)
+            _errorPanel.AddSource(_fileMonitorSource);
         }
         return _errorPanel;
     }
@@ -701,32 +786,95 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (e.FilePath is null) return;
 
-        // Open or activate the document
-        var contentId = _contentCache
-            .FirstOrDefault(kv =>
-            {
-                if (kv.Value is HexEditorControl hex)
-                    return string.Equals(hex.FileName, e.FilePath, System.StringComparison.OrdinalIgnoreCase);
-                return false;
-            }).Key;
+        // Find an already-open tab for this file
+        var (contentId, content) = _contentCache.FirstOrDefault(kv =>
+        {
+            if (kv.Value is HexEditorControl hex)
+                return string.Equals(hex.FileName, e.FilePath, System.StringComparison.OrdinalIgnoreCase);
+            if (kv.Value is WpfHexEditor.Editor.TblEditor.Controls.TblEditor tbl)
+                return string.Equals(tbl.Title.TrimEnd('*', ' '),
+                    Path.GetFileName(e.FilePath), System.StringComparison.OrdinalIgnoreCase);
+            return false;
+        });
 
+        // Activate existing tab or open the file
         if (contentId != null)
         {
-            var item = _layout.FindItemByContentId(contentId);
-            if (item?.Owner != null) item.Owner.ActiveItem = item;
+            var dockItem = _layout.FindItemByContentId(contentId);
+            if (dockItem?.Owner != null) dockItem.Owner.ActiveItem = dockItem;
         }
         else
         {
             OpenFileDirectly(e.FilePath);
         }
 
-        // Scroll to offset after a brief layout pass
-        if (e.Offset.HasValue && _connectedHexEditor != null)
+        // Navigate after layout completes
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
         {
-            var offset = e.Offset.Value;
-            _connectedHexEditor.Dispatcher.BeginInvoke(
-                System.Windows.Threading.DispatcherPriority.Loaded,
-                () => _connectedHexEditor.SetPosition(offset));
+            // HexEditor — byte offset
+            if (e.Offset.HasValue && _connectedHexEditor != null)
+                _connectedHexEditor.SetPosition(e.Offset.Value);
+
+            // TblEditor — jump to hex entry (key stored in Tag by repair service)
+            if (e.Tag is string hexKey && content is WpfHexEditor.Editor.TblEditor.Controls.TblEditor tblEd)
+                tblEd.GoToEntry(hexKey);
+        });
+    }
+
+    private void OnOpenInTextEditorRequested(object? sender, DiagnosticEntry e)
+    {
+        if (e.FilePath is null || !File.Exists(e.FilePath)) return;
+
+        // Look for an already-open TextEditor tab for this file
+        var existing = _contentCache.FirstOrDefault(kv =>
+            kv.Value is WpfHexEditor.Editor.TextEditor.Controls.TextEditor tc &&
+            string.Equals(tc.Title.TrimEnd('*', ' '),
+                Path.GetFileName(e.FilePath), System.StringComparison.OrdinalIgnoreCase));
+
+        if (existing.Key != null)
+        {
+            var existingDockItem = _layout.FindItemByContentId(existing.Key);
+            if (existingDockItem?.Owner != null) existingDockItem.Owner.ActiveItem = existingDockItem;
+        }
+        else
+        {
+            // Create a new TextEditor tab, bypassing the registry (force TextEditorFactory)
+            _documentCounter++;
+            var newContentId = $"doc-text-err-{_documentCounter}";
+            var textFactory  = new WpfHexEditor.Editor.TextEditor.TextEditorFactory();
+            var editor       = textFactory.Create() as WpfHexEditor.Editor.TextEditor.Controls.TextEditor;
+            if (editor == null) return;
+
+            editor.OutputMessage += OnEditorOutputMessage;
+            _ = editor.OpenAsync(e.FilePath);
+
+            _contentCache[newContentId] = editor;
+            var newDockItem = new DockItem
+            {
+                ContentId = newContentId,
+                Title     = Path.GetFileName(e.FilePath)
+            };
+            _engine.Dock(newDockItem, _layout.MainDocumentHost, DockDirection.Center);
+            ActiveDocumentEditor       = editor;
+            ActiveStatusBarContributor = null;
+        }
+
+        // Navigate to the target line after the file is loaded
+        if (e.Line.HasValue)
+        {
+            var targetLine = e.Line.Value;
+            var targetCol  = e.Column ?? 1;
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+            {
+                if (_contentCache.Values
+                    .OfType<WpfHexEditor.Editor.TextEditor.Controls.TextEditor>()
+                    .FirstOrDefault(t => string.Equals(
+                        t.Title.TrimEnd('*', ' '), Path.GetFileName(e.FilePath),
+                        System.StringComparison.OrdinalIgnoreCase)) is { } tc)
+                {
+                    tc.GoToLine(targetLine, targetCol);
+                }
+            });
         }
     }
 
@@ -863,6 +1011,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                         if (bkms is { Count: > 0 }) p.ApplyBookmarks(bkms);
                     }
                 }
+
+                // Wire OutputMessage → Output panel
+                editor.OutputMessage += OnEditorOutputMessage;
+
+                // Register as diagnostic source (e.g. TblEditor with IDiagnosticSource)
+                if (editor is IDiagnosticSource diagSrc && _errorPanel is not null)
+                    _errorPanel.AddSource(diagSrc);
 
                 ActiveDocumentEditor       = editor;
                 ActiveStatusBarContributor = editor as IStatusBarContributor;
@@ -1305,6 +1460,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OutputLogger.Info($"Imported folder '{Path.GetFileName(physicalPath)}' into '{project.Name}'");
     }
 
+    private void OnSEProjectRenameRequested(object? sender, ProjectRenameRequestedEventArgs e)
+        => _ = _solutionManager.RenameProjectAsync(e.Project, e.NewName);
+
+    private void OnSECloseSolutionRequested(object? sender, EventArgs e)
+        => _ = CloseSolutionAsync();
+
     // ─── Active document tracking ───────────────────────────────────────
 
     private void OnActiveDocumentChanged(DockItem item)
@@ -1442,6 +1603,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OutputLogger.Debug($"File: {filename}");
         OutputLogger.Debug(formatPart);
     }
+
+    private void OnEditorOutputMessage(object? sender, string message)
+        => OutputLogger.Info(message);
 
     // ─── Long-running operation handlers (per active document) ──────────
 
@@ -1582,6 +1746,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 SaveProjectItemState(itemId, projectId, persistable);
             }
+
+            // Disconnect IDiagnosticSource for non-HexEditor registry-based editors (e.g. TblEditor)
+            if (ctrl is not HexEditorControl && ctrl is IDiagnosticSource closingDiag)
+                _errorPanel?.RemoveSource(closingDiag);
 
             _propertyProviderCache.Remove(ctrl);  // M5: evict cached provider
             _contentCache.Remove(item.ContentId);
@@ -1872,6 +2040,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task OpenSolutionAsync(string filePath)
     {
+        // Prompt to save modified solution/project files before replacing the current solution.
+        if (_solutionManager.CurrentSolution != null)
+        {
+            var solDirty = CollectDirtySolutionItems();
+            if (solDirty.Count > 0)
+            {
+                var dlg = new Dialogs.SaveChangesDialog
+                {
+                    DirtyItems = solDirty,
+                    Owner      = this
+                };
+                if (dlg.ShowDialog() != true || dlg.Choice == Dialogs.SaveChangesChoice.Cancel)
+                    return;
+
+                if (dlg.Choice == Dialogs.SaveChangesChoice.Save)
+                    await SaveSelectedSolutionItemsAsync(dlg.SelectedContentIds);
+            }
+        }
+
         try
         {
             await _solutionManager.OpenSolutionAsync(filePath);
@@ -1943,8 +2130,26 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _ = CloseSolutionAsync();
     }
 
-    private async Task CloseSolutionAsync()
+    private async Task<bool> CloseSolutionAsync(bool promptUser = true)
     {
+        if (promptUser)
+        {
+            var solDirty = CollectDirtySolutionItems();
+            if (solDirty.Count > 0)
+            {
+                var dlg = new Dialogs.SaveChangesDialog
+                {
+                    DirtyItems = solDirty,
+                    Owner      = this
+                };
+                if (dlg.ShowDialog() != true || dlg.Choice == Dialogs.SaveChangesChoice.Cancel)
+                    return false;
+
+                if (dlg.Choice == Dialogs.SaveChangesChoice.Save)
+                    await SaveSelectedSolutionItemsAsync(dlg.SelectedContentIds);
+            }
+        }
+
         try
         {
             await _solutionManager.CloseSolutionAsync();
@@ -1953,6 +2158,55 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         catch (Exception ex)
         {
             OutputLogger.Error($"Failed to close solution: {ex.Message}");
+        }
+        return true;
+    }
+
+    // ─── Solution dirty-save helpers ───────────────────────────────────
+
+    // Synthetic content IDs used in the SaveChangesDialog for solution/project files.
+    private const string SolutionDirtyId = "__solution__";
+    private static string ProjectDirtyId(string id) => $"__proj__{id}";
+
+    /// <summary>
+    /// Returns one entry per modified solution/project file for the SaveChangesDialog.
+    /// </summary>
+    private List<(string ContentId, string Title)> CollectDirtySolutionItems()
+    {
+        var result = new List<(string, string)>();
+        var sol = _solutionManager.CurrentSolution;
+        if (sol is null) return result;
+
+        if (sol.IsModified)
+            result.Add((SolutionDirtyId, $"{sol.Name}.whsln"));
+
+        foreach (var proj in sol.Projects.Where(p => p.IsModified))
+            result.Add((ProjectDirtyId(proj.Id), $"{proj.Name}.whproj"));
+
+        return result;
+    }
+
+    /// <summary>
+    /// Saves whichever solution/project items the user selected in the dialog.
+    /// If the solution file is in the set, <see cref="ISolutionManager.SaveSolutionAsync"/>
+    /// is used (which also writes all project files).  Otherwise only the selected
+    /// projects are saved individually.
+    /// </summary>
+    private async Task SaveSelectedSolutionItemsAsync(IReadOnlyList<string> selectedIds)
+    {
+        var sol = _solutionManager.CurrentSolution;
+        if (sol is null) return;
+
+        if (selectedIds.Contains(SolutionDirtyId))
+        {
+            await _solutionManager.SaveSolutionAsync(sol);
+            return;
+        }
+
+        foreach (var proj in sol.Projects)
+        {
+            if (selectedIds.Contains(ProjectDirtyId(proj.Id)))
+                await _solutionManager.SaveProjectAsync(proj);
         }
     }
 
@@ -2122,7 +2376,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         _documentCounter++;
         var contentId = $"doc-diff-{_documentCounter}";
-        var viewer    = new DiffViewerControl();
+        var viewer    = new WpfHexEditor.Editor.DiffViewer.Controls.DiffViewer();
         var title     = $"{Path.GetFileName(dlgLeft.FileName)} ↔ {Path.GetFileName(dlgRight.FileName)}";
 
         _contentCache[contentId] = viewer;
@@ -2145,7 +2399,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         _documentCounter++;
         var contentId = $"doc-entropy-{_documentCounter}";
-        var viewer    = new EntropyViewerControl();
+        var viewer    = new WpfHexEditor.Editor.EntropyViewer.Controls.EntropyViewer();
         var title     = $"Entropy: {Path.GetFileName(filePath)}";
 
         _contentCache[contentId] = viewer;

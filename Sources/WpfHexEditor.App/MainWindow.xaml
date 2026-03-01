@@ -1,4 +1,4 @@
-<!--
+﻿<!--
     Apache 2.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
@@ -66,11 +66,11 @@
                       WindowChrome.IsHitTestVisibleInChrome="True">
 
                     <!-- ═══════════ File ═══════════ -->
-                    <MenuItem Header="_File" Style="{DynamicResource DockDarkMenuItemStyle}"
+                    <MenuItem Header="_File"
                               IsEnabled="{Binding IsMenuEnabled, ElementName=ThisWindow}">
 
                         <!-- New ► -->
-                        <MenuItem Header="_New" Style="{DynamicResource DockDarkMenuItemStyle}">
+                        <MenuItem Header="_New">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -90,7 +90,7 @@
                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                            <Separator />
                             <MenuItem Header="_File..." Click="OnNewFile" InputGestureText="Ctrl+N">
                                 <MenuItem.Icon>
                                     <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -101,7 +101,7 @@
                         </MenuItem>
 
                         <!-- Open ► -->
-                        <MenuItem Header="_Open" Style="{DynamicResource DockDarkMenuItemStyle}">
+                        <MenuItem Header="_Open">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -123,7 +123,7 @@
                             </MenuItem>
                         </MenuItem>
 
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
 
                         <!-- Close active document -->
                         <MenuItem Header="_Close" Click="OnCloseActiveDocument" InputGestureText="Ctrl+W">
@@ -149,7 +149,7 @@
                             </MenuItem.Icon>
                         </MenuItem>
 
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
 
                         <!-- Save -->
                         <MenuItem Header="_Save"
@@ -169,11 +169,10 @@
                             </MenuItem.Icon>
                         </MenuItem>
 
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
 
                         <!-- Recent Solutions ► -->
-                        <MenuItem x:Name="RecentSolutionsMenuItem" Header="Recent _Solutions"
-                                  Style="{DynamicResource DockDarkMenuItemStyle}">
+                        <MenuItem x:Name="RecentSolutionsMenuItem" Header="Recent _Solutions">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -183,8 +182,7 @@
                         </MenuItem>
 
                         <!-- Recent Files ► -->
-                        <MenuItem x:Name="RecentFilesMenuItem" Header="Recent _Files"
-                                  Style="{DynamicResource DockDarkMenuItemStyle}">
+                        <MenuItem x:Name="RecentFilesMenuItem" Header="Recent _Files">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -193,7 +191,7 @@
                             <!-- Items populated dynamically -->
                         </MenuItem>
 
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
                         <MenuItem Header="E_xit" Click="OnExit" InputGestureText="Alt+F4">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -204,7 +202,7 @@
                     </MenuItem>
 
                     <!-- ═══════════ Edit ═══════════ -->
-                    <MenuItem Header="_Edit" Style="{DynamicResource DockDarkMenuItemStyle}"
+                    <MenuItem Header="_Edit"
                               IsEnabled="{Binding IsMenuEnabled, ElementName=ThisWindow}">
                         <MenuItem Header="_Undo"
                                   Command="{Binding ActiveDocumentEditor.UndoCommand, ElementName=ThisWindow}"
@@ -224,7 +222,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
                         <MenuItem Header="Cu_t"
                                   Command="{Binding ActiveDocumentEditor.CutCommand, ElementName=ThisWindow}"
                                   InputGestureText="Ctrl+X">
@@ -260,7 +258,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
                         <MenuItem Header="Select _All"
                                   Command="{Binding ActiveDocumentEditor.SelectAllCommand, ElementName=ThisWindow}"
                                   InputGestureText="Ctrl+A">
@@ -270,7 +268,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
                         <MenuItem Header="_Find / Replace..."
                                   Command="{x:Static ApplicationCommands.Find}"
                                   CommandTarget="{Binding ElementName=ThisWindow}"
@@ -290,7 +288,7 @@
                     </MenuItem>
 
                     <!-- ═══════════ View ═══════════ -->
-                    <MenuItem Header="_View" Style="{DynamicResource DockDarkMenuItemStyle}">
+                    <MenuItem Header="_View">
                         <MenuItem Header="_Solution Explorer" Click="OnShowSolutionExplorer" InputGestureText="Ctrl+Alt+L">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -352,7 +350,7 @@
                     </MenuItem>
 
                     <!-- ═══════════ Project ═══════════ (enabled when solution loaded AND no operation active) -->
-                    <MenuItem Header="_Project" Style="{DynamicResource DockDarkMenuItemStyle}"
+                    <MenuItem Header="_Project"
                               IsEnabled="{Binding IsProjectMenuEnabled, ElementName=ThisWindow}">
                         <MenuItem Header="Add _New Item..." Click="OnProjectAddNewItem" InputGestureText="Ctrl+Shift+A">
                             <MenuItem.Icon>
@@ -368,7 +366,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
                         <MenuItem Header="Add New _Project..." Click="OnNewProject">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -376,7 +374,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
                         <MenuItem Header="P_roperties..." Click="OnProjectProperties">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -387,7 +385,7 @@
                     </MenuItem>
 
                     <!-- ═══════════ Layout ═══════════ -->
-                    <MenuItem Header="_Layout" Style="{DynamicResource DockDarkMenuItemStyle}">
+                    <MenuItem Header="_Layout">
                         <MenuItem Header="_Save Layout" Click="OnSaveLayout">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -409,7 +407,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
                         <MenuItem Header="Toggle _Locked Layout" Click="OnToggleLock" IsCheckable="True" x:Name="LockMenuItem">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -420,7 +418,7 @@
                     </MenuItem>
 
                     <!-- ═══════════ Theme ═══════════ -->
-                    <MenuItem Header="_Theme" Style="{DynamicResource DockDarkMenuItemStyle}">
+                    <MenuItem Header="_Theme">
                         <MenuItem Header="_Dark" Click="OnDarkTheme">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE708;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -463,7 +461,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <Separator />
                         <MenuItem Header="_Minimal" Click="OnMinimalTheme">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE790;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -504,25 +502,22 @@
                     <Button Click="OnToolBarDropDownClick" ToolTip="New…"
                             Style="{DynamicResource DockToolBarPodDropDownButtonStyle}">
                         <Button.ContextMenu>
-                            <ContextMenu Style="{DynamicResource DockDarkContextMenuStyle}">
+                            <ContextMenu>
                                 <MenuItem Header="New _File…"     Click="OnNewFile"
-                                          InputGestureText="Ctrl+N"
-                                          Style="{DynamicResource DockDarkMenuItemStyle}">
+                                          InputGestureText="Ctrl+N">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                    Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="New _Project…"  Click="OnNewProject"
-                                          Style="{DynamicResource DockDarkMenuItemStyle}">
+                                <MenuItem Header="New _Project…"  Click="OnNewProject">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE8F9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                    Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="New _Solution…" Click="OnNewSolution"
-                                          InputGestureText="Ctrl+Shift+N"
-                                          Style="{DynamicResource DockDarkMenuItemStyle}">
+                                          InputGestureText="Ctrl+Shift+N">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                    Foreground="{DynamicResource DockMenuForegroundBrush}"/>
@@ -540,18 +535,16 @@
                     <Button Click="OnToolBarDropDownClick" ToolTip="Open…"
                             Style="{DynamicResource DockToolBarPodDropDownButtonStyle}">
                         <Button.ContextMenu>
-                            <ContextMenu Style="{DynamicResource DockDarkContextMenuStyle}">
+                            <ContextMenu>
                                 <MenuItem Header="Open _File…"              Click="OnOpenFile"
-                                          InputGestureText="Ctrl+O"
-                                          Style="{DynamicResource DockDarkMenuItemStyle}">
+                                          InputGestureText="Ctrl+O">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                    Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="Open Solution/_Project…"  Click="OnOpenSolutionOrProject"
-                                          InputGestureText="Ctrl+Shift+O"
-                                          Style="{DynamicResource DockDarkMenuItemStyle}">
+                                          InputGestureText="Ctrl+Shift+O">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE8F9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                    Foreground="{DynamicResource DockMenuForegroundBrush}"/>
@@ -715,32 +708,28 @@
                 <Button Click="OnToolBarDropDownClick" ToolTip="Layout options…"
                         Style="{DynamicResource DockToolBarPodDropDownButtonStyle}">
                     <Button.ContextMenu>
-                        <ContextMenu Style="{DynamicResource DockDarkContextMenuStyle}">
-                            <MenuItem Header="_Save Layout…"   Click="OnSaveLayout"
-                                      Style="{DynamicResource DockDarkMenuItemStyle}">
+                        <ContextMenu>
+                            <MenuItem Header="_Save Layout…"   Click="OnSaveLayout">
                                 <MenuItem.Icon>
                                     <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="_Load Layout…"   Click="OnLoadLayout"
-                                      Style="{DynamicResource DockDarkMenuItemStyle}">
+                            <MenuItem Header="_Load Layout…"   Click="OnLoadLayout">
                                 <MenuItem.Icon>
                                     <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="_Reset Layout"   Click="OnResetLayout"
-                                      Style="{DynamicResource DockDarkMenuItemStyle}">
+                            <MenuItem Header="_Reset Layout"   Click="OnResetLayout">
                                 <MenuItem.Icon>
                                     <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}"/>
+                            <Separator/>
                             <MenuItem Header="Toggle _Locked Layout" Click="OnToggleLock"
-                                      IsCheckable="True" x:Name="LockMenuItemToolbar"
-                                      Style="{DynamicResource DockDarkMenuItemStyle}">
+                                      IsCheckable="True" x:Name="LockMenuItemToolbar">
                                 <MenuItem.Icon>
                                     <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                Foreground="{DynamicResource DockMenuForegroundBrush}"/>
@@ -795,8 +784,7 @@
                                     <Run Text="{Binding Value, Mode=OneWay}" FontWeight="SemiBold"/>
                                 </TextBlock>
                                 <Border.ContextMenu>
-                                    <ContextMenu Style="{DynamicResource DockDarkContextMenuStyle}"
-                                                 ItemsSource="{Binding Choices}">
+                                    <ContextMenu ItemsSource="{Binding Choices}">
                                         <ContextMenu.ItemContainerStyle>
                                             <Style TargetType="MenuItem" BasedOn="{StaticResource DockDarkMenuItemStyle}">
                                                 <Setter Property="Header"    Value="{Binding DisplayName}"/>
