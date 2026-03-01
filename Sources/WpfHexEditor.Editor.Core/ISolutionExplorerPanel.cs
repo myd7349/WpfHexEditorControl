@@ -6,6 +6,18 @@
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>
+/// Event args for "Add New Item" / "Add Existing Item" requests from the Solution Explorer context menu.
+/// </summary>
+public sealed class AddItemRequestedEventArgs : EventArgs
+{
+    /// <summary>Project that should receive the new item.</summary>
+    public IProject Project { get; set; } = null!;
+
+    /// <summary>Virtual folder id to place the item in, or <see langword="null"/> for the project root.</summary>
+    public string? TargetFolderId { get; set; }
+}
+
+/// <summary>
 /// Contract for the Solution Explorer panel.
 /// <para>
 /// The host sets the active solution via <see cref="SetSolution"/> and listens
@@ -39,4 +51,10 @@ public interface ISolutionExplorerPanel
 
     /// <summary>Fired when the user drags a file node to a new folder or the project root.</summary>
     event EventHandler<ItemMoveRequestedEventArgs>? ItemMoveRequested;
+
+    /// <summary>Fired when the user chooses "Add New Item…" from the context menu on a project or folder node.</summary>
+    event EventHandler<AddItemRequestedEventArgs>? AddNewItemRequested;
+
+    /// <summary>Fired when the user chooses "Add Existing Item…" from the context menu on a project or folder node.</summary>
+    event EventHandler<AddItemRequestedEventArgs>? AddExistingItemRequested;
 }

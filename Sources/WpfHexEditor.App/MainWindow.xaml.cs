@@ -428,12 +428,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private SolutionExplorerPanel CreateSolutionExplorerPanel()
     {
         var panel = new SolutionExplorerPanel();
-        panel.ItemActivated            += OnSolutionExplorerItemActivated;
-        panel.ItemSelected             += OnSolutionExplorerItemSelected;
-        panel.ItemRenameRequested      += OnSolutionExplorerItemRenameRequested;
-        panel.ItemDeleteRequested      += OnSolutionExplorerItemDeleteRequested;
-        panel.ItemMoveRequested        += OnSolutionExplorerItemMoveRequested;
+        panel.ItemActivated             += OnSolutionExplorerItemActivated;
+        panel.ItemSelected              += OnSolutionExplorerItemSelected;
+        panel.ItemRenameRequested       += OnSolutionExplorerItemRenameRequested;
+        panel.ItemDeleteRequested       += OnSolutionExplorerItemDeleteRequested;
+        panel.ItemMoveRequested         += OnSolutionExplorerItemMoveRequested;
         panel.DefaultTblChangeRequested += OnDefaultTblChangeRequested;
+        panel.AddNewItemRequested       += OnSEAddNewItem;
+        panel.AddExistingItemRequested  += OnSEAddExistingItem;
         // Sync current solution if already loaded
         panel.SetSolution(_solutionManager.CurrentSolution);
         return panel;
@@ -631,6 +633,34 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OutputLogger.Info(e.TblItem is not null
             ? $"Default TBL set to '{e.TblItem.Name}' in project '{e.Project.Name}'"
             : $"Default TBL cleared in project '{e.Project.Name}'");
+    }
+
+    private void OnSEAddNewItem(object? sender, AddItemRequestedEventArgs e)
+    {
+        var dlg = new AddNewItemDialog(e.Project) { Owner = this };
+        if (dlg.ShowDialog() != true || dlg.SelectedTemplate is null) return;
+
+        _ = _solutionManager.CreateItemAsync(
+            e.Project,
+            dlg.FileName,
+            ProjectItemTypeHelper.FromExtension(Path.GetExtension(dlg.FileName)),
+            virtualFolderId: dlg.TargetFolderId ?? e.TargetFolderId,
+            initialContent:  dlg.SelectedTemplate.CreateContent());
+    }
+
+    private void OnSEAddExistingItem(object? sender, AddItemRequestedEventArgs e)
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title  = "Add Existing Item",
+            Filter = "All Files (*.*)|*.*|Binary Files (*.bin;*.rom)|*.bin;*.rom" +
+                     "|TBL Files (*.tbl;*.tblx)|*.tbl;*.tblx" +
+                     "|IPS/BPS Patches (*.ips;*.bps)|*.ips;*.bps" +
+                     "|JSON Files (*.json;*.whjson)|*.json;*.whjson"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        _ = _solutionManager.AddItemAsync(e.Project, dlg.FileName, e.TargetFolderId);
     }
 
     private void OnSolutionExplorerItemSelected(object? sender, ProjectItemEventArgs e)
@@ -938,6 +968,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_isLocked) return;
 
+        // Dirty-close prompt — only for document tabs backed by IDocumentEditor
+        if (_contentCache.TryGetValue(item.ContentId, out var dirtyCtrl) &&
+            dirtyCtrl is IDocumentEditor dirtyEditor && dirtyEditor.IsDirty)
+        {
+            var cleanTitle = item.Title.TrimEnd('*', ' ');
+            var answer = System.Windows.MessageBox.Show(
+                $"Save changes to '{cleanTitle}'?",
+                "Unsaved Changes",
+                System.Windows.MessageBoxButton.YesNoCancel,
+                System.Windows.MessageBoxImage.Question);
+
+            if (answer == System.Windows.MessageBoxResult.Cancel) return;
+            if (answer == System.Windows.MessageBoxResult.Yes &&
+                dirtyEditor.SaveCommand?.CanExecute(null) == true)
+            {
+                dirtyEditor.SaveCommand.Execute(null);
+            }
+        }
+
         if (_contentCache.TryGetValue(item.ContentId, out var ctrl))
         {
             if (ctrl is HexEditorControl hex)
@@ -1023,16 +1072,38 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_solutionManager.CurrentSolution is null)
         {
-            MessageBox.Show("Please create or open a solution first.", "No Solution",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            // VS-like behaviour: no solution open → show the project dialog and auto-create
+            // a solution with the same name in the same directory.
+            var dlg = new NewProjectDialog("") { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            _ = CreateSolutionAndProjectAsync(dlg.ProjectDirectory, dlg.ProjectName);
             return;
         }
 
         var suggestedDir = Path.GetDirectoryName(_solutionManager.CurrentSolution.FilePath) ?? "";
-        var dlg = new NewProjectDialog(suggestedDir) { Owner = this };
-        if (dlg.ShowDialog() != true) return;
+        var dlg2 = new NewProjectDialog(suggestedDir) { Owner = this };
+        if (dlg2.ShowDialog() != true) return;
 
-        _ = CreateProjectAsync(_solutionManager.CurrentSolution, dlg.ProjectDirectory, dlg.ProjectName);
+        _ = CreateProjectAsync(_solutionManager.CurrentSolution, dlg2.ProjectDirectory, dlg2.ProjectName);
+    }
+
+    private async Task CreateSolutionAndProjectAsync(string directory, string name)
+    {
+        try
+        {
+            await _solutionManager.CreateSolutionAsync(directory, name);
+            OutputLogger.Info($"Solution created: {name}");
+
+            await _solutionManager.CreateProjectAsync(_solutionManager.CurrentSolution!, directory, name);
+            OutputLogger.Info($"Project created: {name}");
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Failed to create solution/project: {ex.Message}");
+            MessageBox.Show($"Failed to create solution/project:\n{ex.Message}", "Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async Task CreateProjectAsync(ISolution solution, string directory, string name)
@@ -1217,6 +1288,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         PopulateRecentMenus();
         OutputLogger.Info($"Open file: {dlg.FileName}");
     }
+
+    // ─── Toolbar dropdown helper ───────────────────────────────────────
+    // Generic Click handler for DockToolBarPodDropDownButtonStyle buttons.
+    // Opens the ContextMenu attached to the button below its bottom edge.
+    private void OnToolBarDropDownClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.ContextMenu is null) return;
+        btn.ContextMenu.PlacementTarget = btn;
+        btn.ContextMenu.Placement       = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        btn.ContextMenu.IsOpen          = true;
+    }
+
+    // Alias: Open Project… → reuses the solution/project open dialog
+    private void OnOpenProject(object sender, RoutedEventArgs e) =>
+        OnOpenSolutionOrProject(sender, e);
 
     // ─── Menu: File — Close ────────────────────────────────────────────
 

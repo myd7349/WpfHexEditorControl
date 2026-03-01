@@ -90,21 +90,65 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     private void UpdateContextMenu(SolutionExplorerNodeVm? node)
     {
         _contextMenuTarget = node;
-        bool isTbl = node is FileNodeVm fn && fn.Source.ItemType == ProjectItemType.Tbl;
 
-        SetDefaultTblMenuItem.Visibility   = isTbl ? Visibility.Visible : Visibility.Collapsed;
-        ClearDefaultTblMenuItem.Visibility = isTbl ? Visibility.Visible : Visibility.Collapsed;
+        bool isProject = node is ProjectNodeVm;
+        bool isFolder  = node is FolderNodeVm;
+        bool isFile    = node is FileNodeVm;
+        bool isTbl     = node is FileNodeVm fn && fn.Source.ItemType == ProjectItemType.Tbl;
+
+        // "Add" items: project or folder only
+        var canAdd = isProject || isFolder;
+        AddNewItemMenuItem.Visibility      = canAdd ? Visibility.Visible  : Visibility.Collapsed;
+        AddExistingItemMenuItem.Visibility = canAdd ? Visibility.Visible  : Visibility.Collapsed;
+        AddSeparator.Visibility            = canAdd ? Visibility.Visible  : Visibility.Collapsed;
+
+        // TBL items: TBL file only
+        SetDefaultTblMenuItem.Visibility   = isTbl  ? Visibility.Visible  : Visibility.Collapsed;
+        ClearDefaultTblMenuItem.Visibility = isTbl  ? Visibility.Visible  : Visibility.Collapsed;
+        TblSeparator.Visibility            = isTbl  ? Visibility.Visible  : Visibility.Collapsed;
+
+        // Rename / Remove: file or folder only
+        RenameMenuItem.Visibility  = (isFile || isFolder) ? Visibility.Visible : Visibility.Collapsed;
+        RemoveMenuItem.Visibility  = (isFile || isFolder) ? Visibility.Visible : Visibility.Collapsed;
+
+        // Properties: file or project
+        PropertiesMenuItem.Visibility  = (isFile || isProject) ? Visibility.Visible : Visibility.Collapsed;
+        PropertiesSeparator.Visibility = (isFile || isProject) ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnAddNewItem(object sender, RoutedEventArgs e)
     {
-        // Raised to host; implemented in App layer
+        var (project, folderId) = GetContextProjectAndFolder();
+        if (project is null) return;
+        AddNewItemRequested?.Invoke(this, new AddItemRequestedEventArgs
+        {
+            Project        = project,
+            TargetFolderId = folderId,
+        });
     }
 
     private void OnAddExistingItem(object sender, RoutedEventArgs e)
     {
-        // Raised to host; implemented in App layer
+        var (project, folderId) = GetContextProjectAndFolder();
+        if (project is null) return;
+        AddExistingItemRequested?.Invoke(this, new AddItemRequestedEventArgs
+        {
+            Project        = project,
+            TargetFolderId = folderId,
+        });
     }
+
+    /// <summary>
+    /// Returns the target project and optional folder id inferred from the current context menu node.
+    /// </summary>
+    private (IProject? project, string? folderId) GetContextProjectAndFolder()
+        => _contextMenuTarget switch
+        {
+            ProjectNodeVm pv => (pv.Source, null),
+            FolderNodeVm  fv => (fv.Project, fv.Folder.Id),
+            FileNodeVm    fn => (fn.Project, null),
+            _                => (null, null),
+        };
 
     private void OnSetDefaultTbl(object sender, RoutedEventArgs e)
     {
@@ -150,6 +194,12 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     /// <summary>Raised when the user requests a change to the project default TBL.</summary>
     public event EventHandler<DefaultTblChangeEventArgs>? DefaultTblChangeRequested;
+
+    /// <inheritdoc/>
+    public event EventHandler<AddItemRequestedEventArgs>? AddNewItemRequested;
+
+    /// <inheritdoc/>
+    public event EventHandler<AddItemRequestedEventArgs>? AddExistingItemRequested;
 
     // ── F2 Inline rename ──────────────────────────────────────────────────────
 

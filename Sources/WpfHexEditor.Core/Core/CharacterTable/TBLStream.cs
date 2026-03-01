@@ -558,6 +558,17 @@ namespace WpfHexEditor.Core.CharacterTable
         }
 
         /// <summary>
+        /// Save tbl file to a specific path (without changing the current FileName).
+        /// </summary>
+        public void SaveAs(string filePath)
+        {
+            var previous = _fileName;
+            _fileName = filePath;
+            try { Save(); }
+            finally { _fileName = previous; }
+        }
+
+        /// <summary>
         /// Add a DTE/MTE in TBL with modification tracking
         /// </summary>
         public void Add(Dte dte)
