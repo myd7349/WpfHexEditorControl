@@ -114,6 +114,7 @@ graph LR
     end
 
     HexEditor --> Core
+    HexEditor --> EditorCore
     WindowPanels --> Core
     JsonEditor --> Core
     JsonEditor --> EditorCore
