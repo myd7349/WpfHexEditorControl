@@ -5,6 +5,7 @@
 
 using System;
 using WpfHexEditor.Core.Models;
+using WpfHexEditor.Core.RomHacking;
 using WpfHexEditor.Editor.Core;
 
 namespace WpfHexEditor.HexEditor
@@ -70,15 +71,47 @@ namespace WpfHexEditor.HexEditor
 
         /// <inheritdoc />
         /// <remarks>
-        /// Returns <see langword="null"/> when the editor buffer is clean (unmodified).
-        /// Full byte-level modification patch serialisation is deferred to a future sprint.
+        /// Serialises all in-memory byte-level changes as a compact IPS patch.
+        /// Returns <see langword="null"/> when the buffer is clean.
         /// </remarks>
-        public byte[]? GetUnsavedModifications() => IsModified ? [] : null;
+        public byte[]? GetUnsavedModifications()
+        {
+            if (!IsModified || !IsFileOrStreamLoaded)
+                return null;
+
+            try
+            {
+                var original = GetAllBytes(copyChange: false);
+                var modified = GetAllBytes(copyChange: true);
+                return IPSPatcher.CreatePatch(original, modified);
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
         /// <inheritdoc />
+        /// <remarks>
+        /// Re-applies an IPS patch (previously returned by <see cref="GetUnsavedModifications"/>)
+        /// on top of the currently loaded file bytes.
+        /// </remarks>
         public void ApplyUnsavedModifications(byte[] data)
         {
-            // Placeholder — no-op until GetUnsavedModifications is fully implemented.
+            if (data == null || data.Length == 0 || !IsFileOrStreamLoaded)
+                return;
+
+            try
+            {
+                var baseData = GetAllBytes(copyChange: false);
+                var result   = IPSPatcher.ApplyPatchFromBytes(ref baseData, data);
+                if (result.Success)
+                    OpenMemory(baseData);
+            }
+            catch
+            {
+                // Silently ignore — the editor stays on the clean file
+            }
         }
     }
 }

@@ -1488,28 +1488,256 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             RunValidation();
         }
 
-        private void ShowFindDialog()
+        // ── Find bar ─────────────────────────────────────────────────────
+
+        private Window? _findWindow;
+        private System.Windows.Controls.TextBox? _findTextBox;
+        private string? _lastFindQuery;
+
+        /// <summary>Shows the modeless find bar (public entry point for host).</summary>
+        public void ShowFindBar()
         {
-            // TODO: Implement find dialog
-            System.Diagnostics.Debug.WriteLine("ShowFindDialog not yet implemented");
+            if (_findWindow?.IsVisible == true)
+            {
+                _findWindow.Activate();
+                _findTextBox?.SelectAll();
+                _findTextBox?.Focus();
+                return;
+            }
+            _findWindow = BuildFindWindow(replace: false);
+            _findWindow.Show();
+            _findTextBox?.Focus();
         }
+
+        private void ShowFindDialog() => ShowFindBar();
 
         private void ShowReplaceDialog()
         {
-            // TODO: Implement replace dialog
-            System.Diagnostics.Debug.WriteLine("ShowReplaceDialog not yet implemented");
+            if (_findWindow?.IsVisible == true)
+            {
+                _findWindow.Close();
+            }
+            _findWindow = BuildFindWindow(replace: true);
+            _findWindow.Show();
+            _findTextBox?.Focus();
         }
+
+        private Window BuildFindWindow(bool replace)
+        {
+            var tb = new System.Windows.Controls.TextBox
+            {
+                Width = 200,
+                Margin = new Thickness(4),
+                VerticalAlignment = VerticalAlignment.Center,
+                Text = _lastFindQuery ?? string.Empty
+            };
+            _findTextBox = tb;
+
+            var btnNext  = new System.Windows.Controls.Button { Content = "▼", Width = 28, Height = 28, Margin = new Thickness(2, 4, 0, 4), ToolTip = "Find Next (Enter)" };
+            var btnPrev  = new System.Windows.Controls.Button { Content = "▲", Width = 28, Height = 28, Margin = new Thickness(2, 4, 0, 4), ToolTip = "Find Previous (Shift+Enter)" };
+            var btnClose = new System.Windows.Controls.Button { Content = "✕", Width = 28, Height = 28, Margin = new Thickness(2, 4, 4, 4), ToolTip = "Close (Esc)" };
+
+            System.Windows.Controls.TextBox? tbReplace = null;
+            System.Windows.Controls.Button? btnReplace = null;
+
+            var panel = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(4) };
+            var row1  = new StackPanel { Orientation = Orientation.Horizontal };
+            row1.Children.Add(new System.Windows.Controls.TextBlock { Text = "Find:", Width = 52, VerticalAlignment = VerticalAlignment.Center });
+            row1.Children.Add(tb);
+            row1.Children.Add(btnNext);
+            row1.Children.Add(btnPrev);
+            row1.Children.Add(btnClose);
+            panel.Children.Add(row1);
+
+            if (replace)
+            {
+                tbReplace   = new System.Windows.Controls.TextBox { Width = 200, Margin = new Thickness(4), VerticalAlignment = VerticalAlignment.Center };
+                btnReplace  = new System.Windows.Controls.Button { Content = "Replace", Margin = new Thickness(2, 4, 0, 4), Padding = new Thickness(6, 2, 6, 2) };
+                var row2 = new StackPanel { Orientation = Orientation.Horizontal };
+                row2.Children.Add(new System.Windows.Controls.TextBlock { Text = "Replace:", Width = 52, VerticalAlignment = VerticalAlignment.Center });
+                row2.Children.Add(tbReplace);
+                row2.Children.Add(btnReplace);
+                panel.Children.Add(row2);
+            }
+
+            var parentWindow = Window.GetWindow(this);
+            var win = new Window
+            {
+                Title       = replace ? "Find & Replace" : "Find",
+                Content     = panel,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                ResizeMode  = ResizeMode.NoResize,
+                WindowStyle = WindowStyle.ToolWindow,
+                ShowInTaskbar = false,
+                Owner       = parentWindow,
+            };
+
+            if (parentWindow != null)
+            {
+                win.Left = parentWindow.Left + (parentWindow.Width - 380) / 2;
+                win.Top  = parentWindow.Top  + 80;
+            }
+
+            // Live search as user types
+            tb.TextChanged += (s, e) =>
+            {
+                _lastFindQuery = tb.Text;
+                ExecuteFind(_lastFindQuery);
+                if (_findResults.Count > 0)
+                {
+                    _currentFindMatchIndex = 0;
+                    NavigateToFindMatch();
+                }
+                else
+                {
+                    _currentFindMatchIndex = -1;
+                    InvalidateVisual();
+                }
+            };
+
+            tb.PreviewKeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+                    { FindPrevious(); e.Handled = true; }
+                else if (e.Key == Key.Enter)
+                    { FindNext(); e.Handled = true; }
+                else if (e.Key == Key.Escape)
+                    { ClearFind(); win.Close(); Focus(); e.Handled = true; }
+            };
+
+            btnNext.Click  += (s, e) => FindNext();
+            btnPrev.Click  += (s, e) => FindPrevious();
+            btnClose.Click += (s, e) => { ClearFind(); win.Close(); Focus(); };
+
+            if (btnReplace != null && tbReplace != null)
+            {
+                btnReplace.Click += (s, e) =>
+                {
+                    if (_currentFindMatchIndex < 0 || _currentFindMatchIndex >= _findResults.Count)
+                        return;
+                    var match = _findResults[_currentFindMatchIndex];
+                    _selection.Start = match;
+                    _selection.End   = new TextPosition(match.Line, match.Column + _findMatchLength);
+                    DeleteSelection();
+                    foreach (var ch in tbReplace.Text) InsertChar(ch);
+                    ExecuteFind(_lastFindQuery ?? string.Empty);
+                    FindNext();
+                };
+            }
+
+            win.Closed += (s, e) => { _findWindow = null; _findTextBox = null; };
+            return win;
+        }
+
+        private void ExecuteFind(string query)
+        {
+            _findResults.Clear();
+            _findMatchLength = 0;
+            if (string.IsNullOrEmpty(query) || _document == null)
+            { InvalidateVisual(); return; }
+
+            _findMatchLength = query.Length;
+            for (int line = 0; line < _document.Lines.Count; line++)
+            {
+                var lineText = _document.Lines[line].Text;
+                int col = 0;
+                while (true)
+                {
+                    int idx = lineText.IndexOf(query, col, StringComparison.OrdinalIgnoreCase);
+                    if (idx < 0) break;
+                    _findResults.Add(new Models.TextPosition(line, idx));
+                    col = idx + 1;
+                }
+            }
+            InvalidateVisual();
+        }
+
+        /// <summary>Navigates to the next find result (wraps around).</summary>
+        public void FindNext()
+        {
+            if (_findResults.Count == 0 && !string.IsNullOrEmpty(_lastFindQuery))
+                ExecuteFind(_lastFindQuery);
+            if (_findResults.Count == 0) return;
+            _currentFindMatchIndex = (_currentFindMatchIndex + 1) % _findResults.Count;
+            NavigateToFindMatch();
+        }
+
+        /// <summary>Navigates to the previous find result (wraps around).</summary>
+        public void FindPrevious()
+        {
+            if (_findResults.Count == 0 && !string.IsNullOrEmpty(_lastFindQuery))
+                ExecuteFind(_lastFindQuery);
+            if (_findResults.Count == 0) return;
+            _currentFindMatchIndex = (_currentFindMatchIndex - 1 + _findResults.Count) % _findResults.Count;
+            NavigateToFindMatch();
+        }
+
+        private void NavigateToFindMatch()
+        {
+            if (_currentFindMatchIndex < 0 || _currentFindMatchIndex >= _findResults.Count) return;
+            var match = _findResults[_currentFindMatchIndex];
+            _cursorLine   = match.Line;
+            _cursorColumn = match.Column + _findMatchLength;
+            EnsureCursorVisible();
+            InvalidateVisual();
+        }
+
+        private void ClearFind()
+        {
+            _findResults.Clear();
+            _currentFindMatchIndex = -1;
+            _findMatchLength = 0;
+            InvalidateVisual();
+        }
+
+        // ── Format JSON ──────────────────────────────────────────────────
 
         private void FormatJson()
         {
-            // TODO: Implement JSON formatting
-            System.Diagnostics.Debug.WriteLine("FormatJson not yet implemented");
+            var text = GetText();
+            try
+            {
+                using var jdoc = System.Text.Json.JsonDocument.Parse(text,
+                    new System.Text.Json.JsonDocumentOptions { AllowTrailingCommas = true });
+                var formatted = System.Text.Json.JsonSerializer.Serialize(
+                    jdoc.RootElement,
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+
+                if (formatted != text)
+                {
+                    LoadText(formatted);
+                    _isDirty = true;
+                    ModifiedChanged?.Invoke(this, EventArgs.Empty);
+                }
+                StatusMessage?.Invoke(this, "JSON formatted.");
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                MessageBox.Show($"Cannot format — invalid JSON:\n{ex.Message}",
+                    "Format Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
+
+        // ── Validate JSON ────────────────────────────────────────────────
 
         private void RunValidation()
         {
-            // TODO: Implement JSON validation
-            System.Diagnostics.Debug.WriteLine("RunValidation not yet implemented");
+            var text = GetText();
+            try
+            {
+                using var _ = System.Text.Json.JsonDocument.Parse(text,
+                    new System.Text.Json.JsonDocumentOptions { AllowTrailingCommas = true });
+                StatusMessage?.Invoke(this, "JSON is valid.");
+                MessageBox.Show("JSON is valid.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                var msg = $"Invalid JSON: {ex.Message}";
+                StatusMessage?.Invoke(this, msg);
+                MessageBox.Show(msg, "Validation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         #endregion

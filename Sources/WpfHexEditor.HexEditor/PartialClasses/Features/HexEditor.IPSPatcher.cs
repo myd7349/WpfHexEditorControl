@@ -151,18 +151,19 @@ namespace WpfHexEditor.HexEditor
 
             try
             {
-                // TODO: Implement IPS patch creation
-                // This would require:
-                // 1. Compare original file with current (modified) data
-                // 2. Identify differences
-                // 3. Create IPS records for changed regions
-                // 4. Write IPS file with PATCH header, records, and EOF footer
+                var originalData = File.ReadAllBytes(originalFilePath);
+                var modifiedData = GetAllBytes();
+
+                var patchBytes = IPSPatcher.CreatePatch(originalData, modifiedData);
+                File.WriteAllBytes(outputIpsPath, patchBytes);
 
                 MessageBox.Show(
-                    "IPS patch creation is not yet implemented.\n\n" +
-                    "This feature will allow you to create IPS patches by comparing\n" +
-                    "an original ROM with your modified version.",
-                    "Feature Not Implemented",
+                    $"IPS patch created successfully!\n\n" +
+                    $"Saved to: {Path.GetFileName(outputIpsPath)}\n" +
+                    $"Original size: {originalData.Length:N0} bytes\n" +
+                    $"Modified size: {modifiedData.Length:N0} bytes\n" +
+                    $"Patch size:    {patchBytes.Length:N0} bytes",
+                    "Patch Created",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }

@@ -19,8 +19,21 @@ using System.Windows.Controls;
 
 namespace WpfHexEditor.WindowPanels.Panels
 {
+    /// <summary>Event args raised when the user clicks "Apply Template".</summary>
+    public sealed class TemplateApplyEventArgs : EventArgs
+    {
+        public CustomTemplate Template { get; }
+        public TemplateApplyEventArgs(CustomTemplate template) => Template = template;
+    }
+
     public partial class CustomParserTemplatePanel : UserControl
     {
+        /// <summary>
+        /// Raised when the user clicks "Apply Template".
+        /// Subscribe in the host to parse the HexEditor's bytes according to the template.
+        /// </summary>
+        public event EventHandler<TemplateApplyEventArgs>? TemplateApplyRequested;
+
         private ObservableCollection<CustomTemplate> _templates;
         private CustomTemplate _currentTemplate;
         private string _templatesDirectory;
@@ -249,20 +262,17 @@ namespace WpfHexEditor.WindowPanels.Panels
                 return;
             }
 
-            // This would integrate with the main HexEditor
-            // For now, show a message
-            MessageBox.Show(
-                $"Applying template '{_currentTemplate.Name}' to the current file.\n\n" +
-                $"This will parse {_currentTemplate.Blocks.Count} blocks according to your template definition.\n\n" +
-                $"Note: Full integration with HexEditor requires connecting to the main view model.",
-                "Apply Template", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            // TODO: Implement actual application to HexEditor
-            // This would require:
-            // 1. Access to the current HexEditor instance
-            // 2. Get the loaded file bytes
-            // 3. Parse according to template blocks
-            // 4. Update the ParsedFieldsPanel with results
+            if (TemplateApplyRequested != null)
+            {
+                TemplateApplyRequested.Invoke(this, new TemplateApplyEventArgs(_currentTemplate));
+            }
+            else
+            {
+                MessageBox.Show(
+                    $"Template '{_currentTemplate.Name}' is ready to apply ({_currentTemplate.Blocks.Count} blocks).\n\n" +
+                    $"Open this panel from within the main application to connect it to the active HexEditor.",
+                    "Apply Template", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
 
         private void ExportTemplate_Click(object sender, RoutedEventArgs e)

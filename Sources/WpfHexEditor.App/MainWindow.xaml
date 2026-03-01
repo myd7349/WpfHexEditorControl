@@ -4,7 +4,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:dock="clr-namespace:WpfHexEditor.Docking.Wpf;assembly=WpfHexEditor.Docking.Wpf"
         xmlns:ec="clr-namespace:WpfHexEditor.Editor.Core;assembly=WpfHexEditor.Editor.Core"
+        xmlns:local="clr-namespace:WpfHexEditor.App"
         Title="WpfHexEditor"
+        Icon="pack://application:,,,/WpfHexEditor.App;component/Logo.ico"
         Width="1200" Height="800"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
@@ -40,6 +42,17 @@
                     <Button Content="&#xE106;" Style="{DynamicResource TitleBarCloseButtonStyle}"
                             Click="OnCloseWindow" ToolTip="Close" />
                 </StackPanel>
+
+                <!-- Logo (VS2022/VS Code style — far left, click = system menu) -->
+                <Image DockPanel.Dock="Left"
+                       Source="pack://application:,,,/WpfHexEditor.App;component/Logo.ico"
+                       Width="20" Height="20"
+                       Margin="8,0,4,0"
+                       VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       WindowChrome.IsHitTestVisibleInChrome="True"
+                       Cursor="Arrow"
+                       MouseLeftButtonDown="OnLogoMouseDown" />
 
                 <!-- Menu (left, inline in title bar) -->
                 <Menu DockPanel.Dock="Left" Style="{DynamicResource DockDarkMenuStyle}"
@@ -251,6 +264,23 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
+                        <Separator Style="{DynamicResource DockDarkMenuSeparatorStyle}" />
+                        <MenuItem Header="_Find / Replace..."
+                                  Command="{x:Static ApplicationCommands.Find}"
+                                  CommandTarget="{Binding ElementName=ThisWindow}"
+                                  InputGestureText="Ctrl+F">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Find _Next"
+                                  Click="OnFindNext"
+                                  InputGestureText="F3" />
+                        <MenuItem Header="Find _Previous"
+                                  Click="OnFindPrevious"
+                                  InputGestureText="Shift+F3" />
                     </MenuItem>
 
                     <!-- ═══════════ View ═══════════ -->
@@ -279,6 +309,13 @@
                         <MenuItem Header="_Output" Click="OnShowOutput">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE7C3;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="_Custom Parser Template" Click="OnShowCustomParserTemplate">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE9A1;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
@@ -423,19 +460,82 @@
             </DockPanel>
         </Border>
 
-        <!-- Toolbar -->
+        <!-- Toolbar — VS2026 style: icon (Segoe MDL2 Assets) + short label -->
         <ToolBar Grid.Row="1" Style="{DynamicResource DockDarkToolBarStyle}">
-            <Button Content="+ Hex Editor" Click="OnNewFile" ToolTip="New hex file" Style="{DynamicResource DockDarkToolBarButtonStyle}" />
-            <Button Content="&#xE8E5; Open" Click="OnOpenFile" ToolTip="Open file" Style="{DynamicResource DockDarkToolBarButtonStyle}"
-                    FontFamily="Segoe MDL2 Assets, Segoe UI" />
-            <Separator />
-            <Button Content="Solution Explorer" Click="OnShowSolutionExplorer" Style="{DynamicResource DockDarkToolBarButtonStyle}" />
-            <Button Content="Parsed Fields" Click="OnShowParsedFields" Style="{DynamicResource DockDarkToolBarButtonStyle}" />
-            <Button Content="Properties" Click="OnShowProperties" Style="{DynamicResource DockDarkToolBarButtonStyle}" />
-            <Button Content="Output" Click="OnShowOutput" Style="{DynamicResource DockDarkToolBarButtonStyle}" />
-            <Separator />
-            <Button Content="Save Layout" Click="OnSaveLayout" Style="{DynamicResource DockDarkToolBarButtonStyle}" />
-            <Button Content="Load Layout" Click="OnLoadLayout" Style="{DynamicResource DockDarkToolBarButtonStyle}" />
+
+            <!-- File operations -->
+            <Button Click="OnNewFile" ToolTip="New file (Ctrl+N)"
+                    Style="{DynamicResource DockDarkToolBarButtonStyle}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="New" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Click="OnOpenFile" ToolTip="Open file (Ctrl+O)"
+                    Style="{DynamicResource DockDarkToolBarButtonStyle}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="Open" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
+
+            <!-- Panel toggles -->
+            <Button Click="OnShowSolutionExplorer" ToolTip="Solution Explorer (Ctrl+Alt+L)"
+                    Style="{DynamicResource DockDarkToolBarButtonStyle}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="Explorer" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Click="OnShowParsedFields" ToolTip="Parsed Fields"
+                    Style="{DynamicResource DockDarkToolBarButtonStyle}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xEBD2;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="Fields" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Click="OnShowProperties" ToolTip="Properties (F4)"
+                    Style="{DynamicResource DockDarkToolBarButtonStyle}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="Properties" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Click="OnShowOutput" ToolTip="Output"
+                    Style="{DynamicResource DockDarkToolBarButtonStyle}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE9A8;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="Output" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
+
+            <!-- Layout -->
+            <Button Click="OnSaveLayout" ToolTip="Save layout"
+                    Style="{DynamicResource DockDarkToolBarButtonStyle}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="Save Layout" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+            <Button Click="OnLoadLayout" ToolTip="Load layout"
+                    Style="{DynamicResource DockDarkToolBarButtonStyle}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                               VerticalAlignment="Center" Margin="0,0,5,0"/>
+                    <TextBlock Text="Load Layout" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
         </ToolBar>
 
         <!-- Main Dock Area -->
@@ -539,10 +639,16 @@
         <KeyBinding Gesture="Ctrl+S"       Command="{Binding ActiveDocumentEditor.SaveCommand, ElementName=ThisWindow}" />
         <KeyBinding Gesture="Ctrl+W"       Command="{x:Static ApplicationCommands.Close}" CommandTarget="{Binding ElementName=ThisWindow}" />
         <KeyBinding Gesture="Ctrl+Shift+N" Command="{x:Static ApplicationCommands.New}"   CommandTarget="{Binding ElementName=ThisWindow}" />
+        <KeyBinding Gesture="Ctrl+F"       Command="{x:Static ApplicationCommands.Find}"  CommandTarget="{Binding ElementName=ThisWindow}" />
+        <KeyBinding Key="F3"               Command="{x:Static local:MainWindow.FindNextCommand}" />
+        <KeyBinding Gesture="Shift+F3"     Command="{x:Static local:MainWindow.FindPreviousCommand}" />
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.New}"   Executed="OnNewFile" />
         <CommandBinding Command="{x:Static ApplicationCommands.Open}"  Executed="OnOpenFile" />
         <CommandBinding Command="{x:Static ApplicationCommands.Close}" Executed="OnCloseActiveDocument" />
+        <CommandBinding Command="{x:Static ApplicationCommands.Find}"  Executed="OnShowAdvancedSearch" />
+        <CommandBinding Command="{x:Static local:MainWindow.FindNextCommand}"     Executed="OnFindNext" />
+        <CommandBinding Command="{x:Static local:MainWindow.FindPreviousCommand}" Executed="OnFindPrevious" />
     </Window.CommandBindings>
 </Window>

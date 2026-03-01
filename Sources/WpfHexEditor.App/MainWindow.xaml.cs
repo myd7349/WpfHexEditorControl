@@ -39,6 +39,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+    // ─── Static RoutedCommands (Find Next / Previous — F3/Shift+F3) ────
+    public static readonly RoutedCommand FindNextCommand = new RoutedCommand(
+        "FindNext", typeof(MainWindow),
+        new InputGestureCollection { new KeyGesture(Key.F3) });
+
+    public static readonly RoutedCommand FindPreviousCommand = new RoutedCommand(
+        "FindPrevious", typeof(MainWindow),
+        new InputGestureCollection { new KeyGesture(Key.F3, ModifierKeys.Shift) });
+
     // ─── Constants ─────────────────────────────────────────────────────
     private static readonly string LayoutFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -68,6 +77,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Properties panel (persistent singleton)
     private PropertiesPanel? _propertiesPanel;
+
+    // Custom Parser Template panel (persistent singleton)
+    private WpfHexEditor.WindowPanels.Panels.CustomParserTemplatePanel? _customParserPanel;
+
+    private const string CustomParserPanelContentId = "panel-custom-parser";
 
     // SolutionManager
     private readonly ISolutionManager _solutionManager = SolutionManager.Instance;
@@ -391,6 +405,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "panel-output"             => CreateOutputContent(),
             ParsedFieldsPanelContentId => CreateParsedFieldsContent(),
             "panel-properties"         => CreatePropertiesContent(),
+            CustomParserPanelContentId => CreateCustomParserContent(),
             _ when item.ContentId.StartsWith("doc-hex-") => CreateHexEditorContent(
                 item.Metadata.TryGetValue("FilePath",    out var fp)   ? fp   : null,
                 item.Metadata.TryGetValue("DisplayName", out var dn)   ? dn   : null,
@@ -425,6 +440,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         _propertiesPanel ??= new PropertiesPanel();
         return _propertiesPanel;
+    }
+
+    private UIElement CreateCustomParserContent()
+    {
+        if (_customParserPanel is null)
+        {
+            _customParserPanel = new WpfHexEditor.WindowPanels.Panels.CustomParserTemplatePanel();
+            _customParserPanel.TemplateApplyRequested += OnTemplateApplyRequested;
+        }
+        return _customParserPanel;
     }
 
     private static UIElement CreateOutputContent() => new OutputPanel();
@@ -750,6 +775,32 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnEditorModifiedChanged(object? sender, EventArgs e)
         => CommandManager.InvalidateRequerySuggested();
+
+    // ─── Find / Replace handlers ────────────────────────────────────────
+
+    private void OnShowAdvancedSearch(object sender, RoutedEventArgs e)
+    {
+        if (ActiveHexEditor is { } hex)
+            hex.ShowAdvancedSearchDialog(this);
+        else if (ActiveDocumentEditor is WpfHexEditor.Editor.JsonEditor.Controls.JsonEditor jsonEd)
+            jsonEd.ShowFindBar();
+    }
+
+    private void OnFindNext(object sender, RoutedEventArgs e)
+    {
+        if (ActiveHexEditor is { } hex)
+            hex.ShowAdvancedSearchDialog(this);          // HexEditor has integrated F3 in the dialog
+        else if (ActiveDocumentEditor is WpfHexEditor.Editor.JsonEditor.Controls.JsonEditor jsonEd)
+            jsonEd.FindNext();
+    }
+
+    private void OnFindPrevious(object sender, RoutedEventArgs e)
+    {
+        if (ActiveHexEditor is { } hex)
+            hex.ShowAdvancedSearchDialog(this);
+        else if (ActiveDocumentEditor is WpfHexEditor.Editor.JsonEditor.Controls.JsonEditor jsonEd)
+            jsonEd.FindPrevious();
+    }
 
     private void OnEditorStatusMessage(object? sender, string message)
     {
@@ -1294,6 +1345,94 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnShowProperties(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Properties", "panel-properties", DockDirection.Right);
+
+    private void OnShowCustomParserTemplate(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Custom Parser Template", CustomParserPanelContentId, DockDirection.Right);
+
+    private void OnTemplateApplyRequested(object? sender,
+        WpfHexEditor.WindowPanels.Panels.TemplateApplyEventArgs e)
+    {
+        if (ActiveHexEditor is not { IsFileOrStreamLoaded: true } hex)
+        {
+            System.Windows.MessageBox.Show(
+                "Please open a file in the HexEditor before applying a template.",
+                "Apply Template", System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        var bytes    = hex.GetAllBytes();
+        var template = e.Template;
+
+        // Ensure ParsedFieldsPanel is visible and initialised
+        ShowOrCreatePanel("Parsed Fields", ParsedFieldsPanelContentId, DockDirection.Right);
+        if (_parsedFieldsPanel is null) return;
+
+        _parsedFieldsPanel.Clear();
+        _parsedFieldsPanel.TotalFileSize = bytes.LongLength;
+        _parsedFieldsPanel.FormatInfo = new WpfHexEditor.Core.Interfaces.FormatInfo
+        {
+            IsDetected  = true,
+            Name        = template.Name,
+            Description = template.Description ?? string.Empty,
+            Category    = "Custom Template",
+        };
+
+        foreach (var block in template.Blocks)
+        {
+            if (block.Offset < 0 || block.Offset + block.Length > bytes.Length)
+                continue;
+
+            var data = new byte[block.Length];
+            Array.Copy(bytes, block.Offset, data, 0, block.Length);
+            var (rawVal, fmtVal) = InterpretTemplateBytes(data, block.ValueType);
+
+            _parsedFieldsPanel.ParsedFields.Add(
+                new WpfHexEditor.Core.ViewModels.ParsedFieldViewModel
+                {
+                    Name           = block.Name ?? $"Field@0x{block.Offset:X}",
+                    Offset         = block.Offset,
+                    Length         = block.Length,
+                    RawValue       = rawVal,
+                    FormattedValue = fmtVal,
+                    ValueType      = block.ValueType,
+                    Description    = block.Description,
+                    Color          = block.Color,
+                    IsValid        = true,
+                });
+        }
+
+        _parsedFieldsPanel.RefreshView();
+        RefreshText.Text = $"Template '{template.Name}' applied — {template.Blocks.Count} fields.";
+    }
+
+    private static (object rawVal, string fmtVal) InterpretTemplateBytes(byte[] data, string? type)
+    {
+        if (data is not { Length: > 0 }) return (data!, "(empty)");
+        try
+        {
+            return type?.ToLowerInvariant() switch
+            {
+                "uint8"   => ((object)(byte)data[0],                                    $"{data[0]}"),
+                "int8"    => ((object)(sbyte)data[0],                                   $"{(sbyte)data[0]}"),
+                "uint16"  when data.Length >= 2 => ((object)BitConverter.ToUInt16(data, 0), $"{BitConverter.ToUInt16(data, 0)}"),
+                "int16"   when data.Length >= 2 => ((object)BitConverter.ToInt16 (data, 0), $"{BitConverter.ToInt16 (data, 0)}"),
+                "uint32"  when data.Length >= 4 => ((object)BitConverter.ToUInt32(data, 0), $"{BitConverter.ToUInt32(data, 0)}"),
+                "int32"   when data.Length >= 4 => ((object)BitConverter.ToInt32 (data, 0), $"{BitConverter.ToInt32 (data, 0)}"),
+                "uint64"  when data.Length >= 8 => ((object)BitConverter.ToUInt64(data, 0), $"{BitConverter.ToUInt64(data, 0)}"),
+                "int64"   when data.Length >= 8 => ((object)BitConverter.ToInt64 (data, 0), $"{BitConverter.ToInt64 (data, 0)}"),
+                "float"   when data.Length >= 4 => ((object)BitConverter.ToSingle(data, 0), $"{BitConverter.ToSingle(data, 0):F4}"),
+                "double"  when data.Length >= 8 => ((object)BitConverter.ToDouble(data, 0), $"{BitConverter.ToDouble(data, 0):F6}"),
+                "string"  or "ascii"            => ((object)System.Text.Encoding.ASCII  .GetString(data).TrimEnd('\0'), System.Text.Encoding.ASCII  .GetString(data).TrimEnd('\0')),
+                "utf8"                          => ((object)System.Text.Encoding.UTF8   .GetString(data).TrimEnd('\0'), System.Text.Encoding.UTF8   .GetString(data).TrimEnd('\0')),
+                "utf16"                         => ((object)System.Text.Encoding.Unicode.GetString(data).TrimEnd('\0'), System.Text.Encoding.Unicode.GetString(data).TrimEnd('\0')),
+                "boolean"                       => ((object)(data[0] != 0), data[0] != 0 ? "True" : "False"),
+                "binary"                        => ((object)data, string.Join(" ", data.Select(b => Convert.ToString(b, 2).PadLeft(8, '0')))),
+                _                               => ((object)data, BitConverter.ToString(data).Replace("-", " ")),
+            };
+        }
+        catch { return (data, BitConverter.ToString(data).Replace("-", " ")); }
+    }
 
     private void OnShowSolutionExplorer(object sender, RoutedEventArgs e)
     {
