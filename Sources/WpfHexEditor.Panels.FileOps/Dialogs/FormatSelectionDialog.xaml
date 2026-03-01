@@ -1,9 +1,9 @@
-<Window x:Class="WpfHexEditor.Panels.BinaryAnalysis.FormatSelectionDialog"
+<Window x:Class="WpfHexEditor.Panels.FileOps.FormatSelectionDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfHexEditor.Panels.BinaryAnalysis"
+        xmlns:local="clr-namespace:WpfHexEditor.Panels.FileOps"
         mc:Ignorable="d"
         Title="Format Selection"
         Height="500" Width="650"
@@ -46,7 +46,7 @@
                 Padding="10"
                 Margin="0,0,0,10">
             <StackPanel>
-                <TextBlock Text="ℹ️ Tip: Higher confidence scores indicate a better match."
+                <TextBlock Text="&#x2139;&#xFE0F; Tip: Higher confidence scores indicate a better match."
                            FontSize="12"
                            Foreground="#555555"/>
                 <TextBlock Text="Select the format that best matches your file type."
@@ -142,13 +142,7 @@
                                         <TextBlock Text="{Binding}"
                                                    FontSize="11"
                                                    Foreground="#666666"
-                                                   Margin="15,1,0,1">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="{Binding}"/>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                                   Margin="15,1,0,1"/>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

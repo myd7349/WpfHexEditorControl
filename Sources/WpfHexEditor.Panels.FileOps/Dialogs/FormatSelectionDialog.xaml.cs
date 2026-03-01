@@ -13,7 +13,7 @@ using System.Windows;
 using System.Windows.Data;
 using WpfHexEditor.Core.FormatDetection;
 
-namespace WpfHexEditor.Panels.BinaryAnalysis
+namespace WpfHexEditor.Panels.FileOps
 {
     /// <summary>
     /// Dialog for manual format selection when auto-detection is ambiguous
@@ -79,82 +79,12 @@ namespace WpfHexEditor.Panels.BinaryAnalysis
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is double confidence)
-            {
                 return confidence * 100.0;
-            }
             return 0.0;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// <summary>
-    /// Converter to check if value is greater than parameter
-    /// </summary>
-    public class GreaterThanConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is double val && parameter is string paramStr && double.TryParse(paramStr, out double threshold))
-            {
-                return val > threshold;
-            }
-            return false;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// <summary>
-    /// Converter to check if value is less than parameter
-    /// </summary>
-    public class LessThanConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is double val && parameter is string paramStr && double.TryParse(paramStr, out double threshold))
-            {
-                return val < threshold;
-            }
-            return false;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// <summary>
-    /// Converter to check if value is between two parameters (format: "min,max")
-    /// </summary>
-    public class BetweenConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is double val && parameter is string paramStr)
-            {
-                var parts = paramStr.Split(',');
-                if (parts.Length == 2 &&
-                    double.TryParse(parts[0], out double min) &&
-                    double.TryParse(parts[1], out double max))
-                {
-                    return val >= min && val <= max;
-                }
-            }
-            return false;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
     }
 
     /// <summary>
@@ -163,13 +93,9 @@ namespace WpfHexEditor.Panels.BinaryAnalysis
     public class NullToBooleanConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return value != null;
-        }
+            => value != null;
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
     }
 }
