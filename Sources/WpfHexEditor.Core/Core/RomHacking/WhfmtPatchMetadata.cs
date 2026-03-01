@@ -13,13 +13,13 @@ namespace WpfHexEditor.Core.RomHacking
 {
     /// <summary>
     /// Metadata companion file for a binary patch (.ips / .bps / .xdelta).
-    /// Saved alongside the patch as a <c>.whjson</c> file with the same base name.
+    /// Saved alongside the patch as a <c>.whfmt</c> file with the same base name.
     ///
     /// Example:
     ///   myrom.bps       ← binary patch
-    ///   myrom.whjson    ← this metadata file
+    ///   myrom.whfmt     ← this metadata file
     /// </summary>
-    public class WhjsonPatchMetadata
+    public class WhfmtPatchMetadata
     {
         private static readonly JsonSerializerOptions _options = new()
         {
@@ -65,10 +65,10 @@ namespace WpfHexEditor.Core.RomHacking
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// Generates a <see cref="WhjsonPatchMetadata"/> from the original and modified byte arrays.
+        /// Generates a <see cref="WhfmtPatchMetadata"/> from the original and modified byte arrays.
         /// CRC32 is computed over the full buffers.
         /// </summary>
-        public static WhjsonPatchMetadata Generate(
+        public static WhfmtPatchMetadata Generate(
             PatchFormat format,
             byte[]      original,
             byte[]      modified,
@@ -80,7 +80,7 @@ namespace WpfHexEditor.Core.RomHacking
             uint crcSrc = CRC32.Compute(original);
             uint crcTgt = CRC32.Compute(modified);
 
-            return new WhjsonPatchMetadata
+            return new WhfmtPatchMetadata
             {
                 Format      = format.ToString(),
                 ToolVersion = $"WpfHexEditor 2.8.0",
@@ -107,35 +107,35 @@ namespace WpfHexEditor.Core.RomHacking
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// Saves this metadata to <paramref name="whjsonPath"/> as a formatted JSON file.
+        /// Saves this metadata to <paramref name="whfmtPath"/> as a formatted JSON file.
         /// </summary>
-        public void Save(string whjsonPath)
+        public void Save(string whfmtPath)
         {
             var json = JsonSerializer.Serialize(this, _options);
-            File.WriteAllText(whjsonPath, json, System.Text.Encoding.UTF8);
+            File.WriteAllText(whfmtPath, json, System.Text.Encoding.UTF8);
         }
 
         /// <summary>
-        /// Loads metadata from an existing <c>.whjson</c> file.
+        /// Loads metadata from an existing <c>.whfmt</c> file.
         /// Returns <see langword="null"/> on error.
         /// </summary>
-        public static WhjsonPatchMetadata Load(string whjsonPath)
+        public static WhfmtPatchMetadata Load(string whfmtPath)
         {
             try
             {
-                if (!File.Exists(whjsonPath)) return null;
-                var json = File.ReadAllText(whjsonPath, System.Text.Encoding.UTF8);
-                return JsonSerializer.Deserialize<WhjsonPatchMetadata>(json, _options);
+                if (!File.Exists(whfmtPath)) return null;
+                var json = File.ReadAllText(whfmtPath, System.Text.Encoding.UTF8);
+                return JsonSerializer.Deserialize<WhfmtPatchMetadata>(json, _options);
             }
             catch { return null; }
         }
 
         /// <summary>
-        /// Returns the companion <c>.whjson</c> path for a given patch file path.
-        /// E.g. "C:\patches\myrom.bps" → "C:\patches\myrom.whjson"
+        /// Returns the companion <c>.whfmt</c> path for a given patch file path.
+        /// E.g. "C:\patches\myrom.bps" → "C:\patches\myrom.whfmt"
         /// </summary>
         public static string MetadataPathFor(string patchFilePath)
-            => Path.ChangeExtension(patchFilePath, ".whjson");
+            => Path.ChangeExtension(patchFilePath, ".whfmt");
 
         /// <summary>
         /// Validates the source and target CRC32 against the provided byte arrays.
@@ -152,7 +152,7 @@ namespace WpfHexEditor.Core.RomHacking
     }
 
     /// <summary>
-    /// Source or target file information stored in <see cref="WhjsonPatchMetadata"/>.
+    /// Source or target file information stored in <see cref="WhfmtPatchMetadata"/>.
     /// </summary>
     public class PatchFileInfo
     {

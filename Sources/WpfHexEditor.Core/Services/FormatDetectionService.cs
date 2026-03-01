@@ -110,8 +110,8 @@ namespace WpfHexEditor.Core.Services
 
             try
             {
-                // Load all .whjson files recursively (legacy .json also accepted)
-                var jsonFiles = Directory.GetFiles(directory, "*.whjson", SearchOption.AllDirectories)
+                // Load all .whfmt files recursively (legacy .json also accepted)
+                var jsonFiles = Directory.GetFiles(directory, "*.whfmt", SearchOption.AllDirectories)
                     .Concat(Directory.GetFiles(directory, "*.json", SearchOption.AllDirectories))
                     .ToArray();
 
@@ -142,9 +142,9 @@ namespace WpfHexEditor.Core.Services
         /// <summary>
         /// Extract category from file path
         /// Examples:
-        /// - "C:/FormatDefinitions/Archives/ZIP.whjson" -> "Archives"
-        /// - "FormatDefinitions/Images/PNG.whjson" -> "Images"
-        /// - "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whjson" (embedded) -> "Archives"
+        /// - "C:/FormatDefinitions/Archives/ZIP.whfmt" -> "Archives"
+        /// - "FormatDefinitions/Images/PNG.whfmt" -> "Images"
+        /// - "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whfmt" (embedded) -> "Archives"
         /// </summary>
         private string ExtractCategoryFromPath(string path)
         {
@@ -159,7 +159,7 @@ namespace WpfHexEditor.Core.Services
                 // Check if it's an embedded resource name (contains dots instead of slashes)
                 if (path.Contains("FormatDefinitions.") && path.Count(c => c == '.') >= 3)
                 {
-                    // Embedded resource format: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whjson"
+                    // Embedded resource format: "WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whfmt"
                     var parts = path.Split('.');
                     var formatDefsIndex = Array.IndexOf(parts, "FormatDefinitions");
                     if (formatDefsIndex >= 0 && formatDefsIndex < parts.Length - 2)
@@ -169,7 +169,7 @@ namespace WpfHexEditor.Core.Services
                 }
                 else
                 {
-                    // File path format: "C:/FormatDefinitions/Archives/ZIP.whjson"
+                    // File path format: "C:/FormatDefinitions/Archives/ZIP.whfmt"
                     var parts = path.Split('/');
                     var formatDefsIndex = Array.FindIndex(parts, p => p.Equals("FormatDefinitions", StringComparison.OrdinalIgnoreCase));
                     if (formatDefsIndex >= 0 && formatDefsIndex < parts.Length - 2)

@@ -15,12 +15,12 @@ using WpfHexEditor.Editor.Core;
 namespace WpfHexEditor.Core.Services;
 
 /// <summary>
-/// Singleton catalog of the embedded <c>.whjson</c> format definitions
+/// Singleton catalog of the embedded <c>.whfmt</c> format definitions
 /// shipped inside <c>WpfHexEditor.Core.dll</c>.
 /// <para>
 /// On first call to <see cref="GetAll"/> the catalog performs a lazy scan of
 /// all manifest resources matching the pattern
-/// <c>WpfHexEditor.Core.FormatDefinitions.*.whjson</c> and extracts
+/// <c>WpfHexEditor.Core.FormatDefinitions.*.whfmt</c> and extracts
 /// lightweight header information without loading the full block definitions.
 /// </para>
 /// </summary>
@@ -56,7 +56,7 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
         var list = new List<EmbeddedFormatEntry>();
         foreach (var key in CoreAssembly.GetManifestResourceNames())
         {
-            if (!key.Contains("FormatDefinitions") || !key.EndsWith(".whjson"))
+            if (!key.Contains("FormatDefinitions") || !key.EndsWith(".whfmt"))
                 continue;
 
             try
@@ -138,7 +138,7 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
 
     /// <summary>
     /// Extracts the category from a resource key like
-    /// <c>WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whjson</c> → <c>Archives</c>.
+    /// <c>WpfHexEditor.Core.FormatDefinitions.Archives.ZIP.whfmt</c> → <c>Archives</c>.
     /// </summary>
     private static string ExtractCategoryFromKey(string key)
     {
@@ -146,7 +146,7 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
         const string prefix = "WpfHexEditor.Core.FormatDefinitions.";
         if (key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         {
-            var rest   = key.Substring(prefix.Length);  // "Archives.ZIP.whjson"
+            var rest   = key.Substring(prefix.Length);  // "Archives.ZIP.whfmt"
             var dotIdx = rest.IndexOf('.');
             if (dotIdx > 0) return rest.Substring(0, dotIdx);
         }
@@ -155,7 +155,7 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
 
     private static string ExtractNameFromKey(string key)
     {
-        // Last segment before ".whjson"
+        // Last segment before ".whfmt"
         var parts = key.Split('.');
         return parts.Length >= 2 ? parts[parts.Length - 2] : key;
     }

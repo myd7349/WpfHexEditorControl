@@ -158,7 +158,7 @@ namespace WpfHexEditor.Core.Tools
             }
 
             var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-            var jsonFiles = Directory.GetFiles(directory, "*.whjson", searchOption)
+            var jsonFiles = Directory.GetFiles(directory, "*.whfmt", searchOption)
                 .Concat(Directory.GetFiles(directory, "*.json", searchOption))
                 .ToArray();
 

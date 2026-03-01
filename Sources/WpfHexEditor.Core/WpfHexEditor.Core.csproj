@@ -57,9 +57,9 @@
     </None>
   </ItemGroup>
 
-  <!-- Embed all FormatDefinitions .whjson files as resources (400+ formats built-in) -->
+  <!-- Embed all FormatDefinitions .whfmt files as resources (400+ formats built-in) -->
   <ItemGroup>
-    <EmbeddedResource Include="FormatDefinitions\**\*.whjson" />
+    <EmbeddedResource Include="FormatDefinitions\**\*.whfmt" />
   </ItemGroup>
 
   <!-- Span<T> and System.Text.Json support for .NET Framework 4.8 -->
