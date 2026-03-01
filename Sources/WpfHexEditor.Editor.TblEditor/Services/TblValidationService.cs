@@ -54,13 +54,13 @@ public class TblValidationService
         {
             foreach (var entry in snapshot)
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                if (cancellationToken.IsCancellationRequested) return;
                 var result = ValidateEntry(entry.Entry, entry.Value);
                 results[entry] = result;
                 entry.IsValid = result.IsValid;
                 entry.ValidationError = result.ErrorMessage;
             }
-        }, cancellationToken);
+        });
         return results;
     }
 }

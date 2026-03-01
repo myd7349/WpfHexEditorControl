@@ -171,6 +171,7 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
             await _validationService.ValidateAllAsync(_entries, ct);
             await RunAnalysisAsync();
         }
+        catch (OperationCanceledException) { }
         finally { IsLoading = false; }
     }
 
@@ -318,8 +319,8 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
 
     private async Task RunAnalysisAsync()
     {
-        _analysisCts.Cancel();
-        _analysisCts.Dispose();
+        try { _analysisCts.Cancel(); } catch (ObjectDisposedException) { }
+        try { _analysisCts.Dispose(); } catch (ObjectDisposedException) { }
         _analysisCts = new CancellationTokenSource();
         var ct = _analysisCts.Token;
         IsAnalyzing = true;
@@ -333,7 +334,7 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
                 vm.HasConflict = conflictKeys.Contains(vm.Entry.ToUpperInvariant());
         }
         catch (OperationCanceledException) { }
-        finally { if (!ct.IsCancellationRequested) IsAnalyzing = false; }
+        finally { IsAnalyzing = false; }
     }
 
     private void PushUndo(ITblCommand cmd)

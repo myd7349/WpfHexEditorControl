@@ -4,8 +4,10 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -21,10 +23,19 @@ namespace WpfHexEditor.Editor.TblEditor.Controls;
 /// No embedded toolbar — all editing commands are exposed via <see cref="IDocumentEditor"/>
 /// and TBL-specific properties/methods for the host to wire to its own menus.
 /// </summary>
-public partial class TblEditor : UserControl, IDocumentEditor, IPropertyProviderSource, IOpenableDocument, IStatusBarContributor
+public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, IStatusBarContributor
 {
     private readonly TblEditorViewModel _vm;
     private string? _currentFilePath;
+
+    // ── IDiagnosticSource ─────────────────────────────────────────────────
+    private List<DiagnosticEntry> _diagnostics = [];
+    public event EventHandler? DiagnosticsChanged;
+
+    string IDiagnosticSource.SourceLabel
+        => _currentFilePath is not null ? Path.GetFileName(_currentFilePath) : "TBL Editor";
+
+    IReadOnlyList<DiagnosticEntry> IDiagnosticSource.GetDiagnostics() => _diagnostics;
 
     // ── Constructor ────────────────────────────────────────────────────────
 
@@ -161,6 +172,8 @@ public partial class TblEditor : UserControl, IDocumentEditor, IPropertyProvider
         _vm.ClearFilter();
         Source = null;
         _currentFilePath = null;
+        _diagnostics.Clear();
+        DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
         NotifyTitle();
     }
 
@@ -169,6 +182,7 @@ public partial class TblEditor : UserControl, IDocumentEditor, IPropertyProvider
     public event EventHandler? CanRedoChanged;
     public event EventHandler<string>? TitleChanged;
     public event EventHandler<string>? StatusMessage;
+    public event EventHandler<string>? OutputMessage;
 
     // ── Long-running operations (no-op: TblEditor has no async operations) ──
     public bool IsBusy => false;
@@ -369,11 +383,45 @@ public partial class TblEditor : UserControl, IDocumentEditor, IPropertyProvider
 
     private async Task LoadFromFileAsync(string filePath, CancellationToken ct = default)
     {
+        var fileName = Path.GetFileName(filePath);
+        OutputMessage?.Invoke(this, $"Opening {fileName}…");
+
+        // ── 1. Repair analysis on raw content (produces line-numbered diagnostics)
+        var rawContent   = await File.ReadAllTextAsync(filePath, Encoding.UTF8, ct);
+        var repairResult = await Task.Run(
+            () => new TblRepairService().Repair(rawContent, fileName), ct);
+
+        // ── 2. Load via TblStream (already lenient — invalid lines silently skipped)
         var tbl = new TblStream(filePath);
         await Task.Run(() => tbl.Load(), ct);
         _currentFilePath = filePath;
         Source = tbl;
         await _vm.LoadAsync(tbl, ct);
+
+        // ── 3. Output summary
+        OutputMessage?.Invoke(this, $"  {EntryCount} entries loaded.");
+        if (repairResult.Diagnostics.Count > 0)
+        {
+            var errors   = repairResult.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error);
+            var warnings = repairResult.Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Warning);
+            if (errors > 0)
+                OutputMessage?.Invoke(this,
+                    $"  {errors} error(s) detected — saving will remove invalid lines.");
+            if (warnings > 0)
+                OutputMessage?.Invoke(this,
+                    $"  {warnings} warning(s) — see Error Panel for details.");
+        }
+
+        // ── 4. Propagate FilePath into diagnostics and publish to ErrorPanel
+        _diagnostics = repairResult.Diagnostics
+            .Select(d => d with { FilePath = filePath })
+            .ToList();
+        DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
+
+        // ── 5. Mark dirty when repairs would change the saved content
+        if (repairResult.WasModified)
+            _vm.MarkDirty();
+
         NotifyTitle();
     }
 

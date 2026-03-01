@@ -26,7 +26,7 @@ public class TblConflictAnalyzer
     public async Task<List<TblConflict>> AnalyzeConflictsAsync(IEnumerable<TblEntryViewModel> entries, CancellationToken cancellationToken)
     {
         var snapshot = entries.ToList(); // Snapshot on calling thread to avoid cross-thread collection modification
-        return await Task.Run(() => AnalyzeConflicts(snapshot, cancellationToken), cancellationToken);
+        return await Task.Run(() => AnalyzeConflicts(snapshot, cancellationToken));
     }
 
     public List<TblConflict> AnalyzeConflicts(IEnumerable<TblEntryViewModel> entries, CancellationToken cancellationToken)
