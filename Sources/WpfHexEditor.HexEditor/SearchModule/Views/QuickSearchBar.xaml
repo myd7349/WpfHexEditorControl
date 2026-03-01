@@ -65,9 +65,9 @@
         </Style>
     </UserControl.Resources>
 
-    <!-- Main container with VSCode-style dark theme -->
-    <Border Background="#252526"
-            BorderBrush="#007ACC"
+    <!-- Main container — theme-aware -->
+    <Border Background="{DynamicResource BackgroundBrush}"
+            BorderBrush="{DynamicResource AccentBrush}"
             BorderThickness="1"
             CornerRadius="3"
             Effect="{StaticResource DropShadowEffect}">
@@ -85,24 +85,25 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <!-- Search input -->
             <TextBox Grid.Column="0"
+                     x:Name="SearchInput"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                      Style="{StaticResource QuickSearchTextBoxStyle}"
                      MinWidth="200">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter" Command="{Binding FindNextCommand}"/>
                     <KeyBinding Key="Enter" Modifiers="Shift" Command="{Binding FindPreviousCommand}"/>
-                    <KeyBinding Key="Escape" Command="{Binding CloseCommand}"/>
                 </TextBox.InputBindings>
             </TextBox>
 
             <!-- Match counter -->
             <TextBlock Grid.Column="1"
                        Text="{Binding CurrentMatchText}"
-                       Foreground="#CCCCCC"
+                       Foreground="{DynamicResource ForegroundBrush}"
                        VerticalAlignment="Center"
                        Margin="10,0"
                        FontSize="11"
@@ -123,24 +124,28 @@
                     Style="{StaticResource QuickSearchButtonStyle}"
                     ToolTip="Next match (Enter)"/>
 
-            <!-- Close button -->
+            <!-- Advanced Search button -->
             <Button Grid.Column="4"
+                    Content="⋯"
+                    x:Name="AdvancedSearchButton"
+                    Style="{StaticResource QuickSearchButtonStyle}"
+                    ToolTip="Advanced Search (Ctrl+Shift+F)"
+                    Margin="2,0,0,0"/>
+
+            <!-- Close button -->
+            <Button Grid.Column="5"
                     Content="✖"
-                    Command="{Binding CloseCommand}"
+                    x:Name="CloseButton"
                     Style="{StaticResource QuickSearchButtonStyle}"
                     ToolTip="Close (Esc)"
-                    Margin="5,0,5,0"/>
+                    Margin="2,0,5,0"/>
 
             <!-- Progress indicator -->
-            <Border Grid.Column="0" Grid.ColumnSpan="5"
+            <Border Grid.Column="0" Grid.ColumnSpan="6"
                     Height="2"
                     VerticalAlignment="Bottom"
-                    Background="#007ACC"
-                    Visibility="{Binding IsSearching, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Border.Effect>
-                    <DropShadowEffect ShadowDepth="0" BlurRadius="4" Color="#007ACC"/>
-                </Border.Effect>
-            </Border>
+                    Background="{DynamicResource AccentBrush}"
+                    Visibility="{Binding IsSearching, Converter={StaticResource BoolToVisibilityConverter}}"/>
         </Grid>
     </Border>
 </UserControl>

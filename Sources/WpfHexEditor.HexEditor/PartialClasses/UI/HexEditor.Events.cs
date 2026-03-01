@@ -606,11 +606,16 @@ namespace WpfHexEditor.HexEditor
                     }
                     break;
 
-                // Ctrl+F: Open Advanced Search; or F as hex nibble in hex mode
+                // Ctrl+F: Inline Quick Search bar; Ctrl+Shift+F: Advanced Search dialog
                 case Key.F:
-                    if (isCtrlPressed)
+                    if (isCtrlPressed && isShiftPressed)
                     {
-                        ShowAdvancedSearchDialog();
+                        ShowAdvancedSearchDialog(System.Windows.Window.GetWindow(this));
+                        handled = true;
+                    }
+                    else if (isCtrlPressed)
+                    {
+                        ShowQuickSearchBar();
                         handled = true;
                     }
                     else if (!_viewModel.ReadOnlyMode && !_isAsciiEditMode && DataStringVisual == DataVisualType.Hexadecimal)

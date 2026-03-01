@@ -633,7 +633,7 @@ namespace WpfHexEditor.HexEditor.Search.ViewModels
             return forward ? currentMatch.Position + currentMatch.Length : currentMatch.Position;
         }
 
-        private void UpdateCommandStates()
+        internal void UpdateCommandStates()
         {
             (FindAllCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (FindNextCommand as RelayCommand)?.RaiseCanExecuteChanged();

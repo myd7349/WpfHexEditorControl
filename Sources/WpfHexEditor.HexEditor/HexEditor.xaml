@@ -7,6 +7,7 @@
              xmlns:models="clr-namespace:WpfHexEditor.Core.Models;assembly=WpfHexEditor.Core"
              xmlns:converters="clr-namespace:WpfHexEditor.HexEditor.Converters"
              xmlns:controls="clr-namespace:WpfHexEditor.HexEditor.Controls"
+             xmlns:searchViews="clr-namespace:WpfHexEditor.HexEditor.Search.Views"
              xmlns:prop="clr-namespace:WpfHexEditor.Core.Properties;assembly=WpfHexEditor.Core"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800"
@@ -419,6 +420,17 @@
                                       Grid.ColumnSpan="2"
                                       Panel.ZIndex="10"
                                       Visibility="Collapsed"/>
+
+            <!-- Quick Search Bar (Ctrl+F inline overlay, VSCode-style) -->
+            <searchViews:QuickSearchBar x:Name="QuickSearchBarOverlay"
+                                        Grid.Column="0"
+                                        Grid.ColumnSpan="2"
+                                        Panel.ZIndex="5"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,4,24,0"
+                                        MaxWidth="450"
+                                        Visibility="Collapsed"/>
         </Grid>
 
         <!-- Status bar -->
