@@ -39,6 +39,11 @@ public interface ISolutionManager
     Task<IProjectItem> CreateItemAsync(IProject project, string name, ProjectItemType type, string? virtualFolderId = null, byte[]? initialContent = null, CancellationToken ct = default);
     Task RemoveItemAsync(IProject project, IProjectItem item, bool deleteFromDisk = false, CancellationToken ct = default);
 
+    // ── TBL helpers ──────────────────────────────────────────────────────
+    /// <summary>Designates <paramref name="tblItem"/> as the default TBL for <paramref name="project"/>.
+    /// Pass <see langword="null"/> to clear the designation.</summary>
+    void SetDefaultTbl(IProject project, IProjectItem? tblItem);
+
     // ── MRU helpers ──────────────────────────────────────────────────────
     void PushRecentFile(string absolutePath);
 

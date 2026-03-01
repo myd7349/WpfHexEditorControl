@@ -54,22 +54,36 @@
                                   VerticalAlignment="Center" HorizontalAlignment="Center"
                                   Margin="0,0,6,0" Visibility="Collapsed" />
                             <Popup x:Name="PART_Popup" Grid.Column="0" Grid.ColumnSpan="4"
-                                   AllowsTransparency="False" Focusable="False"
+                                   AllowsTransparency="True" Focusable="False"
                                    IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
                                    PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}"
                                    Placement="Bottom"
                                    PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}">
-                                <Border Background="{DynamicResource DockMenuBackgroundBrush}"
-                                        BorderBrush="{DynamicResource DockMenuBorderBrush}"
-                                        BorderThickness="1" Padding="0,2"
-                                        SnapsToDevicePixels="True" Grid.IsSharedSizeScope="True">
-                                    <ScrollViewer CanContentScroll="True"
-                                                  HorizontalScrollBarVisibility="Disabled"
-                                                  VerticalScrollBarVisibility="Auto">
-                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
-                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                    </ScrollViewer>
-                                </Border>
+                                <!-- Margin reserves space for the drop shadow around all 4 sides -->
+                                <Grid Margin="8">
+                                    <!-- Layer 1: shadow — opaque background so the effect has a shape to shadow -->
+                                    <Border CornerRadius="4"
+                                            Background="{DynamicResource DockMenuBackgroundBrush}">
+                                        <Border.Effect>
+                                            <DropShadowEffect Color="Black" BlurRadius="10"
+                                                              ShadowDepth="0" Opacity="0.5" />
+                                        </Border.Effect>
+                                    </Border>
+                                    <!-- Layer 2: content — clipped to rounded corners, no effect -->
+                                    <Border CornerRadius="4"
+                                            Background="{DynamicResource DockMenuBackgroundBrush}"
+                                            BorderBrush="{DynamicResource DockMenuBorderBrush}"
+                                            BorderThickness="1" Padding="0,2"
+                                            ClipToBounds="True"
+                                            SnapsToDevicePixels="True" Grid.IsSharedSizeScope="True">
+                                        <ScrollViewer CanContentScroll="True"
+                                                      HorizontalScrollBarVisibility="Disabled"
+                                                      VerticalScrollBarVisibility="Auto">
+                                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
+                                                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
                             </Popup>
                         </Grid>
                     </Border>
@@ -88,7 +102,7 @@
                             <Setter TargetName="menuGestureText" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="menuHeaderContainer" Property="Grid.Column" Value="0" />
                             <Setter TargetName="menuHeaderContainer" Property="Grid.ColumnSpan" Value="3" />
-                            <Setter TargetName="menuHeaderContainer" Property="Margin" Value="8,4" />
+                            <Setter TargetName="menuHeaderContainer" Property="Margin" Value="8,3" />
                             <Setter TargetName="PART_Popup" Property="Placement" Value="Bottom" />
                         </Trigger>
                         <Trigger Property="Role" Value="TopLevelItem">
@@ -98,7 +112,7 @@
                             <Setter TargetName="menuGestureText" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="menuHeaderContainer" Property="Grid.Column" Value="0" />
                             <Setter TargetName="menuHeaderContainer" Property="Grid.ColumnSpan" Value="4" />
-                            <Setter TargetName="menuHeaderContainer" Property="Margin" Value="8,4" />
+                            <Setter TargetName="menuHeaderContainer" Property="Margin" Value="8,3" />
                         </Trigger>
                         <Trigger Property="Role" Value="SubmenuHeader">
                             <Setter TargetName="RightArrow" Property="Visibility" Value="Visible" />
@@ -142,6 +156,30 @@
                             <Setter TargetName="templateRoot" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Themed ContextMenu popup used by status bar items and other host popups -->
+    <Style x:Key="DockDarkContextMenuStyle" TargetType="{x:Type ContextMenu}">
+        <Setter Property="Background"  Value="{DynamicResource DockMenuBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DockMenuBorderBrush}"/>
+        <Setter Property="Foreground"  Value="{DynamicResource DockMenuForegroundBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1"
+                            Padding="0,2"
+                            SnapsToDevicePixels="True"
+                            Grid.IsSharedSizeScope="True">
+                        <ScrollViewer CanContentScroll="True">
+                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
+                                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                        </ScrollViewer>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

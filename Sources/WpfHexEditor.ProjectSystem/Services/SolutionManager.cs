@@ -194,6 +194,16 @@ public sealed class SolutionManager : ISolutionManager
         return Task.CompletedTask;
     }
 
+    // ── TBL helpers ──────────────────────────────────────────────────────
+
+    public void SetDefaultTbl(IProject project, IProjectItem? tblItem)
+    {
+        if (project is not Project proj) return;
+        proj.DefaultTblItemId = tblItem?.Id;
+        proj.IsModified = true;
+        RaiseProjectChanged(proj, ProjectChangeKind.Modified);
+    }
+
     // ── MRU helpers ──────────────────────────────────────────────────────
 
     public void PushRecentFile(string absolutePath)

@@ -12,7 +12,8 @@ namespace WpfHexEditor.ProjectSystem.Models;
 
 internal sealed class Project : IProject, INotifyPropertyChanged
 {
-    private bool _isModified;
+    private bool    _isModified;
+    private string? _defaultTblItemId;
 
     private readonly ObservableCollection<ProjectItem>   _items       = [];
     private readonly ObservableCollection<VirtualFolder> _rootFolders = [];
@@ -28,6 +29,12 @@ internal sealed class Project : IProject, INotifyPropertyChanged
     {
         get => _isModified;
         set { _isModified = value; OnPropertyChanged(); }
+    }
+
+    public string? DefaultTblItemId
+    {
+        get => _defaultTblItemId;
+        set { _defaultTblItemId = value; OnPropertyChanged(); }
     }
 
     internal ObservableCollection<ProjectItem>   ItemsMutable       => _items;

@@ -13,14 +13,24 @@ namespace WpfHexEditor.Editor.Core;
 /// <summary>
 /// A single choice shown in the popup of an interactive status bar item.
 /// </summary>
-public sealed class StatusBarChoice
+public sealed class StatusBarChoice : INotifyPropertyChanged
 {
+    private bool _isActive;
+
     public string  DisplayName { get; set; } = "";
 
     /// <summary>True when this choice matches the editor's current value (shows a checkmark).</summary>
-    public bool IsActive { get; set; }
+    public bool IsActive
+    {
+        get => _isActive;
+        set { _isActive = value; OnPropertyChanged(); }
+    }
 
     public ICommand Command { get; set; } = null!;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? p = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
 }
 
 /// <summary>

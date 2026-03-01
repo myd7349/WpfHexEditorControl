@@ -33,8 +33,9 @@ internal static class ProjectSerializer
         var projectDir = Path.GetDirectoryName(filePath)!;
         var project = new Project
         {
-            Name            = dto.Name,
-            ProjectFilePath = filePath,
+            Name             = dto.Name,
+            ProjectFilePath  = filePath,
+            DefaultTblItemId = dto.DefaultTblItemId,
         };
 
         foreach (var itemDto in dto.Items)
@@ -71,7 +72,7 @@ internal static class ProjectSerializer
     {
         var projectDir = Path.GetDirectoryName(project.ProjectFilePath)!;
 
-        var dto = new ProjectDto { Name = project.Name };
+        var dto = new ProjectDto { Name = project.Name, DefaultTblItemId = project.DefaultTblItemId };
 
         foreach (var item in project.ItemsMutable)
         {

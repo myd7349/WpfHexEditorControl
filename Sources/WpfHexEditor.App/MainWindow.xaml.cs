@@ -48,6 +48,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Content cache: ContentId → created UIElement (enables ParsedFields sync)
     private readonly Dictionary<string, UIElement> _contentCache = new();
 
+    // Per-document format tracking: ContentId → last logged format name.
+    // Prevents re-logging "Format detected" on every tab switch.
+    private readonly Dictionary<string, string> _loggedFormats = new();
+
     // ParsedFieldsPanel (persistent singleton — not recreated per tab)
     private ParsedFieldsPanel? _parsedFieldsPanel;
     private HexEditorControl? _connectedHexEditor;
@@ -81,6 +85,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         get => _activeHexEditor;
         private set { _activeHexEditor = value; OnPropertyChanged(); }
+    }
+
+    private IStatusBarContributor? _activeStatusBarContributor;
+    public IStatusBarContributor? ActiveStatusBarContributor
+    {
+        get => _activeStatusBarContributor;
+        private set { _activeStatusBarContributor = value; OnPropertyChanged(); }
     }
 
     // ─── Constructor ───────────────────────────────────────────────────
@@ -418,6 +429,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (!_contentCache.TryGetValue(item.ContentId, out var content))
             return;
 
+        // Side panels (ParsedFields, Output, SolutionExplorer…) becoming active must not
+        // disconnect the currently connected HexEditor nor reset the active-document bindings.
+        if (item.ContentId.StartsWith("panel-"))
+            return;
+
         var hex = content as HexEditorControl;
 
         // Disconnect previous HexEditor from ParsedFieldsPanel
@@ -432,13 +448,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _parsedFieldsPanel?.Clear();
         }
 
-        // Update IDocumentEditor tracking
+        // Update IDocumentEditor + status bar contributor tracking
         ActiveDocumentEditor = hex as IDocumentEditor;
         ActiveHexEditor = hex;
+        ActiveStatusBarContributor = hex as IStatusBarContributor;
 
-        // If no IDocumentEditor status available, clear the status text
         if (ActiveDocumentEditor == null)
-            StatusText.Text = "Ready";
+            RefreshText.Text = "";
+        else
+            // Refresh the host status bar immediately on tab switch (RaiseHexStatusChanged
+            // is normally only fired from file operations, not from tab activation).
+            hex?.RefreshDocumentStatus();
     }
 
     // ─── IDocumentEditor event handlers ────────────────────────────────
@@ -463,8 +483,59 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnEditorStatusMessage(object? sender, string message)
     {
-        // Route editor status messages to the App's status bar
-        StatusText.Text = message;
+        // Split on "  |  " separators to get individual parts
+        var parts = message.Split(new[] { "  |  " }, StringSplitOptions.None);
+
+        // Show only "Refresh: X ms" on the right side of the status bar (if present)
+        var refreshPart = parts.FirstOrDefault(
+            p => p.TrimStart().StartsWith("Refresh:", StringComparison.OrdinalIgnoreCase));
+        RefreshText.Text = refreshPart?.Trim() ?? "";
+
+        // "Format detected: X [| Size: Y | ...]" → log only the format part to Output,
+        // once per document (skip re-log on tab switch via RaiseHexStatusChanged).
+        if (!message.StartsWith("Format detected:", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Extract just the format name (before any "  |  " separator)
+        var formatPart = parts[0].Trim();
+
+        // Find the ContentId for the sender (HexEditor instance) in the cache
+        var contentId = _contentCache
+            .FirstOrDefault(kv => ReferenceEquals(kv.Value, sender as UIElement))
+            .Key;
+
+        // Skip if this exact format was already logged for this document
+        if (contentId != null &&
+            _loggedFormats.TryGetValue(contentId, out var prev) &&
+            prev == formatPart)
+            return;
+
+        if (contentId != null)
+            _loggedFormats[contentId] = formatPart;
+
+        var hex = sender as HexEditorControl;
+        var filename = hex?.FileName is { Length: > 0 } fn
+            ? System.IO.Path.GetFileName(fn)
+            : ActiveDocumentEditor?.Title?.TrimEnd('*', ' ') ?? "Unknown";
+
+        OutputLogger.Info($"File: {filename}");
+        OutputLogger.Info(formatPart);
+    }
+
+    /// <summary>
+    /// Opens the status bar item's ContextMenu on a left mouse button click.
+    /// WPF Border does not open ContextMenus on left-click by default.
+    /// </summary>
+    private void StatusBarItem_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (sender is Border border && border.ContextMenu != null)
+        {
+            border.ContextMenu.DataContext    = border.DataContext;
+            border.ContextMenu.PlacementTarget = border;
+            border.ContextMenu.Placement       = System.Windows.Controls.Primitives.PlacementMode.Top;
+            border.ContextMenu.IsOpen          = true;
+            e.Handled = true;
+        }
     }
 
     // ─── Tab / panel management ────────────────────────────────────────
@@ -489,11 +560,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 {
                     ActiveDocumentEditor = null;
                     ActiveHexEditor = null;
-                    StatusText.Text = "Ready";
+                    RefreshText.Text = "";
                 }
             }
             _contentCache.Remove(item.ContentId);
         }
+
+        _loggedFormats.Remove(item.ContentId);
 
         try
         {

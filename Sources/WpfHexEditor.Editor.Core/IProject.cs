@@ -26,6 +26,9 @@ public interface IProject
 
     bool IsModified { get; }
 
+    /// <summary>Id of the TBL item designated as the project-wide default, or <see langword="null"/> if none.</summary>
+    string? DefaultTblItemId { get; }
+
     /// <summary>Returns the item with the given id, or <see langword="null"/>.</summary>
     IProjectItem? FindItem(string id);
 

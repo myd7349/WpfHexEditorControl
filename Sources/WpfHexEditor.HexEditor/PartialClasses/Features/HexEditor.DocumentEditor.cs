@@ -262,7 +262,16 @@ namespace WpfHexEditor.HexEditor
             if (RefreshTimeText?.Text  is { Length: > 0 } rt)  parts.Add(rt);
             if (parts.Count > 0)
                 _docEditorStatusMessage?.Invoke(this, string.Join("  |  ", parts));
+
+            // Sync interactive status bar items (IStatusBarContributor)
+            RefreshStatusBarItemValues();
         }
+
+        /// <summary>
+        /// Called by the host (e.g. docking window) when this editor becomes the active document,
+        /// so that the host's status bar is refreshed immediately on tab switch.
+        /// </summary>
+        public void RefreshDocumentStatus() => RaiseHexStatusChanged();
     }
 
     /// <summary>

@@ -25,6 +25,10 @@ internal sealed class ProjectDto
 
     [JsonPropertyName("virtualFolders")]
     public List<VirtualFolderDto> VirtualFolders { get; set; } = [];
+
+    /// <summary>Id of the default TBL item for this project, or null if none.</summary>
+    [JsonPropertyName("defaultTblItemId")]
+    public string? DefaultTblItemId { get; set; }
 }
 
 internal sealed class ProjectItemDto

@@ -19,6 +19,8 @@
             <Setter Property="Margin" Value="0,1"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="BorderBrush" Value="{DynamicResource PFP_ItemSeparatorBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PFP_TextBrush}"/>
             <EventSetter Event="MouseDoubleClick" Handler="FieldItem_MouseDoubleClick"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
@@ -432,6 +434,7 @@
                         Width="100" Height="28"
                         Margin="4,0"
                         FontSize="11"
+                        Foreground="{DynamicResource PFP_TextBrush}"
                         Click="ActionsMenuButton_Click"
                         Style="{DynamicResource {x:Static ToolBar.ButtonStyleKey}}">
                     <Button.ContextMenu>
@@ -457,6 +460,7 @@
                         Width="100" Height="28"
                         Margin="4,0"
                         FontSize="11"
+                        Foreground="{DynamicResource PFP_TextBrush}"
                         Click="ExportMenuButton_Click"
                         Style="{DynamicResource {x:Static ToolBar.ButtonStyleKey}}">
                     <Button.ContextMenu>
@@ -490,6 +494,7 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
                         <TextBlock FontWeight="SemiBold" FontSize="12"
                                    VerticalAlignment="Center" Margin="0,0,4,0"
+                                   Foreground="{DynamicResource PFP_TextBrush}"
                                    Text="Format:"/>
                         <!-- Dropdown when multiple candidates detected -->
                         <ComboBox x:Name="FormatCandidateCombo"
@@ -621,7 +626,8 @@
                                     Padding="8,3"
                                     Margin="0,0,6,4"
                                     Background="{Binding Background}">
-                                <TextBlock FontSize="11">
+                                <TextBlock FontSize="11"
+                                           Foreground="{Binding TextForeground}">
                                     <Run Text="{Binding Icon, Mode=OneWay}"/>
                                     <Run Text=" "/>
                                     <Run Text="{Binding Value, Mode=OneWay}" FontWeight="SemiBold"/>
@@ -674,6 +680,7 @@
                  SelectionChanged="FieldsListBox_SelectionChanged"
                  KeyDown="FieldsListBox_KeyDown"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 Background="{DynamicResource PFP_PanelBackgroundBrush}"
                  BorderThickness="0"
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling"
@@ -704,7 +711,8 @@
                                                             VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding ItemCount}"
                                                                    FontSize="10"
-                                                                   Foreground="{DynamicResource PFP_SubTextBrush}"/>
+                                                                   FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                                     </Border>
                                                 </StackPanel>
                                             </Expander.Header>
