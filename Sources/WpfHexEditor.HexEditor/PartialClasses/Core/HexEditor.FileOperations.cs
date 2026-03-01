@@ -106,6 +106,7 @@ namespace WpfHexEditor.HexEditor
             UpdateFileSizeDisplay();
             BytesPerLineText.Text = $"Bytes/Line: {_viewModel.BytePerLine}";
             EditModeText.Text = $"Mode: {_viewModel.EditMode}";
+            RaiseHexStatusChanged();
 
             // STARTUP OPTIMIZATION: Defer expensive operations to background (low priority)
             // These operations can be done after the control is loaded and visible
@@ -124,6 +125,7 @@ namespace WpfHexEditor.HexEditor
                     if (result.Success && ShowFormatDetectionStatus)
                     {
                         StatusText.Text = $"Format detected: {result.Format?.FormatName ?? "Unknown"}";
+                        RaiseHexStatusChanged();
                     }
                 }), System.Windows.Threading.DispatcherPriority.Background);
             }

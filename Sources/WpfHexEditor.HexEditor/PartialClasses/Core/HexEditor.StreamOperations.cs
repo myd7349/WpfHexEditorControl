@@ -111,6 +111,7 @@ namespace WpfHexEditor.HexEditor
                 UpdateFileSizeDisplay();
                 BytesPerLineText.Text = $"Bytes/Line: {_viewModel.BytePerLine}";
                 EditModeText.Text = $"Mode: {_viewModel.EditMode}";
+                RaiseHexStatusChanged();
             }
             finally
             {
@@ -217,6 +218,7 @@ namespace WpfHexEditor.HexEditor
                 UpdateFileSizeDisplay();
                 BytesPerLineText.Text = $"Bytes/Line: {_viewModel.BytePerLine}";
                 EditModeText.Text = $"Mode: {_viewModel.EditMode}";
+                RaiseHexStatusChanged();
             }
             finally
             {

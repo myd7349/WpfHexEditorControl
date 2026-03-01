@@ -1,13 +1,18 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
+// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6, Claude Opus 4.6
 //////////////////////////////////////////////
 
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
 using Microsoft.Win32;
 using HexEditorControl = WpfHexEditor.HexEditor.HexEditor;
 using WpfHexEditor.Docking.Core;
@@ -15,20 +20,70 @@ using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.Docking.Core.Serialization;
 using WpfHexEditor.Docking.Wpf;
 using WpfHexEditor.App.Controls;
+using WpfHexEditor.Editor.Core;
+using WpfHexEditor.WindowPanels.Panels;
 
 namespace WpfHexEditor.App;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, INotifyPropertyChanged
 {
+    // ─── INotifyPropertyChanged ────────────────────────────────────────
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? name = null) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    // ─── Constants ─────────────────────────────────────────────────────
     private static readonly string LayoutFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "WpfHexEditor", "Sample.Docking", "layout.json");
 
+    private const string ParsedFieldsPanelContentId = "panel-parsed-fields";
+
+    // ─── Fields ────────────────────────────────────────────────────────
     private DockLayoutRoot _layout = null!;
     private DockEngine _engine = null!;
     private int _documentCounter;
     private bool _isLocked;
 
+    // Content cache: ContentId → created UIElement (enables ParsedFields sync)
+    private readonly Dictionary<string, UIElement> _contentCache = new();
+
+    // ParsedFieldsPanel (persistent singleton — not recreated per tab)
+    private ParsedFieldsPanel? _parsedFieldsPanel;
+    private HexEditorControl? _connectedHexEditor;
+
+    // ─── Bindable properties (XAML menu/statusbar bindings) ─────────────
+    private IDocumentEditor? _activeDocumentEditor;
+    public IDocumentEditor? ActiveDocumentEditor
+    {
+        get => _activeDocumentEditor;
+        private set
+        {
+            if (_activeDocumentEditor != null)
+            {
+                _activeDocumentEditor.TitleChanged    -= OnEditorTitleChanged;
+                _activeDocumentEditor.ModifiedChanged -= OnEditorModifiedChanged;
+                _activeDocumentEditor.StatusMessage   -= OnEditorStatusMessage;
+            }
+            _activeDocumentEditor = value;
+            if (_activeDocumentEditor != null)
+            {
+                _activeDocumentEditor.TitleChanged    += OnEditorTitleChanged;
+                _activeDocumentEditor.ModifiedChanged += OnEditorModifiedChanged;
+                _activeDocumentEditor.StatusMessage   += OnEditorStatusMessage;
+            }
+            OnPropertyChanged();
+        }
+    }
+
+    private HexEditorControl? _activeHexEditor;
+    public HexEditorControl? ActiveHexEditor
+    {
+        get => _activeHexEditor;
+        private set { _activeHexEditor = value; OnPropertyChanged(); }
+    }
+
+    // ─── Constructor ───────────────────────────────────────────────────
     public MainWindow()
     {
         InitializeComponent();
@@ -58,8 +113,8 @@ public partial class MainWindow : Window
                 var layout = DockLayoutSerializer.Deserialize(File.ReadAllText(LayoutFilePath));
                 RestoreWindowState(layout);
                 ApplyLayout(layout);
+                EnsureParsedFieldsPanel();
                 OutputLogger.Info($"Layout restored from: {LayoutFilePath}");
-                StatusText.Text = "Layout restored from previous session.";
                 return;
             }
             catch (Exception ex)
@@ -130,6 +185,9 @@ public partial class MainWindow : Window
 
     private void SetupDefaultLayout()
     {
+        // Ensure ParsedFieldsPanel singleton is created before any HexEditor content
+        _parsedFieldsPanel ??= new ParsedFieldsPanel();
+
         var layout = new DockLayoutRoot();
         var engine = new DockEngine(layout);
 
@@ -141,21 +199,28 @@ public partial class MainWindow : Window
         var output = new DockItem { Title = "Output", ContentId = "panel-output" };
         engine.Dock(output, layout.MainDocumentHost, DockDirection.Bottom);
 
-        var properties = new DockItem { Title = "Properties", ContentId = "panel-properties" };
-        engine.Dock(properties, layout.MainDocumentHost, DockDirection.Right);
+        var parsedFields = new DockItem
+        {
+            Title = "Parsed Fields",
+            ContentId = ParsedFieldsPanelContentId,
+            CanClose = false
+        };
+        engine.Dock(parsedFields, layout.MainDocumentHost, DockDirection.Right);
 
         ApplyLayout(layout, engine);
+        OutputLogger.Info("Default layout applied.");
     }
 
     /// <summary>
     /// Wires a layout to the DockControl. Used by SetupDefaultLayout, LoadSavedLayoutOrDefault
-    /// and OnLoadLayout. Manages the single subscription to TabCloseRequested and synchronizes
-    /// the document counter.
+    /// and OnLoadLayout. Manages the single subscription to TabCloseRequested and ActiveItemChanged,
+    /// and synchronizes the document counter.
     /// </summary>
     private void ApplyLayout(DockLayoutRoot layout, DockEngine? engine = null)
     {
         // Avoid duplicates if ApplyLayout is called multiple times (Reset, Load…)
-        DockHost.TabCloseRequested -= OnTabCloseRequested;
+        DockHost.TabCloseRequested   -= OnTabCloseRequested;
+        DockHost.ActiveItemChanged   -= OnActiveDocumentChanged;
 
         _layout = layout;
         _engine = engine ?? new DockEngine(_layout);
@@ -163,11 +228,37 @@ public partial class MainWindow : Window
         LockMenuItem.IsChecked = false;
 
         DockHost.ContentFactory = CreateContentForItem;
-        DockHost.TabCloseRequested += OnTabCloseRequested;
+        DockHost.TabCloseRequested   += OnTabCloseRequested;
+        DockHost.ActiveItemChanged   += OnActiveDocumentChanged;
         DockHost.Layout = _layout;
 
         SyncDocumentCounter();
         UpdateStatusBar();
+    }
+
+    /// <summary>
+    /// If the ParsedFields panel is missing from a restored layout, dock it programmatically.
+    /// Also ensures the panel instance is created eagerly so HexEditors created during
+    /// layout restore can connect to it before ActiveItemChanged fires.
+    /// </summary>
+    private void EnsureParsedFieldsPanel()
+    {
+        // Create the singleton instance eagerly — needed so CreateHexEditorContent
+        // can connect it before the first OpenFile() call.
+        _parsedFieldsPanel ??= new ParsedFieldsPanel();
+
+        if (_layout.FindItemByContentId(ParsedFieldsPanelContentId) == null)
+        {
+            var item = new DockItem
+            {
+                Title = "Parsed Fields",
+                ContentId = ParsedFieldsPanelContentId,
+                CanClose = false
+            };
+            _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Right);
+            DockHost.RebuildVisualTree();
+            OutputLogger.Info("ParsedFields panel added to restored layout.");
+        }
     }
 
     /// <summary>
@@ -194,20 +285,28 @@ public partial class MainWindow : Window
         _documentCounter = max;
     }
 
-    // ─── Content factory ───────────────────────────────────────────────
+    // ─── Content factory (with cache) ──────────────────────────────────
 
     private object CreateContentForItem(DockItem item)
     {
-        return item.ContentId switch
+        if (_contentCache.TryGetValue(item.ContentId, out var cached))
+            return cached;
+        var content = BuildContentForItem(item);
+        _contentCache[item.ContentId] = content;
+        return content;
+    }
+
+    private UIElement BuildContentForItem(DockItem item) =>
+        item.ContentId switch
         {
             "panel-solution-explorer" => CreateSolutionExplorerContent(),
-            "panel-properties" => CreatePropertiesContent(),
-            "panel-output" => CreateOutputContent(),
+            "panel-output"            => CreateOutputContent(),
+            ParsedFieldsPanelContentId => CreateParsedFieldsContent(),
+            "panel-properties"        => CreatePropertiesContent(),
             _ when item.ContentId.StartsWith("doc-hex-") => CreateHexEditorContent(
                 item.Metadata.TryGetValue("FilePath", out var fp) ? fp : null),
             _ => CreateDocumentContent(item)
         };
-    }
 
     private static UIElement CreateSolutionExplorerContent()
     {
@@ -235,17 +334,35 @@ public partial class MainWindow : Window
         return panel;
     }
 
-    private static UIElement CreateOutputContent()
+    private static UIElement CreateOutputContent() => new OutputPanel();
+
+    private UIElement CreateParsedFieldsContent()
     {
-        return new OutputPanel();
+        _parsedFieldsPanel ??= new ParsedFieldsPanel();
+        return _parsedFieldsPanel;
     }
 
-    private static UIElement CreateHexEditorContent(string? filePath)
+    private UIElement CreateHexEditorContent(string? filePath)
     {
+        var hexEditor = new HexEditorControl();
+
+        // Hide HexEditor's own status bar — the App's status bar handles display
+        hexEditor.ShowStatusBar = false;
+
+        // Early-connect: if no HexEditor is connected yet (e.g. on layout restore
+        // before ActiveItemChanged fires) connect this one immediately so format
+        // detection can populate the ParsedFieldsPanel during OpenFile().
+        if (_parsedFieldsPanel != null && _connectedHexEditor == null)
+        {
+            _connectedHexEditor = hexEditor;
+            hexEditor.ConnectParsedFieldsPanel(_parsedFieldsPanel);
+            ActiveDocumentEditor = hexEditor as IDocumentEditor;
+            ActiveHexEditor = hexEditor;
+        }
+
         // No FilePath metadata → "New Hex Document" with random sample data
         if (filePath is null)
         {
-            var hexEditor = new HexEditorControl();
             var data = new byte[1024];
             new Random().NextBytes(data);
             var tempFile = Path.Combine(Path.GetTempPath(), $"hexedit-sample-{Guid.NewGuid():N}.bin");
@@ -258,7 +375,6 @@ public partial class MainWindow : Window
         // FilePath exists → "Open File" or layout restore
         if (File.Exists(filePath))
         {
-            var hexEditor = new HexEditorControl();
             hexEditor.OpenFile(filePath);
             OutputLogger.Info($"Opened: {filePath}");
             return hexEditor;
@@ -295,11 +411,89 @@ public partial class MainWindow : Window
         return textBox;
     }
 
+    // ─── Active document tracking ───────────────────────────────────────
+
+    private void OnActiveDocumentChanged(DockItem item)
+    {
+        if (!_contentCache.TryGetValue(item.ContentId, out var content))
+            return;
+
+        var hex = content as HexEditorControl;
+
+        // Disconnect previous HexEditor from ParsedFieldsPanel
+        if (hex != _connectedHexEditor)
+        {
+            _connectedHexEditor?.DisconnectParsedFieldsPanel();
+
+            _connectedHexEditor = hex;
+            if (_connectedHexEditor != null)
+                _connectedHexEditor.ConnectParsedFieldsPanel(_parsedFieldsPanel);
+            else
+                _parsedFieldsPanel?.Clear();
+        }
+
+        // Update IDocumentEditor tracking
+        ActiveDocumentEditor = hex as IDocumentEditor;
+        ActiveHexEditor = hex;
+
+        // If no IDocumentEditor status available, clear the status text
+        if (ActiveDocumentEditor == null)
+            StatusText.Text = "Ready";
+    }
+
+    // ─── IDocumentEditor event handlers ────────────────────────────────
+
+    private void OnEditorTitleChanged(object? sender, string newTitle)
+    {
+        // Update the DockItem.Title for the active document's tab
+        var contentId = _contentCache
+            .FirstOrDefault(kv => ReferenceEquals(kv.Value, sender as UIElement)).Key;
+        if (contentId != null)
+        {
+            var dockItem = _layout.FindItemByContentId(contentId);
+            if (dockItem != null)
+                dockItem.Title = newTitle;
+        }
+    }
+
+    private void OnEditorModifiedChanged(object? sender, EventArgs e)
+    {
+        // Tab title already updated via TitleChanged — nothing extra needed here
+    }
+
+    private void OnEditorStatusMessage(object? sender, string message)
+    {
+        // Route editor status messages to the App's status bar
+        StatusText.Text = message;
+    }
+
     // ─── Tab / panel management ────────────────────────────────────────
 
     private void OnTabCloseRequested(DockItem item)
     {
         if (_isLocked) return;
+
+        // Cleanup before closing
+        if (_contentCache.TryGetValue(item.ContentId, out var ctrl))
+        {
+            if (ctrl is HexEditorControl hex)
+            {
+                if (ReferenceEquals(hex, _connectedHexEditor))
+                {
+                    hex.DisconnectParsedFieldsPanel();
+                    _connectedHexEditor = null;
+                    _parsedFieldsPanel?.Clear();
+                }
+                // Clear active editor binding if this was the active tab
+                if (ReferenceEquals(hex, ActiveHexEditor))
+                {
+                    ActiveDocumentEditor = null;
+                    ActiveHexEditor = null;
+                    StatusText.Text = "Ready";
+                }
+            }
+            _contentCache.Remove(item.ContentId);
+        }
 
         try
         {
@@ -311,7 +505,6 @@ public partial class MainWindow : Window
         catch (InvalidOperationException ex)
         {
             OutputLogger.Warn($"Cannot close '{item.Title}': {ex.Message}");
-            StatusText.Text = $"Cannot close: {ex.Message}";
         }
     }
 
@@ -335,7 +528,6 @@ public partial class MainWindow : Window
             DockHost.RebuildVisualTree();
             UpdateStatusBar();
             OutputLogger.Info($"Open file: {dialog.FileName}");
-            StatusText.Text = $"Opened: {dialog.FileName}";
         }
     }
 
@@ -350,7 +542,7 @@ public partial class MainWindow : Window
         _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
         DockHost.RebuildVisualTree();
         UpdateStatusBar();
-        StatusText.Text = $"Created: {item.Title}";
+        OutputLogger.Debug($"Created document: {item.Title}");
     }
 
     private void OnNewHexDocument(object sender, RoutedEventArgs e)
@@ -364,7 +556,7 @@ public partial class MainWindow : Window
         _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
         DockHost.RebuildVisualTree();
         UpdateStatusBar();
-        StatusText.Text = $"Created: {item.Title} (HexEditor)";
+        OutputLogger.Debug($"Created hex document: {item.Title}");
     }
 
     private void OnShowProperties(object sender, RoutedEventArgs e)
@@ -382,13 +574,17 @@ public partial class MainWindow : Window
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
     }
 
+    private void OnShowParsedFields(object sender, RoutedEventArgs e)
+    {
+        ShowOrCreatePanel("Parsed Fields", ParsedFieldsPanelContentId, DockDirection.Right);
+    }
+
     private void ShowOrCreatePanel(string title, string contentId, DockDirection direction)
     {
         var existing = _layout.FindItemByContentId(contentId);
         if (existing is not null)
         {
             existing.Owner?.ActiveItem?.Equals(existing);
-            StatusText.Text = $"Activated: {title}";
             return;
         }
 
@@ -396,7 +592,6 @@ public partial class MainWindow : Window
         _engine.Dock(item, _layout.MainDocumentHost, direction);
         DockHost.RebuildVisualTree();
         UpdateStatusBar();
-        StatusText.Text = $"Opened: {title}";
     }
 
     // ─── Menu: Layout ──────────────────────────────────────────────────
@@ -426,7 +621,6 @@ public partial class MainWindow : Window
 
             File.WriteAllText(dialog.FileName, DockLayoutSerializer.Serialize(_layout));
             OutputLogger.Info($"Layout saved to: {dialog.FileName}");
-            StatusText.Text = $"Layout saved: {dialog.FileName}";
         }
     }
 
@@ -443,9 +637,10 @@ public partial class MainWindow : Window
             try
             {
                 var layout = DockLayoutSerializer.Deserialize(File.ReadAllText(dialog.FileName));
+                _contentCache.Clear();
                 ApplyLayout(layout);
+                EnsureParsedFieldsPanel();
                 OutputLogger.Info($"Layout loaded from: {dialog.FileName}");
-                StatusText.Text = $"Layout loaded: {dialog.FileName}";
             }
             catch (Exception ex)
             {
@@ -457,9 +652,9 @@ public partial class MainWindow : Window
 
     private void OnResetLayout(object sender, RoutedEventArgs e)
     {
+        _contentCache.Clear();
         SetupDefaultLayout();
         OutputLogger.Info("Layout reset to default.");
-        StatusText.Text = "Layout reset to default";
     }
 
     // ─── Menu: other ───────────────────────────────────────────────────
@@ -473,7 +668,6 @@ public partial class MainWindow : Window
             group.LockMode = _isLocked ? DockLockMode.Full : DockLockMode.None;
 
         OutputLogger.Info(_isLocked ? "Layout locked." : "Layout unlocked.");
-        StatusText.Text = _isLocked ? "Layout LOCKED" : "Layout UNLOCKED";
         UpdateStatusBar();
     }
 
@@ -484,7 +678,6 @@ public partial class MainWindow : Window
             new ResourceDictionary { Source = new Uri($"pack://application:,,,/WpfHexEditor.Docking.Wpf;component/Themes/{themeFile}") });
         SyncAllHexEditorThemes();
         OutputLogger.Info($"Theme changed to {themeName}.");
-        StatusText.Text = $"Theme: {themeName}";
     }
 
     private void OnDarkTheme(object sender, RoutedEventArgs e) => ApplyTheme("DarkTheme.xaml", "Dark");
@@ -540,11 +733,46 @@ public partial class MainWindow : Window
         // Toggle maximize ↔ restore icon (Segoe MDL2 Assets)
         MaxRestoreButton.Content = WindowState == WindowState.Maximized ? "\uE923" : "\uE739";
 
-        // When maximized with WindowStyle.None, Windows overshoots by the resize border.
-        // Compensate with padding so content doesn't bleed off-screen.
-        RootGrid.Margin = WindowState == WindowState.Maximized
-            ? new Thickness(7)
-            : new Thickness(0);
+        // WM_GETMINMAXINFO hook constrains maximize to the working area (respects taskbar),
+        // so no margin compensation is needed in either state.
+        RootGrid.Margin = new Thickness(0);
+    }
+
+    // ─── WM_GETMINMAXINFO — maximize respects taskbar ────────────────
+
+    [StructLayout(LayoutKind.Sequential)] private struct POINT { public int x, y; }
+    [StructLayout(LayoutKind.Sequential)] private struct MINMAXINFO
+    {
+        public POINT ptReserved, ptMaxSize, ptMaxPosition, ptMinTrackSize, ptMaxTrackSize;
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        (PresentationSource.FromVisual(this) as HwndSource)?.AddHook(HwndHook);
+    }
+
+    private IntPtr HwndHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WM_GETMINMAXINFO = 0x0024;
+        if (msg == WM_GETMINMAXINFO)
+        {
+            var source = PresentationSource.FromVisual(this);
+            if (source?.CompositionTarget != null)
+            {
+                // WindowStyle.None causes Windows to maximize over the taskbar.
+                // Override ptMaxSize/ptMaxPosition to constrain to the working area.
+                var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+                var m   = source.CompositionTarget.TransformToDevice; // DIP → physical px
+                var wa  = SystemParameters.WorkArea;                  // in DIPs
+                mmi.ptMaxPosition.x = (int)(wa.Left   * m.M11);
+                mmi.ptMaxPosition.y = (int)(wa.Top    * m.M22);
+                mmi.ptMaxSize.x     = (int)(wa.Width  * m.M11);
+                mmi.ptMaxSize.y     = (int)(wa.Height * m.M22);
+                Marshal.StructureToPtr(mmi, lParam, true);
+            }
+        }
+        return IntPtr.Zero;
     }
 
     // ─── Status bar ────────────────────────────────────────────────────

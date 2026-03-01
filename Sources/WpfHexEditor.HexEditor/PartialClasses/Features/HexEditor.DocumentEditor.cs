@@ -246,6 +246,23 @@ namespace WpfHexEditor.HexEditor
         {
             _docEditorSelectionChanged?.Invoke(this, EventArgs.Empty);
         }
+
+        /// <summary>
+        /// Fires IDocumentEditor.StatusMessage with the current aggregated status bar content.
+        /// Called after key status bar updates so that host applications (e.g. WpfHexEditor.App)
+        /// can mirror the active editor's status without displaying HexEditor's own status bar.
+        /// </summary>
+        internal void RaiseHexStatusChanged()
+        {
+            var parts = new System.Collections.Generic.List<string>(6);
+            if (StatusText?.Text      is { Length: > 0 } st)  parts.Add(st);
+            if (FileSizeText?.Text    is { Length: > 0 } fs)  parts.Add(fs);
+            if (EditModeText?.Text    is { Length: > 0 } em)  parts.Add(em);
+            if (BytesPerLineText?.Text is { Length: > 0 } bpl) parts.Add(bpl);
+            if (RefreshTimeText?.Text  is { Length: > 0 } rt)  parts.Add(rt);
+            if (parts.Count > 0)
+                _docEditorStatusMessage?.Invoke(this, string.Join("  |  ", parts));
+        }
     }
 
     /// <summary>

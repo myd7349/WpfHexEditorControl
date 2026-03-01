@@ -349,6 +349,10 @@ namespace WpfHexEditor.HexEditor
             {
                 await Dispatcher.InvokeAsync(() =>
                 {
+                    // Re-check after await gap: ParsedFieldsPanel may have been
+                    // disconnected (tab switch) between the initial check and here.
+                    if (ParsedFieldsPanel == null) return;
+
                     // Clear existing fields and variables
                     ParsedFieldsPanel.ParsedFields.Clear();
                     _variableContext?.Clear();

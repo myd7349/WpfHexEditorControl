@@ -62,7 +62,11 @@
                                 <Border Background="{DynamicResource DockMenuBackgroundBrush}"
                                         BorderBrush="{DynamicResource DockMenuBorderBrush}"
                                         BorderThickness="1" Padding="0,2"
-                                        SnapsToDevicePixels="True" Grid.IsSharedSizeScope="True">
+                                        SnapsToDevicePixels="True" Grid.IsSharedSizeScope="True"
+                                        Margin="0,0,4,4">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="Black" BlurRadius="6" ShadowDepth="2" Opacity="0.35" />
+                                    </Border.Effect>
                                     <ScrollViewer CanContentScroll="True"
                                                   HorizontalScrollBarVisibility="Disabled"
                                                   VerticalScrollBarVisibility="Auto">
@@ -90,6 +94,7 @@
                             <Setter TargetName="menuHeaderContainer" Property="Grid.ColumnSpan" Value="3" />
                             <Setter TargetName="menuHeaderContainer" Property="Margin" Value="8,4" />
                             <Setter TargetName="PART_Popup" Property="Placement" Value="Bottom" />
+                            <Setter TargetName="PART_Popup" Property="VerticalOffset" Value="-1" />
                         </Trigger>
                         <Trigger Property="Role" Value="TopLevelItem">
                             <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
@@ -104,9 +109,40 @@
                             <Setter TargetName="RightArrow" Property="Visibility" Value="Visible" />
                             <Setter TargetName="PART_Popup" Property="Placement" Value="Right" />
                         </Trigger>
+                        <!-- Submenu items: highlight background only -->
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="templateRoot" Property="Background" Value="{DynamicResource DockMenuHighlightBrush}" />
                         </Trigger>
+                        <!-- Top-level header: show 1px border rectangle on hover (VS2022 style) -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Role" Value="TopLevelHeader" />
+                                <Condition Property="IsHighlighted" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="templateRoot" Property="Background" Value="{DynamicResource DockMenuHighlightBrush}" />
+                            <Setter TargetName="templateRoot" Property="BorderBrush" Value="{DynamicResource DockMenuHighlightBorderBrush}" />
+                            <Setter TargetName="templateRoot" Property="BorderThickness" Value="1" />
+                        </MultiTrigger>
+                        <!-- Top-level item (non-submenu): same border on hover -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Role" Value="TopLevelItem" />
+                                <Condition Property="IsHighlighted" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="templateRoot" Property="Background" Value="{DynamicResource DockMenuHighlightBrush}" />
+                            <Setter TargetName="templateRoot" Property="BorderBrush" Value="{DynamicResource DockMenuHighlightBorderBrush}" />
+                            <Setter TargetName="templateRoot" Property="BorderThickness" Value="1" />
+                        </MultiTrigger>
+                        <!-- Top-level header: keep highlighted when submenu is open -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Role" Value="TopLevelHeader" />
+                                <Condition Property="IsSubmenuOpen" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="templateRoot" Property="Background" Value="{DynamicResource DockMenuHighlightBrush}" />
+                            <Setter TargetName="templateRoot" Property="BorderBrush" Value="{DynamicResource DockMenuHighlightBorderBrush}" />
+                            <Setter TargetName="templateRoot" Property="BorderThickness" Value="1" />
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="templateRoot" Property="Opacity" Value="0.5" />
                         </Trigger>

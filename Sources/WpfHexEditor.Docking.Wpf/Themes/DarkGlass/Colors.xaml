@@ -20,6 +20,7 @@
     <Color x:Key="DockMenuForegroundColor">#FFFFFF</Color>
     <Color x:Key="DockMenuHighlightColor">#333333</Color>
     <Color x:Key="DockMenuBorderColor">#3F3F3F</Color>
+    <Color x:Key="DockMenuHighlightBorderColor">#9B9B9B</Color>
     <Color x:Key="DockToolBarBackgroundColor">#252525</Color>
     <Color x:Key="DockWindowBackgroundColor">#1A1A1A</Color>
 
@@ -62,6 +63,7 @@
     <SolidColorBrush x:Key="DockMenuForegroundBrush" Color="{StaticResource DockMenuForegroundColor}" />
     <SolidColorBrush x:Key="DockMenuHighlightBrush" Color="{StaticResource DockMenuHighlightColor}" />
     <SolidColorBrush x:Key="DockMenuBorderBrush" Color="{StaticResource DockMenuBorderColor}" />
+    <SolidColorBrush x:Key="DockMenuHighlightBorderBrush" Color="{StaticResource DockMenuHighlightBorderColor}" />
     <SolidColorBrush x:Key="DockToolBarBackgroundBrush" Color="{StaticResource DockToolBarBackgroundColor}" />
     <SolidColorBrush x:Key="DockWindowBackgroundBrush" Color="{StaticResource DockWindowBackgroundColor}" />
 
