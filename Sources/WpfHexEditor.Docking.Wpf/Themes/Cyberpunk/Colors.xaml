@@ -225,6 +225,18 @@
     <SolidColorBrush x:Key="PP_EditableForegroundBrush"      Color="#00FF9F"/>
     <SolidColorBrush x:Key="PP_BorderBrush"                  Color="#2A2F5A"/>
 
+    <!-- Error Panel (ERR) Theme Resources -->
+    <SolidColorBrush x:Key="ERR_BackgroundBrush"      Color="#0A0E27"/>
+    <SolidColorBrush x:Key="ERR_ForegroundBrush"      Color="#E0E7FF"/>
+    <SolidColorBrush x:Key="ERR_ToolbarBrush"         Color="#141B3D"/>
+    <SolidColorBrush x:Key="ERR_GridLinesBrush"        Color="#2E3A5F"/>
+    <SolidColorBrush x:Key="ERR_SelectedRowBrush"      Color="#2A1A4A"/>
+    <SolidColorBrush x:Key="ERR_HoverRowBrush"         Color="#1A2050"/>
+    <SolidColorBrush x:Key="ERR_FilterActiveBrush"     Color="#2A3759"/>
+    <SolidColorBrush x:Key="ERR_FilterInactiveBrush"   Color="Transparent"/>
+    <SolidColorBrush x:Key="ERR_SearchBoxBrush"        Color="#141B3D"/>
+    <SolidColorBrush x:Key="ERR_HeaderBrush"           Color="#12163A"/>
+
     <!-- Generic Dialog Resources (AdvancedSearch, ProjectDialogs, etc.) -->
     <Color x:Key="AccentColor">#FF006E</Color>
     <SolidColorBrush x:Key="BackgroundBrush"  Color="{StaticResource DockWindowBackgroundColor}"/>
