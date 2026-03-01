@@ -15,7 +15,7 @@ Multi-architecture disassembly viewer implementing `IDocumentEditor` + `IOpenabl
 ```csharp
 EditorRegistry.Instance.Register(new DisassemblyViewerFactory());
 
-var editor = new DisassemblyViewerControl();
+var editor = new DisassemblyViewer();
 await editor.OpenAsync("path/to/target.exe");
 myGrid.Children.Add(editor);
 ```

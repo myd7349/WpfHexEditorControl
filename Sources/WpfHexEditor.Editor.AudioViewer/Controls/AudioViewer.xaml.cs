@@ -15,14 +15,14 @@ namespace WpfHexEditor.Editor.AudioViewer.Controls;
 /// Stub audio viewer — planned for a future sprint (requires NAudio).
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public sealed partial class AudioViewerControl : UserControl, IDocumentEditor, IOpenableDocument
+public sealed partial class AudioViewer : UserControl, IDocumentEditor, IOpenableDocument
 {
     private string _filePath = string.Empty;
 
     /// <summary>
-    /// Creates a new <see cref="AudioViewerControl"/>.
+    /// Creates a new <see cref="AudioViewer"/>.
     /// </summary>
-    public AudioViewerControl()
+    public AudioViewer()
     {
         InitializeComponent();
 
@@ -99,6 +99,8 @@ public sealed partial class AudioViewerControl : UserControl, IDocumentEditor, I
 
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
 
     /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;

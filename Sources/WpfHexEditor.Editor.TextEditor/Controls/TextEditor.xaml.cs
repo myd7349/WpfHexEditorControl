@@ -23,7 +23,7 @@ namespace WpfHexEditor.Editor.TextEditor.Controls;
 /// and <see cref="IEditorPersistable"/> so the project system can save and
 /// restore per-file state (caret position, syntax language override).
 /// </summary>
-public sealed partial class TextEditorControl : UserControl, IDocumentEditor, IOpenableDocument, IEditorPersistable
+public sealed partial class TextEditor : UserControl, IDocumentEditor, IOpenableDocument, IEditorPersistable
 {
     // -----------------------------------------------------------------------
     // Fields
@@ -37,9 +37,9 @@ public sealed partial class TextEditorControl : UserControl, IDocumentEditor, IO
     // -----------------------------------------------------------------------
 
     /// <summary>
-    /// Creates a new <see cref="TextEditorControl"/>.
+    /// Creates a new <see cref="TextEditor"/>.
     /// </summary>
-    public TextEditorControl()
+    public TextEditor()
     {
         InitializeComponent();
 
@@ -133,6 +133,8 @@ public sealed partial class TextEditorControl : UserControl, IDocumentEditor, IO
 
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
 
     /// <inheritdoc/>
     public event EventHandler? SelectionChanged;
@@ -307,6 +309,16 @@ public sealed partial class TextEditorControl : UserControl, IDocumentEditor, IO
     /// Returns the full document text.
     /// </summary>
     public string GetText() => _vm.GetText();
+
+    /// <summary>
+    /// Moves the caret to the given 1-based line and column and scrolls it into view.
+    /// </summary>
+    public void GoToLine(int line, int column = 1)
+    {
+        // ViewModel uses 0-based indices; DTO / public API is 1-based
+        _vm.CaretLine   = Math.Max(0, line   - 1);
+        _vm.CaretColumn = Math.Max(0, column - 1);
+    }
 
     // -----------------------------------------------------------------------
     // IEditorPersistable

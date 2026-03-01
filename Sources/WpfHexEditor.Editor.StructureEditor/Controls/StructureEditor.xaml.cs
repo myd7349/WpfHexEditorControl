@@ -9,20 +9,21 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
 
-namespace WpfHexEditor.Editor.DisassemblyViewer.Controls;
+namespace WpfHexEditor.Editor.StructureEditor.Controls;
 
 /// <summary>
-/// Stub disassembly viewer — planned for a future sprint (requires Iced/Capstone.NET).
+/// Stub structure editor — planned for a future sprint.
+/// Reads .whfmt structure definitions.
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public sealed partial class DisassemblyViewerControl : UserControl, IDocumentEditor, IOpenableDocument
+public sealed partial class StructureEditor : UserControl, IDocumentEditor, IOpenableDocument
 {
     private string _filePath = string.Empty;
 
     /// <summary>
-    /// Creates a new <see cref="DisassemblyViewerControl"/>.
+    /// Creates a new <see cref="StructureEditor"/>.
     /// </summary>
-    public DisassemblyViewerControl()
+    public StructureEditor()
     {
         InitializeComponent();
 
@@ -99,6 +100,8 @@ public sealed partial class DisassemblyViewerControl : UserControl, IDocumentEdi
 
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
 
     /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;
@@ -113,7 +116,7 @@ public sealed partial class DisassemblyViewerControl : UserControl, IDocumentEdi
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 #pragma warning restore CS0067
 
-    // ── IDocumentEditor — Methods (no-ops for read-only viewer) ─────────
+    // ── IDocumentEditor — Methods (no-ops for read-only stub) ────────────
 
     /// <inheritdoc/>
     public void Undo() { }

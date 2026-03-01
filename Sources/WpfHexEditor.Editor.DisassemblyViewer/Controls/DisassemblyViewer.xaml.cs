@@ -9,20 +9,20 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
 
-namespace WpfHexEditor.Editor.TileEditor.Controls;
+namespace WpfHexEditor.Editor.DisassemblyViewer.Controls;
 
 /// <summary>
-/// Stub tile editor — planned for a future sprint (NES/GBA/GB tile graphics).
+/// Stub disassembly viewer — planned for a future sprint (requires Iced/Capstone.NET).
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public sealed partial class TileEditorControl : UserControl, IDocumentEditor, IOpenableDocument
+public sealed partial class DisassemblyViewer : UserControl, IDocumentEditor, IOpenableDocument
 {
     private string _filePath = string.Empty;
 
     /// <summary>
-    /// Creates a new <see cref="TileEditorControl"/>.
+    /// Creates a new <see cref="DisassemblyViewer"/>.
     /// </summary>
-    public TileEditorControl()
+    public DisassemblyViewer()
     {
         InitializeComponent();
 
@@ -99,6 +99,8 @@ public sealed partial class TileEditorControl : UserControl, IDocumentEditor, IO
 
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
 
     /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;
@@ -113,7 +115,7 @@ public sealed partial class TileEditorControl : UserControl, IDocumentEditor, IO
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 #pragma warning restore CS0067
 
-    // ── IDocumentEditor — Methods (no-ops for stub) ──────────────────────
+    // ── IDocumentEditor — Methods (no-ops for read-only viewer) ─────────
 
     /// <inheritdoc/>
     public void Undo() { }

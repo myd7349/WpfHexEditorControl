@@ -11,7 +11,7 @@ using WpfHexEditor.Editor.TileEditor.Controls;
 namespace WpfHexEditor.Editor.TileEditor;
 
 /// <summary>
-/// Factory that registers the <see cref="TileEditorControl"/> with the
+/// Factory that registers the <see cref="TileEditor"/> with the
 /// <see cref="IEditorRegistry"/> so the host application can open tile graphics
 /// files automatically by extension.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class TileEditorFactory : IEditorFactory
     }
 
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new TileEditorControl();
+    public IDocumentEditor Create() => new Controls.TileEditor();
 }
 
 file sealed class TileEditorDescriptor : IEditorDescriptor

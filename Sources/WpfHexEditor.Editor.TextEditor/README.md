@@ -35,7 +35,7 @@ using WpfHexEditor.Editor.TextEditor.Controls;
 EditorRegistry.Instance.Register(new TextEditorFactory());
 
 // Or create directly:
-var editor = new TextEditorControl();
+var editor = new TextEditor();
 await editor.OpenAsync("path/to/script.lua");
 myGrid.Children.Add(editor);
 ```

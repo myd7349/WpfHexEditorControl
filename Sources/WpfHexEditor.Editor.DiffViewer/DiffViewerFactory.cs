@@ -11,7 +11,7 @@ using WpfHexEditor.Editor.DiffViewer.Controls;
 namespace WpfHexEditor.Editor.DiffViewer;
 
 /// <summary>
-/// Factory for <see cref="DiffViewerControl"/>.
+/// Factory for <see cref="DiffViewer"/>.
 /// The diff viewer is typically opened from <c>Tools &gt; Compare Files…</c>
 /// rather than by file extension, so <see cref="SupportedExtensions"/> is empty.
 /// </summary>
@@ -26,7 +26,7 @@ public sealed class DiffViewerFactory : IEditorFactory
     public bool CanOpen(string filePath) => false;  // opened from menu, not by extension
 
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new DiffViewerControl();
+    public IDocumentEditor Create() => new Controls.DiffViewer();
 }
 
 file sealed class DiffViewerDescriptor : IEditorDescriptor

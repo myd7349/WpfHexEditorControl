@@ -12,7 +12,7 @@ using WpfHexEditor.Editor.TextEditor.Services;
 namespace WpfHexEditor.Editor.TextEditor;
 
 /// <summary>
-/// Factory that registers the <see cref="TextEditorControl"/> with the
+/// Factory that registers the <see cref="TextEditor"/> with the
 /// <see cref="IEditorRegistry"/> so the host application can open text
 /// files automatically by extension.
 /// </summary>
@@ -40,7 +40,7 @@ public sealed class TextEditorFactory : IEditorFactory
     }
 
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new TextEditorControl();
+    public IDocumentEditor Create() => new Controls.TextEditor();
 }
 
 file sealed class TextEditorDescriptor : IEditorDescriptor

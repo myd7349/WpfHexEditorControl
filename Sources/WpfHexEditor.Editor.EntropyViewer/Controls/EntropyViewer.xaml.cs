@@ -18,7 +18,7 @@ namespace WpfHexEditor.Editor.EntropyViewer.Controls;
 /// Read-only entropy and byte-distribution analyser.
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public sealed partial class EntropyViewerControl : UserControl, IDocumentEditor, IOpenableDocument
+public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpenableDocument
 {
     // -----------------------------------------------------------------------
     // Fields
@@ -39,9 +39,9 @@ public sealed partial class EntropyViewerControl : UserControl, IDocumentEditor,
     // -----------------------------------------------------------------------
 
     /// <summary>
-    /// Creates a new <see cref="EntropyViewerControl"/>.
+    /// Creates a new <see cref="EntropyViewer"/>.
     /// </summary>
-    public EntropyViewerControl()
+    public EntropyViewer()
     {
         InitializeComponent();
 
@@ -119,6 +119,8 @@ public sealed partial class EntropyViewerControl : UserControl, IDocumentEditor,
     public event EventHandler<string>? TitleChanged;
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
     /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;
     /// <inheritdoc/>

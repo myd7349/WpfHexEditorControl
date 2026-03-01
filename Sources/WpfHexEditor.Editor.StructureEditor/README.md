@@ -16,7 +16,7 @@ Loads a `.whfmt` format definition and displays an editable field tree synchroni
 ```csharp
 EditorRegistry.Instance.Register(new StructureEditorFactory());
 
-var editor = new StructureEditorControl();
+var editor = new StructureEditor();
 await editor.OpenAsync("path/to/format.whfmt");
 myGrid.Children.Add(editor);
 ```

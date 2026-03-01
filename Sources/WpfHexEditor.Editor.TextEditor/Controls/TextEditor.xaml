@@ -4,7 +4,7 @@
     Contributors: Claude Sonnet 4.6
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.TextEditor.Controls.TextEditorControl"
+<UserControl x:Class="WpfHexEditor.Editor.TextEditor.Controls.TextEditor"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:WpfHexEditor.Editor.TextEditor.Controls"

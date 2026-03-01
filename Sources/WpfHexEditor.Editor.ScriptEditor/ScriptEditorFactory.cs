@@ -11,7 +11,7 @@ using WpfHexEditor.Editor.ScriptEditor.Controls;
 namespace WpfHexEditor.Editor.ScriptEditor;
 
 /// <summary>
-/// Factory that registers the <see cref="ScriptEditorControl"/> with the
+/// Factory that registers the <see cref="ScriptEditor"/> with the
 /// <see cref="IEditorRegistry"/> so the host application can open game script
 /// files automatically by extension.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class ScriptEditorFactory : IEditorFactory
     }
 
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new ScriptEditorControl();
+    public IDocumentEditor Create() => new Controls.ScriptEditor();
 }
 
 file sealed class ScriptEditorDescriptor : IEditorDescriptor

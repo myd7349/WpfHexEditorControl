@@ -4,7 +4,7 @@
     Contributors: Claude Sonnet 4.6
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.TileEditor.Controls.TileEditorControl"
+<UserControl x:Class="WpfHexEditor.Editor.DisassemblyViewer.Controls.DisassemblyViewer"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource TE_Background}">
@@ -12,6 +12,6 @@
         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
                    Foreground="{DynamicResource TE_LineNumberForeground}"
                    FontSize="14"
-                   Text="Tile Editor — Planned for a future sprint (NES/GBA/GB tile graphics)"/>
+                   Text="Disassembly Viewer — Planned for a future sprint (requires Iced/Capstone.NET)"/>
     </Grid>
 </UserControl>

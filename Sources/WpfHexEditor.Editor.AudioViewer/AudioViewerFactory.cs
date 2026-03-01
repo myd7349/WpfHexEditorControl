@@ -11,7 +11,7 @@ using WpfHexEditor.Editor.AudioViewer.Controls;
 namespace WpfHexEditor.Editor.AudioViewer;
 
 /// <summary>
-/// Factory that registers the <see cref="AudioViewerControl"/> with the
+/// Factory that registers the <see cref="AudioViewer"/> with the
 /// <see cref="IEditorRegistry"/> so the host application can open audio files
 /// automatically by extension.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class AudioViewerFactory : IEditorFactory
     }
 
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new AudioViewerControl();
+    public IDocumentEditor Create() => new Controls.AudioViewer();
 }
 
 file sealed class AudioViewerDescriptor : IEditorDescriptor

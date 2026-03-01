@@ -19,7 +19,7 @@ namespace WpfHexEditor.Editor.DiffViewer.Controls;
 /// <see cref="IOpenableDocument.OpenAsync"/> (which loads only the left-side file).
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public sealed partial class DiffViewerControl : UserControl, IDocumentEditor, IOpenableDocument
+public sealed partial class DiffViewer : UserControl, IDocumentEditor, IOpenableDocument
 {
     // -----------------------------------------------------------------------
     // Constants
@@ -45,9 +45,9 @@ public sealed partial class DiffViewerControl : UserControl, IDocumentEditor, IO
     // -----------------------------------------------------------------------
 
     /// <summary>
-    /// Creates a new <see cref="DiffViewerControl"/>.
+    /// Creates a new <see cref="DiffViewer"/>.
     /// </summary>
-    public DiffViewerControl()
+    public DiffViewer()
     {
         InitializeComponent();
 
@@ -157,6 +157,8 @@ public sealed partial class DiffViewerControl : UserControl, IDocumentEditor, IO
     public event EventHandler<string>? TitleChanged;
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
     /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;
     /// <inheritdoc/>

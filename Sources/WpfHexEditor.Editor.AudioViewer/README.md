@@ -15,7 +15,7 @@ Audio waveform viewer and player implementing `IDocumentEditor` + `IOpenableDocu
 ```csharp
 EditorRegistry.Instance.Register(new AudioViewerFactory());
 
-var editor = new AudioViewerControl();
+var editor = new AudioViewer();
 await editor.OpenAsync("path/to/sound.wav");
 myGrid.Children.Add(editor);
 ```

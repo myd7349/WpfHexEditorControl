@@ -9,20 +9,20 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
 
-namespace WpfHexEditor.Editor.ScriptEditor.Controls;
+namespace WpfHexEditor.Editor.TileEditor.Controls;
 
 /// <summary>
-/// Stub script editor — planned for a future sprint (extends TextEditor with TBL encoding support).
+/// Stub tile editor — planned for a future sprint (NES/GBA/GB tile graphics).
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public sealed partial class ScriptEditorControl : UserControl, IDocumentEditor, IOpenableDocument
+public sealed partial class TileEditor : UserControl, IDocumentEditor, IOpenableDocument
 {
     private string _filePath = string.Empty;
 
     /// <summary>
-    /// Creates a new <see cref="ScriptEditorControl"/>.
+    /// Creates a new <see cref="TileEditor"/>.
     /// </summary>
-    public ScriptEditorControl()
+    public TileEditor()
     {
         InitializeComponent();
 
@@ -99,6 +99,8 @@ public sealed partial class ScriptEditorControl : UserControl, IDocumentEditor, 
 
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
 
     /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;

@@ -9,21 +9,20 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
 
-namespace WpfHexEditor.Editor.StructureEditor.Controls;
+namespace WpfHexEditor.Editor.ScriptEditor.Controls;
 
 /// <summary>
-/// Stub structure editor — planned for a future sprint.
-/// Reads .whfmt structure definitions.
+/// Stub script editor — planned for a future sprint (extends TextEditor with TBL encoding support).
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public sealed partial class StructureEditorControl : UserControl, IDocumentEditor, IOpenableDocument
+public sealed partial class ScriptEditor : UserControl, IDocumentEditor, IOpenableDocument
 {
     private string _filePath = string.Empty;
 
     /// <summary>
-    /// Creates a new <see cref="StructureEditorControl"/>.
+    /// Creates a new <see cref="ScriptEditor"/>.
     /// </summary>
-    public StructureEditorControl()
+    public ScriptEditor()
     {
         InitializeComponent();
 
@@ -100,6 +99,8 @@ public sealed partial class StructureEditorControl : UserControl, IDocumentEdito
 
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
 
     /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;
@@ -114,7 +115,7 @@ public sealed partial class StructureEditorControl : UserControl, IDocumentEdito
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 #pragma warning restore CS0067
 
-    // ── IDocumentEditor — Methods (no-ops for read-only stub) ────────────
+    // ── IDocumentEditor — Methods (no-ops for stub) ──────────────────────
 
     /// <inheritdoc/>
     public void Undo() { }

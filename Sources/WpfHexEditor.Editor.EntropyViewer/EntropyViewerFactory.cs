@@ -11,7 +11,7 @@ using WpfHexEditor.Editor.EntropyViewer.Controls;
 namespace WpfHexEditor.Editor.EntropyViewer;
 
 /// <summary>
-/// Factory that registers <see cref="EntropyViewerControl"/> with the
+/// Factory that registers <see cref="EntropyViewer"/> with the
 /// <see cref="IEditorRegistry"/>. Opens any binary/data file for entropy analysis.
 /// </summary>
 public sealed class EntropyViewerFactory : IEditorFactory
@@ -29,7 +29,7 @@ public sealed class EntropyViewerFactory : IEditorFactory
     }
 
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new EntropyViewerControl();
+    public IDocumentEditor Create() => new Controls.EntropyViewer();
 }
 
 file sealed class EntropyViewerDescriptor : IEditorDescriptor

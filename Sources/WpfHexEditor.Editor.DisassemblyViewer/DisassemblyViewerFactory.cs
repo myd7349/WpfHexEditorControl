@@ -11,7 +11,7 @@ using WpfHexEditor.Editor.DisassemblyViewer.Controls;
 namespace WpfHexEditor.Editor.DisassemblyViewer;
 
 /// <summary>
-/// Factory that registers the <see cref="DisassemblyViewerControl"/> with the
+/// Factory that registers the <see cref="DisassemblyViewer"/> with the
 /// <see cref="IEditorRegistry"/> so the host application can open binary/executable
 /// files automatically by extension.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class DisassemblyViewerFactory : IEditorFactory
     }
 
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new DisassemblyViewerControl();
+    public IDocumentEditor Create() => new Controls.DisassemblyViewer();
 }
 
 file sealed class DisassemblyViewerDescriptor : IEditorDescriptor
@@ -39,9 +39,9 @@ file sealed class DisassemblyViewerDescriptor : IEditorDescriptor
     public string DisplayName => "Disassembly Viewer";
     public string Description => "Read-only disassembly viewer stub. Planned for a future sprint (requires Iced/Capstone.NET).";
 
-    public IReadOnlyList<string> SupportedExtensions =>
-    [
-        ".exe", ".dll", ".elf", ".so", ".bin", ".rom",
-        ".gb", ".gba", ".nes", ".class", ".wasm",
-    ];
+    /// <summary>
+    /// Empty while DisassemblyViewer is a stub — binary/ROM files fall through to HexEditor.
+    /// Populate once Iced/Capstone.NET integration is complete.
+    /// </summary>
+    public IReadOnlyList<string> SupportedExtensions => [];
 }

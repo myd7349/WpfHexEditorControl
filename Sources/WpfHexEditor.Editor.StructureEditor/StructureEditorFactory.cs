@@ -11,7 +11,7 @@ using WpfHexEditor.Editor.StructureEditor.Controls;
 namespace WpfHexEditor.Editor.StructureEditor;
 
 /// <summary>
-/// Factory that registers the <see cref="StructureEditorControl"/> with the
+/// Factory that registers the <see cref="StructureEditor"/> with the
 /// <see cref="IEditorRegistry"/> so the host application can open .whfmt
 /// structure definition files automatically by extension.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class StructureEditorFactory : IEditorFactory
     }
 
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new StructureEditorControl();
+    public IDocumentEditor Create() => new Controls.StructureEditor();
 }
 
 file sealed class StructureEditorDescriptor : IEditorDescriptor

@@ -4,6 +4,8 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,7 +20,8 @@ namespace WpfHexEditor.Editor.ImageViewer.Controls;
 /// Read-only image viewer with zoom, pan, and pixel inspection.
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, IOpenableDocument
+public sealed partial class ImageViewer : UserControl,
+    IDocumentEditor, IOpenableDocument, IStatusBarContributor, IEditorPersistable
 {
     // -----------------------------------------------------------------------
     // Fields
@@ -34,14 +37,20 @@ public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, I
     private double _panScrollH;
     private double _panScrollV;
 
+    // Persistence
+    private double _restoredZoom;   // 0 = "fit to window"
+
+    // Status bar
+    private readonly StatusBarItem _zoomItem = new() { Label = "Zoom", Value = "100%" };
+
     // -----------------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------------
 
     /// <summary>
-    /// Creates a new <see cref="ImageViewerControl"/>.
+    /// Creates a new <see cref="ImageViewer"/>.
     /// </summary>
-    public ImageViewerControl()
+    public ImageViewer()
     {
         InitializeComponent();
 
@@ -56,6 +65,21 @@ public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, I
 
         // Keyboard shortcuts
         KeyDown += OnKeyDown;
+
+        // Status bar — zoom presets
+        foreach (var (name, factor) in new (string, double)[]
+            { ("Fit", 0), ("25%", .25), ("50%", .5), ("75%", .75),
+              ("100%", 1), ("150%", 1.5), ("200%", 2), ("400%", 4) })
+        {
+            var f = factor;
+            _zoomItem.Choices.Add(new StatusBarChoice
+            {
+                DisplayName = name,
+                IsActive    = false,
+                Command     = new RelayCommand(() => { if (f == 0) FitToWindow(); else ApplyZoom(f); })
+            });
+        }
+        StatusBarItems.Add(_zoomItem);
     }
 
     // -----------------------------------------------------------------------
@@ -113,6 +137,13 @@ public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, I
     public ICommand SelectAllCommand { get; }
 
     // -----------------------------------------------------------------------
+    // IStatusBarContributor
+    // -----------------------------------------------------------------------
+
+    /// <inheritdoc/>
+    public ObservableCollection<StatusBarItem> StatusBarItems { get; } = new();
+
+    // -----------------------------------------------------------------------
     // IDocumentEditor — Events
     // -----------------------------------------------------------------------
 
@@ -131,6 +162,8 @@ public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, I
 
     /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
+    /// <inheritdoc/>
+    public event EventHandler<string>? OutputMessage;
 
     /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;
@@ -186,12 +219,45 @@ public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, I
     public void CancelOperation() { }
 
     // -----------------------------------------------------------------------
+    // IEditorPersistable
+    // -----------------------------------------------------------------------
+
+    /// <inheritdoc/>
+    public EditorConfigDto GetEditorConfig() => new()
+    {
+        Extra = new Dictionary<string, string>
+        {
+            ["ZoomFactor"] = _zoom.ToString(CultureInfo.InvariantCulture)
+        }
+    };
+
+    /// <inheritdoc/>
+    public void ApplyEditorConfig(EditorConfigDto config)
+    {
+        if (config?.Extra?.TryGetValue("ZoomFactor", out var s) == true &&
+            double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var z) && z > 0)
+            _restoredZoom = z;
+    }
+
+    /// <inheritdoc/>
+    public byte[]? GetUnsavedModifications() => null;
+
+    /// <inheritdoc/>
+    public void ApplyUnsavedModifications(byte[] data) { }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<BookmarkDto>? GetBookmarks() => null;
+
+    /// <inheritdoc/>
+    public void ApplyBookmarks(IReadOnlyList<BookmarkDto> bookmarks) { }
+
+    // -----------------------------------------------------------------------
     // IOpenableDocument
     // -----------------------------------------------------------------------
 
     /// <summary>
     /// Loads an image file asynchronously and updates the view.
-    /// Supported: PNG, BMP, JPG, GIF, TGA, ICO, TIFF, WEBP, DDS.
+    /// Supported: PNG, BMP, JPG, GIF, TGA, ICO, TIFF, WEBP.
     /// </summary>
     public async Task OpenAsync(string filePath, CancellationToken ct = default)
     {
@@ -217,9 +283,13 @@ public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, I
             _bitmap = bitmap;
             ImageDisplay.Source = bitmap;
 
-            // Reset zoom to fit on open
-            Loaded += (_, _) => FitToWindow();
-            if (IsLoaded) FitToWindow();
+            if (_restoredZoom > 0)
+                ApplyZoom(_restoredZoom);
+            else
+            {
+                Loaded += OnLoadedFitToWindow;
+                if (IsLoaded) FitToWindow();
+            }
 
             UpdateStatusBar();
             TitleChanged?.Invoke(this, Title);
@@ -245,6 +315,12 @@ public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, I
     // Zoom
     // -----------------------------------------------------------------------
 
+    private void OnLoadedFitToWindow(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnLoadedFitToWindow;
+        FitToWindow();
+    }
+
     private void ApplyZoom(double newZoom)
     {
         newZoom = Math.Max(0.05, Math.Min(32.0, newZoom));
@@ -252,6 +328,14 @@ public sealed partial class ImageViewerControl : UserControl, IDocumentEditor, I
 
         ImageDisplay.LayoutTransform = new ScaleTransform(_zoom, _zoom);
         ZoomText.Text = $"{_zoom * 100:F0}%";
+
+        _zoomItem.Value = $"{_zoom * 100:F0}%";
+        foreach (var c in _zoomItem.Choices)
+            c.IsActive = c.DisplayName != "Fit" &&
+                         double.TryParse(c.DisplayName.TrimEnd('%'), out var pct) &&
+                         Math.Abs(pct / 100 - _zoom) < 0.01;
+
+        StatusMessage?.Invoke(this, $"Zoom: {_zoom * 100:F0}%");
     }
 
     private void FitToWindow()

@@ -16,7 +16,7 @@ Displays raw tile data in a configurable grid (width, height, bpp) with palette 
 ```csharp
 EditorRegistry.Instance.Register(new TileEditorFactory());
 
-var editor = new TileEditorControl();
+var editor = new TileEditor();
 await editor.OpenAsync("path/to/sprites.chr");
 myGrid.Children.Add(editor);
 ```

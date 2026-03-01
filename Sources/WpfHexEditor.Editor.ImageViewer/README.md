@@ -27,7 +27,7 @@ using WpfHexEditor.Editor.ImageViewer.Controls;
 EditorRegistry.Instance.Register(new ImageViewerFactory());
 
 // Or create directly:
-var viewer = new ImageViewerControl();
+var viewer = new ImageViewer();
 await viewer.OpenAsync("path/to/sprite.png");
 myGrid.Children.Add(viewer);
 ```

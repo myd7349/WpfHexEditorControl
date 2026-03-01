@@ -4,7 +4,7 @@
     Contributors: Claude Sonnet 4.6
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.AudioViewer.Controls.AudioViewerControl"
+<UserControl x:Class="WpfHexEditor.Editor.AudioViewer.Controls.AudioViewer"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource TE_Background}">

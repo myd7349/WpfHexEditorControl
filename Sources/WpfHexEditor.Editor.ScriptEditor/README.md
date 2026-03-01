@@ -16,7 +16,7 @@ Built on top of the TextEditor engine with TBL encoding support for Japanese gam
 ```csharp
 EditorRegistry.Instance.Register(new ScriptEditorFactory());
 
-var editor = new ScriptEditorControl();
+var editor = new ScriptEditor();
 await editor.OpenAsync("path/to/dialogue.msg");
 myGrid.Children.Add(editor);
 ```

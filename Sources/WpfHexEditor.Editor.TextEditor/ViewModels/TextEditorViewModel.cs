@@ -14,7 +14,7 @@ using WpfHexEditor.Editor.TextEditor.Services;
 namespace WpfHexEditor.Editor.TextEditor.ViewModels;
 
 /// <summary>
-/// Internal view-model backing <see cref="Controls.TextEditorControl"/>.
+/// Internal view-model backing <see cref="Controls.TextEditor"/>.
 /// </summary>
 internal sealed class TextEditorViewModel : INotifyPropertyChanged
 {
