@@ -1,6 +1,6 @@
 {
   "formatName": "PC Engine/TurboGrafx-16 ROM",
-  "version": "2.3",
+  "version": "2.4",
   "extensions": [
     ".pce",
     ".sgx"
@@ -106,12 +106,12 @@
     "DocumentationLevel": "standard",
     "BlocksDefined": 4,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "PC Engine"
   },
   "functions": {
     "readUInt32LE": "Read executable header"

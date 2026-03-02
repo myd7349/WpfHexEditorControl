@@ -1,6 +1,6 @@
 {
   "formatName": "Atari 7800 ROM",
-  "version": "1.12",
+  "version": "1.13",
   "extensions": [
     ".a78"
   ],
@@ -232,12 +232,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 15,
     "ValidationRules": 1,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "Atari 7800"
   },
   "functions": {
     "extractASCIIString": "Read filenames",

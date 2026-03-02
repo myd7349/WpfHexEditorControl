@@ -1,6 +1,6 @@
 {
   "formatName": "Game Boy Advance ROM",
-  "version": "2.4",
+  "version": "2.5",
   "extensions": [
     ".gba"
   ],
@@ -235,12 +235,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 15,
     "ValidationRules": 1,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "GBA"
   },
   "functions": {
     "readUInt32LE": "Read game header",

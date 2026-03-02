@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation EXE",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".exe",
     ".psx"
@@ -237,12 +237,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 16,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "PS1"
   },
   "functions": {
     "readUInt32LE": "Read executable header",

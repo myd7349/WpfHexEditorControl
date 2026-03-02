@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Master System ROM",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".sms",
     ".gg"
@@ -153,12 +153,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 8,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "Sega Master System"
   },
   "functions": {
     "readUInt32LE": "Read executable header"

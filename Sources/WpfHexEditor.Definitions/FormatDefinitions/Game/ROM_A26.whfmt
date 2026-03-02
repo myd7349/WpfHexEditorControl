@@ -1,6 +1,6 @@
 {
   "formatName": "Atari 2600 ROM",
-  "version": "1.12",
+  "version": "1.13",
   "extensions": [
     ".a26",
     ".bin"
@@ -133,12 +133,12 @@
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "Atari 2600"
   },
   "functions": {
     "extractASCIIString": "Read filenames",

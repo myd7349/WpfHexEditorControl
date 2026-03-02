@@ -126,7 +126,12 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
             foreach (var e in ext.EnumerateArray())
                 if (e.GetString() is { } s) extensions.Add(s);
 
-        return new EmbeddedFormatEntry(resourceKey, name, category, description, extensions, quality, version, author);
+        // Extract platform from TechnicalDetails (present in ROM format definitions)
+        var platform = "";
+        if (root.TryGetProperty("TechnicalDetails", out var td))
+            platform = GetString(td, "Platform") ?? "";
+
+        return new EmbeddedFormatEntry(resourceKey, name, category, description, extensions, quality, version, author, platform);
     }
 
     private static string? GetString(JsonElement root, string property)

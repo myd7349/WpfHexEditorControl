@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 2 Disc Image",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".iso",
     ".bin"
@@ -137,12 +137,12 @@
     "DocumentationLevel": "standard",
     "BlocksDefined": 7,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "PS2"
   },
   "functions": {
     "readUInt32LE": "Read dimensions",

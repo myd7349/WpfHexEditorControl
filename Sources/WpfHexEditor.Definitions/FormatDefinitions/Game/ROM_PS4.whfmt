@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation 4 Package",
-  "version": "2.3",
+  "version": "2.4",
   "extensions": [
     ".pkg"
   ],
@@ -164,12 +164,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 9,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "PS4"
   },
   "functions": {
     "calculateCRC32": "Validate CRC",

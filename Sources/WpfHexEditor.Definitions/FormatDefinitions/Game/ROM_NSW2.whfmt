@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Switch 2 Package",
-  "version": "1.11",
+  "version": "1.12",
   "extensions": [
     ".nsp",
     ".xci",
@@ -215,12 +215,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 13,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "Nintendo Switch 2"
   },
   "functions": {
     "calculateCRC32": "Validate CRC",

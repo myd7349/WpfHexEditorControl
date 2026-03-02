@@ -1,6 +1,6 @@
 {
   "formatName": "Super Nintendo ROM",
-  "version": "3.1",
+  "version": "3.2",
   "extensions": [
     ".smc",
     ".sfc"
@@ -242,7 +242,7 @@
     "Preservation"
   ],
   "TechnicalDetails": {
-    "Platform": "Super Nintendo Entertainment System",
+    "Platform": "SNES",
     "primary_extension": ".smc",
     "defined_fields": 13
   },
@@ -251,6 +251,6 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 13,
     "ValidationRules": 3,
-    "LastUpdated": "2026-02-24"
+    "LastUpdated": "2026-03-01"
   }
 }

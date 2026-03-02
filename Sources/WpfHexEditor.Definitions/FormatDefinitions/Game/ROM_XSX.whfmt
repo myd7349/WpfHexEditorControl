@@ -1,6 +1,6 @@
 {
   "formatName": "Xbox Series X/S Package",
-  "version": "2.3",
+  "version": "2.4",
   "extensions": [
     ".xvd",
     ".msixvc"
@@ -154,12 +154,12 @@
     "DocumentationLevel": "standard",
     "BlocksDefined": 8,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "Xbox Series X/S"
   },
   "functions": {
     "calculateCRC32": "Validate CRC",

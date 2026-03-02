@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo 64 ROM",
-  "version": "1.12",
+  "version": "1.13",
   "extensions": [
     ".n64",
     ".z64",
@@ -224,12 +224,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 14,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "N64"
   },
   "functions": {
     "readUInt32LE": "Read game header"

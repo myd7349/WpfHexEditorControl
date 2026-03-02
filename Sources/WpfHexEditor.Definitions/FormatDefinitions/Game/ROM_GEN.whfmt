@@ -1,6 +1,6 @@
 {
   "formatName": "Sega Genesis/Mega Drive ROM",
-  "version": "1.10",
+  "version": "1.11",
   "extensions": [
     ".md",
     ".bin",
@@ -290,12 +290,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 19,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "Mega Drive / Genesis"
   },
   "functions": {
     "readUInt32LE": "Read executable header"

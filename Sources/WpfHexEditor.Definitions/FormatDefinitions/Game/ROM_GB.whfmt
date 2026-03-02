@@ -1,6 +1,6 @@
 {
   "formatName": "Game Boy ROM",
-  "version": "1.12",
+  "version": "1.13",
   "extensions": [
     ".gb",
     ".gbc"
@@ -269,12 +269,12 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 17,
     "ValidationRules": 2,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "Game Boy"
   },
   "functions": {
     "readUInt32LE": "Read game header",

@@ -1,6 +1,6 @@
 {
   "formatName": "Nintendo Wii U Image",
-  "version": "1.13",
+  "version": "1.14",
   "extensions": [
     ".wud",
     ".wux"
@@ -156,12 +156,12 @@
     "DocumentationLevel": "standard",
     "BlocksDefined": 9,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "Nintendo Wii U"
   },
   "functions": {
     "readUInt32LE": "Read dimensions",

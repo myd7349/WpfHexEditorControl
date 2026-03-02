@@ -1,6 +1,6 @@
 {
   "formatName": "PlayStation Portable ISO",
-  "version": "2.4",
+  "version": "2.5",
   "extensions": [
     ".iso",
     ".cso"
@@ -162,12 +162,12 @@
     "DocumentationLevel": "standard",
     "BlocksDefined": 10,
     "ValidationRules": 0,
-    "LastUpdated": "2026-02-24",
+    "LastUpdated": "2026-03-01",
     "PriorityFormat": false,
     "AutoRefined": true
   },
   "TechnicalDetails": {
-    "Platform": "Various"
+    "Platform": "PSP"
   },
   "functions": {
     "readUInt32LE": "Read disk header",

@@ -41,7 +41,13 @@ public sealed record EmbeddedFormatEntry(
     /// <summary>
     /// Author or authoring organization. Empty string if not specified.
     /// </summary>
-    string Author);
+    string Author,
+    /// <summary>
+    /// Target platform extracted from <c>TechnicalDetails.Platform</c> in the
+    /// .whfmt file, e.g. "Nintendo Entertainment System", "SNES".
+    /// Empty string when the format is not platform-specific.
+    /// </summary>
+    string Platform);
 
 /// <summary>
 /// Read-only catalog of the embedded format definitions shipped with the assembly.

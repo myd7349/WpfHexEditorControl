@@ -1,6 +1,6 @@
 {
   "formatName": "NES ROM",
-  "version": "2.1",
+  "version": "2.2",
   "extensions": [
     ".nes"
   ],
@@ -204,7 +204,7 @@
     "Preservation"
   ],
   "TechnicalDetails": {
-    "Platform": "Nintendo Entertainment System",
+    "Platform": "NES",
     "primary_extension": ".nes",
     "defined_fields": 12
   },
@@ -213,6 +213,6 @@
     "DocumentationLevel": "detailed",
     "BlocksDefined": 13,
     "ValidationRules": 2,
-    "LastUpdated": "2026-02-24"
+    "LastUpdated": "2026-03-01"
   }
 }
