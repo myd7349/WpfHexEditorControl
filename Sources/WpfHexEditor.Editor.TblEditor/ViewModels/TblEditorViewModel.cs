@@ -180,9 +180,8 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
     public void Save()
     {
         if (_source == null) return;
-        var existing = _source.GetAllEntries().ToList();
-        foreach (var d in existing) _source.Remove(d);
-        foreach (var vm in _entries) { var d = vm.ToDto(); if (d.IsValid) _source.Add(d); }
+        _source.Clear();
+        foreach (var vm in _entries) { var d = vm.ToDto(); if (d.IsValid) _source[d.Entry] = d; }
         IsDirty = false;
     }
 
@@ -254,6 +253,19 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(TypeFilter));
         OnPropertyChanged(nameof(ShowConflictsOnly));
         ApplyFilter();
+    }
+
+    // ── Force reanalysis ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Re-runs both entry validation and conflict analysis on all in-memory entries,
+    /// then refreshes statistics. Called by <see cref="Controls.TblEditor.ForceValidationAsync"/>.
+    /// </summary>
+    internal async Task ForceReanalysisAsync(CancellationToken ct = default)
+    {
+        await _validationService.ValidateAllAsync(_entries, ct);
+        await RunAnalysisAsync();
+        UpdateStatistics();
     }
 
     // ── GoTo ───────────────────────────────────────────────────────────────
@@ -328,8 +340,18 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
         {
             var conflicts = await _conflictAnalyzer.AnalyzeConflictsAsync(_entries, ct);
             if (ct.IsCancellationRequested) return;
-            var conflictKeys = new HashSet<string>(
-                conflicts.SelectMany(c => c.ConflictingEntries).Select(d => d.Entry.ToUpperInvariant()));
+
+            // Only the SHORT prefix entry is ambiguous — do not mark longer entries as conflicting.
+            // For duplicates, both entries are equally problematic.
+            var conflictKeys = new HashSet<string>();
+            foreach (var c in conflicts)
+            {
+                if (c.Type == ConflictType.PrefixConflict && c.ConflictingEntries.Count > 0)
+                    conflictKeys.Add(c.ConflictingEntries[0].Entry.ToUpperInvariant());
+                else
+                    foreach (var e in c.ConflictingEntries)
+                        conflictKeys.Add(e.Entry.ToUpperInvariant());
+            }
             foreach (var vm in _entries)
                 vm.HasConflict = conflictKeys.Contains(vm.Entry.ToUpperInvariant());
         }

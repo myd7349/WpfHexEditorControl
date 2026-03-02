@@ -13,22 +13,49 @@
              xmlns:ct="clr-namespace:WpfHexEditor.Core.CharacterTable;assembly=WpfHexEditor.Core"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="700"
-             KeyDown="UserControl_KeyDown">
+             KeyDown="UserControl_KeyDown"
+             PreviewMouseWheel="UserControl_PreviewMouseWheel">
 
     <UserControl.Resources>
         <!-- Bool → Visibility -->
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- DataGrid column header — VS IDE style -->
+        <!-- DataGrid column header — VS IDE style (matches ErrorPanel GridViewColumnHeader) -->
         <Style x:Key="TblColumnHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Background"       Value="{DynamicResource ERR_HeaderBrush}"/>
-            <Setter Property="Foreground"       Value="{DynamicResource ERR_ForegroundBrush}"/>
-            <Setter Property="Padding"          Value="6,4"/>
-            <Setter Property="BorderThickness"  Value="0,0,0,1"/>
-            <Setter Property="BorderBrush"      Value="{DynamicResource ERR_GridLinesBrush}"/>
-            <Setter Property="SeparatorBrush"   Value="{DynamicResource ERR_GridLinesBrush}"/>
-            <Setter Property="FontWeight"       Value="SemiBold"/>
-            <Setter Property="FontSize"         Value="11"/>
+            <Setter Property="Background"                Value="{DynamicResource ERR_HeaderBrush}"/>
+            <Setter Property="Foreground"                Value="{DynamicResource ERR_ForegroundBrush}"/>
+            <Setter Property="BorderBrush"               Value="{DynamicResource ERR_GridLinesBrush}"/>
+            <Setter Property="BorderThickness"           Value="0,0,1,1"/>
+            <Setter Property="Padding"                   Value="6,3"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor"                    Value="Arrow"/>
+            <Setter Property="SeparatorVisibility"       Value="Collapsed"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Border x:Name="HeaderBd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="Center"
+                                              SnapsToDevicePixels="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HeaderBd" Property="Background"
+                                        Value="{DynamicResource ERR_HeaderHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="HeaderBd" Property="Background"
+                                        Value="{DynamicResource ERR_HeaderPressedBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- Conflict / invalid row highlight (+ selection) -->
@@ -85,7 +112,128 @@
                   VirtualizingPanel.VirtualizationMode="Recycling"
                   EnableRowVirtualization="True"
                   CellEditEnding="EntriesGrid_CellEditEnding"
-                  SelectionChanged="EntriesGrid_SelectionChanged">
+                  SelectionChanged="EntriesGrid_SelectionChanged"
+                  ContextMenuOpening="EntriesGrid_ContextMenuOpening">
+
+            <!-- ── Context menu ─────────────────────────────────────────── -->
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <!-- ── Group 1 : Entry editing ───────────────────── -->
+                    <MenuItem x:Name="CtxAdd"
+                              Header="Add Entry"
+                              InputGestureText="Ctrl+Insert"
+                              Click="CtxAdd_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="CtxDuplicate"
+                              Header="Duplicate Entry"
+                              Click="CtxDuplicate_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE780;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="CtxDelete"
+                              Header="Delete"
+                              InputGestureText="Delete"
+                              Click="CtxDelete_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+
+                    <!-- ── Group 2 : Clipboard ───────────────────────── -->
+                    <MenuItem x:Name="CtxCut"
+                              Header="Cut"
+                              InputGestureText="Ctrl+X"
+                              Click="CtxCut_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE8C6;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="CtxCopy"
+                              Header="Copy"
+                              InputGestureText="Ctrl+C"
+                              Click="CtxCopy_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="CtxPaste"
+                              Header="Paste"
+                              InputGestureText="Ctrl+V"
+                              Click="CtxPaste_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE77F;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+
+                    <!-- ── Group 3 : Navigation / search ────────────── -->
+                    <MenuItem x:Name="CtxFind"
+                              Header="Find…"
+                              InputGestureText="Ctrl+F"
+                              Click="CtxFind_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="CtxSelectAll"
+                              Header="Select All"
+                              InputGestureText="Ctrl+A"
+                              Click="CtxSelectAll_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE73B;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+
+                    <!-- ── Group 4 : Validation ──────────────────────── -->
+                    <MenuItem x:Name="CtxForceValidation"
+                              Header="Force TBL Validation"
+                              Click="CtxForceValidation_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE8FB;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="CtxShowConflictsOnly"
+                              Header="Show Conflicts Only"
+                              IsCheckable="True"
+                              Click="CtxShowConflictsOnly_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="CtxNextConflict"
+                              Header="Go to Next Conflict"
+                              Click="CtxNextConflict_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xEA47;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+
+                    <!-- ── Group 5 : Undo / Redo ─────────────────────── -->
+                    <MenuItem x:Name="CtxUndo"
+                              Header="Undo"
+                              InputGestureText="Ctrl+Z"
+                              Click="CtxUndo_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="CtxRedo"
+                              Header="Redo"
+                              InputGestureText="Ctrl+Y"
+                              Click="CtxRedo_Click">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE7A6;" FontFamily="Segoe MDL2 Assets" FontSize="12"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
 
             <DataGrid.Columns>
                 <!-- Hex Entry -->

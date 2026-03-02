@@ -27,6 +27,7 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
 {
     private readonly TblEditorViewModel _vm;
     private string? _currentFilePath;
+    private double _baseFontSize = 12.0;
 
     // ── IDiagnosticSource ─────────────────────────────────────────────────
     private List<DiagnosticEntry> _diagnostics = [];
@@ -55,6 +56,8 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         foreach (DteType t in Enum.GetValues<DteType>())
             TypeFilterCombo.Items.Add(new ComboBoxItem { Content = t.ToString(), Tag = t });
         TypeFilterCombo.SelectedIndex = 0;
+
+        Loaded += (_, _) => _baseFontSize = EntriesGrid.FontSize;
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -83,6 +86,32 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
     public static readonly DependencyProperty IsReadOnlyProperty =
         DependencyProperty.Register(nameof(IsReadOnly), typeof(bool), typeof(TblEditor),
             new PropertyMetadata(false, (d, e) => ((TblEditor)d)._vm.IsReadOnly = (bool)e.NewValue));
+
+    public static readonly DependencyProperty ZoomProperty =
+        DependencyProperty.Register(nameof(Zoom), typeof(int), typeof(TblEditor),
+            new PropertyMetadata(100, OnZoomChanged, CoerceZoom));
+
+    /// <summary>Zoom level in percent (50–200). Default is 100.</summary>
+    public int Zoom
+    {
+        get => (int)GetValue(ZoomProperty);
+        set => SetValue(ZoomProperty, value);
+    }
+
+    private static object CoerceZoom(DependencyObject d, object baseValue)
+        => Math.Clamp((int)baseValue, 50, 200);
+
+    private static void OnZoomChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctrl = (TblEditor)d;
+        ctrl.EntriesGrid.FontSize = ctrl._baseFontSize * (int)e.NewValue / 100.0;
+        if (ctrl._sbZoom != null)
+            ctrl._sbZoom.Value = $"{(int)e.NewValue}%";
+    }
+
+    public void ZoomIn()    => Zoom = Math.Min(Zoom + 10, 200);
+    public void ZoomOut()   => Zoom = Math.Max(Zoom - 10, 50);
+    public void ResetZoom() => Zoom = 100;
 
     // ═══════════════════════════════════════════════════════════════════════
     // IDocumentEditor
@@ -256,12 +285,51 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
 
     // ── Search / Filter ───────────────────────────────────────────────────
 
-    public void ShowSearch()              { SearchPanel.Visibility = Visibility.Visible; SearchBox.Focus(); }
-    public void HideSearch()              { SearchPanel.Visibility = Visibility.Collapsed; _vm.ClearFilter(); }
-    public void SetSearch(string text)    { ShowSearch(); _vm.SearchText = text; }
-    public void SetTypeFilter(DteType? t) => _vm.TypeFilter = t;
+    public void ShowSearch()               { SearchPanel.Visibility = Visibility.Visible; SearchBox.Focus(); }
+    public void HideSearch()               { SearchPanel.Visibility = Visibility.Collapsed; _vm.ClearFilter(); }
+    public void SetSearch(string text)     { ShowSearch(); _vm.SearchText = text; }
+    public void SetTypeFilter(DteType? t)  => _vm.TypeFilter = t;
     public void SetConflictsFilter(bool b) => _vm.ShowConflictsOnly = b;
-    public void ClearFilter()             => _vm.ClearFilter();
+    public void ClearFilter()              => _vm.ClearFilter();
+
+    // ── Validation ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Re-runs full validation + conflict analysis on all in-memory entries,
+    /// updates the Error Panel diagnostics and reports a summary in the status bar.
+    /// </summary>
+    public async Task ForceValidationAsync()
+    {
+        if (_vm.Source == null) return;
+        StatusMessage?.Invoke(this, "Validating…");
+
+        await _vm.ForceReanalysisAsync();
+
+        var fileName = _currentFilePath is not null ? Path.GetFileName(_currentFilePath) : null;
+        _diagnostics =
+        [
+            .._vm.Entries
+                .Where(e => !e.IsValid)
+                .Select(e => new DiagnosticEntry(
+                    DiagnosticSeverity.Error, "TBL001",
+                    e.ValidationError ?? "Invalid entry",
+                    FileName: fileName, FilePath: _currentFilePath)),
+            .._vm.Entries
+                .Where(e => e.HasConflict)
+                .Select(e => new DiagnosticEntry(
+                    DiagnosticSeverity.Warning, "TBL003",
+                    $"Prefix conflict on entry \"{e.Entry}\"",
+                    FileName: fileName, FilePath: _currentFilePath))
+        ];
+        DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
+
+        var errors   = _diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error);
+        var warnings = _diagnostics.Count(d => d.Severity == DiagnosticSeverity.Warning);
+        StatusMessage?.Invoke(this, errors == 0 && warnings == 0
+            ? "Validation OK — no issues found"
+            : $"Validation: {errors} error(s), {warnings} conflict warning(s)");
+        RefreshStatusBarItems();
+    }
 
     // ── Navigation ────────────────────────────────────────────────────────
 
@@ -271,6 +339,33 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         if (vm == null) return;
         EntriesGrid.ScrollIntoView(vm);
         EntriesGrid.SelectedItem = vm;
+    }
+
+    /// <summary>
+    /// Scrolls to and selects the next entry with a prefix conflict, wrapping around.
+    /// </summary>
+    public void GoToNextConflict()
+    {
+        var entries = _vm.Entries.ToList();
+        if (entries.Count == 0) return;
+
+        int startIdx = 0;
+        if (_vm.SelectedEntry != null)
+        {
+            var currentIdx = entries.IndexOf(_vm.SelectedEntry);
+            if (currentIdx >= 0) startIdx = currentIdx + 1;
+        }
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            var candidate = entries[(startIdx + i) % entries.Count];
+            if (!candidate.HasConflict) continue;
+            EntriesGrid.ScrollIntoView(candidate);
+            EntriesGrid.SelectedItem  = candidate;
+            _vm.SelectedEntry         = candidate;
+            return;
+        }
+        StatusMessage?.Invoke(this, "No conflicts found");
     }
 
     public void SelectAll() => EntriesGrid.SelectAll();
@@ -303,6 +398,7 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
     private StatusBarItem _sbMte     = null!;
     private StatusBarItem _sbCov     = null!;
     private StatusBarItem _sbConf    = null!;
+    private StatusBarItem _sbZoom    = null!;
 
     public ObservableCollection<StatusBarItem> StatusBarItems
         => _statusBarItems ??= BuildStatusBarItems();
@@ -315,8 +411,9 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         _sbMte     = new StatusBarItem { Label = "MTE",     Tooltip = "Multiple Title Encoding entries" };
         _sbCov     = new StatusBarItem { Label = "Cov.",    Tooltip = "Single-byte key coverage (0x00–0xFF)" };
         _sbConf    = new StatusBarItem { Label = "⚠",       Tooltip = "Prefix conflicts detected" };
+        _sbZoom    = new StatusBarItem { Label = "Zoom",    Tooltip = "Current zoom level (Ctrl+Scroll, Ctrl+0 to reset)" };
         RefreshStatusBarItems();
-        return new ObservableCollection<StatusBarItem> { _sbEntries, _sbAscii, _sbDte, _sbMte, _sbCov, _sbConf };
+        return new ObservableCollection<StatusBarItem> { _sbEntries, _sbAscii, _sbDte, _sbMte, _sbCov, _sbConf, _sbZoom };
     }
 
     internal void RefreshStatusBarItems()
@@ -329,6 +426,7 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         _sbMte.Value     = s.MteCount.ToString();
         _sbCov.Value     = $"{s.CoveragePercent:F1}%";
         _sbConf.Value    = s.ConflictCount.ToString();
+        if (_sbZoom != null) _sbZoom.Value = $"{Zoom}%";
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -345,6 +443,19 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         { Undo(); e.Handled = true; }
         else if (e.Key == Key.Y && Keyboard.Modifiers == ModifierKeys.Control)
         { Redo(); e.Handled = true; }
+        else if ((e.Key == Key.OemPlus || e.Key == Key.Add) && Keyboard.Modifiers == ModifierKeys.Control)
+        { ZoomIn(); e.Handled = true; }
+        else if ((e.Key == Key.OemMinus || e.Key == Key.Subtract) && Keyboard.Modifiers == ModifierKeys.Control)
+        { ZoomOut(); e.Handled = true; }
+        else if ((e.Key == Key.D0 || e.Key == Key.NumPad0) && Keyboard.Modifiers == ModifierKeys.Control)
+        { ResetZoom(); e.Handled = true; }
+    }
+
+    private void UserControl_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers != ModifierKeys.Control) return;
+        if (e.Delta > 0) ZoomIn(); else ZoomOut();
+        e.Handled = true;
     }
 
     private void SearchBox_KeyDown(object sender, KeyEventArgs e)
@@ -366,6 +477,46 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         if (e.EditAction == DataGridEditAction.Commit)
             _vm.MarkDirty();
     }
+
+    private void EntriesGrid_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        bool hasSource    = _vm.Source != null;
+        bool hasSelection = EntriesGrid.SelectedItems.Count > 0;
+        bool singleSel    = EntriesGrid.SelectedItems.Count == 1;
+        bool notReadOnly  = !IsReadOnly;
+        bool hasConflicts = _vm.Entries.Any(en => en.HasConflict);
+
+        CtxAdd.IsEnabled              = hasSource && notReadOnly;
+        CtxDuplicate.IsEnabled        = singleSel && notReadOnly;
+        CtxDelete.IsEnabled           = hasSelection && notReadOnly;
+        CtxCut.IsEnabled              = hasSelection && notReadOnly;
+        CtxCopy.IsEnabled             = hasSelection;
+        CtxPaste.IsEnabled            = notReadOnly && Clipboard.ContainsText();
+        CtxFind.IsEnabled             = hasSource;
+        CtxSelectAll.IsEnabled        = hasSource;
+        CtxForceValidation.IsEnabled  = hasSource && !_vm.IsAnalyzing;
+        CtxShowConflictsOnly.IsEnabled = hasSource;
+        CtxShowConflictsOnly.IsChecked = _vm.ShowConflictsOnly;
+        CtxNextConflict.IsEnabled     = hasConflicts;
+        CtxUndo.IsEnabled             = _vm.CanUndo;
+        CtxRedo.IsEnabled             = _vm.CanRedo;
+    }
+
+    // ── Context menu Click handlers ────────────────────────────────────────
+
+    private void CtxAdd_Click(object sender, RoutedEventArgs e)              => AddEntry();
+    private void CtxDuplicate_Click(object sender, RoutedEventArgs e)        => DuplicateSelectedEntry();
+    private void CtxDelete_Click(object sender, RoutedEventArgs e)           => DeleteSelectedEntries();
+    private void CtxCut_Click(object sender, RoutedEventArgs e)              => Cut();
+    private void CtxCopy_Click(object sender, RoutedEventArgs e)             => Copy();
+    private void CtxPaste_Click(object sender, RoutedEventArgs e)            => Paste();
+    private void CtxFind_Click(object sender, RoutedEventArgs e)             => ShowSearch();
+    private void CtxSelectAll_Click(object sender, RoutedEventArgs e)        => SelectAll();
+    private void CtxForceValidation_Click(object sender, RoutedEventArgs e)  => _ = ForceValidationAsync();
+    private void CtxShowConflictsOnly_Click(object sender, RoutedEventArgs e) => SetConflictsFilter(CtxShowConflictsOnly.IsChecked);
+    private void CtxNextConflict_Click(object sender, RoutedEventArgs e)     => GoToNextConflict();
+    private void CtxUndo_Click(object sender, RoutedEventArgs e)             => Undo();
+    private void CtxRedo_Click(object sender, RoutedEventArgs e)             => Redo();
 
     private void EntriesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
