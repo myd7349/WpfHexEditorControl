@@ -1998,7 +1998,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _propertiesPanel?.SetProvider(new ProjectItemPropertyProvider(e.Item));
     }
 
-    private void OnSolutionExplorerItemRenameRequested(object? sender, ProjectItemEventArgs e)
+    private async void OnSolutionExplorerItemRenameRequested(object? sender, ProjectItemEventArgs e)
     {
         if (e.Project is null) return;
 
@@ -2053,8 +2053,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (newName.Length == 0 || newName == e.Item.Name) return;
 
+        // Release the FileStream before File.Move (FileProvider opens with FileShare.Read)
+        await CloseHexStreamIfOpenAsync(e.Item);
+
         _ = _solutionManager.RenameItemAsync(e.Project, e.Item, newName);
-        // Log is emitted by OnProjectItemRenamed via the ItemRenamed event
+        // Reopen + log are handled in OnProjectItemRenamed via the ItemRenamed event
     }
 
     private void OnSolutionExplorerItemDeleteRequested(object? sender, ProjectItemEventArgs e)
@@ -2073,14 +2076,39 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OutputLogger.Info($"Removed '{e.Item.Name}' from project '{e.Project.Name}'");
     }
 
-    private void OnSolutionExplorerItemMoveRequested(object? sender, ItemMoveRequestedEventArgs e)
+    private async void OnSolutionExplorerItemMoveRequested(object? sender, ItemMoveRequestedEventArgs e)
     {
-        _ = _solutionManager.MoveItemToFolderAsync(e.Project, e.Item, e.TargetFolderId);
+        // Release the FileStream before File.Move (FileProvider opens with FileShare.Read which blocks moves)
+        var openHex = await CloseHexStreamIfOpenAsync(e.Item);
+
+        await _solutionManager.MoveItemToFolderAsync(e.Project, e.Item, e.TargetFolderId);
+
+        // Reopen from the new path (updated by MoveItemToFolderAsync)
+        openHex?.OpenFile(e.Item.AbsolutePath);
 
         var destination = e.TargetFolderId is null
             ? $"project root of '{e.Project.Name}'"
             : $"folder '{e.TargetFolderId}' in '{e.Project.Name}'";
         OutputLogger.Info($"Moved '{e.Item.Name}' → {destination}");
+    }
+
+    /// <summary>
+    /// If <paramref name="item"/> is currently open in a <see cref="HexEditorControl"/> tab,
+    /// saves pending changes (if any) and closes the file stream so callers can safely
+    /// perform a <c>File.Move</c> or <c>File.Delete</c>.
+    /// </summary>
+    /// <returns>The <see cref="HexEditorControl"/> whose stream was closed, or <c>null</c>.</returns>
+    private async Task<HexEditorControl?> CloseHexStreamIfOpenAsync(IProjectItem item)
+    {
+        var contentId = $"doc-proj-{item.Id}";
+        if (!_contentCache.TryGetValue(contentId, out var cached) || cached is not HexEditorControl hex)
+            return null;
+
+        if ((hex as IDocumentEditor)?.IsDirty == true)
+            await (hex as IDocumentEditor)!.SaveAsync();
+
+        hex.Close();
+        return hex;
     }
 
     // ─── Folder management ──────────────────────────────────────────────
@@ -2111,6 +2139,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         dockItem.Title = e.Item.Name;
         dockItem.Metadata["FilePath"] = e.Item.AbsolutePath;
+
+        // Reopen from the new path (stream was closed before rename to release the file lock)
+        if (_contentCache.TryGetValue(contentId, out var ctrl) && ctrl is HexEditorControl hex)
+            hex.OpenFile(e.Item.AbsolutePath);
+
         OutputLogger.Info($"Renamed '{e.OldName}' → '{e.Item.Name}'");
     }
 

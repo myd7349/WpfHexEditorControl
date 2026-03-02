@@ -371,6 +371,16 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
+        <!-- ── Changeset companion file (.whchg) ──────────────────────── -->
+        <DataTemplate DataType="{x:Type vm:ChangesetNodeVm}">
+            <StackPanel Orientation="Horizontal" Opacity="0.7">
+                <TextBlock Style="{StaticResource NodeIcon}" Text="{Binding Icon}"
+                           Foreground="{DynamicResource SE_ForegroundBrush}"/>
+                <TextBlock Style="{StaticResource NodeLabel}" Text="{Binding DisplayName}"
+                           FontStyle="Italic"/>
+            </StackPanel>
+        </DataTemplate>
+
     </UserControl.Resources>
 
     <Grid>
