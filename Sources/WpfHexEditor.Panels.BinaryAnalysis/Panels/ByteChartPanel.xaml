@@ -1,0 +1,173 @@
+<!--
+    Apache 2.0  2026
+    Author : Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Sonnet 4.6
+-->
+
+<UserControl x:Class="WpfHexEditor.Panels.BinaryAnalysis.ByteChartPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:chart="clr-namespace:WpfHexEditor.BarChart.Controls;assembly=WpfHexEditor.BarChart"
+             mc:Ignorable="d"
+             d:DesignHeight="160" d:DesignWidth="600"
+             Background="{DynamicResource PFP_PanelBackgroundBrush}"
+             Loaded="OnLoaded">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="26"/>
+            <RowDefinition Height="*" MinHeight="60"/>
+            <RowDefinition Height="22"/>
+        </Grid.RowDefinitions>
+
+        <!-- ─── Row 0 : Toolbar ─── -->
+        <Border Grid.Row="0" Style="{DynamicResource PanelToolbarStyle}">
+            <DockPanel LastChildFill="False" Margin="2,0">
+
+                <!-- Toggle: axis labels -->
+                <ToggleButton x:Name="ToggleLabels"
+                              DockPanel.Dock="Left"
+                              Style="{DynamicResource PanelIconToggleStyle}"
+                              IsChecked="True"
+                              ToolTip="Show axis labels"
+                              Checked="OnToggleLabels" Unchecked="OnToggleLabels"
+                              Content="&#xE8EC;"/>
+
+                <!-- Toggle: grid lines -->
+                <ToggleButton x:Name="ToggleGrid"
+                              DockPanel.Dock="Left"
+                              Style="{DynamicResource PanelIconToggleStyle}"
+                              IsChecked="False"
+                              ToolTip="Show grid lines"
+                              Checked="OnToggleGrid" Unchecked="OnToggleGrid"
+                              Content="&#xE80A;"/>
+
+                <!-- Toggle: statistics overlay -->
+                <ToggleButton x:Name="ToggleStats"
+                              DockPanel.Dock="Left"
+                              Style="{DynamicResource PanelIconToggleStyle}"
+                              IsChecked="True"
+                              ToolTip="Show statistics overlay"
+                              Checked="OnToggleStats" Unchecked="OnToggleStats"
+                              Content="&#xE9D9;"/>
+
+                <Rectangle DockPanel.Dock="Left" Style="{DynamicResource PanelToolbarSeparatorStyle}"/>
+
+                <!-- Mode dropdown button -->
+                <Button x:Name="ModeButton"
+                        DockPanel.Dock="Left"
+                        Style="{DynamicResource PanelDropdownButtonStyle}"
+                        ToolTip="Chart mode"
+                        Click="OnModeButtonClick">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="ModeLabel" Text="Frequency" FontSize="11"/>
+                            <TextBlock Text=" &#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="9"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button.Content>
+                    <Button.ContextMenu>
+                        <ContextMenu x:Name="ModeContextMenu">
+                            <MenuItem Header="Frequency distribution"
+                                      Click="OnModeFrequency"
+                                      IsCheckable="True" x:Name="ModeFrequencyItem" IsChecked="True"/>
+                            <MenuItem Header="Entropy (sliding window)"
+                                      Click="OnModeEntropy"
+                                      IsCheckable="True" x:Name="ModeEntropyItem"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+
+                <Rectangle DockPanel.Dock="Left" Style="{DynamicResource PanelToolbarSeparatorStyle}"/>
+
+                <!-- Refresh -->
+                <Button DockPanel.Dock="Left"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        ToolTip="Refresh chart"
+                        Click="OnRefresh"
+                        Content="&#xE72C;"/>
+
+                <!-- Copy chart as image -->
+                <Button DockPanel.Dock="Left"
+                        Style="{DynamicResource PanelIconButtonStyle}"
+                        ToolTip="Copy chart as image"
+                        Click="OnCopyChart"
+                        Content="&#xE8C8;"/>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ─── Row 1 : Chart area ─── -->
+        <Grid Grid.Row="1">
+
+            <!-- Frequency chart (BarChartPanel — DrawingContext-based) -->
+            <chart:BarChartPanel x:Name="Chart"
+                                 MinHeight="60"
+                                 MouseLeftButtonDown="OnChartMouseLeftButtonDown"
+                                 Cursor="Hand"/>
+
+            <!-- Entropy chart canvas (alternate mode) -->
+            <Canvas x:Name="EntropyCanvas"
+                    Visibility="Collapsed"
+                    MinHeight="60"
+                    SizeChanged="OnEntropyCanvasSizeChanged"
+                    Background="{DynamicResource PFP_PanelBackgroundBrush}"/>
+
+        </Grid>
+
+        <!-- ─── Row 2 : Footer stats ─── -->
+        <Border Grid.Row="2"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource Panel_ToolbarBorderBrush}"
+                Background="{DynamicResource Panel_ToolbarBrush}">
+            <StackPanel Orientation="Horizontal" Margin="6,0" VerticalAlignment="Center">
+
+                <TextBlock x:Name="EntropyText"
+                           FontSize="11" FontFamily="Consolas"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="SepEntropy" Text=" | " FontSize="11"
+                           Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="MostCommonText"
+                           FontSize="11" FontFamily="Consolas"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="SepMostCommon" Text=" | " FontSize="11"
+                           Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="NullPctText"
+                           FontSize="11" FontFamily="Consolas"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="SepNull" Text=" | " FontSize="11"
+                           Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="AsciiPctText"
+                           FontSize="11" FontFamily="Consolas"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="SepAscii" Text=" | " FontSize="11"
+                           Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock x:Name="TotalBytesText"
+                           Text="No data"
+                           FontSize="11" FontFamily="Consolas"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                           VerticalAlignment="Center"/>
+
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

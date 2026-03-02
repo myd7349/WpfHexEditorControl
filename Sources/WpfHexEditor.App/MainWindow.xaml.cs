@@ -137,8 +137,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Error Panel (persistent singleton)
     private ErrorPanel? _errorPanel;
-    private const string ErrorPanelContentId = "panel-errors";
-    private const string OptionsContentId    = "panel-options";
+    private const string ErrorPanelContentId    = "panel-errors";
+    private const string OptionsContentId       = "panel-options";
+    private const string ByteChartPanelContentId = "panel-byte-chart";
     private string _lastAppliedTheme = string.Empty;
 
     // TBL dropdown — tracks which project TBL item is applied per hex editor
@@ -150,6 +151,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Output Panel (persistent singleton — pre-created so OutputLogger works from startup)
     private OutputPanel? _outputPanel;
+
+    // ByteChart Panel (persistent singleton)
+    private WpfHexEditor.Panels.BinaryAnalysis.ByteChartPanel? _byteChartPanel;
 
     // SolutionManager
     private readonly ISolutionManager _solutionManager = SolutionManager.Instance;
@@ -522,6 +526,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 ApplyLayout(layout);
                 EnsureParsedFieldsPanel();
                 EnsureErrorPanel();
+                EnsureByteChartPanel();
                 OutputLogger.Debug($"Layout restored from: {LayoutFilePath}");
                 return;
             }
@@ -660,6 +665,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var output = new DockItem { Title = "Output", ContentId = "panel-output" };
         engine.Dock(output, errorsItem.Owner!, DockDirection.Center);
 
+        var byteChart = new DockItem { Title = "Byte Chart", ContentId = ByteChartPanelContentId };
+        engine.Dock(byteChart, output.Owner!, DockDirection.Center);
+
         var parsedFields = new DockItem
         {
             Title      = "Parsed Fields",
@@ -713,6 +721,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             DockHost.RebuildVisualTree();
             OutputLogger.Debug("ParsedFields panel added to restored layout.");
         }
+    }
+
+    private void EnsureByteChartPanel()
+    {
+        if (_layout.FindItemByContentId(ByteChartPanelContentId) != null) return;
+
+        var item = new DockItem { Title = "Byte Chart", ContentId = ByteChartPanelContentId };
+        var outputItem = _layout.FindItemByContentId("panel-output");
+        if (outputItem?.Owner is { } outputGroup)
+            _engine.Dock(item, outputGroup, DockDirection.Center);
+        else
+            _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Bottom);
+
+        DockHost.RebuildVisualTree();
     }
 
     private void EnsureErrorPanel()
@@ -787,6 +809,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "panel-properties"         => CreatePropertiesContent(),
             CustomParserPanelContentId => CreateCustomParserContent(),
             ErrorPanelContentId        => CreateErrorPanelContent(),
+            ByteChartPanelContentId   => CreateByteChartContent(),
             OptionsContentId           => CreateOptionsContent(),
             _ when item.ContentId.StartsWith("doc-file-") => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")  => CreateHexEditorContent(
@@ -862,6 +885,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         _outputPanel ??= new OutputPanel();
         return _outputPanel;
+    }
+
+    private UIElement CreateByteChartContent()
+    {
+        if (_byteChartPanel is null)
+        {
+            _byteChartPanel = new WpfHexEditor.Panels.BinaryAnalysis.ByteChartPanel();
+            _byteChartPanel.ByteSelected += OnByteChartByteSelected;
+        }
+        return _byteChartPanel;
     }
 
     private UIElement CreateParsedFieldsContent()
@@ -2289,11 +2322,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (_connectedHexEditor is IDiagnosticSource prevDiag)
                 _errorPanel?.RemoveSource(prevDiag);
             _connectedHexEditor?.DisconnectParsedFieldsPanel();
+            if (_connectedHexEditor is not null)
+                _connectedHexEditor.ByteDistributionPanel = null;
 
             _connectedHexEditor = hex;
             _connectedHexEditor.ConnectParsedFieldsPanel(_parsedFieldsPanel);
             if (_connectedHexEditor is IDiagnosticSource newDiag)
                 EnsureErrorPanelInstance().AddSource(newDiag);
+            if (_byteChartPanel is not null)
+                _connectedHexEditor.ByteDistributionPanel = _byteChartPanel;
         }
 
         ActiveDocumentEditor       = content as IDocumentEditor;
@@ -3538,6 +3575,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnShowErrorPanel(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Error List", ErrorPanelContentId, DockDirection.Bottom);
 
+    private void OnShowByteChartPanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Byte Chart", ByteChartPanelContentId, DockDirection.Bottom);
+
+    private void OnByteChartByteSelected(object? sender, byte byteValue)
+    {
+        if (ActiveHexEditor is not { } hex) return;
+        var offset = _byteChartPanel?.GetFirstOccurrenceOffset(byteValue) ?? -1L;
+        if (offset >= 0)
+            hex.SetPosition(offset);
+    }
+
     private void OnShowParsedFields(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Parsed Fields", ParsedFieldsPanelContentId, DockDirection.Right);
 
@@ -3628,6 +3676,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _parsedFieldsPanel ??= new ParsedFieldsPanel();
             ApplyLayout(layout);
             EnsureParsedFieldsPanel();
+            EnsureByteChartPanel();
             OutputLogger.Debug($"Layout loaded from: {dlg.FileName}");
         }
         catch (Exception ex)
@@ -3682,6 +3731,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         foreach (var editor in FindVisualChildren<HexEditorControl>(this))
             editor.ApplyThemeFromResources();
+
+        _byteChartPanel?.RefreshTheme();
     }
 
     private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
