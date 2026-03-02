@@ -10,6 +10,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="clr-namespace:WpfHexEditor.Editor.TblEditor.ViewModels"
+             xmlns:ct="clr-namespace:WpfHexEditor.Core.CharacterTable;assembly=WpfHexEditor.Core"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="700"
              KeyDown="UserControl_KeyDown">
@@ -18,9 +19,30 @@
         <!-- Bool → Visibility -->
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- Conflict row highlight -->
+        <!-- DataGrid column header — VS IDE style -->
+        <Style x:Key="TblColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background"       Value="{DynamicResource ERR_HeaderBrush}"/>
+            <Setter Property="Foreground"       Value="{DynamicResource ERR_ForegroundBrush}"/>
+            <Setter Property="Padding"          Value="6,4"/>
+            <Setter Property="BorderThickness"  Value="0,0,0,1"/>
+            <Setter Property="BorderBrush"      Value="{DynamicResource ERR_GridLinesBrush}"/>
+            <Setter Property="SeparatorBrush"   Value="{DynamicResource ERR_GridLinesBrush}"/>
+            <Setter Property="FontWeight"       Value="SemiBold"/>
+            <Setter Property="FontSize"         Value="11"/>
+        </Style>
+
+        <!-- Conflict / invalid row highlight (+ selection) -->
         <Style x:Key="ConflictRowStyle" TargetType="DataGridRow">
+            <Setter Property="Background" Value="{DynamicResource ERR_BackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ERR_ForegroundBrush}"/>
             <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ERR_HoverRowBrush}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource ERR_SelectedRowBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource ERR_ForegroundBrush}"/>
+                </Trigger>
                 <DataTrigger Binding="{Binding HasConflict}" Value="True">
                     <Setter Property="Background" Value="#20FF6B00"/>
                     <Setter Property="ToolTip"    Value="Prefix conflict detected"/>
@@ -33,10 +55,9 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid Background="{DynamicResource ERR_BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- ── Main DataGrid ─────────────────────────────────────────────── -->
@@ -53,6 +74,12 @@
                   HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal"
                   BorderThickness="0"
+                  Background="{DynamicResource ERR_BackgroundBrush}"
+                  Foreground="{DynamicResource ERR_ForegroundBrush}"
+                  RowBackground="{DynamicResource ERR_BackgroundBrush}"
+                  AlternatingRowBackground="Transparent"
+                  HorizontalGridLinesBrush="{DynamicResource ERR_GridLinesBrush}"
+                  ColumnHeaderStyle="{StaticResource TblColumnHeaderStyle}"
                   RowStyle="{StaticResource ConflictRowStyle}"
                   VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling"
@@ -79,11 +106,51 @@
                                     Width="120"
                                     IsReadOnly="{Binding DataContext.IsReadOnly, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
 
-                <!-- DTE Type -->
-                <DataGridTextColumn Header="Type"
-                                    Binding="{Binding Type}"
-                                    Width="110"
-                                    IsReadOnly="True"/>
+                <!-- DTE Type badge -->
+                <DataGridTemplateColumn Header="Type" Width="75" IsReadOnly="True" SortMemberPath="Type">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border x:Name="Badge"
+                                    CornerRadius="3" Padding="5,1"
+                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Margin="2,1" Background="#555555">
+                                <TextBlock x:Name="BadgeText"
+                                           FontSize="10" FontWeight="SemiBold"
+                                           Foreground="White" Text="???"/>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static ct:DteType.Ascii}">
+                                    <Setter TargetName="Badge"     Property="Background" Value="#3080C0"/>
+                                    <Setter TargetName="BadgeText" Property="Text"       Value="ASC"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static ct:DteType.DualTitleEncoding}">
+                                    <Setter TargetName="Badge"     Property="Background" Value="#2A9B4E"/>
+                                    <Setter TargetName="BadgeText" Property="Text"       Value="DTE"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static ct:DteType.MultipleTitleEncoding}">
+                                    <Setter TargetName="Badge"     Property="Background" Value="#7B4EC2"/>
+                                    <Setter TargetName="BadgeText" Property="Text"       Value="MTE"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static ct:DteType.Japonais}">
+                                    <Setter TargetName="Badge"     Property="Background" Value="#C05A20"/>
+                                    <Setter TargetName="BadgeText" Property="Text"       Value="JPN"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static ct:DteType.EndLine}">
+                                    <Setter TargetName="Badge"     Property="Background" Value="#C07820"/>
+                                    <Setter TargetName="BadgeText" Property="Text"       Value="EOL"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static ct:DteType.EndBlock}">
+                                    <Setter TargetName="Badge"     Property="Background" Value="#C04530"/>
+                                    <Setter TargetName="BadgeText" Property="Text"       Value="EOB"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static ct:DteType.Invalid}">
+                                    <Setter TargetName="Badge"     Property="Background" Value="#CC3333"/>
+                                    <Setter TargetName="BadgeText" Property="Text"       Value="INV"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
                 <!-- Byte length -->
                 <DataGridTextColumn Header="Bytes"
@@ -118,8 +185,8 @@
                 HorizontalAlignment="Right"
                 Margin="0,4,4,0"
                 Padding="6,4"
-                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
-                BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+                Background="{DynamicResource ERR_HeaderBrush}"
+                BorderBrush="{DynamicResource ERR_GridLinesBrush}"
                 BorderThickness="1"
                 CornerRadius="3"
                 Visibility="Collapsed"
@@ -145,57 +212,5 @@
                         ToolTip="Close search (Escape)"/>
             </StackPanel>
         </Border>
-
-        <!-- ── Status Bar ─────────────────────────────────────────────────── -->
-        <StatusBar Grid.Row="1" FontSize="11">
-            <StatusBarItem>
-                <TextBlock>
-                    <Run Text="{Binding Statistics.TotalCount, Mode=OneWay}"/>
-                    <Run Text=" entries"/>
-                </TextBlock>
-            </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
-                <TextBlock>
-                    <Run Text="ASCII:"/>
-                    <Run Text="{Binding Statistics.AsciiCount, Mode=OneWay}"/>
-                </TextBlock>
-            </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
-                <TextBlock>
-                    <Run Text="DTE:"/>
-                    <Run Text="{Binding Statistics.DteCount, Mode=OneWay}"/>
-                </TextBlock>
-            </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
-                <TextBlock>
-                    <Run Text="MTE:"/>
-                    <Run Text="{Binding Statistics.MteCount, Mode=OneWay}"/>
-                </TextBlock>
-            </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
-                <TextBlock>
-                    <Run Text="Cov.:"/>
-                    <Run Text="{Binding Statistics.CoveragePercent, Mode=OneWay, StringFormat={}{0:F1}%}"/>
-                </TextBlock>
-            </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
-                <TextBlock Foreground="Orange">
-                    <Run Text="⚠"/>
-                    <Run Text="{Binding Statistics.ConflictCount, Mode=OneWay}"/>
-                </TextBlock>
-            </StatusBarItem>
-            <StatusBarItem HorizontalAlignment="Right">
-                <!-- IsDirty dot -->
-                <Ellipse Width="8" Height="8"
-                         Fill="DodgerBlue"
-                         ToolTip="Unsaved changes"
-                         Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}"/>
-            </StatusBarItem>
-        </StatusBar>
     </Grid>
 </UserControl>

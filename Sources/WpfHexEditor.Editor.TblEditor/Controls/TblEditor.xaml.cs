@@ -297,35 +297,38 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
     // ═══════════════════════════════════════════════════════════════════
 
     private ObservableCollection<StatusBarItem>? _statusBarItems;
-    private StatusBarItem _sbTblFile    = null!;
-    private StatusBarItem _sbTblEntries = null!;
+    private StatusBarItem _sbEntries = null!;
+    private StatusBarItem _sbAscii   = null!;
+    private StatusBarItem _sbDte     = null!;
+    private StatusBarItem _sbMte     = null!;
+    private StatusBarItem _sbCov     = null!;
+    private StatusBarItem _sbConf    = null!;
 
     public ObservableCollection<StatusBarItem> StatusBarItems
         => _statusBarItems ??= BuildStatusBarItems();
 
     private ObservableCollection<StatusBarItem> BuildStatusBarItems()
     {
-        _sbTblFile = new StatusBarItem
-        {
-            Label   = "File",
-            Tooltip = "Current TBL file"
-        };
-        _sbTblEntries = new StatusBarItem
-        {
-            Label   = "Entries",
-            Tooltip = "Number of TBL entries"
-        };
+        _sbEntries = new StatusBarItem { Label = "Entries", Tooltip = "Total TBL entries" };
+        _sbAscii   = new StatusBarItem { Label = "ASCII",   Tooltip = "ASCII type entries" };
+        _sbDte     = new StatusBarItem { Label = "DTE",     Tooltip = "Dual Title Encoding entries" };
+        _sbMte     = new StatusBarItem { Label = "MTE",     Tooltip = "Multiple Title Encoding entries" };
+        _sbCov     = new StatusBarItem { Label = "Cov.",    Tooltip = "Single-byte key coverage (0x00–0xFF)" };
+        _sbConf    = new StatusBarItem { Label = "⚠",       Tooltip = "Prefix conflicts detected" };
         RefreshStatusBarItems();
-        return new ObservableCollection<StatusBarItem> { _sbTblFile, _sbTblEntries };
+        return new ObservableCollection<StatusBarItem> { _sbEntries, _sbAscii, _sbDte, _sbMte, _sbCov, _sbConf };
     }
 
     internal void RefreshStatusBarItems()
     {
         if (_statusBarItems == null) return;
-        _sbTblFile.Value    = Source?.FileName is { Length: > 0 } fn
-            ? Path.GetFileName(fn)
-            : "(unsaved)";
-        _sbTblEntries.Value = EntryCount.ToString();
+        var s = _vm.Statistics;
+        _sbEntries.Value = s.TotalCount.ToString();
+        _sbAscii.Value   = s.AsciiCount.ToString();
+        _sbDte.Value     = s.DteCount.ToString();
+        _sbMte.Value     = s.MteCount.ToString();
+        _sbCov.Value     = $"{s.CoveragePercent:F1}%";
+        _sbConf.Value    = s.ConflictCount.ToString();
     }
 
     // ═══════════════════════════════════════════════════════════════════════
