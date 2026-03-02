@@ -43,6 +43,24 @@ public interface IEditorPersistable
     /// </summary>
     void ApplyUnsavedModifications(byte[] data);
 
+    // ── Changeset (WHChg) ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns an immutable snapshot of all pending edits (modify / insert / delete).
+    /// Capturing the snapshot is O(e) — only iterates the edit dictionaries, never
+    /// the full file content.  Returns <see cref="ChangesetSnapshot.Empty"/> when
+    /// the buffer is clean.
+    /// </summary>
+    ChangesetSnapshot GetChangesetSnapshot();
+
+    /// <summary>
+    /// Re-applies edits previously captured with <see cref="GetChangesetSnapshot"/>
+    /// and serialised to a <see cref="ChangesetDto"/>.
+    /// Typically called when a project item is re-opened and a companion .whchg file
+    /// is found alongside the source file.
+    /// </summary>
+    void ApplyChangeset(ChangesetDto changeset);
+
     // ── Bookmarks ─────────────────────────────────────────────────────────
 
     /// <summary>

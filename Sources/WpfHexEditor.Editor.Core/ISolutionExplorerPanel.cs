@@ -155,4 +155,41 @@ public interface ISolutionExplorerPanel
     /// instead of the virtual folder organisation.
     /// </summary>
     bool ShowAllFiles { get; set; }
+
+    /// <summary>
+    /// Fired when the user chooses "Properties" from the context menu.
+    /// <see cref="NodePropertiesEventArgs.Item"/> is <see langword="null"/> when the target is the
+    /// project node itself; otherwise it is the selected file node.
+    /// </summary>
+    event EventHandler<NodePropertiesEventArgs>? PropertiesRequested;
+
+    /// <summary>
+    /// Fired when the user chooses "Apply to Disk" on a <c>.whchg</c> changeset node.
+    /// The host calls <see cref="ISolutionManager.WriteItemToDiskAsync"/> then reloads the editor.
+    /// </summary>
+    event EventHandler<ProjectItemEventArgs>? WriteToDiskRequested;
+
+    /// <summary>
+    /// Fired when the user chooses "Discard Changes" on a <c>.whchg</c> changeset node.
+    /// The host calls <see cref="ISolutionManager.DiscardChangesetAsync"/>.
+    /// </summary>
+    event EventHandler<ProjectItemEventArgs>? DiscardChangesetRequested;
+
+    /// <summary>
+    /// Refreshes the changeset child node under the given item's tree node.
+    /// Called by the host whenever <c>FileMonitorService.ChangesetFileChanged</c> fires.
+    /// </summary>
+    void RefreshChangesetNode(IProjectItem item);
+}
+
+/// <summary>
+/// Event args for context-menu "Properties" requests from the Solution Explorer.
+/// </summary>
+public sealed class NodePropertiesEventArgs : EventArgs
+{
+    /// <summary>Project that owns the target node.</summary>
+    public IProject?     Project { get; init; }
+
+    /// <summary>The file item, or <see langword="null"/> when the target is the project node itself.</summary>
+    public IProjectItem? Item    { get; init; }
 }

@@ -91,7 +91,7 @@ public interface ISolutionManager
     Task<IVirtualFolder> AddFolderFromDiskAsync(IProject project, string physicalPath,
         string? parentVirtualFolderId = null, CancellationToken ct = default);
 
-    // ── Modification tracking ─────────────────────────────────────────────
+    // ── Modification tracking (legacy IPS — kept for migration) ──────────
     /// <summary>
     /// Stores <paramref name="modifications"/> (IPS patch bytes) for the given project item
     /// and persists the project file immediately.
@@ -105,6 +105,23 @@ public interface ISolutionManager
     /// or <see langword="null"/> when the item has no pending modifications.
     /// </summary>
     byte[]? GetItemModifications(IProject project, IProjectItem item);
+
+    // ── WHChg changeset operations ────────────────────────────────────────
+
+    /// <summary>
+    /// Applies the pending .whchg changeset for <paramref name="item"/> to its
+    /// physical file on disk, then removes the .whchg companion file.
+    /// The caller is responsible for reloading the editor after this returns.
+    /// </summary>
+    Task WriteItemToDiskAsync(IProject project, IProjectItem item,
+                              CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes the .whchg companion file for <paramref name="item"/> without
+    /// applying it, effectively discarding all pending tracked changes.
+    /// </summary>
+    Task DiscardChangesetAsync(IProject project, IProjectItem item,
+                               CancellationToken ct = default);
 
     // ── TBL helpers ──────────────────────────────────────────────────────
     /// <summary>Designates <paramref name="tblItem"/> as the default TBL for <paramref name="project"/>.
