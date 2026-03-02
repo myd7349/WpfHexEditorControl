@@ -7,14 +7,19 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Core.Search.Models;
 using WpfHexEditor.HexEditor.Search.ViewModels;
 
 namespace WpfHexEditor.HexEditor.Search.Views
 {
     /// <summary>
-    /// VSCode-style inline quick search bar (Ctrl+F overlay).
+    /// VS-style inline quick search/replace bar (Ctrl+F overlay).
+    /// Features:
+    ///   • Resizable by dragging the left edge (width only, like Visual Studio).
+    ///   • Expand/collapse replace row via the chevron toggle at the far left.
     /// Bind to a HexEditor via <see cref="BindToHexEditor"/> after instantiation.
     /// </summary>
     public partial class QuickSearchBar : UserControl
@@ -31,11 +36,36 @@ namespace WpfHexEditor.HexEditor.Search.Views
         {
             InitializeComponent();
 
-            DataContext = new SearchViewModel();
+            DataContext = new ReplaceViewModel();
 
-            // Wire named buttons — avoids binding to ViewModel for host-level actions
-            CloseButton.Click += (_, __) => OnCloseRequested?.Invoke(this, EventArgs.Empty);
-            AdvancedSearchButton.Click += (_, __) => OnAdvancedSearchRequested?.Invoke(this, EventArgs.Empty);
+            // ── Resize thumb — width-only resize from the left edge ──────────────
+            ResizeThumb.DragDelta += ResizeThumb_DragDelta;
+
+            // ── Expand / collapse replace row ────────────────────────────────────
+            ExpandReplaceToggle.Checked += (_, __) =>
+            {
+                // Rotate chevron to point downward (expanded)
+                if (ExpandIcon.RenderTransform is RotateTransform rt)
+                    rt.Angle = 0;
+
+                // Focus the replace input once the row is visible
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input,
+                    new Action(() => ReplaceInput?.Focus()));
+            };
+
+            ExpandReplaceToggle.Unchecked += (_, __) =>
+            {
+                // Rotate chevron back to point right (collapsed)
+                if (ExpandIcon.RenderTransform is RotateTransform rt)
+                    rt.Angle = -90;
+
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input,
+                    new Action(() => SearchInput?.Focus()));
+            };
+
+            // ── Wire named buttons (host-level actions, not bound to ViewModel) ──
+            CloseButton.Click           += (_, __) => OnCloseRequested?.Invoke(this, EventArgs.Empty);
+            AdvancedSearchButton.Click  += (_, __) => OnAdvancedSearchRequested?.Invoke(this, EventArgs.Empty);
 
             // Focus search box when the bar becomes visible
             IsVisibleChanged += (_, e) =>
@@ -61,12 +91,11 @@ namespace WpfHexEditor.HexEditor.Search.Views
         #region Public API
 
         /// <summary>
-        /// Binds this quick search bar to the given HexEditor.
+        /// Binds this quick search/replace bar to the given HexEditor.
         /// Wires ByteProvider and result navigation.
         /// </summary>
         public void BindToHexEditor(HexEditor editor)
         {
-            // Detach from previous editor
             if (ViewModel != null)
                 ViewModel.OnMatchFound -= OnMatchFound;
 
@@ -77,10 +106,7 @@ namespace WpfHexEditor.HexEditor.Search.Views
             var vm = ViewModel;
             if (vm == null) return;
 
-            // Provide the ByteProvider so the ViewModel can search
             vm.ByteProvider = editor.GetByteProvider();
-
-            // Navigate to each result in the editor
             vm.OnMatchFound += OnMatchFound;
         }
 
@@ -100,9 +126,19 @@ namespace WpfHexEditor.HexEditor.Search.Views
         }
 
         /// <summary>
-        /// Gets the underlying SearchViewModel.
+        /// Gets the underlying <see cref="ReplaceViewModel"/>.
         /// </summary>
-        public SearchViewModel ViewModel => DataContext as SearchViewModel;
+        public ReplaceViewModel ViewModel => DataContext as ReplaceViewModel;
+
+        /// <summary>
+        /// Expands the replace row (same as clicking the chevron toggle).
+        /// </summary>
+        public void ExpandReplace() => ExpandReplaceToggle.IsChecked = true;
+
+        /// <summary>
+        /// Collapses the replace row.
+        /// </summary>
+        public void CollapseReplace() => ExpandReplaceToggle.IsChecked = false;
 
         #endregion
 
@@ -128,6 +164,16 @@ namespace WpfHexEditor.HexEditor.Search.Views
 
             _hexEditor.FindSelect(match.Position, match.Length);
             _hexEditor.SetPosition(match.Position);
+        }
+
+        /// <summary>
+        /// Handles left-edge thumb drag: resize the bar horizontally only.
+        /// Dragging left expands, dragging right shrinks.
+        /// </summary>
+        private void ResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            double current = double.IsNaN(Width) ? ActualWidth : Width;
+            Width = Math.Max(MinWidth, Math.Min(700, current - e.HorizontalChange));
         }
 
         #endregion

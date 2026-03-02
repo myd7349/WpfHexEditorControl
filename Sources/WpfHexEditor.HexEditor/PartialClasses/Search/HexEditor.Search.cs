@@ -266,9 +266,9 @@ namespace WpfHexEditor.HexEditor
             // Cleanup when dialog closes
             dialog.Closed += (s, e) =>
             {
-                // Clear only search highlights, preserve format detection blocks
-                ClearCustomBackgroundBlockByTag("AdvancedSearchResult");
-                // Dispose ViewModel (unsubscribe events, clear references)
+                // NOTE: search result highlights ("AdvancedSearchResult" blocks) are intentionally
+                // kept visible after the dialog closes — the user may want to see all match positions.
+                // They are cleared automatically when a new search is run (HighlightResultsRequested).
                 vm.Dispose();
             };
 

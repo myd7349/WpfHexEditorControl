@@ -178,6 +178,57 @@
             <Setter Property="AlternationCount"                 Value="2"/>
         </Style>
 
+        <!-- GridViewColumnHeaderStyle — dark-themed column headers -->
+        <Style x:Key="GridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
+            <Setter Property="OverridesDefaultStyle"         Value="True"/>
+            <Setter Property="Background"                    Value="{DynamicResource DockMenuBackgroundBrush}"/>
+            <Setter Property="Foreground"                    Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="BorderBrush"                   Value="{DynamicResource DockBorderBrush}"/>
+            <Setter Property="BorderThickness"               Value="0,0,1,1"/>
+            <Setter Property="Padding"                       Value="6,3"/>
+            <Setter Property="FontSize"                      Value="11"/>
+            <Setter Property="FontWeight"                    Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment"    Value="Left"/>
+            <Setter Property="FocusVisualStyle"              Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type GridViewColumnHeader}">
+                        <Grid SnapsToDevicePixels="True">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True"
+                                                  SnapsToDevicePixels="True"/>
+                            </Border>
+                            <Thumb x:Name="PART_HeaderGripper"
+                                   HorizontalAlignment="Right"
+                                   Width="8"
+                                   Cursor="SizeWE">
+                                <Thumb.Template>
+                                    <ControlTemplate TargetType="{x:Type Thumb}">
+                                        <Border Background="Transparent"/>
+                                    </ControlTemplate>
+                                </Thumb.Template>
+                            </Thumb>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource DockTabHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="Role" Value="Floating">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ResultItemContainerStyle — subtle row alternation -->
         <Style x:Key="ResultItemContainerStyle" TargetType="ListViewItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -250,6 +301,7 @@
                     <!-- Mode ComboBox -->
                     <ComboBox DockPanel.Dock="Left"
                               Width="130"
+                              Style="{DynamicResource DockComboBoxStyle}"
                               SelectedIndex="{Binding SelectedModeIndex}"
                               ToolTip="Mode de recherche">
                         <ComboBoxItem Content="TEXT"/>
@@ -287,6 +339,7 @@
                     <!-- Wrap -->
                     <CheckBox DockPanel.Dock="Left"
                               Content="Boucler"
+                              Style="{DynamicResource DockCheckBoxStyle}"
                               IsChecked="{Binding WrapAround}"
                               VerticalAlignment="Center"
                               Margin="4,0,0,0"/>
@@ -350,6 +403,7 @@
                                Margin="0,0,6,0"/>
                     <ComboBox ItemsSource="{Binding AvailableEncodings}"
                               SelectedItem="{Binding SelectedEncoding}"
+                              Style="{DynamicResource DockComboBoxStyle}"
                               DisplayMemberPath="Name"
                               Width="155"/>
                     <TextBlock Text="Max :"
@@ -501,7 +555,7 @@
                       ItemContainerStyle="{StaticResource ResultItemContainerStyle}"
                       Visibility="{Binding IsRelativeMode, Converter={StaticResource InverseBoolToVisibilityConverter}}">
                 <ListView.View>
-                    <GridView>
+                    <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}">
                         <GridViewColumn Header="#"              Width="44"  DisplayMemberBinding="{Binding Index}"/>
                         <GridViewColumn Header="Offset (Hex)"  Width="100" DisplayMemberBinding="{Binding PositionHex}"/>
                         <GridViewColumn Header="Offset (Dec)"  Width="100" DisplayMemberBinding="{Binding PositionDec}"/>
@@ -519,7 +573,7 @@
                       ItemContainerStyle="{StaticResource ResultItemContainerStyle}"
                       Visibility="{Binding IsRelativeMode, Converter={StaticResource BoolToVisibilityConverter}}">
                 <ListView.View>
-                    <GridView>
+                    <GridView ColumnHeaderContainerStyle="{StaticResource GridViewColumnHeaderStyle}">
                         <GridViewColumn Header="#" Width="38">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>

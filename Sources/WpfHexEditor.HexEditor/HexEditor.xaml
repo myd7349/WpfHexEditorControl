@@ -426,7 +426,7 @@
                                       Panel.ZIndex="10"
                                       Visibility="Collapsed"/>
 
-            <!-- Quick Search Bar (Ctrl+F inline overlay, VSCode-style) -->
+            <!-- Quick Search/Replace Bar (Ctrl+F inline overlay, VS-style) -->
             <searchViews:QuickSearchBar x:Name="QuickSearchBarOverlay"
                                         Grid.Column="0"
                                         Grid.ColumnSpan="2"
@@ -434,7 +434,7 @@
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
                                         Margin="0,4,24,0"
-                                        MaxWidth="450"
+                                        Width="420"
                                         Visibility="Collapsed"/>
         </Grid>
 
