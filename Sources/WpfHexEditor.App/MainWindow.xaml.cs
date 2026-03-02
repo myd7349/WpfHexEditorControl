@@ -763,6 +763,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         panel.SaveAllRequested                 += OnSESaveAll;
         panel.OpenWithRequested                += OnSEOpenWith;
         panel.PhysicalFileIncludeRequested     += OnSEPhysicalFileInclude;
+        panel.ImportExternalFileRequested      += OnSEImportExternalFile;
         panel.PropertiesRequested              += OnSEPropertiesRequested;
         panel.WriteToDiskRequested             += OnSEWriteToDisk;
         panel.DiscardChangesetRequested        += OnSEDiscardChangeset;
@@ -800,7 +801,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return _parsedFieldsPanel;
     }
 
-    private UIElement CreateErrorPanelContent()
+    private UIElement CreateErrorPanelContent() => EnsureErrorPanelInstance();
+
+    /// <summary>
+    /// Creates <see cref="_errorPanel"/> the first time it is needed, without docking it.
+    /// Call this instead of null-checking <see cref="_errorPanel"/> so that diagnostic sources
+    /// (e.g. TblEditor, JsonEditor) can register even before the panel is first shown.
+    /// </summary>
+    private ErrorPanel EnsureErrorPanelInstance()
     {
         if (_errorPanel is null)
         {
@@ -1055,8 +1063,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 editor.OutputMessage += OnEditorOutputMessage;
 
                 // Register as diagnostic source (e.g. TblEditor with IDiagnosticSource)
-                if (editor is IDiagnosticSource diagSrc && _errorPanel is not null)
-                    _errorPanel.AddSource(diagSrc);
+                if (editor is IDiagnosticSource diagSrc)
+                    EnsureErrorPanelInstance().AddSource(diagSrc);
 
                 ActiveDocumentEditor       = editor;
                 ActiveStatusBarContributor = editor as IStatusBarContributor;
@@ -1122,8 +1130,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             editor.OutputMessage += OnEditorOutputMessage;
 
-            if (editor is IDiagnosticSource diagSrc && _errorPanel is not null)
-                _errorPanel.AddSource(diagSrc);
+            if (editor is IDiagnosticSource diagSrc)
+                EnsureErrorPanelInstance().AddSource(diagSrc);
 
             ActiveDocumentEditor       = editor;
             ActiveStatusBarContributor = editor as IStatusBarContributor;
@@ -1579,6 +1587,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
     }
 
+    private async void OnSEImportExternalFile(object? sender, ImportExternalFileRequestedEventArgs e)
+    {
+        var projDir  = Path.GetDirectoryName(e.Project.ProjectFilePath) ?? string.Empty;
+        var fileName = Path.GetFileName(e.Item.AbsolutePath);
+        var result   = MessageBox.Show(
+            $"Copy \"{fileName}\" into the project directory?\n\n{projDir}\n\nThe original file will not be deleted.",
+            "Import into Project",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        await _solutionManager.ImportExternalItemAsync(e.Project, e.Item);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+    }
+
     private void OnSEPropertiesRequested(object? sender, NodePropertiesEventArgs e)
     {
         if (e.Item is null && e.Project is not null)
@@ -1697,7 +1721,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _connectedHexEditor = hex;
             _connectedHexEditor.ConnectParsedFieldsPanel(_parsedFieldsPanel);
             if (_connectedHexEditor is IDiagnosticSource newDiag)
-                _errorPanel?.AddSource(newDiag);
+                EnsureErrorPanelInstance().AddSource(newDiag);
         }
 
         ActiveDocumentEditor       = content as IDocumentEditor;
@@ -1881,12 +1905,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void StatusBarItem_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        if (sender is Border border && border.ContextMenu != null)
+        if (sender is Border border &&
+            border.ContextMenu is { } cm &&
+            border.DataContext is StatusBarItem { } si &&
+            si.Choices.Count > 0)
         {
-            border.ContextMenu.DataContext     = border.DataContext;
-            border.ContextMenu.PlacementTarget = border;
-            border.ContextMenu.Placement       = System.Windows.Controls.Primitives.PlacementMode.Top;
-            border.ContextMenu.IsOpen          = true;
+            cm.DataContext     = border.DataContext;
+            cm.PlacementTarget = border;
+            cm.Placement       = System.Windows.Controls.Primitives.PlacementMode.Top;
+            cm.IsOpen          = true;
             e.Handled = true;
         }
     }
