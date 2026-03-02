@@ -16,32 +16,20 @@
         Background="{DynamicResource DockWindowBackgroundBrush}">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/WpfHexEditor.ProjectSystem;component/Themes/DialogStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
 
-        <Style TargetType="Label">
-            <Setter Property="Foreground"       Value="{DynamicResource DockMenuForegroundBrush}"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Padding"          Value="0,0,8,0"/>
-        </Style>
-
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
-        </Style>
-
-        <!-- Search box -->
-        <Style TargetType="TextBox">
-            <Setter Property="Foreground"             Value="{DynamicResource DockMenuForegroundBrush}"/>
-            <Setter Property="Background"             Value="{DynamicResource DockBackgroundBrush}"/>
-            <Setter Property="BorderBrush"            Value="{DynamicResource DockBorderBrush}"/>
-            <Setter Property="CaretBrush"             Value="{DynamicResource DockMenuForegroundBrush}"/>
-            <Setter Property="Padding"                Value="6,3"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-        </Style>
-
-        <!-- Dialog buttons -->
-        <Style TargetType="Button">
-            <Setter Property="Padding"  Value="18,5"/>
-            <Setter Property="MinWidth" Value="80"/>
-        </Style>
+            <!-- Search box — overrides base with Padding=6,3 -->
+            <Style TargetType="TextBox">
+                <Setter Property="Foreground"               Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="Background"               Value="{DynamicResource DockBackgroundBrush}"/>
+                <Setter Property="BorderBrush"              Value="{DynamicResource DockBorderBrush}"/>
+                <Setter Property="CaretBrush"               Value="{DynamicResource DockMenuForegroundBrush}"/>
+                <Setter Property="Padding"                  Value="6,3"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+            </Style>
 
         <!-- ── ListView item — ErrorPanel style ─────────────────────────── -->
         <Style TargetType="ListViewItem">
@@ -118,6 +106,7 @@
             </Setter>
         </Style>
 
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="14">
