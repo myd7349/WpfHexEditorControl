@@ -125,7 +125,13 @@ public partial class ConvertTblDialog : Window
         if (CustomFolderRow is null) return; // called during InitializeComponent
         var useCustom = CustomFolderRadio?.IsChecked == true;
         CustomFolderRow.Visibility = useCustom ? Visibility.Visible : Visibility.Collapsed;
-        if (!useCustom)
+        if (useCustom)
+        {
+            // Pre-populate the text box so _targetFolder stays in sync from the start
+            if (string.IsNullOrWhiteSpace(CustomFolderBox.Text))
+                CustomFolderBox.Text = _targetFolder;
+        }
+        else
         {
             _targetFolder = Path.GetDirectoryName(_sourcePath) ?? string.Empty;
             RefreshTargetText();

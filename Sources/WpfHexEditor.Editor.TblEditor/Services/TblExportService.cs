@@ -153,7 +153,7 @@ public class TblExportService
             case ".csv":  ExportToCsvFile(entries, filePath, csvOptions); break;
             case ".json": ExportToJsonFile(entries, filePath, jsonOptions); break;
             case ".tbl":  ExportToTblFile(entries, filePath); break;
-            case ".tblx": new TblxService().ExportFromTblStream(new TblStream(), filePath, tblxMetadata); break;
+            case ".tblx": new TblxService().ExportFromEntries(entries, filePath, tblxMetadata); break;
             default: throw new NotSupportedException($"Unsupported export format: {extension}");
         }
     }

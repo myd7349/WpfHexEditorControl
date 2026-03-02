@@ -43,7 +43,7 @@ public class TblxService
         catch (JsonException ex) { throw new Exception($"Invalid .tblx JSON: {ex.Message}", ex); }
     }
 
-    public TblImportResult ImportToTblStream(string filePath)
+    public TblImportResult ImportFromTblxFile(string filePath)
     {
         var result = new TblImportResult { DetectedFormat = TblFileFormat.Tblx };
         try
@@ -86,6 +86,21 @@ public class TblxService
         try
         {
             var doc = TblxDocument.FromTblStream(tbl, metadata);
+            if (doc.Metadata.CreatedDate == null) doc.Metadata.CreatedDate = DateTime.Now;
+            SaveToFile(doc, filePath);
+        }
+        catch (Exception ex) { throw new Exception($"Failed to export .tblx: {ex.Message}", ex); }
+    }
+
+    public void ExportFromEntries(IEnumerable<Dte> entries, string filePath, TblxMetadata? metadata = null)
+    {
+        try
+        {
+            var doc = new TblxDocument
+            {
+                Metadata = metadata ?? new TblxMetadata(),
+                Entries  = entries.Select(d => TblxEntry.FromDte(d)).ToList()
+            };
             if (doc.Metadata.CreatedDate == null) doc.Metadata.CreatedDate = DateTime.Now;
             SaveToFile(doc, filePath);
         }

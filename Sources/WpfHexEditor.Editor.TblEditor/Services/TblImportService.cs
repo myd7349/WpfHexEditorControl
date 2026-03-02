@@ -208,7 +208,7 @@ public class TblImportService
             ".csv"  => ImportFromCsv(filePath),
             ".json" => ImportFromJson(filePath),
             ".tbl"  => ImportFromTbl(filePath),
-            ".tblx" => new TblxService().ImportToTblStream(filePath),
+            ".tblx" => new TblxService().ImportFromTblxFile(filePath),
             _       => new TblImportResult { Success = false, Errors = [$"Unsupported file format: {extension}"] }
         };
     }
