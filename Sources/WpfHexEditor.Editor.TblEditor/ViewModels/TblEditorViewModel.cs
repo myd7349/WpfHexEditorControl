@@ -214,7 +214,7 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
     public void AddEntry(Dte? template = null)
     {
         if (IsReadOnly) return;
-        var dte  = template ?? new Dte("00", "?");
+        var dte  = template ?? new Dte(FindFirstFreeSlot(), "?");
         var vm   = new TblEntryViewModel(dte);
         var cmd  = new AddEntryCommand(_entries, vm);
         cmd.Execute();
@@ -277,6 +277,21 @@ internal sealed class TblEditorViewModel : INotifyPropertyChanged, IDisposable
 
     private void ExecuteAdd()    => AddEntry();
     private void ExecuteDelete() => DeleteSelected();
+
+    /// <summary>
+    /// Returns the first single-byte hex slot ("00"–"FF") not already used by an existing entry.
+    /// Falls back to "00" if all 256 slots are taken.
+    /// </summary>
+    private string FindFirstFreeSlot()
+    {
+        for (int i = 0; i <= 0xFF; i++)
+        {
+            var candidate = i.ToString("X2");
+            if (!_validationService.HasDuplicateEntry(candidate, _entries))
+                return candidate;
+        }
+        return "00";
+    }
 
     private void ApplyFilter()
     {

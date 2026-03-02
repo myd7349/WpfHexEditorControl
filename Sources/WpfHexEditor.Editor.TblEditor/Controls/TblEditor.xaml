@@ -236,6 +236,18 @@
             </DataGrid.ContextMenu>
 
             <DataGrid.Columns>
+                <!-- Conflict icon -->
+                <DataGridTemplateColumn Header="⚠" Width="24" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="⚠"
+                                       Foreground="Orange"
+                                       HorizontalAlignment="Center"
+                                       Visibility="{Binding HasConflict, Converter={StaticResource BoolToVis}}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
                 <!-- Hex Entry -->
                 <DataGridTextColumn Header="Hex Entry"
                                     Binding="{Binding Entry, UpdateSourceTrigger=LostFocus}"
@@ -311,18 +323,6 @@
                                     Binding="{Binding Comment, UpdateSourceTrigger=LostFocus}"
                                     Width="*"
                                     IsReadOnly="{Binding DataContext.IsReadOnly, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-
-                <!-- Conflict icon -->
-                <DataGridTemplateColumn Header="⚠" Width="24" IsReadOnly="True">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="⚠"
-                                       Foreground="Orange"
-                                       HorizontalAlignment="Center"
-                                       Visibility="{Binding HasConflict, Converter={StaticResource BoolToVis}}"/>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 

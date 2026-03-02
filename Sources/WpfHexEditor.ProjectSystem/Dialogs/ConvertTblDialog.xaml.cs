@@ -5,9 +5,11 @@
 //////////////////////////////////////////////
 
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
+using WpfHexEditor.Editor.Core;
 
 namespace WpfHexEditor.ProjectSystem.Dialogs;
 
@@ -18,9 +20,15 @@ namespace WpfHexEditor.ProjectSystem.Dialogs;
 public partial class ConvertTblDialog : Window
 {
     private readonly string _sourcePath;
-    private string _targetFolder;
+    private          string _targetFolder;
 
-    public ConvertTblDialog(string sourceTblPath)
+    /// <param name="sourceTblPath">Full path to the .tbl file being converted.</param>
+    /// <param name="romHints">
+    ///   ROM files detected in the active solution, ordered by relevance.
+    ///   When at least one is provided, an "Auto-fill" strip is shown in the
+    ///   Game Metadata section with a ComboBox selector.
+    /// </param>
+    public ConvertTblDialog(string sourceTblPath, IReadOnlyList<GameRomHint>? romHints = null)
     {
         InitializeComponent();
 
@@ -29,6 +37,16 @@ public partial class ConvertTblDialog : Window
 
         SourceFileText.Text = Path.GetFileName(sourceTblPath);
         RefreshTargetText();
+
+        if (romHints is { Count: > 0 })
+        {
+            foreach (var hint in romHints)
+                RomHintCombo.Items.Add(hint);
+
+            RomHintCombo.SelectedIndex   = 0;
+            RomHintCombo.IsEnabled       = romHints.Count > 1;
+            AutoFillStrip.Visibility     = Visibility.Visible;
+        }
     }
 
     // ── Output properties consumed by the host ────────────────────────────────
@@ -133,6 +151,47 @@ public partial class ConvertTblDialog : Window
             _targetFolder = dlg.FolderName;
             RefreshTargetText();
         }
+    }
+
+    private void OnAutoFill(object sender, RoutedEventArgs e)
+    {
+        if (RomHintCombo.SelectedItem is not GameRomHint hint) return;
+
+        if (!string.IsNullOrWhiteSpace(hint.GameTitle))
+            GameTitleBox.Text = hint.GameTitle;
+
+        SetComboText(PlatformCombo, hint.Platform);
+        SetComboText(RegionCombo,   hint.Region);
+
+        // Provide visual feedback — hide the strip to signal the action was applied
+        AutoFillStrip.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Sets an editable ComboBox to <paramref name="value"/>: selects a matching
+    /// <see cref="ComboBoxItem"/> when available, otherwise writes directly to the
+    /// editable text field. No-op when <paramref name="value"/> is null or empty.
+    /// </summary>
+    private static void SetComboText(System.Windows.Controls.ComboBox combo, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+
+        // Always write to the Text property directly.
+        // Setting SelectedItem on an editable ComboBox that has a
+        // "Text={Binding SelectedItem}" binding causes WPF to convert the
+        // ComboBoxItem via ToString(), producing the ugly
+        // "System.Windows.Controls.ComboBoxItem: SNES" artefact.
+        foreach (System.Windows.Controls.ComboBoxItem item in combo.Items.OfType<System.Windows.Controls.ComboBoxItem>())
+        {
+            if (string.Equals(item.Content?.ToString(), value, StringComparison.OrdinalIgnoreCase))
+            {
+                combo.Text = item.Content!.ToString();
+                return;
+            }
+        }
+
+        // No exact match — write raw value to the editable text box
+        combo.Text = value;
     }
 
     private void OnYearPreviewTextInput(object sender, TextCompositionEventArgs e)

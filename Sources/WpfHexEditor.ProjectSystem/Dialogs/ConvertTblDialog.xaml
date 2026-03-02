@@ -8,25 +8,15 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Convert TBL to TBLX"
-        Width="520" Height="420"
-        MinWidth="420" MinHeight="380"
+        Width="520" Height="460"
+        MinWidth="420" MinHeight="420"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False"
         Background="{DynamicResource DockWindowBackgroundBrush}">
 
     <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/WpfHexEditor.ProjectSystem;component/Themes/DialogStyles.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-            <Style TargetType="GroupBox">
-                <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}" />
-                <Setter Property="BorderBrush" Value="{DynamicResource DockBorderBrush}" />
-                <Setter Property="Margin" Value="0,0,0,8" />
-                <Setter Property="Padding" Value="8" />
-            </Style>
-        </ResourceDictionary>
+        <ResourceDictionary Source="/WpfHexEditor.ProjectSystem;component/Themes/DialogStyles.xaml" />
     </Window.Resources>
 
     <Grid Margin="16">
@@ -65,57 +55,118 @@
 
         <!-- Game metadata -->
         <GroupBox Grid.Row="2" Header="Game Metadata (optional)">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="6"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="6"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="100"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="80"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <StackPanel>
 
-                <!-- Row 0: Game Title / Author -->
-                <Label Grid.Row="0" Grid.Column="0" Content="Game _Title:"/>
-                <TextBox x:Name="GameTitleBox" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4"/>
+                <!-- Auto-fill hint strip — visible only when ROM(s) are detected in the solution -->
+                <Border x:Name="AutoFillStrip"
+                        Visibility="Collapsed"
+                        Background="{DynamicResource DockTabHoverBrush}"
+                        BorderBrush="{DynamicResource DockBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="2"
+                        Padding="6,4"
+                        Margin="0,0,0,8">
+                    <DockPanel LastChildFill="True">
+                        <Button DockPanel.Dock="Right"
+                                x:Name="AutoFillButton"
+                                Content="Auto-fill"
+                                Click="OnAutoFill"
+                                Padding="10,3"
+                                MinWidth="0"
+                                Margin="8,0,0,0"
+                                ToolTip="Pre-fill Platform, Region and Title from the selected ROM"/>
+                        <!-- ROM selector: single item = read-only label; multiple = editable combo -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="ROM detected:"
+                                       FontSize="11"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource DockTabTextBrush}"
+                                       Margin="0,0,6,0"/>
+                            <ComboBox x:Name="RomHintCombo"
+                                      FontSize="11"
+                                      Height="22"
+                                      MinWidth="160"
+                                      MaxWidth="260"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
 
-                <!-- Row 2: Platform / Region -->
-                <Label Grid.Row="2" Grid.Column="0" Content="_Platform:"/>
-                <ComboBox x:Name="PlatformCombo" Grid.Row="2" Grid.Column="1"
-                          IsEditable="True"
-                          Text="{Binding SelectedItem, RelativeSource={RelativeSource Self}, Mode=OneWay}">
-                    <ComboBoxItem>SNES</ComboBoxItem>
-                    <ComboBoxItem>NES</ComboBoxItem>
-                    <ComboBoxItem>GBA</ComboBoxItem>
-                    <ComboBoxItem>GBC</ComboBoxItem>
-                    <ComboBoxItem>N64</ComboBoxItem>
-                    <ComboBoxItem>PS1</ComboBoxItem>
-                    <ComboBoxItem>PS2</ComboBoxItem>
-                    <ComboBoxItem>Mega Drive / Genesis</ComboBoxItem>
-                    <ComboBoxItem>PC Engine</ComboBoxItem>
-                    <ComboBoxItem>Other</ComboBoxItem>
-                </ComboBox>
-                <Label Grid.Row="2" Grid.Column="3" Content="_Region:"/>
-                <ComboBox x:Name="RegionCombo" Grid.Row="2" Grid.Column="4" IsEditable="True">
-                    <ComboBoxItem>Japan</ComboBoxItem>
-                    <ComboBoxItem>USA</ComboBoxItem>
-                    <ComboBoxItem>Europe</ComboBoxItem>
-                    <ComboBoxItem>World</ComboBoxItem>
-                </ComboBox>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="6"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="6"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="80"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Row 4: Author / Year -->
-                <Label Grid.Row="4" Grid.Column="0" Content="_Author:"/>
-                <TextBox x:Name="AuthorBox" Grid.Row="4" Grid.Column="1"/>
-                <Label Grid.Row="4" Grid.Column="3" Content="_Year:"/>
-                <TextBox x:Name="YearBox" Grid.Row="4" Grid.Column="4"
-                         PreviewTextInput="OnYearPreviewTextInput"/>
-            </Grid>
+                    <!-- Row 0: Game Title -->
+                    <Label Grid.Row="0" Grid.Column="0" Content="Game _Title:"/>
+                    <TextBox x:Name="GameTitleBox" Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="4"/>
+
+                    <!-- Row 2: Platform / Region -->
+                    <Label Grid.Row="2" Grid.Column="0" Content="_Platform:"/>
+                    <ComboBox x:Name="PlatformCombo" Grid.Row="2" Grid.Column="1"
+                              IsEditable="True"
+                              Text="{Binding SelectedItem, RelativeSource={RelativeSource Self}, Mode=OneWay}">
+                        <!-- Nintendo -->
+                        <ComboBoxItem>NES</ComboBoxItem>
+                        <ComboBoxItem>SNES</ComboBoxItem>
+                        <ComboBoxItem>N64</ComboBoxItem>
+                        <ComboBoxItem>GameCube</ComboBoxItem>
+                        <ComboBoxItem>Nintendo Wii</ComboBoxItem>
+                        <ComboBoxItem>Nintendo Wii U</ComboBoxItem>
+                        <ComboBoxItem>Nintendo Switch</ComboBoxItem>
+                        <ComboBoxItem>Nintendo Switch 2</ComboBoxItem>
+                        <ComboBoxItem>Game Boy</ComboBoxItem>
+                        <ComboBoxItem>GBA</ComboBoxItem>
+                        <!-- Sony -->
+                        <ComboBoxItem>PS1</ComboBoxItem>
+                        <ComboBoxItem>PS2</ComboBoxItem>
+                        <ComboBoxItem>PS3</ComboBoxItem>
+                        <ComboBoxItem>PS4</ComboBoxItem>
+                        <ComboBoxItem>PS5</ComboBoxItem>
+                        <ComboBoxItem>PSP</ComboBoxItem>
+                        <ComboBoxItem>PlayStation Vita</ComboBoxItem>
+                        <!-- Sega -->
+                        <ComboBoxItem>Mega Drive / Genesis</ComboBoxItem>
+                        <ComboBoxItem>Sega Saturn</ComboBoxItem>
+                        <ComboBoxItem>Sega Dreamcast</ComboBoxItem>
+                        <ComboBoxItem>Sega Master System</ComboBoxItem>
+                        <!-- Microsoft -->
+                        <ComboBoxItem>Xbox</ComboBoxItem>
+                        <ComboBoxItem>Xbox 360</ComboBoxItem>
+                        <ComboBoxItem>Xbox One</ComboBoxItem>
+                        <ComboBoxItem>Xbox Series X/S</ComboBoxItem>
+                        <!-- Other -->
+                        <ComboBoxItem>PC Engine</ComboBoxItem>
+                        <ComboBoxItem>Atari 2600</ComboBoxItem>
+                        <ComboBoxItem>Atari 7800</ComboBoxItem>
+                        <ComboBoxItem>Other</ComboBoxItem>
+                    </ComboBox>
+                    <Label Grid.Row="2" Grid.Column="3" Content="_Region:"/>
+                    <ComboBox x:Name="RegionCombo" Grid.Row="2" Grid.Column="4" IsEditable="True">
+                        <ComboBoxItem>Japan</ComboBoxItem>
+                        <ComboBoxItem>USA</ComboBoxItem>
+                        <ComboBoxItem>Europe</ComboBoxItem>
+                        <ComboBoxItem>World</ComboBoxItem>
+                    </ComboBox>
+
+                    <!-- Row 4: Author / Year -->
+                    <Label Grid.Row="4" Grid.Column="0" Content="_Author:"/>
+                    <TextBox x:Name="AuthorBox" Grid.Row="4" Grid.Column="1"/>
+                    <Label Grid.Row="4" Grid.Column="3" Content="_Year:"/>
+                    <TextBox x:Name="YearBox" Grid.Row="4" Grid.Column="4"
+                             PreviewTextInput="OnYearPreviewTextInput"/>
+                </Grid>
+            </StackPanel>
         </GroupBox>
 
         <!-- Output options -->

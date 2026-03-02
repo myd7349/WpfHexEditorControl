@@ -51,6 +51,9 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         _vm.CanRedoChanged    += (_, _) => CanRedoChanged?.Invoke(this, EventArgs.Empty);
         _vm.StatisticsChanged += (_, s) => { StatusMessage?.Invoke(this, s.ToString()); RefreshStatusBarItems(); };
 
+        // Auto-refresh ErrorPanel on any collection mutation (add/delete/undo/redo/toolbar commands)
+        _vm.Entries.CollectionChanged += (_, _) => { if (!_vm.IsLoading) _ = ForceValidationAsync(); };
+
         // Populate type-filter combo
         TypeFilterCombo.Items.Add(new ComboBoxItem { Content = "(All)", Tag = null });
         foreach (DteType t in Enum.GetValues<DteType>())
@@ -101,12 +104,28 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
     private static object CoerceZoom(DependencyObject d, object baseValue)
         => Math.Clamp((int)baseValue, 50, 200);
 
+    // Base pixel widths for fixed-size columns (index matches DataGrid.Columns order).
+    // NaN = star/auto column — not touched.
+    private static readonly double[] _baseColWidths = [24, 100, 120, 75, 50, double.NaN];
+
     private static void OnZoomChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (TblEditor)d;
-        ctrl.EntriesGrid.FontSize = ctrl._baseFontSize * (int)e.NewValue / 100.0;
+        var zoom = (int)e.NewValue;
+        ctrl.EntriesGrid.FontSize = ctrl._baseFontSize * zoom / 100.0;
+        ctrl.ApplyZoomToColumns(zoom);
         if (ctrl._sbZoom != null)
-            ctrl._sbZoom.Value = $"{(int)e.NewValue}%";
+            ctrl._sbZoom.Value = $"{zoom}%";
+    }
+
+    private void ApplyZoomToColumns(int zoom)
+    {
+        var factor = zoom / 100.0;
+        for (int i = 0; i < EntriesGrid.Columns.Count && i < _baseColWidths.Length; i++)
+        {
+            if (!double.IsNaN(_baseColWidths[i]))
+                EntriesGrid.Columns[i].Width = new DataGridLength(_baseColWidths[i] * factor);
+        }
     }
 
     public void ZoomIn()    => Zoom = Math.Min(Zoom + 10, 200);
@@ -306,16 +325,32 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         await _vm.ForceReanalysisAsync();
 
         var fileName = _currentFilePath is not null ? Path.GetFileName(_currentFilePath) : null;
+
+        var duplicateKeys = _vm.Entries
+            .GroupBy(e => e.Entry.ToUpperInvariant())
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToHashSet();
+
         _diagnostics =
         [
+            // TBL001 — entrée structurellement invalide (hex malformé, valeur vide…)
             .._vm.Entries
                 .Where(e => !e.IsValid)
                 .Select(e => new DiagnosticEntry(
                     DiagnosticSeverity.Error, "TBL001",
                     e.ValidationError ?? "Invalid entry",
                     FileName: fileName, FilePath: _currentFilePath)),
+            // TBL002 — clé hex en doublon (toutes les copies signalées)
             .._vm.Entries
-                .Where(e => e.HasConflict)
+                .Where(e => duplicateKeys.Contains(e.Entry.ToUpperInvariant()))
+                .Select(e => new DiagnosticEntry(
+                    DiagnosticSeverity.Error, "TBL002",
+                    $"Duplicate hex key \"{e.Entry}\"",
+                    FileName: fileName, FilePath: _currentFilePath)),
+            // TBL003 — conflit de préfixe uniquement (HasConflict ET pas doublon)
+            .._vm.Entries
+                .Where(e => e.HasConflict && !duplicateKeys.Contains(e.Entry.ToUpperInvariant()))
                 .Select(e => new DiagnosticEntry(
                     DiagnosticSeverity.Warning, "TBL003",
                     $"Prefix conflict on entry \"{e.Entry}\"",
@@ -327,7 +362,7 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         var warnings = _diagnostics.Count(d => d.Severity == DiagnosticSeverity.Warning);
         StatusMessage?.Invoke(this, errors == 0 && warnings == 0
             ? "Validation OK — no issues found"
-            : $"Validation: {errors} error(s), {warnings} conflict warning(s)");
+            : $"Validation: {errors} error(s), {warnings} warning(s)");
         RefreshStatusBarItems();
     }
 
@@ -413,7 +448,7 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
         _sbConf    = new StatusBarItem { Label = "⚠",       Tooltip = "Prefix conflicts detected" };
         _sbZoom    = new StatusBarItem { Label = "Zoom",    Tooltip = "Current zoom level (Ctrl+Scroll, Ctrl+0 to reset)" };
         RefreshStatusBarItems();
-        return new ObservableCollection<StatusBarItem> { _sbEntries, _sbAscii, _sbDte, _sbMte, _sbCov, _sbConf, _sbZoom };
+        return new ObservableCollection<StatusBarItem> { _sbZoom, _sbEntries, _sbAscii, _sbDte, _sbMte, _sbCov, _sbConf };
     }
 
     internal void RefreshStatusBarItems()
@@ -475,7 +510,10 @@ public partial class TblEditor : UserControl, IDocumentEditor, IDiagnosticSource
     private void EntriesGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
     {
         if (e.EditAction == DataGridEditAction.Commit)
+        {
             _vm.MarkDirty();
+            _ = ForceValidationAsync();
+        }
     }
 
     private void EntriesGrid_ContextMenuOpening(object sender, ContextMenuEventArgs e)
