@@ -15,8 +15,8 @@ Contributions are welcome and appreciated! This guide covers everything you need
 ### Fork & Clone
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/WpfHexEditorControl.git
-cd WpfHexEditorControl
+git clone https://github.com/YOUR_USERNAME/WpfHexEditorIDE.git
+cd WpfHexEditorIDE
 ```
 
 Open `WpfHexEditorControl.sln` in Visual Studio 2022.
@@ -124,8 +124,8 @@ dotnet test Sources/WpfHexEditor.Docking.Tests/
 
 ## Reporting Issues
 
-- 🐛 **Bug report**: [GitHub Issues](https://github.com/abbaye/WpfHexEditorControl/issues) — include OS, .NET version, minimal repro
-- 💡 **Feature request**: [GitHub Discussions](https://github.com/abbaye/WpfHexEditorControl/discussions)
+- 🐛 **Bug report**: [GitHub Issues](https://github.com/abbaye/WpfHexEditorIDE/issues) — include OS, .NET version, minimal repro
+- 💡 **Feature request**: [GitHub Discussions](https://github.com/abbaye/WpfHexEditorIDE/discussions)
 
 ---
 

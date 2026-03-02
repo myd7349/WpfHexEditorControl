@@ -11,7 +11,7 @@ The fastest way to explore the project.
 **Requirements:** Visual Studio 2022 · .NET 8.0 SDK · Windows
 
 ```bash
-git clone https://github.com/abbaye/WpfHexEditorControl.git
+git clone https://github.com/abbaye/WpfHexEditorIDE.git
 ```
 
 1. Open `WpfHexEditorControl.sln` in Visual Studio 2022

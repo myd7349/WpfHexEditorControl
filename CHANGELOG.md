@@ -199,7 +199,7 @@ Complete removal of Legacy V1 code after 12-month deprecation period:
 
 ## [1.x] — 2023 and earlier
 
-Legacy V1 monolithic architecture. See [GitHub Releases](https://github.com/abbaye/WpfHexEditorControl/releases) for historical notes.
+Legacy V1 monolithic architecture. See [GitHub Releases](https://github.com/abbaye/WpfHexEditorIDE/releases) for historical notes.
 
 V1 NuGet package (`WPFHexaEditor`) remains available for existing users but is no longer maintained. See [Migration Guide](docs/migration/MIGRATION.md).
 

@@ -6,11 +6,11 @@
 
   [![NuGet Legacy V1](https://img.shields.io/nuget/v/WPFHexaEditor?color=blue&label=NuGet%20(Legacy%20V1)&logo=nuget)](https://www.nuget.org/packages/WPFHexaEditor/)
   [![.NET Multi-Target](https://img.shields.io/badge/.NET-net48%20%7C%20net8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
-  [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorControl)
+  [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
   [![C#](https://img.shields.io/badge/C%23-13.0-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
   [![Languages](https://img.shields.io/badge/Languages-19-success?logo=googletranslate&logoColor=white)](#-multilingual)
-  [![Status](https://img.shields.io/badge/Status-Active%20Development-orange)](https://github.com/abbaye/WpfHexEditorControl/commits/master)
+  [![Status](https://img.shields.io/badge/Status-Active%20Development-orange)](https://github.com/abbaye/WpfHexEditorIDE/commits/master)
 
   <br/>
 
@@ -116,15 +116,15 @@ All controls are **independently reusable** — no IDE required. Drop any of the
 | **[HexBox](Sources/WpfHexEditor.HexBox/)** | net48 · net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
 | **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net48 · net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
 | **[BarChart](Sources/WpfHexEditor.BarChart/)** | net48 · net8.0-windows | ~75% | Byte frequency distribution chart (0x00–0xFF visualization) |
+| **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/)** | net8.0-windows | ~65% | **Custom-built** VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — 100% in-house, zero third-party dependency |
 
 ### Libraries & Infrastructure
 
-| Library | Frameworks | Progress | Description |
-|---------|-----------|----------|-------------|
-| **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/)** | net8.0-windows | ~65% | VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — no third-party dependency |
-| **[Core](Sources/WpfHexEditor.Core/)** | net48 · net8.0-windows | — | ByteProvider, 16 services, data layer — the engine powering HexEditor |
-| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net48 · net8.0-windows | — | `IDocumentEditor` plugin contract, editor registry, shared interfaces |
-| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0-windows | — | 400+ format detection engine, binary templates, DataInspector service |
+| Library | Frameworks | Description |
+|---------|-----------|-------------|
+| **[Core](Sources/WpfHexEditor.Core/)** | net48 · net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
+| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net48 · net8.0-windows | `IDocumentEditor` plugin contract, editor registry, shared interfaces |
+| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0-windows | 400+ format detection engine, binary templates, DataInspector service |
 
 ---
 
@@ -221,7 +221,7 @@ Panels connect to the active document automatically via the docking system.
 ### Run the IDE
 
 ```bash
-git clone https://github.com/abbaye/WpfHexEditorControl.git
+git clone https://github.com/abbaye/WpfHexEditorIDE.git
 ```
 
 Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** as startup project, and run.
@@ -366,7 +366,7 @@ This project is developed in **free time** by passionate contributors. If you fi
 
 - ⭐ **Star this repository** — helps others discover the project
 - 🍴 **Fork and contribute** — pull requests are always welcome
-- 💬 **Share feedback** — report bugs or suggest features via [GitHub Issues](https://github.com/abbaye/WpfHexEditorControl/issues)
+- 💬 **Share feedback** — report bugs or suggest features via [GitHub Issues](https://github.com/abbaye/WpfHexEditorIDE/issues)
 
 **Every star motivates us to keep building! 🙏**
 
@@ -391,8 +391,8 @@ We welcome contributions! The codebase is well-organized and documented:
 
 ## 📧 Contact & Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/abbaye/WpfHexEditorControl/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/abbaye/WpfHexEditorControl/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/abbaye/WpfHexEditorIDE/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/abbaye/WpfHexEditorIDE/discussions)
 - 📧 **Email**: derektremblay666@gmail.com
 
 ---
@@ -417,7 +417,7 @@ We welcome contributions! The codebase is well-organized and documented:
   **[📖 Tutorial](GETTING_STARTED.md)** •
   **[📊 Features](FEATURES.md)** •
   **[📝 Changelog](CHANGELOG.md)** •
-  **[⭐ Star Us](https://github.com/abbaye/WpfHexEditorControl)**
+  **[⭐ Star Us](https://github.com/abbaye/WpfHexEditorIDE)**
 
   <br/>
 </div>
