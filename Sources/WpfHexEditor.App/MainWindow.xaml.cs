@@ -86,6 +86,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         "AdvancedSearch", typeof(MainWindow),
         new InputGestureCollection { new KeyGesture(Key.F, ModifierKeys.Control | ModifierKeys.Shift) });
 
+    /// <summary>Ctrl+G — opens the Go To Offset dialog.</summary>
+    public static readonly RoutedCommand GoToOffsetCommand = new RoutedCommand(
+        "GoToOffset", typeof(MainWindow),
+        new InputGestureCollection { new KeyGesture(Key.G, ModifierKeys.Control) });
+
     // ─── Constants ─────────────────────────────────────────────────────
     private static readonly string LayoutFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -137,8 +142,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Error Panel (persistent singleton)
     private ErrorPanel? _errorPanel;
-    private const string ErrorPanelContentId = "panel-errors";
-    private const string OptionsContentId    = "panel-options";
+    private const string ErrorPanelContentId    = "panel-errors";
+    private const string OptionsContentId       = "panel-options";
+    private const string ByteChartPanelContentId         = "panel-byte-chart";
+    private const string DataInspectorPanelContentId      = "panel-data-inspector";
+    private const string StructureOverlayPanelContentId   = "panel-structure-overlay";
+    private const string FileStatsPanelContentId           = "panel-file-statistics";
+    private const string PatternAnalysisPanelContentId    = "panel-pattern-analysis";
+    private const string FormatInfoPanelContentId         = "panel-format-info";
+    private const string FileComparisonPanelContentId    = "panel-file-comparison";
+    private const string ArchivePanelContentId           = "panel-archive";
     private string _lastAppliedTheme = string.Empty;
 
     // TBL dropdown — tracks which project TBL item is applied per hex editor
@@ -150,6 +163,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Output Panel (persistent singleton — pre-created so OutputLogger works from startup)
     private OutputPanel? _outputPanel;
+
+    // ByteChart Panel (persistent singleton)
+    private WpfHexEditor.Panels.BinaryAnalysis.ByteChartPanel? _byteChartPanel;
+
+    // Analysis panels (persistent singletons)
+    private WpfHexEditor.Panels.BinaryAnalysis.DataInspectorPanel?     _dataInspectorPanel;
+    private WpfHexEditor.Panels.BinaryAnalysis.StructureOverlayPanel?  _structureOverlayPanel;
+    private WpfHexEditor.Panels.BinaryAnalysis.FileStatisticsPanel?    _fileStatisticsPanel;
+    private WpfHexEditor.Panels.BinaryAnalysis.PatternAnalysisPanel?   _patternAnalysisPanel;
+    private WpfHexEditor.Panels.BinaryAnalysis.EnrichedFormatInfoPanel? _formatInfoPanel;
+
+    // FileOps panels (persistent singletons)
+    private WpfHexEditor.Panels.FileOps.ArchiveStructurePanel? _archivePanel;
 
     // SolutionManager
     private readonly ISolutionManager _solutionManager = SolutionManager.Instance;
@@ -522,6 +548,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 ApplyLayout(layout);
                 EnsureParsedFieldsPanel();
                 EnsureErrorPanel();
+                EnsureByteChartPanel();
                 OutputLogger.Debug($"Layout restored from: {LayoutFilePath}");
                 return;
             }
@@ -660,6 +687,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var output = new DockItem { Title = "Output", ContentId = "panel-output" };
         engine.Dock(output, errorsItem.Owner!, DockDirection.Center);
 
+        var byteChart = new DockItem { Title = "Byte Chart", ContentId = ByteChartPanelContentId };
+        engine.Dock(byteChart, output.Owner!, DockDirection.Center);
+
         var parsedFields = new DockItem
         {
             Title      = "Parsed Fields",
@@ -667,6 +697,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             CanClose   = false
         };
         engine.Dock(parsedFields, layout.MainDocumentHost, DockDirection.Right);
+
+        // Additional right-side analysis panels (tabs alongside Parsed Fields)
+        var dataInspector = new DockItem { Title = "Data Inspector", ContentId = DataInspectorPanelContentId };
+        engine.Dock(dataInspector, parsedFields.Owner!, DockDirection.Center);
+
+        var structureOverlay = new DockItem { Title = "Structure Overlay", ContentId = StructureOverlayPanelContentId };
+        engine.Dock(structureOverlay, parsedFields.Owner!, DockDirection.Center);
+
+        var formatInfo = new DockItem { Title = "Format Info", ContentId = FormatInfoPanelContentId };
+        engine.Dock(formatInfo, parsedFields.Owner!, DockDirection.Center);
+
+        // Bottom analysis panels (tabs alongside Output/Errors/ByteChart)
+        var fileStats = new DockItem { Title = "File Statistics", ContentId = FileStatsPanelContentId };
+        engine.Dock(fileStats, byteChart.Owner!, DockDirection.Center);
+
+        var patternAnalysis = new DockItem { Title = "Pattern Analysis", ContentId = PatternAnalysisPanelContentId };
+        engine.Dock(patternAnalysis, byteChart.Owner!, DockDirection.Center);
 
         ApplyLayout(layout, engine);
         OutputLogger.Debug("Default layout applied.");
@@ -713,6 +760,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             DockHost.RebuildVisualTree();
             OutputLogger.Debug("ParsedFields panel added to restored layout.");
         }
+    }
+
+    private void EnsureByteChartPanel()
+    {
+        if (_layout.FindItemByContentId(ByteChartPanelContentId) != null) return;
+
+        var item = new DockItem { Title = "Byte Chart", ContentId = ByteChartPanelContentId };
+        var outputItem = _layout.FindItemByContentId("panel-output");
+        if (outputItem?.Owner is { } outputGroup)
+            _engine.Dock(item, outputGroup, DockDirection.Center);
+        else
+            _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Bottom);
+
+        DockHost.RebuildVisualTree();
     }
 
     private void EnsureErrorPanel()
@@ -787,7 +848,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "panel-properties"         => CreatePropertiesContent(),
             CustomParserPanelContentId => CreateCustomParserContent(),
             ErrorPanelContentId        => CreateErrorPanelContent(),
-            OptionsContentId           => CreateOptionsContent(),
+            ByteChartPanelContentId        => CreateByteChartContent(),
+            DataInspectorPanelContentId    => CreateDataInspectorContent(),
+            StructureOverlayPanelContentId => CreateStructureOverlayContent(),
+            FileStatsPanelContentId        => CreateFileStatsContent(),
+            PatternAnalysisPanelContentId  => CreatePatternAnalysisContent(),
+            FormatInfoPanelContentId       => CreateFormatInfoContent(),
+            FileComparisonPanelContentId   => CreateFileComparisonContent(),
+            ArchivePanelContentId          => CreateArchivePanelContent(),
+            OptionsContentId               => CreateOptionsContent(),
             _ when item.ContentId.StartsWith("doc-file-") => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")  => CreateHexEditorContent(
                 item.Metadata.TryGetValue("FilePath",    out var fp)   ? fp   : null,
@@ -862,6 +931,63 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         _outputPanel ??= new OutputPanel();
         return _outputPanel;
+    }
+
+    private UIElement CreateByteChartContent()
+    {
+        if (_byteChartPanel is null)
+        {
+            _byteChartPanel = new WpfHexEditor.Panels.BinaryAnalysis.ByteChartPanel();
+            _byteChartPanel.ByteSelected += OnByteChartByteSelected;
+        }
+        return _byteChartPanel;
+    }
+
+    private UIElement CreateDataInspectorContent()
+    {
+        _dataInspectorPanel ??= new WpfHexEditor.Panels.BinaryAnalysis.DataInspectorPanel();
+        return _dataInspectorPanel;
+    }
+
+    private UIElement CreateStructureOverlayContent()
+    {
+        if (_structureOverlayPanel is null)
+        {
+            _structureOverlayPanel = new WpfHexEditor.Panels.BinaryAnalysis.StructureOverlayPanel();
+            _structureOverlayPanel.OnFieldSelectedForHighlight += OnStructureOverlayFieldSelected;
+        }
+        return _structureOverlayPanel;
+    }
+
+    private UIElement CreateFileStatsContent()
+    {
+        _fileStatisticsPanel ??= new WpfHexEditor.Panels.BinaryAnalysis.FileStatisticsPanel();
+        return _fileStatisticsPanel;
+    }
+
+    private UIElement CreatePatternAnalysisContent()
+    {
+        _patternAnalysisPanel ??= new WpfHexEditor.Panels.BinaryAnalysis.PatternAnalysisPanel();
+        return _patternAnalysisPanel;
+    }
+
+    private UIElement CreateFormatInfoContent()
+    {
+        _formatInfoPanel ??= new WpfHexEditor.Panels.BinaryAnalysis.EnrichedFormatInfoPanel();
+        return _formatInfoPanel;
+    }
+
+    private UIElement CreateFileComparisonContent()
+    {
+        // FileComparisonPanel manages its own file selection internally
+        var panel = new WpfHexEditor.Panels.FileOps.FileComparisonPanel();
+        return panel;
+    }
+
+    private UIElement CreateArchivePanelContent()
+    {
+        _archivePanel ??= new WpfHexEditor.Panels.FileOps.ArchiveStructurePanel();
+        return _archivePanel;
     }
 
     private UIElement CreateParsedFieldsContent()
@@ -1952,7 +2078,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async Task CreateFolderAndBeginRenameAsync(IProject project, string? parentId, bool physical)
     {
-        var baseName = physical ? "New Physical Folder" : "New Folder";
+        var baseName = physical ? "New Folder" : "New Solution Folder";
         var folder   = await _solutionManager.CreateFolderAsync(project, baseName, parentId, physical);
         _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
         _solutionExplorerPanel?.BeginFolderRename(folder);
@@ -2289,11 +2415,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (_connectedHexEditor is IDiagnosticSource prevDiag)
                 _errorPanel?.RemoveSource(prevDiag);
             _connectedHexEditor?.DisconnectParsedFieldsPanel();
+            if (_connectedHexEditor is not null)
+            {
+                _connectedHexEditor.ByteDistributionPanel  = null;
+                _connectedHexEditor.SelectionChanged       -= OnHexSelectionChangedForInspector;
+                _connectedHexEditor.FormatDetected         -= OnHexFormatDetected;
+            }
 
             _connectedHexEditor = hex;
             _connectedHexEditor.ConnectParsedFieldsPanel(_parsedFieldsPanel);
             if (_connectedHexEditor is IDiagnosticSource newDiag)
                 EnsureErrorPanelInstance().AddSource(newDiag);
+            if (_byteChartPanel is not null)
+                _connectedHexEditor.ByteDistributionPanel = _byteChartPanel;
+
+            _connectedHexEditor.SelectionChanged += OnHexSelectionChangedForInspector;
+            _connectedHexEditor.FormatDetected   += OnHexFormatDetected;
+
+            // Refresh data-intensive analysis panels in background
+            _ = RefreshAnalysisPanelsAsync(_connectedHexEditor);
         }
 
         ActiveDocumentEditor       = content as IDocumentEditor;
@@ -2589,8 +2729,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 if (ReferenceEquals(hex, _connectedHexEditor))
                 {
                     hex.DisconnectParsedFieldsPanel();
+                    hex.SelectionChanged -= OnHexSelectionChangedForInspector;
+                    hex.FormatDetected   -= OnHexFormatDetected;
                     _connectedHexEditor = null;
                     _parsedFieldsPanel?.Clear();
+                    _dataInspectorPanel?.Clear();
+                    _structureOverlayPanel?.ClearAllOverlays();
+                    _fileStatisticsPanel?.UpdateStatistics(new WpfHexEditor.Panels.BinaryAnalysis.FileStats
+                    {
+                        FormatName    = "—",
+                        FileSize      = 0,
+                        HealthScore   = 0,
+                        HealthMessage = "No file loaded"
+                    });
+                    _patternAnalysisPanel?.Analyze(Array.Empty<byte>());
+                    _formatInfoPanel?.ClearFormat();
                 }
                 if (ReferenceEquals(hex, ActiveHexEditor))
                 {
@@ -3538,6 +3691,210 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnShowErrorPanel(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Error List", ErrorPanelContentId, DockDirection.Bottom);
 
+    private void OnShowByteChartPanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Byte Chart", ByteChartPanelContentId, DockDirection.Bottom);
+
+    private void OnByteChartByteSelected(object? sender, byte byteValue)
+    {
+        if (ActiveHexEditor is not { } hex) return;
+        var offset = _byteChartPanel?.GetFirstOccurrenceOffset(byteValue) ?? -1L;
+        if (offset >= 0)
+            hex.SetPosition(offset);
+    }
+
+    private void OnHexSelectionChangedForInspector(object? sender, WpfHexEditor.Core.Events.HexSelectionChangedEventArgs e)
+    {
+        if (_dataInspectorPanel is null || sender is not HexEditorControl hex) return;
+        var bytes = hex.GetSelectionByteArray();
+        _dataInspectorPanel.UpdateBytes(bytes);
+    }
+
+    private void OnHexFormatDetected(object? sender, WpfHexEditor.Core.Events.FormatDetectedEventArgs e)
+    {
+        if (e.Success && e.Format is not null)
+            _formatInfoPanel?.SetFormat(e.Format);
+        else
+            _formatInfoPanel?.ClearFormat();
+    }
+
+    private void OnStructureOverlayFieldSelected(object? sender, WpfHexEditor.Core.Models.StructureOverlay.OverlayField field)
+    {
+        if (_connectedHexEditor is not { } hex) return;
+        hex.SelectionStart = field.Offset;
+        hex.SelectionStop  = field.Offset + Math.Max(1, field.Length) - 1;
+    }
+
+    private async System.Threading.Tasks.Task RefreshAnalysisPanelsAsync(HexEditorControl hex)
+    {
+        try
+        {
+            var bytes = await System.Threading.Tasks.Task.Run(() =>
+            {
+                var all = hex.GetAllBytes();
+                return all.Length > 1_048_576 ? all[..1_048_576] : all;
+            });
+
+            if (!ReferenceEquals(hex, _connectedHexEditor)) return; // tab switched during loading
+
+            _structureOverlayPanel?.UpdateFileBytes(bytes);
+            _patternAnalysisPanel?.Analyze(bytes);
+
+            // Auto-load archive structure for ZIP files
+            if (_archivePanel is not null && !string.IsNullOrEmpty(hex.FileName))
+            {
+                var ext = System.IO.Path.GetExtension(hex.FileName).ToLowerInvariant();
+                if (ext == ".zip")
+                {
+                    try
+                    {
+                        var root = await System.Threading.Tasks.Task.Run(() => BuildZipArchiveTree(hex.FileName));
+                        if (!ReferenceEquals(hex, _connectedHexEditor)) return;
+                        _archivePanel.LoadArchive(root);
+                    }
+                    catch { /* not a valid zip */ }
+                }
+            }
+
+            var fileSize = hex.Length;
+            var entropy  = 0.0;
+            if (bytes.Length > 0)
+            {
+                var freq = new long[256];
+                foreach (var b in bytes) freq[b]++;
+                foreach (var f in freq)
+                {
+                    if (f <= 0) continue;
+                    var p = f / (double)bytes.Length;
+                    entropy -= p * Math.Log(p, 2);
+                }
+            }
+
+            _fileStatisticsPanel?.UpdateStatistics(new WpfHexEditor.Panels.BinaryAnalysis.FileStats
+            {
+                FormatName        = System.IO.Path.GetExtension(hex.FileName ?? "").TrimStart('.').ToUpperInvariant(),
+                FileSize          = fileSize,
+                Entropy           = entropy,
+                HealthScore       = 100,
+                HealthMessage     = "File loaded",
+                StructureValid    = true,
+                ChecksumsPass     = true,
+                ChecksumStatus    = "N/A",
+                CompressionRatio  = 1.0,
+                FieldCount        = 0,
+                Anomalies         = new System.Collections.Generic.List<WpfHexEditor.Panels.BinaryAnalysis.AnomalyInfo>()
+            });
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Debug($"RefreshAnalysisPanels error: {ex.Message}");
+        }
+    }
+
+    private static WpfHexEditor.Panels.FileOps.ArchiveNode BuildZipArchiveTree(string zipPath)
+    {
+        var root = new WpfHexEditor.Panels.FileOps.ArchiveNode
+        {
+            Name     = System.IO.Path.GetFileName(zipPath),
+            IsFolder = true,
+            Children = new System.Collections.ObjectModel.ObservableCollection<WpfHexEditor.Panels.FileOps.ArchiveNode>()
+        };
+
+        using var zip = System.IO.Compression.ZipFile.OpenRead(zipPath);
+        var folderMap = new System.Collections.Generic.Dictionary<string, WpfHexEditor.Panels.FileOps.ArchiveNode>
+        {
+            [""] = root
+        };
+
+        // Ensure folder nodes exist for the given path
+        WpfHexEditor.Panels.FileOps.ArchiveNode EnsureFolder(string folderPath)
+        {
+            if (folderMap.TryGetValue(folderPath, out var existing)) return existing;
+            var parent = EnsureFolder(System.IO.Path.GetDirectoryName(folderPath)?.Replace('\\', '/') ?? "");
+            var node = new WpfHexEditor.Panels.FileOps.ArchiveNode
+            {
+                Name     = System.IO.Path.GetFileName(folderPath.TrimEnd('/')),
+                IsFolder = true,
+                Children = new System.Collections.ObjectModel.ObservableCollection<WpfHexEditor.Panels.FileOps.ArchiveNode>()
+            };
+            parent.Children.Add(node);
+            folderMap[folderPath] = node;
+            return node;
+        }
+
+        foreach (var entry in zip.Entries)
+        {
+            var fullName = entry.FullName.Replace('\\', '/');
+            if (fullName.EndsWith("/"))
+            {
+                EnsureFolder(fullName.TrimEnd('/'));
+                continue;
+            }
+            var dirPart  = System.IO.Path.GetDirectoryName(fullName)?.Replace('\\', '/') ?? "";
+            var parentNode = EnsureFolder(dirPart);
+            parentNode.Children.Add(new WpfHexEditor.Panels.FileOps.ArchiveNode
+            {
+                Name              = entry.Name,
+                IsFolder          = false,
+                Size              = entry.Length,
+                CompressedSize    = entry.CompressedLength,
+                Crc               = $"{entry.Crc32:X8}",
+                CompressionMethod = "Deflate",
+                Children          = new System.Collections.ObjectModel.ObservableCollection<WpfHexEditor.Panels.FileOps.ArchiveNode>()
+            });
+        }
+
+        return root;
+    }
+
+    private void OnShowDataInspectorPanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Data Inspector", DataInspectorPanelContentId, DockDirection.Right);
+
+    private void OnShowStructureOverlayPanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Structure Overlay", StructureOverlayPanelContentId, DockDirection.Right);
+
+    private void OnShowFileStatsPanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("File Statistics", FileStatsPanelContentId, DockDirection.Bottom);
+
+    private void OnShowPatternAnalysisPanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Pattern Analysis", PatternAnalysisPanelContentId, DockDirection.Bottom);
+
+    private void OnShowFormatInfoPanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Format Info", FormatInfoPanelContentId, DockDirection.Right);
+
+    private void OnShowFileComparisonPanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("File Comparison", FileComparisonPanelContentId, DockDirection.Bottom);
+
+    private void OnShowArchivePanel(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Archive Structure", ArchivePanelContentId, DockDirection.Right);
+
+    private void OnGoToOffset(object sender, RoutedEventArgs e)
+    {
+        if (ActiveHexEditor is not { } hex) return;
+
+        var dlg = new WpfHexEditor.App.Dialogs.GoToOffsetDialog { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+
+        if (dlg.Offset >= 0 && dlg.Offset < hex.Length)
+            hex.SetPosition(dlg.Offset);
+        else
+            OutputLogger.Debug($"Go To Offset: offset 0x{dlg.Offset:X} is out of range (file size = {hex.Length}).");
+    }
+
+    private void OnFileDrop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
+            foreach (var file in files)
+                OpenFileDirectly(file);
+    }
+
+    private void OnFileDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
     private void OnShowParsedFields(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Parsed Fields", ParsedFieldsPanelContentId, DockDirection.Right);
 
@@ -3628,6 +3985,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _parsedFieldsPanel ??= new ParsedFieldsPanel();
             ApplyLayout(layout);
             EnsureParsedFieldsPanel();
+            EnsureByteChartPanel();
             OutputLogger.Debug($"Layout loaded from: {dlg.FileName}");
         }
         catch (Exception ex)
@@ -3682,6 +4040,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         foreach (var editor in FindVisualChildren<HexEditorControl>(this))
             editor.ApplyThemeFromResources();
+
+        _byteChartPanel?.RefreshTheme();
     }
 
     private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject

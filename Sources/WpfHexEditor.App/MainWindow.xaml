@@ -19,6 +19,9 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="CanResize"
+        AllowDrop="True"
+        Drop="OnFileDrop"
+        DragOver="OnFileDragOver"
         Background="{DynamicResource DockWindowBackgroundBrush}">
 
     <WindowChrome.WindowChrome>
@@ -316,6 +319,14 @@
                         <MenuItem Header="Find _Previous"
                                   Click="OnFindPrevious"
                                   InputGestureText="Shift+F3" />
+                        <Separator />
+                        <MenuItem Header="_Go To Offset…" Click="OnGoToOffset" InputGestureText="Ctrl+G">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE8A7;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
 
                     <!-- ═══════════ View ═══════════ -->
@@ -351,6 +362,62 @@
                         <MenuItem Header="_Error List" Click="OnShowErrorPanel">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="_Byte Chart" Click="OnShowByteChartPanel">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="_Data Inspector" Click="OnShowDataInspectorPanel">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE9E6;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="_Structure Overlay" Click="OnShowStructureOverlayPanel">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE82D;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="File _Statistics" Click="OnShowFileStatsPanel">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE9F5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="_Pattern Analysis" Click="OnShowPatternAnalysisPanel">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE773;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Format _Info" Click="OnShowFormatInfoPanel">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="File _Comparison" Click="OnShowFileComparisonPanel">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE93D;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="_Archive Structure" Click="OnShowArchivePanel">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE7C3;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
@@ -1051,6 +1118,7 @@
         <KeyBinding Gesture="Ctrl+Shift+F"  Command="{x:Static local:MainWindow.AdvancedSearchCommand}" />
         <KeyBinding Key="F3"               Command="{x:Static local:MainWindow.FindNextCommand}" />
         <KeyBinding Gesture="Shift+F3"     Command="{x:Static local:MainWindow.FindPreviousCommand}" />
+        <KeyBinding Gesture="Ctrl+G"       Command="{x:Static local:MainWindow.GoToOffsetCommand}" />
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.New}"   Executed="OnNewFile" />
@@ -1062,5 +1130,6 @@
         <CommandBinding Command="{x:Static local:MainWindow.FindNextCommand}"        Executed="OnFindNext" />
         <CommandBinding Command="{x:Static local:MainWindow.FindPreviousCommand}"    Executed="OnFindPrevious" />
         <CommandBinding Command="{x:Static local:MainWindow.WriteToDiskCommand}"  Executed="OnWriteToDisk" />
+        <CommandBinding Command="{x:Static local:MainWindow.GoToOffsetCommand}"   Executed="OnGoToOffset" />
     </Window.CommandBindings>
 </Window>
