@@ -1,7 +1,8 @@
 // Apache 2.0 - 2026
 // Contributors: Claude Sonnet 4.6
 
-using System.Windows;
+using System.Collections.Generic;
+using System.IO;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.ChangesetEditor.Controls;
 
@@ -12,13 +13,20 @@ namespace WpfHexEditor.Editor.ChangesetEditor;
 /// </summary>
 public sealed class ChangesetEditorFactory : IEditorFactory
 {
-    public bool CanOpen(string filePath)
-        => filePath.EndsWith(".whchg", StringComparison.OrdinalIgnoreCase);
+    private static readonly IEditorDescriptor _descriptor = new ChangesetEditorDescriptor();
 
-    public UIElement Create(string filePath)
-    {
-        var editor = new ChangesetEditorControl();
-        editor.OpenFile(filePath);
-        return editor;
-    }
+    public IEditorDescriptor Descriptor => _descriptor;
+
+    public bool CanOpen(string filePath)
+        => Path.GetExtension(filePath).Equals(".whchg", StringComparison.OrdinalIgnoreCase);
+
+    public IDocumentEditor Create() => new ChangesetEditorControl();
+}
+
+file sealed class ChangesetEditorDescriptor : IEditorDescriptor
+{
+    public string Id          => "changeset-editor";
+    public string DisplayName => "Changeset Editor";
+    public string Description => "Viewer and editor for .whchg companion changeset files";
+    public IReadOnlyList<string> SupportedExtensions => [".whchg"];
 }

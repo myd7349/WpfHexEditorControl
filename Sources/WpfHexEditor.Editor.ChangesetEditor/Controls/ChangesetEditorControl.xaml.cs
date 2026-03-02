@@ -174,6 +174,13 @@ public sealed partial class ChangesetEditorControl : UserControl, IDocumentEdito
         StatusMessage?.Invoke(this, "Discard: use the Solution Explorer context menu.");
     }
 
+    // ── INotifyPropertyChanged ───────────────────────────────────────────────
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private string GetTitle()
@@ -184,22 +191,11 @@ public sealed partial class ChangesetEditorControl : UserControl, IDocumentEdito
 
     private void NotifyHeadersChanged()
     {
-        // Force re-evaluation of tab header bindings
-        var dp = System.Windows.DependencyPropertyDescriptor.FromProperty(
-            System.Windows.FrameworkElement.TagProperty,
-            typeof(ChangesetEditorControl));
         OnPropertyChanged(nameof(ModifiedHeader));
         OnPropertyChanged(nameof(InsertedHeader));
         OnPropertyChanged(nameof(DeletedHeader));
         OnPropertyChanged(nameof(StatusText));
     }
-
-    private void OnPropertyChanged(string name)
-        => (this as System.ComponentModel.INotifyPropertyChanged)?.GetType();   // trigger WPF refresh
-
-    // ── Explicit INotifyPropertyChanged (triggered via RaisePropertyChanged helper below) ──
-
-    // Note: UserControl doesn't require INPC; we use DependencyProperties or RelativeSource bindings.
 }
 
 // ── Simple RelayCommand ───────────────────────────────────────────────────────
