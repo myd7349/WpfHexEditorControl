@@ -984,6 +984,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             try
             {
                 hexEditor.OpenFile(filePath);
+                ApplyDefaultTbl(hexEditor, project);
                 OutputLogger.Info($"Opened: {filePath}");
                 return hexEditor;
             }
@@ -1219,6 +1220,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OutputLogger.Info(e.TblItem is not null
             ? $"Default TBL set to '{e.TblItem.Name}' in project '{e.Project.Name}'"
             : $"Default TBL cleared in project '{e.Project.Name}'");
+    }
+
+    /// <summary>
+    /// Loads the project's default TBL (or TBLX) into <paramref name="hexEditor"/> if one is set.
+    /// No-op when the project is null, has no default TBL, or the file cannot be read.
+    /// </summary>
+    private void ApplyDefaultTbl(HexEditorControl hexEditor, IProject? project)
+    {
+        if (project?.DefaultTblItemId is null) return;
+
+        var tblItem = project.FindItem(project.DefaultTblItemId);
+        if (tblItem is null || !File.Exists(tblItem.AbsolutePath)) return;
+
+        try
+        {
+            var result = new TblImportService().ImportFromFile(tblItem.AbsolutePath);
+            if (!result.Success || result.Entries.Count == 0) return;
+
+            var tbl = new TblStream();
+            foreach (var dte in result.Entries)
+                tbl.Add(dte);
+
+            hexEditor.LoadTBL(tbl, tblItem.AbsolutePath);
+            OutputLogger.Debug($"Applied default TBL '{tblItem.Name}' ({result.Entries.Count} entries)");
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Warn($"Failed to apply default TBL '{tblItem.Name}': {ex.Message}");
+        }
     }
 
     private void OnSEAddNewItem(object? sender, AddItemRequestedEventArgs e)
@@ -1644,6 +1674,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_solutionManager.CurrentSolution is { } sol)
             _ = _solutionManager.SaveSolutionAsync(sol);
         ActiveDocumentEditor?.SaveCommand?.Execute(null);
+        OutputLogger.Info("Save All executed.");
     }
 
     private void OnSEOpenWith(object? sender, OpenWithRequestedEventArgs e)
@@ -1828,9 +1859,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         else
             hex?.RefreshDocumentStatus();
 
-        // Sync Solution Explorer highlight
-        if (hex?.FileName is { Length: > 0 } fn)
-            _solutionExplorerPanel?.SyncWithFile(fn);
+        // Sync Solution Explorer highlight — hex FileName takes priority, then Metadata["FilePath"]
+        var syncPath = hex?.FileName;
+        if (string.IsNullOrEmpty(syncPath) && item.Metadata.TryGetValue("FilePath", out var fp))
+            syncPath = fp;
+        if (!string.IsNullOrEmpty(syncPath))
+            _solutionExplorerPanel?.SyncWithFile(syncPath);
 
         // Sync Properties panel provider (M5: cached per editor instance)
         if (content is IPropertyProviderSource providerSource)
@@ -2574,10 +2608,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnSaveAll(object sender, RoutedEventArgs e)
     {
-        if (_solutionManager.CurrentSolution != null)
-            _ = _solutionManager.SaveSolutionAsync(_solutionManager.CurrentSolution);
+        if (_solutionManager.CurrentSolution is { } saveSol)
+            _ = _solutionManager.SaveSolutionAsync(saveSol);
 
-        // Also save the active document editor
         ActiveDocumentEditor?.SaveCommand?.Execute(null);
         OutputLogger.Info("Save All executed.");
     }
@@ -2601,11 +2634,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 return;   // nothing to write
 
             _ = ChangesetService.Instance.WriteChangesetAsync(saveItem!, snapshot);
+            OutputLogger.Info($"Saved '{saveItem!.Name}' (tracked).");
             return;
         }
 
         // Direct mode (or non-project tab) — normal save
-        ActiveDocumentEditor?.SaveCommand?.Execute(null);
+        if (ActiveDocumentEditor is { } ed)
+        {
+            ed.SaveCommand?.Execute(null);
+            OutputLogger.Info($"Saved '{ed.Title.TrimEnd(' ', '*')}'.");
+        }
     }
 
     /// <summary>
