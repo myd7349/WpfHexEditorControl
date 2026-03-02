@@ -1026,7 +1026,11 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
                 fn.IsSelected = true;
                 return true;
             }
-            if (SelectNodeByPath(path, node.Children)) return true;
+            if (SelectNodeByPath(path, node.Children))
+            {
+                node.IsExpanded = true; // ensure parent is expanded so the node is visible
+                return true;
+            }
         }
         return false;
     }

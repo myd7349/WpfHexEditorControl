@@ -169,6 +169,13 @@ public sealed class FolderNodeVm : SolutionExplorerNodeVm
     /// </summary>
     public IProject?      Project  { get; init; }
 
+    /// <summary>
+    /// True when the folder is backed by a physical directory on disk
+    /// (<see cref="IVirtualFolder.PhysicalRelativePath"/> is set).
+    /// False for purely logical/virtual folders.
+    /// </summary>
+    public bool IsPhysicallyBacked => Folder.PhysicalRelativePath is not null;
+
     // ── Inline rename ───────────────────────────────────────────────────────
 
     private bool   _isEditing;

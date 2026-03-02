@@ -260,8 +260,10 @@
         <DataTemplate DataType="{x:Type vm:FolderNodeVm}">
             <Grid>
                 <!-- Normal display (IsEditing = false) -->
-                <StackPanel x:Name="FolderDisplayPanel" Orientation="Horizontal">
-                    <TextBlock Style="{StaticResource NodeIcon}" Text="&#xE8D5;" Foreground="#E8B25A"/>
+                <StackPanel x:Name="FolderDisplayPanel" Orientation="Horizontal"
+                            ToolTip="Virtual folder">
+                    <TextBlock x:Name="FolderIcon" Style="{StaticResource NodeIcon}"
+                               Text="&#xE8D5;" Foreground="#6CA8C4"/>
                     <TextBlock Style="{StaticResource NodeLabel}" Text="{Binding DisplayName}"/>
                 </StackPanel>
                 <!-- Inline rename TextBox (IsEditing = true) -->
@@ -282,6 +284,11 @@
                 <DataTrigger Binding="{Binding IsEditing}" Value="True">
                     <Setter TargetName="FolderDisplayPanel"  Property="Visibility" Value="Collapsed"/>
                     <Setter TargetName="FolderInlineEditBox" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <!-- Physical folder: gold icon + distinct tooltip -->
+                <DataTrigger Binding="{Binding IsPhysicallyBacked}" Value="True">
+                    <Setter TargetName="FolderIcon"          Property="Foreground" Value="#E8B25A"/>
+                    <Setter TargetName="FolderDisplayPanel"  Property="ToolTip"    Value="Physical folder"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
