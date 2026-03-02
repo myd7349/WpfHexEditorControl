@@ -632,7 +632,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         DockHost.ActiveItemChanged  -= OnActiveDocumentChanged;
 
         _layout  = layout;
-        _engine  = engine ?? new DockEngine(_layout);
         _isLocked = false;
         LockMenuItem.IsChecked = false;
 
@@ -640,6 +639,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         DockHost.TabCloseRequested += OnTabCloseRequested;
         DockHost.ActiveItemChanged += OnActiveDocumentChanged;
         DockHost.Layout = _layout;
+
+        // DockHost.Layout creates its own DockEngine internally (OnLayoutChanged).
+        // We MUST use that same engine so that _engine.Close(item) fires DockControl.ItemClosed,
+        // which evicts the stale UIElement from DockControl._contentCache.
+        // Using a separate engine here would leave the DockControl cache stale on close,
+        // causing the next open of the same ContentId to return the old, already-Close()d control.
+        _engine = DockHost.Engine!;
 
         SyncDocumentCounter();
         UpdateStatusBar();

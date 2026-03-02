@@ -77,6 +77,16 @@ public class DockItemDto
 }
 
 /// <summary>
+/// DTO for a single regex colorization rule.
+/// </summary>
+public class RegexColorRuleDto
+{
+    public required string Pattern { get; set; }
+    /// <summary>Color stored as #AARRGGBB hex string.</summary>
+    public required string ColorHex { get; set; }
+}
+
+/// <summary>
 /// DTO for <see cref="DocumentTabBarSettings"/>.
 /// </summary>
 public class DocumentTabBarSettingsDto
@@ -85,6 +95,7 @@ public class DocumentTabBarSettingsDto
     public DocumentTabColorMode ColorMode { get; set; } = DocumentTabColorMode.None;
     public bool MultiRowTabs { get; set; }
     public bool MultiRowWithMouseWheel { get; set; } = true;
+    public List<RegexColorRuleDto> RegexRules { get; set; } = [];
 }
 
 /// <summary>

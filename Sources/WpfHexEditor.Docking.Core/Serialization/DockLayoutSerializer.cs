@@ -58,10 +58,16 @@ public static class DockLayoutSerializer
             TabBarSettings = layout.TabBarSettings is not null
                 ? new DocumentTabBarSettingsDto
                   {
-                      TabPlacement          = layout.TabBarSettings.TabPlacement,
-                      ColorMode             = layout.TabBarSettings.ColorMode,
-                      MultiRowTabs          = layout.TabBarSettings.MultiRowTabs,
-                      MultiRowWithMouseWheel = layout.TabBarSettings.MultiRowWithMouseWheel
+                      TabPlacement           = layout.TabBarSettings.TabPlacement,
+                      ColorMode              = layout.TabBarSettings.ColorMode,
+                      MultiRowTabs           = layout.TabBarSettings.MultiRowTabs,
+                      MultiRowWithMouseWheel = layout.TabBarSettings.MultiRowWithMouseWheel,
+                      RegexRules             = layout.TabBarSettings.RegexRules
+                                                 .Select(r => new RegexColorRuleDto
+                                                 {
+                                                     Pattern  = r.Pattern,
+                                                     ColorHex = r.ColorHex
+                                                 }).ToList()
                   }
                 : null
         };
@@ -186,7 +192,9 @@ public static class DockLayoutSerializer
                 TabPlacement           = dto.TabBarSettings.TabPlacement,
                 ColorMode              = dto.TabBarSettings.ColorMode,
                 MultiRowTabs           = dto.TabBarSettings.MultiRowTabs,
-                MultiRowWithMouseWheel = dto.TabBarSettings.MultiRowWithMouseWheel
+                MultiRowWithMouseWheel = dto.TabBarSettings.MultiRowWithMouseWheel,
+                RegexRules             = [.. dto.TabBarSettings.RegexRules
+                    .Select(r => new RegexColorRule { Pattern = r.Pattern, ColorHex = r.ColorHex })]
             };
         }
 

@@ -4,6 +4,7 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -42,6 +43,7 @@ public class DocumentTabBarSettings : INotifyPropertyChanged
     private DocumentTabColorMode _colorMode = DocumentTabColorMode.None;
     private bool _multiRowTabs;
     private bool _multiRowWithMouseWheel = true;
+    private ObservableCollection<RegexColorRule> _regexRules = [];
 
     /// <summary>
     /// Position of the tab strip (only <see cref="DocumentTabPlacement.Top"/> is visually
@@ -81,6 +83,16 @@ public class DocumentTabBarSettings : INotifyPropertyChanged
     {
         get => _multiRowWithMouseWheel;
         set => Set(ref _multiRowWithMouseWheel, value);
+    }
+
+    /// <summary>
+    /// Ordered list of regex rules used when <see cref="ColorMode"/> is
+    /// <see cref="DocumentTabColorMode.Regex"/>. First matching rule wins.
+    /// </summary>
+    public ObservableCollection<RegexColorRule> RegexRules
+    {
+        get => _regexRules;
+        set => Set(ref _regexRules, value);
     }
 
     // ─── INotifyPropertyChanged ──────────────────────────────────────────────

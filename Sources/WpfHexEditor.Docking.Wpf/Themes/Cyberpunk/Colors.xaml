@@ -15,6 +15,7 @@
     <Color x:Key="DockTabActiveColor">#FF006E</Color>
     <Color x:Key="DockTabInactiveColor">#141B3D</Color>
     <Color x:Key="DockTabHoverColor">#2A3759</Color>
+    <Color x:Key="DockTabSelectedHoverColor">#10142F</Color>
     <Color x:Key="DockTabTextColor">#A0AED9</Color>
     <Color x:Key="DockTabActiveTextColor">#FFFFFF</Color>
     <Color x:Key="DockSplitterColor">#2E3A5F</Color>
@@ -61,6 +62,7 @@
     <SolidColorBrush x:Key="DockTabActiveBrush" Color="{StaticResource DockTabActiveColor}" />
     <SolidColorBrush x:Key="DockTabInactiveBrush" Color="{StaticResource DockTabInactiveColor}" />
     <SolidColorBrush x:Key="DockTabHoverBrush" Color="{StaticResource DockTabHoverColor}" />
+    <SolidColorBrush x:Key="DockTabSelectedHoverBrush" Color="{StaticResource DockTabSelectedHoverColor}" />
     <SolidColorBrush x:Key="DockTabTextBrush" Color="{StaticResource DockTabTextColor}" />
     <SolidColorBrush x:Key="DockTabActiveTextBrush" Color="{StaticResource DockTabActiveTextColor}" />
     <SolidColorBrush x:Key="DockSplitterBrush" Color="{StaticResource DockSplitterColor}" />

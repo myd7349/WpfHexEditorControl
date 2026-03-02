@@ -4,13 +4,17 @@
 // Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
+using WpfHexEditor.Docking.Wpf.Attached;
 using WpfHexEditor.Docking.Wpf.Controls;
+using WpfHexEditor.Docking.Wpf.Services;
 
 namespace WpfHexEditor.Docking.Wpf;
 
@@ -60,7 +64,13 @@ public class DocumentTabHost : DockTabControl
     private void WireTemplateParts()
     {
         if (GetTemplateChild("PART_ConfigButton") is TabConfigButton configBtn)
+        {
             configBtn.Settings = Settings;
+            configBtn.OptionsRequested += OnOptionsRequested;
+        }
+
+        if (GetTemplateChild("PART_OverflowPanel") is UIElement panel)
+            panel.PreviewMouseWheel += OnTabStripMouseWheel;
     }
 
     // ─── Settings change handling ─────────────────────────────────────────────
@@ -76,22 +86,80 @@ public class DocumentTabHost : DockTabControl
             newSettings.PropertyChanged += host.OnSettingPropertyChanged;
 
         host.ApplySettings();
+        host.ApplyTabColors();
     }
 
     private void OnSettingPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(DocumentTabBarSettings.MultiRowTabs))
+        if (e.PropertyName is nameof(DocumentTabBarSettings.MultiRowTabs)
+                            or nameof(DocumentTabBarSettings.TabPlacement))
             ApplySettings();
+
+        if (e.PropertyName is nameof(DocumentTabBarSettings.ColorMode)
+                            or nameof(DocumentTabBarSettings.RegexRules))
+            ApplyTabColors();
     }
 
     private void ApplySettings()
     {
-        var styleName = Settings?.MultiRowTabs == true
-            ? "DocumentTabHostMultiRowStyle"
-            : "DocumentTabHostStyle";
+        var styleName = (Settings?.MultiRowTabs == true, Settings?.TabPlacement) switch
+        {
+            (true, _)                       => "DocumentTabHostMultiRowStyle",
+            (_, DocumentTabPlacement.Left)  => "DocumentTabHostLeftStyle",
+            (_, DocumentTabPlacement.Right) => "DocumentTabHostRightStyle",
+            _                               => "DocumentTabHostStyle"
+        };
 
         SetResourceReference(StyleProperty, styleName);
         // OnApplyTemplate is called automatically after the style change, which re-wires parts.
+    }
+
+    // ─── Mouse wheel on tab strip ─────────────────────────────────────────────
+
+    private void OnTabStripMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Settings?.MultiRowWithMouseWheel == true)
+        {
+            Settings.MultiRowTabs = !Settings.MultiRowTabs;
+            e.Handled = true;
+        }
+    }
+
+    // ─── Tab colorization ─────────────────────────────────────────────────────
+
+    protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
+    {
+        base.OnItemsChanged(e);
+        if (e.NewItems is not null && Settings?.ColorMode != DocumentTabColorMode.None)
+            foreach (TabItem tab in e.NewItems.OfType<TabItem>())
+                ApplyTabColor(tab);
+    }
+
+    internal void ApplyTabColors()
+    {
+        foreach (TabItem tab in Items.OfType<TabItem>())
+            ApplyTabColor(tab);
+    }
+
+    private void ApplyTabColor(TabItem tab)
+    {
+        var brush = tab.Tag is DockItem item && Settings is not null
+            ? TabColorService.GetTabBrush(item, Settings)
+            : null;
+        TabColorizerAttached.SetAccentBrush(tab, brush ?? Brushes.Transparent);
+    }
+
+    // ─── Options dialog ───────────────────────────────────────────────────────
+
+    private void OnOptionsRequested(object? sender, EventArgs e)
+    {
+        if (Settings is null) return;
+        var dlg = new Dialogs.TabSettingsDialog
+        {
+            Settings = Settings,
+            Owner = Window.GetWindow(this)
+        };
+        dlg.ShowDialog();
     }
 
     // ─── Placeholder ─────────────────────────────────────────────────────────
