@@ -59,7 +59,7 @@ public partial class WelcomePanel : UserControl
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
 
     private const string ChangelogUrl =
-        "https://raw.githubusercontent.com/abbaye/WpfHexEditorControl/master/CHANGELOG.md";
+        "https://raw.githubusercontent.com/abbaye/WpfHexEditorIDE/master/CHANGELOG.md";
 
     // ── Max versions shown in changelog ───────────────────────────────
 
@@ -119,8 +119,8 @@ public partial class WelcomePanel : UserControl
         OpenFileButton.Click    += (_, _) => _onOpenFile?.Invoke();
         OpenProjectButton.Click += (_, _) => _onOpenProject?.Invoke();
         OptionsButton.Click     += (_, _) => _onOptions?.Invoke();
-        GitHubButton.Click      += (_, _) => OpenUrl("https://github.com/abbaye/WpfHexEditorControl");
-        IssueButton.Click       += (_, _) => OpenUrl("https://github.com/abbaye/WpfHexEditorControl/issues");
+        GitHubButton.Click      += (_, _) => OpenUrl("https://github.com/abbaye/WpfHexEditorIDE");
+        IssueButton.Click       += (_, _) => OpenUrl("https://github.com/abbaye/WpfHexEditorIDE/issues");
     }
 
     private static void OpenUrl(string url)
