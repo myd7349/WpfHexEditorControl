@@ -32,7 +32,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
     /// </summary>
     public partial class CodeEditorSettings : UserControl
     {
-        private CodeEditor _jsonEditorControl;
+        private CodeEditor _codeEditorControl;
         private BaseEditorSettings<CodeEditor> _baseHelper;
 
         /// <summary>
@@ -40,10 +40,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         public CodeEditor CodeEditorControl
         {
-            get => _jsonEditorControl;
+            get => _codeEditorControl;
             set
             {
-                _jsonEditorControl = value;
+                _codeEditorControl = value;
 
                 // Generate UI if control is already loaded
                 if (value != null && IsLoaded)
@@ -61,7 +61,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _baseHelper = new BaseEditorSettings<CodeEditor>(
                 this,
                 typeof(CodeEditor),
-                () => _jsonEditorControl,
+                () => _codeEditorControl,
                 () => SettingsScrollViewer);
 
             // Hide preview placeholder by default
@@ -93,7 +93,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         private void ResetButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (_jsonEditorControl == null)
+            if (_codeEditorControl == null)
             {
                 System.Windows.MessageBox.Show("No CodeEditor control is connected.", "Error",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
@@ -177,7 +177,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         private void ResetToDefaults()
         {
-            if (_jsonEditorControl == null)
+            if (_codeEditorControl == null)
                 return;
 
             // Get all DPs from the CodeEditor type
@@ -191,7 +191,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (dp != null)
                 {
                     // Clear local value to restore default
-                    _jsonEditorControl.ClearValue(dp);
+                    _codeEditorControl.ClearValue(dp);
                 }
             }
 

@@ -144,7 +144,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private Typeface _typeface;
         private Typeface _boldTypeface;
         private Typeface _lineNumberTypeface;
-        private double _fontSize = 12.0;
+        private double _fontSize     = 12.0; // Effective size = _baseFontSize * ZoomLevel
+        private double _baseFontSize = 12.0; // EditorFontSize DP value (zoom-independent)
         private double _charWidth;          // Cached character width
         private double _charHeight;         // Cached character height
         private double _lineHeight;         // Line height with padding
@@ -325,6 +326,43 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             get => (double)GetValue(EditorFontSizeProperty);
             set => SetValue(EditorFontSizeProperty, value);
         }
+
+        // ── ZoomLevel (B6) ─────────────────────────────────────────────────────
+
+        public static readonly DependencyProperty ZoomLevelProperty =
+            DependencyProperty.Register(nameof(ZoomLevel), typeof(double), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(1.0, FrameworkPropertyMetadataOptions.AffectsRender,
+                    OnZoomLevelChanged),
+                ValidateZoomLevel);
+
+        private static bool ValidateZoomLevel(object value)
+            => value is double d && d >= 0.5 && d <= 4.0;
+
+        private static void OnZoomLevelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not CodeEditor editor) return;
+            editor._fontSize = editor._baseFontSize * (double)e.NewValue;
+            editor.CalculateCharacterDimensions();
+            editor.InvalidateMeasure();
+            editor.ZoomLevelChanged?.Invoke(editor, (double)e.NewValue);
+        }
+
+        /// <summary>
+        /// Current zoom multiplier applied on top of <see cref="EditorFontSize"/>.
+        /// Range: 0.5 (50%) to 4.0 (400%), default 1.0 (100%).
+        /// Ctrl+MouseWheel adjusts this value in 0.1 increments.
+        /// </summary>
+        [Category("Appearance.Fonts")]
+        [DisplayName("Zoom Level")]
+        [Description("Zoom multiplier applied to the base font size (0.5–4.0). Ctrl+wheel to adjust.")]
+        public double ZoomLevel
+        {
+            get => (double)GetValue(ZoomLevelProperty);
+            set => SetValue(ZoomLevelProperty, Math.Clamp(value, 0.5, 4.0));
+        }
+
+        /// <summary>Raised when <see cref="ZoomLevel"/> changes. Arg is the new zoom value.</summary>
+        public event EventHandler<double>? ZoomLevelChanged;
 
         public static readonly DependencyProperty LineNumberFontSizeProperty =
             DependencyProperty.Register(nameof(LineNumberFontSize), typeof(double), typeof(CodeEditor),

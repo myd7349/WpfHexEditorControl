@@ -4,10 +4,6 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
-// Apache 2.0  2026
-// JSON Editor Demo Window - Shows CodeEditor with Settings Panel
-// Author: Claude Sonnet 4.5
-
 using System.Windows;
 
 namespace WpfHexEditor.Sample.Main.Views.Dialogs
@@ -15,14 +11,14 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
     /// <summary>
     /// Demo window showing CodeEditor with its auto-generated Settings Panel
     /// </summary>
-    public partial class JsonEditorDemoWindow : Window
+    public partial class CodeEditorDemoWindow : Window
     {
-        public JsonEditorDemoWindow()
+        public CodeEditorDemoWindow()
         {
             InitializeComponent();
 
             // Connect CodeEditor to Settings Panel
-            SettingsPanel.CodeEditorControl = JsonEditorControl;
+            SettingsPanel.CodeEditorControl = CodeEditorControl;
 
             // Load sample JSON for demo
             LoadSampleJson();
@@ -83,7 +79,7 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
   ]
 }";
 
-            JsonEditorControl.LoadText(sampleJson);
+            CodeEditorControl.LoadText(sampleJson);
         }
     }
 }

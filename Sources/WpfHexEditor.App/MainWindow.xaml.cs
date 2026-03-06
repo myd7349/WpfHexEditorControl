@@ -119,7 +119,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Per-document format tracking: ContentId → last logged format name
     private readonly Dictionary<string, string> _loggedFormats = new();
 
-    // QuickSearchBar instances for JsonEditor documents (JsonEditor has no embedded Canvas)
+    // QuickSearchBar instances for CodeEditor documents (CodeEditor has no embedded Canvas)
     private readonly Dictionary<CodeEditorControl, QuickSearchBar> _codeEditorBars = new();
 
     // M5: PropertyProvider cache — avoids recreating the provider on every tab switch
