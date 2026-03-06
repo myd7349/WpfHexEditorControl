@@ -27,7 +27,7 @@ public sealed class CodeEditorFactory : IEditorFactory
         return ext is ".json" or ".whfmt" or ".whjson";
     }
 
-    public IDocumentEditor Create() => new Controls.CodeEditor();
+    public IDocumentEditor Create() => new Controls.CodeEditorSplitHost();
 }
 
 file sealed class CodeEditorDescriptor : IEditorDescriptor

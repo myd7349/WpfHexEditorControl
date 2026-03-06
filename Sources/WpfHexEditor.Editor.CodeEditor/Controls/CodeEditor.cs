@@ -4073,6 +4073,40 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         public CodeDocument Document => _document;
 
         /// <summary>
+        /// Replaces the document model with an externally supplied instance.
+        /// Used by <see cref="CodeEditorSplitHost"/> to share one <see cref="CodeDocument"/>
+        /// between the primary and secondary editor panes.
+        /// </summary>
+        public void SetDocument(CodeDocument document)
+        {
+            if (document == null) throw new ArgumentNullException(nameof(document));
+
+            // Unsubscribe from the old document.
+            _document.TextChanged -= Document_TextChanged;
+
+            _document = document;
+
+            // Subscribe to the new document.
+            _document.TextChanged += Document_TextChanged;
+
+            // Reset view state.
+            _cursorLine = 0;
+            _cursorColumn = 0;
+            _selection.Clear();
+            _verticalScrollOffset   = 0;
+            _currentScrollOffset    = 0;
+            _targetScrollOffset     = 0;
+            _horizontalScrollOffset = 0;
+
+            UpdateVirtualization();
+
+            if (IsFoldingEnabled && _foldingEngine != null)
+                _foldingEngine.Analyze(_document.Lines);
+
+            InvalidateMeasure();
+        }
+
+        /// <summary>
         /// Load text content
         /// </summary>
         public void LoadText(string text)
