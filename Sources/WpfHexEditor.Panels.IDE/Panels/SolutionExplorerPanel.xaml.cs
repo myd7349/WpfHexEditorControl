@@ -81,6 +81,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     public event EventHandler<ProjectItemEventArgs>?               ItemSelected;
     public event EventHandler<ProjectItemEventArgs>?               ItemRenameRequested;
     public event EventHandler<ProjectItemEventArgs>?               ItemDeleteRequested;
+    public event EventHandler<ProjectItemEventArgs>?               ItemDeleteFromDiskRequested;
     public event EventHandler<ItemMoveRequestedEventArgs>?         ItemMoveRequested;
     public event EventHandler<OpenWithSpecificEditorEventArgs>?    OpenWithSpecificRequested;
 
@@ -257,9 +258,10 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         CutMenuItem       .Visibility = (isFile && hasSelectedFiles) ? Visibility.Visible : Visibility.Collapsed;
         PasteMenuItem     .Visibility = canClipPaste                 ? Visibility.Visible : Visibility.Collapsed;
 
-        // Rename / Remove / Exclude
+        // Rename / Remove / Delete / Exclude
         RenameMenuItem            .Visibility = (isSolution || isSolutionFolder || isFile || isFolder || isProject) ? Visibility.Visible : Visibility.Collapsed;
         RemoveMenuItem            .Visibility = (isFile || isFolder || isSolutionFolder)                             ? Visibility.Visible : Visibility.Collapsed;
+        DeleteMenuItem            .Visibility = isFile                                                                ? Visibility.Visible : Visibility.Collapsed;
         ExcludeFromProjectMenuItem.Visibility = isPhysIn                                                              ? Visibility.Visible : Visibility.Collapsed;
 
         // Import external file (file node whose path is outside the project directory)
@@ -662,6 +664,12 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
                 Solution = sfv.Solution,
                 Folder   = sfv.Folder,
             });
+    }
+
+    private void OnDeleteFromDisk(object sender, RoutedEventArgs e)
+    {
+        if (_contextMenuTarget is FileNodeVm fn && fn.Project is not null)
+            ItemDeleteFromDiskRequested?.Invoke(this, new ProjectItemEventArgs { Item = fn.Source, Project = fn.Project });
     }
 
     /// <inheritdoc/>

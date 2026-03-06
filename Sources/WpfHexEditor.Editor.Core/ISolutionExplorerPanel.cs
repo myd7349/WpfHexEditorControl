@@ -85,6 +85,11 @@ public interface ISolutionExplorerPanel
     event EventHandler<ProjectItemEventArgs>? ItemDeleteRequested;
 
     /// <summary>
+    /// Raised when the user requests to delete an item from disk (send to Recycle Bin).
+    /// </summary>
+    event EventHandler<ProjectItemEventArgs>? ItemDeleteFromDiskRequested;
+
+    /// <summary>
     /// Fired when the user drags a file node to a new folder or the project root.
     /// </summary>
     event EventHandler<ItemMoveRequestedEventArgs>? ItemMoveRequested;

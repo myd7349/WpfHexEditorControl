@@ -961,7 +961,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         panel.ItemActivated             += OnSolutionExplorerItemActivated;
         panel.ItemSelected              += OnSolutionExplorerItemSelected;
         panel.ItemRenameRequested       += OnSolutionExplorerItemRenameRequested;
-        panel.ItemDeleteRequested       += OnSolutionExplorerItemDeleteRequested;
+        panel.ItemDeleteRequested           += OnSolutionExplorerItemDeleteRequested;
+        panel.ItemDeleteFromDiskRequested   += OnSEItemDeleteFromDiskRequested;
         panel.ItemMoveRequested         += OnSolutionExplorerItemMoveRequested;
         panel.DefaultTblChangeRequested += OnDefaultTblChangeRequested;
         panel.ApplyTblRequested         += OnSEApplyTbl;
@@ -2317,6 +2318,38 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         _ = _solutionManager.RemoveItemAsync(e.Project, e.Item, deleteFromDisk: false);
         OutputLogger.Info($"Removed '{e.Item.Name}' from project '{e.Project.Name}'");
+    }
+
+    private void OnSEItemDeleteFromDiskRequested(object? sender, ProjectItemEventArgs e)
+    {
+        if (e.Project is null) return;
+
+        var path = e.Item.AbsolutePath;
+        if (!File.Exists(path)) return;
+
+        var result = MessageBox.Show(
+            $"Delete '{e.Item.Name}' and send it to the Recycle Bin?\n\nThis will also remove it from the project.",
+            "Delete File",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        // Close any open editor tab for this file (no dirty prompt — file is being deleted)
+        var contentId = $"doc-proj-{e.Item.Id}";
+        if (_layout.FindItemByContentId(contentId) is { } dockItem)
+            CloseTab(dockItem, promptIfDirty: false);
+
+        // Remove from project model
+        _ = _solutionManager.RemoveItemAsync(e.Project, e.Item, deleteFromDisk: false);
+
+        // Send to Recycle Bin (recoverable delete)
+        Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(
+            path,
+            Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
+            Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin);
+
+        OutputLogger.Info($"Deleted '{e.Item.Name}' from '{e.Project.Name}' → Recycle Bin");
     }
 
     private async void OnSolutionExplorerItemMoveRequested(object? sender, ItemMoveRequestedEventArgs e)
