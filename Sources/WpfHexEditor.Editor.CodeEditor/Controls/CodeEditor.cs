@@ -46,6 +46,28 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private CodeSyntaxHighlighter _highlighter;
 
+        /// <summary>
+        /// Optional external syntax highlighter (e.g. RegexBasedSyntaxHighlighter for .whlang languages).
+        /// When set, overrides the built-in JSON highlighter for all text rendering.
+        /// </summary>
+        public static readonly DependencyProperty ExternalHighlighterProperty =
+            DependencyProperty.Register(nameof(ExternalHighlighter), typeof(ISyntaxHighlighter),
+                typeof(CodeEditor), new FrameworkPropertyMetadata(null,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    OnExternalHighlighterChanged));
+
+        public ISyntaxHighlighter? ExternalHighlighter
+        {
+            get => (ISyntaxHighlighter?)GetValue(ExternalHighlighterProperty);
+            set => SetValue(ExternalHighlighterProperty, value);
+        }
+
+        private static void OnExternalHighlighterChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is CodeEditor editor && e.NewValue is ISyntaxHighlighter h)
+                h.Reset();
+        }
+
         #endregion
 
         #region Fields - Undo/Redo (Phase 3)
@@ -2520,6 +2542,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             var context = new JsonParserContext();
 
+            // Reset external highlighter state before a full render pass.
+            ExternalHighlighter?.Reset();
+
             for (int i = _firstVisibleLine; i <= _lastVisibleLine && i < _document.Lines.Count; i++)
             {
                 // Phase 11: Calculate Y position with virtual scrolling support
@@ -2531,10 +2556,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
                 if (!string.IsNullOrEmpty(line.Text))
                 {
-                    // Phase 2: Use syntax highlighter to get colored tokens
-                    var tokens = _highlighter.HighlightLine(line, context);
+                    // Use external (language-pluggable) highlighter when available,
+                    // otherwise fall back to the built-in JSON highlighter.
+                    IEnumerable<Helpers.SyntaxHighlightToken> renderTokens;
+                    if (ExternalHighlighter is { } ext)
+                    {
+                        renderTokens = ext.Highlight(line.Text, i);
+                    }
+                    else
+                    {
+                        var jsonTokens = _highlighter.HighlightLine(line, context);
+                        renderTokens = jsonTokens.Select(t => new Helpers.SyntaxHighlightToken(
+                            t.StartColumn, t.Length, t.Text ?? string.Empty,
+                            t.Foreground ?? EditorForeground, t.IsBold, t.IsItalic));
+                    }
 
-                    foreach (var token in tokens)
+                    foreach (var token in renderTokens)
                     {
                         var typeface = token.IsBold ? _boldTypeface : _typeface;
 

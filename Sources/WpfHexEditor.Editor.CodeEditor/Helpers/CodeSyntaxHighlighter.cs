@@ -18,8 +18,26 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
     /// Parses JSON line-by-line and identifies syntax elements.
     /// Caches results per line for performance.
     /// </summary>
-    public class CodeSyntaxHighlighter
+    public class CodeSyntaxHighlighter : ISyntaxHighlighter
     {
+        // ── ISyntaxHighlighter — implicit context for interface calls ─────────
+        private JsonParserContext _implicitContext = new();
+
+        /// <inheritdoc />
+        public IReadOnlyList<SyntaxHighlightToken> Highlight(string lineText, int lineIndex)
+        {
+            if (lineIndex == 0) Reset();
+            var line   = new Models.CodeLine { Text = lineText };
+            var tokens = HighlightLine(line, _implicitContext);
+            return tokens.Select(t => new SyntaxHighlightToken(
+                t.StartColumn, t.Length, t.Text ?? string.Empty,
+                t.Foreground ?? System.Windows.Media.Brushes.WhiteSmoke,
+                t.IsBold, t.IsItalic)).ToList();
+        }
+
+        /// <inheritdoc />
+        public void Reset() => _implicitContext = new JsonParserContext();
+
         #region Token Types
 
         public enum TokenType
