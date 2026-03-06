@@ -1259,63 +1259,138 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     private void OnTreeDragOver(object sender, DragEventArgs e)
     {
-        if (!e.Data.GetDataPresent(DragDataFormat))
+        var isFileDrag    = e.Data.GetDataPresent(DragDataFormat);
+        var isProjectDrag = e.Data.GetDataPresent(DragDataFormatProject);
+
+        if (!isFileDrag && !isProjectDrag)
         {
             e.Effects = DragDropEffects.None;
             e.Handled = true;
             return;
         }
 
-        var dragged = e.Data.GetData(DragDataFormat) as FileNodeVm;
-        var target  = GetDropTarget(e.OriginalSource as DependencyObject);
+        var target = GetDropTarget(e.OriginalSource as DependencyObject);
 
-        // Must have a valid target that belongs to the same project
-        e.Effects = (target is not null && dragged?.Project is not null)
-            ? DragDropEffects.Move
-            : DragDropEffects.None;
+        if (isFileDrag)
+        {
+            var dragged = e.Data.GetData(DragDataFormat) as FileNodeVm;
+            e.Effects = (target is (FolderNodeVm or ProjectNodeVm) && dragged?.Project is not null)
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
+        }
+        else
+        {
+            // Project drag: valid targets are SolutionFolderNodeVm and SolutionNodeVm
+            e.Effects = target is (SolutionFolderNodeVm or SolutionNodeVm)
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
+        }
+
         e.Handled = true;
     }
 
     private void OnTreeDrop(object sender, DragEventArgs e)
     {
-        if (!e.Data.GetDataPresent(DragDataFormat)) return;
-        if (e.Data.GetData(DragDataFormat) is not FileNodeVm draggedFile) return;
-        if (draggedFile.Project is null) return;
-
-        var target = GetDropTarget(e.OriginalSource as DependencyObject);
-        if (target is null) return;
-
-        string? targetFolderId = target switch
+        // ── File drop (project-level folder move) ──────────────────────────────
+        if (e.Data.GetDataPresent(DragDataFormat))
         {
-            FolderNodeVm fv => fv.Folder.Id,
-            ProjectNodeVm   => null,    // drop on project root
-            _               => null,
-        };
+            if (e.Data.GetData(DragDataFormat) is not FileNodeVm draggedFile) return;
+            if (draggedFile.Project is null) return;
 
-        // Refuse dropping a file onto the same folder it is already in
-        // (this is a best-effort check; SolutionManager will handle edge-cases)
-        ItemMoveRequested?.Invoke(this, new ItemMoveRequestedEventArgs
+            var target = GetDropTarget(e.OriginalSource as DependencyObject);
+            if (target is null) return;
+
+            string? targetFolderId = target switch
+            {
+                FolderNodeVm fv => fv.Folder.Id,
+                ProjectNodeVm   => null,    // drop on project root
+                _               => null,
+            };
+
+            ItemMoveRequested?.Invoke(this, new ItemMoveRequestedEventArgs
+            {
+                Item           = draggedFile.Source,
+                Project        = draggedFile.Project,
+                TargetFolderId = targetFolderId,
+            });
+
+            _vm.Rebuild();
+            return;
+        }
+
+        // ── Project drop (solution folder move) ────────────────────────────────
+        if (e.Data.GetDataPresent(DragDataFormatProject))
         {
-            Item           = draggedFile.Source,
-            Project        = draggedFile.Project,
-            TargetFolderId = targetFolderId,
-        });
+            if (e.Data.GetData(DragDataFormatProject) is not ProjectNodeVm draggedProj) return;
 
-        // Rebuild the view to reflect the new tree structure
-        _vm.Rebuild();
+            var target = GetDropTarget(e.OriginalSource as DependencyObject);
+            if (target is null) return;
+
+            // Only valid targets: SolutionFolderNodeVm or SolutionNodeVm (root)
+            if (target is not (SolutionFolderNodeVm or SolutionNodeVm)) return;
+
+            string? targetFolderId = target switch
+            {
+                SolutionFolderNodeVm sfv => sfv.Folder.Id,
+                _                        => null,   // SolutionNodeVm → move to solution root
+            };
+
+            // Infer the owning solution from the VM tree
+            var solution = FindSolutionForProject(_vm.Roots, draggedProj);
+            if (solution is null) return;
+
+            ProjectMoveRequested?.Invoke(this, new ProjectMovedEventArgs
+            {
+                Solution       = solution,
+                Project        = draggedProj.Source,
+                TargetFolderId = targetFolderId,
+            });
+
+            _vm.Rebuild();
+        }
     }
 
-    /// <summary>Returns the nearest <see cref="FolderNodeVm"/> or <see cref="ProjectNodeVm"/>
-    /// that is a valid drop target, or <see langword="null"/>.</summary>
+    private static ISolution? FindSolutionForProject(
+        IEnumerable<SolutionExplorerNodeVm> nodes, ProjectNodeVm target)
+    {
+        foreach (var node in nodes)
+        {
+            if (node is SolutionNodeVm sv)
+            {
+                if (ContainsNode(sv.Children, target)) return sv.Source;
+            }
+            var found = FindSolutionForProject(node.Children, target);
+            if (found is not null) return found;
+        }
+        return null;
+    }
+
+    private static bool ContainsNode(IEnumerable<SolutionExplorerNodeVm> nodes, SolutionExplorerNodeVm target)
+    {
+        foreach (var node in nodes)
+        {
+            if (node == target) return true;
+            if (ContainsNode(node.Children, target)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns the nearest valid drop target node: <see cref="FolderNodeVm"/>,
+    /// <see cref="ProjectNodeVm"/>, <see cref="SolutionFolderNodeVm"/>, or
+    /// <see cref="SolutionNodeVm"/>.
+    /// </summary>
     private static SolutionExplorerNodeVm? GetDropTarget(DependencyObject? source)
     {
         if (source is null) return null;
         var tvi = FindAncestor<TreeViewItem>(source);
         return tvi?.DataContext switch
         {
-            FolderNodeVm  fv => fv,
-            ProjectNodeVm pv => pv,
-            _                => null,
+            FolderNodeVm         fv  => fv,
+            ProjectNodeVm        pv  => pv,
+            SolutionFolderNodeVm sfv => sfv,
+            SolutionNodeVm       sv  => sv,
+            _                        => null,
         };
     }
 
