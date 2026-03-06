@@ -293,6 +293,37 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
+        <!-- ── Solution Folder node (VS-like, holds projects) ── -->
+        <DataTemplate DataType="{x:Type vm:SolutionFolderNodeVm}">
+            <Grid>
+                <!-- Normal display -->
+                <StackPanel x:Name="SolFolderDisplayPanel" Orientation="Horizontal"
+                            ToolTip="Solution folder — groups projects logically">
+                    <TextBlock Style="{StaticResource NodeIcon}" Text="&#xE8B7;" Foreground="#DCA95A"/>
+                    <TextBlock Style="{StaticResource NodeLabel}" Text="{Binding DisplayName}"/>
+                </StackPanel>
+                <!-- Inline rename TextBox -->
+                <TextBox x:Name="SolutionFolderInlineEditBox"
+                         Visibility="Collapsed"
+                         Text="{Binding EditingName, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalAlignment="Center"
+                         MinWidth="100"
+                         Background="{DynamicResource SE_SearchBoxBrush}"
+                         Foreground="{DynamicResource SE_ForegroundBrush}"
+                         BorderBrush="{DynamicResource SE_SelectionBorderBrush}"
+                         BorderThickness="1"
+                         Padding="2,1"
+                         KeyDown="OnSolutionFolderInlineEditKeyDown"
+                         LostKeyboardFocus="OnSolutionFolderInlineEditLostFocus"/>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                    <Setter TargetName="SolFolderDisplayPanel"       Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="SolutionFolderInlineEditBox" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:FileNodeVm}">
             <Grid>
                 <!-- Normal display (IsEditing = false) -->
@@ -551,41 +582,54 @@
                     </MenuItem>
                     <Separator x:Name="OpenSeparator"/>
 
-                    <!-- Add operations (project / folder) -->
-                    <MenuItem x:Name="AddNewItemMenuItem" Header="Add New Item..." Click="OnAddNewItem">
+                    <!-- Add > submenu (solution / project / folder) -->
+                    <MenuItem x:Name="AddSubmenuMenuItem" Header="Add">
                         <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8A5;"/>
+                            <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE710;"/>
                         </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="AddExistingItemMenuItem" Header="Add Existing Item..." Click="OnAddExistingItem">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8E5;"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="ImportFormatMenuItem" Header="Import Built-in Format..." Click="OnImportFormatDefinition">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE896;"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="ImportSyntaxMenuItem" Header="Import Built-in Syntax..." Click="OnImportSyntaxDefinition">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE943;"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="NewFolderMenuItem" Header="New Folder" Click="OnNewFolder">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8F4;"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="NewPhysicalFolderMenuItem" Header="New Solution Folder" Click="OnNewPhysicalFolder">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8D5;"/>
-                        </MenuItem.Icon>
-                    </MenuItem>
-                    <MenuItem x:Name="AddFolderFromDiskMenuItem" Header="Add Existing Folder..." Click="OnAddFolderFromDisk">
-                        <MenuItem.Icon>
-                            <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8DA;"/>
-                        </MenuItem.Icon>
+
+                        <!-- Items: project &amp; folder only -->
+                        <MenuItem x:Name="AddNewItemMenuItem" Header="Add New Item..." Click="OnAddNewItem">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8A5;"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="AddExistingItemMenuItem" Header="Add Existing Item..." Click="OnAddExistingItem">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8E5;"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator x:Name="AddItemsSeparator"/>
+
+                        <!-- Import: project &amp; solution -->
+                        <MenuItem x:Name="ImportFormatMenuItem" Header="Import Built-in Format..." Click="OnImportFormatDefinition">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE896;"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="ImportSyntaxMenuItem" Header="Import Built-in Syntax..." Click="OnImportSyntaxDefinition">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE943;"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator x:Name="AddFolderSeparator"/>
+
+                        <!-- Folders: project &amp; folder; NewPhysicalFolder also on solution -->
+                        <MenuItem x:Name="NewFolderMenuItem" Header="New Folder" Click="OnNewFolder">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8F4;"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="NewPhysicalFolderMenuItem" Header="New Solution Folder" Click="OnNewPhysicalFolder">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8D5;"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="AddFolderFromDiskMenuItem" Header="Add Existing Folder..." Click="OnAddFolderFromDisk">
+                            <MenuItem.Icon>
+                                <TextBlock Style="{StaticResource MenuIcon}" Text="&#xE8DA;"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
                     </MenuItem>
                     <Separator x:Name="AddSeparator"/>
 

@@ -984,6 +984,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         panel.PropertiesRequested              += OnSEPropertiesRequested;
         panel.WriteToDiskRequested             += OnSEWriteToDisk;
         panel.DiscardChangesetRequested        += OnSEDiscardChangeset;
+        panel.SolutionFolderCreateRequested    += OnSESolutionFolderCreateRequested;
+        panel.SolutionFolderRenameRequested    += OnSESolutionFolderRenameRequested;
+        panel.SolutionFolderDeleteRequested    += OnSESolutionFolderDeleteRequested;
+        panel.ProjectMoveRequested             += OnSEProjectMoveRequested;
         _solutionManager.ItemRenamed           += OnProjectItemRenamed;
         // Provide the editor registry so the panel can build the "Open With ›" submenu
         panel.SetEditorRegistry(_editorRegistry.GetAll());
@@ -1844,40 +1848,23 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var dlg = new AddExistingItemDialog(e.Project) { Owner = this };
         if (dlg.ShowDialog() != true) return;
 
-        var projDir = Path.GetDirectoryName(e.Project.ProjectFilePath) ?? "";
-
         foreach (var srcPath in dlg.SelectedFilePaths)
         {
-            var itemType  = ProjectItemTypeHelper.FromExtension(Path.GetExtension(srcPath));
             var finalPath = srcPath;
-            var folderId  = dlg.SelectedVirtualFolderId ?? e.TargetFolderId;
 
-            // ── 1. Physical copy ──────────────────────────────────────────────
+            // ── 1. Physical copy to user-selected destination folder ──────────
             if (dlg.CopyToProject)
             {
-                var destDir = projDir;
-                if (dlg.UseTypeSubfolder)
-                    destDir = Path.Combine(destDir, AddExistingItemDialog.TypeSubfolderName(itemType));
+                var destDir = dlg.SelectedPhysicalDestination
+                           ?? Path.GetDirectoryName(e.Project.ProjectFilePath)!;
                 Directory.CreateDirectory(destDir);
                 finalPath = Path.Combine(destDir, Path.GetFileName(srcPath));
                 if (!string.Equals(finalPath, srcPath, StringComparison.OrdinalIgnoreCase))
                     File.Copy(srcPath, finalPath, overwrite: false);
             }
 
-            // ── 2. Virtual folder ─────────────────────────────────────────────
-            if (dlg.CreateVirtualFolder && dlg.UseTypeSubfolder && folderId is null)
-            {
-                var folderName = AddExistingItemDialog.TypeSubfolderName(itemType);
-                var existing   = e.Project.RootFolders
-                    .FirstOrDefault(f => string.Equals(f.Name, folderName,
-                                        StringComparison.OrdinalIgnoreCase));
-                folderId = existing?.Id
-                    ?? (await _solutionManager.CreateFolderAsync(e.Project, folderName,
-                            createPhysical: true)).Id;
-            }
-
-            // ── 3. Register in project ────────────────────────────────────────
-            await _solutionManager.AddItemAsync(e.Project, finalPath, folderId);
+            // ── 2. Register item in project (no virtual-folder assignment for files) ──
+            await _solutionManager.AddItemAsync(e.Project, finalPath, virtualFolderId: null);
         }
     }
 
@@ -2276,6 +2263,54 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _ = _solutionManager.DeleteFolderAsync(e.Project, e.Folder);
         _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
         OutputLogger.Info($"Folder '{e.Folder.Name}' removed from '{e.Project.Name}'");
+    }
+
+    // ─── Solution Folder management ─────────────────────────────────────────
+
+    private void OnSESolutionFolderCreateRequested(object? sender, SolutionFolderCreateRequestedEventArgs e)
+        => _ = CreateSolutionFolderAndBeginRenameAsync(e.Solution, e.ParentFolderId);
+
+    private async Task CreateSolutionFolderAndBeginRenameAsync(ISolution solution, string? parentId)
+    {
+        var folder = await _solutionManager.CreateSolutionFolderAsync(solution, "New Solution Folder", parentId);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        _solutionExplorerPanel?.BeginSolutionFolderRename(folder);
+        OutputLogger.Info($"Solution folder created in '{solution.Name}'");
+    }
+
+    private void OnSESolutionFolderRenameRequested(object? sender, SolutionFolderRenameRequestedEventArgs e)
+    {
+        _ = _solutionManager.RenameSolutionFolderAsync(e.Solution, e.Folder, e.NewName);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        OutputLogger.Info($"Solution folder renamed to '{e.NewName}'");
+    }
+
+    private void OnSESolutionFolderDeleteRequested(object? sender, SolutionFolderDeleteRequestedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            $"Remove solution folder '{e.Folder.Name}'?\n" +
+            "Projects inside will be kept at the solution root.",
+            "Remove solution folder",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        _ = _solutionManager.DeleteSolutionFolderAsync(e.Solution, e.Folder);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        OutputLogger.Info($"Solution folder '{e.Folder.Name}' removed");
+    }
+
+    private void OnSEProjectMoveRequested(object? sender, ProjectMovedEventArgs e)
+    {
+        _ = MoveProjectToSolutionFolderAsync(e.Solution, e.Project, e.TargetFolderId);
+    }
+
+    private async Task MoveProjectToSolutionFolderAsync(ISolution solution, IProject project, string? targetFolderId)
+    {
+        await _solutionManager.MoveProjectToSolutionFolderAsync(solution, project, targetFolderId);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        OutputLogger.Info($"Project '{project.Name}' moved to {(targetFolderId is null ? "solution root" : "solution folder")}");
     }
 
     private void OnSEFolderFromDiskRequested(object? sender, FolderFromDiskRequestedEventArgs e)

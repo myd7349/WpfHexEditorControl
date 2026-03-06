@@ -24,22 +24,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/WpfHexEditor.ProjectSystem;component/Themes/DialogStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
-
-            <!-- HierarchicalDataTemplate for FolderNode tree -->
-            <HierarchicalDataTemplate x:Key="FolderNodeTemplate"
-                                      ItemsSource="{Binding Children}">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="&#xE8B7;"
-                               FontFamily="Segoe MDL2 Assets"
-                               FontSize="12"
-                               VerticalAlignment="Center"
-                               Margin="0,0,5,0"
-                               Foreground="{DynamicResource DockMenuForegroundBrush}" />
-                    <TextBlock Text="{Binding DisplayName}"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource DockMenuForegroundBrush}" />
-                </StackPanel>
-            </HierarchicalDataTemplate>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -63,13 +47,13 @@
             <RowDefinition Height="Auto" />
             <!-- Row 8: spacing -->
             <RowDefinition Height="10" />
-            <!-- Row 9: Project placement section header -->
+            <!-- Row 9: Destination folder section header -->
             <RowDefinition Height="Auto" />
             <!-- Row 10: Placement mode toggle -->
             <RowDefinition Height="Auto" />
             <!-- Row 11: spacing -->
             <RowDefinition Height="4" />
-            <!-- Row 12: TreeView (manual) or hint (auto) — grows with window -->
+            <!-- Row 12: Physical folder tree (manual) or hint (auto) — grows with window -->
             <RowDefinition Height="*" MinHeight="60" />
             <!-- Row 13: spacing -->
             <RowDefinition Height="10" />
@@ -77,9 +61,7 @@
             <RowDefinition Height="Auto" />
             <!-- Row 15: Preview content -->
             <RowDefinition Height="Auto" />
-            <!-- Row 16: filler (collapsed — TreeView in Row 12 now takes extra space) -->
-            <RowDefinition Height="Auto" />
-            <!-- Row 17: buttons -->
+            <!-- Row 16: buttons -->
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
@@ -200,62 +182,103 @@
                          IsChecked="True"
                          Checked="OnCopyModeChanged"
                          Margin="0,0,0,4" />
-            <StackPanel x:Name="SubfolderPanel" Margin="20,0,0,0">
-                <RadioButton x:Name="CopyRootRadio"
-                             Content="Project root"
-                             GroupName="DestMode"
-                             Margin="0,0,0,4" />
-                <RadioButton x:Name="CopyTypeSubfolderRadio"
-                             Content="Type subfolder"
-                             GroupName="DestMode"
-                             IsChecked="True"
-                             Checked="OnDestModeChanged"
-                             Unchecked="OnDestModeChanged" />
-            </StackPanel>
         </StackPanel>
 
-        <!-- ── Section: Project placement ──────────────────────────────── -->
+        <!-- ── Section: Destination folder ─────────────────────────────── -->
         <Grid Grid.Row="9" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Project placement" FontWeight="SemiBold" Margin="0,0,8,0"
+            <TextBlock Grid.Column="0" Text="Destination folder" FontWeight="SemiBold" Margin="0,0,8,0"
                        VerticalAlignment="Center" />
             <Rectangle Grid.Column="1" Height="1"
                        Fill="{DynamicResource Panel_ToolbarBorderBrush}"
                        VerticalAlignment="Center" />
         </Grid>
 
-        <!-- Mode toggle: Manual | Auto by type -->
+        <!-- Mode toggle: Physical subfolder | Keep in place -->
         <StackPanel Grid.Row="10" Orientation="Horizontal">
             <RadioButton x:Name="ManualFolderRadio"
-                         Content="Manual placement"
+                         Content="Physical subfolder"
                          GroupName="PlacementMode"
                          IsChecked="True"
                          Checked="OnPlacementModeChanged" />
             <RadioButton x:Name="AutoFolderRadio"
-                         Content="Auto by type"
+                         Content="Keep in place"
                          GroupName="PlacementMode"
                          Margin="16,0,0,0"
                          Checked="OnPlacementModeChanged" />
         </StackPanel>
 
-        <!-- TreeView (manual) / Auto hint -->
+        <!-- Row 12: Physical folder tree (manual) / hint (auto) -->
         <Grid Grid.Row="12">
-            <!-- Manual mode: compact folder tree -->
-            <Border x:Name="FolderTreeBorder"
-                    BorderBrush="{DynamicResource DockBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="2">
-                <TreeView x:Name="FolderTree"
-                          Background="{DynamicResource DockBackgroundBrush}"
-                          BorderThickness="0"
-                          ItemTemplate="{StaticResource FolderNodeTemplate}"
-                          SelectedItemChanged="OnFolderTreeSelectionChanged" />
-            </Border>
 
-            <!-- Auto mode: resolved hint -->
+            <!-- Manual mode: mini-toolbar + physical tree + inline new-folder form -->
+            <Grid x:Name="ManualPlacementGrid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="26" />   <!-- mini-toolbar -->
+                    <RowDefinition Height="*" />    <!-- tree -->
+                    <RowDefinition Height="Auto" /> <!-- new-folder inline form (Collapsed by default) -->
+                </Grid.RowDefinitions>
+
+                <!-- Mini-toolbar -->
+                <Border Grid.Row="0"
+                        Background="{DynamicResource Panel_ToolbarBrush}"
+                        BorderBrush="{DynamicResource DockBorderBrush}"
+                        BorderThickness="1,1,1,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="&#xE8F4;"
+                                FontFamily="Segoe MDL2 Assets"
+                                ToolTip="New physical folder in the selected directory"
+                                Style="{DynamicResource PanelIconButtonStyle}"
+                                Click="OnNewFolder" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Physical directory tree -->
+                <Border Grid.Row="1"
+                        BorderBrush="{DynamicResource DockBorderBrush}"
+                        BorderThickness="1,0,1,1">
+                    <TreeView x:Name="FolderTree"
+                              Background="{DynamicResource DockBackgroundBrush}"
+                              BorderThickness="0"
+                              SelectedItemChanged="OnFolderTreeSelectionChanged" />
+                </Border>
+
+                <!-- Inline new-folder form (Collapsed by default) -->
+                <Border Grid.Row="2"
+                        x:Name="NewFolderFormBorder"
+                        Visibility="Collapsed"
+                        BorderBrush="{DynamicResource DockBorderBrush}"
+                        BorderThickness="1,0,1,1"
+                        Background="{DynamicResource DockWindowBackgroundBrush}"
+                        Padding="6,4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <TextBox   Grid.Column="1" x:Name="NewFolderNameBox"
+                                   KeyDown="OnNewFolderNameKeyDown" />
+                        <Button    Grid.Column="2"
+                                   Content="&#xE73E;" FontFamily="Segoe MDL2 Assets"
+                                   ToolTip="Confirm new folder"
+                                   Style="{DynamicResource PanelIconButtonStyle}"
+                                   Click="OnConfirmNewFolder" Margin="4,0,0,0" />
+                        <Button    Grid.Column="3"
+                                   Content="&#xE711;" FontFamily="Segoe MDL2 Assets"
+                                   ToolTip="Cancel"
+                                   Style="{DynamicResource PanelIconButtonStyle}"
+                                   Click="OnCancelNewFolder" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Auto/reference hint -->
             <TextBlock x:Name="AutoPlacementHint"
                        Visibility="Collapsed"
                        FontStyle="Italic"
@@ -284,7 +307,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Physical: "
+                <TextBlock Grid.Column="0" Text="Destination: "
                            Foreground="{DynamicResource DockMenuForegroundBrush}"
                            Opacity="0.7" />
                 <TextBlock x:Name="PhysicalPreviewText" Grid.Column="1"
@@ -292,23 +315,10 @@
                            FontStyle="Italic"
                            Foreground="{DynamicResource DockMenuForegroundBrush}" />
             </Grid>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Virtual:    "
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           Opacity="0.7" />
-                <TextBlock x:Name="VirtualPreviewText" Grid.Column="1"
-                           TextTrimming="CharacterEllipsis"
-                           FontStyle="Italic"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}" />
-            </Grid>
         </StackPanel>
 
         <!-- ── Buttons ────────────────────────────────────────────────────── -->
-        <StackPanel Grid.Row="17" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="16" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button x:Name="AddButton" Content="Add" IsDefault="True"
                     IsEnabled="False" Click="OnAdd" Margin="0,0,8,0" />
             <Button Content="Cancel" IsCancel="True" />

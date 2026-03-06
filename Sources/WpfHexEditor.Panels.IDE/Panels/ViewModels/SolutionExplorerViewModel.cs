@@ -231,8 +231,17 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
         var solutionNode = new SolutionNodeVm(_solution);
         Roots.Add(solutionNode);
 
+        // Solution Folders come first; collect which project names are inside a folder.
+        var folderedNames = CollectFolderedProjectNames(_solution.RootFolders);
+
+        foreach (var folder in _solution.RootFolders)
+            solutionNode.Children.Add(BuildSolutionFolderNode(folder, _solution));
+
+        // Unfoldered projects follow directly under the solution node.
         foreach (var project in _solution.Projects)
         {
+            if (folderedNames.Contains(project.Name)) continue;
+
             var projNode = _showAllFiles
                 ? BuildProjectNodePhysical(project)
                 : BuildProjectNode(project);
@@ -276,6 +285,42 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
     }
 
     // ── Node construction ────────────────────────────────────────────────────
+
+    private static HashSet<string> CollectFolderedProjectNames(IReadOnlyList<ISolutionFolder> folders)
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var f in folders) CollectFolderedNamesCore(f, set);
+        return set;
+    }
+
+    private static void CollectFolderedNamesCore(ISolutionFolder folder, HashSet<string> set)
+    {
+        foreach (var id in folder.ProjectIds) set.Add(id);
+        foreach (var child in folder.Children) CollectFolderedNamesCore(child, set);
+    }
+
+    private SolutionFolderNodeVm BuildSolutionFolderNode(ISolutionFolder folder, ISolution solution)
+    {
+        var node = new SolutionFolderNodeVm(folder, solution) { IsExpanded = true };
+
+        // Nested solution folders first (recursive).
+        foreach (var child in folder.Children)
+            node.Children.Add(BuildSolutionFolderNode(child, solution));
+
+        // Projects inside this folder.
+        foreach (var projectName in folder.ProjectIds)
+        {
+            var project = solution.Projects.FirstOrDefault(p => p.Name == projectName);
+            if (project is null) continue;
+
+            var projNode = _showAllFiles
+                ? BuildProjectNodePhysical(project)
+                : BuildProjectNode(project);
+            node.Children.Add(projNode);
+        }
+
+        return node;
+    }
 
     private static ProjectNodeVm BuildProjectNode(IProject project)
     {

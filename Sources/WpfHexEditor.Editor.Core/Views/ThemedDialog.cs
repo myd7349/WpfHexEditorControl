@@ -322,6 +322,19 @@ public class ThemedDialog : Window
         mmi.ptMaxPosition.y = Math.Abs(mi.rcWork.top  - mi.rcMonitor.top);
         mmi.ptMaxSize.x     = mi.rcWork.right  - mi.rcWork.left;
         mmi.ptMaxSize.y     = mi.rcWork.bottom - mi.rcWork.top;
+
+        // WPF's own WM_GETMINMAXINFO hook is bypassed when handled=true, so we must
+        // apply MinWidth/MinHeight manually by converting logical units → physical pixels.
+        if (PresentationSource.FromVisual(this) is { CompositionTarget: { } ct })
+        {
+            var scaleX = ct.TransformToDevice.M11;
+            var scaleY = ct.TransformToDevice.M22;
+            if (!double.IsNaN(MinWidth)  && MinWidth  > 0)
+                mmi.ptMinTrackSize.x = (int)Math.Ceiling(MinWidth  * scaleX);
+            if (!double.IsNaN(MinHeight) && MinHeight > 0)
+                mmi.ptMinTrackSize.y = (int)Math.Ceiling(MinHeight * scaleY);
+        }
+
         Marshal.StructureToPtr(mmi, lParam, true);
 
         handled = true;

@@ -61,13 +61,11 @@ public class AutoHideBar : StackPanel
                 },
                 Padding = new Thickness(6, 4, 6, 4),
                 Margin = new Thickness(1),
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand,
                 Tag = item
             };
 
-            button.SetResourceReference(Control.ForegroundProperty, "DockTabTextBrush");
+            // Apply themed style so IsMouseOver uses DockTabHoverBrush instead of default WPF chrome.
+            button.SetResourceReference(FrameworkElement.StyleProperty, "DockTitleButtonStyle");
             AutomationProperties.SetName(button, $"Show {item.Title}");
             button.Click += (_, _) => ItemClicked?.Invoke(item);
             Children.Add(button);

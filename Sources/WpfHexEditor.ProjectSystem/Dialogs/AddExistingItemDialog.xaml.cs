@@ -7,19 +7,20 @@
 // Description:
 //     "Add Existing Item" dialog — lets the user pick one or more existing files
 //     and configure how they are added to the project (copy vs. reference,
-//     physical subfolder, virtual folder placement).
+//     physical destination subfolder).
 //
 // Architecture Notes:
 //     ThemedDialog base class (WindowStyle=None, custom chrome, VS2022-style).
 //     Multi-file list: ItemsControl bound to List<FileEntry>.
-//     Project placement: TreeView bound to FolderNode hierarchy (Manual mode)
-//     or a hint TextBlock (Auto-by-type mode).
+//     Destination folder: TreeView bound to physical directories on disk (not virtual folders).
+//     New Folder: creates directory immediately on disk (Directory.CreateDirectory — idempotent).
 // ==========================================================
 
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Microsoft.Win32;
 using WpfHexEditor.Editor.Core;
 
@@ -31,14 +32,12 @@ namespace WpfHexEditor.ProjectSystem.Dialogs;
 /// <list type="bullet">
 ///   <item><see cref="SelectedFilePaths"/> — source paths chosen by the user</item>
 ///   <item><see cref="CopyToProject"/> — whether files should be copied into the project</item>
-///   <item><see cref="UseTypeSubfolder"/> — whether to place in a type-based physical subfolder</item>
-///   <item><see cref="CreateVirtualFolder"/> — whether to auto-create a virtual folder by type</item>
-///   <item><see cref="SelectedVirtualFolderId"/> — target virtual folder id, or <c>null</c> for root</item>
+///   <item><see cref="SelectedPhysicalDestination"/> — absolute path of the target directory, or <c>null</c> for the project root</item>
 /// </list>
 /// </summary>
 public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.ThemedDialog
 {
-    // ── Inner models ────────────────────────────────────────────────────────
+    // ── Inner model ──────────────────────────────────────────────────────────
 
     /// <summary>One row in the multi-file list.</summary>
     private sealed record FileEntry(
@@ -48,41 +47,24 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
         ProjectItemType Type,
         string IconGlyph);
 
-    /// <summary>Node for the virtual folder TreeView.</summary>
-    private sealed class FolderNode
-    {
-        public string? Id          { get; init; }
-        public string  DisplayName { get; init; } = "";
-        public ObservableCollection<FolderNode> Children { get; } = [];
-    }
-
     // ── State ────────────────────────────────────────────────────────────────
-    private readonly IProject        _project;
-    private          string[]        _filePaths  = [];
-    private readonly List<FileEntry> _fileEntries = [];
+    private readonly IProject _project;
+    private          string[] _filePaths = [];
 
     // ── Output properties ────────────────────────────────────────────────────
-    public IReadOnlyList<string> SelectedFilePaths       { get; private set; } = [];
-    public bool                  CopyToProject           { get; private set; } = true;
-    public bool                  UseTypeSubfolder        { get; private set; } = true;
-    public bool                  CreateVirtualFolder     { get; private set; } = false;
-    public string?               SelectedVirtualFolderId { get; private set; }
 
-    // ── Type subfolder name map ──────────────────────────────────────────────
-    public static string TypeSubfolderName(ProjectItemType type) => type switch
-    {
-        ProjectItemType.Binary           => "Binaries",
-        ProjectItemType.Tbl              => "Tables",
-        ProjectItemType.Patch            => "Patches",
-        ProjectItemType.FormatDefinition => "FormatDefs",
-        ProjectItemType.Json             => "JSON",
-        ProjectItemType.Text             => "Text",
-        ProjectItemType.Script           => "Scripts",
-        ProjectItemType.Image            => "Images",
-        ProjectItemType.Tile             => "Tiles",
-        ProjectItemType.Audio            => "Audio",
-        _                                => "Other",
-    };
+    /// <summary>Source paths selected by the user.</summary>
+    public IReadOnlyList<string> SelectedFilePaths         { get; private set; } = [];
+
+    /// <summary>Whether files should be copied into the project directory.</summary>
+    public bool    CopyToProject               { get; private set; } = true;
+
+    /// <summary>
+    /// Absolute path of the physical directory where files will be copied.
+    /// <c>null</c> means the project root directory.
+    /// Only meaningful when <see cref="CopyToProject"/> is <c>true</c>.
+    /// </summary>
+    public string? SelectedPhysicalDestination { get; private set; }
 
     // ── Constructor ──────────────────────────────────────────────────────────
     public AddExistingItemDialog(IProject project)
@@ -92,7 +74,7 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
         _project = project;
 
         PopulateTypeCombo();
-        PopulateVirtualFolderTree();
+        PopulatePhysicalFolderTree();
         UpdatePlacementModeVisuals();
 
         Refresh();
@@ -112,66 +94,65 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
         TypeCombo.SelectedIndex = 0;
     }
 
-    private void PopulateVirtualFolderTree()
+    /// <summary>
+    /// Builds the physical directory tree rooted at the project's directory.
+    /// The Tag of each TreeViewItem is the absolute path (string) of that directory.
+    /// </summary>
+    private void PopulatePhysicalFolderTree()
     {
         FolderTree.Items.Clear();
 
-        var root = new FolderNode { Id = null, DisplayName = "(project root)" };
-
-        foreach (var folder in _project.RootFolders)
-            root.Children.Add(BuildFolderNode(folder));
-
-        var rootItem = new TreeViewItem
-        {
-            Header     = BuildFolderNodeHeader("(project root)"),
-            Tag        = root,
-            IsSelected = true,
-            IsExpanded = true,
-        };
-
-        foreach (var child in root.Children)
-            rootItem.Items.Add(BuildTreeViewItem(child));
+        var projDir  = Path.GetDirectoryName(_project.ProjectFilePath) ?? "";
+        var rootItem = BuildPhysicalDirItem(projDir, "(project root)", isRoot: true);
+        rootItem.IsSelected = true;
+        rootItem.IsExpanded = true;
 
         FolderTree.Items.Add(rootItem);
     }
 
-    private static FolderNode BuildFolderNode(IVirtualFolder folder)
-    {
-        var node = new FolderNode { Id = folder.Id, DisplayName = folder.Name };
-        foreach (var child in folder.Children)
-            node.Children.Add(BuildFolderNode(child));
-        return node;
-    }
-
-    private static TreeViewItem BuildTreeViewItem(FolderNode node)
+    private static TreeViewItem BuildPhysicalDirItem(string absolutePath, string displayName, bool isRoot = false)
     {
         var item = new TreeViewItem
         {
-            Header     = BuildFolderNodeHeader(node.DisplayName),
-            Tag        = node,
-            IsExpanded = true,
+            Header     = BuildFolderHeader(displayName),
+            Tag        = absolutePath,
+            IsExpanded = isRoot,
         };
-        foreach (var child in node.Children)
-            item.Items.Add(BuildTreeViewItem(child));
+
+        try
+        {
+            foreach (var sub in Directory.GetDirectories(absolutePath))
+                item.Items.Add(BuildPhysicalDirItem(sub, Path.GetFileName(sub)));
+        }
+        catch (UnauthorizedAccessException) { /* skip inaccessible dirs */ }
+
         return item;
     }
 
-    private static StackPanel BuildFolderNodeHeader(string displayName)
+    /// <summary>Builds a themed folder header (icon + label) for a TreeViewItem.</summary>
+    private static StackPanel BuildFolderHeader(string displayName)
     {
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
-        panel.Children.Add(new TextBlock
+
+        var icon = new System.Windows.Controls.TextBlock
         {
-            Text       = "\uE8B7",
-            FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
-            FontSize   = 12,
-            Margin     = new Thickness(0, 0, 5, 0),
+            Text              = "\uE8B7",   // Folder glyph (Segoe MDL2)
+            FontFamily        = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+            FontSize          = 12,
+            Margin            = new Thickness(0, 0, 5, 0),
             VerticalAlignment = VerticalAlignment.Center,
-        });
-        panel.Children.Add(new TextBlock
+        };
+        icon.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "DockMenuForegroundBrush");
+
+        var label = new System.Windows.Controls.TextBlock
         {
-            Text = displayName,
+            Text              = displayName,
             VerticalAlignment = VerticalAlignment.Center,
-        });
+        };
+        label.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "DockMenuForegroundBrush");
+
+        panel.Children.Add(icon);
+        panel.Children.Add(label);
         return panel;
     }
 
@@ -235,16 +216,8 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
 
     private void OnCopyModeChanged(object sender, RoutedEventArgs e)
     {
-        if (SubfolderPanel is null) return;
+        if (ManualPlacementGrid is null) return;
 
-        var copying = CopyToProjectRadio.IsChecked == true;
-        SubfolderPanel.IsEnabled = copying;
-        UpdatePlacementModeAvailability();
-        Refresh();
-    }
-
-    private void OnDestModeChanged(object sender, RoutedEventArgs e)
-    {
         UpdatePlacementModeAvailability();
         Refresh();
     }
@@ -260,13 +233,67 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
 
     private void OnAdd(object sender, RoutedEventArgs e)
     {
-        SelectedFilePaths       = [.. _filePaths];
-        CopyToProject           = CopyToProjectRadio.IsChecked == true;
-        UseTypeSubfolder        = CopyToProjectRadio.IsChecked == true && CopyTypeSubfolderRadio.IsChecked == true;
-        CreateVirtualFolder     = AutoFolderRadio.IsChecked == true;
-        SelectedVirtualFolderId = GetSelectedVirtualFolderId();
+        SelectedFilePaths          = [.. _filePaths];
+        CopyToProject              = CopyToProjectRadio.IsChecked == true;
+        SelectedPhysicalDestination = CopyToProject ? GetSelectedPhysicalPath() : null;
 
         DialogResult = true;
+    }
+
+    // ── New Folder handlers ──────────────────────────────────────────────────
+
+    private void OnNewFolder(object sender, RoutedEventArgs e)
+    {
+        NewFolderFormBorder.Visibility = Visibility.Visible;
+        NewFolderNameBox.Text          = "";
+        NewFolderNameBox.Focus();
+    }
+
+    private void OnConfirmNewFolder(object sender, RoutedEventArgs e)
+        => CommitNewFolder();
+
+    private void OnCancelNewFolder(object sender, RoutedEventArgs e)
+        => HideNewFolderForm();
+
+    private void OnNewFolderNameKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)  { CommitNewFolder();    e.Handled = true; }
+        if (e.Key == Key.Escape) { HideNewFolderForm();  e.Handled = true; }
+    }
+
+    private void CommitNewFolder()
+    {
+        var name = NewFolderNameBox.Text.Trim();
+        if (string.IsNullOrEmpty(name)) return;
+
+        // Determine parent from currently selected tree item
+        var parentPath = GetSelectedPhysicalPath()
+                      ?? Path.GetDirectoryName(_project.ProjectFilePath)!;
+
+        var newDirPath = Path.Combine(parentPath, name);
+
+        try
+        {
+            // Directory.CreateDirectory is idempotent — safe to call even if it exists
+            Directory.CreateDirectory(newDirPath);
+        }
+        catch (Exception)
+        {
+            // Ignore creation errors (invalid name, access denied, etc.)
+            return;
+        }
+
+        HideNewFolderForm();
+
+        // Rebuild the tree so the new directory appears, then select it
+        PopulatePhysicalFolderTree();
+        SelectPathInTree(newDirPath);
+    }
+
+    private void HideNewFolderForm()
+    {
+        NewFolderFormBorder.Visibility = Visibility.Collapsed;
+        NewFolderNameBox.Text          = "";
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
@@ -283,21 +310,19 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
 
     private void RebuildFileList()
     {
-        _fileEntries.Clear();
-
-        foreach (var path in _filePaths)
+        var entries = _filePaths.Select(path =>
         {
             var type = ProjectItemTypeHelper.FromExtension(Path.GetExtension(path));
-            _fileEntries.Add(new FileEntry(
+            return new FileEntry(
                 FullPath:  path,
                 FileName:  Path.GetFileName(path),
                 TypeLabel: type.ToString(),
                 Type:      type,
-                IconGlyph: TypeGlyph(type)));
-        }
+                IconGlyph: TypeGlyph(type));
+        }).ToList();
 
         FileList.ItemsSource = null;
-        FileList.ItemsSource = _fileEntries;
+        FileList.ItemsSource = entries;
 
         FileListBorder.Visibility = _filePaths.Length >= 2
             ? Visibility.Visible
@@ -336,16 +361,37 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
         }
     }
 
-    private ProjectItemType GetSelectedType()
-        => (TypeCombo.SelectedItem as ComboBoxItem)?.Tag as ProjectItemType?
-           ?? ProjectItemType.Binary;
-
-    private string? GetSelectedVirtualFolderId()
+    private void UpdatePlacementModeAvailability()
     {
-        if (AutoFolderRadio.IsChecked == true) return null;
+        if (ManualFolderRadio is null) return;
 
-        return GetSelectedTreeItem()?.Tag is FolderNode node ? node.Id : null;
+        var copying = CopyToProjectRadio.IsChecked == true;
+
+        ManualFolderRadio.IsEnabled = copying;
+        AutoFolderRadio.IsEnabled   = true;
+
+        // If copy is disabled, force "keep in place" mode
+        if (!copying)
+            AutoFolderRadio.IsChecked = true;
+
+        UpdatePlacementModeVisuals();
     }
+
+    private void UpdatePlacementModeVisuals()
+    {
+        if (ManualPlacementGrid is null || AutoPlacementHint is null) return;
+
+        var isManual = ManualFolderRadio?.IsChecked == true;
+
+        ManualPlacementGrid.Visibility = isManual ? Visibility.Visible   : Visibility.Collapsed;
+        AutoPlacementHint.Visibility   = isManual ? Visibility.Collapsed : Visibility.Visible;
+
+        if (!isManual)
+            AutoPlacementHint.Text = "Files will be kept at their original location (reference only).";
+    }
+
+    private string? GetSelectedPhysicalPath()
+        => GetSelectedTreeItem()?.Tag as string;
 
     private TreeViewItem? GetSelectedTreeItem()
     {
@@ -368,33 +414,32 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
         return null;
     }
 
-    private void UpdatePlacementModeAvailability()
+    /// <summary>
+    /// Walks the tree and selects the node whose Tag matches <paramref name="absolutePath"/>.
+    /// </summary>
+    private void SelectPathInTree(string absolutePath)
     {
-        if (AutoFolderRadio is null) return;
-
-        var copying       = CopyToProjectRadio.IsChecked == true;
-        var typeSubfolder = CopyTypeSubfolderRadio.IsChecked == true;
-
-        // Auto-by-type only makes sense when copying with type subfolder
-        AutoFolderRadio.IsEnabled = copying && typeSubfolder;
-
-        if (!AutoFolderRadio.IsEnabled && AutoFolderRadio.IsChecked == true)
-            ManualFolderRadio.IsChecked = true;
-
-        UpdatePlacementModeVisuals();
+        foreach (TreeViewItem root in FolderTree.Items)
+        {
+            if (TrySelectPath(root, absolutePath))
+                return;
+        }
     }
 
-    private void UpdatePlacementModeVisuals()
+    private static bool TrySelectPath(TreeViewItem item, string path)
     {
-        if (FolderTreeBorder is null || AutoPlacementHint is null) return;
-
-        var isAuto = AutoFolderRadio?.IsChecked == true;
-
-        FolderTreeBorder.Visibility  = isAuto ? Visibility.Collapsed : Visibility.Visible;
-        AutoPlacementHint.Visibility = isAuto ? Visibility.Visible   : Visibility.Collapsed;
-
-        if (isAuto)
-            AutoPlacementHint.Text = $"Files will be placed in: {TypeSubfolderName(GetSelectedType())}";
+        if (string.Equals(item.Tag as string, path, StringComparison.OrdinalIgnoreCase))
+        {
+            item.IsSelected = true;
+            item.BringIntoView();
+            return true;
+        }
+        item.IsExpanded = true;
+        foreach (TreeViewItem child in item.Items)
+        {
+            if (TrySelectPath(child, path)) return true;
+        }
+        return false;
     }
 
     private void Refresh()
@@ -412,46 +457,28 @@ public partial class AddExistingItemDialog : WpfHexEditor.Editor.Core.Views.Them
             return;
         }
 
-        var copying       = CopyToProjectRadio.IsChecked == true;
-        var typeSubfolder = copying && CopyTypeSubfolderRadio.IsChecked == true;
-        var isAuto        = AutoFolderRadio.IsChecked == true;
-        var projDir       = Path.GetDirectoryName(_project.ProjectFilePath) ?? "";
-        var first         = _filePaths[0];
-        var type          = GetSelectedType();
-        var subName       = typeSubfolder ? TypeSubfolderName(type) : null;
+        var copying  = CopyToProjectRadio.IsChecked == true;
+        var isManual = ManualFolderRadio?.IsChecked == true;
+        var first    = _filePaths[0];
 
-        var physPreview = BuildPhysicalPreview(copying, subName, projDir, first);
-        var virtPreview = BuildVirtualPreview(isAuto, subName, first);
-
-        if (_filePaths.Length > 1)
+        string destPreview;
+        if (!copying)
         {
-            var more = $"  (+{_filePaths.Length - 1} more)";
-            physPreview += more;
-            virtPreview += more;
+            destPreview = first;
+        }
+        else
+        {
+            var destDir = isManual
+                ? (GetSelectedPhysicalPath() ?? Path.GetDirectoryName(_project.ProjectFilePath)!)
+                : Path.GetDirectoryName(_project.ProjectFilePath)!;
+            destPreview = Path.Combine(destDir, Path.GetFileName(first));
         }
 
-        PhysicalPreviewText.Text = physPreview;
-        VirtualPreviewText.Text  = virtPreview;
+        if (_filePaths.Length > 1)
+            destPreview += $"  (+{_filePaths.Length - 1} more)";
+
+        PhysicalPreviewText.Text = destPreview;
         PreviewPanel.Visibility  = Visibility.Visible;
-    }
-
-    private static string BuildPhysicalPreview(bool copying, string? subName, string projDir, string first)
-    {
-        if (!copying) return first;
-        return subName is not null
-            ? Path.Combine(projDir, subName, Path.GetFileName(first))
-            : Path.Combine(projDir, Path.GetFileName(first));
-    }
-
-    private string BuildVirtualPreview(bool isAuto, string? subName, string first)
-    {
-        if (isAuto && subName is not null)
-            return $"{subName} › {Path.GetFileName(first)}";
-
-        var selectedNode = GetSelectedTreeItem()?.Tag is FolderNode n ? n : null;
-        return selectedNode?.Id is not null
-            ? $"{selectedNode.DisplayName} › {Path.GetFileName(first)}"
-            : Path.GetFileName(first);
     }
 
     private static string TypeGlyph(ProjectItemType type) => type switch

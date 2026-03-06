@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexEditor.Core;
 using WpfHexEditor.Core.Models;
@@ -821,6 +822,17 @@ namespace WpfHexEditor.HexEditor
 
             // Mark event as handled to prevent ScrollViewer from scrolling
             e.Handled = true;
+        }
+
+        /// <summary>
+        /// Synchronize the column header horizontal offset with ContentScroller horizontal scroll.
+        /// The offset column (Column 0 of the header Grid) is pinned; the hex/ASCII header
+        /// panel translates left by the same amount the content has scrolled.
+        /// </summary>
+        private void ContentScroller_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (_headerScrollTransform != null && e.HorizontalChange != 0)
+                _headerScrollTransform.X = -ContentScroller.HorizontalOffset;
         }
 
         /// <summary>

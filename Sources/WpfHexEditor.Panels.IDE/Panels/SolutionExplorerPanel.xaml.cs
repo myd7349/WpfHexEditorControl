@@ -161,17 +161,18 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     {
         _contextMenuTarget = node;
 
-        var  file         = node as FileNodeVm;
-        var  physFile     = node as PhysicalFileNodeVm;
-        bool isSolution   = node is SolutionNodeVm;
-        bool isProject    = node is ProjectNodeVm;
-        bool isFolder     = node is FolderNodeVm;
-        bool isFile       = file is not null;
-        bool isPhysFolder = node is PhysicalFolderNodeVm;
-        bool isPhysFile   = physFile is not null;
-        bool isPhysIn     = isPhysFile &&  physFile!.IsInProject;
-        bool isPhysNotIn  = isPhysFile && !physFile!.IsInProject;
-        bool isChangeset  = node is ChangesetNodeVm;
+        var  file             = node as FileNodeVm;
+        var  physFile         = node as PhysicalFileNodeVm;
+        bool isSolution       = node is SolutionNodeVm;
+        bool isSolutionFolder = node is SolutionFolderNodeVm;
+        bool isProject        = node is ProjectNodeVm;
+        bool isFolder         = node is FolderNodeVm;
+        bool isFile           = file is not null;
+        bool isPhysFolder     = node is PhysicalFolderNodeVm;
+        bool isPhysFile       = physFile is not null;
+        bool isPhysIn         = isPhysFile &&  physFile!.IsInProject;
+        bool isPhysNotIn      = isPhysFile && !physFile!.IsInProject;
+        bool isChangeset      = node is ChangesetNodeVm;
 
         bool isTbl = file?.Source.ItemType == ProjectItemType.Tbl;
         bool isDefault = file?.IsDefaultTbl == true;
@@ -179,13 +180,20 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         bool isThingyTbl = isTbl && string.Equals(
             Path.GetExtension(file?.Source.Name ?? string.Empty), ".tbl", StringComparison.OrdinalIgnoreCase);
 
-        bool isExternal   = file?.IsExternal == true;
-        bool canOpen      = isFile || isPhysIn;
-        bool canAdd       = isProject || isFolder;
-        bool hasExplorer  = isSolution || isProject || isFolder || isFile || isPhysFolder || isPhysFile;
-        bool hasCopyPath  = isProject || isFolder || isFile || isPhysFolder || isPhysFile;
-        bool hasAfterNav  = isSolution || isProject || isFolder || isFile || isPhysIn;
-        bool hasProp      = isFile || isProject;
+        bool isExternal  = file?.IsExternal == true;
+        bool canOpen     = isFile || isPhysIn;
+
+        // Granular add capabilities — controls Add > submenu parent and each sub-item independently
+        bool canAddItems          = isProject || isFolder;                               // Add New/Existing Item
+        bool canImport            = isProject;                                           // Import Format/Syntax (project only)
+        bool canAddFolders        = isProject || isFolder;                               // New Folder / Add Existing Folder
+        bool canAddSolutionFolder = isSolution || isSolutionFolder;                      // New Solution Folder (solution level only)
+        bool canAdd               = canAddItems || canImport || canAddSolutionFolder || canAddFolders;
+
+        bool hasExplorer = isSolution || isSolutionFolder || isProject || isFolder || isFile || isPhysFolder || isPhysFile;
+        bool hasCopyPath = isSolution || isSolutionFolder || isProject || isFolder || isFile || isPhysFolder || isPhysFile;
+        bool hasAfterNav = isSolution || isSolutionFolder || isProject || isFolder || isFile || isPhysIn;
+        bool hasProp     = isFile || isProject;
 
         // Open / Open With (file and physical-file-in-project)
         OpenMenuItem    .Visibility = canOpen ? Visibility.Visible : Visibility.Collapsed;
@@ -196,14 +204,29 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         if (canOpen)
             RebuildOpenWithSubmenu(file?.Source.AbsolutePath ?? (physFile?.IsInProject == true ? physFile.LinkedItem?.AbsolutePath : null));
 
-        // Add / folder operations (project & folder only)
-        AddNewItemMenuItem       .Visibility = canAdd    ? Visibility.Visible : Visibility.Collapsed;
-        AddExistingItemMenuItem  .Visibility = canAdd    ? Visibility.Visible : Visibility.Collapsed;
-        ImportFormatMenuItem     .Visibility = isProject ? Visibility.Visible : Visibility.Collapsed;
-        NewFolderMenuItem        .Visibility = canAdd    ? Visibility.Visible : Visibility.Collapsed;
-        NewPhysicalFolderMenuItem.Visibility = canAdd    ? Visibility.Visible : Visibility.Collapsed;
-        AddFolderFromDiskMenuItem.Visibility = canAdd    ? Visibility.Visible : Visibility.Collapsed;
-        AddSeparator             .Visibility = canAdd    ? Visibility.Visible : Visibility.Collapsed;
+        // Add > submenu parent
+        AddSubmenuMenuItem.Visibility = canAdd ? Visibility.Visible : Visibility.Collapsed;
+        AddSeparator      .Visibility = canAdd ? Visibility.Visible : Visibility.Collapsed;
+
+        // Sub-items inside Add > — project & folder only
+        AddNewItemMenuItem     .Visibility = canAddItems ? Visibility.Visible : Visibility.Collapsed;
+        AddExistingItemMenuItem.Visibility = canAddItems ? Visibility.Visible : Visibility.Collapsed;
+
+        // Separator between items group and import group — hide if nothing above or nothing below
+        AddItemsSeparator.Visibility = canAddItems && (canImport || canAddSolutionFolder)
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        // Import: project & solution (FIX — ImportSyntaxMenuItem was missing, always Visible)
+        ImportFormatMenuItem.Visibility = canImport ? Visibility.Visible : Visibility.Collapsed;
+        ImportSyntaxMenuItem.Visibility = canImport ? Visibility.Visible : Visibility.Collapsed;
+
+        // Separator between import group and folder group
+        AddFolderSeparator.Visibility = (canAddItems || canImport) && (canAddFolders || canAddSolutionFolder)
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        NewFolderMenuItem        .Visibility = canAddFolders        ? Visibility.Visible : Visibility.Collapsed;
+        NewPhysicalFolderMenuItem.Visibility = canAddSolutionFolder ? Visibility.Visible : Visibility.Collapsed;
+        AddFolderFromDiskMenuItem.Visibility = canAddFolders        ? Visibility.Visible : Visibility.Collapsed;
 
         // Include in Project (Show All Files — physical file not yet tracked)
         IncludeInProjectMenuItem.Visibility = isPhysNotIn ? Visibility.Visible : Visibility.Collapsed;
@@ -223,9 +246,9 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         NavigationSeparator   .Visibility = hasExplorer && hasAfterNav ? Visibility.Visible : Visibility.Collapsed;
 
         // Rename / Remove / Exclude
-        RenameMenuItem            .Visibility = (isSolution || isFile || isFolder || isProject) ? Visibility.Visible : Visibility.Collapsed;
-        RemoveMenuItem            .Visibility = (isFile || isFolder)                             ? Visibility.Visible : Visibility.Collapsed;
-        ExcludeFromProjectMenuItem.Visibility = isPhysIn                                         ? Visibility.Visible : Visibility.Collapsed;
+        RenameMenuItem            .Visibility = (isSolution || isSolutionFolder || isFile || isFolder || isProject) ? Visibility.Visible : Visibility.Collapsed;
+        RemoveMenuItem            .Visibility = (isFile || isFolder || isSolutionFolder)                             ? Visibility.Visible : Visibility.Collapsed;
+        ExcludeFromProjectMenuItem.Visibility = isPhysIn                                                              ? Visibility.Visible : Visibility.Collapsed;
 
         // Import external file (file node whose path is outside the project directory)
         ImportExternalSeparator    .Visibility = isExternal ? Visibility.Visible : Visibility.Collapsed;
@@ -247,7 +270,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         CloseSolutionMenuItem  .Visibility = isSolution ? Visibility.Visible : Visibility.Collapsed;
 
         return canOpen || canAdd || isPhysNotIn || isTbl || hasExplorer
-            || isSolution || isProject || isFolder || isFile || isPhysIn || isChangeset || isExternal;
+            || isSolution || isSolutionFolder || isProject || isFolder || isFile || isPhysIn || isChangeset || isExternal;
     }
 
     private void OnContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -303,6 +326,19 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     private void OnNewPhysicalFolder(object sender, RoutedEventArgs e)
     {
+        // When context is a solution-level node → create a Solution Folder.
+        var (solution, parentFolderId) = GetContextSolutionAndSolutionFolder();
+        if (solution is not null)
+        {
+            SolutionFolderCreateRequested?.Invoke(this, new SolutionFolderCreateRequestedEventArgs
+            {
+                Solution       = solution,
+                ParentFolderId = parentFolderId,
+            });
+            return;
+        }
+
+        // Fallback: project-level virtual folder (kept for backward compat with old callers).
         var (project, folderId) = GetContextProjectAndFolder();
         if (project is null) return;
         FolderCreateRequested?.Invoke(this, new FolderCreateRequestedEventArgs
@@ -483,6 +519,17 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
             _                => (null, null),
         };
 
+    /// <summary>
+    /// Returns the solution and optional solution-folder id for solution-level context menu actions.
+    /// </summary>
+    private (ISolution? solution, string? folderId) GetContextSolutionAndSolutionFolder()
+        => _contextMenuTarget switch
+        {
+            SolutionNodeVm       sv  => (sv.Source, null),
+            SolutionFolderNodeVm sfv => (sfv.Solution, sfv.Folder.Id),
+            _                        => (null, null),
+        };
+
     private void OnSetDefaultTbl(object sender, RoutedEventArgs e)
     {
         if (_contextMenuTarget is not FileNodeVm fn || fn.Project is null) return;
@@ -529,10 +576,11 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     private void OnRename(object sender, RoutedEventArgs e)
     {
-        if      (_contextMenuTarget is SolutionNodeVm sv) StartInlineSolutionEdit(sv);
-        else if (_contextMenuTarget is FileNodeVm     fn) StartInlineEdit(fn);
-        else if (_contextMenuTarget is FolderNodeVm   fv) StartInlineFolderEdit(fv);
-        else if (_contextMenuTarget is ProjectNodeVm  pv) StartInlineProjectEdit(pv);
+        if      (_contextMenuTarget is SolutionNodeVm       sv)  StartInlineSolutionEdit(sv);
+        else if (_contextMenuTarget is SolutionFolderNodeVm sfv) StartInlineSolutionFolderEdit(sfv);
+        else if (_contextMenuTarget is FileNodeVm            fn)  StartInlineEdit(fn);
+        else if (_contextMenuTarget is FolderNodeVm          fv)  StartInlineFolderEdit(fv);
+        else if (_contextMenuTarget is ProjectNodeVm         pv)  StartInlineProjectEdit(pv);
     }
 
     private void OnRemove(object sender, RoutedEventArgs e)
@@ -541,6 +589,12 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
             ItemDeleteRequested?.Invoke(this, new ProjectItemEventArgs { Item = fn.Source, Project = fn.Project });
         else if (_contextMenuTarget is FolderNodeVm fv && fv.Project is not null)
             FolderDeleteRequested?.Invoke(this, new FolderDeleteEventArgs { Folder = fv.Folder, Project = fv.Project });
+        else if (_contextMenuTarget is SolutionFolderNodeVm sfv)
+            SolutionFolderDeleteRequested?.Invoke(this, new SolutionFolderDeleteRequestedEventArgs
+            {
+                Solution = sfv.Solution,
+                Folder   = sfv.Folder,
+            });
     }
 
     /// <inheritdoc/>
@@ -664,6 +718,39 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
             StartInlineFolderEdit(fv);
     }
 
+    // ── Solution Folder events ────────────────────────────────────────────────
+
+    /// <inheritdoc/>
+    public event EventHandler<SolutionFolderCreateRequestedEventArgs>? SolutionFolderCreateRequested;
+
+    /// <inheritdoc/>
+    public event EventHandler<SolutionFolderRenameRequestedEventArgs>? SolutionFolderRenameRequested;
+
+    /// <inheritdoc/>
+    public event EventHandler<SolutionFolderDeleteRequestedEventArgs>? SolutionFolderDeleteRequested;
+
+    /// <inheritdoc/>
+    public event EventHandler<ProjectMovedEventArgs>? ProjectMoveRequested;
+
+    /// <inheritdoc/>
+    public void BeginSolutionFolderRename(ISolutionFolder folder)
+    {
+        if (FindSolutionFolderNodeVm(_vm.Roots, folder) is SolutionFolderNodeVm sfv)
+            StartInlineSolutionFolderEdit(sfv);
+    }
+
+    private static SolutionFolderNodeVm? FindSolutionFolderNodeVm(
+        IEnumerable<SolutionExplorerNodeVm> nodes, ISolutionFolder folder)
+    {
+        foreach (var node in nodes)
+        {
+            if (node is SolutionFolderNodeVm sfv && sfv.Folder.Id == folder.Id) return sfv;
+            var found = FindSolutionFolderNodeVm(node.Children, folder);
+            if (found is not null) return found;
+        }
+        return null;
+    }
+
     /// <inheritdoc/>
     public bool ShowAllFiles
     {
@@ -692,10 +779,11 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     {
         if (e.Key == Key.F2)
         {
-            if      (SolutionTree.SelectedItem is SolutionNodeVm sv) { StartInlineSolutionEdit(sv); e.Handled = true; }
-            else if (SolutionTree.SelectedItem is FileNodeVm     fn) { StartInlineEdit(fn);          e.Handled = true; }
-            else if (SolutionTree.SelectedItem is FolderNodeVm   fv) { StartInlineFolderEdit(fv);    e.Handled = true; }
-            else if (SolutionTree.SelectedItem is ProjectNodeVm  pv) { StartInlineProjectEdit(pv);   e.Handled = true; }
+            if      (SolutionTree.SelectedItem is SolutionNodeVm       sv)  { StartInlineSolutionEdit(sv);        e.Handled = true; }
+            else if (SolutionTree.SelectedItem is SolutionFolderNodeVm sfv) { StartInlineSolutionFolderEdit(sfv); e.Handled = true; }
+            else if (SolutionTree.SelectedItem is FileNodeVm            fn)  { StartInlineEdit(fn);               e.Handled = true; }
+            else if (SolutionTree.SelectedItem is FolderNodeVm          fv)  { StartInlineFolderEdit(fv);         e.Handled = true; }
+            else if (SolutionTree.SelectedItem is ProjectNodeVm         pv)  { StartInlineProjectEdit(pv);        e.Handled = true; }
             return;
         }
 
@@ -928,6 +1016,69 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         SolutionTree.Focus();
     }
 
+    // ── F2 Inline rename — solution folder ───────────────────────────────────
+
+    private void StartInlineSolutionFolderEdit(SolutionFolderNodeVm sfv)
+    {
+        sfv.BeginEdit();
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render, () =>
+        {
+            if (FindTreeViewItem(SolutionTree, sfv) is TreeViewItem tvi)
+            {
+                if (FindChild<TextBox>(tvi, "SolutionFolderInlineEditBox") is TextBox tb)
+                {
+                    tb.Focus();
+                    tb.SelectAll();
+                }
+            }
+        });
+    }
+
+    private void OnSolutionFolderInlineEditKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox tb) return;
+        var sfv = tb.DataContext as SolutionFolderNodeVm;
+
+        if (e.Key == Key.Return)
+        {
+            CommitInlineSolutionFolderEdit(sfv);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            sfv?.CancelEdit();
+            SolutionTree.Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void OnSolutionFolderInlineEditLostFocus(object sender, RoutedEventArgs _)
+    {
+        if (sender is TextBox tb)
+            CommitInlineSolutionFolderEdit(tb.DataContext as SolutionFolderNodeVm);
+    }
+
+    private void CommitInlineSolutionFolderEdit(SolutionFolderNodeVm? sfv)
+    {
+        if (sfv is null || !sfv.IsEditing) return;
+
+        var oldName = sfv.Folder.Name;
+        var newName = sfv.CommitEdit();
+
+        if (!string.IsNullOrWhiteSpace(newName)
+            && !string.Equals(newName, oldName, StringComparison.OrdinalIgnoreCase))
+        {
+            SolutionFolderRenameRequested?.Invoke(this, new SolutionFolderRenameRequestedEventArgs
+            {
+                Solution = sfv.Solution,
+                Folder   = sfv.Folder,
+                NewName  = newName,
+            });
+        }
+
+        SolutionTree.Focus();
+    }
+
     // ── F2 Inline rename — project ────────────────────────────────────────────
 
     private void StartInlineProjectEdit(ProjectNodeVm pv)
@@ -995,9 +1146,11 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     // ── DragDrop ──────────────────────────────────────────────────────────────
 
-    private const string DragDataFormat = "SolutionExplorerFileNode";
-    private Point       _dragStartPoint;
-    private FileNodeVm? _draggedNode;
+    private const string DragDataFormat        = "SolutionExplorerFileNode";
+    private const string DragDataFormatProject = "SolutionExplorerProjectNode";
+    private Point          _dragStartPoint;
+    private FileNodeVm?    _draggedNode;
+    private ProjectNodeVm? _draggedProject;
 
     // Slow-click rename (click on already-selected item → rename after delay)
     private SolutionExplorerNodeVm?                      _slowClickCandidate;
@@ -1012,14 +1165,15 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
         _dragStartPoint = e.GetPosition(null);
         _draggedNode    = null;
+        _draggedProject = null;
 
         if (e.OriginalSource is not DependencyObject src) return;
 
         var tvi  = FindAncestor<TreeViewItem>(src);
         var node = tvi?.DataContext as SolutionExplorerNodeVm;
 
-        if (tvi?.DataContext is FileNodeVm fn0)
-            _draggedNode = fn0;
+        if      (tvi?.DataContext is FileNodeVm    fn0) _draggedNode    = fn0;
+        else if (tvi?.DataContext is ProjectNodeVm pv0) _draggedProject = pv0;
 
         // D3 — Multi-select: Ctrl = toggle, Shift = range, plain click = single
         if (node is not null)
@@ -1063,17 +1217,19 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         {
             _slowClickTimer?.Stop();
             _slowClickTimer = null;
-            if      (candidate is SolutionNodeVm sv && sv.IsSelected && !sv.IsEditing) StartInlineSolutionEdit(sv);
-            else if (candidate is FileNodeVm     fn && fn.IsSelected && !fn.IsEditing) StartInlineEdit(fn);
-            else if (candidate is FolderNodeVm   fv && fv.IsSelected && !fv.IsEditing) StartInlineFolderEdit(fv);
-            else if (candidate is ProjectNodeVm  pv && pv.IsSelected && !pv.IsEditing) StartInlineProjectEdit(pv);
+            if      (candidate is SolutionNodeVm       sv  && sv.IsSelected  && !sv.IsEditing)  StartInlineSolutionEdit(sv);
+            else if (candidate is SolutionFolderNodeVm sfv && sfv.IsSelected && !sfv.IsEditing) StartInlineSolutionFolderEdit(sfv);
+            else if (candidate is FileNodeVm            fn  && fn.IsSelected  && !fn.IsEditing)  StartInlineEdit(fn);
+            else if (candidate is FolderNodeVm          fv  && fv.IsSelected  && !fv.IsEditing)  StartInlineFolderEdit(fv);
+            else if (candidate is ProjectNodeVm         pv  && pv.IsSelected  && !pv.IsEditing)  StartInlineProjectEdit(pv);
         };
         _slowClickTimer.Start();
     }
 
     private void OnTreeMouseMove(object sender, MouseEventArgs e)
     {
-        if (e.LeftButton != MouseButtonState.Pressed || _draggedNode is null) return;
+        if (e.LeftButton != MouseButtonState.Pressed) return;
+        if (_draggedNode is null && _draggedProject is null) return;
 
         var pos  = e.GetPosition(null);
         var diff = _dragStartPoint - pos;
@@ -1085,12 +1241,20 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         _slowClickTimer     = null;
         _slowClickCandidate = null;
 
-        // Don't start drag if we're currently editing inline
-        if (_draggedNode.IsEditing) return;
-
-        var data = new DataObject(DragDataFormat, _draggedNode);
-        DragDrop.DoDragDrop(SolutionTree, data, DragDropEffects.Move);
-        _draggedNode = null;
+        if (_draggedNode is not null)
+        {
+            if (_draggedNode.IsEditing) return;
+            var data = new DataObject(DragDataFormat, _draggedNode);
+            DragDrop.DoDragDrop(SolutionTree, data, DragDropEffects.Move);
+            _draggedNode = null;
+        }
+        else if (_draggedProject is not null)
+        {
+            if (_draggedProject.IsEditing) return;
+            var data = new DataObject(DragDataFormatProject, _draggedProject);
+            DragDrop.DoDragDrop(SolutionTree, data, DragDropEffects.Move);
+            _draggedProject = null;
+        }
     }
 
     private void OnTreeDragOver(object sender, DragEventArgs e)

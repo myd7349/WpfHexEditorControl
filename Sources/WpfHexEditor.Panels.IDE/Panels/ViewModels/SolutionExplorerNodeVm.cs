@@ -373,6 +373,47 @@ public sealed class FileNodeVm : SolutionExplorerNodeVm
     public IProject?   Project { get; init; }
 }
 
+// ── Solution Folder node (VS-like — holds Projects at solution level) ────────
+
+/// <summary>
+/// Represents a VS-like Solution Folder node in the Solution Explorer tree.
+/// Solution Folders group <see cref="ProjectNodeVm"/>s logically; they hold no file items.
+/// </summary>
+public sealed class SolutionFolderNodeVm : SolutionExplorerNodeVm
+{
+    private bool   _isEditing;
+    private string _editingName = string.Empty;
+
+    public SolutionFolderNodeVm(ISolutionFolder folder, ISolution solution)
+    {
+        Folder   = folder;
+        Solution = solution;
+    }
+
+    public ISolutionFolder Folder   { get; }
+    public ISolution       Solution { get; }
+
+    public override string DisplayName => Folder.Name;
+    /// <summary>Segoe MDL2 "FolderOpen" glyph — distinct colour from project-level FolderNodeVm.</summary>
+    public override string Icon => "\uE8B7";
+
+    // ── Inline rename ─────────────────────────────────────────────────────────
+
+    public override bool IsEditing => _isEditing;
+
+    private void SetIsEditing(bool v) { _isEditing = v; OnPropertyChanged(nameof(IsEditing)); }
+
+    public string EditingName
+    {
+        get => _editingName;
+        set { _editingName = value; OnPropertyChanged(); }
+    }
+
+    public void   BeginEdit()  { EditingName = Folder.Name; SetIsEditing(true); }
+    public string CommitEdit() { var n = _editingName.Trim(); SetIsEditing(false); return n; }
+    public void   CancelEdit() => SetIsEditing(false);
+}
+
 // ── Physical folder node (Show All Files mode) ───────────────────────────────
 
 /// <summary>

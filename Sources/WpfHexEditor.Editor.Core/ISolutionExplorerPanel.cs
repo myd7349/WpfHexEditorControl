@@ -176,6 +176,35 @@ public interface ISolutionExplorerPanel
     /// </summary>
     void BeginFolderRename(IVirtualFolder folder);
 
+    // ── Solution Folder events ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Fired when the user requests creation of a new Solution Folder from the context menu.
+    /// </summary>
+    event EventHandler<SolutionFolderCreateRequestedEventArgs>? SolutionFolderCreateRequested;
+
+    /// <summary>
+    /// Fired when the user commits an inline rename on a Solution Folder node.
+    /// </summary>
+    event EventHandler<SolutionFolderRenameRequestedEventArgs>? SolutionFolderRenameRequested;
+
+    /// <summary>
+    /// Fired when the user requests deletion of a Solution Folder (context menu "Remove").
+    /// Projects inside the folder are moved back to the solution root.
+    /// </summary>
+    event EventHandler<SolutionFolderDeleteRequestedEventArgs>? SolutionFolderDeleteRequested;
+
+    /// <summary>
+    /// Fired when the user drops a project node onto a Solution Folder or onto the solution root.
+    /// </summary>
+    event EventHandler<ProjectMovedEventArgs>? ProjectMoveRequested;
+
+    /// <summary>
+    /// Enters inline-rename mode on the tree node that corresponds to <paramref name="folder"/>.
+    /// Call this immediately after creating a new Solution Folder.
+    /// </summary>
+    void BeginSolutionFolderRename(ISolutionFolder folder);
+
     /// <summary>
     /// Gets or sets whether the tree displays the physical file system under the project directory
     /// instead of the virtual folder organisation.
