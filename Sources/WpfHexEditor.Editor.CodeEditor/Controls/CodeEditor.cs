@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - Main Editor Control (Phase 1 - Foundation)
+// Custom CodeEditor - Main Editor Control (Phase 1 - Foundation)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 // Inspired by HexViewport.cs custom rendering pattern
@@ -17,25 +17,25 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using WpfHexEditor.Editor.JsonEditor.Models;
-using WpfHexEditor.Editor.JsonEditor.Helpers;
-using WpfHexEditor.Editor.JsonEditor.Services;
+using WpfHexEditor.Editor.CodeEditor.Models;
+using WpfHexEditor.Editor.CodeEditor.Helpers;
+using WpfHexEditor.Editor.CodeEditor.Services;
 using WpfHexEditor.Core.Settings;
 using WpfHexEditor.Editor.Core;
 
-namespace WpfHexEditor.Editor.JsonEditor.Controls
+namespace WpfHexEditor.Editor.CodeEditor.Controls
 {
     /// <summary>
     /// High-performance JSON text editor using custom rendering (FrameworkElement).
     /// Phase 1: Basic text display + keyboard input + line numbers
-    /// Phase 2: Syntax highlighting with JsonSyntaxHighlighter
+    /// Phase 2: Syntax highlighting with CodeSyntaxHighlighter
     /// Future phases will add: IntelliSense, validation
     /// </summary>
-    public class JsonEditor : FrameworkElement, IDocumentEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, IStatusBarContributor, ISearchTarget
+    public class CodeEditor : FrameworkElement, IDocumentEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, IStatusBarContributor, ISearchTarget
     {
         #region Fields - Document Model
 
-        private JsonDocument _document;
+        private CodeDocument _document;
         private int _cursorLine = 0;        // Current cursor line (0-based)
         private int _cursorColumn = 0;      // Current cursor column (0-based)
         private TextSelection _selection;   // Current text selection
@@ -44,7 +44,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         #region Fields - Syntax Highlighting (Phase 2)
 
-        private JsonSyntaxHighlighter _highlighter;
+        private CodeSyntaxHighlighter _highlighter;
 
         #endregion
 
@@ -156,7 +156,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // Uses same pattern as HexEditor with DynamicSettingsGenerator
 
         public static readonly DependencyProperty ShowLineNumbersProperty =
-            DependencyProperty.Register(nameof(ShowLineNumbers), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ShowLineNumbers), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty EnableIntelliSenseProperty =
-            DependencyProperty.Register(nameof(EnableIntelliSense), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EnableIntelliSense), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true));
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty EnableValidationProperty =
-            DependencyProperty.Register(nameof(EnableValidation), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EnableValidation), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true));
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ===== APPEARANCE - FONTS =====
 
         public static readonly DependencyProperty EditorFontFamilyProperty =
-            DependencyProperty.Register(nameof(EditorFontFamily), typeof(FontFamily), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EditorFontFamily), typeof(FontFamily), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new FontFamily("Consolas"), FrameworkPropertyMetadataOptions.AffectsRender,
                     OnFontChanged));
 
@@ -234,7 +234,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty EditorFontSizeProperty =
-            DependencyProperty.Register(nameof(EditorFontSize), typeof(double), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EditorFontSize), typeof(double), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(12.0, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnFontChanged));
 
@@ -249,7 +249,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty LineNumberFontSizeProperty =
-            DependencyProperty.Register(nameof(LineNumberFontSize), typeof(double), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(LineNumberFontSize), typeof(double), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(10.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Fonts")]
@@ -263,7 +263,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty EditorFontWeightProperty =
-            DependencyProperty.Register(nameof(EditorFontWeight), typeof(FontWeight), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EditorFontWeight), typeof(FontWeight), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(FontWeights.Normal, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnFontChanged));
 
@@ -277,7 +277,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty LineNumberFontFamilyProperty =
-            DependencyProperty.Register(nameof(LineNumberFontFamily), typeof(FontFamily), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(LineNumberFontFamily), typeof(FontFamily), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new FontFamily("Consolas"), FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Fonts")]
@@ -290,7 +290,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty LineHeightMultiplierProperty =
-            DependencyProperty.Register(nameof(LineHeightMultiplier), typeof(double), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(LineHeightMultiplier), typeof(double), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(1.3, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnFontChanged));
 
@@ -305,7 +305,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty BoldKeywordsProperty =
-            DependencyProperty.Register(nameof(BoldKeywords), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(BoldKeywords), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Fonts")]
@@ -318,7 +318,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty ItalicCommentsProperty =
-            DependencyProperty.Register(nameof(ItalicComments), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ItalicComments), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Fonts")]
@@ -333,7 +333,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ===== APPEARANCE - COLORS =====
 
         public static readonly DependencyProperty EditorBackgroundProperty =
-            DependencyProperty.Register(nameof(EditorBackground), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EditorBackground), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.White, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Colors")]
@@ -346,7 +346,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty EditorForegroundProperty =
-            DependencyProperty.Register(nameof(EditorForeground), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EditorForeground), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Colors")]
@@ -359,7 +359,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty LineNumberBackgroundProperty =
-            DependencyProperty.Register(nameof(LineNumberBackground), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(LineNumberBackground), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(245, 245, 245)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
@@ -373,7 +373,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty LineNumberForegroundProperty =
-            DependencyProperty.Register(nameof(LineNumberForeground), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(LineNumberForeground), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(128, 128, 128)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
@@ -387,7 +387,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty CurrentLineBackgroundProperty =
-            DependencyProperty.Register(nameof(CurrentLineBackground), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(CurrentLineBackground), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromArgb(30, 0, 120, 215)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
@@ -401,7 +401,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SelectionBackgroundProperty =
-            DependencyProperty.Register(nameof(SelectionBackground), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SelectionBackground), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(173, 214, 255)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
@@ -417,7 +417,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ===== APPEARANCE - EDITOR COLORS (Advanced) =====
 
         public static readonly DependencyProperty CaretColorProperty =
-            DependencyProperty.Register(nameof(CaretColor), typeof(Color), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(CaretColor), typeof(Color), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Colors.Black, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Colors")]
@@ -430,7 +430,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty CurrentLineBorderColorProperty =
-            DependencyProperty.Register(nameof(CurrentLineBorderColor), typeof(Color), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(CurrentLineBorderColor), typeof(Color), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Color.FromArgb(80, 0, 120, 215), FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Colors")]
@@ -443,7 +443,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty InactiveSelectionBackgroundProperty =
-            DependencyProperty.Register(nameof(InactiveSelectionBackground), typeof(Color), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(InactiveSelectionBackground), typeof(Color), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Color.FromArgb(50, 128, 128, 128), FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Colors")]
@@ -456,7 +456,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty ValidationErrorGlyphColorProperty =
-            DependencyProperty.Register(nameof(ValidationErrorGlyphColor), typeof(Color), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ValidationErrorGlyphColor), typeof(Color), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Colors.Red, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Colors")]
@@ -469,7 +469,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty ValidationWarningGlyphColorProperty =
-            DependencyProperty.Register(nameof(ValidationWarningGlyphColor), typeof(Color), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ValidationWarningGlyphColor), typeof(Color), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Color.FromRgb(255, 165, 0), FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Appearance.Colors")]
@@ -484,7 +484,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ===== BEHAVIOR =====
 
         public static readonly DependencyProperty IndentSizeProperty =
-            DependencyProperty.Register(nameof(IndentSize), typeof(int), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(IndentSize), typeof(int), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(2, OnIndentSizeChanged));
 
         [Category("Behavior")]
@@ -497,7 +497,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty IntelliSenseDelayProperty =
-            DependencyProperty.Register(nameof(IntelliSenseDelay), typeof(int), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(IntelliSenseDelay), typeof(int), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(300));
 
         [Category("Behavior")]
@@ -510,7 +510,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty ValidationDelayProperty =
-            DependencyProperty.Register(nameof(ValidationDelay), typeof(int), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ValidationDelay), typeof(int), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(1000));
 
         [Category("Behavior")]
@@ -525,7 +525,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ===== BEHAVIOR - SELECTION & CURSOR =====
 
         public static readonly DependencyProperty ShowCurrentLineHighlightProperty =
-            DependencyProperty.Register(nameof(ShowCurrentLineHighlight), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ShowCurrentLineHighlight), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Behavior.Selection")]
@@ -538,7 +538,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty ShowCurrentLineBorderProperty =
-            DependencyProperty.Register(nameof(ShowCurrentLineBorder), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ShowCurrentLineBorder), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Behavior.Selection")]
@@ -551,7 +551,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty CaretBlinkRateProperty =
-            DependencyProperty.Register(nameof(CaretBlinkRate), typeof(int), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(CaretBlinkRate), typeof(int), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(500, OnCaretBlinkRateChanged));
 
         [Category("Behavior.Selection")]
@@ -565,14 +565,14 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         private static void OnCaretBlinkRateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is JsonEditor editor)
+            if (d is CodeEditor editor)
             {
                 editor.UpdateCaretBlinkTimer();
             }
         }
 
         public static readonly DependencyProperty CaretWidthProperty =
-            DependencyProperty.Register(nameof(CaretWidth), typeof(double), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(CaretWidth), typeof(double), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(2.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Behavior.Selection")]
@@ -585,7 +585,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SmartBackspaceProperty =
-            DependencyProperty.Register(nameof(SmartBackspace), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SmartBackspace), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true));
 
         [Category("Behavior.Selection")]
@@ -600,7 +600,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ===== BEHAVIOR - ADVANCED FEATURES =====
 
         public static readonly DependencyProperty EnableBracketMatchingProperty =
-            DependencyProperty.Register(nameof(EnableBracketMatching), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EnableBracketMatching), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Behavior.Advanced")]
@@ -613,7 +613,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty EnableAutoClosingBracketsProperty =
-            DependencyProperty.Register(nameof(EnableAutoClosingBrackets), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EnableAutoClosingBrackets), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true));
 
         [Category("Behavior.Advanced")]
@@ -626,7 +626,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty EnableAutoClosingQuotesProperty =
-            DependencyProperty.Register(nameof(EnableAutoClosingQuotes), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EnableAutoClosingQuotes), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true));
 
         [Category("Behavior.Advanced")]
@@ -641,7 +641,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ===== BEHAVIOR - SCROLLING & PERFORMANCE =====
 
         public static readonly DependencyProperty EnableVirtualScrollingProperty =
-            DependencyProperty.Register(nameof(EnableVirtualScrolling), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(EnableVirtualScrolling), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Behavior.Scrolling")]
@@ -654,7 +654,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SmoothScrollingProperty =
-            DependencyProperty.Register(nameof(SmoothScrolling), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SmoothScrolling), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true));
 
         [Category("Behavior.Scrolling")]
@@ -667,7 +667,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty ScrollSpeedMultiplierProperty =
-            DependencyProperty.Register(nameof(ScrollSpeedMultiplier), typeof(double), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ScrollSpeedMultiplier), typeof(double), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(1.0));
 
         [Category("Behavior.Scrolling")]
@@ -681,7 +681,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty HorizontalScrollSensitivityProperty =
-            DependencyProperty.Register(nameof(HorizontalScrollSensitivity), typeof(double), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(HorizontalScrollSensitivity), typeof(double), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(1.0));
 
         [Category("Behavior.Scrolling")]
@@ -695,7 +695,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty ScrollBarVisibilityModeProperty =
-            DependencyProperty.Register(nameof(ScrollBarVisibilityMode), typeof(ScrollBarVisibility), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(ScrollBarVisibilityMode), typeof(ScrollBarVisibility), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(ScrollBarVisibility.Auto));
 
         [Category("Behavior.Scrolling")]
@@ -708,7 +708,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty RenderBufferProperty =
-            DependencyProperty.Register(nameof(RenderBuffer), typeof(int), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(RenderBuffer), typeof(int), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(10, FrameworkPropertyMetadataOptions.AffectsRender));
 
         [Category("Behavior.Scrolling")]
@@ -722,7 +722,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty MaxCachedLinesProperty =
-            DependencyProperty.Register(nameof(MaxCachedLines), typeof(int), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(MaxCachedLines), typeof(int), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(1000));
 
         [Category("Behavior.Scrolling")]
@@ -736,7 +736,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty UseHardwareAccelerationProperty =
-            DependencyProperty.Register(nameof(UseHardwareAcceleration), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(UseHardwareAcceleration), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true, OnUseHardwareAccelerationChanged));
 
         [Category("Behavior.Scrolling")]
@@ -751,7 +751,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ===== SYNTAX HIGHLIGHTING COLORS =====
 
         public static readonly DependencyProperty SyntaxBraceColorProperty =
-            DependencyProperty.Register(nameof(SyntaxBraceColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxBraceColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnSyntaxColorChanged));
 
@@ -765,7 +765,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxBracketColorProperty =
-            DependencyProperty.Register(nameof(SyntaxBracketColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxBracketColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnSyntaxColorChanged));
 
@@ -779,7 +779,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxKeyColorProperty =
-            DependencyProperty.Register(nameof(SyntaxKeyColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxKeyColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 0, 255)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -793,7 +793,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxStringValueColorProperty =
-            DependencyProperty.Register(nameof(SyntaxStringValueColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxStringValueColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(163, 21, 21)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -807,7 +807,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxNumberColorProperty =
-            DependencyProperty.Register(nameof(SyntaxNumberColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxNumberColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(9, 134, 88)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -821,7 +821,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxBooleanColorProperty =
-            DependencyProperty.Register(nameof(SyntaxBooleanColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxBooleanColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 0, 255)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -835,7 +835,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxNullColorProperty =
-            DependencyProperty.Register(nameof(SyntaxNullColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxNullColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.Gray, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnSyntaxColorChanged));
 
@@ -849,7 +849,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxCommentColorProperty =
-            DependencyProperty.Register(nameof(SyntaxCommentColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxCommentColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.Green, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnSyntaxColorChanged));
 
@@ -863,7 +863,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxKeywordColorProperty =
-            DependencyProperty.Register(nameof(SyntaxKeywordColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxKeywordColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 0, 255)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -877,7 +877,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxValueTypeColorProperty =
-            DependencyProperty.Register(nameof(SyntaxValueTypeColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxValueTypeColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(43, 145, 175)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -891,7 +891,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxCalcExpressionColorProperty =
-            DependencyProperty.Register(nameof(SyntaxCalcExpressionColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxCalcExpressionColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(128, 0, 128)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -905,7 +905,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxVariableReferenceColorProperty =
-            DependencyProperty.Register(nameof(SyntaxVariableReferenceColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxVariableReferenceColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(128, 0, 128)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -919,7 +919,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxErrorColorProperty =
-            DependencyProperty.Register(nameof(SyntaxErrorColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxErrorColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.Red, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnSyntaxColorChanged));
 
@@ -933,7 +933,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxCommaColorProperty =
-            DependencyProperty.Register(nameof(SyntaxCommaColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxCommaColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnSyntaxColorChanged));
 
@@ -947,7 +947,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxColonColorProperty =
-            DependencyProperty.Register(nameof(SyntaxColonColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxColonColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(Brushes.Black, FrameworkPropertyMetadataOptions.AffectsRender,
                     OnSyntaxColorChanged));
 
@@ -961,7 +961,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxEscapeSequenceColorProperty =
-            DependencyProperty.Register(nameof(SyntaxEscapeSequenceColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxEscapeSequenceColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(215, 186, 125)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -975,7 +975,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxUrlColorProperty =
-            DependencyProperty.Register(nameof(SyntaxUrlColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxUrlColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(0, 102, 204)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -989,7 +989,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty SyntaxDeprecatedColorProperty =
-            DependencyProperty.Register(nameof(SyntaxDeprecatedColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(SyntaxDeprecatedColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromRgb(128, 128, 128)),
                     FrameworkPropertyMetadataOptions.AffectsRender, OnSyntaxColorChanged));
 
@@ -1003,7 +1003,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty HighlightMatchColorProperty =
-            DependencyProperty.Register(nameof(HighlightMatchColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(HighlightMatchColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromArgb(80, 255, 255, 0)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
@@ -1017,7 +1017,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         public static readonly DependencyProperty FindResultColorProperty =
-            DependencyProperty.Register(nameof(FindResultColor), typeof(Brush), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(FindResultColor), typeof(Brush), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(new SolidColorBrush(Color.FromArgb(100, 255, 165, 0)),
                     FrameworkPropertyMetadataOptions.AffectsRender));
 
@@ -1036,7 +1036,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         private static void OnFontChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is JsonEditor editor)
+            if (d is CodeEditor editor)
             {
                 // Update typefaces
                 var fontFamily = editor.EditorFontFamily;
@@ -1053,7 +1053,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         private static void OnIndentSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is JsonEditor editor && editor._document != null)
+            if (d is CodeEditor editor && editor._document != null)
             {
                 editor._document.IndentSize = (int)e.NewValue;
             }
@@ -1061,7 +1061,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         private static void OnSyntaxColorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is JsonEditor editor && editor._highlighter != null)
+            if (d is CodeEditor editor && editor._highlighter != null)
             {
                 // Update highlighter colors from DPs
                 editor.UpdateSyntaxHighlighterColors();
@@ -1078,7 +1078,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         private static void OnUseHardwareAccelerationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is JsonEditor editor)
+            if (d is CodeEditor editor)
             {
                 // Update RenderOptions hints for hardware acceleration
                 bool useAcceleration = (bool)e.NewValue;
@@ -1104,10 +1104,10 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         #region Constructor
 
-        public JsonEditor()
+        public CodeEditor()
         {
             // Initialize document
-            _document = new JsonDocument();
+            _document = new CodeDocument();
             _selection = new TextSelection();
 
             // Subscribe to document changes
@@ -1120,7 +1120,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             CalculateCharacterDimensions();
 
             // Initialize syntax highlighter (Phase 2)
-            _highlighter = new JsonSyntaxHighlighter();
+            _highlighter = new CodeSyntaxHighlighter();
             UpdateSyntaxHighlighterColors();
 
             // Initialize undo/redo stack (Phase 3)
@@ -1822,7 +1822,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             SearchResultsChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        // JsonEditor does not support replace
+        // CodeEditor does not support replace
         void ISearchTarget.Replace(string replacement)    { }
         void ISearchTarget.ReplaceAll(string replacement) { }
 
@@ -1899,10 +1899,10 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             };
 
             // Subscribe to size changed for viewport updates
-            SizeChanged += JsonEditor_SizeChanged;
+            SizeChanged += CodeEditor_SizeChanged;
         }
 
-        private void JsonEditor_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void CodeEditor_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (_virtualizationEngine != null)
             {
@@ -3892,7 +3892,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         /// <summary>
         /// Get the document model
         /// </summary>
-        public JsonDocument Document => _document;
+        public CodeDocument Document => _document;
 
         /// <summary>
         /// Load text content
@@ -3964,7 +3964,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         // ── IsReadOnly DP ─────────────────────────────────────────────────
 
         public static readonly DependencyProperty IsReadOnlyProperty =
-            DependencyProperty.Register(nameof(IsReadOnly), typeof(bool), typeof(JsonEditor),
+            DependencyProperty.Register(nameof(IsReadOnly), typeof(bool), typeof(CodeEditor),
                 new System.Windows.PropertyMetadata(false, (_, _) => { }));
 
         public bool IsReadOnly
@@ -4048,7 +4048,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         public void Close()
         {
-            _document = new Models.JsonDocument();
+            _document = new Models.CodeDocument();
             _currentFilePath = null;
             _isDirty = false;
             _cursorLine = 0;
@@ -4072,7 +4072,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         public event EventHandler<string>? OutputMessage;
         public event EventHandler? SelectionChanged;
 
-        // ── Long-running operations (no-op: JsonEditor has no async operations) ──
+        // ── Long-running operations (no-op: CodeEditor has no async operations) ──
         public bool IsBusy => false;
         public void CancelOperation() { }
         public event EventHandler<DocumentOperationEventArgs>?          OperationStarted;
@@ -4092,9 +4092,9 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         #endregion
 
         // ── IPropertyProviderSource ───────────────────────────────────────────
-        private WpfHexEditor.Editor.JsonEditor.JsonEditorPropertyProvider? _propertyProvider;
+        private WpfHexEditor.Editor.CodeEditor.CodeEditorPropertyProvider? _propertyProvider;
         public IPropertyProvider? GetPropertyProvider()
-            => _propertyProvider ??= new WpfHexEditor.Editor.JsonEditor.JsonEditorPropertyProvider(this);
+            => _propertyProvider ??= new WpfHexEditor.Editor.CodeEditor.CodeEditorPropertyProvider(this);
 
         // ═══════════════════════════════════════════════════════════════════
         // IStatusBarContributor

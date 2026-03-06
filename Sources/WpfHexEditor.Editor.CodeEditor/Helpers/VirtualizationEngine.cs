@@ -5,13 +5,13 @@
 //////////////////////////////////////////////
 
 // Apache 2.0 - 2026
-// Virtual Scrolling Engine for JsonEditor - Phase 11
+// Virtual Scrolling Engine for CodeEditor - Phase 11
 // Author: Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com)
 
 using System;
 
-namespace WpfHexEditor.Editor.JsonEditor.Helpers
+namespace WpfHexEditor.Editor.CodeEditor.Helpers
 {
     /// <summary>
     /// Engine for calculating visible lines in viewport for virtual scrolling.

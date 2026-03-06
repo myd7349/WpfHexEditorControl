@@ -4,13 +4,13 @@
     Contributors: Claude Sonnet 4.6
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.JsonEditor.Controls.FormatScriptEditorControl"
+<UserControl x:Class="WpfHexEditor.Editor.CodeEditor.Controls.FormatScriptEditorControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:local="clr-namespace:WpfHexEditor.Editor.JsonEditor.Controls"
-             xmlns:jsonEditor="clr-namespace:WpfHexEditor.Editor.JsonEditor.Controls"
+             xmlns:local="clr-namespace:WpfHexEditor.Editor.CodeEditor.Controls"
+             xmlns:codeEditor="clr-namespace:WpfHexEditor.Editor.CodeEditor.Controls"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000">
 
@@ -200,7 +200,7 @@
                 <!-- Editor Tab -->
                 <TabItem x:Name="EditorTab" Header="Editor">
                     <Grid>
-                        <jsonEditor:JsonEditor x:Name="JsonEditorControl"
+                        <codeEditor:CodeEditor x:Name="CodeEditorControl"
                                               ShowLineNumbers="True"
                                               EnableIntelliSense="True"
                                               EnableValidation="True"

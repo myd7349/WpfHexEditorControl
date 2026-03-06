@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - IntelliSense Popup (Phase 4)
+// Custom CodeEditor - IntelliSense Popup (Phase 4)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -14,14 +14,14 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using WpfHexEditor.Editor.JsonEditor.Helpers;
-using WpfHexEditor.Editor.JsonEditor.Models;
+using WpfHexEditor.Editor.CodeEditor.Helpers;
+using WpfHexEditor.Editor.CodeEditor.Models;
 
-namespace WpfHexEditor.Editor.JsonEditor.Controls
+namespace WpfHexEditor.Editor.CodeEditor.Controls
 {
     /// <summary>
     /// IntelliSense popup control with suggestion list and documentation preview.
-    /// Displays context-aware suggestions from JsonIntelliSenseProvider.
+    /// Displays context-aware suggestions from CodeIntelliSenseProvider.
     /// Phase 4: Basic implementation with root level + blocks contexts.
     /// Phase 7 will add all contexts, snippets, and tooltips.
     /// </summary>
@@ -32,8 +32,8 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         private ListBox _suggestionList;
         private TextBlock _documentationPreview;
         private Border _popupBorder;
-        private JsonEditor _editor;
-        private JsonIntelliSenseProvider _provider;
+        private CodeEditor _editor;
+        private CodeIntelliSenseProvider _provider;
         private DispatcherTimer _delayTimer;
         private string _filterText = string.Empty;
         private List<IntelliSenseSuggestion> _allSuggestions;
@@ -42,10 +42,10 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         #region Constructor
 
-        public IntelliSensePopup(JsonEditor editor)
+        public IntelliSensePopup(CodeEditor editor)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
-            _provider = new JsonIntelliSenseProvider();
+            _provider = new CodeIntelliSenseProvider();
 
             InitializeUI();
             InitializeTimer();

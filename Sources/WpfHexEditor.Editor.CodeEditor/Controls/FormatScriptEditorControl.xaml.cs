@@ -16,13 +16,13 @@ using Microsoft.Win32;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using WpfHexEditor.Definitions;
-using WpfHexEditor.Editor.JsonEditor.Models;
+using WpfHexEditor.Editor.CodeEditor.Models;
 
-namespace WpfHexEditor.Editor.JsonEditor.Controls
+namespace WpfHexEditor.Editor.CodeEditor.Controls
 {
     /// <summary>
     /// Main container control for Format Script Editor.
-    /// Integrates JsonEditor with file management, validation, and testing.
+    /// Integrates CodeEditor with file management, validation, and testing.
     /// Phase 8: Complete integration with embedded formats + external file support.
     /// </summary>
     public partial class FormatScriptEditorControl : UserControl
@@ -71,26 +71,26 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             FormatTreeView.SelectedItemChanged += FormatTreeView_SelectedItemChanged;
 
             // Editor events
-            if (JsonEditorControl != null)
+            if (CodeEditorControl != null)
             {
                 // Update status bar when cursor moves
-                JsonEditorControl.PreviewKeyUp += (s, e) => UpdateStatusBar();
-                JsonEditorControl.PreviewMouseUp += (s, e) => UpdateStatusBar();
+                CodeEditorControl.PreviewKeyUp += (s, e) => UpdateStatusBar();
+                CodeEditorControl.PreviewMouseUp += (s, e) => UpdateStatusBar();
             }
         }
 
         /// <summary>
-        /// When Editor tab is selected, automatically focus the JsonEditor
+        /// When Editor tab is selected, automatically focus the CodeEditor
         /// This allows immediate keyboard input without needing to click twice
         /// </summary>
         private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (MainTabControl.SelectedItem == EditorTab && JsonEditorControl != null)
+            if (MainTabControl.SelectedItem == EditorTab && CodeEditorControl != null)
             {
                 // Use Dispatcher to ensure the tab switch animation completes first
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    JsonEditorControl.Focus();
+                    CodeEditorControl.Focus();
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
@@ -191,7 +191,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
   ]
 }";
 
-                JsonEditorControl.LoadText(template);
+                CodeEditorControl.LoadText(template);
                 _currentFilePath = null;
                 _isModified = true;
                 FileNameText.Text = "Untitled.json";
@@ -223,18 +223,18 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         private void UndoButton_Click(object sender, RoutedEventArgs e)
         {
-            // JsonEditor handles undo internally via Ctrl+Z
-            if (JsonEditorControl.CanUndo)
+            // CodeEditor handles undo internally via Ctrl+Z
+            if (CodeEditorControl.CanUndo)
             {
                 // Trigger undo programmatically
-                // (In actual implementation, expose Undo() method on JsonEditor)
+                // (In actual implementation, expose Undo() method on CodeEditor)
             }
         }
 
         private void RedoButton_Click(object sender, RoutedEventArgs e)
         {
-            // JsonEditor handles redo internally via Ctrl+Y
-            if (JsonEditorControl.CanRedo)
+            // CodeEditor handles redo internally via Ctrl+Y
+            if (CodeEditorControl.CanRedo)
             {
                 // Trigger redo programmatically
             }
@@ -244,10 +244,10 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         {
             try
             {
-                var jsonText = JsonEditorControl.GetText();
+                var jsonText = CodeEditorControl.GetText();
                 var parsed = JsonNode.Parse(jsonText);
                 var formatted = parsed!.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
-                JsonEditorControl.LoadText(formatted);
+                CodeEditorControl.LoadText(formatted);
                 _isModified = true;
                 UpdateStatusBar();
             }
@@ -261,13 +261,13 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         private void ValidateButton_Click(object sender, RoutedEventArgs e)
         {
             // Trigger validation
-            JsonEditorControl.TriggerValidation();
+            CodeEditorControl.TriggerValidation();
 
             // Update validation tab
             UpdateValidationTab();
 
             // Show validation tab
-            var tabControl = FindParent<TabControl>(JsonEditorControl);
+            var tabControl = FindParent<TabControl>(CodeEditorControl);
             if (tabControl != null)
             {
                 tabControl.SelectedIndex = 2; // Validation tab
@@ -298,7 +298,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             try
             {
                 var content = File.ReadAllText(filePath);
-                JsonEditorControl.LoadText(content);
+                CodeEditorControl.LoadText(content);
                 _currentFilePath = filePath;
                 _isModified = false;
                 FileNameText.Text = Path.GetFileName(filePath);
@@ -317,7 +317,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             try
             {
                 var content = EmbeddedFormatCatalog.Instance.GetJson(resourceName);
-                JsonEditorControl.LoadText(content);
+                CodeEditorControl.LoadText(content);
                 _currentFilePath = null; // Embedded format
                 _isModified = false;
                 var parts = resourceName.Split('.');
@@ -356,7 +356,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
             try
             {
-                var content = JsonEditorControl.GetText();
+                var content = CodeEditorControl.GetText();
                 File.WriteAllText(_currentFilePath, content);
                 _isModified = false;
                 FileNameText.Text = Path.GetFileName(_currentFilePath);
@@ -400,21 +400,21 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         private void UpdateStatusBar()
         {
-            if (JsonEditorControl == null) return;
+            if (CodeEditorControl == null) return;
 
             try
             {
                 // Update line/column
-                var pos = JsonEditorControl.CursorPosition;
+                var pos = CodeEditorControl.CursorPosition;
                 LineColumnText.Text = $"Ln {pos.Line + 1}, Col {pos.Column + 1}";
 
                 // Update errors/warnings
-                ErrorCountText.Text = $"{JsonEditorControl.ValidationErrorCount} Errors";
-                WarningCountText.Text = $"{JsonEditorControl.ValidationWarningCount} Warnings";
+                ErrorCountText.Text = $"{CodeEditorControl.ValidationErrorCount} Errors";
+                WarningCountText.Text = $"{CodeEditorControl.ValidationWarningCount} Warnings";
 
                 // Update undo/redo buttons
-                UndoButton.IsEnabled = JsonEditorControl.CanUndo;
-                RedoButton.IsEnabled = JsonEditorControl.CanRedo;
+                UndoButton.IsEnabled = CodeEditorControl.CanUndo;
+                RedoButton.IsEnabled = CodeEditorControl.CanRedo;
             }
             catch
             {
@@ -424,12 +424,12 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
 
         private void UpdateValidationTab()
         {
-            if (JsonEditorControl == null || ValidationListBox == null)
+            if (CodeEditorControl == null || ValidationListBox == null)
                 return;
 
             try
             {
-                var errors = JsonEditorControl.ValidationErrors;
+                var errors = CodeEditorControl.ValidationErrors;
 
                 var items = errors.Select(e => new
                 {
@@ -473,9 +473,9 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         #region Public API
 
         /// <summary>
-        /// Get the JsonEditor control
+        /// Get the CodeEditor control
         /// </summary>
-        public JsonEditor Editor => JsonEditorControl;
+        public CodeEditor Editor => CodeEditorControl;
 
         /// <summary>
         /// Load format definition from file path
@@ -490,7 +490,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         /// </summary>
         public string GetFormatJson()
         {
-            return JsonEditorControl?.GetText() ?? string.Empty;
+            return CodeEditorControl?.GetText() ?? string.Empty;
         }
 
         #endregion

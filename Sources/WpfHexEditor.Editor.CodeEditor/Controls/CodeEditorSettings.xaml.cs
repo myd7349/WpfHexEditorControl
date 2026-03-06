@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// JsonEditor Settings Panel - Auto-generated Configuration UI
+// CodeEditor Settings Panel - Auto-generated Configuration UI
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 // Pattern: Uses unified BaseEditorSettings<T> helper (composition)
@@ -10,15 +10,15 @@ using System.Linq;
 using System.Windows.Controls;
 using WpfHexEditor.HexEditor.Controls;
 
-namespace WpfHexEditor.Editor.JsonEditor.Controls
+namespace WpfHexEditor.Editor.CodeEditor.Controls
 {
     /// <summary>
-    /// Complete JsonEditor Settings Panel - Auto-generated via Reflection.
+    /// Complete CodeEditor Settings Panel - Auto-generated via Reflection.
     /// Uses unified BaseEditorSettings helper with DynamicSettingsGenerator.
     ///
     /// <para><b>Usage:</b></para>
     /// <para>
-    /// 1. Set JsonEditorControl property to the JsonEditor instance you want to configure
+    /// 1. Set CodeEditorControl property to the CodeEditor instance you want to configure
     /// 2. The UI will be auto-generated based on [Category] attributes on Dependency Properties
     /// 3. Use GetSettingsJson() to save settings, LoadSettingsJson(json) to restore
     /// </para>
@@ -30,15 +30,15 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
     /// Use LoadSettingsJson(json) to restore settings from a saved JSON string.
     /// </para>
     /// </summary>
-    public partial class JsonEditorSettings : UserControl
+    public partial class CodeEditorSettings : UserControl
     {
-        private JsonEditor _jsonEditorControl;
-        private BaseEditorSettings<JsonEditor> _baseHelper;
+        private CodeEditor _jsonEditorControl;
+        private BaseEditorSettings<CodeEditor> _baseHelper;
 
         /// <summary>
-        /// Reference to the JsonEditor control to configure
+        /// Reference to the CodeEditor control to configure
         /// </summary>
-        public JsonEditor JsonEditorControl
+        public CodeEditor CodeEditorControl
         {
             get => _jsonEditorControl;
             set
@@ -53,14 +53,14 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
             }
         }
 
-        public JsonEditorSettings()
+        public CodeEditorSettings()
         {
             InitializeComponent();
 
             // Initialize helper with composition
-            _baseHelper = new BaseEditorSettings<JsonEditor>(
+            _baseHelper = new BaseEditorSettings<CodeEditor>(
                 this,
-                typeof(JsonEditor),
+                typeof(CodeEditor),
                 () => _jsonEditorControl,
                 () => SettingsScrollViewer);
 
@@ -72,14 +72,14 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         #region Public API - Delegate to Helper
 
         /// <summary>
-        /// Gets the current JsonEditor settings as JSON string.
+        /// Gets the current CodeEditor settings as JSON string.
         /// The consumer is responsible for persisting this (file, database, registry, etc.)
         /// </summary>
         /// <returns>JSON string containing all settings</returns>
         public string GetSettingsJson() => _baseHelper.GetSettingsJson();
 
         /// <summary>
-        /// Loads JsonEditor settings from JSON string.
+        /// Loads CodeEditor settings from JSON string.
         /// </summary>
         /// <param name="json">JSON string containing settings (obtained from GetSettingsJson)</param>
         public void LoadSettingsJson(string json) => _baseHelper.LoadSettingsJson(json);
@@ -95,7 +95,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         {
             if (_jsonEditorControl == null)
             {
-                System.Windows.MessageBox.Show("No JsonEditor control is connected.", "Error",
+                System.Windows.MessageBox.Show("No CodeEditor control is connected.", "Error",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
             }
@@ -126,7 +126,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
                 {
                     Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*",
                     DefaultExt = ".json",
-                    FileName = "JsonEditorSettings.json",
+                    FileName = "CodeEditorSettings.json",
                     Title = "Export Settings"
                 };
 
@@ -173,15 +173,15 @@ namespace WpfHexEditor.Editor.JsonEditor.Controls
         }
 
         /// <summary>
-        /// Reset all JsonEditor properties to their default values
+        /// Reset all CodeEditor properties to their default values
         /// </summary>
         private void ResetToDefaults()
         {
             if (_jsonEditorControl == null)
                 return;
 
-            // Get all DPs from the JsonEditor type
-            var type = typeof(JsonEditor);
+            // Get all DPs from the CodeEditor type
+            var type = typeof(CodeEditor);
             var fields = type.GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
                 .Where(f => f.FieldType == typeof(System.Windows.DependencyProperty));
 

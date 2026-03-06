@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - Line Model
+// Custom CodeEditor - Line Model
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -8,15 +8,15 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using WpfHexEditor.Editor.JsonEditor.Helpers;
+using WpfHexEditor.Editor.CodeEditor.Helpers;
 
-namespace WpfHexEditor.Editor.JsonEditor.Models
+namespace WpfHexEditor.Editor.CodeEditor.Models
 {
     /// <summary>
     /// Represents a single line of text in the JSON document.
     /// Contains text content and cached syntax highlighting tokens.
     /// </summary>
-    public class JsonLine : INotifyPropertyChanged
+    public class CodeLine : INotifyPropertyChanged
     {
         private string _text = string.Empty;
         private int _lineNumber;
@@ -85,14 +85,14 @@ namespace WpfHexEditor.Editor.JsonEditor.Models
         /// <summary>
         /// Create empty line
         /// </summary>
-        public JsonLine()
+        public CodeLine()
         {
         }
 
         /// <summary>
         /// Create line with text
         /// </summary>
-        public JsonLine(string text)
+        public CodeLine(string text)
         {
             _text = text ?? string.Empty;
         }
@@ -100,7 +100,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Models
         /// <summary>
         /// Create line with text and line number
         /// </summary>
-        public JsonLine(string text, int lineNumber) : this(text)
+        public CodeLine(string text, int lineNumber) : this(text)
         {
             _lineNumber = lineNumber;
         }

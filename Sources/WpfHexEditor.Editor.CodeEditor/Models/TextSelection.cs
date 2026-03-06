@@ -1,13 +1,13 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - Text Selection Model
+// Custom CodeEditor - Text Selection Model
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
 
 using System;
 
-namespace WpfHexEditor.Editor.JsonEditor.Models
+namespace WpfHexEditor.Editor.CodeEditor.Models
 {
     /// <summary>
     /// Represents a text selection in the editor.

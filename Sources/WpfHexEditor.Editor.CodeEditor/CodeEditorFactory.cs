@@ -6,18 +6,18 @@
 
 using System.IO;
 using WpfHexEditor.Editor.Core;
-using WpfHexEditor.Editor.JsonEditor.Controls;
+using WpfHexEditor.Editor.CodeEditor.Controls;
 
-namespace WpfHexEditor.Editor.JsonEditor;
+namespace WpfHexEditor.Editor.CodeEditor;
 
 /// <summary>
 /// <see cref="IEditorFactory"/> for the JSON / whfmt editor.
 /// Register at application startup:
-/// <code>EditorRegistry.Instance.Register(new JsonEditorFactory());</code>
+/// <code>EditorRegistry.Instance.Register(new CodeEditorFactory());</code>
 /// </summary>
-public sealed class JsonEditorFactory : IEditorFactory
+public sealed class CodeEditorFactory : IEditorFactory
 {
-    private static readonly IEditorDescriptor _descriptor = new JsonEditorDescriptor();
+    private static readonly IEditorDescriptor _descriptor = new CodeEditorDescriptor();
 
     public IEditorDescriptor Descriptor => _descriptor;
 
@@ -27,10 +27,10 @@ public sealed class JsonEditorFactory : IEditorFactory
         return ext is ".json" or ".whfmt" or ".whjson";
     }
 
-    public IDocumentEditor Create() => new Controls.JsonEditor();
+    public IDocumentEditor Create() => new Controls.CodeEditor();
 }
 
-file sealed class JsonEditorDescriptor : IEditorDescriptor
+file sealed class CodeEditorDescriptor : IEditorDescriptor
 {
     public string Id          => "json-editor";
     public string DisplayName => "JSON Editor";

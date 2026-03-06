@@ -31,7 +31,7 @@ using WpfHexEditor.Core.CharacterTable;
 using WpfHexEditor.Editor.TblEditor;
 using WpfHexEditor.Editor.TblEditor.Models;
 using WpfHexEditor.Editor.TblEditor.Services;
-using WpfHexEditor.Editor.JsonEditor;
+using WpfHexEditor.Editor.CodeEditor;
 using WpfHexEditor.Editor.TextEditor;
 using WpfHexEditor.Editor.ImageViewer;
 using WpfHexEditor.Editor.EntropyViewer;
@@ -56,7 +56,7 @@ using System.Windows.Shell;
 using System.Windows.Threading;
 using WpfHexEditor.Options;
 using WpfHexEditor.Editor.Core.Views;
-using JsonEditorControl = WpfHexEditor.Editor.JsonEditor.Controls.JsonEditor;
+using CodeEditorControl = WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor;
 using TblEditorControl  = WpfHexEditor.Editor.TblEditor.Controls.TblEditor;
 
 namespace WpfHexEditor.App;
@@ -120,7 +120,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly Dictionary<string, string> _loggedFormats = new();
 
     // QuickSearchBar instances for JsonEditor documents (JsonEditor has no embedded Canvas)
-    private readonly Dictionary<JsonEditorControl, QuickSearchBar> _jsonEditorBars = new();
+    private readonly Dictionary<CodeEditorControl, QuickSearchBar> _codeEditorBars = new();
 
     // M5: PropertyProvider cache — avoids recreating the provider on every tab switch
     private readonly Dictionary<UIElement, IPropertyProvider?> _propertyProviderCache = new();
@@ -316,7 +316,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Register editor factories (doc-proj-* dispatcher)
         _editorRegistry.Register(new TblEditorFactory());
-        _editorRegistry.Register(new JsonEditorFactory());
+        _editorRegistry.Register(new CodeEditorFactory());
         _editorRegistry.Register(new TextEditorFactory());
         _editorRegistry.Register(new ImageViewerFactory());
         _editorRegistry.Register(new EntropyViewerFactory());
@@ -1022,7 +1022,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// <summary>
     /// Creates <see cref="_errorPanel"/> the first time it is needed, without docking it.
     /// Call this instead of null-checking <see cref="_errorPanel"/> so that diagnostic sources
-    /// (e.g. TblEditor, JsonEditor) can register even before the panel is first shown.
+    /// (e.g. TblEditor, CodeEditor) can register even before the panel is first shown.
     /// </summary>
     private ErrorPanel EnsureErrorPanelInstance()
     {
@@ -1405,9 +1405,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             var display = WrapWithInfoBar(fe, factory, filePath, item.ContentId);
 
-            // JsonEditor is a FrameworkElement with no embedded Canvas. Add a Canvas overlay
+            // CodeEditor is a FrameworkElement with no embedded Canvas. Add a Canvas overlay
             // to the InfoBar Grid (Row 1) so the QuickSearchBar can be shown inline.
-            if (editor is JsonEditorControl json && display is Grid infoBarGrid)
+            if (editor is CodeEditorControl json && display is Grid infoBarGrid)
             {
                 // No Background + default IsHitTestVisible=True → empty areas let clicks
                 // through to the editor; the QuickSearchBar captures clicks in its own area.
@@ -1426,7 +1426,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 };
                 canvas.Children.Add(bar);
                 infoBarGrid.Children.Add(canvas);
-                _jsonEditorBars[json] = bar;
+                _codeEditorBars[json] = bar;
             }
 
             return display;
@@ -2581,7 +2581,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     /// <summary>
     /// Shows (or refocuses) the inline QuickSearchBar for the given <see cref="ISearchTarget"/>.
-    /// HexEditor and TblEditor have their own embedded Canvas; JsonEditor uses the one injected
+    /// HexEditor and TblEditor have their own embedded Canvas; CodeEditor uses the one injected
     /// by the App during content creation.
     /// </summary>
     private void ShowSearchBarForTarget(ISearchTarget target)
@@ -2592,7 +2592,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (target is TblEditorControl tbl)
         { tbl.ShowSearch(); return; }
 
-        if (target is JsonEditorControl json && _jsonEditorBars.TryGetValue(json, out var bar))
+        if (target is CodeEditorControl json && _codeEditorBars.TryGetValue(json, out var bar))
         {
             if (bar.Visibility == Visibility.Visible)
             { bar.FocusSearchInput(); return; }

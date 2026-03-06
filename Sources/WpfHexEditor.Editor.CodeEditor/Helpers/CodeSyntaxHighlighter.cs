@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - Syntax Highlighter (Phase 2)
+// Custom CodeEditor - Syntax Highlighter (Phase 2)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -9,16 +9,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Media;
-using WpfHexEditor.Editor.JsonEditor.Models;
+using WpfHexEditor.Editor.CodeEditor.Models;
 
-namespace WpfHexEditor.Editor.JsonEditor.Helpers
+namespace WpfHexEditor.Editor.CodeEditor.Helpers
 {
     /// <summary>
     /// JSON syntax highlighter with token-based coloring.
     /// Parses JSON line-by-line and identifies syntax elements.
     /// Caches results per line for performance.
     /// </summary>
-    public class JsonSyntaxHighlighter
+    public class CodeSyntaxHighlighter
     {
         #region Token Types
 
@@ -99,7 +99,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Helpers
         /// Highlight a single line and return list of tokens.
         /// Uses cache if line is not dirty.
         /// </summary>
-        public List<SyntaxToken> HighlightLine(JsonLine line, JsonParserContext context)
+        public List<SyntaxToken> HighlightLine(CodeLine line, JsonParserContext context)
         {
             // Phase 11.4: Return cached tokens if available and update LRU timestamp
             if (!line.IsCacheDirty && line.TokensCache != null)
@@ -536,7 +536,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Helpers
     /// </summary>
     public class SyntaxToken
     {
-        public JsonSyntaxHighlighter.TokenType Type { get; set; }
+        public CodeSyntaxHighlighter.TokenType Type { get; set; }
         public int StartColumn { get; set; }
         public int Length { get; set; }
         public string Text { get; set; }

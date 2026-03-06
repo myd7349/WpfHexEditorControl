@@ -5,7 +5,7 @@
 //////////////////////////////////////////////
 
 // Apache 2.0  2026
-// JSON Editor Demo Window - Shows JsonEditor with Settings Panel
+// JSON Editor Demo Window - Shows CodeEditor with Settings Panel
 // Author: Claude Sonnet 4.5
 
 using System.Windows;
@@ -13,7 +13,7 @@ using System.Windows;
 namespace WpfHexEditor.Sample.Main.Views.Dialogs
 {
     /// <summary>
-    /// Demo window showing JsonEditor with its auto-generated Settings Panel
+    /// Demo window showing CodeEditor with its auto-generated Settings Panel
     /// </summary>
     public partial class JsonEditorDemoWindow : Window
     {
@@ -21,8 +21,8 @@ namespace WpfHexEditor.Sample.Main.Views.Dialogs
         {
             InitializeComponent();
 
-            // Connect JsonEditor to Settings Panel
-            SettingsPanel.JsonEditorControl = JsonEditorControl;
+            // Connect CodeEditor to Settings Panel
+            SettingsPanel.CodeEditorControl = JsonEditorControl;
 
             // Load sample JSON for demo
             LoadSampleJson();

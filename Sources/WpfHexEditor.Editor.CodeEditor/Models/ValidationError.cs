@@ -1,11 +1,11 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - Validation Error Model (Phase 5)
+// Custom CodeEditor - Validation Error Model (Phase 5)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
 
-namespace WpfHexEditor.Editor.JsonEditor.Models
+namespace WpfHexEditor.Editor.CodeEditor.Models
 {
     /// <summary>
     /// Represents a validation error with location and severity.

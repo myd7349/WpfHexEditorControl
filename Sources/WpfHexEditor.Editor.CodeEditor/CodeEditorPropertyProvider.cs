@@ -5,20 +5,20 @@
 //////////////////////////////////////////////
 
 using WpfHexEditor.Editor.Core;
-using JsonEditorControl = WpfHexEditor.Editor.JsonEditor.Controls.JsonEditor;
+using CodeEditorControl = WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor;
 
-namespace WpfHexEditor.Editor.JsonEditor;
+namespace WpfHexEditor.Editor.CodeEditor;
 
 /// <summary>
 /// <see cref="IPropertyProvider"/> for the JSON editor.
 /// Surfaces document-level statistics in the Properties panel (F4).
 /// Node-level path info is not yet exposed by the editor API.
 /// </summary>
-internal sealed class JsonEditorPropertyProvider : IPropertyProvider
+internal sealed class CodeEditorPropertyProvider : IPropertyProvider
 {
-    private readonly JsonEditorControl _editor;
+    private readonly CodeEditorControl _editor;
 
-    public JsonEditorPropertyProvider(JsonEditorControl editor)
+    public CodeEditorPropertyProvider(CodeEditorControl editor)
     {
         _editor = editor;
         _editor.SelectionChanged += (_, _) =>

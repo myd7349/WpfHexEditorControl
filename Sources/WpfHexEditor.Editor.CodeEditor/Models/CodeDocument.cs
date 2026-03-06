@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - Document Model
+// Custom CodeEditor - Document Model
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -13,16 +13,16 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace WpfHexEditor.Editor.JsonEditor.Models
+namespace WpfHexEditor.Editor.CodeEditor.Models
 {
     /// <summary>
     /// Represents a JSON text document with line-based storage.
     /// Handles text editing operations, modification tracking, and change notifications.
     /// Inspired by HexEditor's document model pattern.
     /// </summary>
-    public class JsonDocument : INotifyPropertyChanged
+    public class CodeDocument : INotifyPropertyChanged
     {
-        private ObservableCollection<JsonLine> _lines;
+        private ObservableCollection<CodeLine> _lines;
         private bool _isModified;
         private string _filePath;
         private int _indentSize = 2; // Default 2 spaces for JSON
@@ -32,7 +32,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Models
         /// <summary>
         /// Lines of text in the document
         /// </summary>
-        public ObservableCollection<JsonLine> Lines
+        public ObservableCollection<CodeLine> Lines
         {
             get => _lines;
             private set
@@ -125,10 +125,10 @@ namespace WpfHexEditor.Editor.JsonEditor.Models
         /// <summary>
         /// Create empty document with single empty line
         /// </summary>
-        public JsonDocument()
+        public CodeDocument()
         {
             // CRITICAL: Initialize Lines collection FIRST before calling any methods
-            Lines = new ObservableCollection<JsonLine>();
+            Lines = new ObservableCollection<CodeLine>();
 
             // Initialize with example format definition for demo/testing
             var defaultContent = @"{
@@ -166,7 +166,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Models
         /// <summary>
         /// Create document from text content
         /// </summary>
-        public JsonDocument(string content) : this()
+        public CodeDocument(string content) : this()
         {
             if (!string.IsNullOrEmpty(content))
                 LoadFromString(content);
@@ -236,12 +236,12 @@ namespace WpfHexEditor.Editor.JsonEditor.Models
                 // Insert middle lines
                 for (int i = 1; i < lines.Length - 1; i++)
                 {
-                    Lines.Insert(position.Line + i, new JsonLine(lines[i], position.Line + i));
+                    Lines.Insert(position.Line + i, new CodeLine(lines[i], position.Line + i));
                 }
 
                 // Insert last line
                 Lines.Insert(position.Line + lines.Length - 1,
-                    new JsonLine(lines[lines.Length - 1] + rightPart, position.Line + lines.Length - 1));
+                    new CodeLine(lines[lines.Length - 1] + rightPart, position.Line + lines.Length - 1));
 
                 // Update line numbers
                 UpdateLineNumbers(position.Line);
@@ -309,7 +309,7 @@ namespace WpfHexEditor.Editor.JsonEditor.Models
             currentLine.Text = leftPart;
 
             // Insert new line
-            Lines.Insert(line + 1, new JsonLine(indent + rightPart, line + 1));
+            Lines.Insert(line + 1, new CodeLine(indent + rightPart, line + 1));
 
             // Update line numbers
             UpdateLineNumbers(line + 1);
@@ -483,12 +483,12 @@ namespace WpfHexEditor.Editor.JsonEditor.Models
 
             for (int i = 0; i < lines.Length; i++)
             {
-                Lines.Add(new JsonLine(lines[i], i));
+                Lines.Add(new CodeLine(lines[i], i));
             }
 
             // Ensure at least one line
             if (Lines.Count == 0)
-                Lines.Add(new JsonLine(string.Empty, 0));
+                Lines.Add(new CodeLine(string.Empty, 0));
 
             IsModified = false;
             InvalidateAllCache();

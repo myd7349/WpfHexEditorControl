@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - IntelliSense Provider (Phase 4)
+// Custom CodeEditor - IntelliSense Provider (Phase 4)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -8,16 +8,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using WpfHexEditor.Editor.JsonEditor.Models;
+using WpfHexEditor.Editor.CodeEditor.Models;
 
-namespace WpfHexEditor.Editor.JsonEditor.Helpers
+namespace WpfHexEditor.Editor.CodeEditor.Helpers
 {
     /// <summary>
     /// Provides context-aware IntelliSense suggestions for format definition JSON.
     /// Phase 4: Root level + blocks contexts.
     /// Phase 7 will add all contexts, snippets, and tooltips.
     /// </summary>
-    public class JsonIntelliSenseProvider
+    public class CodeIntelliSenseProvider
     {
         #region Suggestion Data
 

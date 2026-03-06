@@ -1,13 +1,13 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - Text Position Model
+// Custom CodeEditor - Text Position Model
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
 
 using System;
 
-namespace WpfHexEditor.Editor.JsonEditor.Models
+namespace WpfHexEditor.Editor.CodeEditor.Models
 {
     /// <summary>
     /// Represents a position in the text document (line, column).

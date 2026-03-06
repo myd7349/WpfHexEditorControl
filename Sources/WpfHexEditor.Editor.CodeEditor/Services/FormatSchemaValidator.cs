@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // Apache 2.0  - 2026
-// Custom JsonEditor - Format Schema Validator (Phase 5)
+// Custom CodeEditor - Format Schema Validator (Phase 5)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -11,9 +11,9 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using WpfHexEditor.Editor.JsonEditor.Models;
+using WpfHexEditor.Editor.CodeEditor.Models;
 
-namespace WpfHexEditor.Editor.JsonEditor.Services
+namespace WpfHexEditor.Editor.CodeEditor.Services
 {
     /// <summary>
     /// Validates format definition JSON with 4 layers of validation:
