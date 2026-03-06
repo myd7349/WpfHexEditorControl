@@ -98,48 +98,24 @@
                  HEADER
                  ═══════════════════════════════════════════════════════════ -->
             <Border Background="{DynamicResource DockWindowBackgroundBrush}"
-                    Padding="48,32,48,28">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                    Padding="48,10,48,10">
+                <!-- Grid auto-sizes to image width so VersionText aligns to image right edge -->
+                <Grid HorizontalAlignment="Left">
+                    <!-- Logo banner — fills header height, respects aspect ratio -->
+                    <Image Source="pack://application:,,,/WpfHexEditor.App;component/Images/Logo2026.png"
+                           MaxHeight="200"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Left"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
 
-                    <StackPanel Grid.Column="0">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <Image Source="pack://application:,,,/WpfHexEditor.App;component/Logo.ico"
-                                   Width="32" Height="32"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,12,0"
-                                   RenderOptions.BitmapScalingMode="HighQuality" />
-                            <TextBlock Text="WpfHexEditor IDE"
-                                       FontSize="30"
-                                       FontWeight="Light"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                        <TextBlock Text="Professional Binary &amp; Source Editor"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource DockTabTextBrush}"
-                                   Margin="43,0,0,3" />
-                        <TextBlock x:Name="VersionText"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource DockTabTextBrush}"
-                                   Opacity="0.6"
-                                   Margin="43,0,0,0" />
-                    </StackPanel>
-
-                    <!-- Top-right: keyboard shortcut hints -->
-                    <StackPanel Grid.Column="1"
-                                VerticalAlignment="Bottom"
-                                HorizontalAlignment="Right">
-                        <TextBlock FontSize="11"
-                                   Foreground="{DynamicResource DockTabTextBrush}"
-                                   Opacity="0.5"
-                                   TextAlignment="Right">
-                            Ctrl+N · New File&#x0a;Ctrl+O · Open File&#x0a;Ctrl+Shift+O · Open Project
-                        </TextBlock>
-                    </StackPanel>
+                    <!-- Version overlay — bottom-right of image -->
+                    <TextBlock x:Name="VersionText"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Bottom"
+                               Margin="0,0,6,14"
+                               FontSize="11"
+                               Foreground="White"
+                               Opacity="0.65" />
                 </Grid>
             </Border>
 
@@ -326,38 +302,43 @@
                     BorderBrush="{DynamicResource DockBorderBrush}"
                     BorderThickness="0,1,0,0"
                     Padding="48,14,48,14">
-                <StackPanel Orientation="Horizontal">
+                <DockPanel>
 
-                    <TextBlock FontSize="12"
-                               Foreground="{DynamicResource DockTabTextBrush}">
-                        <Hyperlink Style="{StaticResource WelcomeHyperlinkStyle}"
-                                   RequestNavigate="OnHyperlinkNavigate"
-                                   NavigateUri="https://github.com/abbaye/WpfHexEditorControl">
-                            GitHub
-                        </Hyperlink>
-                    </TextBlock>
+                    <!-- Links — left -->
+                    <StackPanel Orientation="Horizontal">
 
-                    <TextBlock FontSize="12"
-                               Foreground="{DynamicResource DockTabTextBrush}"
-                               Margin="28,0,0,0">
-                        <Hyperlink Style="{StaticResource WelcomeHyperlinkStyle}"
-                                   RequestNavigate="OnHyperlinkNavigate"
-                                   NavigateUri="https://github.com/abbaye/WpfHexEditorControl/issues">
-                            Report Issue
-                        </Hyperlink>
-                    </TextBlock>
+                        <TextBlock FontSize="12"
+                                   Foreground="{DynamicResource DockTabTextBrush}">
+                            <Hyperlink Style="{StaticResource WelcomeHyperlinkStyle}"
+                                       RequestNavigate="OnHyperlinkNavigate"
+                                       NavigateUri="https://github.com/abbaye/WpfHexEditorControl">
+                                GitHub
+                            </Hyperlink>
+                        </TextBlock>
 
-                    <TextBlock FontSize="12"
-                               Foreground="{DynamicResource DockTabTextBrush}"
-                               Margin="28,0,0,0">
-                        <Hyperlink Style="{StaticResource WelcomeHyperlinkStyle}"
-                                   RequestNavigate="OnHyperlinkNavigate"
-                                   NavigateUri="https://github.com/abbaye/WpfHexEditorControl/blob/master/CHANGELOG.md">
-                            Full Changelog
-                        </Hyperlink>
-                    </TextBlock>
+                        <TextBlock FontSize="12"
+                                   Foreground="{DynamicResource DockTabTextBrush}"
+                                   Margin="28,0,0,0">
+                            <Hyperlink Style="{StaticResource WelcomeHyperlinkStyle}"
+                                       RequestNavigate="OnHyperlinkNavigate"
+                                       NavigateUri="https://github.com/abbaye/WpfHexEditorControl/issues">
+                                Report Issue
+                            </Hyperlink>
+                        </TextBlock>
 
-                </StackPanel>
+                        <TextBlock FontSize="12"
+                                   Foreground="{DynamicResource DockTabTextBrush}"
+                                   Margin="28,0,0,0">
+                            <Hyperlink Style="{StaticResource WelcomeHyperlinkStyle}"
+                                       RequestNavigate="OnHyperlinkNavigate"
+                                       NavigateUri="https://github.com/abbaye/WpfHexEditorControl/blob/master/CHANGELOG.md">
+                                Full Changelog
+                            </Hyperlink>
+                        </TextBlock>
+
+                    </StackPanel>
+
+                </DockPanel>
             </Border>
 
         </StackPanel>
