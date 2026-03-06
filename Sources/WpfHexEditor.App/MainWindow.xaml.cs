@@ -3782,6 +3782,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void ApplyHexEditorDefaults(HexEditorControl hex)
     {
         var d = AppSettingsService.Instance.Current.HexEditorDefaults;
+
+        // Display
         hex.BytePerLine           = d.BytePerLine;
         hex.ShowOffset            = d.ShowOffset;
         hex.ShowAscii             = d.ShowAscii;
@@ -3789,10 +3791,42 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         hex.OffSetStringVisual    = d.OffSetStringVisual;
         hex.ByteGrouping          = d.ByteGrouping;
         hex.ByteSpacerPositioning = d.ByteSpacerPositioning;
+
+        // Editing
         hex.EditMode              = d.DefaultEditMode;
         hex.AllowZoom             = d.AllowZoom;
         hex.MouseWheelSpeed       = d.MouseWheelSpeed;
         hex.AllowFileDrop         = d.AllowFileDrop;
+
+        // Data interpretation
+        hex.ByteSize                    = d.ByteSize;
+        hex.ByteOrder                   = d.ByteOrder;
+        hex.DefaultCopyToClipboardMode  = d.DefaultCopyToClipboardMode;
+        hex.ByteSpacerVisualStyle       = d.ByteSpacerVisualStyle;
+
+        // Scroll markers
+        hex.ShowBookmarkMarkers     = d.ShowBookmarkMarkers;
+        hex.ShowModifiedMarkers     = d.ShowModifiedMarkers;
+        hex.ShowInsertedMarkers     = d.ShowInsertedMarkers;
+        hex.ShowDeletedMarkers      = d.ShowDeletedMarkers;
+        hex.ShowSearchResultMarkers = d.ShowSearchResultMarkers;
+
+        // Status bar visibility
+        hex.ShowStatusMessage          = d.ShowStatusMessage;
+        hex.ShowFileSizeInStatusBar    = d.ShowFileSizeInStatusBar;
+        hex.ShowSelectionInStatusBar   = d.ShowSelectionInStatusBar;
+        hex.ShowPositionInStatusBar    = d.ShowPositionInStatusBar;
+        hex.ShowEditModeInStatusBar    = d.ShowEditModeInStatusBar;
+        hex.ShowBytesPerLineInStatusBar = d.ShowBytesPerLineInStatusBar;
+
+        // Advanced behaviour
+        hex.AllowAutoHighLightSelectionByte      = d.AllowAutoHighLightSelectionByte;
+        hex.AllowAutoSelectSameByteAtDoubleClick = d.AllowAutoSelectSameByteAtDoubleClick;
+        hex.AllowContextMenu                     = d.AllowContextMenu;
+        hex.AllowDeleteByte                      = d.AllowDeleteByte;
+        hex.AllowExtend                          = d.AllowExtend;
+        hex.FileDroppingConfirmation             = d.FileDroppingConfirmation;
+        hex.PreloadByteInEditorMode              = d.PreloadByteInEditorMode;
     }
 
     // ─── Menu: Project ─────────────────────────────────────────────────
