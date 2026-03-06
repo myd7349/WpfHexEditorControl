@@ -95,10 +95,13 @@ public class DockDragManager
         var targetNode = targetTab?.Node;
         var isSelfDrag = targetNode != null && targetNode == _originalGroup;
 
-        // Documents can only dock to DocumentTabHost; suppress compass over tool panels
+        // Documents: compass only over DocumentTabHost.
+        // Panels: compass only over regular DockTabControl (NOT DocumentTabHost).
+        // Allowing panels to see the compass over DocumentTabHost would let the user drop a tool
+        // panel into the document zone (Center), which corrupts item.IsDocument.
         bool isDocumentDrag = _draggedItem?.IsDocument == true;
         bool showCompass = !isSelfDrag && targetTab != null && targetNode != null
-            && (!isDocumentDrag || targetTab is DocumentTabHost);
+            && (isDocumentDrag ? targetTab is DocumentTabHost : targetTab is not DocumentTabHost);
 
         // --- Panel overlay ---
         if (showCompass)
@@ -352,6 +355,16 @@ public class DockDragManager
 
             // Multi-item floating group: dock ALL items, not just the active one
             var floatingItems = _sourceFloatingWindow.Node?.Items.ToList();
+
+            // Defense-in-depth: never dock a tool panel into DocumentHostNode via Center.
+            // Fix B prevents the compass from appearing there, but guard here as a safety net.
+            if (!isDocumentDrop
+                && _lastDirection.Value == DockDirection.Center
+                && _targetGroup is DocumentHostNode)
+            {
+                EndFloatingDrag();
+                return;
+            }
 
             if (floatingItems is { Count: > 1 })
             {
