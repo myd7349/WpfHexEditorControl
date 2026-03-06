@@ -22,6 +22,7 @@ using WpfHexEditor.Editor.CodeEditor.Models;
 using WpfHexEditor.Editor.CodeEditor.Helpers;
 using WpfHexEditor.Editor.CodeEditor.Rendering;
 using WpfHexEditor.Editor.CodeEditor.Services;
+using WpfHexEditor.Editor.CodeEditor.Snippets;
 using WpfHexEditor.Core.Settings;
 using WpfHexEditor.Editor.Core;
 
@@ -228,6 +229,24 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if ((bool)e.NewValue && editor._document != null)
                 editor._foldingEngine?.Analyze(editor._document.Lines);
             editor.InvalidateMeasure();
+        }
+
+        /// <summary>
+        /// Injectable <see cref="Snippets.SnippetManager"/> that provides language-specific snippets.
+        /// When set, pressing Tab after a matching trigger word expands the snippet instead of
+        /// inserting whitespace. Pass <c>null</c> to disable snippet expansion.
+        /// </summary>
+        public static readonly DependencyProperty SnippetManagerProperty =
+            DependencyProperty.Register(nameof(SnippetManager), typeof(SnippetManager),
+                typeof(CodeEditor), new System.Windows.PropertyMetadata(null));
+
+        [Category("Features")]
+        [DisplayName("Snippet Manager")]
+        [Description("Provides Tab-triggered snippet expansion for the current language.")]
+        public SnippetManager? SnippetManager
+        {
+            get => (SnippetManager?)GetValue(SnippetManagerProperty);
+            set => SetValue(SnippetManagerProperty, value);
         }
 
         public static readonly DependencyProperty EnableIntelliSenseProperty =
@@ -3073,7 +3092,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     break;
 
                 case Key.Tab:
-                    InsertTab();
+                    // Try snippet expansion first; fall back to regular tab insertion.
+                    if (!TryExpandSnippet())
+                        InsertTab();
                     e.Handled = true;
                     break;
 
@@ -3294,6 +3315,61 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 InsertChar(' ');
             }
+        }
+
+        /// <summary>
+        /// Reads the word immediately left of the cursor and tries to expand it as a snippet.
+        /// </summary>
+        /// <returns><c>true</c> if a snippet was found and applied.</returns>
+        private bool TryExpandSnippet()
+        {
+            var mgr = SnippetManager;
+            if (mgr == null || _cursorColumn == 0)
+                return false;
+
+            string lineText = _document.Lines[_cursorLine].Text ?? string.Empty;
+
+            // Extract the non-whitespace word immediately to the left of the caret.
+            int end   = _cursorColumn;
+            int start = end - 1;
+            while (start > 0 && !char.IsWhiteSpace(lineText[start - 1]))
+                start--;
+
+            if (start >= end)
+                return false;
+
+            string word = lineText.Substring(start, end - start);
+
+            if (!mgr.TryExpand(word, out var snippet))
+                return false;
+
+            var expansion = SnippetManager.BuildExpansion(snippet, _cursorLine, start, word.Length);
+            ApplySnippetExpansion(expansion);
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes the trigger text and inserts the expanded snippet body,
+        /// then positions the caret at the <c>$cursor</c> marker location.
+        /// </summary>
+        private void ApplySnippetExpansion(SnippetExpansion expansion)
+        {
+            // Delete trigger: range [InsertColumn .. InsertColumn + TriggerLength).
+            _document.DeleteRange(
+                new TextPosition(expansion.InsertLine, expansion.InsertColumn),
+                new TextPosition(expansion.InsertLine, expansion.InsertColumn + expansion.TriggerLength));
+
+            // Insert expanded body at the now-empty position.
+            _document.InsertText(
+                new TextPosition(expansion.InsertLine, expansion.InsertColumn),
+                expansion.ExpandedText);
+
+            // Move caret to the $cursor position.
+            _cursorLine   = expansion.CaretLine;
+            _cursorColumn = expansion.CaretColumn;
+
+            EnsureCursorVisible();
+            InvalidateVisual();
         }
 
         /// <summary>
