@@ -250,6 +250,10 @@ public partial class WelcomePanel : UserControl
         new(@"^##\s+\[([^\]]+)\](?:\s+[—-]+\s+(\S+))?(?:\s+[—-]+\s+(.+))?$",
             RegexOptions.Compiled);
 
+    // Matches: ## What's Next  (plain ## heading without brackets — e.g. roadmap section)
+    private static readonly Regex PlainVersionHeader =
+        new(@"^##\s+([^\[].+)$", RegexOptions.Compiled);
+
     // Matches: ### ✨ Added — Category   or  ### 🔧 Changed
     private static readonly Regex SectionHeader =
         new(@"^###\s+(.+)$", RegexOptions.Compiled);
@@ -268,7 +272,7 @@ public partial class WelcomePanel : UserControl
         {
             var line = raw.TrimEnd();
 
-            // Version header
+            // Version header — ## [label] — date — title
             var vm = VersionHeader.Match(line);
             if (vm.Success)
             {
@@ -279,6 +283,22 @@ public partial class WelcomePanel : UserControl
                     Label:    vm.Groups[1].Value,
                     Date:     vm.Groups[2].Value,
                     Title:    vm.Groups[3].Value,
+                    Sections: []);
+                versions.Add(current);
+                continue;
+            }
+
+            // Plain version header — ## What's Next  (no brackets)
+            var pvm = PlainVersionHeader.Match(line);
+            if (pvm.Success)
+            {
+                if (versions.Count >= MaxVersionsDisplayed) break;
+
+                section = null;
+                current = new ChangelogVersion(
+                    Label:    pvm.Groups[1].Value,
+                    Date:     string.Empty,
+                    Title:    string.Empty,
                     Sections: []);
                 versions.Add(current);
                 continue;
