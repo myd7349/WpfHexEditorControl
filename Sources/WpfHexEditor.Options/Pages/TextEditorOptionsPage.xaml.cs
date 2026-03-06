@@ -10,14 +10,18 @@
 //
 // Architecture Notes:
 //     Pattern: IOptionsPage (Load / Flush / Changed)
-//     Colour preview: small Border filled via ConvertFromString().
+//     Colour override: CheckBox enables the override; ColorPicker holds the value.
+//     Empty string stored when CheckBox is unchecked (= use theme default).
 //     Theme: DynamicResource brushes inherited from OptionsEditorControl.
+//     ColorPicker DynamicResources (BorderBrush, SurfaceElevatedBrush,
+//     ForegroundBrush) are resolved from the active application theme.
 // ==========================================================
 
 using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using ColorPickerControl = WpfHexEditor.ColorPicker.Controls.ColorPicker;
 
 namespace WpfHexEditor.Options.Pages;
 
@@ -45,11 +49,11 @@ public sealed partial class TextEditorOptionsPage : UserControl, IOptionsPage
             TxtZoom.Text = ((int)(te.DefaultZoom * 100)).ToString();
             CheckChangeset.IsChecked = te.ChangesetEnabled;
 
-            SetColorTextAndPreview(TxtBgColor,  BgPreview,  te.BackgroundColor);
-            SetColorTextAndPreview(TxtFgColor,  FgPreview,  te.ForegroundColor);
-            SetColorTextAndPreview(TxtKwColor,  KwPreview,  te.KeywordColor);
-            SetColorTextAndPreview(TxtStrColor, StrPreview, te.StringColor);
-            SetColorTextAndPreview(TxtCmtColor, CmtPreview, te.CommentColor);
+            LoadColorPicker(ChkBg,  CpBg,  te.BackgroundColor);
+            LoadColorPicker(ChkFg,  CpFg,  te.ForegroundColor);
+            LoadColorPicker(ChkKw,  CpKw,  te.KeywordColor);
+            LoadColorPicker(ChkStr, CpStr, te.StringColor);
+            LoadColorPicker(ChkCmt, CpCmt, te.CommentColor);
         }
         finally { _loading = false; }
     }
@@ -65,11 +69,11 @@ public sealed partial class TextEditorOptionsPage : UserControl, IOptionsPage
         te.ShowLineNumbers = CheckLineNumbers.IsChecked == true;
         te.DefaultZoom     = ParseDouble(TxtZoom.Text, 100.0) / 100.0;
         te.ChangesetEnabled = CheckChangeset.IsChecked == true;
-        te.BackgroundColor = NormalizeColor(TxtBgColor.Text);
-        te.ForegroundColor = NormalizeColor(TxtFgColor.Text);
-        te.KeywordColor    = NormalizeColor(TxtKwColor.Text);
-        te.StringColor     = NormalizeColor(TxtStrColor.Text);
-        te.CommentColor    = NormalizeColor(TxtCmtColor.Text);
+        te.BackgroundColor = FlushColorPicker(ChkBg,  CpBg);
+        te.ForegroundColor = FlushColorPicker(ChkFg,  CpFg);
+        te.KeywordColor    = FlushColorPicker(ChkKw,  CpKw);
+        te.StringColor     = FlushColorPicker(ChkStr, CpStr);
+        te.CommentColor    = FlushColorPicker(ChkCmt, CpCmt);
     }
 
     // ── Control handlers ─────────────────────────────────────────────────
@@ -89,13 +93,13 @@ public sealed partial class TextEditorOptionsPage : UserControl, IOptionsPage
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnColorTextLostFocus(object sender, RoutedEventArgs e)
+    private void OnColorCheckChanged(object sender, RoutedEventArgs e)
     {
-        if (sender is not TextBox tb) return;
+        if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
+    }
 
-        if (tb.Tag is string previewName && FindName(previewName) is Border preview)
-            ApplyColorPreview(preview, tb.Text);
-
+    private void OnColorPickerChanged(object sender, Color e)
+    {
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -126,42 +130,30 @@ public sealed partial class TextEditorOptionsPage : UserControl, IOptionsPage
     private static int ParseInt(string text, int fallback)
         => int.TryParse(text, out int v) && v > 0 ? v : fallback;
 
-    private static string NormalizeColor(string text)
-    {
-        var trimmed = text.Trim();
-        if (string.IsNullOrEmpty(trimmed)) return string.Empty;
-        try
-        {
-            var c = (Color)ColorConverter.ConvertFromString(trimmed);
-            return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
-
-    private static void SetColorTextAndPreview(TextBox tb, Border preview, string value)
-    {
-        tb.Text = value;
-        ApplyColorPreview(preview, value);
-    }
-
-    private static void ApplyColorPreview(Border preview, string value)
+    // Restores CheckBox + ColorPicker from a stored hex string (empty = no override).
+    private static void LoadColorPicker(CheckBox chk, ColorPickerControl cp, string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            preview.Background = null;
+            chk.IsChecked = false;
             return;
         }
         try
         {
-            var color = (Color)ColorConverter.ConvertFromString(value.Trim());
-            preview.Background = new SolidColorBrush(color);
+            cp.SelectedColor = (Color)ColorConverter.ConvertFromString(value.Trim());
+            chk.IsChecked = true;
         }
         catch
         {
-            preview.Background = null;
+            chk.IsChecked = false;
         }
+    }
+
+    // Returns "#RRGGBB" when the override is active, empty string otherwise.
+    private static string FlushColorPicker(CheckBox chk, ColorPickerControl cp)
+    {
+        if (chk.IsChecked != true) return string.Empty;
+        var c = cp.SelectedColor;
+        return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
     }
 }

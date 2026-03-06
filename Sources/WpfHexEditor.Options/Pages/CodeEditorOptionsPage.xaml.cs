@@ -10,14 +10,18 @@
 //
 // Architecture Notes:
 //     Pattern: IOptionsPage (Load / Flush / Changed)
-//     Colour preview: small Border filled via ConvertFromString().
+//     Colour override: CheckBox enables the override; ColorPicker holds the value.
+//     Empty string stored when CheckBox is unchecked (= use theme default).
 //     Theme: DynamicResource brushes inherited from OptionsEditorControl.
+//     ColorPicker DynamicResources (BorderBrush, SurfaceElevatedBrush,
+//     ForegroundBrush) are resolved from the active application theme.
 // ==========================================================
 
 using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using ColorPickerControl = WpfHexEditor.ColorPicker.Controls.ColorPicker;
 
 namespace WpfHexEditor.Options.Pages;
 
@@ -47,12 +51,12 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
             TxtZoom.Text      = ((int)(ce.DefaultZoom * 100)).ToString();
             CheckChangeset.IsChecked = ce.ChangesetEnabled;
 
-            SetColorTextAndPreview(TxtBgColor,  BgPreview,  ce.BackgroundColor);
-            SetColorTextAndPreview(TxtFgColor,  FgPreview,  ce.ForegroundColor);
-            SetColorTextAndPreview(TxtKwColor,  KwPreview,  ce.KeywordColor);
-            SetColorTextAndPreview(TxtStrColor, StrPreview, ce.StringColor);
-            SetColorTextAndPreview(TxtCmtColor, CmtPreview, ce.CommentColor);
-            SetColorTextAndPreview(TxtNumColor, NumPreview, ce.NumberColor);
+            LoadColorPicker(ChkBg,  CpBg,  ce.BackgroundColor);
+            LoadColorPicker(ChkFg,  CpFg,  ce.ForegroundColor);
+            LoadColorPicker(ChkKw,  CpKw,  ce.KeywordColor);
+            LoadColorPicker(ChkStr, CpStr, ce.StringColor);
+            LoadColorPicker(ChkCmt, CpCmt, ce.CommentColor);
+            LoadColorPicker(ChkNum, CpNum, ce.NumberColor);
         }
         finally { _loading = false; }
     }
@@ -70,12 +74,12 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
         ce.HighlightCurrentLine = CheckHighlightLine.IsChecked == true;
         ce.DefaultZoom       = ParseDouble(TxtZoom.Text, 100.0) / 100.0;
         ce.ChangesetEnabled  = CheckChangeset.IsChecked == true;
-        ce.BackgroundColor   = NormalizeColor(TxtBgColor.Text);
-        ce.ForegroundColor   = NormalizeColor(TxtFgColor.Text);
-        ce.KeywordColor      = NormalizeColor(TxtKwColor.Text);
-        ce.StringColor       = NormalizeColor(TxtStrColor.Text);
-        ce.CommentColor      = NormalizeColor(TxtCmtColor.Text);
-        ce.NumberColor       = NormalizeColor(TxtNumColor.Text);
+        ce.BackgroundColor   = FlushColorPicker(ChkBg,  CpBg);
+        ce.ForegroundColor   = FlushColorPicker(ChkFg,  CpFg);
+        ce.KeywordColor      = FlushColorPicker(ChkKw,  CpKw);
+        ce.StringColor       = FlushColorPicker(ChkStr, CpStr);
+        ce.CommentColor      = FlushColorPicker(ChkCmt, CpCmt);
+        ce.NumberColor       = FlushColorPicker(ChkNum, CpNum);
     }
 
     // ── Control handlers ─────────────────────────────────────────────────
@@ -95,14 +99,13 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnColorTextLostFocus(object sender, RoutedEventArgs e)
+    private void OnColorCheckChanged(object sender, RoutedEventArgs e)
     {
-        if (sender is not TextBox tb) return;
+        if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
+    }
 
-        // Resolve the named Border via Tag
-        if (tb.Tag is string previewName && FindName(previewName) is Border preview)
-            ApplyColorPreview(preview, tb.Text);
-
+    private void OnColorPickerChanged(object sender, Color e)
+    {
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -133,43 +136,30 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
     private static int ParseInt(string text, int fallback)
         => int.TryParse(text, out int v) && v > 0 ? v : fallback;
 
-    private static string NormalizeColor(string text)
-    {
-        var trimmed = text.Trim();
-        if (string.IsNullOrEmpty(trimmed)) return string.Empty;
-        // Attempt to parse — discard if invalid so we don't store garbage
-        try
-        {
-            var c = (Color)ColorConverter.ConvertFromString(trimmed);
-            return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
-        }
-        catch
-        {
-            return string.Empty;
-        }
-    }
-
-    private static void SetColorTextAndPreview(TextBox tb, Border preview, string value)
-    {
-        tb.Text = value;
-        ApplyColorPreview(preview, value);
-    }
-
-    private static void ApplyColorPreview(Border preview, string value)
+    // Restores CheckBox + ColorPicker from a stored hex string (empty = no override).
+    private static void LoadColorPicker(CheckBox chk, ColorPickerControl cp, string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            preview.Background = null;
+            chk.IsChecked = false;
             return;
         }
         try
         {
-            var color = (Color)ColorConverter.ConvertFromString(value.Trim());
-            preview.Background = new SolidColorBrush(color);
+            cp.SelectedColor = (Color)ColorConverter.ConvertFromString(value.Trim());
+            chk.IsChecked = true;
         }
         catch
         {
-            preview.Background = null;
+            chk.IsChecked = false;
         }
+    }
+
+    // Returns "#RRGGBB" when the override is active, empty string otherwise.
+    private static string FlushColorPicker(CheckBox chk, ColorPickerControl cp)
+    {
+        if (chk.IsChecked != true) return string.Empty;
+        var c = cp.SelectedColor;
+        return $"#{c.R:X2}{c.G:X2}{c.B:X2}";
     }
 }
