@@ -17,6 +17,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Editor.CodeEditor.Folding;
 using WpfHexEditor.Editor.CodeEditor.Models;
 using WpfHexEditor.Editor.CodeEditor.Helpers;
 using WpfHexEditor.Editor.CodeEditor.Rendering;
@@ -149,6 +150,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         // GlyphRun renderer — recreated whenever font or DPI changes.
         private GlyphRunRenderer? _glyphRenderer;
+
+        // Folding support (Phase B3).
+        private FoldingEngine?  _foldingEngine;
+        private GutterControl?  _gutterControl;
+
         private int _firstVisibleLine = 0;  // Scrolling support (Phase 1: always 0)
         private int _lastVisibleLine = 0;   // Will be calculated in Phase 1
 
@@ -195,6 +201,33 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             get => (bool)GetValue(ShowLineNumbersProperty);
             set => SetValue(ShowLineNumbersProperty, value);
+        }
+
+        public static readonly DependencyProperty IsFoldingEnabledProperty =
+            DependencyProperty.Register(nameof(IsFoldingEnabled), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true, OnIsFoldingEnabledChanged));
+
+        /// <summary>
+        /// Enable or disable the code-folding gutter ([+]/[-] markers).
+        /// When disabled the GutterControl is hidden and FoldingEngine analysis is skipped.
+        /// </summary>
+        [Category("Features")]
+        [DisplayName("Enable Folding")]
+        [Description("Show code-folding markers in the left gutter (brace pairs / indentation blocks)")]
+        public bool IsFoldingEnabled
+        {
+            get => (bool)GetValue(IsFoldingEnabledProperty);
+            set => SetValue(IsFoldingEnabledProperty, value);
+        }
+
+        private static void OnIsFoldingEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not CodeEditor editor) return;
+            if (editor._gutterControl != null)
+                editor._gutterControl.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
+            if ((bool)e.NewValue && editor._document != null)
+                editor._foldingEngine?.Analyze(editor._document.Lines);
+            editor.InvalidateMeasure();
         }
 
         public static readonly DependencyProperty EnableIntelliSenseProperty =
@@ -1210,6 +1243,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _scrollBarChildren.Add(_vScrollBar);
             _scrollBarChildren.Add(_hScrollBar);
 
+            // Initialize folding subsystem (B3).
+            _foldingEngine = new FoldingEngine(new BraceFoldingStrategy());
+            _gutterControl = new GutterControl();
+            _gutterControl.SetEngine(_foldingEngine);
+            _scrollBarChildren.Add(_gutterControl);
+
             // Apply theme resource bindings when connected to the visual tree
             Loaded += (_, _) => ApplyThemeResourceBindings();
         }
@@ -2145,6 +2184,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _vScrollBar.Arrange(needsV ? new Rect(contentW, 0, ScrollBarThickness, contentH) : new Rect(0, 0, 0, 0));
             _hScrollBar.Arrange(needsH ? new Rect(0, contentH, contentW, ScrollBarThickness) : new Rect(0, 0, 0, 0));
 
+            // Arrange the folding gutter flush against the left edge (inside the line-number strip).
+            if (_gutterControl != null)
+            {
+                bool showGutter = IsFoldingEnabled && ShowLineNumbers;
+                _gutterControl.Visibility = showGutter ? Visibility.Visible : Visibility.Collapsed;
+                _gutterControl.Arrange(showGutter
+                    ? new Rect(0, 0, _gutterControl.Width, contentH)
+                    : new Rect(0, 0, 0, 0));
+            }
+
             UpdateScrollBars(contentW, contentH);
             return finalSize;
         }
@@ -2297,6 +2346,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _lastVisibleLine = Math.Min(_document.Lines.Count - 1,
                     (int)(viewportH / _lineHeight));
             }
+
+            // Sync gutter layout with the newly computed visible range.
+            _gutterControl?.Update(_lineHeight, _firstVisibleLine, _lastVisibleLine, TopMargin);
         }
 
         /// <summary>
@@ -3840,6 +3892,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _validationTimer.Start();
             }
 
+            // Refresh folding regions when document content changes.
+            if (IsFoldingEnabled && _foldingEngine != null)
+                _foldingEngine.Analyze(_document.Lines);
+
             // InvalidateMeasure triggers full layout pass → UpdateScrollBars (ranges may have changed)
             InvalidateMeasure();
         }
@@ -3957,6 +4013,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Without this call, the engine keeps the initial count (27 lines from the default
             // template) and clamps LastVisibleLine prematurely for any larger file.
             UpdateVirtualization();
+
+            // Initial folding analysis on freshly loaded content.
+            if (IsFoldingEnabled && _foldingEngine != null)
+                _foldingEngine.Analyze(_document.Lines);
+
             InvalidateMeasure();
         }
 
