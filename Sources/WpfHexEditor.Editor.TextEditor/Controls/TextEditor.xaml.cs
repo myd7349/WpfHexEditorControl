@@ -389,6 +389,9 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IOpenable
     /// <remarks>Not applicable for text editors.</remarks>
     public void ApplyChangeset(ChangesetDto changeset) { }
 
+    /// <inheritdoc/>
+    public void MarkChangesetSaved() { }
+
     // -----------------------------------------------------------------------
     // Scroll sync
     // -----------------------------------------------------------------------

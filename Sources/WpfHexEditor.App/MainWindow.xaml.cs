@@ -1350,6 +1350,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
                     var bkms = projItem.Bookmarks;
                     if (bkms is { Count: > 0 }) hexPers.ApplyBookmarks(bkms);
+
+                    // Restore pending changeset from .whchg companion file
+                    if (ChangesetService.Instance.HasChangeset(projItem))
+                    {
+                        var dto = ChangesetService.Instance.ReadChangeset(projItem);
+                        if (dto is not null)
+                            hexPers.ApplyChangeset(dto);
+                    }
                 }
             }
         }
@@ -2388,6 +2396,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             await _solutionManager.DiscardChangesetAsync(e.Project, e.Item);
+
+            // If the file is currently open, close and reopen to restore the original state
+            var contentId = $"doc-proj-{e.Item.Id}";
+            if (_layout.FindItemByContentId(contentId) is { } dockItem)
+            {
+                CloseTab(dockItem, promptIfDirty: false);
+                OpenProjectItem(e.Item, e.Project);
+            }
             OutputLogger.Info($"Discarded changeset for '{e.Item.Name}'.");
         }
         catch (Exception ex)
@@ -2722,21 +2738,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         item.Metadata.ContainsKey("ProjectId");
 
     /// <summary>Auto-serializes a dirty tracked project item to its <c>.whchg</c> companion
-    /// file without showing a dialog.</summary>
-    private Task AutoSerializeTrackedItemAsync(DockItem item)
+    /// file without showing a dialog.  On success clears the editor dirty flag and refreshes
+    /// the Solution Explorer changeset node.</summary>
+    private async Task AutoSerializeTrackedItemAsync(DockItem item)
     {
-        if (!_contentCache.TryGetValue(item.ContentId, out var ctrl)) return Task.CompletedTask;
-        if (ctrl is not IEditorPersistable persistable) return Task.CompletedTask;
+        if (!_contentCache.TryGetValue(item.ContentId, out var ctrl)) return;
+        if (ctrl is not IEditorPersistable persistable) return;
 
         var snapshot = persistable.GetChangesetSnapshot();
-        if (!snapshot.HasEdits) return Task.CompletedTask;
+        if (!snapshot.HasEdits) return;
 
         var proj = _solutionManager.CurrentSolution?.Projects
             .FirstOrDefault(p => p.Id == item.Metadata["ProjectId"]);
         var it = proj?.FindItem(item.Metadata["ItemId"]);
-        if (it is null) return Task.CompletedTask;
+        if (it is null) return;
 
-        return ChangesetService.Instance.WriteChangesetAsync(it, snapshot);
+        await ChangesetService.Instance.WriteChangesetAsync(it, snapshot);
+
+        // Mark the editor as clean after the tracked save
+        persistable.MarkChangesetSaved();
+
+        // Refresh the .whchg child node in Solution Explorer
+        Dispatcher.BeginInvoke(() => _solutionExplorerPanel?.RefreshChangesetNode(it));
     }
 
     private void OnTabCloseRequested(DockItem item) => CloseTab(item, promptIfDirty: true);
@@ -3337,7 +3360,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (!snapshot.HasEdits)
                 return;   // nothing to write
 
-            _ = ChangesetService.Instance.WriteChangesetAsync(saveItem!, snapshot);
+            _ = ChangesetService.Instance.WriteChangesetAsync(saveItem!, snapshot)
+                    .ContinueWith(_ =>
+                    {
+                        savePersistable.MarkChangesetSaved();
+                        Dispatcher.BeginInvoke(() => _solutionExplorerPanel?.RefreshChangesetNode(saveItem!));
+                    }, TaskScheduler.Default);
             OutputLogger.Info($"Saved '{saveItem!.Name}' (tracked).");
             return;
         }

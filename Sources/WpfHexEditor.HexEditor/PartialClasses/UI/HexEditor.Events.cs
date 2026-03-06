@@ -986,7 +986,12 @@ namespace WpfHexEditor.HexEditor
         {
             if (_viewModel?.Provider != null)
             {
-                var isModified = _viewModel.Provider.UndoCount > 0;
+                var raw = _viewModel.Provider.UndoCount > 0;
+                // When a tracked save baseline has been set, IsDirty = true only when
+                // the undo count diverges from that baseline (new edits or undo past save point).
+                var isModified = _changesetSavedUndoCount < 0
+                    ? raw
+                    : _viewModel.Provider.UndoCount != _changesetSavedUndoCount;
                 if (IsModified != isModified)
                     IsModified = isModified;
             }
