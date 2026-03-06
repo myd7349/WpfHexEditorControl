@@ -1872,35 +1872,93 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     /// <summary>
     /// Handles clipboard paste from the Solution Explorer (Ctrl+V or "Paste" context menu).
-    /// Performs the physical file operation (copy or move) then registers the item in the project.
+    /// Always performs a physical file copy (or move for Cut) into the destination folder,
+    /// then registers the item in the project under the correct virtual folder.
+    /// Shows <see cref="PasteConflictDialog"/> when a file with the same name already exists.
     /// </summary>
     private async void OnSEClipboardPaste(object? sender, AddExistingItemEventArgs e)
     {
         var project = ResolveProjectForPaste(e.TargetFolder);
         if (project is null) return;
 
-        var projDir = Path.GetDirectoryName(project.ProjectFilePath)!;
+        // Resolve the physical directory that maps to the selected virtual folder.
+        // If the folder has a PhysicalRelativePath (disk-backed folder), use it;
+        // otherwise fall back to the project root directory.
+        var projDir     = Path.GetDirectoryName(project.ProjectFilePath)!;
+        var physDestDir = e.TargetFolder?.PhysicalRelativePath is { } rel
+            ? Path.Combine(projDir, rel)
+            : projDir;
+        Directory.CreateDirectory(physDestDir);
 
-        foreach (var srcPath in e.FilePaths)
+        var targetFolderId = e.TargetFolder?.Id;
+
+        try
         {
-            if (!File.Exists(srcPath)) continue;
-
-            var destPath = srcPath;
-
-            if (e.IsCut)
+            foreach (var srcPath in e.FilePaths)
             {
-                // Move the file into the project directory when it originates from elsewhere.
-                var dest = Path.Combine(projDir, Path.GetFileName(srcPath));
-                if (!string.Equals(srcPath, dest, StringComparison.OrdinalIgnoreCase))
-                {
-                    Directory.CreateDirectory(projDir);
-                    File.Move(srcPath, dest, overwrite: false);
-                }
-                destPath = dest;
-            }
+                if (!File.Exists(srcPath)) continue;
 
-            await _solutionManager.AddItemAsync(project, destPath, virtualFolderId: null);
+                var fileName = Path.GetFileName(srcPath);
+                var destPath = Path.Combine(physDestDir, fileName);
+
+                // ── Name-conflict resolution ──────────────────────────────────────
+                if (File.Exists(destPath) &&
+                    !string.Equals(srcPath, destPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    var dlg = new PasteConflictDialog
+                    {
+                        OriginalName = fileName,
+                        NewName      = BuildSuggestedName(physDestDir, fileName),
+                        Owner        = this,
+                    };
+
+                    if (dlg.ShowDialog() != true)
+                    {
+                        if (dlg.CancelAll) return;  // user chose "Cancel All" — stop processing
+                        continue;                    // user chose "Skip" — move to next file
+                    }
+
+                    destPath = Path.Combine(physDestDir, dlg.NewName);
+                }
+
+                // ── Physical file operation ───────────────────────────────────────
+                if (e.IsCut)
+                {
+                    if (!string.Equals(srcPath, destPath, StringComparison.OrdinalIgnoreCase))
+                        File.Move(srcPath, destPath, overwrite: false);
+                }
+                else
+                {
+                    // Copy: always produce a physical file at the destination,
+                    // never keep a reference to the source path.
+                    File.Copy(srcPath, destPath, overwrite: false);
+                }
+
+                await _solutionManager.AddItemAsync(project, destPath,
+                                                    virtualFolderId: targetFolderId);
+            }
         }
+        finally
+        {
+            // Safety-net: guarantee the SE tree reflects the current solution state,
+            // even when AddItemAsync threw silently (async void swallows exceptions).
+            _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        }
+    }
+
+    /// <summary>
+    /// Returns a free file name by appending "(copy)", "(copy 2)", etc.
+    /// until a name that does not already exist in <paramref name="directory"/> is found.
+    /// </summary>
+    private static string BuildSuggestedName(string directory, string fileName)
+    {
+        var nameNoExt = Path.GetFileNameWithoutExtension(fileName);
+        var ext       = Path.GetExtension(fileName);
+        var candidate = $"{nameNoExt} (copy){ext}";
+        var counter   = 2;
+        while (File.Exists(Path.Combine(directory, candidate)))
+            candidate = $"{nameNoExt} (copy {counter++}){ext}";
+        return candidate;
     }
 
     /// <summary>
