@@ -6,6 +6,45 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
+## What's Next
+
+> Planned features — subject to change.
+
+### Plugin System & SDK
+- Public SDK (`WpfHexEditor.SDK`) — versioned, open-source plugin API
+- Hot-load / Hot-unload plugins at runtime without IDE restart
+- Process-level plugin sandboxing (`WpfHexEditor.PluginSandbox`) with CPU/memory monitoring
+- `.whix` package format + Plugin Installer tool
+- Official panels converted to first-class plugin packages (DataInspector, StructureOverlay, FileStatistics, PatternAnalysis, FileComparison…)
+
+### CodeEditor — VS-Like Overkill
+- Multi-caret editing, virtual scroll for >1 GB files
+- Incremental multi-language syntax highlighting + code folding / gutter with line numbers
+- IntelliSense engine: autocomplete, snippets, quick-info, signature help
+- Real-time diagnostics tightly integrated with Error Panel and EventBus
+
+### IDE Core Infrastructure
+- Service Container / Dependency Injection for all IDE components
+- Global CommandBus — all IDE actions (menus, toolbar, terminal, plugins) routed centrally
+- Configurable Keyboard Shortcuts with per-plugin extension support
+- Persistent user preferences (global + per-workspace)
+
+### Advanced IDE Modules
+- Dynamic Snippets: user/plugin/language-scoped with IntelliSense integration
+- AI-Assisted Code Suggestions: contextual completions, auto-refactoring hints
+- Integrated Debugger: breakpoints, watches, step over/into, multi-language
+- Git Integration: inline gutter diff, commit / push / pull / branch panel
+- Multi-Shell Terminal: PowerShell, Bash, CMD — multi-tab with history
+- Plugin Marketplace UI: browse, install, update, disable (sandboxed)
+- Advanced Refactoring: rename symbol, extract method, move class — workspace-wide
+- Unit Testing panel: auto-detect frameworks (NUnit/JUnit/PyTest), run by file/project
+- Code Analysis & Metrics: dependency graphs, cyclomatic complexity, duplication reports
+- Large File Performance: virtualization + lazy parsing + multi-thread IntelliSense
+- Multi-User Collaboration / Pair Programming with real-time document sync
+- Internationalization / Localization — EN/FR initial, plugin-extensible
+
+---
+
 ## [Unreleased] — 2026-03 — IDE & Project System
 
 ### ✨ Added — Project System
