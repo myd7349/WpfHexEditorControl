@@ -938,11 +938,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             FileComparisonPanelContentId   => CreateFileComparisonContent(),
             ArchivePanelContentId          => CreateArchivePanelContent(),
             OptionsContentId               => CreateOptionsContent(),
+            "doc-welcome"                  => CreateWelcomeContent(),
             _ when item.ContentId.StartsWith("doc-file-") => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")  => CreateHexEditorContent(
                 item.Metadata.TryGetValue("FilePath",    out var fp)   ? fp   : null,
                 item.Metadata.TryGetValue("DisplayName", out var dn)   ? dn   : null,
-                item.Metadata.TryGetValue("IsNewFile",   out var isNew) && isNew == "true"),
+                item.Metadata.TryGetValue("IsNewFile",   out var isNew) && isNew == "true",
+                ownerItem: item),
             _ when item.ContentId.StartsWith("doc-proj-") => CreateProjectItemContent(item),
             _ => CreateDocumentContent(item)
         };
@@ -1107,6 +1109,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         return ctrl;
     }
 
+    private UIElement CreateWelcomeContent() =>
+        new Controls.WelcomePanel().Configure(
+            onNewFile:           () => OnNewFile(this, new RoutedEventArgs()),
+            onOpenFile:          () => OnOpenFile(this, new RoutedEventArgs()),
+            onOpenProject:       () => OnOpenSolutionOrProject(this, new RoutedEventArgs()),
+            onOptions:           () => OnSettings(this, new RoutedEventArgs()),
+            recentFiles:         _solutionManager.RecentFiles,
+            recentSolutions:     _solutionManager.RecentSolutions,
+            openRecentFile:      path => { OpenFileDirectly(path); PopulateRecentMenus(); },
+            openRecentSolution:  path => _ = OpenSolutionAsync(path));
+
     /// <summary>
     /// Creates <see cref="_errorPanel"/> the first time it is needed, without docking it.
     /// Call this instead of null-checking <see cref="_errorPanel"/> so that diagnostic sources
@@ -1241,7 +1254,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         string?   filePath,
         string?   displayName = null,
         bool      isNewFile   = false,
-        IProject? project     = null)
+        IProject? project     = null,
+        DockItem? ownerItem   = null)
     {
         var hexEditor = new HexEditorControl();
         ApplyHexEditorDefaults(hexEditor);
@@ -1301,17 +1315,29 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 var msg = $"Cannot open '{Path.GetFileName(filePath)}': {ex.Message}";
                 OutputLogger.Error(msg);
+                ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
+                if (ownerItem is not null)
+                    Dispatcher.InvokeAsync(() => CloseTab(ownerItem, promptIfDirty: false),
+                                           System.Windows.Threading.DispatcherPriority.Background);
                 return MakeErrorBlock(msg);
             }
             catch (UnauthorizedAccessException ex)
             {
                 var msg = $"Access denied '{Path.GetFileName(filePath)}': {ex.Message}";
                 OutputLogger.Error(msg);
+                ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
+                if (ownerItem is not null)
+                    Dispatcher.InvokeAsync(() => CloseTab(ownerItem, promptIfDirty: false),
+                                           System.Windows.Threading.DispatcherPriority.Background);
                 return MakeErrorBlock(msg);
             }
         }
 
         OutputLogger.Error($"File not found: {filePath}");
+        ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
+        if (ownerItem is not null)
+            Dispatcher.InvokeAsync(() => CloseTab(ownerItem, promptIfDirty: false),
+                                   System.Windows.Threading.DispatcherPriority.Background);
         return new TextBlock
         {
             Text = $"File not found:\n{filePath}",
@@ -1357,8 +1383,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         else
         {
-            factory = _editorRegistry.FindFactory(filePath);
+            factory = _editorRegistry.FindFactory(filePath, GetPreferredEditorId(filePath));
         }
+
+        // Record which editor was resolved so "View in" deduplication can match back to this tab.
+        item.Metadata["ActiveEditorId"] = factory?.Descriptor.Id ?? "hex-editor";
 
         if (factory != null)
         {
@@ -1475,7 +1504,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         else
         {
-            factory = _editorRegistry.FindFactory(filePath);
+            factory = _editorRegistry.FindFactory(filePath, GetPreferredEditorId(filePath));
         }
 
         if (factory?.Create() is IDocumentEditor editor && editor is FrameworkElement fe)
@@ -1521,7 +1550,32 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         // Fallback: HexEditor for any binary/unknown file
-        return CreateHexEditorContent(filePath);
+        return CreateHexEditorContent(filePath, ownerItem: item);
+    }
+
+    /// <summary>
+    /// Derives the preferred editor factory ID for <paramref name="filePath"/> by consulting the
+    /// <see cref="EmbeddedFormatCatalog"/> for a matching format entry.
+    /// Resolution order:
+    /// 1. Explicit <c>preferredEditor</c> field in the matching .whfmt definition.
+    /// 2. <c>detection.isTextFormat = true</c> → "code-editor".
+    /// 3. <c>null</c> — falls back to registry first-match order.
+    /// </summary>
+    private static string? GetPreferredEditorId(string filePath)
+    {
+        var ext = Path.GetExtension(filePath)?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext)) return null;
+
+        var entry = EmbeddedFormatCatalog.Instance.GetAll()
+            .FirstOrDefault(e => e.Extensions.Any(
+                x => string.Equals(x, ext, StringComparison.OrdinalIgnoreCase)));
+
+        if (entry is null) return null;
+
+        if (!string.IsNullOrEmpty(entry.PreferredEditor)) return entry.PreferredEditor;
+        if (entry.IsTextFormat) return "code-editor";
+
+        return null;
     }
 
     /// <summary>
@@ -2224,6 +2278,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// </summary>
     private void OpenFileDirectly(string filePath)
     {
+        // Pre-flight: verify file accessibility before creating a document tab.
+        // If the file is locked or missing the error is routed to the Output panel
+        // and no tab is created.
+        if (!TryCheckFileAccess(filePath, out var accessError))
+        {
+            OutputLogger.Error(accessError);
+            ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
+            return;
+        }
+
         _documentCounter++;
         var item = new DockItem
         {
@@ -2235,6 +2299,38 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         DockHost.RebuildVisualTree();
         UpdateStatusBar();
         _solutionManager.PushRecentFile(filePath);
+    }
+
+    /// <summary>
+    /// Verifies that <paramref name="filePath"/> exists and can be opened for reading
+    /// before a document tab is created. Catches <see cref="IOException"/> and
+    /// <see cref="UnauthorizedAccessException"/> to prevent creating a broken tab.
+    /// </summary>
+    private static bool TryCheckFileAccess(string filePath, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        if (!File.Exists(filePath))
+        {
+            errorMessage = $"File not found: {filePath}";
+            return false;
+        }
+
+        try
+        {
+            using var _ = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            return true;
+        }
+        catch (IOException ex)
+        {
+            errorMessage = $"Cannot open '{Path.GetFileName(filePath)}': {ex.Message}";
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            errorMessage = $"Access denied '{Path.GetFileName(filePath)}': {ex.Message}";
+            return false;
+        }
     }
 
     private void OnSolutionExplorerItemSelected(object? sender, ProjectItemEventArgs e)
@@ -2571,6 +2667,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
+        // Also check the bare default tab (doc-proj-{itemId}) in case it was opened with
+        // the same editor as the one being requested via "View in".
+        var bareContentId = $"doc-proj-{item.Id}";
+        if (_layout.FindItemByContentId(bareContentId) is { } bareItem)
+        {
+            bareItem.Metadata.TryGetValue("ActiveEditorId", out var activeEditorId);
+            if (activeEditorId == suffix || (activeEditorId is null && suffix == "hex-editor"))
+            {
+                if (bareItem.Owner is { } bareOwner) bareOwner.ActiveItem = bareItem;
+                DockHost.RebuildVisualTree();
+                return;
+            }
+        }
+
         var meta = new System.Collections.Generic.Dictionary<string, string>
         {
             ["FilePath"]  = item.AbsolutePath,
@@ -2623,6 +2733,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// </summary>
     private void OpenStandaloneFileWithEditor(string filePath, string? factoryId)
     {
+        // Activate existing tab if the same file is already open in the requested editor.
+        var allItems = _layout.GetAllGroups().SelectMany(g => g.Items)
+            .Concat(_layout.FloatingItems)
+            .Concat(_layout.AutoHideItems);
+
+        foreach (var di in allItems)
+        {
+            if (!di.Metadata.TryGetValue("FilePath", out var fp)) continue;
+            if (!string.Equals(fp, filePath, StringComparison.OrdinalIgnoreCase)) continue;
+
+            di.Metadata.TryGetValue("ForceEditorId",  out var feid);
+            di.Metadata.TryGetValue("ActiveEditorId", out var aeid);
+            var effectiveId = feid ?? aeid;
+
+            var matches = factoryId is null
+                ? (di.Metadata.TryGetValue("ForceHexEditor", out var fh) && fh == "true")
+                : effectiveId == factoryId;
+
+            if (!matches) continue;
+
+            if (di.Owner is { } o) o.ActiveItem = di;
+            DockHost.RebuildVisualTree();
+            return;
+        }
+
         _documentCounter++;
         var suffix    = factoryId is null ? "hex" : factoryId;
         var contentId = $"doc-file-{suffix}-{_documentCounter}";
