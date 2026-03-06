@@ -119,6 +119,20 @@ public class AutoHideFlyout : Grid
     public event Action<DockItem>? RestoreRequested;
 
     /// <summary>
+    /// Raised at the very start of <see cref="Close"/>, before the hide animation begins,
+    /// so the host can capture a snapshot while the panel content is still fully visible.
+    /// Covers all dismiss paths including the click-catcher (outside click).
+    /// </summary>
+    public event Action? Dismissing;
+
+    /// <summary>
+    /// Raised after the open animation completes and after <see cref="DispatcherPriority.Render"/>
+    /// so the host can capture a high-quality snapshot when the panel is at full size and fully painted.
+    /// This is the preferred capture point; <see cref="Dismissing"/> is the fallback.
+    /// </summary>
+    public event Action? SnapshotReady;
+
+    /// <summary>
     /// Raised when the user clicks close.
     /// </summary>
     public event Action<DockItem>? CloseRequested;
@@ -375,6 +389,14 @@ public class AutoHideFlyout : Grid
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
+
+        // Notify the host AFTER the open animation finishes AND after the WPF render pipeline
+        // has committed a frame (DispatcherPriority.Render). This is the ideal moment to capture
+        // a snapshot: panel is at full size and content is fully painted.
+        showAnim.Completed += (_, _) =>
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render,
+                (System.Action)(() => SnapshotReady?.Invoke()));
+
         showAnim.Freeze();
 
         if (isHorizontal)
@@ -385,6 +407,10 @@ public class AutoHideFlyout : Grid
 
     public void Close()
     {
+        // Notify the host BEFORE animation starts so it can capture a snapshot
+        // while the panel content is still fully rendered and visible.
+        Dismissing?.Invoke();
+
         bool isHorizontal = _currentSide is DockSide.Left or DockSide.Right;
 
         var hideAnim = new DoubleAnimation(0,

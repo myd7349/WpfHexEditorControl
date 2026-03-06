@@ -35,6 +35,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using WpfHexEditor.Docking.Core.Nodes;
 
 namespace WpfHexEditor.Docking.Wpf.Controls;
 
@@ -280,7 +281,8 @@ public sealed class TabHoverPreview
         {
             // Tab was never activated — no snapshot available.
             // Show a title-only fallback card so the user still gets visual feedback.
-            var title = _hoveredTab.Header as string ?? _hoveredTab.Header?.ToString() ?? string.Empty;
+            // Header is a DockTabHeader (StackPanel), not a string — use Tag (DockItem) for the title.
+            var title = (_hoveredTab.Tag as DockItem)?.Title ?? string.Empty;
             if (string.IsNullOrEmpty(title)) return;
 
             _previewImage.Visibility = Visibility.Collapsed;

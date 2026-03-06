@@ -344,9 +344,11 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         _autoHideTop = new AutoHideBar(Dock.Top);
         _autoHideBottom = new AutoHideBar(Dock.Bottom);
         _autoHideFlyout = new AutoHideFlyout();
+        _autoHideFlyout.SnapshotReady    += CaptureAutoHideSnapshot;  // primary: full-size, fully-painted panel
+        _autoHideFlyout.Dismissing       += CaptureAutoHideSnapshot;  // fallback: covers quick dismiss before animation ends
         _autoHideFlyout.RestoreRequested += OnAutoHideRestoreRequested;
-        _autoHideFlyout.CloseRequested += OnAutoHideCloseRequested;
-        _autoHideFlyout.FloatRequested += OnAutoHideFloatRequested;
+        _autoHideFlyout.CloseRequested   += OnAutoHideCloseRequested;
+        _autoHideFlyout.FloatRequested   += OnAutoHideFloatRequested;
         _centerHost = new ContentControl();
 
         _autoHideLeft.ItemClicked += OnAutoHideItemClicked;
@@ -567,6 +569,8 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         _anchorablesSynchronizer?.Dispose();
         _keyboardNav?.Detach();
         _floatingManager?.CloseAll();
+        _autoHideFlyout.SnapshotReady    -= CaptureAutoHideSnapshot;
+        _autoHideFlyout.Dismissing       -= CaptureAutoHideSnapshot;
         _autoHideFlyout.RestoreRequested -= OnAutoHideRestoreRequested;
         _autoHideFlyout.CloseRequested   -= OnAutoHideCloseRequested;
         _autoHideFlyout.FloatRequested   -= OnAutoHideFloatRequested;
@@ -1136,8 +1140,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     {
         if (_autoHideFlyout.IsOpen && _autoHideFlyout.CurrentItem == item)
         {
-            // Toggle off — capture snapshot before dismissing
-            CaptureAutoHideSnapshot();
+            // Toggle off — snapshot is captured by the Dismissing event inside Close()
             _autoHideFlyout.Close();
             return;
         }
@@ -1147,8 +1150,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
 
     private void OnAutoHideRestoreRequested(DockItem item)
     {
-        CaptureAutoHideSnapshot();
-        _autoHideFlyout.Close();
+        _autoHideFlyout.Close(); // Dismissing event captures snapshot
 
         if (_engine is null || Layout is null) return;
 
@@ -1168,8 +1170,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
 
     private void OnAutoHideCloseRequested(DockItem item)
     {
-        CaptureAutoHideSnapshot();
-        _autoHideFlyout.Close();
+        _autoHideFlyout.Close(); // Dismissing event captures snapshot
 
         if (_engine is null) return;
 
@@ -1179,8 +1180,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
 
     private void OnAutoHideFloatRequested(DockItem item)
     {
-        CaptureAutoHideSnapshot();
-        _autoHideFlyout.Close();
+        _autoHideFlyout.Close(); // Dismissing event captures snapshot
 
         if (_engine is null || Layout is null) return;
 
@@ -1201,11 +1201,17 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         var panel = _autoHideFlyout.PanelElement;
         if (!panel.IsVisible) return;
 
+        // Skip if the panel is too small — it is likely still in the opening animation or
+        // was closed before the animation completed. Storing a partial/blank snapshot here
+        // would overwrite a previously good one, degrading the hover-preview quality.
+        const double MinCaptureSize = 60.0;
+        if (panel.RenderSize.Width < MinCaptureSize || panel.RenderSize.Height < MinCaptureSize) return;
+
         try
         {
             var dpi    = System.Windows.Media.VisualTreeHelper.GetDpi(panel);
-            var width  = Math.Max(1, panel.RenderSize.Width);
-            var height = Math.Max(1, panel.RenderSize.Height);
+            var width  = panel.RenderSize.Width;
+            var height = panel.RenderSize.Height;
 
             var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(
                 (int)(width  * dpi.DpiScaleX),
