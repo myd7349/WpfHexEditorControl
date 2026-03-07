@@ -136,6 +136,8 @@
                     Grid.Column="2"
                     Content="&#xD7;"
                     Style="{StaticResource InfoBarDismissStyle}"
+                    Focusable="False"
+                    IsTabStop="False"
                     Click="OnDismiss"/>
         </Grid>
 

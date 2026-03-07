@@ -67,7 +67,7 @@ public partial class DocumentInfoBar : UserControl
             ActionButtons.Children.Add(MakeButton(factory.Descriptor.DisplayName, factory.Descriptor.Id));
     }
 
-    // ── Event handlers ──────────────────────────────────────────────────────
+    // -- Event handlers ------------------------------------------------------
 
     private void OnDismiss(object sender, RoutedEventArgs e)
         => Visibility = Visibility.Collapsed;
@@ -83,15 +83,17 @@ public partial class DocumentInfoBar : UserControl
             });
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
+    // -- Helpers -------------------------------------------------------------
 
     private Button MakeButton(string label, string? factoryId)
     {
         var btn = new Button
         {
-            Content = label,
-            Tag     = factoryId,        // null ⇒ Hex Editor fallback
-            Style   = (Style)FindResource("InfoBarButtonStyle"),
+            Content    = label,
+            Tag        = factoryId,     // null ⇒ Hex Editor fallback
+            Style      = (Style)FindResource("InfoBarButtonStyle"),
+            Focusable  = false,         // Prevent these buttons from intercepting Enter/Space keyboard events
+            IsTabStop  = false,
         };
         btn.Click += OnActionButtonClick;
         return btn;

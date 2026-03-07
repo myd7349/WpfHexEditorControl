@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: EditsManager.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Tracks all pending byte modifications (modified, inserted, deleted) for
+//     a ByteProvider session, using separate storage per operation type to
+//     avoid insertion/deletion bugs present in the legacy V1 architecture.
+//
+// Architecture Notes:
+//     Core component of ByteProvider V2. Exposes HasChanges, GetAllModifiedBytes,
+//     InsertedBytes, and DeletedPositions collections. Used by ByteReader and
+//     PositionMapper. No WPF dependencies — pure domain model.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

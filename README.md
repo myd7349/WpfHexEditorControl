@@ -5,7 +5,7 @@
   <h3>⚡ The Fastest Wpf Hex Editor IDE for .NET ⚡</h3>
 
   [![NuGet Legacy V1](https://img.shields.io/nuget/v/WPFHexaEditor?color=blue&label=NuGet%20(Legacy%20V1)&logo=nuget)](https://www.nuget.org/packages/WPFHexaEditor/)
-  [![.NET Multi-Target](https://img.shields.io/badge/.NET-net48%20%7C%20net8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+  [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
   [![C#](https://img.shields.io/badge/C%23-13.0-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -18,7 +18,7 @@
 
   <br/>
 
-  <a href="Images/Sample2026-001.png"><img src="Images/Sample2026-001.png" alt="WPF HexEditor IDE" width="900"/></a>
+  <a href="Images/App-Editors-Welcome.png"><img src="Images/App-Editors-Welcome.png" alt="WPF HexEditor IDE" width="900"/></a>
   <br/>
   <sub><i>WpfHexEditor — Full IDE with VS-style docking, project system, and multiple editors</i></sub>
 
@@ -69,12 +69,14 @@
 - **VS2022-style status bar** (edit mode, bytes/line, caret offset)
 - **Output panel** + **Error/Diagnostics panel** + **Quick Search** (inline + advanced)
 - **VS2026-style Options** — document tab, auto-save, live theme preview
+- **Integrated Terminal** (`Ctrl+`` `) — 31 built-in commands, panel/plugin/file management
+- **Plugin System** — `WpfHexEditor.SDK` open API, `.whxplugin` packages, Plugin Manager
 
 </td>
 <td width="50%">
 
 ### 🔍 Binary Intelligence
-- **400+ file format** auto-detection
+- **400+ file format** auto-detection with **format-aware editor routing**
 - **Parsed Fields Panel** with structure overlay
 - **Data Inspector** — 40+ type interpretations
 - **19 languages** with instant switching *(partial — not all languages fully translated)*
@@ -91,15 +93,15 @@ WpfHexEditor uses a **plugin architecture** (`IDocumentEditor`) — every editor
 
 | Editor | Status | Progress | Description |
 |--------|--------|----------|-------------|
-| **Hex Editor** | ✅ Active | ~70% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL |
+| **Hex Editor** | ✅ Active | ~75% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL, status bar contributor |
 | **TBL Editor** | ✅ Active | ~60% | Character table editor for custom encodings and ROM hacking |
-| **JSON Editor** | ✅ Active | ~55% | JSON editing with real-time validation, syntax highlighting and diagnostics |
-| **Text Editor** | ✅ Active | ~45% | Text editing with syntax highlighting and encoding support |
-| **Image Viewer** | 🔧 Stub | ~5% | Binary image viewer (planned) |
+| **Code Editor** | ✅ Active | ~55% | Multi-language code editor with syntax highlighting, find/replace, `IEditorPersistable`, split view |
+| **Text Editor** | ✅ Active | ~50% | Text editing with syntax highlighting and encoding support |
+| **Image Viewer** | 🔧 Active | ~30% | Binary image viewer — zoom/pan, transform pipeline (rotate/flip/crop/resize), context menu, `FileShare.ReadWrite` for concurrent open |
 | **Audio Viewer** | 🔧 Stub | ~5% | Audio binary viewer (planned) |
-| **Diff Viewer** | 🔧 Stub | ~5% | Side-by-side file comparison (planned) |
+| **Diff / Changeset Viewer** | 🔧 Active | ~35% | Side-by-side binary comparison and changeset replay |
 | **Disassembly Viewer** | 🔧 Stub | ~5% | Binary disassembler (planned) |
-| **Entropy Viewer** | 🔧 Stub | ~5% | Entropy analysis viewer (planned) |
+| **Structure Editor** | 🔧 Active | ~30% | Binary template / structure editor |
 
 > **Implementing a new editor?** See [IDocumentEditor contract](Sources/WpfHexEditor.Editor.Core/) and register via `EditorRegistry`.
 
@@ -113,19 +115,21 @@ All controls are **independently reusable** — no IDE required. Drop any of the
 
 | Control | Frameworks | Progress | Description |
 |---------|-----------|----------|-------------|
-| **[HexEditor](Sources/WpfHexEditor.HexEditor/)** | net48 · net8.0-windows | ~80% | Full-featured hex editor UserControl — MVVM, 16 services, insert/overwrite, search, bookmarks, TBL, 400+ format detection |
-| **[HexBox](Sources/WpfHexEditor.HexBox/)** | net48 · net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
-| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net48 · net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
-| **[BarChart](Sources/WpfHexEditor.BarChart/)** | net48 · net8.0-windows | ~60% | Byte frequency distribution chart (0x00–0xFF visualization) — **standalone only**, not yet integrated in the IDE |
+| **[HexEditor](Sources/WpfHexEditor.HexEditor/)** | net8.0-windows | ~80% | Full-featured hex editor UserControl — MVVM, 16 services, insert/overwrite, search, bookmarks, TBL, 400+ format detection |
+| **[HexBox](Sources/WpfHexEditor.HexBox/)** | net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
+| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
 | **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/)** | net8.0-windows | ~65% | **Custom-built** VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — 100% in-house, zero third-party dependency |
 
 ### Libraries & Infrastructure
 
 | Library | Frameworks | Description |
 |---------|-----------|-------------|
-| **[Core](Sources/WpfHexEditor.Core/)** | net48 · net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
-| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net48 · net8.0-windows | `IDocumentEditor` plugin contract, editor registry, shared interfaces |
-| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0-windows | 400+ format detection engine, binary templates, DataInspector service |
+| **[Core](Sources/WpfHexEditor.Core/)** | net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
+| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net8.0-windows | `IDocumentEditor` plugin contract, editor registry, changeset system, shared interfaces |
+| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0 | 400+ format detection engine, binary templates, DataInspector service |
+| **[SDK](Sources/WpfHexEditor.SDK/)** | net8.0-windows | Public plugin API — `IWpfHexEditorPlugin`, `IIDEHostContext`, `IUIRegistry`, 11+ service contracts incl. `ITerminalService`, `PluginCapabilities.Terminal` |
+| **[PluginHost](Sources/WpfHexEditor.PluginHost/)** | net8.0-windows | Runtime plugin infrastructure — discovery, load, watchdog, `PluginManagerControl`, `PermissionService` |
+| **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/)** | net8.0-windows | Command engine — 31+ built-in commands, `HxScriptEngine`, `CommandHistory`, `WriteTable` output helper |
 
 ---
 
@@ -136,13 +140,15 @@ Panels connect to the active document automatically via the docking system.
 | Panel | Progress | Description |
 |-------|----------|-------------|
 | **Parsed Fields Panel** | ~75% | 400+ format detection — parsed field list with type overlay and inline editing |
-| **Data Inspector** | ~65% | 40+ byte interpretations at caret position (int, float, GUID, date, color, …) |
+| **Data Inspector** | ~65% | 40+ byte interpretations at caret position (int, float, GUID, date, color, …); plugin with settings page |
 | **Structure Overlay** | ~55% | Visual field highlighting superimposed on the hex grid |
-| **Solution Explorer** | ~70% | Project tree with virtual & physical folders, Show All Files mode, context menus |
-| **Properties Panel** | ~50% | Context-aware properties for the active document (F4) |
+| **Solution Explorer** | ~75% | Project tree with virtual & physical folders, Show All Files, D&D from Windows Explorer, expand-state persistence, delete from disk |
+| **Properties Panel** | ~60% | Context-aware properties for the active document (F4) — auto-refresh on cursor idle (400 ms debounce), categorized groups, sort/copy/refresh toolbar |
 | **Error Panel** | ~70% | Diagnostics and validation errors from any `IDiagnosticSource` editor |
 | **Output Panel** | ~65% | Session log, file operation messages and build feedback |
-| **Options** | ~70% | VS2026-style settings document tab — theme, display, editing defaults, auto-save |
+| **Terminal Panel** | ~70% | Integrated command terminal — 31+ commands, colored output, history, `TerminalMode` (Interactive/Script/ReadOnly), session export, plugin API via `ITerminalService` |
+| **Plugin Manager** | ~60% | Browse, enable/disable, uninstall plugins; settings integration via `IPluginWithOptions` |
+| **Options** | ~75% | VS2026-style settings document tab — 9 pages: theme, display, editing, behavior, status bar, plugins, auto-save |
 | **Quick Search Bar** | ~55% | Inline Ctrl+F overlay (VSCode-style) — find next/prev, regex toggle, jump to Advanced |
 | **Advanced Search** | ~45% | Full-featured search dialog — 5 modes: Hex, Text, Regex, TBL, Wildcard |
 | **File Diff** | ~30% | Side-by-side binary comparison with diff navigation (F7/F8) |
@@ -284,7 +290,9 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 - **Project system** (.whsln / .whproj)
 - **VS-style docking** (no third-party lib)
 - **8 themes** out of the box
-- **4 functional editors** + 5 planned
+- **4 functional editors** + structure, diff, image viewers
+- **Plugin system** — open SDK + `.whxplugin` packages
+- **Integrated terminal** — 31 commands
 
 </td>
 </tr>
@@ -348,10 +356,9 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 
 | Framework | Version | Notes |
 |-----------|---------|-------|
-| **.NET Framework** | 4.8 | Full support — LRU cache, parallel search |
-| **.NET** | 8.0-windows | Maximum performance — Span\<T\>, SIMD, PGO |
+| **.NET** | 8.0-windows | Span\<T\>, SIMD, PGO — full performance unlocked |
 
-**Recommendation:** Use .NET 8.0 for best performance (SIMD vectorization, Profile-Guided Optimization).
+> **.NET Framework 4.8 support has been dropped.** The project targets .NET 8.0+ exclusively to take full advantage of modern runtime performance, Span\<T\>, SIMD vectorization, and Profile-Guided Optimization (PGO). If you need .NET Framework support, use the legacy V1 NuGet package.
 
 ---
 

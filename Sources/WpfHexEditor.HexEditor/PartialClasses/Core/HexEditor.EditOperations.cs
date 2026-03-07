@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.EditOperations.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing edit operation methods for the HexEditor.
+//     Covers undo, redo, copy, paste, delete, and insert operations on byte ranges,
+//     all integrated with the changeset system for full undo/redo support.
+//
+// Architecture Notes:
+//     All mutations use the changeset pipeline. Clipboard operations use WPF Clipboard
+//     with hex string and raw byte formats. Depends on WpfHexEditor.Core.Models.
+//
+// ==========================================================
 
 using System;
 using WpfHexEditor.Core.Models;
@@ -62,11 +73,30 @@ namespace WpfHexEditor.HexEditor
         }
 
         /// <summary>
-        /// Get selected bytes as byte array
+        /// Get selected bytes as byte array.
+        /// When no multi-byte selection exists (caret only), returns up to 8 bytes
+        /// starting at the caret position so the DataInspector always has data to show.
         /// </summary>
         public byte[] GetSelectionByteArray()
         {
-            return _viewModel?.GetSelectionBytes();
+            if (_viewModel == null) return null;
+
+            // Multi-byte selection: return exactly the selected bytes.
+            var selection = _viewModel.GetSelectionBytes();
+            if (selection != null && selection.Length > 0) return selection;
+
+            // Caret-only: read up to 8 bytes at SelectionStart for DataInspector.
+            var caretPos = _viewModel.SelectionStart;
+            if (!caretPos.IsValid) return null;
+
+            long count = Math.Min(8, _viewModel.VirtualLength - caretPos.Value);
+            if (count <= 0) return null;
+
+            var bytes = new byte[count];
+            for (int i = 0; i < count; i++)
+                bytes[i] = _viewModel.GetByteAt(new VirtualPosition(caretPos.Value + i));
+
+            return bytes;
         }
 
         /// <summary>

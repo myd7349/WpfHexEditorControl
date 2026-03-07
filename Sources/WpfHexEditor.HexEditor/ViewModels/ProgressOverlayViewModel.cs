@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: ProgressOverlayViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+// Created: 2026-03-06
+// Description:
+//     ViewModel for the ProgressOverlay control displayed during long-running operations.
+//     Exposes progress value (0-100), status message, indeterminate mode flag,
+//     and a cancellation command for cooperative task cancellation.
+//
+// Architecture Notes:
+//     MVVM pattern — implements INotifyPropertyChanged manually.
+//     Cancel command uses CancellationTokenSource; callers must observe the token.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

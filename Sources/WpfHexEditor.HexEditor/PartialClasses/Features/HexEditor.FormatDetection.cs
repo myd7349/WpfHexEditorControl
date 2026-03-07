@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.FormatDetection.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class integrating automatic file format detection into the HexEditor.
+//     On file open, runs the FormatDetectionService to identify the file format
+//     and fires format-detected events for the IDE to route to appropriate editors.
+//
+// Architecture Notes:
+//     Uses FormatDetectionService and EmbeddedFormatCatalog from WpfHexEditor.Definitions.
+//     Raises FormatDetected event consumed by the IDE's editor routing logic.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: FieldValidator.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Validates individual field values against constraints defined in format
+//     definitions. Supports range checks, enumerated value sets, regex patterns,
+//     checksum assertions, and custom validator callbacks.
+//
+// Architecture Notes:
+//     Stateless validation utility. Called by FormatScriptInterpreter for each
+//     field during format script execution. Uses ChecksumValidator for checksum
+//     constraints. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

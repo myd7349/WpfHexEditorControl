@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.Theme.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class managing theme application for the HexEditor control.
+//     Reads HexEditor_* brush/color resource keys from Application.Current.Resources
+//     and applies them to the viewport rendering colors when the theme changes.
+//
+// Architecture Notes:
+//     Theme keys follow the HexEditor_* naming convention defined in each theme's
+//     Colors.xaml. ApplyTheme() must be called after any ResourceDictionary swap.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Media;

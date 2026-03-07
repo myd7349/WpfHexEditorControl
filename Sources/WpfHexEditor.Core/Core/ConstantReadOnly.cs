@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2021
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ConstantReadOnly.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Centralizes read-only string format constants and default value strings
+//     used throughout the hex editor for hex display, offset formatting,
+//     and default placeholder values.
+//
+// Architecture Notes:
+//     Static class with readonly string fields — no instantiation, no WPF
+//     dependencies. Single source of truth for all hex format strings across
+//     Core, HexEditor rendering, and UI layers.
+//
+// ==========================================================
 
 namespace WpfHexEditor.Core
 {

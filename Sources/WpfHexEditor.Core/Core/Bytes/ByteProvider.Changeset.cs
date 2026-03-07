@@ -1,5 +1,20 @@
-// Apache 2.0 - 2026
-// Contributors: Claude Sonnet 4.6
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteProvider.Changeset.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class of ByteProvider implementing the changeset snapshot feature.
+//     Captures an immutable snapshot of all pending edits (modify/insert/delete)
+//     grouped into contiguous runs for efficient serialization and persistence.
+//
+// Architecture Notes:
+//     Partial class pattern — depends on EditsManager state from ByteProvider.cs.
+//     O(e) complexity: iterates only the edit dictionaries, never reads the file.
+//     Returns ChangesetSnapshot.Empty when the buffer is clean.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;
@@ -20,7 +35,7 @@ namespace WpfHexEditor.Core.Bytes
             if (!_editsManager.HasChanges)
                 return ChangesetSnapshot.Empty;
 
-            // ── Modified: group consecutive bytes into runs ────────────────
+            // -- Modified: group consecutive bytes into runs ----------------
             var modifiedRanges = new List<ModifiedRange>();
             {
                 long runStart = -1;
@@ -48,7 +63,7 @@ namespace WpfHexEditor.Core.Bytes
                     modifiedRanges.Add(new ModifiedRange(runStart, runValues.ToArray()));
             }
 
-            // ── Inserted: collect bytes per physical position ──────────────
+            // -- Inserted: collect bytes per physical position --------------
             var insertedBlocks = new List<InsertedBlock>();
             foreach (var kvp in _editsManager.GetInsertionPositionsWithCounts())
             {
@@ -61,7 +76,7 @@ namespace WpfHexEditor.Core.Bytes
                     insertedBlocks.Add(new InsertedBlock(kvp.Key, ordered));
             }
 
-            // ── Deleted: group consecutive positions into ranges ───────────
+            // -- Deleted: group consecutive positions into ranges -----------
             var deletedRanges = new List<DeletedRange>();
             {
                 long rangeStart = -1;

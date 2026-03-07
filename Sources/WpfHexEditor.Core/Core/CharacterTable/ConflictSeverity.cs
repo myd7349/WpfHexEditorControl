@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2003-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ConflictSeverity.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Enumeration defining severity levels for TBL file entry conflicts.
+//     Used by the TBL validation system to classify issues ranging from
+//     informational notices to critical errors.
+//
+// Architecture Notes:
+//     Pure enum — no dependencies. Consumed by TBLStream conflict detection
+//     and TblStatistics reporting. Pairs with ConflictType for full context.
+//
+// ==========================================================
 
 namespace WpfHexEditor.Core.CharacterTable
 {

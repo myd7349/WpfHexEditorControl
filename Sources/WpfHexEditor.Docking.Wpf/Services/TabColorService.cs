@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: TabColorService.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Computes the accent Brush to display on a document tab based on the current
+//     DocumentTabBarSettings.ColorMode. Supports None, ByExtension (file type),
+//     Sequential (index-based), and Random modes.
+//
+// Architecture Notes:
+//     Static service — no state, no WPF dependency tree access. Uses a 12-color
+//     accessible palette with ~50-60% lightness for visibility on both dark and
+//     light themes. Brush instances are cached by color value to minimize allocations.
+//
+// ==========================================================
 
 using System.IO;
 using System.Text.RegularExpressions;
@@ -18,7 +30,7 @@ namespace WpfHexEditor.Docking.Wpf.Services;
 /// </summary>
 public static class TabColorService
 {
-    // ─── Palette ─────────────────────────────────────────────────────────────
+    // --- Palette -------------------------------------------------------------
     // 12 distinct, accessible colors that work on both dark and light backgrounds.
     // Kept at ~50–60% lightness so the stripe is visible without being harsh.
 
@@ -38,7 +50,7 @@ public static class TabColorService
         Color.FromRgb(0xA0, 0xA0, 0xF0), // Periwinkle
     ];
 
-    // ─── Public API ──────────────────────────────────────────────────────────
+    // --- Public API ----------------------------------------------------------
 
     /// <summary>
     /// Returns the accent <see cref="Brush"/> for <paramref name="item"/> given the
@@ -57,7 +69,7 @@ public static class TabColorService
         return color.HasValue ? new SolidColorBrush(color.Value) : null;
     }
 
-    // ─── Private helpers ─────────────────────────────────────────────────────
+    // --- Private helpers -----------------------------------------------------
 
     private static Color? ByExtension(string title)
     {

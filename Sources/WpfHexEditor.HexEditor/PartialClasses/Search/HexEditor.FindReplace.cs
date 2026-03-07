@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.FindReplace.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing Find and Replace operations for the HexEditor.
+//     Contains methods for locating byte sequences and replacing them with
+//     new values, supporting single-occurrence and replace-all modes.
+//
+// Architecture Notes:
+//     Find/replace delegates to search services in WpfHexEditor.Core.
+//     Search result highlights use the CustomBackgroundBlock system.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

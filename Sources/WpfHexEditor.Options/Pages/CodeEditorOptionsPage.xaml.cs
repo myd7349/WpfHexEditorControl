@@ -1,21 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.Options
-// File: CodeEditorOptionsPage.xaml.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Code-behind for the CodeEditor options page.
-//     Covers font, indentation, features (IntelliSense, line numbers,
-//     zoom), .whchg toggle, and syntax colour overrides.
-//
-// Architecture Notes:
-//     Pattern: IOptionsPage (Load / Flush / Changed)
-//     Colour override: CheckBox enables the override; ColorPicker holds the value.
-//     Empty string stored when CheckBox is unchecked (= use theme default).
-//     Theme: DynamicResource brushes inherited from OptionsEditorControl.
-//     ColorPicker DynamicResources (BorderBrush, SurfaceElevatedBrush,
-//     ForegroundBrush) are resolved from the active application theme.
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System;
 using System.Windows;
@@ -30,9 +17,28 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
     public event EventHandler? Changed;
     private bool _loading;
 
-    public CodeEditorOptionsPage() => InitializeComponent();
+    public CodeEditorOptionsPage()
+    {
+        InitializeComponent();
 
-    // ── IOptionsPage ──────────────────────────────────────────────────────
+        // Auto-check the override checkbox whenever the user picks a new color.
+        WireAutoCheck(ChkBg,  CpBg);
+        WireAutoCheck(ChkFg,  CpFg);
+        WireAutoCheck(ChkKw,  CpKw);
+        WireAutoCheck(ChkStr, CpStr);
+        WireAutoCheck(ChkCmt, CpCmt);
+        WireAutoCheck(ChkNum, CpNum);
+    }
+
+    private void WireAutoCheck(CheckBox chk, ColorPickerControl cp)
+    {
+        cp.ColorChanged += (_, _) =>
+        {
+            if (!_loading) chk.IsChecked = true;
+        };
+    }
+
+    // -- IOptionsPage ------------------------------------------------------
 
     public void Load(AppSettings s)
     {
@@ -82,7 +88,7 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
         ce.NumberColor       = FlushColorPicker(ChkNum, CpNum);
     }
 
-    // ── Control handlers ─────────────────────────────────────────────────
+    // -- Control handlers -------------------------------------------------
 
     private void OnCheckChanged(object sender, RoutedEventArgs e)
     {
@@ -109,7 +115,7 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────
+    // -- Helpers ----------------------------------------------------------
 
     private static void SelectComboByTag(ComboBox combo, string tag)
     {
@@ -142,6 +148,7 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
         if (string.IsNullOrWhiteSpace(value))
         {
             chk.IsChecked = false;
+            cp.SelectedColor = Colors.White;
             return;
         }
         try
@@ -152,6 +159,7 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
         catch
         {
             chk.IsChecked = false;
+            cp.SelectedColor = Colors.White;
         }
     }
 

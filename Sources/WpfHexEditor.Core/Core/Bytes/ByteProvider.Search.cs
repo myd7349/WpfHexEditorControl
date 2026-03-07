@@ -1,8 +1,20 @@
-////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteProvider.Search.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class of ByteProvider implementing the advanced search operations.
+//     Integrates the SearchEngine (Boyer-Moore-Horspool algorithm) for ultra-fast
+//     pattern matching with full cancellation support via CancellationToken.
+//
+// Architecture Notes:
+//     Partial class pattern — exposes SearchEngine as lazy-initialized field.
+//     Delegates all search logic to SearchEngine; this class is the integration
+//     point between ByteProvider's data layer and the SearchModule services.
+//
+// ==========================================================
 
 using System;
 using System.Threading;

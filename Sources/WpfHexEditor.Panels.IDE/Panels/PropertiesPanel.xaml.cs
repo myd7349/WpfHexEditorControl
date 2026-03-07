@@ -1,13 +1,34 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Panels.IDE
+// File: PropertiesPanel.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the VS-style Properties panel (F4).
+//     Binds to an IPropertyProvider and displays categorised,
+//     optionally-editable property rows.
+//
+// Architecture Notes:
+//     Uses PropertyEntryDataTemplateSelector to pick the right XAML
+//     DataTemplate per entry type. Supports toolbar Sort/Copy/Refresh,
+//     right-click context menu copy, FilePath open-in-Explorer, and
+//     Color swatch rendering via InverseBoolConverter / StringToColorConverter.
+//
+// ==========================================================
 
+using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Editor.Core;
 
 namespace WpfHexEditor.Panels.IDE;
@@ -19,9 +40,11 @@ namespace WpfHexEditor.Panels.IDE;
 /// </summary>
 public partial class PropertiesPanel : UserControl, IPropertiesPanel
 {
-    // ── IPropertiesPanel ─────────────────────────────────────────────────────
+    // -- IPropertiesPanel -----------------------------------------------------
 
     private IPropertyProvider? _provider;
+    private bool                _isSorted;
+    private PropertyEntry?      _selectedEntry;
 
     public PropertyEntryDataTemplateSelector EntryTemplateSelector { get; } = new();
 
@@ -38,14 +61,14 @@ public partial class PropertiesPanel : UserControl, IPropertiesPanel
         Refresh();
     }
 
-    // ── Constructor ──────────────────────────────────────────────────────────
+    // -- Constructor ----------------------------------------------------------
 
     public PropertiesPanel()
     {
         InitializeComponent();
     }
 
-    // ── Refresh ──────────────────────────────────────────────────────────────
+    // -- Refresh --------------------------------------------------------------
 
     private void OnProviderChanged(object? sender, EventArgs e) => Refresh();
 
@@ -57,16 +80,38 @@ public partial class PropertiesPanel : UserControl, IPropertiesPanel
 
         var groups = _provider?.GetProperties() ?? [];
 
-        var source = new ObservableCollection<PropertyGroup>(groups);
-        GroupsControl.ItemsSource = source;
+        if (_isSorted)
+        {
+            groups = groups
+                .Select(g => new PropertyGroup { Name = g.Name, Entries = [.. g.Entries.OrderBy(e => e.Name)] })
+                .ToList();
+        }
+
+        GroupsControl.ItemsSource = new ObservableCollection<PropertyGroup>(groups);
     }
 
-    // ── Entry events ─────────────────────────────────────────────────────────
+    // -- Toolbar handlers -----------------------------------------------------
+
+    private void OnRefreshButtonClick(object sender, RoutedEventArgs e) => Refresh();
+
+    private void OnCopyButtonClick(object sender, RoutedEventArgs e)
+        => TrySetClipboard(_selectedEntry?.Value?.ToString() ?? "");
+
+    private void OnSortChanged(object sender, RoutedEventArgs e)
+    {
+        _isSorted = SortToggle.IsChecked ?? false;
+        Refresh();
+    }
+
+    // -- Entry events ---------------------------------------------------------
 
     private void OnEntryRowClick(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement fe && fe.DataContext is PropertyEntry entry)
+        {
+            _selectedEntry = entry;
             ShowDescription(entry);
+        }
     }
 
     private void ShowDescription(PropertyEntry entry)
@@ -88,9 +133,8 @@ public partial class PropertiesPanel : UserControl, IPropertiesPanel
             entry.OnValueChanged?.Invoke(tb.Text);
             e.Handled = true;
         }
-        else if (e.Key == Key.Escape && sender is TextBox tb2)
+        else if (e.Key == Key.Escape && sender is TextBox)
         {
-            // Revert — refresh will restore the original value
             Refresh();
             e.Handled = true;
         }
@@ -108,7 +152,51 @@ public partial class PropertiesPanel : UserControl, IPropertiesPanel
             cb.SelectedItem != null)
             entry.OnValueChanged?.Invoke(cb.SelectedItem);
     }
+
+    // -- Context menu handlers ------------------------------------------------
+
+    private void OnCopyEntryValue(object sender, RoutedEventArgs e)
+    {
+        var entry = GetEntryFromMenuItem(sender);
+        TrySetClipboard(entry?.Value?.ToString() ?? "");
+    }
+
+    private void OnCopyEntryName(object sender, RoutedEventArgs e)
+    {
+        var entry = GetEntryFromMenuItem(sender);
+        TrySetClipboard(entry?.Name ?? "");
+    }
+
+    private static PropertyEntry? GetEntryFromMenuItem(object sender)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is PropertyEntry e) return e;
+        // MenuItem placed inside a ContextMenu — walk up PlacementTarget
+        if (sender is MenuItem mi && mi.CommandParameter is PropertyEntry pe) return pe;
+        return null;
+    }
+
+    // -- FilePath handler -----------------------------------------------------
+
+    private void OnOpenFilePathClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is PropertyEntry entry &&
+            entry.Value is string path && File.Exists(path))
+        {
+            try { Process.Start("explorer.exe", $"/select,\"{path}\""); }
+            catch { /* silently ignore launch errors */ }
+        }
+    }
+
+    // -- Helpers --------------------------------------------------------------
+
+    private static void TrySetClipboard(string text)
+    {
+        try { Clipboard.SetText(text); }
+        catch { /* silently ignored — clipboard may be locked by another process */ }
+    }
 }
+
+// -- DataTemplateSelector -----------------------------------------------------
 
 /// <summary>
 /// Selects the DataTemplate for a <see cref="PropertyEntry"/> based on its
@@ -128,11 +216,13 @@ public sealed class PropertyEntryDataTemplateSelector : DataTemplateSelector
 
         return entry.Type switch
         {
-            PropertyEntryType.Boolean => uc.FindResource("BooleanTemplate") as DataTemplate,
-            PropertyEntryType.Enum    => uc.FindResource("EnumTemplate") as DataTemplate,
-            PropertyEntryType.Integer => uc.FindResource("EditIntegerTemplate") as DataTemplate,
-            PropertyEntryType.Hex     => uc.FindResource("EditIntegerTemplate") as DataTemplate,
-            _                         => uc.FindResource("EditTextTemplate") as DataTemplate,
+            PropertyEntryType.Boolean  => uc.FindResource("BooleanTemplate")      as DataTemplate,
+            PropertyEntryType.Enum     => uc.FindResource("EnumTemplate")          as DataTemplate,
+            PropertyEntryType.Integer  => uc.FindResource("EditIntegerTemplate")   as DataTemplate,
+            PropertyEntryType.Hex      => uc.FindResource("EditIntegerTemplate")   as DataTemplate,
+            PropertyEntryType.FilePath => uc.FindResource("FilePathTemplate")      as DataTemplate,
+            PropertyEntryType.Color    => uc.FindResource("ColorTemplate")         as DataTemplate,
+            _                          => uc.FindResource("EditTextTemplate")      as DataTemplate,
         };
     }
 
@@ -141,8 +231,41 @@ public sealed class PropertyEntryDataTemplateSelector : DataTemplateSelector
         while (d != null)
         {
             if (d is T t) return t;
-            d = System.Windows.Media.VisualTreeHelper.GetParent(d);
+            d = VisualTreeHelper.GetParent(d);
         }
         return null;
     }
+}
+
+// -- Value converters ---------------------------------------------------------
+
+/// <summary>Inverts a bool — used so read-only entries disable their editing control.</summary>
+public sealed class InverseBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? !b : DependencyProperty.UnsetValue;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? !b : DependencyProperty.UnsetValue;
+}
+
+/// <summary>
+/// Converts a "#RRGGBB" or "#AARRGGBB" string to a WPF <see cref="Color"/>.
+/// Returns <see cref="Colors.Transparent"/> for invalid input.
+/// </summary>
+public sealed class StringToColorConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        try
+        {
+            if (value is string s && s.Length > 0)
+                return (Color)ColorConverter.ConvertFromString(s);
+        }
+        catch { /* fall through */ }
+        return Colors.Transparent;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is Color c ? c.ToString() : "";
 }

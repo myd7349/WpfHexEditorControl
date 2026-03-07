@@ -1,8 +1,18 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: BooleanToVisibilityConverter.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Extended WPF IValueConverter that converts bool to Visibility with configurable
+//     false-state values (Collapsed or Hidden). Inspired by NuGet Package Explorer.
+//     Overcomes the limitation of the built-in WPF BooleanToVisibilityConverter.
+//
+// Architecture Notes:
+//     Stateless converter with ConverterParameter support for false-value override.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

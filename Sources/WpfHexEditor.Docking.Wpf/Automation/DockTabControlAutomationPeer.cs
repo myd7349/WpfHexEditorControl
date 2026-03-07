@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockTabControlAutomationPeer.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Provides UI Automation (UIA) peer information for DockTabControl so that
+//     screen readers and accessibility tools can correctly identify the active tab
+//     group and its docked items.
+//
+// Architecture Notes:
+//     Extends TabControlAutomationPeer. Exposes each tab as a selectable child
+//     with its DockItem.Title as the accessible name for full UIA compliance.
+//
+// ==========================================================
 
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;

@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DocumentTabHost.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     WPF projection of DocumentHostNode: a specialized tab control for editor
+//     documents. Visually distinct from tool panel tabs with a different background
+//     and tab style. Supports VS2026-style multi-row tabs, tab colorization via
+//     TabColorService, and a settings gear button via TabConfigButton.
+//
+// Architecture Notes:
+//     Inherits DockTabControl. DocumentTabBarSettings shared instance drives tab
+//     placement, colorization mode, and multi-row behavior through DependencyProperty.
+//     TabColorizerAttached provides the per-tab AccentBrush attached property.
+//
+// ==========================================================
 
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -26,7 +39,7 @@ namespace WpfHexEditor.Docking.Wpf;
 /// </summary>
 public class DocumentTabHost : DockTabControl
 {
-    // ─── Settings DP ─────────────────────────────────────────────────────────
+    // --- Settings DP ---------------------------------------------------------
 
     public static readonly DependencyProperty SettingsProperty =
         DependencyProperty.Register(
@@ -46,14 +59,14 @@ public class DocumentTabHost : DockTabControl
         set => SetValue(SettingsProperty, value);
     }
 
-    // ─── Constructor ─────────────────────────────────────────────────────────
+    // --- Constructor ---------------------------------------------------------
 
     public DocumentTabHost()
     {
         SetResourceReference(StyleProperty, "DocumentTabHostStyle");
     }
 
-    // ─── Template wiring ─────────────────────────────────────────────────────
+    // --- Template wiring -----------------------------------------------------
 
     public override void OnApplyTemplate()
     {
@@ -73,7 +86,7 @@ public class DocumentTabHost : DockTabControl
             panel.PreviewMouseWheel += OnTabStripMouseWheel;
     }
 
-    // ─── Settings change handling ─────────────────────────────────────────────
+    // --- Settings change handling ---------------------------------------------
 
     private static void OnSettingsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -114,7 +127,7 @@ public class DocumentTabHost : DockTabControl
         // OnApplyTemplate is called automatically after the style change, which re-wires parts.
     }
 
-    // ─── Mouse wheel on tab strip ─────────────────────────────────────────────
+    // --- Mouse wheel on tab strip ---------------------------------------------
 
     private void OnTabStripMouseWheel(object sender, MouseWheelEventArgs e)
     {
@@ -125,7 +138,7 @@ public class DocumentTabHost : DockTabControl
         }
     }
 
-    // ─── Tab colorization ─────────────────────────────────────────────────────
+    // --- Tab colorization -----------------------------------------------------
 
     protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
     {
@@ -149,7 +162,7 @@ public class DocumentTabHost : DockTabControl
         TabColorizerAttached.SetAccentBrush(tab, brush ?? Brushes.Transparent);
     }
 
-    // ─── Options dialog ───────────────────────────────────────────────────────
+    // --- Options dialog -------------------------------------------------------
 
     private void OnOptionsRequested(object? sender, EventArgs e)
     {
@@ -162,7 +175,7 @@ public class DocumentTabHost : DockTabControl
         dlg.ShowDialog();
     }
 
-    // ─── Placeholder ─────────────────────────────────────────────────────────
+    // --- Placeholder ---------------------------------------------------------
 
     /// <summary>
     /// Shows a placeholder when no documents are open.

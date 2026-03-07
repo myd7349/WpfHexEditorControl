@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: IPSPatcher.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     IPS (International Patching System) patcher supporting reading, applying, and
+//     creating IPS patches including RLE records. Reads from file paths, byte arrays,
+//     or streams and returns detailed IPSPatchResult value objects.
+//
+// Architecture Notes:
+//     Stateless class — all methods work on passed streams/byte arrays.
+//     Supports the optional TRUNCATE extension (post-EOF truncation size).
+//     No WPF dependencies. Consumed by the ROM hacking module.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

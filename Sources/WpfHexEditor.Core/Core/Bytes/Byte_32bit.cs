@@ -1,14 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-//////////////////////////////////////////////
-// Apache 2.0  - 2020-2021
-// Base author  : ehsan69h
-// Modified by  : Abbaye
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: Byte_32bit.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic), ehsan69h, Abbaye
+// Created: 2026-03-06
+// Description:
+//     Represents a 32-bit (4-byte) value used as a display unit in the hex
+//     editor byte control system. Implements IByte for uniform handling
+//     alongside 8-bit and 16-bit byte representations.
+//
+// Architecture Notes:
+//     Implements IByte interface. Originally authored by ehsan69h / Abbaye,
+//     adapted for the WpfHexEditor.Core architecture. Used by the HexEditor
+//     rendering pipeline to support multi-byte display modes.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: PositionMapper.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Handles bidirectional virtual-to-physical and physical-to-virtual position
+//     mapping for the ByteProvider V2 architecture. Maintains segment lists and
+//     cumulative deltas to account for inserted and deleted bytes.
+//
+// Architecture Notes:
+//     Uses ConcurrentDictionary for thread-safe cache. PositionSegment struct
+//     stores physical position and virtual offset. Invalidated and rebuilt
+//     whenever EditsManager state changes. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Concurrent;

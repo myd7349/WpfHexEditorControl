@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: FileProvider.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Pure file I/O layer responsible exclusively for reading and writing bytes
+//     from/to the underlying stream. Works with physical file offsets only and
+//     provides aggressive 64 KB block caching to minimize OS I/O calls.
+//
+// Architecture Notes:
+//     Implements IDisposable for stream lifetime management. Only component in
+//     ByteProvider V2 that touches the physical file. ByteReader delegates all
+//     raw reads to FileProvider; no edit awareness here.
+//
+// ==========================================================
 
 using System;
 using System.IO;

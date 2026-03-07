@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2020
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteModified.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Represents a single modified byte in the editing session, recording
+//     the new value, the action type (modify/insert/delete), the stream
+//     position, and the undo length needed for reversal.
+//
+// Architecture Notes:
+//     Implements IByteModified interface. Used internally by EditsManager
+//     and UndoRedoManager. Pure domain model — no WPF dependencies.
+//
+// ==========================================================
 
 using WpfHexEditor.Core.Interfaces;
 

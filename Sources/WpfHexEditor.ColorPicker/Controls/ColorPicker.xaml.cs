@@ -52,7 +52,7 @@ namespace WpfHexEditor.ColorPicker.Controls
                 typeof(Color),
                 typeof(ColorPicker),
                 new FrameworkPropertyMetadata(
-                    Color.FromRgb(64, 64, 255),
+                    Colors.White,
                     FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                     OnSelectedColorChanged));
 
@@ -182,7 +182,7 @@ namespace WpfHexEditor.ColorPicker.Controls
 
         #region Event Handlers
 
-        private void ViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ViewModel.SelectedColor))
             {

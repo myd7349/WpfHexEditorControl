@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.EditorPersistable.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing IEditorPersistable for the HexEditor.
+//     Handles serialization of editor configuration (column widths, encoding,
+//     zoom level, TBL path) to/from EditorConfig for cross-session persistence.
+//
+// Architecture Notes:
+//     Implements IEditorPersistable from WpfHexEditor.Editor.Core.
+//     EditorConfig is serialized to the project's .whproj file by the ProjectSystem.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;
@@ -20,7 +31,7 @@ namespace WpfHexEditor.HexEditor
     /// </summary>
     public partial class HexEditor : IEditorPersistable
     {
-        // ── IEditorPersistable ─────────────────────────────────────────────
+        // -- IEditorPersistable ---------------------------------------------
 
         /// <inheritdoc />
         public EditorConfigDto GetEditorConfig()
@@ -116,7 +127,7 @@ namespace WpfHexEditor.HexEditor
             }
         }
 
-        // ── IEditorPersistable — WHChg changeset ─────────────────────────────
+        // -- IEditorPersistable — WHChg changeset -----------------------------
 
         /// <inheritdoc />
         public ChangesetSnapshot GetChangesetSnapshot()
@@ -146,7 +157,7 @@ namespace WpfHexEditor.HexEditor
         void IEditorPersistable.MarkChangesetSaved()
             => _changesetSavedUndoCount = _viewModel?.Provider?.UndoCount ?? 0;
 
-        // ── IEditorPersistable — Bookmarks ────────────────────────────────────
+        // -- IEditorPersistable — Bookmarks ------------------------------------
         // Explicit interface implementation to avoid collision with the existing
         // public long[] GetBookmarks() method in HexEditor.Bookmarks.cs.
 

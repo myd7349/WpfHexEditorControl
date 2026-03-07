@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.AsyncOperations.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing all async operation methods for the HexEditor.
+//     Covers async file loading, saving, searching, and batch operations that
+//     run on background threads while reporting progress to the UI.
+//
+// Architecture Notes:
+//     Uses Task/async-await with CancellationToken support. Progress reported
+//     via ProgressOverlayViewModel. Part of the HexEditor partial class split.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

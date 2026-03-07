@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: AutoHideBarAutomationPeer.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Provides UI Automation (UIA) peer information for AutoHideBar so that
+//     screen readers and accessibility tools can correctly identify and interact
+//     with the auto-hide button bar.
+//
+// Architecture Notes:
+//     Extends FrameworkElementAutomationPeer. Reports as ToolBar control type
+//     so screen readers announce the bar with its Dock position as the accessible name.
+//
+// ==========================================================
 
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;

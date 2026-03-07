@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: TblFileFormat.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Enumeration of supported TBL file formats used by the character table
+//     system, distinguishing between standard Thingy format and extended
+//     WpfHexEditor-specific format variants.
+//
+// Architecture Notes:
+//     Pure enum — no dependencies. Used by TBLStream to determine parsing
+//     strategy and file save format selection.
+//
+// ==========================================================
 
 namespace WpfHexEditor.Core.CharacterTable
 {

@@ -1,10 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// HexEditor Settings Panel - Auto-generated Configuration UI
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-// Pattern: Uses unified BaseEditorSettings<T> helper (composition)
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditorSettings.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the HexEditor settings panel UserControl.
+//     The UI is auto-generated via reflection on DependencyProperty [Category] attributes
+//     using the DynamicSettingsGenerator from WpfHexEditor.Core.Settings.
+//
+// Architecture Notes:
+//     Composition pattern — delegates generation to BaseEditorSettings<T>.
+//     No direct coupling to any specific HexEditor instance at design time.
+//     Theme: inherits from global WPF ResourceDictionaries via PanelCommon.xaml.
+//
+// ==========================================================
 
 using System.Windows.Controls;
 

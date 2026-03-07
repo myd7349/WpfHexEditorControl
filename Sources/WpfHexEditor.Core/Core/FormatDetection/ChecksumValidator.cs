@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ChecksumValidator.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Validates checksums and CRC values for file integrity verification during
+//     format detection. Supports CRC32, MD5, SHA1, SHA256, checksum8,
+//     checksum16, and checksum32 algorithms.
+//
+// Architecture Notes:
+//     Pure validation utility — no state. Uses System.Security.Cryptography.
+//     Called by FormatScriptInterpreter when a format definition includes
+//     checksum validation rules. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Security.Cryptography;

@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: TabOverflowPanel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Custom WPF Panel that arranges tab items horizontally and collapses those
+//     that overflow the available width. Exposes HasOverflow and OverflowItems
+//     dependency properties for the companion TabOverflowButton to consume.
+//
+// Architecture Notes:
+//     Overrides MeasureOverride and ArrangeOverride for custom layout logic.
+//     OverflowItems is populated during measure pass so the dropdown button
+//     always reflects the current overflow state without extra wiring.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Controls;

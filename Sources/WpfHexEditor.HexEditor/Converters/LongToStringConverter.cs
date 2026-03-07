@@ -1,12 +1,18 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-// Apache 2.0 - 2026
-// Author: Claude Sonnet 4.5
-// Contributors: Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: LongToStringConverter.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     WPF IValueConverter that converts between long (Int64) and string for
+//     TextBox bindings (e.g., ByteShiftLeft property). Handles empty/null strings
+//     gracefully by returning zero.
+//
+// Architecture Notes:
+//     Stateless converter decorated with [ValueConversion] for XAML tooling support.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockKeyboardNavigation.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Keyboard navigation helper for DockControl. Handles Ctrl+Tab to open the
+//     NavigatorWindow for visual document switching, and Alt+F6 to cycle through
+//     visible tool panels in activation-history order.
+//
+// Architecture Notes:
+//     Subscribes to DockControl.PreviewKeyDown at construction; must call Detach()
+//     on disposal to prevent memory leaks. NavigatorWindow is created lazily and
+//     destroyed after the key is released.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Controls;

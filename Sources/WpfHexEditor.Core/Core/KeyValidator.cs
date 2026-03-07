@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2020
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: KeyValidator.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Static utility class for validating keyboard input in the hex editor,
+//     determining whether a key press represents a valid hex character,
+//     ASCII character, or control action for the current editing mode.
+//
+// Architecture Notes:
+//     Uses NativeMethods (P/Invoke) to convert virtual key codes to characters.
+//     Contains WPF Key/Keyboard dependencies. Consumed by byte control
+//     KeyDown handlers throughout the HexEditor input pipeline.
+//
+// ==========================================================
 
 using System;
 using System.Text;

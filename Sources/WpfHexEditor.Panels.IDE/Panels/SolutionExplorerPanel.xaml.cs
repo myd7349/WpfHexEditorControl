@@ -57,7 +57,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         };
     }
 
-    // ── ISolutionExplorerPanel ────────────────────────────────────────────────
+    // -- ISolutionExplorerPanel ------------------------------------------------
 
     public void SetSolution(ISolution? solution)
     {
@@ -85,10 +85,20 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     public event EventHandler<ItemMoveRequestedEventArgs>?         ItemMoveRequested;
     public event EventHandler<OpenWithSpecificEditorEventArgs>?    OpenWithSpecificRequested;
 
-    // ── Tree events ───────────────────────────────────────────────────────────
+    // -- Tree events -----------------------------------------------------------
 
     private void OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
+        // Sync keyboard arrow-key navigation to the ViewModel (single select from WPF).
+        // Mouse multi-select is handled by OnTreeMouseLeftButtonDown — this only fires
+        // for keyboard nav since plain mouse clicks call _vm.SelectNode directly.
+        // Right-click also triggers WPF's internal TreeViewItem.Select(), skip it here;
+        // context-menu selection is handled entirely by OnContextMenuOpening.
+        if (Mouse.RightButton == MouseButtonState.Pressed) return;
+
+        if (e.NewValue is SolutionExplorerNodeVm node)
+            _vm.SelectNode(node);
+
         if (e.NewValue is FileNodeVm fn && fn.Project is not null)
             ItemSelected?.Invoke(this, new ProjectItemEventArgs { Item = fn.Source, Project = fn.Project });
     }
@@ -104,7 +114,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
             ItemActivated?.Invoke(this, new ProjectItemActivatedEventArgs { Item = fn.Source, Project = fn.Project });
     }
 
-    // ── Toolbar ───────────────────────────────────────────────────────────────
+    // -- Toolbar ---------------------------------------------------------------
 
     private void OnCollapseAll(object sender, RoutedEventArgs e)
     {
@@ -120,7 +130,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     private void OnRefresh(object sender, RoutedEventArgs e)
         => _vm.Rebuild();
 
-    // D2 — Sort / Filter ───────────────────────────────────────────────────────
+    // D2 — Sort / Filter -------------------------------------------------------
 
     private void OnSortButtonClick(object sender, RoutedEventArgs e)
     {
@@ -146,7 +156,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
             _vm.CurrentFilter = mode;
     }
 
-    // ── Search box ────────────────────────────────────────────────────────────
+    // -- Search box ------------------------------------------------------------
 
     private void SearchBox_GotFocus(object sender, RoutedEventArgs e)
         => SearchPlaceholder.Visibility = Visibility.Collapsed;
@@ -155,7 +165,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         => SearchPlaceholder.Visibility =
             string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
 
-    // ── Context menu ──────────────────────────────────────────────────────────
+    // -- Context menu ----------------------------------------------------------
 
     /// <summary>
     /// Adapts all context-menu item visibility to <paramref name="node"/>.
@@ -295,9 +305,10 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         var tvi  = FindAncestor<TreeViewItem>(hit);
         var node = tvi?.DataContext as SolutionExplorerNodeVm;
 
-        // VS-style: right-click selects the node
+        // VS-style: right-click on an unselected node replaces the selection with that node.
+        // Right-click on an already-selected node preserves the current multi-selection.
         if (node is not null && !node.IsSelected)
-            node.IsSelected = true;
+            _vm.SelectNode(node);
 
         // Cancel the popup if no item would be visible (empty area, solution node)
         if (!UpdateContextMenu(node))
@@ -495,7 +506,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     private void OnSaveAll(object sender, RoutedEventArgs e)
         => SaveAllRequested?.Invoke(this, EventArgs.Empty);
 
-    // ── Clipboard context-menu handlers (Copy / Cut / Paste) ─────────────────
+    // -- Clipboard context-menu handlers (Copy / Cut / Paste) -----------------
 
     private void OnMenuCopy(object sender, RoutedEventArgs e)
     {
@@ -688,7 +699,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         }
     }
 
-    // ── Path helpers ──────────────────────────────────────────────────────────
+    // -- Path helpers ----------------------------------------------------------
 
     /// <summary>Returns the directory to reveal when the user chooses "Open in File Explorer".</summary>
     private static string? GetExplorerPath(SolutionExplorerNodeVm? node) => node switch
@@ -722,7 +733,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         return projDir;
     }
 
-    // ── Additional public events ───────────────────────────────────────────────
+    // -- Additional public events -----------------------------------------------
 
     /// <inheritdoc/>
     public event EventHandler<SolutionRenameRequestedEventArgs>? SolutionRenameRequested;
@@ -800,7 +811,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
             StartInlineFolderEdit(fv);
     }
 
-    // ── Solution Folder events ────────────────────────────────────────────────
+    // -- Solution Folder events ------------------------------------------------
 
     /// <inheritdoc/>
     public event EventHandler<SolutionFolderCreateRequestedEventArgs>? SolutionFolderCreateRequested;
@@ -855,7 +866,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         return null;
     }
 
-    // ── F2 Inline rename ──────────────────────────────────────────────────────
+    // -- F2 Inline rename ------------------------------------------------------
 
     private void OnTreePreviewKeyDown(object sender, KeyEventArgs e)
     {
@@ -966,7 +977,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         SolutionTree.Focus();
     }
 
-    // ── F2 Inline rename — solution ───────────────────────────────────────────
+    // -- F2 Inline rename — solution -------------------------------------------
 
     private void StartInlineSolutionEdit(SolutionNodeVm sv)
     {
@@ -1031,7 +1042,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         SolutionTree.Focus();
     }
 
-    // ── F2 Inline rename — folder ─────────────────────────────────────────────
+    // -- F2 Inline rename — folder ---------------------------------------------
 
     private void StartInlineFolderEdit(FolderNodeVm fv)
     {
@@ -1098,7 +1109,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         SolutionTree.Focus();
     }
 
-    // ── F2 Inline rename — solution folder ───────────────────────────────────
+    // -- F2 Inline rename — solution folder -----------------------------------
 
     private void StartInlineSolutionFolderEdit(SolutionFolderNodeVm sfv)
     {
@@ -1161,7 +1172,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         SolutionTree.Focus();
     }
 
-    // ── F2 Inline rename — project ────────────────────────────────────────────
+    // -- F2 Inline rename — project --------------------------------------------
 
     private void StartInlineProjectEdit(ProjectNodeVm pv)
     {
@@ -1226,10 +1237,11 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         SolutionTree.Focus();
     }
 
-    // ── DragDrop ──────────────────────────────────────────────────────────────
+    // -- DragDrop --------------------------------------------------------------
 
-    private const string DragDataFormat        = "SolutionExplorerFileNode";
-    private const string DragDataFormatProject = "SolutionExplorerProjectNode";
+    private const string DragDataFormat          = "SolutionExplorerFileNode";
+    private const string DragDataFormatProject   = "SolutionExplorerProjectNode";
+    private const string DragDataFormatMultiFile = "SolutionExplorerMultiFileNodes";
     private Point          _dragStartPoint;
     private FileNodeVm?    _draggedNode;
     private ProjectNodeVm? _draggedProject;
@@ -1326,7 +1338,15 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         if (_draggedNode is not null)
         {
             if (_draggedNode.IsEditing) return;
-            var data = new DataObject(DragDataFormat, _draggedNode);
+
+            // If the dragged node is part of a multi-selection, drag the entire selection.
+            var selected = _vm.SelectedNodes.OfType<FileNodeVm>().ToList();
+            DataObject data;
+            if (selected.Count > 1 && selected.Contains(_draggedNode))
+                data = new DataObject(DragDataFormatMultiFile, selected);
+            else
+                data = new DataObject(DragDataFormat, _draggedNode);
+
             DragDrop.DoDragDrop(SolutionTree, data, DragDropEffects.Move);
             _draggedNode = null;
         }
@@ -1342,18 +1362,19 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     private void OnTreeDragOver(object sender, DragEventArgs e)
     {
         var isFileDrag         = e.Data.GetDataPresent(DragDataFormat);
+        var isMultiFileDrag    = e.Data.GetDataPresent(DragDataFormatMultiFile);
         var isProjectDrag      = e.Data.GetDataPresent(DragDataFormatProject);
         var isExternalFileDrop = e.Data.GetDataPresent(DataFormats.FileDrop);
 
-        if (!isFileDrag && !isProjectDrag && !isExternalFileDrop)
+        if (!isFileDrag && !isMultiFileDrag && !isProjectDrag && !isExternalFileDrop)
         {
             e.Effects = DragDropEffects.None;
             e.Handled = true;
             return;
         }
 
-        // External file drop from Windows Explorer: accept as Copy on any project/folder target
-        if (isExternalFileDrop && !isFileDrag && !isProjectDrag)
+        // External file/folder drop from Windows Explorer: accept as Copy on any project/folder target
+        if (isExternalFileDrop && !isFileDrag && !isMultiFileDrag && !isProjectDrag)
         {
             var extTarget = GetDropTarget(e.OriginalSource as DependencyObject);
             e.Effects = extTarget is (ProjectNodeVm or FolderNodeVm)
@@ -1365,7 +1386,14 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
         var target = GetDropTarget(e.OriginalSource as DependencyObject);
 
-        if (isFileDrag)
+        if (isMultiFileDrag)
+        {
+            // Multi-file internal drag: valid targets are folders or project root
+            e.Effects = target is (FolderNodeVm or ProjectNodeVm)
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
+        }
+        else if (isFileDrag)
         {
             var dragged = e.Data.GetData(DragDataFormat) as FileNodeVm;
             e.Effects = (target is (FolderNodeVm or ProjectNodeVm) && dragged?.Project is not null)
@@ -1385,7 +1413,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     private void OnTreeDrop(object sender, DragEventArgs e)
     {
-        // ── External file drop from Windows Explorer ───────────────────────────
+        // -- External file drop from Windows Explorer ---------------------------
         if (e.Data.GetDataPresent(DataFormats.FileDrop) &&
             !e.Data.GetDataPresent(DragDataFormat) &&
             !e.Data.GetDataPresent(DragDataFormatProject))
@@ -1418,25 +1446,54 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
             if (project is null) return;
 
-            // Only keep file paths (skip directories)
-            var filePaths = droppedPaths
-                .Where(p => File.Exists(p))
+            // Accept files and top-level directories (folders handled recursively by the host)
+            var validPaths = droppedPaths
+                .Where(p => File.Exists(p) || Directory.Exists(p))
                 .ToArray();
 
-            if (filePaths.Length == 0) return;
+            if (validPaths.Length == 0) return;
 
             AddExistingItemRequested?.Invoke(this, new AddItemRequestedEventArgs
             {
                 Project        = project,
                 TargetFolderId = targetFolder,
-                FilePaths      = filePaths,
+                FilePaths      = validPaths,
             });
 
             e.Handled = true;
             return;
         }
 
-        // ── File drop (project-level folder move) ──────────────────────────────
+        // -- Multi-file drop (internal drag of multiple selected nodes) ---------
+        if (e.Data.GetDataPresent(DragDataFormatMultiFile))
+        {
+            if (e.Data.GetData(DragDataFormatMultiFile) is not List<FileNodeVm> draggedFiles) return;
+
+            var multiTarget = GetDropTarget(e.OriginalSource as DependencyObject);
+            if (multiTarget is null) return;
+
+            string? multiTargetFolderId = multiTarget switch
+            {
+                FolderNodeVm fv => fv.Folder.Id,
+                ProjectNodeVm   => null,
+                _               => null,
+            };
+
+            foreach (var file in draggedFiles.Where(f => f.Project is not null))
+            {
+                ItemMoveRequested?.Invoke(this, new ItemMoveRequestedEventArgs
+                {
+                    Item           = file.Source,
+                    Project        = file.Project!,
+                    TargetFolderId = multiTargetFolderId,
+                });
+            }
+
+            _vm.Rebuild();
+            return;
+        }
+
+        // -- File drop (project-level folder move) ------------------------------
         if (e.Data.GetDataPresent(DragDataFormat))
         {
             if (e.Data.GetData(DragDataFormat) is not FileNodeVm draggedFile) return;
@@ -1463,7 +1520,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
             return;
         }
 
-        // ── Project drop (solution folder move) ────────────────────────────────
+        // -- Project drop (solution folder move) --------------------------------
         if (e.Data.GetDataPresent(DragDataFormatProject))
         {
             if (e.Data.GetData(DragDataFormatProject) is not ProjectNodeVm draggedProj) return;
@@ -1539,7 +1596,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         };
     }
 
-    // ── Visual-tree helpers ───────────────────────────────────────────────────
+    // -- Visual-tree helpers ---------------------------------------------------
 
     private static TreeViewItem? FindTreeViewItem(ItemsControl container, object item)
     {
@@ -1578,7 +1635,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         return null;
     }
 
-    // ── Tree helpers ──────────────────────────────────────────────────────────
+    // -- Tree helpers ----------------------------------------------------------
 
     private static void CollapseAll(SolutionExplorerNodeVm node)
     {
@@ -1606,7 +1663,7 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         return false;
     }
 
-    // ── Changeset context menu actions ────────────────────────────────────────
+    // -- Changeset context menu actions ----------------------------------------
 
     /// <inheritdoc/>
     public event EventHandler<ProjectItemEventArgs>? WriteToDiskRequested;

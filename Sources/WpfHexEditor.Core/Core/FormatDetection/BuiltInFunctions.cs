@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: BuiltInFunctions.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Provides built-in function implementations for the format script interpreter,
+//     including cryptographic hashing (MD5, SHA1, SHA256), CRC computation,
+//     and byte array operations callable from format definition scripts.
+//
+// Architecture Notes:
+//     Static class consumed by FormatScriptInterpreter and ExpressionEvaluator.
+//     Uses System.Security.Cryptography for hash functions. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

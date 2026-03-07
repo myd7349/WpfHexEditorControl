@@ -34,7 +34,7 @@ public sealed class SolutionClipboardManager
     // Paths that have been "cut" and are pending move on next paste.
     private readonly HashSet<string> _pendingCutPaths = new(StringComparer.OrdinalIgnoreCase);
 
-    // ── Events ────────────────────────────────────────────────────────────────
+    // -- Events ----------------------------------------------------------------
 
     /// <summary>
     /// Raised when the user pastes items. The host should add the provided paths
@@ -42,7 +42,7 @@ public sealed class SolutionClipboardManager
     /// </summary>
     public event EventHandler<AddExistingItemEventArgs>? AddExistingItemRequested;
 
-    // ── Public API ────────────────────────────────────────────────────────────
+    // -- Public API ------------------------------------------------------------
 
     /// <summary>
     /// Copies the absolute paths of <paramref name="items"/> to the clipboard
@@ -125,11 +125,11 @@ public sealed class SolutionClipboardManager
         if (!Clipboard.ContainsFileDropList()) return false;
         var drop = Clipboard.GetFileDropList();
         foreach (string? p in drop)
-            if (!string.IsNullOrEmpty(p) && File.Exists(p)) return true;
+            if (!string.IsNullOrEmpty(p) && (File.Exists(p) || Directory.Exists(p))) return true;
         return false;
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // -- Private helpers -------------------------------------------------------
 
     private static void PutFileDropList(IEnumerable<string> paths)
     {

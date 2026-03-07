@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: FloatingWindow.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     A WPF Window hosting a dock group (one or more tabbed items) in a floating
+//     state. Implements a custom dark title bar with chevron dropdown, pin, and
+//     close buttons in Visual Studio style.
+//
+// Architecture Notes:
+//     WindowChrome is used to replace the native title bar while keeping native
+//     resize/move. Drag detection raises TitleBarDragStarted for DockDragManager
+//     to take over and show the overlay compass. ReDockRequested supports
+//     re-integrating the floating window back into the dock area.
+//
+// ==========================================================
 
 using System.ComponentModel;
 using System.Windows;
@@ -300,7 +313,12 @@ public class FloatingWindowManager
     public FloatingWindow CreateFloatingWindow(DockItem item, Point? position = null)
     {
         var group = new DockGroupNode();
+        bool wasDocument = item.IsDocument; // Preserve: AddItem always syncs IsDocument to host type,
+                                            // but a floating DockGroupNode is not DocumentHostNode.
+                                            // IsDocument must survive the float so the drag manager
+                                            // routes drops to the document zone, not a panel.
         group.AddItem(item);
+        item.IsDocument = wasDocument;
 
         var window = ConfigureAndShow(group, item, position, trackPosition: true);
 

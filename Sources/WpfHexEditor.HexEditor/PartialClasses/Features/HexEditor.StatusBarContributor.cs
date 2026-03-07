@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.StatusBarContributor.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing IStatusBarContributor for the HexEditor.
+//     Provides status bar items (current offset, selection size, edit mode,
+//     encoding, file size) to the IDE's status bar infrastructure.
+//
+// Architecture Notes:
+//     Implements IStatusBarContributor from WpfHexEditor.Editor.Core.
+//     Status items refreshed on selection change, mode change, and file events.
+//
+// ==========================================================
 
 using System;
 using System.Collections.ObjectModel;
@@ -48,7 +59,7 @@ namespace WpfHexEditor.HexEditor
 
         private ObservableCollection<StatusBarItem> BuildStatusBarItems()
         {
-            // ── Byte size ──────────────────────────────────────────────────
+            // -- Byte size --------------------------------------------------
             _sbByteSize = new StatusBarItem
             {
                 Label   = "Byte size",
@@ -70,7 +81,7 @@ namespace WpfHexEditor.HexEditor
                 Command     = new HexEditorRelayCommand(_ => ByteSize = ByteSizeType.Bit32)
             });
 
-            // ── Byte order ─────────────────────────────────────────────────
+            // -- Byte order -------------------------------------------------
             _sbByteOrder = new StatusBarItem
             {
                 Label   = "Byte order",
@@ -87,7 +98,7 @@ namespace WpfHexEditor.HexEditor
                 Command     = new HexEditorRelayCommand(_ => ByteOrder = ByteOrderType.HiLo)
             });
 
-            // ── Edit mode ──────────────────────────────────────────────────
+            // -- Edit mode --------------------------------------------------
             _sbEditMode = new StatusBarItem
             {
                 Label   = "Mode",
@@ -104,7 +115,7 @@ namespace WpfHexEditor.HexEditor
                 Command     = new HexEditorRelayCommand(_ => EditMode = EditModeEnum.Insert)
             });
 
-            // ── Bytes per line ─────────────────────────────────────────────
+            // -- Bytes per line ---------------------------------------------
             _sbBytePerLine = new StatusBarItem
             {
                 Label   = "Bytes/line",
@@ -120,7 +131,7 @@ namespace WpfHexEditor.HexEditor
                 });
             }
 
-            // ── Offset display format ──────────────────────────────────────────
+            // -- Offset display format ------------------------------------------
             _sbOffsetVisual = new StatusBarItem
             {
                 Label   = "Offset",
@@ -142,7 +153,7 @@ namespace WpfHexEditor.HexEditor
                 Command     = new HexEditorRelayCommand(_ => OffSetStringVisual = DataVisualType.Binary)
             });
 
-            // ── Data display format ────────────────────────────────────────────
+            // -- Data display format --------------------------------------------
             _sbDataVisual = new StatusBarItem
             {
                 Label   = "Data",
@@ -164,7 +175,7 @@ namespace WpfHexEditor.HexEditor
                 Command     = new HexEditorRelayCommand(_ => DataStringVisual = DataVisualType.Binary)
             });
 
-            // ── Byte grouping ──────────────────────────────────────────────────
+            // -- Byte grouping --------------------------------------------------
             _sbByteGrouping = new StatusBarItem
             {
                 Label   = "Grouping",
@@ -191,7 +202,7 @@ namespace WpfHexEditor.HexEditor
                 Command     = new HexEditorRelayCommand(_ => ByteGrouping = ByteSpacerGroup.EightByte)
             });
 
-            // ── Copy-to-clipboard format ───────────────────────────────────────
+            // -- Copy-to-clipboard format ---------------------------------------
             _sbCopyMode = new StatusBarItem
             {
                 Label   = "Copy as",

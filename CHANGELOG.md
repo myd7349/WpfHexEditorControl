@@ -8,40 +8,207 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ## What's Next
 
-> Planned features — subject to change.
+> Planned features — subject to change. Feature numbers map to DevPlans.
 
-### Plugin System & SDK
-- Public SDK (`WpfHexEditor.SDK`) — versioned, open-source plugin API
-- Hot-load / Hot-unload plugins at runtime without IDE restart
-- Process-level plugin sandboxing (`WpfHexEditor.PluginSandbox`) with CPU/memory monitoring
-- `.whix` package format + Plugin Installer tool
-- Official panels converted to first-class plugin packages (DataInspector, StructureOverlay, FileStatistics, PatternAnalysis, FileComparison…)
+### Plugin System — Remaining
+- Hot-load / Hot-unload at runtime without IDE restart (AssemblyLoadContext collectible — UI not yet exposed)
+- **#41 Plugin Marketplace** — `MarketplaceManager`, browse/install/update from online registry, signed packages
+- **#42 Plugin Security & Sandboxing** — permission declarations at install time, integrity verification, AppDomain isolation
+- **#43 Auto-Update** — `UpdateService` / `UpdateChecker`, rollback support, scheduled checks for IDE + plugins
 
-### CodeEditor — VS-Like Overkill
-- Multi-caret editing, virtual scroll for >1 GB files
-- Incremental multi-language syntax highlighting + code folding / gutter with line numbers
-- IntelliSense engine: autocomplete, snippets, quick-info, signature help
-- Real-time diagnostics tightly integrated with Error Panel and EventBus
+### Integrated Terminal — Remaining (#92)
+- Multi-tab terminal with separate shell sessions (PowerShell, Bash, CMD)
+- Script file execution (`.hxscript`) with macro recording and history replay
+
+### Image Viewer — Remaining
+- Batch export, format conversion (PNG/JPEG/BMP/TIFF)
+- Histogram panel, color picker, EXIF metadata viewer
 
 ### IDE Core Infrastructure
-- Service Container / Dependency Injection for all IDE components
-- Global CommandBus — all IDE actions (menus, toolbar, terminal, plugins) routed centrally
-- Configurable Keyboard Shortcuts with per-plugin extension support
-- Persistent user preferences (global + per-workspace)
+- **#36 Service Container / Dependency Injection** — `ServiceContainer` singleton; `FileService`, `EditorService`, `PanelService`, `PluginService`, `EventBus`, `TerminalService` — Singleton/Scoped/Transient lifecycle
+- **#37 Global CommandBus** — all IDE actions (menus, toolbar, terminal, plugins) routed through `CommandBus`; every command has an Id, Handler, CanExecute context, and Category
+- **#38 Keyboard Shortcuts & Bindings** — `KeyBindingService`, configurable gestures per command, conflict detection, plugin-extensible, export/import
+- **#39 User Preferences Persistence** — `ConfigurationManager`, per-section schemas, plugin config API, export/import, cross-session persistence
+- **#40 Centralized Logging & Diagnostics** — `LogService` (Info/Warning/Error/Debug), `DiagnosticService` (perf metrics), `LogSink` abstraction, Output + Error Panel integration
 
-### Advanced IDE Modules
-- Dynamic Snippets: user/plugin/language-scoped with IntelliSense integration
-- AI-Assisted Code Suggestions: contextual completions, auto-refactoring hints
-- Integrated Debugger: breakpoints, watches, step over/into, multi-language
-- Git Integration: inline gutter diff, commit / push / pull / branch panel
-- Multi-Shell Terminal: PowerShell, Bash, CMD — multi-tab with history
-- Plugin Marketplace UI: browse, install, update, disable (sandboxed)
-- Advanced Refactoring: rename symbol, extract method, move class — workspace-wide
-- Unit Testing panel: auto-detect frameworks (NUnit/JUnit/PyTest), run by file/project
-- Code Analysis & Metrics: dependency graphs, cyclomatic complexity, duplication reports
-- Large File Performance: virtualization + lazy parsing + multi-thread IntelliSense
-- Multi-User Collaboration / Pair Programming with real-time document sync
-- Internationalization / Localization — EN/FR initial, plugin-extensible
+### Code Intelligence / Editor
+- **#85 LSP Engine** — incremental symbol parsing, folding, go-to-definition, find-references
+- **#86 IntelliSense** — autocomplete, quick-info, signature help, multi-caret, virtual scroll for >1 GB files
+- **#88 Dynamic Snippets** — `SnippetsManager`, `SnippetEditorDialog`; user/plugin/language-scoped; dynamic variables (`CurrentLine`, `FileName`, `CursorPosition`); priority: user > imported > built-in
+- **#89 AI-Assisted Code Suggestions** — `AICompletionEngine`, `AIRefactoringAssistant`; contextual completions, auto-refactoring, plugin-extensible AI rules
+
+### Debugging & Testing
+- **#44 / #90 Integrated Debugger** — `DebuggerService` (StartDebug, StepInto/Over/Out, Evaluate), `BreakpointsManager`, `WatchPanel`, `CallStackPanel`; supports scripts, plugins and workspace multi-projects via EventBus
+- **#95 Unit Testing Panel** — `TestManager`, `TestRunner`, `TestResultPanel`; auto-detect NUnit/JUnit/PyTest; run by file/project/workspace; scaffolding from workspace templates
+
+### Source Control
+- **#91 Git Integration** — `GitManager`, `GitPanel` (commit/push/pull/branch); inline gutter diff; `GitEventAdapter` for file-change notifications; plugin hooks for pre-commit linters
+
+### Code Analysis & Refactoring
+- **#94 Advanced Refactoring** — `RefactoringManager`, `ASTAnalyzer`; rename symbol (workspace-wide), extract method/class, inline variable, move file between projects; AI-assisted suggestions
+- **#96 Code Analysis & Metrics** — `CodeAnalysisManager`, `DependencyGraphEngine`, `MetricsCalculator`; cyclomatic complexity, code duplication, dependency graphs; dedicated panel with filter/sort
+
+### Performance
+- **#97 Large File Optimization** — `VirtualizationEngine`, `LazyParser`, `MultiThreadedIntelliSenseAdapter`; virtualized display for >1 GB files, incremental parsing, multi-core IntelliSense, workspace memory management
+
+### Collaboration & UX
+- **#98 Multi-User Collaboration** — `CollaborationManager`, `DocumentSyncEngine`; multi-cursor real-time editing, contextual chat/comments per line, EventBus integration
+- **#99 Advanced UI/UX** — `NotificationManager`, `WorkspaceLayoutAdapter`; contextual inline notifications, layout persistence per workspace, full docking for all panels
+- **#100 Internationalization / Localization** — `LocalizationManager`, `TranslationLoader`; EN/FR initial, plugin-provided translations, dynamic switching per workspace
+
+---
+
+## [Unreleased] — 2026-03 — Plugin System, Terminal & IDE Enhancements
+
+### ✨ Added — Plugin System (5 new projects)
+
+**`WpfHexEditor.SDK`** — public plugin contract layer
+- `IWpfHexEditorPlugin` / `IWpfHexEditorPluginV2` — plugin lifecycle (Init / Activate / Deactivate / Dispose)
+- `IIDEHostContext` — full IDE access gateway for plugins
+- `IUIRegistry` — panel registration, Show / Hide / Toggle / Focus API
+- `IDockingAdapter` — ShowDockablePanel / HideDockablePanel / ToggleDockablePanel / FocusDockablePanel
+- Service contracts: `IHexEditorService`, `ICodeEditorService`, `IOutputService`, `IErrorPanelService`, `ISolutionExplorerService`, `IParsedFieldService`
+- `IPluginWithOptions` — optional interface; plugins exposing it get an auto-registered Options page under "Plugins"
+- `IFocusContextService`, `IPluginEventBus`, `IPluginState`, `IPluginDiagnostics`, `IPermissionService`, `IMarketplaceService`, `IThemeService`
+- `PluginManifest` with `ResolvedDirectory` (runtime-only, `JsonIgnore`)
+
+**`WpfHexEditor.PluginHost`** — runtime host infrastructure
+- `WpfPluginHost` — discovery (`%AppData%\WpfHexEditor\Plugins\` + `bin\Plugins\`), load, unload, enable/disable
+- `PluginEntry` — internal mutation API: `SetState`, `SetInstance`, `SetInitDuration`, `SetLoadedAt`, `SetFaultException`, `Unload()` (clears collectible `AssemblyLoadContext`)
+- `PluginCrashHandler` — `HandleCrash` + async `HandleCrashAsync()` overload
+- `PluginWatchdog` — `WrapAsync()` returns `Task<TimeSpan>` (elapsed time)
+- `PluginOptionsRegistry` — thread-safe runtime registry of plugin options pages keyed by plugin ID
+- `PluginLoadContext` — collectible `AssemblyLoadContext` for hot-unload
+- `PluginManifestValidator`, `PluginDiagnosticsCollector`, `PluginScheduler`, `PluginEventBus`, `PluginStateSerializer`
+- `PermissionService` — `PermissionChangedEventArgs` via object-initializer (PluginId, Permission, IsGranted)
+- `UIRegistry` — delegates Show/Hide/Toggle/Focus to `IDockingAdapter`
+- `PluginManagerControl.xaml` — enable/disable/uninstall actions, live status, `PluginListItemViewModel` (LoadedAt, AssemblyPath, OptionsPageFactory)
+- `SandboxPluginProxy` — out-of-process proxy over named-pipe `IpcChannel`
+
+**`WpfHexEditor.PluginSandbox`** — isolated host process (stub, `net8.0-windows`)
+- Console host entry point; named-pipe IPC with main IDE process
+
+**`WpfHexEditor.Core.Terminal`** — command engine (31 built-in commands)
+- Category **Core**: `clear`, `echo`, `exit`, `help`, `history`, `version`
+- Category **File System**: `copy-file`, `delete-file`, `list-files`, `open-file`, `open-folder`
+- Category **Editor**: `close-file`, `read-hex`, `save-file`, `save-as`, `search`, `select-file`, `write-hex`
+- Category **Project / Solution**: `close-project`, `close-solution`, `open-project`, `open-solution`, `reload-solution`
+- Category **Panels**: `append-panel`, `clear-panel`, `close-panel`, `focus-panel`, `open-panel`, `toggle-panel`
+- Category **Plugins**: `plugin-list`, `run-plugin`
+- Category **Diagnostics**: `send-error`, `send-output`, `show-errors`, `show-logs`, `status`
+- `HxScriptEngine` — executes `.hxscript` files; `CommandHistory` with persistence
+
+**`WpfHexEditor.Terminal`** — WPF dockable terminal panel
+- `TerminalPanel.xaml` — VS-style dockable panel, prompt input, colored output
+- `TerminalPanelViewModel` — implements both `ITerminalContext` and `ITerminalOutput`; `TerminalOutputLine` with severity-to-brush converter
+
+**7 First-party plugin packages** (`Sources/Plugins/`)
+- `WpfHexEditor.Plugins.DataInspector` — wraps DataInspectorPanel; implements `IPluginWithOptions` (`DataInspectorOptionsPage`: display format, endianness, auto-refresh interval)
+- `WpfHexEditor.Plugins.StructureOverlay` — wraps StructureOverlayPanel
+- `WpfHexEditor.Plugins.FileStatistics` — wraps FileStatisticsPanel
+- `WpfHexEditor.Plugins.PatternAnalysis` — wraps PatternAnalysisPanel
+- `WpfHexEditor.Plugins.FileComparison` — wraps FileComparisonPanel
+- `WpfHexEditor.Plugins.ArchiveStructure` — wraps ArchiveStructurePanel
+- `WpfHexEditor.Plugins.CustomParserTemplate` — wraps CustomParserTemplatePanel
+
+**Packaging tools** (`Sources/Tools/`)
+- `WpfHexEditor.PackagingTool` — `whxpack` CLI, `ManifestFinalizer` (SHA-256), `PackageBuilder` → `.whxplugin` (ZIP)
+- `WpfHexEditor.PluginInstaller` — WPF installer dialog, `PluginPackageExtractor`, `--silent` mode, `PluginInstallException`
+
+### ✨ Added — App Integration (Plugin System)
+- `MainWindow.PluginSystem.cs` — `InitializePluginSystemAsync`, `ShutdownPluginSystemAsync`, `UpdatePluginFocusContext`
+- `OnOpenTerminal()` — creates `TerminalPanel` + `TerminalPanelViewModel`, docks as `"panel-terminal"`
+- `OnOpenPluginManager()` — docks `PluginManagerControl` as `"plugin-manager"`
+- **Tools menu** — Plugin Manager + Terminal entries; toolbar separators with `DataTrigger`-controlled visibility
+- Dynamic Options registration — each plugin implementing `IPluginWithOptions` gets `OptionsPageRegistry.RegisterDynamic()` on load; `UnregisterDynamic()` on disable/unload
+
+### ✨ Added — Options Module
+- `HexEditorBehaviorPage.xaml(.cs)` — new Options page: data interpretation, scroll markers, advanced behavior
+- `HexEditorStatusBarPage.xaml(.cs)` — new Options page: status bar element visibility toggles
+- `PluginSystemOptionsPage.xaml(.cs)` — plugin loading settings, sandbox mode, auto-update policy
+- `OptionsPageRegistry.RegisterDynamic(category, pageName, factory)` / `UnregisterDynamic(pageId)` — runtime plugin options page registration
+- `AppSettings` — expanded with `SolutionExplorerSettings`, `CodeEditorDefaultSettings`, `TextEditorDefaultSettings`, plugin system settings (~30 new properties)
+
+### ✨ Added — Service Layer
+- `DockingAdapter` — `ShowDockablePanel`, `HideDockablePanel`, `ToggleDockablePanel`, `FocusDockablePanel` (uses `DockItemState.Hidden` check)
+- `ErrorPanelServiceImpl` — `PostDiagnostic` now accepts `DiagnosticSeverity` enum (was string); maps SDK→Core severity; uses `AddSource`
+- `SolutionExplorerServiceImpl` — `OpenFileHandler` delegate avoids circular App↔SDK reference
+- `HexEditorServiceImpl` — `ReadBytes`, `GetSelectedBytes`, `SearchHex`, `SearchText`, `GoToOffset`
+
+### ✨ Added — Docking Improvements
+- `AutoHideBar` — `SnapshotReady` event (fires after open animation + Render priority) and `Dismissing` event (before close animation)
+- `DockControl` — wires `SnapshotReady`/`Dismissing`; `MinCaptureSize` guard in `CaptureAutoHideSnapshot`
+- `TabHoverPreview` — title-only fallback card for never-activated tabs; hides popup on selected tab; title from `DockItem.Tag`
+- `AutoHideBarHoverPreview` — button-relative placement replaces `PlacementMode.Mouse` (Win32 layered window bug)
+- `DockTabControl` — float threshold check moved before reorder-dispatch; vertical drag cancels reorder and floats instead
+- `DockDragManager` — guard for `DocumentTabHost.Node == null`
+
+### ✨ Added — Solution Explorer Improvements
+- **Expand-state persistence** — captures/restores `IsExpanded` per node across `Rebuild()` in same session
+- **Drag & drop from Windows Explorer** — `DataFormats.FileDrop` handled; files added to project without dialog
+- **Delete from disk** — `ItemDeleteFromDiskRequested` event; moves to Recycle Bin with confirmation
+
+### ✨ Added — HexEditor Enhancements
+- `HexEditor.StatusBarContributor` — `RaiseHexStatusChanged()` fired on `ByteGrouping`, `OffSetStringVisual`, `DefaultCopyToClipboardMode` property changes
+- net48 compatibility — `(CopyPasteMode[])Enum.GetValues(typeof(CopyPasteMode))` (generic `Enum.GetValues<T>()` not available in net48)
+
+### ✨ Added — Format-Aware Editor Selection
+- `EmbeddedFormatCatalog` — parses `preferredEditor` and `detection.isTextFormat` from `.whfmt` JSON
+- `EmbeddedFormatEntry` record — `string? PreferredEditor` and `bool IsTextFormat`
+- `EditorRegistry.FindFactory(string filePath, string? preferredId)` — preferred-first, fallback first-match
+- 427 `.whfmt` format definitions annotated with `"preferredEditor"` key
+- `MainWindow.GetPreferredEditorId()` — consults `EmbeddedFormatCatalog` (PreferredEditor → IsTextFormat → null)
+
+### ✨ Added — Image Viewer
+- `IImageTransform` + `ImageTransformPipeline` — composable transform architecture
+- Transforms: `RotateImageTransform`, `FlipImageTransform`, `CropImageTransform`, `ResizeImageTransform`, `ScaleImageTransform`
+- `ResizeImageDialog.xaml(.cs)` — width/height input with aspect ratio lock
+- `ImageContextMenu.xaml` — right-click context menu (copy, save, zoom, transform actions)
+- `ImageViewer.xaml(.cs)` — major enhancement: zoom/pan, transform toolbar, context menu, theme compliance
+- `DockEngine` / `FloatingWindow` — minor additions for ImageViewer floating window sizing
+
+### ✨ Added — Plugin Monitoring Panel
+- `PluginMonitoringViewModel` — observes `PluginEntry` collection, polls CPU% and memory MB at 1 s interval via `PerformanceCounter` / GC; rolling chart history per plugin
+- `PluginMonitoringPanel.xaml(.cs)` — VS-style dockable panel; pure WPF `Canvas` + `Polyline` charts, no external charting library; redraws on `CollectionChanged`
+- `WpfPluginHost` — expanded load/unload/enable/disable lifecycle; diagnostic hooks; hot-unload via collectible `AssemblyLoadContext`
+- `PluginManagerViewModel` — full VM with Enable/Disable/Uninstall/Reload commands, filter/search, `SelectionChanged` wiring to monitoring panel
+- `PluginManagerControl` — DataGrid with status column, toolbar actions, details pane with diagnostics output; `PluginListItemViewModel` extended with `LiveCpuPercent`, `LiveMemoryMb`, `DiagnosticsSummary`
+- Plugin `.csproj` files — SDK manifest metadata (`PluginId`, `PluginVersion`, `PluginEntryPoint`, …) for auto-generated `manifest.json` at build time
+
+### ✨ Added — Options
+- `PluginSystemOptionsPage` — complete settings page: monitoring enabled/interval, sandbox mode, auto-update, trusted publisher; bound to `AppSettings.PluginSystemSettings`
+- `AppSettings.PluginSystemSettings` — `MonitoringEnabled`, `MonitoringIntervalMs`, `MaxHistoryPoints`, sandbox policy
+
+### ✨ Added — Terminal Panel Overhaul
+- `TerminalMode` enum — `Interactive` / `Script` / `ReadOnly` modes with visual indicator
+- `TerminalExportService` — export full session to `.txt` / `.log` file with timestamp header
+- `ITerminalService` (SDK) — new service contract exposing `Execute`, `Clear`, `ExportSession`, `HistoryLines`; consumed by plugins via `IIDEHostContext.TerminalService`
+- `TerminalServiceImpl` — App-side implementation wiring `TerminalPanelViewModel` to the SDK contract; registered in `IDEHostContext`
+- `ITerminalOutput.WriteTable()` — helper for tabular output (header + rows) with column alignment
+- `TerminalCommandRegistry` — new built-in commands: `export-log`, `set-mode`, `terminal-info`
+- `TerminalPanelViewModel` — TerminalMode state machine; per-mode prompt styling; `ExportSession()` delegation to `TerminalExportService`; improved async command dispatch; `ITerminalContext` / `ITerminalOutput` merged into single VM
+- `TerminalPanel.xaml` — mode indicator badge; export toolbar button; resize-handle polish; full keyboard history (↑/↓) wired to `CommandHistory`
+- `IIDEHostContext.TerminalService` — plugins can now read/write terminal programmatically
+- `PluginCapabilities.Terminal` — new capability flag; plugins declare terminal access requirement in manifest
+- `IDEHostContext` / `PluginHost.IDEHostContext` — exposes `ITerminalService`; `PluginPermission.Terminal` entry
+
+### ✨ Added — PropertiesPanel Auto-Refresh
+- `HexEditor.PropertyProvider` — `DependencyPropertyDescriptor.AddValueChanged` on `SelectionStartProperty` / `SelectionStopProperty`; bypasses anti-recursion guard that silently dropped `SelectionChanged` during keyboard navigation
+- 400 ms one-shot `DispatcherTimer` debounce — `PropertiesChanged` fires only after cursor is idle; eliminates synchronous `FileStream` + entropy calls on every keypress
+- `BuildDocumentGroup()` — `EditMode` bound as `enum` (not `.ToString()`); ComboBox `SelectedItem` now matches `AllowedValues` correctly (was always empty)
+
+### 🔧 Changed
+- `PluginEntry` promoted from `internal` to `public`
+- Section separators normalized from Unicode box-drawing (`──`) to ASCII (`--`) across 134 files
+- `MainWindow.xaml` — Tools menu: Plugin Monitoring entry added; `PluginMonitoringPanel` dock item registered
+- `SolutionExplorerPanel` — toolbar layout polish; drag-drop from Windows Explorer refined
+
+### 🐛 Fixed
+- `PermissionService` — `PermissionChangedEventArgs` object-initializer form; missing `System.IO` using
+- `PluginManifestValidator` — constructor signature and `result.IsValid` (was `!result.HasErrors`)
+- `SolutionExplorerPanel` — CS0136 variable scope collision in `OnTreeDragOver`
+- `HexEditor.Events.cs — EnsurePositionVisible` DOWN scroll: replaced centering formula (`lineNumber - visibleLines/2`) with `LastVisibleBytePosition`-based edge trigger; scroll now advances exactly 1 line per arrow-down keypress at viewport bottom; `VerticalScroll.Value` synced in all scroll paths
+- `ImageViewer` — `FileShare.ReadWrite` (was `Read`) allows concurrent access when HexEditor has the same file open; eliminates `IOException` on dual open
 
 ---
 

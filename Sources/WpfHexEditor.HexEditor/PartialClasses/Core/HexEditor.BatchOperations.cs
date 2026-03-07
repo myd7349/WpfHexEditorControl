@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.BatchOperations.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing batch operation methods for the HexEditor.
+//     Provides BeginBatch/EndBatch API to group multiple byte edits into a
+//     single undo-able operation, improving performance for bulk modifications.
+//
+// Architecture Notes:
+//     Batch mode suppresses intermediate UI refreshes and changeset commits.
+//     EndBatch flushes the accumulated changes as a single atomic changeset.
+//
+// ==========================================================
 
 namespace WpfHexEditor.HexEditor
 {

@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: TabSettingsDialog.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the live-preview document tab options dialog. Changes to
+//     controls are applied immediately to the shared DocumentTabBarSettings
+//     instance so the user sees updates in real time without needing to confirm.
+//
+// Architecture Notes:
+//     Inherits ThemedDialog for automatic global theme compliance.
+//     Implements INotifyPropertyChanged for ViewModel-lite binding.
+//     Direct mutation pattern: no intermediate ViewModel needed since settings
+//     already implement change notification.
+//
+// ==========================================================
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -19,7 +32,7 @@ namespace WpfHexEditor.Docking.Wpf.Dialogs;
 /// </summary>
 public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDialog, INotifyPropertyChanged
 {
-    // ─── Dependencies ─────────────────────────────────────────────────────────
+    // --- Dependencies ---------------------------------------------------------
 
     private DocumentTabBarSettings? _settings;
 
@@ -37,7 +50,7 @@ public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDi
         }
     }
 
-    // ─── Constructor ─────────────────────────────────────────────────────────
+    // --- Constructor ---------------------------------------------------------
 
     public TabSettingsDialog()
     {
@@ -45,7 +58,7 @@ public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDi
         RegexGrid.ItemsSource = _regexVmList;
     }
 
-    // ─── Placement ────────────────────────────────────────────────────────────
+    // --- Placement ------------------------------------------------------------
 
     public bool PlacementTop
     {
@@ -65,7 +78,7 @@ public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDi
         set { if (value && _settings is not null) _settings.TabPlacement = DocumentTabPlacement.Right; }
     }
 
-    // ─── Color mode ───────────────────────────────────────────────────────────
+    // --- Color mode -----------------------------------------------------------
 
     public bool ColorNone
     {
@@ -91,7 +104,7 @@ public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDi
         set { if (value && _settings is not null) { _settings.ColorMode = DocumentTabColorMode.Regex; OnColorModeChanged(); } }
     }
 
-    // ─── Multi-row ────────────────────────────────────────────────────────────
+    // --- Multi-row ------------------------------------------------------------
 
     public bool MultiRowTabs
     {
@@ -113,7 +126,7 @@ public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDi
         set { if (_settings is not null) _settings.MultiRowWithMouseWheel = value; }
     }
 
-    // ─── Regex rules VM list ──────────────────────────────────────────────────
+    // --- Regex rules VM list --------------------------------------------------
 
     private readonly ObservableCollection<RegexColorRuleVm> _regexVmList = [];
 
@@ -151,11 +164,11 @@ public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDi
         SyncRegexRulesToSettings();
     }
 
-    // ─── Event handlers ───────────────────────────────────────────────────────
+    // --- Event handlers -------------------------------------------------------
 
     private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
 
-    // ─── INotifyPropertyChanged ───────────────────────────────────────────────
+    // --- INotifyPropertyChanged -----------------------------------------------
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -175,7 +188,7 @@ public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDi
         Notify(nameof(MultiRowWithMouseWheel));
     }
 
-    // ─── Inner VM for regex rules DataGrid ───────────────────────────────────
+    // --- Inner VM for regex rules DataGrid -----------------------------------
 
     /// <summary>
     /// Lightweight view-model for DataGrid editing of regex color rules.

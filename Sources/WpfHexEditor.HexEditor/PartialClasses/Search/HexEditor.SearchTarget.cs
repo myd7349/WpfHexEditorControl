@@ -1,8 +1,19 @@
-////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.SearchTarget.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing ISearchTarget for the HexEditor. Allows the IDE's
+//     search infrastructure to use the HexEditor as a first-class search target,
+//     supporting search capabilities reporting, execution, and result navigation.
+//
+// Architecture Notes:
+//     Implements ISearchTarget from WpfHexEditor.Editor.Core.
+//     Capabilities reported dynamically based on current file and edit mode state.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

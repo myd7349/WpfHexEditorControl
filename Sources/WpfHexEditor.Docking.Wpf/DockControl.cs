@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockControl.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     The central WPF control of the docking system. Renders the DockLayoutRoot
+//     node tree as WPF visual elements, and coordinates drag & drop, floating
+//     windows, auto-hide bars, keyboard navigation, and tab event wiring.
+//
+// Architecture Notes:
+//     Implements IDockHost and IDisposable. Acts as the Facade over DockEngine,
+//     DockDragManager, FloatingWindowManager, and DockKeyboardNavigation.
+//     Content factory pattern: consumers register factories keyed by string IDs
+//     to produce content for DockItem nodes on demand.
+//
+// ==========================================================
 
 using System.Collections;
 using System.Windows;
@@ -84,7 +97,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     /// </summary>
     public DockEngine? Engine => _engine;
 
-    // ─── MVVM Source Binding ─────────────────────────────────────────
+    // --- MVVM Source Binding -----------------------------------------
 
     public static readonly DependencyProperty DocumentsSourceProperty =
         DependencyProperty.Register(nameof(DocumentsSource), typeof(IEnumerable), typeof(DockControl),
@@ -157,7 +170,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
             _anchorablesSynchronizer = new DockItemSourceSynchronizer(this, AnchorablesSource, ItemMapper, isDocument: false);
     }
 
-    // ─── Content Factory ─────────────────────────────────────────────
+    // --- Content Factory ---------------------------------------------
 
     /// <summary>
     /// Factory to create content for a DockItem. If not set, a default placeholder is shown.
@@ -170,7 +183,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     /// </summary>
     public Func<DockItem, Task<object>>? AsyncContentFactory { get; set; }
 
-    // ─── Layout Item Templates ──────────────────────────────────────
+    // --- Layout Item Templates --------------------------------------
 
     /// <summary>
     /// Default <see cref="DataTemplate"/> used to present document view-model content.
@@ -194,7 +207,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     /// </summary>
     public DataTemplateSelector? AnchorableTemplateSelector { get; set; }
 
-    // ─── Cached Content Factory ─────────────────────────────────────
+    // --- Cached Content Factory -------------------------------------
 
     /// <summary>
     /// Returns a wrapped content factory that caches results by <see cref="DockItem.ContentId"/>.
@@ -582,7 +595,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         Dispatcher.Invoke(RebuildVisualTree);
     }
 
-    // ─── Layout size sync ───────────────────────────────────────────
+    // --- Layout size sync -------------------------------------------
 
     /// <summary>
     /// Synchronizes the in-memory <see cref="DockSplitNode.Ratios"/> with the actual
@@ -1070,6 +1083,10 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     {
         ActivationHistory.Remove(item);
         ActivationHistory.Insert(0, item);
+        // Sync model so layout serialization captures the last selected tab,
+        // not just the last tab added via DockEngine.Dock().
+        if (item.Owner is { } owner)
+            owner.ActiveItem = item;
         ActiveItemChanged?.Invoke(item);
     }
 

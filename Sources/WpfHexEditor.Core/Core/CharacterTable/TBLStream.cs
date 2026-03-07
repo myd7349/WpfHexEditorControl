@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2003-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5 (Performance optimizations), Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: TBLStream.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Manages Thingy TBL files (entry=value format) with full standard format
+//     support including DTE, MTE, end-of-line, and end-of-block encodings.
+//     Provides load, save, conflict detection, and byte-to-character translation.
+//
+// Architecture Notes:
+//     Core component of the ROM hacking character table system. Uses ByteConverters
+//     for hex parsing. Performance optimized in v4.5+ with HashSet-based lookups.
+//     No WPF dependencies — pure domain model and file I/O.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

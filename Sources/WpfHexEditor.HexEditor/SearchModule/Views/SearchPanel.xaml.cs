@@ -1,8 +1,19 @@
-////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: SearchPanel.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the SearchPanel UserControl — the full-featured search panel
+//     dockable in the IDE. Binds to SearchViewModel, shows search results in a list,
+//     and supports navigation, result previews, and search type selection.
+//
+// Architecture Notes:
+//     MVVM view in the Search module. Contains internal converters for result formatting.
+//     Conforms to PanelCommon.xaml theme styles for toolbar and layout.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

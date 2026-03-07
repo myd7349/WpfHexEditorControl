@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.ByteDistributionIntegration.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class integrating the HexEditor with the ByteDistributionPanel.
+//     Exposes a DependencyProperty for the panel instance and wires position
+//     change events to update the panel's byte distribution visualization.
+//
+// Architecture Notes:
+//     Observer pattern — HexEditor notifies the panel via IByteDistributionPanel interface.
+//     Loose coupling maintained through the interface contract from WpfHexEditor.Core.
+//
+// ==========================================================
 
 using System;
 using System.Windows;

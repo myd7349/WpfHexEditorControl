@@ -1,8 +1,19 @@
-////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: ReplaceViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     ViewModel for the Find/Replace functionality in the HexEditor search module.
+//     Manages find and replace byte sequences, replace direction (single/all),
+//     and exposes async replace execution with result reporting.
+//
+// Architecture Notes:
+//     MVVM pattern — implements INotifyPropertyChanged manually.
+//     Delegates replace logic to core search/replace services.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

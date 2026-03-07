@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.UIHelpers.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing UI utility and layout helper methods for the HexEditor.
+//     Covers scroll synchronization, column width calculation, line count computation,
+//     and visual state invalidation helpers used across multiple partial classes.
+//
+// Architecture Notes:
+//     Utility methods only — no business logic. Uses WPF DispatcherTimer for
+//     deferred refresh operations to avoid redundant rendering during rapid updates.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

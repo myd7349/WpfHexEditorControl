@@ -1,14 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-//////////////////////////////////////////////
-// Apache 2.0  - 2020-2021
-// Base author  : ehsan69h
-// Modified by  : Abbaye
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: IByte.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic), ehsan69h, Abbaye
+// Created: 2026-03-06
+// Description:
+//     Core interface defining the contract for all byte display units (8-bit,
+//     16-bit, 32-bit). Provides a uniform API for the hex editor rendering
+//     pipeline to handle single and multi-byte display cells.
+//
+// Architecture Notes:
+//     Originally authored by ehsan69h / Abbaye. Implemented by Byte_8bit,
+//     Byte_16bit, and Byte_32bit. Used by the HexEditor rendering pipeline
+//     for polymorphic byte cell management. Contains WPF Key input dependency.
+//
+// ==========================================================
 
 using System.Collections.Generic;
 using System.Windows.Input;

@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2003-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ConflictType.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Enumeration classifying the types of conflicts that can occur in TBL files,
+//     such as prefix ambiguity (one entry being a prefix of another) or duplicate
+//     hex keys mapping to different characters.
+//
+// Architecture Notes:
+//     Pure enum — no dependencies. Consumed by TBLStream conflict detection
+//     and TblStatistics reporting. Pairs with ConflictSeverity for full context.
+//
+// ==========================================================
 
 namespace WpfHexEditor.Core.CharacterTable
 {

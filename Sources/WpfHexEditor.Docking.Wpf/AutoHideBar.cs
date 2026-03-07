@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: AutoHideBar.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     A WPF StackPanel-based bar displayed at the edges of the dock area that
+//     renders buttons for auto-hidden panels. Clicking a button raises ItemClicked
+//     to toggle the panel's flyout. Integrates with AutoHideBarHoverPreview for
+//     thumbnail previews on hover.
+//
+// Architecture Notes:
+//     Inherits StackPanel for automatic horizontal/vertical layout based on Dock position.
+//     Uses AutoHideBarAutomationPeer for full UI Automation (MSAA/UIA) accessibility support.
+//     DynamicResource binding to DockMenuBackgroundBrush ensures theme compliance.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Automation;
@@ -152,7 +165,7 @@ public class AutoHideFlyout : Grid
         _clickCatcher.MouseLeftButtonDown += (_, _) => Close();
         Children.Add(_clickCatcher);
 
-        // ── Title bar ────────────────────────────────────────────────────────────────
+        // -- Title bar ----------------------------------------------------------------
         _titleBlock = new TextBlock
         {
             FontWeight        = FontWeights.SemiBold,
@@ -274,7 +287,7 @@ public class AutoHideFlyout : Grid
             titleBar.ReleaseMouseCapture();
         };
 
-        // ── Content ──────────────────────────────────────────────────────────────────
+        // -- Content ------------------------------------------------------------------
         _contentHost = new ContentControl();
 
         var innerStack = new DockPanel { LastChildFill = true };
@@ -290,7 +303,7 @@ public class AutoHideFlyout : Grid
         _panel.SetResourceReference(Border.BackgroundProperty, "DockBackgroundBrush");
         _panel.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
 
-        // ── Resize handle ─────────────────────────────────────────────────────────
+        // -- Resize handle ---------------------------------------------------------
         // Transparent strip placed on the inner edge; position/cursor configured in ShowForItem.
         _resizeHandle = new Border { Background = Brushes.Transparent };
         _resizeHandle.MouseLeftButtonDown += OnResizeStart;
@@ -298,7 +311,7 @@ public class AutoHideFlyout : Grid
         _resizeHandle.MouseLeftButtonUp   += (_, _) => OnResizeEnd();
         _resizeHandle.LostMouseCapture    += (_, _) => OnResizeEnd();
 
-        // ── Panel container: _panel + resize handle overlaid ─────────────────────
+        // -- Panel container: _panel + resize handle overlaid ---------------------
         _panelContainer = new Grid();
         _panelContainer.Children.Add(_panel);
         _panelContainer.Children.Add(_resizeHandle);
@@ -429,7 +442,7 @@ public class AutoHideFlyout : Grid
             _panelContainer.BeginAnimation(HeightProperty, hideAnim);
     }
 
-    // ── Resize ───────────────────────────────────────────────────────────────────
+    // -- Resize -------------------------------------------------------------------
 
     private void OnResizeStart(object sender, MouseButtonEventArgs e)
     {

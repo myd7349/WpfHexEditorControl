@@ -1,9 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// HexEditor - Data Inspector Integration (Partial Class)
-// Author : Claude Sonnet 4.5
-// Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.DataInspectorIntegration.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class integrating the HexEditor with the DataInspectorPanel.
+//     Exposes a DependencyProperty for the panel instance and wires byte selection
+//     change events to update the panel with multi-type interpretations of selected bytes.
+//
+// Architecture Notes:
+//     Observer pattern — HexEditor feeds bytes to IDataInspectorPanel interface.
+//     Interface defined in WpfHexEditor.Core.Interfaces for zero coupling to panel assembly.
+//
+// ==========================================================
 
 using System;
 using System.Linq;

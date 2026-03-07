@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: ProgressOverlay.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the ProgressOverlay UserControl displayed during long-running
+//     operations such as file loading, searching, or batch edits.
+//     Binds to ProgressOverlayViewModel and shows progress, message, and cancel button.
+//
+// Architecture Notes:
+//     MVVM pattern — DataContext is set to ProgressOverlayViewModel.
+//     Theme: global WPF theme applied via merged ResourceDictionaries.
+//
+// ==========================================================
 
 using System.Windows.Controls;
 using WpfHexEditor.HexEditor.ViewModels;

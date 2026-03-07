@@ -1,0 +1,289 @@
+<!--
+    Project: WpfHexEditor.Panels.IDE
+    File: PluginMonitoringPanel.xaml
+    Author: Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Sonnet 4.6
+    Created: 2026-03-06
+    Description:
+        Docking panel for real-time plugin health monitoring.
+        Shows CPU% and Memory MB line charts (Canvas+Polyline, no external lib),
+        a health summary header, and a per-plugin metrics table.
+    Theme: DynamicResource only (PanelCommon.xaml via merged parent theme).
+    ContentId: "plugin-monitor"
+-->
+<UserControl x:Class="WpfHexEditor.Panels.IDE.Panels.PluginMonitoringPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:WpfHexEditor.Panels.IDE.Panels"
+             xmlns:vm="clr-namespace:WpfHexEditor.Panels.IDE.Panels.ViewModels"
+             Background="{DynamicResource DockBackgroundBrush}">
+
+    <UserControl.Resources>
+        <!-- Converts ChartPoint collection + canvas size to a WPF PointCollection for Polyline -->
+        <local:ChartPointsConverter x:Key="ChartPointsConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- Dark-themed DataGrid column headers -->
+        <Style x:Key="MonitorColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background"                  Value="{DynamicResource Panel_ToolbarBrush}"/>
+            <Setter Property="Foreground"                  Value="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+            <Setter Property="BorderBrush"                 Value="{DynamicResource DockBorderBrush}"/>
+            <Setter Property="BorderThickness"             Value="0,0,1,1"/>
+            <Setter Property="Padding"                     Value="6,4"/>
+            <Setter Property="FontSize"                    Value="11"/>
+            <Setter Property="FontWeight"                  Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment"  Value="Left"/>
+        </Style>
+
+        <!-- Dark-themed DataGrid cells -->
+        <Style x:Key="MonitorCellStyle" TargetType="DataGridCell">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground"      Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="Padding"         Value="4,2"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DockTabHoverBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Dark-themed DataGrid rows — overrides WPF default blue selection -->
+        <Style x:Key="MonitorRowStyle" TargetType="DataGridRow">
+            <Setter Property="Background"  Value="Transparent"/>
+            <Setter Property="Foreground"  Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DockTabHoverBrush}"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource Panel_ToolbarBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Toolbar -->
+            <RowDefinition Height="26"/>
+            <!-- Health summary cards -->
+            <RowDefinition Height="Auto"/>
+            <!-- Charts — proportional, grows with panel height -->
+            <RowDefinition Height="2*" MinHeight="60"/>
+            <!-- Splitter -->
+            <RowDefinition Height="4"/>
+            <!-- Plugin table — proportional -->
+            <RowDefinition Height="*" MinHeight="30"/>
+        </Grid.RowDefinitions>
+
+        <!-- ── Toolbar ──────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Style="{DynamicResource PanelToolbarStyle}">
+            <DockPanel VerticalAlignment="Center" Margin="4,0">
+
+                <!-- Left: title + health badge -->
+                <TextBlock DockPanel.Dock="Left"
+                           Text="PLUGIN MONITOR" FontSize="10" FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+
+                <Border DockPanel.Dock="Left"
+                        CornerRadius="3" Padding="5,1" Margin="8,0,8,0" VerticalAlignment="Center"
+                        Background="{Binding HealthColor}">
+                    <TextBlock Text="{Binding HealthLabel}" FontSize="10" Foreground="White"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- Right: interval selector + start/stop + reset -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+
+                    <TextBlock Text="Interval:" FontSize="10" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                               Margin="0,0,4,0"/>
+                    <ComboBox x:Name="IntervalComboBox" FontSize="11" Width="50" Height="20"
+                              VerticalContentAlignment="Center"
+                              Background="{DynamicResource Panel_ToolbarBrush}"
+                              Foreground="{DynamicResource DockMenuForegroundBrush}"
+                              BorderBrush="{DynamicResource DockBorderBrush}"
+                              SelectionChanged="OnIntervalSelectionChanged">
+                        <ComboBoxItem Content="1 s"  Tag="1"/>
+                        <ComboBoxItem Content="5 s"  Tag="5" IsSelected="True"/>
+                        <ComboBoxItem Content="10 s" Tag="10"/>
+                        <ComboBoxItem Content="30 s" Tag="30"/>
+                    </ComboBox>
+
+                    <Rectangle Width="1" Height="14" Margin="6,0"
+                               Fill="{DynamicResource Panel_ToolbarBorderBrush}"/>
+
+                    <!-- Start / Pause -->
+                    <Button Style="{DynamicResource PanelIconButtonStyle}"
+                            Command="{Binding StartStopCommand}"
+                            ToolTip="{Binding StartStopLabel}">
+                        <TextBlock Text="{Binding StartStopIcon}"
+                                   FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Button>
+
+                    <!-- Reset / Clear history -->
+                    <Button Style="{DynamicResource PanelIconButtonStyle}"
+                            Command="{Binding ResetCommand}"
+                            ToolTip="Clear chart history">
+                        <TextBlock Text="&#xE777;"
+                                   FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Button>
+
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Summary cards ─────────────────────────────────────────────────── -->
+        <Grid Grid.Row="1" Margin="6,4,6,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- CPU -->
+            <Border Grid.Column="0" Background="{DynamicResource Panel_ToolbarBrush}"
+                    CornerRadius="4" Margin="0,0,3,0" Padding="8,6">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding CurrentCpu, StringFormat={}{0:F1}%}"
+                               FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                    <TextBlock Text="CPU" FontSize="10" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Memory -->
+            <Border Grid.Column="1" Background="{DynamicResource Panel_ToolbarBrush}"
+                    CornerRadius="4" Margin="3,0,3,0" Padding="8,6">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding CurrentMemoryMb, StringFormat={}{0} MB}"
+                               FontSize="18" FontWeight="Bold" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                    <TextBlock Text="Memory" FontSize="10" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Running -->
+            <Border Grid.Column="2" Background="{DynamicResource Panel_ToolbarBrush}"
+                    CornerRadius="4" Margin="3,0,3,0" Padding="8,6">
+                <StackPanel HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding LoadedCount}" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                        <TextBlock Text="/" FontSize="18" Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+                        <TextBlock Text="{Binding TotalCount}" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                    </StackPanel>
+                    <TextBlock Text="Running" FontSize="10" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Faults -->
+            <Border Grid.Column="3" Background="{DynamicResource Panel_ToolbarBrush}"
+                    CornerRadius="4" Margin="3,0,0,0" Padding="8,6">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding FaultCount}" FontSize="18" FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                    <TextBlock Text="Faults" FontSize="10" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ── Charts ────────────────────────────────────────────────────────── -->
+        <Grid Grid.Row="2" Margin="6,4,6,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- CPU chart -->
+            <Grid Grid.Column="0">
+                <Border Background="{DynamicResource Panel_ToolbarBrush}" CornerRadius="4"/>
+                <TextBlock Text="CPU %" FontSize="9" FontWeight="SemiBold" Margin="6,4,0,0"
+                           VerticalAlignment="Top" HorizontalAlignment="Left"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+                <Canvas x:Name="CpuChartCanvas" Margin="4,18,4,4" ClipToBounds="True">
+                    <Polyline x:Name="CpuPolyline"
+                              Stroke="#22C55E" StrokeThickness="1.5"
+                              StrokeLineJoin="Round"/>
+                </Canvas>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"
+                          Background="{DynamicResource Panel_ToolbarBorderBrush}"/>
+
+            <!-- Memory chart -->
+            <Grid Grid.Column="2">
+                <Border Background="{DynamicResource Panel_ToolbarBrush}" CornerRadius="4"/>
+                <TextBlock Text="Memory MB" FontSize="9" FontWeight="SemiBold" Margin="6,4,0,0"
+                           VerticalAlignment="Top" HorizontalAlignment="Left"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+                <Canvas x:Name="MemChartCanvas" Margin="4,18,4,4" ClipToBounds="True">
+                    <Polyline x:Name="MemPolyline"
+                              Stroke="#60A5FA" StrokeThickness="1.5"
+                              StrokeLineJoin="Round"/>
+                </Canvas>
+            </Grid>
+        </Grid>
+
+        <GridSplitter Grid.Row="3" Height="4" HorizontalAlignment="Stretch"
+                      Background="{DynamicResource Panel_ToolbarBorderBrush}"/>
+
+        <!-- ── Plugin table ──────────────────────────────────────────────────── -->
+        <DataGrid Grid.Row="4"
+                  ItemsSource="{Binding Rows}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  SelectionMode="Single"
+                  Background="Transparent"
+                  BorderThickness="0"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  RowBackground="Transparent"
+                  AlternatingRowBackground="{DynamicResource Panel_ToolbarBrush}"
+                  ColumnHeaderStyle="{StaticResource MonitorColumnHeaderStyle}"
+                  CellStyle="{StaticResource MonitorCellStyle}"
+                  RowStyle="{StaticResource MonitorRowStyle}"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  Margin="6,4,6,4">
+            <DataGrid.Columns>
+                <!-- State dot -->
+                <DataGridTemplateColumn Header="" Width="20" CanUserResize="False" CanUserSort="False">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Ellipse Width="8" Height="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Fill="{Binding StateColor}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="Plugin" Binding="{Binding Name}" Width="*"/>
+
+                <DataGridTextColumn Header="State" Binding="{Binding State}" Width="80"/>
+
+                <DataGridTextColumn Header="CPU%" Binding="{Binding CpuPercent, StringFormat={}{0:F1}%}" Width="55"/>
+
+                <DataGridTextColumn Header="Mem MB" Binding="{Binding MemoryMb}" Width="60"/>
+
+                <DataGridTextColumn Header="Avg ms" Binding="{Binding AvgExecMs, StringFormat={}{0:F1}}" Width="60"/>
+
+                <DataGridTextColumn Header="Init ms" Binding="{Binding InitTimeMs, StringFormat={}{0:F0}}" Width="60"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

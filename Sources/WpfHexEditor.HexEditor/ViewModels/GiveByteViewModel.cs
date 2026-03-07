@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: GiveByteViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+// Created: 2026-03-06
+// Description:
+//     ViewModel for the GiveByteWindow dialog. Manages user input for a single byte
+//     value (decimal or hex), validates the range, and exposes the confirmed byte
+//     result through an OK/Cancel command pattern.
+//
+// Architecture Notes:
+//     MVVM dialog ViewModel — implements INotifyPropertyChanged manually.
+//     Uses RelayCommand from Commands/ for OK/Cancel actions.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

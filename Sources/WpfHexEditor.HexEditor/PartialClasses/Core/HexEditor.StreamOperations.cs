@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.StreamOperations.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class providing V1-compatible stream and memory data opening methods
+//     for the HexEditor. Exposes OpenStream, OpenMemory, and related overloads
+//     that delegate to the V2 file/data loading infrastructure.
+//
+// Architecture Notes:
+//     Compatibility bridge for Stream-based and byte[]-based consumers.
+//     All operations ultimately route through HexViewport data pipeline.
+//
+// ==========================================================
 
 using System;
 using System.IO;

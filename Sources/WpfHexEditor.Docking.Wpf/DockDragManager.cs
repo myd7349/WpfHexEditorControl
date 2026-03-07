@@ -1,8 +1,22 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockDragManager.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Manages drag and drop operations for dock tabs and floating windows using
+//     WPF mouse capture. Shows two simultaneous overlays in Visual Studio 2022
+//     style: an edge overlay with 4 zone indicators and a panel compass with
+//     5 directional indicators over the hovered panel.
+//
+// Architecture Notes:
+//     Coordinates DockOverlayWindow (panel compass) and DockEdgeOverlayWindow
+//     (edge indicators). Panel compass takes hit-test priority over edge overlay.
+//     DragPreviewWindow shows a semi-transparent snap preview during drags.
+//     Uses Win32 mouse capture for reliable cross-window drag tracking.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Controls;

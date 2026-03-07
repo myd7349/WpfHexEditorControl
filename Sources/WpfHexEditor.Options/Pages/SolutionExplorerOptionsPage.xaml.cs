@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.Options
-// File: SolutionExplorerOptionsPage.xaml.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Code-behind for the Solution Explorer options page.
-//     Implements IOptionsPage — load/flush pattern with auto-save.
-//
-// Architecture Notes:
-//     Pattern: IOptionsPage (Load / Flush / Changed)
-//     Theme: inherits DynamicResource brushes from OptionsEditorControl
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System;
 using System.Windows;
@@ -25,7 +17,7 @@ public sealed partial class SolutionExplorerOptionsPage : UserControl, IOptionsP
 
     public SolutionExplorerOptionsPage() => InitializeComponent();
 
-    // ── IOptionsPage ──────────────────────────────────────────────────────
+    // -- IOptionsPage ------------------------------------------------------
 
     public void Load(AppSettings s)
     {
@@ -50,7 +42,7 @@ public sealed partial class SolutionExplorerOptionsPage : UserControl, IOptionsP
         s.SolutionExplorer.DefaultFilterMode = ReadComboTag(FilterCombo, "All");
     }
 
-    // ── Control handlers ─────────────────────────────────────────────────
+    // -- Control handlers -------------------------------------------------
 
     private void OnCheckChanged(object sender, RoutedEventArgs e)
     {
@@ -62,7 +54,7 @@ public sealed partial class SolutionExplorerOptionsPage : UserControl, IOptionsP
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────
+    // -- Helpers ----------------------------------------------------------
 
     private static void SelectComboByTag(ComboBox combo, string tag)
     {

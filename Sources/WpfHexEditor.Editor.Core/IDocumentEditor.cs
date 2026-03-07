@@ -18,7 +18,7 @@ namespace WpfHexEditor.Editor.Core;
 /// </summary>
 public interface IDocumentEditor
 {
-    // ── State ────────────────────────────────────────────────────────────
+    // -- State ------------------------------------------------------------
     bool IsDirty    { get; }
     bool CanUndo    { get; }
     bool CanRedo    { get; }
@@ -29,17 +29,18 @@ public interface IDocumentEditor
     /// </summary>
     string Title { get; }
 
-    // ── Bindable commands (host: MenuItem.Command, toolbar…) ─────────────
-    ICommand UndoCommand      { get; }
-    ICommand RedoCommand      { get; }
-    ICommand SaveCommand      { get; }
-    ICommand CopyCommand      { get; }
-    ICommand CutCommand       { get; }
-    ICommand PasteCommand     { get; }
-    ICommand DeleteCommand    { get; }
-    ICommand SelectAllCommand { get; }
+    // -- Bindable commands (host: MenuItem.Command, toolbar…) -------------
+    // Nullable: editors that don't support a command may return null.
+    ICommand? UndoCommand      { get; }
+    ICommand? RedoCommand      { get; }
+    ICommand? SaveCommand      { get; }
+    ICommand? CopyCommand      { get; }
+    ICommand? CutCommand       { get; }
+    ICommand? PasteCommand     { get; }
+    ICommand? DeleteCommand    { get; }
+    ICommand? SelectAllCommand { get; }
 
-    // ── Methods ──────────────────────────────────────────────────────────
+    // -- Methods ----------------------------------------------------------
     void Undo();
     void Redo();
     void Save();
@@ -52,7 +53,7 @@ public interface IDocumentEditor
     void SelectAll();
     void Close();
 
-    // ── Events (host updates its own menu/statusbar) ─────────────────────
+    // -- Events (host updates its own menu/statusbar) ---------------------
     event EventHandler?         ModifiedChanged;  // IsDirty changed
     event EventHandler?         CanUndoChanged;
     event EventHandler?         CanRedoChanged;
@@ -61,7 +62,7 @@ public interface IDocumentEditor
     event EventHandler<string>? OutputMessage;   // verbose log → host Output panel
     event EventHandler?         SelectionChanged; // host re-queries CanExecute on commands
 
-    // ── Long-running operations ───────────────────────────────────────────
+    // -- Long-running operations -------------------------------------------
     /// <summary>
     /// True while a long-running operation is in progress on this document.
     /// </summary>

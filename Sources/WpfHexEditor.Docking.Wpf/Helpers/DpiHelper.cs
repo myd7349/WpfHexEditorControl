@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DpiHelper.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Shared DPI conversion utilities for the docking system. Centralizes
+//     screen pixel to WPF DIP conversions and per-monitor DPI awareness via
+//     Win32 API (Windows 8.1+) that were previously duplicated across multiple files.
+//
+// Architecture Notes:
+//     Static helper class — no state. Invokes Win32 GetDpiForWindow via P/Invoke
+//     for per-monitor DPI awareness. Falls back gracefully on older Windows versions.
+//     Used by DockDragManager, DockOverlayWindow, and DockEdgeOverlayWindow.
+//
+// ==========================================================
 
 using System.Runtime.InteropServices;
 using System.Windows;

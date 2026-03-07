@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.Diagnostics.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing diagnostics and profiling methods for the HexEditor.
+//     Provides debug helpers, rendering cache statistics, and performance profiling
+//     utilities for development and troubleshooting.
+//
+// Architecture Notes:
+//     Diagnostic methods are conditional on DEBUG preprocessor symbols where applicable.
+//     Cache statistics expose HexViewport rendering metrics for performance analysis.
+//
+// ==========================================================
 
 namespace WpfHexEditor.HexEditor
 {

@@ -1,9 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0</TargetFrameworks>
-    <!-- net8.0 (sans -windows) : aucune dépendance WPF → portable cross-platform -->
-    <!-- net48 : requis pour que Core (net48;net8.0-windows) puisse référencer ce projet -->
+    <TargetFramework>net8.0</TargetFramework>
     <UseWPF>false</UseWPF>
     <RootNamespace>WpfHexEditor.BinaryAnalysis</RootNamespace>
     <AssemblyName>WpfHexEditor.BinaryAnalysis</AssemblyName>
@@ -31,7 +29,7 @@
       • BinaryTemplateCompiler — C-like template compiler (010 Editor compatible)
       • AnomalyDetectionService — entropy-based anomaly and corruption detection
 
-      Targets .NET Framework 4.8 and .NET 8.0 (no Windows-specific APIs).
+      Targets .NET 8.0+ (no Windows-specific APIs).
       Usable in WPF, WinForms, console, ASP.NET and cross-platform applications.
     </Description>
     <PackageTags>binary;hex;analysis;entropy;intel-hex;srec;s-record;data-inspector;template;anomaly;cross-platform</PackageTags>
@@ -43,10 +41,5 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
-
-  <!-- System.Text.Json is in the BCL on net8.0; explicit NuGet needed for net48 -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
-  </ItemGroup>
 
 </Project>

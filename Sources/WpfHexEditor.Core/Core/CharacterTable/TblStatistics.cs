@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: TblStatistics.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Provides statistics and summary information about a loaded TBL character
+//     table file, including entry counts by type, conflict counts, and caching
+//     support for repeated reads.
+//
+// Architecture Notes:
+//     Plain data class populated by TBLStream after load. Supports lazy
+//     recomputation via invalidation flag. No WPF dependencies.
+//
+// ==========================================================
 
 namespace WpfHexEditor.Core.CharacterTable
 {

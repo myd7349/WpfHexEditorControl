@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: ReplaceByteViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+// Created: 2026-03-06
+// Description:
+//     ViewModel for the ReplaceByteWindow dialog. Manages find-byte and replace-byte
+//     inputs, validates byte ranges, and exposes OK/Cancel command pattern for
+//     single-byte find-and-replace operations within the HexEditor.
+//
+// Architecture Notes:
+//     MVVM dialog ViewModel — implements INotifyPropertyChanged manually.
+//     Uses RelayCommand from Commands/ for OK/Cancel actions.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

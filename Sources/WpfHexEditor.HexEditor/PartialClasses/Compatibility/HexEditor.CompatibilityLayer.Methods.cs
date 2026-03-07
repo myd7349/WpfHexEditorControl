@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.CompatibilityLayer.Methods.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class providing backward-compatibility method shims for the HexEditor.
+//     Exposes V1-era public API methods that delegate to the new V2 architecture,
+//     ensuring existing consumer code continues to compile without modification.
+//
+// Architecture Notes:
+//     Compatibility layer pattern — thin delegation only, no business logic.
+//     Kept in a separate partial class to isolate legacy API surface.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

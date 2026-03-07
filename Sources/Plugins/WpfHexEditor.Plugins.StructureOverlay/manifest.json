@@ -1,0 +1,23 @@
+﻿{
+  "id": "WpfHexEditor.Plugins.StructureOverlay",
+  "name": "Structure Overlay",
+  "author": "Derek Tremblay",
+  "publisher": "WpfHexEditor",
+  "trustedPublisher": true,
+  "version": "1.0.0",
+  "sdkVersion": "1.0.0",
+  "minIDEVersion": "0.2.0",
+  "description": "Official Structure Overlay panel plugin.",
+  "entryPoint": "WpfHexEditor.Plugins.StructureOverlay.StructureOverlayPlugin",
+  "isolationMode": "InProcess",
+  "loadPriority": 100,
+  "assembly": {
+    "file": "WpfHexEditor.Plugins.StructureOverlay.dll"
+  },
+  "permissions": {
+    "accessHexEditor": true,
+    "accessFileSystem": false,
+    "registerMenus": true,
+    "writeOutput": true
+  }
+}

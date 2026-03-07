@@ -1,8 +1,17 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2019
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: VisibilityToBooleanConverter.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     WPF IValueConverter that converts between Visibility and bool in both directions.
+//     Allows two-way binding between visibility state and boolean properties.
+//
+// Architecture Notes:
+//     Stateless sealed converter supporting both Convert and ConvertBack directions.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

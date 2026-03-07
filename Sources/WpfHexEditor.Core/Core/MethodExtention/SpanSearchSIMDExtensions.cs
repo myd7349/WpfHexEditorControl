@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: SpanSearchSIMDExtensions.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     SIMD-accelerated search extension methods for Span&lt;byte&gt; using
+//     System.Numerics.Vector&lt;byte&gt; and x86 AVX2/SSE2 intrinsics on .NET 5+
+//     for maximum throughput pattern matching in large binary files.
+//
+// Architecture Notes:
+//     Conditional compilation for NET5_0_OR_GREATER intrinsics path; falls back
+//     to Vector&lt;byte&gt; on .NET 4.8. Used by SearchEngine as the innermost
+//     search kernel. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

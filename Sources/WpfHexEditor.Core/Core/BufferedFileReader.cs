@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: BufferedFileReader.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Buffered file reader that reads data in blocks to minimize seek operations.
+//     Dramatically improves performance when reading many small fields sequentially
+//     from large files by maintaining a 64 KB in-memory buffer.
+//
+// Architecture Notes:
+//     Implements IDisposable to manage the underlying stream lifetime.
+//     Used by FormatScriptInterpreter and field parsers during format detection.
+//     No WPF dependencies — pure infrastructure/IO layer.
+//
+// ==========================================================
 
 using System;
 using System.IO;

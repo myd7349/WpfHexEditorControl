@@ -1,14 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-//////////////////////////////////////////////
-// Apache 2.0  - 2020-2021
-// Base author  : ehsan69h
-// Modified by  : Abbaye
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: Byte_8bit.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic), ehsan69h, Abbaye
+// Created: 2026-03-06
+// Description:
+//     Represents an 8-bit (single byte) value used as a display unit in the
+//     hex editor byte control system. Implements IByte as the base byte type
+//     alongside 16-bit and 32-bit multi-byte representations.
+//
+// Architecture Notes:
+//     Implements IByte interface. Originally authored by ehsan69h / Abbaye,
+//     adapted for the WpfHexEditor.Core architecture. Used by the HexEditor
+//     rendering pipeline for standard single-byte display mode.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

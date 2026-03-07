@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: XDeltaPatcher.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Pure C# VCDIFF (RFC 3284) encoder/decoder — no external xdelta3 binary required.
+//     Decoder supports full RFC 3284: ADD, COPY (source+target), RUN instructions,
+//     NEAR[4]+SAME[3×256] address cache, multi-window files. Encoder produces
+//     single-window VCDIFF readable by all compliant xdelta3/xdiff patchers.
+//
+// Architecture Notes:
+//     Pure static utility — no WPF dependencies. Validates magic bytes 0xD6 0xC3 0xC4 0x00.
+//     Returns PatchResult value objects on completion. Consumed by the ROM hacking module.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

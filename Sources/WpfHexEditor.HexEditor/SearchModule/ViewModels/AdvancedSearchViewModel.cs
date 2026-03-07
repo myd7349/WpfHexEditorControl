@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: AdvancedSearchViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     ViewModel for the AdvancedSearchDialog. Supports multi-type search
+//     (hex, text, regex) with wildcard bytes, case sensitivity and alignment options.
+//     Exposes async search execution with cancellation and observable result collection.
+//
+// Architecture Notes:
+//     MVVM pattern — implements INotifyPropertyChanged manually.
+//     Delegates actual search execution to WpfHexEditor.Core search services.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

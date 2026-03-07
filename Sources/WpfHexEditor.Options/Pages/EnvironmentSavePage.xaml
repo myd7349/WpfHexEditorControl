@@ -58,5 +58,60 @@
                      LostFocus="OnIntervalLostFocus"/>
         </DockPanel>
 
+        <Separator Margin="0,16,0,16"
+                   Background="{DynamicResource DockBorderBrush}"/>
+
+        <!-- ── Standalone Files ───────────────────────────────────────────── -->
+        <TextBlock Text="Standalone Files (no project)"
+                   FontWeight="SemiBold" FontSize="13"
+                   Foreground="{DynamicResource DockMenuForegroundBrush}"
+                   Margin="0,0,0,6"/>
+
+        <TextBlock Text="When Ctrl+S is pressed on a file not belonging to any project:"
+                   Foreground="{DynamicResource DockMenuForegroundBrush}"
+                   Opacity="0.7"
+                   Margin="0,0,0,10"/>
+
+        <CheckBox x:Name="HexEditorDirectSaveCheck"
+                  Content="Hex Editor — overwrite original file directly"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  Margin="0,0,0,4"
+                  Checked="OnStandaloneSaveChanged"
+                  Unchecked="OnStandaloneSaveChanged"/>
+
+        <CheckBox x:Name="CodeEditorDirectSaveCheck"
+                  Content="Code Editor — overwrite original file directly"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  Margin="0,0,0,4"
+                  Checked="OnStandaloneSaveChanged"
+                  Unchecked="OnStandaloneSaveChanged"/>
+
+        <CheckBox x:Name="TextEditorDirectSaveCheck"
+                  Content="Text Editor — overwrite original file directly"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  Margin="0,0,0,4"
+                  Checked="OnStandaloneSaveChanged"
+                  Unchecked="OnStandaloneSaveChanged"/>
+
+        <CheckBox x:Name="TblEditorDirectSaveCheck"
+                  Content="TBL Editor — overwrite original file directly"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  Margin="0,0,0,4"
+                  Checked="OnStandaloneSaveChanged"
+                  Unchecked="OnStandaloneSaveChanged"/>
+
+        <CheckBox x:Name="ImageViewerDirectSaveCheck"
+                  Content="Image Viewer — overwrite original image directly (transforms applied)"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  Margin="0,0,0,4"
+                  Checked="OnStandaloneSaveChanged"
+                  Unchecked="OnStandaloneSaveChanged"/>
+
+        <TextBlock Text="When unchecked, a Save As dialog lets the user choose a destination and format."
+                   Foreground="{DynamicResource DockMenuForegroundBrush}"
+                   Opacity="0.6"
+                   FontStyle="Italic"
+                   Margin="0,6,0,0"/>
+
     </StackPanel>
 </UserControl>

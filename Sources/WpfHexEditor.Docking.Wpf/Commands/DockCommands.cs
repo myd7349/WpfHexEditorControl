@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockCommands.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Defines the standard WPF RoutedUICommands for dock operations: Hide, Show,
+//     Close, Float, AutoHide, DockToDocument, and Pin. These commands can be
+//     bound in XAML using x:Static syntax and handled by CommandBindings on DockControl.
+//
+// Architecture Notes:
+//     Command pattern via WPF RoutedUICommand. Static class — no state.
+//     Commands are consumed by DockControl CommandBindings and context menus in Generic.xaml.
+//
+// ==========================================================
 
 using System.Windows.Input;
 

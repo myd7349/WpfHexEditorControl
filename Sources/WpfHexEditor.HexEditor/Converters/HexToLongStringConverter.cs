@@ -1,8 +1,17 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2018
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexToLongStringConverter.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     WPF IValueConverter that converts a hexadecimal string representation
+//     to a long (Int64) value for binding numeric inputs in hex format.
+//
+// Architecture Notes:
+//     Stateless sealed converter using WpfHexEditor.Core.Bytes utilities.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

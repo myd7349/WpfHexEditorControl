@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.Options
-// File: HexEditorBehaviorPage.xaml.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Options page — advanced HexEditor interaction behaviour:
-//     auto-highlight, context menu, byte deletion, preload mode, etc.
-//
-// Architecture Notes:
-//     Implements IOptionsPage (Load / Flush / Changed pattern).
-//     Category: "Hex Editor" | Page: "Behavior"
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System;
 using System.Windows;
@@ -26,7 +18,7 @@ public sealed partial class HexEditorBehaviorPage : UserControl, IOptionsPage
 
     public HexEditorBehaviorPage() => InitializeComponent();
 
-    // ── IOptionsPage ──────────────────────────────────────────────────────
+    // -- IOptionsPage ------------------------------------------------------
 
     public void Load(AppSettings s)
     {
@@ -59,7 +51,7 @@ public sealed partial class HexEditorBehaviorPage : UserControl, IOptionsPage
             s.HexEditorDefaults.PreloadByteInEditorMode = pbm;
     }
 
-    // ── Control handlers ─────────────────────────────────────────────────
+    // -- Control handlers -------------------------------------------------
 
     private void OnCheckChanged(object sender, RoutedEventArgs e)
     {

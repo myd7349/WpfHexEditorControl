@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ExpressionEvaluator.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Evaluates simple arithmetic expressions for computing dynamic offsets
+//     and lengths in format definitions. Supports +, -, *, /, parentheses,
+//     and variable references via VariableContext ("var:name" syntax).
+//
+// Architecture Notes:
+//     Recursive descent parser / evaluator. Stateless — receives VariableContext
+//     per evaluation call. Used by FormatScriptInterpreter for offset/length
+//     expressions in .whfmt block definitions. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;
