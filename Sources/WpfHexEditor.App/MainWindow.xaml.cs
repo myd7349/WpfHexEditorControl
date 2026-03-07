@@ -207,6 +207,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _activeDocumentEditor.OperationProgress  += OnDocumentOperationProgress;
                 _activeDocumentEditor.OperationCompleted += OnDocumentOperationCompleted;
             }
+            // Notify plugin system so plugins (ParsedFields, DataInspector, etc.) reconnect.
+            _hexEditorService?.SetActiveEditor(value as HexEditorControl);
+
             // Sync progress bar immediately to reflect the new active document's state
             SyncProgressBarToActiveEditor(value);
             OnPropertyChanged();
