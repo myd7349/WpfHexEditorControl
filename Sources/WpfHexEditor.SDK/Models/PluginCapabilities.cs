@@ -36,6 +36,9 @@ public sealed class PluginCapabilities
     /// <summary>Plugin reads or writes its own settings section.</summary>
     public bool AccessSettings { get; set; }
 
+    /// <summary>Plugin writes output lines to the IDE Terminal panel via <c>ITerminalService</c>.</summary>
+    public bool WriteTerminal { get; set; }
+
     /// <summary>
     /// Plugin is exclusively a Terminal command extension.
     /// When true, WPF theme compliance is not required for this plugin.
@@ -57,6 +60,7 @@ public sealed class PluginCapabilities
         if (WriteOutput) flags |= PluginPermission.WriteOutput;
         if (WriteErrorPanel) flags |= PluginPermission.WriteErrorPanel;
         if (AccessSettings) flags |= PluginPermission.AccessSettings;
+        if (WriteTerminal) flags |= PluginPermission.WriteTerminal;
         if (IsTerminalOnly) flags |= PluginPermission.TerminalOnly;
         return flags;
     }

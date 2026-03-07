@@ -89,6 +89,16 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     private void OnSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
+        // Sync keyboard arrow-key navigation to the ViewModel (single select from WPF).
+        // Mouse multi-select is handled by OnTreeMouseLeftButtonDown — this only fires
+        // for keyboard nav since plain mouse clicks call _vm.SelectNode directly.
+        // Right-click also triggers WPF's internal TreeViewItem.Select(), skip it here;
+        // context-menu selection is handled entirely by OnContextMenuOpening.
+        if (Mouse.RightButton == MouseButtonState.Pressed) return;
+
+        if (e.NewValue is SolutionExplorerNodeVm node)
+            _vm.SelectNode(node);
+
         if (e.NewValue is FileNodeVm fn && fn.Project is not null)
             ItemSelected?.Invoke(this, new ProjectItemEventArgs { Item = fn.Source, Project = fn.Project });
     }
@@ -295,9 +305,10 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         var tvi  = FindAncestor<TreeViewItem>(hit);
         var node = tvi?.DataContext as SolutionExplorerNodeVm;
 
-        // VS-style: right-click selects the node
+        // VS-style: right-click on an unselected node replaces the selection with that node.
+        // Right-click on an already-selected node preserves the current multi-selection.
         if (node is not null && !node.IsSelected)
-            node.IsSelected = true;
+            _vm.SelectNode(node);
 
         // Cancel the popup if no item would be visible (empty area, solution node)
         if (!UpdateContextMenu(node))

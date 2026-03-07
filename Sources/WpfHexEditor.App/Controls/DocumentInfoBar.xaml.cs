@@ -89,9 +89,11 @@ public partial class DocumentInfoBar : UserControl
     {
         var btn = new Button
         {
-            Content = label,
-            Tag     = factoryId,        // null ⇒ Hex Editor fallback
-            Style   = (Style)FindResource("InfoBarButtonStyle"),
+            Content    = label,
+            Tag        = factoryId,     // null ⇒ Hex Editor fallback
+            Style      = (Style)FindResource("InfoBarButtonStyle"),
+            Focusable  = false,         // Prevent these buttons from intercepting Enter/Space keyboard events
+            IsTabStop  = false,
         };
         btn.Click += OnActionButtonClick;
         return btn;

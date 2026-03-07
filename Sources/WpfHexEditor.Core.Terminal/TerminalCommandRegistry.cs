@@ -37,4 +37,17 @@ public sealed class TerminalCommandRegistry
     {
         lock (_lock) return _commands.Values.OrderBy(c => c.CommandName).ToList();
     }
+
+    /// <summary>
+    /// Returns all command names that start with <paramref name="prefix"/>, sorted alphabetically.
+    /// Used for Tab completion in the Terminal input box.
+    /// </summary>
+    public IReadOnlyList<string> GetCompletions(string prefix)
+    {
+        lock (_lock)
+            return _commands.Keys
+                .Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(k => k)
+                .ToList();
+    }
 }

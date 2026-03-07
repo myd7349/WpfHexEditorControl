@@ -790,7 +790,7 @@
                     <!-- Save All -->
                     <Button Click="OnSaveAll" ToolTip="Save All (Ctrl+Shift+S)"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
-                        <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                        <TextBlock Text="&#xE792;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    VerticalAlignment="Center"/>
                     </Button>
 

@@ -47,6 +47,9 @@ public sealed class IDEHostContext : IIDEHostContext
     /// <inheritdoc />
     public IPermissionService Permissions { get; }
 
+    /// <inheritdoc />
+    public ITerminalService Terminal { get; }
+
     public IDEHostContext(
         ISolutionExplorerService solutionExplorer,
         IHexEditorService hexEditor,
@@ -58,7 +61,8 @@ public sealed class IDEHostContext : IIDEHostContext
         IPluginEventBus eventBus,
         IUIRegistry uiRegistry,
         IThemeService theme,
-        IPermissionService permissions)
+        IPermissionService permissions,
+        ITerminalService terminal)
     {
         SolutionExplorer = solutionExplorer ?? throw new ArgumentNullException(nameof(solutionExplorer));
         HexEditor = hexEditor ?? throw new ArgumentNullException(nameof(hexEditor));
@@ -71,5 +75,6 @@ public sealed class IDEHostContext : IIDEHostContext
         UIRegistry = uiRegistry ?? throw new ArgumentNullException(nameof(uiRegistry));
         Theme = theme ?? throw new ArgumentNullException(nameof(theme));
         Permissions = permissions ?? throw new ArgumentNullException(nameof(permissions));
+        Terminal = terminal ?? throw new ArgumentNullException(nameof(terminal));
     }
 }

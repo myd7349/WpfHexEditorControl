@@ -39,6 +39,9 @@ public enum PluginPermission : long
     /// <summary>Plugin may read and write to its own settings section.</summary>
     AccessSettings = 1L << 7,
 
+    /// <summary>Plugin may write output lines to the IDE Terminal panel via <c>ITerminalService</c>.</summary>
+    WriteTerminal = 1L << 9,
+
     /// <summary>Plugin is exclusively a Terminal extension (no UI theme required).</summary>
     TerminalOnly = 1L << 8,
 }

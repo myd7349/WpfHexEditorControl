@@ -15,5 +15,6 @@ public interface ITerminalOutput
     void WriteLine(string text = "");
     void WriteError(string text);
     void WriteWarning(string text);
+    void WriteInfo(string text);
     void Clear();
 }

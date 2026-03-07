@@ -66,4 +66,10 @@ public interface IIDEHostContext
     /// Plugins must degrade gracefully when permissions are revoked.
     /// </summary>
     IPermissionService Permissions { get; }
+
+    /// <summary>
+    /// Write access to the IDE Terminal panel.
+    /// Use this to emit Standard, Info, Warning, or Error lines from plugin commands or background tasks.
+    /// </summary>
+    ITerminalService Terminal { get; }
 }

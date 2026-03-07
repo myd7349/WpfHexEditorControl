@@ -938,6 +938,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             ArchivePanelContentId          => CreateArchivePanelContent(),
             OptionsContentId               => CreateOptionsContent(),
             "doc-welcome"                  => CreateWelcomeContent(),
+            TerminalPanelContentId         => CreateTerminalPanelContent(),
+            PluginMonitorContentId         => CreatePluginMonitorPanelContent(),
             _ when item.ContentId.StartsWith("doc-file-") => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")  => WrapHexDocItemWithInfoBar(item),
             _ when item.ContentId.StartsWith("doc-proj-") => CreateProjectItemContent(item),

@@ -22,6 +22,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using WpfHexEditor.App.Services;
+using WpfHexEditor.Core.Terminal;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.PluginHost;
@@ -46,6 +47,7 @@ public partial class MainWindow
     private OutputServiceImpl? _outputService;
     private ErrorPanelServiceImpl? _errorPanelService;
     private ThemeServiceImpl? _themeService;
+    private TerminalServiceImpl? _terminalService;
 
     private const string PluginManagerContentId   = "plugin-manager";
     private const string TerminalPanelContentId   = "panel-terminal";
@@ -53,6 +55,11 @@ public partial class MainWindow
 
     private int    _pluginFaultCount = 0;
     private string? _infoBarPluginId;   // ID of the plugin currently shown in the InfoBar
+
+    // Panels restored from a saved layout before the plugin system was ready.
+    // Their DataContext is wired up at the end of InitializePluginSystemAsync.
+    private TerminalPanel? _pendingTerminalPanel;
+    private WpfHexEditor.Panels.IDE.Panels.PluginMonitoringPanel? _pendingPluginMonitorPanel;
 
     // --- Startup --------------------------------------------------------
 
@@ -68,6 +75,7 @@ public partial class MainWindow
             _outputService = new OutputServiceImpl();
             _errorPanelService = new ErrorPanelServiceImpl();
             _themeService = new ThemeServiceImpl();
+            _terminalService = new TerminalServiceImpl();
 
             if (_errorPanel is not null)
                 _errorPanelService.SetErrorPanel(_errorPanel);
@@ -97,7 +105,8 @@ public partial class MainWindow
                 eventBus: eventBus,
                 uiRegistry: uiRegistry,
                 theme: _themeService,
-                permissions: permissionService);
+                permissions: permissionService,
+                terminal: _terminalService);
 
             // 3. Create orchestrator
             _ideHostContext = hostContext;
@@ -133,6 +142,26 @@ public partial class MainWindow
                         return wrapper;
                     });
             }
+
+            // Wire up panels that were restored from a saved layout before the plugin
+            // system was ready (DataContext was null at construction time).
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (_pendingTerminalPanel is not null)
+                {
+                    var vm = new TerminalPanelViewModel(hostContext);
+                    _terminalService?.SetOutput(vm);
+                    _pendingTerminalPanel.DataContext = vm;
+                    _pendingTerminalPanel = null;
+                }
+
+                if (_pendingPluginMonitorPanel is not null && _pluginHost is not null)
+                {
+                    var vm = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher);
+                    _pendingPluginMonitorPanel.DataContext = vm;
+                    _pendingPluginMonitorPanel = null;
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -333,8 +362,62 @@ public partial class MainWindow
         };
 
         StoreContent(PluginMonitorContentId, control);
-        _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+
+        // Dock in the existing bottom panel group (Error List / Output area) if available,
+        // otherwise split a new bottom panel from the main document host.
+        var bottomGroup = _layout.FindItemByContentId(ErrorPanelContentId)?.Owner
+                       ?? _layout.FindItemByContentId("panel-output")?.Owner;
+        if (bottomGroup is not null)
+            _engine.Dock(item, bottomGroup, DockDirection.Center);
+        else
+            _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Bottom);
+
         DockHost.RebuildVisualTree();
+    }
+
+    // --- Content factories for panels that may be restored from layout --
+
+    /// <summary>
+    /// Creates the Terminal panel during layout restoration.
+    /// If the plugin system is not yet initialised, the DataContext is deferred.
+    /// </summary>
+    private UIElement CreateTerminalPanelContent()
+    {
+        var panel = new TerminalPanel();
+
+        if (_ideHostContext is not null)
+        {
+            var vm = new TerminalPanelViewModel(_ideHostContext);
+            _terminalService?.SetOutput(vm);
+            panel.DataContext = vm;
+        }
+        else
+        {
+            _pendingTerminalPanel = panel;   // wire up after InitializePluginSystemAsync
+        }
+
+        return panel;
+    }
+
+    /// <summary>
+    /// Creates the Plugin Monitor panel during layout restoration.
+    /// If the plugin system is not yet initialised, the DataContext is deferred.
+    /// </summary>
+    private UIElement CreatePluginMonitorPanelContent()
+    {
+        var panel = new WpfHexEditor.Panels.IDE.Panels.PluginMonitoringPanel();
+
+        if (_pluginHost is not null)
+        {
+            var vm = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher);
+            panel.DataContext = vm;
+        }
+        else
+        {
+            _pendingPluginMonitorPanel = panel;   // wire up after InitializePluginSystemAsync
+        }
+
+        return panel;
     }
 
     // --- Terminal panel --------------------------------------------------
@@ -353,6 +436,7 @@ public partial class MainWindow
         if (_ideHostContext is null) { OutputLogger.Error("[Terminal] Host context unavailable."); return; }
 
         var vm      = new TerminalPanelViewModel(_ideHostContext);
+        _terminalService?.SetOutput(vm);
         var control = new TerminalPanel { DataContext = vm };
 
         var item = new DockItem
@@ -363,7 +447,16 @@ public partial class MainWindow
         };
 
         StoreContent(TerminalPanelContentId, control);
-        _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+
+        // Dock in the existing bottom panel group (Error List / Output area) if available,
+        // otherwise split a new bottom panel from the main document host.
+        var bottomGroup = _layout.FindItemByContentId(ErrorPanelContentId)?.Owner
+                       ?? _layout.FindItemByContentId("panel-output")?.Owner;
+        if (bottomGroup is not null)
+            _engine.Dock(item, bottomGroup, DockDirection.Center);
+        else
+            _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Bottom);
+
         DockHost.RebuildVisualTree();
     }
 

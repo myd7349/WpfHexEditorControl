@@ -46,6 +46,7 @@
     <ProjectReference Include="..\WpfHexEditor.Options\WpfHexEditor.Options.csproj" />
     <ProjectReference Include="..\WpfHexEditor.PluginHost\WpfHexEditor.PluginHost.csproj" />
     <ProjectReference Include="..\WpfHexEditor.Terminal\WpfHexEditor.Terminal.csproj" />
+    <ProjectReference Include="..\WpfHexEditor.Core.Terminal\WpfHexEditor.Core.Terminal.csproj" />
   </ItemGroup>
 
 </Project>
