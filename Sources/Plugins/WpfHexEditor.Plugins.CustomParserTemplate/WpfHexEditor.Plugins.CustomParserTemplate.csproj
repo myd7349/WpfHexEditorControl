@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>WpfHexEditor.Plugins.CustomParserTemplate</RootNamespace>
+    <AssemblyName>WpfHexEditor.Plugins.CustomParserTemplate</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
+    <ProjectReference Include="..\..\WpfHexEditor.Panels.BinaryAnalysis\WpfHexEditor.Panels.BinaryAnalysis.csproj" />
+  </ItemGroup>
+
+</Project>

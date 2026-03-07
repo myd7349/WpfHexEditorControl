@@ -1,0 +1,23 @@
+﻿{
+  "id": "WpfHexEditor.Plugins.PatternAnalysis",
+  "name": "Pattern Analysis",
+  "author": "Derek Tremblay",
+  "publisher": "WpfHexEditor",
+  "trustedPublisher": true,
+  "version": "1.0.0",
+  "sdkVersion": "1.0.0",
+  "minIDEVersion": "0.2.0",
+  "description": "Official Pattern Analysis panel plugin.",
+  "entryPoint": "WpfHexEditor.Plugins.PatternAnalysis.PatternAnalysisPlugin",
+  "isolationMode": "InProcess",
+  "loadPriority": 100,
+  "assembly": {
+    "file": "WpfHexEditor.Plugins.PatternAnalysis.dll"
+  },
+  "permissions": {
+    "accessHexEditor": true,
+    "accessFileSystem": false,
+    "registerMenus": true,
+    "writeOutput": true
+  }
+}

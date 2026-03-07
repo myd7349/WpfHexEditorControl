@@ -1,0 +1,23 @@
+﻿{
+  "id": "WpfHexEditor.Plugins.FileStatistics",
+  "name": "File Statistics",
+  "author": "Derek Tremblay",
+  "publisher": "WpfHexEditor",
+  "trustedPublisher": true,
+  "version": "1.0.0",
+  "sdkVersion": "1.0.0",
+  "minIDEVersion": "0.2.0",
+  "description": "Official File Statistics panel plugin.",
+  "entryPoint": "WpfHexEditor.Plugins.FileStatistics.FileStatisticsPlugin",
+  "isolationMode": "InProcess",
+  "loadPriority": 100,
+  "assembly": {
+    "file": "WpfHexEditor.Plugins.FileStatistics.dll"
+  },
+  "permissions": {
+    "accessHexEditor": true,
+    "accessFileSystem": false,
+    "registerMenus": true,
+    "writeOutput": true
+  }
+}

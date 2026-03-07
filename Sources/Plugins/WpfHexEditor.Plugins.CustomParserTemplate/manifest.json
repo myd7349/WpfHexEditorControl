@@ -1,0 +1,23 @@
+﻿{
+  "id": "WpfHexEditor.Plugins.CustomParserTemplate",
+  "name": "Custom Parser Template",
+  "author": "Derek Tremblay",
+  "publisher": "WpfHexEditor",
+  "trustedPublisher": true,
+  "version": "1.0.0",
+  "sdkVersion": "1.0.0",
+  "minIDEVersion": "0.2.0",
+  "description": "Official Custom Parser Template panel plugin.",
+  "entryPoint": "WpfHexEditor.Plugins.CustomParserTemplate.CustomParserTemplatePlugin",
+  "isolationMode": "InProcess",
+  "loadPriority": 100,
+  "assembly": {
+    "file": "WpfHexEditor.Plugins.CustomParserTemplate.dll"
+  },
+  "permissions": {
+    "accessHexEditor": true,
+    "accessFileSystem": true,
+    "registerMenus": true,
+    "writeOutput": true
+  }
+}

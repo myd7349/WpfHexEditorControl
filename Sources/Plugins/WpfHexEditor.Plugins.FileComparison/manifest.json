@@ -1,0 +1,23 @@
+﻿{
+  "id": "WpfHexEditor.Plugins.FileComparison",
+  "name": "File Comparison",
+  "author": "Derek Tremblay",
+  "publisher": "WpfHexEditor",
+  "trustedPublisher": true,
+  "version": "1.0.0",
+  "sdkVersion": "1.0.0",
+  "minIDEVersion": "0.2.0",
+  "description": "Official File Comparison panel plugin.",
+  "entryPoint": "WpfHexEditor.Plugins.FileComparison.FileComparisonPlugin",
+  "isolationMode": "InProcess",
+  "loadPriority": 100,
+  "assembly": {
+    "file": "WpfHexEditor.Plugins.FileComparison.dll"
+  },
+  "permissions": {
+    "accessHexEditor": true,
+    "accessFileSystem": true,
+    "registerMenus": true,
+    "writeOutput": true
+  }
+}
