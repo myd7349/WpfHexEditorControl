@@ -120,8 +120,8 @@ public partial class MainWindow
             // 3. Create orchestrator
             _ideHostContext = hostContext;
             _pluginHost = new WpfPluginHost(hostContext, uiRegistry, permissionService, Dispatcher,
-                logger:      msg => OutputLogger.Info(msg),
-                errorLogger: msg => OutputLogger.Error(msg));
+                logger:      msg => OutputLogger.PluginInfo(msg),
+                errorLogger: msg => OutputLogger.PluginError(msg));
 
             // 4. Subscribe to host events
             _pluginHost.PluginCrashed       += OnPluginCrashed;
@@ -132,7 +132,7 @@ public partial class MainWindow
             // 5. Discover + load all plugins
             var binDir = AppDomain.CurrentDomain.BaseDirectory;
             var bundledPluginsDir = Path.Combine(binDir, "Plugins");
-            OutputLogger.Info($"[PluginSystem] Plugins dir: {bundledPluginsDir} (exists: {Directory.Exists(bundledPluginsDir)})");
+            OutputLogger.PluginInfo($"[PluginSystem] Plugins dir: {bundledPluginsDir} (exists: {Directory.Exists(bundledPluginsDir)})");
             await _pluginHost.LoadAllAsync(
                 extraDirectories: Directory.Exists(bundledPluginsDir) ? [bundledPluginsDir] : null,
                 ct: CancellationToken.None).ConfigureAwait(false);
@@ -193,7 +193,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            OutputLogger.Error($"[PluginSystem] Failed to initialize: {ex.Message}");
+            OutputLogger.PluginError($"[PluginSystem] Failed to initialize: {ex.Message}");
         }
     }
 
@@ -225,8 +225,8 @@ public partial class MainWindow
     private void OnSlowPluginDetected(object? sender, SlowPluginDetectedEventArgs e)
     {
         _slowPluginName = e.PluginName;
-        OutputLogger.Info(
-            $"[PluginSystem] Warning: Plugin '{e.PluginName}' is slow " +
+        OutputLogger.PluginWarn(
+            $"[PluginSystem] Plugin '{e.PluginName}' is slow " +
             $"(avg {e.AverageExecutionTime.TotalMilliseconds:F0} ms, " +
             $"threshold {e.Threshold.TotalMilliseconds:F0} ms).");
 
@@ -288,7 +288,7 @@ public partial class MainWindow
     {
         Dispatcher.InvokeAsync(() =>
         {
-            OutputLogger.Error(
+            OutputLogger.PluginError(
                 $"[PluginSystem] Plugin '{e.PluginName}' crashed during '{e.Phase}': {e.Exception.Message}");
 
             _pluginFaultCount++;

@@ -58,6 +58,8 @@ public sealed class DockingAdapter : IDockingAdapter
             existing.CanClose = descriptor.CanClose;
             existing.Title    = descriptor.Title;
             _storeContent(uiId, content);
+            // Rebuild so the restored placeholder is replaced with the real plugin UIElement.
+            _dockHost.RebuildVisualTree();
             return;
         }
 
