@@ -17,9 +17,10 @@ public sealed class NullCodeEditorService : ICodeEditorService
 {
     public bool IsActive => false;
     public string? CurrentLanguage => null;
+    public string? CurrentFilePath => null;
     public int CaretLine => 0;
     public int CaretColumn => 0;
-    public event EventHandler? DocumentChanged { add { } remove { } }
+    public event EventHandler DocumentChanged { add { } remove { } }
     public string? GetContent() => null;
-    public string? GetSelectedText() => null;
+    public string GetSelectedText() => string.Empty;
 }

@@ -38,7 +38,7 @@ public sealed class HexEditorServiceImpl : IHexEditorService
     public byte[] ReadBytes(long offset, int length)
     {
         if (_activeEditor is null || length <= 0) return [];
-        try { return _activeEditor.GetCopyData(offset, length) ?? []; }
+        try { return _activeEditor.GetCopyData(offset, (long)length, false) ?? []; }
         catch { return []; }
     }
 

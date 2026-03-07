@@ -5,7 +5,6 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
-using WpfHexEditor.Panels.IDE.Panels;
 using WpfHexEditor.SDK.Contracts.Services;
 
 namespace WpfHexEditor.App.Services;
@@ -15,20 +14,18 @@ namespace WpfHexEditor.App.Services;
 /// </summary>
 public sealed class OutputServiceImpl : IOutputService
 {
-    private OutputPanel? _outputPanel;
+    // OutputPanel registration is handled by OutputLogger.Register() inside OutputPanel's constructor.
+    // OutputServiceImpl routes plugin log calls through the static OutputLogger.
 
-    /// <summary>Called by MainWindow once the OutputPanel is created.</summary>
-    public void SetOutputPanel(OutputPanel panel) => _outputPanel = panel;
-
-    public void Info(string message) => _outputPanel?.Info(message);
-    public void Warning(string message) => _outputPanel?.Info($"[WARN] {message}");
-    public void Error(string message) => _outputPanel?.Error(message);
-    public void Debug(string message) => _outputPanel?.Debug(message);
+    public void Info(string message)    => OutputLogger.Info(message);
+    public void Warning(string message) => OutputLogger.Warn(message);
+    public void Error(string message)   => OutputLogger.Error(message);
+    public void Debug(string message)   => OutputLogger.Debug(message);
 
     public void Write(string category, string message)
-        => _outputPanel?.Info($"[{category}] {message}");
+        => OutputLogger.Info($"[{category}] {message}");
 
-    public void Clear() => _outputPanel?.Clear();
+    public void Clear() => OutputLogger.Clear();
 
     public IReadOnlyList<string> GetRecentLines(int count)
     {

@@ -5,7 +5,7 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
-using WpfHexEditor.ProjectSystem.Services;
+using WpfHexEditor.Editor.Core;
 using WpfHexEditor.SDK.Contracts.Services;
 
 namespace WpfHexEditor.App.Services;
@@ -20,7 +20,11 @@ public sealed class SolutionExplorerServiceImpl : ISolutionExplorerService
     public SolutionExplorerServiceImpl(ISolutionManager solutionManager)
     {
         _solutionManager = solutionManager ?? throw new ArgumentNullException(nameof(solutionManager));
+        _solutionManager.SolutionChanged += OnManagerSolutionChanged;
     }
+
+    private void OnManagerSolutionChanged(object? sender, SolutionChangedEventArgs e)
+        => SolutionChanged?.Invoke(sender, EventArgs.Empty);
 
     public bool HasActiveSolution => _solutionManager.CurrentSolution is not null;
 
@@ -81,19 +85,16 @@ public sealed class SolutionExplorerServiceImpl : ISolutionExplorerService
         catch { return []; }
     }
 
-    public event EventHandler? SolutionChanged
-    {
-        add => _solutionManager.SolutionChanged += value;
-        remove => _solutionManager.SolutionChanged -= value;
-    }
+    public event EventHandler? SolutionChanged;
 
     public IReadOnlyList<string> GetOpenFilePaths()
     {
         if (_solutionManager.CurrentSolution is null) return [];
         return _solutionManager.CurrentSolution
-            .GetAllItems()
-            .Where(i => !string.IsNullOrEmpty(i.FilePath))
-            .Select(i => i.FilePath!)
+            .Projects
+            .SelectMany(p => p.Items)
+            .Where(i => !string.IsNullOrEmpty(i.AbsolutePath))
+            .Select(i => i.AbsolutePath)
             .ToList();
     }
 
@@ -101,10 +102,10 @@ public sealed class SolutionExplorerServiceImpl : ISolutionExplorerService
     {
         if (_solutionManager.CurrentSolution is null) return [];
         return _solutionManager.CurrentSolution
-            .GetAllProjects()
-            .SelectMany(p => p.GetAllItems())
-            .Where(i => !string.IsNullOrEmpty(i.FilePath))
-            .Select(i => i.FilePath!)
+            .Projects
+            .SelectMany(p => p.Items)
+            .Where(i => !string.IsNullOrEmpty(i.AbsolutePath))
+            .Select(i => i.AbsolutePath)
             .ToList();
     }
 }

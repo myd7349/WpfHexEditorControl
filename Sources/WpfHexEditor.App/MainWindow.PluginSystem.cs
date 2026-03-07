@@ -17,6 +17,7 @@
 // Pattern: Adapter — all App internals are wrapped in adapter interfaces
 //          so PluginHost never references WpfHexEditor.App directly.
 
+using System.IO;
 using System.Threading;
 using System.Windows;
 using WpfHexEditor.App.Services;
@@ -63,8 +64,6 @@ public partial class MainWindow
             _errorPanelService = new ErrorPanelServiceImpl();
             _themeService = new ThemeServiceImpl();
 
-            if (_outputPanel is not null)
-                _outputService.SetOutputPanel(_outputPanel);
             if (_errorPanel is not null)
                 _errorPanelService.SetErrorPanel(_errorPanel);
 
@@ -121,14 +120,16 @@ public partial class MainWindow
                     {
                         captured.Plugin.LoadOptions();
                         var page = captured.Plugin.CreateOptionsPage();
-                        return page as System.Windows.Controls.UserControl
-                            ?? new System.Windows.Controls.ContentControl { Content = page };
+                        if (page is System.Windows.Controls.UserControl uc) return uc;
+                        // Wrap arbitrary FrameworkElement in a UserControl for the Options panel.
+                        var wrapper = new System.Windows.Controls.UserControl { Content = page };
+                        return wrapper;
                     });
             }
         }
         catch (Exception ex)
         {
-            _outputPanel?.Error($"[PluginSystem] Failed to initialize: {ex.Message}");
+            OutputLogger.Error($"[PluginSystem] Failed to initialize: {ex.Message}");
         }
     }
 
@@ -156,7 +157,7 @@ public partial class MainWindow
 
     private void OnSlowPluginDetected(object? sender, SlowPluginDetectedEventArgs e)
     {
-        _outputPanel?.Info(
+        OutputLogger.Info(
             $"[PluginSystem] Warning: Plugin '{e.PluginName}' is slow " +
             $"(avg {e.AverageExecutionTime.TotalMilliseconds:F0} ms, " +
             $"threshold {e.Threshold.TotalMilliseconds:F0} ms).");
@@ -166,7 +167,7 @@ public partial class MainWindow
     {
         Dispatcher.InvokeAsync(() =>
         {
-            _outputPanel?.Error(
+            OutputLogger.Error(
                 $"[PluginSystem] Plugin '{e.PluginName}' crashed during '{e.Phase}': {e.Exception.Message}");
         });
     }
@@ -214,7 +215,7 @@ public partial class MainWindow
             return;
         }
 
-        if (_ideHostContext is null) { _outputPanel?.Error("[Terminal] Host context unavailable."); return; }
+        if (_ideHostContext is null) { OutputLogger.Error("[Terminal] Host context unavailable."); return; }
 
         var vm      = new TerminalPanelViewModel(_ideHostContext);
         var control = new TerminalPanel { DataContext = vm };

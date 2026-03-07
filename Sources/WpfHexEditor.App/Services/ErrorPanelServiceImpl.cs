@@ -5,9 +5,11 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
-using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Panels.IDE.Panels;
 using WpfHexEditor.SDK.Contracts.Services;
+using CoreEntry = WpfHexEditor.Editor.Core.DiagnosticEntry;
+using CoreSeverity = WpfHexEditor.Editor.Core.DiagnosticSeverity;
+using CoreSource = WpfHexEditor.Editor.Core.IDiagnosticSource;
 
 namespace WpfHexEditor.App.Services;
 
@@ -24,20 +26,23 @@ public sealed class ErrorPanelServiceImpl : IErrorPanelService
     /// <summary>Called by MainWindow once the ErrorPanel is created.</summary>
     public void SetErrorPanel(ErrorPanel panel) => _errorPanel = panel;
 
-    public void PostDiagnostic(string pluginId, string severity, string message,
-                               string? source = null, int line = -1, int col = -1)
+    public void PostDiagnostic(DiagnosticSeverity severity, string message,
+                               string source = "", int line = -1, int column = -1)
     {
         if (_errorPanel is null) return;
 
+        // Use source as the plugin identifier; fall back to "Plugin" if empty.
+        var pluginId = string.IsNullOrWhiteSpace(source) ? "Plugin" : source;
         var ds = GetOrCreateSource(pluginId);
-        var sev = severity.ToLowerInvariant() switch
+        // Map SDK DiagnosticSeverity (Info=0,Warning=1,Error=2) to Core DiagnosticSeverity (Error=0,Warning=1,Message=2).
+        var coreSev = severity switch
         {
-            "error" => DiagnosticSeverity.Error,
-            "warning" => DiagnosticSeverity.Warning,
-            _ => DiagnosticSeverity.Info
+            DiagnosticSeverity.Error   => CoreSeverity.Error,
+            DiagnosticSeverity.Warning => CoreSeverity.Warning,
+            _                          => CoreSeverity.Message
         };
-
-        ds.Add(new DiagnosticEntry(sev, message, source ?? pluginId, line, col));
+        ds.Add(new CoreEntry(coreSev, Code: "", Description: message,
+                             ProjectName: pluginId, Line: line, Column: column));
     }
 
     public void ClearPluginDiagnostics(string pluginId)
@@ -53,7 +58,7 @@ public sealed class ErrorPanelServiceImpl : IErrorPanelService
             return _sources.Values
                 .SelectMany(s => s.GetDiagnostics())
                 .TakeLast(count)
-                .Select(e => $"[{e.Severity}] {e.Source}: {e.Message}")
+                .Select(e => $"[{e.Severity}] {e.ProjectName}: {e.Description}")
                 .ToList();
         }
     }
@@ -64,15 +69,15 @@ public sealed class ErrorPanelServiceImpl : IErrorPanelService
         {
             ds = new PluginDiagnosticSource(pluginId);
             _sources[pluginId] = ds;
-            _errorPanel?.RegisterSource(ds);
+            _errorPanel?.AddSource(ds);
         }
         return ds;
     }
 
     /// <summary>Per-plugin diagnostic source forwarded to ErrorPanel.</summary>
-    private sealed class PluginDiagnosticSource : IDiagnosticSource
+    private sealed class PluginDiagnosticSource : CoreSource
     {
-        private readonly List<DiagnosticEntry> _entries = new();
+        private readonly List<CoreEntry> _entries = new();
         private readonly object _lock = new();
 
         public string SourceLabel { get; }
@@ -81,12 +86,12 @@ public sealed class ErrorPanelServiceImpl : IErrorPanelService
         public PluginDiagnosticSource(string pluginId) =>
             SourceLabel = $"Plugin: {pluginId}";
 
-        public IReadOnlyList<DiagnosticEntry> GetDiagnostics()
+        public IReadOnlyList<CoreEntry> GetDiagnostics()
         {
             lock (_lock) return _entries.ToList();
         }
 
-        public void Add(DiagnosticEntry entry)
+        public void Add(CoreEntry entry)
         {
             lock (_lock) _entries.Add(entry);
             DiagnosticsChanged?.Invoke(this, EventArgs.Empty);

@@ -15,7 +15,7 @@ namespace WpfHexEditor.Options;
 /// Adding a new page requires only a single descriptor entry here — no other file changes needed.
 /// Dynamic pages (e.g. from plugins) can be registered at runtime via <see cref="RegisterDynamic"/>.
 /// </summary>
-internal static class OptionsPageRegistry
+public static class OptionsPageRegistry
 {
     private static readonly List<OptionsPageDescriptor> _pages =
     [

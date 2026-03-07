@@ -8,6 +8,7 @@
 using System.Windows;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
+using DockItemState = WpfHexEditor.Docking.Core.DockItemState;
 using WpfHexEditor.Docking.Wpf;
 using WpfHexEditor.PluginHost.Adapters;
 using WpfHexEditor.SDK.Descriptors;
@@ -100,7 +101,7 @@ public sealed class DockingAdapter : IDockingAdapter
     public void ShowDockablePanel(string uiId)
     {
         var item = _layout.FindItemByContentId(uiId);
-        if (item is not null) _engine.Activate(item);
+        if (item is not null) _engine.Show(item);
     }
 
     public void HideDockablePanel(string uiId)
@@ -113,12 +114,12 @@ public sealed class DockingAdapter : IDockingAdapter
     {
         var item = _layout.FindItemByContentId(uiId);
         if (item is null) return;
-        if (item.IsVisible) _engine.Hide(item); else _engine.Activate(item);
+        if (item.State != DockItemState.Hidden) _engine.Hide(item); else _engine.Show(item);
     }
 
     public void FocusDockablePanel(string uiId)
     {
         var item = _layout.FindItemByContentId(uiId);
-        if (item is not null) _engine.Activate(item);
+        if (item is not null) _engine.Show(item);
     }
 }

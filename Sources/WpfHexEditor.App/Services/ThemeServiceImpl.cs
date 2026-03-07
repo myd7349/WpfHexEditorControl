@@ -20,10 +20,10 @@ public sealed class ThemeServiceImpl : IThemeService
 
     public string CurrentTheme => _currentTheme;
 
-    public event EventHandler<string>? ThemeChanged;
+    public event EventHandler? ThemeChanged;
 
-    public ResourceDictionary? GetThemeResources()
-        => Application.Current?.Resources;
+    public ResourceDictionary GetThemeResources()
+        => Application.Current?.Resources ?? new ResourceDictionary();
 
     public void RegisterThemeAwareControl(FrameworkElement element)
     {
@@ -40,6 +40,6 @@ public sealed class ThemeServiceImpl : IThemeService
     public void NotifyThemeChanged(string themeName)
     {
         _currentTheme = themeName;
-        ThemeChanged?.Invoke(this, themeName);
+        ThemeChanged?.Invoke(this, EventArgs.Empty);
     }
 }

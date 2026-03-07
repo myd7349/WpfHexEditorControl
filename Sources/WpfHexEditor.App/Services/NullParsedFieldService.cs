@@ -15,6 +15,8 @@ namespace WpfHexEditor.App.Services;
 /// </summary>
 public sealed class NullParsedFieldService : IParsedFieldService
 {
+    public bool HasParsedFields => false;
+    public event EventHandler ParsedFieldsChanged { add { } remove { } }
     public IReadOnlyList<ParsedFieldEntry> GetParsedFields() => [];
     public ParsedFieldEntry? GetFieldAtOffset(long offset) => null;
 }
