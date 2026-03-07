@@ -98,6 +98,7 @@ public sealed class HexEditorServiceImpl : IHexEditorService
             _activeEditor.SelectionStartChanged -= OnSelectionChanged;
             _activeEditor.SelectionStopChanged  -= OnSelectionChanged;
             _activeEditor.FormatDetected        -= OnFormatDetected;
+            _activeEditor.FileOpened            -= OnHexEditorFileOpened;
         }
 
         _activeEditor = editor;
@@ -107,13 +108,23 @@ public sealed class HexEditorServiceImpl : IHexEditorService
             _activeEditor.SelectionStartChanged += OnSelectionChanged;
             _activeEditor.SelectionStopChanged  += OnSelectionChanged;
             _activeEditor.FormatDetected        += OnFormatDetected;
-            FileOpened?.Invoke(this, EventArgs.Empty);
+            // Forward the native FileOpened (fires after file stream is ready, not before).
+            _activeEditor.FileOpened            += OnHexEditorFileOpened;
+
+            // Tab switch: file already loaded — fire immediately so panels refresh now.
+            if (_activeEditor.IsFileLoaded)
+                FileOpened?.Invoke(this, EventArgs.Empty);
         }
 
         // Notify plugins that the active editor has changed (e.g. tab switch).
         // ParsedFieldsPlugin uses this to reconnect its panel to the new editor.
         ActiveEditorChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    // Forwarded from HexEditorControl.FileOpened — fires after the stream is ready,
+    // so plugins that read bytes (FileStats, PatternAnalysis) get valid data.
+    private void OnHexEditorFileOpened(object? sender, EventArgs e)
+        => FileOpened?.Invoke(this, EventArgs.Empty);
 
     private void OnSelectionChanged(object? sender, EventArgs e)
         => SelectionChanged?.Invoke(this, EventArgs.Empty);

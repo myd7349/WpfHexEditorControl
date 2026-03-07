@@ -80,7 +80,8 @@ public sealed class FileStatisticsPlugin : IWpfHexEditorPlugin
                                  "WpfHexEditor.Plugins.FileStatistics.Panel.FileStatisticsPanel"))
             });
 
-        context.HexEditor.FileOpened += OnFileOpened;
+        context.HexEditor.FileOpened          += OnFileOpened;
+        context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
 
         return Task.CompletedTask;
     }
@@ -88,29 +89,35 @@ public sealed class FileStatisticsPlugin : IWpfHexEditorPlugin
     public Task ShutdownAsync(CancellationToken ct = default)
     {
         if (_context is not null)
-            _context.HexEditor.FileOpened -= OnFileOpened;
+        {
+            _context.HexEditor.FileOpened          -= OnFileOpened;
+            _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
+        }
         return Task.CompletedTask;
     }
 
     // -------------------------------------------------------------------------
 
-    private void OnFileOpened(object? sender, EventArgs e) => RefreshStatistics();
+    private void OnFileOpened(object? sender, EventArgs e)          => RefreshStatistics();
+    private void OnActiveEditorChanged(object? sender, EventArgs e) => RefreshStatistics();
 
-    private void RefreshStatistics()
+    private async void RefreshStatistics()
     {
         if (_panel is null || _context is null || !_context.HexEditor.IsActive) return;
 
         var svc      = _context.HexEditor;
         var fileSize = svc.FileSize;
 
-        // Read up to 1 MB for analysis to keep it fast
+        // Read up to 1 MB — must happen on the UI thread (HexEditorControl API).
         var readLen  = (int)Math.Min(fileSize, 1_048_576);
         var data     = readLen > 0 ? svc.ReadBytes(0, readLen) : [];
+        var filePath = svc.CurrentFilePath;
 
-        var stats = ComputeStats(svc.CurrentFilePath, fileSize, data);
+        // Heavy computation runs in background so the UI stays responsive.
+        var stats = await Task.Run(() => ComputeStats(filePath, fileSize, data));
 
-        // Panel must be updated on the UI thread
-        _panel.Dispatcher.BeginInvoke(() => _panel.UpdateStatistics(stats));
+        // async/await resumes on the UI SynchronizationContext — no Dispatcher.BeginInvoke needed.
+        _panel.UpdateStatistics(stats);
     }
 
     private static FileStats ComputeStats(string? filePath, long fileSize, byte[] sample)

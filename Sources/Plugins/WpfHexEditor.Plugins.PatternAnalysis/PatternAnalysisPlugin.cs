@@ -75,7 +75,8 @@ public sealed class PatternAnalysisPlugin : IWpfHexEditorPlugin
                                  "WpfHexEditor.Plugins.PatternAnalysis.Panel.PatternAnalysisPanel"))
             });
 
-        context.HexEditor.FileOpened += OnFileOpened;
+        context.HexEditor.FileOpened          += OnFileOpened;
+        context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
 
         return Task.CompletedTask;
     }
@@ -83,19 +84,25 @@ public sealed class PatternAnalysisPlugin : IWpfHexEditorPlugin
     public Task ShutdownAsync(CancellationToken ct = default)
     {
         if (_context is not null)
-            _context.HexEditor.FileOpened -= OnFileOpened;
+        {
+            _context.HexEditor.FileOpened          -= OnFileOpened;
+            _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
+        }
         return Task.CompletedTask;
     }
 
     // -------------------------------------------------------------------------
 
-    private void OnFileOpened(object? sender, EventArgs e)
+    private void OnActiveEditorChanged(object? sender, EventArgs e) => OnFileOpened(sender, e);
+
+    private async void OnFileOpened(object? sender, EventArgs e)
     {
         if (_panel is null || _context is null || !_context.HexEditor.IsActive) return;
 
+        // Read on UI thread (HexEditorControl API), then dispatch analysis asynchronously.
         var readLen = (int)Math.Min(_context.HexEditor.FileSize, 1_048_576);
         var data    = readLen > 0 ? _context.HexEditor.ReadBytes(0, readLen) : [];
 
-        _panel.Dispatcher.BeginInvoke(() => _panel.Analyze(data));
+        await _panel.Dispatcher.InvokeAsync(() => _panel.AnalyzeAsync(data));
     }
 }

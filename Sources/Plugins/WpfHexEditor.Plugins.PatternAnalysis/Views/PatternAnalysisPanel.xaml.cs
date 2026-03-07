@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -33,8 +34,12 @@ public partial class PatternAnalysisPanel : UserControl
 
     // -- Public API -----------------------------------------------------------
 
-    /// <summary>Analyzes the provided byte array and updates the UI.</summary>
-    public void Analyze(byte[] data)
+    /// <summary>
+    /// Analyzes the provided byte array asynchronously.
+    /// Heavy computation (entropy, distributions, patterns) runs on a background thread
+    /// so the UI dispatcher stays responsive during analysis.
+    /// </summary>
+    public async void AnalyzeAsync(byte[] data)
     {
         if (data == null || data.Length == 0)
         {
@@ -42,20 +47,28 @@ public partial class PatternAnalysisPanel : UserControl
             return;
         }
 
-        _analysisData = data;
+        _analysisData        = data;
         StatusTextBlock.Text = $"Analyzing {data.Length:N0} bytes...";
 
         try
         {
-            var entropy      = CalculateEntropy(data);
-            var distribution = CalculateByteDistribution(data);
-            var patterns     = DetectPatterns(data);
-            var anomalies    = DetectAnomalies(data, distribution);
+            // All heavy computation runs off the UI thread.
+            var result = await Task.Run(() =>
+            {
+                var dist = CalculateByteDistribution(data);
+                return (
+                    Entropy      : CalculateEntropy(data),
+                    Distribution : dist,
+                    Patterns     : DetectPatterns(data),
+                    Anomalies    : DetectAnomalies(data, dist)
+                );
+            });
 
-            UpdateEntropyCard(entropy);
-            UpdateDistributionCard(distribution);
-            UpdatePatternsCard(patterns);
-            UpdateAnomaliesCard(anomalies);
+            // async/await resumes on the UI SynchronizationContext.
+            UpdateEntropyCard(result.Entropy);
+            UpdateDistributionCard(result.Distribution);
+            UpdatePatternsCard(result.Patterns);
+            UpdateAnomaliesCard(result.Anomalies);
 
             StatusTextBlock.Text = $"Analysis complete ({data.Length:N0} bytes)";
             ShowAllCards();

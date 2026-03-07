@@ -89,8 +89,9 @@ public sealed class DataInspectorPlugin : IWpfHexEditorPlugin, IPluginWithOption
             });
 
         // Subscribe to HexEditor events to drive panel updates automatically.
-        context.HexEditor.SelectionChanged += OnSelectionChanged;
-        context.HexEditor.FileOpened       += OnFileOpened;
+        context.HexEditor.SelectionChanged    += OnSelectionChanged;
+        context.HexEditor.FileOpened          += OnFileOpened;
+        context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
 
         return Task.CompletedTask;
     }
@@ -99,8 +100,9 @@ public sealed class DataInspectorPlugin : IWpfHexEditorPlugin, IPluginWithOption
     {
         if (_context != null)
         {
-            _context.HexEditor.SelectionChanged -= OnSelectionChanged;
-            _context.HexEditor.FileOpened       -= OnFileOpened;
+            _context.HexEditor.SelectionChanged    -= OnSelectionChanged;
+            _context.HexEditor.FileOpened          -= OnFileOpened;
+            _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
         }
 
         _panel   = null;
@@ -122,6 +124,10 @@ public sealed class DataInspectorPlugin : IWpfHexEditorPlugin, IPluginWithOption
     /// <summary>Clears the panel when a new file is opened (no active selection yet).</summary>
     private void OnFileOpened(object? sender, EventArgs e)
         => _panel?.Clear();
+
+    /// <summary>Refreshes the panel when the active editor tab changes.</summary>
+    private void OnActiveEditorChanged(object? sender, EventArgs e)
+        => _panel?.OnHexEditorSelectionChanged();
 
     // ── IPluginWithOptions ────────────────────────────────────────────────────
 
