@@ -515,6 +515,25 @@
                         </MenuItem>
                     </MenuItem>
 
+                    <!-- ═══════════ Tools ═══════════ -->
+                    <MenuItem Header="_Tools">
+                        <MenuItem Header="_Plugin Manager" Click="OnOpenPluginManager">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE74C;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="_Terminal" Click="OnOpenTerminal">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE756;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+
                     <!-- ═══════════ Theme ═══════════ -->
                     <MenuItem Header="_Theme">
                         <MenuItem Header="_Dark" Click="OnDarkTheme">
@@ -841,7 +860,25 @@
                 </Button>
             </Border>
 
-            <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
+            <!-- Sep844: visible only when at least one trailing pod (contextuel or TBL) is shown -->
+            <Border Background="Transparent" Padding="0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding ActiveToolbarContributor, ElementName=ThisWindow}"
+                                               Value="{x:Null}"/>
+                                    <Condition Binding="{Binding ActiveHexEditor, ElementName=ThisWindow}"
+                                               Value="{x:Null}"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
+            </Border>
 
             <!-- ── Pod contextuel — visible seulement quand un éditeur contribue ─── -->
             <Border>
@@ -924,7 +961,24 @@
                 </ItemsControl>
             </Border>
 
-            <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
+            <!-- Sep927: visible only when both contextuel pod AND TBL pod are shown -->
+            <Border Background="Transparent" Padding="0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ActiveToolbarContributor, ElementName=ThisWindow}"
+                                         Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ActiveHexEditor, ElementName=ThisWindow}"
+                                         Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
+            </Border>
 
             <!-- ── Pod TBL : sélecteur de table (visible uniquement si HexEditor actif) ── -->
             <Border>

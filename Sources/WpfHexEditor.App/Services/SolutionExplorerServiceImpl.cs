@@ -26,6 +26,23 @@ public sealed class SolutionExplorerServiceImpl : ISolutionExplorerService
 
     public string? ActiveSolutionPath => _solutionManager.CurrentSolution?.FilePath;
 
+    public string? ActiveSolutionName => _solutionManager.CurrentSolution?.Name;
+
+    /// <summary>
+    /// Hook assigned by MainWindow to open a file as a standalone document tab.
+    /// Called by OpenFileAsync so Terminal commands can open files without a direct App reference.
+    /// </summary>
+    public Func<string, Task>? OpenFileHandler { get; set; }
+
+    public Task OpenFileAsync(string filePath, CancellationToken ct = default)
+    {
+        if (OpenFileHandler is not null)
+            return OpenFileHandler(filePath);
+
+        // No handler wired yet — log to output is not available here; silently ignore.
+        return Task.CompletedTask;
+    }
+
     public event EventHandler? SolutionChanged
     {
         add => _solutionManager.SolutionChanged += value;

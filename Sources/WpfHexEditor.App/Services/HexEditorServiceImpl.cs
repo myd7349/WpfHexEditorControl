@@ -35,17 +35,29 @@ public sealed class HexEditorServiceImpl : IHexEditorService
     public event EventHandler? SelectionChanged;
     public event EventHandler? FileOpened;
 
-    public byte[]? ReadBytes(long offset, int length)
+    public byte[] ReadBytes(long offset, int length)
     {
-        if (_activeEditor is null || length <= 0) return null;
-        try { return _activeEditor.GetCopyData(offset, length); }
-        catch { return null; }
+        if (_activeEditor is null || length <= 0) return [];
+        try { return _activeEditor.GetCopyData(offset, length) ?? []; }
+        catch { return []; }
     }
 
-    public byte[]? GetSelectedBytes()
+    public byte[] GetSelectedBytes()
     {
-        if (_activeEditor is null || SelectionLength == 0) return null;
+        if (_activeEditor is null || SelectionLength == 0) return [];
         return ReadBytes(SelectionStart, (int)Math.Min(SelectionLength, int.MaxValue));
+    }
+
+    public IReadOnlyList<long> SearchHex(string hexPattern)
+    {
+        // Full implementation deferred to Phase 4 — requires HexEditor search API wiring.
+        return [];
+    }
+
+    public IReadOnlyList<long> SearchText(string text)
+    {
+        // Full implementation deferred to Phase 4 — requires HexEditor search API wiring.
+        return [];
     }
 
     /// <summary>

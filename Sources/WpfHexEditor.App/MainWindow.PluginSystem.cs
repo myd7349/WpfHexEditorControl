@@ -20,12 +20,14 @@
 using System.Threading;
 using System.Windows;
 using WpfHexEditor.App.Services;
+using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.PluginHost;
 using WpfHexEditor.PluginHost.Monitoring;
 using WpfHexEditor.PluginHost.Services;
 using WpfHexEditor.PluginHost.UI;
 using WpfHexEditor.SDK.Contracts.Focus;
+using WpfHexEditor.Terminal;
 
 namespace WpfHexEditor.App;
 
@@ -33,6 +35,7 @@ public partial class MainWindow
 {
     // ─── Plugin system singletons ───────────────────────────────────────
     private WpfPluginHost? _pluginHost;
+    private IDEHostContext? _ideHostContext;
     private readonly FocusContextService _focusContextService = new();
 
     // Service adapters (lazily set in InitializePluginSystemAsync after layout is ready)
@@ -42,6 +45,7 @@ public partial class MainWindow
     private ThemeServiceImpl? _themeService;
 
     private const string PluginManagerContentId = "plugin-manager";
+    private const string TerminalPanelContentId  = "panel-terminal";
 
     // ─── Startup ────────────────────────────────────────────────────────
 
@@ -73,6 +77,7 @@ public partial class MainWindow
             var uiRegistry = new UIRegistry(dockingAdapter, menuAdapter, statusBarAdapter);
 
             var solutionService = new SolutionExplorerServiceImpl(_solutionManager);
+            solutionService.OpenFileHandler = path => Dispatcher.InvokeAsync(() => OpenStandaloneFileWithEditor(path, null)).Task;
             var codeEditorService = new NullCodeEditorService();
             var parsedFieldService = new NullParsedFieldService();
 
@@ -90,6 +95,7 @@ public partial class MainWindow
                 permissions: permissionService);
 
             // 3. Create orchestrator
+            _ideHostContext = hostContext;
             _pluginHost = new WpfPluginHost(hostContext, uiRegistry, permissionService, Dispatcher);
 
             // 4. Subscribe to host events
@@ -158,7 +164,8 @@ public partial class MainWindow
         var existing = _layout?.FindItemByContentId(PluginManagerContentId);
         if (existing is not null)
         {
-            _engine.Activate(existing);
+            if (existing.Owner is { } owner) owner.ActiveItem = existing;
+            DockHost.RebuildVisualTree();
             return;
         }
 
@@ -173,6 +180,36 @@ public partial class MainWindow
         };
 
         StoreContent(PluginManagerContentId, control);
+        _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+        DockHost.RebuildVisualTree();
+    }
+
+    // ─── Terminal panel ──────────────────────────────────────────────────
+
+    private void OnOpenTerminal(object sender, RoutedEventArgs e)
+    {
+        // Reuse existing panel
+        var existing = _layout?.FindItemByContentId(TerminalPanelContentId);
+        if (existing is not null)
+        {
+            if (existing.Owner is { } owner) owner.ActiveItem = existing;
+            DockHost.RebuildVisualTree();
+            return;
+        }
+
+        if (_ideHostContext is null) { _outputPanel?.Error("[Terminal] Host context unavailable."); return; }
+
+        var vm      = new TerminalPanelViewModel(_ideHostContext);
+        var control = new TerminalPanel { DataContext = vm };
+
+        var item = new DockItem
+        {
+            ContentId = TerminalPanelContentId,
+            Title     = "Terminal",
+            CanClose  = true
+        };
+
+        StoreContent(TerminalPanelContentId, control);
         _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
         DockHost.RebuildVisualTree();
     }

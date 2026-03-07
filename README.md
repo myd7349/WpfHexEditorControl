@@ -151,72 +151,74 @@ Panels connect to the active document automatically via the docking system.
 
 ## 📸 Screenshots
 
-<table>
-<tr>
-<td width="50%" align="center">
+<div align="center">
   <b>🖥️ IDE Overview</b><br/>
   <sub>VS-style docking with Solution Explorer, HexEditor and ParsedFieldsPanel</sub><br/><br/>
-  <a href="Images/App-IDE-Overview.png"><img src="Images/App-IDE-Overview.png" alt="IDE Overview"/></a>
-</td>
-<td width="50%" align="center">
-  <b>🔬 Parsed Fields Panel</b><br/>
-  <sub>400+ format auto-detection with structured field analysis</sub><br/><br/>
-  <a href="Images/App-ParsedFields.png"><img src="Images/App-ParsedFields.png" alt="Parsed Fields"/></a>
-</td>
-</tr>
-<tr>
-<td width="50%" align="center">
-  <b>📝 Multi-Editor Tabs</b><br/>
-  <sub>HexEditor, TBL, JSON and Text editors side by side</sub><br/><br/>
-  <a href="Images/App-Editors.png"><img src="Images/App-Editors.png" alt="Multiple Editors"/></a>
-</td>
-<td width="50%" align="center">
-  <b>🗂️ Solution Explorer</b><br/>
-  <sub>VS-style project tree with virtual and physical folders</sub><br/><br/>
-  <a href="Images/App-SolutionExplorer.png"><img src="Images/App-SolutionExplorer.png" alt="Solution Explorer"/></a>
-</td>
-</tr>
-</table>
+  <a href="Images/App-IDE-Overview.png"><img src="Images/App-IDE-Overview.png" alt="IDE Overview" width="900"/></a>
+</div>
 
 <details>
-<summary>📷 <b>More screenshots</b> — TBL Editor, Error List, Output, Light theme</summary>
-
+<summary>🔬 <b>Parsed Fields Panel</b> — 400+ format auto-detection with structured field analysis</summary>
 <br/>
+<div align="center">
+  <a href="Images/App-ParsedFields.png"><img src="Images/App-ParsedFields.png" alt="Parsed Fields" width="900"/></a>
+</div>
+</details>
 
-<table>
-<tr>
-<td width="50%" align="center">
-  <b>📋 TBL Editor</b><br/>
-  <sub>Custom character table editor for ROM hacking and encodings</sub><br/><br/>
-  <a href="Images/App-TBLEditor.png"><img src="Images/App-TBLEditor.png" alt="TBL Editor"/></a>
-</td>
-<td width="50%" align="center">
-  <b>🔴 Error Panel</b><br/>
-  <sub>Diagnostics and validation errors from active editors</sub><br/><br/>
-  <a href="Images/App-ErrorList.png"><img src="Images/App-ErrorList.png" alt="Error Panel"/></a>
-</td>
-</tr>
-<tr>
-<td width="50%" align="center">
-  <b>📤 Output Panel</b><br/>
-  <sub>Session log, messages and file operation feedback</sub><br/><br/>
-  <a href="Images/App-Output.png"><img src="Images/App-Output.png" alt="Output Panel"/></a>
-</td>
-<td width="50%" align="center">
-  <b>☀️ Light Theme</b><br/>
-  <sub>8 built-in themes — Dark, Light, VS2022Dark, DarkGlass, and more</sub><br/><br/>
-  <a href="Images/App-Theme-Light.png"><img src="Images/App-Theme-Light.png" alt="Light Theme"/></a>
-</td>
-</tr>
-<tr>
-<td colspan="2" align="center">
-  <b>🎮 TBL Format Explained</b><br/>
-  <sub>Custom character table format for game ROM editing</sub><br/><br/>
+<details>
+<summary>📝 <b>Multi-Editor Tabs</b> — HexEditor, TBL, JSON and Text editors side by side</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-Editors.png"><img src="Images/App-Editors.png" alt="Multiple Editors" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>🗂️ <b>Solution Explorer</b> — VS-style project tree with virtual and physical folders</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-SolutionExplorer.png"><img src="Images/App-SolutionExplorer.png" alt="Solution Explorer" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>📋 <b>TBL Editor</b> — Custom character table editor for ROM hacking and encodings</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-TBLEditor.png"><img src="Images/App-TBLEditor.png" alt="TBL Editor" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>🔴 <b>Error Panel</b> — Diagnostics and validation errors from active editors</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-ErrorList.png"><img src="Images/App-ErrorList.png" alt="Error Panel" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>📤 <b>Output Panel</b> — Session log, messages and file operation feedback</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-Output.png"><img src="Images/App-Output.png" alt="Output Panel" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>☀️ <b>Light Theme</b> — 8 built-in themes: Dark, Light, VS2022Dark, DarkGlass, and more</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-Theme-Light.png"><img src="Images/App-Theme-Light.png" alt="Light Theme" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>🎮 <b>TBL Format Explained</b> — Custom character table format for game ROM editing</summary>
+<br/>
+<div align="center">
   <a href="Images/TBLExplain.png"><img src="Images/TBLExplain.png" alt="TBL Explained" width="600"/></a>
-</td>
-</tr>
-</table>
-
+</div>
 </details>
 
 ---
