@@ -456,7 +456,13 @@ public class DockEngine
         // RestoreFloatingWindows runs during the subsequent RebuildVisualTree.
         var floatingGroup = new DockGroupNode();
         foreach (var item in items)
+        {
+            bool wasDocument = item.IsDocument; // Preserve: same reason as CreateFloatingWindow —
+                                                // floatingGroup is not a DocumentHostNode, so AddItem
+                                                // would set IsDocument=false and break drag routing.
             floatingGroup.AddItem(item);
+            item.IsDocument = wasDocument;
+        }
 
         if (originalActive is not null && items.Contains(originalActive))
             floatingGroup.ActiveItem = originalActive;

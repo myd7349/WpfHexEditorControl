@@ -1,9 +1,25 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Editor.ImageViewer
+// File: Controls/ImageViewer.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the ImageViewer control. Hosts a non-destructive
+//     transform pipeline (rotate, flip, crop, resize) on top of a
+//     read-only BitmapSource. Contributes toolbar items, status bar
+//     items, and an Office-like context menu to the App shell.
+//
+// Architecture Notes:
+//     Pattern: Pipeline (ImageTransformPipeline) + Strategy (IImageTransform)
+//     _bitmap        = original frozen BitmapSource (never mutated)
+//     _displayBitmap = pipeline result shown in ImageDisplay
+//     Transforms persisted via EditorConfigDto.Extra["Transforms"] (JSON).
+//     No .whchg usage — changeset system is for byte-level binary edits only.
+//
+// ==========================================================
 
+using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
@@ -13,65 +29,125 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WpfHexEditor.Editor.Core;
+using WpfHexEditor.Editor.ImageViewer.Dialogs;
+using WpfHexEditor.Editor.ImageViewer.Transforms;
 
 namespace WpfHexEditor.Editor.ImageViewer.Controls;
 
 /// <summary>
-/// Read-only image viewer with zoom, pan, and pixel inspection.
-/// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
+/// Image viewer with non-destructive transform pipeline, zoom, pan, and pixel inspection.
 /// </summary>
 public sealed partial class ImageViewer : UserControl,
-    IDocumentEditor, IOpenableDocument, IStatusBarContributor, IEditorPersistable
+    IDocumentEditor, IOpenableDocument, IStatusBarContributor, IEditorToolbarContributor, IEditorPersistable
 {
     // -----------------------------------------------------------------------
     // Fields
     // -----------------------------------------------------------------------
 
     private string _filePath = string.Empty;
+
+    // Original bitmap — never modified
     private BitmapSource? _bitmap;
+
+    // Displayed bitmap = pipeline applied to _bitmap
+    private BitmapSource? _displayBitmap;
+
+    // Non-destructive transform pipeline
+    private readonly ImageTransformPipeline _pipeline = new();
+
+    // Zoom
     private double _zoom = 1.0;
 
     // Pan state
-    private bool _isPanning;
+    private bool  _isPanning;
     private Point _panStart;
     private double _panScrollH;
     private double _panScrollV;
 
+    // Crop selection state
+    private bool  _isCropMode;
+    private bool  _isDraggingCrop;
+    private Point _cropDragStart;   // in CropOverlay canvas coordinates
+
     // Persistence
     private double _restoredZoom;   // 0 = "fit to window"
+    private string _restoredTransforms = string.Empty;
 
-    // Status bar items
-    private readonly StatusBarItem _zoomItem       = new() { Label = "Zoom",   Value = "100%" };
-    private readonly StatusBarItem _dimensionsItem = new() { Label = "Size",   Value = "—" };
-    private readonly StatusBarItem _colorModeItem  = new() { Label = "Format", Value = "—" };
-    private readonly StatusBarItem _fileSizeItem   = new() { Label = "File",   Value = "—" };
-    private readonly StatusBarItem _dpiItem        = new() { Label = "DPI",    Value = "—" };
-    private readonly StatusBarItem _pixelItem      = new() { Label = "Pixel",  Value = "—" };
+    // -----------------------------------------------------------------------
+    // Toolbar + Status bar collections
+    // -----------------------------------------------------------------------
+
+    public ObservableCollection<EditorToolbarItem> ToolbarItems { get; } = new();
+
+    private readonly StatusBarItem _zoomItem       = new() { Label = "Zoom",       Value = "100%" };
+    private readonly StatusBarItem _dimensionsItem = new() { Label = "Size",       Value = "—" };
+    private readonly StatusBarItem _colorModeItem  = new() { Label = "Format",     Value = "—" };
+    private readonly StatusBarItem _fileSizeItem   = new() { Label = "File",       Value = "—" };
+    private readonly StatusBarItem _dpiItem        = new() { Label = "DPI",        Value = "—" };
+    private readonly StatusBarItem _pixelItem      = new() { Label = "Pixel",      Value = "—" };
+    private readonly StatusBarItem _transformsItem = new() { Label = "Transforms", Value = "None" };
 
     // -----------------------------------------------------------------------
     // Constructor
     // -----------------------------------------------------------------------
 
-    /// <summary>
-    /// Creates a new <see cref="ImageViewer"/>.
-    /// </summary>
     public ImageViewer()
     {
         InitializeComponent();
 
         UndoCommand      = new RelayCommand(() => { }, () => false);
         RedoCommand      = new RelayCommand(() => { }, () => false);
-        SaveCommand      = new RelayCommand(() => { }, () => false);
-        CopyCommand      = new RelayCommand(CopyImage,  () => _bitmap is not null);
-        CutCommand       = new RelayCommand(() => { }, () => false);
-        PasteCommand     = new RelayCommand(() => { }, () => false);
-        DeleteCommand    = new RelayCommand(() => { }, () => false);
-        SelectAllCommand = new RelayCommand(() => { }, () => false);
+        SaveCommand      = new RelayCommand(Save,
+            () => _pipeline.Count > 0 && _displayBitmap is not null && !string.IsNullOrEmpty(_filePath));
+        CopyCommand      = new RelayCommand(CopyImage,        () => _displayBitmap is not null);
+        CutCommand       = new RelayCommand(() => { },        () => false);
+        PasteCommand     = new RelayCommand(() => { },        () => false);
+        DeleteCommand    = new RelayCommand(() => { },        () => false);
+        SelectAllCommand = new RelayCommand(() => { },        () => false);
 
-        // Keyboard shortcuts
-        KeyDown += OnKeyDown;
+        BuildToolbarItems();
+        BuildStatusBarItems();
 
-        // Status bar — zoom presets
+        CropOverlay.SizeChanged += OnCropOverlaySizeChanged;
+    }
+
+    // -----------------------------------------------------------------------
+    // Toolbar builder
+    // -----------------------------------------------------------------------
+
+    private void BuildToolbarItems()
+    {
+        // Zoom pod (existing)
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE8A3", Tooltip = "Zoom In (Ctrl+=)",  Command = new RelayCommand(() => ApplyZoom(_zoom * 1.25)) });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE71F", Tooltip = "Zoom Out (Ctrl+-)", Command = new RelayCommand(() => ApplyZoom(_zoom / 1.25)) });
+        ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
+        ToolbarItems.Add(new EditorToolbarItem { Label = "1:1",   Tooltip = "Actual Size",       Command = new RelayCommand(() => ApplyZoom(1.0)) });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE799", Tooltip = "Fit to Window",     Command = new RelayCommand(FitToWindow) });
+
+        // Transform pod
+        ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE7AD", Tooltip = "Rotate Right 90° (Ctrl+R)",       Command = new RelayCommand(RotateRight,   () => _bitmap is not null) });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE7AE", Tooltip = "Rotate Left 90° (Ctrl+Shift+R)",  Command = new RelayCommand(RotateLeft,    () => _bitmap is not null) });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE8B1", Tooltip = "Flip Horizontal (Ctrl+H)",        Command = new RelayCommand(FlipH,         () => _bitmap is not null) });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE8B0", Tooltip = "Flip Vertical (Ctrl+Shift+H)",    Command = new RelayCommand(FlipV,         () => _bitmap is not null) });
+
+        // Crop & Resize pod
+        ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE7A8", Tooltip = "Crop Mode (Ctrl+K)",              Command = new RelayCommand(ToggleCropMode, () => _bitmap is not null) });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE8D4", Tooltip = "Resize... (Ctrl+Shift+Z)",        Command = new RelayCommand(OpenResizeDialog, () => _bitmap is not null) });
+
+        // Export pod
+        ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
+        ToolbarItems.Add(new EditorToolbarItem { Icon = "\uE792", Tooltip = "Export... (Ctrl+Shift+S)",        Command = new RelayCommand(() => SaveAs(), () => _displayBitmap is not null) });
+    }
+
+    // -----------------------------------------------------------------------
+    // Status bar builder
+    // -----------------------------------------------------------------------
+
+    private void BuildStatusBarItems()
+    {
+        // Zoom presets
         foreach (var (name, factor) in new (string, double)[]
             { ("Fit", 0), ("25%", .25), ("50%", .5), ("75%", .75),
               ("100%", 1), ("150%", 1.5), ("200%", 2), ("400%", 4) })
@@ -84,73 +160,50 @@ public sealed partial class ImageViewer : UserControl,
                 Command     = new RelayCommand(() => { if (f == 0) FitToWindow(); else ApplyZoom(f); })
             });
         }
+
         StatusBarItems.Add(_zoomItem);
         StatusBarItems.Add(_dimensionsItem);
         StatusBarItems.Add(_colorModeItem);
         StatusBarItems.Add(_fileSizeItem);
         StatusBarItems.Add(_dpiItem);
         StatusBarItems.Add(_pixelItem);
+        StatusBarItems.Add(_transformsItem);
     }
 
     // -----------------------------------------------------------------------
     // IDocumentEditor — State
     // -----------------------------------------------------------------------
 
-    /// <inheritdoc/>
-    public bool IsDirty    => false;
-
-    /// <inheritdoc/>
+    public bool IsDirty    => _pipeline.Count > 0;
     public bool CanUndo    => false;
-
-    /// <inheritdoc/>
     public bool CanRedo    => false;
 
-    /// <inheritdoc/>
     public bool IsReadOnly
     {
         get => true;
-        set { /* always read-only */ }
+        set { /* always read-only on disk; transforms are non-destructive */ }
     }
 
-    /// <inheritdoc/>
     public string Title { get; private set; } = "Image";
-
-    /// <inheritdoc/>
-    public bool IsBusy { get; private set; }
+    public bool   IsBusy { get; private set; }
 
     // -----------------------------------------------------------------------
     // IDocumentEditor — Commands
     // -----------------------------------------------------------------------
 
-    /// <inheritdoc/>
     public ICommand UndoCommand      { get; }
-
-    /// <inheritdoc/>
     public ICommand RedoCommand      { get; }
-
-    /// <inheritdoc/>
     public ICommand SaveCommand      { get; }
-
-    /// <inheritdoc/>
     public ICommand CopyCommand      { get; }
-
-    /// <inheritdoc/>
     public ICommand CutCommand       { get; }
-
-    /// <inheritdoc/>
     public ICommand PasteCommand     { get; }
-
-    /// <inheritdoc/>
     public ICommand DeleteCommand    { get; }
-
-    /// <inheritdoc/>
     public ICommand SelectAllCommand { get; }
 
     // -----------------------------------------------------------------------
     // IStatusBarContributor
     // -----------------------------------------------------------------------
 
-    /// <inheritdoc/>
     public ObservableCollection<StatusBarItem> StatusBarItems { get; } = new();
 
     // -----------------------------------------------------------------------
@@ -158,128 +211,157 @@ public sealed partial class ImageViewer : UserControl,
     // -----------------------------------------------------------------------
 
 #pragma warning disable CS0067
-    /// <inheritdoc/>
     public event EventHandler?         ModifiedChanged;
-
-    /// <inheritdoc/>
     public event EventHandler?         CanUndoChanged;
-
-    /// <inheritdoc/>
     public event EventHandler?         CanRedoChanged;
-
-    /// <inheritdoc/>
     public event EventHandler<string>? TitleChanged;
-
-    /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
-    /// <inheritdoc/>
     public event EventHandler<string>? OutputMessage;
-
-    /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;
-
-    /// <inheritdoc/>
     public event EventHandler<DocumentOperationEventArgs>?          OperationStarted;
-
-    /// <inheritdoc/>
     public event EventHandler<DocumentOperationEventArgs>?          OperationProgress;
-
-    /// <inheritdoc/>
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 #pragma warning restore CS0067
 
     // -----------------------------------------------------------------------
-    // IDocumentEditor — Methods (no-ops for read-only viewer)
+    // IDocumentEditor — Methods
     // -----------------------------------------------------------------------
 
-    /// <inheritdoc/>
     public void Undo() { }
-
-    /// <inheritdoc/>
     public void Redo() { }
 
-    /// <inheritdoc/>
-    public void Save() { }
+    public void Save()
+    {
+        if (_pipeline.Count == 0 || _displayBitmap is null || string.IsNullOrEmpty(_filePath)) return;
 
-    /// <inheritdoc/>
-    public Task SaveAsync(CancellationToken ct = default) => Task.CompletedTask;
+        try
+        {
+            var encoder = GetEncoder(Path.GetExtension(_filePath));
+            encoder.Frames.Add(BitmapFrame.Create(_displayBitmap));
+            using var stream = new FileStream(_filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+            encoder.Save(stream);
 
-    /// <inheritdoc/>
-    public Task SaveAsAsync(string filePath, CancellationToken ct = default) => Task.CompletedTask;
+            // The saved result becomes the new base; pipeline is now empty (no pending transforms).
+            _bitmap = _displayBitmap;
+            _pipeline.Clear();
+            UpdateDisplayBitmap();
+            UpdateTransformsStatusItem();
+            ModifiedChanged?.Invoke(this, EventArgs.Empty);
+            TitleChanged?.Invoke(this, Title);
 
-    /// <inheritdoc/>
+            var msg = $"Saved: {Path.GetFileName(_filePath)}";
+            StatusMessage?.Invoke(this, msg);
+            OutputMessage?.Invoke(this, msg);
+        }
+        catch (Exception ex)
+        {
+            var msg = $"Save failed '{Path.GetFileName(_filePath)}': {ex.Message}";
+            StatusMessage?.Invoke(this, msg);
+            OutputMessage?.Invoke(this, msg);
+        }
+    }
+
+    public async Task SaveAsync(CancellationToken ct = default)
+    {
+        if (_pipeline.Count == 0 || _displayBitmap is null || string.IsNullOrEmpty(_filePath)) return;
+
+        // Capture frozen refs — BitmapSource.Freeze() makes them safe on background threads.
+        var bitmap  = _displayBitmap;
+        var path    = _filePath;
+        var encoder = GetEncoder(Path.GetExtension(path));
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+        try
+        {
+            await Task.Run(() =>
+            {
+                ct.ThrowIfCancellationRequested();
+                using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+                encoder.Save(stream);
+            }, ct);
+
+            // Back on the UI thread after await — safe to update WPF state.
+            _bitmap = _displayBitmap;
+            _pipeline.Clear();
+            UpdateDisplayBitmap();
+            UpdateTransformsStatusItem();
+            ModifiedChanged?.Invoke(this, EventArgs.Empty);
+            TitleChanged?.Invoke(this, Title);
+
+            var msg = $"Saved: {Path.GetFileName(_filePath)}";
+            StatusMessage?.Invoke(this, msg);
+            OutputMessage?.Invoke(this, msg);
+        }
+        catch (OperationCanceledException) { /* silent — user cancelled */ }
+        catch (Exception ex)
+        {
+            var msg = $"Save failed '{Path.GetFileName(path)}': {ex.Message}";
+            StatusMessage?.Invoke(this, msg);
+            OutputMessage?.Invoke(this, msg);
+        }
+    }
+
+    public Task SaveAsAsync(string filePath, CancellationToken ct = default)
+    {
+        SaveAs(filePath);
+        return Task.CompletedTask;
+    }
+
     public void Copy() => CopyImage();
+    public void Cut()  { }
+    public void Paste(){ }
+    public void Delete(){ }
+    public void SelectAll(){ }
 
-    /// <inheritdoc/>
-    public void Cut() { }
+    public void Close()
+    {
+        _bitmap        = null;
+        _displayBitmap = null;
+        ImageDisplay.Source = null;
+        _pipeline.Clear();
+    }
 
-    /// <inheritdoc/>
-    public void Paste() { }
-
-    /// <inheritdoc/>
-    public void Delete() { }
-
-    /// <inheritdoc/>
-    public void SelectAll() { }
-
-    /// <inheritdoc/>
-    public void Close() { _bitmap = null; ImageDisplay.Source = null; }
-
-    /// <inheritdoc/>
     public void CancelOperation() { }
 
     // -----------------------------------------------------------------------
     // IEditorPersistable
     // -----------------------------------------------------------------------
 
-    /// <inheritdoc/>
     public EditorConfigDto GetEditorConfig() => new()
     {
         Extra = new Dictionary<string, string>
         {
-            ["ZoomFactor"] = _zoom.ToString(CultureInfo.InvariantCulture)
+            ["ZoomFactor"] = _zoom.ToString(CultureInfo.InvariantCulture),
+            ["Transforms"] = _pipeline.Count > 0 ? _pipeline.ToJson() : string.Empty
         }
     };
 
-    /// <inheritdoc/>
     public void ApplyEditorConfig(EditorConfigDto config)
     {
-        if (config?.Extra?.TryGetValue("ZoomFactor", out var s) == true &&
+        if (config?.Extra is null) return;
+
+        if (config.Extra.TryGetValue("ZoomFactor", out var s) &&
             double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var z) && z > 0)
             _restoredZoom = z;
+
+        if (config.Extra.TryGetValue("Transforms", out var t) && !string.IsNullOrWhiteSpace(t))
+            _restoredTransforms = t;
     }
 
-    /// <inheritdoc/>
-    public byte[]? GetUnsavedModifications() => null;
-
-    /// <inheritdoc/>
+    public byte[]? GetUnsavedModifications()      => null;
     public void ApplyUnsavedModifications(byte[] data) { }
-
-    /// <inheritdoc/>
     public IReadOnlyList<BookmarkDto>? GetBookmarks() => null;
-
-    /// <inheritdoc/>
     public void ApplyBookmarks(IReadOnlyList<BookmarkDto> bookmarks) { }
 
-    /// <inheritdoc/>
-    /// <remarks>Image viewers do not have byte-level edits.</remarks>
+    // Image viewers have no byte-level edits — always return empty snapshot.
     public ChangesetSnapshot GetChangesetSnapshot() => ChangesetSnapshot.Empty;
-
-    /// <inheritdoc/>
-    /// <remarks>Not applicable for image viewers.</remarks>
     public void ApplyChangeset(ChangesetDto changeset) { }
-
-    /// <inheritdoc/>
     public void MarkChangesetSaved() { }
 
     // -----------------------------------------------------------------------
     // IOpenableDocument
     // -----------------------------------------------------------------------
 
-    /// <summary>
-    /// Loads an image file asynchronously and updates the view.
-    /// Supported: PNG, BMP, JPG, GIF, TGA, ICO, TIFF, WEBP.
-    /// </summary>
     public async Task OpenAsync(string filePath, CancellationToken ct = default)
     {
         IsBusy = true;
@@ -292,17 +374,30 @@ public sealed partial class ImageViewer : UserControl,
 
             var bitmap = await Task.Run(() =>
             {
+                // Load via FileStream so the file handle is released immediately after
+                // EndInit() — BitmapImage.UriSource can hold a lock even with OnLoad.
+                using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 var img = new BitmapImage();
                 img.BeginInit();
-                img.UriSource = new Uri(filePath, UriKind.Absolute);
-                img.CacheOption = BitmapCacheOption.OnLoad;
+                img.StreamSource = stream;
+                img.CacheOption  = BitmapCacheOption.OnLoad;
                 img.EndInit();
                 img.Freeze();
                 return (BitmapSource)img;
             }, ct);
 
             _bitmap = bitmap;
-            ImageDisplay.Source = bitmap;
+
+            // Restore transforms from persistence before displaying
+            if (!string.IsNullOrWhiteSpace(_restoredTransforms))
+            {
+                var restored = ImageTransformPipeline.FromJson(_restoredTransforms);
+                foreach (var step in restored.Steps)
+                    _pipeline.Add(step);
+                _restoredTransforms = string.Empty;
+            }
+
+            UpdateDisplayBitmap();
 
             if (_restoredZoom > 0)
                 ApplyZoom(_restoredZoom);
@@ -313,6 +408,8 @@ public sealed partial class ImageViewer : UserControl,
             }
 
             UpdateStatusBar();
+            UpdateTransformsStatusItem();
+
             TitleChanged?.Invoke(this, Title);
             StatusMessage?.Invoke(this, $"Loaded: {Path.GetFileName(filePath)}");
             OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { Success = true });
@@ -323,7 +420,9 @@ public sealed partial class ImageViewer : UserControl,
         }
         catch (Exception ex)
         {
-            StatusMessage?.Invoke(this, $"Error loading image: {ex.Message}");
+            var msg = $"Cannot open image '{Path.GetFileName(filePath)}': {ex.Message}";
+            StatusMessage?.Invoke(this, msg);
+            OutputMessage?.Invoke(this, msg);  // route error to Output panel
             OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { Success = false, ErrorMessage = ex.Message });
         }
         finally
@@ -331,6 +430,231 @@ public sealed partial class ImageViewer : UserControl,
             IsBusy = false;
         }
     }
+
+    // -----------------------------------------------------------------------
+    // Transform pipeline helpers
+    // -----------------------------------------------------------------------
+
+    private void UpdateDisplayBitmap()
+    {
+        if (_bitmap is null) return;
+        _displayBitmap = _pipeline.Count > 0 ? _pipeline.Apply(_bitmap) : _bitmap;
+        ImageDisplay.Source = _displayBitmap;
+        // Update dimensions status to reflect the transformed image
+        _dimensionsItem.Value = $"{_displayBitmap.PixelWidth} × {_displayBitmap.PixelHeight} px";
+    }
+
+    private void ApplyTransform(IImageTransform transform)
+    {
+        if (_bitmap is null) return;
+        _pipeline.Add(transform);
+        UpdateDisplayBitmap();
+        UpdateTransformsStatusItem();
+        ModifiedChanged?.Invoke(this, EventArgs.Empty);
+        StatusMessage?.Invoke(this, $"Applied: {transform.Name}");
+    }
+
+    private void UpdateTransformsStatusItem()
+    {
+        var count = _pipeline.Count;
+        _transformsItem.Value = count == 0 ? "None" : $"{count} applied";
+
+        _transformsItem.Choices.Clear();
+        for (int i = 0; i < _pipeline.Steps.Count; i++)
+        {
+            var step = _pipeline.Steps[i];
+            var idx  = i;
+            _transformsItem.Choices.Add(new StatusBarChoice
+            {
+                DisplayName = step.Name,
+                IsActive    = false,
+                Command     = new RelayCommand(() =>
+                {
+                    _pipeline.RemoveAt(idx);
+                    UpdateDisplayBitmap();
+                    UpdateTransformsStatusItem();
+                    ModifiedChanged?.Invoke(this, EventArgs.Empty);
+                })
+            });
+        }
+
+        if (count > 0)
+        {
+            _transformsItem.Choices.Add(new StatusBarChoice
+            {
+                DisplayName = "Reset All",
+                IsActive    = false,
+                Command     = new RelayCommand(ResetAllTransforms)
+            });
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Transform actions (called from toolbar, context menu, keyboard)
+    // -----------------------------------------------------------------------
+
+    public void RotateRight() => ApplyTransform(new RotateImageTransform(90));
+    public void RotateLeft()  => ApplyTransform(new RotateImageTransform(270));
+    public void FlipH()       => ApplyTransform(new FlipImageTransform(FlipAxis.Horizontal));
+    public void FlipV()       => ApplyTransform(new FlipImageTransform(FlipAxis.Vertical));
+
+    public void ResetAllTransforms()
+    {
+        if (_pipeline.Count == 0) return;
+        _pipeline.Clear();
+        UpdateDisplayBitmap();
+        UpdateTransformsStatusItem();
+        ModifiedChanged?.Invoke(this, EventArgs.Empty);
+        StatusMessage?.Invoke(this, "All transforms reset");
+    }
+
+    public void OpenResizeDialog()
+    {
+        if (_displayBitmap is null) return;
+
+        var dlg = new ResizeImageDialog(_displayBitmap.PixelWidth, _displayBitmap.PixelHeight)
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dlg.ShowDialog() != true) return;
+
+        ApplyTransform(new ResizeImageTransform(dlg.TargetWidth, dlg.TargetHeight, dlg.Algorithm));
+    }
+
+    // -----------------------------------------------------------------------
+    // Crop mode
+    // -----------------------------------------------------------------------
+
+    public void ToggleCropMode()
+    {
+        _isCropMode = !_isCropMode;
+        CropOverlay.Visibility     = _isCropMode ? Visibility.Visible : Visibility.Collapsed;
+        CropInstructionBanner.Visibility = _isCropMode ? Visibility.Visible : Visibility.Collapsed;
+        CropSelection.Visibility   = Visibility.Collapsed;
+        _isDraggingCrop            = false;
+        StatusMessage?.Invoke(this, _isCropMode ? "Crop Mode: draw a selection rectangle" : "Crop Mode off");
+    }
+
+    private void ApplyCrop()
+    {
+        if (!_isCropMode || _displayBitmap is null) return;
+        if (CropSelection.Visibility != Visibility.Visible) return;
+
+        // Map canvas coordinates → image pixel coordinates
+        var imageTopLeft  = ImageDisplay.TranslatePoint(new Point(0, 0), CropOverlay);
+        double x = (Canvas.GetLeft(CropSelection) - imageTopLeft.X) / _zoom;
+        double y = (Canvas.GetTop(CropSelection)  - imageTopLeft.Y) / _zoom;
+        double w = CropSelection.Width  / _zoom;
+        double h = CropSelection.Height / _zoom;
+
+        // Clamp to image bounds
+        int ix = Math.Max(0, (int)x);
+        int iy = Math.Max(0, (int)y);
+        int iw = Math.Min(_displayBitmap.PixelWidth  - ix, (int)w);
+        int ih = Math.Min(_displayBitmap.PixelHeight - iy, (int)h);
+
+        if (iw <= 0 || ih <= 0)
+        {
+            StatusMessage?.Invoke(this, "Crop selection is empty — no crop applied");
+            ToggleCropMode();
+            return;
+        }
+
+        ToggleCropMode();
+        ApplyTransform(new CropImageTransform(new Int32Rect(ix, iy, iw, ih)));
+    }
+
+    private void OnCropOverlaySizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        CropVeil.Width  = CropOverlay.ActualWidth;
+        CropVeil.Height = CropOverlay.ActualHeight;
+    }
+
+    private void CropOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!_isCropMode) return;
+        _cropDragStart  = e.GetPosition(CropOverlay);
+        _isDraggingCrop = true;
+        CropSelection.Visibility = Visibility.Collapsed;
+        CropOverlay.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void CropOverlay_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isDraggingCrop) return;
+
+        var current = e.GetPosition(CropOverlay);
+        double x = Math.Min(_cropDragStart.X, current.X);
+        double y = Math.Min(_cropDragStart.Y, current.Y);
+        double w = Math.Abs(current.X - _cropDragStart.X);
+        double h = Math.Abs(current.Y - _cropDragStart.Y);
+
+        if (w < 2 || h < 2) return;
+
+        Canvas.SetLeft(CropSelection, x);
+        Canvas.SetTop(CropSelection,  y);
+        CropSelection.Width  = w;
+        CropSelection.Height = h;
+        CropSelection.Visibility = Visibility.Visible;
+        e.Handled = true;
+    }
+
+    private void CropOverlay_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_isDraggingCrop) return;
+        _isDraggingCrop = false;
+        CropOverlay.ReleaseMouseCapture();
+        e.Handled = true;
+        // User must press Enter to confirm or Escape to cancel
+        StatusMessage?.Invoke(this, "Press Enter to apply crop or Escape to cancel");
+    }
+
+    // -----------------------------------------------------------------------
+    // Save As
+    // -----------------------------------------------------------------------
+
+    public void SaveAs(string? suggestedPath = null)
+    {
+        if (_displayBitmap is null) return;
+
+        var dlg = new SaveFileDialog
+        {
+            Title  = "Save Image As",
+            Filter = "PNG Image (*.png)|*.png|JPEG Image (*.jpg;*.jpeg)|*.jpg;*.jpeg|BMP Image (*.bmp)|*.bmp|TIFF Image (*.tiff;*.tif)|*.tiff;*.tif",
+            FilterIndex = 1,
+            FileName = suggestedPath is not null
+                ? Path.GetFileNameWithoutExtension(suggestedPath)
+                : Path.GetFileNameWithoutExtension(_filePath)
+        };
+
+        if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
+
+        try
+        {
+            var encoder = GetEncoder(Path.GetExtension(dlg.FileName));
+            encoder.Frames.Add(BitmapFrame.Create(_displayBitmap));
+
+            using var stream = File.Create(dlg.FileName);
+            encoder.Save(stream);
+
+            StatusMessage?.Invoke(this, $"Saved: {Path.GetFileName(dlg.FileName)}");
+        }
+        catch (Exception ex)
+        {
+            StatusMessage?.Invoke(this, $"Save As failed: {ex.Message}");
+        }
+    }
+
+    private static BitmapEncoder GetEncoder(string extension) =>
+        extension.ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => new JpegBitmapEncoder { QualityLevel = 92 },
+            ".bmp"            => new BmpBitmapEncoder(),
+            ".tiff" or ".tif" => new TiffBitmapEncoder(),
+            _                 => new PngBitmapEncoder()
+        };
 
     // -----------------------------------------------------------------------
     // Zoom
@@ -348,7 +672,6 @@ public sealed partial class ImageViewer : UserControl,
         _zoom = newZoom;
 
         ImageDisplay.LayoutTransform = new ScaleTransform(_zoom, _zoom);
-        ZoomText.Text = $"{_zoom * 100:F0}%";
 
         _zoomItem.Value = $"{_zoom * 100:F0}%";
         foreach (var c in _zoomItem.Choices)
@@ -361,49 +684,87 @@ public sealed partial class ImageViewer : UserControl,
 
     private void FitToWindow()
     {
-        if (_bitmap is null) return;
+        if (_displayBitmap is null) return;
         if (ImageScroll.ActualWidth <= 0 || ImageScroll.ActualHeight <= 0) return;
 
-        double zoomX = (ImageScroll.ActualWidth  - 32) / _bitmap.PixelWidth;
-        double zoomY = (ImageScroll.ActualHeight - 32) / _bitmap.PixelHeight;
+        double zoomX = (ImageScroll.ActualWidth  - 32) / _displayBitmap.PixelWidth;
+        double zoomY = (ImageScroll.ActualHeight - 32) / _displayBitmap.PixelHeight;
         ApplyZoom(Math.Min(zoomX, zoomY));
     }
 
     // -----------------------------------------------------------------------
-    // Event handlers — toolbar
+    // Event handlers — keyboard
     // -----------------------------------------------------------------------
 
-    private void BtnZoomIn_Click(object sender, RoutedEventArgs e)  => ApplyZoom(_zoom * 1.25);
-    private void BtnZoomOut_Click(object sender, RoutedEventArgs e) => ApplyZoom(_zoom / 1.25);
-    private void BtnZoom100_Click(object sender, RoutedEventArgs e) => ApplyZoom(1.0);
-    private void BtnZoomFit_Click(object sender, RoutedEventArgs e) => FitToWindow();
+    private void ImageViewer_KeyDown(object sender, KeyEventArgs e)
+    {
+        bool ctrl  = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+        bool shift = (Keyboard.Modifiers & ModifierKeys.Shift)   != 0;
+
+        // Crop mode — Enter/Escape
+        if (_isCropMode)
+        {
+            if (e.Key == Key.Return) { ApplyCrop();       e.Handled = true; return; }
+            if (e.Key == Key.Escape) { ToggleCropMode();  e.Handled = true; return; }
+        }
+
+        if (!ctrl) return;
+
+        switch (e.Key)
+        {
+            // Zoom
+            case Key.OemPlus:
+            case Key.Add:        ApplyZoom(_zoom * 1.25); e.Handled = true; break;
+            case Key.OemMinus:
+            case Key.Subtract:   ApplyZoom(_zoom / 1.25); e.Handled = true; break;
+            case Key.D0:
+            case Key.NumPad0:    ApplyZoom(1.0);           e.Handled = true; break;
+
+            // Rotate
+            case Key.R when  shift: RotateLeft();          e.Handled = true; break;
+            case Key.R:             RotateRight();          e.Handled = true; break;
+
+            // Flip
+            case Key.H when  shift: FlipV();               e.Handled = true; break;
+            case Key.H:             FlipH();                e.Handled = true; break;
+
+            // Crop mode toggle
+            case Key.K:             ToggleCropMode();       e.Handled = true; break;
+
+            // Resize
+            case Key.Z when  shift: OpenResizeDialog();     e.Handled = true; break;
+
+            // Save As
+            case Key.S when  shift: SaveAs();               e.Handled = true; break;
+        }
+    }
 
     // -----------------------------------------------------------------------
-    // Event handlers — scroll / pan / mouse
+    // Event handlers — mouse scroll and pan
     // -----------------------------------------------------------------------
 
     private void ImageScroll_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
-            // Ctrl+Wheel → zoom
             ApplyZoom(e.Delta > 0 ? _zoom * 1.15 : _zoom / 1.15);
             e.Handled = true;
         }
-        // else: default scroll behaviour
     }
 
     private void ImageScroll_MouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (_isCropMode) return;  // pan disabled in crop mode
+
         if (e.MiddleButton == MouseButtonState.Pressed ||
             (e.LeftButton  == MouseButtonState.Pressed && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt))
         {
-            _isPanning    = true;
-            _panStart     = e.GetPosition(this);
-            _panScrollH   = ImageScroll.HorizontalOffset;
-            _panScrollV   = ImageScroll.VerticalOffset;
+            _isPanning   = true;
+            _panStart    = e.GetPosition(this);
+            _panScrollH  = ImageScroll.HorizontalOffset;
+            _panScrollV  = ImageScroll.VerticalOffset;
             Mouse.Capture(ImageScroll);
-            e.Handled     = true;
+            e.Handled    = true;
         }
     }
 
@@ -415,23 +776,23 @@ public sealed partial class ImageViewer : UserControl,
             ImageScroll.ScrollToHorizontalOffset(_panScrollH - (pos.X - _panStart.X));
             ImageScroll.ScrollToVerticalOffset  (_panScrollV - (pos.Y - _panStart.Y));
             e.Handled = true;
+            return;
         }
-        else if (_bitmap is not null)
-        {
-            // Pixel inspection
-            var posOnImage = e.GetPosition(ImageDisplay);
-            int px = (int)(posOnImage.X / _zoom);
-            int py = (int)(posOnImage.Y / _zoom);
 
-            if (px >= 0 && py >= 0 && px < _bitmap.PixelWidth && py < _bitmap.PixelHeight)
-            {
-                var color = GetPixelColor(_bitmap, px, py);
-                _pixelItem.Value = $"({px}, {py})  R:{color.R} G:{color.G} B:{color.B} A:{color.A}  #{color.R:X2}{color.G:X2}{color.B:X2}";
-            }
-            else
-            {
-                _pixelItem.Value = "—";
-            }
+        // Pixel inspection on display bitmap
+        if (_displayBitmap is null) return;
+        var posOnImage = e.GetPosition(ImageDisplay);
+        int px = (int)(posOnImage.X / _zoom);
+        int py = (int)(posOnImage.Y / _zoom);
+
+        if (px >= 0 && py >= 0 && px < _displayBitmap.PixelWidth && py < _displayBitmap.PixelHeight)
+        {
+            var color = GetPixelColor(_displayBitmap, px, py);
+            _pixelItem.Value = $"({px}, {py})  R:{color.R} G:{color.G} B:{color.B} A:{color.A}  #{color.R:X2}{color.G:X2}{color.B:X2}";
+        }
+        else
+        {
+            _pixelItem.Value = "—";
         }
     }
 
@@ -446,24 +807,18 @@ public sealed partial class ImageViewer : UserControl,
     }
 
     // -----------------------------------------------------------------------
-    // Keyboard shortcuts
+    // Context menu click handlers (delegate to public transform methods)
     // -----------------------------------------------------------------------
 
-    private void OnKeyDown(object sender, KeyEventArgs e)
-    {
-        if ((e.KeyboardDevice.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-        {
-            switch (e.Key)
-            {
-                case Key.OemPlus:
-                case Key.Add:    ApplyZoom(_zoom * 1.25); e.Handled = true; break;
-                case Key.OemMinus:
-                case Key.Subtract: ApplyZoom(_zoom / 1.25); e.Handled = true; break;
-                case Key.D0:
-                case Key.NumPad0: ApplyZoom(1.0); e.Handled = true; break;
-            }
-        }
-    }
+    private void OnContextRotateRight(object sender, RoutedEventArgs e) => RotateRight();
+    private void OnContextRotateLeft (object sender, RoutedEventArgs e) => RotateLeft();
+    private void OnContextFlipH      (object sender, RoutedEventArgs e) => FlipH();
+    private void OnContextFlipV      (object sender, RoutedEventArgs e) => FlipV();
+    private void OnContextCropMode   (object sender, RoutedEventArgs e) => ToggleCropMode();
+    private void OnContextResize     (object sender, RoutedEventArgs e) => OpenResizeDialog();
+    private void OnContextSaveAs     (object sender, RoutedEventArgs e) => SaveAs();
+    private void OnContextCopy       (object sender, RoutedEventArgs e) => CopyImage();
+    private void OnContextResetTransforms(object sender, RoutedEventArgs e) => ResetAllTransforms();
 
     // -----------------------------------------------------------------------
     // Helpers
@@ -480,7 +835,8 @@ public sealed partial class ImageViewer : UserControl,
             return;
         }
 
-        _dimensionsItem.Value = $"{_bitmap.PixelWidth} × {_bitmap.PixelHeight} px";
+        var display = _displayBitmap ?? _bitmap;
+        _dimensionsItem.Value = $"{display.PixelWidth} × {display.PixelHeight} px";
         _colorModeItem.Value  = FormatPixelFormat(_bitmap.Format);
         _fileSizeItem.Value   = File.Exists(_filePath) ? FormatSize(new FileInfo(_filePath).Length) : "—";
         _dpiItem.Value        = $"{_bitmap.DpiX:F0} × {_bitmap.DpiY:F0} DPI";
@@ -491,7 +847,7 @@ public sealed partial class ImageViewer : UserControl,
         if (fmt == PixelFormats.Bgra32 || fmt == PixelFormats.Pbgra32) return "ARGB32";
         if (fmt == PixelFormats.Bgr32  || fmt == PixelFormats.Bgr24)   return "RGB";
         if (fmt == PixelFormats.Gray8)                                   return "Grayscale";
-        if (fmt == PixelFormats.Indexed8|| fmt == PixelFormats.Indexed4) return "Indexed";
+        if (fmt == PixelFormats.Indexed8 || fmt == PixelFormats.Indexed4) return "Indexed";
         return fmt.ToString();
     }
 
@@ -521,8 +877,8 @@ public sealed partial class ImageViewer : UserControl,
 
     private void CopyImage()
     {
-        if (_bitmap is not null)
-            Clipboard.SetImage(_bitmap);
+        if (_displayBitmap is not null)
+            Clipboard.SetImage(_displayBitmap);
     }
 }
 

@@ -313,7 +313,12 @@ public class FloatingWindowManager
     public FloatingWindow CreateFloatingWindow(DockItem item, Point? position = null)
     {
         var group = new DockGroupNode();
+        bool wasDocument = item.IsDocument; // Preserve: AddItem always syncs IsDocument to host type,
+                                            // but a floating DockGroupNode is not DocumentHostNode.
+                                            // IsDocument must survive the float so the drag manager
+                                            // routes drops to the document zone, not a panel.
         group.AddItem(item);
+        item.IsDocument = wasDocument;
 
         var window = ConfigureAndShow(group, item, position, trackPosition: true);
 
