@@ -179,15 +179,36 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 - `PluginSystemOptionsPage` — complete settings page: monitoring enabled/interval, sandbox mode, auto-update, trusted publisher; bound to `AppSettings.PluginSystemSettings`
 - `AppSettings.PluginSystemSettings` — `MonitoringEnabled`, `MonitoringIntervalMs`, `MaxHistoryPoints`, sandbox policy
 
+### ✨ Added — Terminal Panel Overhaul
+- `TerminalMode` enum — `Interactive` / `Script` / `ReadOnly` modes with visual indicator
+- `TerminalExportService` — export full session to `.txt` / `.log` file with timestamp header
+- `ITerminalService` (SDK) — new service contract exposing `Execute`, `Clear`, `ExportSession`, `HistoryLines`; consumed by plugins via `IIDEHostContext.TerminalService`
+- `TerminalServiceImpl` — App-side implementation wiring `TerminalPanelViewModel` to the SDK contract; registered in `IDEHostContext`
+- `ITerminalOutput.WriteTable()` — helper for tabular output (header + rows) with column alignment
+- `TerminalCommandRegistry` — new built-in commands: `export-log`, `set-mode`, `terminal-info`
+- `TerminalPanelViewModel` — TerminalMode state machine; per-mode prompt styling; `ExportSession()` delegation to `TerminalExportService`; improved async command dispatch; `ITerminalContext` / `ITerminalOutput` merged into single VM
+- `TerminalPanel.xaml` — mode indicator badge; export toolbar button; resize-handle polish; full keyboard history (↑/↓) wired to `CommandHistory`
+- `IIDEHostContext.TerminalService` — plugins can now read/write terminal programmatically
+- `PluginCapabilities.Terminal` — new capability flag; plugins declare terminal access requirement in manifest
+- `IDEHostContext` / `PluginHost.IDEHostContext` — exposes `ITerminalService`; `PluginPermission.Terminal` entry
+
+### ✨ Added — PropertiesPanel Auto-Refresh
+- `HexEditor.PropertyProvider` — `DependencyPropertyDescriptor.AddValueChanged` on `SelectionStartProperty` / `SelectionStopProperty`; bypasses anti-recursion guard that silently dropped `SelectionChanged` during keyboard navigation
+- 400 ms one-shot `DispatcherTimer` debounce — `PropertiesChanged` fires only after cursor is idle; eliminates synchronous `FileStream` + entropy calls on every keypress
+- `BuildDocumentGroup()` — `EditMode` bound as `enum` (not `.ToString()`); ComboBox `SelectedItem` now matches `AllowedValues` correctly (was always empty)
+
 ### 🔧 Changed
 - `PluginEntry` promoted from `internal` to `public`
 - Section separators normalized from Unicode box-drawing (`──`) to ASCII (`--`) across 134 files
 - `MainWindow.xaml` — Tools menu: Plugin Monitoring entry added; `PluginMonitoringPanel` dock item registered
+- `SolutionExplorerPanel` — toolbar layout polish; drag-drop from Windows Explorer refined
 
 ### 🐛 Fixed
 - `PermissionService` — `PermissionChangedEventArgs` object-initializer form; missing `System.IO` using
 - `PluginManifestValidator` — constructor signature and `result.IsValid` (was `!result.HasErrors`)
 - `SolutionExplorerPanel` — CS0136 variable scope collision in `OnTreeDragOver`
+- `HexEditor.Events.cs — EnsurePositionVisible` DOWN scroll: replaced centering formula (`lineNumber - visibleLines/2`) with `LastVisibleBytePosition`-based edge trigger; scroll now advances exactly 1 line per arrow-down keypress at viewport bottom; `VerticalScroll.Value` synced in all scroll paths
+- `ImageViewer` — `FileShare.ReadWrite` (was `Read`) allows concurrent access when HexEditor has the same file open; eliminates `IOException` on dual open
 
 ---
 

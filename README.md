@@ -97,7 +97,7 @@ WpfHexEditor uses a **plugin architecture** (`IDocumentEditor`) — every editor
 | **TBL Editor** | ✅ Active | ~60% | Character table editor for custom encodings and ROM hacking |
 | **Code Editor** | ✅ Active | ~55% | Multi-language code editor with syntax highlighting, find/replace, `IEditorPersistable`, split view |
 | **Text Editor** | ✅ Active | ~50% | Text editing with syntax highlighting and encoding support |
-| **Image Viewer** | 🔧 Stub | ~10% | Binary image viewer — open/zoom/pan; transform dialogs in progress |
+| **Image Viewer** | 🔧 Active | ~30% | Binary image viewer — zoom/pan, transform pipeline (rotate/flip/crop/resize), context menu, `FileShare.ReadWrite` for concurrent open |
 | **Audio Viewer** | 🔧 Stub | ~5% | Audio binary viewer (planned) |
 | **Diff / Changeset Viewer** | 🔧 Active | ~35% | Side-by-side binary comparison and changeset replay |
 | **Disassembly Viewer** | 🔧 Stub | ~5% | Binary disassembler (planned) |
@@ -118,7 +118,6 @@ All controls are **independently reusable** — no IDE required. Drop any of the
 | **[HexEditor](Sources/WpfHexEditor.HexEditor/)** | net8.0-windows | ~80% | Full-featured hex editor UserControl — MVVM, 16 services, insert/overwrite, search, bookmarks, TBL, 400+ format detection |
 | **[HexBox](Sources/WpfHexEditor.HexBox/)** | net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
 | **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
-| **[BarChart](Sources/WpfHexEditor.BarChart/)** | net8.0-windows | ~70% | Byte frequency distribution chart (0x00–0xFF) with zoom — embedded inside the Data Inspector panel |
 | **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/)** | net8.0-windows | ~65% | **Custom-built** VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — 100% in-house, zero third-party dependency |
 
 ### Libraries & Infrastructure
@@ -128,9 +127,9 @@ All controls are **independently reusable** — no IDE required. Drop any of the
 | **[Core](Sources/WpfHexEditor.Core/)** | net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
 | **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net8.0-windows | `IDocumentEditor` plugin contract, editor registry, changeset system, shared interfaces |
 | **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0 | 400+ format detection engine, binary templates, DataInspector service |
-| **[SDK](Sources/WpfHexEditor.SDK/)** | net8.0-windows | Public plugin API — `IWpfHexEditorPlugin`, `IIDEHostContext`, `IUIRegistry`, 10+ service contracts |
+| **[SDK](Sources/WpfHexEditor.SDK/)** | net8.0-windows | Public plugin API — `IWpfHexEditorPlugin`, `IIDEHostContext`, `IUIRegistry`, 11+ service contracts incl. `ITerminalService`, `PluginCapabilities.Terminal` |
 | **[PluginHost](Sources/WpfHexEditor.PluginHost/)** | net8.0-windows | Runtime plugin infrastructure — discovery, load, watchdog, `PluginManagerControl`, `PermissionService` |
-| **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/)** | net8.0-windows | Command engine — 31 built-in commands, `HxScriptEngine`, `CommandHistory` |
+| **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/)** | net8.0-windows | Command engine — 31+ built-in commands, `HxScriptEngine`, `CommandHistory`, `WriteTable` output helper |
 
 ---
 
@@ -144,10 +143,10 @@ Panels connect to the active document automatically via the docking system.
 | **Data Inspector** | ~65% | 40+ byte interpretations at caret position (int, float, GUID, date, color, …); plugin with settings page |
 | **Structure Overlay** | ~55% | Visual field highlighting superimposed on the hex grid |
 | **Solution Explorer** | ~75% | Project tree with virtual & physical folders, Show All Files, D&D from Windows Explorer, expand-state persistence, delete from disk |
-| **Properties Panel** | ~50% | Context-aware properties for the active document (F4) |
+| **Properties Panel** | ~60% | Context-aware properties for the active document (F4) — auto-refresh on cursor idle (400 ms debounce), categorized groups, sort/copy/refresh toolbar |
 | **Error Panel** | ~70% | Diagnostics and validation errors from any `IDiagnosticSource` editor |
 | **Output Panel** | ~65% | Session log, file operation messages and build feedback |
-| **Terminal Panel** | ~60% | Integrated command terminal — 31 built-in commands, colored output, history (`Ctrl+\`` `) |
+| **Terminal Panel** | ~70% | Integrated command terminal — 31+ commands, colored output, history, `TerminalMode` (Interactive/Script/ReadOnly), session export, plugin API via `ITerminalService` |
 | **Plugin Manager** | ~60% | Browse, enable/disable, uninstall plugins; settings integration via `IPluginWithOptions` |
 | **Options** | ~75% | VS2026-style settings document tab — 9 pages: theme, display, editing, behavior, status bar, plugins, auto-save |
 | **Quick Search Bar** | ~55% | Inline Ctrl+F overlay (VSCode-style) — find next/prev, regex toggle, jump to Advanced |
