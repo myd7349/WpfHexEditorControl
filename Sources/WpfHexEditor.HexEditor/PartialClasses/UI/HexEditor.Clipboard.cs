@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.Clipboard.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing clipboard operations for the HexEditor.
+//     Supports copy/paste of selected bytes as hex string, raw bytes, and
+//     C-array formats. Paste validates byte data against file boundaries.
+//
+// Architecture Notes:
+//     Uses WPF Clipboard API with custom DataFormats for hex data.
+//     All paste operations go through the changeset system for undo/redo support.
+//
+// ==========================================================
 
 using System;
 using System.IO;

@@ -1,9 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-// High-performance custom rendering viewport for HexEditor (V2 architecture)
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexViewport.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     High-performance custom WPF rendering viewport for the HexEditor (V2 architecture).
+//     Renders hex bytes, ASCII column, line offsets, selection, highlights, and
+//     custom background blocks using virtualized DrawingVisual-based rendering.
+//
+// Architecture Notes:
+//     Uses DrawingVisual and custom hit-testing for minimal WPF overhead.
+//     Owns the rendering pipeline: layout → measure → render → hit-test.
+//     Communicates with HexEditor via DependencyProperties and events.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

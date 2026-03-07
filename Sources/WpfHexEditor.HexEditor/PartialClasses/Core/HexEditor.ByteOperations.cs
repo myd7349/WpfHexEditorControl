@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.ByteOperations.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing low-level byte read/write/fill operations for the HexEditor.
+//     Provides methods for reading bytes by position, writing single or range values,
+//     and fill operations using various byte patterns.
+//
+// Architecture Notes:
+//     All mutations go through the changeset system for undo/redo support.
+//     Depends on WpfHexEditor.Core byte utilities and model layer.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

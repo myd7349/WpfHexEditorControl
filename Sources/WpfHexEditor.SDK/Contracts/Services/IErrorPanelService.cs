@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IErrorPanelService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Plugin-facing service for posting diagnostic entries to the IDE ErrorPanel.
-//
-// Architecture Notes:
-//     Implemented by ErrorPanelServiceImpl in App/Services, wrapping the ErrorPanel.
-//     Requires PluginPermission.WriteErrorPanel to be granted.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Services;
 

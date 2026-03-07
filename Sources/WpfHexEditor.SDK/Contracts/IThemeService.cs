@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IThemeService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Service providing IDE theme information and dynamic theme integration to plugins.
-//     All plugin WPF controls must use this service — hardcoded colors are forbidden.
-//
-// Architecture Notes:
-//     Plugins must NOT hardcode brush/color values. They must request theme resources
-//     via GetThemeResources() and use SetResourceReference / DynamicResource.
-//     RegisterThemeAwareControl() auto-updates a FrameworkElement when theme changes.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows;
 

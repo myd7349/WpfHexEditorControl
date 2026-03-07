@@ -1,17 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: MarketplaceListing.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     DTO representing a plugin listing retrieved from the marketplace.
-//     Stub for future marketplace client implementation.
-//
-// Architecture Notes:
-//     IMarketplaceService returns collections of this type.
-//     Mirrors the marketplace section in PluginManifest.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Models;
 

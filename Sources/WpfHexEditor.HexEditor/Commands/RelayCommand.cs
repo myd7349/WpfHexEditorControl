@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: RelayCommand.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Generic ICommand implementation for the MVVM pattern.
+//     Wraps an Action delegate and an optional CanExecute predicate,
+//     and uses CommandManager.RequerySuggested for automatic CanExecute refresh.
+//
+// Architecture Notes:
+//     Follows the Command pattern (GoF). Used throughout the HexEditor MVVM
+//     layer to bind UI actions to ViewModel logic without coupling views to logic.
+//
+// ==========================================================
 
 using System;
 using System.Windows.Input;

@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginDiagnosticsCollector.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Collects rolling performance metrics for a single plugin.
-//     Provides CPU%, memory, average execution time, and peak values
-//     for Plugin Manager display and SlowPluginDetector.
-//
-// Architecture Notes:
-//     Circular buffer (default 100 entries) for memory efficiency.
-//     Thread-safe via lock for concurrent sampling and read access.
-//     CPU% is approximated from ProcessorTime delta between samples.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Contracts;
 
@@ -77,7 +66,7 @@ internal sealed class PluginDiagnosticsCollector : IPluginDiagnostics
         lock (_lock) { return [.. _buffer]; }
     }
 
-    // ── IPluginDiagnostics ────────────────────────────────────────────────────
+    // â”€â”€ IPluginDiagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public long MemoryBytes => GetLatest()?.MemoryBytes ?? 0;
     public double CpuUsagePercent => GetLatest()?.CpuPercent ?? 0.0;

@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginWatchdog.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Monitors plugin calls for timeout/freeze. If a plugin call exceeds the
-//     configured timeout, the watchdog marks the plugin as non-responsive and
-//     raises an event for PluginHost to handle (log, notify UI, disable plugin).
-//
-// Architecture Notes:
-//     Wrap calls via WrapAsync<T> — the caller awaits a timeout-bounded task.
-//     On timeout: raises PluginNonResponsive, plugin entry IsResponsive = false.
-//     Timeouts are configurable per-use (init vs. per-call defaults).
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.PluginHost;
 

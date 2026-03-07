@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: UndoRedoManager.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Manages the undo and redo stacks for byte modification operations in the
+//     hex editor. Supports Modify, Insert, and Delete operation types with
+//     grouped transactions for atomic multi-byte undo/redo.
+//
+// Architecture Notes:
+//     Pure domain model — no WPF dependencies. Consumed by ByteProvider and
+//     UndoRedoService. UndoOperationType enum defined in this file for locality.
+//     Stack-based design limits memory use for large edit sessions.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

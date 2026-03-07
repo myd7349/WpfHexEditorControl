@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteReader.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Intelligent byte reading service that combines FileProvider, EditsManager,
+//     and PositionMapper to transparently serve bytes at virtual positions.
+//     Handles modified, inserted, and deleted bytes with multi-layer caching.
+//
+// Architecture Notes:
+//     Works exclusively with virtual (user-visible) positions. Depends on
+//     FileProvider, EditsManager, and PositionMapper. No WPF dependencies —
+//     pure data access layer within the ByteProvider V2 architecture.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

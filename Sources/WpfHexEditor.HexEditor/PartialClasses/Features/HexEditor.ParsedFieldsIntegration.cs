@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.ParsedFieldsIntegration.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class integrating the HexEditor with the ParsedFieldsPanel.
+//     Wires parsed field definitions to custom background blocks in the viewport
+//     so that known fields are visually highlighted by field type and color.
+//
+// Architecture Notes:
+//     Observer pattern — subscribes to ParsedFieldsPanel.FieldsChanged event.
+//     Translates IParsedField definitions into CustomBackgroundBlock entries.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

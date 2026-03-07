@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IPluginDiagnostics.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Interface exposing real-time performance diagnostics for a plugin.
-//     Implemented by PluginDiagnosticsCollector in PluginHost.
-//
-// Architecture Notes:
-//     Read by SlowPluginDetector and PluginManager UI.
-//     Plugin authors may optionally implement this on their plugin class to
-//     provide self-reported metrics.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts;
 
@@ -24,7 +14,7 @@ public interface IPluginDiagnostics
     /// <summary>Gets the current memory usage attributed to this plugin in bytes.</summary>
     long MemoryBytes { get; }
 
-    /// <summary>Gets the current CPU usage percentage (0.0–100.0) attributed to this plugin.</summary>
+    /// <summary>Gets the current CPU usage percentage (0.0â€“100.0) attributed to this plugin.</summary>
     double CpuUsagePercent { get; }
 
     /// <summary>Gets the rolling average execution time of the last N plugin calls.</summary>

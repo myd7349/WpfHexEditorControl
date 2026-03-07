@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: IPSPatchResult.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Represents the detailed result of an IPS patching operation, including success
+//     status, error message, applied record count, and file size information.
+//     Returned by IPSPatcher after apply or create operations.
+//
+// Architecture Notes:
+//     Pure data transfer object — no WPF dependencies, no logic.
+//     Complements the generic PatchResult with IPS-specific record statistics.
+//     Consumed by the patch application dialog and ROM hacking module.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

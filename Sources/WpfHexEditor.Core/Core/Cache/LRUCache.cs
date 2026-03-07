@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: LRUCache.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Generic thread-safe LRU (Least Recently Used) cache that automatically
+//     evicts the least recently used entry when capacity is reached. Used for
+//     caching search results, computed values, and expensive operations.
+//
+// Architecture Notes:
+//     Repository pattern for in-memory storage. TKey must implement IEquatable.
+//     Thread-safety via lock on internal LinkedList. Consumed by SearchEngine
+//     and FormatDetectionService. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

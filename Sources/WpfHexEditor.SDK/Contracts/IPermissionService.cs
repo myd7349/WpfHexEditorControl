@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IPermissionService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Runtime permission enforcement service for the plugin system.
-//     Tracks which permissions are currently granted for each plugin.
-//     Plugins must degrade gracefully when a permission is revoked.
-//
-// Architecture Notes:
-//     Permissions declared in manifest are the initial set.
-//     User can revoke/grant individual permissions in Plugin Manager at runtime.
-//     PermissionChanged event allows plugins to adapt without crashing.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Models;
 

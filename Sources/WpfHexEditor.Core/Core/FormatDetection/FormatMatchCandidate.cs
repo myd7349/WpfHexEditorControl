@@ -1,10 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Multi-Tier Format Detection System
-// Author: Derek Tremblay
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: FormatMatchCandidate.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Represents a potential format match candidate produced by the multi-tier
+//     format detection system, carrying confidence score, matched format definition,
+//     and detection evidence for final ranking and selection.
+//
+// Architecture Notes:
+//     Data container returned by FormatDetectionService. Ranked by confidence
+//     score (0.0–1.0). The highest-confidence candidate triggers editor selection.
+//     No WPF dependencies.
+//
+// ==========================================================
 
 using System.Collections.Generic;
 using WpfHexEditor.Core;

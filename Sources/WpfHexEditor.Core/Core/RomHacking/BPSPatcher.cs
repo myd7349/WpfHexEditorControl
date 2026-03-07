@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: BPSPatcher.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Static patcher implementing the BPS1 (Beat Patch System) format by Near/byuu.
+//     Supports applying and creating BPS patches including CRC-32 source/target/patch
+//     verification. Handles SourceRead, TargetRead, SourceCopy, and TargetCopy actions.
+//
+// Architecture Notes:
+//     Pure static utility — no WPF dependencies. Relies on CRC32 helper for integrity
+//     checks. Returns PatchResult value objects; never throws on patch failure.
+//     Consumed by the ROM hacking module and the patch application dialog.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: FormatDefinition.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Represents a complete file format definition loaded from a .whfmt JSON file.
+//     Contains metadata (name, extension, MIME), detection rules (magic bytes,
+//     signatures), and block definitions for structured field parsing.
+//
+// Architecture Notes:
+//     Deserialized from JSON via System.Text.Json. Includes PreferredEditor
+//     and IsTextFormat properties for editor selection routing. Consumed by
+//     FormatDetectionService and FormatScriptInterpreter. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

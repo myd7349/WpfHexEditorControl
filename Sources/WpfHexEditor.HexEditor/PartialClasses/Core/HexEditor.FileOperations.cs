@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.FileOperations.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing file open/save/close operations for the HexEditor.
+//     Manages file path handling, read-only detection, dirty state tracking,
+//     and integration with the ScrollMarkerPanel for file visualization.
+//
+// Architecture Notes:
+//     File I/O delegates to HexViewport and the underlying stream/data model.
+//     Fires FileSaved/FileOpened/FileClosed events for external integration.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

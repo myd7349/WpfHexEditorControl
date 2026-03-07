@@ -1,17 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IParsedFieldService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Plugin-facing service for accessing the ParsedFields panel data —
-//     structured field definitions overlaid on the HexEditor.
-//
-// Architecture Notes:
-//     Implemented by ParsedFieldServiceImpl in App/Services.
-//     Requires PluginPermission.AccessHexEditor to be granted.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Services;
 

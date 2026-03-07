@@ -1,21 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.Options
-// File: TextEditorOptionsPage.xaml.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Code-behind for the TextEditor options page.
-//     Covers font, indentation, features (line numbers, zoom),
-//     .whchg toggle, and syntax colour overrides.
-//
-// Architecture Notes:
-//     Pattern: IOptionsPage (Load / Flush / Changed)
-//     Colour override: CheckBox enables the override; ColorPicker holds the value.
-//     Empty string stored when CheckBox is unchecked (= use theme default).
-//     Theme: DynamicResource brushes inherited from OptionsEditorControl.
-//     ColorPicker DynamicResources (BorderBrush, SurfaceElevatedBrush,
-//     ForegroundBrush) are resolved from the active application theme.
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System;
 using System.Windows;
@@ -32,7 +19,7 @@ public sealed partial class TextEditorOptionsPage : UserControl, IOptionsPage
 
     public TextEditorOptionsPage() => InitializeComponent();
 
-    // ── IOptionsPage ──────────────────────────────────────────────────────
+    // â”€â”€ IOptionsPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public void Load(AppSettings s)
     {
@@ -76,7 +63,7 @@ public sealed partial class TextEditorOptionsPage : UserControl, IOptionsPage
         te.CommentColor    = FlushColorPicker(ChkCmt, CpCmt);
     }
 
-    // ── Control handlers ─────────────────────────────────────────────────
+    // â”€â”€ Control handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void OnCheckChanged(object sender, RoutedEventArgs e)
     {
@@ -103,7 +90,7 @@ public sealed partial class TextEditorOptionsPage : UserControl, IOptionsPage
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private static void SelectComboByTag(ComboBox combo, string tag)
     {

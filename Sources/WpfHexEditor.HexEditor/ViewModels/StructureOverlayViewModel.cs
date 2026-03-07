@@ -1,9 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Structure Overlay ViewModel
-// Author : Claude Sonnet 4.5
-// Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: StructureOverlayViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+// Created: 2026-03-06
+// Description:
+//     ViewModel for the StructureOverlay feature in the HexEditor. Manages an
+//     observable collection of StructureOverlayEntry items that define colored
+//     background regions mapped to parsed binary fields within the viewport.
+//
+// Architecture Notes:
+//     MVVM pattern — implements INotifyPropertyChanged manually.
+//     Consumed by HexViewport to paint custom background blocks via DependencyProperty.
+//
+// ==========================================================
 
 using System;
 using System.Collections.ObjectModel;

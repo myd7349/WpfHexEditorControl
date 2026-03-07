@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: ValueConverters.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Collection of miscellaneous WPF IValueConverter implementations used across
+//     the HexEditor XAML layer. Includes converters for color, numeric, and
+//     visibility transformations not covered by dedicated converter files.
+//
+// Architecture Notes:
+//     Multiple small stateless converters grouped in a single file for convenience.
+//     Depends on WpfHexEditor.Core for shared constants and types.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

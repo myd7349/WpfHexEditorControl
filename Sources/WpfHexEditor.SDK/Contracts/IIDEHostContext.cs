@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IIDEHostContext.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     The complete IDE host context passed to every plugin via InitializeAsync.
-//     Provides access to all IDE services through plugin-safe interfaces.
-//
-// Architecture Notes:
-//     This is the single injection point — plugins should NOT reference App internals.
-//     Implemented by IDEHostContextImpl in App/Services, injected into PluginHost.
-//     All service properties are non-null; unavailable services return no-op implementations.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Contracts.Services;
 
@@ -24,7 +14,7 @@ namespace WpfHexEditor.SDK.Contracts;
 /// </summary>
 public interface IIDEHostContext
 {
-    // ── IDE Services ─────────────────────────────────────────────────────────
+    // â”€â”€ IDE Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Access to the Solution Explorer for file/project navigation.</summary>
     ISolutionExplorerService SolutionExplorer { get; }
@@ -44,7 +34,7 @@ public interface IIDEHostContext
     /// <summary>Access to the IDE ErrorPanel for plugin diagnostics.</summary>
     IErrorPanelService ErrorPanel { get; }
 
-    // ── Cross-Plugin Services ────────────────────────────────────────────────
+    // â”€â”€ Cross-Plugin Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Focus-aware service tracking active document and panel.</summary>
     IFocusContextService FocusContext { get; }
@@ -55,7 +45,7 @@ public interface IIDEHostContext
     /// </summary>
     IPluginEventBus EventBus { get; }
 
-    // ── UI Integration ───────────────────────────────────────────────────────
+    // â”€â”€ UI Integration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Registry for contributing UI elements (panels, menus, toolbars, status bar items).
@@ -63,7 +53,7 @@ public interface IIDEHostContext
     /// </summary>
     IUIRegistry UIRegistry { get; }
 
-    // ── IDE Features ──────────────────────────────────────────────────────────
+    // â”€â”€ IDE Features â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Theme service providing current IDE theme resources and theme change notifications.

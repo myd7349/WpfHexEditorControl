@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2003-2019
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: DTE.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Represents a single DTE (Dual/Multiple Title Encoding) entry from a TBL file,
+//     mapping a hex byte sequence to a character string for ROM hacking character
+//     table translation. Includes validation and type classification.
+//
+// Architecture Notes:
+//     Sealed class for DTE entries used in TBLStream. Validates entry format via
+//     regex. DteType enum distinguishes ASCII, Japanese, DTE, MTE, EndLine, EndBlock.
+//     No WPF dependencies — pure domain model.
+//
+// ==========================================================
 
 using System;
 using System.Text.RegularExpressions;

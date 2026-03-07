@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.QuickSearch.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing the inline Ctrl+F quick search bar for the HexEditor.
+//     Hosts a QuickSearchBar UserControl in a transparent Canvas overlay and manages
+//     its show/hide lifecycle, position, and delegation to the full search panel.
+//
+// Architecture Notes:
+//     QuickSearchBar floats in a Canvas over the HexViewport. Position is persisted
+//     via DependencyProperties. Ctrl+F toggles visibility; Escape dismisses it.
+//
+// ==========================================================
 
 using System.Windows;
 

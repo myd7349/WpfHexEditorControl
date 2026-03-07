@@ -1,17 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginEntry.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Internal record of a single loaded (or failed) plugin, held by PluginHost.
-//     Aggregates manifest, live instance, load context, diagnostics, and state.
-//
-// Architecture Notes:
-//     Mutable state (State, FaultException) is updated by PluginHost exclusively.
-//     Thread-safe reads via volatile for State field.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Models;
@@ -23,12 +14,12 @@ namespace WpfHexEditor.PluginHost;
 /// </summary>
 internal sealed class PluginEntry
 {
-    // ── Identity ─────────────────────────────────────────────────────────────
+    // â”€â”€ Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Parsed plugin manifest.</summary>
     public PluginManifest Manifest { get; }
 
-    // ── Live Instance ────────────────────────────────────────────────────────
+    // â”€â”€ Live Instance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Plugin instance (null until successfully loaded).</summary>
     public IWpfHexEditorPlugin? Instance { get; set; }
@@ -36,7 +27,7 @@ internal sealed class PluginEntry
     /// <summary>Isolated AssemblyLoadContext for InProcess plugins (null for Sandbox).</summary>
     public PluginLoadContext? LoadContext { get; set; }
 
-    // ── State ────────────────────────────────────────────────────────────────
+    // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private volatile PluginState _state = PluginState.Unloaded;
 
@@ -50,7 +41,7 @@ internal sealed class PluginEntry
     /// <summary>Exception captured during a Faulted transition (null otherwise).</summary>
     public Exception? FaultException { get; set; }
 
-    // ── Timing ───────────────────────────────────────────────────────────────
+    // â”€â”€ Timing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>UTC timestamp when the plugin was successfully initialized.</summary>
     public DateTime? LoadedAt { get; set; }
@@ -58,12 +49,12 @@ internal sealed class PluginEntry
     /// <summary>Time taken by the plugin's InitializeAsync call.</summary>
     public TimeSpan InitDuration { get; set; }
 
-    // ── Diagnostics ──────────────────────────────────────────────────────────
+    // â”€â”€ Diagnostics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Rolling performance diagnostics collector for this plugin.</summary>
     public PluginDiagnosticsCollector Diagnostics { get; } = new();
 
-    // ── Constructor ──────────────────────────────────────────────────────────
+    // â”€â”€ Constructor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public PluginEntry(PluginManifest manifest)
     {

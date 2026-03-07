@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IHexEditorService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Plugin-facing service for accessing the active HexEditor content,
-//     selection, offset, and byte data — without exposing WPF internals.
-//
-// Architecture Notes:
-//     Implemented by HexEditorServiceImpl in App/Services, wrapping ActiveHexEditor.
-//     Read-only by default; write operations require AccessHexEditor permission.
-//     Requires PluginPermission.AccessHexEditor to be granted.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Services;
 
@@ -62,6 +52,18 @@ public interface IHexEditorService
     /// Raised on the UI thread.
     /// </summary>
     event EventHandler SelectionChanged;
+
+    /// <summary>
+    /// Searches for a hex pattern (e.g. "FF 0A") in the current file.
+    /// </summary>
+    /// <returns>List of matching byte offsets, or empty list if no match.</returns>
+    IReadOnlyList<long> SearchHex(string hexPattern);
+
+    /// <summary>
+    /// Searches for a UTF-8 text string in the current file.
+    /// </summary>
+    /// <returns>List of matching byte offsets, or empty list if no match.</returns>
+    IReadOnlyList<long> SearchText(string text);
 
     /// <summary>
     /// Raised when a new file is opened in the HexEditor.

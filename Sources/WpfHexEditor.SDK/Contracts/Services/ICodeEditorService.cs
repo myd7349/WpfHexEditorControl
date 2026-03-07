@@ -1,17 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: ICodeEditorService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Plugin-facing service for interacting with the active CodeEditor.
-//     Provides read access to content, cursor position, and language.
-//
-// Architecture Notes:
-//     Implemented by CodeEditorServiceImpl in App/Services.
-//     Requires PluginPermission.AccessCodeEditor to be granted.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Services;
 

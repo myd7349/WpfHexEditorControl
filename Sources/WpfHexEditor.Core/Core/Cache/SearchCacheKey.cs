@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: SearchCacheKey.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Immutable struct serving as the cache key for search operations.
+//     Combines the search pattern hash, start position, and file length
+//     to uniquely identify a previous search result in the LRU cache.
+//
+// Architecture Notes:
+//     Value type (struct) implementing IEquatable for efficient dictionary
+//     lookups. Used as TKey in LRUCache<SearchCacheKey, SearchResult>.
+//     No WPF dependencies — pure domain model.
+//
+// ==========================================================
 
 using System;
 using System.Linq;

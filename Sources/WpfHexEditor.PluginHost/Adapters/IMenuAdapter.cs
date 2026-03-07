@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: IMenuAdapter.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Adapter interface decoupling PluginHost/UIRegistry from the concrete
-//     WPF menu system in WpfHexEditor.App/MainWindow.
-//     Implemented by MenuAdapter in WpfHexEditor.App/Services.
-//
-// Architecture Notes:
-//     Adapter pattern — PluginHost has no reference to App internals.
-//     UIRegistry calls these methods to add/remove plugin menu contributions.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Descriptors;
 

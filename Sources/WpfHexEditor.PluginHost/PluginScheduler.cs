@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginScheduler.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Throttles plugin callback frequency to prevent CPU spikes.
-//     Plugins that call back too frequently are rate-limited by this scheduler.
-//
-// Architecture Notes:
-//     Per-plugin token bucket (max calls/second configurable).
-//     If a plugin exceeds its budget, excess calls are deferred to the next slot.
-//     Designed for UI-facing plugins that update on selection/scroll changes.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.PluginHost;
 
@@ -54,7 +44,7 @@ internal sealed class PluginScheduler
         lock (_lock) { _counters.Remove(pluginId); }
     }
 
-    // ── Sliding window counter ───────────────────────────────────────────────
+    // â”€â”€ Sliding window counter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private sealed class SlidingWindowCounter(int maxPerSecond)
     {

@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginStateSerializer.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Persists and restores plugin state across IDE sessions.
-//     Stores per-plugin JSON files in %AppData%/WpfHexEditor/Plugins/{pluginId}.json.
-//     Uses atomic write (temp file + rename) to prevent partial writes.
-//
-// Architecture Notes:
-//     Called by PluginHost: LoadStateAsync after init, SaveStateAsync on shutdown.
-//     Plugins must implement IPluginState to participate in state persistence.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.PluginHost;
 

@@ -1,8 +1,19 @@
-////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: QuickSearchBar.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the QuickSearchBar UserControl — the inline Ctrl+F search bar
+//     hosted in a transparent Canvas overlay within the HexEditor. Supports
+//     next/previous navigation and delegates to the full SearchPanel for advanced options.
+//
+// Architecture Notes:
+//     View binds to SearchViewModel from the Search namespace.
+//     Floatable overlay: positioned via Canvas.Left/Top DependencyProperties.
+//
+// ==========================================================
 
 using System;
 using System.Windows;

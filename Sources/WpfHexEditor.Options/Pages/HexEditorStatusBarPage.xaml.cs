@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.Options
-// File: HexEditorStatusBarPage.xaml.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Options page — controls which items are visible inside
-//     the HexEditor built-in status bar.
-//
-// Architecture Notes:
-//     Implements IOptionsPage (Load / Flush / Changed pattern).
-//     Category: "Hex Editor" | Page: "Status Bar"
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System;
 using System.Windows;
@@ -25,7 +17,7 @@ public sealed partial class HexEditorStatusBarPage : UserControl, IOptionsPage
 
     public HexEditorStatusBarPage() => InitializeComponent();
 
-    // ── IOptionsPage ──────────────────────────────────────────────────────
+    // â”€â”€ IOptionsPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public void Load(AppSettings s)
     {
@@ -52,7 +44,7 @@ public sealed partial class HexEditorStatusBarPage : UserControl, IOptionsPage
         s.HexEditorDefaults.ShowBytesPerLineInStatusBar = CheckShowBytesPerLine.IsChecked == true;
     }
 
-    // ── Control handlers ─────────────────────────────────────────────────
+    // â”€â”€ Control handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void OnCheckChanged(object sender, RoutedEventArgs e)
     {

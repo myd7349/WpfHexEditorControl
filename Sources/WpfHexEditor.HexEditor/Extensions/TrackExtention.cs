@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2020
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: TrackExtention.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Extension methods for WPF ScrollBar Track controls. Provides helpers to
+//     retrieve the actual top and bottom positions of the track thumb within
+//     the scrollbar, used for scroll marker positioning calculations.
+//
+// Architecture Notes:
+//     Extends Track (System.Windows.Controls.Primitives) with geometry helpers.
+//     Used by ScrollMarkerPanel to align markers to the scrollbar track.
+//
+// ==========================================================
 
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;

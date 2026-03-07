@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: RelativeSearchViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     ViewModel for the RelativeSearchDialog. Allows searching for byte sequences
+//     relative to the current cursor position or a reference offset, with
+//     configurable relative direction and distance constraints.
+//
+// Architecture Notes:
+//     MVVM pattern — implements INotifyPropertyChanged manually.
+//     Uses CancellationToken for async search cancellability.
+//
+// ==========================================================
 
 using System;
 using System.Collections.ObjectModel;

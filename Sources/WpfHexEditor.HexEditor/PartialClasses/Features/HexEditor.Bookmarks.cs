@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.Bookmarks.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class managing bookmark creation, navigation, and removal in the HexEditor.
+//     Bookmarks mark named byte offsets and appear as colored scroll markers on the
+//     ScrollMarkerPanel for quick visual navigation.
+//
+// Architecture Notes:
+//     Bookmark state stored in HexEditorViewModel.Bookmarks collection.
+//     Visual representation delegated to ScrollMarkerPanel via DependencyProperty.
+//
+// ==========================================================
 
 namespace WpfHexEditor.HexEditor
 {

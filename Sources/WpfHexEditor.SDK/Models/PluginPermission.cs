@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: PluginPermission.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Flags enumeration of granular permissions a plugin can declare and be granted.
-//     Designed as a [Flags] enum for extensibility — new capabilities can be added
-//     without breaking existing plugins that do not declare them.
-//
-// Architecture Notes:
-//     Permissions are declared in the plugin manifest (PluginCapabilities).
-//     At runtime, IPermissionService checks and enforces granted permissions.
-//     Revoking a permission must not crash the plugin — it must degrade gracefully.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Models;
 

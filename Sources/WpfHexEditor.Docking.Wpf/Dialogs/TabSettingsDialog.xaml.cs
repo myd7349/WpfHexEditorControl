@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: TabSettingsDialog.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the live-preview document tab options dialog. Changes to
+//     controls are applied immediately to the shared DocumentTabBarSettings
+//     instance so the user sees updates in real time without needing to confirm.
+//
+// Architecture Notes:
+//     Inherits ThemedDialog for automatic global theme compliance.
+//     Implements INotifyPropertyChanged for ViewModel-lite binding.
+//     Direct mutation pattern: no intermediate ViewModel needed since settings
+//     already implement change notification.
+//
+// ==========================================================
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;

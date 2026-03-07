@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.RelativeSearch.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing relative search operations for the HexEditor.
+//     Opens the RelativeSearchDialog and integrates results with the viewport,
+//     enabling searches relative to current cursor position or a reference offset.
+//
+// Architecture Notes:
+//     Dialog opened on demand; result navigation updates SelectionStart in the editor.
+//     Uses CancellationToken for async search with progress feedback.
+//
+// ==========================================================
 
 using System;
 using System.Threading;

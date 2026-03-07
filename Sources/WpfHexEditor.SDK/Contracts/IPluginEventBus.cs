@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IPluginEventBus.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Central event bus for decoupled communication between plugins.
-//     Plugins publish and subscribe to typed events without direct references.
-//
-// Architecture Notes:
-//     Pattern: Publish/Subscribe with weak references to prevent memory leaks
-//     when plugins are unloaded. IDisposable subscriptions auto-clean on unload.
-//     Async dispatch supported for non-blocking UI plugins.
-//     Example: DataInspectorPlugin publishes ByteMetricsEvent; FileStatisticsPlugin subscribes.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts;
 

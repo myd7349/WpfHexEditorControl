@@ -1,8 +1,17 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2021
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: ByteToHexStringConverter.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     WPF IValueConverter that converts a byte value to a hexadecimal string
+//     representation (e.g., 0xFF). Supports optional 0x prefix tag via Show0xTag property.
+//
+// Architecture Notes:
+//     Stateless sealed converter. Relies on WpfHexEditor.Core byte utilities.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

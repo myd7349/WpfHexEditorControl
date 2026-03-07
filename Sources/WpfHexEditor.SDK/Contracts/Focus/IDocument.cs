@@ -1,17 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IDocument.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Abstraction representing the currently active document in the IDE.
-//     Provides plugin-safe access without exposing WPF internals.
-//
-// Architecture Notes:
-//     Used by IFocusContextService to notify plugins of document changes.
-//     Implemented by the App layer (MainWindow) adapting the concrete editor.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Focus;
 

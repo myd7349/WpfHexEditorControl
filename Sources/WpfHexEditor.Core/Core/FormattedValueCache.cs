@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: FormattedValueCache.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Cache for formatted field values to avoid redundant formatting operations.
+//     Uses a composite key (offset, length, valueType, formatterType, valueHash)
+//     to identify and retrieve previously computed display strings.
+//
+// Architecture Notes:
+//     Dictionary-based in-memory cache. Invalidated on file edit events.
+//     Consumed by ParsedFieldsPanel and FieldValueReader. Improves UI
+//     responsiveness for large format structures. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

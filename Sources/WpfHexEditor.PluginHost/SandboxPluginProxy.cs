@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: SandboxPluginProxy.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     In-process proxy for sandboxed plugins running in WpfHexEditor.PluginSandbox.exe.
-//     Marshals IWpfHexEditorPlugin method calls over a Named Pipe IPC channel.
-//     Full implementation is Phase 5; this stub enables Phase 1 compilation and wiring.
-//
-// Architecture Notes:
-//     Proxy pattern — implements IWpfHexEditorPlugin, delegates to out-of-process plugin.
-//     Named Pipe connection lifecycle tied to Process lifetime.
-//     If the sandbox process exits unexpectedly, proxy raises PluginCrashed.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Diagnostics;
 using WpfHexEditor.SDK.Contracts;
@@ -23,7 +12,7 @@ namespace WpfHexEditor.PluginHost;
 
 /// <summary>
 /// Proxy for an out-of-process plugin running inside WpfHexEditor.PluginSandbox.exe.
-/// Phase 5 stub — IPC channel not yet implemented.
+/// Phase 5 stub â€” IPC channel not yet implemented.
 /// </summary>
 internal sealed class SandboxPluginProxy : IWpfHexEditorPlugin, IAsyncDisposable
 {

@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.StatusBarContributor.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing IStatusBarContributor for the HexEditor.
+//     Provides status bar items (current offset, selection size, edit mode,
+//     encoding, file size) to the IDE's status bar infrastructure.
+//
+// Architecture Notes:
+//     Implements IStatusBarContributor from WpfHexEditor.Editor.Core.
+//     Status items refreshed on selection change, mode change, and file events.
+//
+// ==========================================================
 
 using System;
 using System.Collections.ObjectModel;

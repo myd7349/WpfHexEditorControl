@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.DiagnosticSource.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing IDiagnosticSource for the HexEditor.
+//     Provides structured diagnostic information (warnings, errors, info messages)
+//     about the currently loaded file to the ErrorPanel in the IDE.
+//
+// Architecture Notes:
+//     Implements IDiagnosticSource interface from WpfHexEditor.Editor.Core.
+//     File-scoped namespace syntax (C# 10). Diagnostic entries are raised
+//     reactively on file load, format detection, and edit events.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

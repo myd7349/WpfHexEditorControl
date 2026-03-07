@@ -1,13 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: PropertyConstraints.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-// Apache 2.0 - 2026
-// Property Discovery and Auto-Generation System
-// Author: Claude Sonnet 4.5
-// Contributors: Derek Tremblay (derektremblay666@gmail.com)
+// Created: 2026-03-06
+// Description:
+//     Defines validation constraints for a discovered property in the dynamic settings
+//     UI system. Carries min/max value, step, allowed enum type, and a list of
+//     valid string values used to configure sliders and combo boxes.
+//
+// Architecture Notes:
+//     Pure data model — no WPF dependencies in the constraints themselves.
+//     Populated by PropertyDiscoveryService from [Range] and [ValidValues] attributes.
+//     Consumed by the auto-generated settings panel builder.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

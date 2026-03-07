@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.CustomBackgroundBlocks.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class managing custom background color blocks in the HexEditor viewport.
+//     Allows consumers to define colored byte ranges that are rendered as background
+//     highlights in the hex view, independent of selection and search highlights.
+//
+// Architecture Notes:
+//     Uses CustomBackgroundBlockService from WpfHexEditor.Core.Services for block management.
+//     Rendering delegated to HexViewport DrawingVisual pipeline.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

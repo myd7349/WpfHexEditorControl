@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2020
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteArrayExtention.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Extension methods for byte arrays providing pattern search functionality,
+//     including finding the index of a byte subsequence within a byte array
+//     for search and comparison operations.
+//
+// Architecture Notes:
+//     Pure static extension class — no state, no WPF dependencies. Predates
+//     SpanSearchExtensions; the Span-based implementations should be preferred
+//     for new performance-sensitive code paths.
+//
+// ==========================================================
 
 using System.Collections.Generic;
 using System.Linq;

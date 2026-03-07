@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginManagerViewModel.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Master ViewModel for the Plugin Manager document tab.
-//     Maintains the filtered/sorted list of plugins and delegates
-//     all lifecycle actions to PluginHost.
-//
-// Architecture Notes:
-//     MVVM — PluginManagerControl data-binds entirely to this ViewModel.
-//     DispatcherTimer (2s) calls Refresh() on all item VMs for live metrics.
-//     Filter is applied in-memory over the full list on FilterText change.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;

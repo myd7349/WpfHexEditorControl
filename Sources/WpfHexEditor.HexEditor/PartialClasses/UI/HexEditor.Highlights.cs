@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.Highlights.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class managing byte range highlights in the HexEditor viewport.
+//     Exposes AddHighlight, RemoveHighlight, and ClearHighlights methods for
+//     annotating specific byte ranges with named colors independent of selection.
+//
+// Architecture Notes:
+//     Highlight state stored in HexEditorViewModel. Visual rendering delegated
+//     to HexViewport DrawingVisual pipeline via CustomBackgroundBlock entries.
+//
+// ==========================================================
 
 using System;
 

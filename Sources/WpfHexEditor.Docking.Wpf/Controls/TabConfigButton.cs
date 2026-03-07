@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: TabConfigButton.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     VS2026-style gear/settings button placed at the right end of the document
+//     tab bar. Shows a dropdown context menu for toggling tab placement,
+//     colorization, and multi-row behavior. Mutates the shared
+//     DocumentTabBarSettings instance directly — no extra event plumbing required.
+//
+// Architecture Notes:
+//     Inherits Button. Opens a ContextMenu on click targeting the Settings DP.
+//     Direct mutation pattern: changes propagate via INotifyPropertyChanged on
+//     DocumentTabBarSettings, picked up by bindings in DocumentTabHost.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Controls;

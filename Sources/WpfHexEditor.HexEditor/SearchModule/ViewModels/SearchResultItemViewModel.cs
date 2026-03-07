@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: SearchResultItemViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     ViewModel representing a single search result item in the search results list.
+//     Exposes offset, length, preview bytes, and formatted display properties
+//     for binding in SearchPanel and AdvancedSearchDialog result lists.
+//
+// Architecture Notes:
+//     MVVM pattern — wraps a core search result model for UI presentation.
+//     Implements INotifyPropertyChanged for selected-state toggling.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

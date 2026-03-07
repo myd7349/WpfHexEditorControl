@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.PropertyProvider.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing IPropertyProvider for the HexEditor.
+//     Exposes editor state (file path, size, offset, encoding, format) as
+//     structured property entries for display in the PropertiesPanel.
+//
+// Architecture Notes:
+//     Implements IPropertyProvider interface from WpfHexEditor.Editor.Core.
+//     Returns property groups refreshed on file open, selection change, and format detection.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

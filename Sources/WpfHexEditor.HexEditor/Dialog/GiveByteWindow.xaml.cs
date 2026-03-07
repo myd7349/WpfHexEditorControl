@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0 - 2018-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: GiveByteWindow.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the GiveByteWindow dialog, which lets users enter a byte value
+//     (decimal or hex) to fill a byte range in the hex editor.
+//     Binds to GiveByteViewModel for input validation and result propagation.
+//
+// Architecture Notes:
+//     MVVM dialog pattern — GiveByteViewModel exposes the validated result.
+//     Uses RelayCommand from Commands/ for OK/Cancel actions.
+//
+// ==========================================================
 
 using System;
 using System.Windows;

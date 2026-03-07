@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: IPSRecord.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Represents a single IPS patch record containing offset, size, RLE flag, and data.
+//     Supports both normal data records and RLE (Run-Length Encoding) records where
+//     a single byte value is repeated a given number of times.
+//
+// Architecture Notes:
+//     Pure data model — no WPF dependencies, no logic.
+//     Consumed by IPSPatcher for reading and creating IPS patch files.
+//
+// ==========================================================
 
 using System;
 

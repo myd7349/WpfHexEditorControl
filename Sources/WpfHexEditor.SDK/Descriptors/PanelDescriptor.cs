@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: PanelDescriptor.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Metadata passed to IUIRegistry.RegisterPanel describing how a plugin panel
-//     should be docked in the IDE (title, default position, close behaviour).
-//
-// Architecture Notes:
-//     Consumed by DockingAdapter to configure the DockItem in the WPF docking engine.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Descriptors;
 

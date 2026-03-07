@@ -1,9 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-// Scroll markers overlay for vertical scrollbar (V1 compatibility)
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: ScrollMarkerPanel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Custom Panel that renders colored scroll markers (bookmarks, search hits,
+//     modifications) overlaid on the vertical scrollbar area of the HexEditor.
+//     Supports Left/Right positioning and configurable marker colors and widths.
+//
+// Architecture Notes:
+//     Extends Panel with custom ArrangeOverride/MeasureOverride for rendering.
+//     Used by HexViewport and HexEditor to expose bookmark/search visualization.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

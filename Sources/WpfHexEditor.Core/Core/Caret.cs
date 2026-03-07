@@ -1,16 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-//////////////////////////////////////////////
-// Fork 2017-2020 : Derek Tremblay (derektremblay666@gmail.com) 
-// Part of Wpf HexEditor control : https://github.com/abbaye/WPFHexEditorControl
-// Reference : https://www.codeproject.com/Tips/431000/Caret-for-WPF-User-Controls
-// Reference license : The Code Project Open License (CPOL) 1.02
-// Contributor : emes30
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: Caret.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic), emes30
+// Created: 2026-03-06
+// Description:
+//     WPF caret control that provides a blinking text cursor overlay for the
+//     hex editor. Renders the editing position indicator using a Win32-compatible
+//     caret mechanism adapted for WPF User Controls.
+//
+// Architecture Notes:
+//     Forked from a CodeProject CPOL-licensed implementation (emes30, 2017).
+//     Uses System.Threading.Timer for blink animation. Contains WPF dependencies
+//     (UIElement, DrawingContext). Implements INotifyPropertyChanged for MVVM binding.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

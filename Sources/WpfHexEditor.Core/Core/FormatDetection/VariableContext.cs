@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: VariableContext.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Provides a named variable store for the format script interpreter,
+//     allowing offset and length expressions to reference previously parsed
+//     field values using "var:name" syntax in .whfmt format definitions.
+//
+// Architecture Notes:
+//     Simple Dictionary wrapper. One instance per script execution —
+//     not shared across concurrent evaluations. Used by ExpressionEvaluator
+//     and FormatScriptInterpreter. No WPF dependencies.
+//
+// ==========================================================
 
 using System.Collections.Generic;
 

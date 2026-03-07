@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.StatePersistence.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class managing editor state persistence for the HexEditor.
+//     Saves and loads editor state (bookmarks, scroll position, selection, highlights)
+//     to/from XML files associated with the opened binary file.
+//
+// Architecture Notes:
+//     Uses System.Xml.Linq for XML serialization. State file stored alongside the
+//     target file with a .hexstate extension. Called on file open/close lifecycle.
+//
+// ==========================================================
 
 using System;
 using System.Linq;

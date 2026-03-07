@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: ToolbarItemDescriptor.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Metadata for a toolbar button contributed by a plugin via IUIRegistry.RegisterToolbarItem.
-//
-// Architecture Notes:
-//     Consumed by the App layer's toolbar host to inject plugin toolbar buttons.
-//     Must use Segoe MDL2 Assets for icons to comply with IDE theme standards.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows.Input;
 

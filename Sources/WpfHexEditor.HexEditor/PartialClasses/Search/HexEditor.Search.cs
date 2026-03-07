@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.Search.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing core search and replace operations for the HexEditor.
+//     Provides FindNext, FindPrevious, and FindAll methods for byte sequence matching,
+//     with results highlighted in the viewport via custom background blocks.
+//
+// Architecture Notes:
+//     Delegates pattern matching to WpfHexEditor.Core search services.
+//     Search hit highlighting uses the CustomBackgroundBlock system.
+//
+// ==========================================================
 
 using System.Collections.Generic;
 using System.Linq;

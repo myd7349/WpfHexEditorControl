@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: SpanSearchExtensions.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     High-performance search extension methods for Span&lt;byte&gt; and
+//     ReadOnlySpan&lt;byte&gt;, providing Boyer-Moore-Horspool-based pattern search
+//     and all-occurrences enumeration without heap allocation.
+//
+// Architecture Notes:
+//     Zero-allocation span-based implementation. Preferred over ByteArrayExtention
+//     for all performance-sensitive search paths. Complements SpanSearchSIMDExtensions
+//     for non-SIMD fallback scenarios. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

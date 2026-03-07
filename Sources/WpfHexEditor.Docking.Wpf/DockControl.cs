@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockControl.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     The central WPF control of the docking system. Renders the DockLayoutRoot
+//     node tree as WPF visual elements, and coordinates drag & drop, floating
+//     windows, auto-hide bars, keyboard navigation, and tab event wiring.
+//
+// Architecture Notes:
+//     Implements IDockHost and IDisposable. Acts as the Facade over DockEngine,
+//     DockDragManager, FloatingWindowManager, and DockKeyboardNavigation.
+//     Content factory pattern: consumers register factories keyed by string IDs
+//     to produce content for DockItem nodes on demand.
+//
+// ==========================================================
 
 using System.Collections;
 using System.Windows;

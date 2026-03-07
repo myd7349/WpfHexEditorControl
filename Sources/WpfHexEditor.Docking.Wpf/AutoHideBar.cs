@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: AutoHideBar.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     A WPF StackPanel-based bar displayed at the edges of the dock area that
+//     renders buttons for auto-hidden panels. Clicking a button raises ItemClicked
+//     to toggle the panel's flyout. Integrates with AutoHideBarHoverPreview for
+//     thumbnail previews on hover.
+//
+// Architecture Notes:
+//     Inherits StackPanel for automatic horizontal/vertical layout based on Dock position.
+//     Uses AutoHideBarAutomationPeer for full UI Automation (MSAA/UIA) accessibility support.
+//     DynamicResource binding to DockMenuBackgroundBrush ensures theme compliance.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Automation;

@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: PatchResult.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Generic result value object returned by all patch operations (IPS, BPS, XDelta).
+//     Carries success flag, error message, patch format, file sizes, and elapsed duration.
+//     Created via factory methods CreateSuccess and CreateFailure.
+//
+// Architecture Notes:
+//     Value object pattern — no WPF dependencies, no mutable state after construction.
+//     Shared across BPSPatcher, IPSPatcher, and XDeltaPatcher as a uniform result type.
+//
+// ==========================================================
 
 using System;
 

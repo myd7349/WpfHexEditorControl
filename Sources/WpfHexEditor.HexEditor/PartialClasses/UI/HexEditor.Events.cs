@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.Events.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing all event handler methods for the HexEditor control.
+//     Handles mouse, keyboard, scroll, drag/drop, and control lifecycle events,
+//     translating them into editor operations and ViewModel state updates.
+//
+// Architecture Notes:
+//     Event handlers are thin — delegate to dedicated partial classes (EditOperations,
+//     ByteOperations, Search, etc.) for actual business logic.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

@@ -1,9 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2017-2021
-// Author       : Janus Tida 
-// Contributors: Claude Sonnet 4.6
-// Contributor  : Derek Tremblay
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: IByteControl.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic), Janus Tida
+// Created: 2026-03-06
+// Description:
+//     Interface that all byte control UI elements must implement, providing a
+//     uniform contract for the HexEditor to manipulate byte display controls
+//     regardless of their concrete type (hex cell, ASCII cell, etc.).
+//
+// Architecture Notes:
+//     Originally authored by Janus Tida. Extends IByte interactions with WPF
+//     event handling (ByteEventArgs). Reduces coupling between HexEditor host
+//     and individual byte control implementations.
+//
+// ==========================================================
 
 using System;
 using WpfHexEditor.Core.EventArguments;

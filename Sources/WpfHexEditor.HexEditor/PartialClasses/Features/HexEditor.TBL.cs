@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.TBL.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class providing TBL (Character Table) file support for the HexEditor.
+//     Loads .tbl files mapping byte values to custom characters (used in ROM hacking)
+//     and switches the ASCII column display to use the loaded character table.
+//
+// Architecture Notes:
+//     TBL parsing delegated to WpfHexEditor.Core.CharacterTable utilities.
+//     Character table rendering applied to HexViewport ASCII column.
+//
+// ==========================================================
 
 using System;
 using WpfHexEditor.Core;

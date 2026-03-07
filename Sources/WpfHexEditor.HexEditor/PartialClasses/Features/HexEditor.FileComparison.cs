@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.FileComparison.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing file comparison features for the HexEditor.
+//     Compares the current file against a reference file byte-by-byte and
+//     highlights differences using custom background blocks in the viewport.
+//
+// Architecture Notes:
+//     Uses CustomBackgroundBlockService for difference highlighting.
+//     Delegates binary diff computation to WpfHexEditor.Core.Services.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

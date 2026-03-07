@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2020
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: Enumeration.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Central enumeration file defining core editor enums including ByteAction
+//     (modify/insert/delete/nothing) and other fundamental domain enumerations
+//     used throughout the hex editor core.
+//
+// Architecture Notes:
+//     Pure enums — no WPF dependencies. These enums are referenced by ByteModified,
+//     EditsManager, UndoRedoManager, and multiple UI layers. Kept in one file
+//     for discoverability.
+//
+// ==========================================================
 
 using System;
 

@@ -1,15 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-//////////////////////////////////////////////
-// 2012 - Code from :
-// https://stackoverflow.com/questions/11447019/is-there-any-way-to-find-the-width-of-a-character-in-a-fixed-width-font-given-t
-// 
-// 2018-2020 - Modified/adapted by Derek Tremblay (derektremblay666@gmail.com)
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: StringExtension.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Extension methods for measuring WPF string rendering dimensions, enabling
+//     pixel-accurate width calculation of characters in a given font for the
+//     hex editor's fixed-width column layout calculations.
+//
+// Architecture Notes:
+//     Adapted from a StackOverflow solution (2012). Contains WPF dependencies
+//     (FormattedText, Typeface). Used by HexEditor for dynamic column sizing
+//     based on the configured FontFamily and FontSize.
+//
+// ==========================================================
 
 using System.Globalization;
 using System.Windows;

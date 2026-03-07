@@ -1,8 +1,19 @@
-<!--
-    Apache 2.0  2026
-    Author : Derek Tremblay (derektremblay666@gmail.com)
-    Contributors: Claude Sonnet 4.6
--->
+<!-- ==========================================================
+     Project: WpfHexEditor.Docking.Wpf
+     File: TabSettingsDialog.xaml
+     Author: Derek Tremblay (derektremblay666@gmail.com)
+     Contributors: Claude (Anthropic)
+     Created: 2026-03-06
+     Description:
+         XAML definition for the document tab options dialog.
+         Provides live-preview controls for tab placement, colorization mode,
+         and multi-row behavior. Inherits ThemedDialog for global theme compliance.
+
+     Architecture Notes:
+         Root element: ThemedDialog (WpfHexEditor.Editor.Core.Views).
+         All brushes and foreground colors are bound via DynamicResource to
+         DockBackgroundBrush and DockForegroundBrush for automatic theme switching.
+     ========================================================== -->
 
 <ec:ThemedDialog x:Class="WpfHexEditor.Docking.Wpf.Dialogs.TabSettingsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

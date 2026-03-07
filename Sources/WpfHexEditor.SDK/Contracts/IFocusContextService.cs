@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IFocusContextService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Focus-aware service that tracks the currently active document and panel.
-//     Plugins subscribe to FocusChanged to react to user navigation without polling.
-//
-// Architecture Notes:
-//     Singleton service; implemented by FocusContextService in PluginHost.
-//     Events are raised on the UI thread (safe for WPF plugins).
-//     Critical for context-aware plugins (selection, offset, document type).
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Contracts.Focus;
 

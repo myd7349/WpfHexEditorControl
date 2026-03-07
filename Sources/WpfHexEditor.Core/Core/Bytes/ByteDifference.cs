@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0 - 2021
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteDifference.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Represents a byte-level difference between two binary streams,
+//     storing the original and destination byte values alongside the
+//     stream offset. Used by the file comparison and diff services.
+//
+// Architecture Notes:
+//     Implements ICloneable for safe copy operations. Carries a WPF
+//     SolidColorBrush for UI highlighting; keep this in mind if
+//     future decoupling of the domain model from WPF is desired.
+//
+// ==========================================================
 
 using System;
 using System.Windows.Media;

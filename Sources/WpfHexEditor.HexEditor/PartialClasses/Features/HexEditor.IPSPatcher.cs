@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.IPSPatcher.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class providing IPS patch application and creation dialogs for the HexEditor.
+//     Exposes UI-integrated methods (with file dialogs) for applying IPS patches
+//     and creating IPS patches from file differences.
+//
+// Architecture Notes:
+//     UI dialog methods here; core IPS logic in WpfHexEditor.Core.RomHacking.
+//     See HexEditor.PatchFormats.cs for the unified multi-format patch API.
+//
+// ==========================================================
 
 using System;
 using System.IO;

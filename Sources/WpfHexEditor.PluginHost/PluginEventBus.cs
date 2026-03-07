@@ -1,20 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginEventBus.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Implements IPluginEventBus — decoupled publish/subscribe event bus
-//     for plugin-to-plugin communication. Uses weak references to prevent
-//     memory leaks when plugins are unloaded without explicit unsubscription.
-//
-// Architecture Notes:
-//     Thread-safe subscription dictionary keyed by event Type.
-//     Handlers registered from the UI thread are marshalled back via Dispatcher.
-//     IDisposable subscriptions allow clean unsubscription or auto-cleanup via
-//     UnregisterAllForPlugin() on hot-unload.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows;
 using WpfHexEditor.SDK.Contracts;
@@ -29,7 +17,7 @@ public sealed class PluginEventBus : IPluginEventBus
     private readonly Dictionary<Type, List<WeakHandlerWrapper>> _handlers = new();
     private readonly object _lock = new();
 
-    // ── IPluginEventBus ───────────────────────────────────────────────────────
+    // â”€â”€ IPluginEventBus â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public void Publish<TEvent>(TEvent evt) where TEvent : class
     {
@@ -75,7 +63,7 @@ public sealed class PluginEventBus : IPluginEventBus
         return new Subscription(() => RemoveHandler(typeof(TEvent), wrapper));
     }
 
-    // ── Internal helpers ──────────────────────────────────────────────────────
+    // â”€â”€ Internal helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void AddHandler(Type eventType, WeakHandlerWrapper wrapper)
     {
@@ -105,7 +93,7 @@ public sealed class PluginEventBus : IPluginEventBus
         }
     }
 
-    // ── Nested types ──────────────────────────────────────────────────────────
+    // â”€â”€ Nested types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private abstract class WeakHandlerWrapper
     {

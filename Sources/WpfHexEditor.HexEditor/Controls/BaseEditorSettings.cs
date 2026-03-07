@@ -1,10 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Base Editor Settings - Unified Architecture Helper for All Settings Panels
-// Author : Claude Sonnet 4.5
-// Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
-// Pattern: Composition-based helper (WPF-compatible with partial classes)
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: BaseEditorSettings.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Unified composition helper for all editor settings panels.
+//     Provides auto-generated UI via DynamicSettingsGenerator, scanning
+//     DependencyProperty [Category] attributes to build settings controls at runtime.
+//
+// Architecture Notes:
+//     Composition pattern — generic helper class used by HexEditorSettings and other
+//     settings panels. Avoids inheritance coupling with WPF partial class constraints.
+//     Depends on WpfHexEditor.Core.Settings.DynamicSettingsGenerator.
+//
+// ==========================================================
 
 using System;
 using System.Linq;

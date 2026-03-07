@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: TabOverflowButton.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Dropdown button rendered at the right of the tab strip. In standard mode,
+//     shows only overflowed (hidden) tabs. In ShowAllDocuments mode, always shows
+//     all open documents with a check-mark on the active one — VS2026 document
+//     switcher style.
+//
+// Architecture Notes:
+//     Inherits Button. Observes TabOverflowPanel.HasOverflow and OverflowItems via
+//     DependencyProperty bindings. Popup is built dynamically on click to avoid
+//     maintaining a stale list.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Controls;

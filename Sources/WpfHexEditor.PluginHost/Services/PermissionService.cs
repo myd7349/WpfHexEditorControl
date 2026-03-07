@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PermissionService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Runtime permission management for installed plugins.
-//     Persists granted/revoked permissions to %AppData%/WpfHexEditor/PluginPermissions.json.
-//     Thread-safe via ReaderWriterLockSlim for high-read, low-write workloads.
-//
-// Architecture Notes:
-//     Each plugin has an independent permission mask (PluginPermission flags).
-//     Write-tmp-then-rename pattern for atomic persistence.
-//     PermissionChanged event fires on Dispatcher thread to allow UI bindings.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Text.Json;
 using System.Windows;
@@ -150,7 +139,7 @@ public sealed class PermissionService : IPermissionService
         }
         catch
         {
-            // Corrupt permissions file — start fresh; plugin will re-request on next load.
+            // Corrupt permissions file â€” start fresh; plugin will re-request on next load.
         }
     }
 
@@ -178,7 +167,7 @@ public sealed class PermissionService : IPermissionService
         }
         catch
         {
-            // Non-fatal — permissions will be re-asked on next session.
+            // Non-fatal â€” permissions will be re-asked on next session.
         }
     }
 }

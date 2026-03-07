@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: FormatScriptInterpreter.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Interprets and executes format definition scripts (.whfmt) against a
+//     binary stream, evaluating block definitions to extract parsed fields,
+//     validate constraints, and build the structure overlay for display.
+//
+// Architecture Notes:
+//     Orchestrates FieldValidator, ExpressionEvaluator, BuiltInFunctions, and
+//     VariableContext during script execution. Produces ParsedField objects and
+//     SolidColorBrush-annotated overlay entries. Contains WPF brush references
+//     for overlay color assignment.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

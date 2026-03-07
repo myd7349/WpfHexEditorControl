@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.EditorPersistable.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing IEditorPersistable for the HexEditor.
+//     Handles serialization of editor configuration (column widths, encoding,
+//     zoom level, TBL path) to/from EditorConfig for cross-session persistence.
+//
+// Architecture Notes:
+//     Implements IEditorPersistable from WpfHexEditor.Editor.Core.
+//     EditorConfig is serialized to the project's .whproj file by the ProjectSystem.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

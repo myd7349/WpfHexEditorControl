@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: CRC32.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     CRC-32 (ISO 3309 / ITU-T V.42) implementation using the standard polynomial
+//     0xEDB88320. Compatible with .NET 4.8 — does not depend on System.IO.Hashing.
+//     Used for patch integrity verification in BPS and IPS patchers.
+//
+// Architecture Notes:
+//     Pure static utility with a precomputed 256-entry lookup table built at startup.
+//     No WPF dependencies. No state — all methods are stateless.
+//     Consumed by BPSPatcher and indirectly by XDeltaPatcher.
+//
+// ==========================================================
 
 namespace WpfHexEditor.Core.RomHacking
 {

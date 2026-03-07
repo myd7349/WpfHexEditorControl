@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IUIRegistry.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Registry API for plugins to contribute UI elements (panels, menus, toolbars,
-//     document tabs, status bar items) to the IDE with guaranteed unique IDs.
-//
-// Architecture Notes:
-//     Pattern: each element gets a collision-safe unique ID via GenerateUIId.
-//     ID pattern: {PluginId}.{ElementType}.{ElementName}
-//     Hot-unload: UnregisterAllForPlugin removes all elements for a plugin atomically.
-//     Implemented by UIRegistry in PluginHost, delegating to Adapter interfaces.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows;
 using WpfHexEditor.SDK.Descriptors;
@@ -25,7 +14,7 @@ namespace WpfHexEditor.SDK.Contracts;
 /// </summary>
 public interface IUIRegistry
 {
-    // ── ID Management ────────────────────────────────────────────────────────
+    // â”€â”€ ID Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Generates a unique UI element identifier following the pattern:
@@ -40,7 +29,7 @@ public interface IUIRegistry
     /// <summary>Returns true if a UI element with this ID is already registered.</summary>
     bool Exists(string uiId);
 
-    // ── Panel Registration ───────────────────────────────────────────────────
+    // â”€â”€ Panel Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Registers a dockable panel in the IDE.
@@ -55,7 +44,7 @@ public interface IUIRegistry
     /// <summary>Unregisters and removes a dockable panel by its UI ID.</summary>
     void UnregisterPanel(string uiId);
 
-    // ── Menu Registration ────────────────────────────────────────────────────
+    // â”€â”€ Menu Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Registers a menu item in the IDE main menu.
@@ -65,7 +54,7 @@ public interface IUIRegistry
     /// <summary>Unregisters a menu item by its UI ID.</summary>
     void UnregisterMenuItem(string uiId);
 
-    // ── Toolbar Registration ─────────────────────────────────────────────────
+    // â”€â”€ Toolbar Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Registers a toolbar button in the IDE main toolbar.</summary>
     void RegisterToolbarItem(string uiId, string pluginId, ToolbarItemDescriptor descriptor);
@@ -73,7 +62,7 @@ public interface IUIRegistry
     /// <summary>Unregisters a toolbar button by its UI ID.</summary>
     void UnregisterToolbarItem(string uiId);
 
-    // ── Document Tab Registration ────────────────────────────────────────────
+    // â”€â”€ Document Tab Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Registers a document tab in the central document host area.
@@ -83,7 +72,7 @@ public interface IUIRegistry
     /// <summary>Unregisters and closes a document tab by its UI ID.</summary>
     void UnregisterDocumentTab(string uiId);
 
-    // ── Status Bar Registration ──────────────────────────────────────────────
+    // â”€â”€ Status Bar Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>Registers a status bar item in the IDE status bar.</summary>
     void RegisterStatusBarItem(string uiId, string pluginId, StatusBarItemDescriptor descriptor);
@@ -91,7 +80,7 @@ public interface IUIRegistry
     /// <summary>Unregisters a status bar item by its UI ID.</summary>
     void UnregisterStatusBarItem(string uiId);
 
-    // ── Bulk Unregister ──────────────────────────────────────────────────────
+    // â”€â”€ Bulk Unregister â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Atomically unregisters and removes ALL UI elements owned by the specified plugin.

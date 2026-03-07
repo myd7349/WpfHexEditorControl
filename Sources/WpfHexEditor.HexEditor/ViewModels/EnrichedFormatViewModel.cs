@@ -1,9 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Enriched Format ViewModel
-// Author : Claude Sonnet 4.5
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: EnrichedFormatViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     ViewModel providing enriched format detection information for the HexEditor.
+//     Wraps the FormatDetection result and exposes detected format name, confidence,
+//     MIME type, description, and related format entries for UI binding.
+//
+// Architecture Notes:
+//     MVVM pattern — implements INotifyPropertyChanged manually.
+//     Consumes WpfHexEditor.Core.FormatDetection output; no I/O performed here.
+//
+// ==========================================================
 
 using System.Collections.Generic;
 using System.ComponentModel;

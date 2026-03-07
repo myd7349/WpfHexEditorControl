@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginManagerControl.xaml.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Code-behind for the Plugin Manager document tab.
-//     Sets theme-aware foreground and wires ViewModel lifecycle.
-//
-// Architecture Notes:
-//     Theme compliance: SetResourceReference for foreground text (rule 7b).
-//     ViewModel is created externally and passed in via constructor to allow
-//     the PluginHost to control lifecycle (dispose on panel close).
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows;
 using System.Windows.Controls;
@@ -21,7 +11,7 @@ using System.Windows.Input;
 namespace WpfHexEditor.PluginHost.UI;
 
 /// <summary>
-/// Plugin Manager document tab — lists all plugins with live metrics and lifecycle actions.
+/// Plugin Manager document tab â€” lists all plugins with live metrics and lifecycle actions.
 /// </summary>
 public sealed partial class PluginManagerControl : UserControl
 {

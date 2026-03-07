@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IWpfHexEditorPlugin.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Main interface that every WpfHexEditor plugin must implement.
-//     Entry point declared in the plugin manifest as "entryPoint" field.
-//
-// Architecture Notes:
-//     Pattern: Plugin lifecycle managed by PluginHost (load → init → active → shutdown → unload).
-//     InitializeAsync receives the full IIDEHostContext for service access.
-//     ShutdownAsync must clean up all resources; UIRegistry cleanup is automatic.
-//     Plugins may optionally implement IPluginState and IPluginDiagnostics.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Models;
 
@@ -25,7 +14,7 @@ namespace WpfHexEditor.SDK.Contracts;
 /// </summary>
 public interface IWpfHexEditorPlugin
 {
-    // ── Identity ─────────────────────────────────────────────────────────────
+    // â”€â”€ Identity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Globally unique plugin identifier matching the manifest <c>id</c> field.
@@ -39,7 +28,7 @@ public interface IWpfHexEditorPlugin
     /// <summary>Plugin version matching the manifest <c>version</c> field.</summary>
     Version Version { get; }
 
-    // ── Capabilities ─────────────────────────────────────────────────────────
+    // â”€â”€ Capabilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Declares the capabilities this plugin requires.
@@ -47,7 +36,7 @@ public interface IWpfHexEditorPlugin
     /// </summary>
     PluginCapabilities Capabilities { get; }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Initializes the plugin. Called by PluginHost after the assembly is loaded.
@@ -55,12 +44,14 @@ public interface IWpfHexEditorPlugin
     /// Must complete within the configured watchdog timeout (default: 5 seconds).
     /// </summary>
     /// <param name="context">Full IDE host context providing access to all IDE services.</param>
-    Task InitializeAsync(IIDEHostContext context);
+    /// <param name="ct">Cancellation token (honours watchdog timeout).</param>
+    Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default);
 
     /// <summary>
     /// Shuts down the plugin cleanly. Called before unloading the assembly.
     /// Release all resources, unsubscribe events, and stop background tasks here.
     /// UI element cleanup is handled automatically by PluginHost via UIRegistry.
     /// </summary>
-    Task ShutdownAsync();
+    /// <param name="ct">Cancellation token (honours watchdog timeout).</param>
+    Task ShutdownAsync(CancellationToken ct = default);
 }

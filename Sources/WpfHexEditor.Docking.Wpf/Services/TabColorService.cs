@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: TabColorService.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Computes the accent Brush to display on a document tab based on the current
+//     DocumentTabBarSettings.ColorMode. Supports None, ByExtension (file type),
+//     Sequential (index-based), and Random modes.
+//
+// Architecture Notes:
+//     Static service — no state, no WPF dependency tree access. Uses a 12-color
+//     accessible palette with ~50-60% lightness for visibility on both dark and
+//     light themes. Brush instances are cached by color value to minimize allocations.
+//
+// ==========================================================
 
 using System.IO;
 using System.Text.RegularExpressions;

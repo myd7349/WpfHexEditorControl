@@ -1,9 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2020-2021
-// Author      : ehsan69h
-// Contributors: Claude Sonnet 4.6
-// Modified by : Derek Tremblay (derektremblay666@gmail.com)
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteEventArgs.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic), ehsan69h
+// Created: 2026-03-06
+// Description:
+//     Custom EventArgs passing byte value and position information to event
+//     subscribers for byte-level editing events raised by byte control elements
+//     in the hex editor view.
+//
+// Architecture Notes:
+//     Originally authored by ehsan69h. Located in EventArguments (legacy namespace).
+//     Pure event data container — no WPF dependencies.
+//
+// ==========================================================
 
 using System;
 

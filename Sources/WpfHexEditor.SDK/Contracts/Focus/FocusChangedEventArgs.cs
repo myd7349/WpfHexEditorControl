@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: FocusChangedEventArgs.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Event arguments for IFocusContextService.FocusChanged events.
-//     Carries both previous and new active document/panel state.
-//
-// Architecture Notes:
-//     Immutable record for thread-safe passing across plugin boundaries.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Focus;
 

@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: NativeMethods.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     P/Invoke declarations for Windows API methods used internally by the hex
+//     editor, specifically GetKeyboardState and ToUnicode for virtual key code
+//     to character conversion in KeyValidator.
+//
+// Architecture Notes:
+//     Internal static class following the NativeMethods naming convention for
+//     FxCop compliance. Only exposes the minimal Win32 surface required.
+//     Platform-specific: Windows only.
+//
+// ==========================================================
 
 using System.Runtime.InteropServices;
 using System.Text;

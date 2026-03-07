@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginCrashHandler.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Handles unhandled exceptions from plugins.
-//     Marks the plugin as Faulted, triggers UI notification, and
-//     attempts a clean unload. Guarantees IDE stability regardless of plugin failures.
-//
-// Architecture Notes:
-//     Called by PluginHost's try/catch around InitializeAsync and other plugin calls.
-//     Raises PluginFaulted event for MainWindow to display InfoBar notification.
-//     Never re-throws — the IDE must not crash due to a plugin.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Models;
 
@@ -38,13 +27,13 @@ public sealed class PluginFaultedEventArgs : EventArgs
 }
 
 /// <summary>
-/// Handles plugin crash events — marks Faulted state and raises notifications.
+/// Handles plugin crash events â€” marks Faulted state and raises notifications.
 /// </summary>
 internal sealed class PluginCrashHandler
 {
     /// <summary>
     /// Raised when a plugin is marked Faulted.
-    /// Raised on the calling thread — MainWindow subscribes to show InfoBar.
+    /// Raised on the calling thread â€” MainWindow subscribes to show InfoBar.
     /// </summary>
     public event EventHandler<PluginFaultedEventArgs>? PluginFaulted;
 

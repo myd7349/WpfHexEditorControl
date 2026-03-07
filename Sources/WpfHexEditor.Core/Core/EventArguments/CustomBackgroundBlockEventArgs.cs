@@ -1,13 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-//////////////////////////////////////////////
-// Apache 2.0  - 2021
-// Modified by : Derek Tremblay (derektremblay666@gmail.com)
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: CustomBackgroundBlockEventArgs.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Custom EventArgs for events related to custom background block changes
+//     in the hex editor, carrying the affected block and change type
+//     information to subscribers.
+//
+// Architecture Notes:
+//     Located in EventArguments (legacy namespace); mirrored in Events/.
+//     Pure event data container — no WPF dependencies.
+//
+// ==========================================================
 
 using System;
 

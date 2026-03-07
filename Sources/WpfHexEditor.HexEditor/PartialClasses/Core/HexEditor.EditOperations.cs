@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.EditOperations.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class containing edit operation methods for the HexEditor.
+//     Covers undo, redo, copy, paste, delete, and insert operations on byte ranges,
+//     all integrated with the changeset system for full undo/redo support.
+//
+// Architecture Notes:
+//     All mutations use the changeset pipeline. Clipboard operations use WPF Clipboard
+//     with hex string and raw byte formats. Depends on WpfHexEditor.Core.Models.
+//
+// ==========================================================
 
 using System;
 using WpfHexEditor.Core.Models;

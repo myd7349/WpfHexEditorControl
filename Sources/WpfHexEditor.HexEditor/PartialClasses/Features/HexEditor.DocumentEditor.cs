@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.DocumentEditor.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class implementing IDocumentEditor for the HexEditor control.
+//     Integrates the HexEditor into the IDE document editor framework, exposing
+//     document lifecycle (open, close, save, dirty state) and async operations.
+//
+// Architecture Notes:
+//     Implements IDocumentEditor from WpfHexEditor.Editor.Core.
+//     Bridges the WPF UserControl lifecycle to the IDE document model.
+//
+// ==========================================================
 
 using System;
 using System.IO;

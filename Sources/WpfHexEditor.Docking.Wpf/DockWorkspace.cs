@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockWorkspace.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     High-level facade aggregating a DockControl with optional named profile
+//     management and layout serialization. Provides a simplified API for the
+//     most common dock operations used by the host application.
+//
+// Architecture Notes:
+//     Facade pattern over IDockHost, DockCommandStack, and DockLayoutProfileStore.
+//     Delegates to DockCore for serialization; no WPF-specific rendering concerns here.
+//     DockCommandStack enables undo/redo of layout mutations.
+//
+// ==========================================================
 
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Commands;

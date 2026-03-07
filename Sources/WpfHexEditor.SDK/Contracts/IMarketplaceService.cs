@@ -1,17 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IMarketplaceService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Stub interface for the future WpfHexEditor marketplace client.
-//     Enables the SDK to define the contract without a concrete implementation.
-//
-// Architecture Notes:
-//     The full marketplace client is a separate plan.
-//     This stub allows Plugin Manager to call these methods without a real backend.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Models;
 

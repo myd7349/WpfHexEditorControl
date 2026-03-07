@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.PatchFormats.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class providing the unified multi-format patch API for the HexEditor.
+//     Supports IPS, BPS, and xdelta patch formats through a single Apply/Create
+//     interface, delegating to WpfHexEditor.Core.RomHacking format handlers.
+//
+// Architecture Notes:
+//     Unified facade over format-specific handlers in Core.RomHacking.
+//     UI dialog methods for IPS remain in HexEditor.IPSPatcher.cs.
+//
+// ==========================================================
 
 using System;
 using System.IO;

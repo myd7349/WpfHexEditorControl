@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2003-2019
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: Enum.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Defines the DteType enumeration classifying the type of each DTE entry
+//     in a TBL character table (ASCII, Japonais, DualTitleEncoding,
+//     MultipleTitleEncoding, EndLine, EndBlock, Invalid).
+//
+// Architecture Notes:
+//     Pure enum — no dependencies. Used by Dte class to classify entries and
+//     by TBLStream for lookup and conflict detection logic.
+//
+// ==========================================================
 
 namespace WpfHexEditor.Core.CharacterTable
 {

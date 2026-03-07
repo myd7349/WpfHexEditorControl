@@ -1,13 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
-
-//////////////////////////////////////////////
-// Apache 2.0  - 2021
-// Modified by : Derek Tremblay (derektremblay666@gmail.com)
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteDifferenceEventArgs.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Custom EventArgs carrying a ByteDifference payload for events raised
+//     during file comparison operations, allowing subscribers to receive
+//     source, destination, and offset information.
+//
+// Architecture Notes:
+//     Located in EventArguments (legacy namespace); mirrored in Events/.
+//     Pure event data container — no WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using WpfHexEditor.Core.Bytes;

@@ -1,9 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Data Inspector ViewModel
-// Author : Claude Sonnet 4.5
-// Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: DataInspectorViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     ViewModel for the DataInspector feature within the HexEditor. Receives selected
+//     bytes from the editor and exposes multi-type interpretations (Int8/16/32/64,
+//     float, double, string encodings) as a bindable collection for the DataInspectorPanel.
+//
+// Architecture Notes:
+//     MVVM pattern — implements INotifyPropertyChanged manually.
+//     Interpretation logic delegated to WpfHexEditor.BinaryAnalysis.Services.
+//
+// ==========================================================
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;

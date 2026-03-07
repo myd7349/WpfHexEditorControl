@@ -1,17 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: ISolutionExplorerService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Plugin-facing service for accessing the IDE Solution Explorer —
-//     navigating the solution tree, querying open files and projects.
-//
-// Architecture Notes:
-//     Implemented by SolutionExplorerServiceImpl in App/Services.
-//     Read-only access by default; file operations require AccessFileSystem permission.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Services;
 
@@ -39,6 +30,13 @@ public interface ISolutionExplorerService
     /// Returns empty list if no solution is open.
     /// </summary>
     IReadOnlyList<string> GetSolutionFilePaths();
+
+    /// <summary>
+    /// Opens a file in the IDE (creates a new document tab or activates an existing one).
+    /// </summary>
+    /// <param name="filePath">Absolute path to the file to open.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task OpenFileAsync(string filePath, CancellationToken ct = default);
 
     /// <summary>
     /// Raised when the active solution changes (opened, closed, reloaded).

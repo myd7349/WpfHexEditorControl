@@ -1,8 +1,17 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexColorConverter.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     WPF IValueConverter that converts a hex color string (#RRGGBB or #AARRGGBB)
+//     to a WPF Color struct for use in XAML bindings.
+//
+// Architecture Notes:
+//     Stateless converter using ColorConverter for parsing.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: FieldValueReader.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Utility class for reading typed values from byte arrays, supporting
+//     integer types (int8 through int64, unsigned variants), strings with
+//     various encodings, and configurable endianness.
+//
+// Architecture Notes:
+//     Pure static helper — no state, no WPF dependencies. Used by
+//     FormatScriptInterpreter and ParsedFieldsPanel to extract field values
+//     from raw byte buffers during format detection and display.
+//
+// ==========================================================
 
 using System;
 using System.Linq;

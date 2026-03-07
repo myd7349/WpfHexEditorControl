@@ -1,8 +1,18 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2016-2018
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: BoolInverterConverter.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     WPF IValueConverter that inverts a boolean value.
+//     Returns the negated bool for use in XAML bindings where a negated
+//     condition is required (e.g., IsEnabled="{Binding IsReadOnly, Converter=...}").
+//
+// Architecture Notes:
+//     Stateless sealed converter. Handles nullable bool gracefully.
+//
+// ==========================================================
 
 using System;
 using System.Globalization;

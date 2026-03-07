@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteProvider.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Ultra-optimized byte provider (V2) with proper separation of responsibilities.
+//     Manages file I/O, edit tracking, virtual/physical position mapping, and
+//     multi-layer caching for 10x-100x faster performance on large files.
+//
+// Architecture Notes:
+//     Composed of: FileProvider (I/O), EditsManager (edits), PositionMapper (mapping),
+//     ByteReader (intelligent reads). Partial class — search in ByteProvider.Search.cs,
+//     changeset in ByteProvider.Changeset.cs. V1 ByteProviderLegacy removed in v2.6+.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

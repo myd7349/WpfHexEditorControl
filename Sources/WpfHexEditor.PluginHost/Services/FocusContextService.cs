@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: FocusContextService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Tracks the currently active document and panel in the IDE.
-//     MainWindow calls SetActiveDocument / SetActivePanel on each focus change.
-//     FocusChanged event is always raised on the WPF Dispatcher thread.
-//
-// Architecture Notes:
-//     Singleton — one instance per App lifetime, shared via IIDEHostContext.
-//     No polling — purely event-driven push model.
-//     Thread-safe reads; writes must come from UI thread (or are marshalled).
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows;
 using WpfHexEditor.SDK.Contracts;

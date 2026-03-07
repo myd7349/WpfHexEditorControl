@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: WhfmtPatchMetadata.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Metadata companion descriptor for a binary patch file (.ips / .bps / .xdelta).
+//     Serialized as a .whfmt JSON sidecar file with the same base name as the patch.
+//     Carries format, game name, description, author, version, source CRC, and tags.
+//
+// Architecture Notes:
+//     Serialized/deserialized using System.Text.Json with camelCase policy.
+//     No WPF dependencies — pure infrastructure/data layer.
+//     Consumed by the patch creation dialog and the WhfmtPatchMetadata file watcher.
+//
+// ==========================================================
 
 using System;
 using System.IO;

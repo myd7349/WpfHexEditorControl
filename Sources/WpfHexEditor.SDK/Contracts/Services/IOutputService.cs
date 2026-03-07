@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IOutputService.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Plugin-facing service for writing log messages to the IDE OutputPanel.
-//     Provides categorized output (info, warning, error, debug).
-//
-// Architecture Notes:
-//     Implemented by OutputServiceImpl in App/Services, wrapping the OutputPanel.
-//     All writes are marshaled to the UI thread if called from a background thread.
-//     Requires PluginPermission.WriteOutput to be granted.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Services;
 

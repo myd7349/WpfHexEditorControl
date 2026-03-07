@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginLoadContext.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Isolated AssemblyLoadContext for each InProcess plugin.
-//     Enables hot-unload by unloading the context when the plugin is removed.
-//
-// Architecture Notes:
-//     isCollectible: true — required for GC-based unload.
-//     Probe order: plugin's own directory first, then default resolver.
-//     No shared assemblies (WpfHexEditor.SDK, WpfHexEditor.Core) are copied
-//     to the plugin directory — they resolve via the default (host) context.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Reflection;
 using System.Runtime.Loader;

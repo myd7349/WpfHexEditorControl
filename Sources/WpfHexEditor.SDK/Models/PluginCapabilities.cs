@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: PluginCapabilities.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Declaration of the capabilities (permissions) a plugin requires.
-//     Declared in the plugin manifest and validated by PluginHost at load time.
-//
-// Architecture Notes:
-//     Extensible POCO — new capabilities can be added without breaking existing
-//     manifests (missing fields default to false).
-//     Maps 1:1 to PluginPermission flags at runtime.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Models;
 

@@ -1,9 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// HexEditor - Structure Overlay Integration (Partial Class)
-// Author : Claude Sonnet 4.5
-// Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.StructureOverlayIntegration.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class integrating the HexEditor with the StructureOverlayPanel.
+//     Receives structure node definitions (name, offset, length, color) and renders
+//     them as labeled color overlays on top of the hex viewport.
+//
+// Architecture Notes:
+//     Uses System.Text.Json for JSON-based structure definition exchange.
+//     Visual overlay blocks mapped to CustomBackgroundBlockService entries.
+//     Interface IStructureOverlayPanel defined in WpfHexEditor.Core.Interfaces.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

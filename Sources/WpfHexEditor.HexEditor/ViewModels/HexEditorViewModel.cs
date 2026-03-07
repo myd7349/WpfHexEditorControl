@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditorViewModel.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+// Created: 2026-03-06
+// Description:
+//     Central ViewModel for the HexEditor control. Aggregates editor state including
+//     byte stream metadata, selection range, bookmarks, search results, zoom level,
+//     and file dirty state. Consumed by HexEditor and its partial class hierarchy.
+//
+// Architecture Notes:
+//     MVVM pattern — implements INotifyPropertyChanged manually.
+//     Acts as the single source of truth for observable editor state; partial classes
+//     access it via the HexEditor.ViewModel property.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

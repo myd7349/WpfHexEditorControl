@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: SlowPluginDetector.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Periodically scans all loaded plugins and emits SlowPluginDetected
-//     when a plugin's rolling average execution time exceeds its dynamic threshold
-//     (average × 2.5) or a configured absolute ceiling.
-//
-// Architecture Notes:
-//     DispatcherTimer (UI thread) at configurable interval (default 5s).
-//     Dynamic threshold prevents false positives on legitimately slow plugins.
-//     SlowPluginDetected carries Disable/Restart/Ignore callbacks for InfoBar wiring.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows.Threading;
 

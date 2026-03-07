@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: StatusBarItemDescriptor.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Metadata for a status bar item contributed by a plugin via IUIRegistry.RegisterStatusBarItem.
-//
-// Architecture Notes:
-//     Consumed by StatusBarAdapter to insert the item in the App status bar.
-//     Content must bind to DynamicResource theme brushes — no hardcoded colors.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Descriptors;
 

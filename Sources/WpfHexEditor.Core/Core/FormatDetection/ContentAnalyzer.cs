@@ -1,10 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Content Analysis for Format Detection
-// Author: Derek Tremblay
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ContentAnalyzer.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Analyzes binary file content for format detection heuristics, including
+//     entropy calculation, byte frequency distribution, text encoding detection,
+//     and pattern recognition to support multi-tier format identification.
+//
+// Architecture Notes:
+//     Stateless analysis utility. Works on byte arrays or stream references.
+//     Used by FormatDetectionService as one tier of the multi-tier detection
+//     pipeline. No WPF dependencies.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

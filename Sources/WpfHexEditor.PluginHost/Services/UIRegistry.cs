@@ -1,20 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: UIRegistry.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Implementation of IUIRegistry. Manages all UI contributions from plugins
-//     (panels, menu items, toolbar items, document tabs, status bar items).
-//     Delegates to adapter interfaces that are implemented by App/Services.
-//     Thread-safe; all mutations are serialized via a lock.
-//
-// Architecture Notes:
-//     Adapter pattern — delegates to IDockingAdapter, IMenuAdapter, IStatusBarAdapter.
-//     Hot-load safe — UnregisterAllForPlugin removes all contributions atomically.
-//     ID collision detection prevents duplicate registrations.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows;
 using WpfHexEditor.PluginHost.Adapters;
@@ -170,7 +158,7 @@ public sealed class UIRegistry : IUIRegistry
                 _statusBarAdapter.RemoveStatusBarItem(uiId);
                 break;
             case UIElementKind.ToolbarItem:
-                // No adapter yet — nothing to clean up on the host side.
+                // No adapter yet â€” nothing to clean up on the host side.
                 break;
         }
     }

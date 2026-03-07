@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: HexEditor.CompatibilityLayer.Properties.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class providing backward-compatibility DependencyProperty shims
+//     for the HexEditor. Exposes V1-era properties that delegate to new V2
+//     equivalents, maintaining source-level compatibility for existing consumers.
+//
+// Architecture Notes:
+//     Compatibility layer pattern — thin property forwarding only, no business logic.
+//     Isolated in a separate partial class to limit legacy API surface area.
+//
+// ==========================================================
 
 using System;
 using System.ComponentModel;

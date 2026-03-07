@@ -1,15 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.Options
-// File: OptionsPageRegistry.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Central catalog of all registered options pages.
-//     Adding a new page requires only a single line here.
-//
-// Architecture Notes:
-//     Pattern: Registry / Factory — lazy creation via Func<UserControl>
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Collections.Generic;
 using WpfHexEditor.Options.Pages;
@@ -18,7 +11,7 @@ namespace WpfHexEditor.Options;
 
 /// <summary>
 /// Central catalog of all registered options pages.
-/// Adding a new page requires only a single descriptor entry here — no other file changes needed.
+/// Adding a new page requires only a single descriptor entry here â€” no other file changes needed.
 /// </summary>
 internal static class OptionsPageRegistry
 {
@@ -42,5 +35,8 @@ internal static class OptionsPageRegistry
 
         // Text Editor
         new("Text Editor",        "General",          () => new TextEditorOptionsPage()),
+
+        // Plugin System
+        new("Plugin System",      "General",          () => new PluginSystemOptionsPage()),
     ];
 }

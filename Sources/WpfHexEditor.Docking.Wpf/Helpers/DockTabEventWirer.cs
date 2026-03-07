@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockTabEventWirer.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Manages event subscriptions on a DockTabControl with deterministic cleanup.
+//     Each instance wires Close, Drag, Float, AutoHide, Hide, DockAsDocument,
+//     PinToggle, and Reorder events and stores the named delegates for reliable
+//     unsubscription on Dispose.
+//
+// Architecture Notes:
+//     IDisposable pattern for explicit teardown. Named delegate fields prevent
+//     anonymous lambda capture bugs. Instantiated by DockControl once per
+//     DockTabControl; stored in _tabWirers list for lifetime management.
+//
+// ==========================================================
 
 using WpfHexEditor.Docking.Core.Nodes;
 

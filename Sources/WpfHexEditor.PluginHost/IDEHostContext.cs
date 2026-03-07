@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: IDEHostContext.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Concrete implementation of IIDEHostContext passed to every plugin.
-//     Aggregates all IDE service references and exposes them as a single
-//     injection point, keeping plugin code decoupled from App internals.
-//
-// Architecture Notes:
-//     Constructed by App (IDEHostContextImpl inherits this or App injects directly).
-//     All service references are set via constructor injection.
-//     IPermissionService and IUIRegistry are PluginHost-owned singletons.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;

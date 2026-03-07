@@ -1,8 +1,20 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2018-2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: CustomBackgroundBlock.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Defines a colored background highlight block spanning a byte range in the
+//     hex editor view. Supports equality comparison, brush caching, and validation
+//     to enable custom visual annotations over file regions.
+//
+// Architecture Notes:
+//     Contains a WPF SolidColorBrush for rendering; consider decoupling in future
+//     if headless usage is needed. Used by CustomBackgroundService and consumed
+//     by the HexEditor rendering pipeline.
+//
+// ==========================================================
 
 using System;
 using System.Windows.Media;

@@ -1,5 +1,20 @@
-// Apache 2.0 - 2026
-// Contributors: Claude Sonnet 4.6
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: ByteProvider.Changeset.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Partial class of ByteProvider implementing the changeset snapshot feature.
+//     Captures an immutable snapshot of all pending edits (modify/insert/delete)
+//     grouped into contiguous runs for efficient serialization and persistence.
+//
+// Architecture Notes:
+//     Partial class pattern — depends on EditsManager state from ByteProvider.cs.
+//     O(e) complexity: iterates only the edit dictionaries, never reads the file.
+//     Returns ChangesetSnapshot.Empty when the buffer is clean.
+//
+// ==========================================================
 
 using System;
 using System.Collections.Generic;

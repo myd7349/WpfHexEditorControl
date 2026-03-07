@@ -1,8 +1,21 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Opus 4.6, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Docking.Wpf
+// File: DockOverlayWindow.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Transparent overlay window displaying a 5-indicator compass rose (Center,
+//     Left, Right, Top, Bottom) and a drop-preview zone during a drag operation.
+//     Positioned over the specific panel being hovered by the user.
+//
+// Architecture Notes:
+//     All visual elements (rectangles, text blocks) are pre-created in the constructor
+//     and reused across Rebuild() calls for performance. Frozen SolidColorBrush
+//     instances prevent per-frame allocations. Works alongside DockEdgeOverlayWindow
+//     which renders the outer edge indicators.
+//
+// ==========================================================
 
 using System.Windows;
 using System.Windows.Controls;

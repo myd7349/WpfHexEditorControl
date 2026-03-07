@@ -1,19 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: PluginListItemViewModel.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     ViewModel for a single plugin row in the PluginManagerControl list.
-//     Exposes live diagnostics, state badge, and action commands.
-//     Implements INotifyPropertyChanged for binding support.
-//
-// Architecture Notes:
-//     MVVM pattern — wraps PluginEntry, exposes formatted display properties.
-//     Commands delegate to PluginManagerViewModel callbacks for single-source-of-truth.
-//     Diagnostics are refreshed via Refresh() called by the ViewModel's timer.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -98,7 +87,7 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
 
     public string LoadedSince => _entry.LoadedAt.HasValue
         ? _entry.LoadedAt.Value.ToString("HH:mm:ss")
-        : "—";
+        : "â€”";
 
     // Commands
     public ICommand EnableCommand { get; }

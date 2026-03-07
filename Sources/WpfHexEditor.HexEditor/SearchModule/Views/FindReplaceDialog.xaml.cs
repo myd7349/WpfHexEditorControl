@@ -1,8 +1,19 @@
-////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.HexEditor
+// File: FindReplaceDialog.xaml.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Code-behind for the FindReplaceDialog — a themed dialog combining find
+//     and replace functionality for byte sequences. Binds to ReplaceViewModel
+//     and supports single-occurrence and replace-all modes.
+//
+// Architecture Notes:
+//     Extends ThemedDialog from WpfHexEditor.Editor.Core.Views for consistent theming.
+//     ReplaceViewModel is set as DataContext and exposes commands for both operations.
+//
+// ==========================================================
 
 using System.Windows;
 using WpfHexEditor.HexEditor.Search.ViewModels;

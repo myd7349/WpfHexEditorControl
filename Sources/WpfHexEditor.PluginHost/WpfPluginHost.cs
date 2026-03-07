@@ -1,21 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.PluginHost
-// File: WpfPluginHost.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Core plugin orchestrator. Discovers, loads, unloads, reloads, enables,
-//     disables, and monitors plugins using AssemblyLoadContext (isCollectible: true)
-//     for true hot-load/hot-unload semantics.
-//
-// Architecture Notes:
-//     Each plugin runs in its own PluginLoadContext (collectible ALC).
-//     Unload = Instance.ShutdownAsync + ALC.Unload + UIRegistry.UnregisterAllForPlugin.
-//     PluginWatchdog bounds all async calls (5s init, 200ms per-call).
-//     SlowPluginDetector runs on the WPF Dispatcher at 5-second intervals.
-//     Thread-safety: _entries dict protected by _lock; events fired on Dispatcher.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Reflection;
 using System.Text.Json;
@@ -77,7 +64,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
         _slowDetector.Start();
     }
 
-    // ─── Discovery ──────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Discovery â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Discovers all plugins under <see cref="UserPluginsDir"/> and any provided extra directories.
@@ -106,7 +93,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
         return result;
     }
 
-    // ─── Load ────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Loads a plugin from a discovered manifest. Handles ALC creation, entry point
@@ -130,7 +117,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
         try
         {
             if (manifest.IsolationMode == PluginIsolationMode.Sandbox)
-                throw new NotSupportedException("Sandbox isolation is Phase 5 — use InProcess for now.");
+                throw new NotSupportedException("Sandbox isolation is Phase 5 â€” use InProcess for now.");
 
             // Resolve assembly path
             var pluginDir = ResolvePluginDirectory(manifest);
@@ -193,7 +180,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
         }
     }
 
-    // ─── Unload ──────────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Unload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Gracefully shuts down and unloads a plugin. Removes all UI contributions.
@@ -223,7 +210,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
         }
     }
 
-    // ─── Reload ──────────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Reload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
     /// Hot-reloads a plugin: unload + wait for ALC GC + load fresh.
@@ -254,7 +241,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
         await LoadPluginAsync(manifest, ct).ConfigureAwait(false);
     }
 
-    // ─── Enable / Disable ────────────────────────────────────────────────────────
+    // â”€â”€â”€ Enable / Disable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public async Task EnablePluginAsync(string pluginId, CancellationToken ct = default)
     {
@@ -281,7 +268,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
         // Physical file removal is handled by PluginInstaller, not PluginHost.
     }
 
-    // ─── Queries ─────────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public IReadOnlyList<PluginEntry> GetAllPlugins()
     {
@@ -290,11 +277,10 @@ public sealed class WpfPluginHost : IAsyncDisposable
 
     public PluginEntry? GetPlugin(string pluginId)
     {
-        lock (_lock) _entries.TryGetValue(pluginId, out var entry);
-        return null; // compiler fix: will be replaced with proper return
+        lock (_lock) return _entries.TryGetValue(pluginId, out var entry) ? entry : null;
     }
 
-    // ─── Private helpers ─────────────────────────────────────────────────────────
+    // â”€â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private static async Task<PluginManifest?> TryLoadManifestAsync(string pluginDir)
     {
@@ -314,7 +300,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
 
             var validator = new PluginManifestValidator();
             var result = validator.Validate(manifest, pluginDir);
-            if (result.HasErrors) return null; // Faulted manifest — skip silently
+            if (result.HasErrors) return null; // Faulted manifest â€” skip silently
 
             return manifest;
         }
@@ -372,7 +358,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
     }
 }
 
-// ─── Lightweight event args ──────────────────────────────────────────────────
+// â”€â”€â”€ Lightweight event args â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 public sealed class PluginEventArgs : EventArgs
 {

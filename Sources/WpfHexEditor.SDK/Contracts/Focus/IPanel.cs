@@ -1,17 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IPanel.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Abstraction representing the currently active panel in the IDE.
-//     Provides plugin-safe access without exposing WPF internals.
-//
-// Architecture Notes:
-//     Used by IFocusContextService to notify plugins of panel focus changes.
-//     Implemented by the App layer adapting the concrete dockable panel.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts.Focus;
 

@@ -1,16 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: MenuItemDescriptor.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Metadata for a menu item contributed by a plugin via IUIRegistry.RegisterMenuItem.
-//
-// Architecture Notes:
-//     Consumed by MenuAdapter to inject into the appropriate menu host in MainWindow.
-//     ParentPath uses slash-separated menu path (e.g. "Tools/MyPlugin").
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 using System.Windows.Input;
 

@@ -1,8 +1,18 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: PatchFormat.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// Created: 2026-03-06
+// Description:
+//     Enumeration of supported binary patch formats: IPS, BPS, and XDelta (VCDIFF).
+//     Used across the ROM hacking module to identify the format of a patch file
+//     and to select the appropriate patcher implementation.
+//
+// Architecture Notes:
+//     Pure enum — no WPF dependencies. Carried as a discriminator in PatchResult.
+//
+// ==========================================================
 
 namespace WpfHexEditor.Core.RomHacking
 {

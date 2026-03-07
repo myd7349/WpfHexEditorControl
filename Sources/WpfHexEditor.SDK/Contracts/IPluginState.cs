@@ -1,18 +1,8 @@
-// ==========================================================
-// Project: WpfHexEditor.SDK
-// File: IPluginState.cs
-// Author: Auto
-// Created: 2026-03-06
-// Description:
-//     Optional interface a plugin can implement to support state serialization
-//     and restoration across IDE sessions.
-//
-// Architecture Notes:
-//     PluginStateSerializer in PluginHost calls Serialize() on shutdown and
-//     Deserialize() on the next load, passing the previously saved JSON string.
-//     State is stored at %AppData%/WpfHexEditor/Plugins/{PluginId}.json.
-//
-// ==========================================================
+﻿//////////////////////////////////////////////
+// Apache 2.0  - 2026
+// Author : Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+//////////////////////////////////////////////
 
 namespace WpfHexEditor.SDK.Contracts;
 

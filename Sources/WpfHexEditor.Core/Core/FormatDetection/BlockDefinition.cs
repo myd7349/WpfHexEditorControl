@@ -1,8 +1,19 @@
-//////////////////////////////////////////////
-// Apache 2.0  - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core
+// File: BlockDefinition.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude (Anthropic)
+// Created: 2026-03-06
+// Description:
+//     Represents a single block definition within a .whfmt format file,
+//     which can be a simple field, file signature, conditional branch,
+//     loop construct, or action directive.
+//
+// Architecture Notes:
+//     Data model parsed from JSON format definitions. Used by FormatScriptInterpreter
+//     to drive format detection and field parsing. No WPF dependencies.
+//
+// ==========================================================
 
 using System.Collections.Generic;
 
