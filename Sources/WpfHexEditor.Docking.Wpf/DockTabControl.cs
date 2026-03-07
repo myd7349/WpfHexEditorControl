@@ -404,7 +404,8 @@ public class DockTabHeader : StackPanel
     private Point _dragStartPoint;
     private bool _isDragging;
     private bool _isReordering;
-    private const double FloatThresholdY = 20.0;
+    private const double FloatThresholdY    = 20.0;
+    private const double FloatThresholdTool = 20.0;
 
     public event Action? CloseClicked;
     public event Action? DragStarted;
@@ -786,8 +787,8 @@ public class DockTabHeader : StackPanel
         {
             if (_isDragging) return;
             var diff = e.GetPosition(this) - _dragStartPoint;
-            if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
-                Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
+            if (Math.Abs(diff.X) > FloatThresholdTool ||
+                Math.Abs(diff.Y) > FloatThresholdTool)
             {
                 _isDragging = true;
                 ReleaseMouseCapture();

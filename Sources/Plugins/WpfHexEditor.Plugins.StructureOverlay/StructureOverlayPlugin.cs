@@ -14,6 +14,7 @@
 //     Pattern: Observer + Adapter — host events drive panel; panel events drive host.
 // ==========================================================
 
+using System.Threading.Tasks;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
@@ -98,14 +99,24 @@ public sealed class StructureOverlayPlugin : IWpfHexEditorPlugin
 
     // -------------------------------------------------------------------------
 
-    private void OnFileOpened(object? sender, EventArgs e)
+    private async void OnFileOpened(object? sender, EventArgs e)
     {
         if (_panel is null || _context is null || !_context.HexEditor.IsActive) return;
 
-        var readLen = (int)Math.Min(_context.HexEditor.FileSize, 1_048_576);
-        var data    = readLen > 0 ? _context.HexEditor.ReadBytes(0, readLen) : [];
+        var hexEditor = _context.HexEditor;
+        var panel     = _panel;
+        var readLen   = (int)Math.Min(hexEditor.FileSize, 1_048_576);
 
-        _panel.Dispatcher.BeginInvoke(() => _panel.UpdateFileBytes(data));
+        // Off-load to thread pool; retrieve bytes on the UI thread (DependencyObject
+        // affinity), then hand the buffer to the panel without blocking the render pass.
+        await Task.Run(async () =>
+        {
+            if (!hexEditor.IsActive) return;
+            var data = readLen > 0
+                ? await panel.Dispatcher.InvokeAsync(() => hexEditor.ReadBytes(0, readLen))
+                : [];
+            await panel.Dispatcher.InvokeAsync(() => panel.UpdateFileBytes(data));
+        });
     }
 
     private void OnFieldSelectedForHighlight(object? sender, OverlayField field)

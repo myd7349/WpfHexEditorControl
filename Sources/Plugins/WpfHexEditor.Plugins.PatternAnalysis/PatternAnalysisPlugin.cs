@@ -14,6 +14,7 @@
 //     Reads up to 1 MB for analysis to remain responsive on large files.
 // ==========================================================
 
+using System.Threading.Tasks;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
@@ -99,10 +100,22 @@ public sealed class PatternAnalysisPlugin : IWpfHexEditorPlugin
     {
         if (_panel is null || _context is null || !_context.HexEditor.IsActive) return;
 
-        // Read on UI thread (HexEditorControl API), then dispatch analysis asynchronously.
-        var readLen = (int)Math.Min(_context.HexEditor.FileSize, 1_048_576);
-        var data    = readLen > 0 ? _context.HexEditor.ReadBytes(0, readLen) : [];
+        // Capture locals — _panel / _context may change on the next event.
+        var hexEditor = _context.HexEditor;
+        var panel     = _panel;
+        var readLen   = (int)Math.Min(hexEditor.FileSize, 1_048_576);
 
-        await _panel.Dispatcher.InvokeAsync(() => _panel.AnalyzeAsync(data));
+        // Move to the thread pool so the UI thread stays responsive.
+        // ReadBytes must be retrieved on the UI thread (DependencyObject affinity),
+        // so we dispatch back only for that call, then hand off to AnalyzeAsync
+        // which does its heavy computation on a background thread internally.
+        await Task.Run(async () =>
+        {
+            if (!hexEditor.IsActive) return;
+            var data = readLen > 0
+                ? await panel.Dispatcher.InvokeAsync(() => hexEditor.ReadBytes(0, readLen))
+                : [];
+            await panel.Dispatcher.InvokeAsync(() => panel.AnalyzeAsync(data));
+        });
     }
 }

@@ -5,6 +5,8 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Windows;
+using System.Windows.Threading;
 using WpfHexEditor.Core.Interfaces;
 using WpfHexEditor.SDK.Contracts.Services;
 using HexEditorControl = WpfHexEditor.HexEditor.HexEditor;
@@ -111,23 +113,37 @@ public sealed class HexEditorServiceImpl : IHexEditorService
             // Forward the native FileOpened (fires after file stream is ready, not before).
             _activeEditor.FileOpened            += OnHexEditorFileOpened;
 
-            // Tab switch: file already loaded — fire immediately so panels refresh now.
+            // Tab switch: file already loaded — fire at Background priority so the
+            // UI finishes rendering the tab before plugin handlers run.
             if (_activeEditor.IsFileLoaded)
-                FileOpened?.Invoke(this, EventArgs.Empty);
+                FireDeferred(FileOpened);
         }
 
         // Notify plugins that the active editor has changed (e.g. tab switch).
         // ParsedFieldsPlugin uses this to reconnect its panel to the new editor.
-        ActiveEditorChanged?.Invoke(this, EventArgs.Empty);
+        FireDeferred(ActiveEditorChanged);
     }
 
     // Forwarded from HexEditorControl.FileOpened — fires after the stream is ready,
     // so plugins that read bytes (FileStats, PatternAnalysis) get valid data.
     private void OnHexEditorFileOpened(object? sender, EventArgs e)
-        => FileOpened?.Invoke(this, EventArgs.Empty);
+        => FireDeferred(FileOpened);
 
     private void OnSelectionChanged(object? sender, EventArgs e)
         => SelectionChanged?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Dispatches a plugin-facing event at Background priority so the UI thread
+    /// can finish rendering the newly opened file before any plugin handler runs.
+    /// Plugins that read bytes will therefore never block the initial render pass.
+    /// </summary>
+    private void FireDeferred(EventHandler? handler)
+    {
+        if (handler is null) return;
+        Application.Current?.Dispatcher.InvokeAsync(
+            () => handler(this, EventArgs.Empty),
+            DispatcherPriority.Background);
+    }
 
     private void OnFormatDetected(object? sender, CoreFormatArgs e)
         => FormatDetected?.Invoke(this, new FormatDetectedArgs
