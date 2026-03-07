@@ -53,6 +53,23 @@ public partial class PluginMonitoringPanel : UserControl
         CpuChartCanvas.SizeChanged += (_, _) => RedrawCharts();
         MemChartCanvas.SizeChanged += (_, _) => RedrawCharts();
         SizeChanged += (_, _) => ApplyLayoutMode();
+        Unloaded += OnUnloaded;
+    }
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_vm is not null)
+        {
+            ((INotifyCollectionChanged)_vm.CpuHistory).CollectionChanged    -= OnCpuHistoryChanged;
+            ((INotifyCollectionChanged)_vm.MemoryHistory).CollectionChanged -= OnMemHistoryChanged;
+            ((INotifyCollectionChanged)_vm.EventLog).CollectionChanged      -= OnEventLogChanged;
+            _vm.PropertyChanged -= OnVmPropertyChanged;
+            _vm.Dispose();
+            _vm = null;
+        }
+        Unloaded -= OnUnloaded;
     }
 
     // ── DataContext wiring ───────────────────────────────────────────────────
