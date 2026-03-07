@@ -263,18 +263,28 @@ public partial class WelcomePanel : UserControl
     private static List<ChangelogVersion> ParseChangelog(string[] lines)
     {
         var versions = new List<ChangelogVersion>();
-        ChangelogVersion?  current = null;
-        ChangelogSection?  section = null;
+        ChangelogVersion?  current  = null;
+        ChangelogSection?  section  = null;
+        int                versionCount = 0; // excludes "What's Next"
 
         foreach (var raw in lines)
         {
             var line = raw.TrimEnd();
 
-            // Version header
+            // "What's Next" special header — no square brackets, never counted against limit
+            if (line.Equals("## What's Next", StringComparison.Ordinal))
+            {
+                section = null;
+                current = new ChangelogVersion("What's Next", "", "", []);
+                versions.Insert(0, current); // always rendered first
+                continue;
+            }
+
+            // Version header — ## [Label] — Date — Title
             var vm = VersionHeader.Match(line);
             if (vm.Success)
             {
-                if (versions.Count >= MaxVersionsDisplayed) break;
+                if (versionCount >= MaxVersionsDisplayed) break;
 
                 section = null;
                 current = new ChangelogVersion(
@@ -283,6 +293,7 @@ public partial class WelcomePanel : UserControl
                     Title:    vm.Groups[3].Value,
                     Sections: []);
                 versions.Add(current);
+                versionCount++;
                 continue;
             }
 
@@ -314,6 +325,10 @@ public partial class WelcomePanel : UserControl
 
     private UIElement BuildVersionBlock(ChangelogVersion version)
     {
+        // "What's Next" is rendered as a roadmap section without a version badge
+        if (version.Label == "What's Next")
+            return BuildWhatNextBlock(version);
+
         var container = new StackPanel { Margin = new Thickness(0, 0, 0, 24) };
 
         // Version badge row
@@ -374,6 +389,59 @@ public partial class WelcomePanel : UserControl
             var secColor = ResolveSectionColor(sec.Title);
             container.Children.Add(BuildSectionBlock(sec, secColor));
         }
+
+        return container;
+    }
+
+    private static readonly Brush BrushWhatNext = new SolidColorBrush(Color.FromArgb(0xFF, 0xC5, 0x86, 0xC0)); // purple
+
+    private UIElement BuildWhatNextBlock(ChangelogVersion version)
+    {
+        var container = new StackPanel { Margin = new Thickness(0, 0, 0, 24) };
+
+        // Header row with roadmap icon
+        var headerRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin      = new Thickness(0, 0, 0, 10)
+        };
+
+        var iconBlock = new TextBlock
+        {
+            Text              = "\uE945", // Segoe MDL2: MiniExpand / roadmap
+            FontFamily        = new FontFamily("Segoe MDL2 Assets"),
+            FontSize          = 14,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground        = BrushWhatNext,
+            Margin            = new Thickness(0, 0, 8, 0)
+        };
+        headerRow.Children.Add(iconBlock);
+
+        var titleBlock = new TextBlock
+        {
+            Text              = "What's Next",
+            FontSize          = 14,
+            FontWeight        = FontWeights.SemiBold,
+            Foreground        = BrushWhatNext,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        headerRow.Children.Add(titleBlock);
+
+        container.Children.Add(headerRow);
+
+        // Separator line
+        var sep = new Border
+        {
+            Height  = 1,
+            Opacity = 0.2,
+            Margin  = new Thickness(0, 0, 0, 10)
+        };
+        sep.SetResourceReference(Border.BackgroundProperty, "DockMenuForegroundBrush");
+        container.Children.Add(sep);
+
+        // Sections
+        foreach (var sec in version.Sections)
+            container.Children.Add(BuildSectionBlock(sec, BrushWhatNext));
 
         return container;
     }
