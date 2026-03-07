@@ -53,8 +53,9 @@ public sealed partial class ImageViewer : UserControl,
     // Displayed bitmap = pipeline applied to _bitmap
     private BitmapSource? _displayBitmap;
 
-    // Non-destructive transform pipeline
-    private readonly ImageTransformPipeline _pipeline = new();
+    // Non-destructive transform pipeline + redo stack
+    private readonly ImageTransformPipeline      _pipeline   = new();
+    private readonly Stack<IImageTransform>      _redoStack  = new();
 
     // Zoom
     private double _zoom = 1.0;
@@ -102,8 +103,8 @@ public sealed partial class ImageViewer : UserControl,
     {
         InitializeComponent();
 
-        UndoCommand      = new RelayCommand(() => { }, () => false);
-        RedoCommand      = new RelayCommand(() => { }, () => false);
+        UndoCommand      = new RelayCommand(Undo, () => CanUndo);
+        RedoCommand      = new RelayCommand(Redo, () => CanRedo);
         SaveCommand      = new RelayCommand(Save,
             () => _pipeline.Count > 0 && _displayBitmap is not null && !string.IsNullOrEmpty(_filePath));
         CopyCommand      = new RelayCommand(CopyImage,        () => _displayBitmap is not null);
@@ -179,9 +180,9 @@ public sealed partial class ImageViewer : UserControl,
     // IDocumentEditor — State
     // -----------------------------------------------------------------------
 
-    public bool IsDirty    => _pipeline.Count > 0;
-    public bool CanUndo    => false;
-    public bool CanRedo    => false;
+    public bool IsDirty => _pipeline.Count > 0;
+    public bool CanUndo => _pipeline.Count > 0;
+    public bool CanRedo => _redoStack.Count > 0;
 
     public bool IsReadOnly
     {
@@ -232,8 +233,36 @@ public sealed partial class ImageViewer : UserControl,
     // IDocumentEditor — Methods
     // -----------------------------------------------------------------------
 
-    public void Undo() { }
-    public void Redo() { }
+    public void Undo()
+    {
+        if (_pipeline.Count == 0) return;
+        var step = _pipeline.Steps[^1];
+        _pipeline.RemoveAt(_pipeline.Count - 1);
+        _redoStack.Push(step);
+        UpdateDisplayBitmap();
+        UpdateTransformsStatusItem();
+        NotifyUndoRedoChanged();
+        ModifiedChanged?.Invoke(this, EventArgs.Empty);
+        StatusMessage?.Invoke(this, $"Undo: {step.Name}");
+    }
+
+    public void Redo()
+    {
+        if (_redoStack.Count == 0) return;
+        var step = _redoStack.Pop();
+        _pipeline.Add(step);
+        UpdateDisplayBitmap();
+        UpdateTransformsStatusItem();
+        NotifyUndoRedoChanged();
+        ModifiedChanged?.Invoke(this, EventArgs.Empty);
+        StatusMessage?.Invoke(this, $"Redo: {step.Name}");
+    }
+
+    private void NotifyUndoRedoChanged()
+    {
+        CanUndoChanged?.Invoke(this, EventArgs.Empty);
+        CanRedoChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     public void Save()
     {
@@ -246,11 +275,13 @@ public sealed partial class ImageViewer : UserControl,
             using var stream = new FileStream(_filePath, FileMode.Create, FileAccess.Write, FileShare.None);
             encoder.Save(stream);
 
-            // The saved result becomes the new base; pipeline is now empty (no pending transforms).
+            // The saved result becomes the new base; pipeline and redo history are cleared.
             _bitmap = _displayBitmap;
             _pipeline.Clear();
+            _redoStack.Clear();
             UpdateDisplayBitmap();
             UpdateTransformsStatusItem();
+            NotifyUndoRedoChanged();
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
             TitleChanged?.Invoke(this, Title);
 
@@ -288,8 +319,10 @@ public sealed partial class ImageViewer : UserControl,
             // Back on the UI thread after await — safe to update WPF state.
             _bitmap = _displayBitmap;
             _pipeline.Clear();
+            _redoStack.Clear();
             UpdateDisplayBitmap();
             UpdateTransformsStatusItem();
+            NotifyUndoRedoChanged();
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
             TitleChanged?.Invoke(this, Title);
 
@@ -324,6 +357,7 @@ public sealed partial class ImageViewer : UserControl,
         _displayBitmap = null;
         ImageDisplay.Source = null;
         _pipeline.Clear();
+        _redoStack.Clear();
     }
 
     public void CancelOperation() { }
@@ -459,9 +493,11 @@ public sealed partial class ImageViewer : UserControl,
     private void ApplyTransform(IImageTransform transform)
     {
         if (_bitmap is null) return;
+        _redoStack.Clear(); // A new action clears the redo history.
         _pipeline.Add(transform);
         UpdateDisplayBitmap();
         UpdateTransformsStatusItem();
+        NotifyUndoRedoChanged();
         ModifiedChanged?.Invoke(this, EventArgs.Empty);
         StatusMessage?.Invoke(this, $"Applied: {transform.Name}");
     }
@@ -512,10 +548,12 @@ public sealed partial class ImageViewer : UserControl,
 
     public void ResetAllTransforms()
     {
-        if (_pipeline.Count == 0) return;
+        if (_pipeline.Count == 0 && _redoStack.Count == 0) return;
         _pipeline.Clear();
+        _redoStack.Clear();
         UpdateDisplayBitmap();
         UpdateTransformsStatusItem();
+        NotifyUndoRedoChanged();
         ModifiedChanged?.Invoke(this, EventArgs.Empty);
         StatusMessage?.Invoke(this, "All transforms reset");
     }
@@ -898,6 +936,10 @@ public sealed partial class ImageViewer : UserControl,
             // Flip
             case Key.H when  shift: FlipV();               e.Handled = true; break;
             case Key.H:             FlipH();                e.Handled = true; break;
+
+            // Undo / Redo
+            case Key.Z when !shift: Undo();                 e.Handled = true; break;
+            case Key.Y:             Redo();                 e.Handled = true; break;
 
             // Crop mode toggle
             case Key.K:             ToggleCropMode();       e.Handled = true; break;

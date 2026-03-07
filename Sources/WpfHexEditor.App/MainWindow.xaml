@@ -678,7 +678,7 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Reset All _Transforms"
+                        <MenuItem Header="Reset to _Original Image"
                                   Click="OnImageResetTransforms">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="13"

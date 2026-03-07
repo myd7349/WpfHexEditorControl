@@ -15,6 +15,7 @@
 //
 // ==========================================================
 
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -42,6 +43,14 @@ namespace WpfHexEditor.HexEditor.ViewModels
             _showAllFormats = true; // Show all formats by default
             _selectedCategory = "All";
         }
+
+        /// <summary>
+        /// Available category filter options for the toolbar ComboBox
+        /// </summary>
+        public List<string> Categories { get; } = new List<string>
+        {
+            "All", "Integer", "Float", "Date/Time", "Network", "GUID", "Color", "Basic", "Bits"
+        };
 
         /// <summary>
         /// Collection of interpreted values

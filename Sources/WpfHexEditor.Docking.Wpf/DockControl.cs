@@ -1083,6 +1083,10 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     {
         ActivationHistory.Remove(item);
         ActivationHistory.Insert(0, item);
+        // Sync model so layout serialization captures the last selected tab,
+        // not just the last tab added via DockEngine.Dock().
+        if (item.Owner is { } owner)
+            owner.ActiveItem = item;
         ActiveItemChanged?.Invoke(item);
     }
 

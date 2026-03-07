@@ -779,6 +779,10 @@ namespace WpfHexEditor.HexEditor.Controls
                     _linesSource.CollectionChanged -= LinesSource_CollectionChanged;
                 }
 
+                // Dismiss any open tooltip — the document is changing and the byte under
+                // the cursor belongs to the previous file (stale data).
+                CloseTooltip();
+
                 _linesSource = value;
 
                 // Subscribe to new collection

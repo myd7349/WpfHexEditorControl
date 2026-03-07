@@ -1023,6 +1023,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private UIElement CreateDataInspectorContent()
     {
         _dataInspectorPanel ??= new WpfHexEditor.Panels.BinaryAnalysis.DataInspectorPanel();
+
+        // Seed with current caret/selection bytes when panel is first shown
+        if (_connectedHexEditor is not null)
+            _dataInspectorPanel.UpdateBytes(_connectedHexEditor.GetSelectionByteArray());
+
         return _dataInspectorPanel;
     }
 
@@ -1253,6 +1258,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             _connectedHexEditor = hexEditor;
             hexEditor.ConnectParsedFieldsPanel(_parsedFieldsPanel);
+            hexEditor.SelectionChanged += OnHexSelectionChangedForInspector;
+            hexEditor.FormatDetected   += OnHexFormatDetected;
             ActiveDocumentEditor       = hexEditor as IDocumentEditor;
             ActiveHexEditor            = hexEditor;
             ActiveStatusBarContributor = hexEditor as IStatusBarContributor;

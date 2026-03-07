@@ -30,6 +30,7 @@ using WpfHexEditor.PluginHost.Monitoring;
 using WpfHexEditor.PluginHost.Services;
 using WpfHexEditor.PluginHost.UI;
 using WpfHexEditor.Options;
+using WpfHexEditor.Editor.Core;
 using WpfHexEditor.SDK.Contracts.Focus;
 using WpfHexEditor.Terminal;
 
@@ -185,7 +186,7 @@ public partial class MainWindow
         // Resolve the actual editor content
         _contentCache.TryGetValue(activeItem.ContentId, out var content);
 
-        IDocument? document = content is IDocument d ? d : new SimpleDockItemDocument(activeItem);
+        IDocument? document = content is IDocument d ? d : new SimpleDockItemDocument(activeItem, content as IDocumentEditor);
         _focusContextService.SetActiveDocument(document);
     }
 
@@ -479,12 +480,23 @@ public partial class MainWindow
     /// </summary>
     private sealed class SimpleDockItemDocument : IDocument
     {
-        private readonly DockItem _item;
-        public SimpleDockItemDocument(DockItem item) => _item = item;
-        public string ContentId => _item.ContentId;
-        public string Title => _item.Title ?? _item.ContentId;
-        public string? FilePath => _item.Metadata?.TryGetValue("FilePath", out var fp) == true ? fp : null;
-        public string DocumentType => "DockItem";
-        public bool IsDirty => false;
+        private readonly DockItem           _item;
+        private readonly IDocumentEditor?   _editor;
+
+        public SimpleDockItemDocument(DockItem item, IDocumentEditor? editor = null)
+        {
+            _item   = item;
+            _editor = editor;
+        }
+
+        public string  ContentId    => _item.ContentId;
+        public string  Title        => _item.Title ?? _item.ContentId;
+        public string? FilePath     => _item.Metadata?.TryGetValue("FilePath", out var fp) == true ? fp : null;
+        public string  DocumentType => "DockItem";
+        public bool    IsDirty      => _editor?.IsDirty ?? false;
+        public bool    CanUndo      => _editor?.CanUndo ?? false;
+        public bool    CanRedo      => _editor?.CanRedo ?? false;
+        public void    Undo()       => _editor?.Undo();
+        public void    Redo()       => _editor?.Redo();
     }
 }

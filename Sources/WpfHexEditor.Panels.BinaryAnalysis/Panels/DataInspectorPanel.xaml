@@ -92,65 +92,39 @@
     <Grid Background="{DynamicResource PFP_PanelBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header toolbar -->
-        <Border Grid.Row="0"
-                Background="{DynamicResource Panel_ToolbarBrush}"
-                BorderBrush="{DynamicResource PFP_BorderBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="10,8">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="🔍" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBlock Grid.Column="1" Text="Data Inspector"
-                           FontSize="14" FontWeight="Bold" VerticalAlignment="Center"
-                           Foreground="{DynamicResource PFP_TextBrush}"/>
-            </Grid>
-        </Border>
+        <!-- VS-standard single toolbar row (H=26, PanelCommon) -->
+        <Border Grid.Row="0" Style="{DynamicResource PanelToolbarStyle}">
+            <DockPanel LastChildFill="False" Margin="4,0">
+                <!-- Category filter -->
+                <TextBlock DockPanel.Dock="Left" Text="Category:"
+                           VerticalAlignment="Center" Margin="0,0,5,0"
+                           FontSize="11"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+                <ComboBox DockPanel.Dock="Left" Width="110" FontSize="11"
+                          VerticalAlignment="Center"
+                          ItemsSource="{Binding Categories}"
+                          SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
 
-        <!-- Filters toolbar -->
-        <Border Grid.Row="1"
-                Background="{DynamicResource Panel_ToolbarBrush}"
-                BorderBrush="{DynamicResource PFP_BorderBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="10,6">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,10,0">
-                    <TextBlock Text="Category:" VerticalAlignment="Center" Margin="0,0,5,0"
-                               FontSize="11" Foreground="{DynamicResource PFP_TextBrush}"/>
-                    <ComboBox x:Name="CategoryFilterComboBox" Width="120" FontSize="11"
-                              SelectedValue="{Binding SelectedCategory, Mode=TwoWay}">
-                        <ComboBoxItem Content="All" IsSelected="True"/>
-                        <ComboBoxItem Content="Integer"/>
-                        <ComboBoxItem Content="Float"/>
-                        <ComboBoxItem Content="Date/Time"/>
-                        <ComboBoxItem Content="Network"/>
-                        <ComboBoxItem Content="GUID"/>
-                        <ComboBoxItem Content="Color"/>
-                        <ComboBoxItem Content="Basic"/>
-                        <ComboBoxItem Content="Bits"/>
-                    </ComboBox>
-                </StackPanel>
-                <CheckBox Grid.Column="2" Content="Show all formats" VerticalAlignment="Center"
+                <!-- Separator -->
+                <Rectangle DockPanel.Dock="Left"
+                           Style="{DynamicResource PanelToolbarSeparatorStyle}"/>
+
+                <!-- Show-all toggle -->
+                <CheckBox DockPanel.Dock="Left"
+                          Content="All formats"
+                          VerticalAlignment="Center"
+                          FontSize="11"
                           IsChecked="{Binding ShowAllFormats, Mode=TwoWay}"
-                          FontSize="11" Foreground="{DynamicResource PFP_TextBrush}"/>
-            </Grid>
+                          Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
+            </DockPanel>
         </Border>
 
         <!-- Values list -->
-        <ScrollViewer Grid.Row="2"
+        <ScrollViewer Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Background="{DynamicResource PFP_PanelBackgroundBrush}">
@@ -170,7 +144,7 @@
         </ScrollViewer>
 
         <!-- Status bar -->
-        <Border Grid.Row="3"
+        <Border Grid.Row="2"
                 Background="{DynamicResource Panel_ToolbarBrush}"
                 BorderBrush="{DynamicResource PFP_BorderBrush}"
                 BorderThickness="0,1,0,0"

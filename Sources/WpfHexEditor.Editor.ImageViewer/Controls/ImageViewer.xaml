@@ -119,7 +119,7 @@ Architecture Notes:
 
             <!-- Reset -->
             <MenuItem x:Name="CmResetTransforms"
-                      Header="Reset All Transforms"
+                      Header="Reset to Original Image"
                       Click="OnContextResetTransforms">
                 <MenuItem.Icon>
                     <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="13"/>
