@@ -34,4 +34,7 @@ public interface IOutputService
 
     /// <summary>Clears all messages from the OutputPanel.</summary>
     void Clear();
+
+    /// <summary>Returns the last <paramref name="count"/> log lines, newest last.</summary>
+    IReadOnlyList<string> GetRecentLines(int count);
 }

@@ -29,4 +29,10 @@ public sealed class OutputServiceImpl : IOutputService
         => _outputPanel?.Info($"[{category}] {message}");
 
     public void Clear() => _outputPanel?.Clear();
+
+    public IReadOnlyList<string> GetRecentLines(int count)
+    {
+        // TODO: wire to OutputPanel's internal line buffer when available.
+        return [];
+    }
 }

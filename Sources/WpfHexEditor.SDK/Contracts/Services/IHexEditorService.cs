@@ -66,6 +66,13 @@ public interface IHexEditorService
     IReadOnlyList<long> SearchText(string text);
 
     /// <summary>
+    /// Writes bytes into the active file at the specified offset.
+    /// </summary>
+    /// <param name="offset">Start byte offset.</param>
+    /// <param name="data">Bytes to write.</param>
+    void WriteBytes(long offset, byte[] data);
+
+    /// <summary>
     /// Raised when a new file is opened in the HexEditor.
     /// Raised on the UI thread.
     /// </summary>

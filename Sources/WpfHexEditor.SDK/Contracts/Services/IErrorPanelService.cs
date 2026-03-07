@@ -34,4 +34,7 @@ public interface IErrorPanelService
 
     /// <summary>Clears all diagnostic entries previously posted by this plugin.</summary>
     void ClearPluginDiagnostics(string pluginId);
+
+    /// <summary>Returns the last <paramref name="count"/> error/warning messages (as formatted strings).</summary>
+    IReadOnlyList<string> GetRecentErrors(int count);
 }

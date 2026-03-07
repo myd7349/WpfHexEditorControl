@@ -45,6 +45,19 @@ public sealed class ErrorPanelServiceImpl : IErrorPanelService
         if (_sources.TryGetValue(pluginId, out var ds)) ds.Clear();
     }
 
+    public IReadOnlyList<string> GetRecentErrors(int count)
+    {
+        // Aggregate entries from all registered sources, newest last, limited to count.
+        lock (_sources)
+        {
+            return _sources.Values
+                .SelectMany(s => s.GetDiagnostics())
+                .TakeLast(count)
+                .Select(e => $"[{e.Severity}] {e.Source}: {e.Message}")
+                .ToList();
+        }
+    }
+
     private PluginDiagnosticSource GetOrCreateSource(string pluginId)
     {
         if (!_sources.TryGetValue(pluginId, out var ds))

@@ -38,6 +38,33 @@ public interface ISolutionExplorerService
     /// <param name="ct">Cancellation token.</param>
     Task OpenFileAsync(string filePath, CancellationToken ct = default);
 
+    /// <summary>Closes an open file tab. If <paramref name="fileName"/> is null, closes the active document.</summary>
+    Task CloseFileAsync(string? fileName = null, CancellationToken ct = default);
+
+    /// <summary>Saves a file. If <paramref name="fileName"/> is null, saves the active document.</summary>
+    Task SaveFileAsync(string? fileName = null, CancellationToken ct = default);
+
+    /// <summary>Opens a folder in Solution Explorer (navigates to it).</summary>
+    Task OpenFolderAsync(string path, CancellationToken ct = default);
+
+    /// <summary>Activates a project node in Solution Explorer by name.</summary>
+    Task OpenProjectAsync(string name, CancellationToken ct = default);
+
+    /// <summary>Closes a project by name (removes from solution).</summary>
+    Task CloseProjectAsync(string name, CancellationToken ct = default);
+
+    /// <summary>Opens a solution file in the IDE.</summary>
+    Task OpenSolutionAsync(string path, CancellationToken ct = default);
+
+    /// <summary>Closes the active solution.</summary>
+    Task CloseSolutionAsync(CancellationToken ct = default);
+
+    /// <summary>Reloads the active solution from disk.</summary>
+    Task ReloadSolutionAsync(CancellationToken ct = default);
+
+    /// <summary>Returns file paths inside <paramref name="path"/> (non-recursive). Returns empty list on error.</summary>
+    IReadOnlyList<string> GetFilesInDirectory(string path);
+
     /// <summary>
     /// Raised when the active solution changes (opened, closed, reloaded).
     /// Raised on the UI thread.

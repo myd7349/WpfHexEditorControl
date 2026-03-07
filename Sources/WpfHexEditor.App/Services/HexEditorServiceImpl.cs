@@ -48,6 +48,13 @@ public sealed class HexEditorServiceImpl : IHexEditorService
         return ReadBytes(SelectionStart, (int)Math.Min(SelectionLength, int.MaxValue));
     }
 
+    public void WriteBytes(long offset, byte[] data)
+    {
+        if (_activeEditor is null || data.Length == 0) return;
+        // TODO: wire to HexEditor's SetByte / paste API when available.
+        // Stub: no-op until the HexEditor write API is exposed.
+    }
+
     public IReadOnlyList<long> SearchHex(string hexPattern)
     {
         // Full implementation deferred to Phase 4 — requires HexEditor search API wiring.

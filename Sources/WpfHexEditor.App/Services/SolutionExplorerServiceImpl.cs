@@ -43,6 +43,44 @@ public sealed class SolutionExplorerServiceImpl : ISolutionExplorerService
         return Task.CompletedTask;
     }
 
+    /// <summary>Hook assigned by MainWindow to close an open file tab.</summary>
+    public Func<string?, Task>? CloseFileHandler { get; set; }
+
+    /// <summary>Hook assigned by MainWindow to save a file.</summary>
+    public Func<string?, Task>? SaveFileHandler { get; set; }
+
+    public Task CloseFileAsync(string? fileName = null, CancellationToken ct = default)
+        => CloseFileHandler is not null ? CloseFileHandler(fileName) : Task.CompletedTask;
+
+    public Task SaveFileAsync(string? fileName = null, CancellationToken ct = default)
+        => SaveFileHandler is not null ? SaveFileHandler(fileName) : Task.CompletedTask;
+
+    // ── Folder / project / solution management — stubs until UI is wired ─────
+
+    public Task OpenFolderAsync(string path, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task OpenProjectAsync(string name, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task CloseProjectAsync(string name, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task OpenSolutionAsync(string path, CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task CloseSolutionAsync(CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public Task ReloadSolutionAsync(CancellationToken ct = default)
+        => Task.CompletedTask;
+
+    public IReadOnlyList<string> GetFilesInDirectory(string path)
+    {
+        try { return System.IO.Directory.GetFiles(path); }
+        catch { return []; }
+    }
+
     public event EventHandler? SolutionChanged
     {
         add => _solutionManager.SolutionChanged += value;
