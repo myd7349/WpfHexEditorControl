@@ -34,16 +34,24 @@ public sealed class DockingAdapter : IDockingAdapter
     // side are grouped as tabs (DockDirection.Center) rather than creating new splits.
     private readonly Dictionary<DockDirection, string> _sideAnchorIds = new();
 
+    // When the session was restored from a saved layout, panels absent from that layout
+    // were intentionally closed by the user. They are deferred here and only docked when
+    // the user explicitly opens them (e.g. via View menu / ShowPanel).
+    private readonly bool _isRestoredFromFile;
+    private readonly Dictionary<string, (UIElement Content, PanelDescriptor Descriptor)> _deferredPanels = new();
+
     public DockingAdapter(
         DockEngine engine,
         DockLayoutRoot layout,
         DockControl dockHost,
-        Action<string, UIElement> storeContent)
+        Action<string, UIElement> storeContent,
+        bool isRestoredFromFile = false)
     {
         _engine = engine ?? throw new ArgumentNullException(nameof(engine));
         _layout = layout ?? throw new ArgumentNullException(nameof(layout));
         _dockHost = dockHost ?? throw new ArgumentNullException(nameof(dockHost));
         _storeContent = storeContent ?? throw new ArgumentNullException(nameof(storeContent));
+        _isRestoredFromFile = isRestoredFromFile;
     }
 
     /// <inheritdoc />
@@ -65,19 +73,43 @@ public sealed class DockingAdapter : IDockingAdapter
             return;
         }
 
+        // Layout was restored from file and this panel was absent from it — the user had it
+        // closed (or did a Reset Layout). Defer docking until the user explicitly opens it.
+        if (_isRestoredFromFile)
+        {
+            _storeContent(uiId, content);
+            _deferredPanels[uiId] = (content, descriptor);
+            return;
+        }
+
+        DockNewPanel(uiId, content, descriptor);
+    }
+
+    /// <inheritdoc />
+    public void RemoveDockablePanel(string uiId)
+    {
+        _deferredPanels.Remove(uiId);
+        var item = _layout.FindItemByContentId(uiId);
+        if (item is not null) _engine.Close(item);
+    }
+
+    // Performs the actual docking of a new panel at its default side.
+    // Used both for first-run auto-dock and for on-demand deferred dock.
+    private void DockNewPanel(string uiId, UIElement content, PanelDescriptor descriptor)
+    {
         var direction = descriptor.DefaultDockSide?.ToLowerInvariant() switch
         {
-            "left" => DockDirection.Left,
+            "left"   => DockDirection.Left,
             "bottom" => DockDirection.Bottom,
-            "top" => DockDirection.Top,
-            _ => DockDirection.Right
+            "top"    => DockDirection.Top,
+            _        => DockDirection.Right
         };
 
         var item = new DockItem
         {
             ContentId = uiId,
-            Title = descriptor.Title,
-            CanClose = descriptor.CanClose
+            Title     = descriptor.Title,
+            CanClose  = descriptor.CanClose
         };
 
         _storeContent(uiId, content);
@@ -106,13 +138,6 @@ public sealed class DockingAdapter : IDockingAdapter
     }
 
     /// <inheritdoc />
-    public void RemoveDockablePanel(string uiId)
-    {
-        var item = _layout.FindItemByContentId(uiId);
-        if (item is not null) _engine.Close(item);
-    }
-
-    /// <inheritdoc />
     public void AddDocumentTab(string uiId, UIElement content, DocumentDescriptor descriptor)
     {
         if (_layout.FindItemByContentId(uiId) is not null) return;
@@ -138,6 +163,14 @@ public sealed class DockingAdapter : IDockingAdapter
 
     public void ShowDockablePanel(string uiId)
     {
+        // If the panel was deferred (absent from the restored layout), dock it now on first show.
+        if (_deferredPanels.TryGetValue(uiId, out var deferred))
+        {
+            _deferredPanels.Remove(uiId);
+            DockNewPanel(uiId, deferred.Content, deferred.Descriptor);
+            return;
+        }
+
         var item = _layout.FindItemByContentId(uiId);
         if (item is not null) _engine.Show(item);
     }
@@ -150,6 +183,13 @@ public sealed class DockingAdapter : IDockingAdapter
 
     public void ToggleDockablePanel(string uiId)
     {
+        // Deferred panel: first toggle = dock and show it.
+        if (_deferredPanels.ContainsKey(uiId))
+        {
+            ShowDockablePanel(uiId);
+            return;
+        }
+
         var item = _layout.FindItemByContentId(uiId);
         if (item is null) return;
         if (item.State != DockItemState.Hidden) _engine.Hide(item); else _engine.Show(item);
@@ -157,6 +197,13 @@ public sealed class DockingAdapter : IDockingAdapter
 
     public void FocusDockablePanel(string uiId)
     {
+        // Deferred panel: focusing it for the first time docks and shows it.
+        if (_deferredPanels.ContainsKey(uiId))
+        {
+            ShowDockablePanel(uiId);
+            return;
+        }
+
         var item = _layout.FindItemByContentId(uiId);
         if (item is not null) _engine.Show(item);
     }

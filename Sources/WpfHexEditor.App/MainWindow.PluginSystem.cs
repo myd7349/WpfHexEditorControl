@@ -89,7 +89,7 @@ public partial class MainWindow
             if (_errorPanel is not null)
                 _errorPanelService.SetErrorPanel(_errorPanel);
 
-            var dockingAdapter = new DockingAdapter(_engine, _layout, DockHost, StoreContent);
+            var dockingAdapter = new DockingAdapter(_engine, _layout, DockHost, StoreContent, _layoutWasRestoredFromFile);
             var menuAdapter = new MenuAdapter(MainMenuBar);
             var statusBarAdapter = new StatusBarAdapter(AppStatusBar);
 

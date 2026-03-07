@@ -545,6 +545,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // --- Layout persistence --------------------------------------------
 
+    // True when the current session loaded a layout from disk (vs. first-run SetupDefaultLayout).
+    // Used by DockingAdapter to decide whether plugin panels absent from the saved layout
+    // should be deferred rather than auto-docked.
+    private bool _layoutWasRestoredFromFile;
+
     private void LoadSavedLayoutOrDefault()
     {
         if (File.Exists(LayoutFilePath))
@@ -556,6 +561,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 PruneStaleDocumentItems(layout);
                 ApplyLayout(layout);
                 EnsureErrorPanel();
+                _layoutWasRestoredFromFile = true;
                 OutputLogger.Debug($"Layout restored from: {LayoutFilePath}");
                 return;
             }
