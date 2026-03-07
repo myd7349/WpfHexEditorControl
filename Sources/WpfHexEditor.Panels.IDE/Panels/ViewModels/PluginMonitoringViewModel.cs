@@ -19,79 +19,173 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 using WpfHexEditor.PluginHost;
+using WpfHexEditor.PluginHost.Monitoring;
 using WpfHexEditor.SDK.Models;
 
 namespace WpfHexEditor.Panels.IDE.Panels.ViewModels;
 
-/// <summary>
-/// A single data point for the time-series chart.
-/// </summary>
+/// <summary>Side of the panel where the plugin list appears in landscape (bottom-dock) mode.</summary>
+public enum PanelListSide { Left, Right }
+
+/// <summary>A single data point for the time-series chart.</summary>
 public sealed record ChartPoint(DateTime Time, double Value);
+
+/// <summary>A timestamped event entry displayed in the live event log.</summary>
+public sealed record PluginEventEntry(string TimeLabel, string Icon, string Color, string PluginName, string Message);
 
 /// <summary>
 /// Summary row for a single plugin in the monitoring table.
 /// </summary>
 public sealed class PluginMonitorRow : INotifyPropertyChanged
 {
-    private string _name = string.Empty;
-    private string _state = string.Empty;
-    private string _stateColor = "#9CA3AF";
+    private string _name        = string.Empty;
+    private string _state       = string.Empty;
+    private string _stateColor  = "#9CA3AF";
     private double _cpuPercent;
-    private long _memoryMb;
+    private long   _memoryMb;
     private double _avgExecMs;
     private double _initTimeMs;
+    private string _uptimeLabel = string.Empty;
+    private double _peakCpu;
+    private bool   _isResponsive = true;
+    private bool   _isSlow;
+    private string _faultMessage = string.Empty;
+    private string _version      = string.Empty;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string Id { get; init; } = string.Empty;
 
-    public string Name
+    public string Name        { get => _name;        set { _name        = value; OnPropertyChanged(); } }
+    public string State       { get => _state;       set { _state       = value; OnPropertyChanged(); } }
+    public string StateColor  { get => _stateColor;  set { _stateColor  = value; OnPropertyChanged(); } }
+    public double CpuPercent  { get => _cpuPercent;  set { _cpuPercent  = value; OnPropertyChanged(); } }
+    public long   MemoryMb    { get => _memoryMb;    set { _memoryMb    = value; OnPropertyChanged(); } }
+    public double AvgExecMs   { get => _avgExecMs;   set { _avgExecMs   = value; OnPropertyChanged(); } }
+    public double InitTimeMs  { get => _initTimeMs;  set { _initTimeMs  = value; OnPropertyChanged(); } }
+    public string UptimeLabel { get => _uptimeLabel; set { _uptimeLabel = value; OnPropertyChanged(); } }
+    public double PeakCpu     { get => _peakCpu;     set { _peakCpu     = value; OnPropertyChanged(); } }
+    public string FaultMessage { get => _faultMessage; set { _faultMessage = value; OnPropertyChanged(); } }
+    public string Version      { get => _version;      set { _version      = value; OnPropertyChanged(); } }
+
+    public bool IsResponsive
     {
-        get => _name;
-        set { _name = value; OnPropertyChanged(); }
+        get => _isResponsive;
+        set { _isResponsive = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasWarning)); OnPropertyChanged(nameof(WarningIcon)); OnPropertyChanged(nameof(WarningColor)); OnPropertyChanged(nameof(WarningTooltip)); }
     }
 
-    public string State
+    public bool IsSlow
     {
-        get => _state;
-        set { _state = value; OnPropertyChanged(); }
+        get => _isSlow;
+        set { _isSlow = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasWarning)); OnPropertyChanged(nameof(WarningIcon)); OnPropertyChanged(nameof(WarningColor)); OnPropertyChanged(nameof(WarningTooltip)); }
     }
 
-    public string StateColor
-    {
-        get => _stateColor;
-        set { _stateColor = value; OnPropertyChanged(); }
-    }
+    // -- Computed warning properties -----------------------------------------
 
-    public double CpuPercent
-    {
-        get => _cpuPercent;
-        set { _cpuPercent = value; OnPropertyChanged(); }
-    }
+    /// <summary>True when the plugin is slow or not responsive.</summary>
+    public bool   HasWarning    => !_isResponsive || _isSlow;
 
-    public long MemoryMb
-    {
-        get => _memoryMb;
-        set { _memoryMb = value; OnPropertyChanged(); }
-    }
+    /// <summary>Segoe MDL2 icon for the warning badge (empty string = no icon).</summary>
+    public string WarningIcon   => !_isResponsive ? "\uE7BA" : _isSlow ? "\uE946" : string.Empty;
 
-    public double AvgExecMs
-    {
-        get => _avgExecMs;
-        set { _avgExecMs = value; OnPropertyChanged(); }
-    }
+    /// <summary>Color of the warning badge.</summary>
+    public string WarningColor  => !_isResponsive ? "#F97316" : "#F59E0B";
 
-    public double InitTimeMs
-    {
-        get => _initTimeMs;
-        set { _initTimeMs = value; OnPropertyChanged(); }
-    }
+    /// <summary>Tooltip message for the warning badge.</summary>
+    public string WarningTooltip => !_isResponsive ? "Plugin not responsive" : _isSlow ? "Slow plugin detected" : string.Empty;
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
+
+/// <summary>
+/// Rich metadata + runtime metrics for the currently selected plugin.
+/// Populated by <see cref="PluginMonitoringViewModel.SelectedPlugin"/> setter.
+/// </summary>
+public sealed class PluginDetailViewModel : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public string  Name             { get; private set; } = string.Empty;
+    public string  Version          { get; private set; } = string.Empty;
+    public string  Author           { get; private set; } = string.Empty;
+    public string  Description      { get; private set; } = string.Empty;
+    public bool    TrustedPublisher { get; private set; }
+    public string  TrustLabel       { get; private set; } = string.Empty;
+    public string  IsolationMode    { get; private set; } = string.Empty;
+    public string  SdkVersion       { get; private set; } = string.Empty;
+    public string  LoadedAtLabel    { get; private set; } = "—";
+    public string  UptimeLabel      { get; private set; } = "—";
+    public string  InitTimeMsLabel  { get; private set; } = string.Empty;
+    public string  AvgExecMsLabel   { get; private set; } = string.Empty;
+    public string  PeakCpuLabel     { get; private set; } = string.Empty;
+    public string  AvgCpuLabel      { get; private set; } = string.Empty;
+    public string  PermissionsLabel { get; private set; } = "None";
+    public string? FaultMessage     { get; private set; }
+    public bool    HasFault         { get; private set; }
+    public string  StateColor       { get; private set; } = "#9CA3AF";
+
+    /// <summary>Refreshes all properties from the given <paramref name="entry"/>.</summary>
+    public void Update(PluginEntry entry)
+    {
+        Name            = entry.Manifest.Name;
+        Version         = entry.Manifest.Version ?? string.Empty;
+        Author          = string.IsNullOrEmpty(entry.Manifest.Author) ? entry.Manifest.Publisher : entry.Manifest.Author;
+        Description     = entry.Manifest.Description ?? string.Empty;
+        TrustedPublisher = entry.Manifest.TrustedPublisher;
+        TrustLabel      = entry.Manifest.TrustedPublisher ? "Official" : "Community";
+        IsolationMode   = entry.Manifest.IsolationMode.ToString();
+        SdkVersion      = entry.Manifest.SdkVersion ?? string.Empty;
+        LoadedAtLabel   = entry.LoadedAt?.ToLocalTime().ToString("HH:mm:ss") ?? "—";
+
+        var uptime      = entry.Diagnostics.Uptime;
+        UptimeLabel     = uptime.TotalSeconds < 1 ? "—"
+            : uptime.TotalHours >= 1
+                ? $"{(int)uptime.TotalHours:D2}:{uptime.Minutes:D2}:{uptime.Seconds:D2}"
+                : $"{uptime.Minutes:D2}:{uptime.Seconds:D2}";
+
+        InitTimeMsLabel = $"{entry.InitDuration.TotalMilliseconds:F0} ms";
+        AvgExecMsLabel  = $"{entry.Diagnostics.AverageExecutionTime.TotalMilliseconds:F1} ms";
+        PeakCpuLabel    = $"{entry.Diagnostics.PeakCpu():F1} %";
+        AvgCpuLabel     = $"{entry.Diagnostics.AverageCpu():F1} %";
+        FaultMessage    = entry.FaultException?.ToString();
+        HasFault        = entry.FaultException is not null;
+        StateColor      = StateBadgeColor(entry.State);
+        PermissionsLabel = BuildPermissionsLabel(entry.Manifest.Permissions);
+
+        // Fire single notification to refresh all bindings.
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+    }
+
+    private static string BuildPermissionsLabel(PluginCapabilities? caps)
+    {
+        if (caps is null) return "None";
+        var flags = new List<string>(8);
+        if (caps.AccessFileSystem) flags.Add("FileSystem");
+        if (caps.AccessNetwork)    flags.Add("Network");
+        if (caps.AccessHexEditor)  flags.Add("HexEditor");
+        if (caps.AccessCodeEditor) flags.Add("CodeEditor");
+        if (caps.RegisterMenus)    flags.Add("Menus");
+        if (caps.WriteOutput)      flags.Add("Output");
+        if (caps.WriteErrorPanel)  flags.Add("ErrorPanel");
+        if (caps.AccessSettings)   flags.Add("Settings");
+        if (caps.WriteTerminal)    flags.Add("Terminal");
+        return flags.Count == 0 ? "None" : string.Join("  ·  ", flags);
+    }
+
+    private static string StateBadgeColor(PluginState state) => state switch
+    {
+        PluginState.Loaded       => "#22C55E",
+        PluginState.Loading      => "#F59E0B",
+        PluginState.Disabled     => "#6B7280",
+        PluginState.Faulted      => "#EF4444",
+        PluginState.Incompatible => "#F97316",
+        _                        => "#9CA3AF"
+    };
 }
 
 /// <summary>
@@ -104,13 +198,23 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
     private readonly WpfPluginHost _host;
     private readonly DispatcherTimer _timer;
 
-    private double _currentCpu;
-    private long   _currentMemoryMb;
-    private int    _loadedCount;
-    private int    _totalCount;
-    private int    _faultCount;
-    private bool   _isRunning = true;
-    private int    _intervalSeconds = 5;
+    private const int MaxEventLog = 200;
+
+    private readonly HashSet<string> _slowPluginIds = new();
+    private readonly ICollectionView _filteredRows = null!; // assigned in constructor
+    private string              _searchText = string.Empty;
+    private PluginMonitorRow?   _selectedPlugin;
+    private PluginDetailViewModel? _selectedPluginDetail;
+
+    private double        _currentCpu;
+    private long          _currentMemoryMb;
+    private int           _loadedCount;
+    private int           _totalCount;
+    private int           _faultCount;
+    private bool          _isRunning = true;
+    private int           _intervalSeconds = 5;
+    private PanelListSide _listSide = PanelListSide.Right;
+    private bool          _isLandscape;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -125,12 +229,32 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
         _timer.Tick += OnTimerTick;
         _timer.Start();
 
-        StartStopCommand = new RelayCommand(_ => ToggleRunning());
-        ResetCommand     = new RelayCommand(_ => Reset());
-        SetIntervalCommand = new RelayCommand(p =>
+        StartStopCommand      = new RelayCommand(_ => ToggleRunning());
+        ResetCommand          = new RelayCommand(_ => Reset());
+        ToggleListSideCommand = new RelayCommand(_ => ListSide = ListSide == PanelListSide.Right ? PanelListSide.Left : PanelListSide.Right);
+        ClearLogCommand       = new RelayCommand(_ => EventLog.Clear());
+        ReloadPluginCommand   = new RelayCommand(_ => { if (_selectedPlugin is not null) _ = _host.ReloadPluginAsync(_selectedPlugin.Id); });
+        TogglePluginCommand   = new RelayCommand(_ =>
+        {
+            if (_selectedPlugin is null) return;
+            if (_selectedPlugin.State is "Running" or "Loading")
+                _ = _host.DisablePluginAsync(_selectedPlugin.Id);
+            else
+                _ = _host.EnablePluginAsync(_selectedPlugin.Id);
+        });
+        SetIntervalCommand    = new RelayCommand(p =>
         {
             if (p is int seconds) SetInterval(seconds);
         });
+
+        // Subscribe to host lifecycle events for the live event log.
+        _host.PluginLoaded        += OnPluginLoaded;
+        _host.PluginCrashed       += OnPluginCrashed;
+        _host.SlowPluginDetected  += OnSlowPluginDetected;
+
+        // Build the filterable view over the Rows collection.
+        _filteredRows = CollectionViewSource.GetDefaultView(Rows);
+        _filteredRows.Filter = FilterPlugin;
 
         Refresh();
     }
@@ -142,6 +266,18 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
 
     /// <summary>Clears all chart history and resets counters.</summary>
     public ICommand ResetCommand { get; }
+
+    /// <summary>Toggles the plugin list between left and right side in landscape mode.</summary>
+    public ICommand ToggleListSideCommand { get; }
+
+    /// <summary>Clears the live event log.</summary>
+    public ICommand ClearLogCommand { get; }
+
+    /// <summary>Reloads the currently selected plugin.</summary>
+    public ICommand ReloadPluginCommand { get; }
+
+    /// <summary>Enables or disables the currently selected plugin.</summary>
+    public ICommand TogglePluginCommand { get; }
 
     /// <summary>Sets the sampling interval. CommandParameter = int seconds.</summary>
     public ICommand SetIntervalCommand { get; }
@@ -171,6 +307,44 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
     {
         get => _intervalSeconds;
         private set { _intervalSeconds = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>
+    /// Which side the plugin list appears on in landscape (bottom-dock) mode.
+    /// Toggled by <see cref="ToggleListSideCommand"/>. Code-behind reacts via PropertyChanged.
+    /// </summary>
+    public PanelListSide ListSide
+    {
+        get => _listSide;
+        private set
+        {
+            if (_listSide == value) return;
+            _listSide = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ListSideIcon));
+            OnPropertyChanged(nameof(ListSideTooltip));
+        }
+    }
+
+    /// <summary>Segoe MDL2 icon for the list-side toggle button.</summary>
+    public string ListSideIcon    => _listSide == PanelListSide.Right ? "\uE89F" : "\uE8A0";
+
+    /// <summary>Tooltip text for the list-side toggle button.</summary>
+    public string ListSideTooltip => _listSide == PanelListSide.Right ? "Move list to left" : "Move list to right";
+
+    /// <summary>
+    /// True when the panel is in wide/landscape mode (bottom dock).
+    /// Set by the code-behind on SizeChanged. Drives toolbar toggle button visibility.
+    /// </summary>
+    public bool IsLandscape
+    {
+        get => _isLandscape;
+        set
+        {
+            if (_isLandscape == value) return;
+            _isLandscape = value;
+            OnPropertyChanged();
+        }
     }
 
     private void ToggleRunning()
@@ -251,9 +425,104 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
         : LoadedCount < TotalCount ? "#F59E0B"
         : "#22C55E";
 
-    // -- Plugin table --------------------------------------------------------
+    // -- Plugin table + search -----------------------------------------------
 
     public ObservableCollection<PluginMonitorRow> Rows { get; } = new();
+
+    /// <summary>Filtered + sortable view over <see cref="Rows"/>. DataGrid binds to this.</summary>
+    public ICollectionView FilteredRows => _filteredRows;
+
+    /// <summary>Real-time filter applied to <see cref="FilteredRows"/> (case-insensitive name match).</summary>
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (_searchText == value) return;
+            _searchText = value;
+            OnPropertyChanged();
+            _filteredRows.Refresh();
+        }
+    }
+
+    private bool FilterPlugin(object item)
+        => string.IsNullOrWhiteSpace(_searchText)
+        || (item is PluginMonitorRow row && row.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    // -- Selection -----------------------------------------------------------
+
+    /// <summary>Currently selected row; drives the detail pane and action buttons.</summary>
+    public PluginMonitorRow? SelectedPlugin
+    {
+        get => _selectedPlugin;
+        set
+        {
+            if (_selectedPlugin == value) return;
+            _selectedPlugin = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasSelectedPlugin));
+            OnPropertyChanged(nameof(TogglePluginLabel));
+            OnPropertyChanged(nameof(TogglePluginIcon));
+            UpdateSelectedPluginDetail();
+        }
+    }
+
+    /// <summary>True when a plugin row is selected; enables action toolbar buttons.</summary>
+    public bool HasSelectedPlugin => _selectedPlugin is not null;
+
+    /// <summary>Rich detail view for the selected plugin. Null when nothing is selected.</summary>
+    public PluginDetailViewModel? SelectedPluginDetail
+    {
+        get => _selectedPluginDetail;
+        private set { _selectedPluginDetail = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>Label for the enable/disable toggle button.</summary>
+    public string TogglePluginLabel => _selectedPlugin?.State is "Running" or "Loading" ? "Disable" : "Enable";
+
+    /// <summary>Segoe MDL2 icon for the enable/disable toggle button.</summary>
+    public string TogglePluginIcon  => _selectedPlugin?.State is "Running" or "Loading" ? "\uE711" : "\uE8D8";
+
+    private void UpdateSelectedPluginDetail()
+    {
+        if (_selectedPlugin is null) { SelectedPluginDetail = null; return; }
+        var entry = _host.GetPlugin(_selectedPlugin.Id);
+        if (entry is null) { SelectedPluginDetail = null; return; }
+        var detail = _selectedPluginDetail ?? new PluginDetailViewModel();
+        detail.Update(entry);
+        SelectedPluginDetail = detail;
+    }
+
+    // -- Live event log ------------------------------------------------------
+
+    /// <summary>Timestamped events from the plugin host (load, crash, slow detection).</summary>
+    public ObservableCollection<PluginEventEntry> EventLog { get; } = new();
+
+    private void OnPluginLoaded(object? sender, PluginEventArgs e)
+    {
+        _slowPluginIds.Remove(e.PluginId); // reset slow flag on reload
+        AddEvent(new PluginEventEntry(Now(), "\uE73E", "#22C55E", e.PluginName, "Plugin loaded"));
+    }
+
+    private void OnPluginCrashed(object? sender, PluginFaultedEventArgs e)
+        => AddEvent(new PluginEventEntry(Now(), "\uEA39", "#EF4444", e.PluginName,
+                    $"Crashed ({e.Phase}): {e.Exception?.Message ?? "unknown error"}"));
+
+    private void OnSlowPluginDetected(object? sender, SlowPluginDetectedEventArgs e)
+    {
+        _slowPluginIds.Add(e.PluginId);
+        AddEvent(new PluginEventEntry(Now(), "\uE946", "#F59E0B", e.PluginName,
+                 $"Slow: avg {e.AverageExecutionTime.TotalMilliseconds:F0} ms (threshold {e.Threshold.TotalMilliseconds:F0} ms)"));
+    }
+
+    private void AddEvent(PluginEventEntry entry)
+    {
+        while (EventLog.Count >= MaxEventLog)
+            EventLog.RemoveAt(0);
+        EventLog.Add(entry);
+    }
+
+    private static string Now() => DateTime.Now.ToString("HH:mm:ss");
 
     // -- Internals -----------------------------------------------------------
 
@@ -300,6 +569,14 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
         AddChartPoint(CpuHistory,    new ChartPoint(now, cpu));
         AddChartPoint(MemoryHistory, new ChartPoint(now, memMb));
 
+        // Refresh detail pane + toggle label when a plugin is selected.
+        if (_selectedPlugin is not null)
+        {
+            OnPropertyChanged(nameof(TogglePluginLabel));
+            OnPropertyChanged(nameof(TogglePluginIcon));
+            UpdateSelectedPluginDetail();
+        }
+
         // Sync rows collection
         var existingIds = Rows.Select(r => r.Id).ToHashSet();
         var currentIds  = plugins.Select(p => p.Manifest.Id).ToHashSet();
@@ -320,13 +597,19 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
                 Rows.Add(row);
             }
 
-            row.Name       = entry.Manifest.Name;
-            row.State      = StateLabel(entry.State);
-            row.StateColor = StateBadgeColor(entry.State);
-            row.CpuPercent = snap?.CpuPercent ?? 0;
-            row.MemoryMb   = snap is not null ? snap.MemoryBytes / (1024 * 1024) : 0;
-            row.AvgExecMs  = entry.Diagnostics.AverageExecutionTime.TotalMilliseconds;
-            row.InitTimeMs = entry.InitDuration.TotalMilliseconds;
+            row.Name         = entry.Manifest.Name;
+            row.State        = StateLabel(entry.State);
+            row.StateColor   = StateBadgeColor(entry.State);
+            row.CpuPercent   = snap?.CpuPercent ?? 0;
+            row.MemoryMb     = snap is not null ? snap.MemoryBytes / (1024 * 1024) : 0;
+            row.AvgExecMs    = entry.Diagnostics.AverageExecutionTime.TotalMilliseconds;
+            row.InitTimeMs   = entry.InitDuration.TotalMilliseconds;
+            row.UptimeLabel  = FormatUptime(entry.Diagnostics.Uptime);
+            row.PeakCpu      = entry.Diagnostics.PeakCpu();
+            row.IsResponsive = entry.Diagnostics.IsResponsive;
+            row.IsSlow       = _slowPluginIds.Contains(entry.Manifest.Id);
+            row.FaultMessage = entry.FaultException?.Message ?? string.Empty;
+            row.Version      = entry.Manifest.Version ?? string.Empty;
         }
     }
 
@@ -337,6 +620,14 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
         while (collection.Count >= MaxChartPoints)
             collection.RemoveAt(0);
         collection.Add(point);
+    }
+
+    private static string FormatUptime(TimeSpan uptime)
+    {
+        if (uptime.TotalSeconds < 1) return "—";
+        return uptime.TotalHours >= 1
+            ? $"{(int)uptime.TotalHours:D2}:{uptime.Minutes:D2}:{uptime.Seconds:D2}"
+            : $"{uptime.Minutes:D2}:{uptime.Seconds:D2}";
     }
 
     private static string StateLabel(PluginState state) => state switch
@@ -364,6 +655,9 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
     {
         _timer.Stop();
         _timer.Tick -= OnTimerTick;
+        _host.PluginLoaded       -= OnPluginLoaded;
+        _host.PluginCrashed      -= OnPluginCrashed;
+        _host.SlowPluginDetected -= OnSlowPluginDetected;
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

@@ -266,6 +266,34 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
         RestoreExpandedState(Roots);
     }
 
+    // -- Collapse-state cross-session persistence ------------------------------
+
+    /// <summary>
+    /// Snapshots the current live tree and returns all stable keys of expanded nodes.
+    /// Intended for serialisation to the <c>.whsln.user</c> sidecar file.
+    /// </summary>
+    public IReadOnlyList<string> GetExpandedKeys()
+    {
+        CaptureExpandedState(Roots);
+        return _expandedState
+            .Where(kv => kv.Value)
+            .Select(kv => kv.Key)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Replaces the in-memory expand state with <paramref name="keys"/> and applies
+    /// it to the live tree immediately. Nodes not in the list are collapsed.
+    /// Call after <see cref="Rebuild"/> once the tree has been populated.
+    /// </summary>
+    public void ApplyExpandedKeys(IReadOnlyList<string> keys)
+    {
+        _expandedState.Clear();
+        foreach (var key in keys)
+            _expandedState[key] = true;
+        RestoreExpandedState(Roots);
+    }
+
     // -- Collapse-state helpers ------------------------------------------------
 
     /// <summary>

@@ -4,6 +4,7 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -1690,6 +1691,12 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         var fileNode = FindFileNodeVm(_vm.Roots, item);
         fileNode?.RefreshChangesetChild();
     }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<string> GetExpandedNodeKeys() => _vm.GetExpandedKeys();
+
+    /// <inheritdoc/>
+    public void ApplyExpandedNodeKeys(IReadOnlyList<string> keys) => _vm.ApplyExpandedKeys(keys);
 
     private static FileNodeVm? FindFileNodeVm(IEnumerable<SolutionExplorerNodeVm> nodes, IProjectItem item)
     {

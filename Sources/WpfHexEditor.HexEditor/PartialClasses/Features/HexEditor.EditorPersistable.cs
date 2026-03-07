@@ -43,9 +43,7 @@ namespace WpfHexEditor.HexEditor
                 SelectionStart  = SelectionStart,
                 SelectionLength = SelectionLength,
                 Encoding        = CustomEncoding?.WebName,
-                // ScrollOffset: HexEditor exposes no public scroll-line accessor;
-                // stored as 0 and scroll restoration is skipped for now.
-                ScrollOffset    = 0,
+                ScrollOffset    = _viewModel?.ScrollPosition ?? 0,
             };
         }
 
@@ -79,6 +77,13 @@ namespace WpfHexEditor.HexEditor
                 {
                     // Encoding name not recognised — keep default
                 }
+            }
+
+            // Restore scroll position — must come after the file is loaded so VisibleLines is valid.
+            if (config.ScrollOffset > 0 && _viewModel != null && VerticalScroll != null)
+            {
+                _viewModel.ScrollPosition = (long)config.ScrollOffset;
+                VerticalScroll.Value      = config.ScrollOffset;
             }
         }
 

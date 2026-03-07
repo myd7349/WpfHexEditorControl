@@ -51,6 +51,7 @@ using WpfHexEditor.Panels.IDE.Services;
 using WpfHexEditor.Definitions;
 using WpfHexEditor.ProjectSystem;
 using WpfHexEditor.ProjectSystem.Dialogs;
+using WpfHexEditor.ProjectSystem.Serialization;
 using WpfHexEditor.ProjectSystem.Services;
 using WpfHexEditor.ProjectSystem.Templates;
 using System.Windows.Shell;
@@ -683,10 +684,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _layout.WindowHeight = Height;
             }
 
+            // Snapshot current editor state into each DockItem.Metadata before serialising.
+            SnapshotEditorConfigs();
+
             Directory.CreateDirectory(Path.GetDirectoryName(LayoutFilePath)!);
             File.WriteAllText(LayoutFilePath, DockLayoutSerializer.Serialize(_layout));
             OutputLogger.Debug($"Layout auto-saved to: {LayoutFilePath}");
             SaveSession();
+
+            // Persist SE collapse state to .whsln.user sidecar (fire-and-forget, non-blocking).
+            if (_solutionExplorerPanel != null && _solutionManager.CurrentSolution != null)
+                _ = SaveSolutionUserFileAsync(_solutionManager.CurrentSolution.FilePath);
         }
         catch (Exception ex)
         {
@@ -708,6 +716,51 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         catch (Exception ex)
         {
             OutputLogger.Error($"Failed to save session: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Iterates all open editor tabs and snapshots their current <see cref="EditorConfigDto"/>
+    /// into <c>DockItem.Metadata["EditorConfigJson"]</c> so the layout serialiser captures
+    /// up-to-date position data (scroll, selection, caret) for every editor.
+    /// </summary>
+    private void SnapshotEditorConfigs()
+    {
+        foreach (var (contentId, uiElement) in _contentCache)
+        {
+            if (uiElement is not IEditorPersistable persistable) continue;
+
+            var dockItem = _engine.Layout.FindItemByContentId(contentId);
+            if (dockItem is null) continue;
+
+            try
+            {
+                var cfg = persistable.GetEditorConfig();
+                dockItem.Metadata["EditorConfigJson"] =
+                    System.Text.Json.JsonSerializer.Serialize(cfg);
+            }
+            catch
+            {
+                // Non-critical — skip editors that fail to report their state.
+            }
+        }
+    }
+
+    /// <summary>
+    /// Writes the Solution Explorer expand state to the <c>.whsln.user</c> sidecar.
+    /// Only runs when <c>AppSettings.SolutionExplorer.PersistCollapseState</c> is true.
+    /// </summary>
+    private async Task SaveSolutionUserFileAsync(string solutionFilePath)
+    {
+        if (!AppSettingsService.Instance.Current.SolutionExplorer.PersistCollapseState) return;
+        try
+        {
+            var keys = _solutionExplorerPanel!.GetExpandedNodeKeys();
+            await SolutionUserSerializer.WriteTreeStateAsync(solutionFilePath, keys);
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.Error($"Failed to save .whsln.user: {ex.Message}");
         }
     }
 
@@ -763,9 +816,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var seItem = new DockItem { Title = "Solution Explorer", ContentId = SolutionExplorerContentId };
         engine.Dock(seItem, layout.MainDocumentHost, DockDirection.Left);
 
-        // Error panel docked first so Output (added last) becomes the active tab
+        // Error List and Plugin Monitor docked first; Output added last so it is the active tab.
         var errorsItem = new DockItem { Title = "Error List", ContentId = ErrorPanelContentId };
         engine.Dock(errorsItem, layout.MainDocumentHost, DockDirection.Bottom);
+
+        var pluginMonitor = new DockItem { Title = "Plugin Monitor", ContentId = PluginMonitorContentId };
+        engine.Dock(pluginMonitor, errorsItem.Owner!, DockDirection.Center);
 
         var output = new DockItem { Title = "Output", ContentId = "panel-output" };
         engine.Dock(output, errorsItem.Owner!, DockDirection.Center);
@@ -1371,6 +1427,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             if (editor is IOpenableDocument openable)
                 _ = openable.OpenAsync(filePath);
+
+            // Restore per-file position (scroll, selection, caret) from previous session.
+            if (editor is IEditorPersistable persistable &&
+                item.Metadata.TryGetValue("EditorConfigJson", out var cfgJson))
+            {
+                try
+                {
+                    var cfg = System.Text.Json.JsonSerializer.Deserialize<EditorConfigDto>(cfgJson);
+                    if (cfg != null) persistable.ApplyEditorConfig(cfg);
+                }
+                catch { /* ignore malformed config */ }
+            }
 
             editor.OutputMessage += OnEditorOutputMessage;
 
@@ -3542,6 +3610,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             await _solutionManager.OpenSolutionAsync(filePath);
             OutputLogger.Info($"Solution opened: {filePath}");
             EnsureSolutionExplorerVisible();
+
+            // Restore SE collapse state from .whsln.user sidecar (silently skipped if absent).
+            if (_solutionExplorerPanel != null &&
+                AppSettingsService.Instance.Current.SolutionExplorer.PersistCollapseState)
+            {
+                var keys = await SolutionUserSerializer.ReadExpandedKeysAsync(filePath);
+                if (keys is { Count: > 0 })
+                    _solutionExplorerPanel.ApplyExpandedNodeKeys(keys);
+            }
         }
         catch (Exception ex)
         {
