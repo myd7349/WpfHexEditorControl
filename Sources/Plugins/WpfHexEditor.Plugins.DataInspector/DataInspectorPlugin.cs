@@ -4,17 +4,21 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Windows;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
+using WpfHexEditor.Plugins.DataInspector.Options;
 using WpfHexEditor.Plugins.DataInspector.Views;
 
 namespace WpfHexEditor.Plugins.DataInspector;
 
 /// <summary>
 /// Official plugin wrapping the Data Inspector panel(s).
+/// Implements IPluginWithOptions to expose its settings in the IDE Options panel
+/// and in the Plugin Manager "Settings" tab.
 /// </summary>
-public sealed class DataInspectorPlugin : IWpfHexEditorPlugin
+public sealed class DataInspectorPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 {
     public string Id      => "WpfHexEditor.Plugins.DataInspector";
     public string Name    => "Data Inspector";
@@ -48,4 +52,22 @@ public sealed class DataInspectorPlugin : IWpfHexEditorPlugin
         // UIRegistry.UnregisterAllForPlugin is called automatically by PluginHost.
         return Task.CompletedTask;
     }
+
+    // ── IPluginWithOptions ──────────────────────────────────────────────────
+
+    private DataInspectorOptionsPage? _optionsPage;
+
+    /// <summary>Creates (or returns a new instance of) the options UI for this plugin.</summary>
+    public FrameworkElement CreateOptionsPage()
+    {
+        _optionsPage = new DataInspectorOptionsPage();
+        _optionsPage.Load();
+        return _optionsPage;
+    }
+
+    /// <summary>Persists the current state of the options page.</summary>
+    public void SaveOptions() => _optionsPage?.Save();
+
+    /// <summary>Reloads options from disk into the cached options page (if alive).</summary>
+    public void LoadOptions() => _optionsPage?.Load();
 }
