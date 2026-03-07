@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="Images/Logo2026.png"><img src="Images/Logo2026.png" width="750" /></a>
+  <a href="Images/Logo2026.png"><img src="Images/Logo2026.png" width="750" height="250" /></a>
   <br/><br/>
 
   <h3>⚡ The Fastest Wpf Hex Editor IDE for .NET ⚡</h3>
@@ -8,7 +8,6 @@
   [![.NET Multi-Target](https://img.shields.io/badge/.NET-net48%20%7C%20net8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
   [![C#](https://img.shields.io/badge/C%23-13.0-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
-  [![Version](https://img.shields.io/badge/Version-0.2.0-blueviolet)](CHANGELOG.md)
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
   [![Languages](https://img.shields.io/badge/Languages-19-success?logo=googletranslate&logoColor=white)](#-multilingual)
   [![Status](https://img.shields.io/badge/Status-Active%20Development-orange)](https://github.com/abbaye/WpfHexEditorIDE/commits/master)
@@ -30,7 +29,6 @@
     <a href="#-analysis--ide-panels"><b>Panels</b></a> •
     <a href="#-quick-start"><b>Quick Start</b></a> •
     <a href="#-documentation"><b>Docs</b></a> •
-    <a href="#-whats-next"><b>What's Next</b></a> •
     <a href="CHANGELOG.md"><b>Changelog</b></a>
   </p>
 </div>
@@ -48,19 +46,17 @@
 ### 🏗️ Project System
 - **Solution & Project** management (`.whsln` / `.whproj`)
 - **Virtual & physical folders** (like VS Solution Explorer)
-- **Format versioning** with `IFormatMigrator` + `MigrationPipeline`
-- **Atomic upgrade** — `.v{N}.bak` backups before writing
-- **Per-file state** persistence (bookmarks, scroll, caret, encoding)
-- **`IItemLink`** — typed links between project items (`.bin` ↔ `.tbl`)
+- **Format versioning** with auto-migration
+- **Per-file state** persistence (bookmarks, scroll, encoding)
 
 </td>
 <td width="50%">
 
 ### 🪟 VS-Style Docking *(🔧 100% in-house engine)*
 - **Float, dock, auto-hide** any panel
-- **Colored tabs** with per-document customization (`TabSettingsDialog`)
+- **Colored tabs** with per-document customization
 - **8 built-in themes** (Dark, Light, VS2022Dark, DarkGlass, Minimal, Office, Cyberpunk, VisualStudio)
-- **Tab placement** left / right / bottom per dock group
+- **Tab placement** left / right / bottom
 
 </td>
 </tr>
@@ -68,21 +64,19 @@
 <td width="50%">
 
 ### 📋 IDE Infrastructure
-- **WelcomePanel** — VS Start Page with quick actions, recent files/projects, live changelog
-- **Format-aware editor routing** — `preferredEditor` per `.whfmt` definition (400+ formats)
 - **IDocumentEditor** plugin contract — every editor is pluggable
 - **Undo/Redo/Copy/Cut/Paste** unified via menu bindings
 - **VS2022-style status bar** (edit mode, bytes/line, caret offset)
-- **VS2026-style Options** — document tab, auto-save, live theme preview, ColorPicker
+- **Output panel** + **Error/Diagnostics panel** + **Quick Search** (inline + advanced)
+- **VS2026-style Options** — document tab, auto-save, live theme preview
 
 </td>
 <td width="50%">
 
 ### 🔍 Binary Intelligence
-- **400+ file format** auto-detection (`.whfmt` definitions)
+- **400+ file format** auto-detection
 - **Parsed Fields Panel** with structure overlay
 - **Data Inspector** — 40+ type interpretations
-- **Quick Search** (inline Ctrl+F) + **Advanced Search** (5 modes: Hex, Text, Regex, TBL, Wildcard)
 - **19 languages** with instant switching *(partial — not all languages fully translated)*
 
 </td>
@@ -97,20 +91,15 @@ WpfHexEditor uses a **plugin architecture** (`IDocumentEditor`) — every editor
 
 | Editor | Status | Progress | Description |
 |--------|--------|----------|-------------|
-| **Hex Editor** | ✅ Active | ~75% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL support |
-| **Code Editor** | ✅ Active | ~65% | Multi-language editor — syntax highlighting, language registry (`.whlang`), `IEditorPersistable`, diagnostics |
-| **TBL Editor** | ✅ Active | ~65% | Character table editor for custom encodings and ROM hacking |
-| **JSON Editor** | ✅ Active | ~60% | JSON editing with real-time validation, syntax highlighting and Error Panel diagnostics |
-| **Text Editor** | ✅ Active | ~50% | Text editing with syntax highlighting and encoding support |
-| **Structure Editor** | 🔧 Early | ~20% | Binary structure editor — field mapping and overlay |
-| **Image Viewer** | 🔧 Stub | ~5% | Binary image viewer (BMP, PNG, JPEG…) |
-| **Audio Viewer** | 🔧 Stub | ~5% | Audio binary viewer (WAV, MP3…) |
-| **Diff Viewer** | 🔧 Stub | ~5% | Side-by-side binary comparison with diff navigation |
-| **Disassembly Viewer** | 🔧 Stub | ~5% | Binary disassembler (x86/x64) |
-| **Entropy Viewer** | 🔧 Stub | ~5% | Entropy analysis and visualization |
-| **Tile Editor** | 🔧 Stub | ~5% | Tile-based graphic editor for retro/game ROMs |
-| **Script Editor** | 🔧 Stub | ~5% | Embedded script editor (automation & macros) |
-| **Changeset Editor** | 🔧 Stub | ~5% | Visual changeset review and annotation |
+| **Hex Editor** | ✅ Active | ~70% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL |
+| **TBL Editor** | ✅ Active | ~60% | Character table editor for custom encodings and ROM hacking |
+| **JSON Editor** | ✅ Active | ~55% | JSON editing with real-time validation, syntax highlighting and diagnostics |
+| **Text Editor** | ✅ Active | ~45% | Text editing with syntax highlighting and encoding support |
+| **Image Viewer** | 🔧 Stub | ~5% | Binary image viewer (planned) |
+| **Audio Viewer** | 🔧 Stub | ~5% | Audio binary viewer (planned) |
+| **Diff Viewer** | 🔧 Stub | ~5% | Side-by-side file comparison (planned) |
+| **Disassembly Viewer** | 🔧 Stub | ~5% | Binary disassembler (planned) |
+| **Entropy Viewer** | 🔧 Stub | ~5% | Entropy analysis viewer (planned) |
 
 > **Implementing a new editor?** See [IDocumentEditor contract](Sources/WpfHexEditor.Editor.Core/) and register via `EditorRegistry`.
 
@@ -126,20 +115,17 @@ All controls are **independently reusable** — no IDE required. Drop any of the
 |---------|-----------|----------|-------------|
 | **[HexEditor](Sources/WpfHexEditor.HexEditor/)** | net48 · net8.0-windows | ~80% | Full-featured hex editor UserControl — MVVM, 16 services, insert/overwrite, search, bookmarks, TBL, 400+ format detection |
 | **[HexBox](Sources/WpfHexEditor.HexBox/)** | net48 · net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
-| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net48 · net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input — integrated in Options and TabSettingsDialog |
-| **[BarChart](Sources/WpfHexEditor.BarChart/)** | net48 · net8.0-windows | ~60% | Byte frequency distribution chart (0x00–0xFF visualization) |
-| **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/)** | net8.0-windows | ~70% | **Custom-built** VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — 100% in-house, zero third-party dependency |
+| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net48 · net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
+| **[BarChart](Sources/WpfHexEditor.BarChart/)** | net48 · net8.0-windows | ~60% | Byte frequency distribution chart (0x00–0xFF visualization) — **standalone only**, not yet integrated in the IDE |
+| **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/)** | net8.0-windows | ~65% | **Custom-built** VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — 100% in-house, zero third-party dependency |
 
 ### Libraries & Infrastructure
 
 | Library | Frameworks | Description |
 |---------|-----------|-------------|
 | **[Core](Sources/WpfHexEditor.Core/)** | net48 · net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
-| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net48 · net8.0-windows | `IDocumentEditor` plugin contract, `EditorRegistry`, `IEditorPersistable`, shared interfaces |
-| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0-windows | 400+ format detection engine, `.whfmt` definitions, DataInspector service |
-| **[ProjectSystem](Sources/WpfHexEditor.ProjectSystem/)** | net8.0-windows | `.whsln` / `.whproj` format, `SolutionManager`, migration pipeline, file templates |
-| **[Definitions](Sources/WpfHexEditor.Definitions/)** | net8.0-windows | 400+ embedded `.whfmt` format catalog, `EmbeddedFormatCatalog` singleton |
-| **[Options](Sources/WpfHexEditor.Options/)** | net8.0-windows | `AppSettings` / `AppSettingsService`, 4 option pages (General, SolutionExplorer, CodeEditor, TextEditor) |
+| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net48 · net8.0-windows | `IDocumentEditor` plugin contract, editor registry, shared interfaces |
+| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0-windows | 400+ format detection engine, binary templates, DataInspector service |
 
 ---
 
@@ -149,89 +135,90 @@ Panels connect to the active document automatically via the docking system.
 
 | Panel | Progress | Description |
 |-------|----------|-------------|
-| **Welcome Panel** | ~80% | VS Start Page — quick actions, recent files/projects, live changelog from GitHub, theme-compliant |
-| **Solution Explorer** | ~70% | Project tree with virtual & physical folders, Show All Files, drag & drop from Windows Explorer, context menus |
 | **Parsed Fields Panel** | ~75% | 400+ format detection — parsed field list with type overlay and inline editing |
 | **Data Inspector** | ~65% | 40+ byte interpretations at caret position (int, float, GUID, date, color, …) |
 | **Structure Overlay** | ~55% | Visual field highlighting superimposed on the hex grid |
+| **Solution Explorer** | ~70% | Project tree with virtual & physical folders, Show All Files mode, context menus |
 | **Properties Panel** | ~50% | Context-aware properties for the active document (F4) |
-| **Error Panel** | ~70% | VS-style diagnostics panel with severity filtering — any `IDiagnosticSource` editor can push errors |
+| **Error Panel** | ~70% | Diagnostics and validation errors from any `IDiagnosticSource` editor |
 | **Output Panel** | ~65% | Session log, file operation messages and build feedback |
-| **Options** | ~75% | VS2026-style settings document tab — theme, display, editing defaults, ColorPicker, auto-save |
-| **Quick Search Bar** | ~60% | Inline Ctrl+F overlay (VSCode-style) — find next/prev, regex toggle, jump to Advanced |
-| **Advanced Search** | ~50% | Full-featured search dialog — 5 modes: Hex, Text, Regex, TBL, Wildcard |
+| **Options** | ~70% | VS2026-style settings document tab — theme, display, editing defaults, auto-save |
+| **Quick Search Bar** | ~55% | Inline Ctrl+F overlay (VSCode-style) — find next/prev, regex toggle, jump to Advanced |
+| **Advanced Search** | ~45% | Full-featured search dialog — 5 modes: Hex, Text, Regex, TBL, Wildcard |
 | **File Diff** | ~30% | Side-by-side binary comparison with diff navigation (F7/F8) |
 
 ---
 
 ## 📸 Screenshots
 
-<table>
-<tr>
-<td width="50%" align="center">
+<div align="center">
   <b>🖥️ IDE Overview</b><br/>
   <sub>VS-style docking with Solution Explorer, HexEditor and ParsedFieldsPanel</sub><br/><br/>
-  <a href="Images/App-IDE-Overview.png"><img src="Images/App-IDE-Overview.png" alt="IDE Overview"/></a>
-</td>
-<td width="50%" align="center">
-  <b>🔬 Parsed Fields Panel</b><br/>
-  <sub>400+ format auto-detection with structured field analysis</sub><br/><br/>
-  <a href="Images/App-ParsedFields.png"><img src="Images/App-ParsedFields.png" alt="Parsed Fields"/></a>
-</td>
-</tr>
-<tr>
-<td width="50%" align="center">
-  <b>📝 Multi-Editor Tabs</b><br/>
-  <sub>HexEditor, TBL, JSON and Code editors side by side</sub><br/><br/>
-  <a href="Images/App-Editors.png"><img src="Images/App-Editors.png" alt="Multiple Editors"/></a>
-</td>
-<td width="50%" align="center">
-  <b>🗂️ Solution Explorer</b><br/>
-  <sub>VS-style project tree with virtual and physical folders</sub><br/><br/>
-  <a href="Images/App-SolutionExplorer.png"><img src="Images/App-SolutionExplorer.png" alt="Solution Explorer"/></a>
-</td>
-</tr>
-</table>
+  <a href="Images/App-IDE-Overview.png"><img src="Images/App-IDE-Overview.png" alt="IDE Overview" width="900"/></a>
+</div>
 
 <details>
-<summary>📷 <b>More screenshots</b> — TBL Editor, Error List, Output, Light theme</summary>
-
+<summary>🔬 <b>Parsed Fields Panel</b> — 400+ format auto-detection with structured field analysis</summary>
 <br/>
+<div align="center">
+  <a href="Images/App-ParsedFields.png"><img src="Images/App-ParsedFields.png" alt="Parsed Fields" width="900"/></a>
+</div>
+</details>
 
-<table>
-<tr>
-<td width="50%" align="center">
-  <b>📋 TBL Editor</b><br/>
-  <sub>Custom character table editor for ROM hacking and encodings</sub><br/><br/>
-  <a href="Images/App-TBLEditor.png"><img src="Images/App-TBLEditor.png" alt="TBL Editor"/></a>
-</td>
-<td width="50%" align="center">
-  <b>🔴 Error Panel</b><br/>
-  <sub>Diagnostics and validation errors from active editors</sub><br/><br/>
-  <a href="Images/App-ErrorList.png"><img src="Images/App-ErrorList.png" alt="Error Panel"/></a>
-</td>
-</tr>
-<tr>
-<td width="50%" align="center">
-  <b>📤 Output Panel</b><br/>
-  <sub>Session log, messages and file operation feedback</sub><br/><br/>
-  <a href="Images/App-Output.png"><img src="Images/App-Output.png" alt="Output Panel"/></a>
-</td>
-<td width="50%" align="center">
-  <b>☀️ Light Theme</b><br/>
-  <sub>8 built-in themes — Dark, Light, VS2022Dark, DarkGlass, and more</sub><br/><br/>
-  <a href="Images/App-Theme-Light.png"><img src="Images/App-Theme-Light.png" alt="Light Theme"/></a>
-</td>
-</tr>
-<tr>
-<td colspan="2" align="center">
-  <b>🎮 TBL Format Explained</b><br/>
-  <sub>Custom character table format for game ROM editing</sub><br/><br/>
+<details>
+<summary>📝 <b>Multi-Editor Tabs</b> — HexEditor, TBL, JSON and Text editors side by side</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-Editors.png"><img src="Images/App-Editors.png" alt="Multiple Editors" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>🗂️ <b>Solution Explorer</b> — VS-style project tree with virtual and physical folders</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-SolutionExplorer.png"><img src="Images/App-SolutionExplorer.png" alt="Solution Explorer" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>📋 <b>TBL Editor</b> — Custom character table editor for ROM hacking and encodings</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-TBLEditor.png"><img src="Images/App-TBLEditor.png" alt="TBL Editor" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>🔴 <b>Error Panel</b> — Diagnostics and validation errors from active editors</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-ErrorList.png"><img src="Images/App-ErrorList.png" alt="Error Panel" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>📤 <b>Output Panel</b> — Session log, messages and file operation feedback</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-Output.png"><img src="Images/App-Output.png" alt="Output Panel" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>☀️ <b>Light Theme</b> — 8 built-in themes: Dark, Light, VS2022Dark, DarkGlass, and more</summary>
+<br/>
+<div align="center">
+  <a href="Images/App-Theme-Light.png"><img src="Images/App-Theme-Light.png" alt="Light Theme" width="900"/></a>
+</div>
+</details>
+
+<details>
+<summary>🎮 <b>TBL Format Explained</b> — Custom character table format for game ROM editing</summary>
+<br/>
+<div align="center">
   <a href="Images/TBLExplain.png"><img src="Images/TBLExplain.png" alt="TBL Explained" width="600"/></a>
-</td>
-</tr>
-</table>
-
+</div>
 </details>
 
 ---
@@ -297,7 +284,7 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 - **Project system** (.whsln / .whproj)
 - **VS-style docking** (no third-party lib)
 - **8 themes** out of the box
-- **5 functional editors** + 9 planned
+- **4 functional editors** + 5 planned
 
 </td>
 </tr>
@@ -306,9 +293,9 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 
 ### 🔍 Binary Intelligence
 - **400+ formats** auto-detected
-- **Format-aware editor routing** per file type
 - **Parsed Fields** with type overlay
 - **Data Inspector** 40+ interpretations
+- **Binary templates** support
 
 </td>
 <td width="33%">
@@ -327,63 +314,6 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 - **Save data loss** resolved
 - **Unlimited Undo/Redo**
 - **Async** file operations with progress
-
-</td>
-</tr>
-</table>
-
----
-
-## 🔮 What's Next
-
-> Planned features — subject to change. See [CHANGELOG.md](CHANGELOG.md) for details.
-
-<table>
-<tr>
-<td width="50%">
-
-### 🔌 Plugin System & SDK
-- Public `WpfHexEditor.SDK` — versioned, open-source API
-- Hot-load / Hot-unload plugins at runtime
-- Process-level sandbox (`WpfHexEditor.PluginSandbox`)
-- CPU/memory monitoring + slow-plugin warnings
-- `.whix` package format + Plugin Installer tool
-- Official panels as first-class plugin packages
-
-</td>
-<td width="50%">
-
-### ⚙️ IDE Core Infrastructure
-- Service Container / Dependency Injection
-- Global CommandBus — all actions routed centrally
-- Configurable Keyboard Shortcuts (per-plugin)
-- Persistent preferences — global + per-workspace
-- Integrated Terminal (PowerShell / Bash / CMD)
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 📝 CodeEditor — VS-Like Overkill
-- Multi-caret, virtual scroll for >1 GB files
-- Incremental syntax highlighting + code folding
-- IntelliSense: autocomplete, snippets, quick-info
-- Real-time diagnostics → Error Panel + EventBus
-- AI-Assisted suggestions + auto-refactoring hints
-
-</td>
-<td width="50%">
-
-### 🚀 Advanced IDE Modules
-- **Integrated Debugger** — breakpoints, watches, step over/into
-- **Git Integration** — inline gutter diff, commit/push/pull
-- **Plugin Marketplace** — browse, install, update (sandboxed)
-- **Advanced Refactoring** — rename symbol, extract method
-- **Unit Testing Panel** — auto-detect NUnit/JUnit/PyTest
-- **Code Analysis & Metrics** — dependency graphs, complexity
-- **Multi-User Collaboration** — real-time pair programming
-- **Internationalization** — EN/FR initial, plugin-extensible
 
 </td>
 </tr>
@@ -494,7 +424,6 @@ We welcome contributions! The codebase is well-organized and documented:
   **[📖 Tutorial](GETTING_STARTED.md)** •
   **[📊 Features](FEATURES.md)** •
   **[📝 Changelog](CHANGELOG.md)** •
-  **[🔮 What's Next](#-whats-next)** •
   **[⭐ Star Us](https://github.com/abbaye/WpfHexEditorIDE)**
 
   <br/>
