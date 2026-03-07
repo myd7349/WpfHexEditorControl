@@ -207,4 +207,21 @@ public sealed class DockingAdapter : IDockingAdapter
         var item = _layout.FindItemByContentId(uiId);
         if (item is not null) _engine.Show(item);
     }
+
+    /// <inheritdoc />
+    public bool IsPanelVisible(string uiId)
+    {
+        // Panel was never shown (deferred after layout restore) — treat as not visible.
+        if (_deferredPanels.ContainsKey(uiId)) return false;
+
+        var item = _layout.FindItemByContentId(uiId);
+
+        // Panel absent from layout (not yet registered or already removed) — fail-open so
+        // plugins do not permanently skip work during early startup before layout is ready.
+        if (item is null) return true;
+
+        // Hidden state means the user explicitly closed or hid the panel.
+        // Docked, Float and AutoHide are all reachable by the user without opening a file again.
+        return item.State != DockItemState.Hidden;
+    }
 }
