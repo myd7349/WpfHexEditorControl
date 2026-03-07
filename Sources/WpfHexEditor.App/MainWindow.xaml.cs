@@ -207,8 +207,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _activeDocumentEditor.OperationProgress  += OnDocumentOperationProgress;
                 _activeDocumentEditor.OperationCompleted += OnDocumentOperationCompleted;
             }
-            // Notify plugin system so plugins (ParsedFields, DataInspector, etc.) reconnect.
-            _hexEditorService?.SetActiveEditor(value as HexEditorControl);
+            // Notify plugin system only when a hex editor becomes active.
+            // Non-hex editors (JSON, TBL…) leave panels connected to the last hex editor
+            // (same VS-like behaviour enforced in OnActiveDocumentChanged).
+            if (value is HexEditorControl hexEditor)
+                _hexEditorService?.SetActiveEditor(hexEditor);
 
             // Sync progress bar immediately to reflect the new active document's state
             SyncProgressBarToActiveEditor(value);
