@@ -188,6 +188,39 @@ public sealed class TerminalPanelViewModel : INotifyPropertyChanged, IDisposable
         _registry.Register(new ListOpenFilesCommand());
         _registry.Register(new ReadHexCommand());
         _registry.Register(new SearchCommand());
+
+        // File management
+        _registry.Register(new SaveFileCommand());
+        _registry.Register(new SaveAsCommand());
+        _registry.Register(new CloseFileCommand());
+        _registry.Register(new OpenFolderCommand());
+        _registry.Register(new OpenProjectCommand());
+        _registry.Register(new CloseProjectCommand());
+        _registry.Register(new OpenSolutionCommand());
+        _registry.Register(new CloseSolutionCommand());
+        _registry.Register(new ReloadSolutionCommand());
+        _registry.Register(new ListFilesCommand());
+        _registry.Register(new SelectFileCommand());
+        _registry.Register(new CopyFileCommand());
+        _registry.Register(new DeleteFileCommand());
+
+        // Panel management
+        _registry.Register(new OpenPanelCommand());
+        _registry.Register(new ClosePanelCommand());
+        _registry.Register(new TogglePanelCommand());
+        _registry.Register(new FocusPanelCommand());
+        _registry.Register(new ClearPanelCommand());
+        _registry.Register(new AppendPanelCommand());
+
+        // Output / errors
+        _registry.Register(new ShowLogsCommand());
+        _registry.Register(new ShowErrorsCommand());
+
+        // Hex editing
+        _registry.Register(new WriteHexCommand());
+
+        // Plugins
+        _registry.Register(new RunPluginCommand());
     }
 
     // ── INotifyPropertyChanged ────────────────────────────────────────────────────
