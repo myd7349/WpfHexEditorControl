@@ -52,7 +52,7 @@ namespace WpfHexEditor.ColorPicker.Controls
                 typeof(Color),
                 typeof(ColorPicker),
                 new FrameworkPropertyMetadata(
-                    Color.FromRgb(64, 64, 255),
+                    Colors.White,
                     FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
                     OnSelectedColorChanged));
 
