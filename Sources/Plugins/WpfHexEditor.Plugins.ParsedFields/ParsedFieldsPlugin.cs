@@ -20,6 +20,7 @@
 //       are auto-wired via HexEditorControl's ParsedFieldsPanelProperty DP.
 // ==========================================================
 
+using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.Core.ViewModels;
 using WpfHexEditor.Plugins.ParsedFields.Views;
 using WpfHexEditor.SDK.Contracts;
@@ -66,10 +67,24 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
             Id,
             new PanelDescriptor
             {
-                Title          = "Parsed Fields",
+                Title           = "Parsed Fields",
                 DefaultDockSide = "Right",
+                DefaultAutoHide = false,
                 CanClose        = true,
                 PreferredWidth  = 340
+            });
+
+        // Register View menu item so the user can show/hide this panel.
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Show",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "_Parsed Fields",
+                ParentPath = "View",
+                IconGlyph  = "\uE81E",
+                Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(
+                                 "WpfHexEditor.Plugins.ParsedFields.Panel.ParsedFieldsPanel"))
             });
 
         // Connect to the current active editor immediately (if any file is already open).
@@ -142,7 +157,7 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
                     Name           = block.Name,
                     Offset         = block.Offset,
                     Length         = block.Length,
-                    DataType       = block.TypeHint     ?? "Unknown",
+                    ValueType      = block.TypeHint     ?? "Unknown",
                     FormattedValue = block.DisplayValue ?? string.Empty
                 });
             }

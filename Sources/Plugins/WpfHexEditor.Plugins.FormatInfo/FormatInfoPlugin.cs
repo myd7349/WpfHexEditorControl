@@ -15,6 +15,7 @@
 //     must not rely on this field.
 // ==========================================================
 
+using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
@@ -54,7 +55,26 @@ public sealed class FormatInfoPlugin : IWpfHexEditorPlugin
             "WpfHexEditor.Plugins.FormatInfo.Panel.EnrichedFormatInfoPanel",
             _panel,
             Id,
-            new PanelDescriptor { Title = "Format Info", DefaultDockSide = "Right", CanClose = true });
+            new PanelDescriptor
+            {
+                Title           = "Format Info",
+                DefaultDockSide = "Right",
+                DefaultAutoHide = true,
+                CanClose        = true
+            });
+
+        // Register View menu item so the user can show/hide this panel.
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Show",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "Format _Info",
+                ParentPath = "View",
+                IconGlyph  = "\uE946",
+                Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(
+                                 "WpfHexEditor.Plugins.FormatInfo.Panel.EnrichedFormatInfoPanel"))
+            });
 
         context.HexEditor.FormatDetected += OnFormatDetected;
         context.HexEditor.FileOpened     += OnFileOpened;

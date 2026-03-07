@@ -17,6 +17,7 @@
 // ==========================================================
 
 using System.Linq;
+using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Events;
@@ -59,7 +60,26 @@ public sealed class CustomParserTemplatePlugin : IWpfHexEditorPlugin
             "WpfHexEditor.Plugins.CustomParserTemplate.Panel.CustomParserTemplatePanel",
             _panel,
             Id,
-            new PanelDescriptor { Title = "Custom Parser Template", DefaultDockSide = "Right", CanClose = true });
+            new PanelDescriptor
+            {
+                Title           = "Custom Parser Template",
+                DefaultDockSide = "Right",
+                DefaultAutoHide = true,
+                CanClose        = true
+            });
+
+        // Register View menu item so the user can show/hide this panel.
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Show",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "_Custom Parser Template",
+                ParentPath = "View",
+                IconGlyph  = "\uE9A1",
+                Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(
+                                 "WpfHexEditor.Plugins.CustomParserTemplate.Panel.CustomParserTemplatePanel"))
+            });
 
         return Task.CompletedTask;
     }

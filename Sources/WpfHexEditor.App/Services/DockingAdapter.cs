@@ -30,6 +30,10 @@ public sealed class DockingAdapter : IDockingAdapter
     private readonly DockControl _dockHost;
     private readonly Action<string, UIElement> _storeContent;
 
+    // Tracks the first panel docked on each side so subsequent panels on the same
+    // side are grouped as tabs (DockDirection.Center) rather than creating new splits.
+    private readonly Dictionary<DockDirection, string> _sideAnchorIds = new();
+
     public DockingAdapter(
         DockEngine engine,
         DockLayoutRoot layout,
@@ -73,7 +77,27 @@ public sealed class DockingAdapter : IDockingAdapter
         };
 
         _storeContent(uiId, content);
-        _engine.Dock(item, _layout.MainDocumentHost, direction);
+
+        // Group panels on the same side into a single tab strip.
+        // First visible (non-autohide) panel on a side creates the split; subsequent ones tab into it.
+        // Auto-hide panels are always docked first then immediately collapsed — they never serve as anchors.
+        if (!descriptor.DefaultAutoHide
+            && _sideAnchorIds.TryGetValue(direction, out var anchorId)
+            && _layout.FindItemByContentId(anchorId)?.Owner is { } group)
+        {
+            _engine.Dock(item, group, DockDirection.Center);
+        }
+        else
+        {
+            _engine.Dock(item, _layout.MainDocumentHost, direction);
+            if (!descriptor.DefaultAutoHide)
+                _sideAnchorIds[direction] = uiId;
+        }
+
+        // Collapse to the side-bar if the plugin requests auto-hide by default.
+        if (descriptor.DefaultAutoHide)
+            _engine.AutoHide(item);
+
         _dockHost.RebuildVisualTree();
     }
 

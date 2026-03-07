@@ -299,9 +299,9 @@
                                                TextTrimming="CharacterEllipsis"/>
                                     <TextBlock FontSize="10" Opacity="0.7"
                                                Foreground="{DynamicResource Panel_ToolbarForegroundBrush}">
-                                        <Run Text="{Binding Publisher}"/>
+                                        <Run Text="{Binding Publisher, Mode=OneWay}"/>
                                         <Run Text=" · "/>
-                                        <Run Text="{Binding VersionLabel}"/>
+                                        <Run Text="{Binding VersionLabel, Mode=OneWay}"/>
                                     </TextBlock>
                                 </StackPanel>
 
@@ -383,11 +383,11 @@
                                 </Border>
                             </StackPanel>
                             <TextBlock FontSize="11" Foreground="{DynamicResource Panel_ToolbarForegroundBrush}" Opacity="0.8">
-                                <Run Text="{Binding Publisher}"/>
+                                <Run Text="{Binding Publisher, Mode=OneWay}"/>
                                 <Run Text=" · "/>
-                                <Run Text="{Binding VersionLabel}"/>
+                                <Run Text="{Binding VersionLabel, Mode=OneWay}"/>
                                 <Run Text=" · "/>
-                                <Run Text="{Binding IsolationMode}"/>
+                                <Run Text="{Binding IsolationMode, Mode=OneWay}"/>
                             </TextBlock>
                         </StackPanel>
 
@@ -495,7 +495,7 @@
                                 <!-- Loaded since -->
                                 <TextBlock Margin="0,0,0,4" FontSize="11"
                                            Foreground="{DynamicResource Panel_ToolbarForegroundBrush}">
-                                    <Run Text="Loaded since: "/><Run Text="{Binding LoadedSince}"/>
+                                    <Run Text="Loaded since: "/><Run Text="{Binding LoadedSince, Mode=OneWay}"/>
                                 </TextBlock>
 
                             </StackPanel>

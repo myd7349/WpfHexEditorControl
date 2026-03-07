@@ -14,6 +14,7 @@
 //     Pattern: Observer + Adapter — host events drive panel; panel events drive host.
 // ==========================================================
 
+using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
@@ -57,7 +58,26 @@ public sealed class StructureOverlayPlugin : IWpfHexEditorPlugin
             "WpfHexEditor.Plugins.StructureOverlay.Panel.StructureOverlayPanel",
             _panel,
             Id,
-            new PanelDescriptor { Title = "Structure Overlay", DefaultDockSide = "Right", CanClose = true });
+            new PanelDescriptor
+            {
+                Title           = "Structure Overlay",
+                DefaultDockSide = "Right",
+                DefaultAutoHide = false,
+                CanClose        = true
+            });
+
+        // Register View menu item so the user can show/hide this panel.
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Show",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "_Structure Overlay",
+                ParentPath = "View",
+                IconGlyph  = "\uE82D",
+                Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(
+                                 "WpfHexEditor.Plugins.StructureOverlay.Panel.StructureOverlayPanel"))
+            });
 
         context.HexEditor.FileOpened += OnFileOpened;
 

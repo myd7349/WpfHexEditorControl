@@ -18,6 +18,7 @@
 // ==========================================================
 
 using System.Windows;
+using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
@@ -68,8 +69,22 @@ public sealed class DataInspectorPlugin : IWpfHexEditorPlugin, IPluginWithOption
             {
                 Title           = "Data Inspector",
                 DefaultDockSide = "Right",
+                DefaultAutoHide = false,
                 CanClose        = true,
-                PreferredHeight = 180
+                PreferredHeight = 280
+            });
+
+        // Register View menu item so the user can show/hide this panel.
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Show",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "_Data Inspector",
+                ParentPath = "View",
+                IconGlyph  = "\uE9E6",
+                Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(
+                                 "WpfHexEditor.Plugins.DataInspector.Panel.DataInspectorPanel"))
             });
 
         // Subscribe to HexEditor events to drive panel updates automatically.

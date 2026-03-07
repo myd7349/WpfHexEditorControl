@@ -4081,9 +4081,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnShowProperties(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Properties", "panel-properties", DockDirection.Right);
 
-    private void OnShowCustomParserTemplate(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("Custom Parser Template", "WpfHexEditor.Plugins.CustomParserTemplate.Panel.CustomParserTemplatePanel", DockDirection.Right);
-
     private void OnCompareFiles(object sender, RoutedEventArgs e)
     {
         var dlgLeft = new OpenFileDialog { Title = "Select LEFT file for comparison", Multiselect = false };
@@ -4241,28 +4238,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         return root;
     }
-
-    // These panels are now managed by plugins — activate the plugin-registered panel by ContentId.
-    private void OnShowDataInspectorPanel(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("Data Inspector", "WpfHexEditor.Plugins.DataInspector.Panel.DataInspectorPanel", DockDirection.Right);
-
-    private void OnShowStructureOverlayPanel(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("Structure Overlay", "WpfHexEditor.Plugins.StructureOverlay.Panel.StructureOverlayPanel", DockDirection.Right);
-
-    private void OnShowFileStatsPanel(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("File Statistics", "WpfHexEditor.Plugins.FileStatistics.Panel.FileStatisticsPanel", DockDirection.Right);
-
-    private void OnShowPatternAnalysisPanel(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("Pattern Analysis", "WpfHexEditor.Plugins.PatternAnalysis.Panel.PatternAnalysisPanel", DockDirection.Bottom);
-
-    private void OnShowFormatInfoPanel(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("Format Info", "WpfHexEditor.Plugins.FormatInfo.Panel.EnrichedFormatInfoPanel", DockDirection.Right);
-
-    private void OnShowFileComparisonPanel(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("File Comparison", FileComparisonPanelContentId, DockDirection.Bottom);
-
-    private void OnShowArchivePanel(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("Archive Structure", ArchivePanelContentId, DockDirection.Right);
 
     private void OnGoToOffset(object sender, RoutedEventArgs e)
     {

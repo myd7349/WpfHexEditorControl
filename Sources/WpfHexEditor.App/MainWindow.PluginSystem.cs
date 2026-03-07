@@ -119,7 +119,9 @@ public partial class MainWindow
 
             // 3. Create orchestrator
             _ideHostContext = hostContext;
-            _pluginHost = new WpfPluginHost(hostContext, uiRegistry, permissionService, Dispatcher);
+            _pluginHost = new WpfPluginHost(hostContext, uiRegistry, permissionService, Dispatcher,
+                logger:      msg => OutputLogger.Info(msg),
+                errorLogger: msg => OutputLogger.Error(msg));
 
             // 4. Subscribe to host events
             _pluginHost.PluginCrashed       += OnPluginCrashed;
@@ -130,6 +132,7 @@ public partial class MainWindow
             // 5. Discover + load all plugins
             var binDir = AppDomain.CurrentDomain.BaseDirectory;
             var bundledPluginsDir = Path.Combine(binDir, "Plugins");
+            OutputLogger.Info($"[PluginSystem] Plugins dir: {bundledPluginsDir} (exists: {Directory.Exists(bundledPluginsDir)})");
             await _pluginHost.LoadAllAsync(
                 extraDirectories: Directory.Exists(bundledPluginsDir) ? [bundledPluginsDir] : null,
                 ct: CancellationToken.None).ConfigureAwait(false);

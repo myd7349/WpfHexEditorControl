@@ -15,6 +15,7 @@
 //     Statistics computation is done inline (no separate service needed for now).
 // ==========================================================
 
+using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
@@ -56,7 +57,27 @@ public sealed class FileStatisticsPlugin : IWpfHexEditorPlugin
             "WpfHexEditor.Plugins.FileStatistics.Panel.FileStatisticsPanel",
             _panel,
             Id,
-            new PanelDescriptor { Title = "File Statistics", DefaultDockSide = "Right", CanClose = true });
+            new PanelDescriptor
+            {
+                Title           = "File Statistics",
+                DefaultDockSide = "Bottom",
+                DefaultAutoHide = false,
+                CanClose        = true,
+                PreferredHeight = 200
+            });
+
+        // Register View menu item so the user can show/hide this panel.
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Show",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "File _Statistics",
+                ParentPath = "View",
+                IconGlyph  = "\uE9F5",
+                Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(
+                                 "WpfHexEditor.Plugins.FileStatistics.Panel.FileStatisticsPanel"))
+            });
 
         context.HexEditor.FileOpened += OnFileOpened;
 

@@ -78,7 +78,9 @@ public sealed class MenuAdapter : IMenuAdapter
 
         foreach (var topItem in _mainMenu.Items.OfType<MenuItem>())
         {
-            if (string.Equals(topItem.Header?.ToString(), parentPath, StringComparison.OrdinalIgnoreCase))
+            // Strip leading underscore (WPF access key prefix, e.g. "_View" → "View") before comparing.
+            var headerText = topItem.Header?.ToString()?.TrimStart('_') ?? string.Empty;
+            if (string.Equals(headerText, parentPath.TrimStart('_'), StringComparison.OrdinalIgnoreCase))
                 return topItem;
         }
 
