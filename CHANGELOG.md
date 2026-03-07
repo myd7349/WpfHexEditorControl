@@ -8,24 +8,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ## What's Next
 
-> Planned features — subject to change. Items marked ✅ are already shipped.
+> Planned features — subject to change.
 
 ### Plugin System & SDK
-- ✅ Public SDK (`WpfHexEditor.SDK`) — versioned plugin contracts (IWpfHexEditorPlugin, IIDEHostContext, IUIRegistry, …)
-- ✅ `WpfHexEditor.PluginHost` — runtime host: discovery, loading, watchdog, permission service
-- ✅ Process-level plugin sandboxing (`WpfHexEditor.PluginSandbox`) — named-pipe IPC, out-of-process stub
-- ✅ `.whxplugin` package format + `WpfHexEditor.PluginInstaller` tool + `whxpack` CLI
-- ✅ 7 first-party plugins (DataInspector, StructureOverlay, FileStatistics, PatternAnalysis, FileComparison, ArchiveStructure, CustomParserTemplate)
-- ✅ `PluginManagerControl` — browse, enable/disable, uninstall loaded plugins
-- ✅ `IPluginWithOptions` — optional contract; plugin settings auto-registered in IDE Options under "Plugins"
 - Hot-load / Hot-unload plugins at runtime without IDE restart (AssemblyLoadContext collectible — UI not yet exposed)
-- Real-time CPU / memory monitoring per plugin in Plugin Manager
+- Real-time CPU / memory monitoring per plugin — `PluginMonitoringPanel` with `PerformanceCounter` polling
 
 ### Integrated Terminal
-- ✅ `WpfHexEditor.Core.Terminal` — command engine: 31 built-in commands (file, editor, project, panels, plugins, diagnostics)
-- ✅ `WpfHexEditor.Terminal` — WPF dockable terminal panel (PowerShell-style prompt, history, colored output)
 - Multi-tab terminal with separate shell sessions (PowerShell, Bash, CMD)
 - Script file execution (`.hxscript`) with macro recording
+
+### Image Viewer
+- Full transform pipeline: rotate, flip, crop, resize — `IImageTransform` + `ImageTransformPipeline`
+- Batch export, format conversion (PNG/JPEG/BMP/TIFF)
 
 ### CodeEditor — VS-Like Overkill
 - Multi-caret editing, virtual scroll for >1 GB files
@@ -154,9 +149,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 - 427 `.whfmt` format definitions annotated with `"preferredEditor"` key
 - `MainWindow.GetPreferredEditorId()` — consults `EmbeddedFormatCatalog` (PreferredEditor → IsTextFormat → null)
 
+### ✨ Added — Image Viewer
+- `IImageTransform` + `ImageTransformPipeline` — composable transform architecture
+- Transforms: `RotateImageTransform`, `FlipImageTransform`, `CropImageTransform`, `ResizeImageTransform`, `ScaleImageTransform`
+- `ResizeImageDialog.xaml(.cs)` — width/height input with aspect ratio lock
+- `ImageContextMenu.xaml` — right-click context menu (copy, save, zoom, transform actions)
+- `ImageViewer.xaml(.cs)` — major enhancement: zoom/pan, transform toolbar, context menu, theme compliance
+- `DockEngine` / `FloatingWindow` — minor additions for ImageViewer floating window sizing
+
+### ✨ Added — Plugin Monitoring Panel
+- `PluginMonitoringViewModel` — observes `PluginEntry` collection, polls CPU% and memory MB at 1 s interval via `PerformanceCounter` / GC; rolling chart history per plugin
+- `PluginMonitoringPanel.xaml(.cs)` — VS-style dockable panel; pure WPF `Canvas` + `Polyline` charts, no external charting library; redraws on `CollectionChanged`
+- `WpfPluginHost` — expanded load/unload/enable/disable lifecycle; diagnostic hooks; hot-unload via collectible `AssemblyLoadContext`
+- `PluginManagerViewModel` — full VM with Enable/Disable/Uninstall/Reload commands, filter/search, `SelectionChanged` wiring to monitoring panel
+- `PluginManagerControl` — DataGrid with status column, toolbar actions, details pane with diagnostics output; `PluginListItemViewModel` extended with `LiveCpuPercent`, `LiveMemoryMb`, `DiagnosticsSummary`
+- Plugin `.csproj` files — SDK manifest metadata (`PluginId`, `PluginVersion`, `PluginEntryPoint`, …) for auto-generated `manifest.json` at build time
+
+### ✨ Added — Options
+- `PluginSystemOptionsPage` — complete settings page: monitoring enabled/interval, sandbox mode, auto-update, trusted publisher; bound to `AppSettings.PluginSystemSettings`
+- `AppSettings.PluginSystemSettings` — `MonitoringEnabled`, `MonitoringIntervalMs`, `MaxHistoryPoints`, sandbox policy
+
 ### 🔧 Changed
 - `PluginEntry` promoted from `internal` to `public`
 - Section separators normalized from Unicode box-drawing (`──`) to ASCII (`--`) across 134 files
+- `MainWindow.xaml` — Tools menu: Plugin Monitoring entry added; `PluginMonitoringPanel` dock item registered
 
 ### 🐛 Fixed
 - `PermissionService` — `PermissionChangedEventArgs` object-initializer form; missing `System.IO` using
