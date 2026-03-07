@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>WpfHexEditor.HexEditor</RootNamespace>
     <AssemblyName>WpfHexEditor.HexEditor</AssemblyName>
@@ -20,16 +20,6 @@
     <DebugType>embedded</DebugType>
     <Optimize>true</Optimize>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Release' and '$(TargetFramework)'=='net48'">
-    <Optimize>true</Optimize>
-    <DebugType>embedded</DebugType>
-  </PropertyGroup>
-
-  <!-- Span<T> support for .NET Framework 4.8 -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <PackageReference Include="System.Memory" Version="4.5.5" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WpfHexEditor.Core\WpfHexEditor.Core.csproj" />

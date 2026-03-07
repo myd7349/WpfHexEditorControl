@@ -370,13 +370,6 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="_Byte Chart" Click="OnShowByteChartPanel">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
                         <MenuItem Header="_Data Inspector" Click="OnShowDataInspectorPanel">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE9E6;" FontFamily="Segoe MDL2 Assets" FontSize="13"

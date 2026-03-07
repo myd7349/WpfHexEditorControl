@@ -146,7 +146,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ErrorPanel? _errorPanel;
     private const string ErrorPanelContentId    = "panel-errors";
     private const string OptionsContentId       = "panel-options";
-    private const string ByteChartPanelContentId         = "panel-byte-chart";
     private const string DataInspectorPanelContentId      = "panel-data-inspector";
     private const string StructureOverlayPanelContentId   = "panel-structure-overlay";
     private const string FileStatsPanelContentId           = "panel-file-statistics";
@@ -165,9 +164,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Output Panel (persistent singleton — pre-created so OutputLogger works from startup)
     private OutputPanel? _outputPanel;
-
-    // ByteChart Panel (persistent singleton)
-    private WpfHexEditor.Panels.BinaryAnalysis.ByteChartPanel? _byteChartPanel;
 
     // Analysis panels (persistent singletons)
     private WpfHexEditor.Panels.BinaryAnalysis.DataInspectorPanel?     _dataInspectorPanel;
@@ -573,7 +569,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 ApplyLayout(layout);
                 EnsureParsedFieldsPanel();
                 EnsureErrorPanel();
-                EnsureByteChartPanel();
                 OutputLogger.Debug($"Layout restored from: {LayoutFilePath}");
                 return;
             }
@@ -790,9 +785,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var output = new DockItem { Title = "Output", ContentId = "panel-output" };
         engine.Dock(output, errorsItem.Owner!, DockDirection.Center);
 
-        var byteChart = new DockItem { Title = "Byte Chart", ContentId = ByteChartPanelContentId };
-        engine.Dock(byteChart, output.Owner!, DockDirection.Center);
-
         var parsedFields = new DockItem
         {
             Title      = "Parsed Fields",
@@ -816,7 +808,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         engine.Dock(fileStats, parsedFields.Owner!, DockDirection.Center);
 
         var patternAnalysis = new DockItem { Title = "Pattern Analysis", ContentId = PatternAnalysisPanelContentId };
-        engine.Dock(patternAnalysis, byteChart.Owner!, DockDirection.Center);
+        engine.Dock(patternAnalysis, output.Owner!, DockDirection.Center);
 
         ApplyLayout(layout, engine);
         OutputLogger.Debug("Default layout applied.");
@@ -863,20 +855,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             DockHost.RebuildVisualTree();
             OutputLogger.Debug("ParsedFields panel added to restored layout.");
         }
-    }
-
-    private void EnsureByteChartPanel()
-    {
-        if (_layout.FindItemByContentId(ByteChartPanelContentId) != null) return;
-
-        var item = new DockItem { Title = "Byte Chart", ContentId = ByteChartPanelContentId };
-        var outputItem = _layout.FindItemByContentId("panel-output");
-        if (outputItem?.Owner is { } outputGroup)
-            _engine.Dock(item, outputGroup, DockDirection.Center);
-        else
-            _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Bottom);
-
-        DockHost.RebuildVisualTree();
     }
 
     private void EnsureErrorPanel()
@@ -951,7 +929,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "panel-properties"         => CreatePropertiesContent(),
             CustomParserPanelContentId => CreateCustomParserContent(),
             ErrorPanelContentId        => CreateErrorPanelContent(),
-            ByteChartPanelContentId        => CreateByteChartContent(),
             DataInspectorPanelContentId    => CreateDataInspectorContent(),
             StructureOverlayPanelContentId => CreateStructureOverlayContent(),
             FileStatsPanelContentId        => CreateFileStatsContent(),
@@ -1039,16 +1016,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         _outputPanel ??= new OutputPanel();
         return _outputPanel;
-    }
-
-    private UIElement CreateByteChartContent()
-    {
-        if (_byteChartPanel is null)
-        {
-            _byteChartPanel = new WpfHexEditor.Panels.BinaryAnalysis.ByteChartPanel();
-            _byteChartPanel.ByteSelected += OnByteChartByteSelected;
-        }
-        return _byteChartPanel;
     }
 
     private UIElement CreateDataInspectorContent()
@@ -1947,9 +1914,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             foreach (var srcPath in directPaths)
             {
-                if (!File.Exists(srcPath)) continue;
-                await _solutionManager.AddItemAsync(e.Project, srcPath,
-                    virtualFolderId: e.TargetFolderId);
+                if (File.Exists(srcPath))
+                    await _solutionManager.AddItemAsync(e.Project, srcPath,
+                        virtualFolderId: e.TargetFolderId);
+                else if (Directory.Exists(srcPath))
+                    // Register the entire directory tree in-place (no physical copy — same
+                    // behaviour as "Add Existing Folder From Disk" in the context menu).
+                    await ImportFolderFromDiskAsync(e.Project, srcPath, e.TargetFolderId);
             }
             return;
         }
@@ -2004,46 +1975,73 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             foreach (var srcPath in e.FilePaths)
             {
-                if (!File.Exists(srcPath)) continue;
-
-                var fileName = Path.GetFileName(srcPath);
-                var destPath = Path.Combine(physDestDir, fileName);
-
-                // -- Name-conflict resolution --------------------------------------
-                if (File.Exists(destPath) &&
-                    !string.Equals(srcPath, destPath, StringComparison.OrdinalIgnoreCase))
+                if (File.Exists(srcPath))
                 {
-                    var dlg = new PasteConflictDialog
-                    {
-                        OriginalName = fileName,
-                        NewName      = BuildSuggestedName(physDestDir, fileName),
-                        Owner        = this,
-                    };
+                    var fileName = Path.GetFileName(srcPath);
+                    var destPath = Path.Combine(physDestDir, fileName);
 
-                    if (dlg.ShowDialog() != true)
+                    // -- Name-conflict resolution --------------------------------------
+                    if (File.Exists(destPath) &&
+                        !string.Equals(srcPath, destPath, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (dlg.CancelAll) return;  // user chose "Cancel All" — stop processing
-                        continue;                    // user chose "Skip" — move to next file
+                        var dlg = new PasteConflictDialog
+                        {
+                            OriginalName = fileName,
+                            NewName      = BuildSuggestedName(physDestDir, fileName),
+                            Owner        = this,
+                        };
+
+                        if (dlg.ShowDialog() != true)
+                        {
+                            if (dlg.CancelAll) return;  // user chose "Cancel All" — stop processing
+                            continue;                    // user chose "Skip" — move to next file
+                        }
+
+                        destPath = Path.Combine(physDestDir, dlg.NewName);
                     }
 
-                    destPath = Path.Combine(physDestDir, dlg.NewName);
-                }
+                    // -- Physical file operation ---------------------------------------
+                    if (e.IsCut)
+                    {
+                        if (!string.Equals(srcPath, destPath, StringComparison.OrdinalIgnoreCase))
+                            File.Move(srcPath, destPath, overwrite: false);
+                    }
+                    else
+                    {
+                        // Copy: always produce a physical file at the destination,
+                        // never keep a reference to the source path.
+                        File.Copy(srcPath, destPath, overwrite: false);
+                    }
 
-                // -- Physical file operation ---------------------------------------
-                if (e.IsCut)
-                {
-                    if (!string.Equals(srcPath, destPath, StringComparison.OrdinalIgnoreCase))
-                        File.Move(srcPath, destPath, overwrite: false);
+                    await _solutionManager.AddItemAsync(project, destPath,
+                                                        virtualFolderId: targetFolderId);
                 }
-                else
+                else if (Directory.Exists(srcPath))
                 {
-                    // Copy: always produce a physical file at the destination,
-                    // never keep a reference to the source path.
-                    File.Copy(srcPath, destPath, overwrite: false);
-                }
+                    // -- Folder paste: physical copy (or move) + recursive registration --
+                    var dirName = Path.GetFileName(
+                        srcPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                    var destDir = Path.Combine(physDestDir, dirName);
 
-                await _solutionManager.AddItemAsync(project, destPath,
-                                                    virtualFolderId: targetFolderId);
+                    if (e.IsCut)
+                    {
+                        // Same-drive move is instantaneous; cross-drive requires copy + delete.
+                        if (string.Equals(Path.GetPathRoot(srcPath), Path.GetPathRoot(destDir),
+                                StringComparison.OrdinalIgnoreCase))
+                            Directory.Move(srcPath, destDir);
+                        else
+                        {
+                            CopyDirectoryRecursive(srcPath, destDir);
+                            Directory.Delete(srcPath, recursive: true);
+                        }
+                    }
+                    else
+                    {
+                        CopyDirectoryRecursive(srcPath, destDir);
+                    }
+
+                    await _solutionManager.AddFolderFromDiskAsync(project, destDir, targetFolderId);
+                }
             }
         }
         finally
@@ -2067,6 +2065,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         while (File.Exists(Path.Combine(directory, candidate)))
             candidate = $"{nameNoExt} (copy {counter++}){ext}";
         return candidate;
+    }
+
+    /// <summary>
+    /// Recursively copies all files and subdirectories from <paramref name="sourceDir"/>
+    /// into <paramref name="destDir"/>, creating <paramref name="destDir"/> if it does not exist.
+    /// Existing files at the destination are not overwritten.
+    /// </summary>
+    private static void CopyDirectoryRecursive(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+        foreach (var file in Directory.GetFiles(sourceDir))
+            File.Copy(file, Path.Combine(destDir, Path.GetFileName(file)), overwrite: false);
+        foreach (var sub in Directory.GetDirectories(sourceDir))
+            CopyDirectoryRecursive(sub, Path.Combine(destDir, Path.GetFileName(sub)));
     }
 
     /// <summary>
@@ -3002,9 +3014,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _connectedHexEditor.ConnectParsedFieldsPanel(_parsedFieldsPanel);
             if (_connectedHexEditor is IDiagnosticSource newDiag)
                 EnsureErrorPanelInstance().AddSource(newDiag);
-            if (_byteChartPanel is not null)
-                _connectedHexEditor.ByteDistributionPanel = _byteChartPanel;
-
             _connectedHexEditor.SelectionChanged += OnHexSelectionChangedForInspector;
             _connectedHexEditor.FormatDetected   += OnHexFormatDetected;
 
@@ -3216,11 +3225,29 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             IsDocumentBusy = false;
             ProgressStatusItem.Visibility = Visibility.Collapsed;
 
-            // Brief status feedback in the existing RefreshText slot
             if (e.WasCancelled)
+            {
                 RefreshText.Text = "Operation cancelled";
-            else if (!e.Success && !string.IsNullOrEmpty(e.ErrorMessage))
+                return;
+            }
+
+            if (!e.Success && !string.IsNullOrEmpty(e.ErrorMessage))
+            {
+                // Log as Error (red) and reveal the Output panel.
+                OutputLogger.Error(e.ErrorMessage);
+                ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
                 RefreshText.Text = $"Error: {e.ErrorMessage}";
+
+                // Silently close the tab whose editor raised the failure.
+                if (e.CloseTabOnFailure)
+                {
+                    var contentId = _contentCache
+                        .FirstOrDefault(kv => ReferenceEquals(kv.Value, sender)).Key;
+                    if (contentId is not null &&
+                        _layout.FindItemByContentId(contentId) is { } dockItem)
+                        CloseTab(dockItem, promptIfDirty: false);
+                }
+            }
         });
     }
 
@@ -3885,11 +3912,30 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             return;
         }
 
-        // Direct mode (or non-project tab) — normal save
+        // Direct mode (or non-project tab) — respect per-editor standalone save preference.
         if (ActiveDocumentEditor is { } ed)
         {
-            ed.SaveCommand?.Execute(null);
-            OutputLogger.Info($"Saved '{ed.Title.TrimEnd(' ', '*')}'.");
+            var sf = settings.StandaloneFileSave;
+
+            bool directSave = ed switch
+            {
+                HexEditorControl                                         => sf.HexEditorDirectSave,
+                CodeEditorControl                                        => sf.CodeEditorDirectSave,
+                TblEditorControl                                         => sf.TblEditorDirectSave,
+                WpfHexEditor.Editor.ImageViewer.Controls.ImageViewer    => sf.ImageViewerDirectSave,
+                _                                                        => true
+            };
+
+            if (directSave)
+            {
+                ed.SaveCommand?.Execute(null);
+                OutputLogger.Info($"Saved '{ed.Title.TrimEnd(' ', '*')}'.");
+            }
+            else
+            {
+                _ = ed.SaveAsAsync(string.Empty);
+                OutputLogger.Info($"Save As invoked for '{ed.Title.TrimEnd(' ', '*')}'.");
+            }
         }
     }
 
@@ -4357,17 +4403,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnShowErrorPanel(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Error List", ErrorPanelContentId, DockDirection.Bottom);
 
-    private void OnShowByteChartPanel(object sender, RoutedEventArgs e)
-        => ShowOrCreatePanel("Byte Chart", ByteChartPanelContentId, DockDirection.Bottom);
-
-    private void OnByteChartByteSelected(object? sender, byte byteValue)
-    {
-        if (ActiveHexEditor is not { } hex) return;
-        var offset = _byteChartPanel?.GetFirstOccurrenceOffset(byteValue) ?? -1L;
-        if (offset >= 0)
-            hex.SetPosition(offset);
-    }
-
     private void OnHexSelectionChangedForInspector(object? sender, WpfHexEditor.Core.Events.HexSelectionChangedEventArgs e)
     {
         if (_dataInspectorPanel is null || sender is not HexEditorControl hex) return;
@@ -4655,7 +4690,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _parsedFieldsPanel ??= new ParsedFieldsPanel();
             ApplyLayout(layout);
             EnsureParsedFieldsPanel();
-            EnsureByteChartPanel();
             OutputLogger.Debug($"Layout loaded from: {dlg.FileName}");
         }
         catch (Exception ex)
@@ -4731,7 +4765,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         foreach (var editor in FindVisualChildren<HexEditorControl>(this))
             editor.ApplyThemeFromResources();
 
-        _byteChartPanel?.RefreshTheme();
     }
 
     private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject

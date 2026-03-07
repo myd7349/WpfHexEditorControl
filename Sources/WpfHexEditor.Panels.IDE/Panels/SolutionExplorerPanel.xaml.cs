@@ -1228,8 +1228,9 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     // -- DragDrop --------------------------------------------------------------
 
-    private const string DragDataFormat        = "SolutionExplorerFileNode";
-    private const string DragDataFormatProject = "SolutionExplorerProjectNode";
+    private const string DragDataFormat          = "SolutionExplorerFileNode";
+    private const string DragDataFormatProject   = "SolutionExplorerProjectNode";
+    private const string DragDataFormatMultiFile = "SolutionExplorerMultiFileNodes";
     private Point          _dragStartPoint;
     private FileNodeVm?    _draggedNode;
     private ProjectNodeVm? _draggedProject;
@@ -1326,7 +1327,15 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         if (_draggedNode is not null)
         {
             if (_draggedNode.IsEditing) return;
-            var data = new DataObject(DragDataFormat, _draggedNode);
+
+            // If the dragged node is part of a multi-selection, drag the entire selection.
+            var selected = _vm.SelectedNodes.OfType<FileNodeVm>().ToList();
+            DataObject data;
+            if (selected.Count > 1 && selected.Contains(_draggedNode))
+                data = new DataObject(DragDataFormatMultiFile, selected);
+            else
+                data = new DataObject(DragDataFormat, _draggedNode);
+
             DragDrop.DoDragDrop(SolutionTree, data, DragDropEffects.Move);
             _draggedNode = null;
         }
@@ -1342,18 +1351,19 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     private void OnTreeDragOver(object sender, DragEventArgs e)
     {
         var isFileDrag         = e.Data.GetDataPresent(DragDataFormat);
+        var isMultiFileDrag    = e.Data.GetDataPresent(DragDataFormatMultiFile);
         var isProjectDrag      = e.Data.GetDataPresent(DragDataFormatProject);
         var isExternalFileDrop = e.Data.GetDataPresent(DataFormats.FileDrop);
 
-        if (!isFileDrag && !isProjectDrag && !isExternalFileDrop)
+        if (!isFileDrag && !isMultiFileDrag && !isProjectDrag && !isExternalFileDrop)
         {
             e.Effects = DragDropEffects.None;
             e.Handled = true;
             return;
         }
 
-        // External file drop from Windows Explorer: accept as Copy on any project/folder target
-        if (isExternalFileDrop && !isFileDrag && !isProjectDrag)
+        // External file/folder drop from Windows Explorer: accept as Copy on any project/folder target
+        if (isExternalFileDrop && !isFileDrag && !isMultiFileDrag && !isProjectDrag)
         {
             var extTarget = GetDropTarget(e.OriginalSource as DependencyObject);
             e.Effects = extTarget is (ProjectNodeVm or FolderNodeVm)
@@ -1365,7 +1375,14 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
         var target = GetDropTarget(e.OriginalSource as DependencyObject);
 
-        if (isFileDrag)
+        if (isMultiFileDrag)
+        {
+            // Multi-file internal drag: valid targets are folders or project root
+            e.Effects = target is (FolderNodeVm or ProjectNodeVm)
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
+        }
+        else if (isFileDrag)
         {
             var dragged = e.Data.GetData(DragDataFormat) as FileNodeVm;
             e.Effects = (target is (FolderNodeVm or ProjectNodeVm) && dragged?.Project is not null)
@@ -1418,21 +1435,50 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
             if (project is null) return;
 
-            // Only keep file paths (skip directories)
-            var filePaths = droppedPaths
-                .Where(p => File.Exists(p))
+            // Accept files and top-level directories (folders handled recursively by the host)
+            var validPaths = droppedPaths
+                .Where(p => File.Exists(p) || Directory.Exists(p))
                 .ToArray();
 
-            if (filePaths.Length == 0) return;
+            if (validPaths.Length == 0) return;
 
             AddExistingItemRequested?.Invoke(this, new AddItemRequestedEventArgs
             {
                 Project        = project,
                 TargetFolderId = targetFolder,
-                FilePaths      = filePaths,
+                FilePaths      = validPaths,
             });
 
             e.Handled = true;
+            return;
+        }
+
+        // -- Multi-file drop (internal drag of multiple selected nodes) ---------
+        if (e.Data.GetDataPresent(DragDataFormatMultiFile))
+        {
+            if (e.Data.GetData(DragDataFormatMultiFile) is not List<FileNodeVm> draggedFiles) return;
+
+            var multiTarget = GetDropTarget(e.OriginalSource as DependencyObject);
+            if (multiTarget is null) return;
+
+            string? multiTargetFolderId = multiTarget switch
+            {
+                FolderNodeVm fv => fv.Folder.Id,
+                ProjectNodeVm   => null,
+                _               => null,
+            };
+
+            foreach (var file in draggedFiles.Where(f => f.Project is not null))
+            {
+                ItemMoveRequested?.Invoke(this, new ItemMoveRequestedEventArgs
+                {
+                    Item           = file.Source,
+                    Project        = file.Project!,
+                    TargetFolderId = multiTargetFolderId,
+                });
+            }
+
+            _vm.Rebuild();
             return;
         }
 

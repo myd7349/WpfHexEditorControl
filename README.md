@@ -5,7 +5,7 @@
   <h3>⚡ The Fastest Wpf Hex Editor IDE for .NET ⚡</h3>
 
   [![NuGet Legacy V1](https://img.shields.io/nuget/v/WPFHexaEditor?color=blue&label=NuGet%20(Legacy%20V1)&logo=nuget)](https://www.nuget.org/packages/WPFHexaEditor/)
-  [![.NET Multi-Target](https://img.shields.io/badge/.NET-net48%20%7C%20net8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+  [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
   [![C#](https://img.shields.io/badge/C%23-13.0-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
@@ -18,7 +18,7 @@
 
   <br/>
 
-  <a href="Images/Sample2026-001.png"><img src="Images/Sample2026-001.png" alt="WPF HexEditor IDE" width="900"/></a>
+  <a href="Images/App-Editors-Welcome.png"><img src="Images/App-Editors-Welcome.png" alt="WPF HexEditor IDE" width="900"/></a>
   <br/>
   <sub><i>WpfHexEditor — Full IDE with VS-style docking, project system, and multiple editors</i></sub>
 
@@ -115,19 +115,19 @@ All controls are **independently reusable** — no IDE required. Drop any of the
 
 | Control | Frameworks | Progress | Description |
 |---------|-----------|----------|-------------|
-| **[HexEditor](Sources/WpfHexEditor.HexEditor/)** | net48 · net8.0-windows | ~80% | Full-featured hex editor UserControl — MVVM, 16 services, insert/overwrite, search, bookmarks, TBL, 400+ format detection |
-| **[HexBox](Sources/WpfHexEditor.HexBox/)** | net48 · net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
-| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net48 · net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
-| **[BarChart](Sources/WpfHexEditor.BarChart/)** | net48 · net8.0-windows | ~60% | Byte frequency distribution chart (0x00–0xFF visualization) — **standalone only**, not yet integrated in the IDE |
+| **[HexEditor](Sources/WpfHexEditor.HexEditor/)** | net8.0-windows | ~80% | Full-featured hex editor UserControl — MVVM, 16 services, insert/overwrite, search, bookmarks, TBL, 400+ format detection |
+| **[HexBox](Sources/WpfHexEditor.HexBox/)** | net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
+| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
+| **[BarChart](Sources/WpfHexEditor.BarChart/)** | net8.0-windows | ~70% | Byte frequency distribution chart (0x00–0xFF) with zoom — embedded inside the Data Inspector panel |
 | **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/)** | net8.0-windows | ~65% | **Custom-built** VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — 100% in-house, zero third-party dependency |
 
 ### Libraries & Infrastructure
 
 | Library | Frameworks | Description |
 |---------|-----------|-------------|
-| **[Core](Sources/WpfHexEditor.Core/)** | net48 · net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
-| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net48 · net8.0-windows | `IDocumentEditor` plugin contract, editor registry, changeset system, shared interfaces |
-| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0-windows | 400+ format detection engine, binary templates, DataInspector service |
+| **[Core](Sources/WpfHexEditor.Core/)** | net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
+| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net8.0-windows | `IDocumentEditor` plugin contract, editor registry, changeset system, shared interfaces |
+| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0 | 400+ format detection engine, binary templates, DataInspector service |
 | **[SDK](Sources/WpfHexEditor.SDK/)** | net8.0-windows | Public plugin API — `IWpfHexEditorPlugin`, `IIDEHostContext`, `IUIRegistry`, 10+ service contracts |
 | **[PluginHost](Sources/WpfHexEditor.PluginHost/)** | net8.0-windows | Runtime plugin infrastructure — discovery, load, watchdog, `PluginManagerControl`, `PermissionService` |
 | **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/)** | net8.0-windows | Command engine — 31 built-in commands, `HxScriptEngine`, `CommandHistory` |
@@ -357,10 +357,9 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 
 | Framework | Version | Notes |
 |-----------|---------|-------|
-| **.NET Framework** | 4.8 | Full support — LRU cache, parallel search |
-| **.NET** | 8.0-windows | Maximum performance — Span\<T\>, SIMD, PGO |
+| **.NET** | 8.0-windows | Span\<T\>, SIMD, PGO — full performance unlocked |
 
-**Recommendation:** Use .NET 8.0 for best performance (SIMD vectorization, Profile-Guided Optimization).
+> **.NET Framework 4.8 support has been dropped.** The project targets .NET 8.0+ exclusively to take full advantage of modern runtime performance, Span\<T\>, SIMD vectorization, and Profile-Guided Optimization (PGO). If you need .NET Framework support, use the legacy V1 NuGet package.
 
 ---
 

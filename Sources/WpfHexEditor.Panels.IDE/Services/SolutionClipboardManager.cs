@@ -125,7 +125,7 @@ public sealed class SolutionClipboardManager
         if (!Clipboard.ContainsFileDropList()) return false;
         var drop = Clipboard.GetFileDropList();
         foreach (string? p in drop)
-            if (!string.IsNullOrEmpty(p) && File.Exists(p)) return true;
+            if (!string.IsNullOrEmpty(p) && (File.Exists(p) || Directory.Exists(p))) return true;
         return false;
     }
 

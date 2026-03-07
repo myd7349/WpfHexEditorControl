@@ -26,6 +26,13 @@ public sealed partial class EnvironmentSavePage : UserControl, IOptionsPage
             RadioTracked.IsChecked       = s.DefaultFileSaveMode == FileSaveMode.Tracked;
             CheckAutoSerialize.IsChecked = s.AutoSerializeEnabled;
             TxtInterval.Text             = s.AutoSerializeIntervalSeconds.ToString();
+
+            // Standalone file save preferences
+            HexEditorDirectSaveCheck.IsChecked   = s.StandaloneFileSave.HexEditorDirectSave;
+            CodeEditorDirectSaveCheck.IsChecked  = s.StandaloneFileSave.CodeEditorDirectSave;
+            TextEditorDirectSaveCheck.IsChecked  = s.StandaloneFileSave.TextEditorDirectSave;
+            TblEditorDirectSaveCheck.IsChecked   = s.StandaloneFileSave.TblEditorDirectSave;
+            ImageViewerDirectSaveCheck.IsChecked = s.StandaloneFileSave.ImageViewerDirectSave;
         }
         finally { _loading = false; }
     }
@@ -40,6 +47,13 @@ public sealed partial class EnvironmentSavePage : UserControl, IOptionsPage
 
         if (int.TryParse(TxtInterval.Text, out int secs) && secs > 0)
             s.AutoSerializeIntervalSeconds = secs;
+
+        // Standalone file save preferences
+        s.StandaloneFileSave.HexEditorDirectSave   = HexEditorDirectSaveCheck.IsChecked   == true;
+        s.StandaloneFileSave.CodeEditorDirectSave  = CodeEditorDirectSaveCheck.IsChecked  == true;
+        s.StandaloneFileSave.TextEditorDirectSave  = TextEditorDirectSaveCheck.IsChecked  == true;
+        s.StandaloneFileSave.TblEditorDirectSave   = TblEditorDirectSaveCheck.IsChecked   == true;
+        s.StandaloneFileSave.ImageViewerDirectSave = ImageViewerDirectSaveCheck.IsChecked == true;
     }
 
     // -- Control handlers -------------------------------------------------
@@ -55,6 +69,11 @@ public sealed partial class EnvironmentSavePage : UserControl, IOptionsPage
     }
 
     private void OnIntervalLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnStandaloneSaveChanged(object sender, RoutedEventArgs e)
     {
         if (!_loading) Changed?.Invoke(this, EventArgs.Empty);
     }

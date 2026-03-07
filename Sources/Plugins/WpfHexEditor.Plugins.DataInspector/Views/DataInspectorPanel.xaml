@@ -2,6 +2,14 @@
     Apache 2.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
+
+    Unified bottom panel — ByteChart (left) + Byte Interpretations (right).
+    Optimized for bottom-dock layout: wide/short (design 1000×180).
+
+    Theme: PanelCommon.xaml (PanelToolbarStyle, PanelIconButtonStyle,
+           PanelIconToggleStyle, PanelDropdownButtonStyle, PanelToolbarSeparatorStyle)
+    ResourceDictionaries: merged via docking theme chain (Dark/Light/VS2022Dark/etc.)
+    Brushes: DynamicResource PFP_* + Panel_* (no hardcoded colors on structural elements)
 -->
 
 <UserControl x:Class="WpfHexEditor.Plugins.DataInspector.Views.DataInspectorPanel"
@@ -9,10 +17,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:chart="clr-namespace:WpfHexEditor.Panels.BinaryAnalysis.Controls;assembly=WpfHexEditor.Panels.BinaryAnalysis"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="350">
+             d:DesignHeight="180" d:DesignWidth="1000">
+
     <UserControl.Resources>
-        <!-- Category Color Brushes (semantic — unchanged across themes) -->
+        <!-- Category color indicators (semantic — theme-independent) -->
         <SolidColorBrush x:Key="CategoryIntegerBrush"  Color="#4A90E2"/>
         <SolidColorBrush x:Key="CategoryFloatBrush"    Color="#7ED321"/>
         <SolidColorBrush x:Key="CategoryDateTimeBrush" Color="#F5A623"/>
@@ -25,11 +35,12 @@
         <Style x:Key="CategoryIndicatorStyle" TargetType="Border">
             <Setter Property="Width"        Value="4"/>
             <Setter Property="CornerRadius" Value="2"/>
-            <Setter Property="Margin"       Value="0,0,8,0"/>
+            <Setter Property="Margin"       Value="0,0,6,0"/>
         </Style>
 
+        <!-- Compact item template — optimised for limited height (horizontal layout) -->
         <DataTemplate x:Key="InspectorValueTemplate">
-            <Border Padding="8,6" Margin="0,0,0,1"
+            <Border Padding="6,3" Margin="0,0,0,1"
                     Background="{DynamicResource PFP_SectionBackgroundBrush}"
                     BorderBrush="{DynamicResource PFP_BorderBrush}"
                     BorderThickness="0,0,0,1">
@@ -39,6 +50,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
+                    <!-- Category color bar -->
                     <Border Grid.Column="0">
                         <Border.Style>
                             <Style TargetType="Border" BasedOn="{StaticResource CategoryIndicatorStyle}">
@@ -72,17 +84,16 @@
                         </Border.Style>
                     </Border>
 
+                    <!-- Format + value (compact 2-line layout) -->
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="{Binding Format}"
-                                   FontWeight="SemiBold" FontSize="11"
+                                   FontWeight="SemiBold" FontSize="10"
                                    Foreground="{DynamicResource PFP_TextBrush}"/>
                         <TextBlock Text="{Binding Value}"
-                                   FontFamily="Consolas" FontSize="12"
-                                   Margin="0,2,0,2" TextWrapping="Wrap"
+                                   FontFamily="Consolas" FontSize="11"
+                                   TextWrapping="NoWrap"
+                                   TextTrimming="CharacterEllipsis"
                                    Foreground="{DynamicResource PFP_ValueBrush}"/>
-                        <TextBlock Text="{Binding HexValue, StringFormat='Raw: {0}'}"
-                                   FontFamily="Consolas" FontSize="9"
-                                   Foreground="{DynamicResource PFP_SubTextBrush}"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -91,96 +102,330 @@
 
     <Grid Background="{DynamicResource PFP_PanelBackgroundBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>     <!-- Row 0: unified toolbar -->
+            <RowDefinition Height="*"/>        <!-- Row 1: chart + interpretations -->
+            <RowDefinition Height="Auto"/>     <!-- Row 2: status bar -->
         </Grid.RowDefinitions>
 
-        <!-- Header toolbar -->
-        <Border Grid.Row="0"
-                Background="{DynamicResource Panel_ToolbarBrush}"
-                BorderBrush="{DynamicResource PFP_BorderBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="10,8">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="&#xE11A;" FontFamily="Segoe MDL2 Assets" FontSize="16"
-                           VerticalAlignment="Center" Margin="0,0,8,0"
-                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
-                <TextBlock Grid.Column="1" Text="Data Inspector"
-                           FontSize="14" FontWeight="Bold" VerticalAlignment="Center"
-                           Foreground="{DynamicResource PFP_TextBrush}"/>
-            </Grid>
-        </Border>
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- Row 0 — Unified toolbar (PanelToolbarStyle, H=26px)               -->
+        <!-- Left  : Scope | Chart toggles | Mode | Zoom | Refresh/Copy        -->
+        <!-- Right : Category filter | All formats                              -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Style="{StaticResource PanelToolbarStyle}">
+            <DockPanel LastChildFill="False" Margin="4,0">
 
-        <!-- Filters toolbar -->
-        <Border Grid.Row="1"
-                Background="{DynamicResource Panel_ToolbarBrush}"
-                BorderBrush="{DynamicResource PFP_BorderBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="10,6">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="0,0,10,0">
-                    <TextBlock Text="Category:" VerticalAlignment="Center" Margin="0,0,5,0"
-                               FontSize="11" Foreground="{DynamicResource PFP_TextBrush}"/>
-                    <ComboBox x:Name="CategoryFilterComboBox" Width="120" FontSize="11"
-                              SelectedValue="{Binding SelectedCategory, Mode=TwoWay}">
-                        <ComboBoxItem Content="All" IsSelected="True"/>
-                        <ComboBoxItem Content="Integer"/>
-                        <ComboBoxItem Content="Float"/>
-                        <ComboBoxItem Content="Date/Time"/>
-                        <ComboBoxItem Content="Network"/>
-                        <ComboBoxItem Content="GUID"/>
-                        <ComboBoxItem Content="Color"/>
-                        <ComboBoxItem Content="Basic"/>
-                        <ComboBoxItem Content="Bits"/>
-                    </ComboBox>
-                </StackPanel>
-                <CheckBox Grid.Column="2" Content="Show all formats" VerticalAlignment="Center"
+                <!-- ── RIGHT side: Inspector controls ────────────────────────── -->
+                <CheckBox DockPanel.Dock="Right"
+                          Content="All formats"
+                          VerticalAlignment="Center"
                           IsChecked="{Binding ShowAllFormats, Mode=TwoWay}"
-                          FontSize="11" Foreground="{DynamicResource PFP_TextBrush}"/>
-            </Grid>
+                          FontSize="11"
+                          Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                          Margin="0,0,6,0"/>
+
+                <Rectangle DockPanel.Dock="Right" Style="{StaticResource PanelToolbarSeparatorStyle}"/>
+
+                <TextBlock DockPanel.Dock="Right"
+                           Text="Category:"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                           Margin="0,0,4,0"/>
+
+                <ComboBox DockPanel.Dock="Right"
+                          x:Name="CategoryFilterComboBox"
+                          Width="100" FontSize="11"
+                          VerticalAlignment="Center"
+                          SelectedValue="{Binding SelectedCategory, Mode=TwoWay}"
+                          SelectedValuePath="Content">
+                    <ComboBoxItem Content="All"       IsSelected="True"/>
+                    <ComboBoxItem Content="Integer"/>
+                    <ComboBoxItem Content="Float"/>
+                    <ComboBoxItem Content="Date/Time"/>
+                    <ComboBoxItem Content="Network"/>
+                    <ComboBoxItem Content="GUID"/>
+                    <ComboBoxItem Content="Color"/>
+                    <ComboBoxItem Content="Basic"/>
+                    <ComboBoxItem Content="Bits"/>
+                </ComboBox>
+
+                <Rectangle DockPanel.Dock="Right" Style="{StaticResource PanelToolbarSeparatorStyle}"/>
+
+                <!-- ── LEFT side: Scope ──────────────────────────────────────── -->
+                <TextBlock DockPanel.Dock="Left"
+                           Text="Scope:"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                           Margin="4,0,4,0"/>
+
+                <ComboBox DockPanel.Dock="Left"
+                          x:Name="ScopeComboBox"
+                          Width="110" FontSize="11"
+                          VerticalAlignment="Center"
+                          SelectionChanged="OnScopeChanged">
+                    <ComboBoxItem x:Name="ScopeSelection" Content="Selection" IsSelected="True"/>
+                    <ComboBoxItem x:Name="ScopeWholeFile" Content="Whole file"/>
+                </ComboBox>
+
+                <Rectangle DockPanel.Dock="Left" Style="{StaticResource PanelToolbarSeparatorStyle}"/>
+
+                <!-- ── LEFT side: Chart display toggles ─────────────────────── -->
+                <ToggleButton DockPanel.Dock="Left"
+                              x:Name="ToggleLabels"
+                              Style="{StaticResource PanelIconToggleStyle}"
+                              Content="&#xE8EC;"
+                              IsChecked="True"
+                              ToolTip="Show axis labels"
+                              Checked="OnToggleLabels" Unchecked="OnToggleLabels"/>
+
+                <ToggleButton DockPanel.Dock="Left"
+                              x:Name="ToggleGrid"
+                              Style="{StaticResource PanelIconToggleStyle}"
+                              Content="&#xE80A;"
+                              IsChecked="False"
+                              ToolTip="Show grid lines"
+                              Checked="OnToggleGrid" Unchecked="OnToggleGrid"/>
+
+                <ToggleButton DockPanel.Dock="Left"
+                              x:Name="ToggleStats"
+                              Style="{StaticResource PanelIconToggleStyle}"
+                              Content="&#xE9D9;"
+                              IsChecked="True"
+                              ToolTip="Show statistics overlay"
+                              Checked="OnToggleStats" Unchecked="OnToggleStats"/>
+
+                <Rectangle DockPanel.Dock="Left" Style="{StaticResource PanelToolbarSeparatorStyle}"/>
+
+                <!-- ── LEFT side: Chart mode dropdown ───────────────────────── -->
+                <Button DockPanel.Dock="Left"
+                        x:Name="ModeButton"
+                        Style="{StaticResource PanelDropdownButtonStyle}"
+                        ToolTip="Chart display mode"
+                        Click="OnModeButtonClick">
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="ModeLabel" Text="Frequency" FontSize="11"/>
+                            <TextBlock Text=" &#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="9"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button.Content>
+                    <Button.ContextMenu>
+                        <ContextMenu x:Name="ModeContextMenu">
+                            <MenuItem Header="Frequency distribution"
+                                      Click="OnModeFrequency"
+                                      IsCheckable="True" x:Name="ModeFrequencyItem" IsChecked="True"/>
+                            <MenuItem Header="Entropy (sliding window)"
+                                      Click="OnModeEntropy"
+                                      IsCheckable="True" x:Name="ModeEntropyItem"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+
+                <Rectangle DockPanel.Dock="Left" Style="{StaticResource PanelToolbarSeparatorStyle}"/>
+
+                <!-- ── LEFT side: Zoom controls ─────────────────────────────── -->
+                <Button DockPanel.Dock="Left"
+                        Style="{StaticResource PanelIconButtonStyle}"
+                        Content="&#xE8A3;"
+                        ToolTip="Zoom in (mouse wheel also works)"
+                        Click="OnZoomIn"/>
+
+                <Button DockPanel.Dock="Left"
+                        Style="{StaticResource PanelIconButtonStyle}"
+                        Content="&#xE71F;"
+                        ToolTip="Zoom out"
+                        Click="OnZoomOut"/>
+
+                <Button DockPanel.Dock="Left"
+                        Style="{StaticResource PanelIconButtonStyle}"
+                        Content="&#xE740;"
+                        ToolTip="Reset zoom (show full 0x00–0xFF)"
+                        Click="OnZoomReset"/>
+
+                <Rectangle DockPanel.Dock="Left" Style="{StaticResource PanelToolbarSeparatorStyle}"/>
+
+                <!-- ── LEFT side: Refresh + Copy ────────────────────────────── -->
+                <Button DockPanel.Dock="Left"
+                        Style="{StaticResource PanelIconButtonStyle}"
+                        Content="&#xE72C;"
+                        ToolTip="Refresh chart"
+                        Click="OnRefresh"/>
+
+                <Button DockPanel.Dock="Left"
+                        Style="{StaticResource PanelIconButtonStyle}"
+                        Content="&#xE8C8;"
+                        ToolTip="Copy chart as image"
+                        Click="OnCopyChart"/>
+
+            </DockPanel>
         </Border>
 
-        <!-- Values list -->
-        <ScrollViewer Grid.Row="2"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Background="{DynamicResource PFP_PanelBackgroundBrush}">
-            <ItemsControl x:Name="ValuesItemsControl"
-                          ItemsSource="{Binding Values}"
-                          ItemTemplate="{StaticResource InspectorValueTemplate}">
-                <ItemsControl.Template>
-                    <ControlTemplate TargetType="ItemsControl">
-                        <Border Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <ItemsPresenter/>
-                        </Border>
-                    </ControlTemplate>
-                </ItemsControl.Template>
-            </ItemsControl>
-        </ScrollViewer>
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- Row 1 — Main area: ByteChart (left) | Interpretations (right)     -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1" x:Name="MainAreaGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="ChartColumnDef"    Width="*" MinWidth="120"/> <!-- chart area   -->
+                <ColumnDefinition x:Name="SplitterColumnDef" Width="5"/>                <!-- splitter     -->
+                <ColumnDefinition                            Width="280" MinWidth="160"/> <!-- interpretations -->
+            </Grid.ColumnDefinitions>
 
-        <!-- Status bar -->
-        <Border Grid.Row="3"
+            <!-- ── Col 0: Chart area ─────────────────────────────────────────── -->
+            <Grid Grid.Column="0" x:Name="ChartContainer">
+
+                <!-- Frequency mode: BarChartPanel wrapped in horizontal ScrollViewer for zoom -->
+                <ScrollViewer x:Name="ChartScrollViewer"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled"
+                              Visibility="Visible"
+                              SizeChanged="OnChartScrollViewerSizeChanged">
+                    <chart:BarChartPanel x:Name="Chart"
+                                         MinHeight="50"
+                                         MouseLeftButtonDown="OnChartMouseDown"
+                                         MouseMove="OnChartMouseMove"
+                                         MouseLeftButtonUp="OnChartMouseUp"
+                                         MouseWheel="OnChartMouseWheel"
+                                         Cursor="Crosshair"/>
+                </ScrollViewer>
+
+                <!-- Entropy mode: sliding-window canvas (alternate) -->
+                <Canvas x:Name="EntropyCanvas"
+                        Visibility="Collapsed"
+                        MinHeight="50"
+                        SizeChanged="OnEntropyCanvasSizeChanged"
+                        Background="{DynamicResource PFP_PanelBackgroundBrush}"/>
+
+                <!-- Drag-to-zoom rubber band overlay (hit-test transparent) -->
+                <Canvas x:Name="ZoomRubberBandCanvas"
+                        IsHitTestVisible="False"/>
+
+                <!-- Async progress overlay (visible during WholeFile load > 1 MB) -->
+                <Border x:Name="ProgressOverlay"
+                        Visibility="Collapsed"
+                        Background="#AA1E1E1E"
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Stretch">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock x:Name="ProgressLabel"
+                                   Text="Analyzing file..."
+                                   FontSize="11"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,6"/>
+                        <ProgressBar x:Name="LoadingProgress"
+                                     Width="200" Height="6"
+                                     IsIndeterminate="True"
+                                     Foreground="{DynamicResource Panel_ToolbarButtonActiveBrush}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ── Col 1: GridSplitter ──────────────────────────────────────── -->
+            <GridSplitter x:Name="ChartSplitter"
+                          Grid.Column="1"
+                          Width="5"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Background="{DynamicResource PFP_BorderBrush}"
+                          Cursor="SizeWE"/>
+
+            <!-- ── Col 2: Byte interpretations ──────────────────────────────── -->
+            <ScrollViewer Grid.Column="2"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Background="{DynamicResource PFP_PanelBackgroundBrush}">
+                <ItemsControl x:Name="ValuesItemsControl"
+                              ItemsSource="{Binding Values}"
+                              ItemTemplate="{StaticResource InspectorValueTemplate}">
+                    <ItemsControl.Template>
+                        <ControlTemplate TargetType="ItemsControl">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                <ItemsPresenter/>
+                            </Border>
+                        </ControlTemplate>
+                    </ItemsControl.Template>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- Row 2 — Status bar (chart stats left | interpretations count right) -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2"
                 Background="{DynamicResource Panel_ToolbarBrush}"
                 BorderBrush="{DynamicResource PFP_BorderBrush}"
                 BorderThickness="0,1,0,0"
-                Padding="10,4">
-            <TextBlock FontSize="10" Foreground="{DynamicResource PFP_SubTextBrush}">
-                <Run Text="Interpretations: "/>
-                <Run Text="{Binding Values.Count, Mode=OneWay}" FontWeight="Bold"/>
-            </TextBlock>
+                Padding="6,3">
+            <DockPanel>
+                <!-- Right: interpretations count -->
+                <TextBlock DockPanel.Dock="Right"
+                           FontSize="10"
+                           Foreground="{DynamicResource PFP_SubTextBrush}"
+                           VerticalAlignment="Center">
+                    <Run Text="Interpretations: "/>
+                    <Run Text="{Binding Values.Count, Mode=OneWay}" FontWeight="Bold"/>
+                </TextBlock>
+
+                <!-- Left: chart stats (chart-side context) -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="EntropyText"
+                               FontSize="10" FontFamily="Consolas"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="SepEntropy" Text=" | " FontSize="10"
+                               Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="MostCommonText"
+                               FontSize="10" FontFamily="Consolas"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="SepMostCommon" Text=" | " FontSize="10"
+                               Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="NullPctText"
+                               FontSize="10" FontFamily="Consolas"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="SepNull" Text=" | " FontSize="10"
+                               Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="AsciiPctText"
+                               FontSize="10" FontFamily="Consolas"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="SepAscii" Text=" | " FontSize="10"
+                               Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="TotalBytesText"
+                               Text="No data"
+                               FontSize="10" FontFamily="Consolas"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="SepZoom" Text=" | " FontSize="10"
+                               Visibility="Collapsed"
+                               Foreground="{DynamicResource Panel_ToolbarBorderBrush}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock x:Name="ZoomRangeText"
+                               FontSize="10" FontFamily="Consolas"
+                               Visibility="Collapsed"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
         </Border>
     </Grid>
 </UserControl>

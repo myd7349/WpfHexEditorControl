@@ -26,7 +26,9 @@ public class DocumentOperationEventArgs : EventArgs
 /// </summary>
 public class DocumentOperationCompletedEventArgs : EventArgs
 {
-    public bool   Success      { get; set; }
-    public bool   WasCancelled { get; set; }
-    public string ErrorMessage { get; set; } = "";
+    public bool   Success           { get; set; }
+    public bool   WasCancelled      { get; set; }
+    public string ErrorMessage      { get; set; } = "";
+    /// <summary>When true, the host should silently close the editor tab after logging the error.</summary>
+    public bool   CloseTabOnFailure { get; set; }
 }

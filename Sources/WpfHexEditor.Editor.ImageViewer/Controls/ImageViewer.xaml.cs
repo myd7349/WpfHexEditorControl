@@ -422,8 +422,13 @@ public sealed partial class ImageViewer : UserControl,
         {
             var msg = $"Cannot open image '{Path.GetFileName(filePath)}': {ex.Message}";
             StatusMessage?.Invoke(this, msg);
-            OutputMessage?.Invoke(this, msg);  // route error to Output panel
-            OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { Success = false, ErrorMessage = ex.Message });
+            // ErrorMessage carries the full contextual message; MainWindow logs it as Error and closes the tab.
+            OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs
+            {
+                Success           = false,
+                ErrorMessage      = msg,
+                CloseTabOnFailure = true
+            });
         }
         finally
         {
