@@ -4,8 +4,7 @@
 
   <h3>⚡ The Fastest Wpf Hex Editor IDE for .NET ⚡</h3>
 
-  [![NuGet Legacy V1](https://img.shields.io/nuget/v/WPFHexaEditor?color=blue&label=NuGet%20(Legacy%20V1)&logo=nuget)](https://www.nuget.org/packages/WPFHexaEditor/)
-  [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
   [![IDE Version](https://img.shields.io/badge/IDE-v0.2.5-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
