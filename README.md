@@ -103,6 +103,9 @@ WpfHexEditor uses a **plugin architecture** (`IDocumentEditor`) — every editor
 | **Diff / Changeset Viewer** | 🔧 Active | ~35% | Side-by-side binary comparison and changeset replay |
 | **Disassembly Viewer** | 🔧 Stub | ~5% | Binary disassembler (planned) |
 | **Structure Editor** | 🔧 Active | ~30% | Binary template / structure editor |
+| **Decompiled Source Viewer** | 🔜 Planned | ~0% | C# skeleton + full IL view via ILSpy backend; "Go to Metadata Token" navigation from Assembly Explorer (#106) |
+| **Memory Snapshot Viewer** | 🔜 Planned | ~0% | Load Windows mini-dump `.dmp` / Linux core-dump; display memory regions, thread stacks, modules, heap blocks (#117) |
+| **PCAP / Network Capture Viewer** | 🔜 Planned | ~0% | Load `.pcap` / `.pcapng`; packet list, layer breakdown (Ethernet/IP/TCP/UDP/TLS), raw payload in hex view (#136) |
 
 > **Implementing a new editor?** See [IDocumentEditor contract](Sources/WpfHexEditor.Editor.Core/) and register via `EditorRegistry`.
 
