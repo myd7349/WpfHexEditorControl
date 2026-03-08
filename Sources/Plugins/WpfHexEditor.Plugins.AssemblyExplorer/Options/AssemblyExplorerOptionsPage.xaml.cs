@@ -76,7 +76,11 @@ public partial class AssemblyExplorerOptionsPage : UserControl
     // ── Handlers ──────────────────────────────────────────────────────────────
 
     private void OnFontSizeChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        => FontSizeLabel.Text = $"{(int)e.NewValue}pt";
+    {
+        // FontSizeLabel may not exist yet if the Slider fires ValueChanged during InitializeComponent.
+        if (FontSizeLabel is null) return;
+        FontSizeLabel.Text = $"{(int)e.NewValue}pt";
+    }
 
     private void OnClearRecentClick(object sender, RoutedEventArgs e)
     {
