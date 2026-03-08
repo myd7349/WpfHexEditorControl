@@ -185,6 +185,12 @@ public sealed class AssemblyExplorerViewModel : INotifyPropertyChanged
 
     private AssemblyModel? _lastModel;
 
+    /// <summary>
+    /// File path of the currently loaded assembly, or null when no assembly is loaded.
+    /// Exposed for code-behind/detail pane consumers that need on-demand file access (IL, hex).
+    /// </summary>
+    public string? CurrentAssemblyFilePath => _lastModel?.FilePath;
+
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// <summary>
@@ -251,7 +257,7 @@ public sealed class AssemblyExplorerViewModel : INotifyPropertyChanged
     /// </summary>
     public void OnNodeSelected(AssemblyNodeViewModel node)
     {
-        DetailViewModel.ShowNode(node);
+        DetailViewModel.ShowNode(node, _lastModel?.FilePath ?? string.Empty);
         NavigateHexEditorToNode(node);
         PublishMemberSelected(node);
     }

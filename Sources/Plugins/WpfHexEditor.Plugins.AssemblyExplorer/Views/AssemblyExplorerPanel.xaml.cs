@@ -159,7 +159,7 @@ public partial class AssemblyExplorerPanel : UserControl
     }
 
     private void OnDecompile(object? sender, AssemblyNodeViewModel node)
-        => ViewModel.DetailViewModel.ShowNode(node);
+        => ViewModel.DetailViewModel.ShowNode(node, ViewModel.CurrentAssemblyFilePath ?? string.Empty);
 
     private void OnCopyName(object? sender, AssemblyNodeViewModel node)
         => SafeCopy(node.DisplayName);
