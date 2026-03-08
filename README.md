@@ -374,6 +374,7 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, and
 | **IDE Localization Engine** — full IDE UI (HexEditor control already 19 languages) | 🔜 Planned | #100 |
 | **Official Website** — landing page, docs, downloads, plugin registry | 🔜 Planned | #108 |
 | **Installable Package** — MSI / MSIX / WinGet, auto-update, no SDK required | 🔜 Planned | #109 |
+| **In-IDE Plugin Development** — write, build, hot-reload and live-test SDK plugins without leaving the IDE | 🔜 Planned | #138 |
 
 ---
 

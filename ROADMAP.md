@@ -167,6 +167,7 @@ Features already shipped are in [CHANGELOG.md](CHANGELOG.md).
 | #133 | **Command Palette (Ctrl+Shift+P)** | VS Code-style fuzzy-search palette surfacing all IDE commands, open documents, settings, and plugin actions with keyboard navigation and recent-command history. |
 | #134 | **Extension Point Debugger** | Developer panel listing every SDK extension point (menus, toolbar, statusbar, eventbus) registered by each plugin with live invocation counts and last-call stack. |
 | #135 | **Workspace File Watcher** | Monitor all open project files for external changes (from other processes or Git operations); prompt to reload, diff, or merge changes without closing the editor tab. |
+| #138 | **In-IDE Plugin Development** | Develop, build, hot-reload, and live-test SDK plugins directly inside the IDE — `PluginProjectTemplate` scaffolding, MSBuild integration (#103), collectible `AssemblyLoadContext` hot-reload, lightweight sandbox, full SDK IntelliSense, Plugin Dev Log panel, and `.whxplugin` packaging; no external toolchain required. |
 
 ---
 

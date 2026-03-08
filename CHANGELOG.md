@@ -61,6 +61,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 - **#102 C# / VB.NET Project Support** — full `.csproj` / `.vbproj` parsing; properties, item groups, package references, project-to-project references; read/write support
 - **#103 MSBuild API Integration** — build, rebuild, clean targets from within the IDE via embedded MSBuild API; build output routed to Output Panel; errors and warnings surfaced in Error Panel with file/line navigation
 
+### Plugin Developer Experience
+- **#138 In-IDE Plugin Development** — full authoring workflow inside the IDE: `PluginProjectTemplate` scaffolding (`.whproj` + manifest + starter class), MSBuild build integration (#103) with Output/Error Panel routing, collectible `AssemblyLoadContext` hot-reload without IDE restart, lightweight `PluginDevSandbox` for crash isolation, full SDK IntelliSense with XML docs and snippets (`plugin-panel`, `plugin-toolbar`, `plugin-statusbar`, `plugin-options`), dedicated "Plugin Dev Log" dockable panel (console redirect, exceptions, perf metrics), and `.whxplugin` packaging for direct distribution or Marketplace (#41) submission — no external toolchain required
+
 ### Assembly Explorer & .NET Decompilation
 - **#104 Assembly Explorer Panel — Full Tree** — namespaces, types (class/struct/interface/enum/delegate), methods, fields, properties, events, resources, assembly references; filter/search; node icons per visibility and kind
 - **#105 ECMA-335 Metadata Resolution** — full `PeOffsetResolver` implementation (§II.24 table offsets); metadata token → PE file offset; offset-to-source synchronization with HexEditor (click node → jump to raw bytes)
