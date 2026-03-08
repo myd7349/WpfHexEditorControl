@@ -79,7 +79,7 @@
 - **Parsed Fields Panel** with structure overlay
 - **Data Inspector** — 40+ type interpretations
 - **Assembly Explorer** — .NET PE inspection, types, methods, fields; ILSpy decompilation *(#104-106 — in progress)*
-- **19 languages** with instant switching *(partial — not all languages fully translated)*
+- **HexEditor control** — 19 languages with instant switching *(IDE UI is English only — full localization engine coming soon)*
 
 </td>
 </tr>
@@ -343,6 +343,7 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 | **Integrated Debugger** | 🔜 Planned | #44, #90 |
 | **Git Integration** | 🔜 Planned | #91 |
 | **Plugin Marketplace & Auto-Update** | 🔜 Planned | #41–43 |
+| **IDE Localization Engine** — full IDE UI translation beyond HexEditor control | 🔜 Coming Soon | #100 |
 
 ---
 
