@@ -100,16 +100,19 @@ public sealed class PluginAlertEngine
 
     private PluginAlertEventArgs? EvaluateEntry(PluginEntry entry, DiagnosticsSnapshot snap)
     {
-        if (snap.CpuPercent > CpuAlertThreshold)
+        // Defensively clamp CPU % to 0–100 regardless of how the sample was computed.
+        var cpu = Math.Clamp(snap.CpuPercent, 0.0, 100.0);
+
+        if (cpu > CpuAlertThreshold)
         {
             return new PluginAlertEventArgs
             {
                 PluginId       = entry.Manifest.Id,
                 PluginName     = entry.Manifest.Name,
                 Kind           = PluginAlertKind.Cpu,
-                CurrentValue   = snap.CpuPercent,
+                CurrentValue   = cpu,
                 ThresholdValue = CpuAlertThreshold,
-                Message        = $"CPU {snap.CpuPercent:F1}% exceeds threshold {CpuAlertThreshold:F0}%"
+                Message        = $"CPU {cpu:F1}% exceeds threshold {CpuAlertThreshold:F0}%"
             };
         }
 

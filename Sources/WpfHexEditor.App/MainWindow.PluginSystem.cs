@@ -181,7 +181,7 @@ public partial class MainWindow
 
                 if (_pendingPluginMonitorPanel is not null && _pluginHost is not null)
                 {
-                    var vm = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher);
+                    var vm = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
                     _pendingPluginMonitorPanel.DataContext = vm;
                     _pendingPluginMonitorPanel = null;
                 }
@@ -509,7 +509,7 @@ public partial class MainWindow
             return;
         }
 
-        var vm      = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher);
+        var vm      = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
         var control = new WpfHexEditor.Panels.IDE.Panels.PluginMonitoringPanel { DataContext = vm };
 
         var item = new DockItem
@@ -588,7 +588,7 @@ public partial class MainWindow
 
         if (_pluginHost is not null)
         {
-            var vm = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher);
+            var vm = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
             panel.DataContext = vm;
         }
         else
