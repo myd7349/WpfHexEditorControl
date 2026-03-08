@@ -264,7 +264,7 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, and
 
 ### Embed the HexEditor in your WPF app
 
-**Reference the V2 projects:**
+**Reference the projects:**
 ```xml
 <ProjectReference Include="..\WpfHexEditor.Core\WpfHexEditor.Core.csproj" />
 <ProjectReference Include="..\WpfHexEditor.HexEditor\WpfHexEditor.HexEditor.csproj" />
@@ -277,7 +277,7 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, and
 </Window>
 ```
 
-> **NuGet:** A V1 legacy package (`WPFHexaEditor`) is still available on NuGet but is no longer maintained. V2 NuGet packaging is planned.
+> **NuGet:** A legacy package (`WPFHexaEditor`) is still available on NuGet but is no longer maintained. NuGet packaging is planned (#109).
 
 > **JetBrains Rider:** See the **[Rider Guide](docs/IDE/RIDER_GUIDE.md)** for IntelliSense tips.
 
@@ -383,7 +383,7 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, and
 | **[GETTING_STARTED.md](GETTING_STARTED.md)** | Run the IDE or embed the control — step by step |
 | **[FEATURES.md](FEATURES.md)** | Complete feature list — IDE, editors, panels, controls |
 | **[CHANGELOG.md](CHANGELOG.md)** | Version history and what's new |
-| **[MIGRATION.md](docs/migration/MIGRATION.md)** | V1 → V2 migration guide (zero code changes required) |
+| **[MIGRATION.md](docs/migration/MIGRATION.md)** | Legacy V1 → migration guide (zero code changes required) |
 
 ### Developer Reference
 
