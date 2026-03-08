@@ -149,6 +149,7 @@ public partial class PluginMonitoringPanel : UserControl
             ApplySparklineVisibility();
             SyncLayoutCombo(_vm.ChartsPosition);
             RebuildContentGrid(_vm.ChartsPosition);
+            ApplyEventLogVisibility();
         }
 
         RedrawCharts();
@@ -156,10 +157,18 @@ public partial class PluginMonitoringPanel : UserControl
 
     private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(PluginMonitoringViewModel.ChartsPosition))
-            RebuildContentGrid(_vm!.ChartsPosition);
-        else if (e.PropertyName == nameof(PluginMonitoringViewModel.ShowSparklines))
-            ApplySparklineVisibility();
+        switch (e.PropertyName)
+        {
+            case nameof(PluginMonitoringViewModel.ChartsPosition):
+                RebuildContentGrid(_vm!.ChartsPosition);
+                break;
+            case nameof(PluginMonitoringViewModel.ShowSparklines):
+                ApplySparklineVisibility();
+                break;
+            case nameof(PluginMonitoringViewModel.ShowEventLog):
+                ApplyEventLogVisibility();
+                break;
+        }
     }
 
     // ── Sparkline column visibility ──────────────────────────────────────────
@@ -172,6 +181,30 @@ public partial class PluginMonitoringPanel : UserControl
         var vis = (_vm?.ShowSparklines ?? true) ? Visibility.Visible : Visibility.Collapsed;
         SparklineCpuColumn.Visibility = vis;
         SparklineMemColumn.Visibility = vis;
+    }
+
+    // ── EventLog visibility ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Shows or hides the EventLog splitter and area based on the user's ShowEventLog
+    /// toggle and whether there are any log entries. Also adjusts the outer grid row
+    /// heights so hidden rows consume no space.
+    /// </summary>
+    private void ApplyEventLogVisibility()
+    {
+        var show = (_vm?.ShowEventLog ?? true) && (_vm?.EventLog.Count ?? 0) > 0;
+        var vis  = show ? Visibility.Visible : Visibility.Collapsed;
+
+        EventLogSplitter.Visibility = vis;
+        EventLogArea.Visibility     = vis;
+
+        // When hidden, collapse the rows entirely so they don't reserve space.
+        RootGrid.RowDefinitions[4].Height = show
+            ? new GridLength(4)
+            : new GridLength(0);
+        RootGrid.RowDefinitions[5].Height = show
+            ? new GridLength(1, GridUnitType.Star)
+            : new GridLength(0);
     }
 
     // ── Layout ───────────────────────────────────────────────────────────────
@@ -204,8 +237,11 @@ public partial class PluginMonitoringPanel : UserControl
         if (LayoutPositionCombo.SelectedItem is not ComboBoxItem item) return;
         if (!Enum.TryParse<MonitorChartsPosition>(item.Tag?.ToString(), out var pos)) return;
 
+        // Setting ChartsPosition fires OnVmPropertyChanged → RebuildContentGrid.
+        // Do NOT call RebuildContentGrid here to avoid creating a second set of
+        // RowDefinition/ColumnDefinition objects, which would corrupt the GridSplitter
+        // adjacent-definition references and break dragging after repeated layout changes.
         _vm.ChartsPosition = pos;
-        RebuildContentGrid(pos);
     }
 
     /// <summary>
@@ -368,6 +404,9 @@ public partial class PluginMonitoringPanel : UserControl
         // Auto-scroll to the latest log entry.
         if (_vm?.EventLog.Count > 0)
             EventLogListBox.ScrollIntoView(_vm.EventLog[^1]);
+
+        // Show/hide the log section based on current ShowEventLog flag and whether there are entries.
+        ApplyEventLogVisibility();
     }
 
     // ── Drag-drop install ────────────────────────────────────────────────────

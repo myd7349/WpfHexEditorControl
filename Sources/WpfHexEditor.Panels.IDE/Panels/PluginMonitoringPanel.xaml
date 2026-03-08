@@ -88,7 +88,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="26"/>            <!-- Row 0: Toolbar -->
             <RowDefinition Height="Auto"/>          <!-- Row 1: Filter chips strip -->
@@ -282,6 +282,15 @@
 
                     <Rectangle Width="1" Height="14" Margin="6,0"
                                Fill="{DynamicResource Panel_ToolbarBorderBrush}"/>
+
+                    <!-- Toggle event log visibility -->
+                    <Button Style="{DynamicResource PanelIconButtonStyle}"
+                            Command="{Binding ToggleEventLogCommand}"
+                            ToolTip="{Binding ShowEventLogTooltip}">
+                        <TextBlock Text="{Binding ShowEventLogIcon}"
+                                   FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Button>
 
                     <!-- Clear event log -->
                     <Button Style="{DynamicResource PanelIconButtonStyle}"
@@ -893,36 +902,17 @@
 
         </Grid><!-- end inner wrapper Grid (Row 3) -->
 
-        <!-- ── EventLog GridSplitter (resizable, hidden when log is empty) ────── -->
+        <!-- ── EventLog GridSplitter — visibility managed by ApplyEventLogVisibility() -->
         <GridSplitter x:Name="EventLogSplitter" Grid.Row="4" Height="4"
                       HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"
-                      Background="{DynamicResource Panel_ToolbarBorderBrush}">
-            <GridSplitter.Style>
-                <Style TargetType="GridSplitter">
-                    <Setter Property="Visibility" Value="Visible"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding EventLog.Count, FallbackValue=0}" Value="0">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </GridSplitter.Style>
-        </GridSplitter>
+                      Visibility="Collapsed"
+                      Background="{DynamicResource Panel_ToolbarBorderBrush}"/>
 
-        <!-- ── Live event log ────────────────────────────────────────────────── -->
+        <!-- ── Live event log — visibility managed by ApplyEventLogVisibility() ── -->
         <Border x:Name="EventLogArea" Grid.Row="5"
                 BorderBrush="{DynamicResource DockBorderBrush}" BorderThickness="0,1,0,0"
-                Background="{DynamicResource DockBackgroundBrush}" Margin="6,0,6,4">
-            <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="Visibility" Value="Visible"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding EventLog.Count, FallbackValue=0}" Value="0">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
+                Background="{DynamicResource DockBackgroundBrush}" Margin="6,0,6,4"
+                Visibility="Collapsed">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="16"/>

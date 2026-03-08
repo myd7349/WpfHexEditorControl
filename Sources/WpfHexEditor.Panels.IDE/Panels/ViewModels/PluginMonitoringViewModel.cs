@@ -434,6 +434,7 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
     private bool                  _isLandscape;
     private bool                  _isInstalling;
     private MonitorChartsPosition _chartsPosition = MonitorChartsPosition.Top;
+    private bool                  _showEventLog   = true;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -459,6 +460,7 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
         TogglePluginCommand      = new RelayCommand(_ => TogglePlugin());
         SetIntervalCommand       = new RelayCommand(p => { if (p is int s) SetInterval(s); });
         ToggleSparklinesCommand  = new RelayCommand(_ => ShowSparklines = !ShowSparklines);
+        ToggleEventLogCommand    = new RelayCommand(_ => ShowEventLog   = !ShowEventLog);
         ExportCsvCommand         = new RelayCommand(_ => ExportTo("csv"));
         ExportJsonCommand        = new RelayCommand(_ => ExportTo("json"));
         ExportCrashReportCommand = new RelayCommand(
@@ -497,6 +499,7 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
     public ICommand TogglePluginCommand      { get; }
     public ICommand SetIntervalCommand       { get; }
     public ICommand ToggleSparklinesCommand  { get; }
+    public ICommand ToggleEventLogCommand    { get; }
     public ICommand ExportCsvCommand         { get; }
     public ICommand ExportJsonCommand        { get; }
     public ICommand ExportCrashReportCommand { get; }
@@ -591,6 +594,23 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
             OnPropertyChanged();
         }
     }
+
+    /// <summary>When true, the event log section is visible at the bottom of the panel.</summary>
+    public bool ShowEventLog
+    {
+        get => _showEventLog;
+        set
+        {
+            if (_showEventLog == value) return;
+            _showEventLog = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ShowEventLogIcon));
+            OnPropertyChanged(nameof(ShowEventLogTooltip));
+        }
+    }
+
+    public string ShowEventLogIcon    => _showEventLog ? "\uE81C" : "\uE81B";  // ChevronDown / ChevronUp
+    public string ShowEventLogTooltip => _showEventLog ? "Hide event log"      : "Show event log";
 
     /// <summary>True while a plugin package is being installed. Drives the drop-zone progress overlay.</summary>
     public bool IsInstalling
