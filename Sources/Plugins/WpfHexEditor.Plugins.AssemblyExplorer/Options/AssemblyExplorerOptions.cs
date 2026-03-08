@@ -64,6 +64,26 @@ public sealed class AssemblyExplorerOptions
     /// <summary>Automatically analyze the file when it is opened in the HexEditor.</summary>
     public bool AutoAnalyzeOnFileOpen { get; set; } = true;
 
+    // ── Phase 6 additions ─────────────────────────────────────────────────────
+
+    /// <summary>Recently opened assembly paths (most-recent first, max 20 items).</summary>
+    public List<string> RecentFiles { get; set; } = [];
+
+    /// <summary>Keep loaded assemblies pinned when the active HexEditor file changes.</summary>
+    public bool PinAssembliesAcrossFileChange { get; set; } = false;
+
+    /// <summary>Show non-public members in the tree.</summary>
+    public bool ShowNonPublicMembers { get; set; } = true;
+
+    /// <summary>Show inherited members in the tree.</summary>
+    public bool ShowInheritedMembers { get; set; } = false;
+
+    /// <summary>
+    /// Default tab to activate in the detail pane.
+    /// "Code" | "IL" | "Info" | "Hex".
+    /// </summary>
+    public string DefaultDecompileTab { get; set; } = "Code";
+
     // ── Persistence ───────────────────────────────────────────────────────────
 
     private static readonly string FilePath = Path.Combine(
@@ -108,6 +128,20 @@ public sealed class AssemblyExplorerOptions
         {
             // Silently ignore — disk errors must not crash the IDE.
         }
+    }
+
+    /// <summary>
+    /// Adds <paramref name="filePath"/> to the top of <see cref="RecentFiles"/>,
+    /// removing any existing duplicate and trimming the list to 20 items.
+    /// Automatically saves options to disk.
+    /// </summary>
+    public void AddRecentFile(string filePath)
+    {
+        RecentFiles.RemoveAll(p => string.Equals(p, filePath, StringComparison.OrdinalIgnoreCase));
+        RecentFiles.Insert(0, filePath);
+        if (RecentFiles.Count > 20)
+            RecentFiles.RemoveRange(20, RecentFiles.Count - 20);
+        Save();
     }
 
     /// <summary>

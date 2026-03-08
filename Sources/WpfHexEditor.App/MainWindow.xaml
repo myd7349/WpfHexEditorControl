@@ -1,4 +1,4 @@
-<!--
+﻿<!--
     GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
@@ -58,7 +58,7 @@
                             Click="OnCloseWindow" ToolTip="Close" />
                 </StackPanel>
 
-                <!-- Logo (VS2022/VS Code style � far left, click = system menu) -->
+                <!-- Logo (VS2022/VS Code style — far left, click = system menu) -->
                 <Image DockPanel.Dock="Left"
                        Source="pack://application:,,,/WpfHexEditor.App;component/Logo.ico"
                        Width="20" Height="20"
@@ -74,11 +74,11 @@
                       VerticalAlignment="Center"
                       WindowChrome.IsHitTestVisibleInChrome="True">
 
-                    <!-- ----------- File ----------- -->
+                    <!-- ═══════════ File ═══════════ -->
                     <MenuItem Header="_File"
                               IsEnabled="{Binding IsMenuEnabled, ElementName=ThisWindow}">
 
-                        <!-- New ? -->
+                        <!-- New ► -->
                         <MenuItem Header="_New">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -109,7 +109,7 @@
                             </MenuItem>
                         </MenuItem>
 
-                        <!-- Open ? -->
+                        <!-- Open ► -->
                         <MenuItem Header="_Open">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -189,7 +189,18 @@
 
                         <Separator />
 
-                        <!-- Recent Solutions ? -->
+                        <!-- Options (VS-style document tab) -->
+                        <MenuItem Header="_Options..." Click="OnSettings">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <Separator />
+
+                        <!-- Recent Solutions ► -->
                         <MenuItem x:Name="RecentSolutionsMenuItem" Header="Recent _Solutions">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -199,7 +210,7 @@
                             <!-- Items populated dynamically -->
                         </MenuItem>
 
-                        <!-- Recent Files ? -->
+                        <!-- Recent Files ► -->
                         <MenuItem x:Name="RecentFilesMenuItem" Header="Recent _Files">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -219,7 +230,7 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ----------- Edit ----------- -->
+                    <!-- ═══════════ Edit ═══════════ -->
                     <MenuItem Header="_Edit"
                               IsEnabled="{Binding IsMenuEnabled, ElementName=ThisWindow}">
                         <MenuItem Header="_Undo"
@@ -313,7 +324,7 @@
                                   Click="OnFindPrevious"
                                   InputGestureText="Shift+F3" />
                         <Separator />
-                        <MenuItem Header="_Go To Offset�" Click="OnGoToOffset" InputGestureText="Ctrl+G">
+                        <MenuItem Header="_Go To Offset…" Click="OnGoToOffset" InputGestureText="Ctrl+G">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8A7;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -322,7 +333,7 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ----------- View ----------- -->
+                    <!-- ═══════════ View ═══════════ -->
                     <MenuItem Header="_View">
                         <MenuItem Header="_Solution Explorer" Click="OnShowSolutionExplorer" InputGestureText="Ctrl+Alt+L">
                             <MenuItem.Icon>
@@ -355,14 +366,14 @@
                         <!-- Plugin-contributed View menu items are injected here dynamically
                              by each plugin via IUIRegistry.RegisterMenuItem() at load time. -->
                         <Separator/>
-                        <MenuItem Header="_Compare Files�" Click="OnCompareFiles" InputGestureText="Ctrl+Alt+D">
+                        <MenuItem Header="_Compare Files…" Click="OnCompareFiles" InputGestureText="Ctrl+Alt+D">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE93D;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="_Entropy Analysis�" Click="OnEntropyAnalysis"
+                        <MenuItem Header="_Entropy Analysis…" Click="OnEntropyAnalysis"
                                   ToolTip="Analyse entropy and byte distribution of the active file">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -372,7 +383,7 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ----------- Project ----------- (enabled when solution loaded AND no operation active) -->
+                    <!-- ═══════════ Project ═══════════ (enabled when solution loaded AND no operation active) -->
                     <MenuItem Header="_Project"
                               IsEnabled="{Binding IsProjectMenuEnabled, ElementName=ThisWindow}">
                         <MenuItem Header="Add _New Item..." Click="OnProjectAddNewItem" InputGestureText="Ctrl+Shift+A">
@@ -407,7 +418,7 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ----------- Layout ----------- -->
+                    <!-- ═══════════ Layout ═══════════ -->
                     <MenuItem Header="_Layout">
                         <MenuItem Header="_Save Layout" Click="OnSaveLayout">
                             <MenuItem.Icon>
@@ -440,7 +451,7 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ----------- Tools ----------- -->
+                    <!-- ═══════════ Tools ═══════════ -->
                     <MenuItem Header="_Tools">
                         <MenuItem Header="_Terminal" Click="OnOpenTerminal">
                             <MenuItem.Icon>
@@ -449,20 +460,9 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-
-                        <Separator />
-
-                        <!-- Options � VS-style: always in Tools menu -->
-                        <MenuItem Header="_Options..." Click="OnSettings">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
                     </MenuItem>
 
-                    <!-- ----------- Plugins ----------- -->
+                    <!-- ═══════════ Plugins ═══════════ -->
                     <MenuItem Header="_Plugins">
                         <MenuItem Header="_Plugin Manager"
                                   Command="{x:Static local:MainWindow.OpenPluginManagerCommand}"
@@ -506,7 +506,7 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ----------- Theme ----------- -->
+                    <!-- ═══════════ Theme ═══════════ -->
                     <MenuItem Header="_Theme">
                         <MenuItem Header="_Dark" Click="OnDarkTheme">
                             <MenuItem.Icon>
@@ -567,7 +567,7 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ----------- Image ----------- -->
+                    <!-- ═══════════ Image ═══════════ -->
                     <!-- Visible only when an ImageViewer is the active/last-focused editor -->
                     <MenuItem Header="_Image"
                               Visibility="{Binding IsImageViewerActive, RelativeSource={RelativeSource AncestorType=Window},
@@ -665,14 +665,14 @@
             </DockPanel>
         </Border>
 
-        <!-- Toolbar � VS2026 pod pattern (7 pods)
-             +------------------------+ +---------------------------+ +----------------+ +----------------------------------+ +--------------+ +------------------+ +----------------+
-             �  New?  Open?  � ?? ??All � �  ? Undo  ? Redo  � ? ? ?? � �  ?? Find  � ? ? � �  ?? Explorer  � =  � ?  � ? Output � �  Layout?     � � [editor actions] � � ?? TBL?       �
-             +------------------------+ +---------------------------+ +----------------+ +----------------------------------+ +--------------+ +------------------+ +----------------+
+        <!-- Toolbar — VS2026 pod pattern (7 pods)
+             ┌────────────────────────┐ ┌───────────────────────────┐ ┌────────────────┐ ┌──────────────────────────────────┐ ┌──────────────┐ ┌──────────────────┐ ┌────────────────┐
+             │  New▾  Open▾  │ 💾 💾All │ │  ↩ Undo  ↪ Redo  │ ✂ ⧉ 📋 │ │  🔍 Find  │ ↓ ↑ │ │  🔍 Explorer  │ ≡  │ ⚙  │ ▪ Output │ │  Layout▾     │ │ [editor actions] │ │ 🔤 TBL▾       │
+             └────────────────────────┘ └───────────────────────────┘ └────────────────┘ └──────────────────────────────────┘ └──────────────┘ └──────────────────┘ └────────────────┘
                      Pod File                    Pod Edit                   Pod Find                     Pod View                  Pod Layout      Pod contextuel       Pod TBL        -->
         <ToolBar Grid.Row="1" Style="{DynamicResource DockDarkToolBarStyle}">
 
-            <!-- -- Home ---------------------------------------------------- -->
+            <!-- ── Home ──────────────────────────────────────────────────── -->
             <Border Style="{DynamicResource DockToolBarPodStyle}">
                 <Button Click="OnShowWelcome" ToolTip="Welcome Page"
                         Style="{DynamicResource DockDarkToolBarButtonStyle}">
@@ -683,29 +683,29 @@
 
             <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
 
-            <!-- -- Pod 1 : File --------------------------------------------- -->
+            <!-- ── Pod 1 : File ───────────────────────────────────────────── -->
             <Border Style="{DynamicResource DockToolBarPodStyle}">
                 <StackPanel Orientation="Horizontal">
 
-                    <!-- New ? : New File / New Project / New Solution -->
-                    <Button Click="OnToolBarDropDownClick" ToolTip="New�"
+                    <!-- New ▾ : New File / New Project / New Solution -->
+                    <Button Click="OnToolBarDropDownClick" ToolTip="New…"
                             Style="{DynamicResource DockToolBarPodDropDownButtonStyle}">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="New _File�"     Click="OnNewFile"
+                                <MenuItem Header="New _File…"     Click="OnNewFile"
                                           InputGestureText="Ctrl+N">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                    Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="New _Project�"  Click="OnNewProject">
+                                <MenuItem Header="New _Project…"  Click="OnNewProject">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE8F9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                    Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="New _Solution�" Click="OnNewSolution"
+                                <MenuItem Header="New _Solution…" Click="OnNewSolution"
                                           InputGestureText="Ctrl+Shift+N">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -720,19 +720,19 @@
 
                     <Separator Style="{DynamicResource DockToolBarPodDividerStyle}"/>
 
-                    <!-- Open ? : Open File / Open Solution or Project -->
-                    <Button Click="OnToolBarDropDownClick" ToolTip="Open�"
+                    <!-- Open ▾ : Open File / Open Solution or Project -->
+                    <Button Click="OnToolBarDropDownClick" ToolTip="Open…"
                             Style="{DynamicResource DockToolBarPodDropDownButtonStyle}">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Open _File�"              Click="OnOpenFile"
+                                <MenuItem Header="Open _File…"              Click="OnOpenFile"
                                           InputGestureText="Ctrl+O">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE8E5;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                    Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="Open Solution/_Project�"  Click="OnOpenSolutionOrProject"
+                                <MenuItem Header="Open Solution/_Project…"  Click="OnOpenSolutionOrProject"
                                           InputGestureText="Ctrl+Shift+O">
                                     <MenuItem.Icon>
                                         <TextBlock Text="&#xE8F9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -747,7 +747,7 @@
 
                     <Separator Style="{DynamicResource DockToolBarPodDividerStyle}"/>
 
-                    <!-- Save � Command binding (auto-enable/disable) -->
+                    <!-- Save — Command binding (auto-enable/disable) -->
                     <Button Command="{x:Static ApplicationCommands.Save}"
                             ToolTip="Save (Ctrl+S)"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
@@ -767,11 +767,11 @@
 
             <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
 
-            <!-- -- Pod 2 : Edit --------------------------------------------- -->
+            <!-- ── Pod 2 : Edit ───────────────────────────────────────────── -->
             <Border Style="{DynamicResource DockToolBarPodStyle}">
                 <StackPanel Orientation="Horizontal">
 
-                    <!-- Undo / Redo � Command bindings -->
+                    <!-- Undo / Redo — Command bindings -->
                     <Button Command="{Binding ActiveDocumentEditor.UndoCommand, ElementName=ThisWindow}"
                             ToolTip="Undo (Ctrl+Z)"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
@@ -787,7 +787,7 @@
 
                     <Separator Style="{DynamicResource DockToolBarPodDividerStyle}"/>
 
-                    <!-- Cut / Copy / Paste � Command bindings -->
+                    <!-- Cut / Copy / Paste — Command bindings -->
                     <Button Command="{Binding ActiveDocumentEditor.CutCommand, ElementName=ThisWindow}"
                             ToolTip="Cut (Ctrl+X)"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
@@ -812,12 +812,12 @@
 
             <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
 
-            <!-- -- Pod 3 : Find --------------------------------------------- -->
+            <!-- ── Pod 3 : Find ───────────────────────────────────────────── -->
             <Border Style="{DynamicResource DockToolBarPodStyle}">
                 <StackPanel Orientation="Horizontal">
 
-                    <!-- Find � icon + label -->
-                    <Button Click="OnShowAdvancedSearch" ToolTip="Find� (Ctrl+F)"
+                    <!-- Find — icon + label -->
+                    <Button Click="OnShowAdvancedSearch" ToolTip="Find… (Ctrl+F)"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="14"
@@ -844,7 +844,7 @@
                 </StackPanel>
             </Border>
 
-            <!-- -- Pod 4 : View (panneaux) ---------------------------------- -->
+            <!-- ── Pod 4 : View (panneaux) ────────────────────────────────── -->
             <Border Style="{DynamicResource DockToolBarPodStyle}">
                 <StackPanel Orientation="Horizontal">
 
@@ -890,19 +890,19 @@
 
             <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
 
-            <!-- -- Pod 5 : Layout ? ----------------------------------------- -->
+            <!-- ── Pod 5 : Layout ▾ ───────────────────────────────────────── -->
             <Border Style="{DynamicResource DockToolBarPodStyle}">
-                <Button Click="OnToolBarDropDownClick" ToolTip="Layout options�"
+                <Button Click="OnToolBarDropDownClick" ToolTip="Layout options…"
                         Style="{DynamicResource DockToolBarPodDropDownButtonStyle}">
                     <Button.ContextMenu>
                         <ContextMenu>
-                            <MenuItem Header="_Save Layout�"   Click="OnSaveLayout">
+                            <MenuItem Header="_Save Layout…"   Click="OnSaveLayout">
                                 <MenuItem.Icon>
                                     <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="_Load Layout�"   Click="OnLoadLayout">
+                            <MenuItem Header="_Load Layout…"   Click="OnLoadLayout">
                                 <MenuItem.Icon>
                                     <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                Foreground="{DynamicResource DockMenuForegroundBrush}"/>
@@ -952,7 +952,7 @@
                 <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
             </Border>
 
-            <!-- -- Pod contextuel � visible seulement quand un �diteur contribue --- -->
+            <!-- ── Pod contextuel — visible seulement quand un éditeur contribue ─── -->
             <Border>
                 <Border.Style>
                     <Style BasedOn="{StaticResource DockToolBarPodStyle}" TargetType="Border">
@@ -1052,7 +1052,7 @@
                 <Separator Style="{DynamicResource DockDarkToolBarSeparatorStyle}"/>
             </Border>
 
-            <!-- -- Pod TBL : s�lecteur de table (visible uniquement si HexEditor actif) -- -->
+            <!-- ── Pod TBL : sélecteur de table (visible uniquement si HexEditor actif) ── -->
             <Border>
                 <Border.Style>
                     <Style BasedOn="{StaticResource DockToolBarPodStyle}" TargetType="Border">
@@ -1093,7 +1093,7 @@
                                 <Style.Triggers>
                                     <!-- Headers: not focusable/clickable but visually ENABLED
                                          (IsEnabled stays True) so the bold text renders with full
-                                         color in any theme � no graying. -->
+                                         color in any theme — no graying. -->
                                     <DataTrigger Binding="{Binding IsHeader}" Value="True">
                                         <Setter Property="Focusable"        Value="False"/>
                                         <Setter Property="IsHitTestVisible" Value="False"/>
@@ -1147,7 +1147,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Plugin InfoBar � shown when a plugin is slow or has faulted (VS-style notification) -->
+            <!-- Plugin InfoBar — shown when a plugin is slow or has faulted (VS-style notification) -->
             <Border x:Name="PluginInfoBar" Grid.Row="0" Visibility="Collapsed"
                     Background="{DynamicResource PM_BadgeSlowBrush}" Padding="8,5">
                 <Grid>
@@ -1196,7 +1196,7 @@
             <dock:DockControl Grid.Row="1" x:Name="DockHost" Margin="2" />
         </Grid>
 
-        <!-- Status Bar � VS2022-style: adapts to the active document -->
+        <!-- Status Bar — VS2022-style: adapts to the active document -->
         <StatusBar x:Name="AppStatusBar" Grid.Row="3" Background="{DynamicResource DockTabActiveBrush}">
 
             <!-- Active editor interactive items (IStatusBarContributor) -->
@@ -1246,7 +1246,7 @@
                 </ItemsControl>
             </StatusBarItem>
 
-            <!-- Centre : progression des op�rations longues (visible uniquement pendant une op�ration) -->
+            <!-- Centre : progression des opérations longues (visible uniquement pendant une opération) -->
             <StatusBarItem x:Name="ProgressStatusItem" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="ProgressTitleText"
@@ -1265,7 +1265,7 @@
                                Margin="0,0,8,0"
                                VerticalAlignment="Center"/>
                     <Button x:Name="ProgressCancelButton"
-                            Content="?"
+                            Content="✕"
                             ToolTip="Cancel operation"
                             Click="OnProgressCancel"
                             Visibility="Collapsed"
@@ -1277,7 +1277,7 @@
 
             <!-- Plugin health indicator (click to open Plugin Manager) -->
             <StatusBarItem x:Name="PluginStatusItem" HorizontalAlignment="Right"
-                           Cursor="Hand" ToolTip="Plugin System Status � Click to open Plugin Manager"
+                           Cursor="Hand" ToolTip="Plugin System Status — Click to open Plugin Manager"
                            MouseLeftButtonDown="OnPluginStatusBarClick"
                            MouseRightButtonDown="OnPluginStatusBarRightClick">
                 <StackPanel Orientation="Horizontal" Margin="0,0,8,0">

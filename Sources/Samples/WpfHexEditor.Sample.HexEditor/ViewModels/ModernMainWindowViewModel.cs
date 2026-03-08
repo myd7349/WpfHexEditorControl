@@ -1,4 +1,4 @@
-//////////////////////////////////////////////
+ï»¿//////////////////////////////////////////////
 // GNU Affero General Public License v3.0  2026
 // HexEditor V2 - Modern Main Window ViewModel
 // Author : Derek Tremblay (derektremblay666@gmail.com)
@@ -632,7 +632,7 @@ namespace WpfHexEditor.Sample.HexEditor.ViewModels
                     _hexEditor.ClearSelection();
 
                     string scope = inSelectionOnly ? "in selection" : "in file";
-                    StatusMessage = $"Replaced {replacedCount} occurrences (0x{findByte:X2} ? 0x{replaceByte:X2}) {scope}";
+                    StatusMessage = $"Replaced {replacedCount} occurrences (0x{findByte:X2} â†’ 0x{replaceByte:X2}) {scope}";
                 }
             }
             catch (Exception ex)
@@ -853,11 +853,11 @@ namespace WpfHexEditor.Sample.HexEditor.ViewModels
             MessageBox.Show(
                 "WPF HexEditor V2 - Modern Sample 2026\n\n" +
                 "Ultra-performant hex editor with modern UI\n" +
-                "• 99% faster search with V2 engine\n" +
-                "• 4 modern themes\n" +
-                "• Multi-language support\n" +
-                "• Search-first architecture\n\n" +
-                "Apache 2.0 License © 2026\n" +
+                "â€¢ 99% faster search with V2 engine\n" +
+                "â€¢ 4 modern themes\n" +
+                "â€¢ Multi-language support\n" +
+                "â€¢ Search-first architecture\n\n" +
+                "Apache 2.0 License Â© 2026\n" +
                 "Author: Derek Tremblay\n" +
                 "Contributors: Claude Sonnet 4.5",
                 "About",
@@ -941,7 +941,7 @@ namespace WpfHexEditor.Sample.HexEditor.ViewModels
         {
             var settings = Properties.Settings.Default;
 
-            // Migration v2?v3 : the ParsedFieldsPanel was previously embedded inside
+            // Migration v2â†’v3 : the ParsedFieldsPanel was previously embedded inside
             // HexEditor (always visible). Now standalone, default must be true.
             if (settings.SettingsVersion < 3)
             {

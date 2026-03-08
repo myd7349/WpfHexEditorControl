@@ -1,0 +1,218 @@
+<!--
+    Project: WpfHexEditor.Plugins.AssemblyExplorer
+    File: Views/OpenAssemblyDialog.xaml
+    Author: Derek Tremblay
+    Created: 2026-03-08
+    License: GNU Affero General Public License v3.0 (AGPL-3.0)
+    Description:
+        "Open Assembly" dialog. Supports:
+          - Drag-and-drop of .dll/.exe files onto the drop zone
+          - Ctrl+V paste of a file path (plain text) or Explorer clipboard (FileDrop)
+          - Browse button (OpenFileDialog)
+          - Recent assemblies list (double-click to load, [×] to remove)
+        Theme: all brushes via DynamicResource Dock* / PFP_* tokens.
+        Validated: OK button enabled only when path exists + CanAnalyze().
+
+    Architecture Notes:
+        No external NuGet. Plain Window (no ThemedDialog dependency).
+        All behaviour in code-behind to stay self-contained within the plugin.
+-->
+<Window x:Class="WpfHexEditor.Plugins.AssemblyExplorer.Views.OpenAssemblyDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Open Assembly"
+        Width="520" SizeToContent="Height"
+        MinWidth="400" MinHeight="260"
+        ResizeMode="CanResizeWithGrip"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource DockWindowBackgroundBrush}"
+        Foreground="{DynamicResource DockMenuForegroundBrush}"
+        TextElement.Foreground="{DynamicResource DockMenuForegroundBrush}"
+        KeyDown="OnWindowKeyDown"
+        AllowDrop="True"
+        Drop="OnWindowDrop"
+        DragOver="OnWindowDragOver">
+
+    <Window.Resources>
+        <!-- Drop zone style -->
+        <Style x:Key="DropZoneStyle" TargetType="Border">
+            <Setter Property="Background"        Value="{DynamicResource PFP_PanelBackgroundBrush}"/>
+            <Setter Property="BorderBrush"       Value="{DynamicResource DockBorderBrush}"/>
+            <Setter Property="BorderThickness"   Value="2"/>
+            <Setter Property="CornerRadius"      Value="4"/>
+            <Setter Property="Height"            Value="72"/>
+            <Setter Property="AllowDrop"         Value="True"/>
+        </Style>
+
+        <!-- Recent item remove button -->
+        <Style x:Key="RemoveButtonStyle" TargetType="Button">
+            <Setter Property="Width"            Value="18"/>
+            <Setter Property="Height"           Value="18"/>
+            <Setter Property="Padding"          Value="0"/>
+            <Setter Property="FontFamily"       Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize"         Value="10"/>
+            <Setter Property="Content"          Value="&#xE8BB;"/>
+            <Setter Property="Background"       Value="Transparent"/>
+            <Setter Property="BorderThickness"  Value="0"/>
+            <Setter Property="Foreground"       Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="ToolTip"          Value="Remove from recent list"/>
+        </Style>
+
+        <!-- Dialog action buttons -->
+        <Style x:Key="DialogButtonStyle" TargetType="Button">
+            <Setter Property="MinWidth"         Value="88"/>
+            <Setter Property="Height"           Value="26"/>
+            <Setter Property="Padding"          Value="8,0"/>
+            <Setter Property="Background"       Value="{DynamicResource PFP_PanelBackgroundBrush}"/>
+            <Setter Property="Foreground"       Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="BorderBrush"      Value="{DynamicResource DockBorderBrush}"/>
+            <Setter Property="BorderThickness"  Value="1"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16,12,16,12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>   <!-- Drop zone -->
+            <RowDefinition Height="8"/>      <!-- Spacer -->
+            <RowDefinition Height="Auto"/>   <!-- Path row -->
+            <RowDefinition Height="8"/>      <!-- Spacer -->
+            <RowDefinition Height="Auto"/>   <!-- Section label -->
+            <RowDefinition Height="*"
+                           MinHeight="80"
+                           MaxHeight="200"/> <!-- Recent list -->
+            <RowDefinition Height="8"/>      <!-- Spacer -->
+            <RowDefinition Height="Auto"/>   <!-- Buttons -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Drop zone ───────────────────────────────────────────────── -->
+        <Border x:Name="DropZone"
+                Grid.Row="0"
+                Style="{StaticResource DropZoneStyle}"
+                Drop="OnDropZoneDrop"
+                DragOver="OnDropZoneDragOver"
+                DragLeave="OnDropZoneDragLeave">
+            <StackPanel VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal"
+                        IsHitTestVisible="False">
+                <TextBlock FontFamily="Segoe MDL2 Assets"
+                           FontSize="22"
+                           Text="&#xEC50;"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"
+                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                           Opacity="0.6"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Drop a .dll or .exe here"
+                               FontSize="13"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                    <TextBlock Text="or paste a path with Ctrl+V"
+                               FontSize="11"
+                               Opacity="0.6"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ── File path row ───────────────────────────────────────────── -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="6"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox x:Name="PathBox"
+                     Grid.Column="0"
+                     Height="24"
+                     Padding="4,0"
+                     VerticalContentAlignment="Center"
+                     Background="{DynamicResource PFP_PanelBackgroundBrush}"
+                     Foreground="{DynamicResource DockMenuForegroundBrush}"
+                     BorderBrush="{DynamicResource DockBorderBrush}"
+                     CaretBrush="{DynamicResource DockMenuForegroundBrush}"
+                     TextChanged="OnPathTextChanged"
+                     KeyDown="OnPathBoxKeyDown"
+                     ToolTip="Type or paste the full path to the assembly"/>
+
+            <Button x:Name="BrowseButton"
+                    Grid.Column="2"
+                    Content="Browse…"
+                    Style="{StaticResource DialogButtonStyle}"
+                    Click="OnBrowseClick"/>
+        </Grid>
+
+        <!-- ── Recent section ──────────────────────────────────────────── -->
+        <TextBlock Grid.Row="4"
+                   Text="Recent"
+                   FontWeight="SemiBold"
+                   FontSize="11"
+                   Opacity="0.75"
+                   Margin="0,0,0,4"
+                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+
+        <Border Grid.Row="5"
+                BorderBrush="{DynamicResource DockBorderBrush}"
+                BorderThickness="1"
+                Background="{DynamicResource PFP_PanelBackgroundBrush}">
+            <ListBox x:Name="RecentList"
+                     Background="Transparent"
+                     Foreground="{DynamicResource DockMenuForegroundBrush}"
+                     BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     MouseDoubleClick="OnRecentDoubleClick">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding"            Value="4,3"/>
+                        <Setter Property="Foreground"         Value="{DynamicResource DockMenuForegroundBrush}"/>
+                        <Setter Property="Background"         Value="Transparent"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding FileName}"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding FullPath}"
+                                           FontSize="10"
+                                           Opacity="0.6"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource RemoveButtonStyle}"
+                                    Tag="{Binding FullPath}"
+                                    Click="OnRemoveRecentClick"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <!-- ── Action buttons ──────────────────────────────────────────── -->
+        <StackPanel Grid.Row="7"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Content="Cancel"
+                    IsCancel="True"
+                    Style="{StaticResource DialogButtonStyle}"
+                    Margin="0,0,8,0"
+                    Click="OnCancelClick"/>
+            <Button x:Name="OpenButton"
+                    Content="Open Assembly"
+                    IsDefault="True"
+                    IsEnabled="False"
+                    Style="{StaticResource DialogButtonStyle}"
+                    Click="OnOpenClick"/>
+        </StackPanel>
+    </Grid>
+</Window>
