@@ -424,24 +424,18 @@ public sealed partial class TerminalPanel : UserControl
     }
 
     /// <summary>
-    /// Handles a new-session menu item click from the "+" button context menu.
-    /// The Tag of the MenuItem holds the TerminalMode name string.
+    /// Click handler for the "+" new-session button.
+    /// Opens the shell-type selection context menu below the button.
+    /// The context menu items use direct Command bindings, so no additional
+    /// dispatch logic is needed here.
     /// </summary>
     private void OnNewSessionMenuClick(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuItem { Tag: string modeStr })
-        {
-            if (Enum.TryParse<TerminalMode>(modeStr, out var mode))
-            {
-                switch (mode)
-                {
-                    case TerminalMode.HxTerminal: _vm?.AddHxTerminalCommand.Execute(null); break;
-                    case TerminalMode.PowerShell: _vm?.AddPowerShellCommand.Execute(null); break;
-                    case TerminalMode.Bash:       _vm?.AddBashCommand.Execute(null);       break;
-                    case TerminalMode.Cmd:        _vm?.AddCmdCommand.Execute(null);        break;
-                }
-            }
-        }
+        if (sender is not Button btn || btn.ContextMenu is not { } menu) return;
+
+        menu.PlacementTarget = btn;
+        menu.Placement       = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.IsOpen          = true;
     }
 
     // -- Toolbar button handlers --------------------------------------------------

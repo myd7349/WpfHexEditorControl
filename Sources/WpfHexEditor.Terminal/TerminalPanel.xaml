@@ -20,13 +20,14 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- Themed text button for Run / Cancel in the input row. -->
+        <!-- Flat text button for Run / Cancel in the input row.
+             Transparent at rest, themed hover/active highlight, no border.
+             Consistent across all themes (dark and light). -->
         <Style x:Key="TerminalTextButtonStyle" TargetType="Button">
             <Setter Property="Padding"             Value="10,3"/>
-            <Setter Property="BorderThickness"     Value="1"/>
-            <Setter Property="Background"          Value="{DynamicResource Panel_ToolbarBrush}"/>
-            <Setter Property="Foreground"          Value="{DynamicResource DockMenuForegroundBrush}"/>
-            <Setter Property="BorderBrush"         Value="{DynamicResource DockBorderBrush}"/>
+            <Setter Property="BorderThickness"     Value="0"/>
+            <Setter Property="Background"          Value="Transparent"/>
+            <Setter Property="Foreground"          Value="{DynamicResource Panel_ToolbarForegroundBrush}"/>
             <Setter Property="FontFamily"          Value="Segoe UI"/>
             <Setter Property="FontSize"            Value="12"/>
             <Setter Property="VerticalAlignment"   Value="Center"/>
@@ -37,9 +38,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="2"
+                                CornerRadius="3"
                                 Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -55,7 +54,39 @@
                                         Value="{DynamicResource Panel_ToolbarButtonActiveBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
+                                <Setter Property="Opacity" Value="0.35"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Themed close button for the session tab strip (×).
+             Transparent at rest, hover = Panel_ToolbarButtonHoverBrush, no border. -->
+        <Style x:Key="CloseTabButtonStyle" TargetType="Button">
+            <Setter Property="Background"       Value="Transparent"/>
+            <Setter Property="BorderThickness"  Value="0"/>
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="2"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource Panel_ToolbarButtonActiveBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -407,17 +438,14 @@
                             <DockPanel MinWidth="80">
                                 <!-- Close session button -->
                                 <Button DockPanel.Dock="Right"
+                                        Style="{StaticResource CloseTabButtonStyle}"
                                         Tag="{Binding}"
                                         Click="OnCloseSessionTabClick"
-                                        Width="14" Height="14"
+                                        Width="16" Height="16"
                                         VerticalAlignment="Center"
                                         Margin="4,0,0,0"
-                                        Padding="0"
-                                        BorderThickness="0"
-                                        Background="Transparent"
-                                        Cursor="Hand"
-                                        ToolTip="Close Session"
-                                        FocusVisualStyle="{x:Null}">
+                                        Padding="1"
+                                        ToolTip="Close Session">
                                     <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="9"
                                                Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                                 </Button>
