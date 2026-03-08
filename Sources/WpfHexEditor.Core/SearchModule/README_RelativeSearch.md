@@ -856,7 +856,7 @@ Please report issues with:
 - **Author:** Derek Tremblay (derektremblay666@gmail.com)
 - **Contributors:** Claude Sonnet 4.5
 - **Issue:** [#45](https://github.com/abbaye/WPFHexaEditor/issues/45)
-- **License:** Apache 2.0 (2026)
+- **License:** GNU Affero General Public License v3.0 (2026)
 
 ---
 

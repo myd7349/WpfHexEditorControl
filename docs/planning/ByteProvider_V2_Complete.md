@@ -34,7 +34,7 @@ Ce document fournit un plan d'implémentation **complet et détaillé** pour la 
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // ByteProvider V2 - FileProvider (Pure file I/O)
 //////////////////////////////////////////////
@@ -264,7 +264,7 @@ namespace WpfHexaEditor.Services
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // ByteProvider V2 - EditsManager (Modification tracking)
 //////////////////////////////////////////////
@@ -536,7 +536,7 @@ namespace WpfHexaEditor.Services
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // ByteProvider V2 - PositionMapper (Virtual↔Physical conversion)
 //////////////////////////////////////////////
@@ -683,7 +683,7 @@ namespace WpfHexaEditor.Services
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // ByteProvider V2 - ByteReader (Intelligent byte reading)
 //////////////////////////////////////////////
@@ -800,7 +800,7 @@ namespace WpfHexaEditor.Services
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // ByteProvider V2 - IEdit interface for Undo/Redo
 //////////////////////////////////////////////
@@ -841,7 +841,7 @@ namespace WpfHexaEditor.Services
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // ByteProvider V2 - ModifyByteEdit
 //////////////////////////////////////////////
 
@@ -895,7 +895,7 @@ namespace WpfHexaEditor.Services.Edits
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // ByteProvider V2 - InsertBytesEdit
 //////////////////////////////////////////////
 
@@ -939,7 +939,7 @@ namespace WpfHexaEditor.Services.Edits
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // ByteProvider V2 - DeleteByteEdit
 //////////////////////////////////////////////
 
@@ -977,7 +977,7 @@ namespace WpfHexaEditor.Services.Edits
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // ByteProvider V2 - UndoRedoServiceV2
 //////////////////////////////////////////////
 

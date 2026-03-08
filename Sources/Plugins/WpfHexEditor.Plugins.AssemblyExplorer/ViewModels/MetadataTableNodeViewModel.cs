@@ -28,6 +28,7 @@ public sealed class MetadataTableNodeViewModel : AssemblyNodeViewModel
 
     public override string DisplayName => $"{TableName} ({RowCount} rows)";
     public override string IconGlyph   => "\uE9D2"; // Table
+    public override Brush  IconBrush   => MakeBrush("#9B9B9B"); // Silver
 
     public override string ToolTipText =>
         $"Metadata table: {TableName}\n{RowCount} rows"

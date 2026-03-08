@@ -26,7 +26,9 @@ public sealed class MethodNodeViewModel : AssemblyNodeViewModel
     public override string DisplayName =>
         Model.Signature is not null ? Model.Signature : $"{Model.Name}()";
 
-    public override string IconGlyph => "\uE8F4"; // Method
+    public override string IconGlyph  => "\uE8F4"; // Method
+    public override Brush  IconBrush  => MakeBrush("#C586C0"); // Purple
+    public override bool   IsPublic   => Model.IsPublic;
 
     public override string ToolTipText =>
         $"Method: {Model.Name}\nToken: 0x{Model.MetadataToken:X8}"

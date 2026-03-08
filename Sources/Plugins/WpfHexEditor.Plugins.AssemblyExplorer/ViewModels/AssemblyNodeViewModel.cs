@@ -17,6 +17,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Media;
 
 namespace WpfHexEditor.Plugins.AssemblyExplorer.ViewModels;
 
@@ -48,6 +49,29 @@ public abstract class AssemblyNodeViewModel : INotifyPropertyChanged
 
     /// <summary>Segoe MDL2 Assets Unicode codepoint for the node icon.</summary>
     public abstract string IconGlyph { get; }
+
+    /// <summary>
+    /// Semantic color brush for the node icon. Each concrete node type returns
+    /// a frozen SolidColorBrush matching its category (VS Code C# palette).
+    /// </summary>
+    public virtual Brush IconBrush => _defaultBrush;
+
+    /// <summary>
+    /// True when the member or type has public visibility.
+    /// Grouping nodes (Namespace, Assembly, Reference, Resource, Metadata) are always true.
+    /// </summary>
+    public virtual bool IsPublic => true;
+
+    // Frozen default brush (neutral gray) — used by grouping/structural nodes.
+    private static readonly Brush _defaultBrush = MakeBrush("#9B9B9B");
+
+    /// <summary>Creates and freezes a <see cref="SolidColorBrush"/> from a hex color string.</summary>
+    protected static Brush MakeBrush(string hex)
+    {
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+        brush.Freeze();
+        return brush;
+    }
 
     /// <summary>Tooltip text; defaults to <see cref="DisplayName"/>.</summary>
     public virtual string ToolTipText => DisplayName;

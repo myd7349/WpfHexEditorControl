@@ -24,6 +24,7 @@ public sealed class ResourceNodeViewModel : AssemblyNodeViewModel
 
     public override string DisplayName => Resource.Name;
     public override string IconGlyph   => "\uEB9F"; // Resource
+    public override Brush  IconBrush   => MakeBrush("#CE9178"); // Orange-brown
 
     public override string ToolTipText =>
         $"Resource: {Resource.Name}"

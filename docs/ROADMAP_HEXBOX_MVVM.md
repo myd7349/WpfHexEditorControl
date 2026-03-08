@@ -127,7 +127,7 @@ WPFHexaEditor/
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 //////////////////////////////////////////////
 
@@ -361,7 +361,7 @@ namespace WpfHexaEditor.ViewModels
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 //////////////////////////////////////////////
 
@@ -444,7 +444,7 @@ namespace WpfHexaEditor.Commands
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 //////////////////////////////////////////////
 
@@ -484,7 +484,7 @@ namespace WpfHexaEditor.Models
 
 ```xml
 <!--
-    Apache 2.0  - 2026
+    GNU Affero General Public License v3.0  - 2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     V2 MVVM Architecture - Data binding instead of code-behind events
 -->
@@ -597,7 +597,7 @@ namespace WpfHexaEditor.Models
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // V2 MVVM Architecture - Minimal code-behind
 //////////////////////////////////////////////
@@ -815,7 +815,7 @@ namespace WpfHexaEditor
 
 ```csharp
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0  - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Legacy Wrapper - 100% backward compatible
 //////////////////////////////////////////////

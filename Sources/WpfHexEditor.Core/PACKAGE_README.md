@@ -191,7 +191,7 @@ Contributions welcome! Check out:
 
 ## 📜 License
 
-**Apache 2.0** - See [LICENSE](https://github.com/abbaye/WpfHexEditorIDE/blob/master/LICENSE)
+**GNU Affero General Public License v3.0** - See [LICENSE](https://github.com/abbaye/WpfHexEditorIDE/blob/master/LICENSE)
 
 Copyright 2016-2026 Derek Tremblay and contributors
 

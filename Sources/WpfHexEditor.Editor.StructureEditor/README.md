@@ -31,4 +31,4 @@ myGrid.Children.Add(editor);
 
 ## License
 
-Apache 2.0 — see repository root.
+GNU Affero General Public License v3.0 — see repository root.

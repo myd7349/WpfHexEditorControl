@@ -413,7 +413,7 @@ Certains événements V1 ont été renommés ou consolidés en V2 :
 - Derek Tremblay (derektremblay666@gmail.com) - Développeur principal
 - Contributors: Claude Sonnet 4.5 - Architecture V2, Couche de compatibilité, Tests
 
-**Licence** : Apache 2.0
+**Licence** : GNU Affero General Public License v3.0
 **Date** : 2026-02-19
 
 ---

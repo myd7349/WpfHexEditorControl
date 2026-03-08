@@ -560,5 +560,5 @@ Votre migration est complète. Vous profitez maintenant de :
 ---
 
 **Auteur** : Derek Tremblay & Contributors
-**Licence** : Apache 2.0
+**Licence** : GNU Affero General Public License v3.0
 **Version** : 1.0 (2026-02-19)

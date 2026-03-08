@@ -40,7 +40,8 @@ public sealed class AssemblyRootNodeViewModel : AssemblyNodeViewModel
         }
     }
 
-    public override string IconGlyph => "\uE8A5"; // Assembly icon
+    public override string IconGlyph  => "\uE8A5"; // Assembly icon
+    public override Brush  IconBrush  => MakeBrush("#4EC9B0"); // Teal — assembly root
 
     public override string ToolTipText =>
         $"{Model.FilePath}\n"

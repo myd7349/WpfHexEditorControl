@@ -169,4 +169,4 @@ This makes it safe to use in any WPF application without pulling in the rest of 
 
 ## License
 
-Apache 2.0 — Copyright 2017–2026 Derek Tremblay. See [LICENSE](../../LICENSE).
+GNU Affero General Public License v3.0 — Copyright 2017–2026 Derek Tremblay. See [LICENSE](../../LICENSE).

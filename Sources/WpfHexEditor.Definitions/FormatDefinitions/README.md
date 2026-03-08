@@ -473,4 +473,4 @@ Common issues:
 
 ---
 
-Created for WPFHexaEditor - Apache 2.0 License - 2026
+Created for WPFHexaEditor - GNU Affero General Public License v3.0 License - 2026

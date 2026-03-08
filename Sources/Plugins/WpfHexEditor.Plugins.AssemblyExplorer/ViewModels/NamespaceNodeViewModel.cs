@@ -24,7 +24,8 @@ public sealed class NamespaceNodeViewModel : AssemblyNodeViewModel
     public override string DisplayName =>
         string.IsNullOrEmpty(_namespaceName) ? "(global namespace)" : _namespaceName;
 
-    public override string IconGlyph => "\uE8B7"; // Folder icon
+    public override string IconGlyph  => "\uE8B7"; // Folder icon
+    public override Brush  IconBrush  => MakeBrush("#DCDCAA"); // Gold — namespace
 
     public override string ToolTipText => $"Namespace: {DisplayName}  ({Children.Count} types)";
 }

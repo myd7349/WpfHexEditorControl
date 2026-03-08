@@ -872,4 +872,4 @@ R: Oui, 100% compatible. Mais OpenMemory() rend les tests 10-100x plus rapides.
 **Auteur** : WPF HexEditor Team + Claude Sonnet 4.5
 **Date** : 2026-02-19
 **Version** : 2.0
-**License** : Apache 2.0
+**License** : GNU Affero General Public License v3.0

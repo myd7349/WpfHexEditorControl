@@ -99,7 +99,6 @@ WpfHexEditor uses a **plugin architecture** (`IDocumentEditor`) — every editor
 | **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ✅ Active | ~55% | Multi-language code editor with syntax highlighting, find/replace, `IEditorPersistable`, split view |
 | **[Text Editor](Sources/WpfHexEditor.Editor.TextEditor/README.md)** | ✅ Active | ~50% | Text editing with 26 embedded language definitions, auto-detection by extension, encoding support |
 | **[Script Editor](Sources/WpfHexEditor.Editor.ScriptEditor/README.md)** | ✅ Active | ~45% | `.hxscript` editor with syntax highlighting, run-in-terminal integration, `HxScriptEngine` backend |
-| **[JSON Editor](Sources/WpfHexEditor.Editor.JsonEditor/README.md)** | 🔜 Planned | ~0% | Dedicated JSON/JSONC editor (planned — `.json` currently handled by Code Editor) |
 | **[Image Viewer](Sources/WpfHexEditor.Editor.ImageViewer/README.md)** | 🔧 Active | ~30% | Binary image viewer — zoom/pan, transform pipeline (rotate/flip/crop/resize), `FileShare.ReadWrite` for concurrent open |
 | **[Tile Editor](Sources/WpfHexEditor.Editor.TileEditor/README.md)** | 🔧 Active | ~30% | Tile-based graphic editor for ROM/binary assets — palette, zoom, pixel grid |
 | **[Structure Editor](Sources/WpfHexEditor.Editor.StructureEditor/README.md)** | 🔧 Active | ~30% | `.whfmt` binary template editor — block DataGrid, type/offset/length editing, live save |

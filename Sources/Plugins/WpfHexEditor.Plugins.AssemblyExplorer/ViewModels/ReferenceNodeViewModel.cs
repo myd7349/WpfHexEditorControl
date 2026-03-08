@@ -24,7 +24,8 @@ public sealed class ReferenceNodeViewModel : AssemblyNodeViewModel
             ? $"{Reference.Name} v{Reference.Version}"
             : Reference.Name;
 
-    public override string IconGlyph => "\uE71B"; // Reference / link
+    public override string IconGlyph  => "\uE71B"; // Reference / link
+    public override Brush  IconBrush  => MakeBrush("#9B9B9B"); // Silver
 
     public override string ToolTipText =>
         $"Assembly Reference: {Reference.Name}"

@@ -35,6 +35,17 @@ public sealed class TypeNodeViewModel : AssemblyNodeViewModel
         _                  => "\uE943"  // Class (default)
     };
 
+    public override Brush IconBrush => Model.Kind switch
+    {
+        TypeKind.Interface => MakeBrush("#B8D7A3"), // Light green
+        TypeKind.Struct    => MakeBrush("#4EC9B0"), // Cyan-green
+        TypeKind.Enum      => MakeBrush("#CE9178"), // Orange
+        TypeKind.Delegate  => MakeBrush("#C586C0"), // Purple
+        _                  => MakeBrush("#4FC1FF")  // Blue — class
+    };
+
+    public override bool IsPublic => Model.IsPublic;
+
     public override string ToolTipText =>
         $"{Model.FullName}\nToken: 0x{Model.MetadataToken:X8}"
       + (Model.PeOffset > 0 ? $"\nPE offset: 0x{Model.PeOffset:X}" : string.Empty);

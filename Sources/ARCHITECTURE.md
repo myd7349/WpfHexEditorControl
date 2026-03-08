@@ -539,4 +539,4 @@ dotnet run -- pack path/to/plugin.dll --output my.whxplugin
 
 **Last Updated:** 2026-03-07
 **Maintainers:** Derek Tremblay (derektremblay666@gmail.com) · Contributors: Claude Sonnet 4.6
-**License:** Apache 2.0
+**License:** GNU Affero General Public License v3.0

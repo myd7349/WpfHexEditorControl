@@ -17,8 +17,12 @@ namespace WpfHexEditor.Plugins.AssemblyExplorer.Converters;
 
 /// <summary>
 /// Converts a boolean <c>IsPublic</c> value to a <see cref="Visibility"/>.
-/// Public → Visible; non-public → Visible (with dimmed icon via a separate opacity binding).
-/// Pass "collapse" as ConverterParameter to collapse non-public members instead.
+/// Supports three modes via ConverterParameter:
+/// <list type="bullet">
+///   <item><c>null</c> — always Visible (both public and non-public shown)</item>
+///   <item><c>"collapse"</c> — public=Visible, non-public=Collapsed</item>
+///   <item><c>"invert"</c> — public=Collapsed, non-public=Visible (use for lock icon)</item>
+/// </list>
 /// </summary>
 [ValueConversion(typeof(bool), typeof(Visibility))]
 public sealed class MemberAccessToVisibilityConverter : IValueConverter
@@ -28,10 +32,13 @@ public sealed class MemberAccessToVisibilityConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         var isPublic = value is true;
-        var collapse = parameter is string s && s == "collapse";
 
-        if (isPublic) return Visibility.Visible;
-        return collapse ? Visibility.Collapsed : Visibility.Visible;
+        return parameter is string mode ? mode switch
+        {
+            "collapse" => isPublic ? Visibility.Visible   : Visibility.Collapsed,
+            "invert"   => isPublic ? Visibility.Collapsed : Visibility.Visible,
+            _          => Visibility.Visible
+        } : Visibility.Visible;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

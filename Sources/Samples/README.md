@@ -364,4 +364,4 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for detailed guidelines.
 ✨ **Created by Derek Tremblay** (derektremblay666@gmail.com)
 🤖 **Contributions by Claude Sonnet 4.5**
 
-**License:** Apache 2.0
+**License:** GNU Affero General Public License v3.0

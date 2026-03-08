@@ -4,7 +4,7 @@
   <img src="../../Images/Logo2026.png?raw=true" width="500" height="210" />
   <br/><br/>
   <h3>⚡ The Fastest WPF Hex Editor IDE for .NET ⚡</h3>
-  <sub>Version 0.2.0 · .NET 8.0-windows · Apache 2.0</sub>
+  <sub>Version 0.2.0 · .NET 8.0-windows · GNU Affero General Public License v3.0</sub>
 </div>
 
 ---

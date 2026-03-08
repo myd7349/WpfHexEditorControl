@@ -285,4 +285,4 @@ if (EditorRegistry.Instance.TryGetFactory(".tbl", out var factory))
 
 ## License
 
-Apache 2.0 — Copyright 2026 Derek Tremblay. See [LICENSE](../../LICENSE).
+GNU Affero General Public License v3.0 — Copyright 2026 Derek Tremblay. See [LICENSE](../../LICENSE).

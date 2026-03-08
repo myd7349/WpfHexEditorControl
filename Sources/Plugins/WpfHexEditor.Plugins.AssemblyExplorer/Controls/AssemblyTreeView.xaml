@@ -46,12 +46,23 @@
         <HierarchicalDataTemplate DataType="{x:Type vm:AssemblyNodeViewModel}"
                                   ItemsSource="{Binding Children}">
             <StackPanel Orientation="Horizontal" Margin="0,1">
+                <!-- Semantic color icon -->
                 <TextBlock Text="{Binding Converter={StaticResource NodeIconConverter}}"
                            FontFamily="Segoe MDL2 Assets"
                            FontSize="12"
                            VerticalAlignment="Center"
-                           Margin="0,0,4,0"
-                           Foreground="{DynamicResource PFP_SubTextBrush}"/>
+                           Margin="0,0,2,0"
+                           Foreground="{Binding IconBrush}"/>
+                <!-- Lock badge: visible only for non-public members/types -->
+                <TextBlock Text="&#xE72E;"
+                           FontFamily="Segoe MDL2 Assets"
+                           FontSize="8"
+                           VerticalAlignment="Center"
+                           Margin="0,0,3,0"
+                           Foreground="{DynamicResource PFP_SubTextBrush}"
+                           Visibility="{Binding IsPublic,
+                                                Converter={StaticResource AccessConverter},
+                                                ConverterParameter=invert}"/>
                 <TextBlock Text="{Binding DisplayName}"
                            VerticalAlignment="Center"
                            FontSize="12"/>

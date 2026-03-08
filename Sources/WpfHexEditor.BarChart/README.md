@@ -144,4 +144,4 @@ Each bar represents one byte value. The height is proportional to how many times
 
 ## License
 
-Apache 2.0 — Copyright 2016–2026 Derek Tremblay. See [LICENSE](../../LICENSE).
+GNU Affero General Public License v3.0 — Copyright 2016–2026 Derek Tremblay. See [LICENSE](../../LICENSE).

@@ -25,6 +25,8 @@ public sealed class FieldNodeViewModel : AssemblyNodeViewModel
 
     public override string DisplayName => Model.Name;
     public override string IconGlyph   => "\uE8D2"; // Field
+    public override Brush  IconBrush   => MakeBrush("#9CDCFE"); // Light blue
+    public override bool   IsPublic    => Model.IsPublic;
 
     public override string ToolTipText =>
         $"Field: {Model.Name}\nToken: 0x{Model.MetadataToken:X8}"

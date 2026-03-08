@@ -241,4 +241,4 @@ Memory stays near-constant because `ByteProvider` uses memory-mapped I/O — onl
 
 ## License
 
-Apache 2.0 — Copyright 2016–2026 Derek Tremblay. See [LICENSE](../../LICENSE).
+GNU Affero General Public License v3.0 — Copyright 2016–2026 Derek Tremblay. See [LICENSE](../../LICENSE).

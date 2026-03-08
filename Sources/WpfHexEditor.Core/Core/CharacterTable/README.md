@@ -230,5 +230,5 @@ HexEditor
 
 ---
 
-**License**: Apache 2.0 (2016-2026)
+**License**: GNU Affero General Public License v3.0 (2016-2026)
 **Contributors**: Derek Tremblay, Claude Sonnet 4.5

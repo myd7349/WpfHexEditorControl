@@ -1284,4 +1284,4 @@ while (hexEditor.NavigateToNextBookmark())
 
 **Document Version**: 1.0
 **Author**: Claude Sonnet 4.5 with Derek Tremblay
-**License**: Apache 2.0
+**License**: GNU Affero General Public License v3.0
