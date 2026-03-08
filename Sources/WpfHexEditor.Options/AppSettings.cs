@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -43,7 +43,7 @@ public sealed class AppSettings
 
     /// <summary>
     /// Applied to every newly-opened HexEditor tab.
-    /// Serialised as "hexEditorDefaults": { â€¦ } in settings.json.
+    /// Serialised as "hexEditorDefaults": { … } in settings.json.
     /// </summary>
     public HexEditorDefaultSettings HexEditorDefaults { get; set; } = new();
 
@@ -51,7 +51,7 @@ public sealed class AppSettings
 
     /// <summary>
     /// Solution Explorer panel behaviour settings.
-    /// Serialised as "solutionExplorer": { â€¦ } in settings.json.
+    /// Serialised as "solutionExplorer": { … } in settings.json.
     /// </summary>
     public SolutionExplorerSettings SolutionExplorer { get; set; } = new();
 
@@ -59,7 +59,7 @@ public sealed class AppSettings
 
     /// <summary>
     /// CodeEditor appearance and behaviour defaults.
-    /// Serialised as "codeEditor": { â€¦ } in settings.json.
+    /// Serialised as "codeEditor": { … } in settings.json.
     /// </summary>
     public CodeEditorDefaultSettings CodeEditorDefaults { get; set; } = new();
 
@@ -67,7 +67,7 @@ public sealed class AppSettings
 
     /// <summary>
     /// TextEditor appearance and behaviour defaults.
-    /// Serialised as "textEditor": { â€¦ } in settings.json.
+    /// Serialised as "textEditor": { … } in settings.json.
     /// </summary>
     public TextEditorDefaultSettings TextEditorDefaults { get; set; } = new();
 
@@ -75,7 +75,7 @@ public sealed class AppSettings
 
     /// <summary>
     /// Per-editor Ctrl+S behaviour for files opened outside any project.
-    /// Serialised as "standaloneFileSave": { … } in settings.json.
+    /// Serialised as "standaloneFileSave": { � } in settings.json.
     /// </summary>
     public StandaloneFileSaveSettings StandaloneFileSave { get; set; } = new();
 
@@ -83,7 +83,7 @@ public sealed class AppSettings
 
     /// <summary>
     /// Plugin system behaviour and monitoring settings.
-    /// Serialised as "pluginSystem": { … } in settings.json.
+    /// Serialised as "pluginSystem": { � } in settings.json.
     /// </summary>
     public PluginSystemSettings PluginSystem { get; set; } = new();
 }
@@ -262,7 +262,7 @@ public sealed class TextEditorDefaultSettings
 
 /// <summary>
 /// Controls whether Ctrl+S on a standalone file (not belonging to any project)
-/// overwrites the original directly or prompts a Save As dialog — per editor type.
+/// overwrites the original directly or prompts a Save As dialog � per editor type.
 /// </summary>
 public sealed class StandaloneFileSaveSettings
 {

@@ -1,6 +1,6 @@
 
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -92,6 +92,11 @@ public partial class MainWindow
                 _errorPanelService.SetErrorPanel(_errorPanel);
 
             _dockingAdapter = new DockingAdapter(_engine, _layout, DockHost, StoreContent, _layoutWasRestoredFromFile);
+
+            // Seed the left-side anchor with the built-in Solution Explorer so that plugin panels
+            // declaring DefaultDockSide = "Left" are automatically tabbed into the same group.
+            _dockingAdapter.SeedSideAnchor(DockDirection.Left, SolutionExplorerContentId);
+
             var dockingAdapter = _dockingAdapter;
             var menuAdapter = new MenuAdapter(MainMenuBar);
             var statusBarAdapter = new StatusBarAdapter(AppStatusBar);

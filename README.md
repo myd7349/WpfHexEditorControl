@@ -8,7 +8,7 @@
   [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
   [![C#](https://img.shields.io/badge/C%23-13.0-239120?logo=csharp&logoColor=white)](https://learn.microsoft.com/dotnet/csharp/)
-  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+  [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![Languages](https://img.shields.io/badge/Languages-19-success?logo=googletranslate&logoColor=white)](#-multilingual)
   [![Status](https://img.shields.io/badge/Status-Active%20Development-orange)](https://github.com/abbaye/WpfHexEditorIDE/commits/master)
 
@@ -375,7 +375,7 @@ English · French · Spanish · German · Italian · Japanese · Korean · Dutch
 
 ## ⭐ Support This Project
 
-WPF HexEditor is **100% free and open source** (Apache 2.0) — free for personal and commercial use.
+WPF HexEditor is **100% free and open source** (GNU AGPL v3.0) — free to use, modify and distribute under the terms of the AGPL.
 
 This project is developed in **free time** by passionate contributors. If you find it useful:
 
@@ -400,7 +400,7 @@ We welcome contributions! The codebase is well-organized and documented:
 
 ## 📝 License
 
-**Apache License 2.0** — free for personal and commercial use. See [LICENSE](LICENSE) for details.
+**GNU Affero General Public License v3.0** — free to use, modify and distribute. Any modified version distributed over a network must also be made available as open source. See [LICENSE](LICENSE) for details.
 
 ---
 

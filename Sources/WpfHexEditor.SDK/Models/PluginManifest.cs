@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -83,7 +83,7 @@ public sealed class PluginManifest
 
     // -- Permissions ---------------------------------------------------------
 
-    /// <summary>Capability declarations â€” validated against user-granted permissions at runtime.</summary>
+    /// <summary>Capability declarations — validated against user-granted permissions at runtime.</summary>
     [JsonPropertyName("permissions")]
     public PluginCapabilities Permissions { get; set; } = new();
 
@@ -135,7 +135,7 @@ public sealed class PluginManifest
 
 // ----------------------------------------------------------------------------
 
-/// <summary>Assembly metadata â€” populated by PackagingTool in Distribution Manifest.</summary>
+/// <summary>Assembly metadata — populated by PackagingTool in Distribution Manifest.</summary>
 public sealed class PluginAssemblyInfo
 {
     /// <summary>DLL file name (e.g. "WpfHexEditor.Plugins.Barchart.dll").</summary>
@@ -151,7 +151,7 @@ public sealed class PluginAssemblyInfo
     public long Size { get; set; }
 }
 
-/// <summary>Digital signature metadata â€” populated by PackagingTool.</summary>
+/// <summary>Digital signature metadata — populated by PackagingTool.</summary>
 public sealed class PluginSignatureInfo
 {
     /// <summary>Whether the package is signed.</summary>
@@ -171,7 +171,7 @@ public sealed class PluginSignatureInfo
     public string SignatureFile { get; set; } = string.Empty;
 }
 
-/// <summary>Marketplace listing metadata â€” optional, for future marketplace client.</summary>
+/// <summary>Marketplace listing metadata — optional, for future marketplace client.</summary>
 public sealed class PluginMarketplaceInfo
 {
     [JsonPropertyName("listingId")]

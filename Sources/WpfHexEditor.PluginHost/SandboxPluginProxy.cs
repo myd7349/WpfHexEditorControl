@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -12,7 +12,7 @@ namespace WpfHexEditor.PluginHost;
 
 /// <summary>
 /// Proxy for an out-of-process plugin running inside WpfHexEditor.PluginSandbox.exe.
-/// Phase 5 stub â€” IPC channel not yet implemented.
+/// Phase 5 stub — IPC channel not yet implemented.
 /// </summary>
 internal sealed class SandboxPluginProxy : IWpfHexEditorPlugin, IAsyncDisposable
 {

@@ -1,5 +1,5 @@
-﻿<!--
-    Apache 2.0  2026
+<!--
+    GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
 -->
@@ -95,7 +95,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🌍" FontSize="16" Margin="0,0,5,0"/>
+                        <TextBlock Text="??" FontSize="16" Margin="0,0,5,0"/>
                         <TextBlock Text="{DynamicResource Options_LanguageTab}" FontSize="13"/>
                     </StackPanel>
                 </TabItem.Header>
@@ -128,7 +128,7 @@
                                        FontWeight="SemiBold"/>
                             <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                 <TextBlock x:Name="CurrentLanguageFlag"
-                                           Text="🇺🇸"
+                                           Text="????"
                                            FontSize="24"
                                            Margin="0,0,10,0"
                                            VerticalAlignment="Center"/>
@@ -221,7 +221,7 @@
                             Padding="12"
                             Margin="0,15,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="✨" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="?" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
                             <TextBlock Text="{DynamicResource Options_Language_RestartWarning}"
                                        FontSize="12"
                                        Foreground="#1976D2"
@@ -236,7 +236,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🎨" FontSize="16" Margin="0,0,5,0"/>
+                        <TextBlock Text="??" FontSize="16" Margin="0,0,5,0"/>
                         <TextBlock Text="{DynamicResource Options_AppearanceTab}" FontSize="13"/>
                     </StackPanel>
                 </TabItem.Header>
@@ -269,7 +269,7 @@
                                        FontWeight="SemiBold"/>
                             <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                 <TextBlock x:Name="CurrentThemeIcon"
-                                           Text="📄"
+                                           Text="??"
                                            FontSize="24"
                                            Margin="0,0,10,0"
                                            VerticalAlignment="Center"/>
@@ -355,7 +355,7 @@
                             Padding="12"
                             Margin="0,15,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="✨" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="?" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
                             <TextBlock Text="{DynamicResource Options_Theme_InstantInfo}"
                                        FontSize="12"
                                        Foreground="#1976D2"
@@ -370,7 +370,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="📋" FontSize="16" Margin="0,0,5,0"/>
+                        <TextBlock Text="??" FontSize="16" Margin="0,0,5,0"/>
                         <TextBlock Text="{DynamicResource Options_ClipboardTab}" FontSize="13"/>
                     </StackPanel>
                 </TabItem.Header>
@@ -403,7 +403,7 @@
                                        FontWeight="SemiBold"/>
                             <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                 <TextBlock x:Name="CurrentCopyModeIcon"
-                                           Text="📋"
+                                           Text="??"
                                            FontSize="24"
                                            Margin="0,0,10,0"
                                            VerticalAlignment="Center"/>
@@ -489,7 +489,7 @@
                             Padding="12"
                             Margin="0,15,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="✨" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="?" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
                             <TextBlock Text="{DynamicResource Options_CopyMode_InstantInfo}"
                                        FontSize="12"
                                        Foreground="#1976D2"
@@ -504,7 +504,7 @@
             <TabItem IsEnabled="False">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="⚡" FontSize="16" Margin="0,0,5,0"/>
+                        <TextBlock Text="?" FontSize="16" Margin="0,0,5,0"/>
                         <TextBlock Text="{DynamicResource Options_PerformanceTab}" FontSize="13"/>
                     </StackPanel>
                 </TabItem.Header>

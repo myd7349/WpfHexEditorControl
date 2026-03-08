@@ -1,6 +1,6 @@
 
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -235,6 +235,17 @@ public sealed class DockingAdapter : IDockingAdapter
 
         var item = _layout.FindItemByContentId(uiId);
         if (item is not null) _engine.Show(item);
+    }
+
+    /// <summary>
+    /// Seeds the side-anchor table with an existing host-level panel (e.g. Solution Explorer)
+    /// so that plugin panels requesting the same side are automatically tabbed with it.
+    /// Call this after <see cref="SetupDefaultLayout"/> for each built-in panel that should
+    /// serve as a tab-group host for plugins.
+    /// </summary>
+    public void SeedSideAnchor(DockDirection direction, string anchorContentId)
+    {
+        _sideAnchorIds[direction] = anchorContentId;
     }
 
     /// <summary>

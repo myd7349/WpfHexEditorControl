@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -46,27 +46,27 @@ namespace WpfHexEditor.Sample.HexEditor.Views.Dialogs
             // All 19 languages supported
             var languages = new List<LanguageInfo>
             {
-                new LanguageInfo { Flag = "🇺🇸", Code = "en", Name = "English", NativeName = "English" },
-                new LanguageInfo { Flag = "🇪🇸", Code = "es-ES", Name = "Spanish (Spain)", NativeName = "Español (España)" },
-                new LanguageInfo { Flag = "🇲🇽", Code = "es-419", Name = "Spanish (Latin America)", NativeName = "Español (Latinoamérica)" },
-                new LanguageInfo { Flag = "🇫🇷", Code = "fr-FR", Name = "French (France)", NativeName = "Français (France)" },
-                new LanguageInfo { Flag = "🇨🇦", Code = "fr-CA", Name = "French (Canada)", NativeName = "Français (Canada)" },
-                new LanguageInfo { Flag = "🇵🇱", Code = "pl-PL", Name = "Polish", NativeName = "Polski" },
-                new LanguageInfo { Flag = "🇧🇷", Code = "pt-BR", Name = "Portuguese (Brazil)", NativeName = "Português (Brasil)" },
-                new LanguageInfo { Flag = "🇷🇺", Code = "ru-RU", Name = "Russian", NativeName = "Русский" },
-                new LanguageInfo { Flag = "🇨🇳", Code = "zh-CN", Name = "Chinese (Simplified)", NativeName = "简体中文" },
+                new LanguageInfo { Flag = "????", Code = "en", Name = "English", NativeName = "English" },
+                new LanguageInfo { Flag = "????", Code = "es-ES", Name = "Spanish (Spain)", NativeName = "Espa�ol (Espa�a)" },
+                new LanguageInfo { Flag = "????", Code = "es-419", Name = "Spanish (Latin America)", NativeName = "Espa�ol (Latinoam�rica)" },
+                new LanguageInfo { Flag = "????", Code = "fr-FR", Name = "French (France)", NativeName = "Fran�ais (France)" },
+                new LanguageInfo { Flag = "????", Code = "fr-CA", Name = "French (Canada)", NativeName = "Fran�ais (Canada)" },
+                new LanguageInfo { Flag = "????", Code = "pl-PL", Name = "Polish", NativeName = "Polski" },
+                new LanguageInfo { Flag = "????", Code = "pt-BR", Name = "Portuguese (Brazil)", NativeName = "Portugu�s (Brasil)" },
+                new LanguageInfo { Flag = "????", Code = "ru-RU", Name = "Russian", NativeName = "???????" },
+                new LanguageInfo { Flag = "????", Code = "zh-CN", Name = "Chinese (Simplified)", NativeName = "????" },
 
                 // New languages added in localization expansion
-                new LanguageInfo { Flag = "🇩🇪", Code = "de-DE", Name = "German", NativeName = "Deutsch" },
-                new LanguageInfo { Flag = "🇮🇹", Code = "it-IT", Name = "Italian", NativeName = "Italiano" },
-                new LanguageInfo { Flag = "🇯🇵", Code = "ja-JP", Name = "Japanese", NativeName = "日本語" },
-                new LanguageInfo { Flag = "🇰🇷", Code = "ko-KR", Name = "Korean", NativeName = "한국어" },
-                new LanguageInfo { Flag = "🇳🇱", Code = "nl-NL", Name = "Dutch", NativeName = "Nederlands" },
-                new LanguageInfo { Flag = "🇸🇪", Code = "sv-SE", Name = "Swedish", NativeName = "Svenska" },
-                new LanguageInfo { Flag = "🇹🇷", Code = "tr-TR", Name = "Turkish", NativeName = "Türkçe" },
-                new LanguageInfo { Flag = "🇮🇳", Code = "hi-IN", Name = "Hindi", NativeName = "हिन्दी" },
-                new LanguageInfo { Flag = "🇦🇪", Code = "ar-SA", Name = "Arabic", NativeName = "العربية" },
-                new LanguageInfo { Flag = "🇵🇹", Code = "pt-PT", Name = "Portuguese (Portugal)", NativeName = "Português (Portugal)" },
+                new LanguageInfo { Flag = "????", Code = "de-DE", Name = "German", NativeName = "Deutsch" },
+                new LanguageInfo { Flag = "????", Code = "it-IT", Name = "Italian", NativeName = "Italiano" },
+                new LanguageInfo { Flag = "????", Code = "ja-JP", Name = "Japanese", NativeName = "???" },
+                new LanguageInfo { Flag = "????", Code = "ko-KR", Name = "Korean", NativeName = "???" },
+                new LanguageInfo { Flag = "????", Code = "nl-NL", Name = "Dutch", NativeName = "Nederlands" },
+                new LanguageInfo { Flag = "????", Code = "sv-SE", Name = "Swedish", NativeName = "Svenska" },
+                new LanguageInfo { Flag = "????", Code = "tr-TR", Name = "Turkish", NativeName = "T�rk�e" },
+                new LanguageInfo { Flag = "????", Code = "hi-IN", Name = "Hindi", NativeName = "??????" },
+                new LanguageInfo { Flag = "????", Code = "ar-SA", Name = "Arabic", NativeName = "???????" },
+                new LanguageInfo { Flag = "????", Code = "pt-PT", Name = "Portuguese (Portugal)", NativeName = "Portugu�s (Portugal)" },
             };
 
             // Sort by name for easy navigation
@@ -75,7 +75,7 @@ namespace WpfHexEditor.Sample.HexEditor.Views.Dialogs
             // Insert "System Language" at the top of the list
             var systemLanguage = new LanguageInfo
             {
-                Flag = "🌐",
+                Flag = "??",
                 Code = "system",
                 Name = GetResourceString("Options_Language_SystemLanguage_Name", "System Language"),
                 NativeName = GetResourceString("Options_Language_SystemLanguage_Description", "Use system language")
@@ -131,12 +131,12 @@ namespace WpfHexEditor.Sample.HexEditor.Views.Dialogs
             // All 6 themes supported in V2
             var themes = new List<ThemeInfo>
             {
-                new ThemeInfo { Icon = "📄", Name = "Office", DisplayName = "Office", Description = "Light professional office theme" },
-                new ThemeInfo { Icon = "🎨", Name = "VisualStudio", DisplayName = "Visual Studio", Description = "Professional clean theme inspired by VS 2022" },
-                new ThemeInfo { Icon = "☀️", Name = "Light", DisplayName = "Light", Description = "Clean professional light theme" },
-                new ThemeInfo { Icon = "🌙", Name = "DarkGlass", DisplayName = "Dark Glass", Description = "Modern glassmorphism dark theme" },
-                new ThemeInfo { Icon = "⚪", Name = "Minimal", DisplayName = "Minimal", Description = "Ultra-clean minimalist theme" },
-                new ThemeInfo { Icon = "🌆", Name = "Cyberpunk", DisplayName = "Cyberpunk", Description = "Vibrant neon cyberpunk theme" }
+                new ThemeInfo { Icon = "??", Name = "Office", DisplayName = "Office", Description = "Light professional office theme" },
+                new ThemeInfo { Icon = "??", Name = "VisualStudio", DisplayName = "Visual Studio", Description = "Professional clean theme inspired by VS 2022" },
+                new ThemeInfo { Icon = "??", Name = "Light", DisplayName = "Light", Description = "Clean professional light theme" },
+                new ThemeInfo { Icon = "??", Name = "DarkGlass", DisplayName = "Dark Glass", Description = "Modern glassmorphism dark theme" },
+                new ThemeInfo { Icon = "?", Name = "Minimal", DisplayName = "Minimal", Description = "Ultra-clean minimalist theme" },
+                new ThemeInfo { Icon = "??", Name = "Cyberpunk", DisplayName = "Cyberpunk", Description = "Vibrant neon cyberpunk theme" }
             };
 
             ThemeListView.ItemsSource = themes;
@@ -270,13 +270,13 @@ namespace WpfHexEditor.Sample.HexEditor.Views.Dialogs
             // All supported copy modes
             var copyModes = new List<CopyModeInfo>
             {
-                new CopyModeInfo { Icon = "🔄", Mode = CopyPasteMode.Auto, DisplayName = "Auto (Default)", Description = "Automatically selects format based on context" },
-                new CopyModeInfo { Icon = "📋", Mode = CopyPasteMode.HexaString, DisplayName = "Hexadecimal", Description = "Copy as hexadecimal string (e.g., \"48656C6C6F\")" },
-                new CopyModeInfo { Icon = "📝", Mode = CopyPasteMode.AsciiString, DisplayName = "ASCII", Description = "Copy as ASCII text string" },
-                new CopyModeInfo { Icon = "📊", Mode = CopyPasteMode.FormattedView, DisplayName = "Formatted View", Description = "Copy with offsets, hex bytes, and ASCII columns" },
-                new CopyModeInfo { Icon = "💻", Mode = CopyPasteMode.CSharpCode, DisplayName = "C# Code", Description = "Copy as C# byte array code" },
-                new CopyModeInfo { Icon = "🔧", Mode = CopyPasteMode.CCode, DisplayName = "C Code", Description = "Copy as C byte array code" },
-                new CopyModeInfo { Icon = "📖", Mode = CopyPasteMode.TblString, DisplayName = "TBL String", Description = "Copy using loaded TBL character table" }
+                new CopyModeInfo { Icon = "??", Mode = CopyPasteMode.Auto, DisplayName = "Auto (Default)", Description = "Automatically selects format based on context" },
+                new CopyModeInfo { Icon = "??", Mode = CopyPasteMode.HexaString, DisplayName = "Hexadecimal", Description = "Copy as hexadecimal string (e.g., \"48656C6C6F\")" },
+                new CopyModeInfo { Icon = "??", Mode = CopyPasteMode.AsciiString, DisplayName = "ASCII", Description = "Copy as ASCII text string" },
+                new CopyModeInfo { Icon = "??", Mode = CopyPasteMode.FormattedView, DisplayName = "Formatted View", Description = "Copy with offsets, hex bytes, and ASCII columns" },
+                new CopyModeInfo { Icon = "??", Mode = CopyPasteMode.CSharpCode, DisplayName = "C# Code", Description = "Copy as C# byte array code" },
+                new CopyModeInfo { Icon = "??", Mode = CopyPasteMode.CCode, DisplayName = "C Code", Description = "Copy as C byte array code" },
+                new CopyModeInfo { Icon = "??", Mode = CopyPasteMode.TblString, DisplayName = "TBL String", Description = "Copy using loaded TBL character table" }
             };
 
             CopyModeListView.ItemsSource = copyModes;

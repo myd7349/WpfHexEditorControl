@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -216,7 +216,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
             var cpuAfter  = System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime;
             var cpuDelta  = cpuAfter - cpuBefore;
             // Clamp: cpuDelta is process-wide (all cores, all threads). During batch startup
-            // multiple plugins init in parallel, so cpuDelta >> per-plugin share → clamp to 100.
+            // multiple plugins init in parallel, so cpuDelta >> per-plugin share ? clamp to 100.
             var cpuPct    = elapsed.TotalMilliseconds > 0
                 ? Math.Clamp(cpuDelta.TotalMilliseconds / (elapsed.TotalMilliseconds * Environment.ProcessorCount) * 100.0, 0.0, 100.0)
                 : 0.0;

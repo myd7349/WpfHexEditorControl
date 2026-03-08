@@ -16,7 +16,7 @@
     <Authors>Derek Tremblay;Claude Sonnet 4.6</Authors>
     <Company>Derek Tremblay (derektremblay666@gmail.com)</Company>
     <Product>WpfHexEditor.BinaryAnalysis</Product>
-    <Copyright>Apache 2.0 - 2026</Copyright>
+    <Copyright>GNU Affero General Public License v3.0 - 2026</Copyright>
     <Description>
       Cross-platform binary analysis library — zero WPF dependency.
 
@@ -36,7 +36,7 @@
     <PackageProjectUrl>https://github.com/abbaye/WpfHexEditorControl</PackageProjectUrl>
     <RepositoryUrl>https://github.com/abbaye/WpfHexEditorControl</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>

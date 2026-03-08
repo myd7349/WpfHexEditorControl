@@ -1,5 +1,5 @@
-﻿<!--
-    Apache 2.0  2026
+<!--
+    GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
 -->
@@ -18,7 +18,7 @@
                 <services:LocalizedResourceDictionary/>
                 <!-- HexEditor Control Localization Resources -->
                 <hexServices:LocalizedResourceDictionary/>
-                <!-- Office Theme (needed for existing dialogs like Options/Paramètres) -->
+                <!-- Office Theme (needed for existing dialogs like Options/Param�tres) -->
                 <ResourceDictionary Source="Resources/Themes/Office.xaml"/>
                 <!-- Ribbon Vector Icons (Temporary - will be removed when Ribbon is deleted) -->
                 <ResourceDictionary Source="Resources/RibbonIcons.xaml"/>

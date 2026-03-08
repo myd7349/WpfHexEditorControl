@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -146,7 +146,7 @@ public sealed class PermissionService : IPermissionService
         }
         catch
         {
-            // Corrupt permissions file â€” start fresh; plugin will re-request on next load.
+            // Corrupt permissions file — start fresh; plugin will re-request on next load.
         }
     }
 
@@ -174,7 +174,7 @@ public sealed class PermissionService : IPermissionService
         }
         catch
         {
-            // Non-fatal â€” permissions will be re-asked on next session.
+            // Non-fatal — permissions will be re-asked on next session.
         }
     }
 }

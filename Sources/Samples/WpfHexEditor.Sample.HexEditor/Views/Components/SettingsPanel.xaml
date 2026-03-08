@@ -1,5 +1,5 @@
-﻿<!--
-    Apache 2.0  2026
+<!--
+    GNU Affero General Public License v3.0  2026
     HexEditor V2 - Settings Panel
     Comprehensive settings for theme, language, search, and display options
     Author : Derek Tremblay (derektremblay666@gmail.com)
@@ -27,7 +27,7 @@
 
             <!-- Header -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
-                <TextBlock Text="⚙️" FontSize="28" Margin="0,0,12,0"/>
+                <TextBlock Text="??" FontSize="28" Margin="0,0,12,0"/>
                 <TextBlock Text="{DynamicResource Settings_Title}"
                           FontSize="22"
                           FontWeight="Bold"
