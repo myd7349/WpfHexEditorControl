@@ -39,6 +39,12 @@ namespace WpfHexEditor.Panels.IDE.Panels.ViewModels;
 /// <summary>Side of the panel where the plugin list appears in landscape (bottom-dock) mode.</summary>
 public enum PanelListSide { Left, Right }
 
+/// <summary>
+/// Controls where the CPU/Memory charts area is positioned relative to the plugin table.
+/// Mirrors the <c>ChartPosition</c> pattern used in the DataInspector panel.
+/// </summary>
+public enum MonitorChartsPosition { Top, Bottom, Left, Right }
+
 /// <summary>A single data point for the time-series chart.</summary>
 public sealed record ChartPoint(DateTime Time, double Value);
 
@@ -424,9 +430,10 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
     private bool          _isRunning    = true;
     private bool          _showSparklines = true;
     private int           _intervalSeconds = 5;
-    private PanelListSide _listSide    = PanelListSide.Right;
-    private bool          _isLandscape;
-    private bool          _isInstalling;
+    private PanelListSide         _listSide       = PanelListSide.Right;
+    private bool                  _isLandscape;
+    private bool                  _isInstalling;
+    private MonitorChartsPosition _chartsPosition = MonitorChartsPosition.Top;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -568,6 +575,21 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
     {
         get => _isLandscape;
         set { if (_isLandscape == value) return; _isLandscape = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>
+    /// Controls where the CPU/Memory charts area appears relative to the plugin table.
+    /// Persisted for the session; the XAML combo box stays in sync via code-behind.
+    /// </summary>
+    public MonitorChartsPosition ChartsPosition
+    {
+        get => _chartsPosition;
+        set
+        {
+            if (_chartsPosition == value) return;
+            _chartsPosition = value;
+            OnPropertyChanged();
+        }
     }
 
     /// <summary>True while a plugin package is being installed. Drives the drop-zone progress overlay.</summary>

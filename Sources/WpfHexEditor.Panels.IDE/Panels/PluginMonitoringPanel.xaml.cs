@@ -94,11 +94,8 @@ public sealed class BoolToGrantColorConverter : IValueConverter
 
 public partial class PluginMonitoringPanel : UserControl
 {
-    // Aspect-ratio threshold: wider than this factor → landscape (bottom-dock) mode.
-    private const double LandscapeThreshold = 1.8;
-
     private PluginMonitoringViewModel? _vm;
-    private bool _isLandscape;
+    private bool _suppressLayoutChange;
 
     public PluginMonitoringPanel()
     {
@@ -106,7 +103,6 @@ public partial class PluginMonitoringPanel : UserControl
         DataContextChanged += OnDataContextChanged;
         CpuChartCanvas.SizeChanged += (_, _) => RedrawCharts();
         MemChartCanvas.SizeChanged += (_, _) => RedrawCharts();
-        SizeChanged += (_, _) => ApplyLayoutMode();
         DragLeave += (_, _) => DropHintOverlay.Visibility = Visibility.Collapsed;
         Unloaded  += OnUnloaded;
     }
@@ -151,6 +147,8 @@ public partial class PluginMonitoringPanel : UserControl
             _vm.PropertyChanged  += OnVmPropertyChanged;
             _vm.RequestUninstall += OnRequestUninstall;
             ApplySparklineVisibility();
+            SyncLayoutCombo(_vm.ChartsPosition);
+            RebuildContentGrid(_vm.ChartsPosition);
         }
 
         RedrawCharts();
@@ -158,8 +156,8 @@ public partial class PluginMonitoringPanel : UserControl
 
     private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(PluginMonitoringViewModel.ListSide))
-            RebuildContentGrid(_isLandscape);
+        if (e.PropertyName == nameof(PluginMonitoringViewModel.ChartsPosition))
+            RebuildContentGrid(_vm!.ChartsPosition);
         else if (e.PropertyName == nameof(PluginMonitoringViewModel.ShowSparklines))
             ApplySparklineVisibility();
     }
@@ -176,86 +174,143 @@ public partial class PluginMonitoringPanel : UserControl
         SparklineMemColumn.Visibility = vis;
     }
 
-    // ── Adaptive layout ──────────────────────────────────────────────────────
+    // ── Layout ───────────────────────────────────────────────────────────────
 
-    private void ApplyLayoutMode()
+    /// <summary>
+    /// Syncs the layout combo box to <paramref name="pos"/> without re-triggering
+    /// the <see cref="OnLayoutPositionChanged"/> handler.
+    /// </summary>
+    private void SyncLayoutCombo(MonitorChartsPosition pos)
     {
-        var isLandscape = ActualWidth > ActualHeight * LandscapeThreshold;
-        if (isLandscape == _isLandscape) return;
+        _suppressLayoutChange = true;
+        foreach (ComboBoxItem item in LayoutPositionCombo.Items)
+        {
+            if (item.Tag?.ToString() == pos.ToString())
+            {
+                LayoutPositionCombo.SelectedItem = item;
+                break;
+            }
+        }
+        _suppressLayoutChange = false;
+    }
 
-        _isLandscape = isLandscape;
-        if (_vm is not null) _vm.IsLandscape = isLandscape;
-        RebuildContentGrid(isLandscape);
+    /// <summary>
+    /// Fires when the user selects a new layout from the toolbar combo.
+    /// Updates the ViewModel and immediately rebuilds the layout.
+    /// </summary>
+    private void OnLayoutPositionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressLayoutChange || _vm is null) return;
+        if (LayoutPositionCombo.SelectedItem is not ComboBoxItem item) return;
+        if (!Enum.TryParse<MonitorChartsPosition>(item.Tag?.ToString(), out var pos)) return;
+
+        _vm.ChartsPosition = pos;
+        RebuildContentGrid(pos);
     }
 
     /// <summary>
     /// Rebuilds ContentGrid row/column definitions and repositions the three
     /// child elements (ChartsArea, ContentSplitter, PluginsDataGrid) and the
-    /// inner chart grid (ChartsInnerGrid) according to the current mode.
+    /// inner chart grid (ChartsInnerGrid) for the given <paramref name="position"/>.
     /// </summary>
-    private void RebuildContentGrid(bool isLandscape)
+    private void RebuildContentGrid(MonitorChartsPosition position)
     {
         ContentGrid.RowDefinitions.Clear();
         ContentGrid.ColumnDefinitions.Clear();
 
-        if (!isLandscape)
+        switch (position)
         {
-            // Portrait: 3 rows — charts (*) | splitter (4px) | table (2*).
-            // Plugin table is the primary view — it gets twice the space of the charts area.
-            ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star), MinHeight = 50 });
-            ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
-            ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(2, GridUnitType.Star), MinHeight = 50 });
+            case MonitorChartsPosition.Top:
+                // 3 rows: charts (1*) | splitter | table (2*)
+                ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star), MinHeight = 50 });
+                ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
+                ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(2, GridUnitType.Star), MinHeight = 50 });
 
-            Grid.SetRow(ChartsArea,      0); Grid.SetColumn(ChartsArea,      0);
-            Grid.SetRow(ContentSplitter, 1); Grid.SetColumn(ContentSplitter, 0);
-            Grid.SetRow(PluginsDataGrid, 2); Grid.SetColumn(PluginsDataGrid, 0);
+                Grid.SetRow(ChartsArea,      0); Grid.SetColumn(ChartsArea,      0);
+                Grid.SetRow(ContentSplitter, 1); Grid.SetColumn(ContentSplitter, 0);
+                Grid.SetRow(PluginsDataGrid, 2); Grid.SetColumn(PluginsDataGrid, 0);
 
-            ContentSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
-            ContentSplitter.VerticalAlignment   = VerticalAlignment.Stretch;
-            ContentSplitter.Height              = 4;
-            ContentSplitter.Width               = double.NaN;
-            ContentSplitter.ResizeDirection     = GridResizeDirection.Rows;
+                ContentSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+                ContentSplitter.VerticalAlignment   = VerticalAlignment.Stretch;
+                ContentSplitter.Height              = 4;
+                ContentSplitter.Width               = double.NaN;
+                ContentSplitter.ResizeDirection     = GridResizeDirection.Rows;
 
-            RebuildChartsInnerGrid(landscape: false);
-        }
-        else
-        {
-            // Landscape: 3 columns — charts (*) | splitter (4px) | table (*)
-            // Column order depends on ListSide preference.
-            var listSide  = _vm?.ListSide ?? PanelListSide.Right;
-            var chartsCol = listSide == PanelListSide.Right ? 0 : 2;
-            var tableCol  = listSide == PanelListSide.Right ? 2 : 0;
+                RebuildChartsInnerGrid(stacked: false);
+                break;
 
-            ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
-            ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
-            ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
+            case MonitorChartsPosition.Bottom:
+                // 3 rows: table (2*) | splitter | charts (1*)
+                ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(2, GridUnitType.Star), MinHeight = 50 });
+                ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
+                ContentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star), MinHeight = 50 });
 
-            Grid.SetRow(ChartsArea,      0); Grid.SetColumn(ChartsArea,      chartsCol);
-            Grid.SetRow(ContentSplitter, 0); Grid.SetColumn(ContentSplitter, 1);
-            Grid.SetRow(PluginsDataGrid, 0); Grid.SetColumn(PluginsDataGrid, tableCol);
+                Grid.SetRow(PluginsDataGrid, 0); Grid.SetColumn(PluginsDataGrid, 0);
+                Grid.SetRow(ContentSplitter, 1); Grid.SetColumn(ContentSplitter, 0);
+                Grid.SetRow(ChartsArea,      2); Grid.SetColumn(ChartsArea,      0);
 
-            ContentSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
-            ContentSplitter.VerticalAlignment   = VerticalAlignment.Stretch;
-            ContentSplitter.Height              = double.NaN;
-            ContentSplitter.Width               = 4;
-            ContentSplitter.ResizeDirection     = GridResizeDirection.Columns;
+                ContentSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+                ContentSplitter.VerticalAlignment   = VerticalAlignment.Stretch;
+                ContentSplitter.Height              = 4;
+                ContentSplitter.Width               = double.NaN;
+                ContentSplitter.ResizeDirection     = GridResizeDirection.Rows;
 
-            RebuildChartsInnerGrid(landscape: true);
+                RebuildChartsInnerGrid(stacked: false);
+                break;
+
+            case MonitorChartsPosition.Left:
+                // 3 columns: charts (1*) | splitter | table (1*)
+                ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
+                ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
+                ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
+
+                Grid.SetRow(ChartsArea,      0); Grid.SetColumn(ChartsArea,      0);
+                Grid.SetRow(ContentSplitter, 0); Grid.SetColumn(ContentSplitter, 1);
+                Grid.SetRow(PluginsDataGrid, 0); Grid.SetColumn(PluginsDataGrid, 2);
+
+                ContentSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+                ContentSplitter.VerticalAlignment   = VerticalAlignment.Stretch;
+                ContentSplitter.Height              = double.NaN;
+                ContentSplitter.Width               = 4;
+                ContentSplitter.ResizeDirection     = GridResizeDirection.Columns;
+
+                RebuildChartsInnerGrid(stacked: true);
+                break;
+
+            case MonitorChartsPosition.Right:
+                // 3 columns: table (1*) | splitter | charts (1*)
+                ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
+                ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
+                ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
+
+                Grid.SetRow(PluginsDataGrid, 0); Grid.SetColumn(PluginsDataGrid, 0);
+                Grid.SetRow(ContentSplitter, 0); Grid.SetColumn(ContentSplitter, 1);
+                Grid.SetRow(ChartsArea,      0); Grid.SetColumn(ChartsArea,      2);
+
+                ContentSplitter.HorizontalAlignment = HorizontalAlignment.Stretch;
+                ContentSplitter.VerticalAlignment   = VerticalAlignment.Stretch;
+                ContentSplitter.Height              = double.NaN;
+                ContentSplitter.Width               = 4;
+                ContentSplitter.ResizeDirection     = GridResizeDirection.Columns;
+
+                RebuildChartsInnerGrid(stacked: true);
+                break;
         }
     }
 
     /// <summary>
-    /// Rebuilds the inner charts grid between portrait (side-by-side columns)
-    /// and landscape (stacked rows) to make best use of the available space.
+    /// Rebuilds the inner charts grid.
+    /// <paramref name="stacked"/> = true → CPU/Memory in rows (Left/Right modes).
+    /// <paramref name="stacked"/> = false → CPU/Memory in columns (Top/Bottom modes).
     /// </summary>
-    private void RebuildChartsInnerGrid(bool landscape)
+    private void RebuildChartsInnerGrid(bool stacked)
     {
         ChartsInnerGrid.RowDefinitions.Clear();
         ChartsInnerGrid.ColumnDefinitions.Clear();
 
-        if (!landscape)
+        if (!stacked)
         {
-            // Side-by-side: CPU | splitter | Memory
+            // Side-by-side columns: CPU | splitter | Memory
             ChartsInnerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             ChartsInnerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
             ChartsInnerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -272,7 +327,7 @@ public partial class PluginMonitoringPanel : UserControl
         }
         else
         {
-            // Stacked: CPU / splitter / Memory
+            // Stacked rows: CPU / splitter / Memory
             ChartsInnerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             ChartsInnerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
             ChartsInnerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
