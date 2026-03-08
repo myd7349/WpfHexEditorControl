@@ -7,7 +7,7 @@
 //     Tree node for a .NET event definition.
 // ==========================================================
 
-using WpfHexEditor.Plugins.AssemblyExplorer.Models;
+using WpfHexEditor.Core.AssemblyAnalysis.Models;
 
 namespace WpfHexEditor.Plugins.AssemblyExplorer.ViewModels;
 

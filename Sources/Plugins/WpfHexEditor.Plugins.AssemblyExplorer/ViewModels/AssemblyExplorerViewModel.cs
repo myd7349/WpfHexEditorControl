@@ -22,7 +22,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using WpfHexEditor.Plugins.AssemblyExplorer.Events;
-using WpfHexEditor.Plugins.AssemblyExplorer.Models;
+using WpfHexEditor.Core.AssemblyAnalysis.Models;
 using WpfHexEditor.Plugins.AssemblyExplorer.Services;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts.Services;

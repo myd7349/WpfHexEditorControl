@@ -22,7 +22,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
-using WpfHexEditor.Plugins.AssemblyExplorer.Models;
+using WpfHexEditor.Core.AssemblyAnalysis.Models;
 
 namespace WpfHexEditor.Plugins.AssemblyExplorer.Services;
 

@@ -13,7 +13,7 @@
 //     can be swapped without touching the ViewModel layer.
 // ==========================================================
 
-using WpfHexEditor.Plugins.AssemblyExplorer.Models;
+using WpfHexEditor.Core.AssemblyAnalysis.Models;
 
 namespace WpfHexEditor.Plugins.AssemblyExplorer.Services;
 

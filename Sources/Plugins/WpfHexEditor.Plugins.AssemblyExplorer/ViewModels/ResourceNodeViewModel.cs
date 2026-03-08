@@ -7,7 +7,7 @@
 //     Tree node for a managed resource (ManifestResource row).
 // ==========================================================
 
-using WpfHexEditor.Plugins.AssemblyExplorer.Models;
+using WpfHexEditor.Core.AssemblyAnalysis.Models;
 
 namespace WpfHexEditor.Plugins.AssemblyExplorer.ViewModels;
 

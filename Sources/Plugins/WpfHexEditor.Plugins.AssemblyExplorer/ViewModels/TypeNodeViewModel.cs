@@ -8,7 +8,7 @@
 //     Children are method/field/property/event sub-groups.
 // ==========================================================
 
-using WpfHexEditor.Plugins.AssemblyExplorer.Models;
+using WpfHexEditor.Core.AssemblyAnalysis.Models;
 
 namespace WpfHexEditor.Plugins.AssemblyExplorer.ViewModels;
 

@@ -13,7 +13,7 @@
 //     All text comes from DecompilerService (stub in Phase 1).
 // ==========================================================
 
-using WpfHexEditor.Plugins.AssemblyExplorer.Models;
+using WpfHexEditor.Core.AssemblyAnalysis.Models;
 using WpfHexEditor.Plugins.AssemblyExplorer.Services;
 
 namespace WpfHexEditor.Plugins.AssemblyExplorer.ViewModels;
