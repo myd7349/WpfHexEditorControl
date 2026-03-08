@@ -348,6 +348,8 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 | **Git Integration** | 🔜 Planned | #91 |
 | **Plugin Marketplace & Auto-Update** | 🔜 Planned | #41–43 |
 | **IDE Localization Engine** — full IDE UI (HexEditor control already 19 languages) | 🔜 Planned | #100 |
+| **Official Website** — landing page, docs, downloads, plugin registry | 🔜 Planned | #108 |
+| **Installable Package** — MSI / MSIX / WinGet, auto-update, no SDK required | 🔜 Planned | #109 |
 
 ---
 

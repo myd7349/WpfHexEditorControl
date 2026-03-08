@@ -107,6 +107,15 @@ Features already shipped are in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
+## 🔜 Planned — Distribution & Web Presence
+
+| Feature # | Title | Description |
+|-----------|-------|-------------|
+| #108 | **Official Website** | Public project website — landing page, feature showcase, screenshots, documentation browser, changelog, download links and plugin registry. |
+| #109 | **Installable Package** | Self-contained installer for the IDE — MSI / MSIX / WinGet package; auto-update channel; no .NET SDK required for end users; optional silent install for enterprise. |
+
+---
+
 ## ✅ Recently Shipped
 
 | Feature | Version / Release |
