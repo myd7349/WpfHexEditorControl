@@ -62,7 +62,7 @@ public sealed class IlTextEmitter
         var reader = body.GetILReader();
 
         sb.AppendLine($"// MaxStack: {body.MaxStack}");
-        if (body.LocalSignature != EntityHandle.Empty)
+        if (!body.LocalSignature.IsNil)
         {
             sb.AppendLine($"// Locals: {body.LocalSignature}");
         }
@@ -144,7 +144,7 @@ public sealed class IlTextEmitter
             case ILOpCode.Ceq:   case ILOpCode.Cgt:   case ILOpCode.Cgt_un:
             case ILOpCode.Clt:   case ILOpCode.Clt_un:
             case ILOpCode.Volatile:
-            case ILOpCode.Tailcall:
+            case ILOpCode.Tail:
             case ILOpCode.Readonly:
                 return;
 
@@ -270,23 +270,24 @@ public sealed class IlTextEmitter
         try
         {
             var handle = MetadataTokens.EntityHandle(token);
-            return handle.Kind switch
+            switch (handle.Kind)
             {
-                HandleKind.MethodDefinition =>
-                    mdReader.GetString(mdReader.GetMethodDefinition(
-                        (MethodDefinitionHandle)handle).Name),
-                HandleKind.MemberReference =>
+                case HandleKind.MethodDefinition:
+                    return mdReader.GetString(
+                        mdReader.GetMethodDefinition((MethodDefinitionHandle)handle).Name);
+                case HandleKind.MemberReference:
                 {
                     var mref = mdReader.GetMemberReference((MemberReferenceHandle)handle);
                     return $"{ResolveParentType(mref.Parent, mdReader)}::{mdReader.GetString(mref.Name)}";
-                },
-                HandleKind.MethodSpecification =>
+                }
+                case HandleKind.MethodSpecification:
                 {
                     var spec = mdReader.GetMethodSpecification((MethodSpecificationHandle)handle);
                     return ResolveMethodOrMember(MetadataTokens.GetToken(spec.Method), mdReader);
-                },
-                _ => $"0x{token:X8}"
-            };
+                }
+                default:
+                    return $"0x{token:X8}";
+            }
         }
         catch { return $"0x{token:X8}"; }
     }

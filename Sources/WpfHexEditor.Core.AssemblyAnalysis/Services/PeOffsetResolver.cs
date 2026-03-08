@@ -118,8 +118,8 @@ public sealed class PeOffsetResolver
         // To avoid re-parsing the full stream header, we use the fact that the
         // BCL gives us the metadata block pointer via PEReader.GetMetadata().
 
-        var metaBlock    = peReader.GetMetadata();
-        var metaSpan     = metaBlock.GetContent();
+        var metaBlock              = peReader.GetMetadata();
+        ReadOnlySpan<byte> metaSpan = metaBlock.GetContent().AsSpan();
 
         // Parse the METADATA_ROOT (ECMA-335 §II.24.2.1):
         //   Signature (4) + MajorVersion (2) + MinorVersion (2) +
