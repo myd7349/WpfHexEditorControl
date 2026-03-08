@@ -328,6 +328,22 @@ Open `WpfHexEditorControl.sln` in Visual Studio 2022, set **WpfHexEditor.App** a
 
 ---
 
+## 🗺️ Roadmap
+
+> Full planned feature list with issue tracking in [CHANGELOG.md — What's Next](CHANGELOG.md#whats-next).
+
+| Feature | Status | Issues |
+|---------|--------|--------|
+| **MSBuild & Visual Studio `.sln` / `.csproj` / `.vbproj` support** | 🔜 Planned | #101–103 |
+| **Assembly Explorer — full tree + ECMA-335 metadata** | 🔧 In Progress (Phase 1 done) | #104–105 |
+| **.NET Decompilation via ILSpy** | 🔜 Planned | #106 |
+| **Code Intelligence (LSP / IntelliSense / Snippets)** | 🔜 Planned | #85–89 |
+| **Integrated Debugger** | 🔜 Planned | #44, #90 |
+| **Git Integration** | 🔜 Planned | #91 |
+| **Plugin Marketplace & Auto-Update** | 🔜 Planned | #41–43 |
+
+---
+
 ## 📚 Documentation
 
 ### User Guides

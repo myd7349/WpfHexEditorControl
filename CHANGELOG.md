@@ -56,6 +56,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 - **#99 Advanced UI/UX** — `NotificationManager`, `WorkspaceLayoutAdapter`; contextual inline notifications, layout persistence per workspace, full docking for all panels
 - **#100 Internationalization / Localization** — `LocalizationManager`, `TranslationLoader`; EN/FR initial, plugin-provided translations, dynamic switching per workspace
 
+### MSBuild & Visual Studio Solution Support
+- **#101 `.sln` Parser** — open and parse existing Visual Studio 2019/2022 solution files; project graph resolution, nested solution folders, shared projects
+- **#102 C# / VB.NET Project Support** — full `.csproj` / `.vbproj` parsing; properties, item groups, package references, project-to-project references; read/write support
+- **#103 MSBuild API Integration** — build, rebuild, clean targets from within the IDE via embedded MSBuild API; build output routed to Output Panel; errors and warnings surfaced in Error Panel with file/line navigation
+
+### Assembly Explorer & .NET Decompilation
+- **#104 Assembly Explorer Panel — Full Tree** — namespaces, types (class/struct/interface/enum/delegate), methods, fields, properties, events, resources, assembly references; filter/search; node icons per visibility and kind
+- **#105 ECMA-335 Metadata Resolution** — full `PeOffsetResolver` implementation (§II.24 table offsets); metadata token → PE file offset; offset-to-source synchronization with HexEditor (click node → jump to raw bytes)
+- **#106 Decompilation Backend via ILSpy** — C# skeleton view + full IL disassembly view per method; "Go to Metadata Token" navigation; decompiled source displayed in Code Editor tab; integration via `WpfHexEditor.Decompiler.Core` (no direct ILSpy ProjectReference — adapter pattern)
+
 ---
 
 ## [Unreleased] — 2026-03 — Plugin System, Terminal & IDE Enhancements
