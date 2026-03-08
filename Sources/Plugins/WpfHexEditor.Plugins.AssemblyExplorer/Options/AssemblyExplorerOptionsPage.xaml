@@ -124,5 +124,55 @@
                   Foreground="{DynamicResource PFP_TextBrush}"
                   Margin="0,0,0,4"/>
 
+        <CheckBox x:Name="ChkShowNonPublic"
+                  Content="Show non-public members (private, internal, protected)"
+                  Foreground="{DynamicResource PFP_TextBrush}"
+                  Margin="0,0,0,4"/>
+
+        <CheckBox x:Name="ChkShowInherited"
+                  Content="Show inherited members in type nodes"
+                  Foreground="{DynamicResource PFP_TextBrush}"
+                  Margin="0,0,0,4"/>
+
+        <CheckBox x:Name="ChkPinAssemblies"
+                  Content="Pin loaded assemblies across active editor changes"
+                  Foreground="{DynamicResource PFP_TextBrush}"
+                  Margin="0,0,0,4"/>
+
+        <!-- Separator -->
+        <Separator Background="{DynamicResource PFP_BorderBrush}" Margin="0,8,0,8"/>
+
+        <!-- Section: Recent Files -->
+        <TextBlock Text="Recent Assemblies"
+                   FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource PFP_AccentBrush}"
+                   Margin="0,0,0,6"/>
+
+        <Border Background="{DynamicResource PFP_SectionBackgroundBrush}"
+                BorderBrush="{DynamicResource PFP_BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="2"
+                Height="120"
+                Margin="0,0,0,6">
+            <ListBox x:Name="RecentFilesList"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Foreground="{DynamicResource PFP_TextBrush}"
+                     FontSize="11"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     SelectionMode="Single"/>
+        </Border>
+
+        <Button x:Name="BtnClearRecent"
+                Content="Clear All Recent"
+                HorizontalAlignment="Left"
+                Padding="8,3"
+                FontSize="11"
+                Background="{DynamicResource PFP_SectionBackgroundBrush}"
+                Foreground="{DynamicResource PFP_TextBrush}"
+                BorderBrush="{DynamicResource PFP_BorderBrush}"
+                Click="OnClearRecentClick"/>
+
     </StackPanel>
 </UserControl>

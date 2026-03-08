@@ -37,11 +37,19 @@ public partial class AssemblyExplorerOptionsPage : UserControl
         SelectComboByTag(BackendCombo,  opts.DecompilerBackend);
         SelectComboByTag(LanguageCombo, opts.DecompileLanguage);
 
-        ChkAutoAnalyze.IsChecked  = opts.AutoAnalyzeOnFileOpen;
-        ChkAutoSync.IsChecked     = opts.AutoSyncWithHexEditor;
-        ChkShowResources.IsChecked = opts.ShowResources;
-        ChkShowMetadata.IsChecked  = opts.ShowMetadataTables;
-        ChkInheritTheme.IsChecked  = opts.InheritIDETheme;
+        ChkAutoAnalyze.IsChecked    = opts.AutoAnalyzeOnFileOpen;
+        ChkAutoSync.IsChecked       = opts.AutoSyncWithHexEditor;
+        ChkShowResources.IsChecked  = opts.ShowResources;
+        ChkShowMetadata.IsChecked   = opts.ShowMetadataTables;
+        ChkInheritTheme.IsChecked   = opts.InheritIDETheme;
+        ChkShowNonPublic.IsChecked  = opts.ShowNonPublicMembers;
+        ChkShowInherited.IsChecked  = opts.ShowInheritedMembers;
+        ChkPinAssemblies.IsChecked  = opts.PinAssembliesAcrossFileChange;
+
+        // Populate recent files list
+        RecentFilesList.Items.Clear();
+        foreach (var path in opts.RecentFiles)
+            RecentFilesList.Items.Add(path);
     }
 
     /// <summary>Persists current control values to <see cref="AssemblyExplorerOptions.Instance"/>.</summary>
@@ -49,14 +57,18 @@ public partial class AssemblyExplorerOptionsPage : UserControl
     {
         var opts = AssemblyExplorerOptions.Instance;
 
-        opts.DecompilerFontSize     = (int)FontSizeSlider.Value;
-        opts.DecompilerBackend      = GetComboTag(BackendCombo)  ?? "None";
-        opts.DecompileLanguage      = GetComboTag(LanguageCombo) ?? "CSharp";
-        opts.AutoAnalyzeOnFileOpen  = ChkAutoAnalyze.IsChecked  == true;
-        opts.AutoSyncWithHexEditor  = ChkAutoSync.IsChecked     == true;
-        opts.ShowResources          = ChkShowResources.IsChecked == true;
-        opts.ShowMetadataTables     = ChkShowMetadata.IsChecked  == true;
-        opts.InheritIDETheme        = ChkInheritTheme.IsChecked  == true;
+        opts.DecompilerFontSize              = (int)FontSizeSlider.Value;
+        opts.DecompilerBackend               = GetComboTag(BackendCombo)  ?? "None";
+        opts.DecompileLanguage               = GetComboTag(LanguageCombo) ?? "CSharp";
+        opts.AutoAnalyzeOnFileOpen           = ChkAutoAnalyze.IsChecked   == true;
+        opts.AutoSyncWithHexEditor           = ChkAutoSync.IsChecked      == true;
+        opts.ShowResources                   = ChkShowResources.IsChecked  == true;
+        opts.ShowMetadataTables              = ChkShowMetadata.IsChecked   == true;
+        opts.InheritIDETheme                 = ChkInheritTheme.IsChecked   == true;
+        opts.ShowNonPublicMembers            = ChkShowNonPublic.IsChecked  == true;
+        opts.ShowInheritedMembers            = ChkShowInherited.IsChecked  == true;
+        opts.PinAssembliesAcrossFileChange   = ChkPinAssemblies.IsChecked  == true;
+        // RecentFiles list is managed by AddRecentFile() — not saved from here.
 
         opts.Save();
     }
@@ -65,6 +77,13 @@ public partial class AssemblyExplorerOptionsPage : UserControl
 
     private void OnFontSizeChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         => FontSizeLabel.Text = $"{(int)e.NewValue}pt";
+
+    private void OnClearRecentClick(object sender, RoutedEventArgs e)
+    {
+        AssemblyExplorerOptions.Instance.RecentFiles.Clear();
+        AssemblyExplorerOptions.Instance.Save();
+        RecentFilesList.Items.Clear();
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

@@ -88,6 +88,25 @@ Features already shipped are in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
+## 🔜 Planned — Quality, Tooling & Operations
+
+| Feature # | Title | Description |
+|-----------|-------|-------------|
+| #45 | **Plugin & Script Testing** | `TestRunnerService` — automated functional, compatibility, security and performance tests for plugins and scripts before execution or installation. |
+| #46 | **Integrated Documentation & Contextual Help** | In-IDE documentation browser and context-sensitive help for all components (menus, commands, panels, plugins, APIs). |
+| #47 | **Notification & Alert System** | Centralized `NotificationService` — inline toast alerts, priority levels, EventBus integration, plugin-extensible notification hooks. |
+| #48 | **Monitoring & Analytics** | IDE health dashboard — plugin CPU/RAM usage, event frequency, command stats, latency tracking; exportable reports. |
+| #49 | **Export / Import Projects & Configurations** | Full export/import of workspace configs, settings, plugin lists, templates and keybindings for portability and backup. |
+| #54 | **Auto-Save & Restore** | Automatic session backup at configurable intervals; full restore on crash or abnormal exit without data loss. |
+| #58 | **Reporting & Dashboards** | Dedicated report panel — code quality metrics, plugin health, build history, test results; filterable and exportable. |
+| #63 | **Smart Session Backup & Auto-Resume** | Intelligent session snapshot (open files, cursors, layout, unsaved changes); seamless resume after restart or crash. |
+| #65 | **Interactive Tutorials & Onboarding** | Step-by-step interactive onboarding for new users; contextual tutorial overlays for major features; plugin authors guide. |
+| #67 | **Global Backup & Config Versioning** | Version-controlled snapshots of all IDE configurations, plugin manifests and workspace templates; rollback support. |
+| #69 | **Dependency Monitoring & Plugin Compatibility** | Detect plugin dependency conflicts, SDK version mismatches, and incompatible combinations; alerts before install/update. |
+| #71 | **CI Integration for Plugins & Scripts** | Trigger automated plugin test suites and script validation from CI pipelines; webhook support; result reporting via Output Panel. |
+
+---
+
 ## ✅ Recently Shipped
 
 | Feature | Version / Release |
