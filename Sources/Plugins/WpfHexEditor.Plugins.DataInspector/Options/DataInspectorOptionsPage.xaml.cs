@@ -17,7 +17,13 @@ public partial class DataInspectorOptionsPage : UserControl
 {
     public DataInspectorOptionsPage()
     {
-        InitializeComponent();
+        // Wrap InitializeComponent() because Application.LoadComponent() can throw
+        // NullReferenceException when the plugin assembly is loaded in a custom
+        // AssemblyLoadContext and WPF's pack URI system can't resolve the resource stream.
+        // If BAML loading fails, all x:Name fields remain null; Load() handles that
+        // via its null guard and returns early without accessing any field.
+        try { InitializeComponent(); }
+        catch { /* BAML load failed in ALC — UI fields will be null; Load() guard handles it */ }
     }
 
     /// <summary>Populates the page controls from current options.</summary>
