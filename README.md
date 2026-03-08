@@ -94,20 +94,24 @@ WpfHexEditor uses a **plugin architecture** (`IDocumentEditor`) — every editor
 
 | Editor | Status | Progress | Description |
 |--------|--------|----------|-------------|
-| **Hex Editor** | ✅ Active | ~75% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL, status bar contributor |
-| **TBL Editor** | ✅ Active | ~60% | Character table editor for custom encodings and ROM hacking |
-| **Code Editor** | ✅ Active | ~55% | Multi-language code editor with syntax highlighting, find/replace, `IEditorPersistable`, split view |
-| **Text Editor** | ✅ Active | ~50% | Text editing with syntax highlighting and encoding support |
-| **Image Viewer** | 🔧 Active | ~30% | Binary image viewer — zoom/pan, transform pipeline (rotate/flip/crop/resize), context menu, `FileShare.ReadWrite` for concurrent open |
-| **Audio Viewer** | 🔧 Stub | ~5% | Audio binary viewer (planned) |
-| **Diff / Changeset Viewer** | 🔧 Active | ~35% | Side-by-side binary comparison and changeset replay |
-| **Disassembly Viewer** | 🔧 Stub | ~5% | Binary disassembler (planned) |
-| **Structure Editor** | 🔧 Active | ~30% | Binary template / structure editor |
-| **Decompiled Source Viewer** | 🔜 Planned | ~0% | C# skeleton + full IL view via ILSpy backend; "Go to Metadata Token" navigation from Assembly Explorer (#106) |
-| **Memory Snapshot Viewer** | 🔜 Planned | ~0% | Load Windows mini-dump `.dmp` / Linux core-dump; display memory regions, thread stacks, modules, heap blocks (#117) |
-| **PCAP / Network Capture Viewer** | 🔜 Planned | ~0% | Load `.pcap` / `.pcapng`; packet list, layer breakdown (Ethernet/IP/TCP/UDP/TLS), raw payload in hex view (#136) |
+| **[Hex Editor](Sources/WpfHexEditor.HexEditor/README.md)** | ✅ Active | ~75% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL, status bar contributor |
+| **[TBL Editor](Sources/WpfHexEditor.Editor.TblEditor/README.md)** | ✅ Active | ~60% | Character table editor for custom encodings and ROM hacking |
+| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ✅ Active | ~55% | Multi-language code editor with syntax highlighting, find/replace, `IEditorPersistable`, split view |
+| **[Text Editor](Sources/WpfHexEditor.Editor.TextEditor/README.md)** | ✅ Active | ~50% | Text editing with 26 embedded language definitions, auto-detection by extension, encoding support |
+| **[Script Editor](Sources/WpfHexEditor.Editor.ScriptEditor/README.md)** | ✅ Active | ~45% | `.hxscript` editor with syntax highlighting, run-in-terminal integration, `HxScriptEngine` backend |
+| **[JSON Editor](Sources/WpfHexEditor.Editor.JsonEditor/README.md)** | 🔧 Active | ~40% | JSON/JSONC editor with syntax highlighting and schema validation |
+| **[Image Viewer](Sources/WpfHexEditor.Editor.ImageViewer/README.md)** | 🔧 Active | ~30% | Binary image viewer — zoom/pan, transform pipeline (rotate/flip/crop/resize), `FileShare.ReadWrite` for concurrent open |
+| **[Tile Editor](Sources/WpfHexEditor.Editor.TileEditor/README.md)** | 🔧 Active | ~30% | Tile-based graphic editor for ROM/binary assets — palette, zoom, pixel grid |
+| **[Structure Editor](Sources/WpfHexEditor.Editor.StructureEditor/README.md)** | 🔧 Active | ~30% | `.whfmt` binary template editor — block DataGrid, type/offset/length editing, live save |
+| **[Entropy Viewer](Sources/WpfHexEditor.Editor.EntropyViewer/README.md)** | 🔧 Active | ~25% | Visual entropy graph of binary sections — detect encryption, compression, and packed regions |
+| **[Diff / Changeset Viewer](Sources/WpfHexEditor.Editor.DiffViewer/README.md)** | 🔧 Active | ~35% | Side-by-side binary comparison and changeset replay |
+| **[Audio Viewer](Sources/WpfHexEditor.Editor.AudioViewer/README.md)** | 🔧 Stub | ~5% | Audio binary viewer — waveform display (planned) |
+| **[Disassembly Viewer](Sources/WpfHexEditor.Editor.DisassemblyViewer/README.md)** | 🔧 Stub | ~5% | x86/x64/ARM binary disassembler (planned) |
+| **[Decompiled Source Viewer](Sources/WpfHexEditor.Decompiler.Core/README.md)** | 🔜 Planned | ~0% | C# skeleton + full IL view via ILSpy backend; "Go to Metadata Token" navigation (#106) |
+| **Memory Snapshot Viewer** | 🔜 Planned | ~0% | Load Windows mini-dump `.dmp` / Linux core-dump; display memory regions, thread stacks, modules (#117) |
+| **PCAP / Network Capture Viewer** | 🔜 Planned | ~0% | Load `.pcap` / `.pcapng`; packet list, layer breakdown (Ethernet/IP/TCP/UDP/TLS), raw payload (#136) |
 
-> **Implementing a new editor?** See [IDocumentEditor contract](Sources/WpfHexEditor.Editor.Core/) and register via `EditorRegistry`.
+> **Implementing a new editor?** See [IDocumentEditor contract](Sources/WpfHexEditor.Editor.Core/README.md) and register via `EditorRegistry`.
 
 ---
 
@@ -119,30 +123,30 @@ All controls are **independently reusable** — no IDE required. Drop any of the
 
 | Control | Frameworks | Progress | Description |
 |---------|-----------|----------|-------------|
-| **[HexEditor](Sources/WpfHexEditor.HexEditor/)** | net8.0-windows | ~80% | Full-featured hex editor UserControl — MVVM, 16 services, insert/overwrite, search, bookmarks, TBL, 400+ format detection |
-| **[HexBox](Sources/WpfHexEditor.HexBox/)** | net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
-| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/)** | net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
-| **[BarChart](Sources/WpfHexEditor.BarChart/)** | net48 \| net8.0-windows | ~85% | Standalone byte-frequency bar chart — visualizes distribution of all 256 byte values (0x00–0xFF) in a binary file |
-| **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/)** | net8.0-windows | ~65% | **Custom-built** VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — 100% in-house, zero third-party dependency |
+| **[HexEditor](Sources/WpfHexEditor.HexEditor/README.md)** | net8.0-windows | ~80% | Full-featured hex editor UserControl — MVVM, 16 services, insert/overwrite, search, bookmarks, TBL, 400+ format detection |
+| **[HexBox](Sources/WpfHexEditor.HexBox/README.md)** | net8.0-windows | ~80% | Lightweight hex input field — zero external dependencies, MVVM-ready |
+| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/README.md)** | net8.0-windows | ~95% | Compact color picker UserControl with RGB/HSV/hex input |
+| **[BarChart](Sources/WpfHexEditor.BarChart/README.md)** | net48 \| net8.0-windows | ~85% | Standalone byte-frequency bar chart — visualizes distribution of all 256 byte values (0x00–0xFF) in a binary file |
+| **[Docking.Wpf](Sources/WpfHexEditor.Docking.Wpf/README.md)** | net8.0-windows | ~65% | **Custom-built** VS-style docking engine — float, dock, auto-hide, colored tabs, 8 themes — 100% in-house, zero third-party dependency |
 
 ### Libraries & Infrastructure
 
 | Library | Frameworks | Description |
 |---------|-----------|-------------|
-| **[Core](Sources/WpfHexEditor.Core/)** | net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
-| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/)** | net8.0-windows | `IDocumentEditor` plugin contract, editor registry, changeset system, shared interfaces |
-| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/)** | net8.0 | 400+ format detection engine, binary templates, DataInspector service |
-| **[Definitions](Sources/WpfHexEditor.Definitions/)** | net8.0-windows | Embedded format catalog (400+ file signatures) and syntax definitions shared across editors and plugins |
-| **[SDK](Sources/WpfHexEditor.SDK/)** | net8.0-windows | Public plugin API — `IWpfHexEditorPlugin`, `IIDEHostContext`, `IUIRegistry`, 11+ service contracts incl. `ITerminalService`, `PluginCapabilities.Terminal` |
-| **[PluginHost](Sources/WpfHexEditor.PluginHost/)** | net8.0-windows | Runtime plugin infrastructure — discovery, load, watchdog, `PluginManagerControl`, `PermissionService` |
-| **[PluginSandbox](Sources/WpfHexEditor.PluginSandbox/)** | net8.0-windows | Out-of-process plugin execution host via IPC — fault isolation stub (#81) |
-| **[Docking.Core](Sources/WpfHexEditor.Docking.Core/)** | net8.0-windows | Abstract platform-agnostic docking contracts — `DockEngine`, layout model, `DockItemState` |
-| **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/)** | net8.0-windows | Command engine — 31+ built-in commands, `HxScriptEngine`, `CommandHistory`, `WriteTable` output helper |
-| **[Terminal](Sources/WpfHexEditor.Terminal/)** | net8.0-windows | WPF terminal panel layer — `TerminalPanel`, `TerminalPanelViewModel`, multi-tab shell session management |
-| **[Core.AssemblyAnalysis](Sources/WpfHexEditor.Core.AssemblyAnalysis/)** | net8.0 | BCL-only .NET PE analysis pipeline — PEReader + assembly model, foundation for Assembly Explorer plugin |
-| **[Decompiler.Core](Sources/WpfHexEditor.Decompiler.Core/)** | net8.0-windows | `IDecompiler` contract + stub backend for ILSpy/dnSpy integration (#106) |
-| **[ProjectSystem](Sources/WpfHexEditor.ProjectSystem/)** | net8.0-windows | `.whsln` / `.whproj` workspace and project model — serialization, project-to-project references, dialogs |
-| **[Options](Sources/WpfHexEditor.Options/)** | net8.0-windows | `AppSettingsService`, `OptionsEditorControl` — IDE settings persistence and options page infrastructure |
+| **[Core](Sources/WpfHexEditor.Core/README.md)** | net8.0-windows | ByteProvider, 16 services, data layer — the engine powering HexEditor |
+| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/README.md)** | net8.0-windows | `IDocumentEditor` plugin contract, editor registry, changeset system, shared interfaces |
+| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/README.md)** | net8.0 | 400+ format detection engine, binary templates, DataInspector service |
+| **[Definitions](Sources/WpfHexEditor.Definitions/README.md)** | net8.0-windows | Embedded format catalog (400+ file signatures) and syntax definitions shared across editors and plugins |
+| **[SDK](Sources/WpfHexEditor.SDK/README.md)** | net8.0-windows | Public plugin API — `IWpfHexEditorPlugin`, `IIDEHostContext`, `IUIRegistry`, 11+ service contracts incl. `ITerminalService`, `PluginCapabilities.Terminal` |
+| **[PluginHost](Sources/WpfHexEditor.PluginHost/README.md)** | net8.0-windows | Runtime plugin infrastructure — discovery, load, watchdog, `PluginManagerControl`, `PermissionService` |
+| **[PluginSandbox](Sources/WpfHexEditor.PluginSandbox/README.md)** | net8.0-windows | Out-of-process plugin execution host via IPC — fault isolation stub (#81) |
+| **[Docking.Core](Sources/WpfHexEditor.Docking.Core/README.md)** | net8.0-windows | Abstract platform-agnostic docking contracts — `DockEngine`, layout model, `DockItemState` |
+| **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/README.md)** | net8.0-windows | Command engine — 31+ built-in commands, `HxScriptEngine`, `CommandHistory`, `WriteTable` output helper |
+| **[Terminal](Sources/WpfHexEditor.Terminal/README.md)** | net8.0-windows | WPF terminal panel layer — `TerminalPanel`, `TerminalPanelViewModel`, multi-tab shell session management |
+| **[Core.AssemblyAnalysis](Sources/WpfHexEditor.Core.AssemblyAnalysis/README.md)** | net8.0 | BCL-only .NET PE analysis pipeline — PEReader + assembly model, foundation for Assembly Explorer plugin |
+| **[Decompiler.Core](Sources/WpfHexEditor.Decompiler.Core/README.md)** | net8.0-windows | `IDecompiler` contract + stub backend for ILSpy/dnSpy integration (#106) |
+| **[ProjectSystem](Sources/WpfHexEditor.ProjectSystem/README.md)** | net8.0-windows | `.whsln` / `.whproj` workspace and project model — serialization, project-to-project references, dialogs |
+| **[Options](Sources/WpfHexEditor.Options/README.md)** | net8.0-windows | `AppSettingsService`, `OptionsEditorControl` — IDE settings persistence and options page infrastructure |
 
 ---
 
@@ -152,27 +156,27 @@ Panels connect to the active document automatically via the docking system.
 
 | Panel | Progress | Description |
 |-------|----------|-------------|
-| **Parsed Fields Panel** | ~75% | 400+ format detection — parsed field list with type overlay and inline editing |
-| **Data Inspector** | ~65% | 40+ byte interpretations at caret position (int, float, GUID, date, color, …); plugin with settings page |
-| **Structure Overlay** | ~55% | Visual field highlighting superimposed on the hex grid |
-| **Solution Explorer** | ~75% | Project tree with virtual & physical folders, Show All Files, D&D from Windows Explorer, expand-state persistence, delete from disk |
-| **Properties Panel** | ~60% | Context-aware properties for the active document (F4) — auto-refresh on cursor idle (400 ms debounce), categorized groups, sort/copy/refresh toolbar |
-| **Error Panel** | ~70% | Diagnostics and validation errors from any `IDiagnosticSource` editor |
-| **Output Panel** | ~65% | Session log, file operation messages and build feedback |
-| **Terminal Panel** | ~70% | Integrated command terminal — 31+ commands, colored output, history, `TerminalMode` (Interactive/Script/ReadOnly), session export, plugin API via `ITerminalService` |
-| **Plugin Manager** | ~65% | Browse, enable/disable, uninstall plugins; settings integration via `IPluginWithOptions`; themed toolbar with RelayCommand |
-| **Plugin Monitoring** | ~60% | Real-time CPU% + memory charts per plugin; pure WPF `Canvas` + `Polyline` (no charting lib); rolling history, `PerformanceCounter` + GC polling at 1 s interval |
-| **Options** | ~75% | VS2026-style settings document tab — 9 pages: theme, display, editing, behavior, status bar, plugins, auto-save |
+| **[Parsed Fields Panel](Sources/Plugins/WpfHexEditor.Plugins.ParsedFields/README.md)** | ~75% | 400+ format detection — parsed field list with type overlay and inline editing |
+| **[Data Inspector](Sources/Plugins/WpfHexEditor.Plugins.DataInspector/README.md)** | ~65% | 40+ byte interpretations at caret position (int, float, GUID, date, color, …); plugin with settings page |
+| **[Structure Overlay](Sources/Plugins/WpfHexEditor.Plugins.StructureOverlay/README.md)** | ~55% | Visual field highlighting superimposed on the hex grid |
+| **[Solution Explorer](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~75% | Project tree with virtual & physical folders, Show All Files, D&D from Windows Explorer, expand-state persistence, delete from disk |
+| **[Properties Panel](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~60% | Context-aware properties for the active document (F4) — auto-refresh on cursor idle (400 ms debounce), categorized groups, sort/copy/refresh toolbar |
+| **[Error Panel](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~70% | Diagnostics and validation errors from any `IDiagnosticSource` editor |
+| **[Output Panel](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~65% | Session log, file operation messages and build feedback |
+| **[Terminal Panel](Sources/WpfHexEditor.Terminal/README.md)** | ~70% | Integrated command terminal — 31+ commands, colored output, history, `TerminalMode` (Interactive/Script/ReadOnly), session export, plugin API via `ITerminalService` |
+| **[Plugin Manager](Sources/WpfHexEditor.PluginHost/README.md)** | ~65% | Browse, enable/disable, uninstall plugins; settings integration via `IPluginWithOptions`; themed toolbar with RelayCommand |
+| **[Plugin Monitoring](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~60% | Real-time CPU% + memory charts per plugin; pure WPF `Canvas` + `Polyline` (no charting lib); rolling history, `PerformanceCounter` + GC polling at 1 s interval |
+| **[Options](Sources/WpfHexEditor.Options/README.md)** | ~75% | VS2026-style settings document tab — 9 pages: theme, display, editing, behavior, status bar, plugins, auto-save |
 | **Quick Search Bar** | ~55% | Inline Ctrl+F overlay (VSCode-style) — find next/prev, regex toggle, jump to Advanced |
 | **Advanced Search** | ~45% | Full-featured search dialog — 5 modes: Hex, Text, Regex, TBL, Wildcard |
-| **File Diff** | ~30% | Side-by-side binary comparison with diff navigation (F7/F8) |
-| **Assembly Explorer** | ~15% | .NET PE tree — namespaces, types, methods, fields, events, resources; ECMA-335 metadata resolution (Phase 1 done, #104–105) |
-| **Archive Structure** | ~40% | ZIP/archive tree view — browse entries, extract, inspect compressed file layouts inside the hex view |
-| **File Comparison** | ~45% | Binary file comparison panel — byte-level diff between two files with synchronized scrolling |
-| **File Statistics** | ~55% | Byte-frequency charts, entropy score, size breakdown, and format distribution for the active binary |
-| **Format Info** | ~60% | Detailed format metadata panel — detected format, MIME type, magic bytes, section list, and known offsets |
-| **Pattern Analysis** | ~50% | Pattern detection in binary data — highlight known byte sequences, data structures, and anomalies |
-| **Custom Parser Template** | ~40% | Template-driven binary parser — define structures in a `.bt`-style schema, render parsed fields live |
+| **[File Diff](Sources/WpfHexEditor.Editor.DiffViewer/README.md)** | ~30% | Side-by-side binary comparison with diff navigation (F7/F8) |
+| **[Assembly Explorer](Sources/Plugins/WpfHexEditor.Plugins.AssemblyExplorer/README.md)** | ~15% | .NET PE tree — namespaces, types, methods, fields, events, resources; ECMA-335 metadata resolution (Phase 1 done, #104–105) |
+| **[Archive Structure](Sources/Plugins/WpfHexEditor.Plugins.ArchiveStructure/README.md)** | ~40% | ZIP/archive tree view — browse entries, extract, inspect compressed file layouts inside the hex view |
+| **[File Comparison](Sources/Plugins/WpfHexEditor.Plugins.FileComparison/README.md)** | ~45% | Binary file comparison panel — byte-level diff between two files with synchronized scrolling |
+| **[File Statistics](Sources/Plugins/WpfHexEditor.Plugins.FileStatistics/README.md)** | ~55% | Byte-frequency charts, entropy score, size breakdown, and format distribution for the active binary |
+| **[Format Info](Sources/Plugins/WpfHexEditor.Plugins.FormatInfo/README.md)** | ~60% | Detailed format metadata panel — detected format, MIME type, magic bytes, section list, and known offsets |
+| **[Pattern Analysis](Sources/Plugins/WpfHexEditor.Plugins.PatternAnalysis/README.md)** | ~50% | Pattern detection in binary data — highlight known byte sequences, data structures, and anomalies |
+| **[Custom Parser Template](Sources/Plugins/WpfHexEditor.Plugins.CustomParserTemplate/README.md)** | ~40% | Template-driven binary parser — define structures in a `.bt`-style schema, render parsed fields live |
 
 ---
 
