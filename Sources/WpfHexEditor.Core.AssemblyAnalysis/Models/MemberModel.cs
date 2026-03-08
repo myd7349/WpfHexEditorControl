@@ -1,0 +1,71 @@
+// ==========================================================
+// Project: WpfHexEditor.Core.AssemblyAnalysis
+// File: Models/MemberModel.cs
+// Author: Derek Tremblay
+// Created: 2026-03-08
+// License: GNU Affero General Public License v3.0 (AGPL-3.0)
+// Description:
+//     Immutable model representing a single .NET member:
+//     a method, field, property, or event definition.
+//
+// Architecture Notes:
+//     Pattern: Immutable data model (init-only properties).
+//     Signature is populated by SignatureDecoder during analysis;
+//     no longer null for method/field/property rows.
+// ==========================================================
+
+namespace WpfHexEditor.Core.AssemblyAnalysis.Models;
+
+/// <summary>Distinguishes the kind of a .NET member definition.</summary>
+public enum MemberKind
+{
+    Method,
+    Field,
+    Property,
+    Event
+}
+
+/// <summary>
+/// Immutable model for a .NET member (method/field/property/event) row.
+/// </summary>
+public sealed class MemberModel
+{
+    /// <summary>Simple member name, e.g. "GetHashCode" or "_items".</summary>
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>Method, Field, Property, or Event.</summary>
+    public MemberKind Kind { get; init; }
+
+    /// <summary>True when the member has public visibility.</summary>
+    public bool IsPublic { get; init; }
+
+    /// <summary>True when the member is static.</summary>
+    public bool IsStatic { get; init; }
+
+    /// <summary>True when the member is abstract (interface member or abstract method).</summary>
+    public bool IsAbstract { get; init; }
+
+    /// <summary>True when the member is virtual.</summary>
+    public bool IsVirtual { get; init; }
+
+    /// <summary>
+    /// Raw PE file offset of the IL method body, or 0 if not yet resolved.
+    /// Used by the HexEditor sync feature.
+    /// </summary>
+    public long PeOffset { get; init; }
+
+    /// <summary>ECMA-335 metadata token (table-specific row token).</summary>
+    public int MetadataToken { get; init; }
+
+    /// <summary>
+    /// Human-readable decoded signature for display, e.g. "int Add(int a, int b)".
+    /// Populated by SignatureDecoder. Null only for Event rows (which have no blob signature).
+    /// </summary>
+    public string? Signature { get; init; }
+
+    /// <summary>
+    /// Simple names of custom attributes applied to this member,
+    /// e.g. ["Obsolete", "DllImport"]. Attribute suffix stripped.
+    /// </summary>
+    public IReadOnlyList<string> CustomAttributes { get; init; } = [];
+}

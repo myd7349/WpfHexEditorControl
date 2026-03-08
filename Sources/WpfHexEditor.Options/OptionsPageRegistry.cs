@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -12,7 +12,7 @@ namespace WpfHexEditor.Options;
 
 /// <summary>
 /// Central catalog of all registered options pages.
-/// Adding a new page requires only a single descriptor entry here — no other file changes needed.
+/// Adding a new page requires only a single descriptor entry here � no other file changes needed.
 /// Dynamic pages (e.g. from plugins) can be registered at runtime via <see cref="RegisterDynamic"/>.
 /// </summary>
 public static class OptionsPageRegistry

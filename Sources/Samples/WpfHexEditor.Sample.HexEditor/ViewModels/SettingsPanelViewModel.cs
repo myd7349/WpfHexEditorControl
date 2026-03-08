@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0  2026
 // HexEditor V2 - Settings Panel ViewModel
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
@@ -61,11 +61,11 @@ namespace WpfHexEditor.Sample.HexEditor.ViewModels
         public List<LanguageOption> AvailableLanguages { get; } = new List<LanguageOption>
         {
             new LanguageOption { Code = "en-US", DisplayName = "English", NativeName = "English" },
-            new LanguageOption { Code = "fr-CA", DisplayName = "French (Canada)", NativeName = "Français (Canada)" },
+            new LanguageOption { Code = "fr-CA", DisplayName = "French (Canada)", NativeName = "Fran�ais (Canada)" },
             new LanguageOption { Code = "pl-PL", DisplayName = "Polish", NativeName = "Polski" },
-            new LanguageOption { Code = "pt-BR", DisplayName = "Portuguese (Brazil)", NativeName = "Português (Brasil)" },
-            new LanguageOption { Code = "ru-RU", DisplayName = "Russian", NativeName = "Русский" },
-            new LanguageOption { Code = "zh-CN", DisplayName = "Chinese", NativeName = "中文" }
+            new LanguageOption { Code = "pt-BR", DisplayName = "Portuguese (Brazil)", NativeName = "Portugu�s (Brasil)" },
+            new LanguageOption { Code = "ru-RU", DisplayName = "Russian", NativeName = "???????" },
+            new LanguageOption { Code = "zh-CN", DisplayName = "Chinese", NativeName = "??" }
         };
 
         /// <summary>

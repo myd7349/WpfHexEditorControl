@@ -1,5 +1,5 @@
 <!--
-    Apache 2.0  2026
+    GNU Affero General Public License v3.0  2026
     Shared implicit styles for all ProjectSystem dialogs.
     Provides theme-aware Button, RadioButton and GroupBox templates (not provided by PanelCommon.xaml).
     ComboBox and CheckBox are intentionally omitted — PanelCommon.xaml's implicit styles handle them.

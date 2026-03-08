@@ -1,5 +1,5 @@
-ï»¿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -59,7 +59,7 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
     public string Id => _entry.Manifest.Id;
     public string Name => _entry.Manifest.Name;
     public string Version => _entry.Manifest.Version;
-    public string VersionLabel => string.IsNullOrEmpty(_entry.Manifest.Version) ? "â€”" : $"v{_entry.Manifest.Version}";
+    public string VersionLabel => string.IsNullOrEmpty(_entry.Manifest.Version) ? "—" : $"v{_entry.Manifest.Version}";
     public string Author => _entry.Manifest.Author;
     public string Publisher => _entry.Manifest.Publisher;
     public bool IsTrustedPublisher => _entry.Manifest.TrustedPublisher;
@@ -121,7 +121,7 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
 
     public string LoadedSince => _entry.LoadedAt.HasValue
         ? _entry.LoadedAt.Value.ToString("HH:mm:ss")
-        : "â€”";
+        : "—";
 
     public TimeSpan Uptime => _entry.Diagnostics.Uptime;
 
@@ -130,7 +130,7 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
         get
         {
             var u = _entry.Diagnostics.Uptime;
-            if (u.TotalSeconds < 1) return "â€”";
+            if (u.TotalSeconds < 1) return "—";
             return u.TotalHours >= 1
                 ? $"{(int)u.TotalHours:D2}:{u.Minutes:D2}:{u.Seconds:D2}"
                 : $"{u.Minutes:D2}:{u.Seconds:D2}";
@@ -193,7 +193,7 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
             if (_entry.Instance is null) return null;
             if (_entry.Instance is not SDK.Contracts.IPluginWithOptions opts) return null;
 
-            // LoadOptions/CreateOptionsPage may do I/O â€” call synchronously here but OK since
+            // LoadOptions/CreateOptionsPage may do I/O — call synchronously here but OK since
             // this getter is triggered by tab selection (UI thread, user interaction, not hot path).
             opts.LoadOptions();
             _optionsPage = opts.CreateOptionsPage();

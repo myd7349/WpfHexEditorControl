@@ -1,6 +1,6 @@
 
 //////////////////////////////////////////////
-// Apache 2.0  - 2026
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -25,6 +25,7 @@ using System.Windows.Threading;
 using WpfHexEditor.App.Services;
 using WpfHexEditor.SDK.Events;
 using WpfHexEditor.Core.Terminal;
+using WpfHexEditor.Core.Terminal.ShellSession;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.PluginHost;
@@ -91,6 +92,11 @@ public partial class MainWindow
                 _errorPanelService.SetErrorPanel(_errorPanel);
 
             _dockingAdapter = new DockingAdapter(_engine, _layout, DockHost, StoreContent, _layoutWasRestoredFromFile);
+
+            // Seed the left-side anchor with the built-in Solution Explorer so that plugin panels
+            // declaring DefaultDockSide = "Left" are automatically tabbed into the same group.
+            _dockingAdapter.SeedSideAnchor(DockDirection.Left, SolutionExplorerContentId);
+
             var dockingAdapter = _dockingAdapter;
             var menuAdapter = new MenuAdapter(MainMenuBar);
             var statusBarAdapter = new StatusBarAdapter(AppStatusBar);
@@ -176,7 +182,8 @@ public partial class MainWindow
                 if (_pendingTerminalPanel is not null)
                 {
                     var vm = new TerminalPanelViewModel(hostContext);
-                    _terminalService?.SetOutput(vm);
+                    _terminalService?.SetOutput(vm.GetActiveOutput());
+                    _terminalService?.SetSessionManager(vm.SessionManager);
                     _pendingTerminalPanel.DataContext = vm;
                     _pendingTerminalPanel = null;
                 }
@@ -569,7 +576,8 @@ public partial class MainWindow
         if (_ideHostContext is not null)
         {
             var vm = new TerminalPanelViewModel(_ideHostContext);
-            _terminalService?.SetOutput(vm);
+            _terminalService?.SetOutput(vm.GetActiveOutput());
+            _terminalService?.SetSessionManager(vm.SessionManager);
             panel.DataContext = vm;
         }
         else
@@ -617,7 +625,8 @@ public partial class MainWindow
         if (_ideHostContext is null) { OutputLogger.Error("[Terminal] Host context unavailable."); return; }
 
         var vm      = new TerminalPanelViewModel(_ideHostContext);
-        _terminalService?.SetOutput(vm);
+        _terminalService?.SetOutput(vm.GetActiveOutput());
+        _terminalService?.SetSessionManager(vm.SessionManager);
         var control = new TerminalPanel { DataContext = vm };
 
         var item = new DockItem

@@ -1,5 +1,5 @@
-﻿<!--
-    Apache 2.0  2026
+<!--
+    GNU Affero General Public License v3.0  2026
     HexEditor V2 - Main Window (Classic Menu + Toolbar Style)
     Based on original MainWindow.xaml structure
     Author : Derek Tremblay (derektremblay666@gmail.com)
@@ -59,7 +59,7 @@
                 <MenuItem Command="{Binding OpenFileCommand}" InputGestureText="Ctrl+O">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📂 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_File_Open}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -67,7 +67,7 @@
                 <MenuItem Command="{Binding SaveFileCommand}" InputGestureText="Ctrl+S">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="💾 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_File_Save}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -75,7 +75,7 @@
                 <MenuItem Command="{Binding SaveAsFileCommand}">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="💾 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_File_SaveAs}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -84,7 +84,7 @@
                 <MenuItem Command="{Binding CloseFileCommand}">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="❌ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_File_Close}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -93,7 +93,7 @@
                 <MenuItem Command="{Binding ExitCommand}">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🚪 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_File_Exit}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -104,7 +104,7 @@
                 <MenuItem Command="{Binding UndoCommand}" InputGestureText="Ctrl+Z">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="↶ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Edit_Undo}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -112,7 +112,7 @@
                 <MenuItem Command="{Binding RedoCommand}" InputGestureText="Ctrl+Y">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="↷ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Edit_Redo}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -121,7 +121,7 @@
                 <MenuItem Command="{Binding CopyCommand}" InputGestureText="Ctrl+C">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📋 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Edit_Copy}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -129,7 +129,7 @@
                 <MenuItem Command="{Binding PasteCommand}" InputGestureText="Ctrl+V">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📄 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Edit_Paste}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -137,7 +137,7 @@
                 <MenuItem Command="{Binding DeleteSelectionCommand}" InputGestureText="Del">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🗑️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="??? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Edit_DeleteSelection}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -146,7 +146,7 @@
                 <MenuItem Command="{Binding SelectAllCommand}" InputGestureText="Ctrl+A">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="☑️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Edit_SelectAll}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -154,7 +154,7 @@
                 <MenuItem Command="{Binding ClearSelectionCommand}">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⬜ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Edit_ClearSelection}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -166,7 +166,7 @@
                           ToolTipService.IsEnabled="True">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⇄ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="Reverse Selection"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -177,7 +177,7 @@
                           ToolTipService.IsEnabled="True">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⊕ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="Invert Selection"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -187,7 +187,7 @@
                     <MenuItem Command="{Binding ToggleBookmarkCommand}" InputGestureText="Ctrl+B">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔖 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="{DynamicResource Menu_Edit_ToggleBookmark}"/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -195,7 +195,7 @@
                     <MenuItem Command="{Binding ClearBookmarksCommand}">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🗑️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="??? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="{DynamicResource Menu_Edit_ClearAllBookmarks}"/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -207,7 +207,7 @@
                 <MenuItem Click="AdvancedSearchMenuItem_Click" InputGestureText="Ctrl+F">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔍 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="Advanced Search..."/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -216,7 +216,7 @@
                 <MenuItem Command="{Binding FindNextCommand}" InputGestureText="F3">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⬇️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Search_FindNext}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -224,7 +224,7 @@
                 <MenuItem Command="{Binding FindPreviousCommand}" InputGestureText="Shift+F3">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⬆️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Search_FindPrevious}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -233,7 +233,7 @@
                 <MenuItem Click="RelativeSearchMenuItem_Click">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔎 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource RelativeSearchMenuString}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -245,7 +245,7 @@
                     <MenuItem Command="{Binding ToggleBookmarkCommand}" InputGestureText="Ctrl+B">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔖 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="{DynamicResource Menu_Edit_ToggleBookmark}"/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -253,7 +253,7 @@
                     <MenuItem Command="{Binding ClearBookmarksCommand}">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🗑️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="??? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="{DynamicResource Menu_Edit_ClearAllBookmarks}"/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -262,7 +262,7 @@
                     <MenuItem Command="{Binding NextBookmarkCommand}" InputGestureText="Ctrl+N">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⬇️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="{DynamicResource Menu_Tools_NextBookmark}"/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -270,7 +270,7 @@
                     <MenuItem Command="{Binding PreviousBookmarkCommand}" InputGestureText="Ctrl+P">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⬆️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="{DynamicResource Menu_Tools_PreviousBookmark}"/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -279,7 +279,7 @@
                     <MenuItem Command="{Binding ShowBookmarksCommand}">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📚 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="{DynamicResource Menu_Tools_ShowAllBookmarks}"/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -293,7 +293,7 @@
                               ToolTipService.IsEnabled="True">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🎨 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="Fill with Byte..."/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -304,7 +304,7 @@
                               ToolTipService.IsEnabled="True">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔄 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="Replace Byte..."/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -315,7 +315,7 @@
                     <MenuItem Click="LoadTblMenuItem_Click">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📋 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="Load TBL File..."/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -324,7 +324,7 @@
                               InputGestureText="Ctrl+T">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📝 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="TBL Editor..."/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -335,7 +335,7 @@
                               IsEnabled="False">
                         <MenuItem.Header>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="❌ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                                <TextBlock Text="? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                                 <TextBlock Text="Close TBL"/>
                             </StackPanel>
                         </MenuItem.Header>
@@ -347,7 +347,7 @@
                 <MenuItem Command="{Binding GoToPositionCommand}" InputGestureText="Ctrl+G">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🎯 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Position_GoTo}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -381,7 +381,7 @@
                 <MenuItem Command="{Binding ToggleSettingsPanelCommand}" InputGestureText="Ctrl+,">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⚙️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Options_SettingsPanel}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -390,7 +390,7 @@
                 <MenuItem Click="ShowOptionsDialog_Click">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔧 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Options_Advanced}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -416,7 +416,7 @@
                 <MenuItem Click="CodeEditorDemoMenuItem_Click">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📝 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="JSON Editor Demo"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -427,7 +427,7 @@
                 <MenuItem Command="{Binding ShowAboutCommand}">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="ℹ️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Help_About}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -435,7 +435,7 @@
                 <MenuItem Command="{Binding ShowKeyboardShortcutsCommand}">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⌨️ " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Help_KeyboardShortcuts}"/>
                         </StackPanel>
                     </MenuItem.Header>
@@ -444,7 +444,7 @@
                 <MenuItem Command="{Binding OpenGitHubCommand}">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔗 " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
+                            <TextBlock Text="?? " FontFamily="Segoe UI Emoji" Margin="0,0,4,0"/>
                             <TextBlock Text="{DynamicResource Menu_Help_GitHub}"/>
                         </StackPanel>
                     </MenuItem.Header>

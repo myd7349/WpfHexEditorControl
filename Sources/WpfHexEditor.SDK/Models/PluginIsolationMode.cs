@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -16,13 +16,13 @@ public enum PluginIsolationMode
 {
     /// <summary>
     /// Plugin runs in the IDE process using an isolated <see cref="System.Runtime.Loader.AssemblyLoadContext"/>.
-    /// Best performance, standard isolation â€” recommended default.
+    /// Best performance, standard isolation — recommended default.
     /// </summary>
     InProcess,
 
     /// <summary>
     /// Plugin runs in a separate <c>WpfHexEditor.PluginSandbox.exe</c> process.
-    /// Maximum crash isolation â€” communicates via Named Pipes / IPC.
+    /// Maximum crash isolation — communicates via Named Pipes / IPC.
     /// Use for untrusted or experimental plugins.
     /// </summary>
     Sandbox

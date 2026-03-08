@@ -1,5 +1,5 @@
-﻿<!--
-    Apache 2.0  2026
+<!--
+    GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
 -->
@@ -57,16 +57,16 @@
             <TextBlock Text="Quick Actions:" FontWeight="Bold" FontSize="13" Margin="4,8,4,4"/>
 
             <UniformGrid Columns="2">
-                <Button Content="🔴 Add Red (0-16)" Click="AddRedBlock_Click"
+                <Button Content="?? Add Red (0-16)" Click="AddRedBlock_Click"
                         ToolTip="Add a red block at bytes 0-16 (file header)"/>
-                <Button Content="🔵 Add Blue (16-32)" Click="AddBlueBlock_Click"
+                <Button Content="?? Add Blue (16-32)" Click="AddBlueBlock_Click"
                         ToolTip="Add a blue block at bytes 16-32"/>
             </UniformGrid>
 
             <UniformGrid Columns="2">
-                <Button Content="🟢 Add Green (32-64)" Click="AddGreenBlock_Click"
+                <Button Content="?? Add Green (32-64)" Click="AddGreenBlock_Click"
                         ToolTip="Add a green block at bytes 32-64"/>
-                <Button Content="🟡 Add Yellow (64-128)" Click="AddYellowBlock_Click"
+                <Button Content="?? Add Yellow (64-128)" Click="AddYellowBlock_Click"
                         ToolTip="Add a yellow block at bytes 64-128"/>
             </UniformGrid>
 
@@ -74,15 +74,15 @@
 
             <TextBlock Text="Advanced:" FontWeight="Bold" FontSize="13" Margin="4,4"/>
 
-            <Button Content="🎲 Add Random Block" Click="AddRandomBlock_Click"
+            <Button Content="?? Add Random Block" Click="AddRandomBlock_Click"
                     ToolTip="Add a random block at a random position"/>
 
-            <Button Content="🔍 Detect File Format" Click="DetectFormat_Click"
+            <Button Content="?? Detect File Format" Click="DetectFormat_Click"
                     ToolTip="Auto-detect common file signatures (ZIP, PNG, PDF, etc.)"/>
 
             <Separator Margin="4,8"/>
 
-            <Button Content="🗑️ Clear All Blocks" Click="ClearBlocks_Click"
+            <Button Content="??? Clear All Blocks" Click="ClearBlocks_Click"
                     Background="#D32F2F" Foreground="White"
                     ToolTip="Remove all custom background blocks"/>
         </StackPanel>
@@ -128,7 +128,7 @@
                                                    TextWrapping="Wrap"/>
                                     </StackPanel>
 
-                                    <Button Grid.Column="1" Content="❌"
+                                    <Button Grid.Column="1" Content="?"
                                             Width="24" Height="24"
                                             Padding="0" Margin="4,0,0,0"
                                             ToolTip="Remove this block"

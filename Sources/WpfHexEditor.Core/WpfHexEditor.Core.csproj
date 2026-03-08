@@ -16,7 +16,7 @@
     </Description>
     <PackageReadmeFile>PACKAGE_README.md</PackageReadmeFile>
     <Product>WpfHexEditor.Core</Product>
-    <Copyright>Apache 2.0 - 2016-2026</Copyright>
+    <Copyright>GNU AGPL v3.0 - 2016-2026</Copyright>
     <AssemblyVersion>2.8.0.0</AssemblyVersion>
     <FileVersion>2.8.0</FileVersion>
     <Version>2.8.0</Version>

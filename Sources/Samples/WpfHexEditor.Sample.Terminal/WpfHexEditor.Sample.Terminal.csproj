@@ -1,0 +1,37 @@
+<!--
+    GNU Affero General Public License v3.0  2026
+    Author : Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Sonnet 4.6
+
+    WpfHexEditor.Sample.Terminal
+    ============================
+    Minimal standalone sample demonstrating the WpfHexEditor Terminal panel
+    with runtime Dark/Light theme switching and a menu bar.
+    No docking engine — the TerminalPanel fills the entire client area.
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>WpfHexEditor.Sample.Terminal</AssemblyName>
+    <RootNamespace>WpfHexEditor.Sample.Terminal</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Single explicit reference. Transitively pulls:
+        WpfHexEditor.Core.Terminal  (commands, macros, scripting engine)
+        WpfHexEditor.Docking.Wpf   (theme ResourceDictionaries — used for themes only, not docking)
+        WpfHexEditor.SDK           (service contracts for StandaloneIDEHostContext)
+    -->
+    <ProjectReference Include="..\..\WpfHexEditor.Terminal\WpfHexEditor.Terminal.csproj" />
+  </ItemGroup>
+
+</Project>

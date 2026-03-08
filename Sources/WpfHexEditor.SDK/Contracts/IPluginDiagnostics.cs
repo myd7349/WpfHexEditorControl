@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -14,7 +14,7 @@ public interface IPluginDiagnostics
     /// <summary>Gets the current memory usage attributed to this plugin in bytes.</summary>
     long MemoryBytes { get; }
 
-    /// <summary>Gets the current CPU usage percentage (0.0â€“100.0) attributed to this plugin.</summary>
+    /// <summary>Gets the current CPU usage percentage (0.0–100.0) attributed to this plugin.</summary>
     double CpuUsagePercent { get; }
 
     /// <summary>Gets the rolling average execution time of the last N plugin calls.</summary>

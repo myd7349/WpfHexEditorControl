@@ -1,5 +1,5 @@
-﻿//////////////////////////////////////////////
-// Apache 2.0  - 2026
+//////////////////////////////////////////////
+// GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -32,7 +32,7 @@ public sealed class MarketplaceListing
     /// <summary>Searchable tags.</summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
 
-    /// <summary>License identifier (e.g. "Apache-2.0", "MIT").</summary>
+    /// <summary>License identifier (e.g. "AGPL-3.0-only", "MIT").</summary>
     public string License { get; init; } = string.Empty;
 
     /// <summary>Source repository URL (optional).</summary>
