@@ -116,6 +116,69 @@ Features already shipped are in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
+## 🔜 Planned — Binary Analysis & Reverse Engineering
+
+| Feature # | Title | Description |
+|-----------|-------|-------------|
+| #110 | **String Extraction Panel** | Dockable panel scanning the active binary for ASCII, Unicode, and custom-encoding strings with minimum-length filter and one-click jump to offset in hex view. |
+| #111 | **Cryptographic Hash Inspector** | Compute MD5, SHA-1, SHA-256, SHA-512, CRC-32, and Adler-32 for the full file or any byte-range selection in real time, with copy-to-clipboard and reference-hash comparison. |
+| #112 | **Embedded File Carver** | Detect and extract embedded PE files, ZIP archives, PNG images, and other magic-byte signatures from within a binary; carved blobs open as virtual child documents. |
+| #113 | **YARA Rule Engine** | Author, compile, and run YARA rules directly in the IDE; matches highlighted in hex view and listed in a results panel with offset, length, and rule name. |
+| #114 | **PE Import / Export Table Analyzer** | Parse PE32/PE64 IAT and Export Directory; display resolved DLL and function names side-by-side with raw offsets; flag suspicious ordinal-only imports. |
+| #115 | **Binary Patch Recorder** | Record every byte modification as a named, annotated patch; export as binary diff, IDA script, or human-readable `.patch` file for reproducible patching. |
+| #116 | **Obfuscation & Packing Detector** | Heuristic analysis of section entropy, suspicious imports, and known packer watermarks (UPX, Themida, MPRESS); produces a risk score and actionable report. |
+| #117 | **Memory Snapshot Viewer** | Load Windows mini-dump (`.dmp`) or Linux core-dump files; display memory regions, thread stacks, loaded modules, and heap blocks in the hex view with structured overlays. |
+
+---
+
+## 🔜 Planned — Security & Forensics
+
+| Feature # | Title | Description |
+|-----------|-------|-------------|
+| #118 | **File Signature Database** | Integrated, user-extensible magic-byte catalog that auto-identifies 500+ file types on open; shows detected format, MIME type, and confidence in the status bar. |
+| #119 | **Byte Frequency & Bigram Heatmap** | 256×256 bigram dot-plot and 256-bucket byte-frequency histogram for any selection or full file — visually distinguishes encrypted, compressed, text, and binary payloads. |
+| #120 | **XOR / ROT Cipher Decoder** | Brute-force single-byte XOR keys and ROT offsets over a selection; score candidates by ASCII printability; display top results with one-click "apply to selection". |
+| #121 | **Audit Log & Forensic Session Journal** | Record every user action (open, edit, navigate, export) with timestamps and byte-range context into a tamper-evident journal, exportable as signed HTML or JSON report. |
+| #122 | **Certificate & ASN.1 Inspector** | Parse DER/PEM X.509 certificates, PKCS#7/12 containers, and raw ASN.1 structures embedded in any binary; tree-view with field names, OIDs, validity dates, and key parameters. |
+| #123 | **Vulnerability Pattern Scanner** | Curated byte-pattern rules (stack cookies, heap metadata, safe SEH markers) that flag potential vulnerability indicators in native binaries directly in the hex view. |
+
+---
+
+## 🔜 Planned — Developer Productivity
+
+| Feature # | Title | Description |
+|-----------|-------|-------------|
+| #124 | **Hex Bookmarks & Named Regions** | Persistent named bookmarks at absolute or relative offsets with groups, colors, and comments; importable/exportable as JSON; visible in a dedicated Bookmarks Panel. |
+| #125 | **Regex Search over Hex & ASCII** | Full regex search across hex byte patterns (e.g. `\xDE\xAD.{2}\xBE\xEF`) and decoded ASCII simultaneously, with match highlighting, results list, and replace support. |
+| #126 | **Byte-Range Calculator** | Inline calculator panel for arithmetic, bitwise, and shift operations on raw byte values; accepts hex/decimal/binary input; shows two's-complement and IEEE-754 float interpretations. |
+| #127 | **Column / Block Selection** | Rectangular block selection across hex and ASCII panes; paste, fill, or export selected columns as independent byte arrays — essential for fixed-width record formats. |
+| #128 | **Binary Template Marketplace** | Community-driven repository of binary template definitions; browse, search, install, and auto-update format templates (PE, ELF, ZIP, PNG, MP4, etc.) from within the IDE. |
+| #129 | **Multi-File Hex Session Tabs** | True independent hex editor sessions per tab with separate cursors, selections, undo stacks, and bookmarks — enabling parallel analysis of multiple binaries. |
+| #130 | **Changeset Review Panel** | Diff-style view of all pending unsaved byte modifications across the file: offset, original value, new value, age, and per-change accept/reject controls before save. |
+
+---
+
+## 🔜 Planned — IDE Infrastructure
+
+| Feature # | Title | Description |
+|-----------|-------|-------------|
+| #131 | **Plugin Dependency Graph Panel** | Interactive directed-graph visualization of all loaded plugins, their service dependencies, and SDK version constraints; detects cycles and orphaned dependencies. |
+| #132 | **Theme Designer & Live Preview** | In-IDE XAML brush editor to create, fork, and export custom themes; changes applied live to all dockable panels; themes packaged as `.whtheme` files. |
+| #133 | **Command Palette (Ctrl+Shift+P)** | VS Code-style fuzzy-search palette surfacing all IDE commands, open documents, settings, and plugin actions with keyboard navigation and recent-command history. |
+| #134 | **Extension Point Debugger** | Developer panel listing every SDK extension point (menus, toolbar, statusbar, eventbus) registered by each plugin with live invocation counts and last-call stack. |
+| #135 | **Workspace File Watcher** | Monitor all open project files for external changes (from other processes or Git operations); prompt to reload, diff, or merge changes without closing the editor tab. |
+
+---
+
+## 🔜 Planned — Network & Protocol Analysis
+
+| Feature # | Title | Description |
+|-----------|-------|-------------|
+| #136 | **PCAP / Network Capture Viewer** | Load `.pcap` and `.pcapng` files; display packet list, layer breakdown (Ethernet/IP/TCP/UDP/TLS), and raw payload bytes in the hex view. |
+| #137 | **Protocol Dissector Plugin API** | Plugin contract allowing third parties to register custom protocol dissectors; dissected fields appear in the ParsedFields panel and hex view overlays. |
+
+---
+
 ## ✅ Recently Shipped
 
 | Feature | Version / Release |
