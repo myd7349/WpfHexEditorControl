@@ -442,7 +442,7 @@ We welcome contributions! The codebase is well-organized and documented:
   <p>
     <sub>Created by Derek Tremblay (abbaye)<br/>
     Contributors: Claude Sonnet 4.6, Claude Opus 4.6<br/>
-    V1 Contributors: ehsan69h, Janus Tida</sub>
+    HexEditor Legacy Contributors: ehsan69h, Janus Tida</sub>
   </p>
   <p>
     <sub>Coded with ❤️ for the community! 😊🤟 (with a touch of AI magic ✨)</sub>
