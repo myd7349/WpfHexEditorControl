@@ -9,6 +9,7 @@
 //     Loads from and saves to DataInspectorOptions.Instance.
 // ==========================================================
 
+using System.Windows;
 using System.Windows.Controls;
 
 namespace WpfHexEditor.Plugins.DataInspector.Options;
