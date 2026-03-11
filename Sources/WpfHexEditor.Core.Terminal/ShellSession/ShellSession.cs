@@ -96,12 +96,8 @@ public sealed class ShellSession : IDisposable
                 try { ShellProcess.Kill(entireProcessTree: true); }
                 catch { /* best-effort */ }
             }
-
-            
-            if (ShellProcess is not null) 
-                ShellProcess.Dispose();
-            
-
+                        
+            ShellProcess?.Dispose();            
             ShellProcess = null;
         }
     }
