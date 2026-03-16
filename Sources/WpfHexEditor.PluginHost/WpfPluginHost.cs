@@ -12,10 +12,14 @@ using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
+using WpfHexEditor.Events.IDEEvents;
 using WpfHexEditor.PluginHost.Monitoring;
+using WpfHexEditor.PluginHost.Sandbox;
 using WpfHexEditor.PluginHost.Services;
 using WpfHexEditor.SDK.Contracts;
+using WpfHexEditor.SDK.ExtensionPoints;
 using WpfHexEditor.SDK.Models;
+using WpfHexEditor.SDK.Sandbox;
 
 namespace WpfHexEditor.PluginHost;
 
@@ -40,7 +44,31 @@ public sealed class WpfPluginHost : IAsyncDisposable
     private readonly Dictionary<string, PluginEntry> _entries = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _lock = new();
 
-    // Continuous diagnostics sampling (default: every 5 seconds).
+    // -- Feature 5 & 6 --
+    private readonly PluginDependencyGraph _dependencyGraph = new();
+    private PluginActivationService? _activationService;
+
+    /// <summary>
+    /// Live capability registry backed by <see cref="_entries"/>.
+    /// Exposed so the App layer can call <see cref="PluginCapabilityRegistryAdapter.SetInner"/>.
+    /// </summary>
+    public IPluginCapabilityRegistry CapabilityRegistry { get; }
+
+    // --- Isolation mode overrides (user preference, persisted) ------------------
+    private readonly Dictionary<string, PluginIsolationMode> _isolationOverrides =
+        new(StringComparer.OrdinalIgnoreCase);
+    private static readonly string OverridesFilePath =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                     "WpfHexEditor", "plugin-isolation-overrides.json");
+
+    // PHASE 1-4: New MetricsEngine for advanced monitoring
+    private readonly PluginMetricsEngine _metricsEngine;
+
+    // --- Dynamic migration monitor -----------------------------------------------
+    private readonly PluginMigrationMonitor _migrationMonitor;
+
+    // Legacy timer (deprecated - kept for backward compatibility)
+    [Obsolete("Use MetricsEngine instead")]
     private readonly DispatcherTimer _samplingTimer;
     private TimeSpan _lastCpuTime;
     private DateTime _lastCpuCheck;
@@ -49,17 +77,18 @@ public sealed class WpfPluginHost : IAsyncDisposable
     /// <summary>Interval between diagnostics samples. Default: 5 seconds.</summary>
     public TimeSpan DiagnosticSamplingInterval
     {
-        get => _samplingTimer.Interval;
-        set => _samplingTimer.Interval = value;
+        get => _metricsEngine.PassiveSamplingInterval;
+        set => _metricsEngine.PassiveSamplingInterval = value;
     }
 
     /// <summary>
     /// Process-level CPU% measured at the most recent periodic sampling tick.
-    /// Initialized to 0% immediately at startup (via PerformInitialSample), 
-    /// then updated every ~5s by the sampling timer.
-    /// NOT contaminated by the init-phase sample recorded in LoadPluginAsync.
+    /// Now delegated to MetricsEngine for improved accuracy.
     /// </summary>
-    public double LastSampledCpuPercent => _lastSampledCpuPercent;
+    public double LastSampledCpuPercent => _metricsEngine.LastSampledCpuPercent;
+
+    /// <summary>Access to the metrics engine for advanced diagnostics.</summary>
+    public PluginMetricsEngine MetricsEngine => _metricsEngine;
 
     /// <summary>Registry of per-plugin options pages (populated automatically on load).</summary>
     public PluginOptionsRegistry OptionsRegistry { get; } = new();
@@ -81,6 +110,17 @@ public sealed class WpfPluginHost : IAsyncDisposable
     /// <summary>Raised when SlowPluginDetector identifies a non-responsive plugin.</summary>
     public event EventHandler<SlowPluginDetectedEventArgs>? SlowPluginDetected;
 
+    /// <summary>
+    /// Raised on the Dispatcher thread when the migration monitor detects that an InProcess
+    /// plugin has exceeded a configured threshold.
+    /// Only raised in <see cref="PluginMigrationMode.SuggestOnly"/> mode —
+    /// in <see cref="PluginMigrationMode.AutoMigrate"/> mode the host migrates automatically.
+    /// </summary>
+    public event EventHandler<PluginMigrationSuggestedEventArgs>? MigrationSuggested;
+
+    /// <summary>The active migration policy. Live-updated via <see cref="UpdateMigrationPolicy"/>.</summary>
+    public PluginMigrationPolicy MigrationPolicy { get; private set; }
+
     public WpfPluginHost(
         IIDEHostContext hostContext,
         UIRegistry uiRegistry,
@@ -95,8 +135,14 @@ public sealed class WpfPluginHost : IAsyncDisposable
         _log = logger ?? (_ => { });
         _logError = errorLogger ?? _log;
         _dispatcher = dispatcher;
-        // Snapshot the current CPU time so the first sampling tick measures a real delta
-        // rather than the entire process CPU from startup (which would produce 100%).
+
+        CapabilityRegistry = new PluginCapabilityRegistry(_entries);
+
+        // PHASE 1-4: Initialize new MetricsEngine
+        _metricsEngine = new PluginMetricsEngine(GetLoadedEntries, dispatcher, _log);
+        _metricsEngine.Start();
+
+        // Legacy compatibility (deprecated)
         _lastCpuTime  = Process.GetCurrentProcess().TotalProcessorTime;
         _lastCpuCheck = DateTime.UtcNow;
 
@@ -107,7 +153,7 @@ public sealed class WpfPluginHost : IAsyncDisposable
         _slowDetector.SlowPluginDetected += (s, e) => SlowPluginDetected?.Invoke(this, e);
         _slowDetector.Start();
 
-        // Sample CPU/memory for all loaded plugins on a background timer tick.
+        // Legacy timer (deprecated - MetricsEngine handles sampling now)
         _samplingTimer = new System.Windows.Threading.DispatcherTimer(
             System.Windows.Threading.DispatcherPriority.Background, dispatcher)
         {
@@ -115,41 +161,54 @@ public sealed class WpfPluginHost : IAsyncDisposable
         };
         _samplingTimer.Tick += OnSamplingTick;
 
-        // Perform initial sample immediately to avoid race condition with PluginMonitoringViewModel.
-        // Without this, LastSampledCpuPercent remains 0 until first timer tick (~5s),
-        // causing Plugin Monitor metrics and charts to not update if opened before first tick.
-        PerformInitialSample();
+        // PerformInitialSample() removed — MetricsEngine handles startup initialization
+        // and avoids the race condition with PluginMonitoringViewModel more reliably.
 
         _samplingTimer.Start();
+
+        LoadIsolationOverrides();
+
+        // Dynamic migration monitor — loaded policy persisted per-user.
+        MigrationPolicy = PluginMigrationPolicy.Load();
+        _migrationMonitor = new PluginMigrationMonitor(
+            getLoadedEntries: GetLoadedEntries,
+            policy:           MigrationPolicy,
+            onMigrationTriggered: OnMigrationTriggered,
+            dispatcher:       dispatcher);
+        _migrationMonitor.Start();
+
+        // Forward crash events to migration monitor so it can track crash counts.
+        PluginCrashed += (_, e) => _migrationMonitor.RecordCrash(e.PluginId);
     }
 
     // --- Discovery --------------------------------------------------------------
 
     /// <summary>
     /// Discovers all plugins under <see cref="UserPluginsDir"/> and any provided extra directories.
-    /// Returns a list of validated manifests ready for loading.
+    /// Manifest parsing runs in parallel (Phase 6c) for fast startup with many plugins.
+    /// Returns validated manifests sorted by dependency order.
     /// </summary>
     public async Task<IReadOnlyList<PluginManifest>> DiscoverPluginsAsync(
         IEnumerable<string>? extraDirectories = null,
         CancellationToken ct = default)
     {
-        var result = new List<PluginManifest>();
         var searchDirs = new List<string> { UserPluginsDir };
         if (extraDirectories is not null) searchDirs.AddRange(extraDirectories);
 
+        // Collect all candidate plugin directories first
+        var pluginDirs = new List<string>();
         foreach (var dir in searchDirs)
         {
             _log($"[PluginSystem] Scanning: {dir} (exists: {Directory.Exists(dir)})");
-            if (!Directory.Exists(dir)) continue;
-
-            foreach (var pluginDir in Directory.GetDirectories(dir))
-            {
-                ct.ThrowIfCancellationRequested();
-                var manifest = await TryLoadManifestAsync(pluginDir).ConfigureAwait(false);
-                if (manifest is not null) result.Add(manifest);
-            }
+            if (Directory.Exists(dir))
+                pluginDirs.AddRange(Directory.GetDirectories(dir));
         }
 
+        // Phase 6c: Parse all manifests in parallel
+        var tasks = pluginDirs.Select(d => TryLoadManifestAsync(d)).ToArray();
+        var manifests = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+        var result = manifests.Where(m => m is not null).Cast<PluginManifest>().ToList();
         _log($"[PluginSystem] Discovered {result.Count} plugin(s).");
         return result;
     }
@@ -157,12 +216,20 @@ public sealed class WpfPluginHost : IAsyncDisposable
     // --- Load --------------------------------------------------------------------
 
     /// <summary>
-    /// Loads a plugin from a discovered manifest. Handles ALC creation, entry point
-    /// reflection, InitializeAsync (watchdog-bounded), permission initialization.
+    /// Loads a plugin from a discovered manifest.
+    /// Supports both InProcess (AssemblyLoadContext) and Sandbox (out-of-process) isolation modes.
+    /// Assembly loading and InitializeAsync run off the UI thread; only WPF control registration
+    /// is dispatched back to the STA Dispatcher.
     /// </summary>
     public async Task<PluginEntry> LoadPluginAsync(PluginManifest manifest, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(manifest);
+
+        // Use user override if present, else resolve (Auto → InProcess/Sandbox via decision engine).
+        var effectiveMode = GetEffectiveIsolationMode(manifest);
+
+        if (manifest.IsolationMode == PluginIsolationMode.Auto)
+            _log($"[PluginSystem] Auto-resolved '{manifest.Id}' → {effectiveMode}");
 
         PluginEntry entry;
         lock (_lock)
@@ -172,73 +239,159 @@ public sealed class WpfPluginHost : IAsyncDisposable
 
             entry = new PluginEntry(manifest);
             entry.SetState(PluginState.Loading);
+            entry.SetResolvedIsolationMode(effectiveMode);
             _entries[manifest.Id] = entry;
         }
 
         try
         {
-            if (manifest.IsolationMode == PluginIsolationMode.Sandbox)
-                throw new NotSupportedException("Sandbox isolation is Phase 5 - use InProcess for now.");
+            IWpfHexEditorPlugin instance;
+            PluginLoadContext? loadContext = null;
 
-            // Resolve assembly path
-            var pluginDir = ResolvePluginDirectory(manifest);
-            var assemblyPath = Path.Combine(pluginDir, manifest.Assembly?.File ?? $"{manifest.Id}.dll");
+            if (effectiveMode == PluginIsolationMode.Sandbox)
+            {
+                // ── Phase 5: Out-of-process sandbox ─────────────────────────────
+                var proxy = new SandboxPluginProxy(manifest, _log);
+                proxy.SetMetricsEngine(_metricsEngine);
 
-            if (!File.Exists(assemblyPath))
-                throw new FileNotFoundException($"Plugin assembly not found: {assemblyPath}");
+                // Forward sandbox crash events to the IDE crash handler
+                proxy.CrashReceived += (_, crash) =>
+                {
+                    var ex = new Exception($"[Sandbox crash] {crash.ExceptionType}: {crash.Message}");
+                    entry.SetState(PluginState.Faulted);
+                    entry.SetFaultException(ex);
+                    RaiseOnDispatcher(() => PluginCrashed?.Invoke(this,
+                        new PluginFaultedEventArgs
+                        {
+                            PluginId   = manifest.Id,
+                            PluginName = manifest.Name,
+                            Exception  = ex,
+                            Phase      = crash.Phase,
+                        }));
+                };
 
-            // Create collectible ALC.
-            // Pass assemblyPath (not pluginDir) so AssemblyDependencyResolver can locate
-            // the {plugin}.deps.json file and correctly resolve inter-plugin dependencies
-            // (e.g. WpfHexEditor.Core.AssemblyAnalysis) from the plugin directory.
-            var loadContext = new PluginLoadContext(assemblyPath);
-            var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
+                instance = proxy;
+                // Sandbox plugins declare permissions via manifest — no ALC needed
+                _permissionService.InitializeForPlugin(
+                    manifest.Id, manifest.Permissions?.ToPermissionFlags() ?? SDK.Models.PluginPermission.None);
+            }
+            else
+            {
+                // ── InProcess: AssemblyLoadContext per plugin ────────────────────
+                // Phase 6b: Assembly loading runs off the UI thread (no Dispatcher.InvokeAsync here)
+                var pluginDir    = ResolvePluginDirectory(manifest);
+                var assemblyPath = Path.Combine(pluginDir, manifest.Assembly?.File ?? $"{manifest.Id}.dll");
 
-            // Resolve entry point type
-            var entryType = assembly.GetType(manifest.EntryPoint)
-                ?? throw new TypeLoadException($"Entry point type '{manifest.EntryPoint}' not found in '{assemblyPath}'.");
+                if (!File.Exists(assemblyPath))
+                    throw new FileNotFoundException($"Plugin assembly not found: {assemblyPath}");
 
-            var instance = (IWpfHexEditorPlugin)(Activator.CreateInstance(entryType)
-                ?? throw new InvalidOperationException($"Could not create instance of '{manifest.EntryPoint}'."));
+                // Create collectible ALC off the UI thread — no WPF objects created yet.
+                // Wire conflict detection before any assemblies are loaded.
+                loadContext = new PluginLoadContext(assemblyPath);
+                loadContext.DependencyConflictDetected += conflict =>
+                {
+                    lock (_lock)
+                    {
+                        if (_entries.TryGetValue(manifest.Id, out var e))
+                        {
+                            e.AssemblyConflicts.Add(conflict);
+                            _log($"[ALC] '{manifest.Id}' conflict: {conflict.AssemblyName} " +
+                                 $"host={conflict.HostVersion} requested={conflict.RequestedVersion}");
+                        }
+                    }
+                };
+
+                var assembly = await Task.Run(() =>
+                    loadContext.LoadFromAssemblyPath(assemblyPath), ct).ConfigureAwait(false);
+
+                var entryType = assembly.GetType(manifest.EntryPoint)
+                    ?? throw new TypeLoadException(
+                        $"Entry point type '{manifest.EntryPoint}' not found in '{assemblyPath}'.");
+
+                instance = (IWpfHexEditorPlugin)(Activator.CreateInstance(entryType)
+                    ?? throw new InvalidOperationException(
+                        $"Could not create instance of '{manifest.EntryPoint}'."));
+
+                var declaredPerms = instance.Capabilities.ToPermissionFlags();
+                _permissionService.InitializeForPlugin(manifest.Id, declaredPerms);
+            }
 
             entry.SetInstance(instance, loadContext);
 
-            // Initialize permissions from declared capabilities
-            var declaredPerms = instance.Capabilities.ToPermissionFlags();
-            _permissionService.InitializeForPlugin(manifest.Id, declaredPerms);
-
-            // Build a per-plugin context: substitutes IHexEditorService with a
-            // TimedHexEditorService proxy so that every event handler invocation is
-            // timed and recorded in the plugin's diagnostics ring buffer.
-            // This gives PluginMonitoringViewModel a non-zero avgMs for active plugins,
-            // enabling proportional CPU/RAM distribution in the Plugin Monitor.
-            var timedHex     = new TimedHexEditorService(_hostContext.HexEditor, entry.Diagnostics);
+            // Build per-plugin scoped context (timed hex service wraps callbacks for metrics)
+            var timedHex     = new TimedHexEditorService(_hostContext.HexEditor, entry.Diagnostics, _metricsEngine);
+            timedHex.SetPluginId(manifest.Id);
             var pluginContext = new PluginScopedContext(_hostContext, timedHex);
 
-            // Run InitializeAsync on the STA dispatcher thread: plugins create WPF controls
-            // (UserControl, Window, etc.) which require an STA thread.
-            var cpuBefore = System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime;
-            var initTask  = await _dispatcher.InvokeAsync(() => instance.InitializeAsync(pluginContext, ct));
-            var elapsed   = await _watchdog.WrapAsync(manifest.Id, "InitializeAsync",
-                initTask,
-                _watchdog.InitTimeout).ConfigureAwait(false);
+            // Phase 3: Capture baseline memory BEFORE InitializeAsync
+            entry.BaselineMemoryBytes = GC.GetTotalMemory(forceFullCollection: false);
+            entry.Diagnostics.BaselineMemoryBytes = entry.BaselineMemoryBytes;
 
-            var cpuAfter  = System.Diagnostics.Process.GetCurrentProcess().TotalProcessorTime;
-            var cpuDelta  = cpuAfter - cpuBefore;
-            // Clamp: cpuDelta is process-wide (all cores, all threads). During batch startup
-            // multiple plugins init in parallel, so cpuDelta >> per-plugin share ? clamp to 100.
-            var cpuPct    = elapsed.TotalMilliseconds > 0
-                ? Math.Clamp(cpuDelta.TotalMilliseconds / (elapsed.TotalMilliseconds * Environment.ProcessorCount) * 100.0, 0.0, 100.0)
+            var cpuBefore = Process.GetCurrentProcess().TotalProcessorTime;
+            var sw = Stopwatch.StartNew();
+
+            // Phase 6b: For InProcess plugins, InitializeAsync MUST run on the STA Dispatcher
+            // because plugins create WPF controls in-process.
+            // Sandbox plugins also start on the thread pool — their SandboxPluginProxy explicitly
+            // captures Application.Current.Dispatcher (not Dispatcher.CurrentDispatcher) so the
+            // SandboxUIRegistryProxy always marshals panel/menu registration to the UI thread.
+            Task initTask;
+            if (effectiveMode == PluginIsolationMode.Sandbox)
+            {
+                initTask = instance.InitializeAsync(pluginContext, ct);
+            }
+            else
+            {
+                initTask = await _dispatcher.InvokeAsync(
+                    () => instance.InitializeAsync(pluginContext, ct));
+            }
+
+            var elapsed = await _watchdog.WrapAsync(
+                manifest.Id, "InitializeAsync", initTask, _watchdog.InitTimeout)
+                .ConfigureAwait(false);
+
+            sw.Stop();
+            var cpuAfter = Process.GetCurrentProcess().TotalProcessorTime;
+            var cpuDelta = cpuAfter - cpuBefore;
+
+            // Phase 3: Capture post-init memory AFTER InitializeAsync
+            entry.PostInitMemoryBytes = GC.GetTotalMemory(forceFullCollection: false);
+            entry.Diagnostics.PostInitMemoryBytes = entry.PostInitMemoryBytes;
+
+            var cpuPct = elapsed.TotalMilliseconds > 0
+                ? Math.Clamp(
+                    cpuDelta.TotalMilliseconds / (elapsed.TotalMilliseconds * Environment.ProcessorCount) * 100.0,
+                    0.0, 100.0)
                 : 0.0;
-            var memBytes  = GC.GetTotalMemory(forceFullCollection: false);
-            entry.Diagnostics.Record(cpuPct, memBytes, elapsed);
+
+            entry.Diagnostics.Record(cpuPct, entry.PostInitMemoryBytes, elapsed);
             entry.SetInitDuration(elapsed);
             entry.SetState(PluginState.Loaded);
 
-            // Auto-register options page if the plugin supports it.
+            // Populate ALC diagnostics (InProcess only).
+            if (loadContext is not null)
+            {
+                entry.Diagnostics.AlcAssemblyCount = loadContext.LoadedAssemblies.Count;
+                entry.Diagnostics.AlcConflictCount = entry.AssemblyConflicts.Count;
+            }
+
+            // Register extension-point contributions declared in the manifest.
+            RegisterExtensionContributions(entry);
+
+            // Auto-register options page (InProcess plugins only — sandbox UI is remote)
             if (instance is IPluginWithOptions optionsPlugin)
                 OptionsRegistry.RegisterPluginPage(manifest.Id, manifest.Name, optionsPlugin);
+
             entry.SetLoadedAt(DateTime.UtcNow);
+
+            // Publish PluginLoadedEvent to IDE EventBus.
+            _hostContext.IDEEvents.Publish(new PluginLoadedEvent
+            {
+                Source = "WpfPluginHost",
+                PluginId = manifest.Id,
+                PluginName = manifest.Name,
+                IsolationMode = effectiveMode.ToString(),
+            });
 
             RaiseOnDispatcher(() => PluginLoaded?.Invoke(this, new PluginEventArgs(manifest.Id, manifest.Name)));
             return entry;
@@ -248,21 +401,87 @@ public sealed class WpfPluginHost : IAsyncDisposable
             entry.SetState(PluginState.Faulted);
             entry.SetFaultException(ex);
             RaiseOnDispatcher(() => PluginCrashed?.Invoke(this,
-                new PluginFaultedEventArgs { PluginId = manifest.Id, PluginName = manifest.Name, Exception = ex, Phase = "Load" }));
+                new PluginFaultedEventArgs
+                {
+                    PluginId   = manifest.Id,
+                    PluginName = manifest.Name,
+                    Exception  = ex,
+                    Phase      = "Load",
+                }));
             throw;
         }
     }
 
     /// <summary>
-    /// Discovers and loads all plugins. Faulted plugins are silently recorded.
+    /// Discovers and loads all plugins.
+    /// Builds the dependency graph, validates constraints, registers startup plugins,
+    /// registers dormant plugins (awaiting activation triggers), and inits the activation service.
+    /// Faulted plugins are silently recorded.
     /// </summary>
     public async Task LoadAllAsync(IEnumerable<string>? extraDirectories = null, CancellationToken ct = default)
     {
         var manifests = await DiscoverPluginsAsync(extraDirectories, ct).ConfigureAwait(false);
-        var sorted    = TopologicalSort(manifests);
+
+        // Build the dependency graph and validate constraints.
+        _dependencyGraph.Build(manifests);
+
+        // Pre-register all entries so Validate() can look them up.
+        lock (_lock)
+        {
+            foreach (var m in manifests)
+            {
+                if (!_entries.ContainsKey(m.Id))
+                    _entries[m.Id] = new PluginEntry(m);
+            }
+        }
+
+        var validationErrors = _dependencyGraph.Validate(_entries);
+        foreach (var err in validationErrors)
+        {
+            _logError($"[DependencyGraph] {err.DependentPluginId} → {err.Kind}: {err.RequiredPluginId}");
+            lock (_lock)
+            {
+                if (_entries.TryGetValue(err.DependentPluginId, out var e))
+                {
+                    e.UnresolvedDependencies.Add(err);
+                    if (err.Kind != DependencyErrorKind.VersionMismatch || e.State == PluginState.Unloaded)
+                        e.SetState(PluginState.Incompatible);
+                }
+            }
+        }
+
+        var sorted = _dependencyGraph.GetLoadOrder(_entries);
+
         foreach (var manifest in sorted)
         {
             ct.ThrowIfCancellationRequested();
+
+            // Skip incompatible plugins.
+            lock (_lock)
+            {
+                if (_entries.TryGetValue(manifest.Id, out var existing)
+                    && existing.State == PluginState.Incompatible)
+                {
+                    _log($"[PluginSystem] Skipping '{manifest.Name}' — incompatible dependencies.");
+                    continue;
+                }
+            }
+
+            // Determine if plugin should load eagerly (startup) or be dormant.
+            var activation = manifest.Activation;
+            bool isDormant = activation is not null && !activation.IsStartupLoad;
+
+            if (isDormant)
+            {
+                lock (_lock)
+                {
+                    if (_entries.TryGetValue(manifest.Id, out var entry))
+                        entry.SetState(PluginState.Dormant);
+                }
+                _log($"[PluginSystem] '{manifest.Name}' registered as Dormant (lazy).");
+                continue;
+            }
+
             _log($"[PluginSystem] Loading '{manifest.Name}' ({manifest.Id})...");
             try
             {
@@ -275,32 +494,122 @@ public sealed class WpfPluginHost : IAsyncDisposable
                 /* entry already marked Faulted; PluginCrashed already raised */
             }
         }
+
+        // Initialize activation service (after all dormant plugins are registered).
+        _activationService = new PluginActivationService(
+            _hostContext.IDEEvents, _entries, id => ActivateDormantPluginAsync(id));
+
+        // PHASE 1: Initialize MetricsEngine after all plugins loaded
+        await _metricsEngine.InitializeAsync(delayMs: 150).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Sorts manifests so that dependencies are loaded before dependents.
-    /// Within the same dependency level, lower LoadPriority values load first.
-    /// Cycles and unknown dependencies are silently skipped.
+    /// Activates a dormant plugin by ID — called by <see cref="PluginActivationService"/>
+    /// or by the "Load Now" command in the Plugin Manager UI.
     /// </summary>
-    private static IEnumerable<PluginManifest> TopologicalSort(IReadOnlyList<PluginManifest> manifests)
+    public async Task ActivateDormantPluginAsync(string pluginId, CancellationToken ct = default)
     {
-        var byId   = manifests.ToDictionary(m => m.Id);
-        var result = new List<PluginManifest>(manifests.Count);
-        var visited = new HashSet<string>();
+        PluginEntry? entry;
+        lock (_lock) _entries.TryGetValue(pluginId, out entry);
+        if (entry is null || entry.State != PluginState.Dormant) return;
 
-        void Visit(PluginManifest m)
+        // Ensure all dependencies are activated first (if they are dormant too).
+        var deps = _dependencyGraph.GetDirectDependencies(pluginId);
+        foreach (var dep in deps)
         {
-            if (!visited.Add(m.Id)) return;
-            foreach (var depId in m.Dependencies)
-            {
-                if (byId.TryGetValue(depId, out var dep))
-                    Visit(dep);
-            }
-            result.Add(m);
+            PluginEntry? depEntry;
+            lock (_lock) _entries.TryGetValue(dep.PluginId, out depEntry);
+            if (depEntry?.State == PluginState.Dormant)
+                await ActivateDormantPluginAsync(dep.PluginId, ct).ConfigureAwait(false);
         }
 
-        foreach (var m in manifests.OrderBy(x => x.LoadPriority))
-            Visit(m);
+        _log($"[PluginSystem] Activating dormant plugin '{entry.Manifest.Name}'...");
+        await LoadPluginAsync(entry.Manifest, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Cascading unload: unloads all dependents first, then the target plugin.
+    /// </summary>
+    public async Task CascadingUnloadAsync(string pluginId, CancellationToken ct = default)
+    {
+        var order = _dependencyGraph.GetCascadedUnloadOrder(pluginId);
+        foreach (var id in order)
+        {
+            ct.ThrowIfCancellationRequested();
+            _log($"[PluginSystem] Cascade unload '{id}'...");
+            await UnloadPluginAsync(id, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Cascading reload: reloads the target plugin first, then its dependents in order.
+    /// </summary>
+    public async Task CascadingReloadAsync(string pluginId, CancellationToken ct = default)
+    {
+        var order = _dependencyGraph.GetCascadedReloadOrder(pluginId);
+        foreach (var id in order)
+        {
+            ct.ThrowIfCancellationRequested();
+            _log($"[PluginSystem] Cascade reload '{id}'...");
+            await ReloadPluginAsync(id, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Sorts manifests so that dependencies are loaded before dependents using Kahn's algorithm.
+    /// Phase 6c: Detects dependency cycles and logs them instead of silently infinite-looping.
+    /// Within the same dependency level, lower LoadPriority values load first.
+    /// </summary>
+    private IEnumerable<PluginManifest> TopologicalSort(IReadOnlyList<PluginManifest> manifests)
+    {
+        var byId = manifests.ToDictionary(m => m.Id, StringComparer.OrdinalIgnoreCase);
+
+        // Build in-degree map and adjacency list (dep → dependents)
+        var inDegree   = manifests.ToDictionary(m => m.Id, _ => 0, StringComparer.OrdinalIgnoreCase);
+        var dependents = manifests.ToDictionary(m => m.Id,
+            _ => new List<string>(), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var m in manifests)
+        {
+            foreach (var depId in m.Dependencies)
+            {
+                if (!byId.ContainsKey(depId)) continue; // unknown dep — skip
+                inDegree[m.Id]++;
+                dependents[depId].Add(m.Id);
+            }
+        }
+
+        // Kahn's BFS: start with nodes that have no dependencies
+        // Use a priority queue keyed by LoadPriority so lower-priority values load first
+        var queue = new SortedSet<(int Priority, string Id)>(
+            manifests
+                .Where(m => inDegree[m.Id] == 0)
+                .Select(m => (m.LoadPriority, m.Id)));
+
+        var result = new List<PluginManifest>(manifests.Count);
+
+        while (queue.Count > 0)
+        {
+            var (_, id) = queue.Min;
+            queue.Remove(queue.Min);
+
+            result.Add(byId[id]);
+
+            foreach (var dependentId in dependents[id])
+            {
+                inDegree[dependentId]--;
+                if (inDegree[dependentId] == 0)
+                    queue.Add((byId[dependentId].LoadPriority, dependentId));
+            }
+        }
+
+        // Phase 6c: Cycle detection — any remaining non-zero in-degree = cycle
+        var cycleIds = inDegree.Where(kv => kv.Value > 0).Select(kv => kv.Key).ToList();
+        if (cycleIds.Count > 0)
+        {
+            _logError($"[PluginSystem] Circular dependency detected. Affected plugins will be skipped: " +
+                      string.Join(", ", cycleIds));
+        }
 
         return result;
     }
@@ -329,12 +638,165 @@ public sealed class WpfPluginHost : IAsyncDisposable
         catch { /* best-effort shutdown */ }
         finally
         {
-            _uiRegistry.UnregisterAllForPlugin(pluginId);
+            // UI unregistration (menus, panels, toolbar items) must run on the UI thread.
+            // UnregisterAllForPlugin calls MenuAdapter.RemoveMenuItem which touches ItemsControl.Items.
+            if (_dispatcher.CheckAccess())
+                _uiRegistry.UnregisterAllForPlugin(pluginId);
+            else
+                await _dispatcher.InvokeAsync(() => _uiRegistry.UnregisterAllForPlugin(pluginId));
+
             OptionsRegistry.UnregisterPluginPage(pluginId);
+            _migrationMonitor.ResetCrashCount(pluginId);
+
+            // Unregister all extension-point contributions from this plugin.
+            _hostContext.ExtensionRegistry.UnregisterAll(pluginId);
+
             entry.Unload();
             entry.SetState(PluginState.Unloaded);
+
+            // Publish PluginUnloadedEvent to IDE EventBus.
+            _hostContext.IDEEvents.Publish(new PluginUnloadedEvent
+            {
+                Source = "WpfPluginHost",
+                PluginId = pluginId,
+                PluginName = entry.Manifest.Name,
+            });
+
             RaiseOnDispatcher(() => PluginUnloaded?.Invoke(this, new PluginEventArgs(pluginId, entry.Manifest.Name)));
         }
+    }
+
+    // --- Isolation Mode Override -------------------------------------------------
+
+    /// <summary>
+    /// Returns the user override if set, otherwise the raw manifest declaration
+    /// (preserving <see cref="PluginIsolationMode.Auto"/> without resolving it).
+    /// Use this to seed the Plugin Manager ComboBox so that Auto plugins show "Auto".
+    /// </summary>
+    public PluginIsolationMode GetDeclaredIsolationMode(PluginManifest manifest)
+        => _isolationOverrides.TryGetValue(manifest.Id, out var mode) ? mode : manifest.IsolationMode;
+
+    /// <summary>
+    /// Returns the effective isolation mode for a plugin:
+    /// user override if set, otherwise the manifest declaration with Auto resolved
+    /// to a concrete InProcess or Sandbox decision via <see cref="PluginIsolationDecisionEngine"/>.
+    /// </summary>
+    public PluginIsolationMode GetEffectiveIsolationMode(PluginManifest manifest)
+    {
+        if (_isolationOverrides.TryGetValue(manifest.Id, out var overrideMode))
+            return overrideMode;
+
+        return Services.PluginIsolationDecisionEngine.Resolve(manifest);
+    }
+
+    /// <summary>
+    /// Changes the isolation mode for a plugin at runtime and hot-reloads it immediately.
+    /// The override is persisted to AppData and survives IDE restarts.
+    /// </summary>
+    public async Task SetIsolationOverrideAsync(
+        string pluginId, PluginIsolationMode mode, CancellationToken ct = default)
+    {
+        PluginEntry? entry;
+        lock (_lock) _entries.TryGetValue(pluginId, out entry);
+        if (entry is null) return;
+
+        _isolationOverrides[pluginId] = mode;
+        SaveIsolationOverrides();
+
+        var manifest = entry.Manifest;
+        _log($"[PluginSystem] '{pluginId}' isolation → {mode}. Hot-reloading…");
+
+        await UnloadPluginAsync(pluginId, ct).ConfigureAwait(false);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        await Task.Delay(200, ct).ConfigureAwait(false);
+        await LoadPluginAsync(manifest, ct).ConfigureAwait(false);
+    }
+
+    private void LoadIsolationOverrides()
+    {
+        try
+        {
+            if (!File.Exists(OverridesFilePath)) return;
+            var json = File.ReadAllText(OverridesFilePath);
+            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            if (dict is null) return;
+            foreach (var (k, v) in dict)
+                if (Enum.TryParse<PluginIsolationMode>(v, out var parsed))
+                    _isolationOverrides[k] = parsed;
+        }
+        catch { /* best-effort: corrupt/missing file is not fatal */ }
+    }
+
+    // --- Dynamic migration -------------------------------------------------------
+
+    /// <summary>
+    /// Replaces the active migration policy and persists it.
+    /// The monitor picks up the change on its next tick.
+    /// </summary>
+    public void UpdateMigrationPolicy(PluginMigrationPolicy policy)
+    {
+        ArgumentNullException.ThrowIfNull(policy);
+        MigrationPolicy = policy;
+        _migrationMonitor.UpdatePolicy(policy);
+        policy.Save();
+    }
+
+    /// <summary>
+    /// Invoked by <see cref="PluginMigrationMonitor"/> on the Dispatcher thread when a
+    /// threshold is exceeded.
+    /// </summary>
+    private void OnMigrationTriggered(string pluginId, MigrationTriggerReason reason)
+    {
+        PluginEntry? entry;
+        lock (_lock) _entries.TryGetValue(pluginId, out entry);
+        if (entry is null) return;
+
+        if (MigrationPolicy.Mode == PluginMigrationMode.AutoMigrate)
+        {
+            _log($"[PluginSystem] Auto-migrating '{pluginId}' to Sandbox (reason: {reason}).");
+            _ = SetIsolationOverrideAsync(pluginId, PluginIsolationMode.Sandbox);
+        }
+        else
+        {
+            // SuggestOnly — raise the event for the UI to handle.
+            RaiseOnDispatcher(() => MigrationSuggested?.Invoke(this,
+                BuildMigrationSuggestedArgs(entry, reason)));
+        }
+    }
+
+    private PluginMigrationSuggestedEventArgs BuildMigrationSuggestedArgs(
+        PluginEntry entry, MigrationTriggerReason reason)
+    {
+        var snap  = entry.Diagnostics.GetLatest();
+        var memMb = snap is not null ? snap.MemoryBytes / (1024 * 1024) : 0;
+        var cpu   = snap?.CpuPercent ?? 0.0;
+
+        var message = reason switch
+        {
+            MigrationTriggerReason.Crashes =>
+                $"Plugin '{entry.Manifest.Name}' has crashed {_migrationMonitor.GetCrashCount(entry.Manifest.Id)} time(s). Consider moving it to Sandbox.",
+            MigrationTriggerReason.Memory =>
+                $"Plugin '{entry.Manifest.Name}' is using {memMb} MB — consider moving it to Sandbox.",
+            MigrationTriggerReason.Cpu =>
+                $"Plugin '{entry.Manifest.Name}' has sustained high CPU ({cpu:F1}%) — consider moving it to Sandbox.",
+            _ => $"Plugin '{entry.Manifest.Name}' may benefit from Sandbox isolation."
+        };
+
+        return new PluginMigrationSuggestedEventArgs(
+            entry.Manifest.Id, entry.Manifest.Name, reason, memMb, cpu, message);
+    }
+
+    private void SaveIsolationOverrides()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(OverridesFilePath)!);
+            var dict = _isolationOverrides.ToDictionary(kv => kv.Key, kv => kv.Value.ToString());
+            File.WriteAllText(OverridesFilePath,
+                JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        catch { /* best-effort */ }
     }
 
     // --- Reload ------------------------------------------------------------------
@@ -448,6 +910,114 @@ public sealed class WpfPluginHost : IAsyncDisposable
         lock (_lock) return _entries.TryGetValue(pluginId, out var entry) ? entry : null;
     }
 
+    // --- Sandbox Options Pages (Phase 11) ----------------------------------------
+
+    /// <summary>
+    /// Returns options page registrations declared by sandbox plugins.
+    /// Each entry carries the plugin ID, display name, and the Win32 HWND of the
+    /// options page HwndSource created inside the sandbox process.
+    /// The caller should wrap the HWND in an HwndPanelHost and register it with
+    /// OptionsPageRegistry. Call this after <see cref="LoadAllAsync"/> completes.
+    /// </summary>
+    public IReadOnlyList<(string PluginId, string PluginName, long Hwnd)> GetSandboxOptionsPages()
+    {
+        lock (_lock)
+        {
+            var result = new List<(string PluginId, string PluginName, long Hwnd)>();
+            foreach (var entry in _entries.Values)
+            {
+                if (entry.State != PluginState.Loaded) continue;
+                if (entry.Instance is not SandboxPluginProxy proxy) continue;
+                var info = proxy.GetOptionsPageInfo();
+                if (info.HasValue)
+                    result.Add((info.Value.PluginId, info.Value.PluginName, info.Value.Hwnd));
+            }
+            return result;
+        }
+    }
+
+    // --- Theme forwarding (Phase 9) -----------------------------------------------
+
+    /// <summary>
+    /// Notifies all running sandbox plugins of a theme change.
+    /// Call this from the IDE theme switch handler so sandbox-hosted panels
+    /// can re-apply the new brush/color tokens.
+    /// </summary>
+    public Task NotifyThemeChangedAsync(string themeXaml, CancellationToken ct = default)
+    {
+        List<SandboxPluginProxy> proxies;
+        lock (_lock)
+        {
+            proxies = _entries.Values
+                .Where(e => e.State == PluginState.Loaded && e.Instance is SandboxPluginProxy)
+                .Select(e => (SandboxPluginProxy)e.Instance!)
+                .ToList();
+        }
+
+        if (proxies.Count == 0) return Task.CompletedTask;
+
+        return Task.WhenAll(proxies.Select(p => p.ForwardThemeChangeAsync(themeXaml, ct)));
+    }
+
+    // --- Extension Point Registration -------------------------------------------
+
+    /// <summary>
+    /// After InitializeAsync completes, iterates the manifest "extensions" dict and registers
+    /// each declared implementation against its contract type in the IDE ExtensionRegistry.
+    /// </summary>
+    private void RegisterExtensionContributions(PluginEntry entry)
+    {
+        if (entry.Manifest.Extensions.Count == 0) return;
+
+        // Collect all assemblies from the plugin's ALC (or AppDomain for sandbox proxies).
+        var assemblies = entry.LoadContext?.LoadedAssemblies.ToList()
+            ?? AppDomain.CurrentDomain.GetAssemblies().ToList();
+
+        foreach (var (pointName, className) in entry.Manifest.Extensions)
+        {
+            var contractType = ExtensionPointCatalog.TryResolve(pointName);
+            if (contractType is null)
+            {
+                _log($"[Extensions] Unknown extension point '{pointName}' in '{entry.Manifest.Id}' — skipping.");
+                continue;
+            }
+
+            object? impl = null;
+            foreach (var asm in assemblies)
+            {
+                var type = asm.GetType(className);
+                if (type is null) continue;
+                try { impl = Activator.CreateInstance(type); }
+                catch (Exception ex)
+                {
+                    _logError($"[Extensions] Could not create '{className}': {ex.Message}");
+                    break;
+                }
+                break;
+            }
+
+            if (impl is null)
+            {
+                _logError($"[Extensions] Type '{className}' not found for point '{pointName}' in '{entry.Manifest.Id}'.");
+                continue;
+            }
+
+            // Inject IDE context if the implementation requests it.
+            if (impl is IExtensionWithContext ctxImpl)
+            {
+                try { ctxImpl.Initialize(new PluginScopedContext(
+                    _hostContext, new TimedHexEditorService(_hostContext.HexEditor, entry.Diagnostics, _metricsEngine))); }
+                catch (Exception ex)
+                {
+                    _logError($"[Extensions] Initialize() failed for '{className}': {ex.Message}");
+                }
+            }
+
+            _hostContext.ExtensionRegistry.Register(entry.Manifest.Id, contractType, impl);
+            _log($"[Extensions] Registered '{pointName}' → '{className}' for plugin '{entry.Manifest.Id}'.");
+        }
+    }
+
     // --- Private helpers ---------------------------------------------------------
 
     private async Task<PluginManifest?> TryLoadManifestAsync(string pluginDir)
@@ -498,37 +1068,14 @@ public sealed class WpfPluginHost : IAsyncDisposable
     // --- Diagnostics sampling (continuous background monitoring) -------------------
 
     /// <summary>
-    /// Performs an initial CPU/Memory sample to initialize LastSampledCpuPercent.
-    /// Called immediately in the constructor to avoid race condition where PluginMonitoringViewModel
-    /// queries metrics before the first timer tick (which happens ~5s after startup).
-    /// Uses initial zero delta for CPU (will show 0% initially, which is correct for startup).
+    /// [DEPRECATED] Legacy sampling tick - kept for backward compatibility.
+    /// MetricsEngine now handles all sampling operations.
     /// </summary>
-    private void PerformInitialSample()
-    {
-        var process = Process.GetCurrentProcess();
-        _lastCpuTime = process.TotalProcessorTime;
-        _lastCpuCheck = DateTime.UtcNow;
-
-        // Initial sample: CPU will be 0% (no delta yet), Memory will be current heap size
-        _lastSampledCpuPercent = 0.0;
-
-        long memBytes = GC.GetTotalMemory(forceFullCollection: false);
-
-        // Record initial sample for any already-loaded plugins
-        IReadOnlyList<PluginEntry> loaded;
-        lock (_lock) loaded = _entries.Values.Where(e => e.State == PluginState.Loaded).ToList();
-
-        foreach (var entry in loaded)
-            entry.Diagnostics.Record(0.0, memBytes, TimeSpan.Zero);
-    }
-
-    /// <summary>
-    /// Called every DiagnosticSamplingInterval. Records a process-level CPU % and GC memory
-    /// snapshot into each loaded plugin's diagnostics ring buffer.
-    /// CPU is computed as delta TotalProcessorTime / elapsed wall time / processor count.
-    /// </summary>
+    [Obsolete("Use MetricsEngine instead")]
     private void OnSamplingTick(object? sender, EventArgs e)
     {
+        // Legacy compatibility - delegate to MetricsEngine
+        // This method is kept to avoid breaking existing code that might depend on the timer
         var now = DateTime.UtcNow;
         var wallElapsed = now - _lastCpuCheck;
         if (wallElapsed.TotalMilliseconds < 1) return;
@@ -544,22 +1091,6 @@ public sealed class WpfPluginHost : IAsyncDisposable
 
         _lastCpuTime = cpuNow;
         _lastCpuCheck = now;
-
-        // Use managed heap size (consistent with LoadPluginAsync) rather than WorkingSet64.
-        // WorkingSet64 is the full process physical footprint (~200-400 MB for WPF), which
-        // would cause a jarring jump after the first tick and is misleading per-plugin.
-        long memBytes = GC.GetTotalMemory(forceFullCollection: false);
-
-        IReadOnlyList<PluginEntry> loaded;
-        lock (_lock) loaded = _entries.Values.Where(e2 => e2.State == PluginState.Loaded).ToList();
-
-        // Distribute a single process-level sample to every loaded plugin.
-        // Per-plugin isolation is not possible in InProcess mode; the process metrics
-        // serve as an upper-bound indicator for the monitoring UI.
-        // Pass TimeSpan.Zero as executionTime: wallElapsed is the sampling interval (~5s),
-        // not the plugin's execution time. Passing it would corrupt AverageExecutionTime.
-        foreach (var entry in loaded)
-            entry.Diagnostics.Record(cpuPct, memBytes, TimeSpan.Zero);
     }
 
     private IReadOnlyList<PluginEntry> GetLoadedEntries()
@@ -588,6 +1119,12 @@ public sealed class WpfPluginHost : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _activationService?.Dispose();
+
+        // Dispose MetricsEngine first
+        _metricsEngine?.Dispose();
+        _migrationMonitor.Dispose();
+
         _samplingTimer.Stop();
         _samplingTimer.Tick -= OnSamplingTick;
         _slowDetector.Dispose();
@@ -611,4 +1148,31 @@ public sealed class PluginEventArgs : EventArgs
     public string PluginId { get; }
     public string PluginName { get; }
     public PluginEventArgs(string id, string name) { PluginId = id; PluginName = name; }
+}
+
+/// <summary>
+/// Event args raised when the migration monitor suggests moving an InProcess plugin to Sandbox.
+/// </summary>
+public sealed class PluginMigrationSuggestedEventArgs : EventArgs
+{
+    public string                PluginId      { get; }
+    public string                PluginName    { get; }
+    public MigrationTriggerReason Reason       { get; }
+    public long                  CurrentMemoryMb { get; }
+    public double                CurrentCpu    { get; }
+    public string                Message       { get; }
+
+    public PluginMigrationSuggestedEventArgs(
+        string pluginId, string pluginName,
+        MigrationTriggerReason reason,
+        long currentMemoryMb, double currentCpu,
+        string message)
+    {
+        PluginId       = pluginId;
+        PluginName     = pluginName;
+        Reason         = reason;
+        CurrentMemoryMb = currentMemoryMb;
+        CurrentCpu     = currentCpu;
+        Message        = message;
+    }
 }

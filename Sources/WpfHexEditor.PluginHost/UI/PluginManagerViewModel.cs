@@ -24,6 +24,8 @@ public sealed class PluginManagerViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly WpfPluginHost _host;
     private readonly Dispatcher _dispatcher;
+    private readonly Func<(int warning, int high, int critical, bool enabled,
+                           string normalColor, string warningColor, string highColor, string criticalColor)>? _getMemoryThresholds;
 
     // Metrics-only refresh timer (10 s — lighter than full Rebuild)
     private readonly DispatcherTimer _metricsTimer;
@@ -48,10 +50,15 @@ public sealed class PluginManagerViewModel : INotifyPropertyChanged, IDisposable
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public PluginManagerViewModel(WpfPluginHost host, Dispatcher dispatcher)
+    public PluginManagerViewModel(
+        WpfPluginHost host, 
+        Dispatcher dispatcher,
+        Func<(int warning, int high, int critical, bool enabled,
+              string normalColor, string warningColor, string highColor, string criticalColor)>? getMemoryThresholds = null)
     {
         _host       = host       ?? throw new ArgumentNullException(nameof(host));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        _getMemoryThresholds = getMemoryThresholds;
 
         // Metrics timer — only refreshes live CPU/RAM + sparkline history, does NOT rebuild the list
         _metricsTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher)
@@ -69,9 +76,10 @@ public sealed class PluginManagerViewModel : INotifyPropertyChanged, IDisposable
         _filterDebounce.Tick += OnFilterDebounced;
 
         // Keep list in sync with plugin lifecycle events
-        _host.PluginLoaded   += OnHostPluginChanged;
-        _host.PluginUnloaded += OnHostPluginChanged;
+        _host.PluginLoaded       += OnHostPluginChanged;
+        _host.PluginUnloaded     += OnHostPluginChanged;
         _host.SlowPluginDetected += OnHostSlowPlugin;
+        _host.MigrationSuggested += OnHostMigrationSuggested;
 
         RefreshCommand             = new RelayCommand(_ => RebuildOnUiThread());
         InstallFromFileCommand     = new RelayCommand(_ => ExecuteInstallFromFile());
@@ -171,10 +179,23 @@ public sealed class PluginManagerViewModel : INotifyPropertyChanged, IDisposable
 
     // --- Plugin lifecycle callbacks (called from PluginListItemViewModel commands) ---
 
-    public void EnablePlugin(string id)    => RunLifecycleAndRebuild(() => _host.EnablePluginAsync(id));
-    public void DisablePlugin(string id)   => RunLifecycleAndRebuild(() => _host.DisablePluginAsync(id));
-    public void ReloadPlugin(string id)    => RunLifecycleAndRebuild(() => _host.ReloadPluginAsync(id));
-    public void UninstallPlugin(string id) => RunLifecycleAndRebuild(() => _host.UninstallPluginAsync(id));
+    public void EnablePlugin(string id)     => RunLifecycleAndRebuild(() => _host.EnablePluginAsync(id));
+    public void DisablePlugin(string id)    => RunLifecycleAndRebuild(() => _host.DisablePluginAsync(id));
+    public void ReloadPlugin(string id)     => RunLifecycleAndRebuild(() => _host.ReloadPluginAsync(id));
+    public void UninstallPlugin(string id)  => RunLifecycleAndRebuild(() => _host.UninstallPluginAsync(id));
+    public void LoadPluginNow(string id)    => RunLifecycleAndRebuild(() => _host.ActivateDormantPluginAsync(id));
+    public void CascadeUnload(string id)    => RunLifecycleAndRebuild(() => _host.CascadingUnloadAsync(id));
+    public void CascadeReload(string id)    => RunLifecycleAndRebuild(() => _host.CascadingReloadAsync(id));
+
+    public void MigratePluginToSandbox(string id)
+    {
+        // Clear the suggestion banner immediately so the user sees feedback.
+        var vm = _allItems.FirstOrDefault(i => i.Id == id);
+        vm?.ClearMigrationSuggestion();
+
+        RunLifecycleAndRebuild(() =>
+            _host.SetIsolationOverrideAsync(id, SDK.Models.PluginIsolationMode.Sandbox));
+    }
 
     // --- Host event handlers ---
 
@@ -188,6 +209,13 @@ public sealed class PluginManagerViewModel : INotifyPropertyChanged, IDisposable
             var vm = _allItems.FirstOrDefault(i => i.Id == e.PluginId);
             if (vm is not null) vm.IsSlow = true;
         });
+    }
+
+    private void OnHostMigrationSuggested(object? sender, PluginMigrationSuggestedEventArgs e)
+    {
+        // Already on Dispatcher thread (raised via RaiseOnDispatcher in WpfPluginHost).
+        var vm = _allItems.FirstOrDefault(i => i.Id == e.PluginId);
+        vm?.SetMigrationSuggestion(e.Message);
     }
 
     // --- Internal ---
@@ -205,7 +233,19 @@ public sealed class PluginManagerViewModel : INotifyPropertyChanged, IDisposable
                 onDisable: DisablePlugin,
                 onReload: ReloadPlugin,
                 onUninstall: UninstallPlugin,
-                permissionService: _host.Permissions));
+                permissionService: _host.Permissions,
+                getMemoryThresholds: _getMemoryThresholds,
+                initialIsolationMode: _host.GetDeclaredIsolationMode(entry.Manifest),
+                onIsolationModeChanged: (id, mode) => _host.SetIsolationOverrideAsync(id, mode),
+                onMigrateToSandbox: MigratePluginToSandbox,
+                onDismissMigrationSuggestion: id =>
+                {
+                    var vm = _allItems.FirstOrDefault(i => i.Id == id);
+                    vm?.ClearMigrationSuggestion();
+                },
+                onLoadNow: LoadPluginNow,
+                onCascadeUnload: CascadeUnload,
+                onCascadeReload: CascadeReload));
         }
 
         ApplyFilterAndSort();
@@ -389,6 +429,7 @@ public sealed class PluginManagerViewModel : INotifyPropertyChanged, IDisposable
         _host.PluginLoaded       -= OnHostPluginChanged;
         _host.PluginUnloaded     -= OnHostPluginChanged;
         _host.SlowPluginDetected -= OnHostSlowPlugin;
+        _host.MigrationSuggested -= OnHostMigrationSuggested;
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

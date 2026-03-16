@@ -26,6 +26,23 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
     private readonly Action<string> _onReload;
     private readonly Action<string> _onUninstall;
     private readonly PermissionService? _permissionService;
+    private readonly Func<string, PluginIsolationMode, Task>? _onIsolationModeChanged;
+    private readonly Action<string>? _onMigrateToSandbox;
+    private readonly Action<string>? _onDismissMigrationSuggestion;
+    private readonly Action<string>? _onLoadNow;
+    private readonly Action<string>? _onCascadeUnload;
+    private readonly Action<string>? _onCascadeReload;
+
+    // Delegate to get memory thresholds from settings (injected to avoid circular dependency)
+    private readonly Func<(int warning, int high, int critical, bool enabled,
+                           string normalColor, string warningColor, string highColor, string criticalColor)>? _getMemoryThresholds;
+
+    private PluginIsolationMode _selectedIsolationMode;
+    private bool _isReloading;
+
+    // Migration suggestion state
+    private bool   _migrationSuggested;
+    private string _migrationSuggestionReason = string.Empty;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -35,7 +52,16 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
         Action<string> onDisable,
         Action<string> onReload,
         Action<string> onUninstall,
-        PermissionService? permissionService = null)
+        PermissionService? permissionService = null,
+        Func<(int warning, int high, int critical, bool enabled,
+              string normalColor, string warningColor, string highColor, string criticalColor)>? getMemoryThresholds = null,
+        PluginIsolationMode? initialIsolationMode = null,
+        Func<string, PluginIsolationMode, Task>? onIsolationModeChanged = null,
+        Action<string>? onMigrateToSandbox = null,
+        Action<string>? onDismissMigrationSuggestion = null,
+        Action<string>? onLoadNow = null,
+        Action<string>? onCascadeUnload = null,
+        Action<string>? onCascadeReload = null)
     {
         _entry = entry ?? throw new ArgumentNullException(nameof(entry));
         _onEnable = onEnable;
@@ -43,11 +69,34 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
         _onReload = onReload;
         _onUninstall = onUninstall;
         _permissionService = permissionService;
+        _getMemoryThresholds = getMemoryThresholds;
+        _onIsolationModeChanged = onIsolationModeChanged;
+        _onMigrateToSandbox = onMigrateToSandbox;
+        _onDismissMigrationSuggestion = onDismissMigrationSuggestion;
+        _onLoadNow = onLoadNow;
+        _onCascadeUnload = onCascadeUnload;
+        _onCascadeReload = onCascadeReload;
+        _selectedIsolationMode = initialIsolationMode ?? entry.Manifest.IsolationMode;
 
         EnableCommand = new RelayCommand(_ => _onEnable(Id), _ => State == PluginState.Disabled);
         DisableCommand = new RelayCommand(_ => _onDisable(Id), _ => State == PluginState.Loaded);
         ReloadCommand = new RelayCommand(_ => _onReload(Id), _ => State is PluginState.Loaded or PluginState.Faulted or PluginState.Disabled);
         UninstallCommand = new RelayCommand(_ => _onUninstall(Id));
+        MigrateToSandboxCommand = new RelayCommand(
+            _ => _onMigrateToSandbox?.Invoke(Id),
+            _ => CanMigrateToSandbox);
+        DismissMigrationSuggestionCommand = new RelayCommand(
+            _ => { _onDismissMigrationSuggestion?.Invoke(Id); ClearMigrationSuggestion(); });
+
+        LoadNowCommand = new RelayCommand(
+            _ => _onLoadNow?.Invoke(Id),
+            _ => IsDormant && _onLoadNow is not null);
+        CascadeUnloadCommand = new RelayCommand(
+            _ => _onCascadeUnload?.Invoke(Id),
+            _ => State == PluginState.Loaded && _onCascadeUnload is not null);
+        CascadeReloadCommand = new RelayCommand(
+            _ => _onCascadeReload?.Invoke(Id),
+            _ => State == PluginState.Loaded && _onCascadeReload is not null);
 
         Permissions = BuildPermissions();
 
@@ -64,7 +113,64 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
     public string Publisher => _entry.Manifest.Publisher;
     public bool IsTrustedPublisher => _entry.Manifest.TrustedPublisher;
     public string Description => _entry.Manifest.Description;
-    public string IsolationMode => _entry.Manifest.IsolationMode.ToString();
+    // IsolationMode — bindable ComboBox selection; changing triggers a hot-swap reload.
+    public static IReadOnlyList<string> IsolationModes { get; } = ["Auto", "InProcess", "Sandbox"];
+
+    /// <summary>
+    /// For Auto-mode plugins: shows "(→ InProcess)" or "(→ Sandbox)" inline next to the ComboBox.
+    /// Visible only when Auto is selected; empty string otherwise.
+    /// </summary>
+    public string ResolvedIsolationModeLabel
+    {
+        get
+        {
+            var declared = _entry.Manifest.IsolationMode;
+            var resolved = _entry.ResolvedIsolationMode;
+            return declared == PluginIsolationMode.Auto
+                ? $"(→ {resolved})"
+                : string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Semantic foreground color for the resolved isolation mode label.
+    /// InProcess → green (fast, in-host); Sandbox → amber (isolated, external process).
+    /// </summary>
+    public string ResolvedIsolationModeColor => _entry.ResolvedIsolationMode switch
+    {
+        PluginIsolationMode.InProcess => "#22C55E",  // green — same as Loaded state badge
+        PluginIsolationMode.Sandbox   => "#F59E0B",  // amber — same as SLOW badge / Loading state
+        _                             => "#9CA3AF"   // gray fallback (Auto not yet resolved)
+    };
+
+    public string SelectedIsolationMode
+    {
+        get => _selectedIsolationMode.ToString();
+        set
+        {
+            if (!Enum.TryParse<PluginIsolationMode>(value, out var mode) || mode == _selectedIsolationMode)
+                return;
+            _selectedIsolationMode = mode;
+            OnPropertyChanged();
+            if (_onIsolationModeChanged is not null)
+                _ = ApplyIsolationModeAsync(mode);
+        }
+    }
+
+    public bool IsReloading
+    {
+        get => _isReloading;
+        private set { _isReloading = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanChangeIsolationMode)); }
+    }
+
+    public bool CanChangeIsolationMode => !_isReloading;
+
+    private async Task ApplyIsolationModeAsync(PluginIsolationMode mode)
+    {
+        IsReloading = true;
+        try { await _onIsolationModeChanged!(Id, mode).ConfigureAwait(false); }
+        finally { IsReloading = false; }
+    }
 
     public PluginState State => _entry.State;
 
@@ -76,6 +182,7 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
         PluginState.Faulted => "Error",
         PluginState.Incompatible => "Incompatible",
         PluginState.Unloaded => "Unloaded",
+        PluginState.Dormant => "Dormant",
         _ => "Unknown"
     };
 
@@ -86,8 +193,59 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
         PluginState.Disabled => "#6B7280", // gray
         PluginState.Faulted => "#EF4444",  // red
         PluginState.Incompatible => "#F97316", // orange
+        PluginState.Dormant => "#A855F7",  // purple
         _ => "#9CA3AF"
     };
+
+    // -- Lazy Loading (Dormant) ---------------------------------------------------
+
+    public bool IsDormant => _entry.State == PluginState.Dormant;
+
+    public string ActivationTriggerLabel
+    {
+        get
+        {
+            var activation = _entry.Manifest.Activation;
+            if (activation is null) return string.Empty;
+            var parts = new List<string>();
+            if (activation.FileExtensions.Count > 0)
+                parts.Add("Files: " + string.Join(", ", activation.FileExtensions));
+            if (activation.Commands.Count > 0)
+                parts.Add("Cmds: " + string.Join(", ", activation.Commands));
+            return string.Join(" | ", parts);
+        }
+    }
+
+    // -- ALC Diagnostics (InProcess only) ----------------------------------------
+
+    public bool IsInProcess => _entry.ResolvedIsolationMode == PluginIsolationMode.InProcess;
+    public int AlcAssemblyCount => _entry.Diagnostics.AlcAssemblyCount;
+    public int AlcConflictCount => _entry.Diagnostics.AlcConflictCount;
+    public bool HasAlcConflicts => _entry.Diagnostics.AlcConflictCount > 0;
+
+    public IReadOnlyList<string> AssemblyConflictLabels
+        => _entry.AssemblyConflicts
+            .Select(c => $"{c.AssemblyName}: host={c.HostVersion} requested={c.RequestedVersion}")
+            .ToList();
+
+    // -- Capability Features ------------------------------------------------------
+
+    public IReadOnlyList<string> Features => _entry.Manifest.Features;
+    public bool HasFeatures => _entry.Manifest.Features.Count > 0;
+
+    // -- Extension Points ---------------------------------------------------------
+
+    public IReadOnlyList<string> ExtensionLabels
+        => _entry.Manifest.Extensions.Select(kv => $"{kv.Key} → {kv.Value}").ToList();
+    public bool HasExtensions => _entry.Manifest.Extensions.Count > 0;
+
+    // -- Dependency Graph ---------------------------------------------------------
+
+    public IReadOnlyList<string> UnresolvedDepLabels
+        => _entry.UnresolvedDependencies
+            .Select(e => $"{e.RequiredPluginId} ({e.Kind})")
+            .ToList();
+    public bool HasUnresolvedDeps => _entry.UnresolvedDependencies.Count > 0;
 
     public string? FaultMessage => _entry.FaultException?.Message;
 
@@ -110,6 +268,29 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
     public long MemoryMb { get; private set; }
     public double InitTimeMs { get; private set; }
     public double AvgExecMs { get; private set; }
+
+    // Memory alert properties
+    private string _memoryAlertColor = "#22C55E";
+    private string _memoryAlertIcon = "🟢";
+    private string _memoryAlertMessage = string.Empty;
+
+    public string MemoryAlertColor
+    {
+        get => _memoryAlertColor;
+        private set { _memoryAlertColor = value; OnPropertyChanged(); }
+    }
+
+    public string MemoryAlertIcon
+    {
+        get => _memoryAlertIcon;
+        private set { _memoryAlertIcon = value; OnPropertyChanged(); }
+    }
+
+    public string MemoryAlertMessage
+    {
+        get => _memoryAlertMessage;
+        private set { _memoryAlertMessage = value; OnPropertyChanged(); }
+    }
 
     // Rolling history for sparkline charts (60-point rolling window).
     private const int HistoryCapacity = 60;
@@ -142,6 +323,57 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
     public ICommand DisableCommand { get; }
     public ICommand ReloadCommand { get; }
     public ICommand UninstallCommand { get; }
+    public ICommand MigrateToSandboxCommand { get; }
+    public ICommand DismissMigrationSuggestionCommand { get; }
+    public ICommand LoadNowCommand { get; }
+    public ICommand CascadeUnloadCommand { get; }
+    public ICommand CascadeReloadCommand { get; }
+
+    // -- Migration suggestion -----------------------------------------------------
+
+    /// <summary>
+    /// True when the migration monitor has suggested moving this plugin to Sandbox.
+    /// Drives the warning banner visibility in the Plugin Manager detail pane.
+    /// </summary>
+    public bool MigrationSuggested
+    {
+        get => _migrationSuggested;
+        private set { _migrationSuggested = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanMigrateToSandbox)); }
+    }
+
+    /// <summary>Human-readable reason for the migration suggestion.</summary>
+    public string MigrationSuggestionReason
+    {
+        get => _migrationSuggestionReason;
+        private set { _migrationSuggestionReason = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>
+    /// True when this plugin can be manually migrated to Sandbox via the "Move to Sandbox" button.
+    /// Requires: plugin is InProcess, Loaded, and not currently reloading.
+    /// </summary>
+    public bool CanMigrateToSandbox
+        => _entry.ResolvedIsolationMode == PluginIsolationMode.InProcess
+        && _entry.State == PluginState.Loaded
+        && !_isReloading;
+
+    /// <summary>
+    /// Called by <see cref="PluginManagerViewModel"/> when <c>WpfPluginHost.MigrationSuggested</c>
+    /// fires for this plugin.
+    /// </summary>
+    public void SetMigrationSuggestion(string reason)
+    {
+        MigrationSuggestionReason = reason;
+        MigrationSuggested = true;
+        ((RelayCommand)MigrateToSandboxCommand).RaiseCanExecuteChanged();
+    }
+
+    /// <summary>Clears the migration suggestion banner (user dismissed or migration applied).</summary>
+    public void ClearMigrationSuggestion()
+    {
+        MigrationSuggested = false;
+        MigrationSuggestionReason = string.Empty;
+    }
 
     // -- Permissions -----------------------------------------------------------
 
@@ -250,6 +482,9 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
                 PeakMemoryMb = rollingPeakMem;
                 OnPropertyChanged(nameof(PeakMemoryMb));
             }
+
+            // Update memory alert badge
+            UpdateMemoryAlert(MemoryMb);
         }
         InitTimeMs = _entry.InitDuration.TotalMilliseconds;
 
@@ -264,9 +499,25 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(Uptime));
         OnPropertyChanged(nameof(UptimeLabel));
 
+        OnPropertyChanged(nameof(IsDormant));
+        OnPropertyChanged(nameof(IsInProcess));
+        OnPropertyChanged(nameof(ResolvedIsolationModeLabel));
+        OnPropertyChanged(nameof(ResolvedIsolationModeColor));
+        OnPropertyChanged(nameof(AlcAssemblyCount));
+        OnPropertyChanged(nameof(AlcConflictCount));
+        OnPropertyChanged(nameof(HasAlcConflicts));
+        OnPropertyChanged(nameof(AssemblyConflictLabels));
+        OnPropertyChanged(nameof(HasUnresolvedDeps));
+        OnPropertyChanged(nameof(UnresolvedDepLabels));
+
         ((RelayCommand)EnableCommand).RaiseCanExecuteChanged();
         ((RelayCommand)DisableCommand).RaiseCanExecuteChanged();
         ((RelayCommand)ReloadCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)MigrateToSandboxCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)LoadNowCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)CascadeUnloadCommand).RaiseCanExecuteChanged();
+        ((RelayCommand)CascadeReloadCommand).RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(CanMigrateToSandbox));
     }
 
     private static void PushHistory(ObservableCollection<double> col, double value)
@@ -274,6 +525,60 @@ public sealed class PluginListItemViewModel : INotifyPropertyChanged
         while (col.Count >= HistoryCapacity)
             col.RemoveAt(0);
         col.Add(value);
+    }
+
+    /// <summary>
+    /// Evaluates current memory usage against thresholds and updates alert properties.
+    /// </summary>
+    private void UpdateMemoryAlert(long memoryMb)
+    {
+        // If no threshold provider, default to green (no alerts)
+        if (_getMemoryThresholds is null)
+        {
+            MemoryAlertColor = "#22C55E";
+            MemoryAlertIcon = "🟢";
+            MemoryAlertMessage = string.Empty;
+            return;
+        }
+
+        var (warning, high, critical, enabled, normalColor, warningColor, highColor, criticalColor) 
+            = _getMemoryThresholds();
+
+        if (!enabled)
+        {
+            // Reset to configured normal color when alerts are disabled
+            MemoryAlertColor = normalColor;
+            MemoryAlertIcon = "🟢";
+            MemoryAlertMessage = string.Empty;
+            return;
+        }
+
+        // Evaluate thresholds with configured colors (critical > high > warning)
+        if (memoryMb >= critical)
+        {
+            MemoryAlertColor = criticalColor;
+            MemoryAlertIcon = "🔴";
+            MemoryAlertMessage = $"Critical: {memoryMb} MB (threshold: {critical} MB)";
+        }
+        else if (memoryMb >= high)
+        {
+            MemoryAlertColor = highColor;
+            MemoryAlertIcon = "🟠";
+            MemoryAlertMessage = $"High: {memoryMb} MB (threshold: {high} MB)";
+        }
+        else if (memoryMb >= warning)
+        {
+            MemoryAlertColor = warningColor;
+            MemoryAlertIcon = "🟡";
+            MemoryAlertMessage = $"Warning: {memoryMb} MB (threshold: {warning} MB)";
+        }
+        else
+        {
+            // Normal - use configured normal color
+            MemoryAlertColor = normalColor;
+            MemoryAlertIcon = "🟢";
+            MemoryAlertMessage = string.Empty;
+        }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

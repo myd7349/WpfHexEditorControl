@@ -86,6 +86,14 @@ public sealed class AppSettings
     /// Serialised as "pluginSystem": { … } in settings.json.
     /// </summary>
     public PluginSystemSettings PluginSystem { get; set; } = new();
+
+    // -- Output Logger ----------------------------------------------------------------
+
+    /// <summary>
+    /// Log-level colour settings for the Output panel.
+    /// Serialised as "outputLogger": { … } in settings.json.
+    /// </summary>
+    public OutputLoggerSettings OutputLogger { get; set; } = new();
 }
 
 // ----------------------------------------------------------------------------
@@ -329,4 +337,75 @@ public sealed class PluginSystemSettings
     /// without prompting the user.
     /// </summary>
     public bool AutoLoadPlugins { get; set; } = true;
+
+    // -- Memory Alert Thresholds ------------------------------------------
+
+    /// <summary>Memory warning threshold in MB (yellow). Default: 500 MB.</summary>
+    public int MemoryWarningThresholdMB { get; set; } = 500;
+
+    /// <summary>Memory high threshold in MB (orange). Default: 750 MB.</summary>
+    public int MemoryHighThresholdMB { get; set; } = 750;
+
+    /// <summary>Memory critical threshold in MB (red). Default: 1000 MB.</summary>
+    public int MemoryCriticalThresholdMB { get; set; } = 1000;
+
+    /// <summary>Enable memory usage alerts and badges.</summary>
+    public bool EnableMemoryAlerts { get; set; } = true;
+
+    /// <summary>Show color gradation (green/yellow/orange/red) in monitors.</summary>
+    public bool ShowMemoryColorGradation { get; set; } = true;
+
+    // -- Memory Alert Colors ----------------------------------------------
+
+    /// <summary>Color for normal memory usage (green). Default: #22C55E</summary>
+    public string MemoryNormalColor { get; set; } = "#22C55E";
+
+    /// <summary>Color for warning threshold (yellow). Default: #EAB308</summary>
+    public string MemoryWarningColor { get; set; } = "#EAB308";
+
+    /// <summary>Color for high threshold (orange). Default: #F97316</summary>
+    public string MemoryHighColor { get; set; } = "#F97316";
+
+    /// <summary>Color for critical threshold (red). Default: #EF4444</summary>
+    public string MemoryCriticalColor { get; set; } = "#EF4444";
+}
+
+// --------------------------------------------------------------------------------
+// Output Logger Settings
+// --------------------------------------------------------------------------------
+
+/// <summary>
+/// Log-level colour settings for the Output panel.
+/// Colours are stored as HTML hex strings (e.g. "#F0503C").
+/// INFO level always inherits the theme foreground and is not configurable here.
+/// </summary>
+public sealed class OutputLoggerSettings
+{
+    // -- Log-level colours --------------------------------------------------------
+
+    /// <summary>Colour for WARN messages. Default: gold #DCB432.</summary>
+    public string WarnColor    { get; set; } = "#DCB432";
+
+    /// <summary>Colour for ERROR messages. Default: red-orange #F0503C.</summary>
+    public string ErrorColor   { get; set; } = "#F0503C";
+
+    /// <summary>Colour for DEBUG messages. Default: gray #828282.</summary>
+    public string DebugColor   { get; set; } = "#828282";
+
+    /// <summary>Colour for SUCCESS/OK messages. Default: teal-green #4EC9B0.</summary>
+    public string SuccessColor { get; set; } = "#4EC9B0";
+
+    // -- Change notification ------------------------------------------------------
+
+    /// <summary>
+    /// Raised when colours have been updated so that <see cref="OutputLogger"/>
+    /// can rebuild its cached brushes without restarting.
+    /// </summary>
+    public static event Action? ColorsChanged;
+
+    /// <summary>
+    /// Signals that colour settings have changed.
+    /// Called by <c>OutputOptionsPage.Flush()</c> after writing new values.
+    /// </summary>
+    public static void NotifyChanged() => ColorsChanged?.Invoke();
 }

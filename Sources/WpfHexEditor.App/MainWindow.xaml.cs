@@ -342,6 +342,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // -- Long-running operation state (per active document) ---------------
     private bool _isDocumentBusy;
     private bool _isClosingForced;
+    private bool _isShutdownComplete;
     /// <summary>
     /// True while the currently active document is performing a long-running operation.
     /// Switches instantly when the active tab changes.
@@ -463,11 +464,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnWindowClosing(object? sender, CancelEventArgs e)
     {
+        // Shutdown completed — allow the final close through.
+        if (_isShutdownComplete) return;
+
         if (_isClosingForced)
         {
+            // Triggered by ConfirmAndCloseAsync: cancel close, run async shutdown, then re-close.
+            e.Cancel = true;
             _fileMonitorService?.Dispose();
-            _ = ShutdownPluginSystemAsync();
             AutoSaveLayout();
+            _ = ShutdownThenCloseAsync();
             return;
         }
 
@@ -476,12 +482,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (allDirty.Count == 0)
         {
+            // No unsaved work — cancel close, run async shutdown, then re-close.
+            e.Cancel = true;
+            _fileMonitorService?.Dispose();
             AutoSaveLayout();
+            _ = ShutdownThenCloseAsync();
             return;
         }
 
         e.Cancel = true;
         _ = ConfirmAndCloseAsync(allDirty, dirtyDocs);
+    }
+
+    /// <summary>
+    /// Awaits plugin system shutdown (including sandbox process termination),
+    /// then re-triggers the window close on the UI thread.
+    /// </summary>
+    private async Task ShutdownThenCloseAsync()
+    {
+        await ShutdownPluginSystemAsync().ConfigureAwait(false);
+        _isShutdownComplete = true;
+        await Dispatcher.InvokeAsync(Close);
     }
 
     private async Task ConfirmAndCloseAsync(
@@ -2408,6 +2429,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         DockHost.RebuildVisualTree();
         UpdateStatusBar();
         _solutionManager.PushRecentFile(filePath);
+        NotifyFileOpened(filePath);
     }
 
     /// <summary>
@@ -3022,8 +3044,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Panel tabs: exit without altering status bar or toolbar contributions.
         // The status bar and toolbar always reflect the last active document editor,
         // even when a panel tab is focused (same behaviour as Visual Studio).
+        // Exception: non-editor documents (e.g. Plugin Manager) do NOT persist their
+        // toolbar when a panel gains focus — clear it so the pod disappears.
         if (item.ContentId.StartsWith("panel-"))
+        {
+            if (ActiveDocumentEditor is null)
+                ActiveToolbarContributor = null;
             return;
+        }
 
         // Content not yet materialized (lazy tab never selected): clear and exit.
         if (!_contentCache.TryGetValue(item.ContentId, out var content))
@@ -3134,7 +3162,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var focusedHex = unwrapped as HexEditorControl;
         if (focusedHex != null)
             focusedHex.RefreshDocumentStatus();
-        // else RefreshText.Text = ""; // Removed - now handled via StatusBarContributor
+
+        // Sync toolbar contributions for the newly focused editor — mirrors the assignments
+        // in OnActiveDocumentChanged. Without this, ActiveHexEditor and ActiveToolbarContributor
+        // are stale when keyboard focus moves between split panes without a tab click
+        // (e.g., hex pane → TBL pane keeps the TBL character-table pod visible).
+        ActiveHexEditor          = focusedHex;
+        ActiveToolbarContributor = unwrapped as IEditorToolbarContributor;
+        SyncTblDropdownToActiveEditor();
     }
 
     // --- IDocumentEditor event handlers --------------------------------
@@ -4084,17 +4119,32 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     private void OnSettings(object sender, RoutedEventArgs e)
+        => OpenSettingsAt(null, null);
+
+    /// <summary>
+    /// Opens the Options tab and optionally navigates to a specific page.
+    /// </summary>
+    private void OpenSettingsAt(string? category, string? pageName)
     {
         var existing = _layout.FindItemByContentId(OptionsContentId);
         if (existing is not null)
         {
             if (existing.Owner is { } owner) owner.ActiveItem = existing;
             DockHost.RebuildVisualTree();
-            return;
         }
-        var item = new DockItem { Title = "Options", ContentId = OptionsContentId };
-        _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
-        DockHost.RebuildVisualTree();
+        else
+        {
+            var item = new DockItem { Title = "Options", ContentId = OptionsContentId };
+            _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+            DockHost.RebuildVisualTree();
+        }
+
+        if (category is not null && pageName is not null &&
+            _contentCache.TryGetValue(OptionsContentId, out var content) &&
+            content is OptionsEditorControl ctrl)
+        {
+            ctrl.NavigateTo(category, pageName);
+        }
     }
 
     private void OnOptionsSettingsChanged()
@@ -4651,6 +4701,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             });
         SyncAllHexEditorThemes();
         OutputLogger.Info($"Theme changed to {themeName}.");
+
+        // Phase 9 — forward new theme resources to sandbox plugins so their
+        // WPF controls apply the same brush/color tokens as the IDE.
+        _themeService?.NotifyThemeChanged(themeName);
+        if (_pluginHost is not null)
+        {
+            var themeXaml = WpfHexEditor.PluginHost.Sandbox.ThemeResourceSerializer.Serialize(
+                Application.Current.Resources);
+            _ = _pluginHost.NotifyThemeChangedAsync(themeXaml);
+        }
     }
 
     // -----------------------------------------------------------------------

@@ -15,10 +15,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 - **#41 Plugin Marketplace** — `MarketplaceManager`, browse/install/update from online registry, signed packages
 - **#42 Plugin Security & Sandboxing** — permission declarations at install time, integrity verification, AppDomain isolation
 - **#43 Auto-Update** — `UpdateService` / `UpdateChecker`, rollback support, scheduled checks for IDE + plugins
-
-### Integrated Terminal — Remaining (#92)
-- Multi-tab terminal with separate shell sessions (PowerShell, Bash, CMD)
-- Script file execution (`.hxscript`) with macro recording and history replay
+- **gRPC transport migration** — replace named-pipe IPC with gRPC for sandbox plugins
 
 ### Image Viewer — Remaining
 - Batch export, format conversion (PNG/JPEG/BMP/TIFF)
@@ -71,7 +68,131 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
-## [Unreleased] — 2026-03 — Plugin System, Terminal & IDE Enhancements
+## [0.4.0] — 2026-03-16 — Plugin Architecture v2: EventBus, Lazy Loading, Capability Registry, Extension Points & Dependency Graph
+
+### ✨ Added — WpfHexEditor.Events (new project)
+
+- **`WpfHexEditor.Events`** — new `net8.0` leaf project (no WPF dependency); referenced by SDK, PluginHost, and App
+- **`IDEEventBase`** — abstract record base for all IDE events: `EventId`, `Source`, `Timestamp`, `CorrelationId`
+- **`IDEEventContext`** — per-publish context: `PublisherPluginId`, `IsFromSandbox`, `CancellationToken`
+- **`IIDEEventBus`** — typed pub/sub interface with sync and async publish; context-aware subscribe overloads; `IEventRegistry EventRegistry` diagnostics accessor
+- **`IDEEventBus`** — implementation: `ReaderWriterLockSlim`, weak-reference handler entries, lazy purge on publish, rolling event log (last 100 entries), `GetLog()` / `ClearLog()` for diagnostics
+- **`IEventRegistry` / `EventRegistry`** — subscriber count tracking per event type; `GetAllEntries()` for options page
+
+**10 built-in IDE event types** (`WpfHexEditor.Events.IDEEvents`):
+- `FileOpenedEvent` — `FilePath`, `FileExtension`, `FileSize`
+- `FileClosedEvent` — `FilePath`
+- `WorkspaceChangedEvent` — `WorkspacePath`, `PreviousWorkspacePath`
+- `PluginLoadedEvent` — `PluginId`, `PluginName`, `IsolationMode`
+- `PluginUnloadedEvent` — `PluginId`
+- `EditorSelectionChangedEvent` — `Offset`, `Length`, `SelectedBytes`
+- `DocumentSavedEvent` — `FilePath`
+- `TerminalCommandExecutedEvent` — `Command`, `ShellType`
+- `BuildStartedEvent`, `BuildSucceededEvent`, `BuildFailedEvent`
+
+### ✨ Added — Feature 1: Lazy Loading (#77)
+
+- **`PluginActivationConfig`** (SDK) — manifest sub-model: `FileExtensions`, `Commands`, `OnStartup`; plugins with `onStartup: false` remain dormant until activated
+- **`PluginState.Dormant`** (SDK) — new state between `Unloaded` and `Loading`; dormant plugins are discovered but not loaded
+- **`PluginManifest.Activation`** (SDK) — optional `PluginActivationConfig?` property; backward compatible (null = eager load)
+- **`PluginActivationService`** (PluginHost) — watches `FileOpenedEvent` on `IDEEventBus`; triggers `LoadPluginAsync` for dormant plugins matching file extension or command triggers; prevents double-activation via `HashSet<string>`
+- **`WpfPluginHost`** — `LoadAllAsync` partitions plugins into startup vs dormant; `RegisterDormantPlugin()`; wires `_activationService`
+- **Plugin Manager UI** — `IsDormant`, `ActivationTriggerLabel`, `LoadNowCommand` on `PluginListItemViewModel`; dormant badge (purple) + lazy info card with "Load Now" button in `PluginManagerControl.xaml`
+
+### ✨ Added — Feature 2: ALC Isolation Diagnostics
+
+- **`PluginAssemblyConflictInfo`** (SDK) — `record(AssemblyName, HostVersion, RequestedVersion, DetectedAt)`
+- **`PluginLoadContext`** (PluginHost) — `LoadedAssemblies` list, `DependencyConflictDetected` event, `CreateWeakReference()`; host version always wins on conflict
+- **`PluginEntry`** — `LoadContextWeakRef` (`WeakReference<PluginLoadContext>`), `AssemblyConflicts` list, `LoadedAssemblyCount`
+- **Plugin Manager UI** — ALC metrics card (InProcess only): assembly count + conflict count; expandable conflicts list; `ZeroToGreenNonZeroToOrange` converter
+
+### ✨ Added — Feature 3: Capability Registry
+
+- **`PluginFeature`** (SDK) — `static class` with `const string` well-known feature names: `HexViewOverlay`, `BinaryAnalyzer`, `PEParser`, `DisassemblyProvider`, `DecompilerProvider`, `FormatDetector`, `StructureTemplate`, `ScriptEngine`, `TerminalExtension`
+- **`IPluginCapabilityRegistry`** (SDK) — `FindPluginsWithFeature()`, `PluginHasFeature()`, `GetFeaturesForPlugin()`, `GetAllRegisteredFeatures()`
+- **`PluginCapabilityRegistry`** (PluginHost) — live queries over `WpfPluginHost._entries`; no caching
+- **`PluginCapabilityRegistryAdapter`** (PluginHost) — lazy wrapper resolving circular dependency; `.SetInner()` called after host construction
+- **`PluginManifest.Features`** (SDK) — `List<string>` feature declarations; e.g. `"features": ["HexViewOverlay", "BinaryAnalyzer"]`
+- **`IIDEHostContext.CapabilityRegistry`** (SDK) — exposes capability registry to all plugins
+- **Plugin Manager UI** — feature chip strip (`WrapPanel` of pill `Border` elements) in plugin detail pane
+
+### ✨ Added — Feature 4: IDE EventBus Integration
+
+- **`IIDEHostContext.IDEEvents`** (SDK) — exposes `IIDEEventBus` to plugins; sandbox plugins receive events via IPC bridge
+- **`SandboxPluginProxy`** — `WireIDEEventBridgeToSandbox()`: subscribes to `FileOpenedEvent` + `EditorSelectionChangedEvent` on `IDEEventBus` and forwards to sandbox process via named-pipe `IDEEventNotification` messages
+- **`SandboxedPluginRunner`** — `HandleIDEEventNotification()`: deserializes event payload, resolves concrete type from `WpfHexEditor.Events` assembly, publishes to `SandboxLocalEventBus` via reflection
+- **`IDEEventBusOptionsPage.xaml`** (PluginHost) — new Options page under `Plugin System > Event Bus`: rolling event log (last 100), subscriber count table per event type, "Clear log" button; full theme compliance
+- **`WpfPluginHost`** — publishes `PluginLoadedEvent` / `PluginUnloadedEvent` on every load/unload
+- **`MainWindow.PluginSystem.cs`** (App) — constructs `IDEEventBus`, registers 10 well-known events in registry, wires `FileOpened` → `FileOpenedEvent`, `SelectionChanged` → `EditorSelectionChangedEvent`
+
+### ✨ Added — Feature 5: Extension Points
+
+- **Extension point contracts** (SDK, `WpfHexEditor.SDK.ExtensionPoints`):
+  - `IFileAnalyzerExtension` — `Task<FileAnalysisResult> AnalyzeAsync(string filePath, CancellationToken ct)` + `FileAnalysisResult` record
+  - `IHexViewOverlayExtension` — `IEnumerable<HexOverlayRegion> GetOverlays(byte[] data, long offset, long length)` + `HexOverlayRegion` record
+  - `IBinaryParserExtension` — `ParsedStructure? TryParse(Stream data, string fileExtension)` + `ParsedStructure` record
+  - `IDecompilerExtension` — `Task<string> DecompileAsync(byte[] data, CancellationToken ct)`
+  - `IExtensionWithContext` — optional init interface; `Initialize(IIDEHostContext context)` called by host after instantiation
+- **`ExtensionPointCatalog`** (SDK) — static `IReadOnlyDictionary<string, Type>` mapping well-known point names to contract types
+- **`IExtensionRegistry`** (SDK) — `GetExtensions<T>()`, `Register<T>()`, `UnregisterAll(pluginId)`, `GetAllEntries()`
+- **`ExtensionRegistry`** (PluginHost) — thread-safe impl (`ReaderWriterLockSlim`); snapshot on `GetExtensions<T>()` prevents mutation during iteration
+- **`PluginManifest.Extensions`** (SDK) — `Dictionary<string, string>` mapping extension point name → fully-qualified class name in plugin assembly
+- **`WpfPluginHost`** — `RegisterExtensionContributions()` after `InitializeAsync`; `ExtensionRegistry.UnregisterAll()` during `UnloadPluginAsync`
+- **`IIDEHostContext.ExtensionRegistry`** (SDK) — exposes extension registry to all plugins
+- **Plugin Manager UI** — extensions chip strip in plugin detail pane; `Extensions` / `HasExtensions` on `PluginListItemViewModel`
+- **`MainWindow.PluginSystem.cs`** — wires file-open handler to call `GetExtensions<IFileAnalyzerExtension>()` and routes results to Output Panel
+
+### ✨ Added — Feature 6: Plugin Dependency Graph
+
+- **`PluginDependencySpec`** (SDK) — parsed versioned constraint: `PluginId` + `PluginVersionConstraint`; `Parse("BinaryAnalysisCore >=1.0")` — backward compatible with plain IDs
+- **`PluginVersionConstraint`** (SDK) — single-class parser; operators `>=`, `>`, `<=`, `<`, `=`, `^`; `bool Satisfies(Version candidate)`; no NuGet dependency
+- **`PluginDependencyGraph`** (PluginHost) — adjacency-list graph with forward + reverse edges; `Build()`, `GetLoadOrder()`, `GetDependents()`, `GetCascadedUnloadOrder()`, `GetCascadedReloadOrder()`, `Validate()`; `DependencyValidationError` record with `DependencyErrorKind` (Missing | VersionMismatch | Circular)
+- **`WpfPluginHost`** — replaces inline `TopologicalSort()` with `_dependencyGraph.GetLoadOrder()`; `CascadingUnloadAsync()` and `CascadingReloadAsync()`; plugins with unmet dependencies marked `Incompatible` and skipped at startup
+- **`PluginManifest.Dependencies`** — existing `List<string>` now supports versioned syntax: `"BinaryAnalysisCore >=1.0"`; plain IDs still work (any version)
+- **Plugin Manager UI** — `DependsOn` chip list (green=satisfied, red=missing), `DependedOnBy` list, `HasUnresolvedDeps`; Cascade Unload / Cascade Reload buttons; dependency section in right pane
+
+### 🔧 Changed
+
+- All 10 plugin `.csproj` files — `<PluginIsolationMode>` changed from `Sandbox` → `Auto`; `Auto` is now the correct default (host decides InProcess vs Sandbox based on trust level and capability declarations)
+- `StandaloneIDEHostContext` (Sample.Terminal) — implements 3 new `IIDEHostContext` members (`IDEEvents`, `CapabilityRegistry`, `ExtensionRegistry`) with null-object stubs
+- `ExtensionRegistry` — promoted from `internal` to `public` (required by `App` project)
+- `IDEEventBusOptionsPage` — uses concrete `IDEEventBus` type (diagnostics methods not on interface)
+
+---
+
+## [0.3.0] — 2026-03-15 — Plugin System Phase 5-12, Sandbox & IDE Enhancements
+
+### ✨ Added — Plugin Sandbox (Phases 9–12)
+
+- **HWND Embedding** — out-of-process plugin UI surfaces embedded directly into the IDE docking system via Win32 HWND parenting; plugins run fully isolated but appear native
+- **IPC Menu/Toolbar Bridge** — sandbox plugins register menus, toolbar items, and options pages in the host IDE via named-pipe IPC; `SandboxPluginProxy` dispatches menu clicks back to plugin process
+- **IPC HexEditor Event Bridge** (Phase 12) — `SelectionChanged`, `FileOpened`, `FormatDetected`, and `ViewportScrolled` events forwarded from host to sandbox plugins; `ParsedFields` panel refresh now works from sandbox context
+- **`SandboxJobObject`** — Windows Job Object wrapper constraining sandbox process CPU and memory usage; enforces per-plugin resource budgets with configurable limits
+- **Auto Isolation Mode / Decision Engine** — `PluginMigrationPolicy` evaluates plugin trust level, crash history, and resource usage to automatically select `InProcess` vs `Sandbox` isolation; no manual configuration required
+- **`PluginMigrationMonitor`** — tracks plugin migrations between isolation modes; exposes upgrade/downgrade history, trigger reasons, and stability metrics; observable from Plugin Manager
+
+### ✨ Added — Plugin Options UI
+
+- `UI/Options/` — dedicated options sub-panel within Plugin Manager for per-plugin sandbox configuration, migration policy overrides, and resource budget thresholds
+- `AssemblyExplorerOptionsPage.xaml` — updated options page with sandbox-compatible bindings
+- `DataInspectorOptionsPage.xaml` — updated options page with sandbox-compatible bindings
+
+### ✨ Added — Plugin Manager Improvements
+
+- `PluginListItemViewModel` — extended with `IsolationMode`, `MigrationStatus`, `SandboxHealth`, `LastMigrationReason`; badge indicators for auto-isolation decisions
+- `PluginManagerControl.xaml` — isolation mode column, migration history button, sandbox health indicator in list; options sub-panel per plugin
+- `PluginManagerViewModel` — wires migration monitor; exposes `MigrationHistoryCommand`; auto-refreshes on isolation mode change
+
+### ✨ Added — Themes
+
+- All 8 theme `Colors.xaml` files updated — new brush tokens for sandbox health badges, isolation mode indicators, and plugin options UI
+
+### 🧪 Added — Tests
+
+- `PluginMigrationMonitor_Tests` — unit tests covering migration trigger logic, history accumulation, and observer notification
+- `PluginMigrationPolicy_Tests` — unit tests covering decision engine: trust thresholds, crash-rate fallback, manual override precedence
+
+---
 
 ### ✨ Added — Plugin System (5 new projects)
 
@@ -299,7 +420,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
-## [Unreleased] — 2026-03 — IDE & Project System
+## [0.3.0 cont.] — 2026-03 — IDE & Project System
 
 ### ✨ Added — Project System
 - **Solution & Project management** (`.whsln` / `.whproj` formats) with `SolutionManager` singleton

@@ -9,7 +9,7 @@
   "minIDEVersion": "0.2.0",
   "description": "Official Data Inspector panel plugin.",
   "entryPoint": "WpfHexEditor.Plugins.DataInspector.DataInspectorPlugin",
-  "isolationMode": "InProcess",
+  "isolationMode": "Auto",
   "loadPriority": 100,
   "assembly": {
     "file": "WpfHexEditor.Plugins.DataInspector.dll"
@@ -19,5 +19,11 @@
     "accessFileSystem": false,
     "registerMenus": true,
     "writeOutput": true
-  }
+  },
+  "activation": {
+    "onStartup": true
+  },
+  "features": [ "HexViewOverlay" ],
+  "extensions": {},
+  "dependencies": []
 }

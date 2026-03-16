@@ -28,10 +28,14 @@ using WpfHexEditor.Core.Terminal;
 using WpfHexEditor.Core.Terminal.ShellSession;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
+using WpfHexEditor.Events;
+using WpfHexEditor.Events.IDEEvents;
 using WpfHexEditor.PluginHost;
+using WpfHexEditor.PluginHost.DevTools;
 using WpfHexEditor.PluginHost.Monitoring;
 using WpfHexEditor.PluginHost.Services;
 using WpfHexEditor.PluginHost.UI;
+using WpfHexEditor.PluginHost.UI.Options;
 using WpfHexEditor.Options;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.SDK.Contracts.Focus;
@@ -44,6 +48,7 @@ public partial class MainWindow
     // --- Plugin system singletons ---------------------------------------
     private WpfPluginHost? _pluginHost;
     private IDEHostContext? _ideHostContext;
+    private IDEEventBus? _ideEventBus;
     private readonly FocusContextService _focusContextService = new();
 
     // Service adapters (lazily set in InitializePluginSystemAsync after layout is ready)
@@ -57,6 +62,7 @@ public partial class MainWindow
     private const string PluginManagerContentId   = "plugin-manager";
     private const string TerminalPanelContentId   = "panel-terminal";
     private const string PluginMonitorContentId   = "plugin-monitor";
+    private const string MarketplaceContentId     = "plugin-marketplace";
 
     private int    _pluginFaultCount = 0;
     private string? _infoBarPluginId;   // ID of the plugin currently shown in the InfoBar
@@ -66,6 +72,9 @@ public partial class MainWindow
     private TerminalPanel? _pendingTerminalPanel;
     private WpfHexEditor.Panels.IDE.Panels.PluginMonitoringPanel? _pendingPluginMonitorPanel;
     private WpfHexEditor.PluginHost.UI.PluginManagerControl? _pendingPluginManagerControl;
+
+    // Dev tools (instantiated on first use)
+    private PluginDevLoader? _pluginDevLoader;
 
     // StatusBar fault-blink timer (DispatcherTimer, 800 ms toggle)
     private DispatcherTimer? _statusBarBlinkTimer;
@@ -111,19 +120,29 @@ public partial class MainWindow
             var codeEditorService = new NullCodeEditorService();
             var parsedFieldService = new NullParsedFieldService();
 
+            // 2b. Construct IDE EventBus + Extension/Capability services
+            _ideEventBus = new IDEEventBus();
+            RegisterWellKnownEvents(_ideEventBus);
+
+            var capabilityAdapter = new PluginCapabilityRegistryAdapter();
+            var extensionRegistry = new ExtensionRegistry();
+
             var hostContext = new IDEHostContext(
-                solutionExplorer: solutionService,
-                hexEditor: _hexEditorService,
-                codeEditor: codeEditorService,
-                output: _outputService,
-                parsedField: parsedFieldService,
-                errorPanel: _errorPanelService,
-                focusContext: _focusContextService,
-                eventBus: eventBus,
-                uiRegistry: uiRegistry,
-                theme: _themeService,
-                permissions: permissionService,
-                terminal: _terminalService);
+                solutionExplorer:    solutionService,
+                hexEditor:           _hexEditorService,
+                codeEditor:          codeEditorService,
+                output:              _outputService,
+                parsedField:         parsedFieldService,
+                errorPanel:          _errorPanelService,
+                focusContext:        _focusContextService,
+                eventBus:            eventBus,
+                uiRegistry:          uiRegistry,
+                theme:               _themeService,
+                permissions:         permissionService,
+                terminal:            _terminalService,
+                ideEvents:           _ideEventBus,
+                capabilityRegistry:  capabilityAdapter,
+                extensionRegistry:   extensionRegistry);
 
             // 3. Create orchestrator
             _ideHostContext = hostContext;
@@ -131,11 +150,32 @@ public partial class MainWindow
                 logger:      msg => OutputLogger.PluginInfo(msg),
                 errorLogger: msg => OutputLogger.PluginError(msg));
 
+            // 3b. Resolve circular dependency: capability registry now backed by the host's entries.
+            capabilityAdapter.SetInner(_pluginHost.CapabilityRegistry);
+
+            // 3c. Wire IDE-level events to IDEEventBus publishers.
+            if (_hexEditorService is not null)
+                _hexEditorService.SelectionChanged += OnHexEditorSelectionChanged;
+
             // 4. Subscribe to host events
             _pluginHost.PluginCrashed       += OnPluginCrashed;
             _pluginHost.SlowPluginDetected  += OnSlowPluginDetected;
             _pluginHost.PluginLoaded        += OnPluginLoadedOrUnloaded;
             _pluginHost.PluginUnloaded      += OnPluginLoadedOrUnloaded;
+
+            // 4b. Register Plugin System → Migration options page (requires _pluginHost instance).
+            var capturedHost = _pluginHost;
+            OptionsPageRegistry.RegisterDynamic(
+                "Plugin System",
+                "Migration",
+                () => new PluginMigrationOptionsPage(capturedHost));
+
+            // 4c. Register Plugin System → Event Bus options page.
+            var capturedBus = _ideEventBus;
+            OptionsPageRegistry.RegisterDynamic(
+                "Plugin System",
+                "Event Bus",
+                () => new IDEEventBusOptionsPage(capturedBus));
 
             // 5. Discover + load all plugins.
             // Suspend visual tree rebuilds so that N plugins each registering a panel
@@ -157,7 +197,7 @@ public partial class MainWindow
                 await Dispatcher.InvokeAsync(dockingAdapter.ResumeRebuild);
             }
 
-            // Register a dynamic Options page for every plugin that supports IPluginWithOptions.
+            // Register a dynamic Options page for every in-process plugin that supports IPluginWithOptions.
             foreach (var entry in _pluginHost.OptionsRegistry.GetAll())
             {
                 var captured = entry;
@@ -171,6 +211,29 @@ public partial class MainWindow
                         if (page is System.Windows.Controls.UserControl uc) return uc;
                         // Wrap arbitrary FrameworkElement in a UserControl for the Options panel.
                         var wrapper = new System.Windows.Controls.UserControl { Content = page };
+                        return wrapper;
+                    });
+            }
+
+            // Phase 11: Register options pages for sandbox plugins that implement IPluginWithOptions.
+            // Each sandbox plugin eagerly creates its options page HwndSource during init and sends
+            // the HWND here. We wrap it in HwndPanelHost inside a UserControl for the Options dialog.
+            foreach (var (pluginId, pluginName, hwnd) in _pluginHost.GetSandboxOptionsPages())
+            {
+                var capturedId   = pluginId;
+                var capturedHwnd = new IntPtr(hwnd);
+                OptionsPageRegistry.RegisterDynamic(
+                    "Plugins",
+                    pluginName,
+                    () =>
+                    {
+                        var host    = new WpfHexEditor.PluginHost.Sandbox.HwndPanelHost(capturedHwnd, capturedId);
+                        var wrapper = new System.Windows.Controls.UserControl
+                        {
+                            Content = host,
+                            MinWidth  = 400,
+                            MinHeight = 300,
+                        };
                         return wrapper;
                     });
             }
@@ -197,7 +260,23 @@ public partial class MainWindow
 
                 if (_pendingPluginManagerControl is not null && _pluginHost is not null)
                 {
-                    var vm = new PluginManagerViewModel(_pluginHost, Dispatcher);
+                    var vm = new PluginManagerViewModel(
+                        _pluginHost, 
+                        Dispatcher,
+                        () =>
+                        {
+                            var ps = AppSettingsService.Instance.Current.PluginSystem;
+                            return (
+                                ps.MemoryWarningThresholdMB, 
+                                ps.MemoryHighThresholdMB, 
+                                ps.MemoryCriticalThresholdMB, 
+                                ps.EnableMemoryAlerts,
+                                ps.MemoryNormalColor,
+                                ps.MemoryWarningColor,
+                                ps.MemoryHighColor,
+                                ps.MemoryCriticalColor
+                            );
+                        });
                     _pendingPluginManagerControl.DataContext = vm;
                     _pendingPluginManagerControl = null;
                 }
@@ -469,10 +548,7 @@ public partial class MainWindow
     }
 
     internal void OnOpenPluginSettings(object sender, RoutedEventArgs e)
-    {
-        // Open Options dialog at the Plugins page
-        OnSettings(sender, e);
-    }
+        => OpenSettingsAt("Plugin System", "General");
 
     // --- Plugin Manager document tab ------------------------------------
 
@@ -559,6 +635,72 @@ public partial class MainWindow
             _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Bottom);
 
         DockHost.RebuildVisualTree();
+    }
+
+    // --- Marketplace panel -----------------------------------------------
+
+    private void OnOpenMarketplace(object sender, RoutedEventArgs e)
+    {
+        var existing = _layout?.FindItemByContentId(MarketplaceContentId);
+        if (existing is not null)
+        {
+            if (existing.Owner is { } owner) owner.ActiveItem = existing;
+            DockHost.RebuildVisualTree();
+            return;
+        }
+
+        var svc   = new MarketplaceServiceImpl();
+        var vm    = new MarketplacePanelViewModel(_pluginHost!, svc, msg => OutputLogger.PluginInfo(msg));
+        var panel = new MarketplacePanel();
+        panel.Initialize(vm);
+
+        var item = new DockItem
+        {
+            ContentId = MarketplaceContentId,
+            Title     = "Plugin Marketplace",
+            CanClose  = true
+        };
+
+        StoreContent(MarketplaceContentId, panel);
+
+        var bottomGroup = _layout.FindItemByContentId(ErrorPanelContentId)?.Owner
+                       ?? _layout.FindItemByContentId("panel-output")?.Owner;
+        if (bottomGroup is not null)
+            _engine.Dock(item, bottomGroup, DockDirection.Center);
+        else
+            _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Bottom);
+
+        DockHost.RebuildVisualTree();
+    }
+
+    // --- Plugin Dev Watch ------------------------------------------------
+
+    private void OnOpenPluginDevWatch(object sender, RoutedEventArgs e)
+    {
+        if (_pluginHost is null)
+        {
+            OutputLogger.PluginError("[DevWatch] Plugin system not initialised.");
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Select Plugin Build Output Directory",
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog(this) != true) return;
+
+        var dir = dialog.FolderName;
+        if (!Directory.Exists(dir)) return;
+
+        // Derive plugin ID from the folder name (user can rename via the folder they pick)
+        var pluginId = new DirectoryInfo(dir).Name;
+
+        _pluginDevLoader ??= new PluginDevLoader(_pluginHost, Dispatcher, msg => OutputLogger.PluginInfo(msg));
+        _pluginDevLoader.Watch(pluginId, dir);
+
+        OutputLogger.PluginInfo($"[DevWatch] Watching '{pluginId}' → {dir}");
     }
 
     // --- Content factories for panels that may be restored from layout --
@@ -680,8 +822,62 @@ public partial class MainWindow
         _pluginHost.PluginUnloaded     -= OnPluginLoadedOrUnloaded;
         _statusBarBlinkTimer?.Stop();
         _statusBarBlinkTimer = null;
+        if (_hexEditorService is not null)
+            _hexEditorService.SelectionChanged -= OnHexEditorSelectionChanged;
         await _pluginHost.DisposeAsync().ConfigureAwait(false);
         _pluginHost = null;
+        _ideEventBus?.Dispose();
+        _ideEventBus = null;
+    }
+
+    // --- IDE EventBus publishers -----------------------------------------
+
+    /// <summary>
+    /// Called by OpenFileDirectly (MainWindow.xaml.cs) after a file tab is created.
+    /// Publishes <see cref="FileOpenedEvent"/> on the IDE EventBus.
+    /// </summary>
+    internal void NotifyFileOpened(string filePath)
+    {
+        if (_ideEventBus is null) return;
+        var info = new FileInfo(filePath);
+        _ideEventBus.Publish(new FileOpenedEvent
+        {
+            Source        = "MainWindow",
+            FilePath      = filePath,
+            FileExtension = Path.GetExtension(filePath),
+            FileSize      = info.Exists ? info.Length : 0L
+        });
+    }
+
+    private void OnHexEditorSelectionChanged(object? sender, EventArgs e)
+    {
+        if (_ideEventBus is null || _hexEditorService is null) return;
+        var start  = _hexEditorService.SelectionStart;
+        var stop   = _hexEditorService.SelectionStop;
+        var length = Math.Max(0L, stop - start + 1);
+        _ideEventBus.Publish(new EditorSelectionChangedEvent
+        {
+            Source        = "HexEditorService",
+            Offset        = start,
+            Length        = length,
+            SelectedBytes = []   // lazy: avoid reading large selections on every keystroke
+        });
+    }
+
+    /// <summary>Registers the 10 well-known IDE event types in the EventBus registry.</summary>
+    private static void RegisterWellKnownEvents(IDEEventBus bus)
+    {
+        var reg = bus.EventRegistry;
+        reg.Register(typeof(FileOpenedEvent),               "File Opened",                "MainWindow");
+        reg.Register(typeof(FileClosedEvent),               "File Closed",                "MainWindow");
+        reg.Register(typeof(WorkspaceChangedEvent),         "Workspace Changed",          "MainWindow");
+        reg.Register(typeof(DocumentSavedEvent),            "Document Saved",             "MainWindow");
+        reg.Register(typeof(EditorSelectionChangedEvent),   "Editor Selection Changed",   "HexEditorService");
+        reg.Register(typeof(PluginLoadedEvent),             "Plugin Loaded",              "WpfPluginHost");
+        reg.Register(typeof(PluginUnloadedEvent),           "Plugin Unloaded",            "WpfPluginHost");
+        reg.Register(typeof(TerminalCommandExecutedEvent),  "Terminal Command Executed",  "TerminalPanel");
+        reg.Register(typeof(BuildStartedEvent),             "Build Started",              "BuildService");
+        reg.Register(typeof(BuildSucceededEvent),           "Build Succeeded",            "BuildService");
     }
 
     // --- Minimal helpers ------------------------------------------------
