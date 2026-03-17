@@ -239,6 +239,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private FoldingEngine?  _foldingEngine;
         private GutterControl?  _gutterControl;
 
+        // True between the first Ctrl+M press and the second chord key (outlining commands).
+        private bool _outlineChordPending;
+
         // 500ms folding debounce timer (P1-CE-01) — prevents O(n) scan on every keystroke
         private System.Windows.Threading.DispatcherTimer? _foldingDebounceTimer;
 
@@ -1957,6 +1960,61 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             validateMenuItem.Click += ValidateMenuItem_Click;
             contextMenu.Items.Add(validateMenuItem);
 
+            // Separator
+            contextMenu.Items.Add(new Separator());
+
+            // ── Mode Plan (Outlining) submenu — mirrors Visual Studio outlining menu ──
+            var outlineMenu = new MenuItem { Header = "_Mode Plan" };
+
+            var miToggleCurrent = new MenuItem
+            {
+                Header           = "Activer/Désactiver le développement",
+                InputGestureText = "Ctrl+M, Ctrl+M"
+            };
+            miToggleCurrent.Click += (_, _) => OutlineToggleCurrent();
+
+            var miToggleAll = new MenuItem
+            {
+                Header           = "Activer/Désactiver _tout",
+                InputGestureText = "Ctrl+M, Ctrl+L"
+            };
+            miToggleAll.Click += (_, _) => OutlineToggleAll();
+
+            var miStop = new MenuItem
+            {
+                Header           = "_Arrêter le mode Plan",
+                InputGestureText = "Ctrl+M, Ctrl+P"
+            };
+            miStop.Click += (_, _) => OutlineStop();
+
+            var miStopHiding = new MenuItem
+            {
+                Header           = "Arrêter le _masquage actuel",
+                InputGestureText = "Ctrl+M, Ctrl+U"
+            };
+            miStopHiding.Click += (_, _) => OutlineStopHidingCurrent();
+
+            var miCollapseDefs = new MenuItem
+            {
+                Header           = "_Réduire aux définitions",
+                InputGestureText = "Ctrl+M, Ctrl+O"
+            };
+            miCollapseDefs.Click += (_, _) => OutlineCollapseToDefinitions();
+
+            outlineMenu.Items.Add(miToggleCurrent);
+            outlineMenu.Items.Add(miToggleAll);
+            outlineMenu.Items.Add(new Separator());
+            outlineMenu.Items.Add(miStop);
+            outlineMenu.Items.Add(miStopHiding);
+            outlineMenu.Items.Add(new Separator());
+            outlineMenu.Items.Add(miCollapseDefs);
+
+            // Enable the submenu only when folding is active.
+            contextMenu.Opened += (_, _) => outlineMenu.IsEnabled = IsFoldingEnabled;
+
+            contextMenu.Items.Add(outlineMenu);
+            // ─────────────────────────────────────────────────────────────────────────
+
             // Set context menu
             ContextMenu = contextMenu;
 
@@ -2509,6 +2567,66 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// fraction from the virtualization engine so lines align correctly during smooth scroll.
         /// </summary>
         /// <param name="visIdx">0-based index among non-hidden visible lines.</param>
+        #region Outlining Commands (Ctrl+M chord)
+
+        /// <summary>Toggle the fold region that starts on the cursor line (Ctrl+M, Ctrl+M).</summary>
+        private void OutlineToggleCurrent()
+        {
+            if (_foldingEngine == null || !IsFoldingEnabled) return;
+            _foldingEngine.ToggleRegion(_cursorLine);
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Collapse all regions if none are collapsed; otherwise expand all (Ctrl+M, Ctrl+L).
+        /// </summary>
+        private void OutlineToggleAll()
+        {
+            if (_foldingEngine == null || !IsFoldingEnabled) return;
+            bool anyCollapsed = _foldingEngine.Regions.Any(r => r.IsCollapsed);
+            if (anyCollapsed) _foldingEngine.ExpandAll();
+            else              _foldingEngine.CollapseAll();
+            InvalidateVisual();
+        }
+
+        /// <summary>Expand all regions and disable outlining (Ctrl+M, Ctrl+P).</summary>
+        private void OutlineStop()
+        {
+            _foldingEngine?.ExpandAll();
+            IsFoldingEnabled = false;
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Expand the innermost collapsed region that contains the cursor (Ctrl+M, Ctrl+U).
+        /// </summary>
+        private void OutlineStopHidingCurrent()
+        {
+            if (_foldingEngine == null || !IsFoldingEnabled) return;
+            // Find the innermost collapsed region containing the cursor.
+            FoldingRegion? innermost = null;
+            foreach (var r in _foldingEngine.Regions)
+            {
+                if (!r.IsCollapsed) continue;
+                if (_cursorLine < r.StartLine || _cursorLine > r.EndLine) continue;
+                if (innermost == null || (r.EndLine - r.StartLine) < (innermost.EndLine - innermost.StartLine))
+                    innermost = r;
+            }
+            if (innermost != null)
+                _foldingEngine.ToggleRegion(innermost.StartLine);
+            InvalidateVisual();
+        }
+
+        /// <summary>Collapse all regions (Ctrl+M, Ctrl+O).</summary>
+        private void OutlineCollapseToDefinitions()
+        {
+            if (_foldingEngine == null || !IsFoldingEnabled) return;
+            _foldingEngine.CollapseAll();
+            InvalidateVisual();
+        }
+
+        #endregion
+
         private double GetFoldAwareLineY(int visIdx)
         {
             double scrollFraction = (EnableVirtualScrolling && _virtualizationEngine != null)
@@ -3731,6 +3849,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             bool ctrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
             bool shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
 
+            // Cancel any pending outline chord on any key press without Ctrl held.
+            if (!ctrlPressed) _outlineChordPending = false;
+
             switch (e.Key)
             {
                 case Key.Left:
@@ -3850,14 +3971,59 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
                 // ── Folding keyboard shortcuts (P2-02) ─────────────────────
                 // Ctrl+M → toggle fold at caret line
+                // ── Outlining chord: Ctrl+M arms the chord; second key executes action ────
                 case Key.M:
-                    if (ctrlPressed && IsFoldingEnabled && _foldingEngine != null)
+                    if (ctrlPressed && IsFoldingEnabled)
                     {
-                        _foldingEngine.ToggleRegion(_cursorLine);
-                        InvalidateVisual();
+                        if (_outlineChordPending)
+                        {
+                            _outlineChordPending = false;
+                            OutlineToggleCurrent(); // Ctrl+M, Ctrl+M
+                        }
+                        else
+                        {
+                            _outlineChordPending = true; // arm chord, wait for second key
+                        }
                         e.Handled = true;
                     }
                     break;
+
+                case Key.L:
+                    if (ctrlPressed && _outlineChordPending)
+                    {
+                        _outlineChordPending = false;
+                        OutlineToggleAll(); // Ctrl+M, Ctrl+L
+                        e.Handled = true;
+                    }
+                    break;
+
+                case Key.P:
+                    if (ctrlPressed && _outlineChordPending)
+                    {
+                        _outlineChordPending = false;
+                        OutlineStop(); // Ctrl+M, Ctrl+P
+                        e.Handled = true;
+                    }
+                    break;
+
+                case Key.U:
+                    if (ctrlPressed && _outlineChordPending)
+                    {
+                        _outlineChordPending = false;
+                        OutlineStopHidingCurrent(); // Ctrl+M, Ctrl+U
+                        e.Handled = true;
+                    }
+                    break;
+
+                case Key.O:
+                    if (ctrlPressed && _outlineChordPending)
+                    {
+                        _outlineChordPending = false;
+                        OutlineCollapseToDefinitions(); // Ctrl+M, Ctrl+O
+                        e.Handled = true;
+                    }
+                    break;
+                // ────────────────────────────────────────────────────────────────────────
                 // Ctrl+Shift+[ → collapse all folds
                 case Key.OemOpenBrackets:
                     if (ctrlPressed && shiftPressed && IsFoldingEnabled && _foldingEngine != null)
