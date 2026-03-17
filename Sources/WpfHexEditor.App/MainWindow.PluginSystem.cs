@@ -317,6 +317,16 @@ public partial class MainWindow
 
                 UpdatePluginStatusBar();
 
+                // Enable "Open Folder…" only when a loader for .whfolder is registered.
+                // The menu item is hidden at startup (IsEnabled=false set in XAML) and revealed here.
+                if (MenuOpenFolder is not null)
+                {
+                    MenuOpenFolder.IsEnabled = extensionRegistry
+                        .GetExtensions<ISolutionLoader>()
+                        .Any(l => l.SupportedExtensions
+                                   .Contains("whfolder", StringComparer.OrdinalIgnoreCase));
+                }
+
                 // Restore a VS solution that was deferred in TryRestoreSession() because the
                 // plugin loaders (ISolutionLoader extensions) were not yet registered at that point.
                 if (!string.IsNullOrEmpty(_pendingRestoreSolutionPath))

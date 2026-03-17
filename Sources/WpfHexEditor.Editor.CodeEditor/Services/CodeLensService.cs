@@ -21,9 +21,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using System.Windows.Threading;
 using WpfHexEditor.Editor.CodeEditor.Models;
 using WpfHexEditor.Editor.CodeEditor.NavigationBar;
@@ -35,6 +37,7 @@ internal sealed class CodeLensService : IDisposable
     // ── State ─────────────────────────────────────────────────────────────────
 
     private CodeDocument?            _document;
+    private string?                  _currentFilePath;
     private CancellationTokenSource  _cts      = new();
     private readonly DispatcherTimer _debounce;
     private bool                     _disposed;
@@ -42,10 +45,10 @@ internal sealed class CodeLensService : IDisposable
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Current lens data: 0-based line index → (reference count, symbol name).
+    /// Current lens data: 0-based line index → (reference count, symbol name, MDL2 icon glyph, icon brush).
     /// </summary>
-    public IReadOnlyDictionary<int, (int Count, string Symbol)> LensData { get; private set; }
-        = new Dictionary<int, (int, string)>();
+    public IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, Brush IconBrush)> LensData
+        { get; private set; } = new Dictionary<int, (int, string, string, Brush)>();
 
     /// <summary>Raised on the UI thread when <see cref="LensData"/> has been refreshed.</summary>
     public event EventHandler? LensDataRefreshed;
@@ -62,11 +65,14 @@ internal sealed class CodeLensService : IDisposable
 
     /// <summary>
     /// Attaches to <paramref name="document"/> and schedules an immediate refresh.
+    /// <paramref name="currentFilePath"/> is used to filter workspace files by
+    /// extension and to avoid double-counting the currently open file.
     /// Safe to call multiple times — the previous document is detached first.
     /// </summary>
-    internal void Attach(CodeDocument document)
+    internal void Attach(CodeDocument document, string? currentFilePath)
     {
         Detach();
+        _currentFilePath       = currentFilePath;
         _document              = document;
         _document.TextChanged += OnDocumentTextChanged;
         ScheduleRefresh();
@@ -83,8 +89,9 @@ internal sealed class CodeLensService : IDisposable
             _document              = null;
         }
 
+        _currentFilePath = null;
         CancelPending();
-        LensData = new Dictionary<int, (int, string)>();
+        LensData = new Dictionary<int, (int, string, string, Brush)>();
     }
 
     public void Dispose()
@@ -128,14 +135,15 @@ internal sealed class CodeLensService : IDisposable
         CancelPending();
         var ct = _cts.Token;
 
-        // Snapshot lines on the UI thread — ObservableCollection is not thread-safe.
+        // Snapshot lines and file path on the UI thread — ObservableCollection is not thread-safe.
         var lineSnapshot = _document.Lines.ToList();
+        var filePath     = _currentFilePath;
 
         try
         {
             // ConfigureAwait(true) resumes on the UI (Dispatcher) thread so we can
             // safely update LensData and fire the event without an Invoke call.
-            var data = await Task.Run(() => ComputeLensData(lineSnapshot, ct), ct)
+            var data = await Task.Run(() => ComputeLensData(lineSnapshot, filePath, ct), ct)
                                  .ConfigureAwait(true);
 
             if (ct.IsCancellationRequested) return;
@@ -147,19 +155,27 @@ internal sealed class CodeLensService : IDisposable
     }
 
     /// <summary>
-    /// Pure background worker: parse declarations then count whole-word references.
-    /// Must not touch any WPF objects — only BCL + snapshoted CodeLine data.
+    /// Pure background worker: parse declarations then count whole-word references
+    /// across both the current document lines and all solution files of the same
+    /// file extension via <see cref="WorkspaceFileCache"/>.
+    /// Must not touch any WPF objects — only BCL + snapshotted CodeLine data.
     /// </summary>
-    private static IReadOnlyDictionary<int, (int Count, string Symbol)> ComputeLensData(
-        IReadOnlyList<CodeLine> lines, CancellationToken ct)
+    private static IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, Brush IconBrush)> ComputeLensData(
+        IReadOnlyList<CodeLine> lines, string? currentFilePath, CancellationToken ct)
     {
         var snapshot = CodeStructureParser.Parse(lines);
 
         // Collect declaration items — Types + Members; skip Namespaces (too broad).
         var items = snapshot.Types.Concat(snapshot.Members).ToList();
-        if (items.Count == 0) return new Dictionary<int, (int, string)>();
+        if (items.Count == 0) return new Dictionary<int, (int, string, string, Brush)>();
 
-        var result = new Dictionary<int, (int, string)>(items.Count);
+        // Gather workspace files of matching extension once per ComputeLensData call.
+        IReadOnlyList<string> workspacePaths = [];
+        var ext = Path.GetExtension(currentFilePath ?? string.Empty);
+        if (!string.IsNullOrEmpty(ext))
+            workspacePaths = WorkspaceFileCache.GetPathsForExtensions([ext]);
+
+        var result = new Dictionary<int, (int, string, string, Brush)>(items.Count);
 
         foreach (var item in items)
         {
@@ -168,18 +184,34 @@ internal sealed class CodeLensService : IDisposable
             string symbol = item.Name;
             if (string.IsNullOrEmpty(symbol)) continue;
 
+            // Count in the current in-memory document.
             int count = CountWholeWordOccurrences(lines, symbol, ct);
 
-            // A count of 0 can happen for generated/private symbols with no callers.
-            // Store anyway so the UI can show "0 références" if desired, but we skip
-            // 0-count entries to avoid cluttering the lens layer.
+            // Count across all solution files of the same extension, skipping the
+            // current file (already counted above via in-memory lines).
+            foreach (var wPath in workspacePaths)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (wPath.Equals(currentFilePath, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var wLines = WorkspaceFileCache.GetLines(wPath);
+                if (wLines is null) continue;
+
+                count += CountWholeWordOccurrencesInText(wLines, symbol, ct);
+            }
+
+            // Skip 0-count entries to avoid cluttering the lens layer.
             if (count > 0)
-                result[item.Line] = (count, item.Name);
+                result[item.Line] = (count, item.Name, item.IconGlyph, item.IconBrush);
         }
 
         return result;
     }
 
+    /// <summary>Counts whole-word occurrences of <paramref name="symbol"/> in a
+    /// <see cref="CodeLine"/> list (current in-memory document).</summary>
     private static int CountWholeWordOccurrences(
         IReadOnlyList<CodeLine> lines, string symbol, CancellationToken ct)
     {
@@ -190,6 +222,40 @@ internal sealed class CodeLensService : IDisposable
             ct.ThrowIfCancellationRequested();
 
             string text = lines[i].Text;
+            if (string.IsNullOrEmpty(text)) continue;
+
+            int col = 0;
+            while (col < text.Length)
+            {
+                int idx = text.IndexOf(symbol, col, StringComparison.Ordinal);
+                if (idx < 0) break;
+
+                bool leftOk  = idx == 0               || !IsWordChar(text[idx - 1]);
+                bool rightOk = idx + symbol.Length >= text.Length
+                               || !IsWordChar(text[idx + symbol.Length]);
+
+                if (leftOk && rightOk)
+                    count++;
+
+                col = idx + 1;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>Counts whole-word occurrences of <paramref name="symbol"/> in a
+    /// plain <see cref="string"/> array (workspace file read from disk).</summary>
+    private static int CountWholeWordOccurrencesInText(
+        string[] lines, string symbol, CancellationToken ct)
+    {
+        int count = 0;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            string text = lines[i];
             if (string.IsNullOrEmpty(text)) continue;
 
             int col = 0;

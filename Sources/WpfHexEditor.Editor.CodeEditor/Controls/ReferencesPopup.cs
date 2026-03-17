@@ -18,6 +18,8 @@
 //       FindReferencesPanel)
 //     - Fires NavigationRequested, RefreshRequested, PinRequested
 //     - Group sections are independently collapsible (chevron toggle)
+//     - Header row shows symbol kind icon (Segoe MDL2) + symbol name
+//     - Popup bottom is bottom-anchored: grows upward from the hint zone
 // ==========================================================
 
 using System;
@@ -78,15 +80,20 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
     /// <summary>
     /// Floating popup listing "Find All References" results grouped by file.
+    /// The popup bottom is bottom-anchored: it grows upward from the CodeLens hint zone.
+    /// A header row shows the symbol's kind icon (Segoe MDL2) and name.
     /// </summary>
     internal sealed class ReferencesPopup : Popup
     {
         #region Fields
 
-        private ScrollViewer _scroll       = null!;
-        private TextBlock    _collapseLink = null!;
+        private ScrollViewer _scroll        = null!;
+        private TextBlock    _collapseLink  = null!;
+        private TextBlock    _headerIconTb  = null!;
+        private TextBlock    _headerNameTb  = null!;
         private Point        _anchor;
-        private string       _symbolName   = string.Empty;
+        private string       _symbolName    = string.Empty;
+        private double       _lineHeight    = 16.0;
         private bool         _allCollapsed;
 
         private List<(StackPanel ItemsPanel, TextBlock Chevron)> _groups = new();
@@ -98,7 +105,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// <summary>Fired when the user clicks a reference row.</summary>
         public event EventHandler<ReferencesNavigationEventArgs>? NavigationRequested;
 
-        /// <summary>Fired when "Actualiser" is clicked — caller should re-run the search.</summary>
+        /// <summary>Fired when "Refresh" is clicked — caller should re-run the search.</summary>
         public event EventHandler? RefreshRequested;
 
         /// <summary>Fired when the pin button is clicked — caller should dock results.</summary>
@@ -133,11 +140,20 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             CodeEditor                    owner,
             IReadOnlyList<ReferenceGroup> groups,
             string                        symbolName,
-            Point                         anchor)
+            Point                         anchor,
+            double                        lineHeight,
+            string                        iconGlyph,
+            Brush?                        iconBrush)
         {
             _anchor     = anchor;
+            _lineHeight = lineHeight > 0 ? lineHeight : 16.0;
             _symbolName = symbolName ?? string.Empty;
             _allCollapsed = false;
+
+            // Update header with symbol kind icon and name.
+            _headerIconTb.Text       = iconGlyph;
+            _headerIconTb.Foreground = iconBrush ?? Brushes.Gray;
+            _headerNameTb.Text       = _symbolName;
 
             PlacementTarget              = owner;
             Placement                    = PlacementMode.Custom;
@@ -185,10 +201,43 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             outerBorder.SetResourceReference(Border.BackgroundProperty,  "TE_Background");
             outerBorder.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
 
-            // ── Root grid: body (row 0) + footer (row 1) ──────────────────────
+            // ── Root grid: header (row 0) + body (row 1) + footer (row 2) ─────
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // ── Header: kind icon + symbol name ────────────────────────────────
+            var header = new Border
+            {
+                Padding         = new Thickness(10, 6, 10, 6),
+                BorderThickness = new Thickness(0, 0, 0, 1)
+            };
+            header.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
+            header.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
+
+            var headerRow = new StackPanel { Orientation = Orientation.Horizontal };
+
+            _headerIconTb = new TextBlock
+            {
+                FontFamily        = new FontFamily("Segoe MDL2 Assets"),
+                FontSize          = 13,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin            = new Thickness(0, 0, 6, 0)
+            };
+
+            _headerNameTb = new TextBlock
+            {
+                FontWeight        = FontWeights.SemiBold,
+                FontSize          = 12,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            _headerNameTb.SetResourceReference(TextBlock.ForegroundProperty, "TE_Foreground");
+
+            headerRow.Children.Add(_headerIconTb);
+            headerRow.Children.Add(_headerNameTb);
+            header.Child = headerRow;
+            Grid.SetRow(header, 0);
 
             // ── Scrollable body ────────────────────────────────────────────────
             _scroll = new ScrollViewer
@@ -198,7 +247,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
             _scroll.SetResourceReference(ScrollViewer.BackgroundProperty, "TE_Background");
-            Grid.SetRow(_scroll, 0);
+            Grid.SetRow(_scroll, 1);
 
             // ── Footer ────────────────────────────────────────────────────────
             var footer = new Border
@@ -208,7 +257,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             };
             footer.SetResourceReference(Border.BackgroundProperty,  "TE_Background");
             footer.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
-            Grid.SetRow(footer, 1);
+            Grid.SetRow(footer, 2);
 
             // Footer content: links left, pin right
             var footerRow = new DockPanel { LastChildFill = false };
@@ -216,13 +265,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Pin button — right-aligned
             var pinBtn = new TextBlock
             {
-                Text              = "\uE718",    // Segoe MDL2 — pin (thumbtack); \uE840 renders invisible
+                Text              = "\uE718",    // Segoe MDL2 — pin (thumbtack)
                 FontFamily        = new FontFamily("Segoe MDL2 Assets"),
                 FontSize          = 13,
-                Background        = Brushes.Transparent,   // ensures full bounding-box hit-test
+                Background        = Brushes.Transparent,
                 Padding           = new Thickness(6, 0, 0, 0),
                 Cursor            = Cursors.Hand,
-                ToolTip           = "Ancrer la fenêtre contextuelle",
+                ToolTip           = "Pin to Find References panel",
                 VerticalAlignment = VerticalAlignment.Center
             };
             pinBtn.SetResourceReference(TextBlock.ForegroundProperty, "TE_Foreground");
@@ -237,12 +286,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             };
             DockPanel.SetDock(pinBtn, Dock.Right);
 
-            // "Tout réduire" — TextBlock link (no WPF Button blue hover artefact)
+            // "Collapse all" — TextBlock link
             _collapseLink = new TextBlock
             {
-                Text              = "Tout réduire",
+                Text              = "Collapse all",
                 FontSize          = 11,
-                Background        = Brushes.Transparent,   // full bounding-box hit-test
+                Background        = Brushes.Transparent,
                 Cursor            = Cursors.Hand,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -253,12 +302,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 OnCollapseAllClicked();
             };
 
-            // "Actualiser" — TextBlock link
+            // "Refresh" — TextBlock link
             var refreshLink = new TextBlock
             {
-                Text              = "Actualiser",
+                Text              = "Refresh",
                 FontSize          = 11,
-                Background        = Brushes.Transparent,   // full bounding-box hit-test
+                Background        = Brushes.Transparent,
                 Cursor            = Cursors.Hand,
                 Margin            = new Thickness(16, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center
@@ -275,10 +324,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             footerRow.Children.Add(refreshLink);
             footer.Child = footerRow;
 
+            root.Children.Add(header);
             root.Children.Add(_scroll);
             root.Children.Add(footer);
 
             outerBorder.Child = root;
+
+            // Swallow all unhandled left-clicks inside the popup so they do NOT bubble up
+            // through the PlacementTarget (CodeEditor) logical-parent chain and trigger
+            // CodeEditor.OnMouseDown, which unconditionally closes the popup.
+            outerBorder.MouseLeftButtonDown += (_, e) => e.Handled = true;
+
             Child = outerBorder;
         }
 
@@ -289,7 +345,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private void PopulateContent(IReadOnlyList<ReferenceGroup> groups)
         {
             _allCollapsed         = false;
-            _collapseLink.Text    = "Tout réduire";
+            _collapseLink.Text    = "Collapse all";
 
             var panel = ReferencesTreeBuilder.BuildGroupsPanel(
                 groups,
@@ -312,7 +368,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 panel.Visibility = _allCollapsed ? Visibility.Collapsed : Visibility.Visible;
                 chevron.Text     = _allCollapsed ? "▶" : "▼";
             }
-            _collapseLink.Text = _allCollapsed ? "Tout développer" : "Tout réduire";
+            _collapseLink.Text = _allCollapsed ? "Expand all" : "Collapse all";
         }
 
         #endregion
@@ -322,11 +378,20 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private CustomPopupPlacement[] CalculatePlacement(
             Size popupSize, Size targetSize, Point offset)
         {
-            double x = Math.Min(_anchor.X, Math.Max(0, targetSize.Width  - popupSize.Width  - 8));
-            double y = _anchor.Y;
-            if (y + popupSize.Height > targetSize.Height - 8)
-                y = Math.Max(0, _anchor.Y - popupSize.Height - 4);
-            return new[] { new CustomPopupPlacement(new Point(x, y), PopupPrimaryAxis.Vertical) };
+            double x = Math.Min(_anchor.X, Math.Max(0, targetSize.Width - popupSize.Width - 8));
+
+            // _anchor.Y is the desired BOTTOM edge of the popup; derive the top-left Y.
+            double y = _anchor.Y - popupSize.Height;
+
+            // If the popup would clip above the editor top, fall back to opening below the hint.
+            if (y < 8)
+                y = _anchor.Y + _lineHeight * 3;
+
+            // Clamp so the popup never overflows below the editor bottom.
+            y = Math.Min(y, targetSize.Height - popupSize.Height - 8);
+            y = Math.Max(y, 0);
+
+            return [new CustomPopupPlacement(new Point(x, y), PopupPrimaryAxis.Vertical)];
         }
 
         #endregion

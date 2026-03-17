@@ -145,10 +145,12 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IOpenableDocume
 
         // -- Forward CodeLens reference events from both editors ---------------
         // Either editor can show the references popup (both share the same document).
-        _primaryEditor.ReferenceNavigationRequested   += (s, e) => ReferenceNavigationRequested?.Invoke(this, e);
-        _primaryEditor.FindAllReferencesDockRequested += (s, e) => FindAllReferencesDockRequested?.Invoke(this, e);
-        _secondaryEditor.ReferenceNavigationRequested   += (s, e) => ReferenceNavigationRequested?.Invoke(this, e);
-        _secondaryEditor.FindAllReferencesDockRequested += (s, e) => FindAllReferencesDockRequested?.Invoke(this, e);
+        _primaryEditor.ReferenceNavigationRequested       += (s, e) => ReferenceNavigationRequested?.Invoke(this, e);
+        _primaryEditor.FindAllReferencesDockRequested     += (s, e) => FindAllReferencesDockRequested?.Invoke(this, e);
+        _primaryEditor.GoToExternalDefinitionRequested    += (s, e) => GoToExternalDefinitionRequested?.Invoke(this, e);
+        _secondaryEditor.ReferenceNavigationRequested     += (s, e) => ReferenceNavigationRequested?.Invoke(this, e);
+        _secondaryEditor.FindAllReferencesDockRequested   += (s, e) => FindAllReferencesDockRequested?.Invoke(this, e);
+        _secondaryEditor.GoToExternalDefinitionRequested  += (s, e) => GoToExternalDefinitionRequested?.Invoke(this, e);
 
         // Connect the secondary editor to the same document after primary is loaded.
         Loaded += OnHostLoaded;
@@ -362,6 +364,12 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IOpenableDocume
     /// Forwarded from whichever editor pane fires it.
     /// </summary>
     public event EventHandler<FindAllReferencesDockEventArgs>? FindAllReferencesDockRequested;
+
+    /// <summary>
+    /// Raised when Ctrl+Click targets an external symbol (BCL / NuGet assembly).
+    /// Forwarded from whichever editor pane fires it.
+    /// </summary>
+    public event EventHandler<GoToExternalDefinitionEventArgs>? GoToExternalDefinitionRequested;
 
     #endregion
 }

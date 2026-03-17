@@ -372,6 +372,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private bool _isDocumentBusy;
     private bool _isClosingForced;
     private bool _isShutdownComplete;
+    private bool _shutdownStarted;   // prevents duplicate ShutdownThenCloseAsync instances
     /// <summary>
     /// True while the currently active document is performing a long-running operation.
     /// Switches instantly when the active tab changes.
@@ -530,10 +531,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (_isClosingForced)
         {
-            // Triggered by ConfirmAndCloseAsync: cancel close, run async shutdown, then re-close.
+            // Re-entry guard: user clicked X again while ShutdownThenCloseAsync is already
+            // running from ConfirmAndCloseAsync. _shutdownStarted is true so the call below
+            // returns immediately without starting a duplicate shutdown.
             e.Cancel = true;
-            _fileMonitorService?.Dispose();
-            AutoSaveLayout();
             _ = ShutdownThenCloseAsync();
             return;
         }
@@ -561,6 +562,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     /// </summary>
     private async Task ShutdownThenCloseAsync()
     {
+        // Prevent duplicate instances: if the user clicks X again while shutdown is in
+        // progress, we ignore the second call and let the first instance complete.
+        if (_shutdownStarted) return;
+        _shutdownStarted = true;
+
         try
         {
             // Give the plugin system at most 5 seconds to shut down cleanly.
@@ -574,7 +580,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         finally
         {
             _isShutdownComplete = true;
-            await Dispatcher.InvokeAsync(Close);
+            // Defensive: if InvokeAsync itself throws (e.g. dispatcher already shut down),
+            // _isShutdownComplete is already true so the next user-initiated close succeeds.
+            try { await Dispatcher.InvokeAsync(Close); }
+            catch { }
         }
     }
 
@@ -582,11 +591,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         List<(string ContentId, string Title)> allDirty,
         List<DockItem> dirtyDocs)
     {
-        if (!await PromptAndSaveDirtyAsync(allDirty, dirtyDocs)) return;
+        bool shouldClose;
+        try
+        {
+            shouldClose = await PromptAndSaveDirtyAsync(allDirty, dirtyDocs);
+        }
+        catch
+        {
+            // Save pipeline threw (IO error, command exception, etc.).
+            // Items may be partially saved. Proceed to close rather than
+            // leaving the IDE stuck open forever.
+            shouldClose = true;
+        }
 
+        if (!shouldClose) return;
+
+        // Drive shutdown directly — avoids the Close() → OnWindowClosing re-entry
+        // that was silently blocking the final close in some configurations.
         _isClosingForced = true;
+        _fileMonitorService?.Dispose();
         AutoSaveLayout();
-        Close();
+        _ = ShutdownThenCloseAsync();
     }
 
     // --- SolutionManager event handlers --------------------------------
@@ -1434,6 +1459,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         OnOpenInTextEditorRequested(sender, entry);
     }
 
+    private void OnGoToExternalDefinitionRequested(
+        object? sender,
+        WpfHexEditor.Editor.CodeEditor.Controls.GoToExternalDefinitionEventArgs e)
+    {
+        // The symbol is external (BCL / NuGet assembly).
+        // Try to surface it in AssemblyExplorer (plugin system) if it is loaded.
+        // For now: log a helpful message in the Output panel and show an info tooltip
+        // so the user knows they can load the assembly in AssemblyExplorer manually.
+        OutputLogger.Info(
+            $"[Go to Definition] '{e.SymbolName}' is defined in an external assembly. " +
+            "Load the assembly in Assembly Explorer to navigate to its decompiled source.");
+    }
+
     private void OnFindAllReferencesDockRequested(
         object? sender,
         WpfHexEditor.Editor.CodeEditor.Controls.FindAllReferencesDockEventArgs e)
@@ -1476,7 +1514,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _findReferencesPanel.CloseRequested += (_, _) =>
             {
                 var item = _layout.FindItemByContentId(FindReferencesPanelContentId);
-                if (item is not null) _engine.Close(item);
+                // Use CloseTab() (not _engine.Close) so that _displayContent and _contentCache
+                // are cleared and RebuildVisualTree() is called.  Without this, the stale panel
+                // instance remains a visual child of the old tab control; the next pin click would
+                // cause a WPF "element is already the child of another element" exception and the
+                // dock panel would silently never appear.
+                if (item is not null) CloseTab(item, promptIfDirty: false);
                 _findReferencesPanel = null;
             };
         }
@@ -1781,6 +1824,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Wire cross-file "Find All References" navigation (Shift+F12).
                 json.ReferenceNavigationRequested    += OnCodeEditorReferenceNavigation;
                 json.FindAllReferencesDockRequested  += OnFindAllReferencesDockRequested;
+                json.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
                 // No Background + default IsHitTestVisible=True → empty areas let clicks
                 // through to the editor; the QuickSearchBar captures clicks in its own area.
                 var canvas = new Canvas();
@@ -1807,6 +1851,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 splitHost.ReferenceNavigationRequested   += OnCodeEditorReferenceNavigation;
                 splitHost.FindAllReferencesDockRequested += OnFindAllReferencesDockRequested;
+                splitHost.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
             }
 
             return display;
@@ -4083,6 +4128,56 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (dlg.ShowDialog() != true) return;
 
         _ = OpenSolutionAsync(dlg.FileName);
+    }
+
+    /// <summary>
+    /// Opens a folder picker and loads the selected directory as a VS Code–style folder session.
+    /// Creates a <c>.whfolder</c> marker file in the selected directory if one does not yet exist,
+    /// then routes through <see cref="OpenSolutionAsync"/> so the Folder Mode plugin handles the load.
+    /// </summary>
+    private void OnOpenFolder(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title      = "Open Folder",
+            Multiselect = false,
+        };
+
+        if (dlg.ShowDialog() != true) return;
+
+        _ = OpenFolderAsSolutionAsync(dlg.FolderName);
+    }
+
+    /// <summary>
+    /// Ensures a <c>.whfolder</c> marker exists inside <paramref name="dirPath"/>,
+    /// then delegates to <see cref="OpenSolutionAsync"/> so the Folder Mode plugin handles loading.
+    /// The marker is a minimal JSON file — no compile dependency on the plugin assembly.
+    /// </summary>
+    private async Task OpenFolderAsSolutionAsync(string dirPath)
+    {
+        var dirName    = Path.GetFileName(dirPath.TrimEnd(Path.DirectorySeparatorChar,
+                                                          Path.AltDirectorySeparatorChar));
+        var markerPath = Path.Combine(dirPath, dirName + ".whfolder");
+
+        // Write a default marker only if absent — preserves existing user settings.
+        if (!File.Exists(markerPath))
+        {
+            var json = $$"""
+                {
+                  "version": 1,
+                  "rootPath": ".",
+                  "name": "{{dirName}}",
+                  "excludePatterns": ["obj","bin",".git",".vs","node_modules","__pycache__",".idea"],
+                  "includeHidden": false,
+                  "useGitIgnore": true,
+                  "created": "{{DateTimeOffset.UtcNow:O}}",
+                  "lastOpened": "{{DateTimeOffset.UtcNow:O}}"
+                }
+                """;
+            await File.WriteAllTextAsync(markerPath, json).ConfigureAwait(true);
+        }
+
+        await OpenSolutionAsync(markerPath);
     }
 
     /// <summary>

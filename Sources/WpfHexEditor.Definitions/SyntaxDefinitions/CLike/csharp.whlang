@@ -21,7 +21,6 @@
   "rules": [
     { "type": "BlockComment",  "pattern": "/\\*[\\s\\S]*?\\*/", "colorKey": "TE_Comment" },
     { "type": "String",        "pattern": "(@\"(?:[^\"]|\"\")*\"|\\$@?\"(?:[^\"\\\\]|\\\\.)*\"|\"(?:[^\"\\\\]|\\\\.)*\"|'(?:[^'\\\\]|\\\\.)*')", "colorKey": "TE_String" },
-    { "type": "XmlDocComment", "pattern": "///.*$", "colorKey": "TE_Comment" },
     { "type": "Comment",       "pattern": "//.*$", "colorKey": "TE_Comment" },
     { "type": "Preprocessor",  "pattern": "^\\s*#(?:if|elif|else|endif|define|undef|region|endregion|pragma|warning|error|nullable|line)\\b[^/\\n]*", "colorKey": "TE_Directive" },
     { "type": "Keyword",       "pattern": "\\b(abstract|as|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|false|finally|fixed|float|for|foreach|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|private|protected|public|readonly|record|ref|return|sbyte|sealed|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|virtual|void|volatile|while|async|await|dynamic|var|yield|from|select|where|orderby|group|by|join|into|let|on|equals|ascending|descending|global|partial|file|required|with|init|get|set|add|remove|value|nameof|when|and|or|not|nint|nuint)\\b", "colorKey": "TE_Keyword" },

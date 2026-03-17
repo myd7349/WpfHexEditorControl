@@ -558,7 +558,81 @@
                 <TextBlock FontSize="11" Foreground="{DynamicResource PFP_SubTextBrush}" TextWrapping="Wrap"
                            Text="{Binding FormatInfo.Description}"/>
 
-                <!-- EnrichedFormatInfoPanel moved to WpfHexEditor.Plugins.FormatInfo — managed by FormatInfoPlugin via IUIRegistry -->
+                <!-- Enriched Format Metadata — compact expander powered by EnrichedFormatViewModel -->
+                <Border x:Name="EnrichedFormatSection"
+                        Visibility="Collapsed"
+                        Margin="0,6,0,0">
+                    <Expander IsExpanded="False"
+                              Foreground="{DynamicResource PFP_AccentBrush}"
+                              FontWeight="SemiBold"
+                              FontSize="11">
+                        <Expander.Header>
+                            <TextBlock Text="Enriched Format Metadata"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PFP_AccentBrush}"/>
+                        </Expander.Header>
+                        <StackPanel Margin="4,6,0,0"
+                                    DataContext="{Binding EnrichedFormat,
+                                                  RelativeSource={RelativeSource AncestorType=local:ParsedFieldsPanel}}">
+                            <!-- MIME Types -->
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="MIME Types" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PFP_SubTextBrush}" VerticalAlignment="Top"/>
+                                <TextBlock Grid.Column="1" Text="{Binding MimeTypesDisplay}"
+                                           FontSize="10" Foreground="{DynamicResource PFP_TextBrush}" TextWrapping="Wrap"/>
+                            </Grid>
+                            <!-- Extensions -->
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Extensions" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PFP_SubTextBrush}" VerticalAlignment="Top"/>
+                                <TextBlock Grid.Column="1" Text="{Binding ExtensionsDisplay}"
+                                           FontSize="10" Foreground="{DynamicResource PFP_TextBrush}" TextWrapping="Wrap"/>
+                            </Grid>
+                            <!-- Software -->
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Software" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PFP_SubTextBrush}" VerticalAlignment="Top"/>
+                                <TextBlock Grid.Column="1" Text="{Binding SoftwareDisplay}"
+                                           FontSize="10" Foreground="{DynamicResource PFP_TextBrush}" TextWrapping="Wrap"/>
+                            </Grid>
+                            <!-- Use Cases -->
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Use Cases" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PFP_SubTextBrush}" VerticalAlignment="Top"/>
+                                <TextBlock Grid.Column="1" Text="{Binding UseCasesDisplay}"
+                                           FontSize="10" Foreground="{DynamicResource PFP_TextBrush}" TextWrapping="Wrap"/>
+                            </Grid>
+                            <!-- Quality Score -->
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Quality" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PFP_SubTextBrush}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{Binding CompletenessScoreDisplay}"
+                                           FontSize="10" Foreground="{DynamicResource PFP_TextBrush}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+                </Border>
 
             </StackPanel>
         </Border>

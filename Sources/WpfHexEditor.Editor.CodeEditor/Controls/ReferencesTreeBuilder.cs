@@ -148,7 +148,11 @@ internal static class ReferencesTreeBuilder
         foreach (var item in group.Items)
             itemsPanel.Children.Add(BuildReferenceRow(group.FilePath, item, symbolName, onNavigate));
 
-        groupHeader.MouseLeftButtonDown += (_, _) => ToggleGroup(itemsPanel, chevron);
+        groupHeader.MouseLeftButtonDown += (_, e) =>
+        {
+            e.Handled = true;   // prevent bubble to CodeEditor.OnMouseDown via PlacementTarget chain
+            ToggleGroup(itemsPanel, chevron);
+        };
 
         var sep = new Border { Height = 1 };
         sep.SetResourceReference(Border.BackgroundProperty, "Panel_ToolbarBorderBrush");
@@ -215,13 +219,16 @@ internal static class ReferencesTreeBuilder
         rowContent.Children.Add(snippetTb);
         row.Child = rowContent;
 
-        row.MouseLeftButtonDown += (_, _) =>
+        row.MouseLeftButtonDown += (_, e) =>
+        {
+            e.Handled = true;   // prevent bubble to CodeEditor.OnMouseDown via PlacementTarget chain
             onNavigate(new ReferencesNavigationEventArgs
             {
                 FilePath = filePath,
                 Line     = item.Line,
                 Column   = item.Column
             });
+        };
 
         return row;
     }

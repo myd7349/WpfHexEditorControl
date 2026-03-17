@@ -314,6 +314,19 @@
     <SolidColorBrush x:Key="CE_Selection"         Color="#BDD7EE"/>
     <SolidColorBrush x:Key="CE_SelectionInactive" Color="#D6D6D6"/>
 
+    <!-- CE_QuickInfo_* — Quick Info hover popup (Office) -->
+    <SolidColorBrush x:Key="CE_QuickInfo_Background"        Color="#FAFAFA"/>
+    <SolidColorBrush x:Key="CE_QuickInfo_Border"            Color="#C0C0C0"/>
+    <SolidColorBrush x:Key="CE_QuickInfo_Text"              Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="CE_QuickInfo_TypeText"          Color="#666666"/>
+    <SolidColorBrush x:Key="CE_QuickInfo_SignatureText"      Color="#0078D4"/>
+    <SolidColorBrush x:Key="CE_QuickInfo_LinkText"          Color="#0078D4"/>
+    <SolidColorBrush x:Key="CE_QuickInfo_Separator"         Color="#D0D0D0"/>
+    <SolidColorBrush x:Key="CE_QuickInfo_DiagnosticError"   Color="#FCEAEA"/>
+    <SolidColorBrush x:Key="CE_QuickInfo_DiagnosticWarning" Color="#FFF4E0"/>
+    <!-- CE_CtrlHover_Underline — Ctrl+hover symbol underline (Office) -->
+    <SolidColorBrush x:Key="CE_CtrlHover_Underline"         Color="#0078D4"/>
+
     <!-- Generic Dialog Resources (AdvancedSearch, ProjectDialogs, etc.) -->
     <Color x:Key="AccentColor">#0078D4</Color>
     <SolidColorBrush x:Key="BackgroundBrush"       Color="{StaticResource DockWindowBackgroundColor}"/>

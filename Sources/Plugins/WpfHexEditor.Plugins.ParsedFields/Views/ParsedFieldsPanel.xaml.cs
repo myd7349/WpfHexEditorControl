@@ -18,6 +18,7 @@ using System.Windows.Threading;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.Interfaces;
 using WpfHexEditor.Core.ViewModels;
+using WpfHexEditor.HexEditor.ViewModels;
 using WpfHexEditor.Plugins.ParsedFields.Dialogs;
 using WpfHexEditor.SDK.UI;
 
@@ -41,6 +42,7 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         private int _sortMode = 0; // 0=offset, 1=nameAZ, 2=nameZA, 3=type, 4=size
         private long _totalFileSize;
         private ToolbarOverflowManager _overflowManager = null!;
+        private readonly EnrichedFormatViewModel _enrichedVm = new();
 
         public ParsedFieldsPanel()
         {
@@ -77,6 +79,12 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
                 Dispatcher.InvokeAsync(_overflowManager.CaptureNaturalWidths, DispatcherPriority.Loaded);
             };
         }
+
+        /// <summary>
+        /// ViewModel for the embedded "Enriched Format Metadata" expander section.
+        /// Bound in XAML via RelativeSource; populated by SetEnrichedFormat().
+        /// </summary>
+        public EnrichedFormatViewModel EnrichedFormat => _enrichedVm;
 
         /// <summary>
         /// Collection of parsed fields to display
@@ -208,19 +216,24 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         public event EventHandler RefreshRequested;
 
         /// <summary>
-        /// Set the format definition for enriched metadata display
+        /// Populates the embedded "Enriched Format Metadata" expander with the detected format definition.
+        /// Pass null to clear (hide) the section.
         /// </summary>
-        public void SetEnrichedFormat(FormatDefinition format)
+        public void SetEnrichedFormat(FormatDefinition? format)
         {
-            // EnrichedFormatInfoPanel moved to WpfHexEditor.Plugins.FormatInfo — managed by FormatInfoPlugin
+            _enrichedVm.CurrentFormat = format;
+            if (EnrichedFormatSection != null)
+                EnrichedFormatSection.Visibility = format is not null ? Visibility.Visible : Visibility.Collapsed;
         }
 
         /// <summary>
-        /// Clear the enriched format information
+        /// Clears and hides the enriched format metadata section.
         /// </summary>
         public void ClearEnrichedFormat()
         {
-            // EnrichedFormatInfoPanel moved to WpfHexEditor.Plugins.FormatInfo — managed by FormatInfoPlugin
+            _enrichedVm.ClearData();
+            if (EnrichedFormatSection != null)
+                EnrichedFormatSection.Visibility = Visibility.Collapsed;
         }
 
         /// <summary>
