@@ -3723,9 +3723,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (pos.Line < _firstVisibleLine || pos.Line > _lastVisibleLine)
                     continue;
 
-                double y = EnableVirtualScrolling && _virtualizationEngine != null
-                    ? TopMargin + _virtualizationEngine.GetLineYPosition(pos.Line)
-                    : TopMargin + (pos.Line - _firstVisibleLine) * _lineHeight;
+                // Word highlights on CodeLens declaration lines are distracting:
+                // the hint zone sits above the code text and the rectangle would
+                // overlap it.  Skip these lines entirely.
+                if (ShowCodeLens && _lensData.ContainsKey(pos.Line))
+                    continue;
+
+                double y = _lineYLookup.TryGetValue(pos.Line, out double wy) ? wy
+                    : (EnableVirtualScrolling && _virtualizationEngine != null
+                        ? TopMargin + _virtualizationEngine.GetLineYPosition(pos.Line)
+                        : TopMargin + (pos.Line - _firstVisibleLine) * _lineHeight);
 
                 double x1 = leftEdge + pos.Column * _charWidth;
                 double x2 = x1 + _wordHighlightLen * _charWidth;
@@ -5486,14 +5493,33 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private TextPosition PixelToTextPosition(Point pixel)
         {
             double leftEdge = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+            int line;
 
-            // Calculate line — use VirtualizationEngine for sub-line scroll accuracy.
-            // Plain formula (_firstVisibleLine + offset/lineHeight) breaks with pixel-based
-            // smooth scrolling because the fractional scroll remainder shifts rendered text
-            // without updating _firstVisibleLine.
-            int line = EnableVirtualScrolling && _virtualizationEngine != null
-                ? _virtualizationEngine.GetLineAtYPosition(pixel.Y - TopMargin)
-                : _firstVisibleLine + (int)((pixel.Y - TopMargin) / _lineHeight);
+            if (ShowCodeLens && _visLinePositions.Count > 0)
+            {
+                // Variable-height scan: CodeLens declaration lines have a taller slot.
+                // Each lens-line slot spans (codeY - LensLineHeight → codeY + _lineHeight).
+                // Each normal-line slot spans (codeY → codeY + _lineHeight).
+                line = _visLinePositions[^1].LineIndex; // default: last visible line
+                for (int k = 0; k < _visLinePositions.Count; k++)
+                {
+                    var (lineIdx, codeY) = _visLinePositions[k];
+                    double slotTop = _lensData.ContainsKey(lineIdx) ? codeY - LensLineHeight : codeY;
+                    if (pixel.Y >= slotTop && pixel.Y < codeY + _lineHeight)
+                    {
+                        line = lineIdx;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Uniform-height path: use VirtualizationEngine for sub-line scroll accuracy.
+                line = EnableVirtualScrolling && _virtualizationEngine != null
+                    ? _virtualizationEngine.GetLineAtYPosition(pixel.Y - TopMargin)
+                    : _firstVisibleLine + (int)((pixel.Y - TopMargin) / _lineHeight);
+            }
+
             line = Math.Max(0, Math.Min(_document.Lines.Count - 1, line));
 
             // Calculate column (account for horizontal scroll offset)

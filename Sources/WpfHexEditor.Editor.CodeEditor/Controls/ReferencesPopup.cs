@@ -6,17 +6,19 @@
 // Created: 2026-03-17
 // Description:
 //     Inline "Find All References" popup anchored near the cursor.
-//     Displays LSP reference results grouped by file with line numbers
-//     and highlighted code snippets — mimics the Visual Studio peek
-//     references panel.
+//     Displays results grouped by file with VS Code–style collapsible
+//     sections: folder path (dimmed) + bold filename + (count),
+//     reference rows with icon + line number + highlighted snippet.
 //
 // Architecture Notes:
-//     - Popup-derived (StaysOpen=false, AllowsTransparency=true)
-//     - Mirrors IntelliSensePopup architecture pattern
-//     - All colors via SetResourceReference / DynamicResource (CE_* / Panel_* tokens)
+//     - Popup-derived (StaysOpen=true — explicit dismiss via click-outside
+//       or Escape; CodeEditor.OnMouseDown closes it on any click)
+//     - AllowsTransparency=true for drop-shadow effect
+//     - All colours via SetResourceReference / DynamicResource
+//       (CE_* / Panel_* / TE_* / PFP_* tokens) — theme-agnostic
 //     - Fires NavigationRequested; CodeEditor routes cross-file navigation
 //       to the host through its own ReferenceNavigationRequested event
-//     - Group sections are independently collapsible (VS-like chevron toggle)
+//     - Group sections are independently collapsible (VS-style chevron toggle)
 // ==========================================================
 
 using System;
@@ -28,6 +30,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 
 namespace WpfHexEditor.Editor.CodeEditor.Controls
 {
@@ -39,10 +42,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// <summary>0-based line index.</summary>
         public int Line { get; init; }
 
-        /// <summary>0-based column of the symbol start.</summary>
+        /// <summary>0-based column of the symbol start in the original (non-trimmed) line.</summary>
         public int Column { get; init; }
 
-        /// <summary>Raw (untrimmed) source line text; max 200 chars.</summary>
+        /// <summary>Source line text (may be TrimStart'd); max 200 chars.</summary>
         public string Snippet { get; init; } = string.Empty;
     }
 
@@ -63,27 +66,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
     public sealed class ReferencesNavigationEventArgs : EventArgs
     {
         public string FilePath { get; init; } = string.Empty;
-        public int Line        { get; init; }
-        public int Column      { get; init; }
+        public int    Line     { get; init; }
+        public int    Column   { get; init; }
     }
 
     // ── ReferencesPopup control ────────────────────────────────────────────────
 
     /// <summary>
-    /// Inline popup that lists all LSP reference results grouped by file.
+    /// Inline popup that lists all "Find References" results grouped by file,
+    /// using a VS Code–style collapsible tree layout.
     /// Anchor it to the editor via <see cref="Show"/>.
     /// </summary>
     internal sealed class ReferencesPopup : Popup
     {
         #region Fields
 
-        private StackPanel  _groupsPanel  = null!;
-        private TextBlock   _headerLabel  = null!;
+        private StackPanel  _groupsPanel    = null!;
         private Button      _collapseAllBtn = null!;
         private Point       _anchor;
-        private string      _symbolName   = string.Empty;
+        private string      _symbolName     = string.Empty;
         private bool        _allCollapsed;
-        private readonly List<(StackPanel itemsPanel, TextBlock chevron)> _groups = new();
+
+        // Frozen colour for the ◆ reference glyph (VS Code method purple).
+        private static readonly Brush s_glyphBrush = MakeFrozenBrush(Color.FromRgb(0xC5, 0x86, 0xC0));
+
+        // Frozen semi-transparent background for the highlighted symbol span.
+        private static readonly Brush s_symbolHighlightBg = MakeFrozenBrush(Color.FromArgb(80, 0x20, 0x56, 0xA0));
+
+        private readonly List<(StackPanel ItemsPanel, TextBlock Chevron)> _groups = new();
 
         #endregion
 
@@ -98,7 +108,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         internal ReferencesPopup()
         {
-            StaysOpen          = true;
+            StaysOpen          = true;   // Explicit dismiss: Escape or CodeEditor.OnMouseDown
             AllowsTransparency = true;
 
             BuildUI();
@@ -115,18 +125,18 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// (editor-relative coordinates, below the cursor).
         /// </summary>
         internal void Show(
-            CodeEditor              owner,
+            CodeEditor                   owner,
             IReadOnlyList<ReferenceGroup> groups,
-            string                  symbolName,
-            Point                   anchor)
+            string                       symbolName,
+            Point                        anchor)
         {
             _anchor     = anchor;
             _symbolName = symbolName ?? string.Empty;
             _allCollapsed = false;
 
-            PlacementTarget               = owner;
-            Placement                     = PlacementMode.Custom;
-            CustomPopupPlacementCallback  = CalculatePlacement;
+            PlacementTarget              = owner;
+            Placement                    = PlacementMode.Custom;
+            CustomPopupPlacementCallback = CalculatePlacement;
 
             PopulateContent(groups);
             IsOpen = true;
@@ -146,111 +156,67 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void BuildUI()
         {
-            // ── Outer border (shadow + rounded corners) ────────────────────────
+            // ── Outer border: shadow + rounded corners ─────────────────────────
             var outerBorder = new Border
             {
-                MinWidth        = 520,
+                MinWidth        = 480,
+                MaxWidth        = 700,
                 BorderThickness = new Thickness(1),
                 CornerRadius    = new CornerRadius(4),
-                Effect          = new System.Windows.Media.Effects.DropShadowEffect
+                Effect          = new DropShadowEffect
                 {
                     Color       = Colors.Black,
-                    Opacity     = 0.35,
-                    BlurRadius  = 8,
+                    Opacity     = 0.40,
+                    BlurRadius  = 10,
                     ShadowDepth = 3
                 }
             };
-            outerBorder.SetResourceReference(Border.BackgroundProperty,    "TE_Background");
-            outerBorder.SetResourceReference(Border.BorderBrushProperty,   "Panel_ToolbarBorderBrush");
+            outerBorder.SetResourceReference(Border.BackgroundProperty,  "TE_Background");
+            outerBorder.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
 
-            // ── Root grid: header / body / footer ─────────────────────────────
-            // All rows are Auto — star rows collapse to 0 in auto-sized containers.
+            // ── Root grid: scrollable body (row 0) + footer (row 1) ───────────
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-            // ── Header row ────────────────────────────────────────────────────
-            // BorderThickness bottom=1 draws the separator between header and body
-            // without a separate Border element that would occupy the same grid row.
-            var header = new Border
-            {
-                Padding         = new Thickness(10, 6, 8, 6),
-                BorderThickness = new Thickness(0, 0, 0, 1)
-            };
-            header.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
-            header.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
-            Grid.SetRow(header, 0);
-
-            var headerGrid = new Grid();
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            _headerLabel = new TextBlock
-            {
-                FontWeight  = FontWeights.SemiBold,
-                FontSize    = 12,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            _headerLabel.SetResourceReference(TextBlock.ForegroundProperty, "TE_Foreground");
-            Grid.SetColumn(_headerLabel, 0);
-
-            var closeBtn = new Button
-            {
-                Content         = "✕",
-                Width           = 20,
-                Height          = 20,
-                Padding         = new Thickness(0),
-                BorderThickness = new Thickness(0),
-                FontSize        = 11,
-                Cursor          = Cursors.Hand,
-                ToolTip         = "Close (Esc)"
-            };
-            closeBtn.SetResourceReference(Button.BackgroundProperty,   "Panel_ToolbarBrush");
-            closeBtn.SetResourceReference(Button.ForegroundProperty,   "TE_Foreground");
-            closeBtn.Click += (_, _) => IsOpen = false;
-            Grid.SetColumn(closeBtn, 1);
-
-            headerGrid.Children.Add(_headerLabel);
-            headerGrid.Children.Add(closeBtn);
-            header.Child = headerGrid;
-
-            // ── Body — scrollable groups list ─────────────────────────────────
+            // ── Body: scrollable groups ────────────────────────────────────────
             _groupsPanel = new StackPanel();
             _groupsPanel.SetResourceReference(StackPanel.BackgroundProperty, "TE_Background");
 
             var scroll = new ScrollViewer
             {
-                MaxHeight                     = 360,
+                MaxHeight                     = 400,
                 VerticalScrollBarVisibility   = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 Content                       = _groupsPanel
             };
             scroll.SetResourceReference(ScrollViewer.BackgroundProperty, "TE_Background");
-            Grid.SetRow(scroll, 1);
+            Grid.SetRow(scroll, 0);
 
-            // ── Footer ────────────────────────────────────────────────────────
-            var footer = new Border { Padding = new Thickness(8, 4, 8, 4) };
-            footer.SetResourceReference(Border.BackgroundProperty,   "Panel_ToolbarBrush");
-            footer.SetResourceReference(Border.BorderBrushProperty,  "Panel_ToolbarBorderBrush");
-            footer.BorderThickness = new Thickness(0, 1, 0, 0);
-            Grid.SetRow(footer, 2);
+            // ── Footer: "Tout réduire" link ────────────────────────────────────
+            var footer = new Border
+            {
+                Padding         = new Thickness(10, 5, 10, 5),
+                BorderThickness = new Thickness(0, 1, 0, 0)
+            };
+            footer.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
+            footer.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
+            Grid.SetRow(footer, 1);
 
             _collapseAllBtn = new Button
             {
-                Content         = "Réduire tout",
-                Padding         = new Thickness(6, 2, 6, 2),
+                Content         = "Tout réduire",
+                Padding         = new Thickness(0),
+                BorderThickness = new Thickness(0),
+                Background      = Brushes.Transparent,
+                Cursor          = Cursors.Hand,
                 FontSize        = 11,
-                BorderThickness = new Thickness(1),
-                Cursor          = Cursors.Hand
+                HorizontalContentAlignment = HorizontalAlignment.Left
             };
-            _collapseAllBtn.SetResourceReference(Button.ForegroundProperty,  "TE_Foreground");
-            _collapseAllBtn.SetResourceReference(Button.BackgroundProperty,  "Panel_ToolbarBrush");
-            _collapseAllBtn.SetResourceReference(Button.BorderBrushProperty, "Panel_ToolbarBorderBrush");
+            _collapseAllBtn.SetResourceReference(Button.ForegroundProperty, "CE_Keyword");
             _collapseAllBtn.Click += OnCollapseAllClicked;
             footer.Child = _collapseAllBtn;
 
-            root.Children.Add(header);
             root.Children.Add(scroll);
             root.Children.Add(footer);
 
@@ -266,13 +232,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             _groups.Clear();
             _groupsPanel.Children.Clear();
-
-            int total = 0;
-            foreach (var g in groups) total += g.Items.Count;
-
-            _headerLabel.Text = $"{total} référence{(total != 1 ? "s" : "")} — {_symbolName}";
-            _allCollapsed     = false;
-            _collapseAllBtn.Content = "Réduire tout";
+            _allCollapsed = false;
+            _collapseAllBtn.Content = "Tout réduire";
 
             foreach (var group in groups)
                 _groupsPanel.Children.Add(BuildGroupPanel(group));
@@ -282,13 +243,21 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             var container = new StackPanel();
 
-            // ── Group header: ▼ chevron + file name ───────────────────────────
+            // ── Split file path into folder portion and bold filename ──────────
+            string fileName      = Path.GetFileName(group.FilePath);
+            if (string.IsNullOrEmpty(fileName)) fileName = group.DisplayLabel;
+            string folderFull    = Path.GetDirectoryName(group.FilePath) ?? string.Empty;
+            string folderDisplay = BuildCompactFolderPath(folderFull);
+
+            // ── Group header: left accent border + path + count ───────────────
             var groupHeader = new Border
             {
-                Padding    = new Thickness(6, 4, 6, 4),
-                Cursor     = Cursors.Hand
+                Padding         = new Thickness(10, 5, 10, 5),
+                BorderThickness = new Thickness(3, 0, 0, 0),  // left accent stripe
+                Cursor          = Cursors.Hand
             };
-            groupHeader.SetResourceReference(Border.BackgroundProperty, "Panel_ToolbarBrush");
+            groupHeader.SetResourceReference(Border.BackgroundProperty,  "Panel_ToolbarBrush");
+            groupHeader.SetResourceReference(Border.BorderBrushProperty, "CE_Keyword");
 
             var headerRow = new StackPanel { Orientation = Orientation.Horizontal };
 
@@ -301,41 +270,50 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             };
             chevron.SetResourceReference(TextBlock.ForegroundProperty, "TE_Foreground");
 
-            var fileLabel = new TextBlock
+            // Path block: dimmed folder + bold filename
+            var pathBlock = new TextBlock
             {
-                Text              = group.DisplayLabel,
-                FontWeight        = FontWeights.SemiBold,
-                FontSize          = 12,
                 VerticalAlignment = VerticalAlignment.Center,
-                ToolTip           = group.FilePath
+                ToolTip           = group.FilePath,
+                TextTrimming      = TextTrimming.CharacterEllipsis,
+                MaxWidth          = 580
             };
-            fileLabel.SetResourceReference(TextBlock.ForegroundProperty, "TE_Foreground");
-
-            var countLabel = new TextBlock
+            if (!string.IsNullOrEmpty(folderDisplay))
             {
-                Text              = $" ({group.Items.Count})",
+                var folderRun = new Run(folderDisplay);
+                folderRun.SetResourceReference(Run.ForegroundProperty, "PFP_SubTextBrush");
+                pathBlock.Inlines.Add(folderRun);
+            }
+            var fileRun = new Run(fileName)
+            {
+                FontWeight = FontWeights.Bold,
+                FontSize   = 12
+            };
+            fileRun.SetResourceReference(Run.ForegroundProperty, "TE_Foreground");
+            pathBlock.Inlines.Add(fileRun);
+
+            var countTb = new TextBlock
+            {
+                Text              = $"  ({group.Items.Count})",
                 FontSize          = 11,
                 VerticalAlignment = VerticalAlignment.Center
             };
-            countLabel.SetResourceReference(TextBlock.ForegroundProperty, "PFP_SubTextBrush");
+            countTb.SetResourceReference(TextBlock.ForegroundProperty, "PFP_SubTextBrush");
 
             headerRow.Children.Add(chevron);
-            headerRow.Children.Add(fileLabel);
-            headerRow.Children.Add(countLabel);
+            headerRow.Children.Add(pathBlock);
+            headerRow.Children.Add(countTb);
             groupHeader.Child = headerRow;
 
             // ── Items panel (collapsible) ─────────────────────────────────────
             var itemsPanel = new StackPanel();
-
             foreach (var item in group.Items)
                 itemsPanel.Children.Add(BuildReferenceRow(group.FilePath, item));
 
-            // Wire collapse toggle
-            groupHeader.MouseLeftButtonDown += (_, _) =>
-                ToggleGroup(itemsPanel, chevron);
-
+            groupHeader.MouseLeftButtonDown += (_, _) => ToggleGroup(itemsPanel, chevron);
             _groups.Add((itemsPanel, chevron));
 
+            // Subtle separator between groups
             var sep = new Border { Height = 1 };
             sep.SetResourceReference(Border.BackgroundProperty, "Panel_ToolbarBorderBrush");
 
@@ -350,52 +328,55 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             var row = new Border
             {
-                Padding    = new Thickness(26, 3, 8, 3),
-                Cursor     = Cursors.Hand
+                Padding = new Thickness(12, 3, 8, 3),
+                Cursor  = Cursors.Hand
             };
             row.SetResourceReference(Border.BackgroundProperty, "TE_Background");
 
-            // Hover effect
             row.MouseEnter += (_, _) => row.SetResourceReference(
-                Border.BackgroundProperty, "Panel_ToolbarBrush");
+                Border.BackgroundProperty, "Panel_ToolbarButtonHoverBrush");
             row.MouseLeave += (_, _) => row.SetResourceReference(
                 Border.BackgroundProperty, "TE_Background");
 
-            var rowContent = new StackPanel { Orientation = Orientation.Horizontal };
+            var rowContent = new DockPanel { LastChildFill = true };
 
-            // Line-number badge
-            var lineNum = new Border
+            // ◆ reference glyph (method-purple, Segoe MDL2 style)
+            var icon = new TextBlock
             {
-                Padding         = new Thickness(4, 1, 4, 1),
-                Margin          = new Thickness(0, 0, 8, 0),
-                BorderThickness = new Thickness(1),
-                CornerRadius    = new CornerRadius(2),
-                MinWidth        = 32,
-                VerticalAlignment = VerticalAlignment.Center
+                Text              = "◆",
+                FontSize          = 9,
+                Margin            = new Thickness(0, 0, 6, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground        = s_glyphBrush
             };
-            lineNum.SetResourceReference(Border.BorderBrushProperty, "Panel_ToolbarBorderBrush");
-            lineNum.SetResourceReference(Border.BackgroundProperty,   "Panel_ToolbarBrush");
-            var lineNumText = new TextBlock
+            DockPanel.SetDock(icon, Dock.Left);
+
+            // Line number + colon — right-aligned in a fixed-width block
+            var lineNumTb = new TextBlock
             {
-                Text      = (item.Line + 1).ToString(),
-                FontSize  = 10,
-                TextAlignment = TextAlignment.Right
+                Text              = $"{item.Line + 1} : ",
+                FontFamily        = new FontFamily("Consolas"),
+                FontSize          = 11,
+                MinWidth          = 52,
+                TextAlignment     = TextAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin            = new Thickness(0, 0, 4, 0)
             };
-            lineNumText.SetResourceReference(TextBlock.ForegroundProperty, "PFP_SubTextBrush");
-            lineNum.Child = lineNumText;
+            lineNumTb.SetResourceReference(TextBlock.ForegroundProperty, "PFP_SubTextBrush");
+            DockPanel.SetDock(lineNumTb, Dock.Left);
 
-            // Snippet with highlighted symbol
-            var snippet = BuildSnippetTextBlock(item.Snippet, _symbolName);
-            snippet.FontFamily  = new FontFamily("Consolas");
-            snippet.FontSize    = 11;
-            snippet.VerticalAlignment = VerticalAlignment.Center;
-            snippet.TextTrimming = TextTrimming.CharacterEllipsis;
+            // Code snippet with symbol occurrence highlighted
+            var snippetTb = BuildSnippetTextBlock(item.Snippet, _symbolName);
+            snippetTb.FontFamily        = new FontFamily("Consolas");
+            snippetTb.FontSize          = 11;
+            snippetTb.VerticalAlignment = VerticalAlignment.Center;
+            snippetTb.TextTrimming      = TextTrimming.CharacterEllipsis;
 
-            rowContent.Children.Add(lineNum);
-            rowContent.Children.Add(snippet);
+            rowContent.Children.Add(icon);
+            rowContent.Children.Add(lineNumTb);
+            rowContent.Children.Add(snippetTb);
             row.Child = rowContent;
 
-            // Navigate on click
             row.MouseLeftButtonDown += (_, _) =>
                 NavigationRequested?.Invoke(this, new ReferencesNavigationEventArgs
                 {
@@ -408,10 +389,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
-        /// Builds a <see cref="TextBlock"/> with the first occurrence of
-        /// <paramref name="symbol"/> highlighted in bold/accent colour.
+        /// Builds a <see cref="TextBlock"/> with the first whole-word occurrence of
+        /// <paramref name="symbol"/> rendered in keyword colour with a highlight background.
         /// </summary>
-        private TextBlock BuildSnippetTextBlock(string snippet, string symbol)
+        private static TextBlock BuildSnippetTextBlock(string snippet, string symbol)
         {
             var tb = new TextBlock { TextWrapping = TextWrapping.NoWrap };
             tb.SetResourceReference(TextBlock.ForegroundProperty, "TE_Foreground");
@@ -424,10 +405,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             int idx = snippet.IndexOf(symbol, StringComparison.Ordinal);
             if (idx < 0)
-            {
-                // Try case-insensitive fallback
                 idx = snippet.IndexOf(symbol, StringComparison.OrdinalIgnoreCase);
-            }
 
             if (idx < 0)
             {
@@ -435,7 +413,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return tb;
             }
 
-            // prefix
+            // Pre-symbol text
             if (idx > 0)
             {
                 var pre = new Run(snippet[..idx]);
@@ -443,15 +421,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 tb.Inlines.Add(pre);
             }
 
-            // highlighted symbol
+            // Highlighted symbol: keyword colour + semi-transparent blue background
             var match = new Run(snippet.Substring(idx, symbol.Length))
             {
-                FontWeight = FontWeights.Bold
+                FontWeight = FontWeights.Bold,
+                Background = s_symbolHighlightBg
             };
             match.SetResourceReference(Run.ForegroundProperty, "CE_Keyword");
             tb.Inlines.Add(match);
 
-            // suffix
+            // Post-symbol text
             if (idx + symbol.Length < snippet.Length)
             {
                 var post = new Run(snippet[(idx + symbol.Length)..]);
@@ -462,13 +441,32 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             return tb;
         }
 
+        /// <summary>
+        /// Returns a compact display string for the folder path.
+        /// Shows the last 3 path segments with trailing backslash, or the full path
+        /// if it has ≤3 segments.  Returns empty string for null/empty input.
+        /// </summary>
+        private static string BuildCompactFolderPath(string folder)
+        {
+            if (string.IsNullOrEmpty(folder)) return string.Empty;
+
+            folder = folder.Replace('/', '\\').TrimEnd('\\');
+            var parts = folder.Split('\\', StringSplitOptions.RemoveEmptyEntries);
+
+            return parts.Length == 0
+                ? string.Empty
+                : parts.Length > 3
+                    ? $"…\\{string.Join("\\", parts[^3..])} \\"
+                    : folder + "\\";
+        }
+
         #endregion
 
-        #region Collapse/Expand
+        #region Collapse / Expand
 
         private static void ToggleGroup(StackPanel itemsPanel, TextBlock chevron)
         {
-            bool isVisible = itemsPanel.Visibility == Visibility.Visible;
+            bool isVisible    = itemsPanel.Visibility == Visibility.Visible;
             itemsPanel.Visibility = isVisible ? Visibility.Collapsed : Visibility.Visible;
             chevron.Text          = isVisible ? "▶" : "▼";
         }
@@ -481,7 +479,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 panel.Visibility = _allCollapsed ? Visibility.Collapsed : Visibility.Visible;
                 chevron.Text     = _allCollapsed ? "▶" : "▼";
             }
-            _collapseAllBtn.Content = _allCollapsed ? "Développer tout" : "Réduire tout";
+            _collapseAllBtn.Content = _allCollapsed ? "Tout développer" : "Tout réduire";
         }
 
         #endregion
@@ -491,11 +489,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private CustomPopupPlacement[] CalculatePlacement(
             Size popupSize, Size targetSize, Point offset)
         {
-            // Position below cursor; clamp to right/bottom edges.
+            // Position below cursor, clamped to the right/bottom edges.
             double x = Math.Min(_anchor.X, Math.Max(0, targetSize.Width  - popupSize.Width  - 8));
             double y = _anchor.Y;
 
-            // If popup would overflow downward, show above the cursor line instead.
+            // If popup would overflow downward, show it above the cursor instead.
             if (y + popupSize.Height > targetSize.Height - 8)
                 y = Math.Max(0, _anchor.Y - popupSize.Height - 4);
 
@@ -513,6 +511,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 IsOpen    = false;
                 e.Handled = true;
             }
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private static Brush MakeFrozenBrush(Color color)
+        {
+            var b = new SolidColorBrush(color);
+            b.Freeze();
+            return b;
         }
 
         #endregion
