@@ -58,6 +58,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // URL hit-zones: rebuilt on every render pass; used for cursor + Ctrl+Click.
         private readonly List<UrlHitZone> _urlHitZones = new();
 
+        // Fold-label hit-zones: rebuilt on every render pass; used for click-to-toggle.
+        private readonly List<(Rect rect, int line)> _foldLabelHitZones = new();
+
         // The URL zone currently under the mouse pointer (null = none).
         // Drives hover underline; changing it triggers InvalidateVisual().
         private UrlHitZone? _hoveredUrlZone;
@@ -158,6 +161,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private static readonly Pen s_lineNumberSeparatorPen = MakeFrozenPen(Color.FromRgb(200, 200, 200), 1.0);
         private static readonly Pen s_glyphInnerPen          = MakeFrozenPen(Colors.White, 1.5);
 
+        // Fold-collapse inline label rendering assets (frozen for performance).
+        private static readonly Pen      s_foldLabelPen       = MakeFrozenPen(Color.FromRgb(128, 128, 128), 1.0);
+        private static readonly Brush    s_foldLabelTextBrush = MakeFrozenBrush(Color.FromRgb(160, 160, 160));
+        private static readonly Brush    s_foldLabelBgBrush   = MakeFrozenBrush(Color.FromArgb(25, 128, 128, 128));
+        private static readonly Typeface s_foldLabelTypeface  = new("Consolas");
+
         private static Pen MakeSquigglyPen(Color color) => MakeFrozenPen(color, 1.5);
 
         private static Pen MakeFrozenPen(Color color, double thickness)
@@ -166,6 +175,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             pen.Brush.Freeze();
             pen.Freeze();
             return pen;
+        }
+
+        private static Brush MakeFrozenBrush(Color color)
+        {
+            var b = new SolidColorBrush(color);
+            b.Freeze();
+            return b;
         }
 
         #endregion
@@ -2502,6 +2518,42 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
+        /// Draws a "[…]" badge after the text of a collapsed fold-opener line and
+        /// registers the badge rect in <see cref="_foldLabelHitZones"/> for click-to-toggle.
+        /// </summary>
+        private void RenderFoldCollapseLabel(DrawingContext dc, int lineIndex, double textX, double y)
+        {
+            if (_foldingEngine == null) return;
+            var region = _foldingEngine.GetRegionAt(lineIndex);
+            if (region == null || !region.IsCollapsed) return;
+
+            const string LabelText = " \u2026 "; // " … "
+            const double FontSize  = 10.0;
+            const double PaddingH  = 3.0;
+            const double PaddingV  = 1.0;
+
+            var ft = new FormattedText(
+                LabelText,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                s_foldLabelTypeface, FontSize,
+                s_foldLabelTextBrush,
+                VisualTreeHelper.GetDpi(this).PixelsPerDip);
+
+            var    codeLine = _document.Lines[lineIndex];
+            double textLen  = (codeLine.Text?.TrimEnd().Length ?? 0) * _charWidth;
+            double labelX   = textX + textLen + _charWidth * 0.5;
+            double boxW     = ft.Width  + PaddingH * 2;
+            double boxH     = ft.Height + PaddingV * 2;
+            double labelY   = y + (_lineHeight - boxH) / 2.0;
+
+            var rect = new Rect(labelX, labelY, boxW, boxH);
+            dc.DrawRectangle(s_foldLabelBgBrush, s_foldLabelPen, rect);
+            dc.DrawText(ft, new Point(labelX + PaddingH, labelY + PaddingV));
+            _foldLabelHitZones.Add((rect, lineIndex));
+        }
+
+        /// <summary>
         /// Main rendering method - draws all visual elements
         /// Called by WPF when visual update is needed
         /// </summary>
@@ -3104,6 +3156,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // Rebuild URL hit-zones each render pass (document may have changed).
             _urlHitZones.Clear();
+            _foldLabelHitZones.Clear();
 
             // Lazy-init the underline pen from the current SyntaxUrlColor DP.
             // Re-created each render so theme changes are reflected immediately.
@@ -3163,6 +3216,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                                 }
                             }
                         }
+
+                        // Draw fold-collapse label at end of line if this is a collapsed region opener.
+                        RenderFoldCollapseLabel(dc, i, x, y);
 
                         continue; // skip slow path
                     }
@@ -3281,6 +3337,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     }
                     // ── end cache build ───────────────────────────────────────────────
                 }
+
+                // Draw fold-collapse label (handles both non-empty and empty opener lines).
+                RenderFoldCollapseLabel(dc, i, x, y);
             }
         }
 
@@ -4284,6 +4343,21 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     InvalidateVisual();
                     NotifyCaretMovedIfChanged();
                     return;
+                }
+            }
+
+            // Left-click on an inline fold-collapse label → toggle the fold.
+            if (e.LeftButton == MouseButtonState.Pressed && _foldLabelHitZones.Count > 0)
+            {
+                var clickPos = e.GetPosition(this);
+                foreach (var (rect, line) in _foldLabelHitZones)
+                {
+                    if (rect.Contains(clickPos))
+                    {
+                        _foldingEngine?.ToggleRegion(line);
+                        e.Handled = true;
+                        return;
+                    }
                 }
             }
 
