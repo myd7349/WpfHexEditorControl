@@ -1270,6 +1270,15 @@
                               SelectedItem="{Binding ActiveBuildPlatform, ElementName=ThisWindow, Mode=TwoWay}"
                               Background="Transparent"
                               Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                    <!-- Startup project selector -->
+                    <ComboBox x:Name="CbStartupProject"
+                              Width="140" Margin="2,0" VerticalAlignment="Center"
+                              ToolTip="Startup Project — launched by ▶ Start (Ctrl+F5)"
+                              ItemsSource="{Binding StartupProjectNames, ElementName=ThisWindow}"
+                              SelectedItem="{Binding ActiveStartupProjectName, ElementName=ThisWindow, Mode=TwoWay}"
+                              IsEnabled="{Binding HasSolution, ElementName=ThisWindow}"
+                              Background="Transparent"
+                              Foreground="{DynamicResource DockMenuForegroundBrush}"/>
                     <Separator Style="{DynamicResource DockToolBarPodDividerStyle}"/>
                     <!-- Start (Run startup project without debugger — Ctrl+F5) -->
                     <Button x:Name="BtnRunStartup"

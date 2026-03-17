@@ -594,6 +594,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+        RefreshStartupProjectList();
         RebuildTblItemList();
         RefreshAllChangesetNodes();
         PopulateRecentMenus();

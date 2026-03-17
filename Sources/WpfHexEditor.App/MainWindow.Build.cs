@@ -9,10 +9,12 @@
 //     Contains:
 //       - BuildSystem + ConfigurationManager initialization
 //       - Properties: IsBuildMenuEnabled, HasActiveBuild,
-//         BuildConfigurations, ActiveBuildConfiguration, BuildPlatforms
+//         BuildConfigurations, ActiveBuildConfiguration, BuildPlatforms,
+//         StartupProjectNames, ActiveStartupProjectName
 //       - Click handlers: Build/Rebuild/Clean Solution|Project, Cancel, ConfigManager
 //       - StatusBar + ErrorList adapter wiring
-//       - Keyboard shortcut: Ctrl+Shift+B → Build Solution
+//       - Keyboard shortcuts: Ctrl+Shift+B → Build Solution, Ctrl+F5 → Start
+//       - Build output channel is cleared at the start of every build operation
 // ==========================================================
 
 using System.Collections.ObjectModel;
@@ -85,6 +87,31 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>
+    /// Project names shown in the startup-project selector ComboBox.
+    /// Rebuilt whenever the solution changes.
+    /// </summary>
+    public ObservableCollection<string> StartupProjectNames { get; } = [];
+
+    /// <summary>
+    /// The name of the currently selected startup project (bound two-way to the ComboBox).
+    /// Setting it calls <see cref="SetStartupProject"/> and refreshes CanRunStartupProject.
+    /// </summary>
+    public string? ActiveStartupProjectName
+    {
+        get => _solutionManager.CurrentSolution?.StartupProject?.Name;
+        set
+        {
+            if (value is null || _solutionManager.CurrentSolution is null) return;
+            var project = _solutionManager.CurrentSolution.Projects
+                .FirstOrDefault(p => p.Name.Equals(value, StringComparison.OrdinalIgnoreCase));
+            if (project is null) return;
+            SetStartupProject(project.Id);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanRunStartupProject));
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Initialization — called from MainWindow.PluginSystem.cs after host ready
     // -----------------------------------------------------------------------
@@ -143,6 +170,7 @@ public partial class MainWindow
             _solutionExplorerPanel.SetStartupProjectRequested  += (_, id) =>
             {
                 SetStartupProject(id);
+                OnPropertyChanged(nameof(ActiveStartupProjectName));
                 OnPropertyChanged(nameof(CanRunStartupProject));
             };
         }
@@ -181,7 +209,7 @@ public partial class MainWindow
     private async Task RunStartupProjectAsync()
     {
         if (_startupRunner is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         RefreshBuildProperties();
         await _startupRunner.RunAsync();
         RefreshBuildProperties();
@@ -190,7 +218,7 @@ public partial class MainWindow
     private async Task RunBuildSolutionAsync()
     {
         if (_buildSystem is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         if (_solutionManager.CurrentSolution is null
             || _solutionManager.CurrentSolution.Projects.Count == 0)
         {
@@ -208,7 +236,7 @@ public partial class MainWindow
         if (_buildSystem is null || _solutionManager.CurrentSolution is null) return;
         var startup = _solutionManager.CurrentSolution.StartupProject;
         if (startup is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         RefreshBuildProperties();
         var result = await _buildSystem.BuildProjectAsync(startup.Id);
         _buildErrorListAdapter?.SetDiagnostics(result.Errors.Concat(result.Warnings));
@@ -218,7 +246,7 @@ public partial class MainWindow
     private async Task RunRebuildSolutionAsync()
     {
         if (_buildSystem is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         if (_solutionManager.CurrentSolution is null
             || _solutionManager.CurrentSolution.Projects.Count == 0)
         {
@@ -236,7 +264,7 @@ public partial class MainWindow
         if (_buildSystem is null || _solutionManager.CurrentSolution is null) return;
         var startup = _solutionManager.CurrentSolution.StartupProject;
         if (startup is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         RefreshBuildProperties();
         var result = await _buildSystem.RebuildProjectAsync(startup.Id);
         _buildErrorListAdapter?.SetDiagnostics(result.Errors.Concat(result.Warnings));
@@ -246,7 +274,7 @@ public partial class MainWindow
     private async Task RunCleanSolutionAsync()
     {
         if (_buildSystem is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         await _buildSystem.CleanSolutionAsync();
         RefreshBuildProperties();
     }
@@ -256,7 +284,7 @@ public partial class MainWindow
         if (_buildSystem is null || _solutionManager.CurrentSolution is null) return;
         var startup = _solutionManager.CurrentSolution.StartupProject;
         if (startup is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         await _buildSystem.CleanProjectAsync(startup.Id);
         RefreshBuildProperties();
     }
@@ -266,7 +294,7 @@ public partial class MainWindow
     private async Task RunBuildProjectByIdAsync(string projectId)
     {
         if (_buildSystem is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         RefreshBuildProperties();
         var result = await _buildSystem.BuildProjectAsync(projectId);
         _buildErrorListAdapter?.SetDiagnostics(result.Errors.Concat(result.Warnings));
@@ -276,7 +304,7 @@ public partial class MainWindow
     private async Task RunRebuildProjectByIdAsync(string projectId)
     {
         if (_buildSystem is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         RefreshBuildProperties();
         var result = await _buildSystem.RebuildProjectAsync(projectId);
         _buildErrorListAdapter?.SetDiagnostics(result.Errors.Concat(result.Warnings));
@@ -286,13 +314,32 @@ public partial class MainWindow
     private async Task RunCleanProjectByIdAsync(string projectId)
     {
         if (_buildSystem is null) return;
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         await _buildSystem.CleanProjectAsync(projectId);
         RefreshBuildProperties();
     }
 
     private void SetStartupProject(string projectId)
         => _solutionManager.SetStartupProject(projectId);
+
+    /// <summary>
+    /// Rebuilds <see cref="StartupProjectNames"/> from the current solution's project list
+    /// and refreshes the ComboBox binding. Safe to call from any thread.
+    /// </summary>
+    internal void RefreshStartupProjectList()
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            StartupProjectNames.Clear();
+            var projects = _solutionManager.CurrentSolution?.Projects;
+            if (projects is not null)
+                foreach (var p in projects)
+                    StartupProjectNames.Add(p.Name);
+
+            OnPropertyChanged(nameof(ActiveStartupProjectName));
+            OnPropertyChanged(nameof(CanRunStartupProject));
+        });
+    }
 
     // -----------------------------------------------------------------------
     // StatusBar update (dispatched to WPF thread)
