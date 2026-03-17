@@ -132,6 +132,10 @@ internal sealed class GutterControl : FrameworkElement
             double markerY = y + (_lineHeight - MarkerSize) / 2.0;
             double markerX = (ActualWidth - MarkerSize) / 2.0;
 
+            // Hide marker when the opener line has scrolled above the visible area.
+            if (markerY + MarkerSize <= _topMargin || markerY >= ActualHeight)
+                continue;
+
             var rect = new Rect(markerX, markerY, MarkerSize, MarkerSize);
 
             // Draw marker box.
