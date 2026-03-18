@@ -576,6 +576,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 TimeSpan.FromMilliseconds(Math.Max(200, (int)e.NewValue)));
         }
 
+        // ── Language Definition DP ─────────────────────────────────────────────
+
+        public static readonly DependencyProperty LanguageProperty =
+            DependencyProperty.Register(nameof(Language), typeof(LanguageDefinition), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(null,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    OnLanguageChanged));
+
+        [Category("Features")]
+        [DisplayName("Language Definition")]
+        [Description("Active language definition controlling CodeLens and Ctrl+Click navigation per language.")]
+        public LanguageDefinition? Language
+        {
+            get => (LanguageDefinition?)GetValue(LanguageProperty);
+            set => SetValue(LanguageProperty, value);
+        }
+
+        private static void OnLanguageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not CodeEditor ce) return;
+            var lang = e.NewValue as LanguageDefinition;
+            // Re-evaluate CodeLens service attachment: only attach when the language declares support.
+            if (lang?.EnableCodeLens == true)
+                ce._codeLensService.Attach(ce._document, ce._currentFilePath);
+            else
+                ce._codeLensService.Detach();
+        }
+
         public static readonly DependencyProperty EnableValidationProperty =
             DependencyProperty.Register(nameof(EnableValidation), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true));
@@ -5433,9 +5461,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (ShowQuickInfo && _hoverQuickInfoService is not null && !_isSelecting)
                     HandleQuickInfoHover(hoverPos, e.GetPosition(this));
 
-                // Ctrl+hover symbol underline.
+                // Ctrl+hover symbol underline — only for languages that declare navigation support.
                 // Force Hand cursor for the full duration of Ctrl held — signals navigability.
-                if (_ctrlDown)
+                if (_ctrlDown && Language?.EnableCtrlClickNavigation == true)
                 {
                     HandleCtrlHover(hoverPos);
                     if (!overLens && !urlZone.HasValue)

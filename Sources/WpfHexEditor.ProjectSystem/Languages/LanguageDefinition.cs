@@ -57,6 +57,20 @@ public sealed class LanguageDefinition
     public string? BlockCommentEnd { get; init; }
 
     /// <summary>
+    /// When <see langword="true"/>, the CodeEditor will render CodeLens hints (inline
+    /// reference counts) for this language.  Should only be enabled for languages that
+    /// have structural parsing support (e.g. C#, VB.NET).
+    /// </summary>
+    public bool EnableCodeLens { get; init; }
+
+    /// <summary>
+    /// When <see langword="true"/>, Ctrl+click go-to-definition navigation is active for
+    /// this language.  Disable for data/markup/script languages that have no declaration
+    /// model understood by the local parser.
+    /// </summary>
+    public bool EnableCtrlClickNavigation { get; init; }
+
+    /// <summary>
     /// When <see langword="true"/>, this language is the preferred (default) highlighter
     /// for its declared extensions inside the owning project.
     /// Only one definition per extension should be marked default; the registry uses

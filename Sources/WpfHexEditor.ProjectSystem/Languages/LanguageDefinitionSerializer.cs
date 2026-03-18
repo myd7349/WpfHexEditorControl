@@ -163,11 +163,13 @@ public static class LanguageDefinitionSerializer
                 Body        = s.Body    ?? string.Empty,
                 Description = s.Description ?? string.Empty
             }).ToArray() ?? [],
-            FoldingStrategy   = dto.FoldingStrategy,
-            LineCommentPrefix = dto.LineCommentPrefix,
-            BlockCommentStart = dto.BlockCommentStart,
-            BlockCommentEnd   = dto.BlockCommentEnd,
-            IsDefault         = dto.IsDefault,
+            FoldingStrategy          = dto.FoldingStrategy,
+            LineCommentPrefix        = dto.LineCommentPrefix,
+            BlockCommentStart        = dto.BlockCommentStart,
+            BlockCommentEnd          = dto.BlockCommentEnd,
+            EnableCodeLens           = dto.EnableCodeLens,
+            EnableCtrlClickNavigation = dto.EnableCtrlClickNavigation,
+            IsDefault                = dto.IsDefault,
         };
     }
 
@@ -198,6 +200,16 @@ public static class LanguageDefinitionSerializer
         public string?               LineCommentPrefix   { get; set; }
         public string?               BlockCommentStart   { get; set; }
         public string?               BlockCommentEnd     { get; set; }
+        /// <summary>
+        /// When true, the CodeEditor renders CodeLens hints for this language.
+        /// </summary>
+        public bool EnableCodeLens { get; set; }
+
+        /// <summary>
+        /// When true, Ctrl+click go-to-definition is active for this language.
+        /// </summary>
+        public bool EnableCtrlClickNavigation { get; set; }
+
         /// <summary>
         /// When true, the registry will call SetProjectDefault() automatically for all
         /// extensions declared in the file, making this the preferred language.
