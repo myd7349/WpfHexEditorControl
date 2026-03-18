@@ -50,6 +50,12 @@ public sealed class LanguageDefinition
     /// </summary>
     public string? LineCommentPrefix { get; init; }
 
+    /// <summary>Opening delimiter for block comments (e.g. "/*" or "&lt;!--"). Null if not applicable.</summary>
+    public string? BlockCommentStart { get; init; }
+
+    /// <summary>Closing delimiter for block comments (e.g. "*/" or "--&gt;"). Null if not applicable.</summary>
+    public string? BlockCommentEnd { get; init; }
+
     /// <summary>
     /// When <see langword="true"/>, this language is the preferred (default) highlighter
     /// for its declared extensions inside the owning project.

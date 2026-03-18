@@ -129,6 +129,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // NuGet manager map: doc-nuget-{name} → IProject (for deferred content creation)
     private readonly Dictionary<string, IProject> _nugetManagerMap = new();
 
+    // Solution-level NuGet manager map: doc-nuget-solution-{name} → ISolution
+    private readonly Dictionary<string, ISolution> _nugetSolutionManagerMap = new();
+
     // ContentIds of "doc-projprops-*" tabs that received the placeholder at layout-restore time
     // because the solution was not yet loaded. Evicted and rebuilt in OnSolutionChanged().
     private readonly HashSet<string> _pendingProjectPropertiesContentIds = new();
@@ -1178,7 +1181,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _ when item.ContentId.StartsWith("doc-file-")      => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")       => WrapHexDocItemWithInfoBar(item),
             _ when item.ContentId.StartsWith("doc-projprops-") => CreateProjectPropertiesContent(item),
-            _ when item.ContentId.StartsWith("doc-nuget-")     => CreateNuGetManagerContent(item),
+            _ when item.ContentId.StartsWith("doc-nuget-solution-") => CreateNuGetSolutionManagerContent(item),
+            _ when item.ContentId.StartsWith("doc-nuget-")          => CreateNuGetManagerContent(item),
             _ when item.ContentId.StartsWith("doc-proj-")      => CreateProjectItemContent(item),
             _ => CreateDocumentContent(item)
         };
@@ -1220,7 +1224,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         panel.PhysicalFileIncludeRequested     += OnSEPhysicalFileInclude;
         panel.ImportExternalFileRequested      += OnSEImportExternalFile;
         panel.PropertiesRequested              += OnSEPropertiesRequested;
-        panel.ManageNuGetPackagesRequested     += OnSEManageNuGetPackages;
+        panel.ManageNuGetPackagesRequested         += OnSEManageNuGetPackages;
+        panel.ManageSolutionNuGetPackagesRequested += OnSEManageSolutionNuGetPackages;
         panel.WriteToDiskRequested             += OnSEWriteToDisk;
         panel.DiscardChangesetRequested        += OnSEDiscardChangeset;
         panel.SolutionFolderCreateRequested    += OnSESolutionFolderCreateRequested;
@@ -5094,6 +5099,78 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         };
 
         return new WpfHexEditor.ProjectSystem.Documents.NuGet.NuGetManagerDocument
+        {
+            DataContext = vm
+        };
+    }
+
+    // ── Solution-level NuGet Manager ─────────────────────────────────────────
+
+    private void OnSEManageSolutionNuGetPackages(object? sender, ManageSolutionNuGetRequestedEventArgs e)
+        => OpenNuGetSolutionManagerDocument(e.Solution);
+
+    /// <summary>
+    /// Opens (or activates) the solution-level NuGet Manager document tab.
+    /// Uses contentId "doc-nuget-solution-{SolutionName}" for deduplication.
+    /// </summary>
+    private void OpenNuGetSolutionManagerDocument(ISolution solution)
+    {
+        var contentId = $"doc-nuget-solution-{solution.Name}";
+
+        // Dedup: activate existing tab if already open.
+        var existing = _layout.GetAllGroups().SelectMany(g => g.Items)
+            .Concat(_layout.FloatingItems)
+            .Concat(_layout.AutoHideItems)
+            .FirstOrDefault(di => di.ContentId == contentId);
+
+        if (existing is not null)
+        {
+            if (existing.Owner is { } owner) owner.ActiveItem = existing;
+            DockHost.RebuildVisualTree();
+            return;
+        }
+
+        _nugetSolutionManagerMap[contentId] = solution;
+
+        var item = new DockItem
+        {
+            Title     = $"NuGet — {solution.Name} (Solution)",
+            ContentId = contentId,
+            Metadata  = { ["SolutionName"] = solution.Name }
+        };
+
+        _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+        DockHost.RebuildVisualTree();
+    }
+
+    /// <summary>
+    /// Content factory for "doc-nuget-solution-*" items.
+    /// Creates the <see cref="NuGetSolutionManagerDocument"/> backed by its ViewModel.
+    /// </summary>
+    private UIElement CreateNuGetSolutionManagerContent(DockItem item)
+    {
+        if (!_nugetSolutionManagerMap.TryGetValue(item.ContentId, out var solution))
+        {
+            solution = _solutionManager.CurrentSolution;
+            if (solution is null)
+                return new System.Windows.Controls.TextBlock { Text = "Solution not loaded." };
+
+            _nugetSolutionManagerMap[item.ContentId] = solution;
+        }
+
+        var vm = new WpfHexEditor.ProjectSystem.Documents.NuGet.NuGetSolutionManagerViewModel(
+            solution,
+            new WpfHexEditor.ProjectSystem.Services.NuGet.NuGetV3Client());
+
+        // Reload solution tree after any .csproj write-back to keep the Solution Explorer in sync.
+        vm.SolutionModified += (_, _) =>
+        {
+            var sol = _solutionManager.CurrentSolution;
+            if (sol is not null)
+                _solutionExplorerPanel?.SetSolution(sol);
+        };
+
+        return new WpfHexEditor.ProjectSystem.Documents.NuGet.NuGetSolutionManagerDocument
         {
             DataContext = vm
         };

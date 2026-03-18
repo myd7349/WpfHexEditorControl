@@ -3910,6 +3910,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         // Draw fold-collapse label at end of line if this is a collapsed region opener.
                         RenderFoldCollapseLabel(dc, i, x, y);
 
+                        // Advance stateful highlighter even when using the glyph cache,
+                        // so block-comment tracking (_inBlockComment) stays correct for
+                        // subsequent lines that may not be cached.
+                        ExternalHighlighter?.Highlight(line.Text, i);
+
                         continue; // skip slow path
                     }
                     // ── end fast path ─────────────────────────────────────────────────

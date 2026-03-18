@@ -3,17 +3,22 @@
 // File: DesignCanvas.cs
 // Author: Derek Tremblay
 // Created: 2026-03-16
+// Updated: 2026-03-17 — Phase 1: UID injection, XamlElementMapper, ResizeAdorner,
+//                        DesignInteractionService wiring, element-to-XElement mapping.
+//                        Phase 3: ZoomPanCanvas host integration.
 // Description:
 //     Live WPF rendering surface for the XAML designer.
 //     Parses XAML via XamlReader.Parse() and presents the result
-//     in a ContentPresenter. Overlays a SelectionAdorner when the
-//     user clicks an element.
+//     in a ContentPresenter + AdornerLayer.
+//     When InteractionEnabled=true, wraps selection with ResizeAdorner
+//     and delegates move/resize events to DesignInteractionService.
 //
 // Architecture Notes:
 //     Inherits Border. Contains a ContentPresenter + AdornerLayer.
 //     XamlReader.Parse() runs on the UI thread inside a try/catch.
-//     Missing xmlns attributes are auto-injected before parsing to
-//     handle partial snippets gracefully.
+//     UID injection: DesignToXamlSyncService.InjectUids() tags every element
+//       with Tag="xd_N" before parsing, then XamlElementMapper reads them
+//       back from the rendered tree to build UIElement→XElement mapping.
 // ==========================================================
 
 using System.Text.RegularExpressions;
@@ -23,6 +28,8 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
+using WpfHexEditor.Editor.XamlDesigner.Models;
+using WpfHexEditor.Editor.XamlDesigner.Services;
 
 namespace WpfHexEditor.Editor.XamlDesigner.Controls;
 
@@ -44,6 +51,19 @@ public sealed class DesignCanvas : Border
             typeof(DesignCanvas),
             new FrameworkPropertyMetadata(string.Empty, OnXamlSourceChanged));
 
+    // ── Interaction ───────────────────────────────────────────────────────────
+
+    private DesignInteractionService? _interaction;
+    private readonly XamlElementMapper _mapper = new();
+    private readonly DesignToXamlSyncService _syncService = new();
+
+    /// <summary>
+    /// When true, selection uses ResizeAdorner instead of SelectionAdorner
+    /// and wires DesignInteractionService for drag-move/resize.
+    /// Set by XamlDesignerSplitHost once it has wired the interaction service.
+    /// </summary>
+    public bool InteractionEnabled { get; private set; }
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public DesignCanvas()
@@ -61,7 +81,6 @@ public sealed class DesignCanvas : Border
 
         Child = _presenter;
 
-        // Element selection via click-through.
         PreviewMouseLeftButtonDown += OnCanvasMouseDown;
     }
 
@@ -74,11 +93,17 @@ public sealed class DesignCanvas : Border
         set => SetValue(XamlSourceProperty, value);
     }
 
-    /// <summary>The last successfully rendered root UIElement; null when empty or failed.</summary>
+    /// <summary>The last successfully rendered root UIElement.</summary>
     public UIElement? DesignRoot { get; private set; }
 
-    /// <summary>The currently selected element (highlighted with SelectionAdorner).</summary>
+    /// <summary>The currently selected element.</summary>
     public UIElement? SelectedElement { get; private set; }
+
+    /// <summary>XElement in the source document corresponding to the selected element.</summary>
+    public System.Xml.Linq.XElement? SelectedXElement { get; private set; }
+
+    /// <summary>UID of the selected element (-1 if none).</summary>
+    public int SelectedElementUid { get; private set; } = -1;
 
     /// <summary>Fired after each render attempt. Null = success, non-null = error message.</summary>
     public event EventHandler<string?>? RenderError;
@@ -86,30 +111,26 @@ public sealed class DesignCanvas : Border
     /// <summary>Fired when the selected element changes.</summary>
     public event EventHandler? SelectedElementChanged;
 
+    /// <summary>
+    /// Wires the DesignInteractionService and enables interactive adorners.
+    /// </summary>
+    public void EnableInteraction(DesignInteractionService service)
+    {
+        _interaction     = service;
+        InteractionEnabled = true;
+    }
+
     /// <summary>Programmatically selects an element and places the adorner.</summary>
     public void SelectElement(UIElement? el)
     {
-        // Remove existing adorner.
-        if (SelectedElement is not null)
-        {
-            var oldLayer = AdornerLayer.GetAdornerLayer(SelectedElement);
-            if (oldLayer is not null)
-            {
-                var existing = oldLayer.GetAdorners(SelectedElement);
-                if (existing is not null)
-                    foreach (var a in existing.OfType<SelectionAdorner>())
-                        oldLayer.Remove(a);
-            }
-        }
+        RemoveSelectionAdorner();
 
-        SelectedElement = el;
+        SelectedElement    = el;
+        SelectedXElement   = el is not null ? _mapper.GetXElement(el) : null;
+        SelectedElementUid = el is not null ? _mapper.GetUid(el) : -1;
 
-        // Place new adorner.
         if (el is not null)
-        {
-            var layer = AdornerLayer.GetAdornerLayer(el);
-            layer?.Add(new SelectionAdorner(el));
-        }
+            PlaceSelectionAdorner(el);
 
         SelectedElementChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -132,26 +153,29 @@ public sealed class DesignCanvas : Border
 
         try
         {
-            var prepared = EnsureWpfNamespaces(SanitizeForPreview(xaml));
-            var result   = XamlReader.Parse(prepared);
+            var sanitized = SanitizeForPreview(xaml);
+
+            // Inject UIDs so the element mapper can link UIElements → XElements.
+            var withUids  = _syncService.InjectUids(sanitized, out var uidMap);
+            var prepared  = EnsureWpfNamespaces(withUids);
+            var result    = XamlReader.Parse(prepared);
 
             if (result is UIElement uiResult)
             {
                 _presenter.Content = uiResult;
                 DesignRoot         = uiResult;
                 SelectElement(null);
-                RenderError?.Invoke(this, null);
-            }
-            else if (result is FrameworkElement fe)
-            {
-                _presenter.Content = fe;
-                DesignRoot         = fe;
-                SelectElement(null);
+
+                // Build the UIElement → XElement map after the element is in the tree.
+                Dispatcher.InvokeAsync(() =>
+                {
+                    _mapper.Build(uidMap, uiResult);
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
+
                 RenderError?.Invoke(this, null);
             }
             else
             {
-                // Non-visual result (e.g. ResourceDictionary) — show type name.
                 _presenter.Content = new TextBlock
                 {
                     Text       = $"[{result?.GetType().Name ?? "null"} — non-visual root]",
@@ -170,29 +194,62 @@ public sealed class DesignCanvas : Border
         }
     }
 
+    // ── Adorner management ────────────────────────────────────────────────────
+
+    private void RemoveSelectionAdorner()
+    {
+        if (SelectedElement is null) return;
+
+        var layer = AdornerLayer.GetAdornerLayer(SelectedElement);
+        if (layer is null) return;
+
+        var adorners = layer.GetAdorners(SelectedElement);
+        if (adorners is null) return;
+
+        foreach (var a in adorners)
+        {
+            if (a is SelectionAdorner or ResizeAdorner)
+                layer.Remove(a);
+        }
+    }
+
+    private void PlaceSelectionAdorner(UIElement el)
+    {
+        var layer = AdornerLayer.GetAdornerLayer(el);
+        if (layer is null) return;
+
+        if (InteractionEnabled && _interaction is not null)
+        {
+            int uid = _mapper.GetUid(el);
+            layer.Add(new ResizeAdorner(el, _interaction, uid));
+        }
+        else
+        {
+            layer.Add(new SelectionAdorner(el));
+        }
+    }
+
     // ── Mouse selection ───────────────────────────────────────────────────────
 
     private void OnCanvasMouseDown(object sender, MouseButtonEventArgs e)
     {
-        // Walk up from the hit-tested element to find the first direct child
-        // of the rendered root (or the root itself).
         if (DesignRoot is null) return;
 
         var hit = e.OriginalSource as DependencyObject;
         if (hit is null) return;
 
-        // Find the topmost UIElement in the visual tree that is a child of _presenter.
+        // Don't reselect when clicking on resize/move handles.
+        if (hit is System.Windows.Controls.Primitives.Thumb) return;
+
         var target = FindSelectableElement(hit);
         SelectElement(target);
-        e.Handled = false; // Let events propagate normally.
+        e.Handled = false;
     }
 
     private UIElement? FindSelectableElement(DependencyObject? source)
     {
         if (source is null) return null;
 
-        // Walk up the visual tree until we find a UIElement whose parent
-        // is the ContentPresenter or the design root.
         var current = source as UIElement;
         while (current is not null)
         {
@@ -207,91 +264,58 @@ public sealed class DesignCanvas : Border
 
     // ── XAML preprocessing ────────────────────────────────────────────────────
 
-    // Window-specific attributes and events that are meaningless (or forbidden) inside a Border.
     private static readonly string[] WindowOnlyAttributes =
     [
-        // Properties
         "Title", "Icon", "WindowStyle", "WindowStartupLocation", "WindowState",
         "ResizeMode", "ShowInTaskbar", "Topmost", "AllowsTransparency",
         "SizeToContent", "ShowActivated",
-        // Events (Window-only — not present on Border/FrameworkElement)
         "Closed", "Closing", "Activated", "Deactivated",
         "StateChanged", "LocationChanged", "ContentRendered", "SourceInitialized"
     ];
 
-    /// <summary>
-    /// Strips code-behind directives (x:Class, x:Subclass) and replaces a Window
-    /// root element with a Border so the XAML can be hosted in a ContentPresenter
-    /// without requiring the code-behind type to be present in the AppDomain.
-    /// </summary>
     private static string SanitizeForPreview(string xaml)
     {
-        // Remove x:Class, x:Subclass, x:FieldModifier — all require code-behind resolution.
         xaml = Regex.Replace(xaml, @"\s+x:(Class|Subclass|FieldModifier)=""[^""]*""", string.Empty);
 
-        // Strip event handler attributes anywhere in the document.
-        // XamlReader.Parse has no code-behind context so any attribute whose value is a
-        // C# method reference (no curly braces, no dots, looks like a method name) will
-        // cause "Cannot bind to target method" / "Unknown member" exceptions.
-        // Heuristic: plain identifier values that start with "On" or contain an underscore
-        // are virtually always event handlers; enum/property values never follow that pattern.
         xaml = Regex.Replace(
             xaml,
             @"\s+\w+=""(On[A-Za-z][A-Za-z0-9_]*|[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+)""",
             string.Empty);
 
-        // Strip Window-shell property elements that internally cast to Window at runtime.
-        // e.g. <WindowChrome.WindowChrome>...</WindowChrome.WindowChrome>,
-        //      <TaskbarItemInfo.Overlay>...</TaskbarItemInfo.Overlay>
-        // After Window→Border replacement these cause InvalidCastException in WPF internals.
         xaml = Regex.Replace(
             xaml,
             @"<WindowChrome\.\w+>[\s\S]*?</WindowChrome\.\w+>",
             string.Empty,
             RegexOptions.Singleline);
+
         xaml = Regex.Replace(
             xaml,
             @"<TaskbarItemInfo\.\w+>[\s\S]*?</TaskbarItemInfo\.\w+>",
             string.Empty,
             RegexOptions.Singleline);
 
-        // Replace a Window root with Border (Window cannot be hosted in a ContentPresenter).
         xaml = ReplaceWindowRoot(xaml);
 
         return xaml;
     }
 
-    /// <summary>
-    /// Replaces &lt;Window …&gt;…&lt;/Window&gt; at the root with &lt;Border …&gt;…&lt;/Border&gt;,
-    /// removing Window-only attributes that would cause parse errors on Border.
-    /// </summary>
     private static string ReplaceWindowRoot(string xaml)
     {
-        // Match the opening Window tag (self-closing or not).
         var openTag = Regex.Match(xaml, @"<Window(\s[^>]*)?>", RegexOptions.Singleline);
         if (!openTag.Success) return xaml;
 
         var attrs = openTag.Groups[1].Value;
 
-        // Remove Window-only attributes.
         foreach (var attr in WindowOnlyAttributes)
             attrs = Regex.Replace(attrs, $@"\s+{attr}=""[^""]*""", string.Empty);
 
-        // Rebuild the opening tag as Border.
         var newOpen = $"<Border{attrs}>";
         xaml = xaml[..openTag.Index] + newOpen + xaml[(openTag.Index + openTag.Length)..];
-
-        // Replace closing tag (simple string replace is safe — XML is well-formed).
         xaml = xaml.Replace("</Window>", "</Border>");
 
         return xaml;
     }
 
-    /// <summary>
-    /// Pre-injects the standard WPF xmlns declarations if the XAML fragment
-    /// does not already declare them. Prevents trivial "namespace not found"
-    /// errors when the user is editing a partial snippet.
-    /// </summary>
     private static string EnsureWpfNamespaces(string xaml)
     {
         const string wpfNs = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
@@ -300,7 +324,6 @@ public sealed class DesignCanvas : Border
         if (xaml.Contains(wpfNs) && xaml.Contains(xNs))
             return xaml;
 
-        // Find the first tag opening so we can inject into it.
         int tagStart = xaml.IndexOf('<');
         if (tagStart < 0) return xaml;
 
@@ -320,7 +343,6 @@ public sealed class DesignCanvas : Border
 
     private static int FindAttributeInsertPosition(string xaml, int tagStart)
     {
-        // Skip the tag name to find the end of the element name.
         int i = tagStart + 1;
         while (i < xaml.Length && !char.IsWhiteSpace(xaml[i]) && xaml[i] != '>' && xaml[i] != '/')
             i++;

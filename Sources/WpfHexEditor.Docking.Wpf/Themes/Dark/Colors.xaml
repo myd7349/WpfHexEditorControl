@@ -389,4 +389,28 @@
     <SolidColorBrush x:Key="XD_PropertyValueForeground"          Color="#D4D4D4"/>
     <SolidColorBrush x:Key="XD_PropertyGroupHeaderBackground"    Color="#252526"/>
     <SolidColorBrush x:Key="XD_ToolbarViewToggleActiveBrush"     Color="#007ACC"/>
+    <!-- XD Phase 1-10 extended tokens (Dark) -->
+    <SolidColorBrush x:Key="XD_MoveAdornerBrush"                Color="#007ACC"/>
+    <SolidColorBrush x:Key="XD_ResizeHandleFillBrush"           Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="XD_ResizeHandleStrokeBrush"         Color="#007ACC"/>
+    <SolidColorBrush x:Key="XD_RulerBackground"                 Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="XD_RulerTickBrush"                  Color="#8C8C8C"/>
+    <SolidColorBrush x:Key="XD_RulerCursorBrush"                Color="#FF4500"/>
+    <SolidColorBrush x:Key="XD_SnapGuideBrush"                  Color="#FF4500"/>
+    <SolidColorBrush x:Key="XD_ToolboxBackground"               Color="#252526"/>
+    <SolidColorBrush x:Key="XD_ToolboxItemHover"                Color="#2D2D30"/>
+    <SolidColorBrush x:Key="XD_ToolboxCategoryHeader"           Color="#1C1C1E"/>
+    <SolidColorBrush x:Key="XD_ColorSwatchBorder"               Color="#3F3F46"/>
+    <SolidColorBrush x:Key="XD_GradientStopHandle"              Color="#569CD6"/>
+    <SolidColorBrush x:Key="XD_BindingBadgeBackground"          Color="#1A3A5C"/>
+    <SolidColorBrush x:Key="XD_TimelineBackground"              Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="XD_KeyframeThumbBrush"              Color="#FF8C00"/>
+
+    <!-- History Panel (XD_History*) -->
+    <SolidColorBrush x:Key="XD_HistoryPanelBackground"          Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="XD_HistoryAppliedForeground"        Color="#D4D4D4"/>
+    <SolidColorBrush x:Key="XD_HistoryUndoneForeground"         Color="#6A6A6A"/>
+    <SolidColorBrush x:Key="XD_HistoryCurrentMarkerBrush"       Color="#007ACC"/>
+    <SolidColorBrush x:Key="XD_HistoryEntryHoverBrush"          Color="#2A2A2A"/>
+    <SolidColorBrush x:Key="XD_HistoryIconBrush"                Color="#9CDCFE"/>
 </ResourceDictionary>

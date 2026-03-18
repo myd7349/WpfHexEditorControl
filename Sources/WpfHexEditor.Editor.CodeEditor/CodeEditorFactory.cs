@@ -91,7 +91,11 @@ public sealed class CodeEditorFactory : IEditorFactory
             isItalic: rule.Kind is SyntaxTokenKind.Comment,
             kind:     rule.Kind));
 
-        return new SyntaxRuleHighlighter(rules, language.Name);
+        return new SyntaxRuleHighlighter(
+            rules,
+            language.Name,
+            language.BlockCommentStart,
+            language.BlockCommentEnd);
     }
 
     private static SnippetManager BuildSnippetManager(LanguageDefinition language)

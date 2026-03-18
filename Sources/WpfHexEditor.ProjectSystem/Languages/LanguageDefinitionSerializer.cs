@@ -165,6 +165,8 @@ public static class LanguageDefinitionSerializer
             }).ToArray() ?? [],
             FoldingStrategy   = dto.FoldingStrategy,
             LineCommentPrefix = dto.LineCommentPrefix,
+            BlockCommentStart = dto.BlockCommentStart,
+            BlockCommentEnd   = dto.BlockCommentEnd,
             IsDefault         = dto.IsDefault,
         };
     }
@@ -193,7 +195,9 @@ public static class LanguageDefinitionSerializer
         public SyntaxRuleDto[]?      SyntaxRules       { get; set; }
         public SnippetDefinitionDto[]? Snippets         { get; set; }
         public FoldingStrategyKind   FoldingStrategy   { get; set; } = FoldingStrategyKind.Brace;
-        public string?               LineCommentPrefix { get; set; }
+        public string?               LineCommentPrefix   { get; set; }
+        public string?               BlockCommentStart   { get; set; }
+        public string?               BlockCommentEnd     { get; set; }
         /// <summary>
         /// When true, the registry will call SetProjectDefault() automatically for all
         /// extensions declared in the file, making this the preferred language.
