@@ -5461,9 +5461,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (ShowQuickInfo && _hoverQuickInfoService is not null && !_isSelecting)
                     HandleQuickInfoHover(hoverPos, e.GetPosition(this));
 
-                // Ctrl+hover symbol underline — only for languages that declare navigation support.
-                // Force Hand cursor for the full duration of Ctrl held — signals navigability.
-                if (_ctrlDown && Language?.EnableCtrlClickNavigation == true)
+                // Ctrl+hover symbol underline.
+                // Enabled when: (a) no LanguageDefinition is registered for this file type
+                // (Language == null → backward-compatible default ON), or (b) the language
+                // explicitly declares EnableCtrlClickNavigation = true.
+                // Languages that set EnableCtrlClickNavigation = false (e.g. JSON, YAML, HTML)
+                // suppress the hand-cursor and block navigation.
+                if (_ctrlDown && (Language is null || Language.EnableCtrlClickNavigation))
                 {
                     HandleCtrlHover(hoverPos);
                     if (!overLens && !urlZone.HasValue)
