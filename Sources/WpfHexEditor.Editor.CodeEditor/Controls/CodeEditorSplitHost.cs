@@ -350,7 +350,8 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IOpenableDocume
 
     async Task IOpenableDocument.OpenAsync(string filePath, CancellationToken ct)
     {
-        // Lazy highlighter resolution before loading so the first render is already coloured.
+        // Lazy highlighter + language definition resolution before loading
+        // so the first render is already coloured and feature gates are correct.
         if (_primaryEditor.ExternalHighlighter is null)
         {
             var language = LanguageRegistry.Instance.GetLanguageForFile(filePath);
@@ -359,6 +360,12 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IOpenableDocume
                 var highlighter = CodeEditorFactory.BuildHighlighter(language);
                 _primaryEditor.ExternalHighlighter   = highlighter;
                 _secondaryEditor.ExternalHighlighter = highlighter;
+
+                // Propagate the LanguageDefinition so per-language feature gates
+                // (CodeLens, Ctrl+Click navigation) apply even when the editor is
+                // created outside CodeEditorFactory (e.g. XamlDesignerSplitHost).
+                _primaryEditor.Language   = language;
+                _secondaryEditor.Language = language;
             }
         }
 
