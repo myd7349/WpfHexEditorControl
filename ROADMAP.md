@@ -199,8 +199,8 @@ Cette section présente les concepts VS-level de l’IDE, en se concentrant uniq
 
 | Feature | Version / Release |
 |---------|-------------------|
-| **Ctrl+Click Navigation** — workspace cross-file declaration scan, multi-location `ReferencesPopup`, OmniSharp `MetadataUri` passthrough, external symbol decompilation via `AssemblyAnalysisEngine` + `CSharpSkeletonEmitter` → read-only Code Editor tab | [0.5.3] — 2026-03-17 |
-| **Search highlight fix** — `ComputeVisualX` for tab-aware X alignment + `_lineYLookup` for CodeLens-aware Y in `RenderFindResults` | [0.5.3] — 2026-03-17 |
+| **Ctrl+Click Navigation** — workspace cross-file declaration scan, multi-location `ReferencesPopup`, OmniSharp `MetadataUri` passthrough, external symbol decompilation via `AssemblyAnalysisEngine` + `CSharpSkeletonEmitter` → read-only Code Editor tab | [0.5.8] — 2026-03-17 |
+| **Search highlight fix** — `ComputeVisualX` for tab-aware X alignment + `_lineYLookup` for CodeLens-aware Y in `RenderFindResults` | [0.5.8] — 2026-03-17 |
 | **Code Editor Navigation Bar** — VS-like types/members combos, Segoe MDL2 icons, `CaretMoved` event, auto-scroll to declaration | [0.5.2] — 2026-03-16 |
 | **Assembly Explorer Expansion** — ILSpy backend, VB.NET, CFG Canvas, Assembly Diff, Assembly Search, XRef View, Decompile Cache, options page | [0.5.2] — 2026-03-16 |
 | **NuGet support** — `NuGetV3Client`, `CsprojPackageWriter`, `NuGetPackageViewModel` in ProjectSystem | [0.5.2] — 2026-03-16 |

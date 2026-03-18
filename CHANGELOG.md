@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
-## [0.5.3] — 2026-03-17 — Ctrl+Click Navigation, Search Highlight Fix & CodeLens Improvements
+## [0.5.8] — 2026-03-17 — Ctrl+Click Navigation, Search Highlight Fix & CodeLens Improvements
 
 ### ✨ Added — Code Editor: Ctrl+Click Go-to-Definition
 
