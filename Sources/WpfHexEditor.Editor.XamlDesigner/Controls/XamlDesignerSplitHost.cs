@@ -98,6 +98,7 @@ public sealed class XamlDesignerSplitHost : Grid,
     private Grid      _designPaneGrid    = null!;
     private ScrollBar _hScrollBar        = null!;
     private ScrollBar _vScrollBar        = null!;
+    private Rectangle _scrollCorner      = null!;
     private bool      _isSyncingScrollBars;
     // Set by ApplySplitLayout(); consumed by _zoomPan.SizeChanged to re-fit at correct size.
     private bool      _pendingFitToContent;
@@ -294,14 +295,16 @@ public sealed class XamlDesignerSplitHost : Grid,
         Grid.SetRow(_vScrollBar, 0); Grid.SetColumn(_vScrollBar, 1);
 
         // Corner rectangle filling the gap where both scrollbars meet.
-        var scrollCorner = new Rectangle { Width = SystemParameters.VerticalScrollBarWidth };
-        scrollCorner.SetResourceReference(Rectangle.FillProperty, "DockSplitterBrush");
-        Grid.SetRow(scrollCorner, 1); Grid.SetColumn(scrollCorner, 1);
+        // Saved as a field so UpdateScrollBars() can collapse it when scrollbars are hidden,
+        // preventing its explicit Width (17px) from keeping Col 1 at 17px when not needed.
+        _scrollCorner = new Rectangle { Width = SystemParameters.VerticalScrollBarWidth };
+        _scrollCorner.SetResourceReference(Rectangle.FillProperty, "DockSplitterBrush");
+        Grid.SetRow(_scrollCorner, 1); Grid.SetColumn(_scrollCorner, 1);
 
         _designPaneGrid.Children.Add(_zoomPan);
         _designPaneGrid.Children.Add(_hScrollBar);
         _designPaneGrid.Children.Add(_vScrollBar);
-        _designPaneGrid.Children.Add(scrollCorner);
+        _designPaneGrid.Children.Add(_scrollCorner);
 
         // Scrollbar → canvas: value 0 = content at +ScrollExtraMargin (left/top blank margin visible).
         _hScrollBar.ValueChanged += (_, _) =>
@@ -1088,8 +1091,12 @@ public sealed class XamlDesignerSplitHost : Grid,
         // its child is Collapsed, giving _zoomPan the full design pane space.
         bool needsH = cw > vw + 0.5;
         bool needsV = ch > vh + 0.5;
-        _hScrollBar.Visibility = needsH ? Visibility.Visible : Visibility.Collapsed;
-        _vScrollBar.Visibility = needsV ? Visibility.Visible : Visibility.Collapsed;
+        _hScrollBar.Visibility  = needsH ? Visibility.Visible : Visibility.Collapsed;
+        _vScrollBar.Visibility  = needsV ? Visibility.Visible : Visibility.Collapsed;
+        // Collapse scrollCorner when vertical scrollbar is hidden: its explicit Width (17px)
+        // would otherwise keep Col 1 at 17px even with _vScrollBar collapsed, stealing
+        // space from _zoomPan and creating a dark 17px strip on the right of the canvas.
+        _scrollCorner.Visibility = (needsH && needsV) ? Visibility.Visible : Visibility.Collapsed;
 
         _isSyncingScrollBars = true;
         try

@@ -81,7 +81,10 @@ public sealed class DesignCanvas : Border
 
     public DesignCanvas()
     {
-        SetResourceReference(BackgroundProperty, "XD_CanvasBackground");
+        // Transparent background: lets the IDE panel background show through instead of
+        // the dark XD_CanvasBackground, which was visually covering transparent XAML roots
+        // (Grid, UserControl, StackPanel) and making them appear "hidden behind" a dark layer.
+        Background = Brushes.Transparent;
         SetResourceReference(BorderBrushProperty, "XD_CanvasBorderBrush");
         BorderThickness = new Thickness(1);
 
