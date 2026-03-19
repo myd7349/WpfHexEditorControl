@@ -1,12 +1,12 @@
 // ==========================================================
 // Project: WpfHexEditor.Editor.CodeEditor
-// File: Services/CodeLensService.cs
+// File: Services/InlineHintsService.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-17
 // Description:
 //     Background service that builds a 0-based-line → reference-count map
-//     for CodeLens hint rendering.
+//     for InlineHints hint rendering.
 //     Uses CodeStructureParser to locate declaration lines, then performs
 //     a whole-word scan of all document lines to count usages.
 //
@@ -16,7 +16,7 @@
 //     Lines snapshot is taken on the UI thread (ObservableCollection is
 //     not thread-safe); actual counting runs on a Task.Run thread.
 //     Result is marshalled back to the WPF Dispatcher before firing
-//     LensDataRefreshed so callers can safely update UI state.
+//     HintsDataRefreshed so callers can safely update UI state.
 // ==========================================================
 
 using System;
@@ -33,7 +33,7 @@ using WpfHexEditor.Editor.CodeEditor.NavigationBar;
 
 namespace WpfHexEditor.Editor.CodeEditor.Services;
 
-internal sealed class CodeLensService : IDisposable
+internal sealed class InlineHintsService : IDisposable
 {
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -46,17 +46,17 @@ internal sealed class CodeLensService : IDisposable
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Current lens data: 0-based line index → (reference count, symbol name, MDL2 icon glyph, icon brush, symbol kind).
+    /// Current hints data: 0-based line index → (reference count, symbol name, MDL2 icon glyph, icon brush, symbol kind).
     /// </summary>
-    public IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, Brush IconBrush, CodeLensSymbolKinds Kind)> LensData
-        { get; private set; } = new Dictionary<int, (int, string, string, Brush, CodeLensSymbolKinds)>();
+    public IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, Brush IconBrush, InlineHintsSymbolKinds Kind)> HintsData
+        { get; private set; } = new Dictionary<int, (int, string, string, Brush, InlineHintsSymbolKinds)>();
 
-    /// <summary>Raised on the UI thread when <see cref="LensData"/> has been refreshed.</summary>
-    public event EventHandler? LensDataRefreshed;
+    /// <summary>Raised on the UI thread when <see cref="HintsData"/> has been refreshed.</summary>
+    public event EventHandler? HintsDataRefreshed;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    internal CodeLensService()
+    internal InlineHintsService()
     {
         _debounce       = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
         _debounce.Tick += OnDebounceTick;
@@ -94,7 +94,7 @@ internal sealed class CodeLensService : IDisposable
 
         _currentFilePath = null;
         CancelPending();
-        LensData = new Dictionary<int, (int, string, string, Brush, CodeLensSymbolKinds)>();
+        HintsData = new Dictionary<int, (int, string, string, Brush, InlineHintsSymbolKinds)>();
     }
 
     public void Dispose()
@@ -149,14 +149,14 @@ internal sealed class CodeLensService : IDisposable
         try
         {
             // ConfigureAwait(true) resumes on the UI (Dispatcher) thread so we can
-            // safely update LensData and fire the event without an Invoke call.
-            var data = await Task.Run(() => ComputeLensData(lineSnapshot, filePath, ct), ct)
+            // safely update HintsData and fire the event without an Invoke call.
+            var data = await Task.Run(() => ComputeHintsData(lineSnapshot, filePath, ct), ct)
                                  .ConfigureAwait(true);
 
             if (ct.IsCancellationRequested) return;
 
-            LensData = data;
-            LensDataRefreshed?.Invoke(this, EventArgs.Empty);
+            HintsData = data;
+            HintsDataRefreshed?.Invoke(this, EventArgs.Empty);
         }
         catch (OperationCanceledException) { /* expected on rapid editing */ }
     }
@@ -167,22 +167,22 @@ internal sealed class CodeLensService : IDisposable
     /// file extension via <see cref="WorkspaceFileCache"/>.
     /// Must not touch any WPF objects — only BCL + snapshotted CodeLine data.
     /// </summary>
-    private static IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, Brush IconBrush, CodeLensSymbolKinds Kind)> ComputeLensData(
+    private static IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, Brush IconBrush, InlineHintsSymbolKinds Kind)> ComputeHintsData(
         IReadOnlyList<CodeLine> lines, string? currentFilePath, CancellationToken ct)
     {
         var snapshot = CodeStructureParser.Parse(lines);
 
         // Collect declaration items — Types + Members; skip Namespaces (too broad).
         var items = snapshot.Types.Concat(snapshot.Members).ToList();
-        if (items.Count == 0) return new Dictionary<int, (int, string, string, Brush, CodeLensSymbolKinds)>();
+        if (items.Count == 0) return new Dictionary<int, (int, string, string, Brush, InlineHintsSymbolKinds)>();
 
-        // Gather workspace files of matching extension once per ComputeLensData call.
+        // Gather workspace files of matching extension once per ComputeHintsData call.
         IReadOnlyList<string> workspacePaths = [];
         var ext = Path.GetExtension(currentFilePath ?? string.Empty);
         if (!string.IsNullOrEmpty(ext))
             workspacePaths = WorkspaceFileCache.GetPathsForExtensions([ext]);
 
-        var result = new Dictionary<int, (int, string, string, Brush, CodeLensSymbolKinds)>(items.Count);
+        var result = new Dictionary<int, (int, string, string, Brush, InlineHintsSymbolKinds)>(items.Count);
 
         foreach (var item in items)
         {
@@ -215,9 +215,9 @@ internal sealed class CodeLensService : IDisposable
                 count += CountWholeWordOccurrencesInText(wLines, symbol, ct);
             }
 
-            // Skip 0-count entries to avoid cluttering the lens layer.
+            // Skip 0-count entries to avoid cluttering the hints layer.
             if (count > 0)
-                result[item.Line] = (count, item.Name, item.IconGlyph, item.IconBrush, MapToCodeLensKind(item));
+                result[item.Line] = (count, item.Name, item.IconGlyph, item.IconBrush, MapToInlineHintsKind(item));
         }
 
         return result;
@@ -225,25 +225,25 @@ internal sealed class CodeLensService : IDisposable
 
     /// <summary>
     /// Maps a <see cref="NavigationBarItem"/>'s Kind/TypeKind/MemberKind to the
-    /// corresponding <see cref="CodeLensSymbolKinds"/> flag for render filtering.
+    /// corresponding <see cref="InlineHintsSymbolKinds"/> flag for render filtering.
     /// </summary>
-    private static CodeLensSymbolKinds MapToCodeLensKind(NavigationBarItem item) =>
+    private static InlineHintsSymbolKinds MapToInlineHintsKind(NavigationBarItem item) =>
         (item.Kind, item.TypeKind, item.MemberKind) switch
         {
-            (NavigationItemKind.Type,   TypeKind.Class,       _)                    => CodeLensSymbolKinds.Class,
-            (NavigationItemKind.Type,   TypeKind.Interface,   _)                    => CodeLensSymbolKinds.Interface,
-            (NavigationItemKind.Type,   TypeKind.Struct,      _)                    => CodeLensSymbolKinds.Struct,
-            (NavigationItemKind.Type,   TypeKind.Enum,        _)                    => CodeLensSymbolKinds.Enum,
-            (NavigationItemKind.Type,   TypeKind.Record,      _)                    => CodeLensSymbolKinds.Record,
-            (NavigationItemKind.Type,   TypeKind.Delegate,    _)                    => CodeLensSymbolKinds.Delegate,
-            (NavigationItemKind.Member, _,                    MemberKind.Method)    => CodeLensSymbolKinds.Method,
-            (NavigationItemKind.Member, _,                    MemberKind.Constructor) => CodeLensSymbolKinds.Constructor,
-            (NavigationItemKind.Member, _,                    MemberKind.Property)  => CodeLensSymbolKinds.Property,
-            (NavigationItemKind.Member, _,                    MemberKind.Indexer)   => CodeLensSymbolKinds.Indexer,
-            (NavigationItemKind.Member, _,                    MemberKind.Field)     => CodeLensSymbolKinds.Field,
-            (NavigationItemKind.Member, _,                    MemberKind.Event)     => CodeLensSymbolKinds.Event,
+            (NavigationItemKind.Type,   TypeKind.Class,       _)                    => InlineHintsSymbolKinds.Class,
+            (NavigationItemKind.Type,   TypeKind.Interface,   _)                    => InlineHintsSymbolKinds.Interface,
+            (NavigationItemKind.Type,   TypeKind.Struct,      _)                    => InlineHintsSymbolKinds.Struct,
+            (NavigationItemKind.Type,   TypeKind.Enum,        _)                    => InlineHintsSymbolKinds.Enum,
+            (NavigationItemKind.Type,   TypeKind.Record,      _)                    => InlineHintsSymbolKinds.Record,
+            (NavigationItemKind.Type,   TypeKind.Delegate,    _)                    => InlineHintsSymbolKinds.Delegate,
+            (NavigationItemKind.Member, _,                    MemberKind.Method)    => InlineHintsSymbolKinds.Method,
+            (NavigationItemKind.Member, _,                    MemberKind.Constructor) => InlineHintsSymbolKinds.Constructor,
+            (NavigationItemKind.Member, _,                    MemberKind.Property)  => InlineHintsSymbolKinds.Property,
+            (NavigationItemKind.Member, _,                    MemberKind.Indexer)   => InlineHintsSymbolKinds.Indexer,
+            (NavigationItemKind.Member, _,                    MemberKind.Field)     => InlineHintsSymbolKinds.Field,
+            (NavigationItemKind.Member, _,                    MemberKind.Event)     => InlineHintsSymbolKinds.Event,
             // Unknown/Namespace fall-through: include in All so they are never silently hidden.
-            _                                                                       => CodeLensSymbolKinds.All,
+            _                                                                       => InlineHintsSymbolKinds.All,
         };
 
     /// <summary>Counts whole-word occurrences of <paramref name="symbol"/> in a

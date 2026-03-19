@@ -1,12 +1,12 @@
 // ==========================================================
 // Project: WpfHexEditor.Editor.Core
-// File: CodeLensSymbolKinds.cs
+// File: InlineHintsSymbolKinds.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-18
 // Description:
 //     Flags enum for filtering which symbol kinds display
-//     inline CodeLens reference-count hints in the CodeEditor.
+//     inline reference-count hints in the CodeEditor.
 //     Shared between WpfHexEditor.Editor.CodeEditor (rendering)
 //     and WpfHexEditor.Options (settings page).
 //
@@ -20,11 +20,11 @@
 namespace WpfHexEditor.Editor.Core;
 
 /// <summary>
-/// Bitmask controlling which symbol kinds show CodeLens reference-count hints.
+/// Bitmask controlling which symbol kinds show inline reference-count hints.
 /// All kinds are enabled by default (<see cref="All"/> = 4095).
 /// </summary>
 [Flags]
-public enum CodeLensSymbolKinds
+public enum InlineHintsSymbolKinds
 {
     /// <summary>No hints displayed.</summary>
     None        = 0,

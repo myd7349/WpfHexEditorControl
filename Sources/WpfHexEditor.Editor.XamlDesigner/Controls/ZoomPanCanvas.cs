@@ -68,6 +68,18 @@ public sealed class ZoomPanCanvas : ContentControl
 
     public ZoomPanCanvas()
     {
+        // HorizontalContentAlignment = Left prevents ContentPresenter from arranging
+        // the content in a viewport-sized rect (the default Stretch behaviour).
+        // With Stretch, WPF's NeedsClipBounds fires whenever zoom > (viewport / contentWidth):
+        //   finalArrange passed to ArrangeCore = viewportWidth / zoom  < content.Width
+        //   → WPF sets _layoutClip = Rect(viewportWidth/zoom, viewportHeight/zoom)
+        //   → content is silently clipped in its own coordinate space to the viewport size,
+        //     so zooming in never reveals more content — the right/bottom is always black.
+        // With Left/Top, ContentPresenter gives content its DesiredSize as the arrangement
+        // rect → finalArrange = content.Width/Height → NeedsClipBounds = false → no clip.
+        HorizontalContentAlignment = HorizontalAlignment.Left;
+        VerticalContentAlignment   = VerticalAlignment.Top;
+
         // ZoomPanCanvas itself has NO transform.
         // Transforms are applied to the content element in OnContentChanged:
         //   LayoutTransform = _scale   → content is measured/arranged at scaled size
