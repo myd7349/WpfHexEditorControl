@@ -182,8 +182,14 @@ public sealed class ZoomPanCanvas : ContentControl
             return;
         double cw = content.ActualWidth  * ZoomLevel;
         double ch = content.ActualHeight * ZoomLevel;
-        OffsetX = Math.Clamp(OffsetX, ActualWidth  - cw - ScrollExtraMargin, ScrollExtraMargin);
-        OffsetY = Math.Clamp(OffsetY, ActualHeight - ch - ScrollExtraMargin, ScrollExtraMargin);
+        // Guard min ≤ max: when content + both extra margins fit entirely inside the viewport,
+        // (ActualWidth - cw - ScrollExtraMargin) exceeds ScrollExtraMargin and Math.Clamp throws.
+        // Math.Min caps the lower bound so both converge to ScrollExtraMargin — content is anchored
+        // with exactly ScrollExtraMargin of blank space on the near side (VS-like at extreme zoom-out).
+        double xMin = Math.Min(ActualWidth  - cw - ScrollExtraMargin, ScrollExtraMargin);
+        double yMin = Math.Min(ActualHeight - ch - ScrollExtraMargin, ScrollExtraMargin);
+        OffsetX = Math.Clamp(OffsetX, xMin, ScrollExtraMargin);
+        OffsetY = Math.Clamp(OffsetY, yMin, ScrollExtraMargin);
     }
 
     /// <summary>Centers content in the viewport.</summary>

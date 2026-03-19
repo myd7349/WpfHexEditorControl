@@ -253,9 +253,10 @@ public sealed class DesignCanvas : Border
     {
         if (string.IsNullOrWhiteSpace(xaml))
         {
+            // Clear adorners BEFORE removing content so AdornerLayer is still reachable.
+            SelectElement(null);
             _presenter.Content = null;
             DesignRoot         = null;
-            SelectElement(null);
             RenderError?.Invoke(this, null);
             return;
         }
@@ -274,6 +275,8 @@ public sealed class DesignCanvas : Border
             var (xmlOk, xmlError) = TryValidateXml(prepared);
             if (!xmlOk)
             {
+                // Clear adorners BEFORE replacing content so AdornerLayer is still reachable.
+                SelectElement(null, suppressEvent: true);
                 DesignRoot         = null;
                 _presenter.Content = BuildRenderErrorCard(xmlError!);
                 RenderError?.Invoke(this, xmlError);
@@ -284,6 +287,16 @@ public sealed class DesignCanvas : Border
 
             if (result is UIElement uiResult)
             {
+                // Capture previous selection UID before clearing adorners.
+                var prevUid = SelectedElementUid;
+
+                // Clear adorners WHILE the OLD _presenter.Content is still connected to the
+                // AdornerDecorator visual tree.  If called after _presenter.Content = uiResult,
+                // SelectedElement is disconnected → AdornerLayer.GetAdornerLayer returns null →
+                // SelectionAdorner / ResizeAdorner stays in the layer as an orphan, and its Thumbs
+                // block all subsequent mouse events (hover, selection, zoom stability).
+                SelectElement(null, suppressEvent: true);   // silent: no caret movement
+
                 _presenter.Content = uiResult;
                 DesignRoot         = uiResult;
 
@@ -296,12 +309,6 @@ public sealed class DesignCanvas : Border
                     if (!double.IsNaN(rootFe.Width)  && rootFe.Width  > 0) Width  = rootFe.Width  + Extra;
                     if (!double.IsNaN(rootFe.Height) && rootFe.Height > 0) Height = rootFe.Height + Extra;
                 }
-
-                // Capture previous selection UID before clearing — used to silently restore
-                // it after the mapper rebuilds, so the canvas doesn't flash as "deselected"
-                // after every code edit → 500ms debounce → re-render cycle.
-                var prevUid = SelectedElementUid;
-                SelectElement(null, suppressEvent: true);   // silent: no caret movement
 
                 // Build the UIElement → XElement map after the element is in the tree,
                 // then attempt to restore the previously selected element by UID.
@@ -333,6 +340,8 @@ public sealed class DesignCanvas : Border
         }
         catch (Exception ex)
         {
+            // Clear adorners BEFORE replacing content so AdornerLayer is still reachable.
+            SelectElement(null, suppressEvent: true);
             DesignRoot         = null;
             _presenter.Content = BuildRenderErrorCard(ex.Message);
             RenderError?.Invoke(this, ex.Message);
