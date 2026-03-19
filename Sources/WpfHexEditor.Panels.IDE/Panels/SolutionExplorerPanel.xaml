@@ -995,6 +995,9 @@
                         </MenuItem.Icon>
                     </MenuItem>
 
+                    <!-- Plugin-contributed items are injected here at runtime -->
+                    <Separator x:Name="PluginMenuSeparator" Visibility="Collapsed"/>
+
                     <!-- Properties -->
                     <Separator x:Name="PropertiesSeparator"/>
                     <MenuItem x:Name="PropertiesMenuItem" Header="Properties" Click="OnProperties">

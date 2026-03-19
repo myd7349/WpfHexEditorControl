@@ -32,6 +32,7 @@
 // ==========================================================
 
 using System.IO;
+using System.Linq;
 using System.Windows;
 using WpfHexEditor.Editor.ClassDiagram.Controls;
 using WpfHexEditor.Editor.ClassDiagram.Core.Model;
@@ -200,6 +201,9 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
         // Register menu items (View / Tools).
         RegisterMenuItems(context);
+
+        // Register Solution Explorer context menu contributor.
+        context.UIRegistry.RegisterContextMenuContributor(Id, new ClassDiagramContextMenuContributor(this, context));
 
         // Subscribe to document focus changes so panels sync to the active diagram.
         context.FocusContext.FocusChanged += OnFocusChanged;
@@ -659,6 +663,97 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     }
 
     /// <summary>Returns true for C# (.cs) and VB.NET (.vb) source files.</summary>
+    private static bool IsSourceFile(string path) =>
+        path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".vb", StringComparison.OrdinalIgnoreCase);
+}
+
+// ==========================================================
+// ISolutionExplorerContextMenuContributor implementation
+// Injects "View Class Diagram" / "Generate Class Diagram…" items
+// into the Solution Explorer right-click context menu.
+// ==========================================================
+
+/// <summary>
+/// Contributes Class Diagram items to the Solution Explorer context menu
+/// for .cs/.vb files, project nodes, and solution nodes.
+/// </summary>
+file sealed class ClassDiagramContextMenuContributor : ISolutionExplorerContextMenuContributor
+{
+    private readonly ClassDiagramPlugin  _plugin;
+    private readonly IIDEHostContext     _context;
+
+    public ClassDiagramContextMenuContributor(ClassDiagramPlugin plugin, IIDEHostContext context)
+    {
+        _plugin  = plugin;
+        _context = context;
+    }
+
+    public IReadOnlyList<SolutionContextMenuItem> GetContextMenuItems(string nodeKind, string? nodePath)
+    {
+        var items = new List<SolutionContextMenuItem>();
+
+        switch (nodeKind)
+        {
+            case "File":
+                // Only for .cs / .vb source files
+                if (nodePath is null || !IsSourceFile(nodePath)) break;
+                items.Add(SolutionContextMenuItem.Separator());
+                items.Add(SolutionContextMenuItem.Item(
+                    header:   "View Class Diagram",
+                    command:  new RelayCommand(_ => _ = _plugin.OpenClassDiagramForFileAsync(nodePath!, _context)),
+                    iconGlyph: "\uE8EC"));
+                break;
+
+            case "Project":
+                if (nodePath is null) break;
+                var projectDir = Path.GetDirectoryName(nodePath);
+                if (projectDir is null) break;
+                items.Add(SolutionContextMenuItem.Separator());
+                items.Add(SolutionContextMenuItem.Item(
+                    header:   "Generate Class Diagram for Project",
+                    command:  new RelayCommand(_ => _ = _plugin.OpenClassDiagramForFolderAsync(projectDir, _context)),
+                    iconGlyph: "\uE8EC"));
+                break;
+
+            case "Solution":
+                if (!_context.SolutionExplorer.HasActiveSolution) break;
+                items.Add(SolutionContextMenuItem.Separator());
+                items.Add(SolutionContextMenuItem.Item(
+                    header:   "Generate Class Diagram for Solution",
+                    command:  new RelayCommand(_ => _ = OpenDiagramForSolutionAsync()),
+                    iconGlyph: "\uE8EC"));
+                break;
+        }
+
+        return items;
+    }
+
+    private async Task OpenDiagramForSolutionAsync()
+    {
+        var files = _context.SolutionExplorer.GetSolutionFilePaths()
+            .Where(f => IsSourceFile(f))
+            .ToArray();
+
+        if (files.Length == 0)
+        {
+            _context.Output.Info("[Class Diagram] No C# or VB.NET files found in the active solution.");
+            return;
+        }
+
+        _context.Output.Info($"[Class Diagram] Analyzing {files.Length} source files…");
+
+        var doc      = ClassDiagramSourceAnalyzer.AnalyzeFiles(files, new());
+        var dsl      = ClassDiagramSerializer.Serialize(doc);
+        var tempDir  = Path.Combine(Path.GetTempPath(), "WpfHexEditor", "ClassDiagrams");
+        Directory.CreateDirectory(tempDir);
+        var tmpPath  = Path.Combine(tempDir, "solution.classdiagram");
+
+        await File.WriteAllTextAsync(tmpPath, dsl, System.Text.Encoding.UTF8);
+        _context.DocumentHost.OpenDocument(tmpPath, "WpfHexEditor.Editor.ClassDiagram");
+        _context.Output.Info($"[Class Diagram] Generated diagram with {doc.Classes.Count} classes.");
+    }
+
     private static bool IsSourceFile(string path) =>
         path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
         path.EndsWith(".vb", StringComparison.OrdinalIgnoreCase);

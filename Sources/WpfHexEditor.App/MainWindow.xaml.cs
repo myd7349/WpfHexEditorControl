@@ -1251,6 +1251,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         };
         // Provide the editor registry so the panel can build the "Open With ›" submenu
         panel.SetEditorRegistry(_editorRegistry.GetAll());
+
+        // Wire plugin-contributed context menu items: queries UIRegistry on every right-click.
+        // Deferred lambda: _ideHostContext may not be set yet at panel creation time — that's fine,
+        // the lambda captures the field reference and resolves it lazily at menu-open time.
+        panel.SetContextMenuContributorResolver((nodeKind, nodePath) =>
+        {
+            var registry = _ideHostContext?.UIRegistry;
+            if (registry is null) return [];
+            var contributors = registry.GetContextMenuContributors();
+            if (contributors.Count == 0) return [];
+            var result = new List<WpfHexEditor.SDK.Contracts.SolutionContextMenuItem>();
+            foreach (var c in contributors)
+                result.AddRange(c.GetContextMenuItems(nodeKind, nodePath));
+            return result;
+        });
+
         // Sync current solution if already loaded
         panel.SetSolution(_solutionManager.CurrentSolution);
         return panel;
