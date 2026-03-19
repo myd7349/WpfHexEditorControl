@@ -202,7 +202,7 @@
                     <Grid>
                         <codeEditor:CodeEditor x:Name="CodeEditorControl"
                                               ShowLineNumbers="True"
-                                              EnableIntelliSense="True"
+                                              EnableSmartComplete="True"
                                               EnableValidation="True"
                                               EditorBackground="{DynamicResource TE_Background}"
                                               EditorForeground="{DynamicResource TE_Foreground}"

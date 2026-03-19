@@ -80,7 +80,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
     /// <summary>
     /// Floating popup listing "Find All References" results grouped by file.
-    /// The popup bottom is bottom-anchored: it grows upward from the CodeLens hint zone.
+    /// The popup bottom is bottom-anchored: it grows upward from the InlineHints hint zone.
     /// A header row shows the symbol's kind icon (Segoe MDL2) and name.
     /// </summary>
     internal sealed class ReferencesPopup : Popup

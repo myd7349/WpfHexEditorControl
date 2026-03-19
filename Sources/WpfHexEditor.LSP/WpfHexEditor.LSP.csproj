@@ -7,7 +7,7 @@
     =================
     Language-server-style analysis engine for WpfHexEditor.
     Provides: LanguageDefinitionManager (whlang), IncrementalParser, SymbolTable,
-    DiagnosticsEngine, BoostedIntelliSenseManager, RefactoringEngine,
+    DiagnosticsEngine, BoostedSmartCompleteManager, RefactoringEngine,
     LspSnippetsManager, and integration bridges for CodeEditor.
 -->
 
@@ -21,7 +21,7 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Description>Language-server-style analysis engine — LanguageDefinitionManager, IncrementalParser, SymbolTable, DiagnosticsEngine, BoostedIntelliSenseManager, RefactoringEngine.</Description>
+    <Description>Language-server-style analysis engine — LanguageDefinitionManager, IncrementalParser, SymbolTable, DiagnosticsEngine, BoostedSmartCompleteManager, RefactoringEngine.</Description>
     <Version>1.0.0</Version>
   </PropertyGroup>
 

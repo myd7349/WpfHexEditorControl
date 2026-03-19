@@ -1,19 +1,19 @@
 // ==========================================================
 // Project: WpfHexEditor.LSP
-// File: IntelliSense/WorkspaceSymbolTableManager.cs
+// File: SmartComplete/WorkspaceSymbolTableManager.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-16
 // Description:
 //     Aggregates all per-document SymbolTable instances and exposes a
-//     workspace-wide symbol query interface for BoostedIntelliSenseManager.
+//     workspace-wide symbol query interface for BoostedSmartCompleteManager.
 //     Subscribes to SymbolTableManager.SymbolTableUpdated to keep its
 //     cache fresh after each parse.
 // ==========================================================
 
 using WpfHexEditor.LSP.Symbols;
 
-namespace WpfHexEditor.LSP.IntelliSense;
+namespace WpfHexEditor.LSP.SmartComplete;
 
 /// <summary>
 /// Workspace-level symbol view that aggregates all document <see cref="SymbolTable"/> instances.

@@ -42,7 +42,7 @@ internal sealed class GutterControl : FrameworkElement
     private int                        _lastVisibleLine;
     private double                     _topMargin;
     private double                     _scrollFraction; // sub-pixel smooth-scroll offset from CodeEditor
-    private IReadOnlyDictionary<int, double> _lineYLookup = new Dictionary<int, double>(); // per-line Y from CodeEditor (includes CodeLens offsets)
+    private IReadOnlyDictionary<int, double> _lineYLookup = new Dictionary<int, double>(); // per-line Y from CodeEditor (includes InlineHints offsets)
 
     // Hit-test rectangles built during OnRender (line → rect).
     private readonly List<(Rect rect, int line)> _hitRects = new();
@@ -130,8 +130,8 @@ internal sealed class GutterControl : FrameworkElement
             if (startLine < _firstVisibleLine || startLine > _lastVisibleLine)
                 continue;
 
-            // Use the exact per-line Y from CodeEditor when available (accounts for CodeLens
-            // hint rows that add LensLineHeight pixels above the code text).  Fall back to
+            // Use the exact per-line Y from CodeEditor when available (accounts for InlineHints
+            // hint rows that add HintLineHeight pixels above the code text).  Fall back to
             // uniform layout when the lookup has no entry for this line.
             double y;
             if (!_lineYLookup.TryGetValue(startLine, out y))

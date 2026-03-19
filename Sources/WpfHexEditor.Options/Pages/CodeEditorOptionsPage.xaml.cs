@@ -60,7 +60,7 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
             TxtFontSize.Text   = ce.FontSize.ToString("F0");
             TxtIndentSize.Text = ce.IndentSize.ToString();
             CheckUseSpaces.IsChecked     = ce.UseSpaces;
-            CheckIntelliSense.IsChecked  = ce.ShowIntelliSense;
+            CheckSmartComplete.IsChecked  = ce.ShowSmartComplete;
             CheckLineNumbers.IsChecked   = ce.ShowLineNumbers;
             CheckHighlightLine.IsChecked   = ce.HighlightCurrentLine;
             CheckFoldDoubleClick.IsChecked = ce.FoldToggleOnDoubleClick;
@@ -91,7 +91,7 @@ public sealed partial class CodeEditorOptionsPage : UserControl, IOptionsPage
         ce.FontSize          = ParseDouble(TxtFontSize.Text, 13.0);
         ce.IndentSize        = ParseInt(TxtIndentSize.Text, 4);
         ce.UseSpaces         = CheckUseSpaces.IsChecked    == true;
-        ce.ShowIntelliSense  = CheckIntelliSense.IsChecked == true;
+        ce.ShowSmartComplete  = CheckSmartComplete.IsChecked == true;
         ce.ShowLineNumbers   = CheckLineNumbers.IsChecked  == true;
         ce.HighlightCurrentLine    = CheckHighlightLine.IsChecked   == true;
         ce.FoldToggleOnDoubleClick = CheckFoldDoubleClick.IsChecked == true;

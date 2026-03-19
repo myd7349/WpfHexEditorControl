@@ -1,19 +1,19 @@
 // ==========================================================
 // Project: WpfHexEditor.Options
-// File: CodeEditorCodeLensPage.xaml.cs
+// File: CodeEditorInlineHintsPage.xaml.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-18
 // Description:
-//     Options page for the CodeEditor CodeLens feature.
+//     Options page for the CodeEditor Inline Hints feature.
 //     Master toggle + per-symbol-kind visibility filters.
 //     All kinds enabled by default.
 //
 // Architecture Notes:
 //     Pattern: Options Page (IOptionsPage).
-//     CodeLensSymbolKinds bit values are duplicated as private int constants
+//     InlineHintsSymbolKinds bit values are duplicated as private int constants
 //     to avoid adding a WpfHexEditor.Editor.Core project reference here.
-//     AppSettings stores CodeLensVisibleKinds as int for the same reason.
+//     AppSettings stores InlineHintsVisibleKinds as int for the same reason.
 // ==========================================================
 
 using System;
@@ -22,12 +22,12 @@ using System.Windows.Controls;
 
 namespace WpfHexEditor.Options.Pages;
 
-public sealed partial class CodeEditorCodeLensPage : UserControl, IOptionsPage
+public sealed partial class CodeEditorInlineHintsPage : UserControl, IOptionsPage
 {
     public event EventHandler? Changed;
     private bool _loading;
 
-    // ── Bit constants matching CodeLensSymbolKinds (WpfHexEditor.Editor.Core) ──
+    // ── Bit constants matching InlineHintsSymbolKinds (WpfHexEditor.Editor.Core) ──
     // Kept as int to avoid cross-project enum dependency in WpfHexEditor.Options.
 
     private const int KindClass       = 1 << 0;   //    1
@@ -44,7 +44,7 @@ public sealed partial class CodeEditorCodeLensPage : UserControl, IOptionsPage
     private const int KindEvent       = 1 << 11;  // 2048
     private const int KindAll         = (1 << 12) - 1; // 4095
 
-    public CodeEditorCodeLensPage()
+    public CodeEditorInlineHintsPage()
     {
         InitializeComponent();
     }
@@ -57,10 +57,10 @@ public sealed partial class CodeEditorCodeLensPage : UserControl, IOptionsPage
         try
         {
             var ce   = s.CodeEditorDefaults;
-            CheckCodeLensEnabled.IsChecked = ce.ShowCodeLens;
+            CheckInlineHintsEnabled.IsChecked = ce.ShowInlineHints;
 
             // Treat 0 as All (migration: old settings.json without this field defaults to 0).
-            int mask = ce.CodeLensVisibleKinds == 0 ? KindAll : ce.CodeLensVisibleKinds;
+            int mask = ce.InlineHintsVisibleKinds == 0 ? KindAll : ce.InlineHintsVisibleKinds;
 
             ChkClass.IsChecked       = (mask & KindClass)       != 0;
             ChkInterface.IsChecked   = (mask & KindInterface)   != 0;
@@ -81,7 +81,7 @@ public sealed partial class CodeEditorCodeLensPage : UserControl, IOptionsPage
     public void Flush(AppSettings s)
     {
         var ce = s.CodeEditorDefaults;
-        ce.ShowCodeLens = CheckCodeLensEnabled.IsChecked == true;
+        ce.ShowInlineHints = CheckInlineHintsEnabled.IsChecked == true;
 
         int mask = 0;
         if (ChkClass.IsChecked       == true) mask |= KindClass;
@@ -96,7 +96,7 @@ public sealed partial class CodeEditorCodeLensPage : UserControl, IOptionsPage
         if (ChkIndexer.IsChecked     == true) mask |= KindIndexer;
         if (ChkField.IsChecked       == true) mask |= KindField;
         if (ChkEvent.IsChecked       == true) mask |= KindEvent;
-        ce.CodeLensVisibleKinds = mask;
+        ce.InlineHintsVisibleKinds = mask;
     }
 
     // -- Control handlers ------------------------------------------------------

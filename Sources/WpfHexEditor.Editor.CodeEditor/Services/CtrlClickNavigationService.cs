@@ -11,7 +11,7 @@
 //     and display the hand cursor + underline.
 //
 // Architecture Notes:
-//     Pattern: Service / Observer — mirrors CodeLensService / HoverQuickInfoService.
+//     Pattern: Service / Observer — mirrors InlineHintsService / HoverQuickInfoService.
 //     Debounce: 200 ms (fast — user is already holding Ctrl and hovering).
 //     Resolution priority:
 //       1. ILspClient.DefinitionAsync  (preferred — cross-file, external detection)

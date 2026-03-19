@@ -39,11 +39,11 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
     private bool    _foldToggleOnDoubleClick  = true;
     private bool    _showScopeGuides     = true;
     private bool    _enableMultiCaret    = true;
-    private bool    _enableIntelliSense       = true;
+    private bool    _enableSmartComplete       = true;
     private bool    _enableSnippets           = true;
     private bool    _enableFindAllReferences  = true;
-    private bool    _showCodeLens             = true;
-    private CodeLensSymbolKinds _codeLensVisibleKinds = CodeLensSymbolKinds.All;
+    private bool    _showInlineHints          = true;
+    private InlineHintsSymbolKinds _inlineHintsVisibleKinds = InlineHintsSymbolKinds.All;
     private string? _themeOverride       = null;
 
     // -----------------------------------------------------------------------
@@ -112,10 +112,10 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
         set { _enableMultiCaret = value; Notify(); }
     }
 
-    public bool EnableIntelliSense
+    public bool EnableSmartComplete
     {
-        get => _enableIntelliSense;
-        set { _enableIntelliSense = value; Notify(); }
+        get => _enableSmartComplete;
+        set { _enableSmartComplete = value; Notify(); }
     }
 
     public bool EnableSnippets
@@ -135,23 +135,23 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// When true, shows "N références" hints above each declaration line
-    /// (CodeLens style). Clicking a hint opens the Find All References popup.
+    /// When true, shows "N références" hints above each declaration line.
+    /// Clicking a hint opens the Find All References popup.
     /// </summary>
-    public bool ShowCodeLens
+    public bool ShowInlineHints
     {
-        get => _showCodeLens;
-        set { _showCodeLens = value; Notify(); }
+        get => _showInlineHints;
+        set { _showInlineHints = value; Notify(); }
     }
 
     /// <summary>
-    /// Bitmask controlling which symbol kinds display CodeLens hints.
-    /// Default: <see cref="CodeLensSymbolKinds.All"/> (all 12 kinds visible).
+    /// Bitmask controlling which symbol kinds display inline hints.
+    /// Default: <see cref="InlineHintsSymbolKinds.All"/> (all 12 kinds visible).
     /// </summary>
-    public CodeLensSymbolKinds CodeLensVisibleKinds
+    public InlineHintsSymbolKinds InlineHintsVisibleKinds
     {
-        get => _codeLensVisibleKinds;
-        set { _codeLensVisibleKinds = value; Notify(); }
+        get => _inlineHintsVisibleKinds;
+        set { _inlineHintsVisibleKinds = value; Notify(); }
     }
 
     private int  _maxUndoHistory      = 500;

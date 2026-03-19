@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // GNU Affero General Public License v3.0 - 2026
-// Custom CodeEditor - IntelliSense Popup (Phase 4)
+// Custom CodeEditor - SmartComplete Popup (Phase 4)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -20,12 +20,12 @@ using WpfHexEditor.Editor.CodeEditor.Models;
 namespace WpfHexEditor.Editor.CodeEditor.Controls
 {
     /// <summary>
-    /// IntelliSense popup control with suggestion list and documentation preview.
-    /// Displays context-aware suggestions from CodeIntelliSenseProvider.
+    /// SmartComplete popup control with suggestion list and documentation preview.
+    /// Displays context-aware suggestions from CodeSmartCompleteProvider.
     /// Phase 4: Basic implementation with root level + blocks contexts.
     /// Phase 7 will add all contexts, snippets, and tooltips.
     /// </summary>
-    public class IntelliSensePopup : Popup
+    public class SmartCompletePopup : Popup
     {
         #region Fields
 
@@ -33,19 +33,19 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private TextBlock _documentationPreview;
         private Border _popupBorder;
         private CodeEditor _editor;
-        private CodeIntelliSenseProvider _provider;
+        private CodeSmartCompleteProvider _provider;
         private DispatcherTimer _delayTimer;
         private string _filterText = string.Empty;
-        private List<IntelliSenseSuggestion> _allSuggestions;
+        private List<SmartCompleteSuggestion> _allSuggestions;
 
         #endregion
 
         #region Constructor
 
-        public IntelliSensePopup(CodeEditor editor)
+        public SmartCompletePopup(CodeEditor editor)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
-            _provider = new CodeIntelliSenseProvider();
+            _provider = new CodeSmartCompleteProvider();
 
             InitializeUI();
             InitializeTimer();
@@ -54,7 +54,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             AllowsTransparency = true;
 
             // Close on Escape
-            PreviewKeyDown += IntelliSensePopup_PreviewKeyDown;
+            PreviewKeyDown += SmartCompletePopup_PreviewKeyDown;
         }
 
         #endregion
@@ -179,7 +179,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         #region Event Handlers
 
-        private void IntelliSensePopup_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void SmartCompletePopup_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             switch (e.Key)
             {
@@ -240,7 +240,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void SuggestionList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_suggestionList.SelectedItem is IntelliSenseSuggestion suggestion)
+            if (_suggestionList.SelectedItem is SmartCompleteSuggestion suggestion)
             {
                 UpdateDocumentation(suggestion);
             }
@@ -257,7 +257,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         #region Public Methods
 
         /// <summary>
-        /// Trigger IntelliSense with delay (for auto-trigger on typing)
+        /// Trigger SmartComplete with delay (for auto-trigger on typing)
         /// </summary>
         public void TriggerWithDelay(int delayMs = 500)
         {
@@ -267,7 +267,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
-        /// Show IntelliSense immediately (for Ctrl+Space)
+        /// Show SmartComplete immediately (for Ctrl+Space)
         /// </summary>
         public void TriggerImmediate()
         {
@@ -285,7 +285,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
-        /// Hide IntelliSense popup
+        /// Hide SmartComplete popup
         /// </summary>
         public void Hide()
         {
@@ -308,7 +308,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             try
             {
                 // Get suggestions from provider
-                var context = new IntelliSenseContext
+                var context = new SmartCompleteContext
                 {
                     DocumentText = _editor.GetText(),
                     CursorPosition = _editor.CursorPosition,
@@ -337,7 +337,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
             catch (Exception)
             {
-                // Silently fail if IntelliSense cannot be shown
+                // Silently fail if SmartComplete cannot be shown
                 Hide();
             }
         }
@@ -350,7 +350,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (_allSuggestions == null)
                 return;
 
-            List<IntelliSenseSuggestion> filtered;
+            List<SmartCompleteSuggestion> filtered;
 
             if (string.IsNullOrEmpty(_filterText))
             {
@@ -407,7 +407,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// <summary>
         /// Update documentation preview for selected suggestion
         /// </summary>
-        private void UpdateDocumentation(IntelliSenseSuggestion suggestion)
+        private void UpdateDocumentation(SmartCompleteSuggestion suggestion)
         {
             if (suggestion == null)
             {
@@ -432,7 +432,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         private void CommitSelection()
         {
-            if (_suggestionList.SelectedItem is IntelliSenseSuggestion suggestion)
+            if (_suggestionList.SelectedItem is SmartCompleteSuggestion suggestion)
             {
                 // Insert suggestion text at cursor
                 InsertSuggestion(suggestion);
@@ -443,7 +443,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// <summary>
         /// Insert suggestion into editor at cursor position
         /// </summary>
-        private void InsertSuggestion(IntelliSenseSuggestion suggestion)
+        private void InsertSuggestion(SmartCompleteSuggestion suggestion)
         {
             if (_editor == null || suggestion == null)
                 return;

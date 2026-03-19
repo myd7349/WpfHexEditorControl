@@ -92,7 +92,7 @@
 
         <!-- HexEditor Control -->
         <!--
-            💡 Rider Tip: Start typing <hex: and IntelliSense shows all properties!
+            💡 Rider Tip: Start typing <hex: and SmartComplete shows all properties!
             Press Ctrl+Space on any property to see available values.
         -->
         <hex:HexEditor x:Name="HexEditor"

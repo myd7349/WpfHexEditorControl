@@ -27,7 +27,7 @@
                              HorizontalScrollBarVisibility="Auto">
                     <codeEditor:CodeEditor x:Name="CodeEditorControl"
                                           ShowLineNumbers="True"
-                                          EnableIntelliSense="True"
+                                          EnableSmartComplete="True"
                                           EnableValidation="True"/>
                 </ScrollViewer>
             </DockPanel>

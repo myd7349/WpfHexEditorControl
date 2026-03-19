@@ -1,11 +1,11 @@
 // ==========================================================
 // Project: WpfHexEditor.LSP
-// File: IntelliSense/BoostedIntelliSenseManager.cs
+// File: SmartComplete/BoostedSmartCompleteManager.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-16
 // Description:
-//     Workspace-aware IntelliSense completion provider.
+//     Workspace-aware SmartComplete completion provider.
 //     Aggregates: language keywords, workspace symbols (cross-file),
 //     plugin-contributed snippets, and auto-import suggestions.
 //     Priority order: UserCreated language > Imported > BuiltIn.
@@ -21,19 +21,19 @@
 using WpfHexEditor.LSP.Models;
 using WpfHexEditor.LSP.Symbols;
 
-namespace WpfHexEditor.LSP.IntelliSense;
+namespace WpfHexEditor.LSP.SmartComplete;
 
 /// <summary>
 /// Provides context-aware completion items combining language keywords,
 /// workspace symbols, and snippets.
 /// </summary>
-public sealed class BoostedIntelliSenseManager
+public sealed class BoostedSmartCompleteManager
 {
     private readonly LanguageDefinitionManager   _languages;
     private readonly WorkspaceSymbolTableManager _workspaceSymbols;
     private readonly Snippets.LspSnippetsManager _snippets;
 
-    public BoostedIntelliSenseManager(
+    public BoostedSmartCompleteManager(
         LanguageDefinitionManager   languages,
         WorkspaceSymbolTableManager workspaceSymbols,
         Snippets.LspSnippetsManager snippets)

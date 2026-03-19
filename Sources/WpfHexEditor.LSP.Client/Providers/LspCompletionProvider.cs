@@ -7,7 +7,7 @@
 // Description:
 //     Sends textDocument/completion requests and maps the JSON response to
 //     the strongly-typed LspCompletionItem list expected by CodeEditor's
-//     IntelliSenseEngine.
+//     SmartCompleteEngine.
 // ==========================================================
 
 using System.Collections.Generic;

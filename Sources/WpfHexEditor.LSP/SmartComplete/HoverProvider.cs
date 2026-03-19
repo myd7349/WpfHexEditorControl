@@ -1,6 +1,6 @@
 // ==========================================================
 // Project: WpfHexEditor.LSP
-// File: IntelliSense/HoverProvider.cs
+// File: SmartComplete/HoverProvider.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-16
@@ -19,7 +19,7 @@ using WpfHexEditor.LSP.Models;
 using WpfHexEditor.LSP.Parsing;
 using WpfHexEditor.LSP.Symbols;
 
-namespace WpfHexEditor.LSP.IntelliSense;
+namespace WpfHexEditor.LSP.SmartComplete;
 
 /// <summary>
 /// Resolves hover tooltip content for a given cursor position in a document.

@@ -20,7 +20,7 @@ namespace RiderSimpleExample;
 /// - Loading TBL (Character Table) files for custom encoding
 ///
 /// 💡 Rider Tips:
-/// - Press Ctrl+Space to see IntelliSense for HexEditor properties
+/// - Press Ctrl+Space to see SmartComplete for HexEditor properties
 /// - Use XAML Preview (View -> Tool Windows -> XAML Preview) to see design
 /// - Import Live Templates from docs/IDE/WpfHexEditor.DotSettings for quick snippets
 /// </summary>

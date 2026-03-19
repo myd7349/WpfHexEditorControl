@@ -174,7 +174,7 @@ public static class LanguageDefinitionSerializer
             LineCommentPrefix        = dto.LineCommentPrefix,
             BlockCommentStart        = dto.BlockCommentStart,
             BlockCommentEnd          = dto.BlockCommentEnd,
-            EnableCodeLens           = dto.EnableCodeLens,
+            EnableInlineHints        = dto.EnableInlineHints,
             EnableCtrlClickNavigation = dto.EnableCtrlClickNavigation,
             IsDefault                = dto.IsDefault,
         };
@@ -208,9 +208,9 @@ public static class LanguageDefinitionSerializer
         public string?               BlockCommentStart   { get; set; }
         public string?               BlockCommentEnd     { get; set; }
         /// <summary>
-        /// When true, the CodeEditor renders CodeLens hints for this language.
+        /// When true, the CodeEditor renders inline hints for this language.
         /// </summary>
-        public bool EnableCodeLens { get; set; }
+        public bool EnableInlineHints { get; set; }
 
         /// <summary>
         /// When true, Ctrl+click go-to-definition is active for this language.

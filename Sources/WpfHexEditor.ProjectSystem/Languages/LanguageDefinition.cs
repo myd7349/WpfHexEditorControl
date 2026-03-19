@@ -57,11 +57,11 @@ public sealed class LanguageDefinition
     public string? BlockCommentEnd { get; init; }
 
     /// <summary>
-    /// When <see langword="true"/>, the CodeEditor will render CodeLens hints (inline
+    /// When <see langword="true"/>, the CodeEditor will render inline hints (inline
     /// reference counts) for this language.  Should only be enabled for languages that
     /// have structural parsing support (e.g. C#, VB.NET).
     /// </summary>
-    public bool EnableCodeLens { get; init; }
+    public bool EnableInlineHints { get; init; }
 
     /// <summary>
     /// When <see langword="true"/>, Ctrl+click go-to-definition navigation is active for
@@ -100,7 +100,7 @@ public sealed class SnippetDefinition
     /// </summary>
     public required string Body { get; init; }
 
-    /// <summary>Short description shown in the IntelliSense completion list.</summary>
+    /// <summary>Short description shown in the SmartComplete completion list.</summary>
     public string Description { get; init; } = string.Empty;
 }
 

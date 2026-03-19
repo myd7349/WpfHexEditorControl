@@ -2,14 +2,16 @@
 
 > **Platform:** Windows · .NET 8.0 · Native WPF
 > **Architecture:** VS-style IDE with plugin system, dockable panels, multi-editor workspace
+> **Last Updated:** 2026-03-19 (v0.6.0)
 
 ---
 
 ## Table of Contents
 
 - [IDE Shell](#ide-shell)
-- [Project System](#project-system)
+- [Project System & Build](#project-system--build)
 - [Editors](#editors)
+- [Shared Undo/Redo Engine](#shared-undoredo-engine)
 - [Plugins](#plugins)
 - [IDE Panels](#ide-panels)
 - [Integrated Terminal](#integrated-terminal)
@@ -27,18 +29,23 @@
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| VS-style docking (float, dock, auto-hide, tab groups) | ✅ | Custom engine — zero third-party docking dependency |
+| VS-style docking (float, dock, auto-hide, tab groups) | ✅ | Custom engine `WpfHexEditor.Shell` — zero third-party dependency |
 | 8 built-in visual themes | ✅ | Dark · Light · VS2022Dark · DarkGlass · Minimal · Office · Cyberpunk · VisualStudio |
 | Runtime theme switching | ✅ | Live, no restart required |
-| Colored tabs with `TabSettingsDialog` | ✅ | Per-tab color + left/right placement |
-| VS2022-style status bar | ✅ | Edit mode · bytes/line · caret offset · plugin personality |
-| Output panel | ✅ | Session log and operation messages |
-| Error/Diagnostics panel | ✅ | Severity filter, navigation to offset |
-| Toolbar overflow manager | ✅ | All panels collapse toolbar groups on resize |
+| Colored tabs with `TabSettingsDialog` | ✅ | Per-tab color + left/right/bottom placement |
+| VS2022-style status bar | ✅ | Edit mode · bytes/line · caret offset · plugin personality · editor-contributed items |
+| Output panel (multi-channel) | ✅ | General · Build · Debug · PluginSystem channels |
+| Error/Diagnostics panel | ✅ | Severity filter, navigate to file/line from any `IDiagnosticSource` |
+| Build output panel | ✅ | Real-time streamed build output per project |
+| Quick Search bar | ✅ | Unified inline search across all editors |
 | Plugin monitor panel | ✅ | Per-plugin CPU %, RAM, load state, priority |
 | Plugin manager UI | ✅ | Load/unload/inspect plugins at runtime |
-| In-IDE plugin development (#138) | 🔧 Planned | Write, compile and hot-reload plugins directly inside the IDE |
-| Command palette | 🔧 Planned | Keyboard-driven access to all IDE commands |
+| Toolbar overflow manager | ✅ | All panels collapse toolbar groups on resize |
+| Welcome panel | ✅ | VS Start Page with recent files/solutions and CHANGELOG preview |
+| Document info bar | ✅ | Orange reload/conflict banner for external file changes |
+| Plugin quick-status toast | ✅ | Load/unload notifications, auto-dismiss |
+| NuGet Solution Manager | ✅ | Browse/Installed/Consolidate/Updates across all projects |
+| Command palette | 🔧 Planned | Fuzzy-search over all IDE commands (Ctrl+Shift+P) |
 | Global options / settings dialog | 🔧 Planned | Centralized settings with per-plugin sections |
 | Workspace-scoped settings | 🔧 Planned | Per-project overrides for themes, encoding, layout |
 
@@ -48,119 +55,217 @@
 |----------|--------|
 | Ctrl+O | Open file in new editor tab |
 | Ctrl+S | Save current editor |
+| Ctrl+Shift+S | Save all |
 | Ctrl+W | Close current tab |
 | Ctrl+Tab | Cycle editor tabs |
-| Ctrl+V | Paste (also opens assembly dialog in AssemblyExplorer) |
+| Ctrl+G | Go to offset / Go to line |
 | F4 | Open Properties panel |
-| F7 / F8 | Navigate diffs |
+| F7 / F8 | Navigate diff regions |
+| Ctrl+`` ` `` | Toggle integrated terminal |
 
 ---
 
-## Project System
+## Project System & Build
 
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Solution management (`.whsln`) | ✅ | Create, open, save, close |
 | Project management (`.whproj`) | ✅ | Multiple projects per solution |
-| VS `.sln` / `.csproj` import | 🔧 Planned | Read-only parsing via MSBuild |
+| VS `.sln` / `.csproj` / `.vbproj` import | ✅ | `VsSolutionLoaderPlugin` — full open + build |
+| Folder mode (VS Code–style) | ✅ | `FolderSolutionLoaderPlugin` — gitignore-aware, 500ms debounce refresh |
+| MSBuild integration | ✅ | Build / Rebuild / Clean via `dotnet build` — `Build.MSBuild` plugin |
+| Build dependency ordering | ✅ | Kahn's topological sort in `BuildDependencyResolver` |
+| Build configuration manager | ✅ | Debug / Release / custom configs + platform selector |
+| Startup project selection | ✅ | `StartupProjectsPage` in Solution Properties dialog |
+| Build output → Output Panel | ✅ | Real-time line streaming via `BuildOutputAdapter` |
+| Build errors → Error Panel | ✅ | `BuildErrorListAdapter` with navigate-to-line |
+| Status bar build progress | ✅ | `BuildStatusBarAdapter` updates during build |
 | Virtual folders | ✅ | Logical grouping without disk structure |
 | Physical folders | ✅ | Mirrors disk directory tree |
 | Show All Files mode | ✅ | Reveals untracked files in project directories |
 | Per-file state persistence | ✅ | Bookmarks, caret position, scroll, encoding |
 | Typed item links | ✅ | e.g. `.bin` linked to `.tbl` → auto-applied on open |
-| Format versioning + auto-migration | ✅ | In-memory format upgrade on open with automatic backup |
-| File templates | ✅ | Binary · TBL · JSON · Text |
+| Format versioning + auto-migration | ✅ | In-memory upgrade on open with automatic backup |
+| File templates | ✅ | Binary · TBL · JSON · Text · C# (Console/Library/WPF/ASP.NET) |
+| NuGet per-project management | ✅ | Browse/install/update/uninstall per project |
+| NuGet Solution Manager | ✅ | Consolidate + upgrade across all projects |
+| Solution Property Pages dialog | ✅ | Build dependencies, configurations, source files, startup project |
+| External file change detection | ✅ | `FileMonitorService` + 500ms debounce + reload/dismiss banner |
+| Git Integration | 🔧 Planned | GitPanel, commit/push/pull, inline gutter diff |
 
 ---
 
 ## Editors
 
-All editors implement `IDocumentEditor` and integrate with docking, undo/redo, status bar, search, and the options system.
+All editors implement `IDocumentEditor` and integrate with the shared docking, undo/redo engine, status bar, search, and options system.
 
-| Editor | Status | Key Capabilities |
-|--------|--------|-----------------|
-| **Hex Editor** | ✅ | Insert/overwrite, 400+ format detection, SIMD search, TBL, bookmarks, BarChart, scroll markers |
-| **TBL Editor** | ✅ | Character table editing for custom encodings and ROM hacking, DTE/MTE support |
-| **JSON Editor** | ✅ | Real-time validation, diagnostics, syntax coloring |
-| **Text Editor** | ✅ | Syntax highlighting, multi-encoding |
-| **Code Editor** | 🔧 In dev | VS-like: IntelliSense, folding, gutter, multi-caret, multi-language syntax, diagnostics |
-| **Script Editor** | 🔧 Stub | Planned scripting host |
-| **Image Viewer** | 🔧 Stub | Planned |
-| **Audio Viewer** | 🔧 Stub | Planned |
-| **Diff Viewer** | 🔧 Stub | Side-by-side binary/text comparison |
-| **Disassembly Viewer** | 🔧 Stub | x86/x64 disassembly display |
-| **Entropy Viewer** | 🔧 Stub | Block entropy visualization |
-| **Structure Editor** | 🔧 Stub | Binary structure definition & overlay |
-| **Tile Editor** | 🔧 Stub | Pixel/tile editing for ROM graphics |
-| **Changeset Editor** | 🔧 Stub | Edit history and patch management |
+| Editor | Status | Progress | Key Capabilities |
+|--------|--------|----------|-----------------|
+| **Hex Editor** | ✅ Active | ~75% | Insert/overwrite, 400+ format detection, SIMD search, TBL, bookmarks, BarChart, scroll markers |
+| **Code Editor** | ✅ Active | ~90% | See detailed table below |
+| **XAML Designer** | ✅ Active | ~70% | See detailed table below |
+| **Text Editor** | ✅ Active | ~50% | 55+ `.whlang` syntax, multi-encoding, rect selection, drag-to-move, shared UndoEngine |
+| **TBL Editor** | ✅ Active | ~60% | Character table editing for custom encodings and ROM hacking, DTE/MTE support |
+| **JSON Editor** | ✅ Active | ~55% | Real-time validation, diagnostics, syntax coloring |
+| **Script Editor** | 🔧 Active | ~45% | `.hxscript` syntax, run-in-terminal, `HxScriptEngine` backend |
+| **Image Viewer** | 🔧 Active | ~30% | Zoom/pan, transform pipeline (rotate/flip/crop/resize), `FileShare.ReadWrite` |
+| **Entropy Viewer** | 🔧 Active | ~25% | Block entropy graph, anomaly detection |
+| **Diff Viewer** | 🔧 Active | ~35% | Side-by-side binary/text comparison, F7/F8 navigation |
+| **Structure Editor** | 🔧 Active | ~30% | `.whfmt` binary template — block DataGrid, live save |
+| **Tile Editor** | 🔧 Active | ~30% | Tile-based ROM/binary asset palette + pixel grid |
+| **Disassembly Viewer** | 🔧 Stub | ~5% | x86/x64/ARM planned |
+| **Audio Viewer** | 🔧 Stub | ~5% | Waveform display planned |
+| **Changeset Editor** | 🔧 Active | ~35% | Edit history and patch management |
 
 ### Code Editor — Feature Set
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Multi-language syntax highlighting | 🔧 Planned | C#, JSON, XML, XAML, Lua, Python, and more |
-| IntelliSense / autocomplete / snippets | 🔧 Planned | Language-server-style suggestions |
-| Multi-caret and multi-selection | 🔧 Planned | VS-like editing ergonomics |
-| Code folding / collapse | 🔧 Planned | Block indicators in gutter |
-| Gutter: line numbers, breakpoint markers, error indicators | 🔧 Planned | Full VS-like gutter |
-| Virtual scroll for large files (>1 GB) | 🔧 Planned | Render only visible lines |
-| Diagnostics integration | 🔧 Planned | Errors/warnings pushed to Error panel |
-| Command system integration (#78) | 🔧 Planned | Keyboard-bound, palette-accessible scripted commands |
-| Event system (#80) | 🔧 Planned | Editor events exposed for plugin subscription |
-| Scripting host (#79) | 🔧 Planned | Embedded script execution (Lua / C# scripting) |
-| Plugin sandbox per-editor (#81) | 🔧 Planned | Isolated plugin execution per document |
-| Workspace & project integration | 🔧 Planned | Respects `.whsln` / `.whproj` context |
-| Undo/Redo + diff tracking | 🔧 Planned | IDE-level undo stack, changeset history |
-| Theme & options integration | 🔧 Planned | Follows global IDE theme and options system |
+| Multi-language syntax highlighting | ✅ | 55+ `.whlang` definitions — C# · XAML · XML · HTML · CSS · JS · Python · Lua · Rust · Go · Java · … |
+| VS-Like navigation bar | ✅ | Dual combo (types / members), Segoe MDL2 icons, caret auto-sync |
+| Inline Hints inline hints (VS Code–style) | ✅ | Reference counts inline above methods; per-language gated |
+| Ctrl+Click Go-to-Definition | ✅ | Workspace scan + LSP multi-location popup; external symbol decompilation |
+| Quick Info hover tooltip | ✅ | `QuickInfoPopup` — 400ms debounce, `IQuickInfoProvider` SDK extension |
+| Find / Replace panel | ✅ | Tab/Inline Hints-aware highlight alignment (`ComputeVisualX` + `_lineYLookup`) |
+| Code folding — brace + `#region` | ✅ | `BraceFoldingStrategy` + `RegionDirectiveFoldingStrategy` + `CompositeFoldingStrategy` |
+| Inline `{…}` badge on collapsed regions | ✅ | Non-destructive — gutter triangle unaffected |
+| `#region` colorization | ✅ | Dedicated brush tokens; badges on collapse |
+| Gutter: line numbers + fold toggles | ✅ | Fold toggles follow smooth-scroll; hide when opener scrolls above viewport |
+| Scroll marker panel | ✅ | `CodeScrollMarkerPanel` — bookmarks · modified · errors · search matches |
+| Word-under-caret highlight + scrollbar ticks | ✅ | All occurrences, tick marks in scrollbar |
+| Scope guide lines (VS Code–style) | ✅ | Vertical indent guides |
+| Bracket / brace highlight | ✅ | `_lineYLookup`-aware Y positioning |
+| Rectangular selection (Alt+Click) | ✅ | Column-aligned block; single merged rectangle render |
+| Text drag-to-move | ✅ | Inline relocate, recorded as compound undo entry |
+| Rectangular block drag-to-move | ✅ | Block moves to target column, preserves surrounding columns |
+| Shared `UndoEngine` | ✅ | Coalescing (500ms), transactions, save-point, `Ctrl+Z/Y/Shift+Z` |
+| Dynamic undo/redo context menu | ✅ | "Undo (N)" / "Redo (N)" headers |
+| URL hover + click | ✅ | Detects URLs in code, opens browser on click |
+| Context menu with Segoe MDL2 icons | ✅ | Cut/Copy/Paste/Find/Undo/Redo + Outlining submenu |
+| Ctrl+Left/Right word jump | ✅ | Standard VS word-boundary navigation |
+| Ctrl+Home / End | ✅ | Document start/end |
+| Split view | ✅ | `CodeEditorSplitHost` — side-by-side split pane |
+| Find References panel | ✅ | `FindReferencesPanel` + `ReferencesPopup` for multi-location results |
+| `IEditorPersistable` state | ✅ | Caret, scroll, language persisted per file |
+| `IStatusBarContributor` | ✅ | Language · Line/Col · Encoding · Zoom items |
+| `IEditorToolbarContributor` | ✅ | Dynamic toolbar strips (view mode, zoom, layout) |
+| Diagnostics integration | 🔧 Planned | Full error squiggles pushed to Error panel |
+| Multi-caret | 🔧 Planned | VS-like multi-cursor editing |
+| Virtual scroll >1 GB | 🔧 Planned | Render only visible lines |
+
+### XAML Designer — Feature Set
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Live WPF canvas (XamlReader.Parse) | ✅ | Real-time render on code change |
+| Bidirectional canvas↔code sync | ✅ | ~95% fidelity; 150ms debounce; feedback-loop guard |
+| Move / resize handles | ✅ | `ResizeAdorner` — 8 Thumb handles |
+| Rotation handle | ✅ | Arc handle above selection; patches `RenderTransform` in XAML |
+| Parent selection via Escape | ✅ | Hierarchical walk-up (VS-Like) |
+| Snap-to-grid + element edge snap | ✅ | `SnapEngineService` + `SnapGuideOverlay` visual guides |
+| Multi-select + rubber band | ✅ | `RubberBandAdorner`, `MultiSelectionAdorner` |
+| 12 alignment / distribution ops | ✅ | Left/Right/Center-H/Top/Bottom/Center-V + 6 distribute/space ops |
+| Property Inspector (F4) | ✅ | DP reflection + custom editors (color, enum, font, numeric, thickness) |
+| Toolbox with Drag-and-Drop | ✅ | `ToolboxDropService` — insert element at drop position |
+| Design History panel (VS-Like) | ✅ | Undo/redo list with jump-to-state; Single/Batch/Snapshot entries |
+| Overkill undo/redo | ✅ | `DesignUndoManager` — max 200 entries, batch grouping, full XAML snapshots |
+| Error card overlay | ✅ | Inline error on parse failure, auto-dismisses on fix |
+| `#region` colorization | ✅ | Dedicated brush tokens in code pane |
+| 4 split layouts | ✅ | Right/Left/Bottom/Top; `Ctrl+Shift+L` cycles; persisted in `EditorConfigDto.Extra` |
+| Zoom / pan canvas | ✅ | `ZoomPanCanvas` — Ctrl+Wheel zoom, Shift+Wheel/middle-mouse pan |
+| Design-time data (d:DataContext) | ✅ | `DesignTimeDataService` + `DesignDataPanel` |
+| XAML Outline panel | ✅ | Element tree, sync with canvas selection |
+| Live Visual Tree panel | ✅ | Runtime visual tree from rendered canvas |
+| Resource Browser panel | ✅ | StaticResource / DynamicResource catalog |
+| Binding Inspector panel | ✅ | Binding expression diagnostics |
+| Animation Timeline panel | ✅ | Storyboard keyframe editor |
+| 30 XD_* theme tokens × 8 themes | ✅ | All surfaces theme-compliant via `SetResourceReference()` |
+| Trigger / animation timeline editor | 🔧 Planned | Beyond stub — Phase 2 |
+| Data-binding wizard | 🔧 Planned | Visual binding setup |
+| Export as standalone `.xaml` | 🔧 Planned | Phase 2 |
+
+---
+
+## Shared Undo/Redo Engine
+
+`WpfHexEditor.Editor.Core.Undo` — shared across CodeEditor, TextEditor, and XAML Designer.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `UndoEngine` — unified stack | ✅ | Replaces both editors' custom stacks; `List<IUndoEntry>` + split pointer; max 500 entries |
+| Coalescing (`TryMerge`) | ✅ | Consecutive same-type edits merged within 500ms window |
+| Transactions | ✅ | `BeginTransaction()` / `CommitTransaction()` → `CompositeUndoEntry`; atomic replay |
+| Save-point tracking | ✅ | `MarkSaved()` / `IsAtSavePoint` → drives `IsDirty`; `StateChanged` event → IDE title bar |
+| `Ctrl+Shift+Z` redo | ✅ | Added alongside `Ctrl+Y` in CodeEditor and TextEditor |
+| Dynamic context menu headers | ✅ | "Undo (N)" / "Redo (N)" operation count |
+| `UndoCount` / `RedoCount` on `IDocumentEditor` | ✅ | Default interface members for status bar consumption |
+| Design undo: `IDesignUndoEntry` hierarchy | ✅ | Single (attr diff) · Batch (grouped) · Snapshot (full XAML) for XAML Designer |
+| Jump-to-state (Design History) | ✅ | `DesignUndoManager` computes undo/redo count to reach any history entry |
 
 ---
 
 ## Plugins
 
-Plugins are loaded via `WpfHexEditor.PluginHost` with priority-based ordering and optional sandboxing. All plugins expose dockable panels conforming to the VS-Like standard.
+Plugins are loaded via `WpfHexEditor.PluginHost` with priority-based ordering and optional sandboxing. All plugins conform to the VS-Like dockable panel standard.
 
 ### Assembly Explorer (`WpfHexEditor.Plugins.AssemblyExplorer`)
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Open assembly via dialog / drag-drop / Ctrl+V | ✅ | Supports .dll, .exe, .winmd |
+| Open assembly via dialog / drag-drop / Ctrl+V | ✅ | .dll, .exe, .winmd |
 | Namespace / type / member tree | ✅ | Classes, interfaces, structs, enums, delegates |
 | Method, field, property, event nodes | ✅ | Full member breakdown |
 | Colored semantic icons | ✅ | VS Code color palette per node type |
 | Lock badge for non-public members | ✅ | Visual access-modifier indicator |
 | C# skeleton decompiler | ✅ | `CSharpSkeletonEmitter` — BCL-only, zero NuGet |
 | IL text emitter | ✅ | Full ECMA-335 IL via `IlTextEmitter` |
+| ILSpy decompiler backend | ✅ | `IlSpyDecompilerBackend`; switchable via options |
+| VB.NET decompilation | ✅ | `VbNetDecompilationLanguage` in decompiler registry |
+| Decompile cache | ✅ | Keyed by `(filePath, tokenHandle, language)` |
 | 4-tab Detail pane (Code / IL / Info / Hex) | ✅ | IL tab auto-selected for method nodes |
 | Open in Code Editor | ✅ | Via `IUIRegistry.RegisterDocumentTab` |
+| Assembly Diff panel | ✅ | Side-by-side comparison with color-coded changes |
+| Assembly Search panel | ✅ | Full-text member search across loaded assemblies |
+| CFG Canvas | ✅ | Control-flow graph per method (basic blocks + jump edges) |
+| XRef View | ✅ | Cross-references (callers/implementors) per member |
 | Live tree filter / search | ✅ | Bottom-up `SetNodeVisibility`, parent auto-expand |
-| "Inherits From" group | ✅ | Shows base type and interfaces per class |
-| Framework badge on root nodes | ✅ | Displays `[.NET X.X]` target |
-| Show non-public members toggle | ✅ | Options page |
-| Show inherited members toggle | ✅ | Options page |
+| "Inherits From" group | ✅ | Shows base type and implemented interfaces |
+| Framework badge on root nodes | ✅ | `[.NET X.X]` target badge |
+| Show non-public / inherited members toggles | ✅ | Options page |
 | Recent files list (max 20) | ✅ | Persisted in options |
-| Pin assemblies across file change | ✅ | Options page |
-| Core library: BCL-only, no NuGet | ✅ | `System.Reflection.Metadata` + `PEReader` inbox in .NET 8 |
-| Full method body decompilation | 🔧 Planned | Emit full C# code (not just skeleton) |
-| Cross-assembly reference navigation | 🔧 Planned | Jump to definition across loaded assemblies |
-| Attribute and custom metadata display | 🔧 Planned | Show custom attributes on any node |
-| Export decompiled output | 🔧 Planned | Save C# / IL to file |
+| Ctrl+Click external symbol decompilation | ✅ | `FindAssemblyPath` (AppDomain → runtime → NuGet cache) → read-only tab |
+| Full method body decompilation | 🔧 Planned | Complete C# output via ILSpy |
+| Cross-assembly reference navigation | 🔧 Planned | Jump-to-definition across loaded assemblies |
+
+### Synalysis Grammar (`WpfHexEditor.Plugins.SynalysisGrammar`) — issue #177
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| UFWB (Synalysis/Hexinator) grammar parsing | ✅ | XML-based `.grammar` format |
+| 10+ embedded grammars | ✅ | Auto-loaded from `WpfHexEditor.Definitions` |
+| Plugin-contributed grammars | ✅ | `IGrammarProvider` SDK extension point |
+| Colored hex overlay (CustomBackgroundBlock) | ✅ | `SynalysisToBackgroundBlockBridge` |
+| Parsed Fields panel population | ✅ | `SynalysisToFieldViewModelBridge` |
+| Auto-apply on file open / editor switch | ✅ | Configurable |
+| Grammar Selector dockable panel | ✅ | Right side, 340px |
+| `GrammarAppliedEvent` (plugin event bus) | ✅ | Consumed by Parsed Fields panel |
+| Options page | ✅ | Auto-apply toggle, max depth, color scheme |
 
 ### Data Inspector (`WpfHexEditor.Plugins.DataInspector`)
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| 40+ byte type interpretations at caret | ✅ | Int8/16/32/64, Float, Double, GUID, Dates, Flags, ... |
+| 40+ byte type interpretations at caret | ✅ | Int8/16/32/64, Float, Double, GUID, Dates, Flags, … |
 | Scope: Caret / Selection / Active View / Whole File | ✅ | Switchable from toolbar |
-| Byte distribution BarChart | ✅ | Byte frequency histogram |
-| Lazy whole-file load (one-shot) | ✅ | `_wholeFileChartLoaded` guard — no reload on each selection |
+| Byte distribution BarChart | ✅ | Full 0x00–0xFF histogram |
 | Endianness toggle | ✅ | Little / Big Endian |
-| Toolbar overflow support | ✅ | 5 collapsible toolbar groups |
+| Toolbar overflow (5 groups) | ✅ | Collapsible groups |
 
 ### Parsed Fields (`WpfHexEditor.Plugins.ParsedFields`)
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| 400+ binary format detection | ✅ | PE, ELF, ZIP, PNG, MP3, SQLite, PDF, ... |
+| 400+ binary format detection | ✅ | PE, ELF, ZIP, PNG, MP3, SQLite, PDF, … |
 | Field list with type and offset | ✅ | Hierarchical field tree |
 | Inline field value editing | ✅ | Edit parsed values directly |
 | Type overlay on hex grid | ✅ | Visual highlight per field |
@@ -171,7 +276,7 @@ Plugins are loaded via `WpfHexEditor.PluginHost` with priority-based ordering an
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Visual field highlighting on hex grid | ✅ | Color-coded regions |
-| Add structure overlay manually | ✅ | Via toolbar |
+| Add overlay manually | ✅ | Via toolbar |
 | Overlay from parsed format | ✅ | Auto-generated from Parsed Fields |
 
 ### Pattern Analysis (`WpfHexEditor.Plugins.PatternAnalysis`)
@@ -179,14 +284,14 @@ Plugins are loaded via `WpfHexEditor.PluginHost` with priority-based ordering an
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Byte pattern detection | ✅ | Statistical analysis of byte sequences |
-| Refresh from toolbar | ✅ | On-demand re-analysis |
+| On-demand refresh | ✅ | Toolbar trigger |
 
 ### File Statistics (`WpfHexEditor.Plugins.FileStatistics`)
 
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Byte frequency histogram | ✅ | Full 0x00–0xFF distribution |
-| Entropy calculation | ✅ | Shannon entropy per block |
+| Shannon entropy per block | ✅ | Block-level entropy |
 | Null / printable / high byte ratios | ✅ | Summary statistics |
 
 ### File Comparison (`WpfHexEditor.Plugins.FileComparison`)
@@ -194,7 +299,7 @@ Plugins are loaded via `WpfHexEditor.PluginHost` with priority-based ordering an
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Binary file diff | ✅ | Byte-level comparison |
-| SIMD-accelerated comparison | ✅ | 3 variants: Basic / Parallel / SIMD |
+| SIMD-accelerated comparison | ✅ | Basic / Parallel / SIMD variants |
 | Similarity percentage | ✅ | `CalculateSimilarity()` 0–100% |
 | Difference count | ✅ | `CountDifferences()` with SIMD |
 
@@ -202,14 +307,14 @@ Plugins are loaded via `WpfHexEditor.PluginHost` with priority-based ordering an
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Archive format tree display | ✅ | ZIP, RAR, 7z, CAB structural view |
+| Archive format tree | ✅ | ZIP, RAR, 7z, CAB structural view |
 | Entry navigation | ✅ | Jump to entry offset in hex editor |
 
 ### Format Info (`WpfHexEditor.Plugins.FormatInfo`)
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Detected format metadata display | ✅ | MIME type, version, encoding info |
+| Detected format metadata | ✅ | MIME type, version, encoding info |
 | Format confidence score | ✅ | Detection certainty indicator |
 
 ### Custom Parser Template (`WpfHexEditor.Plugins.CustomParserTemplate`)
@@ -219,24 +324,39 @@ Plugins are loaded via `WpfHexEditor.PluginHost` with priority-based ordering an
 | User-defined field parser | 🔧 In dev | Template-based binary parsing |
 | Script-driven field definitions | 🔧 In dev | Extensible format description |
 | Visual template designer | 🔧 Planned | Drag-and-drop field layout editor |
-| Export as C struct / Go struct | 🔧 Planned | Generate native struct definitions from template |
-| Share / import templates | 🔧 Planned | Community template exchange |
+
+### Solution Loaders
+
+| Plugin | Load Priority | Purpose |
+|--------|-------------|---------|
+| `SolutionLoader.WH` | 95 | Native `.whsln` / `.whproj` files |
+| `SolutionLoader.VS` | 90 | Visual Studio `.sln` / `.csproj` / `.vbproj` |
+| `SolutionLoader.Folder` | 85 | Any directory — VS Code-style, gitignore-aware |
+
+### Build Adapter
+
+| Plugin | Load Priority | Purpose |
+|--------|-------------|---------|
+| `Build.MSBuild` | 85 | `dotnet build` CLI — no `Microsoft.Build.*` in-process |
 
 ---
 
 ## IDE Panels
 
-Built-in panels that ship with `WpfHexEditor.Panels.IDE`. All follow the VS-Like dockable panel standard.
+Built-in panels shipping with `WpfHexEditor.Panels.IDE`. All follow the VS-Like dockable panel standard with VS-style toolbar, drag/float/dock/tab groups.
 
 | Panel | Status | Description |
 |-------|--------|-------------|
-| Solution Explorer | ✅ | Project tree with virtual/physical folders, file operations |
+| Solution Explorer | ✅ | Project tree with virtual/physical folders, file operations, context menus |
 | Properties Panel | ✅ | Context-aware F4 panel via `IPropertyProvider` |
-| Error/Diagnostics Panel | ✅ | Severity filter, navigate-to-offset from any `IDiagnosticSource` |
+| Error/Diagnostics Panel | ✅ | Severity filter, navigate to file+line from any `IDiagnosticSource` |
 | File Diff Panel | ✅ | Side-by-side binary comparison, F7/F8 navigation |
 | Plugin Monitor Panel | ✅ | Per-plugin CPU %, RAM, load state, execution metrics |
 | Plugin Manager | ✅ | Load/unload/inspect plugins, version and priority info |
-| Output Panel | ✅ | Session log, operation messages from all components |
+| Output Panel | ✅ | Multi-channel log (General · Build · Debug · PluginSystem) |
+| Build Output | ✅ | Real-time build output with severity coloring |
+| NuGet Solution Manager | ✅ | Browse/Installed/Consolidate/Updates across all VS projects |
+| Quick Search | ✅ | Unified inline + advanced search bar across all editors |
 
 ---
 
@@ -250,23 +370,22 @@ Multi-tab terminal panel (`WpfHexEditor.Terminal`) with macro recording and shel
 | Shell types: HxTerminal / PowerShell / Bash / CMD | ✅ | Per-session shell selection |
 | New session via "+" menu | ✅ | Choose shell type on creation |
 | Close session (last tab protected) | ✅ | Cannot close the last remaining tab |
-| Session command history | ✅ | Per-session history |
+| Session command history | ✅ | Per-session history with Up/Down navigation |
 | Macro recording | ✅ | `record start` / `record stop` / `record save <path>` |
 | Macro replay | ✅ | `replay-history [N]` command |
-| Built-in commands: `record`, `replay-history` | ✅ | Registered via `TerminalCommandRegistry` |
-| Ctrl+L to clear terminal | ✅ | Keyboard shortcut |
-| Toolbar overflow: 5 collapsible groups | ✅ | Scroll nav · history · filters · recording · save |
+| 31 built-in commands | ✅ | File ops, panel management, format commands |
+| Ctrl+L to clear | ✅ | Keyboard shortcut |
+| Toolbar overflow (5 collapsible groups) | ✅ | Scroll nav · history · filters · recording · save |
 | Theme compliance | ✅ | Follows global IDE theme |
-| Save session output to file | 🔧 Planned | Export full session transcript |
+| Save session output | 🔧 Planned | Export full session transcript to file |
 | Split terminal panes | 🔧 Planned | Side-by-side sessions in the same panel |
 | Environment variable editor | 🔧 Planned | Per-session environment configuration |
-| Auto-attach to running process | 🔧 Planned | Pipe into an existing process stdio |
 
 ---
 
 ## HexEditor Control
 
-`WpfHexEditor.HexEditor` is a standalone, reusable WPF UserControl targeting `net48` and `net8.0-windows`. It is the core editing engine for the IDE Hex Editor tab, but can be embedded in any WPF application independently.
+`WpfHexEditor.HexEditor` — standalone, reusable WPF UserControl targeting `net48` and `net8.0-windows`. Embeddable independently of the IDE.
 
 ### Core Editing
 
@@ -295,7 +414,6 @@ Multi-tab terminal panel (`WpfHexEditor.Terminal`) with macro recording and shel
 | SIMD vectorization (AVX2/SSE2) | ✅ | 16–32 bytes per instruction |
 | Async search with progress | ✅ | `IProgress<int>` + `CancellationToken` |
 | Scrollbar markers for results | ✅ | Bright orange markers |
-| Search cache invalidation | ✅ | Fixed at all 11 modification points |
 
 ### Display & Visualization
 
@@ -312,6 +430,7 @@ Multi-tab terminal panel (`WpfHexEditor.Terminal`) with macro recording and shel
 | Dual-color selection | ✅ | Active/inactive panel distinction |
 | Font customization | ✅ | Family + size (`Courier New` default) |
 | Highlight colors (14 brushes) | ✅ | All fully customizable |
+| External file change detection | ✅ | `FileSystemWatcher` + 500ms debounce; auto-reload or status warning |
 
 ### File Operations
 
@@ -330,13 +449,11 @@ Multi-tab terminal panel (`WpfHexEditor.Terminal`) with macro recording and shel
 | Feature | Status | Notes |
 |---------|--------|-------|
 | 20+ built-in encodings | ✅ | ASCII · UTF-8 · UTF-16 · EBCDIC · Shift-JIS · EUC-KR · … |
-| Custom `Encoding` property | ✅ | Windows-1252, ISO-8859-1, and any `System.Text.Encoding` |
+| Custom `Encoding` property | ✅ | Windows-1252, ISO-8859-1, any `System.Text.Encoding` |
 | TBL file loading | ✅ | `LoadTBLFile(path)` |
 | Unicode TBL (DTE/MTE) | ✅ | Multi-byte character support |
 | TBL color customization | ✅ | `TbldteColor`, `TblmteColor`, `TblEndBlockColor`, `TblEndLineColor` |
 | TBL MTE display toggle | ✅ | `TblShowMte` property |
-| ASCII/TBL mode switching | ✅ | `CloseTBL()` |
-| TBL string copy mode | ✅ | `CopyPasteMode.TblString` |
 
 ### Copy, Paste & Export
 
@@ -344,11 +461,8 @@ Multi-tab terminal panel (`WpfHexEditor.Terminal`) with macro recording and shel
 |---------|--------|-------|
 | Standard clipboard (Ctrl+C/V/X) | ✅ | Windows clipboard |
 | Copy as code — 19 languages | ✅ | C# · VB.NET · Java · Python · C++ · Go · … |
-| Multiple formats (Hex / ASCII / Binary) | ✅ | Flexible representation |
-| Copy to stream | ✅ | Stream-based export for large selections |
 | 7 copy modes | ✅ | HexaString · AsciiString · CSharpCode · TblString · … |
 | Paste Insert / Overwrite | ✅ | Configurable paste mode |
-| `GetCopyData(start, stop, copyChange)` | ✅ | Programmatic selection extraction |
 
 ### Events (21+)
 
@@ -356,20 +470,14 @@ Multi-tab terminal panel (`WpfHexEditor.Terminal`) with macro recording and shel
 |-------|-------------|
 | `SelectionChanged` | Selection start/stop/length changed |
 | `PositionChanged` | Caret position changed |
-| `ByteModified` | Byte modified (with `ByteEventArgs`) |
+| `ByteModified` | Byte modified |
 | `BytesDeleted` | Bytes deleted |
 | `DataCopied` | Data copied to clipboard |
 | `ChangesSubmited` | Changes saved to file/stream |
 | `FileOpened` / `FileClosed` | File lifecycle |
 | `Undone` / `Redone` | Undo/Redo executed |
-| `UndoCompleted` / `RedoCompleted` | Operation complete |
 | `LongProcessProgressChanged` | Progress 0–100% |
-| `LongProcessProgressStarted/Completed` | Long op lifecycle |
-| `ReplaceByteCompleted` | Replace finished |
-| `FillWithByteCompleted` | Fill finished |
-| `ByteClick` / `ByteDoubleClick` | Mouse events with position |
 | `ZoomScaleChanged` | Zoom level changed |
-| `VerticalScrollBarChanged` | Scrollbar position |
 | `ReadOnlyChanged` | Read-only mode toggled |
 
 ### Keyboard Shortcuts (HexEditor)
@@ -391,13 +499,9 @@ Multi-tab terminal panel (`WpfHexEditor.Terminal`) with macro recording and shel
 | Ctrl+MouseWheel | Zoom in/out |
 | ESC | Clear selection / close find panel |
 
-All shortcuts configurable via `AllowBuildin*` properties.
-
 ---
 
 ## Reusable Controls & Libraries
-
-All controls target `net48` and `net8.0-windows` unless noted.
 
 | Library | Target | Status | Description |
 |---------|--------|--------|-------------|
@@ -405,12 +509,16 @@ All controls target `net48` and `net8.0-windows` unless noted.
 | `WpfHexEditor.HexBox` | net48 · net8 | ✅ | Standalone hex value input control |
 | `WpfHexEditor.ColorPicker` | net48 · net8 | ✅ | RGBA color picker with theme support |
 | `WpfHexEditor.BarChart` | net48 · net8 | ✅ | Byte distribution histogram control |
-| `WpfHexEditor.Docking.Wpf` | net8 | ✅ | VS-style docking engine (custom, no AvalonDock) |
+| `WpfHexEditor.Shell` | net8 | ✅ | VS-style docking engine (custom, zero AvalonDock) — renamed from `Docking.Wpf` in v0.6.0 |
 | `WpfHexEditor.BinaryAnalysis` | net8 | ✅ | 400+ format detection engine |
 | `WpfHexEditor.Core.AssemblyAnalysis` | net8 | ✅ | BCL-only .NET assembly analysis (no NuGet) |
+| `WpfHexEditor.Core.SourceAnalysis` | net8 | ✅ | BCL-only regex outline engine for `.cs` / `.xaml` |
 | `WpfHexEditor.Core.Terminal` | net8 | ✅ | Shell session management, macro engine |
+| `WpfHexEditor.LSP` | net8 | ✅ | Language intelligence — lexer, symbols, SmartComplete, refactoring |
+| `WpfHexEditor.BuildSystem` | net8 | ✅ | Build orchestration engine + `IBuildAdapter` contracts |
+| `WpfHexEditor.Events` | net8 | ✅ | IDE-wide event bus contracts + all domain event records |
 | `WpfHexEditor.SDK` | net8 | ✅ | Plugin + editor contracts for third-party extensions |
-| `WpfHexEditor.Definitions` | net8 | ✅ | Shared types and format definitions |
+| `WpfHexEditor.Definitions` | net8 | ✅ | Shared types, format definitions, 55+ `.whlang` files |
 
 ---
 
@@ -420,7 +528,7 @@ The HexEditor control and binary analysis engine are built around six performanc
 
 | Tier | Technique | Gain |
 |------|-----------|------|
-| **1 — Rendering** | `DrawingContext` + `DrawingVisual`, GPU-accelerated custom pipeline | **5–10× faster** than a naive WPF layout |
+| **1 — Rendering** | `DrawingContext` + `DrawingVisual`, GPU-accelerated custom pipeline | **5–10× faster** than naive WPF layout |
 | **2 — Search Cache** | LRU 20-entry cache, O(1) repeat lookup | **10–100× faster** repeated searches |
 | **3 — Parallel Search** | Multi-core, auto-enabled > 100 MB | **2–4× faster** |
 | **4 — SIMD Vectorization** | AVX2/SSE2, 16–32 bytes/instruction | **4–8× faster** single-byte search |
@@ -432,9 +540,9 @@ The HexEditor control and binary analysis engine are built around six performanc
 Additional optimizations:
 - `Typeface` / glyph-width render cache (static `Dictionary`)
 - `BeginBatch` / `EndBatch` bulk update pattern
-- `HashSet<long>` for highlights (2–3× faster, 50% less memory than `Dictionary`)
+- `HashSet<long>` for highlights (2–3× faster, 50% less memory)
 - Memory-mapped files for GB+ binary files
-- Profile-Guided Optimization (PGO) + ReadyToRun — .NET 8 only
+- Profile-Guided Optimization (PGO) + ReadyToRun (.NET 8 only)
 
 ---
 
@@ -448,9 +556,17 @@ Additional optimizations:
 | `IPropertyProvider` | ✅ | Expose properties to the F4 Properties panel |
 | `IDiagnosticSource` | ✅ | Push errors/warnings to the Error panel |
 | `ITerminalService` | ✅ | Open sessions, send commands from plugins |
-| `ToolbarOverflowManager` | ✅ | Drop-in toolbar collapse for any panel |
-| Plugin sandboxing (`WpfHexEditor.PluginSandbox`) | ✅ | Isolated plugin execution |
+| `IEditorToolbarContributor` | ✅ | Contribute toolbar strips to any editor |
+| `IStatusBarContributor` | ✅ | Add/update status bar items per editor |
+| `IQuickInfoProvider` | ✅ | SDK extension point for hover Quick Info tooltips |
+| `IGrammarProvider` | ✅ | Contribute Synalysis grammar files from plugins |
+| `ISourceOutlineService` | ✅ | BCL-only outline engine for navigation bar |
+| `IBuildAdapter` | ✅ | Pluggable build backend (MSBuild, Gradle, …) |
+| `ISolutionLoader` | ✅ | Pluggable solution format (WH, VS, Folder, …) |
+| `IIDEEventBus` | ✅ | IDE-wide publish/subscribe event bus |
+| Plugin sandboxing (`WpfHexEditor.PluginSandbox`) | ✅ | Isolated out-of-process plugin execution |
 | Plugin priority system | ✅ | Load order and resource scheduling |
+| `ToolbarOverflowManager` | ✅ | Drop-in toolbar collapse for any panel |
 | 60+ dependency properties on `HexEditor` | ✅ | Full XAML / data-binding support |
 | MVVM-ready `HexEditorViewModel` | ✅ | `INotifyPropertyChanged`, `RelayCommand<T>` |
 | Async APIs throughout | ✅ | `IProgress<int>` + `CancellationToken` |
@@ -462,27 +578,19 @@ Additional optimizations:
 
 ## Roadmap Highlights
 
-Major features currently tracked or in active planning.
-
-| Feature | Issue | Priority | Notes |
-|---------|-------|----------|-------|
-| Code Editor — VS-like full experience | #84 | High | IntelliSense, folding, multi-caret, scripting |
-| In-IDE Plugin Development | #138 | High | Write + hot-reload plugins without leaving the IDE |
-| Command System | #78 | High | Palette, keyboard bindings, scripted commands |
-| Event System | #80 | High | IDE-wide observable event bus for plugins |
-| Scripting Host | #79 | High | Embedded Lua / C# scripting in editors |
-| Plugin Sandbox isolation | #81 | High | Crash-proof per-plugin process boundary |
-| Full method body decompiler | — | Medium | Complete C# decompilation in Assembly Explorer |
-| VS `.sln` / `.csproj` import | — | Medium | Read-only MSBuild solution support |
-| Global options dialog | — | Medium | Centralized settings with per-plugin pages |
-| Split terminal panes | — | Medium | Side-by-side sessions |
-| Command palette | — | Medium | Fuzzy-search over all IDE commands |
-| Disassembly Viewer (x86/x64) | — | Medium | Full disassembly editor with symbol support |
-| Entropy Viewer | — | Medium | Block entropy map with anomaly detection |
-| Image Viewer | — | Low | Common image formats (PNG, BMP, DDS, …) |
-| Audio Viewer | — | Low | Waveform display for embedded audio assets |
-| Tile Editor | — | Low | ROM tile / palette editing |
-| Structure Editor | — | Low | Visual binary structure authoring |
+| Feature | Issue | Status | Notes |
+|---------|-------|--------|-------|
+| XAML Designer Phase 2 | #155 | 🔧 Planned | Trigger/animation timeline, data-binding wizard, multi-DPI preview |
+| Code Editor — diagnostics + multi-caret | #84 | 🔧 Planned | Error squiggles, multi-cursor editing |
+| In-IDE Plugin Development | #138 | 🔧 Planned | Write + hot-reload plugins without leaving the IDE |
+| Command Palette | — | 🔧 Planned | Ctrl+Shift+P fuzzy-search over all IDE commands |
+| Global Options Dialog | — | 🔧 Planned | Centralized settings with per-plugin pages |
+| Git Integration | #91 | 🔧 Planned | GitPanel, commit/push/pull, inline gutter diff |
+| Full C# method body decompiler | — | 🔧 Planned | Complete output via ILSpy in Assembly Explorer |
+| Virtual scroll >1 GB | #97 | 🔧 Planned | Render-only visible lines in Code/Text editors |
+| Split terminal panes | — | 🔧 Planned | Side-by-side sessions |
+| Disassembly Viewer | — | 🔧 Planned | x86/x64/ARM full disassembly |
+| Plugin Sandbox gRPC migration | #81 | 🔧 Planned | Replace Named Pipe IPC with gRPC transport |
 
 ---
 
@@ -490,11 +598,11 @@ Major features currently tracked or in active planning.
 
 | Symbol | Meaning |
 |--------|---------|
-| ✅ | Implemented and tested |
+| ✅ | Implemented and shipped |
 | 🔧 | In development or planned |
 | ⚡ | Performance-critical path |
 
-> Features marked 🔧 represent the active development direction. See [ROADMAP.md](ROADMAP.md) for milestone tracking.
+> See [ROADMAP.md](ROADMAP.md) for milestone tracking and [CHANGELOG.md](CHANGELOG.md) for full version history.
 
 ---
 

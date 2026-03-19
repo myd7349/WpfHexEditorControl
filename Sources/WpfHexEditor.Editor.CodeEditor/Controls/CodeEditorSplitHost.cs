@@ -150,7 +150,7 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IOpenableDocume
         _primaryEditor.OperationProgress  += (s, e) => OperationProgress?.Invoke(this, e);
         _primaryEditor.OperationCompleted += (s, e) => OperationCompleted?.Invoke(this, e);
 
-        // -- Forward CodeLens reference events from both editors ---------------
+        // -- Forward InlineHints reference events from both editors ---------------
         // Either editor can show the references popup (both share the same document).
         _primaryEditor.ReferenceNavigationRequested       += (s, e) => ReferenceNavigationRequested?.Invoke(this, e);
         _primaryEditor.FindAllReferencesDockRequested     += (s, e) => FindAllReferencesDockRequested?.Invoke(this, e);
@@ -397,7 +397,7 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IOpenableDocume
             _secondaryEditor.ExternalHighlighter = highlighter;
 
             // Propagate the LanguageDefinition so per-language feature gates
-            // (CodeLens, Ctrl+Click navigation) apply even when the editor is
+            // (InlineHints, Ctrl+Click navigation) apply even when the editor is
             // created outside CodeEditorFactory (e.g. XamlDesignerSplitHost).
             _primaryEditor.Language   = language;
             _secondaryEditor.Language = language;

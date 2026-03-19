@@ -10,10 +10,14 @@
 //
 // Architecture Notes:
 //     ContentControl — wraps DesignCanvas.
-//     Uses LayoutTransform (not RenderTransform) so hit-testing coordinates
-//     remain correct after scaling.
+//     Uses RenderTransform (TransformGroup: ScaleTransform + TranslateTransform) on the
+//     content element — NOT LayoutTransform. LayoutTransform causes WPF NeedsClipBounds
+//     to fire on the content due to floating-point precision in the inverse-transform
+//     round-trip (1280 * zoom / zoom = 1279.9999...), silently clipping the design canvas
+//     rendering to the viewport size at any zoom level above fit-to-view.
+//     RenderTransform is purely visual: no layout participation, no clip guard triggered.
 //     ZoomLevel clamped to [0.1, 4.0]. Transforms composed as:
-//       ScaleTransform(zoom, zoom) + TranslateTransform(offsetX, offsetY)
+//       TransformGroup { ScaleTransform(zoom, zoom), TranslateTransform(offsetX, offsetY) }
 // ==========================================================
 
 using System.Windows;
@@ -41,8 +45,12 @@ public sealed class ZoomPanCanvas : ContentControl
 
     // ── State ─────────────────────────────────────────────────────────────────
 
-    private readonly ScaleTransform     _scale     = new(1, 1);
-    private readonly TranslateTransform _translate = new(0, 0);
+    private readonly ScaleTransform     _scale          = new(1, 1);
+    private readonly TranslateTransform _translate      = new(0, 0);
+    // Combined Scale + Translate applied as RenderTransform on the content element.
+    // Scale is applied first (around origin 0,0), then Translate shifts the result.
+    // Both transforms are mutated in-place by OnZoomLevelChanged / OnOffsetChanged.
+    private readonly TransformGroup     _contentTransform;
 
     private Point _panStart;
     private bool  _isPanning;
@@ -68,24 +76,26 @@ public sealed class ZoomPanCanvas : ContentControl
 
     public ZoomPanCanvas()
     {
-        // HorizontalContentAlignment = Left prevents ContentPresenter from arranging
-        // the content in a viewport-sized rect (the default Stretch behaviour).
-        // With Stretch, WPF's NeedsClipBounds fires whenever zoom > (viewport / contentWidth):
-        //   finalArrange passed to ArrangeCore = viewportWidth / zoom  < content.Width
-        //   → WPF sets _layoutClip = Rect(viewportWidth/zoom, viewportHeight/zoom)
-        //   → content is silently clipped in its own coordinate space to the viewport size,
-        //     so zooming in never reveals more content — the right/bottom is always black.
-        // With Left/Top, ContentPresenter gives content its DesiredSize as the arrangement
-        // rect → finalArrange = content.Width/Height → NeedsClipBounds = false → no clip.
+        // Build the combined RenderTransform before any content is set.
+        _contentTransform = new TransformGroup();
+        _contentTransform.Children.Add(_scale);
+        _contentTransform.Children.Add(_translate);
+
+        // HorizontalContentAlignment = Left prevents ContentPresenter from giving the
+        // content an arrangement rect equal to the viewport size (the default Stretch).
+        // With Stretch, the content's explicit Width (1280) exceeds the arrangement rect
+        // → NeedsClipBounds = true → layout clip applied → content visually clipped to
+        // the viewport footprint regardless of zoom or pan offset.
+        // With Left/Top, ContentPresenter gives content its DesiredSize (= explicit
+        // Width/Height = 1280×720) as the arrangement rect → no clip guard triggers.
         HorizontalContentAlignment = HorizontalAlignment.Left;
         VerticalContentAlignment   = VerticalAlignment.Top;
 
         // ZoomPanCanvas itself has NO transform.
-        // Transforms are applied to the content element in OnContentChanged:
-        //   LayoutTransform = _scale   → content is measured/arranged at scaled size
-        //   RenderTransform = _translate → content pans without re-measuring
+        // Transforms are applied to the content element in OnContentChanged as a
+        // single TransformGroup (Scale then Translate) on RenderTransform.
         // HorizontalAlignment=Left + VerticalAlignment=Top on the content element
-        // ensures content.ActualWidth reflects its natural size, not the viewport.
+        // ensures content.ActualWidth reflects its natural (explicit) size.
         ClipToBounds = true;
 
         // Use PreviewMouseWheel (tunneling) so Ctrl+Wheel zoom works even when
@@ -149,6 +159,8 @@ public sealed class ZoomPanCanvas : ContentControl
     /// <summary>
     /// Applies zoom/pan transforms directly to the content element so that only
     /// the design content scales — not the ZoomPanCanvas viewport frame.
+    /// Uses a combined RenderTransform (ScaleTransform + TranslateTransform) —
+    /// NOT LayoutTransform — to avoid WPF's layout-clip guard.
     /// Also anchors content to top-left so ActualWidth/Height reflect natural size.
     /// </summary>
     protected override void OnContentChanged(object oldContent, object newContent)
@@ -163,11 +175,14 @@ public sealed class ZoomPanCanvas : ContentControl
             oldFe.SizeChanged -= OnContentSizeChanged;
         }
 
-        // Apply transforms to new content.
+        // Apply combined RenderTransform to new content.
+        // No LayoutTransform: using LayoutTransform here causes WPF's NeedsClipBounds
+        // guard to fire due to floating-point rounding in the inverse-transform path
+        // (1280*zoom / zoom = 1279.9999...), silently clipping the rendered content.
         if (newContent is FrameworkElement newEl)
         {
-            newEl.LayoutTransform = _scale;
-            newEl.RenderTransform = _translate;
+            newEl.LayoutTransform = Transform.Identity;
+            newEl.RenderTransform = _contentTransform;
             // Left+Top alignment: content.ActualWidth = natural design width (not viewport).
             newEl.HorizontalAlignment = HorizontalAlignment.Left;
             newEl.VerticalAlignment   = VerticalAlignment.Top;
@@ -303,6 +318,19 @@ public sealed class ZoomPanCanvas : ContentControl
         ReleaseMouseCapture();
         Cursor = null;
     }
+
+    // ── Hit-testing ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Makes the entire viewport bounds hit-testable so that mouse-wheel zoom and
+    /// middle-mouse pan work everywhere in the designer area — not just over the
+    /// rendered design element.  Without this override, WPF only considers the
+    /// ZoomPanCanvas "hit" where the content element's visual occupies space;
+    /// the blank canvas background has no hit-testable surface (Background = null)
+    /// and therefore receives no routed mouse events.
+    /// </summary>
+    protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)
+        => new PointHitTestResult(this, hitTestParameters.HitPoint);
 
     // ── Transform sync ────────────────────────────────────────────────────────
 

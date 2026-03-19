@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // GNU Affero General Public License v3.0 - 2026
-// Custom CodeEditor - IntelliSense Provider (Phase 4)
+// Custom CodeEditor - SmartComplete Provider (Phase 4)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -13,18 +13,18 @@ using WpfHexEditor.Editor.CodeEditor.Models;
 namespace WpfHexEditor.Editor.CodeEditor.Helpers
 {
     /// <summary>
-    /// Provides context-aware IntelliSense suggestions for format definition JSON.
+    /// Provides context-aware SmartComplete suggestions for format definition JSON.
     /// Phase 4: Root level + blocks contexts.
     /// Phase 7 will add all contexts, snippets, and tooltips.
     /// </summary>
-    public class CodeIntelliSenseProvider
+    public class CodeSmartCompleteProvider
     {
         #region Suggestion Data
 
         // Root level properties for format definitions
-        private static readonly List<IntelliSenseSuggestion> RootProperties = new List<IntelliSenseSuggestion>
+        private static readonly List<SmartCompleteSuggestion> RootProperties = new List<SmartCompleteSuggestion>
         {
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "formatName",
                 InsertText = "\"formatName\": \"\"",
@@ -35,7 +35,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 10
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "version",
                 InsertText = "\"version\": \"1.0\"",
@@ -46,7 +46,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 20
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "description",
                 InsertText = "\"description\": \"\"",
@@ -57,7 +57,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 30
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "extensions",
                 InsertText = "\"extensions\": [\".ext\"]",
@@ -68,7 +68,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 40
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "author",
                 InsertText = "\"author\": \"\"",
@@ -79,7 +79,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 50
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "website",
                 InsertText = "\"website\": \"\"",
@@ -90,7 +90,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 60
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "detection",
                 InsertText = "\"detection\": {}",
@@ -101,7 +101,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 70
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "blocks",
                 InsertText = "\"blocks\": []",
@@ -115,9 +115,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         };
 
         // Block-level properties
-        private static readonly List<IntelliSenseSuggestion> BlockProperties = new List<IntelliSenseSuggestion>
+        private static readonly List<SmartCompleteSuggestion> BlockProperties = new List<SmartCompleteSuggestion>
         {
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "type",
                 InsertText = "\"type\": \"\"",
@@ -128,7 +128,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 10
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "name",
                 InsertText = "\"name\": \"\"",
@@ -139,7 +139,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 20
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "fields",
                 InsertText = "\"fields\": []",
@@ -150,7 +150,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 30
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "condition",
                 InsertText = "\"condition\": \"\"",
@@ -161,7 +161,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 40
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "count",
                 InsertText = "\"count\": \"\"",
@@ -175,9 +175,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         };
 
         // Field properties
-        private static readonly List<IntelliSenseSuggestion> FieldProperties = new List<IntelliSenseSuggestion>
+        private static readonly List<SmartCompleteSuggestion> FieldProperties = new List<SmartCompleteSuggestion>
         {
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "type",
                 InsertText = "\"type\": \"\"",
@@ -188,7 +188,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 10
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "name",
                 InsertText = "\"name\": \"\"",
@@ -199,7 +199,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 20
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "length",
                 InsertText = "\"length\": ",
@@ -209,7 +209,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 30
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "value",
                 InsertText = "\"value\": \"\"",
@@ -220,7 +220,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 40
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "offset",
                 InsertText = "\"offset\": ",
@@ -230,7 +230,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 50
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "endianness",
                 InsertText = "\"endianness\": \"little\"",
@@ -241,7 +241,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 60
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "varName",
                 InsertText = "\"varName\": \"\"",
@@ -255,9 +255,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         };
 
         // Block types (keywords)
-        private static readonly List<IntelliSenseSuggestion> BlockTypes = new List<IntelliSenseSuggestion>
+        private static readonly List<SmartCompleteSuggestion> BlockTypes = new List<SmartCompleteSuggestion>
         {
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "signature",
                 InsertText = "\"signature\"",
@@ -267,7 +267,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Keyword,
                 SortPriority = 10
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "field",
                 InsertText = "\"field\"",
@@ -277,7 +277,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Keyword,
                 SortPriority = 20
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "conditional",
                 InsertText = "\"conditional\"",
@@ -287,7 +287,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Keyword,
                 SortPriority = 30
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "loop",
                 InsertText = "\"loop\"",
@@ -297,7 +297,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Keyword,
                 SortPriority = 40
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "action",
                 InsertText = "\"action\"",
@@ -310,29 +310,29 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         };
 
         // Value types (data types)
-        private static readonly List<IntelliSenseSuggestion> ValueTypes = new List<IntelliSenseSuggestion>
+        private static readonly List<SmartCompleteSuggestion> ValueTypes = new List<SmartCompleteSuggestion>
         {
-            new IntelliSenseSuggestion("\"uint8\"", "Unsigned 8-bit integer (0-255)") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 10 },
-            new IntelliSenseSuggestion("\"uint16\"", "Unsigned 16-bit integer (0-65535)") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 11 },
-            new IntelliSenseSuggestion("\"uint32\"", "Unsigned 32-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 12 },
-            new IntelliSenseSuggestion("\"uint64\"", "Unsigned 64-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 13 },
-            new IntelliSenseSuggestion("\"int8\"", "Signed 8-bit integer (-128 to 127)") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 20 },
-            new IntelliSenseSuggestion("\"int16\"", "Signed 16-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 21 },
-            new IntelliSenseSuggestion("\"int32\"", "Signed 32-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 22 },
-            new IntelliSenseSuggestion("\"int64\"", "Signed 64-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 23 },
-            new IntelliSenseSuggestion("\"float\"", "32-bit floating point") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 30 },
-            new IntelliSenseSuggestion("\"double\"", "64-bit floating point") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 31 },
-            new IntelliSenseSuggestion("\"string\"", "String with specified length") { Icon = "🔤", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 40 },
-            new IntelliSenseSuggestion("\"ascii\"", "ASCII-encoded string") { Icon = "🔤", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 41 },
-            new IntelliSenseSuggestion("\"utf8\"", "UTF-8 encoded string") { Icon = "🔤", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 42 },
-            new IntelliSenseSuggestion("\"utf16\"", "UTF-16 encoded string") { Icon = "🔤", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 43 },
-            new IntelliSenseSuggestion("\"bytes\"", "Raw byte array") { Icon = "📦", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 50 }
+            new SmartCompleteSuggestion("\"uint8\"", "Unsigned 8-bit integer (0-255)") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 10 },
+            new SmartCompleteSuggestion("\"uint16\"", "Unsigned 16-bit integer (0-65535)") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 11 },
+            new SmartCompleteSuggestion("\"uint32\"", "Unsigned 32-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 12 },
+            new SmartCompleteSuggestion("\"uint64\"", "Unsigned 64-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 13 },
+            new SmartCompleteSuggestion("\"int8\"", "Signed 8-bit integer (-128 to 127)") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 20 },
+            new SmartCompleteSuggestion("\"int16\"", "Signed 16-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 21 },
+            new SmartCompleteSuggestion("\"int32\"", "Signed 32-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 22 },
+            new SmartCompleteSuggestion("\"int64\"", "Signed 64-bit integer") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 23 },
+            new SmartCompleteSuggestion("\"float\"", "32-bit floating point") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 30 },
+            new SmartCompleteSuggestion("\"double\"", "64-bit floating point") { Icon = "🔢", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 31 },
+            new SmartCompleteSuggestion("\"string\"", "String with specified length") { Icon = "🔤", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 40 },
+            new SmartCompleteSuggestion("\"ascii\"", "ASCII-encoded string") { Icon = "🔤", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 41 },
+            new SmartCompleteSuggestion("\"utf8\"", "UTF-8 encoded string") { Icon = "🔤", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 42 },
+            new SmartCompleteSuggestion("\"utf16\"", "UTF-16 encoded string") { Icon = "🔤", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 43 },
+            new SmartCompleteSuggestion("\"bytes\"", "Raw byte array") { Icon = "📦", TypeHint = "type", Type = SuggestionType.ValueType, SortPriority = 50 }
         };
 
         // Detection properties (Phase 16)
-        private static readonly List<IntelliSenseSuggestion> DetectionProperties = new List<IntelliSenseSuggestion>
+        private static readonly List<SmartCompleteSuggestion> DetectionProperties = new List<SmartCompleteSuggestion>
         {
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "signatures",
                 InsertText = "\"signatures\": []",
@@ -343,7 +343,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 10
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "offset",
                 InsertText = "\"offset\": 0",
@@ -353,7 +353,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 20
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "value",
                 InsertText = "\"value\": \"\"",
@@ -364,7 +364,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Property,
                 SortPriority = 30
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "description",
                 InsertText = "\"description\": \"\"",
@@ -378,16 +378,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         };
 
         // Endianness values (Phase 16)
-        private static readonly List<IntelliSenseSuggestion> EndiannessValues = new List<IntelliSenseSuggestion>
+        private static readonly List<SmartCompleteSuggestion> EndiannessValues = new List<SmartCompleteSuggestion>
         {
-            new IntelliSenseSuggestion("\"little\"", "Little-endian byte order (x86, ARM)") { Icon = "🔄", TypeHint = "value", Type = SuggestionType.Value, SortPriority = 10 },
-            new IntelliSenseSuggestion("\"big\"", "Big-endian byte order (network, SPARC)") { Icon = "🔄", TypeHint = "value", Type = SuggestionType.Value, SortPriority = 20 }
+            new SmartCompleteSuggestion("\"little\"", "Little-endian byte order (x86, ARM)") { Icon = "🔄", TypeHint = "value", Type = SuggestionType.Value, SortPriority = 10 },
+            new SmartCompleteSuggestion("\"big\"", "Big-endian byte order (network, SPARC)") { Icon = "🔄", TypeHint = "value", Type = SuggestionType.Value, SortPriority = 20 }
         };
 
         // Snippets - Complete code templates (Phase 16)
-        private static readonly List<IntelliSenseSuggestion> Snippets = new List<IntelliSenseSuggestion>
+        private static readonly List<SmartCompleteSuggestion> Snippets = new List<SmartCompleteSuggestion>
         {
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "snippet:signature",
                 InsertText = "{\n  \"type\": \"signature\",\n  \"name\": \"Magic bytes\",\n  \"value\": \"\"\n}",
@@ -398,7 +398,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Snippet,
                 SortPriority = 100
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "snippet:field",
                 InsertText = "{\n  \"type\": \"field\",\n  \"name\": \"\",\n  \"valueType\": \"uint32\",\n  \"endianness\": \"little\"\n}",
@@ -409,7 +409,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Snippet,
                 SortPriority = 101
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "snippet:loop",
                 InsertText = "{\n  \"type\": \"loop\",\n  \"name\": \"\",\n  \"count\": 1,\n  \"fields\": []\n}",
@@ -420,7 +420,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Snippet,
                 SortPriority = 102
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "snippet:conditional",
                 InsertText = "{\n  \"type\": \"conditional\",\n  \"name\": \"\",\n  \"condition\": \"var:someVar == 1\",\n  \"fields\": []\n}",
@@ -431,7 +431,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 Type = SuggestionType.Snippet,
                 SortPriority = 103
             },
-            new IntelliSenseSuggestion
+            new SmartCompleteSuggestion
             {
                 DisplayText = "snippet:format",
                 InsertText = "{\n  \"formatName\": \"\",\n  \"version\": \"1.0\",\n  \"description\": \"\",\n  \"extensions\": [\".ext\"],\n  \"author\": \"\",\n  \"detection\": {\n    \"signatures\": []\n  },\n  \"blocks\": []\n}",
@@ -449,12 +449,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         #region Public Methods
 
         /// <summary>
-        /// Get IntelliSense suggestions for given context
+        /// Get SmartComplete suggestions for given context
         /// </summary>
-        public List<IntelliSenseSuggestion> GetSuggestions(IntelliSenseContext context)
+        public List<SmartCompleteSuggestion> GetSuggestions(SmartCompleteContext context)
         {
             if (context == null)
-                return new List<IntelliSenseSuggestion>();
+                return new List<SmartCompleteSuggestion>();
 
             try
             {
@@ -462,43 +462,43 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                 var contextType = DetermineContextType(context);
 
                 // Get suggestions based on context
-                List<IntelliSenseSuggestion> suggestions;
+                List<SmartCompleteSuggestion> suggestions;
 
                 switch (contextType)
                 {
                     case ContextType.Root:
-                        suggestions = new List<IntelliSenseSuggestion>(RootProperties);
+                        suggestions = new List<SmartCompleteSuggestion>(RootProperties);
                         // Add snippets at root level
                         suggestions.AddRange(Snippets);
                         break;
 
                     case ContextType.Block:
-                        suggestions = new List<IntelliSenseSuggestion>(BlockProperties);
+                        suggestions = new List<SmartCompleteSuggestion>(BlockProperties);
                         break;
 
                     case ContextType.Field:
-                        suggestions = new List<IntelliSenseSuggestion>(FieldProperties);
+                        suggestions = new List<SmartCompleteSuggestion>(FieldProperties);
                         break;
 
                     case ContextType.BlockTypeValue:
-                        suggestions = new List<IntelliSenseSuggestion>(BlockTypes);
+                        suggestions = new List<SmartCompleteSuggestion>(BlockTypes);
                         break;
 
                     case ContextType.FieldTypeValue:
-                        suggestions = new List<IntelliSenseSuggestion>(ValueTypes);
+                        suggestions = new List<SmartCompleteSuggestion>(ValueTypes);
                         break;
 
                     case ContextType.Detection:
-                        suggestions = new List<IntelliSenseSuggestion>(DetectionProperties);
+                        suggestions = new List<SmartCompleteSuggestion>(DetectionProperties);
                         break;
 
                     case ContextType.EndiannessValue:
-                        suggestions = new List<IntelliSenseSuggestion>(EndiannessValues);
+                        suggestions = new List<SmartCompleteSuggestion>(EndiannessValues);
                         break;
 
                     case ContextType.BlocksArray:
                         // Inside blocks array - suggest block snippets
-                        suggestions = new List<IntelliSenseSuggestion>
+                        suggestions = new List<SmartCompleteSuggestion>
                         {
                             Snippets.First(s => s.DisplayText == "snippet:signature"),
                             Snippets.First(s => s.DisplayText == "snippet:field"),
@@ -508,7 +508,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
                         break;
 
                     default:
-                        suggestions = new List<IntelliSenseSuggestion>();
+                        suggestions = new List<SmartCompleteSuggestion>();
                         break;
                 }
 
@@ -518,7 +518,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
             catch (Exception)
             {
                 // Return empty list on error
-                return new List<IntelliSenseSuggestion>();
+                return new List<SmartCompleteSuggestion>();
             }
         }
 
@@ -529,7 +529,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         /// <summary>
         /// Determine the context type based on cursor position and document structure
         /// </summary>
-        private ContextType DetermineContextType(IntelliSenseContext context)
+        private ContextType DetermineContextType(SmartCompleteContext context)
         {
             var line = context.CurrentLine?.Trim() ?? string.Empty;
 
@@ -577,7 +577,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         /// <summary>
         /// Check if cursor is inside blocks array
         /// </summary>
-        private bool IsInBlocksArray(IntelliSenseContext context)
+        private bool IsInBlocksArray(SmartCompleteContext context)
         {
             if (string.IsNullOrEmpty(context.DocumentText))
                 return false;
@@ -590,7 +590,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         /// <summary>
         /// Check if cursor is inside fields array (within a block)
         /// </summary>
-        private bool IsInFieldsArray(IntelliSenseContext context)
+        private bool IsInFieldsArray(SmartCompleteContext context)
         {
             if (string.IsNullOrEmpty(context.DocumentText))
                 return false;
@@ -602,7 +602,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         /// <summary>
         /// Check if cursor is in block context (for type value suggestions)
         /// </summary>
-        private bool IsInBlockContext(IntelliSenseContext context)
+        private bool IsInBlockContext(SmartCompleteContext context)
         {
             var textBeforeCursor = GetTextBeforeCursor(context);
 
@@ -634,7 +634,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         /// <summary>
         /// Check if cursor is in field context (for type value suggestions)
         /// </summary>
-        private bool IsInFieldContext(IntelliSenseContext context)
+        private bool IsInFieldContext(SmartCompleteContext context)
         {
             var textBeforeCursor = GetTextBeforeCursor(context);
             return textBeforeCursor.Contains("\"fields\"");
@@ -643,7 +643,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         /// <summary>
         /// Check if cursor is inside detection object (Phase 16)
         /// </summary>
-        private bool IsInDetectionObject(IntelliSenseContext context)
+        private bool IsInDetectionObject(SmartCompleteContext context)
         {
             var textBeforeCursor = GetTextBeforeCursor(context);
 
@@ -668,7 +668,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         /// <summary>
         /// Get all text before cursor position
         /// </summary>
-        private string GetTextBeforeCursor(IntelliSenseContext context)
+        private string GetTextBeforeCursor(SmartCompleteContext context)
         {
             if (string.IsNullOrEmpty(context.DocumentText))
                 return string.Empty;

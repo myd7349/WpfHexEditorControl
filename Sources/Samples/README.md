@@ -1,4 +1,4 @@
-﻿# WPF HexEditor Samples
+# WPF HexEditor Samples
 
 This directory contains sample applications demonstrating the features and capabilities of the WPF HexEditor control (V2 Architecture).
 
@@ -45,7 +45,7 @@ Or open `WpfHexEditorControl.sln` and set `WpfHexEditor.Sample.HexEditor` as the
 - 📦 Manual control instantiation (no designer/toolbox required)
 - 📂 File opening and viewing
 - 📝 Basic editing operations
-- 🎯 IntelliSense-driven development
+- 🎯 SmartComplete-driven development
 - ⚡ Rider Live Templates for fast coding
 
 **How to run:**

@@ -7,7 +7,7 @@ Multi-language code and structured-text editor for [WpfHexEditor](https://github
 - **Full `IDocumentEditor` + `IOpenableDocument` integration** (Undo/Redo, Save, Dirty tracking, Commands)
 - **Split-view** — togglable horizontal split; both panes share the same `CodeDocument`
 - **Syntax highlighting** built from `.whlang` / `LanguageDefinition` rule sets via `SyntaxRuleHighlighter`
-- **IntelliSense popup** (`IntelliSensePopup`) with completion candidates
+- **SmartComplete popup** (`SmartCompletePopup`) with completion candidates
 - **Snippet support** — `SnippetManager` injects snippets from the active language definition
 - **Gutter** — line numbers via `GutterControl`
 - **Format-script editor** (`FormatScriptEditorControl`) for `.whfmt` scripting files

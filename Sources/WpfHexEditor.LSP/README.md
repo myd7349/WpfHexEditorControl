@@ -1,7 +1,7 @@
 # WpfHexEditor.LSP
 
 **Type:** Class Library (`net8.0-windows`, UseWPF: false)
-**Role:** Language-server-style analysis engine — multi-language tokenization, symbol resolution, incremental parsing, IntelliSense, refactoring, and diagnostics.
+**Role:** Language-server-style analysis engine — multi-language tokenization, symbol resolution, incremental parsing, SmartComplete, refactoring, and diagnostics.
 
 ---
 
@@ -53,13 +53,13 @@ DiagnosticsEngine  (apply IDiagnosticRule instances)
 | `Symbol` | Immutable — Name, Kind, FilePath, Line, Column |
 | `SymbolTable` | Per-document symbol store; FindByName(), FindDefinition(), GetInScope() |
 | `SymbolTableManager` | Workspace-level registry; thread-safe; FindWorkspaceSymbol(), GetAllSymbolNames(), FindAllReferences() |
-| `WorkspaceSymbolTableManager` | Aggregated cross-file queries for IntelliSense and refactoring |
+| `WorkspaceSymbolTableManager` | Aggregated cross-file queries for SmartComplete and refactoring |
 
-### IntelliSense
+### SmartComplete
 
 | Class | Responsibility |
 |-------|---------------|
-| `BoostedIntelliSenseManager` | Aggregates keywords + workspace symbols + snippets; priority-ranked (keywords > local > cross-file > snippets) |
+| `BoostedSmartCompleteManager` | Aggregates keywords + workspace symbols + snippets; priority-ranked (keywords > local > cross-file > snippets) |
 | `CompletionItem` | Label, CompletionKind, InsertText, Detail, SortPriority |
 | `HoverProvider` | Quick-info text for identifiers on hover |
 | `LspSnippetsManager` | Per-language snippet catalog |
@@ -132,4 +132,4 @@ DiagnosticsEngine  (apply IDiagnosticRule instances)
 | **Registry** | `LanguageDefinitionManager`, `RefactoringEngine` |
 | **Pipeline** | `DiagnosticsEngine` rule pipeline |
 | **Factory** | `LanguageDefinitionManager.Create()` |
-| **Aggregator** | `BoostedIntelliSenseManager` merges multiple sources |
+| **Aggregator** | `BoostedSmartCompleteManager` merges multiple sources |

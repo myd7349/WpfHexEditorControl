@@ -6,7 +6,7 @@
 // Created: 2026-03-06
 // Description:
 //     Options page for the CodeEditor (full-featured, VS-like).
-//     Covers: font, indentation, features (IntelliSense, line numbers,
+//     Covers: font, indentation, features (SmartComplete, line numbers,
 //     zoom), .whchg changeset toggle, and syntax colour overrides.
 //
 // Theme: PanelCommon.xaml + DynamicResource brushes (all themes)
@@ -96,8 +96,8 @@
                    Foreground="{DynamicResource DockMenuForegroundBrush}"
                    Margin="0,0,0,10"/>
 
-        <CheckBox x:Name="CheckIntelliSense"
-                  Content="Enable IntelliSense auto-complete"
+        <CheckBox x:Name="CheckSmartComplete"
+                  Content="Enable SmartComplete auto-complete"
                   Foreground="{DynamicResource DockMenuForegroundBrush}"
                   Margin="0,0,0,8"
                   Checked="OnCheckChanged"

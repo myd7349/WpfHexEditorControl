@@ -120,7 +120,7 @@ Application.Current.TryEnqueue(() =>
 ## ✨ Extension Method Benefits
 
 - **Readability**: Fluent, method-chaining syntax
-- **Discoverability**: IntelliSense shows extensions on types
+- **Discoverability**: SmartComplete shows extensions on types
 - **No Inheritance**: Add methods without subclassing
 - **Reusability**: Used across entire codebase
 - **Testing**: Easy to unit test extension methods

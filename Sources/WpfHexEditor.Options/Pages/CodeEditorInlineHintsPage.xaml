@@ -1,18 +1,18 @@
 <!--
 // ==========================================================
 // Project: WpfHexEditor.Options
-// File: CodeEditorCodeLensPage.xaml
+// File: CodeEditorInlineHintsPage.xaml
 // Author: Auto
 // Created: 2026-03-18
 // Description:
-//     Options page for CodeEditor CodeLens feature.
+//     Options page for CodeEditor Inline Hints feature.
 //     Master enable/disable toggle + per-symbol-kind checkboxes.
 //     All kinds enabled by default.
 //
 // Theme: DynamicResource brushes only (all 8 themes).
 // ==========================================================
 -->
-<UserControl x:Class="WpfHexEditor.Options.Pages.CodeEditorCodeLensPage"
+<UserControl x:Class="WpfHexEditor.Options.Pages.CodeEditorInlineHintsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
@@ -61,14 +61,14 @@
 
     <StackPanel Margin="0,0,0,16">
 
-        <!-- ── Code Lens ─────────────────────────────────────────────────── -->
-        <TextBlock Text="Code Lens"
+        <!-- ── Inline Hints ──────────────────────────────────────────────────── -->
+        <TextBlock Text="Inline Hints"
                    FontWeight="SemiBold" FontSize="13"
                    Foreground="{DynamicResource DockMenuForegroundBrush}"
                    Margin="0,0,0,10"/>
 
-        <CheckBox x:Name="CheckCodeLensEnabled"
-                  Content="Enable Code Lens (show inline reference counts above declarations)"
+        <CheckBox x:Name="CheckInlineHintsEnabled"
+                  Content="Enable Inline Hints (show inline reference counts above declarations)"
                   Foreground="{DynamicResource DockMenuForegroundBrush}"
                   Margin="0,0,0,8"
                   Checked="OnCheckChanged"
@@ -77,13 +77,13 @@
         <Separator Margin="0,12,0,12"
                    Background="{DynamicResource DockBorderBrush}"/>
 
-        <!-- ── Symbol Kinds ──────────────────────────────────────────────── -->
+        <!-- ── Symbol Kinds ──────────────────────────────────────────────────── -->
         <TextBlock Text="Show hints for symbol kinds:"
                    FontWeight="SemiBold" FontSize="13"
                    Foreground="{DynamicResource DockMenuForegroundBrush}"
                    Margin="0,0,0,4"/>
 
-        <TextBlock Text="Uncheck a kind to hide its reference-count hints while keeping Code Lens active for others."
+        <TextBlock Text="Uncheck a kind to hide its reference-count hints while keeping Inline Hints active for others."
                    FontSize="11"
                    Foreground="{DynamicResource DockMenuForegroundBrush}"
                    Opacity="0.65"
@@ -92,7 +92,7 @@
 
         <!-- Kind panel — disabled when master toggle is off -->
         <StackPanel x:Name="KindPanel"
-                    IsEnabled="{Binding IsChecked, ElementName=CheckCodeLensEnabled}">
+                    IsEnabled="{Binding IsChecked, ElementName=CheckInlineHintsEnabled}">
 
             <!-- Types sub-group -->
             <TextBlock Text="Types"

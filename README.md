@@ -99,7 +99,7 @@ WpfHexEditor uses a **plugin architecture** (`IDocumentEditor`) — every editor
 |--------|--------|----------|-------------|
 | **[Hex Editor](Sources/WpfHexEditor.HexEditor/README.md)** | ✅ Active | ~75% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL, status bar contributor |
 | **[TBL Editor](Sources/WpfHexEditor.Editor.TblEditor/README.md)** | ✅ Active | ~60% | Character table editor for custom encodings and ROM hacking |
-| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ✅ Active | ~90% | Multi-language code editor — VS-like navigation bar (types/members combos, Segoe MDL2 icons, caret tracking), full `.whlang` syntax highlighting (55+ languages), URL hover/click, find/replace, `IEditorPersistable`, split view; **Ctrl+Click** cross-file navigation + external symbol decompilation; tab/CodeLens-aware search highlights; **Alt+Click rectangular selection**; **text & block drag-to-move**; **shared `UndoEngine`** (coalescing, transactions, save-point); `#region` colorization; hosts decompiled C# from Assembly Explorer |
+| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ✅ Active | ~90% | Multi-language code editor — VS-like navigation bar (types/members combos, Segoe MDL2 icons, caret tracking), full `.whlang` syntax highlighting (55+ languages), URL hover/click, find/replace, `IEditorPersistable`, split view; **Ctrl+Click** cross-file navigation + external symbol decompilation; tab/Inline Hints-aware search highlights; **Alt+Click rectangular selection**; **text & block drag-to-move**; **shared `UndoEngine`** (coalescing, transactions, save-point); `#region` colorization; hosts decompiled C# from Assembly Explorer |
 | **[XAML Designer](Sources/WpfHexEditor.Editor.XamlDesigner/README.md)** | ✅ Active | ~70% | Full split-pane XAML designer — live WPF rendering canvas with **bidirectional sync** (canvas↔code, ~95%); move/resize/rotate handles; property inspector (F4); multi-select + alignment guides; snap grid; `#region` colorization; error card overlay; **4 split layouts** (`Ctrl+Shift+L`); zoom/pan; VS-like `Ctrl+Z/Y` undo/redo with `DesignHistoryPanel`; Toolbox, Resource Browser, Design Data and Animation panels; right-click context menu; `Ctrl+1/2/3` view modes |
 | **[Text Editor](Sources/WpfHexEditor.Editor.TextEditor/README.md)** | ✅ Active | ~50% | Text editing with 26 embedded language definitions, auto-detection by extension, encoding support |
 | **[Script Editor](Sources/WpfHexEditor.Editor.ScriptEditor/README.md)** | ✅ Active | ~45% | `.hxscript` editor with syntax highlighting, run-in-terminal integration, `HxScriptEngine` backend |
@@ -287,7 +287,7 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, and
 
 > **NuGet:** A legacy package (`WPFHexaEditor`) is still available on NuGet but is no longer maintained. NuGet packaging is planned (#109).
 
-> **JetBrains Rider:** See the **[Rider Guide](docs/IDE/RIDER_GUIDE.md)** for IntelliSense tips.
+> **JetBrains Rider:** See the **[Rider Guide](docs/IDE/RIDER_GUIDE.md)** for SmartComplete tips.
 
 **[Complete Tutorial →](GETTING_STARTED.md)**
 
@@ -380,7 +380,7 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, and
 | **Document Model** — unified in-memory document representation | 🔧 In Progress ~10% | #107 |
 | **Integrated Terminal** — full multi-shell + macro | 🔧 In Progress ~70% | #92 |
 | **.NET Decompilation via ILSpy** — full C# skeleton + IL view | 🔜 Planned | #106 |
-| **Code Intelligence (LSP / IntelliSense / Snippets)** | 🔜 Planned | #85–89 |
+| **Code Intelligence (LSP / SmartComplete / Snippets)** | 🔜 Planned | #85–89 |
 | **Integrated Debugger** | 🔜 Planned | #44, #90 |
 | **Git Integration** | 🔜 Planned | #91 |
 | **Plugin Marketplace & Auto-Update** | 🔜 Planned | #41–43 |

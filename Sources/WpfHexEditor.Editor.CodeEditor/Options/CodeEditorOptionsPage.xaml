@@ -122,8 +122,8 @@
                        Margin="0,0,0,6"
                        Foreground="{DynamicResource DockMenuForegroundBrush}" />
 
-            <CheckBox Content="Enable IntelliSense"
-                      IsChecked="{Binding EnableIntelliSense}"
+            <CheckBox Content="Enable SmartComplete"
+                      IsChecked="{Binding EnableSmartComplete}"
                       Margin="0,2,0,2"
                       Foreground="{DynamicResource DockMenuForegroundBrush}" />
 
@@ -144,7 +144,7 @@
                       ToolTip="Requires an active Language Server (LSP) for the current file type" />
 
             <CheckBox Content="Show Code Lens (inline reference counts)"
-                      IsChecked="{Binding ShowCodeLens}"
+                      IsChecked="{Binding ShowInlineHints}"
                       Margin="0,2,0,2"
                       Foreground="{DynamicResource DockMenuForegroundBrush}"
                       ToolTip="Shows reference count above each declaration. Click the hint to open the References popup." />

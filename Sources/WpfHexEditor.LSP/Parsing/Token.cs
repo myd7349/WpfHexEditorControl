@@ -7,7 +7,7 @@
 // Description:
 //     Token model produced by the Lexer during document parsing.
 //     Maps to a LanguageRule type; consumed by DiagnosticsEngine,
-//     SymbolTableManager, IntelliSense, and FoldingEngine integrations.
+//     SymbolTableManager, SmartComplete, and FoldingEngine integrations.
 // ==========================================================
 
 namespace WpfHexEditor.LSP.Parsing;

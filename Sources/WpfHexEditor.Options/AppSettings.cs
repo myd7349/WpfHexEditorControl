@@ -1,4 +1,4 @@
-﻿//////////////////////////////////////////////
+//////////////////////////////////////////////
 // GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
@@ -208,8 +208,8 @@ public sealed class CodeEditorDefaultSettings
 
     // -- Features --------------------------------------------------------
 
-    /// <summary>Show IntelliSense auto-complete popup while typing.</summary>
-    public bool ShowIntelliSense { get; set; } = true;
+    /// <summary>Show SmartComplete auto-complete popup while typing.</summary>
+    public bool ShowSmartComplete { get; set; } = true;
 
     /// <summary>Show line numbers in the gutter.</summary>
     public bool ShowLineNumbers { get; set; } = true;
@@ -234,20 +234,20 @@ public sealed class CodeEditorDefaultSettings
     /// </summary>
     public bool FoldToggleOnDoubleClick { get; set; } = true;
 
-    // -- CodeLens ------------------------------------------------------------
+    // -- InlineHints ---------------------------------------------------------
 
     /// <summary>
-    /// Master toggle: when false, no CodeLens hints are rendered regardless of
-    /// <see cref="CodeLensVisibleKinds"/>.
+    /// Master toggle: when false, no inline hints are rendered regardless of
+    /// <see cref="InlineHintsVisibleKinds"/>.
     /// </summary>
-    public bool ShowCodeLens { get; set; } = true;
+    public bool ShowInlineHints { get; set; } = true;
 
     /// <summary>
-    /// Bitmask of symbol kinds (integer cast of <c>CodeLensSymbolKinds</c>) for which
+    /// Bitmask of symbol kinds (integer cast of <c>InlineHintsSymbolKinds</c>) for which
     /// hints are visible. Stored as int to avoid a cross-project enum dependency in
-    /// AppSettings. 4095 = CodeLensSymbolKinds.All = (1 &lt;&lt; 12) − 1.
+    /// AppSettings. 4095 = InlineHintsSymbolKinds.All = (1 &lt;&lt; 12) − 1.
     /// </summary>
-    public int CodeLensVisibleKinds { get; set; } = 4095;
+    public int InlineHintsVisibleKinds { get; set; } = 4095;
 
     // -- Changeset (.whchg) -----------------------------------------------
 

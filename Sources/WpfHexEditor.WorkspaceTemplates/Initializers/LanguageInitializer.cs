@@ -19,7 +19,7 @@ namespace WpfHexEditor.WorkspaceTemplates.Initializers;
 
 /// <summary>
 /// Copies template .whlang language definition files into the project
-/// and tags the first one as the default language for IntelliSense.
+/// and tags the first one as the default language for SmartComplete.
 /// </summary>
 public sealed class LanguageInitializer
 {

@@ -5,7 +5,7 @@
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-17
 // Description:
-//     Dockable "Find References" panel — VS2022 CodeLens style.
+//     Dockable "Find References" panel — VS2022 InlineHints style.
 //     Shown when the user pins the references popup into the bottom
 //     tool-window area.  Displays a collapsible tree of references
 //     grouped by file with title bar, scrollable body, and footer.
@@ -72,7 +72,7 @@ public sealed class FindReferencesPanel : UserControl
     /// </summary>
     public void Refresh(IReadOnlyList<ReferenceGroup> groups, string symbolName)
     {
-        _titleTb.Text      = $"CodeLens Références — {symbolName}";
+        _titleTb.Text      = $"InlineHints Références — {symbolName}";
         _allCollapsed      = false;
         _collapseLink.Text = "Tout réduire";
 
@@ -130,7 +130,7 @@ public sealed class FindReferencesPanel : UserControl
         closeBtn.MouseLeftButtonDown += (_, _) => CloseRequested?.Invoke(this, EventArgs.Empty);
         DockPanel.SetDock(closeBtn, Dock.Right);
 
-        // Title text — "CodeLens Références — {symbol}"
+        // Title text — "InlineHints Références — {symbol}"
         _titleTb = new TextBlock
         {
             FontSize          = 11,

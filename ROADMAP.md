@@ -12,11 +12,11 @@ Features already shipped are in [CHANGELOG.md](CHANGELOG.md).
 | Feature # | Title | Description | Progress |
 |-----------|-------|-------------|----------|
 | #81 | **Plugin Sandbox** | Out-of-process isolation via HWND embedding + full IPC bridge (menus, toolbar, events). HWND parenting, Job Object resource control, IPC HexEditor event bridge done. Auto-isolation engine done. IDE EventBus IPC bridge done. Remaining: gRPC migration, hot-reload from sandbox. | ~65% |
-| #84 | **Code Editor — VS-Like Advanced** | Full-featured code editor: VS-like navigation bar (types/members combos, Segoe MDL2 icons, `CaretMoved` event, auto-scroll), syntax highlighting with 55+ `.whlang` definitions, URL hover/click, find/replace, split view, `IEditorPersistable`. Hosts decompiled C# from Assembly Explorer. Ctrl+Click cross-file navigation (workspace scan + LSP multi-location popup). Search highlight tab/CodeLens-aware. Alt+Click rect selection + drag-to-move. `#region` colorization. Shared `UndoEngine` (coalescing, transactions, save-point). Remaining: folding, gutter indicators, multi-caret, diagnostics integration. | ~90% |
+| #84 | **Code Editor — VS-Like Advanced** | Full-featured code editor: VS-like navigation bar (types/members combos, Segoe MDL2 icons, `CaretMoved` event, auto-scroll), syntax highlighting with 55+ `.whlang` definitions, URL hover/click, find/replace, split view, `IEditorPersistable`. Hosts decompiled C# from Assembly Explorer. Ctrl+Click cross-file navigation (workspace scan + LSP multi-location popup). Search highlight tab/Inline Hints-aware. Alt+Click rect selection + drag-to-move. `#region` colorization. Shared `UndoEngine` (coalescing, transactions, save-point). Remaining: folding, gutter indicators, multi-caret, diagnostics integration. | ~90% |
 | #101–103 | **MSBuild & VS Solution Support** | Open `.sln` files via `VsSolutionLoaderPlugin`; build/rebuild/clean via MSBuild API; output routed to Build channel with severity coloring; auto-focus on build start; empty-solution guard. Project templates scaffolded. Remaining: error list navigation, incremental build. | ~60% |
 | #104–106 | **Assembly Explorer + Decompilation** | .NET PE tree done. C# decompilation done. ILSpy backend added (`IlSpyDecompilerBackend`). VB.NET language done. CFG Canvas, Assembly Diff, Assembly Search, XRef View, Decompile Cache done (v0.5.2). Ctrl+Click external symbol decompilation in Code Editor: `FindAssemblyPath` (AppDomain + runtime + NuGet), `AssemblyAnalysisEngine` + `CSharpSkeletonEmitter` pipeline, read-only tab with `GoToLine`. Remaining: full ECMA-335 token→offset resolution, hex sync. | ~65% |
 | #107 | **Document Model** | Unified in-memory document representation shared across all editors (hex, code, text, diff). Foundation for multi-editor collaboration, undo/redo unification and LSP integration. | ~10% |
-| #85–86 | **LSP Engine / IntelliSense** | `WpfHexEditor.LSP` project created with navigation, formatting, refactoring, symbols infrastructure. `RefactoringEngine`, `RenameRefactoring`, `ExtractMethodRefactoring`, `CodeFormatter`, `SymbolTableManager`, `NavigationProvider` stubs. `CommandIntegration` mediator wired to IDE EventBus. `ILspClient` SDK contract (`ILspClient.cs`) + `GoToExternalDefinitionEventArgs.MetadataUri` for OmniSharp metadata URI passthrough. Remaining: real parsing backend, completion provider, hover info. | ~25% |
+| #85–86 | **LSP Engine / SmartComplete** | `WpfHexEditor.LSP` project created with navigation, formatting, refactoring, symbols infrastructure. `RefactoringEngine`, `RenameRefactoring`, `ExtractMethodRefactoring`, `CodeFormatter`, `SymbolTableManager`, `NavigationProvider` stubs. `CommandIntegration` mediator wired to IDE EventBus. `ILspClient` SDK contract (`ILspClient.cs`) + `GoToExternalDefinitionEventArgs.MetadataUri` for OmniSharp metadata URI passthrough. Remaining: real parsing backend, completion provider, hover info. | ~25% |
 
 ---
 
@@ -59,7 +59,7 @@ Cette section présente les concepts VS-level de l’IDE, en se concentrant uniq
 |-----------|-------|-------------|
 | #84 | **Code Editor — VS-Like Advanced** | *(In Progress ~70% — see above)* Remaining: syntax folding, gutter indicators, multi-caret, diagnostics integration. |
 | #85 | **LSP Engine** | *(In Progress ~20% — see above)* Infrastructure done. Remaining: real parsing backend, go-to-definition, find-references. |
-| #86 | **IntelliSense v4 (LSP)** | Advanced autocomplete, signature help, quick-info, multi-caret editing, virtual scroll for >1 GB files. |
+| #86 | **SmartComplete v4 (LSP)** | Advanced autocomplete, signature help, quick-info, multi-caret editing, virtual scroll for >1 GB files. |
 | #88 | **Dynamic Snippets** | `SnippetsManager` with context-aware snippets, dynamic variables (`CurrentLine`, `FileName`, `CursorPosition`); user/plugin/language-scoped. |
 | #89 | **AI-Assisted Code Suggestions** | `AICompletionEngine` and `AIRefactoringAssistant`; contextual completions, auto-refactoring, plugin-extensible AI rules. |
 | #94 | **Advanced Refactoring** | Rename symbol (workspace-wide), extract method/class, inline variable, move file between projects; AI-assisted suggestions. |
@@ -74,7 +74,7 @@ Cette section présente les concepts VS-level de l’IDE, en se concentrant uniq
 | Feature # | Title | Description |
 |-----------|-------|-------------|
 | #81 | **Plugin Sandbox (gRPC Migration + Hot-Reload)** | HWND embedding + IPC bridge done (v0.3.0). Remaining: gRPC transport migration, collectible `AssemblyLoadContext` hot-reload from sandbox, plugin restart-less upgrade flow. |
-| #97 | **Large File Optimization** | `VirtualizationEngine`, `LazyParser`, multi-core IntelliSense adapter; virtualized display for >1 GB files, incremental parsing. |
+| #97 | **Large File Optimization** | `VirtualizationEngine`, `LazyParser`, multi-core SmartComplete adapter; virtualized display for >1 GB files, incremental parsing. |
 
 ---
 
@@ -182,7 +182,7 @@ Cette section présente les concepts VS-level de l’IDE, en se concentrant uniq
 | #133 | **Command Palette (Ctrl+Shift+P)** | VS Code-style fuzzy-search palette surfacing all IDE commands, open documents, settings, and plugin actions with keyboard navigation and recent-command history. |
 | #134 | **Extension Point Debugger** | Developer panel listing every SDK extension point (menus, toolbar, statusbar, eventbus) registered by each plugin with live invocation counts and last-call stack. |
 | #135 | **Workspace File Watcher** | Monitor all open project files for external changes (from other processes or Git operations); prompt to reload, diff, or merge changes without closing the editor tab. |
-| #138 | **In-IDE Plugin Development** | Develop, build, hot-reload, and live-test SDK plugins directly inside the IDE — `PluginProjectTemplate` scaffolding, MSBuild integration (#103), collectible `AssemblyLoadContext` hot-reload, lightweight sandbox, full SDK IntelliSense, Plugin Dev Log panel, and `.whxplugin` packaging; no external toolchain required. |
+| #138 | **In-IDE Plugin Development** | Develop, build, hot-reload, and live-test SDK plugins directly inside the IDE — `PluginProjectTemplate` scaffolding, MSBuild integration (#103), collectible `AssemblyLoadContext` hot-reload, lightweight sandbox, full SDK SmartComplete, Plugin Dev Log panel, and `.whxplugin` packaging; no external toolchain required. |
 
 ---
 
@@ -203,10 +203,10 @@ Cette section présente les concepts VS-level de l’IDE, en se concentrant uniq
 | **Shared `UndoEngine`** — `WpfHexEditor.Editor.Core.Undo`; coalescing (500 ms window), transactions (`BeginTransaction`/`CommitTransaction`), save-point tracking (`MarkSaved`/`IsAtSavePoint`), `Ctrl+Shift+Z` redo, dynamic "Undo (N)" headers; replaces both editors' custom stacks | [0.6.0] — 2026-03-18 |
 | **Rectangular Selection + Drag-and-Drop** — Alt+Click block selection, text drag-to-move, rect block drag-to-move; single-rect rendering (no row seams); `IUndoEntry` migration for TextEditor | [0.6.0] — 2026-03-18 |
 | **NuGet Solution Manager** — solution-level panel (Browse/Installed/Consolidate/Updates); right-click solution node; `doc-nuget-solution-` content ID | [0.6.0] — 2026-03-18 |
-| **CodeLens per-language gates + 29 new `.whlang` definitions** — 55+ total embedded language definitions; per-language Ctrl+Click and CodeLens activation | [0.6.0] — 2026-03-18 |
+| **Inline Hints per-language gates + 29 new `.whlang` definitions** — 55+ total embedded language definitions; per-language Ctrl+Click and Inline Hints activation | [0.6.0] — 2026-03-18 |
 | **Shell rename** — `WpfHexEditor.Docking.Wpf` → `WpfHexEditor.Shell`; namespace, assembly name and Pack URI updated | [0.6.0] — 2026-03-18 |
 | **Ctrl+Click Navigation** — workspace cross-file declaration scan, multi-location `ReferencesPopup`, OmniSharp `MetadataUri` passthrough, external symbol decompilation via `AssemblyAnalysisEngine` + `CSharpSkeletonEmitter` → read-only Code Editor tab | [0.5.8] — 2026-03-17 |
-| **Search highlight fix** — `ComputeVisualX` for tab-aware X alignment + `_lineYLookup` for CodeLens-aware Y in `RenderFindResults` | [0.5.8] — 2026-03-17 |
+| **Search highlight fix** — `ComputeVisualX` for tab-aware X alignment + `_lineYLookup` for Inline Hints-aware Y in `RenderFindResults` | [0.5.8] — 2026-03-17 |
 | **Code Editor Navigation Bar** — VS-like types/members combos, Segoe MDL2 icons, `CaretMoved` event, auto-scroll to declaration | [0.5.2] — 2026-03-16 |
 | **Assembly Explorer Expansion** — ILSpy backend, VB.NET, CFG Canvas, Assembly Diff, Assembly Search, XRef View, Decompile Cache, options page | [0.5.2] — 2026-03-16 |
 | **NuGet support** — `NuGetV3Client`, `CsprojPackageWriter`, `NuGetPackageViewModel` in ProjectSystem | [0.5.2] — 2026-03-16 |

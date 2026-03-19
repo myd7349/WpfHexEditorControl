@@ -6,7 +6,7 @@
 // Created: 2026-03-16
 // Description:
 //     Represents a named symbol (variable, function, class, etc.) discovered
-//     during document parsing. Consumed by SymbolTable, IntelliSense, and
+//     during document parsing. Consumed by SymbolTable, SmartComplete, and
 //     the RefactoringEngine.
 // ==========================================================
 

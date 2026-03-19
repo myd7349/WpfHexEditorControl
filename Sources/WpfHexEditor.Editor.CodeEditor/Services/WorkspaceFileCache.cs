@@ -6,7 +6,7 @@
 // Created: 2026-03-17
 // Description:
 //     Static singleton cache of solution file contents for
-//     solution-wide CodeLens reference counting and Find All References.
+//     solution-wide InlineHints reference counting and Find All References.
 //     Subscribes to SolutionManager.Instance.SolutionChanged to
 //     invalidate on every solution open / close / reload.
 //

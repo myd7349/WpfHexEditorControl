@@ -1,6 +1,6 @@
 //////////////////////////////////////////////
 // GNU Affero General Public License v3.0 - 2026
-// Custom CodeEditor - IntelliSense Suggestion Model (Phase 4)
+// Custom CodeEditor - SmartComplete Suggestion Model (Phase 4)
 // Author : Claude Sonnet 4.5
 // Contributors: Derek Tremblay (derektremblay666@gmail.com), Claude Sonnet 4.6
 //////////////////////////////////////////////
@@ -8,10 +8,10 @@
 namespace WpfHexEditor.Editor.CodeEditor.Models
 {
     /// <summary>
-    /// Represents a single IntelliSense suggestion.
+    /// Represents a single SmartComplete suggestion.
     /// Contains display text, insert text, documentation, and metadata.
     /// </summary>
-    public class IntelliSenseSuggestion
+    public class SmartCompleteSuggestion
     {
         /// <summary>
         /// Text displayed in suggestion list
@@ -53,7 +53,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Models
         /// </summary>
         public SuggestionType Type { get; set; }
 
-        public IntelliSenseSuggestion()
+        public SmartCompleteSuggestion()
         {
             Icon = "📄"; // Default icon
             CursorOffset = 0;
@@ -61,7 +61,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Models
             Type = SuggestionType.Property;
         }
 
-        public IntelliSenseSuggestion(string displayText, string documentation = null)
+        public SmartCompleteSuggestion(string displayText, string documentation = null)
         {
             DisplayText = displayText;
             InsertText = displayText;
@@ -79,7 +79,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Models
     }
 
     /// <summary>
-    /// Type of IntelliSense suggestion
+    /// Type of SmartComplete suggestion
     /// </summary>
     public enum SuggestionType
     {

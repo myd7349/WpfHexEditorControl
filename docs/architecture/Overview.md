@@ -1078,7 +1078,7 @@ var interpretations = dataInspectorService.Interpret(byteProvider, position: 100
 
 **CodeEditor Features** (61 Dependency Properties):
 - 🎨 **Syntax Highlighting** - 13+ token types (keys, values, keywords, etc.)
-- 💡 **IntelliSense** - Context-aware autocomplete with 9 contexts
+- 💡 **SmartComplete** - Context-aware autocomplete with 9 contexts
 - ✅ **Real-time Validation** - 4-layer validation with squiggly lines
 - 🔤 **Line Numbers** - Configurable gutter
 - 🎯 **Bracket Matching** - Visual highlighting of matching {}, [], ()
@@ -1089,7 +1089,7 @@ var interpretations = dataInspectorService.Interpret(byteProvider, position: 100
 - 📄 **Code Folding** - Collapse/expand blocks
 - 💾 **IEditorPersistable** - Scroll position, caret, encoding, edit mode restored on reopen
 
-**IntelliSense Contexts**:
+**SmartComplete Contexts**:
 1. Root level (formatName, signature, fields, etc.)
 2. Field properties (name, type, offset, length, etc.)
 3. Type suggestions (uint8, uint16, string, etc.)
@@ -1334,7 +1334,7 @@ finally
 - [Data Inspector](advanced-features/data-inspector.md) - Multi-type interpretation
 - [Parsed Fields Panel](advanced-features/parsed-fields.md) - Structure visualization
 - [File Diff System](advanced-features/file-diff.md) - Binary comparison
-- [Format Script Editor](advanced-features/format-script-editor.md) - JsonEditor with IntelliSense
+- [Format Script Editor](advanced-features/format-script-editor.md) - JsonEditor with SmartComplete
 
 ### Data Flow Documentation
 - [File Operations](data-flow/file-operations.md) - Open, Close, Save sequences

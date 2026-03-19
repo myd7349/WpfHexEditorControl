@@ -142,7 +142,7 @@ All event args follow .NET conventions:
 - **Immutability**: Properties set at construction
 - **Extensibility**: Easy to add new properties
 - **Standard Pattern**: Follows .NET conventions
-- **IntelliSense Friendly**: Full code completion support
+- **SmartComplete Friendly**: Full code completion support
 
 ## 📚 Related Components
 

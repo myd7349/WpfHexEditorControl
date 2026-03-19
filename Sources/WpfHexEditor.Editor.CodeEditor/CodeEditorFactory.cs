@@ -63,7 +63,7 @@ public sealed class CodeEditorFactory : IEditorFactory
             host.PrimaryEditor.ExternalHighlighter   = highlighter;
             host.SecondaryEditor.ExternalHighlighter = highlighter;
 
-            // Propagate the language definition so CodeEditor can gate CodeLens and Ctrl+Click.
+            // Propagate the language definition so CodeEditor can gate InlineHints and Ctrl+Click.
             host.PrimaryEditor.Language   = language;
             host.SecondaryEditor.Language = language;
 

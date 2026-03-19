@@ -132,7 +132,7 @@ ProcessByteControl(new Byte_32bit());
 - **Flexibility**: Swap implementations without breaking code
 - **Testing**: Easy to create mocks and stubs
 - **Documentation**: Interfaces serve as API contracts
-- **IntelliSense**: Full IDE support for implementers
+- **SmartComplete**: Full IDE support for implementers
 
 ## 🧪 Testing with Interfaces
 

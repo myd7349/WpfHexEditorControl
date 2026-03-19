@@ -403,18 +403,18 @@ public partial class MainWindow : Window
         Editor.SecondaryEditor.IsFoldingEnabled = v;
     }
 
-    private void OnMenuToggleCodeLens(object sender, RoutedEventArgs e)
+    private void OnMenuToggleInlineHints(object sender, RoutedEventArgs e)
     {
-        bool v = MenuCodeLens.IsChecked;
-        Editor.PrimaryEditor.ShowCodeLens   = v;
-        Editor.SecondaryEditor.ShowCodeLens = v;
+        bool v = MenuInlineHints.IsChecked;
+        Editor.PrimaryEditor.ShowInlineHints   = v;
+        Editor.SecondaryEditor.ShowInlineHints = v;
     }
 
-    private void OnMenuToggleIntelliSense(object sender, RoutedEventArgs e)
+    private void OnMenuToggleSmartComplete(object sender, RoutedEventArgs e)
     {
-        bool v = MenuIntelliSense.IsChecked;
-        Editor.PrimaryEditor.EnableIntelliSense   = v;
-        Editor.SecondaryEditor.EnableIntelliSense = v;
+        bool v = MenuSmartComplete.IsChecked;
+        Editor.PrimaryEditor.EnableSmartComplete   = v;
+        Editor.SecondaryEditor.EnableSmartComplete = v;
     }
 
     private void OnMenuToggleWordHighlight(object sender, RoutedEventArgs e)
@@ -458,7 +458,7 @@ public partial class MainWindow : Window
             "Standalone showcase of the WpfHexEditor code editor.\n\n" +
             "Features:\n" +
             "  • Syntax highlighting (30+ languages)\n" +
-            "  • Code folding, CodeLens, IntelliSense\n" +
+            "  • Code folding, InlineHints, SmartComplete\n" +
             "  • Find & Replace (Ctrl+F / Ctrl+H)\n" +
             "  • Split view (toggle in navigation bar)\n" +
             "  • Dark / Light runtime theme switching (F1 / F2)\n" +

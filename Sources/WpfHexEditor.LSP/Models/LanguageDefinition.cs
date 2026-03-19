@@ -7,7 +7,7 @@
 // Description:
 //     Rich language metadata model parsed from a .whlang file.
 //     Consumed by LanguageDefinitionManager, Lexer, FoldingEngine,
-//     IntelliSense, and SnippetManager.
+//     SmartComplete, and SnippetManager.
 // ==========================================================
 
 namespace WpfHexEditor.LSP.Models;
@@ -65,7 +65,7 @@ public sealed class LanguageDefinition
     /// <summary>Ordered list of tokenisation rules parsed from the <c>rules</c> array.</summary>
     public IReadOnlyList<LanguageRule> Rules { get; init; } = [];
 
-    // -- IntelliSense hints -------------------------------------------------
+    // -- SmartComplete hints -------------------------------------------------
 
     /// <summary>Keyword list extracted from <c>Keyword</c>-type rules (for quick completion).</summary>
     public IReadOnlyList<string> Keywords { get; init; } = [];

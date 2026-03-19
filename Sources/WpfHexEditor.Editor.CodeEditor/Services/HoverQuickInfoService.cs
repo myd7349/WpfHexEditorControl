@@ -10,13 +10,13 @@
 //     the QuickInfoPopup after the hover dwell timer fires.
 //
 // Architecture Notes:
-//     Pattern: Service / Observer — mirrors CodeLensService.
+//     Pattern: Service / Observer — mirrors InlineHintsService.
 //     Resolution priority:
 //       1. Diagnostics snapshot covering the position  (instant, no I/O)
 //       2. ILspClient.HoverAsync                       (network, 10-s timeout)
 //       3. IQuickInfoProvider plugin contributors      (pluggable)
 //       4. Local CodeStructureParser fallback          (BCL-only)
-//     Debounce: 400 ms (shorter than CodeLens 800 ms — hover is user-driven).
+//     Debounce: 400 ms (shorter than InlineHints 800 ms — hover is user-driven).
 //     Threading: UI-thread snapshot → Task.Run background → ConfigureAwait(true)
 //     marshal back → fire QuickInfoResolved on UI thread.
 // ==========================================================

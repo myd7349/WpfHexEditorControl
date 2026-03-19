@@ -41,9 +41,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 - **4 tabs** — Browse (online `nuget.org/v3` search), Installed (current packages per project), Consolidate (cross-project version mismatches), Updates (available upgrades)
 - Content ID `doc-nuget-solution-{name}` — content router matches this prefix before single-project `doc-nuget-` entries to avoid routing collisions; `_nugetSolutionManagerMap` prevents duplicate documents
 
-### ✨ Added — CodeLens: Per-Language Gates + 29 New Language Definitions
+### ✨ Added — Inline Hints: Per-Language Gates + 29 New Language Definitions
 
-- **Per-language CodeLens** — CodeLens hints and Ctrl+Click navigation are now gated per-language via the `.whlang` definition; languages that do not declare symbol-resolution support no longer fire spurious LSP requests on hover
+- **Per-language Inline Hints** — Inline Hints hints and Ctrl+Click navigation are now gated per-language via the `.whlang` definition; languages that do not declare symbol-resolution support no longer fire spurious LSP requests on hover
 - **29 new `.whlang` definitions** — extended the embedded language set; total embedded language definitions now exceeds 55, covering most common text, markup, config, and code file types
 
 ### 🔧 Refactored — Shell Rename (`WpfHexEditor.Docking.Wpf` → `WpfHexEditor.Shell`)
@@ -60,7 +60,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
-## [0.5.8] — 2026-03-17 — Ctrl+Click Navigation, Search Highlight Fix & CodeLens Improvements
+## [0.5.8] — 2026-03-17 — Ctrl+Click Navigation, Search Highlight Fix & Inline Hints Improvements
 
 ### ✨ Added — Code Editor: Ctrl+Click Go-to-Definition
 
@@ -78,7 +78,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 ### 🔧 Fixed — Code Editor: Search Highlight Misalignment
 
 - **`RenderFindResults` X position** — replaced raw `column * _charWidth` with `_glyphRenderer.ComputeVisualX(lineText, column)` so tab characters (rendered as expanded spaces) are accounted for correctly; highlight boxes now align exactly with the matched text regardless of tab indentation
-- **`RenderFindResults` Y position** — replaced raw `_lineHeight` arithmetic with `_lineYLookup.TryGetValue(line, out double ry)` to respect per-line Y offsets introduced by CodeLens hint rows; highlights in CodeLens-decorated files no longer drift vertically
+- **`RenderFindResults` Y position** — replaced raw `_lineHeight` arithmetic with `_lineYLookup.TryGetValue(line, out double ry)` to respect per-line Y offsets introduced by Inline Hints hint rows; highlights in Inline Hints-decorated files no longer drift vertically
 
 ### 🔧 Fixed — Compilation Errors
 
@@ -129,7 +129,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 ### ✨ Added — Workspace Templates
 
 - **`WpfHexEditor.WorkspaceTemplates`** project — `TemplateManager`, `ProjectScaffolder`, `IProjectTemplate`; 3 built-in JSON templates (`blank`, `sdk-plugin`, `text-analysis`)
-- **Initializers** — `IntelliSenseInitializer`, `LanguageInitializer`, `OptionsInitializer`, `PluginInitializer`; each wires one aspect of a new workspace on scaffold
+- **Initializers** — `SmartCompleteInitializer`, `LanguageInitializer`, `OptionsInitializer`, `PluginInitializer`; each wires one aspect of a new workspace on scaffold
 - **`NewProjectDialog`** — XAML dialog + `NewProjectDialogViewModel` for creating projects from templates
 
 ### 🔧 Fixed / Refactored — Build System
@@ -244,7 +244,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 | Priority | Feature | Issue |
 |----------|---------|-------|
 | 🔥 High | **LSP Engine** — go-to-definition, find-references, incremental symbol parsing | #85 |
-| 🔥 High | **IntelliSense** — autocomplete, signature help, quick-info | #86 |
+| 🔥 High | **SmartComplete** — autocomplete, signature help, quick-info | #86 |
 | 🔥 High | **Assembly Explorer** — ILSpy full decompilation, hex sync, metadata token navigation | #106 |
 | 🔥 High | **MSBuild** — error list navigation with file/line jump, incremental builds | #103 |
 | 🔥 High | **Synalysis Grammar Support** — `.grammar` file parser + 10 embedded grammars | #177 |

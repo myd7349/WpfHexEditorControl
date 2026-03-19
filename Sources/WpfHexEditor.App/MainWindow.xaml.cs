@@ -1865,7 +1865,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Wire OutputMessage → Output panel
                 editor.OutputMessage += OnEditorOutputMessage;
 
-                // Wire CodeEditor reference events (CodeLens: navigate, dock panel, Ctrl+Click go-to-def).
+                // Wire CodeEditor reference events (InlineHints: navigate, dock panel, Ctrl+Click go-to-def).
                 // Mirrors the equivalent block in CreateSmartFileEditorContent for doc-file-* tabs.
                 // Without this, pin/navigate/go-to-def silently do nothing for project-opened files.
                 if (editor is CodeEditorControl plainCe)
@@ -2028,7 +2028,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _codeEditorBars[json] = bar;
             }
 
-            // CodeEditorSplitHost wraps CodeEditor — wire CodeLens reference events
+            // CodeEditorSplitHost wraps CodeEditor — wire InlineHints reference events
             // that the inner CodeEditor raises but the split-host now forwards.
             if (editor is CodeEditorSplitHost splitHost)
             {
@@ -4842,11 +4842,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 ce.MouseWheelSpeed         = settings.CodeEditorDefaults.MouseWheelSpeed;
                 ce.ZoomLevel               = settings.CodeEditorDefaults.DefaultZoom;
                 ce.FoldToggleOnDoubleClick = settings.CodeEditorDefaults.FoldToggleOnDoubleClick;
-                ce.ShowCodeLens            = settings.CodeEditorDefaults.ShowCodeLens;
-                // Treat 0 as All (migration: old settings.json without CodeLensVisibleKinds defaults to 0).
-                ce.CodeLensVisibleKinds = settings.CodeEditorDefaults.CodeLensVisibleKinds == 0
-                    ? WpfHexEditor.Editor.Core.CodeLensSymbolKinds.All
-                    : (WpfHexEditor.Editor.Core.CodeLensSymbolKinds)settings.CodeEditorDefaults.CodeLensVisibleKinds;
+                ce.ShowInlineHints            = settings.CodeEditorDefaults.ShowInlineHints;
+                // Treat 0 as All (migration: old settings.json without InlineHintsVisibleKinds defaults to 0).
+                ce.InlineHintsVisibleKinds = settings.CodeEditorDefaults.InlineHintsVisibleKinds == 0
+                    ? WpfHexEditor.Editor.Core.InlineHintsSymbolKinds.All
+                    : (WpfHexEditor.Editor.Core.InlineHintsSymbolKinds)settings.CodeEditorDefaults.InlineHintsVisibleKinds;
                 ApplySyntaxColorOverrides(ce, settings.CodeEditorDefaults);
                 break;
             case WpfHexEditor.Editor.TextEditor.Controls.TextEditor te:

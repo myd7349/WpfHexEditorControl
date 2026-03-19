@@ -40,7 +40,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
     /// High-performance JSON text editor using custom rendering (FrameworkElement).
     /// Phase 1: Basic text display + keyboard input + line numbers
     /// Phase 2: Syntax highlighting with CodeSyntaxHighlighter
-    /// Future phases will add: IntelliSense, validation
+    /// Future phases will add: SmartComplete, validation
     /// </summary>
     public class CodeEditor : FrameworkElement, IDocumentEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, INavigableDocument, IStatusBarContributor, ISearchTarget, IEditorPersistable
     {
@@ -152,10 +152,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         #endregion
 
-        #region Fields - IntelliSense (Phase 4)
+        #region Fields - SmartComplete (Phase 4)
 
-        private IntelliSensePopup _intelliSensePopup;
-        private bool _enableIntelliSense = true;
+        private SmartCompletePopup _smartCompletePopup;
+        private bool _enableSmartComplete = true;
 
         #endregion
 
@@ -178,14 +178,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private List<ReferenceGroup> _lastReferenceGroups = new();
         private string               _lastReferenceSymbol = string.Empty;
 
-        // ── CodeLens ──────────────────────────────────────────────────────────
-        private readonly Services.CodeLensService                                                                                              _codeLensService  = new();
-        private          IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, System.Windows.Media.Brush IconBrush, WpfHexEditor.Editor.Core.CodeLensSymbolKinds Kind)> _lensData = new Dictionary<int, (int, string, string, System.Windows.Media.Brush, WpfHexEditor.Editor.Core.CodeLensSymbolKinds)>();
-        private          int                                                                                                                   _visibleLensCount = 0;
-        private readonly List<(Rect Zone, int LineIndex, string Symbol)>                                                                       _lensHitZones     = new();
+        // ── InlineHints ──────────────────────────────────────────────────────────
+        private readonly Services.InlineHintsService                                                                                              _inlineHintsService  = new();
+        private          IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, System.Windows.Media.Brush IconBrush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds Kind)> _hintsData = new Dictionary<int, (int, string, string, System.Windows.Media.Brush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds)>();
+        private          int                                                                                                                   _visibleHintsCount = 0;
+        private readonly List<(Rect Zone, int LineIndex, string Symbol)>                                                                       _hintsHitZones     = new();
         private readonly List<(int LineIndex, double Y)>                                                                                       _visLinePositions = new();
         private readonly Dictionary<int, double>                                                                                               _lineYLookup      = new();
-        private          int                                                                                                                   _hoveredLensLine  = -1;
+        private          int                                                                                                                   _hoveredHintsLine  = -1;
 
         // ── Quick Info Hover ──────────────────────────────────────────────────
         private Services.HoverQuickInfoService?      _hoverQuickInfoService;
@@ -369,7 +369,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         // OPT-D: lineYLookup dirty flag — avoids rebuilding per-line Y positions on every
         // render frame (e.g. caret blink at 530 ms).  Rebuilt only when the visible range,
-        // CodeLens data, or folding regions actually change.
+        // InlineHints data, or folding regions actually change.
         private bool _linePositionsDirty = true;
 
         #endregion
@@ -391,8 +391,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private const double ScrollBarThickness = 12.0;
         private const double SelectionCornerRadius = 3.0;
 
-        // Extra vertical space reserved at the top of each line slot for CodeLens hints.
-        private const double LensLineHeight = 16.0;
+        // Extra vertical space reserved at the top of each line slot for InlineHints hints.
+        private const double HintLineHeight = 16.0;
 
         #endregion
 
@@ -531,23 +531,23 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             set => SetValue(SnippetManagerProperty, value);
         }
 
-        public static readonly DependencyProperty EnableIntelliSenseProperty =
-            DependencyProperty.Register(nameof(EnableIntelliSense), typeof(bool), typeof(CodeEditor),
+        public static readonly DependencyProperty EnableSmartCompleteProperty =
+            DependencyProperty.Register(nameof(EnableSmartComplete), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true));
 
         /// <summary>
-        /// Enable IntelliSense context-aware autocomplete
+        /// Enable SmartComplete context-aware autocomplete
         /// </summary>
         [Category("Features")]
-        [DisplayName("Enable IntelliSense")]
+        [DisplayName("Enable SmartComplete")]
         [Description("Enable context-aware autocomplete suggestions (Ctrl+Space to trigger manually)")]
-        public bool EnableIntelliSense
+        public bool EnableSmartComplete
         {
-            get => (bool)GetValue(EnableIntelliSenseProperty);
+            get => (bool)GetValue(EnableSmartCompleteProperty);
             set
             {
-                SetValue(EnableIntelliSenseProperty, value);
-                _enableIntelliSense = value;
+                SetValue(EnableSmartCompleteProperty, value);
+                _enableSmartComplete = value;
             }
         }
 
@@ -568,52 +568,52 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             set => SetValue(EnableFindAllReferencesProperty, value);
         }
 
-        public static readonly DependencyProperty ShowCodeLensProperty =
-            DependencyProperty.Register(nameof(ShowCodeLens), typeof(bool), typeof(CodeEditor),
+        public static readonly DependencyProperty ShowInlineHintsProperty =
+            DependencyProperty.Register(nameof(ShowInlineHints), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true,
                     FrameworkPropertyMetadataOptions.AffectsRender,
-                    OnShowCodeLensChanged));
+                    OnShowInlineHintsChanged));
 
         [Category("Features")]
         [DisplayName("Show Code Lens")]
         [Description("Shows inline reference counts above each declaration.")]
-        public bool ShowCodeLens
+        public bool ShowInlineHints
         {
-            get => (bool)GetValue(ShowCodeLensProperty);
-            set => SetValue(ShowCodeLensProperty, value);
+            get => (bool)GetValue(ShowInlineHintsProperty);
+            set => SetValue(ShowInlineHintsProperty, value);
         }
 
-        private static void OnShowCodeLensChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnShowInlineHintsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not CodeEditor ce) return;
-            // Trigger layout/scrollbar recalculation — _lineHeight is no longer affected by CodeLens.
+            // Trigger layout/scrollbar recalculation — _lineHeight is no longer affected by InlineHints.
             // Only visible-line Y positions change (per-declaration extra space), handled in OnRender.
             ce.InvalidateMeasure();
         }
 
-        public static readonly DependencyProperty CodeLensVisibleKindsProperty =
+        public static readonly DependencyProperty InlineHintsVisibleKindsProperty =
             DependencyProperty.Register(
-                nameof(CodeLensVisibleKinds),
-                typeof(WpfHexEditor.Editor.Core.CodeLensSymbolKinds),
+                nameof(InlineHintsVisibleKinds),
+                typeof(WpfHexEditor.Editor.Core.InlineHintsSymbolKinds),
                 typeof(CodeEditor),
                 new FrameworkPropertyMetadata(
-                    WpfHexEditor.Editor.Core.CodeLensSymbolKinds.All,
+                    WpfHexEditor.Editor.Core.InlineHintsSymbolKinds.All,
                     FrameworkPropertyMetadataOptions.AffectsRender,
-                    OnCodeLensVisibleKindsChanged));
+                    OnInlineHintsVisibleKindsChanged));
 
         [Category("Features")]
         [DisplayName("Code Lens Visible Kinds")]
         [Description("Bitmask of symbol kinds for which inline reference-count hints are displayed.")]
-        public WpfHexEditor.Editor.Core.CodeLensSymbolKinds CodeLensVisibleKinds
+        public WpfHexEditor.Editor.Core.InlineHintsSymbolKinds InlineHintsVisibleKinds
         {
-            get => (WpfHexEditor.Editor.Core.CodeLensSymbolKinds)GetValue(CodeLensVisibleKindsProperty);
-            set => SetValue(CodeLensVisibleKindsProperty, value);
+            get => (WpfHexEditor.Editor.Core.InlineHintsSymbolKinds)GetValue(InlineHintsVisibleKindsProperty);
+            set => SetValue(InlineHintsVisibleKindsProperty, value);
         }
 
-        private static void OnCodeLensVisibleKindsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnInlineHintsVisibleKindsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not CodeEditor ce) return;
-            ce.RebuildVisibleLensCount();
+            ce.RebuildVisibleHintsCount();
             ce.InvalidateMeasure();
         }
 
@@ -669,7 +669,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         [Category("Features")]
         [DisplayName("Language Definition")]
-        [Description("Active language definition controlling CodeLens and Ctrl+Click navigation per language.")]
+        [Description("Active language definition controlling InlineHints and Ctrl+Click navigation per language.")]
         public LanguageDefinition? Language
         {
             get => (LanguageDefinition?)GetValue(LanguageProperty);
@@ -680,11 +680,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             if (d is not CodeEditor ce) return;
             var lang = e.NewValue as LanguageDefinition;
-            // Re-evaluate CodeLens service attachment: only attach when the language declares support.
-            if (lang?.EnableCodeLens == true)
-                ce._codeLensService.Attach(ce._document, ce._currentFilePath);
+            // Re-evaluate InlineHints service attachment: only attach when the language declares support.
+            if (lang?.EnableInlineHints == true)
+                ce._inlineHintsService.Attach(ce._document, ce._currentFilePath);
             else
-                ce._codeLensService.Detach();
+                ce._inlineHintsService.Detach();
         }
 
         public static readonly DependencyProperty EnableValidationProperty =
@@ -1031,17 +1031,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             set => SetValue(IndentSizeProperty, value);
         }
 
-        public static readonly DependencyProperty IntelliSenseDelayProperty =
-            DependencyProperty.Register(nameof(IntelliSenseDelay), typeof(int), typeof(CodeEditor),
+        public static readonly DependencyProperty SmartCompleteDelayProperty =
+            DependencyProperty.Register(nameof(SmartCompleteDelay), typeof(int), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(300));
 
         [Category("Behavior")]
-        [DisplayName("IntelliSense Delay (ms)")]
-        [Description("Delay before showing IntelliSense popup (milliseconds)")]
-        public int IntelliSenseDelay
+        [DisplayName("SmartComplete Delay (ms)")]
+        [Description("Delay before showing SmartComplete popup (milliseconds)")]
+        public int SmartCompleteDelay
         {
-            get => (int)GetValue(IntelliSenseDelayProperty);
-            set => SetValue(IntelliSenseDelayProperty, value);
+            get => (int)GetValue(SmartCompleteDelayProperty);
+            set => SetValue(SmartCompleteDelayProperty, value);
         }
 
         public static readonly DependencyProperty ValidationDelayProperty =
@@ -1677,8 +1677,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _undoEngine.MarkSaved();   // Initial state is clean.
             _undoEngine.StateChanged  += OnUndoEngineStateChanged;
 
-            // Initialize IntelliSense popup (Phase 4)
-            _intelliSensePopup = new IntelliSensePopup(this);
+            // Initialize SmartComplete popup (Phase 4)
+            _smartCompletePopup = new SmartCompletePopup(this);
 
             // Initialize validator (Phase 5)
             _validator = new FormatSchemaValidator();
@@ -1786,9 +1786,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _wordHighlightTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
             _wordHighlightTimer.Tick += (_, _) => { _wordHighlightTimer.Stop(); UpdateWordHighlights(); };
 
-            // Attach CodeLens service to the initial document.
-            _codeLensService.LensDataRefreshed += OnLensDataRefreshed;
-            _codeLensService.Attach(_document, _currentFilePath);
+            // Attach InlineHints service to the initial document.
+            _inlineHintsService.HintsDataRefreshed += OnLensDataRefreshed;
+            _inlineHintsService.Attach(_document, _currentFilePath);
 
             // Initialize Quick Info and Ctrl+Click services.
             _hoverQuickInfoService                    = new Services.HoverQuickInfoService();
@@ -1807,37 +1807,37 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void OnLensDataRefreshed(object? sender, EventArgs e)
         {
-            _lensData           = _codeLensService.LensData;
-            RebuildVisibleLensCount();
-            _linePositionsDirty = true; // OPT-D: CodeLens data affects per-line Y offsets
+            _hintsData           = _inlineHintsService.HintsData;
+            RebuildVisibleHintsCount();
+            _linePositionsDirty = true; // OPT-D: InlineHints data affects per-line Y offsets
             InvalidateVisual();
         }
 
         /// <summary>
-        /// Returns true when <paramref name="lineIndex"/> has a CodeLens entry whose
-        /// <see cref="WpfHexEditor.Editor.Core.CodeLensSymbolKinds"/> flag matches the
-        /// current <see cref="CodeLensVisibleKinds"/> filter.
+        /// Returns true when <paramref name="lineIndex"/> has a InlineHints entry whose
+        /// <see cref="WpfHexEditor.Editor.Core.InlineHintsSymbolKinds"/> flag matches the
+        /// current <see cref="InlineHintsVisibleKinds"/> filter.
         /// </summary>
-        private bool IsLensEntryVisible(int lineIndex)
+        private bool IsHintEntryVisible(int lineIndex)
         {
-            if (!_lensData.TryGetValue(lineIndex, out var entry)) return false;
-            return (entry.Kind & CodeLensVisibleKinds) != 0;
+            if (!_hintsData.TryGetValue(lineIndex, out var entry)) return false;
+            return (entry.Kind & InlineHintsVisibleKinds) != 0;
         }
 
         /// <summary>
-        /// Recounts filtered CodeLens entries and caches the result in <see cref="_visibleLensCount"/>.
-        /// Must be called whenever <see cref="_lensData"/> or <see cref="CodeLensVisibleKinds"/> changes
+        /// Recounts filtered InlineHints entries and caches the result in <see cref="_visibleHintsCount"/>.
+        /// Must be called whenever <see cref="_hintsData"/> or <see cref="InlineHintsVisibleKinds"/> changes
         /// so that scrollbar height calculations use the correct filtered count.
         /// </summary>
-        private void RebuildVisibleLensCount()
+        private void RebuildVisibleHintsCount()
         {
-            var kinds = CodeLensVisibleKinds;
+            var kinds = InlineHintsVisibleKinds;
             int count = 0;
-            foreach (var entry in _lensData.Values)
+            foreach (var entry in _hintsData.Values)
             {
                 if ((entry.Kind & kinds) != 0) count++;
             }
-            _visibleLensCount = count;
+            _visibleHintsCount = count;
         }
 
         /// <summary>
@@ -1902,8 +1902,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             ShowScopeGuides          = options.ShowScopeGuides;
             FoldToggleOnDoubleClick  = options.FoldToggleOnDoubleClick;
             EnableFindAllReferences  = options.EnableFindAllReferences;
-            ShowCodeLens             = options.ShowCodeLens;
-            CodeLensVisibleKinds     = options.CodeLensVisibleKinds;
+            ShowInlineHints             = options.ShowInlineHints;
+            InlineHintsVisibleKinds     = options.InlineHintsVisibleKinds;
             EnableWordHighlight      = options.EnableWordHighlight;
 
             // Syntax color overrides — set local value to override the DynamicResource binding.
@@ -3074,8 +3074,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// <summary>
         /// Returns the Y coordinate where the code text for visible-index
         /// <paramref name="visIdx"/> should be drawn.
-        /// For declaration lines with CodeLens active the Y is pushed down by
-        /// <see cref="LensLineHeight"/>; for all other lines it sits at the slot top.
+        /// For declaration lines with InlineHints active the Y is pushed down by
+        /// <see cref="HintLineHeight"/>; for all other lines it sits at the slot top.
         /// Falls back to the uniform formula when the precomputed list is unavailable.
         /// </summary>
         private double GetFoldAwareLineY(int visIdx)
@@ -3083,7 +3083,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (visIdx < _visLinePositions.Count)
                 return _visLinePositions[visIdx].Y;
 
-            // Fallback: uniform layout (no CodeLens offset).
+            // Fallback: uniform layout (no InlineHints offset).
             double scrollFraction = (EnableVirtualScrolling && _virtualizationEngine != null)
                 ? _virtualizationEngine.GetLineYPosition(_firstVisibleLine)
                 : 0.0;
@@ -3092,13 +3092,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         /// <summary>
         /// Returns the top Y of the lens hint zone for visible-index <paramref name="visIdx"/>
-        /// (the LensLineHeight zone immediately above the code text).
+        /// (the HintLineHeight zone immediately above the code text).
         /// </summary>
-        private double GetLensZoneY(int visIdx) => GetFoldAwareLineY(visIdx) - LensLineHeight;
+        private double GetLensZoneY(int visIdx) => GetFoldAwareLineY(visIdx) - HintLineHeight;
 
         /// <summary>
-        /// Precomputes per-visible-line Y positions, adding <see cref="LensLineHeight"/>
-        /// only for lines that have a CodeLens entry.  Must be called in OnRender immediately
+        /// Precomputes per-visible-line Y positions, adding <see cref="HintLineHeight"/>
+        /// only for lines that have a InlineHints entry.  Must be called in OnRender immediately
         /// after <see cref="CalculateVisibleLines"/>.
         /// </summary>
         private void ComputeVisibleLinePositions()
@@ -3115,13 +3115,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 if (_foldingEngine?.IsLineHidden(i) == true) continue;
 
-                if (ShowCodeLens && IsLensEntryVisible(i))
+                if (ShowInlineHints && IsHintEntryVisible(i))
                 {
                     // Code text sits below the hint zone.
-                    double codeY = y + LensLineHeight;
+                    double codeY = y + HintLineHeight;
                     _visLinePositions.Add((i, codeY));
                     _lineYLookup[i] = codeY;
-                    y += _lineHeight + LensLineHeight;
+                    y += _lineHeight + HintLineHeight;
                 }
                 else
                 {
@@ -3133,22 +3133,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
-        /// Draws "N références" hints in the lens zone (top <see cref="LensLineHeight"/> px of
-        /// each line slot) for lines that have declaration items in <see cref="_lensData"/>.
-        /// Hit zones are stored in <see cref="_lensHitZones"/> for mouse interaction.
+        /// Draws "N références" hints in the lens zone (top <see cref="HintLineHeight"/> px of
+        /// each line slot) for lines that have declaration items in <see cref="_hintsData"/>.
+        /// Hit zones are stored in <see cref="_hintsHitZones"/> for mouse interaction.
         /// Called from OnRender after the text-area clip but before the H-scroll transform,
         /// so hints are clipped to the text column yet not scrolled horizontally.
         /// </summary>
-        private void RenderCodeLensHints(DrawingContext dc)
+        private void RenderInlineHints(DrawingContext dc)
         {
-            if (!ShowCodeLens || _visibleLensCount == 0 || _document == null) return;
+            if (!ShowInlineHints || _visibleHintsCount == 0 || _document == null) return;
 
-            _lensHitZones.Clear();
+            _hintsHitZones.Clear();
 
             var normalBrush = (Brush?)TryFindResource("CE_Lens")       ?? Brushes.Gray;
             var hoverBrush  = (Brush?)TryFindResource("CE_Lens_Hover") ?? Brushes.Silver;
             var bgBrush     = (Brush?)TryFindResource("CE_Lens_Bg")    ?? Brushes.Transparent;
-            double fontSize  = LensLineHeight * 0.72;   // ~11.5 px for a 16-px slot
+            double fontSize  = HintLineHeight * 0.72;   // ~11.5 px for a 16-px slot
             double baseX     = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
             double pixelsPerDip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
 
@@ -3157,7 +3157,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 if (_foldingEngine?.IsLineHidden(i) == true) { continue; }
 
-                if (IsLensEntryVisible(i) && _lensData.TryGetValue(i, out var entry) && entry.Count > 0)
+                if (IsHintEntryVisible(i) && _hintsData.TryGetValue(i, out var entry) && entry.Count > 0)
                 {
                     // Indent hint to match the leading whitespace of the declaration line.
                     string lineText = _document.Lines[i].Text ?? string.Empty;
@@ -3167,7 +3167,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     double x = baseX + _glyphRenderer.ComputeVisualX(lineText, indent);
 
                     string label  = entry.Count == 1 ? "1 reference" : $"{entry.Count} references";
-                    var    brush  = i == _hoveredLensLine ? hoverBrush : normalBrush;
+                    var    brush  = i == _hoveredHintsLine ? hoverBrush : normalBrush;
                     var ft = new System.Windows.Media.FormattedText(
                         label,
                         System.Globalization.CultureInfo.CurrentCulture,
@@ -3181,7 +3181,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     // Subtle pill background — makes the hint visually distinct from code/comments.
                     dc.DrawRoundedRectangle(bgBrush, null, new Rect(x - 3, y, ft.Width + 6, ft.Height + 1), 3, 3);
                     dc.DrawText(ft, new Point(x, y));
-                    _lensHitZones.Add((new Rect(x - 3, y, ft.Width + 6, LensLineHeight - 2), i, entry.Symbol));
+                    _hintsHitZones.Add((new Rect(x - 3, y, ft.Width + 6, HintLineHeight - 2), i, entry.Symbol));
                 }
 
                 visIdx++;
@@ -3317,10 +3317,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Calculate visible line range
             int prevFirstVisible = _firstVisibleLine, prevLastVisible = _lastVisibleLine;
             CalculateVisibleLines();
-            // Pre-compute per-visible-line Y positions; only declaration lines get +LensLineHeight.
+            // Pre-compute per-visible-line Y positions; only declaration lines get +HintLineHeight.
             ComputeVisibleLinePositions();
 
-            // OPT-D: rebuild per-line Y positions only when the visible range, CodeLens, or
+            // OPT-D: rebuild per-line Y positions only when the visible range, InlineHints, or
             // folding state changed — not on every caret-blink render frame.
             if (_firstVisibleLine != prevFirstVisible || _lastVisibleLine != prevLastVisible)
                 _linePositionsDirty = true;
@@ -3347,9 +3347,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // -- Text area clip + horizontal translate -------------------
             dc.PushClip(new RectangleGeometry(new Rect(textLeft, 0, Math.Max(0, contentW - textLeft), contentH)));
 
-            // 3b. CodeLens hints — drawn inside the text-area clip but WITHOUT the
+            // 3b. InlineHints hints — drawn inside the text-area clip but WITHOUT the
             //     H-scroll transform so they stay anchored at the left edge.
-            RenderCodeLensHints(dc);
+            RenderInlineHints(dc);
 
             dc.PushTransform(new System.Windows.Media.TranslateTransform(-_horizontalScrollOffset, 0));
 
@@ -3471,7 +3471,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double textLeft    = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
             int    hiddenLines = _foldingEngine?.TotalHiddenLineCount ?? 0;
             double totalH      = TopMargin + ((_document?.Lines.Count ?? 0) - hiddenLines) * _lineHeight
-                             + (ShowCodeLens ? _visibleLensCount * LensLineHeight : 0);
+                             + (ShowInlineHints ? _visibleHintsCount * HintLineHeight : 0);
             double totalTW     = textLeft + _maxContentWidth;
 
             // Determine which scrollbars are needed (check for mutual dependency)
@@ -3526,7 +3526,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 // Subtract collapsed fold lines so the scrollbar range matches actual rendered content.
                 int    foldHidden = _foldingEngine?.TotalHiddenLineCount ?? 0;
                 double totalH     = TopMargin + ((_document?.Lines.Count ?? 0) - foldHidden) * _lineHeight
-                    + (ShowCodeLens ? _visibleLensCount * LensLineHeight : 0);
+                    + (ShowInlineHints ? _visibleHintsCount * HintLineHeight : 0);
                 double maxV       = Math.Max(0, totalH - contentH);
 
                 // Clamp internal offset (e.g. file got shorter after edit)
@@ -3919,7 +3919,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// Renders the rectangular (block/column) selection overlay as a single seamless rectangle
         /// spanning the full vertical extent of the selection. Drawing one rectangle eliminates
         /// the anti-aliasing seams that appear when drawing one rect per line.
-        /// Uses _lineYLookup for CodeLens-aware Y offsets (mandatory).
+        /// Uses _lineYLookup for InlineHints-aware Y offsets (mandatory).
         /// </summary>
         private void RenderRectSelection(DrawingContext dc)
         {
@@ -3938,7 +3938,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double x2    = leftEdge + rightCol * _charWidth;
             double width = Math.Max(x2 - x1, 1.0); // at least 1px when collapsed
 
-            // Mandatory: use _lineYLookup for CodeLens-aware Y offset.
+            // Mandatory: use _lineYLookup for InlineHints-aware Y offset.
             double yTop = _lineYLookup.TryGetValue(visTop, out double lt) ? lt
                 : TopMargin + (visTop - _firstVisibleLine) * _lineHeight;
             double yBottom = (_lineYLookup.TryGetValue(visBottom, out double lb) ? lb
@@ -3985,7 +3985,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (result.Line < _firstVisibleLine || result.Line > _lastVisibleLine)
                     continue;
 
-                // Y: use _lineYLookup so CodeLens hint rows are accounted for
+                // Y: use _lineYLookup so InlineHints hint rows are accounted for
                 double y = _lineYLookup.TryGetValue(result.Line, out double ry) ? ry
                     : TopMargin + (result.Line - _firstVisibleLine) * _lineHeight;
 
@@ -4021,10 +4021,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (pos.Line < _firstVisibleLine || pos.Line > _lastVisibleLine)
                     continue;
 
-                // Word highlights on CodeLens declaration lines are distracting:
+                // Word highlights on InlineHints declaration lines are distracting:
                 // the hint zone sits above the code text and the rectangle would
                 // overlap it.  Skip these lines entirely.
-                if (ShowCodeLens && IsLensEntryVisible(pos.Line))
+                if (ShowInlineHints && IsHintEntryVisible(pos.Line))
                     continue;
 
                 // Skip collapsed directive opener lines — text is blanked; a rect outline
@@ -4498,7 +4498,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (_cursorLine < _firstVisibleLine || _cursorLine > _lastVisibleLine)
                 return;
 
-            // Use per-line Y lookup so the caret sits at the code-text Y on CodeLens lines.
+            // Use per-line Y lookup so the caret sits at the code-text Y on InlineHints lines.
             double y = _lineYLookup.TryGetValue(_cursorLine, out double cy) ? cy
                 : (EnableVirtualScrolling && _virtualizationEngine != null
                     ? TopMargin + _virtualizationEngine.GetLineYPosition(_cursorLine)
@@ -4647,7 +4647,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (line < _firstVisibleLine || line > _lastVisibleLine)
                 return;
 
-            // Use _lineYLookup to account for CodeLens hint zone height offset (same pattern as RenderCursor/RenderSelection/RenderWordHighlights)
+            // Use _lineYLookup to account for InlineHints hint zone height offset (same pattern as RenderCursor/RenderSelection/RenderWordHighlights)
             double y = _lineYLookup.TryGetValue(line, out double by) ? by
                 : (EnableVirtualScrolling && _virtualizationEngine != null
                     ? TopMargin + _virtualizationEngine.GetLineYPosition(line)
@@ -4968,11 +4968,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     }
                     break;
 
-                // IntelliSense trigger (Phase 4)
+                // SmartComplete trigger (Phase 4)
                 case Key.Space:
-                    if (ctrlPressed && _enableIntelliSense)
+                    if (ctrlPressed && _enableSmartComplete)
                     {
-                        TriggerIntelliSense();
+                        TriggerSmartComplete();
                         e.Handled = true;
                     }
                     break;
@@ -5116,10 +5116,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         _cursorColumn--;
                     }
 
-                    // Auto-trigger IntelliSense on specific characters (Phase 4)
-                    if (EnableIntelliSense && ShouldAutoTriggerIntelliSense(ch))
+                    // Auto-trigger SmartComplete on specific characters (Phase 4)
+                    if (EnableSmartComplete && ShouldAutoTriggerSmartComplete(ch))
                     {
-                        TriggerIntelliSenseWithDelay();
+                        TriggerSmartCompleteWithDelay();
                     }
                 }
                 // OPT-B: InvalidateVisual() removed — Document_TextChanged fires in the same
@@ -5214,9 +5214,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 InvalidateVisual();
             }
 
-            if (_hoveredLensLine >= 0)
+            if (_hoveredHintsLine >= 0)
             {
-                _hoveredLensLine = -1;
+                _hoveredHintsLine = -1;
                 ToolTip = null;
                 InvalidateVisual();
             }
@@ -5744,11 +5744,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 }
             }
 
-            // Left-click on a CodeLens hint → navigate cursor onto the symbol and open references popup.
-            if (ShowCodeLens && e.LeftButton == MouseButtonState.Pressed && _lensHitZones.Count > 0)
+            // Left-click on a InlineHints hint → navigate cursor onto the symbol and open references popup.
+            if (ShowInlineHints && e.LeftButton == MouseButtonState.Pressed && _hintsHitZones.Count > 0)
             {
                 var clickPos = e.GetPosition(this);
-                foreach (var (zone, lineIdx, symbol) in _lensHitZones)
+                foreach (var (zone, lineIdx, symbol) in _hintsHitZones)
                 {
                     if (zone.Contains(clickPos))
                     {
@@ -5786,9 +5786,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 }
             }
 
-            // Block caret placement when clicking in the CodeLens hint zone
-            // (the LensLineHeight strip above the code text of a declaration line).
-            if (ShowCodeLens
+            // Block caret placement when clicking in the InlineHints hint zone
+            // (the HintLineHeight strip above the code text of a declaration line).
+            if (ShowInlineHints
                 && _lineYLookup.TryGetValue(textPos.Line, out double codeTextY)
                 && pos.Y < codeTextY)
             {
@@ -5895,17 +5895,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     InvalidateVisual();
                 }
 
-                // CodeLens hint zones: Hand cursor, hover highlight, and tooltip.
+                // InlineHints hint zones: Hand cursor, hover highlight, and tooltip.
                 var mousePixel = e.GetPosition(this);
-                int prevHover  = _hoveredLensLine;
-                _hoveredLensLine = -1;
+                int prevHover  = _hoveredHintsLine;
+                _hoveredHintsLine = -1;
                 string? lensTooltip = null;
-                foreach (var (zone, lineIdx, sym) in _lensHitZones)
+                foreach (var (zone, lineIdx, sym) in _hintsHitZones)
                 {
                     if (zone.Contains(mousePixel))
                     {
-                        _hoveredLensLine = lineIdx;
-                        if (_lensData.TryGetValue(lineIdx, out var entry))
+                        _hoveredHintsLine = lineIdx;
+                        if (_hintsData.TryGetValue(lineIdx, out var entry))
                         {
                             lensTooltip = entry.Count == 1
                                 ? $"1 reference to '{sym}'  (Alt+3)"
@@ -5914,10 +5914,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         break;
                     }
                 }
-                if (_hoveredLensLine != prevHover)
+                if (_hoveredHintsLine != prevHover)
                     InvalidateVisual();
 
-                bool overLens = _hoveredLensLine >= 0;
+                bool overLens = _hoveredHintsLine >= 0;
                 ToolTip = overLens ? lensTooltip : null;
 
                 // Fold label zones — Hand cursor + 1.5s peek-on-hover.
@@ -6197,16 +6197,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double leftEdge = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
             int line;
 
-            if (ShowCodeLens && _visLinePositions.Count > 0)
+            if (ShowInlineHints && _visLinePositions.Count > 0)
             {
-                // Variable-height scan: CodeLens declaration lines have a taller slot.
-                // Each lens-line slot spans (codeY - LensLineHeight → codeY + _lineHeight).
+                // Variable-height scan: InlineHints declaration lines have a taller slot.
+                // Each lens-line slot spans (codeY - HintLineHeight → codeY + _lineHeight).
                 // Each normal-line slot spans (codeY → codeY + _lineHeight).
                 line = _visLinePositions[^1].LineIndex; // default: last visible line
                 for (int k = 0; k < _visLinePositions.Count; k++)
                 {
                     var (lineIdx, codeY) = _visLinePositions[k];
-                    double slotTop = IsLensEntryVisible(lineIdx) ? codeY - LensLineHeight : codeY;
+                    double slotTop = IsHintEntryVisible(lineIdx) ? codeY - HintLineHeight : codeY;
                     if (pixel.Y >= slotTop && pixel.Y < codeY + _lineHeight)
                     {
                         line = lineIdx;
@@ -6875,34 +6875,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         #endregion
 
-        #region IntelliSense Methods (Phase 4)
+        #region SmartComplete Methods (Phase 4)
 
         /// <summary>
-        /// Trigger IntelliSense immediately (Ctrl+Space)
+        /// Trigger SmartComplete immediately (Ctrl+Space)
         /// </summary>
-        private void TriggerIntelliSense()
+        private void TriggerSmartComplete()
         {
-            if (!_enableIntelliSense || _intelliSensePopup == null)
+            if (!_enableSmartComplete || _smartCompletePopup == null)
                 return;
 
-            _intelliSensePopup.TriggerImmediate();
+            _smartCompletePopup.TriggerImmediate();
         }
 
         /// <summary>
-        /// Trigger IntelliSense with delay (auto-trigger)
+        /// Trigger SmartComplete with delay (auto-trigger)
         /// </summary>
-        private void TriggerIntelliSenseWithDelay()
+        private void TriggerSmartCompleteWithDelay()
         {
-            if (!_enableIntelliSense || _intelliSensePopup == null)
+            if (!_enableSmartComplete || _smartCompletePopup == null)
                 return;
 
-            _intelliSensePopup.TriggerWithDelay(IntelliSenseDelay);
+            _smartCompletePopup.TriggerWithDelay(SmartCompleteDelay);
         }
 
         /// <summary>
-        /// Check if character should auto-trigger IntelliSense
+        /// Check if character should auto-trigger SmartComplete
         /// </summary>
-        private bool ShouldAutoTriggerIntelliSense(char ch)
+        private bool ShouldAutoTriggerSmartComplete(char ch)
         {
             // Trigger on: quote (start of key/value), colon (after key), comma (new item), opening brace/bracket
             return ch == '"' || ch == ':' || ch == ',' || ch == '{' || ch == '[';
@@ -7027,8 +7027,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Subscribe to the new document.
             _document.TextChanged += Document_TextChanged;
 
-            // Re-attach CodeLens service to the new document.
-            _codeLensService.Attach(_document, _currentFilePath);
+            // Re-attach InlineHints service to the new document.
+            _inlineHintsService.Attach(_document, _currentFilePath);
 
             // Reset view state.
             _cursorLine = 0;
@@ -7273,9 +7273,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             InvalidateMeasure();
             _currentFilePath = filePath;
 
-            // Re-attach CodeLens with the resolved file path so workspace-wide
+            // Re-attach InlineHints with the resolved file path so workspace-wide
             // counting uses the correct extension filter.
-            _codeLensService.Attach(_document, _currentFilePath);
+            _inlineHintsService.Attach(_document, _currentFilePath);
 
             // Apply .editorconfig settings (P2-03): indent style, size, EOL, etc.
             ApplyEditorConfig(Services.EditorConfigService.Resolve(filePath));
@@ -7440,7 +7440,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             if (_document is null) return;
 
-            // When called from a CodeLens click, line/symbol are supplied directly
+            // When called from a InlineHints click, line/symbol are supplied directly
             // so the caret is never mutated. The Shift+F12 path supplies no overrides
             // and reads _cursorLine / _cursorColumn as before.
             int    line   = lineOverride ?? _cursorLine;
@@ -7690,10 +7690,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double x  = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + column * cw;
 
             // Prefer the actual rendered hit-zone Top as anchor Y.
-            // _lineYLookup can accumulate rounding errors when many CodeLens lines appear
+            // _lineYLookup can accumulate rounding errors when many InlineHints lines appear
             // above the declaration, causing the popup to float too high.
             double anchorY = -1;
-            foreach (var (hz, hzLine, _) in _lensHitZones)
+            foreach (var (hz, hzLine, _) in _hintsHitZones)
             {
                 if (hzLine == line) { anchorY = hz.Top; break; }
             }
@@ -7702,7 +7702,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 // Shift+F12 / hint not currently rendered — fall back to _lineYLookup.
                 double codeY = _lineYLookup.TryGetValue(line, out double ly)
                     ? ly : TopMargin + visLineOffset * lh;
-                anchorY = codeY - LensLineHeight;
+                anchorY = codeY - HintLineHeight;
             }
 
             var anchor = new Point(x, anchorY);
@@ -7710,7 +7710,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Resolve kind icon from lens data (null-safe: Shift+F12 invocations have no lens entry).
             string iconGlyph = "\uE8A5";
             System.Windows.Media.Brush iconBrush = System.Windows.Media.Brushes.Gray;
-            if (_lensData.TryGetValue(line, out var lensEntry))
+            if (_hintsData.TryGetValue(line, out var lensEntry))
             {
                 iconGlyph = lensEntry.IconGlyph;
                 iconBrush = lensEntry.IconBrush;
@@ -8138,7 +8138,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _quickInfoPopup.ActionRequested += OnQuickInfoActionRequested;
             }
 
-            // Compute anchor below the hovered line (CodeLens-aware Y via _lineYLookup).
+            // Compute anchor below the hovered line (InlineHints-aware Y via _lineYLookup).
             double anchorX = TextAreaLeftOffset + _lastHoverTextPos.Column * _charWidth
                              - _horizontalScrollOffset;
             double anchorY = _lineYLookup.TryGetValue(_lastHoverTextPos.Line, out double ly)

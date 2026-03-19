@@ -76,8 +76,8 @@ HexEdit.Stream = File.OpenRead(@"C:\path\to\file.bin");
 
 | IDE | Notes |
 |-----|-------|
-| **Visual Studio 2022** | ✅ Full toolbox, XAML designer, IntelliSense |
-| **JetBrains Rider** | ✅ XAML IntelliSense + preview — no visual toolbox (Rider limitation) · See [Rider Guide](docs/IDE/RIDER_GUIDE.md) |
+| **Visual Studio 2022** | ✅ Full toolbox, XAML designer, SmartComplete |
+| **JetBrains Rider** | ✅ XAML SmartComplete + preview — no visual toolbox (Rider limitation) · See [Rider Guide](docs/IDE/RIDER_GUIDE.md) |
 | **VS Code** | ✅ XAML extension for syntax highlighting |
 
 ---

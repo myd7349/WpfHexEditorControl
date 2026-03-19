@@ -374,7 +374,7 @@ hexEditor.OpenMemory(data);
 
 ---
 
-### Issue 4: IntelliSense not working
+### Issue 4: SmartComplete not working
 
 **Symptom**: No autocomplete for HexEditor properties/methods
 
@@ -436,8 +436,8 @@ dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org
    - Rider auto-suggests namespace when typing `<HexEditor`
    - Press Alt+Enter → Add namespace
 
-3. **IntelliSense**
-   - Full IntelliSense support for properties/methods
+3. **SmartComplete**
+   - Full SmartComplete support for properties/methods
    - Rider shows documentation tooltips
 
 ---

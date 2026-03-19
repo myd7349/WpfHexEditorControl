@@ -90,7 +90,7 @@ dotnet build
 
 ---
 
-### Issue: IntelliSense not working
+### Issue: SmartComplete not working
 
 **Symptoms**: No autocomplete for HexEditor properties/methods.
 

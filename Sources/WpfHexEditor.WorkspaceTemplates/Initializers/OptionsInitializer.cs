@@ -53,7 +53,7 @@ public sealed class OptionsInitializer
 public sealed class WorkspaceOptionsDocument
 {
     public string? DefaultLanguageId { get; set; }
-    public bool    EnableIntelliSense { get; set; } = true;
+    public bool    EnableSmartComplete { get; set; } = true;
     public bool    EnableFolding      { get; set; } = true;
     public int     TabSize            { get; set; } = 4;
     public bool    UseSpaces          { get; set; } = true;

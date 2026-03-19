@@ -6,7 +6,7 @@
 // Created: 2026-03-16
 // Description:
 //     Builds and maintains per-document SymbolTable objects from ParseResult data.
-//     Exposes workspace-level symbol queries used by BoostedIntelliSenseManager
+//     Exposes workspace-level symbol queries used by BoostedSmartCompleteManager
 //     and RefactoringEngine.
 //
 // Architecture Notes:

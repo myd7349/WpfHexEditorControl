@@ -7,7 +7,7 @@
     ================================
     Provides built-in and user-defined workspace templates for the
     New Project dialog. Scaffolds .whproj / .whsln files and wires
-    language definitions, IntelliSense, and optional plugins.
+    language definitions, SmartComplete, and optional plugins.
 -->
 
 <Project Sdk="Microsoft.NET.Sdk">

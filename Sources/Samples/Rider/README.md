@@ -1,4 +1,4 @@
-﻿# 🚀 WpfHexEditor - Rider Sample Projects
+# 🚀 WpfHexEditor - Rider Sample Projects
 
 **Ready-to-use examples** for JetBrains Rider users.
 
@@ -13,7 +13,7 @@
 - Basic file opening
 - Simple hex/ASCII viewing
 - Read-only mode toggle
-- Demonstrates IntelliSense usage
+- Demonstrates SmartComplete usage
 
 **How to open:**
 ```bash
@@ -31,7 +31,7 @@ dotnet run
 
 **No visual toolbox?** Don't worry! These examples show how to:
 - ✅ Add controls via XAML code
-- ✅ Use IntelliSense for properties
+- ✅ Use SmartComplete for properties
 - ✅ Preview in XAML Preview window
 - ✅ Use Live Templates for fast insertion
 
@@ -41,9 +41,9 @@ dotnet run
 
 ## 🎯 Quick Tips
 
-### 1. IntelliSense is your friend
+### 1. SmartComplete is your friend
 ```xml
-<!-- Start typing and IntelliSense shows all options -->
+<!-- Start typing and SmartComplete shows all options -->
 <hex:HexEditor |
                ^
                Ctrl+Space shows all properties!

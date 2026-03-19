@@ -7,7 +7,7 @@
 // Description:
 //     Aggregates snippet definitions from .whlang built-in templates and
 //     plugin-contributed ISnippetProvider instances.
-//     Exposes GetSnippets(languageId, trigger) for IntelliSense lookup.
+//     Exposes GetSnippets(languageId, trigger) for SmartComplete lookup.
 //
 // Architecture Notes:
 //     Pattern: Aggregator
