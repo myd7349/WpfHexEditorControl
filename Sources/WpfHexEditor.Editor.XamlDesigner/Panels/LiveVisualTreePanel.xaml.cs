@@ -183,9 +183,15 @@ public partial class LiveVisualTreePanel : UserControl
             new FrameworkElement[] { TbgNavigation },
             leftFixedElements: null);
 
+        // Background priority gives WPF extra layout passes so TbgNavigation.ActualWidth
+        // is correctly measured before CaptureNaturalWidths reads it.
         Dispatcher.InvokeAsync(
-            () => _overflowManager.CaptureNaturalWidths(),
-            DispatcherPriority.Loaded);
+            () =>
+            {
+                TbgNavigation.UpdateLayout();
+                _overflowManager.CaptureNaturalWidths();
+            },
+            DispatcherPriority.Background);
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -233,8 +239,24 @@ public partial class LiveVisualTreePanel : UserControl
         // Fire RefreshRequested whenever the panel becomes visible so the plugin
         // can reseed from the current wired host — covers the case where the panel
         // was hidden when the last DesignRendered / FocusChanged event fired.
-        if ((bool)e.NewValue)
-            RefreshRequested?.Invoke(this, EventArgs.Empty);
+        if (!(bool)e.NewValue) return;
+
+        RefreshRequested?.Invoke(this, EventArgs.Empty);
+
+        // Re-capture toolbar natural widths every time the panel becomes visible.
+        // CaptureNaturalWidths() guards ActualWidth>0, so it silently skips when
+        // the panel loads in a hidden tab. Invalidating here + scheduling at
+        // Background priority gives WPF time to do a full layout pass with the
+        // panel actually visible before we try to measure TbgNavigation.
+        _overflowManager?.InvalidateWidths();
+        Dispatcher.InvokeAsync(
+            () =>
+            {
+                TbgNavigation.Visibility = Visibility.Visible;
+                TbgNavigation.UpdateLayout();
+                _overflowManager?.CaptureNaturalWidths();
+            },
+            DispatcherPriority.Background);
     }
 
     // ── Tree selection ────────────────────────────────────────────────────────

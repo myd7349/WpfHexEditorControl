@@ -146,7 +146,10 @@
                 Background="{DynamicResource XD_PanelToolbarBrush}"
                 BorderBrush="{DynamicResource XD_PanelToolbarBorderBrush}"
                 BorderThickness="0,0,0,1">
-            <DockPanel>
+            <!-- LastChildFill="False" ensures TbgNavigation reports its content width,
+                 not the fill width — required for ToolbarOverflowManager.CaptureNaturalWidths()
+                 to measure the true natural size (not the available-space size). -->
+            <DockPanel LastChildFill="False">
                 <!-- Always-visible right panel (ToolbarOverflowManager anchor) -->
                 <StackPanel x:Name="ToolbarRightPanel" DockPanel.Dock="Right"
                             Orientation="Horizontal" Margin="0,0,2,0">
@@ -199,7 +202,7 @@
                             Content="&#xE89A;" ToolTip="Set selected element as tree root (inspect subtree)"/>
 
                     <!-- C: Reset to full tree (visible only in inspect mode) -->
-                    <Button x:Name="BtnResetRoot" Style="{StaticResource XD_LiveTreeIconButton}"
+                    <Button x:Name="BtnResetRoot"
                             Content="&#xE8B3;" ToolTip="Reset to full tree view">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource XD_LiveTreeIconButton}">

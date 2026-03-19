@@ -450,4 +450,8 @@
     <SolidColorBrush x:Key="XD_ContextMatchTrackBrush"          Color="#BDD5EA"/>
     <SolidColorBrush x:Key="XD_HistoryCurrentStateBrush"        Color="#0078D4"/>
     <SolidColorBrush x:Key="XD_BindingStatusWarnBrush"          Color="#E67E22"/>
+
+    <!-- Markdown Editor Preview Tokens (2026-03-19) -->
+    <SolidColorBrush x:Key="MD_PreviewBackground"  Color="#EFF1F5"/>
+    <SolidColorBrush x:Key="MD_PreviewBorder"       Color="#ACB0BE"/>
 </ResourceDictionary>
