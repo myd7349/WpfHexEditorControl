@@ -23,6 +23,7 @@
 // ==========================================================
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -98,13 +99,16 @@ public sealed class DesignCanvas : Border
 
         PreviewMouseLeftButtonDown += OnCanvasMouseDown;
 
-        // Escape key deselects the current element.
+        // Escape key — if something is selected, walk up to the nearest selectable parent;
+        // if already at root (or nothing is selected), deselect entirely.
         Focusable = true;
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape)
             {
-                SelectElement(null);
+                SelectElement(SelectedElement is not null
+                    ? FindSelectableParent(SelectedElement)  // null when at root → deselects
+                    : null);
                 e.Handled = true;
             }
         };
@@ -146,6 +150,29 @@ public sealed class DesignCanvas : Border
         InteractionEnabled = true;
     }
 
+    /// <summary>
+    /// Selects the nearest selectable UIElement ancestor of the current selection.
+    /// Selecting null deselects entirely when the element has no parent within the canvas.
+    /// </summary>
+    public void SelectParent()
+        => SelectElement(SelectedElement is not null ? FindSelectableParent(SelectedElement) : null);
+
+    /// <summary>
+    /// Walks the visual tree upward from <paramref name="current"/> and returns the first
+    /// UIElement ancestor that is still within the <see cref="_presenter"/> boundary.
+    /// Returns null when <paramref name="current"/> is already the root child of the presenter.
+    /// </summary>
+    internal UIElement? FindSelectableParent(UIElement current)
+    {
+        var node = VisualTreeHelper.GetParent(current);
+        while (node is not null && !ReferenceEquals(node, _presenter))
+        {
+            if (node is UIElement u) return u;
+            node = VisualTreeHelper.GetParent(node);
+        }
+        return null; // reached presenter boundary → caller should deselect
+    }
+
     /// <summary>Programmatically selects an element and places the adorner.</summary>
     public void SelectElement(UIElement? el)
     {
@@ -184,7 +211,7 @@ public sealed class DesignCanvas : Border
             // Inject UIDs so the element mapper can link UIElements → XElements.
             var withUids  = _syncService.InjectUids(sanitized, out var uidMap);
             var prepared  = EnsureWpfNamespaces(withUids);
-            var result    = XamlReader.Parse(prepared);
+            var result    = ParseXaml(prepared);
 
             if (result is UIElement uiResult)
             {
@@ -230,6 +257,15 @@ public sealed class DesignCanvas : Border
             RenderError?.Invoke(this, ex.Message);
         }
     }
+
+    /// <summary>
+    /// Invokes <see cref="XamlReader.Parse"/> in a method marked <see cref="DebuggerHiddenAttribute"/>
+    /// so that the Visual Studio debugger does not pause on the first-chance
+    /// <see cref="System.Windows.Markup.XamlParseException"/> thrown by invalid XAML.
+    /// The exception propagates normally and is caught by <see cref="RenderXaml"/>.
+    /// </summary>
+    [DebuggerHidden]
+    private static object ParseXaml(string xaml) => XamlReader.Parse(xaml);
 
     /// <summary>
     /// Builds a centered error card displayed on the design surface when XAML

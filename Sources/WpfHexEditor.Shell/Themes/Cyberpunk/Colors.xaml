@@ -291,9 +291,11 @@
     <SolidColorBrush x:Key="TE_Operator"               Color="#E0E7FF"/>
     <SolidColorBrush x:Key="TE_Type"                   Color="#00BFFF"/>
     <SolidColorBrush x:Key="TE_Directive"              Color="#FF6B6B"/>
+    <SolidColorBrush x:Key="TE_RegionName"             Color="#00FFFF"/>
 
     <!-- CE_* — Code Editor syntax token colors (Cyberpunk neon palette) -->
     <SolidColorBrush x:Key="CE_Keyword"       Color="#FF2D78"/>
+    <SolidColorBrush x:Key="CE_ControlFlow"   Color="#FF79C6"/>
     <SolidColorBrush x:Key="CE_Comment"       Color="#4A9375"/>
     <SolidColorBrush x:Key="CE_String"        Color="#FFD700"/>
     <SolidColorBrush x:Key="CE_Number"        Color="#00FFCC"/>
@@ -401,6 +403,7 @@
     <SolidColorBrush x:Key="XD_ToolbarViewToggleActiveBrush"     Color="#FF2D78"/>
     <!-- XD Phase 1-10 extended tokens (Cyberpunk) -->
     <SolidColorBrush x:Key="XD_MoveAdornerBrush"                Color="#00FFEA"/>
+    <SolidColorBrush x:Key="XD_RotationHandleFillBrush"           Color="#FF4FC1FF"/>
     <SolidColorBrush x:Key="XD_ResizeHandleFillBrush"           Color="#FF007A"/>
     <SolidColorBrush x:Key="XD_ResizeHandleStrokeBrush"         Color="#00FFEA"/>
     <SolidColorBrush x:Key="XD_RulerBackground"                 Color="#0A0E27"/>

@@ -16,6 +16,7 @@
 // ==========================================================
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -38,6 +39,11 @@ public sealed class DesignInteractionService
     private double _startCanvasTop;
     private bool   _isInMove;
     private int    _activeUid = -1;
+
+    // Rotation state
+    private bool   _isInRotate;
+    private double _rotateStartAngle;
+    private int    _rotateUid = -1;
 
     // Multi-element move state
     private Point _multiMoveStart;
@@ -286,7 +292,57 @@ public sealed class DesignInteractionService
         _activeUid = -1;
     }
 
+    // ── Rotation API ──────────────────────────────────────────────────────────
+
+    /// <summary>Called when the user starts dragging the rotation handle.</summary>
+    public void OnRotateStarted(FrameworkElement element, int elementUid)
+    {
+        _rotateStartAngle = GetCurrentRotation(element);
+        _rotateUid        = elementUid;
+        _isInRotate       = true;
+    }
+
+    /// <summary>Called on each mouse move during a rotation drag.</summary>
+    public void OnRotateDelta(FrameworkElement element, double newAngle)
+    {
+        if (!_isInRotate) return;
+
+        element.RenderTransformOrigin = new Point(0.5, 0.5);
+
+        if (element.RenderTransform is RotateTransform rt)
+            rt.Angle = newAngle;
+        else
+            element.RenderTransform = new RotateTransform(newAngle);
+    }
+
+    /// <summary>Called when the rotation drag is completed.</summary>
+    public void OnRotateCompleted(FrameworkElement element)
+    {
+        if (!_isInRotate) return;
+        _isInRotate = false;
+
+        double after = GetCurrentRotation(element);
+        if (Math.Abs(after - _rotateStartAngle) < 0.01) return; // no-op
+
+        var op = DesignOperation.CreateRotate(
+            _rotateUid,
+            new Dictionary<string, string?> { ["Angle"] = _rotateStartAngle.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) },
+            new Dictionary<string, string?> { ["Angle"] = after.ToString("F2", System.Globalization.CultureInfo.InvariantCulture) });
+
+        OperationCommitted?.Invoke(this, new DesignOperationCommittedEventArgs(op, element));
+        _rotateUid = -1;
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    /// <summary>Reads the current rotation angle from a FrameworkElement's RenderTransform.</summary>
+    private static double GetCurrentRotation(FrameworkElement fe)
+    {
+        if (fe.RenderTransform is RotateTransform rt) return rt.Angle;
+        if (fe.RenderTransform is TransformGroup tg)
+            return tg.Children.OfType<RotateTransform>().FirstOrDefault()?.Angle ?? 0.0;
+        return 0.0;
+    }
 
     /// <summary>
     /// Extracts the numeric UID from an element's Tag string (format: "xd_N").

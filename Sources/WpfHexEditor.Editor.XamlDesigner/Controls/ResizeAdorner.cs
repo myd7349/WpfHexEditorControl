@@ -15,6 +15,7 @@
 //     Theme-aware via XD_SelectionBorderBrush and XD_ResizeHandleFillBrush tokens.
 // ==========================================================
 
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -45,18 +46,26 @@ public sealed class ResizeAdorner : Adorner
         (0.0, 0.5, Cursors.SizeWE),   // 7 W
     ];
 
-    private const double HandleSize = 8.0;
-    private const double BorderInset = 0.5;
+    private const double HandleSize      = 8.0;
+    private const double BorderInset     = 0.5;
+    private const double RotHandleOffset = 28.0; // px above top-center handle
+    private const double RotHandleSize   = 14.0;
 
     // ── State ─────────────────────────────────────────────────────────────────
 
-    private readonly VisualCollection      _visuals;
-    private readonly Thumb[]               _handles = new Thumb[8];
+    private readonly VisualCollection         _visuals;
+    private readonly Thumb[]                  _handles = new Thumb[8];
+    private readonly Thumb                    _rotationThumb;
     private readonly DesignInteractionService _interaction;
-    private readonly int                   _elementUid;
+    private readonly int                      _elementUid;
 
-    private Point _dragStart;
-    private bool  _isMoving;
+    private Point  _dragStart;
+    private bool   _isMoving;
+
+    // Rotation drag state
+    private Point  _rotCenter;
+    private double _rotStartAngle;
+    private double _rotCurrentAngle;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -74,6 +83,14 @@ public sealed class ResizeAdorner : Adorner
         Cursor           = Cursors.SizeAll;
 
         BuildHandles();
+
+        // 9th handle: rotation circle above the top-center handle.
+        _rotationThumb = CreateRotationThumb();
+        _visuals.Add(_rotationThumb);
+        _rotationThumb.DragStarted   += RotThumb_DragStarted;
+        _rotationThumb.DragDelta     += RotThumb_DragDelta;
+        _rotationThumb.DragCompleted += RotThumb_DragCompleted;
+
         WireMouseEvents();
     }
 
@@ -94,6 +111,11 @@ public sealed class ResizeAdorner : Adorner
             var y   = cfg.NormY * h - HandleSize / 2.0;
             _handles[i].Arrange(new Rect(x, y, HandleSize, HandleSize));
         }
+
+        // Rotation thumb: centered above the top-center (N) handle.
+        double rx = w / 2.0 - RotHandleSize / 2.0;
+        double ry = -RotHandleOffset - RotHandleSize / 2.0;
+        _rotationThumb.Arrange(new Rect(rx, ry, RotHandleSize, RotHandleSize));
 
         return finalSize;
     }
@@ -124,6 +146,13 @@ public sealed class ResizeAdorner : Adorner
                 bounds.Y + BorderInset,
                 Math.Max(0, bounds.Width  - BorderInset * 2),
                 Math.Max(0, bounds.Height - BorderInset * 2)));
+
+        // Thin connector line from the top-center of the selection border to the rotation thumb.
+        var linePen = new Pen(borderBrush, 1.0);
+        linePen.Freeze();
+        dc.DrawLine(linePen,
+            new Point(bounds.Width / 2.0, 0),
+            new Point(bounds.Width / 2.0, -RotHandleOffset));
     }
 
     // ── Build ─────────────────────────────────────────────────────────────────
@@ -185,6 +214,70 @@ public sealed class ResizeAdorner : Adorner
         {
             VisualTree = factory
         };
+    }
+
+    private static Thumb CreateRotationThumb()
+    {
+        var fillBrush   = Application.Current?.TryFindResource("XD_RotationHandleFillBrush") as Brush
+                          ?? new SolidColorBrush(Color.FromRgb(0x4F, 0xC1, 0xFF));
+        var strokeBrush = Application.Current?.TryFindResource("XD_ResizeHandleStrokeBrush") as Brush
+                          ?? new SolidColorBrush(Color.FromRgb(0, 122, 204));
+
+        var factory = new FrameworkElementFactory(typeof(Border));
+        factory.SetValue(Border.BackgroundProperty,      fillBrush);
+        factory.SetValue(Border.BorderBrushProperty,     strokeBrush);
+        factory.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+        factory.SetValue(Border.CornerRadiusProperty,    new CornerRadius(RotHandleSize / 2.0));
+
+        return new Thumb
+        {
+            Width    = RotHandleSize,
+            Height   = RotHandleSize,
+            Cursor   = Cursors.Cross,
+            Template = new ControlTemplate(typeof(Thumb)) { VisualTree = factory }
+        };
+    }
+
+    // ── Rotation drag handlers ─────────────────────────────────────────────────
+
+    private void RotThumb_DragStarted(object sender, DragStartedEventArgs e)
+    {
+        if (AdornedElement is not FrameworkElement fe) return;
+
+        // Compute the element center in screen coordinates.
+        var tl = fe.TranslatePoint(new Point(0, 0), null);
+        _rotCenter = new Point(tl.X + fe.ActualWidth / 2.0, tl.Y + fe.ActualHeight / 2.0);
+
+        // Capture the angle from the current mouse position to the element center.
+        var mp = Mouse.GetPosition(null);
+        _rotStartAngle   = Math.Atan2(mp.Y - _rotCenter.Y, mp.X - _rotCenter.X) * 180.0 / Math.PI;
+        _rotCurrentAngle = GetCurrentRotation(fe);
+
+        _interaction.OnRotateStarted(fe, _elementUid);
+    }
+
+    private void RotThumb_DragDelta(object sender, DragDeltaEventArgs e)
+    {
+        if (AdornedElement is not FrameworkElement fe) return;
+
+        var mp    = Mouse.GetPosition(null);
+        double a  = Math.Atan2(mp.Y - _rotCenter.Y, mp.X - _rotCenter.X) * 180.0 / Math.PI;
+        _interaction.OnRotateDelta(fe, _rotCurrentAngle + (a - _rotStartAngle));
+        InvalidateArrange();
+    }
+
+    private void RotThumb_DragCompleted(object sender, DragCompletedEventArgs e)
+    {
+        if (AdornedElement is FrameworkElement fe)
+            _interaction.OnRotateCompleted(fe);
+    }
+
+    private static double GetCurrentRotation(FrameworkElement fe)
+    {
+        if (fe.RenderTransform is RotateTransform rt) return rt.Angle;
+        if (fe.RenderTransform is TransformGroup tg)
+            return tg.Children.OfType<RotateTransform>().FirstOrDefault()?.Angle ?? 0.0;
+        return 0.0;
     }
 
     // ── Move mouse events ─────────────────────────────────────────────────────

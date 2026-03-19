@@ -291,9 +291,11 @@
     <SolidColorBrush x:Key="TE_Operator"               Color="#323130"/>
     <SolidColorBrush x:Key="TE_Type"                   Color="#267F99"/>
     <SolidColorBrush x:Key="TE_Directive"              Color="#800080"/>
+    <SolidColorBrush x:Key="TE_RegionName"             Color="#0070C1"/>
 
     <!-- CE_* — Code Editor syntax token colors (Office 365 light palette) -->
     <SolidColorBrush x:Key="CE_Keyword"       Color="#0000FF"/>
+    <SolidColorBrush x:Key="CE_ControlFlow"   Color="#AF00DB"/>
     <SolidColorBrush x:Key="CE_Comment"       Color="#008000"/>
     <SolidColorBrush x:Key="CE_String"        Color="#A31515"/>
     <SolidColorBrush x:Key="CE_Number"        Color="#098658"/>
@@ -401,6 +403,7 @@
     <SolidColorBrush x:Key="XD_ToolbarViewToggleActiveBrush"     Color="#217346"/>
     <!-- XD Phase 1-10 extended tokens (Office) -->
     <SolidColorBrush x:Key="XD_MoveAdornerBrush"                Color="#0078D4"/>
+    <SolidColorBrush x:Key="XD_RotationHandleFillBrush"           Color="#FF005FB8"/>
     <SolidColorBrush x:Key="XD_ResizeHandleFillBrush"           Color="#FFFFFF"/>
     <SolidColorBrush x:Key="XD_ResizeHandleStrokeBrush"         Color="#0078D4"/>
     <SolidColorBrush x:Key="XD_RulerBackground"                 Color="#F3F3F3"/>

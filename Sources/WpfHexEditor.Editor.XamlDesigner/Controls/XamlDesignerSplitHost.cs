@@ -537,7 +537,9 @@ public sealed class XamlDesignerSplitHost : Grid,
         }
 
         var el = _designCanvas.SelectedElement;
-        _sbElement.Value     = el?.GetType().Name ?? string.Empty;
+        _sbElement.Value = el is null
+            ? string.Empty
+            : $"{el.GetType().Name}  •  Esc = parent  •  Alt+Click: cycle";
         _sbCoordinates.Value = el is System.Windows.FrameworkElement fe
             ? $"{fe.ActualWidth:F0} × {fe.ActualHeight:F0}"
             : string.Empty;
@@ -654,7 +656,8 @@ public sealed class XamlDesignerSplitHost : Grid,
     private void OnDesignOperationCommitted(object? sender, DesignOperationCommittedEventArgs e)
     {
         var rawXaml = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
-        var patched  = _syncService.PatchElement(rawXaml, e.Operation.ElementUid, e.Operation.After);
+        // Route through ApplyOperation so structural operations (e.g. Rotate) use the correct patch path.
+        var patched  = _syncService.ApplyOperation(rawXaml, e.Operation);
         _undoManager.PushEntry(new SingleDesignUndoEntry(e.Operation));
         ApplyXamlToCode(patched);
     }
@@ -1289,6 +1292,19 @@ public sealed class XamlDesignerSplitHost : Grid,
         menu.SetResourceReference(ContextMenu.BackgroundProperty,   "DockMenuBackgroundBrush");
         menu.SetResourceReference(ContextMenu.ForegroundProperty,   "DockMenuForegroundBrush");
         menu.SetResourceReference(ContextMenu.BorderBrushProperty,  "DockMenuBorderBrush");
+
+        // "Select Parent" — visible only when there is a selectable parent within the canvas.
+        var selectParentItem = new MenuItem { Header = "Select Parent", InputGestureText = "Esc" };
+        selectParentItem.SetResourceReference(MenuItem.ForegroundProperty, "DockMenuForegroundBrush");
+        selectParentItem.Icon = MakeMenuIcon("\uE898");
+        menu.Opened += (_, _) =>
+        {
+            selectParentItem.IsEnabled = _designCanvas.SelectedElement is not null
+                && _designCanvas.FindSelectableParent(_designCanvas.SelectedElement) is not null;
+        };
+        selectParentItem.Click += (_, _) => _designCanvas.SelectParent();
+        menu.Items.Add(selectParentItem);
+        menu.Items.Add(new Separator());
 
         menu.Items.Add(MakeItem("\uE74D", "Delete",         new RelayCommand(_ => DeleteSelectedElement()),                                              "Del"));
         menu.Items.Add(new Separator());

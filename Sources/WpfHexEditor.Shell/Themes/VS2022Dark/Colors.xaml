@@ -284,11 +284,13 @@
     <SolidColorBrush x:Key="TE_Operator"               Color="#D4D4D4"/>
     <SolidColorBrush x:Key="TE_Type"                   Color="#4EC9B0"/>
     <SolidColorBrush x:Key="TE_Directive"              Color="#C586C0"/>
+    <SolidColorBrush x:Key="TE_RegionName"             Color="#DCDCAA"/>
 
     <!-- CE_* — Code Editor syntax token colors (used by CodeEditor DPs via implicit Style) -->
     <SolidColorBrush x:Key="CE_Keyword"       Color="#569CD6"/>
+    <SolidColorBrush x:Key="CE_ControlFlow"   Color="#C586C0"/>
     <SolidColorBrush x:Key="CE_Comment"       Color="#6A9955"/>
-    <SolidColorBrush x:Key="CE_String"        Color="#CE9178"/>
+    <SolidColorBrush x:Key="CE_String"        Color="#D4845A"/>
     <SolidColorBrush x:Key="CE_Number"        Color="#B5CEA8"/>
     <SolidColorBrush x:Key="CE_Type"          Color="#4EC9B0"/>
     <SolidColorBrush x:Key="CE_Identifier"    Color="#DCDCAA"/>
@@ -395,6 +397,7 @@
     <SolidColorBrush x:Key="XD_ToolbarViewToggleActiveBrush"     Color="#007ACC"/>
     <!-- XD Phase 1-10 extended tokens (VS2022Dark) -->
     <SolidColorBrush x:Key="XD_MoveAdornerBrush"                Color="#0078D4"/>
+    <SolidColorBrush x:Key="XD_RotationHandleFillBrush"           Color="#FF4FC1FF"/>
     <SolidColorBrush x:Key="XD_ResizeHandleFillBrush"           Color="#FFFFFF"/>
     <SolidColorBrush x:Key="XD_ResizeHandleStrokeBrush"         Color="#0078D4"/>
     <SolidColorBrush x:Key="XD_RulerBackground"                 Color="#1E1E1E"/>

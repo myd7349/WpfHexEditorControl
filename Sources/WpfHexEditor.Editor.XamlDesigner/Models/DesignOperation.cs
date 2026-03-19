@@ -39,6 +39,9 @@ public enum DesignOperationType
 
     /// <summary>Multiple elements were aligned or distributed.</summary>
     Alignment,
+
+    /// <summary>Element was rotated via the rotation handle (RenderTransform.Angle changed).</summary>
+    Rotate,
 }
 
 /// <summary>
@@ -100,6 +103,13 @@ public sealed record DesignOperation(
             new Dictionary<string, string?>(),
             new Dictionary<string, string?>(),
             $"Insert {elementName}");
+
+    /// <summary>Creates a Rotate operation capturing the angle before and after the drag.</summary>
+    public static DesignOperation CreateRotate(
+        int uid,
+        Dictionary<string, string?> before,
+        Dictionary<string, string?> after)
+        => new(DesignOperationType.Rotate, uid, before, after, "Rotate");
 
     /// <summary>
     /// Creates a placeholder Delete operation.

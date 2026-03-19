@@ -16,6 +16,7 @@
 //     Preserves all whitespace and unrelated attributes.
 // ==========================================================
 
+using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
 
@@ -149,18 +150,47 @@ public sealed class DesignToXamlSyncService
     }
 
     /// <summary>
+    /// Applies the forward (after) state of a design operation to the given XAML string.
+    /// Routes structural operations (e.g. Rotate) to dedicated patch methods instead of
+    /// the generic attribute-only <see cref="PatchElement"/>.
+    /// </summary>
+    public string ApplyOperation(string rawXaml, Models.DesignOperation op)
+    {
+        if (op.Type == Models.DesignOperationType.Rotate)
+        {
+            op.After.TryGetValue("Angle", out var angle);
+            return PatchRotation(rawXaml, op.ElementUid, angle ?? "0");
+        }
+        return PatchElement(rawXaml, op.ElementUid, op.After);
+    }
+
+    /// <summary>
     /// Applies the inverse of <paramref name="op"/> to produce an undo XAML string.
     /// Uses the <c>Before</c> dictionary of the operation.
     /// </summary>
     public string ApplyUndo(string rawXaml, Models.DesignOperation op)
-        => PatchElement(rawXaml, op.ElementUid, op.Before);
+    {
+        if (op.Type == Models.DesignOperationType.Rotate)
+        {
+            op.Before.TryGetValue("Angle", out var angle);
+            return PatchRotation(rawXaml, op.ElementUid, angle ?? "0");
+        }
+        return PatchElement(rawXaml, op.ElementUid, op.Before);
+    }
 
     /// <summary>
     /// Applies the forward state of <paramref name="op"/> to produce a redo XAML string.
     /// Uses the <c>After</c> dictionary of the operation.
     /// </summary>
     public string ApplyRedo(string rawXaml, Models.DesignOperation op)
-        => PatchElement(rawXaml, op.ElementUid, op.After);
+    {
+        if (op.Type == Models.DesignOperationType.Rotate)
+        {
+            op.After.TryGetValue("Angle", out var angle);
+            return PatchRotation(rawXaml, op.ElementUid, angle ?? "0");
+        }
+        return PatchElement(rawXaml, op.ElementUid, op.After);
+    }
 
     /// <summary>
     /// Applies the <c>Before</c> state of each operation in REVERSE order,
@@ -288,6 +318,56 @@ public sealed class DesignToXamlSyncService
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Patches the element at <paramref name="uid"/> to add or remove a
+    /// <c>&lt;Element.RenderTransform&gt;&lt;RotateTransform Angle="X"/&gt;&lt;/Element.RenderTransform&gt;</c>
+    /// child and the corresponding <c>RenderTransformOrigin="0.5,0.5"</c> attribute.
+    /// When <paramref name="angleDeg"/> rounds to zero, both are removed.
+    /// </summary>
+    private static string PatchRotation(string rawXaml, int uid, string angleDeg)
+    {
+        if (string.IsNullOrWhiteSpace(rawXaml)) return rawXaml;
+        try
+        {
+            var doc    = XDocument.Parse(rawXaml, LoadOptions.PreserveWhitespace);
+            var target = FindElementByUid(doc.Root, uid);
+            if (target is null) return rawXaml;
+
+            bool removeRotation = !double.TryParse(angleDeg, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out double angle)
+                || Math.Abs(angle) < 0.01;
+
+            // Remove any existing RenderTransform property element.
+            target.Elements()
+                  .FirstOrDefault(e => e.Name.LocalName.EndsWith(".RenderTransform"))
+                  ?.Remove();
+
+            if (removeRotation)
+            {
+                target.SetAttributeValue("RenderTransformOrigin", null);
+            }
+            else
+            {
+                target.SetAttributeValue("RenderTransformOrigin", "0.5,0.5");
+
+                var wpfNs   = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml/presentation");
+                var propTag = target.Name.LocalName + ".RenderTransform";
+                var rt      = new XElement(
+                    target.Name.Namespace + propTag,
+                    new XElement(wpfNs + "RotateTransform",
+                        new XAttribute("Angle", angleDeg)));
+
+                target.AddFirst(rt);
+            }
+
+            return Serialize(doc);
+        }
+        catch
+        {
+            return rawXaml;
+        }
+    }
 
     /// <summary>Serializes an XDocument to a XAML-compatible string without an XML declaration.</summary>
     private static string Serialize(XDocument doc)
