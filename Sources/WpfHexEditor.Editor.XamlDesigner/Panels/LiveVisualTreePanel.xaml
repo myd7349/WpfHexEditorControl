@@ -2,6 +2,14 @@
     GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
     Contributors: Claude Sonnet 4.6
+    Updated: 2026-03-19 — Phase 2: type-specific icons (IconGlyph/IconBrush)
+                           Phase 3: rich hover tooltips (TooltipLines)
+                           Phase 5: Auto-refresh toggle (BtnAutoRefresh)
+                           Phase 6: Expand-to-selection button (BtnExpandToSelected)
+                           Phase 7: Context menu on tree items
+                           Phase 8: Breadcrumb bar (Row 1), UseLogicalTree toggle
+                           Phase 9: Node count status bar (Row 4)
+                           Phase 10: Visual/Logical tree toggle (BtnLogicalTree)
     Theme: Global theme via XD_* and DockBackgroundBrush tokens (DynamicResource)
     ResourceDictionaries: WpfHexEditor.Shell/Themes/{Theme}/Colors.xaml
     Panel: Live Visual Tree — shows the runtime WPF visual tree of the design canvas.
@@ -49,34 +57,79 @@
             </Setter>
         </Style>
 
-        <!-- TreeViewItem style — same VS-like selection/hover pattern as XamlOutlinePanel -->
-        <Style TargetType="TreeViewItem">
-            <Setter Property="IsExpanded"                 Value="{Binding IsExpanded, Mode=TwoWay}"/>
-            <Setter Property="IsSelected"                 Value="{Binding IsSelected, Mode=TwoWay}"/>
-            <Setter Property="Background"                 Value="Transparent"/>
-            <Setter Property="BorderThickness"            Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-            <Setter Property="FocusVisualStyle"           Value="{x:Null}"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource DockTabActiveBrush}"/>
-                    <Setter Property="Foreground" Value="{DynamicResource DockTabActiveTextBrush}"/>
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource DockTabHoverBrush}"/>
-                </Trigger>
-            </Style.Triggers>
+        <!-- Toggle button style (auto-refresh / logical-tree toggles) -->
+        <Style x:Key="XD_LiveTreeToggleButton" TargetType="ToggleButton">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width"           Value="22"/>
+            <Setter Property="Height"          Value="22"/>
+            <Setter Property="Padding"         Value="3"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FontFamily"      Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Foreground"      Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="2" SnapsToDevicePixels="True"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource DockTabHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource DockTabActiveBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
+
+        <!-- Breadcrumb button style (small, no fixed width) -->
+        <Style x:Key="XD_BreadcrumbButton" TargetType="Button">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="3,1"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FontSize"        Value="10"/>
+            <Setter Property="Foreground"      Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="2" SnapsToDevicePixels="True"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource DockTabHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="26"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="26"/>   <!-- Row 0: Toolbar -->
+            <RowDefinition Height="22"/>   <!-- Row 1: Breadcrumb bar -->
+            <RowDefinition Height="1"/>    <!-- Row 2: Separator -->
+            <RowDefinition Height="*"/>    <!-- Row 3: TreeView -->
+            <RowDefinition Height="18"/>   <!-- Row 4: Status bar -->
         </Grid.RowDefinitions>
 
-        <!-- ── Toolbar (Row 0) ── -->
+        <!-- ── Row 0 — Toolbar ── -->
         <Border x:Name="ToolbarBorder" Grid.Row="0"
                 Background="{DynamicResource XD_PanelToolbarBrush}"
                 BorderBrush="{DynamicResource XD_PanelToolbarBorderBrush}"
@@ -98,16 +151,32 @@
                                   Visibility="Collapsed"/>
                 </StackPanel>
 
-                <!-- Collapsible group: navigation + filter -->
+                <!-- Collapsible group: navigation + filter + toggles -->
                 <StackPanel x:Name="TbgNavigation" DockPanel.Dock="Left"
                             Orientation="Horizontal" Margin="2,2,0,2">
                     <!-- Refresh visual tree -->
                     <Button x:Name="BtnRefresh" Style="{StaticResource XD_LiveTreeIconButton}"
                             Content="&#xE72C;" ToolTip="Refresh visual tree"/>
 
+                    <!-- Auto-refresh on render toggle -->
+                    <ToggleButton x:Name="BtnAutoRefresh" Style="{StaticResource XD_LiveTreeToggleButton}"
+                                  Content="&#xE8BD;"
+                                  ToolTip="Auto-refresh on canvas render"
+                                  IsChecked="{Binding AutoRefresh, Mode=TwoWay}"/>
+
+                    <!-- Visual / Logical tree toggle -->
+                    <ToggleButton x:Name="BtnLogicalTree" Style="{StaticResource XD_LiveTreeToggleButton}"
+                                  Content="&#xE8A0;"
+                                  ToolTip="Switch to Logical Tree view"
+                                  IsChecked="{Binding UseLogicalTree, Mode=TwoWay}"/>
+
+                    <!-- Expand to selected element -->
+                    <Button x:Name="BtnExpandToSelected" Style="{StaticResource XD_LiveTreeIconButton}"
+                            Content="&#xE8A4;" ToolTip="Expand and scroll to selected element"/>
+
                     <!-- Filter textbox -->
                     <TextBox x:Name="TbxFilter"
-                             Width="110" Height="20"
+                             Width="90" Height="20"
                              Margin="4,0,0,0"
                              Background="{DynamicResource DockMenuBackgroundBrush}"
                              Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -140,37 +209,183 @@
             </DockPanel>
         </Border>
 
-        <!-- Separator (Row 1) -->
-        <Border Grid.Row="1" Height="1"
+        <!-- ── Row 1 — Breadcrumb bar ── -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource XD_PanelToolbarBrush}"
+                BorderBrush="{DynamicResource DockBorderBrush}"
+                BorderThickness="0,0,0,1">
+            <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Hidden">
+                <ItemsControl ItemsSource="{Binding BreadcrumbPath}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:LiveTreeNode}">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="{Binding TypeName}"
+                                        Style="{StaticResource XD_BreadcrumbButton}"
+                                        Click="OnBreadcrumbNodeClick"/>
+                                <TextBlock Text="›"
+                                           FontSize="10"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           Opacity="0.5"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,2,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ── Row 2 — Separator ── -->
+        <Border Grid.Row="2" Height="1"
                 Background="{DynamicResource DockBorderBrush}"/>
 
-        <!-- ── Live Visual Tree (Row 2) ── -->
-        <TreeView x:Name="LiveTree" Grid.Row="2"
+        <!-- ── Row 3 — Live Visual Tree ── -->
+        <TreeView x:Name="LiveTree" Grid.Row="3"
                   Background="{DynamicResource DockBackgroundBrush}"
                   Foreground="{DynamicResource DockMenuForegroundBrush}"
                   BorderThickness="0"
                   ItemsSource="{Binding RootNodes}"
                   VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling">
+            <!-- PanelTreeViewItemStyle provides a full ControlTemplate with themed hover/selection
+                 (Panel_ToolbarButtonHoverBrush / SE_SelectedBrush). The inline BasedOn layer adds
+                 only the TwoWay VM bindings for expand/select state sync. -->
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem" BasedOn="{StaticResource PanelTreeViewItemStyle}">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                </Style>
+            </TreeView.ItemContainerStyle>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type vm:LiveTreeNode}"
                                           ItemsSource="{Binding Children}">
-                    <StackPanel Orientation="Horizontal">
-                        <!-- Type icon glyph (Segoe MDL2: E8A5 = "Layer") -->
-                        <TextBlock Text="&#xE8A5;"
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Type-specific icon (Segoe MDL2, color from IconBrush) -->
+                        <TextBlock Text="{Binding IconGlyph}"
                                    FontFamily="Segoe MDL2 Assets"
                                    FontSize="10"
-                                   Foreground="{DynamicResource XD_PropertyNameForeground}"
+                                   Foreground="{Binding IconBrush}"
                                    VerticalAlignment="Center"
                                    Margin="0,0,4,0"/>
-                        <TextBlock Text="{Binding DisplayLabel}"
-                                   Foreground="{DynamicResource DockMenuForegroundBrush}"
+
+                        <!-- TypeName — inherits TreeViewItem foreground (adapts on selection) -->
+                        <TextBlock Text="{Binding TypeName}"
+                                   FontSize="11"
+                                   VerticalAlignment="Center"/>
+
+                        <!-- Quick Peek — discriminating property value for unnamed nodes (italic, muted) -->
+                        <TextBlock Visibility="{Binding QuickPeekVisibility}"
+                                   Text="{Binding QuickPeekLabel}"
+                                   FontSize="10"
+                                   FontStyle="Italic"
+                                   Opacity="0.6"
+                                   VerticalAlignment="Center"
+                                   Margin="5,0,0,0"/>
+
+                        <!-- x:Name — highlighted color, visible only when HasName -->
+                        <TextBlock Visibility="{Binding NameVisibility}"
+                                   Foreground="{DynamicResource LVT_NameBrush}"
                                    FontSize="11"
                                    VerticalAlignment="Center"
-                                   Padding="0,1"/>
+                                   Margin="5,0,0,0">
+                            <Run Text="["/><Run Text="{Binding ElementName, Mode=OneWay}"/><Run Text="]"/>
+                        </TextBlock>
+
+                        <!-- Dimensions — muted, inherits foreground (adapts on selection) -->
+                        <TextBlock Visibility="{Binding DimsVisibility}"
+                                   Text="{Binding DimensionsLabel, StringFormat=' ({0})'}"
+                                   Opacity="0.45"
+                                   FontSize="10"
+                                   VerticalAlignment="Center"
+                                   Margin="3,0,0,0"/>
+
+                        <!-- Badge: Hidden / Collapsed -->
+                        <Border Visibility="{Binding VisibilityBadgeVisibility}"
+                                Background="{DynamicResource LVT_BadgeHiddenBrush}"
+                                CornerRadius="3"
+                                Padding="4,1"
+                                Margin="5,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding VisibilityBadgeText}"
+                                       Foreground="{DynamicResource LVT_BadgeTextBrush}"
+                                       FontSize="9"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+
+                        <!-- Badge: Disabled -->
+                        <Border Visibility="{Binding DisabledBadgeVisibility}"
+                                Background="{DynamicResource LVT_BadgeDisabledBrush}"
+                                CornerRadius="3"
+                                Padding="4,1"
+                                Margin="5,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="disabled"
+                                       Foreground="{DynamicResource LVT_BadgeTextBrush}"
+                                       FontSize="9"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+
+                        <!-- Rich hover tooltip (TooltipLines from ViewModel) -->
+                        <StackPanel.ToolTip>
+                            <ToolTip Background="{DynamicResource DockBackgroundBrush}"
+                                     BorderBrush="{DynamicResource DockBorderBrush}">
+                                <ItemsControl ItemsSource="{Binding TooltipLines}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}"
+                                                       FontSize="11"
+                                                       FontFamily="Consolas"
+                                                       Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ToolTip>
+                        </StackPanel.ToolTip>
+
+                        <!-- Context menu: copy / navigate / select -->
+                        <StackPanel.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Copy Type Name"
+                                          Command="{Binding CopyTypeNameCommand}"
+                                          FontFamily="Segoe MDL2 Assets"
+                                          Icon="{x:Null}"/>
+                                <MenuItem Header="Copy x:Name"
+                                          Command="{Binding CopyElementNameCommand}"/>
+                                <MenuItem Header="Copy Full Path"
+                                          Command="{Binding CopyFullPathCommand}"/>
+                                <Separator/>
+                                <MenuItem x:Name="MiSelectOnCanvas" Header="Select on Canvas"
+                                          Click="OnContextSelectOnCanvas"/>
+                                <MenuItem x:Name="MiNavigateToXaml" Header="Navigate to XAML"
+                                          Click="OnContextNavigateToXaml"/>
+                                <Separator/>
+                                <MenuItem x:Name="MiExpandChildren" Header="Expand All Children"
+                                          Click="OnContextExpandAllChildren"/>
+                            </ContextMenu>
+                        </StackPanel.ContextMenu>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>
+
+        <!-- ── Row 4 — Status bar ── -->
+        <Border Grid.Row="4"
+                Background="{DynamicResource XD_PanelToolbarBrush}"
+                BorderBrush="{DynamicResource DockBorderBrush}"
+                BorderThickness="0,1,0,0">
+            <TextBlock Text="{Binding StatusText}"
+                       FontSize="10"
+                       Margin="6,0"
+                       Foreground="{DynamicResource DockMenuForegroundBrush}"
+                       VerticalAlignment="Center"/>
+        </Border>
     </Grid>
 </UserControl>
