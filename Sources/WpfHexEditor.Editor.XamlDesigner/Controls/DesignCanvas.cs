@@ -490,6 +490,40 @@ public sealed class DesignCanvas : Border
 
     // ── Mouse selection ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Width of the outer edge band (in presenter-space pixels) within which the
+    /// cursor is considered to be on the DesignRoot outer frame rather than an interior child.
+    /// </summary>
+    private const double RootEdgeHitZone = 6.0;
+
+    /// <summary>
+    /// Returns the DesignRoot's bounding rect in <see cref="_presenter"/> coordinates,
+    /// or <see cref="Rect.Empty"/> if DesignRoot is not a FrameworkElement.
+    /// </summary>
+    private Rect GetRootBoundsInPresenter()
+    {
+        if (DesignRoot is not FrameworkElement rootFe) return Rect.Empty;
+        var origin = rootFe.TransformToAncestor(_presenter).Transform(new Point(0, 0));
+        return new Rect(origin, rootFe.RenderSize);
+    }
+
+    /// <summary>
+    /// Returns true when <paramref name="posInPresenter"/> falls inside the outer
+    /// <see cref="RootEdgeHitZone"/>-pixel rim of DesignRoot — i.e., on the outer frame
+    /// but not in the interior child area.
+    /// </summary>
+    private bool IsInRootEdgeZone(Point posInPresenter)
+    {
+        var outer = GetRootBoundsInPresenter();
+        if (outer.IsEmpty || !outer.Contains(posInPresenter)) return false;
+        var inner = new Rect(
+            outer.X + RootEdgeHitZone,
+            outer.Y + RootEdgeHitZone,
+            Math.Max(0, outer.Width  - RootEdgeHitZone * 2),
+            Math.Max(0, outer.Height - RootEdgeHitZone * 2));
+        return !inner.Contains(posInPresenter);
+    }
+
     private void OnCanvasMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (DesignRoot is null) return;
@@ -502,6 +536,16 @@ public sealed class DesignCanvas : Border
 
         if (!isAlt)
         {
+            // Outer-frame zone: clicking on the root element's edge band selects the root directly.
+            if (IsInRootEdgeZone(clickPoint))
+            {
+                _lastHitElements.Clear();
+                _altClickDepth = 0;
+                SelectElement(DesignRoot);
+                e.Handled = false;
+                return;
+            }
+
             // Fresh click — rebuild the full hit list (z-order: topmost first).
             _lastHitElements.Clear();
             _altClickDepth = 0;
@@ -517,6 +561,17 @@ public sealed class DesignCanvas : Border
                     return HitTestResultBehavior.Continue;
                 },
                 new PointHitTestParameters(clickPoint));
+
+            // Ensure DesignRoot is always in the list for Alt+Click cycling,
+            // even when it has a transparent/null background that WPF hit-test misses.
+            var rootBounds = GetRootBoundsInPresenter();
+            if (DesignRoot is UIElement rootEl
+                && !_lastHitElements.Contains(rootEl)
+                && !rootBounds.IsEmpty
+                && rootBounds.Contains(clickPoint))
+            {
+                _lastHitElements.Add(rootEl);
+            }
 
             // Prefer a leaf element (not a container with children); fall back to topmost.
             var target = _lastHitElements.FirstOrDefault(IsLeafElement)
@@ -540,6 +595,16 @@ public sealed class DesignCanvas : Border
                         return HitTestResultBehavior.Continue;
                     },
                     new PointHitTestParameters(clickPoint));
+
+                // Ensure DesignRoot is reachable via Alt+Click cycling.
+                var rootBounds = GetRootBoundsInPresenter();
+                if (DesignRoot is UIElement rootEl
+                    && !_lastHitElements.Contains(rootEl)
+                    && !rootBounds.IsEmpty
+                    && rootBounds.Contains(clickPoint))
+                {
+                    _lastHitElements.Add(rootEl);
+                }
             }
 
             if (_lastHitElements.Count > 0)
@@ -586,9 +651,16 @@ public sealed class DesignCanvas : Border
     /// <summary>
     /// Returns the leaf-preferred UIElement at <paramref name="positionInPresenter"/>
     /// within the <see cref="_presenter"/> hit area, excluding adorners.
+    /// When the cursor is in the outer <see cref="RootEdgeHitZone"/>-pixel rim of
+    /// <see cref="DesignRoot"/>, the root element is returned directly so the outer
+    /// frame is always hoverable and selectable.
     /// </summary>
     private UIElement? HitTestElement(Point positionInPresenter)
     {
+        // Outer-frame priority: cursor on the root element's edge band → return root directly.
+        if (IsInRootEdgeZone(positionInPresenter))
+            return DesignRoot;
+
         var hits = new List<UIElement>();
         VisualTreeHelper.HitTest(
             _presenter,
@@ -602,6 +674,18 @@ public sealed class DesignCanvas : Border
                 return HitTestResultBehavior.Continue;
             },
             new PointHitTestParameters(positionInPresenter));
+
+        // Transparent-background guard: DesignRoot may be skipped by WPF hit-test when
+        // Background is null. If the cursor is within its bounds and no other element was
+        // hit, add it as a fallback candidate.
+        var rootBounds = GetRootBoundsInPresenter();
+        if (DesignRoot is UIElement rootEl
+            && !hits.Contains(rootEl)
+            && !rootBounds.IsEmpty
+            && rootBounds.Contains(positionInPresenter))
+        {
+            hits.Add(rootEl);
+        }
 
         return hits.FirstOrDefault(IsLeafElement) ?? hits.FirstOrDefault();
     }
@@ -634,6 +718,18 @@ public sealed class DesignCanvas : Border
         }
 
         _hoveredElement = null;
+    }
+
+    /// <summary>
+    /// Draws a non-selecting hover overlay on <paramref name="element"/> — called by the
+    /// Live Visual Tree panel when the user hovers a tree node so the canvas reflects it.
+    /// Pass null to clear the overlay.  Does NOT change <see cref="SelectedElement"/>.
+    /// </summary>
+    public void HighlightHoverElement(UIElement? element)
+    {
+        // Skip if the element is already the canvas-selected element (selection adorner has priority).
+        if (ReferenceEquals(element, SelectedElement)) return;
+        UpdateHoverAdorner(element);
     }
 
     // ── XAML preprocessing ────────────────────────────────────────────────────
