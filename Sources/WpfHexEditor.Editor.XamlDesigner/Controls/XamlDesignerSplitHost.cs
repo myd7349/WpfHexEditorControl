@@ -453,6 +453,31 @@ public sealed class XamlDesignerSplitHost : Grid,
     /// <summary>Exposes the undo manager for the History Panel plugin wiring.</summary>
     public DesignUndoManager UndoManager => _undoManager;
 
+    /// <summary>
+    /// Navigates the code editor to the specified 1-based line number.
+    /// No-op when the primary editor is not yet loaded.
+    /// </summary>
+    public void NavigateToLine(int line)
+    {
+        if (line > 0)
+            _codeHost.PrimaryEditor.NavigateToLine(line);
+    }
+
+    /// <summary>
+    /// Inserts a toolbox item at the current canvas position (centre of the viewport)
+    /// using the same drop-service logic as drag-and-drop.
+    /// </summary>
+    public void InsertElementAtSelection(ToolboxItem item)
+    {
+        var beforeXaml    = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
+        bool isCanvasRoot = beforeXaml.Contains("<Canvas");
+        // Insert at the visual centre of the design surface as a sensible default.
+        var centre     = new System.Windows.Point(_designCanvas.ActualWidth / 2, _designCanvas.ActualHeight / 2);
+        var afterXaml  = _dropService.InsertItem(beforeXaml, item, centre, isCanvasRoot);
+        _undoManager.PushEntry(new SnapshotDesignUndoEntry(beforeXaml, afterXaml, $"Insert {item.Name}"));
+        ApplyXamlToCode(afterXaml);
+    }
+
     // ── IPropertyProviderSource ───────────────────────────────────────────────
 
     /// <summary>
@@ -1010,11 +1035,15 @@ public sealed class XamlDesignerSplitHost : Grid,
     {
         _splitLayout = layout;
         UpdateGridLayout();
-        // Re-fit after layout settles: switching orientation changes the pane dimensions
-        // and ClampOffsets alone may leave content partially outside the viewport.
+        // Re-fit after ALL layout passes settle. Loaded (6) is not sufficient: the first
+        // Render (7) pass triggers SizeChanged → UpdateScrollBars → ScrollBar DP changes,
+        // which can queue a second Render (7) pass AFTER our Loaded (6) item is already
+        // in the queue. FitToContent would then run between the two Render passes with an
+        // intermediate ActualWidth, producing wrong zoom/offset. Background (4) runs after
+        // Render, Loaded, and Input — guaranteeing _zoomPan.ActualWidth is the final value.
         Dispatcher.InvokeAsync(
             () => { if (_zoomPan.ActualWidth > 0) _zoomPan.FitToContent(); },
-            System.Windows.Threading.DispatcherPriority.Loaded);
+            System.Windows.Threading.DispatcherPriority.Background);
     }
 
     /// <summary>
