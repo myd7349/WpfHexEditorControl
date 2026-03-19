@@ -25,11 +25,11 @@ public partial class App : Application
     /// <summary>All available themes keyed by their canonical name.</summary>
     public static readonly IReadOnlyDictionary<string, Uri> Themes = new Dictionary<string, Uri>
     {
-        ["DarkTheme"]       = new("pack://application:,,,/WpfHexEditor.Docking.Wpf;component/Themes/DarkTheme.xaml"),
-        ["OfficeTheme"]     = new("pack://application:,,,/WpfHexEditor.Docking.Wpf;component/Themes/OfficeTheme.xaml"),
-        ["VS2022DarkTheme"] = new("pack://application:,,,/WpfHexEditor.Docking.Wpf;component/Themes/VS2022DarkTheme.xaml"),
-        ["MinimalTheme"]    = new("pack://application:,,,/WpfHexEditor.Docking.Wpf;component/Themes/MinimalTheme.xaml"),
-        ["CyberpunkTheme"]  = new("pack://application:,,,/WpfHexEditor.Docking.Wpf;component/Themes/CyberpunkTheme.xaml"),
+        ["DarkTheme"]       = new("pack://application:,,,/WpfHexEditor.Shell;component/Themes/DarkTheme.xaml"),
+        ["OfficeTheme"]     = new("pack://application:,,,/WpfHexEditor.Shell;component/Themes/OfficeTheme.xaml"),
+        ["VS2022DarkTheme"] = new("pack://application:,,,/WpfHexEditor.Shell;component/Themes/VS2022DarkTheme.xaml"),
+        ["MinimalTheme"]    = new("pack://application:,,,/WpfHexEditor.Shell;component/Themes/MinimalTheme.xaml"),
+        ["CyberpunkTheme"]  = new("pack://application:,,,/WpfHexEditor.Shell;component/Themes/CyberpunkTheme.xaml"),
     };
 
     // -- Theme switching ----------------------------------------------------------

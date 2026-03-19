@@ -20,7 +20,7 @@
            DockDarkToolBarButtonStyle — toolbar buttons
            DockToolBarPodStyle        — toolbar pod borders
            Panel_ToolbarForegroundBrush — status bar text
-         Theme: DarkTheme.xaml (WpfHexEditor.Docking.Wpf — explicit ref)
+         Theme: DarkTheme.xaml (WpfHexEditor.Shell — explicit ref)
      ========================================================== -->
 
 <Window x:Class="WpfHexEditor.Sample.CodeEditor.MainWindow"

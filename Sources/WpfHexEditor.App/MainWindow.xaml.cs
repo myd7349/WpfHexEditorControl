@@ -21,7 +21,7 @@ using HexEditorControl = WpfHexEditor.HexEditor.HexEditor;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.Docking.Core.Serialization;
-using WpfHexEditor.Docking.Wpf;
+using WpfHexEditor.Shell;
 using WpfHexEditor.App.Controls;
 using WpfHexEditor.App.Dialogs;
 using WpfHexEditor.App.Models;
@@ -5615,7 +5615,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Application.Current.Resources.MergedDictionaries.Add(
             new ResourceDictionary
             {
-                Source = new Uri($"pack://application:,,,/WpfHexEditor.Docking.Wpf;component/Themes/{themeFile}")
+                Source = new Uri($"pack://application:,,,/WpfHexEditor.Shell;component/Themes/{themeFile}")
             });
         SyncAllHexEditorThemes();
         OutputLogger.Info($"Theme changed to {themeName}.");
