@@ -34,6 +34,10 @@
 //     Phase E5 — Context menu extended with Cut/Copy/Paste/Duplicate/Wrap In.
 //     Phase F3 — Internal clipboard for XAML element copy/paste.
 //     Phase F5 — Ctrl+F element search overlay on the design canvas.
+//     Phase EL — IDiagnosticSource + IErrorPanelService wiring (ErrorList pipeline).
+//     Phase MS — Multi-selection: rubber-band marquee, Ctrl+Click toggle,
+//                 AlignmentToolbarViewModel.SetSelectionProvider, multi-element delete,
+//                 Ctrl+A select-all (canvas scope).
 // ==========================================================
 
 using System.Collections.ObjectModel;
@@ -57,8 +61,11 @@ using WpfHexEditor.Editor.XamlDesigner.Services;
 using WpfHexEditor.Editor.XamlDesigner.ViewModels;
 using WpfHexEditor.ProjectSystem.Languages;
 using WpfHexEditor.SDK.Commands;
-// Resolve ambiguity: System.Windows.Controls.Primitives.StatusBarItem vs Editor.Core.StatusBarItem
-using CoreStatusBarItem = WpfHexEditor.Editor.Core.StatusBarItem;
+using WpfHexEditor.SDK.Contracts.Services;
+// Resolve ambiguity: StatusBarItem and DiagnosticSeverity exist in both Core and SDK.Contracts.Services
+using CoreStatusBarItem       = WpfHexEditor.Editor.Core.StatusBarItem;
+using CoreDiagnosticSeverity  = WpfHexEditor.Editor.Core.DiagnosticSeverity;
+using SdkDiagnosticSeverity   = WpfHexEditor.SDK.Contracts.Services.DiagnosticSeverity;
 
 namespace WpfHexEditor.Editor.XamlDesigner.Controls;
 
@@ -71,7 +78,9 @@ public sealed class XamlDesignerSplitHost : Grid,
     IEditorPersistable,
     IStatusBarContributor,
     IEditorToolbarContributor,
-    IPropertyProviderSource
+    IPropertyProviderSource,
+    IDiagnosticSource,
+    INavigableDocument
 {
     // ── View mode ─────────────────────────────────────────────────────────────
 
@@ -123,6 +132,8 @@ public sealed class XamlDesignerSplitHost : Grid,
     private readonly ToggleButton _btnAutoPreview;
     private readonly Border       _errorBanner;
     private readonly TextBlock    _errorText;
+    private Border?               _errorOverlay;     // centred error card over the design pane
+    private TextBlock?            _overlayDetail;    // detail text inside _errorOverlay
 
     // ── Overkill Undo/Redo — DesignUndoManager ────────────────────────────────
 
@@ -146,12 +157,13 @@ public sealed class XamlDesignerSplitHost : Grid,
     private readonly XamlSourceLocationService _locationService = new();
 
     /// <summary>
-    /// Guards against feedback loops: when we're programmatically driving a sync in one
-    /// direction, this flag suppresses the reactive event that would trigger the reverse.
-    /// Also set by ApplyXamlToCode to prevent LoadFromString's caret-reset from
-    /// launching a spurious Code→Canvas sync.
+    /// Re-entrance counter for bidirectional sync.
+    /// Any value > 0 means a programmatic sync is in progress in one direction,
+    /// suppressing the reactive event that would trigger the reverse.
+    /// Using int (not bool) is safe against reentrant Dispatcher callbacks that
+    /// would reset a bool flag too early via the finally block.
     /// </summary>
-    private bool _isSyncingSelection;
+    private int _syncDepth;
 
     /// <summary>
     /// Debounce timer for Code→Canvas sync (150ms idle window).
@@ -193,6 +205,41 @@ public sealed class XamlDesignerSplitHost : Grid,
 
     private Border?  _searchBar;
     private TextBox? _searchBox;
+
+    // ── Phase E4 — Rulers / Grid / Snap ──────────────────────────────────────
+
+    private RulerControl?      _hRuler;
+    private RulerControl?      _vRuler;
+    private System.Windows.Shapes.Rectangle? _rulerCorner;
+    private DesignGridOverlay? _gridOverlay;
+    private SnapGuideOverlay?  _snapGuideOverlay;
+    private bool _rulersVisible = false;
+    private bool _gridVisible   = false;
+    private bool _snapEnabled   = true;
+
+    // ── Phase EL — ErrorList pipeline (IDiagnosticSource) ──────────────────────
+
+    private const string XamlDiagSourceId = "XAML-Designer";
+
+    /// <summary>
+    /// Injected by <see cref="Plugins.XamlDesigner.XamlDesignerPlugin"/> on document focus.
+    /// Null when the plugin is not loaded or a non-XAML document is active.
+    /// </summary>
+    public IErrorPanelService? ErrorPanelService { get; set; }
+
+    // ── IDiagnosticSource ─────────────────────────────────────────────────────
+
+    /// <summary>Human-readable label shown in the ErrorPanel source column.</summary>
+    public string SourceLabel
+        => System.IO.Path.GetFileName(_filePath) is { Length: > 0 } n ? n : "XAML Designer";
+
+    private readonly List<DiagnosticEntry> _diagnostics = [];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<DiagnosticEntry> GetDiagnostics() => _diagnostics;
+
+    /// <inheritdoc/>
+    public event EventHandler? DiagnosticsChanged;
 
     // ── Auto-preview debounce ─────────────────────────────────────────────────
 
@@ -309,6 +356,151 @@ public sealed class XamlDesignerSplitHost : Grid,
         _designPaneGrid.Children.Add(_vScrollBar);
         _designPaneGrid.Children.Add(_scrollCorner);
 
+        // Centred error overlay — sits over the ZoomPanCanvas at ZIndex 99, outside the
+        // zoom transform, so it is always full-size regardless of the current zoom level.
+        var overlayIcon = new TextBlock
+        {
+            Text       = "\uE783",
+            FontFamily = new FontFamily("Segoe MDL2 Assets"),
+            FontSize   = 32,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x85, 0x57)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin     = new Thickness(0, 0, 0, 8)
+        };
+        var overlayTitle = new TextBlock
+        {
+            Text       = "XAML Parse Error",
+            FontSize   = 14,
+            FontWeight = FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x85, 0x57)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin     = new Thickness(0, 0, 0, 6)
+        };
+        _overlayDetail = new TextBlock
+        {
+            FontSize     = 11,
+            Foreground   = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
+            TextWrapping = TextWrapping.Wrap,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment       = TextAlignment.Center,
+            MaxWidth     = 480
+        };
+        var overlayStack = new StackPanel
+        {
+            Orientation         = Orientation.Vertical,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment   = VerticalAlignment.Center
+        };
+        overlayStack.Children.Add(overlayIcon);
+        overlayStack.Children.Add(overlayTitle);
+        overlayStack.Children.Add(_overlayDetail);
+        _errorOverlay = new Border
+        {
+            Background          = new SolidColorBrush(Color.FromArgb(0xCC, 0x1E, 0x1E, 0x1E)),
+            BorderBrush         = new SolidColorBrush(Color.FromRgb(0xF4, 0x85, 0x57)),
+            BorderThickness     = new Thickness(1),
+            CornerRadius        = new CornerRadius(6),
+            Padding             = new Thickness(24, 20, 24, 20),
+            MaxWidth            = 560,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment   = VerticalAlignment.Center,
+            Visibility          = Visibility.Collapsed,
+            Child               = overlayStack
+        };
+        Grid.SetRow(_errorOverlay, 0);
+        Grid.SetColumn(_errorOverlay, 0);
+        Panel.SetZIndex(_errorOverlay, 99);
+        _designPaneGrid.Children.Add(_errorOverlay);
+
+        // -- Phase E4: Ruler controls ----------------------------------------
+        // Layout: top-left corner stub | H-ruler across top | V-ruler on left.
+        // Rulers occupy a 22px band; the ZoomPanCanvas is offset by a matching
+        // margin when rulers are visible (toggled by UpdateRulerVisibility).
+        _hRuler = new RulerControl { IsHorizontal = true, Height = 22 };
+        _vRuler = new RulerControl { IsHorizontal = false, Width = 22 };
+
+        // Ruler corner stub (top-left overlap when both rulers are visible).
+        _rulerCorner = new System.Windows.Shapes.Rectangle { Width = 22, Height = 22 };
+        _rulerCorner.SetResourceReference(System.Windows.Shapes.Rectangle.FillProperty, "XD_RulerBackground");
+
+        // Place rulers in row 0, col 0 of _designPaneGrid with explicit alignment.
+        Grid.SetRow(_hRuler,      0); Grid.SetColumn(_hRuler,      0);
+        Grid.SetRow(_vRuler,      0); Grid.SetColumn(_vRuler,      0);
+        Grid.SetRow(_rulerCorner, 0); Grid.SetColumn(_rulerCorner, 0);
+
+        _hRuler.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _hRuler.VerticalAlignment   = VerticalAlignment.Top;
+        _hRuler.Margin              = new Thickness(22, 0, 0, 0);
+
+        _vRuler.HorizontalAlignment = HorizontalAlignment.Left;
+        _vRuler.VerticalAlignment   = VerticalAlignment.Stretch;
+        _vRuler.Margin              = new Thickness(0, 22, 0, 0);
+
+        _rulerCorner.HorizontalAlignment = HorizontalAlignment.Left;
+        _rulerCorner.VerticalAlignment   = VerticalAlignment.Top;
+
+        Panel.SetZIndex(_hRuler,      50);
+        Panel.SetZIndex(_vRuler,      50);
+        Panel.SetZIndex(_rulerCorner, 51);
+
+        _hRuler.Visibility     = Visibility.Collapsed;
+        _vRuler.Visibility     = Visibility.Collapsed;
+        _rulerCorner.Visibility= Visibility.Collapsed;
+
+        _designPaneGrid.Children.Add(_hRuler);
+        _designPaneGrid.Children.Add(_vRuler);
+        _designPaneGrid.Children.Add(_rulerCorner);
+
+        // -- Phase E4: Grid overlay ------------------------------------------
+        _gridOverlay = new DesignGridOverlay();
+        Grid.SetRow(_gridOverlay, 0); Grid.SetColumn(_gridOverlay, 0);
+        _gridOverlay.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _gridOverlay.VerticalAlignment   = VerticalAlignment.Stretch;
+        Panel.SetZIndex(_gridOverlay, 10);
+        _designPaneGrid.Children.Add(_gridOverlay);
+
+        // Sync ruler/grid overlay from ZoomPan zoom+pan events.
+        void SyncOverlayOffsets()
+        {
+            double zoom = _zoomPan.ZoomLevel;
+            double ox   = _zoomPan.OffsetX;
+            double oy   = _zoomPan.OffsetY;
+
+            if (_hRuler is not null)
+            {
+                _hRuler.ZoomFactor     = zoom;
+                _hRuler.Offset         = ox;
+            }
+            if (_vRuler is not null)
+            {
+                _vRuler.ZoomFactor     = zoom;
+                _vRuler.Offset         = oy;
+            }
+            if (_gridOverlay is not null)
+            {
+                _gridOverlay.ZoomFactor = zoom;
+                _gridOverlay.OffsetX    = ox;
+                _gridOverlay.OffsetY    = oy;
+            }
+        }
+
+        _zoomPan.ZoomChanged += (_, _) => SyncOverlayOffsets();
+        _zoomPan.PanChanged  += (_, _) => SyncOverlayOffsets();
+
+        // Update ruler cursor line when the mouse moves over the ZoomPan area.
+        _zoomPan.MouseMove += (_, e) =>
+        {
+            if (!_rulersVisible) return;
+            var pos = e.GetPosition(_zoomPan);
+            if (_hRuler is not null) _hRuler.CursorPosition = pos.X;
+            if (_vRuler is not null) _vRuler.CursorPosition = pos.Y;
+        };
+        _zoomPan.MouseLeave += (_, _) =>
+        {
+            if (_hRuler is not null) _hRuler.CursorPosition = -1;
+            if (_vRuler is not null) _vRuler.CursorPosition = -1;
+        };
+
         // Scrollbar → canvas: OffsetX = xMax − Value  (xMax = (virtualW−cw)/2).
         // Value 0 = canvas at leftmost virtual position; mid-range = canvas centred.
         _hScrollBar.ValueChanged += (_, _) =>
@@ -350,6 +542,18 @@ public sealed class XamlDesignerSplitHost : Grid,
 
         Children.Add(_designPaneGrid);
 
+        // -- Phase E4: SnapGuideOverlay on the design canvas ------------------
+        // Placed after the canvas is in the tree so AdornerLayer is reachable.
+        _designCanvas.Loaded += (_, _) =>
+        {
+            var adornerLayer = System.Windows.Documents.AdornerLayer.GetAdornerLayer(_designCanvas);
+            if (adornerLayer is not null && _snapGuideOverlay is null)
+            {
+                _snapGuideOverlay = new SnapGuideOverlay(_designCanvas);
+                adornerLayer.Add(_snapGuideOverlay);
+            }
+        };
+
         // -- Auto-preview timer ----------------------------------------------
         _previewTimer = new DispatcherTimer
         {
@@ -360,8 +564,22 @@ public sealed class XamlDesignerSplitHost : Grid,
         // -- Wire design interaction + undo (Phase 1 / Overkill) ------------
         _interactionService.OperationCommitted += OnDesignOperationCommitted;
 
+        // -- Phase E4: forward snap guides from interaction service → overlay.
+        _interactionService.SnapGuidesUpdated += (_, guides) =>
+            _snapGuideOverlay?.ShowGuides(guides);
+
         // -- Wire alignment batch undo (Phase 5 / Overkill) -----------------
         _alignVm.OperationsBatch += OnAlignmentOperationsBatch;
+
+        // -- Phase MS: supply multi-selection to alignment commands ----------
+        // Returns all currently selected FrameworkElements with their UIDs so
+        // AlignmentService can operate on the live elements and produce undoable ops.
+        _alignVm.SetSelectionProvider(() =>
+            _designCanvas.SelectedElements
+                .OfType<System.Windows.FrameworkElement>()
+                .Select(el => (el, _designCanvas.GetUidOf(el)))
+                .Where(t => t.Item2 >= 0)
+                .ToList());
 
         // -- Wire undo manager history changes -------------------------------
         _undoManager.HistoryChanged += OnUndoHistoryChanged;
@@ -494,6 +712,21 @@ public sealed class XamlDesignerSplitHost : Grid,
     }
 
     /// <summary>
+    /// <see cref="INavigableDocument"/> implementation: scrolls the code pane to
+    /// <paramref name="line"/>/<paramref name="column"/> and ensures it is visible.
+    /// Switches from Design-Only to Split view so the user can see the error location.
+    /// </summary>
+    void INavigableDocument.NavigateTo(int line, int column)
+    {
+        // Make the code pane visible if the designer is in Design-Only mode.
+        if (_viewMode == ViewMode.DesignOnly)
+            ApplyViewMode(ViewMode.Split);
+
+        if (line > 0 && _codeHost.PrimaryEditor is INavigableDocument nav)
+            nav.NavigateTo(line, column > 0 ? column : 1);
+    }
+
+    /// <summary>
     /// Inserts a toolbox item at the current canvas position (centre of the viewport)
     /// using the same drop-service logic as drag-and-drop.
     /// </summary>
@@ -521,6 +754,9 @@ public sealed class XamlDesignerSplitHost : Grid,
     async Task IOpenableDocument.OpenAsync(string filePath, CancellationToken ct)
     {
         _filePath = filePath;
+
+        // Phase EL: keep the canvas in sync so DiagnosticEntry.FilePath is always current.
+        _designCanvas.SourceFilePath = filePath;
 
         // Unsubscribe from any previous document before loading a new file.
         if (_codeHost.PrimaryEditor.Document is { } prevDoc)
@@ -606,6 +842,13 @@ public sealed class XamlDesignerSplitHost : Grid,
     {
         _previewTimer.Stop();
         _animPreviewService.Stop();
+
+        // Phase EL: clear diagnostics from the ErrorPanel when the document is closed.
+        _diagnostics.Clear();
+        DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
+        ErrorPanelService?.ClearPluginDiagnostics(XamlDiagSourceId);
+        ErrorPanelService = null;
+
         ((IDocumentEditor)_codeHost).Close();
     }
 
@@ -904,10 +1147,62 @@ public sealed class XamlDesignerSplitHost : Grid,
 
     // ── Render error ──────────────────────────────────────────────────────────
 
-    private void OnRenderError(object? sender, string? message)
+    private void OnRenderError(object? sender, XamlRenderError? error)
     {
-        _errorBanner.Visibility = message is not null ? Visibility.Visible : Visibility.Collapsed;
-        _errorText.Text         = message ?? string.Empty;
+        bool hasError = error is not null;
+        var  message  = error?.Message ?? string.Empty;
+
+        // ── 1. Toolbar banner (compact, always visible at top of designer) ────
+        _errorBanner.Visibility = hasError ? Visibility.Visible : Visibility.Collapsed;
+        _errorText.Text         = message;
+
+        // ── 2. Centred card overlay over the ZoomPanCanvas (zoom-independent) ─
+        if (_errorOverlay is not null)
+        {
+            _errorOverlay.Visibility = hasError ? Visibility.Visible : Visibility.Collapsed;
+            if (_overlayDetail is not null)
+                _overlayDetail.Text = message;
+        }
+
+        // ── 3. IDiagnosticSource — push to the ErrorPanel list ────────────────
+        // Always clear first so stale errors from a previous edit are removed
+        // the moment the render succeeds.
+        _diagnostics.Clear();
+
+        if (error is not null)
+        {
+            _diagnostics.Add(new DiagnosticEntry(
+                Severity    : CoreDiagnosticSeverity.Error,
+                Code        : "XAML0001",
+                Description : error.Message,
+                ProjectName : SourceLabel,
+                FileName    : _filePath is not null
+                                  ? System.IO.Path.GetFileName(_filePath)
+                                  : null,
+                FilePath    : _filePath,
+                Line        : error.Line   > 0 ? error.Line   : null,
+                Column      : error.Column > 0 ? error.Column : null));
+        }
+
+        DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
+
+        // ── 4. IErrorPanelService — forward via plugin-injected service ───────
+        // Used as a secondary path: clears previous plugin diagnostics and
+        // re-posts when an error exists, so the ErrorPanel panel item count
+        // badge updates immediately even when no IDiagnosticSource is wired.
+        if (ErrorPanelService is not null)
+        {
+            ErrorPanelService.ClearPluginDiagnostics(XamlDiagSourceId);
+            if (error is not null)
+            {
+                ErrorPanelService.PostDiagnostic(
+                    SdkDiagnosticSeverity.Error,
+                    error.Message,
+                    source : XamlDiagSourceId,
+                    line   : error.Line   > 0 ? error.Line   : -1,
+                    column : error.Column > 0 ? error.Column : -1);
+            }
+        }
     }
 
     // ── Design canvas selection ───────────────────────────────────────────────
@@ -917,23 +1212,54 @@ public sealed class XamlDesignerSplitHost : Grid,
         RefreshStatusBarItems();
         SelectedElementChanged?.Invoke(this, EventArgs.Empty);
 
-        // Canvas → Code sync: navigate the code editor to the selected element's line.
-        if (_isSyncingSelection || !IsDesignVisible()) return;
+        if (_syncDepth > 0) return;
 
         int uid = _designCanvas.SelectedElementUid;
         if (uid < 0) return;
+
+        NavigateCodeEditorToUid(uid);
+    }
+
+    /// <summary>
+    /// Navigates the code editor to the start line of the element identified by
+    /// <paramref name="uid"/> (pre-order UID as assigned by DesignToXamlSyncService).
+    /// No-op when the UID is not found or the primary editor is not an INavigableDocument.
+    /// Called by OnDesignSelectionChanged (canvas selection) and by the plugin when
+    /// the user selects a node in the Live Visual Tree panel.
+    /// </summary>
+    public void NavigateCodeEditorToUid(int uid)
+    {
+        if (_syncDepth > 0 || uid < 0) return;
 
         var raw  = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
         int line = _locationService.FindElementStartLine(raw, uid);
         if (line < 0) return;
 
-        // Don't steal the caret if it is already on the element's line — avoids jarring
-        // caret jumps after the render-restore cycle that silently re-selects an element.
         if (_codeHost.PrimaryEditor.CursorPosition.Line == line) return;
 
-        _isSyncingSelection = true;
+        _syncDepth++;
         try   { ((INavigableDocument)_codeHost.PrimaryEditor).NavigateTo(line + 1, 1); }
-        finally { _isSyncingSelection = false; }
+        finally { _syncDepth--; }
+    }
+
+    /// <summary>
+    /// Navigates the code editor to the first element whose x:Name attribute equals
+    /// <paramref name="xName"/>. Used by Live Visual Tree "Navigate to XAML" context menu.
+    /// No-op when the name is not found in the current XAML source.
+    /// </summary>
+    public void NavigateCodeEditorToXName(string xName)
+    {
+        if (_syncDepth > 0 || string.IsNullOrEmpty(xName)) return;
+
+        var raw  = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
+        int line = _locationService.FindElementStartLineByXName(raw, xName);
+        if (line < 0) return;
+
+        if (_codeHost.PrimaryEditor.CursorPosition.Line == line) return;
+
+        _syncDepth++;
+        try   { ((INavigableDocument)_codeHost.PrimaryEditor).NavigateTo(line + 1, 1); }
+        finally { _syncDepth--; }
     }
 
     // ── Code → Canvas sync (debounced) ────────────────────────────────────────
@@ -945,7 +1271,7 @@ public sealed class XamlDesignerSplitHost : Grid,
     /// </summary>
     private void RequestCodeToCanvasSync()
     {
-        if (_isSyncingSelection || !IsDesignVisible()) return;
+        if (_syncDepth > 0 || !IsDesignVisible()) return;
         _codeToCanvasSyncTimer.Stop();
         _codeToCanvasSyncTimer.Start();
     }
@@ -957,18 +1283,18 @@ public sealed class XamlDesignerSplitHost : Grid,
     private void OnCodeToCanvasSyncTimerTick(object? sender, EventArgs e)
     {
         _codeToCanvasSyncTimer.Stop();
-        if (_isSyncingSelection || !IsDesignVisible()) return;
-        if (!_codeHost.PrimaryEditor.Selection.IsEmpty) return;  // ignore text-selection drags
+        if (_syncDepth > 0 || !IsDesignVisible()) return;
+        if (!_codeHost.PrimaryEditor.Selection.IsEmpty) return;
 
         var raw  = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
-        int line = _codeHost.PrimaryEditor.CursorPosition.Line;  // 0-based
+        int line = _codeHost.PrimaryEditor.CursorPosition.Line;
         if (line < 0) return;
         int uid  = _locationService.FindUidAtLine(raw, line);
         if (uid < 0) return;
 
-        _isSyncingSelection = true;
+        _syncDepth++;
         try   { _designCanvas.SelectElementByUid(uid); }
-        finally { _isSyncingSelection = false; }
+        finally { _syncDepth--; }
     }
 
     /// <summary>
@@ -1018,7 +1344,7 @@ public sealed class XamlDesignerSplitHost : Grid,
     /// </summary>
     private void OnDesignRendered(object? sender, UIElement? root)
     {
-        if (_isSyncingSelection) return;
+        if (_syncDepth > 0) return;
         Dispatcher.InvokeAsync(UpdateIdePropertyProvider, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
@@ -1340,14 +1666,12 @@ public sealed class XamlDesignerSplitHost : Grid,
     /// </summary>
     private void ApplyXamlToCode(string xaml)
     {
-        // Set _isSyncingSelection before LoadFromString: LoadFromString resets the
+        // Increment _syncDepth before LoadFromString: LoadFromString resets the
         // caret to (0,0), which fires CaretMoved / SelectionChanged, which would
         // otherwise start the _codeToCanvasSyncTimer and select the root element.
-        _isSyncingSelection = true;
+        _syncDepth++;
         try
         {
-            // Stop the debounce timer before writing — we wrote the content ourselves,
-            // so the TextChanged event that fires next must not schedule another render.
             _previewTimer.Stop();
             _codeHost.PrimaryEditor.Document?.LoadFromString(xaml);
             if (_autoPreviewEnabled)
@@ -1355,7 +1679,7 @@ public sealed class XamlDesignerSplitHost : Grid,
         }
         finally
         {
-            _isSyncingSelection = false;
+            _syncDepth--;
         }
     }
 
@@ -1475,9 +1799,9 @@ public sealed class XamlDesignerSplitHost : Grid,
         var btnGrid   = MakeIconButton("\uE80A", "Toggle grid (Ctrl+G)");
         var btnSnap   = MakeIconButton("\uE8C6", "Toggle snap (Ctrl+Shift+S)");
 
-        btnRulers.Click += (_, _) => { /* TODO Phase E4: toggle ruler overlay */ };
-        btnGrid.Click   += (_, _) => { /* TODO Phase E4: toggle design grid  */ };
-        btnSnap.Click   += (_, _) => { /* TODO Phase E4: toggle snap engine  */ };
+        btnRulers.Click += (_, _) => ToggleRulers();
+        btnGrid.Click   += (_, _) => ToggleGrid();
+        btnSnap.Click   += (_, _) => ToggleSnap();
 
         // ── Phase E4: Edit group ─────────────────────────────────────────────
         var btnCut   = MakeIconButton("\uE8C6", "Cut element (Ctrl+X)");
@@ -1770,17 +2094,46 @@ public sealed class XamlDesignerSplitHost : Grid,
     /// </summary>
     private void DeleteSelectedElement()
     {
-        int uid = _designCanvas.SelectedElementUid;
-        if (uid < 0) return;
+        var selected = _designCanvas.SelectedElements;
+        if (selected.Count == 0) return;
 
-        var elementType = _designCanvas.SelectedElement?.GetType().Name ?? "Element";
-        var beforeXaml  = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
-        var afterXaml   = _syncService.RemoveElement(beforeXaml, uid);
+        if (selected.Count == 1)
+        {
+            // Single-element delete — existing path.
+            int uid = _designCanvas.SelectedElementUid;
+            if (uid < 0) return;
 
-        if (string.Equals(beforeXaml, afterXaml, StringComparison.Ordinal)) return;
+            var elementType = _designCanvas.SelectedElement?.GetType().Name ?? "Element";
+            var beforeXaml  = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
+            var afterXaml   = _syncService.RemoveElement(beforeXaml, uid);
 
-        _undoManager.PushEntry(new SnapshotDesignUndoEntry(beforeXaml, afterXaml, $"Delete {elementType}"));
-        ApplyXamlToCode(afterXaml);
+            if (string.Equals(beforeXaml, afterXaml, StringComparison.Ordinal)) return;
+
+            _undoManager.PushEntry(new SnapshotDesignUndoEntry(beforeXaml, afterXaml, $"Delete {elementType}"));
+            ApplyXamlToCode(afterXaml);
+        }
+        else
+        {
+            // Multi-element delete — remove from highest UID first to avoid pre-order index shift.
+            var uids = selected
+                .Select(el => _designCanvas.GetUidOf(el))
+                .Where(uid => uid >= 0)
+                .Distinct()
+                .OrderByDescending(uid => uid)
+                .ToList();
+
+            if (uids.Count == 0) return;
+
+            var beforeXaml = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
+            var afterXaml  = beforeXaml;
+            foreach (var uid in uids)
+                afterXaml = _syncService.RemoveElement(afterXaml, uid);
+
+            if (string.Equals(beforeXaml, afterXaml, StringComparison.Ordinal)) return;
+
+            _undoManager.PushEntry(new SnapshotDesignUndoEntry(beforeXaml, afterXaml, $"Delete {uids.Count} elements"));
+            ApplyXamlToCode(afterXaml);
+        }
     }
 
     // ── Keyboard shortcuts ────────────────────────────────────────────────────
@@ -1824,7 +2177,30 @@ public sealed class XamlDesignerSplitHost : Grid,
                     _zoomVm.ZoomResetCommand.Execute(null);
                     e.Handled = true;
                     return;
+                case Key.R:
+                    ToggleRulers();
+                    e.Handled = true;
+                    return;
+                case Key.G:
+                    ToggleGrid();
+                    e.Handled = true;
+                    return;
+                case Key.A:
+                    // Ctrl+A selects all direct visual children of DesignRoot when the canvas has focus.
+                    if (_designCanvas.IsKeyboardFocusWithin)
+                    {
+                        SelectAllCanvasElements();
+                        e.Handled = true;
+                    }
+                    return;
             }
+        }
+
+        if (ctrl && shift && e.Key == Key.S)
+        {
+            ToggleSnap();
+            e.Handled = true;
+            return;
         }
 
         if (ctrl && shift && e.Key == Key.P)
@@ -1897,6 +2273,91 @@ public sealed class XamlDesignerSplitHost : Grid,
         _interactionService.OnMoveStart(el, origin, uid);
         _interactionService.OnMoveDelta(el, new System.Windows.Point(dx, dy));
         _interactionService.OnMoveCompleted(el);
+    }
+
+    // ── Phase MS — Ctrl+A select-all ──────────────────────────────────────────
+
+    /// <summary>
+    /// Selects all direct visual children of <see cref="DesignCanvas.DesignRoot"/>.
+    /// Falls back to selecting DesignRoot itself when it has no children.
+    /// </summary>
+    private void SelectAllCanvasElements()
+    {
+        var root = _designCanvas.DesignRoot;
+        if (root is null) return;
+
+        var children = new List<UIElement>();
+        int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < n; i++)
+        {
+            if (System.Windows.Media.VisualTreeHelper.GetChild(root, i) is UIElement child)
+                children.Add(child);
+        }
+
+        if (children.Count > 0)
+            _designCanvas.SelectElements(children);
+        else
+            _designCanvas.SelectElement(root);
+    }
+
+    // ── Phase E4 — Rulers / Grid / Snap toggle methods ────────────────────────
+
+    /// <summary>
+    /// Toggles the horizontal and vertical pixel rulers along the top/left edges
+    /// of the design canvas viewport. Adjusts the ZoomPanCanvas margin to make room.
+    /// </summary>
+    private void ToggleRulers()
+    {
+        _rulersVisible = !_rulersVisible;
+        var vis    = _rulersVisible ? Visibility.Visible : Visibility.Collapsed;
+        var margin = _rulersVisible ? new Thickness(22, 22, 0, 0) : new Thickness(0);
+
+        if (_hRuler is not null)    _hRuler.Visibility    = vis;
+        if (_vRuler is not null)    _vRuler.Visibility    = vis;
+        if (_rulerCorner is not null) _rulerCorner.Visibility = vis;
+
+        // Offset ZoomPanCanvas so it doesn't overlap the ruler band.
+        _zoomPan.Margin = margin;
+
+        // Sync ruler state from current zoom/offset immediately.
+        if (_rulersVisible && _hRuler is not null)
+        {
+            _hRuler.ZoomFactor     = _zoomPan.ZoomLevel;
+            _hRuler.Offset         = _zoomPan.OffsetX;
+        }
+        if (_rulersVisible && _vRuler is not null)
+        {
+            _vRuler.ZoomFactor     = _zoomPan.ZoomLevel;
+            _vRuler.Offset         = _zoomPan.OffsetY;
+        }
+    }
+
+    /// <summary>Toggles the dotted design grid overlay over the canvas viewport.</summary>
+    private void ToggleGrid()
+    {
+        _gridVisible = !_gridVisible;
+        if (_gridOverlay is not null)
+        {
+            _gridOverlay.Visibility = _gridVisible ? Visibility.Visible : Visibility.Collapsed;
+            if (_gridVisible)
+            {
+                _gridOverlay.ZoomFactor = _zoomPan.ZoomLevel;
+                _gridOverlay.OffsetX    = _zoomPan.OffsetX;
+                _gridOverlay.OffsetY    = _zoomPan.OffsetY;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Toggles the snap engine and clears any lingering snap guide lines.
+    /// When snap is off, the SnapGuideOverlay is also hidden.
+    /// </summary>
+    private void ToggleSnap()
+    {
+        _snapEnabled = !_snapEnabled;
+        _interactionService.SnapEnabled = _snapEnabled;
+        if (!_snapEnabled)
+            _snapGuideOverlay?.Clear();
     }
 
     // ── Phase F3 — Copy / Paste / Duplicate / Wrap In ─────────────────────────

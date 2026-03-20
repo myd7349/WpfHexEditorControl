@@ -7,6 +7,10 @@
 //                        DesignInteractionService wiring, element-to-XElement mapping.
 //                        Phase 3: ZoomPanCanvas host integration.
 //          2026-03-18 — Phase E2: Page boundary shadow + border drawn via OnRender override.
+//                        Phase EL: RenderError upgraded to XamlRenderError? (line/col extracted).
+//                        Phase MS: Multi-selection — rubber-band marquee, Ctrl+Click toggle,
+//                                  SelectElements/ToggleElementInSelection API, MultiSelectionAdorner,
+//                                  RubberBandAdorner, GetUidOf helper for alignment service wiring.
 // Description:
 //     Live WPF rendering surface for the XAML designer.
 //     Parses XAML via XamlReader.Parse() and presents the result
@@ -70,6 +74,19 @@ public sealed class DesignCanvas : Border
     // Hover adorner state — the element currently highlighted under the cursor.
     private UIElement? _hoveredElement;
 
+    // ── Multi-selection ────────────────────────────────────────────────────────
+
+    // Canonical ordered list of all currently selected elements (0 = none, 1 = single, 2+ = multi).
+    private readonly List<UIElement> _selectedElements = new();
+
+    // Combined-bounds adorner placed on DesignRoot when 2+ elements are selected.
+    private MultiSelectionAdorner? _multiAdorner;
+
+    // Rubber-band marquee adorner shown while the user drag-selects on empty canvas space.
+    private RubberBandAdorner? _rubberBandAdorner;
+    private bool               _isRubberBanding;
+    private Point              _rubberBandStart;   // in DesignRoot coordinate space
+
     /// <summary>
     /// When true, selection uses ResizeAdorner instead of SelectionAdorner
     /// and wires DesignInteractionService for drag-move/resize.
@@ -106,19 +123,25 @@ public sealed class DesignCanvas : Border
         Child = _presenter;
 
         PreviewMouseLeftButtonDown += OnCanvasMouseDown;
+        PreviewMouseLeftButtonUp   += OnCanvasMouseUp;
         MouseMove  += OnCanvasMouseMove;
         MouseLeave += OnCanvasMouseLeave;
 
-        // Escape key — if something is selected, walk up to the nearest selectable parent;
-        // if already at root (or nothing is selected), deselect entirely.
+        // Escape key:
+        //   • 2+ elements selected → narrow to primary (first in list).
+        //   • 1 element selected   → walk up to nearest selectable parent (deselects at root).
+        //   • nothing selected     → no-op.
         Focusable = true;
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape)
             {
-                SelectElement(SelectedElement is not null
-                    ? FindSelectableParent(SelectedElement)  // null when at root → deselects
-                    : null);
+                if (_selectedElements.Count > 1)
+                    SelectElement(SelectedElement);   // narrow multi-selection → primary
+                else
+                    SelectElement(SelectedElement is not null
+                        ? FindSelectableParent(SelectedElement)  // null when at root → deselects
+                        : null);
                 e.Handled = true;
             }
         };
@@ -145,8 +168,16 @@ public sealed class DesignCanvas : Border
     /// <summary>UID of the selected element (-1 if none).</summary>
     public int SelectedElementUid { get; private set; } = -1;
 
-    /// <summary>Fired after each render attempt. Null = success, non-null = error message.</summary>
-    public event EventHandler<string?>? RenderError;
+    /// <summary>
+    /// Fired after each render attempt.
+    /// <c>null</c> = success; non-null = structured error with message, line, and column.
+    /// The line/column are 1-based source coordinates extracted from
+    /// <see cref="System.Xml.XmlException"/> / <see cref="System.Windows.Markup.XamlParseException"/>.
+    /// </summary>
+    public event EventHandler<XamlRenderError?>? RenderError;
+
+    /// <summary>The file path used to populate <see cref="XamlRenderError.FilePath"/>.</summary>
+    public string? SourceFilePath { get; set; }
 
     /// <summary>Fired when the selected element changes.</summary>
     public event EventHandler? SelectedElementChanged;
@@ -233,15 +264,76 @@ public sealed class DesignCanvas : Border
     /// </param>
     public void SelectElement(UIElement? el, bool suppressEvent = false)
     {
-        RemoveHoverAdorner();       // Clear hover first so selection adorner has priority.
-        RemoveSelectionAdorner();
+        RemoveHoverAdorner();
+        ClearAllSelectionAdorners();
 
+        _selectedElements.Clear();
         SelectedElement    = el;
         SelectedXElement   = el is not null ? _mapper.GetXElement(el) : null;
         SelectedElementUid = el is not null ? _mapper.GetUid(el) : -1;
 
         if (el is not null)
+        {
+            _selectedElements.Add(el);
             PlaceSelectionAdorner(el);
+        }
+
+        if (!suppressEvent)
+            SelectedElementChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>All currently selected elements (0 = none, 1 = single, 2+ = multi).</summary>
+    public IReadOnlyList<UIElement> SelectedElements => _selectedElements;
+
+    /// <summary>
+    /// Returns the UID assigned to <paramref name="el"/> by the element mapper after the last
+    /// successful render, or -1 when the element is not mapped.
+    /// </summary>
+    public int GetUidOf(UIElement el) => _mapper.GetUid(el);
+
+    /// <summary>
+    /// Replaces the current selection with <paramref name="elements"/>, placing per-element
+    /// adorners and a combined <see cref="MultiSelectionAdorner"/> when 2+ are selected.
+    /// </summary>
+    public void SelectElements(IEnumerable<UIElement> elements, bool suppressEvent = false)
+    {
+        RemoveHoverAdorner();
+        ClearAllSelectionAdorners();
+
+        _selectedElements.Clear();
+        _selectedElements.AddRange(elements.Where(e => e is not null).Distinct());
+
+        var primary        = _selectedElements.Count > 0 ? _selectedElements[0] : null;
+        SelectedElement    = primary;
+        SelectedXElement   = primary is not null ? _mapper.GetXElement(primary) : null;
+        SelectedElementUid = primary is not null ? _mapper.GetUid(primary) : -1;
+
+        if (_selectedElements.Count == 1)
+            PlaceSelectionAdorner(_selectedElements[0]);
+        else if (_selectedElements.Count > 1)
+            PlaceMultiSelectionAdorners();
+
+        if (!suppressEvent)
+            SelectedElementChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Adds or removes <paramref name="el"/> from the selection (Ctrl+Click toggle).
+    /// Rebuilds adorners for the resulting set.
+    /// </summary>
+    public void ToggleElementInSelection(UIElement el, bool suppressEvent = false)
+    {
+        if (_selectedElements.Contains(el))
+            _selectedElements.Remove(el);
+        else
+            _selectedElements.Add(el);
+
+        RebuildSelectionAdorners();
+
+        var primary        = _selectedElements.Count > 0 ? _selectedElements[0] : null;
+        SelectedElement    = primary;
+        SelectedXElement   = primary is not null ? _mapper.GetXElement(primary) : null;
+        SelectedElementUid = primary is not null ? _mapper.GetUid(primary) : -1;
 
         if (!suppressEvent)
             SelectedElementChanged?.Invoke(this, EventArgs.Empty);
@@ -250,7 +342,13 @@ public sealed class DesignCanvas : Border
     // ── Rendering ─────────────────────────────────────────────────────────────
 
     private static void OnXamlSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        => ((DesignCanvas)d).RenderXaml((string)e.NewValue);
+    {
+        // Wrap the call so no exception ever escapes a DependencyProperty callback.
+        // An unhandled exception here would propagate into the WPF property system and
+        // crash the IDE instead of displaying the error card on the design surface.
+        try   { ((DesignCanvas)d).RenderXaml((string)e.NewValue); }
+        catch { /* RenderXaml has its own catch; this is a last-resort safety net. */ }
+    }
 
     private void RenderXaml(string xaml)
     {
@@ -275,14 +373,13 @@ public sealed class DesignCanvas : Border
             // Pre-validate XML syntax before calling XamlReader.Parse().
             // XmlException is caught inside TryValidateXml — it never propagates,
             // so the VS debugger has no first-chance exception to pause on.
-            var (xmlOk, xmlError) = TryValidateXml(prepared);
+            var (xmlOk, xmlDiag) = TryValidateXmlStructured(prepared);
             if (!xmlOk)
             {
-                // Clear adorners BEFORE replacing content so AdornerLayer is still reachable.
                 SelectElement(null, suppressEvent: true);
                 DesignRoot         = null;
-                _presenter.Content = BuildRenderErrorCard(xmlError!);
-                RenderError?.Invoke(this, xmlError);
+                _presenter.Content = null;
+                RenderError?.Invoke(this, xmlDiag with { FilePath = SourceFilePath });
                 return;
             }
 
@@ -320,11 +417,20 @@ public sealed class DesignCanvas : Border
                 // code editor's caret while the user is typing.
                 Dispatcher.InvokeAsync(() =>
                 {
-                    _mapper.Build(uidMap, uiResult);
-                    if (prevUid >= 0)
-                        SelectElementByUid(prevUid, suppressEvent: true);
-                    // Notify subscribers that DesignRoot is now stable and the visual tree is walkable.
-                    DesignRendered?.Invoke(this, DesignRoot);
+                    try
+                    {
+                        _mapper.Build(uidMap, uiResult);
+                        if (prevUid >= 0)
+                            SelectElementByUid(prevUid, suppressEvent: true);
+                        DesignRendered?.Invoke(this, DesignRoot);
+                    }
+                    catch (Exception ex)
+                    {
+                        SelectElement(null, suppressEvent: true);
+                        DesignRoot         = null;
+                        _presenter.Content = null;
+                        RenderError?.Invoke(this, ParseLineCol(ex.Message) with { FilePath = SourceFilePath });
+                    }
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
 
                 RenderError?.Invoke(this, null);
@@ -343,11 +449,10 @@ public sealed class DesignCanvas : Border
         }
         catch (Exception ex)
         {
-            // Clear adorners BEFORE replacing content so AdornerLayer is still reachable.
             SelectElement(null, suppressEvent: true);
             DesignRoot         = null;
-            _presenter.Content = BuildRenderErrorCard(ex.Message);
-            RenderError?.Invoke(this, ex.Message);
+            _presenter.Content = null;
+            RenderError?.Invoke(this, ParseLineCol(ex.Message) with { FilePath = SourceFilePath });
         }
     }
 
@@ -366,7 +471,7 @@ public sealed class DesignCanvas : Border
     /// first-chance exception from XML-level syntax errors (invalid comments, encoding, etc.).
     /// </summary>
     [DebuggerNonUserCode]
-    private static (bool Ok, string? Error) TryValidateXml(string xml)
+    private static (bool Ok, XamlRenderError? Error) TryValidateXmlStructured(string xml)
     {
         try
         {
@@ -377,8 +482,31 @@ public sealed class DesignCanvas : Border
         }
         catch (XmlException ex)
         {
-            return (false, ex.Message);
+            return (false, new XamlRenderError(ex.Message, ex.LineNumber, ex.LinePosition));
         }
+    }
+
+    /// <summary>
+    /// Parses the line and column numbers embedded in a XAML/XML exception message
+    /// (format: "… Line N, position M.") and wraps them in a <see cref="XamlRenderError"/>.
+    /// Falls back to -1 when the pattern is not found.
+    /// </summary>
+    private static XamlRenderError ParseLineCol(string message)
+    {
+        // XamlParseException: "… 'foo' Line 26, position 17."
+        // XmlException uses the same wording.
+        var m = Regex.Match(message,
+            @"[Ll]ine\s+(\d+)[,\s]+[Pp]os(?:ition)?\s+(\d+)",
+            RegexOptions.CultureInvariant);
+
+        if (m.Success
+            && int.TryParse(m.Groups[1].Value, out int line)
+            && int.TryParse(m.Groups[2].Value, out int col))
+        {
+            return new XamlRenderError(message, line, col);
+        }
+
+        return new XamlRenderError(message);
     }
 
     /// <summary>
@@ -431,7 +559,7 @@ public sealed class DesignCanvas : Border
             stack.Children.Add(title);
             stack.Children.Add(detail);
 
-            return new Border
+            var card = new Border
             {
                 Background          = new SolidColorBrush(Color.FromArgb(0xCC, 0x1E, 0x1E, 0x1E)),
                 BorderBrush         = new SolidColorBrush(Color.FromRgb(0xF4, 0x85, 0x57)),
@@ -442,6 +570,18 @@ public sealed class DesignCanvas : Border
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment   = VerticalAlignment.Center,
                 Child               = stack
+            };
+
+            // Wrap in a Grid that fills the ZoomPanCanvas viewport so the
+            // HorizontalAlignment/VerticalAlignment = Center on the card
+            // actually centres it in the visible area, not just in its DesiredSize.
+            return new Grid
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment   = VerticalAlignment.Stretch,
+                Width               = 9999,
+                Height              = 9999,
+                Children            = { card }
             };
         }
         catch
@@ -458,20 +598,64 @@ public sealed class DesignCanvas : Border
 
     // ── Adorner management ────────────────────────────────────────────────────
 
-    private void RemoveSelectionAdorner()
+    /// <summary>Removes adorners from all currently tracked selected elements and the combined overlay.</summary>
+    private void ClearAllSelectionAdorners()
     {
-        if (SelectedElement is null) return;
+        // Deduplicate: SelectedElement may already be in _selectedElements.
+        var toClean = new HashSet<UIElement>();
+        if (SelectedElement is not null) toClean.Add(SelectedElement);
+        foreach (var el in _selectedElements) toClean.Add(el);
+        foreach (var el in toClean) RemoveElementAdorners(el);
+        RemoveMultiAdorner();
+    }
 
-        var layer = AdornerLayer.GetAdornerLayer(SelectedElement);
+    /// <summary>Rebuilds adorners from the current <see cref="_selectedElements"/> list without changing the list.</summary>
+    private void RebuildSelectionAdorners()
+    {
+        ClearAllSelectionAdorners();
+        if (_selectedElements.Count == 1)
+            PlaceSelectionAdorner(_selectedElements[0]);
+        else if (_selectedElements.Count > 1)
+            PlaceMultiSelectionAdorners();
+    }
+
+    private static void RemoveElementAdorners(UIElement el)
+    {
+        var layer    = AdornerLayer.GetAdornerLayer(el);
         if (layer is null) return;
-
-        var adorners = layer.GetAdorners(SelectedElement);
+        var adorners = layer.GetAdorners(el);
         if (adorners is null) return;
-
         foreach (var a in adorners)
-        {
             if (a is SelectionAdorner or ResizeAdorner)
                 layer.Remove(a);
+    }
+
+    private void RemoveMultiAdorner()
+    {
+        if (_multiAdorner is null || DesignRoot is null) return;
+        var layer = AdornerLayer.GetAdornerLayer(DesignRoot);
+        layer?.Remove(_multiAdorner);
+        _multiAdorner = null;
+    }
+
+    /// <summary>Places a <see cref="SelectionAdorner"/> on every element and a combined <see cref="MultiSelectionAdorner"/> on DesignRoot.</summary>
+    private void PlaceMultiSelectionAdorners()
+    {
+        foreach (var el in _selectedElements)
+        {
+            var layer = AdornerLayer.GetAdornerLayer(el);
+            layer?.Add(new SelectionAdorner(el));
+        }
+
+        if (DesignRoot is not null)
+        {
+            var rootLayer = AdornerLayer.GetAdornerLayer(DesignRoot);
+            if (rootLayer is not null)
+            {
+                _multiAdorner = new MultiSelectionAdorner(DesignRoot);
+                _multiAdorner.Refresh(_selectedElements);
+                rootLayer.Add(_multiAdorner);
+            }
         }
     }
 
@@ -535,7 +719,8 @@ public sealed class DesignCanvas : Border
         if (e.OriginalSource is System.Windows.Controls.Primitives.Thumb) return;
 
         var clickPoint = e.GetPosition(_presenter);
-        bool isAlt     = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
+        bool isAlt  = (Keyboard.Modifiers & ModifierKeys.Alt)     != 0;
+        bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
 
         if (!isAlt)
         {
@@ -544,7 +729,10 @@ public sealed class DesignCanvas : Border
             {
                 _lastHitElements.Clear();
                 _altClickDepth = 0;
-                SelectElement(DesignRoot);
+                if (isCtrl)
+                    ToggleElementInSelection(DesignRoot!);
+                else
+                    SelectElement(DesignRoot);
                 e.Handled = false;
                 return;
             }
@@ -579,7 +767,23 @@ public sealed class DesignCanvas : Border
             // Prefer a leaf element (not a container with children); fall back to topmost.
             var target = _lastHitElements.FirstOrDefault(IsLeafElement)
                       ?? _lastHitElements.FirstOrDefault();
-            SelectElement(target);
+
+            if (isCtrl && target is not null)
+            {
+                // Ctrl+Click — toggle the element in / out of the multi-selection.
+                ToggleElementInSelection(target);
+            }
+            else if (target is null)
+            {
+                // Click on empty canvas space — clear selection and start rubber-band marquee.
+                SelectElement(null);
+                if (DesignRoot is IInputElement rootIe)
+                    StartRubberBand(e.GetPosition(rootIe));
+            }
+            else
+            {
+                SelectElement(target);
+            }
         }
         else
         {
@@ -637,6 +841,17 @@ public sealed class DesignCanvas : Border
 
     private void OnCanvasMouseMove(object sender, MouseEventArgs e)
     {
+        // Update rubber-band adorner while the user is dragging a selection marquee.
+        if (_isRubberBanding)
+        {
+            if (DesignRoot is IInputElement rootIe)
+            {
+                var current = e.GetPosition(rootIe);
+                _rubberBandAdorner?.UpdateBounds(_rubberBandStart, current);
+            }
+            return;
+        }
+
         if (DesignRoot is null) return;
 
         var hovered = HitTestElement(e.GetPosition(_presenter));
@@ -649,7 +864,40 @@ public sealed class DesignCanvas : Border
     }
 
     private void OnCanvasMouseLeave(object sender, MouseEventArgs e)
-        => UpdateHoverAdorner(null);
+    {
+        if (_isRubberBanding) return;  // keep hover clear but don't abort rubber-band
+        UpdateHoverAdorner(null);
+    }
+
+    private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_isRubberBanding) return;
+        _isRubberBanding = false;
+        ReleaseMouseCapture();
+
+        // Remove the rubber-band adorner from the design root layer.
+        if (DesignRoot is not null && _rubberBandAdorner is not null)
+        {
+            var layer = AdornerLayer.GetAdornerLayer(DesignRoot);
+            layer?.Remove(_rubberBandAdorner);
+            _rubberBandAdorner = null;
+        }
+
+        if (DesignRoot is not IInputElement rootIe) return;
+
+        var end  = e.GetPosition(rootIe);
+        var rect = new Rect(
+            Math.Min(_rubberBandStart.X, end.X),
+            Math.Min(_rubberBandStart.Y, end.Y),
+            Math.Abs(end.X - _rubberBandStart.X),
+            Math.Abs(end.Y - _rubberBandStart.Y));
+
+        if (rect.Width < 2 || rect.Height < 2) return;
+
+        var hits = CollectElementsInRubberBand(rect);
+        if (hits.Count > 0)
+            SelectElements(hits);
+    }
 
     /// <summary>
     /// Returns the leaf-preferred UIElement at <paramref name="positionInPresenter"/>
@@ -730,9 +978,62 @@ public sealed class DesignCanvas : Border
     /// </summary>
     public void HighlightHoverElement(UIElement? element)
     {
-        // Skip if the element is already the canvas-selected element (selection adorner has priority).
+        // Skip if the element is already selected (selection adorner has priority).
         if (ReferenceEquals(element, SelectedElement)) return;
+        if (element is not null && _selectedElements.Contains(element)) return;
         UpdateHoverAdorner(element);
+    }
+
+    // ── Rubber-band selection ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Begins a rubber-band marquee drag starting at <paramref name="startInRoot"/>.
+    /// Places a <see cref="RubberBandAdorner"/> on DesignRoot and captures the mouse.
+    /// </summary>
+    private void StartRubberBand(Point startInRoot)
+    {
+        _rubberBandStart = startInRoot;
+        _isRubberBanding = true;
+
+        var layer = DesignRoot is not null ? AdornerLayer.GetAdornerLayer(DesignRoot) : null;
+        if (layer is not null)
+        {
+            _rubberBandAdorner = new RubberBandAdorner(DesignRoot!);
+            layer.Add(_rubberBandAdorner);
+        }
+        CaptureMouse();
+    }
+
+    /// <summary>
+    /// Returns all <see cref="FrameworkElement"/>s whose bounds (in DesignRoot space)
+    /// intersect <paramref name="rubberBandInRoot"/>. DesignRoot itself is excluded.
+    /// </summary>
+    private IReadOnlyList<UIElement> CollectElementsInRubberBand(Rect rubberBandInRoot)
+    {
+        if (DesignRoot is not FrameworkElement root) return Array.Empty<UIElement>();
+        var result = new List<UIElement>();
+        CollectElementsInRectCore(root, rubberBandInRoot, root, result);
+        return result;
+    }
+
+    private static void CollectElementsInRectCore(
+        UIElement el, Rect rect, UIElement root, List<UIElement> result)
+    {
+        if (!ReferenceEquals(el, root) && el is FrameworkElement fe
+            && fe.IsVisible && fe.ActualWidth > 0 && fe.ActualHeight > 0)
+        {
+            var pos    = fe.TranslatePoint(new Point(0, 0), root);
+            var bounds = new Rect(pos.X, pos.Y, fe.ActualWidth, fe.ActualHeight);
+            if (rect.IntersectsWith(bounds))
+                result.Add(el);
+        }
+
+        int n = VisualTreeHelper.GetChildrenCount(el);
+        for (int i = 0; i < n; i++)
+        {
+            if (VisualTreeHelper.GetChild(el, i) is UIElement child)
+                CollectElementsInRectCore(child, rect, root, result);
+        }
     }
 
     // ── XAML preprocessing ────────────────────────────────────────────────────

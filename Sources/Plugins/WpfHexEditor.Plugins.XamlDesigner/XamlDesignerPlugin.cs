@@ -423,6 +423,9 @@ public sealed class XamlDesignerPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             _toolboxPanel.DropCompleted   += OnToolboxDropCompleted;
         }
 
+        // Phase EL: inject ErrorPanelService so OnRenderError can push diagnostics to the ErrorList.
+        host.ErrorPanelService = _context?.ErrorPanel;
+
         _outlinePanel?.ViewModel?.RebuildTree(host.Document.ParsedRoot);
         UpdateSidePanels(host);
     }
@@ -475,6 +478,9 @@ public sealed class XamlDesignerPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             _toolboxPanel.DropCompleted   -= OnToolboxDropCompleted;
         }
 
+        // Phase EL: detach ErrorPanelService so the outgoing host stops posting diagnostics.
+        _wiredHost.ErrorPanelService = null;
+
         _wiredHost = null;
     }
 
@@ -489,9 +495,21 @@ public sealed class XamlDesignerPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             _liveTreePanel.ViewModel.Refresh(root);
     }
 
-    // Fired when the user clicks a node in the Live Visual Tree — highlights that element on the canvas.
+    // Fired when the user clicks a node in the Live Visual Tree — highlights that element on the canvas
+    // AND navigates the code editor to the corresponding XAML line.
     private void OnLiveTreeNodeSelected(object? sender, System.Windows.UIElement? element)
-        => _wiredHost?.Canvas?.SelectElement(element);
+    {
+        if (_wiredHost is null) return;
+
+        // Select on canvas (this also triggers OnDesignSelectionChanged → NavigateCodeEditorToUid).
+        _wiredHost.Canvas?.SelectElement(element);
+
+        // Direct code navigation: resolve UID from the canvas selection so navigation
+        // works even when the design pane is not visible (CodeOnly mode).
+        int uid = _wiredHost.Canvas?.SelectedElementUid ?? -1;
+        if (uid >= 0)
+            _wiredHost.NavigateCodeEditorToUid(uid);
+    }
 
     // Fired when the Live Visual Tree panel becomes visible — reseed from the current DesignRoot
     // so the panel is never empty when revealed without a prior document-switch event.
@@ -506,11 +524,16 @@ public sealed class XamlDesignerPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     private void OnLiveTreeNodeHovered(object? sender, System.Windows.UIElement? element)
         => _wiredHost?.Canvas?.HighlightHoverElement(element);
 
-    // Fired when "Navigate to XAML" context menu is chosen — syncs the XAML outline panel
-    // to the element's x:Name so the code editor scrolls to the right line.
+    // Fired when "Navigate to XAML" context menu is chosen — navigates the code editor
+    // to the element's x:Name line and syncs the XAML outline panel.
     private void OnLiveTreeNavigateToXaml(object? sender, string? elementName)
     {
         if (string.IsNullOrEmpty(elementName)) return;
+
+        // Navigate the code editor to the element's source line.
+        _wiredHost?.NavigateCodeEditorToXName(elementName);
+
+        // Also sync the outline panel for visual feedback.
         _outlinePanel?.ViewModel?.SelectNodeByPath(elementName);
     }
 

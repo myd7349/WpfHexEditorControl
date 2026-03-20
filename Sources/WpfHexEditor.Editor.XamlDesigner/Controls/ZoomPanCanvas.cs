@@ -172,15 +172,24 @@ public sealed class ZoomPanCanvas : ContentControl
     {
         if (Content is not FrameworkElement fe) return;
         if (fe.ActualWidth <= 0 || fe.ActualHeight <= 0) return;
+        if (ActualWidth <= 0 || ActualHeight <= 0) return;
 
-        // Fit to the tightest dimension so the canvas fills as much of the visible area as possible.
-        // A small 3% margin is kept so the canvas edge never touches the viewport border.
-        // Exception: when the viewport is extremely wide-short (e.g. VerticalDesignTop thin strip,
-        // scaleY < scaleX/2), fall back to width-only fit to avoid a tiny canvas with huge margins.
-        double scaleX = ActualWidth  / fe.ActualWidth;
-        double scaleY = ActualHeight / fe.ActualHeight;
-        double scale  = scaleY < scaleX * 0.5 ? scaleX : Math.Min(scaleX, scaleY);
-        ZoomLevel = Math.Clamp(scale * 0.97, MinZoom, MaxZoom);
+        // Reserve a fixed 10 px free border on every side so the canvas edge
+        // never touches the viewport border.
+        const double Padding = 10.0;
+
+        double availW = Math.Max(1, ActualWidth  - Padding * 2);
+        double availH = Math.Max(1, ActualHeight - Padding * 2);
+
+        double scaleX = availW / fe.ActualWidth;
+        double scaleY = availH / fe.ActualHeight;
+
+        // Use the tighter axis so the whole canvas fits. Exception: an extremely
+        // wide-short viewport (e.g. VerticalDesignTop thin strip, scaleY < scaleX/2)
+        // falls back to width-only fit to avoid a tiny canvas with huge margins.
+        double scale = scaleY < scaleX * 0.5 ? scaleX : Math.Min(scaleX, scaleY);
+
+        ZoomLevel = Math.Clamp(scale, MinZoom, MaxZoom);
         CenterContent();
     }
 
