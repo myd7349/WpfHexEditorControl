@@ -382,6 +382,27 @@ public sealed class ClassDiagramSplitHost : Grid,
     public DiagramDocument Document       => _document;
     public ClassDiagramUndoManager UndoManager => _undoManager;
 
+    /// <summary>
+    /// Loads a pre-analyzed <see cref="DiagramDocument"/> directly into the editor.
+    /// No file I/O — called by the plugin when opening from source file/folder/solution analysis.
+    /// </summary>
+    public void LoadDocument(DiagramDocument doc, string title)
+    {
+        _document  = doc;
+        string dsl = ClassDiagramSerializer.Serialize(doc);
+
+        _suppressCodeSync = true;
+        _dslTextBox.Text  = dsl;
+        _suppressCodeSync = false;
+
+        _canvas.ApplyDocument(_document);
+        _undoManager.Clear();
+        SetDirty(false);
+        TitleChanged?.Invoke(this, title);
+        UpdateStatusBar();
+        DiagramChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     // ---------------------------------------------------------------------------
     // View mode / layout
     // ---------------------------------------------------------------------------

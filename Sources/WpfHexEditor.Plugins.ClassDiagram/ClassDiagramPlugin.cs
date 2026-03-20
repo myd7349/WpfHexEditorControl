@@ -96,6 +96,11 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     private StatusBarItemDescriptor?  _sbNode;
     private ClassDiagramSplitHost?    _wiredHost;
 
+    // Open diagram tabs keyed by source key (file/folder path or "solution").
+    // Used to reactivate an already-open tab instead of creating a duplicate.
+    private readonly Dictionary<string, string> _openTabs =
+        new(StringComparer.OrdinalIgnoreCase);
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
@@ -580,10 +585,17 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     /// Called from the "Generate Class Diagram for Solution Files" menu item.
     /// Analyzes all .cs files in the active solution and opens a combined diagram.
     /// </summary>
-    private async Task OpenDiagramForSolutionAsync(IIDEHostContext context)
+    public async Task OpenDiagramForSolutionAsync(IIDEHostContext context)
     {
-        IReadOnlyList<string> files = context.SolutionExplorer.GetSolutionFilePaths();
-        string[] csFiles = files
+        const string key = "solution";
+        if (_openTabs.TryGetValue(key, out string? existingId)
+            && context.UIRegistry.Exists(existingId))
+        {
+            context.UIRegistry.FocusPanel(existingId);
+            return;
+        }
+
+        string[] csFiles = context.SolutionExplorer.GetSolutionFilePaths()
             .Where(f => IsSourceFile(f))
             .ToArray();
 
@@ -595,12 +607,23 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
         context.Output.Info($"[Class Diagram] Analyzing {csFiles.Length} source files…");
 
-        DiagramDocument doc = ClassDiagramSourceAnalyzer.AnalyzeFiles(csFiles, _options);
-        string dsl          = ClassDiagramSerializer.Serialize(doc);
-        string tmpPath      = GetTempDiagramPath("solution");
+        DiagramDocument doc = await Task.Run(() =>
+            ClassDiagramSourceAnalyzer.AnalyzeFiles(csFiles, _options));
 
-        await File.WriteAllTextAsync(tmpPath, dsl, System.Text.Encoding.UTF8);
-        context.DocumentHost.OpenDocument(tmpPath, "WpfHexEditor.Editor.ClassDiagram");
+        string title = "Solution [Class Diagram]";
+        string uiId  = $"doc-class-diagram-{Guid.NewGuid():N}";
+
+        var host = new ClassDiagramSplitHost();
+        host.LoadDocument(doc, title);
+
+        _openTabs[key] = uiId;
+        context.UIRegistry.RegisterDocumentTab(uiId, host, Id, new DocumentDescriptor
+        {
+            Title     = title,
+            ContentId = uiId,
+            ToolTip   = "Class diagram for all solution source files",
+            CanClose  = true,
+        });
 
         context.Output.Info(
             $"[Class Diagram] Generated diagram with {doc.Classes.Count} classes " +
@@ -616,12 +639,31 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         string csharpFilePath,
         IIDEHostContext context)
     {
-        DiagramDocument doc = ClassDiagramSourceAnalyzer.AnalyzeFile(csharpFilePath, _options);
-        string dsl          = ClassDiagramSerializer.Serialize(doc);
-        string tmpPath      = GetTempDiagramPath(csharpFilePath);
+        // Reactivate the existing tab if already open for this file.
+        if (_openTabs.TryGetValue(csharpFilePath, out string? existingId)
+            && context.UIRegistry.Exists(existingId))
+        {
+            context.UIRegistry.FocusPanel(existingId);
+            return;
+        }
 
-        await File.WriteAllTextAsync(tmpPath, dsl, System.Text.Encoding.UTF8);
-        context.DocumentHost.OpenDocument(tmpPath, "WpfHexEditor.Editor.ClassDiagram");
+        DiagramDocument doc = await Task.Run(() =>
+            ClassDiagramSourceAnalyzer.AnalyzeFile(csharpFilePath, _options));
+
+        string title = Path.GetFileNameWithoutExtension(csharpFilePath) + " [Class Diagram]";
+        string uiId  = $"doc-class-diagram-{Guid.NewGuid():N}";
+
+        var host = new ClassDiagramSplitHost();
+        host.LoadDocument(doc, title);
+
+        _openTabs[csharpFilePath] = uiId;
+        context.UIRegistry.RegisterDocumentTab(uiId, host, Id, new DocumentDescriptor
+        {
+            Title     = title,
+            ContentId = uiId,
+            ToolTip   = csharpFilePath,
+            CanClose  = true,
+        });
     }
 
     /// <summary>
@@ -632,29 +674,41 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         string folderPath,
         IIDEHostContext context)
     {
-        string[] csFiles =
+        // Reactivate the existing tab if already open for this folder.
+        if (_openTabs.TryGetValue(folderPath, out string? existingId)
+            && context.UIRegistry.Exists(existingId))
+        {
+            context.UIRegistry.FocusPanel(existingId);
+            return;
+        }
+
+        string[] sourceFiles =
         [
             .. Directory.GetFiles(folderPath, "*.cs", SearchOption.AllDirectories),
             .. Directory.GetFiles(folderPath, "*.vb", SearchOption.AllDirectories),
         ];
 
-        DiagramDocument doc = ClassDiagramSourceAnalyzer.AnalyzeFiles(csFiles, _options);
-        string dsl          = ClassDiagramSerializer.Serialize(doc);
-        string tmpPath      = GetTempDiagramPath(folderPath + "_project");
+        DiagramDocument doc = await Task.Run(() =>
+            ClassDiagramSourceAnalyzer.AnalyzeFiles(sourceFiles, _options));
 
-        await File.WriteAllTextAsync(tmpPath, dsl, System.Text.Encoding.UTF8);
-        context.DocumentHost.OpenDocument(tmpPath, "WpfHexEditor.Editor.ClassDiagram");
+        string folderName = Path.GetFileName(folderPath.TrimEnd('/', '\\', Path.DirectorySeparatorChar));
+        string title      = folderName + " [Class Diagram]";
+        string uiId       = $"doc-class-diagram-{Guid.NewGuid():N}";
+
+        var host = new ClassDiagramSplitHost();
+        host.LoadDocument(doc, title);
+
+        _openTabs[folderPath] = uiId;
+        context.UIRegistry.RegisterDocumentTab(uiId, host, Id, new DocumentDescriptor
+        {
+            Title     = title,
+            ContentId = uiId,
+            ToolTip   = folderPath,
+            CanClose  = true,
+        });
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static string GetTempDiagramPath(string sourcePath)
-    {
-        string name = Path.GetFileNameWithoutExtension(sourcePath);
-        string dir  = Path.Combine(Path.GetTempPath(), "WpfHexEditor", "ClassDiagrams");
-        Directory.CreateDirectory(dir);
-        return Path.Combine(dir, $"{name}.classdiagram");
-    }
 
     private static bool HasActiveClassDiagramSource(IIDEHostContext context)
     {
@@ -729,30 +783,8 @@ file sealed class ClassDiagramContextMenuContributor : ISolutionExplorerContextM
         return items;
     }
 
-    private async Task OpenDiagramForSolutionAsync()
-    {
-        var files = _context.SolutionExplorer.GetSolutionFilePaths()
-            .Where(f => IsSourceFile(f))
-            .ToArray();
-
-        if (files.Length == 0)
-        {
-            _context.Output.Info("[Class Diagram] No C# or VB.NET files found in the active solution.");
-            return;
-        }
-
-        _context.Output.Info($"[Class Diagram] Analyzing {files.Length} source files…");
-
-        var doc      = ClassDiagramSourceAnalyzer.AnalyzeFiles(files, new());
-        var dsl      = ClassDiagramSerializer.Serialize(doc);
-        var tempDir  = Path.Combine(Path.GetTempPath(), "WpfHexEditor", "ClassDiagrams");
-        Directory.CreateDirectory(tempDir);
-        var tmpPath  = Path.Combine(tempDir, "solution.classdiagram");
-
-        await File.WriteAllTextAsync(tmpPath, dsl, System.Text.Encoding.UTF8);
-        _context.DocumentHost.OpenDocument(tmpPath, "WpfHexEditor.Editor.ClassDiagram");
-        _context.Output.Info($"[Class Diagram] Generated diagram with {doc.Classes.Count} classes.");
-    }
+    private Task OpenDiagramForSolutionAsync()
+        => _plugin.OpenDiagramForSolutionAsync(_context);
 
     private static bool IsSourceFile(string path) =>
         path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||

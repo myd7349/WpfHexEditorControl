@@ -78,7 +78,8 @@ public sealed class ResourceScannerService
         foreach (var merged in dict.MergedDictionaries)
         {
             var mergedScope = merged.Source is not null
-                ? System.IO.Path.GetFileNameWithoutExtension(merged.Source.LocalPath)
+                ? System.IO.Path.GetFileNameWithoutExtension(
+                    merged.Source.IsAbsoluteUri ? merged.Source.LocalPath : merged.Source.OriginalString)
                 : scope;
             ScanDictionary(merged, mergedScope, results, visited);
         }

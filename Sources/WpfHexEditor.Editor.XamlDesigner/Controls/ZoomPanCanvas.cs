@@ -106,7 +106,10 @@ public sealed class ZoomPanCanvas : ContentControl
         MouseMove         += OnMouseMove;
         MouseUp           += OnMouseUp;
 
-        // Clamp offsets whenever the host viewport is resized.
+        // Clamp offsets on every viewport resize — keeps the canvas within the
+        // virtual scrollable area without forcing any re-centering.
+        // The LayoutClip truncation is fixed by MeasureOverride/ArrangeOverride, so
+        // forced re-centering is no longer needed and would cause the canvas to jump.
         SizeChanged += (_, _) => ClampOffsets();
 
         // Auto-fit content when the control first becomes visible.
@@ -139,22 +142,45 @@ public sealed class ZoomPanCanvas : ContentControl
 
     // ── Public commands ───────────────────────────────────────────────────────
 
-    public void ZoomIn()  => ZoomLevel = Math.Min(MaxZoom, Math.Round(ZoomLevel + ZoomStep, 2));
-    public void ZoomOut() => ZoomLevel = Math.Max(MinZoom, Math.Round(ZoomLevel - ZoomStep, 2));
-    public void ZoomReset() { ZoomLevel = 1.0; OffsetX = 0; OffsetY = 0; }
+    public void ZoomIn()    => AnchorZoom(Math.Min(MaxZoom, Math.Round(ZoomLevel + ZoomStep, 2)));
+    public void ZoomOut()   => AnchorZoom(Math.Max(MinZoom, Math.Round(ZoomLevel - ZoomStep, 2)));
+    public void ZoomReset() => AnchorZoom(1.0);
+
+    /// <summary>
+    /// Changes zoom while keeping the viewport centre fixed over the same canvas point.
+    /// This prevents the canvas from drifting right/down when zooming via toolbar buttons,
+    /// which was the root cause of the right/bottom truncation with a small viewport.
+    /// </summary>
+    private void AnchorZoom(double newZoom)
+    {
+        if (ActualWidth <= 0 || ActualHeight <= 0 || ZoomLevel == newZoom)
+        {
+            ZoomLevel = newZoom;
+            return;
+        }
+
+        // Anchor point = centre of the visible viewport.
+        var anchor = new Point(ActualWidth / 2.0, ActualHeight / 2.0);
+        double ratio = newZoom / ZoomLevel;
+        OffsetX = anchor.X - (anchor.X - OffsetX) * ratio;
+        OffsetY = anchor.Y - (anchor.Y - OffsetY) * ratio;
+
+        ZoomLevel = newZoom;   // triggers OnZoomLevelChanged → ClampOffsets
+    }
 
     public void FitToContent()
     {
         if (Content is not FrameworkElement fe) return;
         if (fe.ActualWidth <= 0 || fe.ActualHeight <= 0) return;
 
-        // Fit to viewport WIDTH (fill horizontal space at 90%).
-        // When scaleX ≤ scaleY (normal case): identical to min(scaleX,scaleY)*0.9 — no change.
-        // When scaleX > scaleY (wide-short viewport, e.g. VerticalDesignTop thin strip):
-        //   min-scale used scaleY → tiny canvas with huge side margins ("rectangles on each side").
-        //   width-fit uses scaleX → canvas fills width, overflows vertically via scrollbar.
-        double scaleX = ActualWidth / fe.ActualWidth;
-        ZoomLevel = Math.Clamp(scaleX * 0.9, MinZoom, MaxZoom);
+        // Fit to the tightest dimension so the canvas fills as much of the visible area as possible.
+        // A small 3% margin is kept so the canvas edge never touches the viewport border.
+        // Exception: when the viewport is extremely wide-short (e.g. VerticalDesignTop thin strip,
+        // scaleY < scaleX/2), fall back to width-only fit to avoid a tiny canvas with huge margins.
+        double scaleX = ActualWidth  / fe.ActualWidth;
+        double scaleY = ActualHeight / fe.ActualHeight;
+        double scale  = scaleY < scaleX * 0.5 ? scaleX : Math.Min(scaleX, scaleY);
+        ZoomLevel = Math.Clamp(scale * 0.97, MinZoom, MaxZoom);
         CenterContent();
     }
 
@@ -204,11 +230,13 @@ public sealed class ZoomPanCanvas : ContentControl
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// When content fits inside the viewport, forces it to the center (no panning needed).
-    /// When content overflows, clamps pan offsets so the canvas can be scrolled up to
-    /// ScrollExtraMargin px beyond each edge — matching the VS Designer blank-canvas breathing room.
-    /// Force-centering on every SizeChanged (including layout switches) ensures the canvas is never
-    /// left at a stale offset after the viewport is resized.
+    /// Clamps OffsetX/Y so the canvas always stays within the VS-like virtual scrollable area:
+    ///   virtual size = max(content, viewport) + 2 × (10 % of viewport) on each side.
+    /// The canvas is centred inside this virtual space:
+    ///   OffsetX max (scroll at 0) = (virtualW − cw) / 2
+    ///   OffsetX at centre         = (vw − cw) / 2  (canvas centred in viewport)
+    ///   OffsetX min (scroll max)  = xMax − (virtualW − vw)
+    /// This model is consistent with UpdateScrollBars and the scrollbar→canvas handlers.
     /// </summary>
     private void ClampOffsets()
     {
@@ -217,25 +245,22 @@ public sealed class ZoomPanCanvas : ContentControl
 
         double cw = content.ActualWidth  * ZoomLevel;
         double ch = content.ActualHeight * ZoomLevel;
+        double vw = ActualWidth;
+        double vh = ActualHeight;
 
-        // Content fits horizontally → force-center; no user panning is meaningful here.
-        if (cw <= ActualWidth)
-            OffsetX = (ActualWidth - cw) / 2.0;
-        else
-        {
-            // Content overflows → allow panning within [content-left-edge - margin, margin].
-            double xMin = ActualWidth - cw - ScrollExtraMargin;
-            OffsetX = Math.Clamp(OffsetX, Math.Min(xMin, -ScrollExtraMargin), ScrollExtraMargin);
-        }
+        double mH = Math.Max(SystemParameters.PrimaryScreenWidth  * 0.10, 20);
+        double mV = Math.Max(SystemParameters.PrimaryScreenHeight * 0.10, 20);
 
-        // Same logic vertically.
-        if (ch <= ActualHeight)
-            OffsetY = (ActualHeight - ch) / 2.0;
-        else
-        {
-            double yMin = ActualHeight - ch - ScrollExtraMargin;
-            OffsetY = Math.Clamp(OffsetY, Math.Min(yMin, -ScrollExtraMargin), ScrollExtraMargin);
-        }
+        double virtualW = Math.Max(cw, vw) + 2 * mH;
+        double virtualH = Math.Max(ch, vh) + 2 * mV;
+
+        double xMax = (virtualW - cw) / 2.0;
+        double xMin = xMax - (virtualW - vw);
+        OffsetX = Math.Clamp(OffsetX, xMin, xMax);
+
+        double yMax = (virtualH - ch) / 2.0;
+        double yMin = yMax - (virtualH - vh);
+        OffsetY = Math.Clamp(OffsetY, yMin, yMax);
     }
 
     /// <summary>Centers content in the viewport.</summary>
@@ -338,6 +363,44 @@ public sealed class ZoomPanCanvas : ContentControl
         Cursor = null;
     }
 
+    // ── Layout overrides ─────────────────────────────────────────────────────
+    //
+    // Root cause of right/bottom truncation:
+    // ContentControl passes the viewport size as constraint to its ContentPresenter,
+    // which then receives finalSize = viewport during Arrange.  WPF sets NeedsClipBounds
+    // on ContentPresenter (desiredSize 1018 > finalRect 640) and issues a LayoutClip
+    // BEFORE RenderTransform — the canvas is clipped to the viewport regardless of pan.
+    //
+    // Fix: override Measure/Arrange to always give the ContentPresenter (visual child)
+    // infinite space during measure and its full DesiredSize during arrange.
+    // ZoomPanCanvas itself still returns the real viewport size so docking is unaffected.
+    // NOTE: in ContentControl the direct visual child is the ContentPresenter from the
+    //       default template — NOT the Content object (which is a logical child hosted
+    //       inside that ContentPresenter).  We must operate on GetVisualChild(0).
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        if (VisualChildrenCount > 0 && GetVisualChild(0) is UIElement cp)
+            cp.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+        return availableSize;   // ZoomPanCanvas fills its allocated cell
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        if (VisualChildrenCount > 0 && GetVisualChild(0) is UIElement cp)
+        {
+            var natural = cp.DesiredSize;
+            // Arrange ContentPresenter at its natural size so WPF does NOT issue a
+            // LayoutClip on it.  The visual clip is handled by ClipToBounds = true on
+            // ZoomPanCanvas itself, which fires AFTER RenderTransform.
+            cp.Arrange(new Rect(0, 0,
+                Math.Max(natural.Width,  0.1),
+                Math.Max(natural.Height, 0.1)));
+        }
+        return finalSize;
+    }
+
     // ── Hit-testing ───────────────────────────────────────────────────────────
 
     /// <summary>
@@ -359,6 +422,7 @@ public sealed class ZoomPanCanvas : ContentControl
         double z = (double)e.NewValue;
         ctrl._scale.ScaleX = z;
         ctrl._scale.ScaleY = z;
+        ctrl.ClampOffsets();          // keep canvas in virtual bounds after any zoom change
         ctrl.ZoomChanged?.Invoke(ctrl, EventArgs.Empty);
     }
 
