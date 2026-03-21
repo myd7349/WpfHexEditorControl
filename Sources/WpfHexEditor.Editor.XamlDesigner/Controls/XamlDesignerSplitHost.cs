@@ -111,6 +111,9 @@ public sealed class XamlDesignerSplitHost : Grid,
     private bool      _isSyncingScrollBars;
     // Set by ApplySplitLayout(); consumed by _zoomPan.SizeChanged to re-fit at correct size.
     private bool      _pendingFitToContent;
+    // Set by OpenAsync() when a new file is loaded; consumed by the first TriggerPreview()
+    // to fit the canvas once at DispatcherPriority.Background (layout fully settled).
+    private bool      _fitOnFirstRender;
 
     private readonly ColumnDefinition    _codeColumn     = new() { Width  = new GridLength(1, GridUnitType.Star) };
     private readonly ColumnDefinition    _splitterColumn = new() { Width  = new GridLength(4) };
@@ -785,6 +788,8 @@ public sealed class XamlDesignerSplitHost : Grid,
             doc.TextChanged += OnDocumentTextChanged;
 
         // Trigger initial render after the file is loaded.
+        // Signal TriggerPreview to fit the canvas once after the first render.
+        _fitOnFirstRender = true;
         if (_autoPreviewEnabled)
             TriggerPreview();
     }
@@ -1008,6 +1013,18 @@ public sealed class XamlDesignerSplitHost : Grid,
             : rawText;
 
         _designCanvas.XamlSource = previewText;
+
+        // Fit the canvas once after the first render of a new document.
+        // DispatcherPriority.Background fires after all layout passes, so
+        // ZoomPanCanvas.ActualWidth/Height are fully settled → correct scale.
+        // Subsequent live-preview calls (keystrokes) do NOT re-fit.
+        if (_fitOnFirstRender)
+        {
+            _fitOnFirstRender = false;
+            Dispatcher.InvokeAsync(
+                () => { if (_zoomPan.ActualWidth > 0) _zoomPan.FitToContent(); },
+                System.Windows.Threading.DispatcherPriority.Background);
+        }
 
         // Attach animation preview service to the newly rendered root (Phase 10).
         Dispatcher.InvokeAsync(() =>

@@ -111,13 +111,10 @@ public sealed class ZoomPanCanvas : ContentControl
         // The LayoutClip truncation is fixed by MeasureOverride/ArrangeOverride, so
         // forced re-centering is no longer needed and would cause the canvas to jump.
         SizeChanged += (_, _) => ClampOffsets();
-
-        // Auto-fit content when the control first becomes visible.
-        Loaded += (_, _) =>
-        {
-            if (ActualWidth > 0 && Content is FrameworkElement)
-                Dispatcher.InvokeAsync(FitToContent, DispatcherPriority.Loaded);
-        };
+        // Note: no auto-fit in Loaded — FitToContent is called explicitly by
+        // XamlDesignerSplitHost after each new-file render so that layout is
+        // fully settled (DispatcherPriority.Background) before computing the scale.
+        // This prevents the zoom from resetting when the user switches tabs.
     }
 
     // ── Properties ────────────────────────────────────────────────────────────
@@ -211,7 +208,6 @@ public sealed class ZoomPanCanvas : ContentControl
         {
             oldFe.LayoutTransform = Transform.Identity;
             oldFe.RenderTransform = Transform.Identity;
-            oldFe.SizeChanged -= OnContentSizeChanged;
         }
 
         // Apply combined RenderTransform to new content.
@@ -225,16 +221,13 @@ public sealed class ZoomPanCanvas : ContentControl
             // Left+Top alignment: content.ActualWidth = natural design width (not viewport).
             newEl.HorizontalAlignment = HorizontalAlignment.Left;
             newEl.VerticalAlignment   = VerticalAlignment.Top;
-            newEl.SizeChanged += OnContentSizeChanged;
         }
     }
 
-    /// <summary>Auto-fits content once it has a measured natural size.</summary>
-    private void OnContentSizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        if (ActualWidth > 0 && e.NewSize.Width > 10)
-            Dispatcher.InvokeAsync(FitToContent, DispatcherPriority.Render);
-    }
+    // OnContentSizeChanged intentionally does NOT auto-call FitToContent.
+    // Auto-fit is driven by XamlDesignerSplitHost._fitOnFirstRender so that:
+    //  - the fit only happens once per new document (not on every live preview update)
+    //  - DispatcherPriority.Background guarantees ActualWidth is fully settled
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
