@@ -2167,8 +2167,7 @@ public sealed class XamlDesignerSplitHost : Grid,
     }
 
     /// <summary>User dragged a boundary grip → resize column or row.</summary>
-    private void OnGridGuideResized(object? sender,
-        WpfHexEditor.Editor.XamlDesigner.Models.GridGuideResizedEventArgs e)
+    private void OnGridGuideResized(object? sender, GridGuideResizedEventArgs e)
     {
         var uid  = _designCanvas.SelectedElementUid;
         if (uid < 0) return;
@@ -2181,8 +2180,7 @@ public sealed class XamlDesignerSplitHost : Grid,
     }
 
     /// <summary>User clicked "+" to add a new column or row.</summary>
-    private void OnGridGuideAdded(object? sender,
-        WpfHexEditor.Editor.XamlDesigner.Models.GridGuideAddedEventArgs e)
+    private void OnGridGuideAdded(object? sender, GridGuideAddedEventArgs e)
     {
         var uid  = _designCanvas.SelectedElementUid;
         if (uid < 0) return;
@@ -2196,8 +2194,7 @@ public sealed class XamlDesignerSplitHost : Grid,
     }
 
     /// <summary>User clicked "×" on a handle chip → remove column or row.</summary>
-    private void OnGridGuideRemoved(object? sender,
-        WpfHexEditor.Editor.XamlDesigner.Models.GridGuideRemovedEventArgs e)
+    private void OnGridGuideRemoved(object? sender, GridGuideRemovedEventArgs e)
     {
         var uid  = _designCanvas.SelectedElementUid;
         if (uid < 0) return;
@@ -2210,8 +2207,7 @@ public sealed class XamlDesignerSplitHost : Grid,
     }
 
     /// <summary>User picked a new size type from the chip dropdown → change type.</summary>
-    private void OnGridGuideTypeChanged(object? sender,
-        WpfHexEditor.Editor.XamlDesigner.Models.GridGuideTypeChangedEventArgs e)
+    private void OnGridGuideTypeChanged(object? sender, GridGuideTypeChangedEventArgs e)
     {
         var uid  = _designCanvas.SelectedElementUid;
         if (uid < 0) return;
