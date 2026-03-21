@@ -505,6 +505,16 @@ public sealed class DesignCanvas : Border
                         _mapper.Build(uidMap, uiResult);
                         if (prevUid >= 0)
                             SelectElementByUid(prevUid, suppressEvent: true);
+
+                        // Restore insert guide at current mouse position after re-render.
+                        // Mouse.GetPosition is safe on the UI thread; IsMouseOver guards
+                        // against refreshing when the mouse is outside the canvas.
+                        if (IsMouseOver)
+                        {
+                            var mp = Mouse.GetPosition(_presenter);
+                            UpdateGridInsertAdorner(HitTestElement(mp), mp);
+                        }
+
                         DesignRendered?.Invoke(this, DesignRoot);
                     }
                     catch (Exception ex)
