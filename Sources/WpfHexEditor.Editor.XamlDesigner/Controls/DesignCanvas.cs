@@ -776,21 +776,13 @@ public sealed class DesignCanvas : Border
     /// </summary>
     private void UpdateGridInsertAdorner(UIElement? hitElement, Point mouseInPresenter)
     {
-        // Primary: element-based discovery (fast path).
-        var grid = FindNearestGrid(hitElement);
-
-        // Fallback: bounds-based discovery for Grids with null/transparent background
-        // where WPF hit-testing returns nothing at the empty edge area.
-        if (grid is null)
-            grid = FindGridByBounds(mouseInPresenter);
-
+        var grid = FindNearestGrid(hitElement) ?? FindGridByBounds(mouseInPresenter);
         if (grid is null)
         {
             HideGridInsertAdorner();
             return;
         }
 
-        // Place adorner when hovering over a different Grid.
         if (!ReferenceEquals(_insertAdornerGrid, grid))
         {
             HideGridInsertAdorner();
@@ -804,14 +796,26 @@ public sealed class DesignCanvas : Border
         var localPos = PresenterToGridLocal(mouseInPresenter, grid);
         var info     = _gridService.GetGridInfo(grid);
 
-        // Preserve user-toggled mode; auto-flip only when the grid lacks that definition type.
+        // ── Auto-determine mode from edge band proximity ──────────────────────
+        // Left / right 18px band  → Row    mode (horizontal guide follows mouse Y).
+        // Top  / bottom 18px band → Column mode (vertical  guide follows mouse X).
+        // Corner or interior      → keep current mode.
+        const double EdgeBand = 18.0;
+        bool nearLR = localPos.X <= EdgeBand || localPos.X >= grid.ActualWidth  - EdgeBand;
+        bool nearTB = localPos.Y <= EdgeBand || localPos.Y >= grid.ActualHeight - EdgeBand;
+
         var mode = _insertAdorner!.Mode;
+        if      (nearLR && !nearTB) mode = GridInsertAdorner.InsertMode.Row;
+        else if (nearTB && !nearLR) mode = GridInsertAdorner.InsertMode.Column;
+        // corner / interior → keep mode
+
+        // Safety: flip when the grid only has one definition type.
         if (mode == GridInsertAdorner.InsertMode.Row    && info.Rows.Count    == 0 && info.Columns.Count > 0)
             mode = GridInsertAdorner.InsertMode.Column;
         if (mode == GridInsertAdorner.InsertMode.Column && info.Columns.Count == 0 && info.Rows.Count    > 0)
             mode = GridInsertAdorner.InsertMode.Row;
 
-        // Always compute guide position from mouse coordinates.
+        // Guide always follows the mouse (no interior freeze).
         double linePos;
         int    insertAfter;
         if (mode == GridInsertAdorner.InsertMode.Row)
@@ -825,18 +829,7 @@ public sealed class DesignCanvas : Border
             insertAfter = ComputeInsertAfter(info.Columns, localPos.X);
         }
 
-        // Position tracking rule:
-        //  • Not yet visible   → show at current position (first contact anywhere in grid).
-        //  • In edge band      → update position (guide follows mouse on the edge).
-        //  • In interior       → freeze at last position (guide stays, doesn't follow).
-        const double EdgeBand = 18.0;
-        bool inEdgeBand = mode == GridInsertAdorner.InsertMode.Row
-            ? localPos.X <= EdgeBand || localPos.X >= grid.ActualWidth  - EdgeBand
-            : localPos.Y <= EdgeBand || localPos.Y >= grid.ActualHeight - EdgeBand;
-
-        if (!_insertAdorner.IsVisible || inEdgeBand)
-            _insertAdorner.Update(linePos, mode, insertAfter);
-        // else: interior + already visible → keep frozen (no Update call)
+        _insertAdorner.Update(linePos, mode, insertAfter);
     }
 
     private void HideGridInsertAdorner()
@@ -862,42 +855,29 @@ public sealed class DesignCanvas : Border
 
         var localPos = PresenterToGridLocal(e.GetPosition(_presenter), _insertAdornerGrid);
 
-        // Snapshot fields before any method call that may null them (SelectElement
-        // → ClearAllSelectionAdorners → HideGridInsertAdorner sets _insertAdorner = null).
+        // Both the toggle button and the guide line trigger insertion.
+        // Capture values BEFORE SelectElement, which calls ClearAllSelectionAdorners
+        // → HideGridInsertAdorner → nulls _insertAdorner.
+        bool onToggle = _insertAdorner.ToggleBounds.Contains(localPos);
+        bool onLine   = _insertAdorner.LineBounds.Contains(localPos);
+        if (!onToggle && !onLine) return false;
+
         var adorner     = _insertAdorner;
         var grid        = _insertAdornerGrid;
+        bool isColumn    = adorner.Mode        == GridInsertAdorner.InsertMode.Column;
+        int  insertAfter = adorner.InsertAfter;
 
-        // Toggle button — switch mode and redraw
-        if (adorner.ToggleBounds.Contains(localPos))
+        if (!ReferenceEquals(SelectedElement, grid))
+            SelectElement(grid); // may null _insertAdorner
+
+        GridGuideAdded?.Invoke(this, new GridGuideAddedEventArgs
         {
-            adorner.ToggleMode();
-            var mp = e.GetPosition(_presenter);
-            UpdateGridInsertAdorner(HitTestElement(mp), mp);
-            e.Handled = true;
-            return true;
-        }
-
-        // Guide line — insert a new definition at the cursor position
-        if (adorner.LineBounds.Contains(localPos))
-        {
-            // Capture values BEFORE SelectElement, which may null _insertAdorner.
-            bool isColumn    = adorner.Mode        == GridInsertAdorner.InsertMode.Column;
-            int  insertAfter = adorner.InsertAfter;
-
-            if (!ReferenceEquals(SelectedElement, grid))
-                SelectElement(grid); // _insertAdorner may be nulled here
-
-            GridGuideAdded?.Invoke(this, new GridGuideAddedEventArgs
-            {
-                IsColumn    = isColumn,
-                InsertAfter = insertAfter,
-                Definition  = "*"
-            });
-            e.Handled = true;
-            return true;
-        }
-
-        return false;
+            IsColumn    = isColumn,
+            InsertAfter = insertAfter,
+            Definition  = "*"
+        });
+        e.Handled = true;
+        return true;
     }
 
     private System.Windows.Controls.Grid? FindNearestGrid(UIElement? element)

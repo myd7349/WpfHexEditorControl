@@ -155,9 +155,39 @@ public sealed class GridDefinitionService
             else
                 defs[insertAfterIndex].AddAfterSelf(newDef);
 
+            // Shift Grid.Row (or Grid.Column) on children that come after the insertion point
+            // so the existing layout is preserved when a new definition is prepended or inserted.
+            ShiftChildrenAttribute(grid, isColumn, insertAfterIndex);
+
             return Serialize(doc);
         }
         catch { return xaml; }
+    }
+
+    /// <summary>
+    /// Increments the <c>Grid.Row</c> (or <c>Grid.Column</c>) attached-property attribute
+    /// on every direct child whose current value is greater than
+    /// <paramref name="insertAfterIndex"/>.
+    /// Children that have no explicit attribute are treated as index 0 — they are
+    /// shifted too when a definition is prepended (<paramref name="insertAfterIndex"/> == -1).
+    /// </summary>
+    private static void ShiftChildrenAttribute(XElement gridEl, bool isColumn, int insertAfterIndex)
+    {
+        var attachedProp = isColumn ? "Grid.Column" : "Grid.Row";
+
+        foreach (var child in gridEl.Elements())
+        {
+            // Skip XAML property elements (e.g. <Grid.RowDefinitions>).
+            if (child.Name.LocalName.Contains('.')) continue;
+
+            var attr    = child.Attribute(attachedProp);
+            int current = attr is not null && int.TryParse(attr.Value, out int v) ? v : 0;
+
+            // Increment when current index is strictly after the insertion point.
+            // Covers the prepend case (insertAfterIndex == -1) for all children.
+            if (current > insertAfterIndex)
+                child.SetAttributeValue(attachedProp, current + 1);
+        }
     }
 
     /// <summary>
