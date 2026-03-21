@@ -92,6 +92,11 @@ public sealed class DesignCanvas : Border
     private UIElement?             _gridAdornedElement;
     private readonly GridDefinitionService _gridService = new();
 
+    // ── Grid insert adorner ────────────────────────────────────────────────────
+
+    private GridInsertAdorner?                    _insertAdorner;
+    private System.Windows.Controls.Grid?         _insertAdornerGrid;
+
     /// <summary>
     /// When true, selection uses ResizeAdorner instead of SelectionAdorner
     /// and wires DesignInteractionService for drag-move/resize.
@@ -647,6 +652,9 @@ public sealed class DesignCanvas : Border
         // Remove the grid guide adorner whenever selection adorners are rebuilt
         // (handles deselect, multi-select, and XAML re-render restores).
         RemoveGridGuideAdorner();
+
+        // Remove the insert guide (stale after selection / re-render; reappears on next mouse move).
+        HideGridInsertAdorner();
     }
 
     /// <summary>Rebuilds adorners from the current <see cref="_selectedElements"/> list without changing the list.</summary>
@@ -759,7 +767,221 @@ public sealed class DesignCanvas : Border
         _gridAdornedElement = null;
     }
 
-    // ── Mouse selection ───────────────────────────────────────────────────────
+    // ── Grid insert adorner management ─────────────────────────────────
+
+    /// <summary>
+    /// Creates or updates the <see cref="GridInsertAdorner"/> over the nearest Grid
+    /// ancestor of <paramref name="hitElement"/>. Hides the adorner when no Grid
+    /// is found under the cursor.
+    /// </summary>
+    private void UpdateGridInsertAdorner(UIElement? hitElement, Point mouseInPresenter)
+    {
+        // Primary: element-based discovery (fast path).
+        var grid = FindNearestGrid(hitElement);
+
+        // Fallback: bounds-based discovery for Grids with null/transparent background
+        // where WPF hit-testing returns nothing at the empty edge area.
+        if (grid is null)
+            grid = FindGridByBounds(mouseInPresenter);
+
+        if (grid is null)
+        {
+            HideGridInsertAdorner();
+            return;
+        }
+
+        // Place adorner when hovering over a different Grid.
+        if (!ReferenceEquals(_insertAdornerGrid, grid))
+        {
+            HideGridInsertAdorner();
+            var layer = AdornerLayer.GetAdornerLayer(grid);
+            if (layer is null) return;
+            _insertAdorner     = new GridInsertAdorner(grid);
+            _insertAdornerGrid = grid;
+            layer.Add(_insertAdorner);
+        }
+
+        var localPos = PresenterToGridLocal(mouseInPresenter, grid);
+        var info     = _gridService.GetGridInfo(grid);
+
+        // Preserve user-toggled mode; auto-flip only when the grid lacks that definition type.
+        var mode = _insertAdorner!.Mode;
+        if (mode == GridInsertAdorner.InsertMode.Row    && info.Rows.Count    == 0 && info.Columns.Count > 0)
+            mode = GridInsertAdorner.InsertMode.Column;
+        if (mode == GridInsertAdorner.InsertMode.Column && info.Columns.Count == 0 && info.Rows.Count    > 0)
+            mode = GridInsertAdorner.InsertMode.Row;
+
+        // Always compute guide position from mouse coordinates.
+        double linePos;
+        int    insertAfter;
+        if (mode == GridInsertAdorner.InsertMode.Row)
+        {
+            linePos     = Math.Clamp(localPos.Y, 0, grid.ActualHeight);
+            insertAfter = ComputeInsertAfter(info.Rows, localPos.Y);
+        }
+        else
+        {
+            linePos     = Math.Clamp(localPos.X, 0, grid.ActualWidth);
+            insertAfter = ComputeInsertAfter(info.Columns, localPos.X);
+        }
+
+        // Position tracking rule:
+        //  • Not yet visible   → show at current position (first contact anywhere in grid).
+        //  • In edge band      → update position (guide follows mouse on the edge).
+        //  • In interior       → freeze at last position (guide stays, doesn't follow).
+        const double EdgeBand = 18.0;
+        bool inEdgeBand = mode == GridInsertAdorner.InsertMode.Row
+            ? localPos.X <= EdgeBand || localPos.X >= grid.ActualWidth  - EdgeBand
+            : localPos.Y <= EdgeBand || localPos.Y >= grid.ActualHeight - EdgeBand;
+
+        if (!_insertAdorner.IsVisible || inEdgeBand)
+            _insertAdorner.Update(linePos, mode, insertAfter);
+        // else: interior + already visible → keep frozen (no Update call)
+    }
+
+    private void HideGridInsertAdorner()
+    {
+        if (_insertAdorner is null) return;
+        if (_insertAdornerGrid is not null)
+        {
+            var layer = AdornerLayer.GetAdornerLayer(_insertAdornerGrid);
+            layer?.Remove(_insertAdorner);
+        }
+        _insertAdorner     = null;
+        _insertAdornerGrid = null;
+    }
+
+    /// <summary>
+    /// Handles a click that may have landed on the insert guide line or its toggle button.
+    /// Returns <see langword="true"/> when the click was consumed (caller should return).
+    /// </summary>
+    private bool HandleGridInsertClick(MouseButtonEventArgs e)
+    {
+        if (_insertAdorner is null || _insertAdornerGrid is null || !_insertAdorner.IsVisible)
+            return false;
+
+        var localPos = PresenterToGridLocal(e.GetPosition(_presenter), _insertAdornerGrid);
+
+        // Snapshot fields before any method call that may null them (SelectElement
+        // → ClearAllSelectionAdorners → HideGridInsertAdorner sets _insertAdorner = null).
+        var adorner     = _insertAdorner;
+        var grid        = _insertAdornerGrid;
+
+        // Toggle button — switch mode and redraw
+        if (adorner.ToggleBounds.Contains(localPos))
+        {
+            adorner.ToggleMode();
+            var mp = e.GetPosition(_presenter);
+            UpdateGridInsertAdorner(HitTestElement(mp), mp);
+            e.Handled = true;
+            return true;
+        }
+
+        // Guide line — insert a new definition at the cursor position
+        if (adorner.LineBounds.Contains(localPos))
+        {
+            // Capture values BEFORE SelectElement, which may null _insertAdorner.
+            bool isColumn    = adorner.Mode        == GridInsertAdorner.InsertMode.Column;
+            int  insertAfter = adorner.InsertAfter;
+
+            if (!ReferenceEquals(SelectedElement, grid))
+                SelectElement(grid); // _insertAdorner may be nulled here
+
+            GridGuideAdded?.Invoke(this, new GridGuideAddedEventArgs
+            {
+                IsColumn    = isColumn,
+                InsertAfter = insertAfter,
+                Definition  = "*"
+            });
+            e.Handled = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    private System.Windows.Controls.Grid? FindNearestGrid(UIElement? element)
+    {
+        var node = element as DependencyObject;
+        while (node is not null)
+        {
+            if (node is System.Windows.Controls.Grid g) return g;
+            if (ReferenceEquals(node, _presenter)) break; // don't escape the design surface
+            if (node is not Visual and not System.Windows.Media.Media3D.Visual3D) break;
+            node = VisualTreeHelper.GetParent(node);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Walks the visual tree of <see cref="DesignRoot"/> and returns the innermost
+    /// <see cref="System.Windows.Controls.Grid"/> whose rendered bounds (in
+    /// <see cref="_presenter"/> coordinates) contain <paramref name="mouseInPresenter"/>.
+    /// Used as a fallback when WPF hit-testing misses Grids with null/transparent
+    /// Background (empty cells, edge bands with no child elements).
+    /// </summary>
+    private System.Windows.Controls.Grid? FindGridByBounds(Point mouseInPresenter)
+    {
+        if (DesignRoot is not UIElement root) return null;
+        return FindGridByBoundsCore(root, mouseInPresenter);
+    }
+
+    private System.Windows.Controls.Grid? FindGridByBoundsCore(UIElement el, Point mouseInPresenter)
+    {
+        // Depth-first, reverse z-order so the innermost / topmost Grid wins.
+        int n = VisualTreeHelper.GetChildrenCount(el);
+        for (int i = n - 1; i >= 0; i--)
+        {
+            if (VisualTreeHelper.GetChild(el, i) is UIElement child)
+            {
+                var found = FindGridByBoundsCore(child, mouseInPresenter);
+                if (found is not null) return found;
+            }
+        }
+
+        if (el is not System.Windows.Controls.Grid g) return null;
+
+        try
+        {
+            var origin = g.TranslatePoint(new Point(0, 0), _presenter);
+            var bounds = new Rect(origin.X, origin.Y, g.ActualWidth, g.ActualHeight);
+            return bounds.Contains(mouseInPresenter) ? g : null;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Converts a point in <see cref="_presenter"/> space to Grid-local space.</summary>
+    private Point PresenterToGridLocal(Point presenterPt, UIElement grid)
+    {
+        try
+        {
+            var origin = grid.TranslatePoint(new Point(0, 0), _presenter);
+            return new Point(presenterPt.X - origin.X, presenterPt.Y - origin.Y);
+        }
+        catch
+        {
+            return presenterPt; // element detached from tree (re-render in progress)
+        }
+    }
+
+    /// <summary>
+    /// Returns the 0-based index after which a new definition should be inserted
+    /// so that it appears at <paramref name="pos"/> pixels from the grid's origin.
+    /// Returns -1 when <paramref name="pos"/> is before the midpoint of the first definition.
+    /// </summary>
+    private static int ComputeInsertAfter(
+        IReadOnlyList<GridDefinitionModel> defs, double pos)
+    {
+        if (defs.Count == 0) return -1;
+        for (int i = 0; i < defs.Count; i++)
+        {
+            double mid = defs[i].OffsetPixels + defs[i].ActualPixels / 2.0;
+            if (pos <= mid) return i - 1;  // before definition i → after i-1 (-1 = prepend)
+        }
+        return defs.Count - 1; // after the last definition
+    }
+
+    // ── Mouse selection ────────────────────────────────────────────
 
     /// <summary>
     /// Width of the outer edge band (in presenter-space pixels) within which the
@@ -798,6 +1020,10 @@ public sealed class DesignCanvas : Border
     private void OnCanvasMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (DesignRoot is null) return;
+
+        // Grid insert guide takes first priority: the adorner is non-hit-testable so its
+        // bounds must be checked explicitly before any other click handling.
+        if (HandleGridInsertClick(e)) return;
 
         // Don't reselect when clicking on any interactive adorner element:
         // handles the Thumb body check, Border-inside-Thumb (template children),
@@ -961,19 +1187,21 @@ public sealed class DesignCanvas : Border
 
         if (DesignRoot is null) return;
 
-        var hovered = HitTestElement(e.GetPosition(_presenter));
+        var mousePos   = e.GetPosition(_presenter);
+        var hitElement = HitTestElement(mousePos);
 
         // Don't overlay hover on the already-selected element.
-        if (ReferenceEquals(hovered, SelectedElement))
-            hovered = null;
+        UpdateHoverAdorner(ReferenceEquals(hitElement, SelectedElement) ? null : hitElement);
 
-        UpdateHoverAdorner(hovered);
+        // Grid insert guide: show a snap-to-insert line when hovering over any Grid.
+        UpdateGridInsertAdorner(hitElement, mousePos);
     }
 
     private void OnCanvasMouseLeave(object sender, MouseEventArgs e)
     {
         if (_isRubberBanding) return;  // keep hover clear but don't abort rubber-band
         UpdateHoverAdorner(null);
+        HideGridInsertAdorner();
     }
 
     private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
