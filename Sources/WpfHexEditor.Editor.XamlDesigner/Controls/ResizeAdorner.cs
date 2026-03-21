@@ -99,6 +99,27 @@ public sealed class ResizeAdorner : Adorner
     protected override int    VisualChildrenCount        => _visuals.Count;
     protected override Visual GetVisualChild(int index)  => _visuals[index];
 
+    /// <summary>
+    /// Extends the hit-testable area beyond AdornedElement.RenderSize to cover:
+    /// • corner/edge grip handles that are arranged up to HandleSize/2 px outside the element,
+    /// • the rotation thumb that sits RotHandleOffset+RotHandleSize px above the element.
+    /// Without this override the default Adorner hit-test clips to (0,0,w,h) and the
+    /// handles outside that rect are invisible to WPF's pointer event routing.
+    /// </summary>
+    protected override HitTestResult HitTestCore(PointHitTestParameters p)
+    {
+        const double extra    = HandleSize / 2.0;
+        double       rotExtra = RotHandleOffset + RotHandleSize;
+        var expanded = new Rect(
+            -extra,
+            -rotExtra,
+            AdornedElement.RenderSize.Width  + extra * 2,
+            AdornedElement.RenderSize.Height + extra * 2 + rotExtra);
+        return expanded.Contains(p.HitPoint)
+            ? new PointHitTestResult(this, p.HitPoint)
+            : base.HitTestCore(p);
+    }
+
     protected override Size ArrangeOverride(Size finalSize)
     {
         var w = AdornedElement.RenderSize.Width;

@@ -41,6 +41,9 @@ public sealed class GridGuideAdorner : Adorner
     private Point       _dragOrigin;
     private double      _dragDelta;
 
+    // Hover state: bounds of the hit/drag region currently under the pointer.
+    private Rect        _hoveredBounds = Rect.Empty;
+
     public event EventHandler<GridGuideResizedEventArgs>?     GuideResized;
     public event EventHandler<GridGuideAddedEventArgs>?       GuideAdded;
     public event EventHandler<GridGuideRemovedEventArgs>?     GuideRemoved;
@@ -58,6 +61,7 @@ public sealed class GridGuideAdorner : Adorner
     public void Refresh(IReadOnlyList<GridDefinitionModel> cols, IReadOnlyList<GridDefinitionModel> rows)
     {
         _cols = cols; _rows = rows; _dragging = false; _dragDelta = 0;
+        _hoveredBounds = Rect.Empty;
         InvalidateVisual();
     }
 
@@ -135,6 +139,13 @@ public sealed class GridGuideAdorner : Adorner
                 dc.DrawLine(dp, new Point(0, y), new Point(w, y));
                 DrawSizeLabel(dc, ComputeNewValue(_rows[_activeDrag.Index], _dragDelta), new Point(w / 2 - 20, y + 4));
             }
+        }
+
+        // Hover highlight overlay — drawn last so it appears above everything.
+        if (!_dragging && _hoveredBounds != Rect.Empty)
+        {
+            var hl = new SolidColorBrush(Color.FromArgb(55, 255, 255, 255)); hl.Freeze();
+            dc.DrawRoundedRectangle(hl, null, _hoveredBounds, 2, 2);
         }
     }
 
@@ -230,8 +241,21 @@ public sealed class GridGuideAdorner : Adorner
         }
         else
         {
-            var hit = _drags.FirstOrDefault(d => d.Bounds.Contains(pos));
-            Cursor = hit is not null ? (hit.IsColumn ? Cursors.SizeWE : Cursors.SizeNS) : Cursors.Arrow;
+            var hitRegion  = _hits.FirstOrDefault(h => h.Bounds.Contains(pos));
+            var dragRegion = _drags.FirstOrDefault(d => d.Bounds.Contains(pos));
+
+            // Update cursor: resize cursor on drag grips, hand on clickable chips/buttons.
+            Cursor = dragRegion is not null ? (dragRegion.IsColumn ? Cursors.SizeWE : Cursors.SizeNS)
+                   : hitRegion  is not null ? Cursors.Hand
+                   : Cursors.Arrow;
+
+            // Update hover highlight, invalidating only when the hovered region changes.
+            var newBounds = hitRegion?.Bounds ?? dragRegion?.Bounds ?? Rect.Empty;
+            if (newBounds != _hoveredBounds)
+            {
+                _hoveredBounds = newBounds;
+                InvalidateVisual();
+            }
         }
     }
 
@@ -244,7 +268,16 @@ public sealed class GridGuideAdorner : Adorner
         InvalidateVisual(); e.Handled = true;
     }
 
-    protected override void OnMouseLeave(MouseEventArgs e) { if (!_dragging) Cursor = Cursors.Arrow; }
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        if (_dragging) return;
+        Cursor = Cursors.Arrow;
+        if (_hoveredBounds != Rect.Empty)
+        {
+            _hoveredBounds = Rect.Empty;
+            InvalidateVisual();
+        }
+    }
 
     // -- Actions ---------------------------------------------------------------
 

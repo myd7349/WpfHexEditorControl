@@ -599,10 +599,14 @@ public sealed class XamlDesignerSplitHost : Grid,
         // -- Deselect when clicking outside the design canvas (Phase E3) ----
         // A click anywhere in the ZoomPanCanvas viewport that does NOT land inside
         // _designCanvas should clear the active selection.
+        // Exception: adorners (GridGuideAdorner, ResizeAdorner, Thumb children…) live in
+        // the window-level AdornerLayer — not inside _designCanvas visually — so
+        // IsDescendantOf returns false for them. Use IsAdornerOnCanvas to detect these.
         _zoomPan.PreviewMouseLeftButtonDown += (_, e) =>
         {
             if (e.OriginalSource is DependencyObject src
-                && !IsDescendantOf(src, _designCanvas))
+                && !IsDescendantOf(src, _designCanvas)
+                && !IsAdornerOnCanvas(src, _designCanvas))
             {
                 _designCanvas.SelectElement(null);
             }
@@ -1329,6 +1333,33 @@ public sealed class XamlDesignerSplitHost : Grid,
             current = current is System.Windows.Media.Visual or System.Windows.Media.Media3D.Visual3D
                 ? System.Windows.Media.VisualTreeHelper.GetParent(current)
                 : System.Windows.LogicalTreeHelper.GetParent(current);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true when <paramref name="src"/> is an <see cref="System.Windows.Documents.Adorner"/>
+    /// (or a visual child of one) whose <c>AdornedElement</c> is inside <paramref name="canvas"/>.
+    /// Adorners live in the window-level AdornerLayer, so they are NOT visual descendants of
+    /// the DesignCanvas — this helper bridges that gap so clicks on interactive adorners
+    /// (GridGuideAdorner chips, ResizeAdorner grip Thumbs…) are treated as "inside the canvas".
+    /// </summary>
+    private static bool IsAdornerOnCanvas(
+        DependencyObject                           src,
+        System.Windows.Controls.Border             canvas)
+    {
+        var node = src;
+        while (node is not null)
+        {
+            if (node is System.Windows.Documents.Adorner adorner)
+                return adorner.AdornedElement is not null
+                    && IsDescendantOf(adorner.AdornedElement, canvas);
+
+            if (node is not System.Windows.Media.Visual
+                    and not System.Windows.Media.Media3D.Visual3D)
+                return false;
+
+            node = System.Windows.Media.VisualTreeHelper.GetParent(node);
         }
         return false;
     }

@@ -799,8 +799,10 @@ public sealed class DesignCanvas : Border
     {
         if (DesignRoot is null) return;
 
-        // Don't reselect when clicking on resize/move handles.
-        if (e.OriginalSource is System.Windows.Controls.Primitives.Thumb) return;
+        // Don't reselect when clicking on any interactive adorner element:
+        // handles the Thumb body check, Border-inside-Thumb (template children),
+        // GridGuideAdorner chips/buttons, and ResizeAdorner drag-move body.
+        if (IsSourceFromAdorner(e.OriginalSource as DependencyObject)) return;
 
         var clickPoint = e.GetPosition(_presenter);
         bool isAlt  = (Keyboard.Modifiers & ModifierKeys.Alt)     != 0;
@@ -906,6 +908,27 @@ public sealed class DesignCanvas : Border
         }
 
         e.Handled = false;
+    }
+
+    /// <summary>
+    /// Returns true when <paramref name="obj"/> is an <see cref="Adorner"/> or a visual
+    /// descendant of one (e.g. a Border inside a Thumb template inside a ResizeAdorner,
+    /// or the GridGuideAdorner itself). Prevents the canvas selection logic from firing
+    /// when the user clicks on interactive adorner elements.
+    /// </summary>
+    private static bool IsSourceFromAdorner(DependencyObject? obj)
+    {
+        var node = obj;
+        while (node is not null)
+        {
+            if (node is Adorner) return true;
+            // VisualTreeHelper.GetParent throws InvalidOperationException on DependencyObjects
+            // that are neither Visual nor Visual3D (e.g. FlowDocument, TextElement).
+            // Stop walking as soon as we leave the visual tree — can't be an Adorner ancestor.
+            if (node is not Visual and not System.Windows.Media.Media3D.Visual3D) return false;
+            node = VisualTreeHelper.GetParent(node);
+        }
+        return false;
     }
 
     /// <summary>

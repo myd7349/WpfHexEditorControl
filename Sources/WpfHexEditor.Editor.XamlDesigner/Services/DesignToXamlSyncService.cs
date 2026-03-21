@@ -114,7 +114,14 @@ public sealed class DesignToXamlSyncService
                 if (!isPropertyElement)
                 {
                     map[counter] = original_el;
-                    render_el.SetAttributeValue("Tag", $"xd_{counter}");
+
+                    // Only inject Tag on FrameworkElement / FrameworkContentElement types.
+                    // Freezable types (transforms, brushes, geometries, animations) and
+                    // style-related types (Style, Setter, Trigger…) do NOT have a Tag property;
+                    // injecting Tag on them causes XamlParseException at the next render.
+                    if (ElementSupportsTagAttribute(render_el.Name.LocalName))
+                        render_el.SetAttributeValue("Tag", $"xd_{counter}");
+
                     counter++;
                 }
 
@@ -339,6 +346,58 @@ public sealed class DesignToXamlSyncService
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns <see langword="true"/> when a WPF element with local name
+    /// <paramref name="localName"/> supports the <c>Tag</c> property
+    /// (i.e. it derives from <c>FrameworkElement</c> or <c>FrameworkContentElement</c>).
+    ///
+    /// Freezable types (transforms, brushes, geometries, animations…) and
+    /// style/template infrastructure types (Style, Setter, Trigger…) do NOT
+    /// have a <c>Tag</c> property — injecting one causes a
+    /// <see cref="System.Windows.Markup.XamlParseException"/> at the next render.
+    /// </summary>
+    private static bool ElementSupportsTagAttribute(string localName)
+    {
+        // Transforms — all WPF transform types end with "Transform" or are "TransformGroup"
+        if (localName.EndsWith("Transform", StringComparison.Ordinal)) return false;
+        if (localName == "TransformGroup")                              return false;
+
+        // Brushes — SolidColorBrush, LinearGradientBrush, RadialGradientBrush, …
+        if (localName.EndsWith("Brush", StringComparison.Ordinal))     return false;
+
+        // Animations & key-frames — DoubleAnimation, ColorAnimation, …KeyFrame, …Timeline
+        if (localName.EndsWith("Animation", StringComparison.Ordinal)) return false;
+        if (localName.EndsWith("KeyFrame",  StringComparison.Ordinal)) return false;
+        if (localName.EndsWith("Timeline",  StringComparison.Ordinal)) return false;
+        if (localName == "Storyboard")                                  return false;
+
+        // Geometry & path primitives
+        if (localName.EndsWith("Geometry", StringComparison.Ordinal))  return false;
+        if (localName.EndsWith("Segment",  StringComparison.Ordinal))  return false;
+        if (localName == "PathFigure")                                  return false;
+
+        // Drawing objects (Freezable)
+        if (localName.EndsWith("Drawing", StringComparison.Ordinal))   return false;
+
+        // Visual effects (Freezable)
+        if (localName.EndsWith("Effect", StringComparison.Ordinal))    return false;
+
+        // Gradient stop (child of gradient brush)
+        if (localName == "GradientStop")                                return false;
+
+        // Style infrastructure — Style, Setter, *Trigger, *Template, Condition
+        if (localName == "Style")                                       return false;
+        if (localName == "Setter")                                      return false;
+        if (localName.EndsWith("Trigger",   StringComparison.Ordinal)) return false;
+        if (localName.EndsWith("Template",  StringComparison.Ordinal)) return false;
+        if (localName.EndsWith("Condition", StringComparison.Ordinal)) return false;
+
+        // Resources
+        if (localName == "ResourceDictionary")                          return false;
+
+        return true;
+    }
 
     /// <summary>
     /// Patches the element at <paramref name="uid"/> to add or remove a
