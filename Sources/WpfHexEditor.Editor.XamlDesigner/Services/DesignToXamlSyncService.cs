@@ -480,8 +480,14 @@ public sealed class DesignToXamlSyncService
 
     private static XElement? FindUid(XElement el, int uid, ref int counter)
     {
-        if (counter == uid) return el;
-        counter++;
+        // Mirror the traversal in InjectUids: property elements (e.g. <Button.Style>,
+        // <Grid.RowDefinitions>) are NOT counted, but their children still are.
+        bool isPropertyElement = el.Name.LocalName.Contains('.');
+        if (!isPropertyElement)
+        {
+            if (counter == uid) return el;
+            counter++;
+        }
         foreach (var child in el.Elements())
         {
             var found = FindUid(child, uid, ref counter);
@@ -509,8 +515,12 @@ public sealed class DesignToXamlSyncService
     private static XElement? FindUidForRemoval(XElement? root, int uid, ref int counter)
     {
         if (root is null) return null;
-        if (counter == uid) return root;
-        counter++;
+        bool isPropertyElement = root.Name.LocalName.Contains('.');
+        if (!isPropertyElement)
+        {
+            if (counter == uid) return root;
+            counter++;
+        }
         foreach (var child in root.Elements())
         {
             var found = FindUidForRemoval(child, uid, ref counter);

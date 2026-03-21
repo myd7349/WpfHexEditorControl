@@ -213,8 +213,14 @@ public sealed class GridDefinitionService
 
     private static XElement? FindCore(XElement el, int uid, ref int counter)
     {
-        if (counter == uid) return el;
-        counter++;
+        // Property elements (<Grid.RowDefinitions>, <Button.Style>…) are NOT counted
+        // by InjectUids, so we skip them here too to keep UID numbering in sync.
+        bool isPropertyElement = el.Name.LocalName.Contains('.');
+        if (!isPropertyElement)
+        {
+            if (counter == uid) return el;
+            counter++;
+        }
         foreach (var child in el.Elements())
         {
             var found = FindCore(child, uid, ref counter);
