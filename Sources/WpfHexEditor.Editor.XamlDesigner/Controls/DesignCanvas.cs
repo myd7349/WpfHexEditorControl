@@ -777,7 +777,9 @@ public sealed class DesignCanvas : Border
     private void UpdateGridInsertAdorner(UIElement? hitElement, Point mouseInPresenter)
     {
         var grid = FindNearestGrid(hitElement) ?? FindGridByBounds(mouseInPresenter);
-        if (grid is null)
+
+        // Guide is only shown when the found Grid is the currently selected element.
+        if (grid is null || !ReferenceEquals(grid, SelectedElement))
         {
             HideGridInsertAdorner();
             return;
@@ -855,13 +857,12 @@ public sealed class DesignCanvas : Border
 
         var localPos = PresenterToGridLocal(e.GetPosition(_presenter), _insertAdornerGrid);
 
-        // Both the toggle button and the guide line trigger insertion.
+        // Only the toggle button triggers insertion.
+        // Clicking anywhere else on the grid uses the normal selection path.
+        if (!_insertAdorner.ToggleBounds.Contains(localPos)) return false;
+
         // Capture values BEFORE SelectElement, which calls ClearAllSelectionAdorners
         // → HideGridInsertAdorner → nulls _insertAdorner.
-        bool onToggle = _insertAdorner.ToggleBounds.Contains(localPos);
-        bool onLine   = _insertAdorner.LineBounds.Contains(localPos);
-        if (!onToggle && !onLine) return false;
-
         var adorner     = _insertAdorner;
         var grid        = _insertAdornerGrid;
         bool isColumn    = adorner.Mode        == GridInsertAdorner.InsertMode.Column;
@@ -1173,8 +1174,27 @@ public sealed class DesignCanvas : Border
         // Don't overlay hover on the already-selected element.
         UpdateHoverAdorner(ReferenceEquals(hitElement, SelectedElement) ? null : hitElement);
 
-        // Grid insert guide: show a snap-to-insert line when hovering over any Grid.
+        // Grid insert guide: show only when the hovered Grid is selected.
         UpdateGridInsertAdorner(hitElement, mousePos);
+
+        // Update cursor when hovering over insert-guide regions.
+        if (_insertAdorner is not null && _insertAdornerGrid is not null && _insertAdorner.IsVisible)
+        {
+            var lp = PresenterToGridLocal(mousePos, _insertAdornerGrid);
+            if (_insertAdorner.ToggleBounds.Contains(lp))
+            {
+                Cursor = Cursors.Hand;
+                return;
+            }
+            if (_insertAdorner.LineBounds.Contains(lp))
+            {
+                Cursor = _insertAdorner.Mode == GridInsertAdorner.InsertMode.Row
+                    ? Cursors.SizeNS
+                    : Cursors.SizeWE;
+                return;
+            }
+        }
+        Cursor = null;  // restore default
     }
 
     private void OnCanvasMouseLeave(object sender, MouseEventArgs e)
