@@ -836,20 +836,33 @@ public sealed class DesignCanvas : Border
     /// </summary>
     private void UpdateGridInsertAdorner(UIElement? hitElement, Point mouseInPresenter)
     {
+        // Resolve which Grid the mouse is over.
         var grid = FindNearestGrid(hitElement) ?? FindGridByBounds(mouseInPresenter);
 
-        // Guide is only shown when:
-        //   (a) the found Grid IS the selected element, OR
-        //   (b) the selected element is a visual descendant of the found Grid
-        //       (the user selected a child but the parent Grid is what's being edited).
-        // This handles the case where HitTestElement returns a leaf child of the Grid
-        // rather than the Grid itself, which would make a plain ReferenceEquals fail.
+        // If no grid found by hit-test but we already have an active adorner,
+        // keep using that grid as long as the mouse is still inside its bounds.
+        if (grid is null && _insertAdornerGrid is not null)
+        {
+            try
+            {
+                var origin = _insertAdornerGrid.TranslatePoint(new Point(0, 0), _presenter);
+                var bounds = new Rect(origin.X, origin.Y,
+                                      _insertAdornerGrid.ActualWidth,
+                                      _insertAdornerGrid.ActualHeight);
+                if (bounds.Contains(mouseInPresenter))
+                    grid = _insertAdornerGrid;
+            }
+            catch { }
+        }
+
+        // Guide is only shown when the grid belongs to the active selection context.
         if (grid is null || !IsGridActiveForInsert(grid))
         {
             HideGridInsertAdorner();
             return;
         }
 
+        // Create adorner when we switch to a different grid.
         if (!ReferenceEquals(_insertAdornerGrid, grid))
         {
             HideGridInsertAdorner();
@@ -863,10 +876,10 @@ public sealed class DesignCanvas : Border
         var localPos = PresenterToGridLocal(mouseInPresenter, grid);
         var info     = _gridService.GetGridInfo(grid);
 
-        // ── Auto-determine mode from edge band proximity ──────────────────────
-        // Left / right 18px band  → Row    mode (horizontal guide follows mouse Y).
-        // Top  / bottom 18px band → Column mode (vertical  guide follows mouse X).
-        // Corner or interior      → keep current mode.
+        // Auto-determine mode from edge band proximity:
+        //   Left / right 18px  →  Row    (H guide follows mouse Y)
+        //   Top  / bottom 18px →  Column (V guide follows mouse X)
+        //   Corner / interior  →  keep current mode
         const double EdgeBand = 18.0;
         bool nearLR = localPos.X <= EdgeBand || localPos.X >= grid.ActualWidth  - EdgeBand;
         bool nearTB = localPos.Y <= EdgeBand || localPos.Y >= grid.ActualHeight - EdgeBand;
@@ -874,15 +887,14 @@ public sealed class DesignCanvas : Border
         var mode = _insertAdorner!.Mode;
         if      (nearLR && !nearTB) mode = GridInsertAdorner.InsertMode.Row;
         else if (nearTB && !nearLR) mode = GridInsertAdorner.InsertMode.Column;
-        // corner / interior → keep mode
 
-        // Safety: flip when the grid only has one definition type.
+        // Safety flip when the grid only has one definition type.
         if (mode == GridInsertAdorner.InsertMode.Row    && info.Rows.Count    == 0 && info.Columns.Count > 0)
             mode = GridInsertAdorner.InsertMode.Column;
         if (mode == GridInsertAdorner.InsertMode.Column && info.Columns.Count == 0 && info.Rows.Count    > 0)
             mode = GridInsertAdorner.InsertMode.Row;
 
-        // Guide always follows the mouse (no interior freeze).
+        // Guide always follows the mouse.
         double linePos;
         int    insertAfter;
         if (mode == GridInsertAdorner.InsertMode.Row)
