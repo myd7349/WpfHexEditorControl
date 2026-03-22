@@ -1948,6 +1948,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             ShowLineNumbers          = options.ShowLineNumbers;
             ShowScopeGuides          = options.ShowScopeGuides;
             FoldToggleOnDoubleClick  = options.FoldToggleOnDoubleClick;
+            IsWordWrapEnabled        = options.WordWrap;
             EnableFindAllReferences  = options.EnableFindAllReferences;
             ShowInlineHints             = options.ShowInlineHints;
             InlineHintsVisibleKinds     = options.InlineHintsVisibleKinds;
@@ -2519,6 +2520,19 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             contextMenu.Items.Add(outlineMenu);
             // ─────────────────────────────────────────────────────────────────────────
+
+            // Word Wrap toggle
+            contextMenu.Items.Add(new Separator());
+            var miWordWrap = new MenuItem
+            {
+                Header           = "_Word Wrap",
+                IsCheckable      = true,
+                InputGestureText = "Alt+Z",
+                Icon             = MakeMenuIcon("\uE751")
+            };
+            miWordWrap.SetBinding(MenuItem.IsCheckedProperty,
+                new System.Windows.Data.Binding(nameof(IsWordWrapEnabled)) { Source = this, Mode = System.Windows.Data.BindingMode.TwoWay });
+            contextMenu.Items.Add(miWordWrap);
 
             // Set context menu
             ContextMenu = contextMenu;
@@ -5243,8 +5257,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (!isNavigationOrCopy) { e.Handled = true; return; }
             }
 
-            bool ctrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
-            bool shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+            bool ctrlPressed  = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+            bool shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift)   != 0;
+            bool altPressed   = (Keyboard.Modifiers & ModifierKeys.Alt)     != 0;
+
+            // Alt+Z — toggle word wrap
+            if (e.Key == Key.Z && altPressed && !ctrlPressed && !shiftPressed)
+            {
+                IsWordWrapEnabled = !IsWordWrapEnabled;
+                e.Handled = true;
+                return;
+            }
 
             // Cancel any pending outline chord on any key press without Ctrl held.
             if (!ctrlPressed) _outlineChordPending = false;
@@ -8402,12 +8425,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         EditorConfigDto IEditorPersistable.GetEditorConfig()
         {
+            var extra = new Dictionary<string, string>
+            {
+                ["wordWrap"] = IsWordWrapEnabled ? "1" : "0"
+            };
             return new EditorConfigDto
             {
                 CaretLine        = _cursorLine + 1,   // store 1-based
                 CaretColumn      = _cursorColumn + 1,
                 FirstVisibleLine = (int)(_verticalScrollOffset / Math.Max(1, _lineHeight)) + 1,
                 SyntaxLanguageId = ExternalHighlighter is not null ? "external" : null,
+                Extra            = extra,
             };
         }
 
@@ -8422,6 +8450,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 _verticalScrollOffset = (config.FirstVisibleLine - 1) * _lineHeight;
             }
+            if (config.Extra?.TryGetValue("wordWrap", out var ww) == true)
+                IsWordWrapEnabled = ww == "1";
             InvalidateVisual();
         }
 

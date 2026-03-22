@@ -108,11 +108,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // --- Constants -----------------------------------------------------
     private static readonly string LayoutFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "WpfHexEditor", "Sample.Docking", "layout.json");
+        "WpfHexEditor", "App", "layout.json");
 
     private static readonly string SessionFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "WpfHexEditor", "session.json");
+        "WpfHexEditor", "App", "session.json");
 
     private const string SolutionExplorerContentId    = "panel-solution-explorer";
 
@@ -4909,6 +4909,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 ce.MouseWheelSpeed         = settings.CodeEditorDefaults.MouseWheelSpeed;
                 ce.ZoomLevel               = settings.CodeEditorDefaults.DefaultZoom;
                 ce.FoldToggleOnDoubleClick = settings.CodeEditorDefaults.FoldToggleOnDoubleClick;
+                ce.IsWordWrapEnabled       = settings.CodeEditorDefaults.WordWrap;
                 ce.ShowInlineHints            = settings.CodeEditorDefaults.ShowInlineHints;
                 // Treat 0 as All (migration: old settings.json without InlineHintsVisibleKinds defaults to 0).
                 ce.InlineHintsVisibleKinds = settings.CodeEditorDefaults.InlineHintsVisibleKinds == 0
@@ -4917,8 +4918,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 ApplySyntaxColorOverrides(ce, settings.CodeEditorDefaults);
                 break;
             case WpfHexEditor.Editor.TextEditor.Controls.TextEditor te:
-                te.MouseWheelSpeed = settings.TextEditorDefaults.MouseWheelSpeed;
-                te.ZoomLevel       = settings.TextEditorDefaults.DefaultZoom;
+                te.MouseWheelSpeed  = settings.TextEditorDefaults.MouseWheelSpeed;
+                te.ZoomLevel        = settings.TextEditorDefaults.DefaultZoom;
+                te.IsWordWrapEnabled = settings.TextEditorDefaults.WordWrap;
                 break;
         }
     }

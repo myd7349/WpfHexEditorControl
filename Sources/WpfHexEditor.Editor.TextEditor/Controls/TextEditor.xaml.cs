@@ -112,14 +112,27 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IOpenable
         cm.Items.Add(new Separator());
         cm.Items.Add(new MenuItem { Header = "Select _All", InputGestureText = "Ctrl+A", Command = ApplicationCommands.SelectAll, CommandTarget = Viewport, Icon = MakeMenuIcon("\uE8B3") });
         cm.Items.Add(new MenuItem { Header = "_Delete",     InputGestureText = "Del",    Command = ApplicationCommands.Delete,    CommandTarget = Viewport, Icon = MakeMenuIcon("\uE74D") });
+        cm.Items.Add(new Separator());
 
-        // Update undo/redo headers dynamically with step count when menu opens.
+        // Word Wrap toggle
+        var miWordWrap = new MenuItem
+        {
+            Header           = "_Word Wrap",
+            IsCheckable      = true,
+            InputGestureText = "Alt+Z",
+            Icon             = MakeMenuIcon("\uE751")
+        };
+        miWordWrap.Click += (_, _) => IsWordWrapEnabled = !IsWordWrapEnabled;
+        cm.Items.Add(miWordWrap);
+
+        // Update undo/redo headers and word wrap checkmark dynamically when menu opens.
         cm.Opened += (_, _) =>
         {
             int undoCount = _vm.UndoCount;
             int redoCount = _vm.RedoCount;
-            _undoMenuItem.Header = undoCount > 0 ? $"_Undo ({undoCount})" : "_Undo";
-            _redoMenuItem.Header = redoCount > 0 ? $"_Redo ({redoCount})" : "_Redo";
+            _undoMenuItem.Header      = undoCount > 0 ? $"_Undo ({undoCount})" : "_Undo";
+            _redoMenuItem.Header      = redoCount > 0 ? $"_Redo ({redoCount})" : "_Redo";
+            miWordWrap.IsChecked      = IsWordWrapEnabled;
         };
 
         Viewport.ContextMenu = cm;
@@ -127,6 +140,11 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IOpenable
         // Ctrl+Shift+Z → Redo (VS-standard alternative shortcut).
         Viewport.InputBindings.Add(new KeyBinding(ApplicationCommands.Redo,
             new KeyGesture(Key.Z, ModifierKeys.Control | ModifierKeys.Shift)));
+
+        // Alt+Z → toggle word wrap
+        Viewport.InputBindings.Add(new KeyBinding(
+            new RelayCommand(() => IsWordWrapEnabled = !IsWordWrapEnabled),
+            new KeyGesture(Key.Z, ModifierKeys.Alt)));
 
         // Cut — enabled when normal or rectangular selection is active.
         Viewport.CommandBindings.Add(new CommandBinding(ApplicationCommands.Cut,
@@ -577,6 +595,7 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IOpenable
         FirstVisibleLine  = Viewport.FirstVisibleLine,
         // HexEditor fields are not applicable — leave at defaults
         SelectionStart    = -1,
+        Extra             = new Dictionary<string, string> { ["wordWrap"] = IsWordWrapEnabled ? "1" : "0" },
     };
 
     /// <inheritdoc/>
@@ -607,6 +626,10 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IOpenable
             var def = SyntaxDefinitionCatalog.Instance.FindByName(config.SyntaxLanguageId);
             if (def is not null) SetSyntaxDefinition(def);
         }
+
+        // Restore word wrap state
+        if (config.Extra?.TryGetValue("wordWrap", out var ww) == true)
+            IsWordWrapEnabled = ww == "1";
     }
 
     /// <inheritdoc/>
