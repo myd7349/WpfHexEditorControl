@@ -82,6 +82,7 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
     private ISolution? _solution;
     private string     _searchText   = "";
     private SearchMode _searchMode   = SearchMode.FileName;
+    private bool       _searchActive;   // true while a search (≥2 chars) is in effect
     private bool       _showAllFiles;
     private SortMode   _currentSort   = SortMode.None;
     private FilterMode _currentFilter = FilterMode.All;
@@ -284,13 +285,20 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
     {
         CancelSearch();
 
-        if (string.IsNullOrWhiteSpace(_searchText))
+        if (string.IsNullOrWhiteSpace(_searchText) || _searchText.Trim().Length < 2)
         {
-            // Fast path: no background work needed; ResetToStructuralExpansion is O(n)
-            // but synchronous and imperceptibly fast for any realistic tree size.
-            ResetToStructuralExpansion(Roots);
+            // Only reset the tree if a search was previously active.
+            // If no search was running, the tree is already in its normal state — touching it
+            // here would cause an unwanted full expansion when the user types the first char.
+            if (_searchActive)
+            {
+                _searchActive = false;
+                ResetToStructuralExpansion(Roots);
+            }
             return;
         }
+
+        _searchActive = true;
 
         // Adaptive debounce: 400 ms for content modes (disk I/O), 200 ms for name/regex.
         var debounceMs = _searchMode is SearchMode.NameAndContent or SearchMode.ContentOnly ? 400 : 200;
@@ -1251,8 +1259,12 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
         {
             var inSet = matchedAndAncestors.Contains(flat.Node);
 
-            // Visibility: ALL nodes — hide everything not matched or an ancestor of a match.
-            if (flat.Node.IsSearchVisible != inSet)
+            // Visibility: only fire PropertyChanged for nodes whose parent is already visible.
+            // If the parent is NOT in the set, IsExpanded=false already hides all its children
+            // via the ControlTemplate trigger — firing PropertyChanged on those descendants is
+            // a wasted WPF DataTrigger evaluation for each live TreeViewItem container.
+            var parentVisible = flat.Parent is null || matchedAndAncestors.Contains(flat.Parent);
+            if (parentVisible && flat.Node.IsSearchVisible != inSet)
                 flat.Node.IsSearchVisible = inSet;
 
             // Expansion: containers only — never set IsExpanded on file nodes (triggers lazy outline load).

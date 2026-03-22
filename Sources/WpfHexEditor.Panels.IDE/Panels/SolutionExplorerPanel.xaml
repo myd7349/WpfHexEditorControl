@@ -142,18 +142,18 @@
                             <Trigger Property="IsExpanded" Value="False">
                                 <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
                             </Trigger>
+                            <!-- Hide row + children when node does not match the active search.
+                                 ControlTemplate.Triggers (not Style.Triggers) is required here —
+                                 Style.Triggers Visibility setter does not reliably fire for
+                                 TreeViewItem containers in a virtualised WPF tree. -->
+                            <DataTrigger Binding="{Binding IsSearchVisible}" Value="False">
+                                <Setter TargetName="RowGrid"   Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <!-- Hide nodes that do not match the active search query.
-                     IsSearchVisible defaults to true; set to false by ApplySearchResultBatch.
-                     DataTrigger required: IsSearchVisible is an INPC-backed property, not a DP. -->
-                <DataTrigger Binding="{Binding IsSearchVisible}" Value="False">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-            </Style.Triggers>
         </Style>
 
         <!-- TreeView base -->
