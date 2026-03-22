@@ -320,8 +320,8 @@ public sealed class DesignCanvas : Border
         // appears right after selection without waiting for the next MouseMove event.
         if (nearestGrid is not null)
         {
-            var mouseNow = Mouse.GetPosition(_presenter);
-            UpdateGridInsertAdorner(HitTestElement(mouseNow), mouseNow);
+            var mouseNow = Mouse.GetPosition(this);
+            UpdateGridInsertAdorner(HitTestElement(Mouse.GetPosition(_presenter)), mouseNow);
         }
 
         if (!suppressEvent)
@@ -845,16 +845,13 @@ public sealed class DesignCanvas : Border
         {
             try
             {
-                var origin = _insertAdornerGrid.TranslatePoint(new Point(0, 0), _presenter);
-                var bounds = new Rect(origin.X, origin.Y,
-                                      _insertAdornerGrid.ActualWidth,
-                                      _insertAdornerGrid.ActualHeight);
-                if (bounds.Contains(mouseInPresenter))
+                var localPt = TranslatePoint(mouseInPresenter, _insertAdornerGrid);
+                var bounds  = new Rect(0, 0, _insertAdornerGrid.ActualWidth, _insertAdornerGrid.ActualHeight);
+                if (bounds.Contains(localPt))
                     grid = _insertAdornerGrid;
             }
             catch { }
         }
-
         // Guide is only shown when the grid belongs to the active selection context.
         if (grid is null || !IsGridActiveForInsert(grid))
         {
@@ -978,13 +975,13 @@ public sealed class DesignCanvas : Border
     /// Used as a fallback when WPF hit-testing misses Grids with null/transparent
     /// Background (empty cells, edge bands with no child elements).
     /// </summary>
-    private System.Windows.Controls.Grid? FindGridByBounds(Point mouseInPresenter)
+    private System.Windows.Controls.Grid? FindGridByBounds(Point mouseInCanvas)
     {
         if (DesignRoot is not UIElement root) return null;
-        return FindGridByBoundsCore(root, mouseInPresenter);
+        return FindGridByBoundsCore(root, mouseInCanvas);
     }
 
-    private System.Windows.Controls.Grid? FindGridByBoundsCore(UIElement el, Point mouseInPresenter)
+    private System.Windows.Controls.Grid? FindGridByBoundsCore(UIElement el, Point mouseInCanvas)
     {
         // Depth-first, reverse z-order so the innermost / topmost Grid wins.
         int n = VisualTreeHelper.GetChildrenCount(el);
@@ -992,7 +989,7 @@ public sealed class DesignCanvas : Border
         {
             if (VisualTreeHelper.GetChild(el, i) is UIElement child)
             {
-                var found = FindGridByBoundsCore(child, mouseInPresenter);
+                var found = FindGridByBoundsCore(child, mouseInCanvas);
                 if (found is not null) return found;
             }
         }
@@ -1001,24 +998,27 @@ public sealed class DesignCanvas : Border
 
         try
         {
-            var origin = g.TranslatePoint(new Point(0, 0), _presenter);
-            var bounds = new Rect(origin.X, origin.Y, g.ActualWidth, g.ActualHeight);
-            return bounds.Contains(mouseInPresenter) ? g : null;
+            // mouseInCanvas is in DesignCanvas space; convert to Grid-local to check containment.
+            var localPt = TranslatePoint(mouseInCanvas, g);
+            var bounds  = new Rect(0, 0, g.ActualWidth, g.ActualHeight);
+            return bounds.Contains(localPt) ? g : null;
         }
         catch { return null; }
     }
 
-    /// <summary>Converts a point in <see cref="_presenter"/> space to Grid-local space.</summary>
-    private Point PresenterToGridLocal(Point presenterPt, UIElement grid)
+    /// <summary>
+    /// Converts a point in <see cref="DesignCanvas"/> (this) coordinate space to Grid-local space.
+    /// Uses <see cref="UIElement.TranslatePoint"/> which is fully transform-aware.
+    /// </summary>
+    private Point PresenterToGridLocal(Point canvasPt, UIElement grid)
     {
         try
         {
-            var origin = grid.TranslatePoint(new Point(0, 0), _presenter);
-            return new Point(presenterPt.X - origin.X, presenterPt.Y - origin.Y);
+            return TranslatePoint(canvasPt, grid);
         }
         catch
         {
-            return presenterPt; // element detached from tree (re-render in progress)
+            return canvasPt; // element detached from tree
         }
     }
 
@@ -1255,8 +1255,12 @@ public sealed class DesignCanvas : Border
 
         if (DesignRoot is null) return;
 
-        var mousePos   = e.GetPosition(_presenter);
-        var hitElement = HitTestElement(mousePos);
+        // e.GetPosition(this) = position in DesignCanvas (Border) coordinate space.
+        // Using _presenter would add the 8px ContentPresenter.Margin offset.
+        // All subsequent conversions (PresenterToGridLocal, FindGridByBounds) use
+        // this.TranslatePoint(pt, target) which is transform-aware.
+        var mousePos   = e.GetPosition(this);
+        var hitElement = HitTestElement(e.GetPosition(_presenter));
 
         // Don't overlay hover on the already-selected element.
         UpdateHoverAdorner(ReferenceEquals(hitElement, SelectedElement) ? null : hitElement);
@@ -1291,8 +1295,8 @@ public sealed class DesignCanvas : Border
     private void OnCanvasMouseEnter(object sender, MouseEventArgs e)
     {
         if (DesignRoot is null) return;
-        var mousePos   = e.GetPosition(_presenter);
-        var hitElement = HitTestElement(mousePos);
+        var mousePos   = e.GetPosition(this);
+        var hitElement = HitTestElement(e.GetPosition(_presenter));
         UpdateGridInsertAdorner(hitElement, mousePos);
     }
 
