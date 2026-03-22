@@ -374,6 +374,16 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         _autoHideTop.GroupClicked    += OnAutoHideGroupClicked;
         _autoHideBottom.GroupClicked += OnAutoHideGroupClicked;
 
+        _autoHideLeft.GroupFloatRequested   += OnAutoHideGroupFloatRequested;
+        _autoHideRight.GroupFloatRequested  += OnAutoHideGroupFloatRequested;
+        _autoHideTop.GroupFloatRequested    += OnAutoHideGroupFloatRequested;
+        _autoHideBottom.GroupFloatRequested += OnAutoHideGroupFloatRequested;
+
+        _autoHideLeft.GroupCloseRequested   += OnAutoHideGroupCloseRequested;
+        _autoHideRight.GroupCloseRequested  += OnAutoHideGroupCloseRequested;
+        _autoHideTop.GroupCloseRequested    += OnAutoHideGroupCloseRequested;
+        _autoHideBottom.GroupCloseRequested += OnAutoHideGroupCloseRequested;
+
         // Attach hover-preview to all four auto-hide bars.
         // The bitmap provider returns the last-captured snapshot for a given item.
         AutoHideBarHoverPreview.Attach(_autoHideLeft,   item => _autoHideBitmapCache.GetValueOrDefault(item));
@@ -1254,6 +1264,27 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         _engine.RestoreFromAutoHide(item, Layout.MainDocumentHost, DockDirection.Center);
         _engine.Float(item);
         item.IsDocument = wasDocument;  // Restore panel identity after float
+        RebuildVisualTree();
+    }
+
+    private void OnAutoHideGroupFloatRequested(IReadOnlyList<DockItem> items)
+    {
+        if (_engine is null || Layout is null) return;
+        foreach (var item in items)
+        {
+            bool wasDocument = item.IsDocument;
+            _engine.RestoreFromAutoHide(item, Layout.MainDocumentHost, DockDirection.Center);
+            _engine.Float(item);
+            item.IsDocument = wasDocument;
+        }
+        RebuildVisualTree();
+    }
+
+    private void OnAutoHideGroupCloseRequested(IReadOnlyList<DockItem> items)
+    {
+        if (_engine is null) return;
+        foreach (var item in items)
+            _engine.Close(item);
         RebuildVisualTree();
     }
 

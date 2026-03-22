@@ -44,6 +44,16 @@ public class AutoHideBar : StackPanel
     public event Action<IReadOnlyList<DockItem>>? GroupClicked;
 
     /// <summary>
+    /// Raised when the user chooses "Float" from the bar button context menu.
+    /// </summary>
+    public event Action<IReadOnlyList<DockItem>>? GroupFloatRequested;
+
+    /// <summary>
+    /// Raised when the user chooses "Close" from the bar button context menu.
+    /// </summary>
+    public event Action<IReadOnlyList<DockItem>>? GroupCloseRequested;
+
+    /// <summary>
     /// Raised after <see cref="UpdateItems"/> rebuilds the button list,
     /// so attached hover-preview helpers can re-wire mouse events.
     /// </summary>
@@ -100,6 +110,35 @@ public class AutoHideBar : StackPanel
             AutomationProperties.SetName(button, $"Show {label}");
             var captured = (IReadOnlyList<DockItem>)groupItems;
             button.Click += (_, _) => GroupClicked?.Invoke(captured);
+
+            // VS-like right-click context menu: Show / Float / — / Close
+            static TextBlock MakeIcon(string glyph) => new()
+            {
+                Text       = glyph,
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize   = 12,
+                Width      = 16,
+                TextAlignment = TextAlignment.Center
+            };
+
+            var showItem  = new MenuItem { Header = "Show",  Icon = MakeIcon("\uE8BD") };
+            var floatItem = new MenuItem { Header = "Float", Icon = MakeIcon("\uE78B") };
+            var closeItem = new MenuItem { Header = "Close", Icon = MakeIcon("\uE8BB") };
+            showItem.Click  += (_, _) => GroupClicked?.Invoke(captured);
+            floatItem.Click += (_, _) => GroupFloatRequested?.Invoke(captured);
+            closeItem.Click += (_, _) => GroupCloseRequested?.Invoke(captured);
+
+            var ctxMenu = new ContextMenu();
+            ctxMenu.Items.Add(showItem);
+            ctxMenu.Items.Add(floatItem);
+            ctxMenu.Items.Add(new Separator());
+            ctxMenu.Items.Add(closeItem);
+            ctxMenu.SetResourceReference(ContextMenu.BackgroundProperty,  "DockMenuBackgroundBrush");
+            ctxMenu.SetResourceReference(ContextMenu.BorderBrushProperty, "DockMenuBorderBrush");
+            foreach (MenuItem mi in ctxMenu.Items.OfType<MenuItem>())
+                mi.SetResourceReference(MenuItem.ForegroundProperty, "DockMenuForegroundBrush");
+            button.ContextMenu = ctxMenu;
+
             Children.Add(button);
         }
 
@@ -134,6 +173,7 @@ public class AutoHideFlyout : Grid
     private IReadOnlyList<DockItem> _currentGroup = [];
     private StackPanel? _tabStrip;
     private Func<DockItem, object>? _contentFactory;
+    private bool _isOpen;
 
     public DockItem? CurrentItem { get; private set; }
 
@@ -142,7 +182,7 @@ public class AutoHideFlyout : Grid
     /// </summary>
     public IReadOnlyList<DockItem> CurrentGroup => _currentGroup;
 
-    public bool IsOpen => _panelContainer.Visibility == Visibility.Visible;
+    public bool IsOpen => _isOpen;
 
     /// <summary>
     /// Returns the panel container element so the host can capture a snapshot before closing.
@@ -485,6 +525,7 @@ public class AutoHideFlyout : Grid
         else
             _panelContainer.Height = 0;
 
+        _isOpen = true;
         Visibility = Visibility.Visible;
 
         var showAnim = new DoubleAnimation(targetSize,
@@ -510,6 +551,8 @@ public class AutoHideFlyout : Grid
 
     public void Close()
     {
+        _isOpen = false;
+
         // Notify the host BEFORE animation starts so it can capture a snapshot
         // while the panel content is still fully rendered and visible.
         Dismissing?.Invoke();
@@ -542,11 +585,18 @@ public class AutoHideFlyout : Grid
 
     private void OnResizeStart(object sender, MouseButtonEventArgs e)
     {
+        // Release the open-animation hold so manual Width/Height assignments in OnResizeMove
+        // are not silently overridden by WPF's animation clock.
+        if (_currentSide is DockSide.Left or DockSide.Right)
+            _panelContainer.BeginAnimation(WidthProperty, null);
+        else
+            _panelContainer.BeginAnimation(HeightProperty, null);
+
         _resizing        = true;
         _resizeStart     = e.GetPosition(this);
         _resizeStartSize = _currentSide is DockSide.Left or DockSide.Right
-            ? _panelContainer.Width
-            : _panelContainer.Height;
+            ? _panelContainer.ActualWidth
+            : _panelContainer.ActualHeight;
         _resizeHandle.CaptureMouse();
         e.Handled = true;
     }
