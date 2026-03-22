@@ -678,13 +678,23 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private static void OnLanguageChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not CodeEditor ce) return;
-            var lang = e.NewValue as LanguageDefinition;
+            if (d is not CodeEditor editor) return;
+            var newLang = e.NewValue as LanguageDefinition;
+
             // Re-evaluate InlineHints service attachment: only attach when the language declares support.
-            if (lang?.EnableInlineHints == true)
-                ce._inlineHintsService.Attach(ce._document, ce._currentFilePath);
+            if (newLang?.EnableInlineHints == true)
+                editor._inlineHintsService.Attach(editor._document, editor._currentFilePath);
             else
-                ce._inlineHintsService.Detach();
+                editor._inlineHintsService.Detach();
+
+            // Rebuild folding strategy from language-specific FoldingRules.
+            var foldingStrategy = Folding.LanguageFoldingStrategyBuilder.Build(newLang?.FoldingRules);
+            if (foldingStrategy is not null && editor._foldingEngine is not null)
+            {
+                editor._foldingEngine.ReplaceStrategy(foldingStrategy);
+                editor._foldingEngine.Analyze(editor._document.Lines);
+                editor.InvalidateVisual();
+            }
         }
 
         public static readonly DependencyProperty EnableValidationProperty =

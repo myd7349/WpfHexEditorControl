@@ -31,6 +31,7 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
     private Encoding _encoding = Encoding.UTF8;
     private SyntaxDefinition? _syntaxDefinition;
     private RegexSyntaxHighlighter? _highlighter;
+    private IContextualHighlighter? _contextualHighlighter;
 
     // Incremental max-width tracking (P1-TE-01) â€” O(1) on growth, O(n) only on shrink
     private int _cachedMaxLineLength;
@@ -118,6 +119,10 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
             {
                 _syntaxDefinition = value;
                 _highlighter = value is not null ? new RegexSyntaxHighlighter(value) : null;
+                // Auto-activate embedded language injection when the definition declares it
+                _contextualHighlighter = value?.EmbeddedLanguages.Count > 0
+                    ? new FencedCodeHighlighter(value.EmbeddedLanguages, _highlighter!)
+                    : null;
                 InvalidateHighlightCache();
                 OnPropertyChanged();
             }
@@ -233,9 +238,14 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
             texts[i]   = needed[i] ? _lines[li] : string.Empty;
         }
 
-        var cache      = _highlightCache;
-        var highlighter = _highlighter;
-        var syncCtx    = _syncContext;
+        var cache                 = _highlightCache;
+        var highlighter           = _highlighter;
+        var contextualHighlighter = _contextualHighlighter;
+        var syncCtx               = _syncContext;
+
+        // Prepare contextual highlighter with a snapshot of all lines (UI thread, before Task.Run)
+        if (contextualHighlighter != null)
+            contextualHighlighter.Prepare(_lines);
 
         Task.Run(() =>
         {
@@ -244,7 +254,9 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
             {
                 int li = indices[i];
                 if (!needed[i] || li < firstVisible || li > lastVisible) continue;
-                var result = highlighter.Highlight(texts[i]);
+                var result = contextualHighlighter != null
+                    ? contextualHighlighter.Highlight(texts[i], indices[i])
+                    : highlighter!.Highlight(texts[i]);
                 if (li < cache.Count && !token.IsCancellationRequested)
                     cache[li] = result;
             }
@@ -254,7 +266,9 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
             {
                 int li = indices[i];
                 if (!needed[i] || (li >= firstVisible && li <= lastVisible)) continue;
-                var result = highlighter.Highlight(texts[i]);
+                var result = contextualHighlighter != null
+                    ? contextualHighlighter.Highlight(texts[i], indices[i])
+                    : highlighter!.Highlight(texts[i]);
                 if (li < cache.Count && !token.IsCancellationRequested)
                     cache[li] = result;
             }

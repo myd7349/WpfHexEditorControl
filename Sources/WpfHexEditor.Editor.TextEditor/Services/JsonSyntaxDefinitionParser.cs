@@ -113,4 +113,90 @@ internal static class JsonSyntaxDefinitionParser
         using var fs = File.OpenRead(filePath);
         return Parse(fs, filePath);
     }
+
+    /// <summary>
+    /// Parses a <c>SyntaxDefinition</c> from a <c>syntaxDefinition</c> JSON block
+    /// extracted from a <c>.whfmt</c> file.
+    /// The block uses <c>lineCommentPrefix</c> (instead of <c>lineComment</c>),
+    /// <c>blockCommentStart</c>, and <c>blockCommentEnd</c>.
+    /// </summary>
+    /// <param name="syntaxJson">JSON text of the syntaxDefinition sub-object.</param>
+    /// <param name="formatName">Display name from the parent .whfmt file.</param>
+    /// <param name="category">Category from the parent .whfmt file.</param>
+    /// <param name="extensions">Extensions from the parent .whfmt file (fallback when not in block).</param>
+    /// <param name="sourceKey">Resource key for the parent .whfmt embedded resource.</param>
+    internal static SyntaxDefinition? ParseFromSyntaxDefinitionBlock(
+        string syntaxJson,
+        string formatName,
+        string category,
+        IReadOnlyList<string> extensions,
+        string sourceKey)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(syntaxJson, _jsonOptions);
+            var root = doc.RootElement;
+
+            var name    = root.TryGetProperty("name", out var np) ? np.GetString() ?? formatName : formatName;
+
+            var exts = new List<string>();
+            if (root.TryGetProperty("extensions", out var extProp) && extProp.ValueKind == JsonValueKind.Array)
+                foreach (var e in extProp.EnumerateArray())
+                    if (e.GetString() is string ext) exts.Add(ext.ToLowerInvariant());
+            if (exts.Count == 0) exts.AddRange(extensions);
+
+            // syntaxDefinition blocks use "lineCommentPrefix" (not "lineComment").
+            var lineComment = root.TryGetProperty("lineCommentPrefix",  out var lcp) ? lcp.GetString()
+                            : root.TryGetProperty("lineComment",        out var lc)  ? lc.GetString()
+                            : null;
+            var blockStart  = root.TryGetProperty("blockCommentStart", out var bcs) ? bcs.GetString() : null;
+            var blockEnd    = root.TryGetProperty("blockCommentEnd",   out var bce) ? bce.GetString() : null;
+
+            var rules = new List<SyntaxRule>();
+            if (root.TryGetProperty("rules", out var rulesProp) && rulesProp.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var r in rulesProp.EnumerateArray())
+                {
+                    var type     = r.TryGetProperty("type",     out var tp) ? tp.GetString() ?? string.Empty : string.Empty;
+                    var pattern  = r.TryGetProperty("pattern",  out var pp) ? pp.GetString() ?? string.Empty : string.Empty;
+                    var colorKey = r.TryGetProperty("colorKey", out var cp) ? cp.GetString() ?? string.Empty : string.Empty;
+
+                    if (!string.IsNullOrEmpty(pattern))
+                        rules.Add(new SyntaxRule { Type = type, Pattern = pattern, ColorKey = colorKey });
+                }
+            }
+
+            // Parse embeddedLanguages (optional — for fenced code block injection)
+            var embeddedLanguages = new List<EmbeddedLanguageEntry>();
+            if (root.TryGetProperty("embeddedLanguages", out var embProp) &&
+                embProp.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var e in embProp.EnumerateArray())
+                {
+                    var id  = e.TryGetProperty("id",        out var ip) ? ip.GetString()  ?? "" : "";
+                    var ext = e.TryGetProperty("extension", out var ep) ? ep.GetString()  ?? "" : "";
+                    if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(ext))
+                        embeddedLanguages.Add(new EmbeddedLanguageEntry(id, ext));
+                }
+            }
+
+            return new SyntaxDefinition
+            {
+                Name              = name,
+                Category          = category,
+                Extensions        = exts,
+                LineComment       = lineComment,
+                BlockCommentStart = blockStart,
+                BlockCommentEnd   = blockEnd,
+                Rules             = rules,
+                EmbeddedLanguages = embeddedLanguages,
+                SourceKey         = sourceKey,
+            };
+        }
+        catch
+        {
+            // Malformed syntaxDefinition block — skip silently.
+            return null;
+        }
+    }
 }

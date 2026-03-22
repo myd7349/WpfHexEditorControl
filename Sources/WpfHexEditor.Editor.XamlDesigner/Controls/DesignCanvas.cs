@@ -1551,6 +1551,64 @@ public sealed class DesignCanvas : Border
 
         xaml = ReplaceWindowRoot(xaml);
 
+        // Strip custom clr-namespace: prefix declarations and all their usages.
+        // Prevents XamlReader.Parse from throwing on unknown types from renamed/unavailable assemblies.
+        xaml = StripCustomClrNamespacePrefixes(xaml);
+
+        return xaml;
+    }
+
+    // ── Namespace sanitization ─────────────────────────────────────────────────
+
+    private static readonly Regex s_customXmlns = new(
+        @"xmlns:(?<prefix>[\w]+)\s*=\s*""clr-namespace:[^""]*""",
+        RegexOptions.Compiled);
+
+    private static readonly HashSet<string> s_safeNamespacePrefixes =
+        new(StringComparer.OrdinalIgnoreCase) { "x", "mc", "d", "local" };
+
+    /// <summary>
+    /// Removes xmlns declarations for custom clr-namespace: assemblies and all
+    /// elements/attributes that use those prefixes. Prevents XamlReader.Parse from
+    /// throwing on unknown types from renamed or unavailable assemblies.
+    /// Safe prefixes (x, mc, d, local) are always retained.
+    /// </summary>
+    private static string StripCustomClrNamespacePrefixes(string xaml)
+    {
+        // Collect custom prefixes (clr-namespace: only, excluding safe WPF ones).
+        var customPrefixes = s_customXmlns.Matches(xaml)
+            .Select(m => m.Groups["prefix"].Value)
+            .Where(p => !s_safeNamespacePrefixes.Contains(p))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (customPrefixes.Count == 0) return xaml;
+
+        // 1. Remove xmlns:PREFIX="clr-namespace:..." declarations.
+        xaml = s_customXmlns.Replace(xaml, m =>
+            s_safeNamespacePrefixes.Contains(m.Groups["prefix"].Value) ? m.Value : string.Empty);
+
+        foreach (var prefix in customPrefixes)
+        {
+            // 2. Remove block elements: <PREFIX:Tag ...>...</PREFIX:Tag>
+            xaml = Regex.Replace(
+                xaml,
+                $@"<{prefix}:[^/][^>]*>[\s\S]*?</{prefix}:[^>]+>",
+                string.Empty,
+                RegexOptions.Singleline);
+
+            // 3. Remove self-closing elements: <PREFIX:Tag ... />
+            xaml = Regex.Replace(
+                xaml,
+                $@"<{prefix}:[^>]*/\s*>",
+                string.Empty);
+
+            // 4. Remove attributes: PREFIX:Attr="..."
+            xaml = Regex.Replace(
+                xaml,
+                $@"\s+{prefix}:[A-Za-z][A-Za-z0-9.]*\s*=\s*""[^""]*""",
+                string.Empty);
+        }
+
         return xaml;
     }
 
