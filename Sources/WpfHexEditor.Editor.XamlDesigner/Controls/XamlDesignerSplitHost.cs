@@ -369,6 +369,23 @@ public sealed class XamlDesignerSplitHost : Grid,
         {
             _designCanvas.CanvasPresetWidth = w;
             _breakpointBar.SetActive(w);
+
+            // Also patch the Width attribute in the XAML source so the code editor stays in sync.
+            // Follows the same path as OnDesignOperationCommitted for every other property change.
+            if (_designCanvas.DesignRoot is not UIElement rootEl) return;
+            int uid = _designCanvas.GetUidOf(rootEl);
+            if (uid < 0) return;
+
+            string newWidth = w.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var op      = DesignOperation.CreatePropertyChange(uid, "Width", null, newWidth);
+            var rawXaml = _codeHost?.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
+            var patched = _syncService.ApplyOperation(rawXaml, op);
+            if (patched is null) return;
+
+            _undoManager.PushEntry(new SingleDesignUndoEntry(op));
+            ApplyXamlToCode(patched);
+            Dispatcher.InvokeAsync(UpdateIdePropertyProvider,
+                                   System.Windows.Threading.DispatcherPriority.Loaded);
         };
 
         _breadcrumbBar = new TemplateBreadcrumbBar();
