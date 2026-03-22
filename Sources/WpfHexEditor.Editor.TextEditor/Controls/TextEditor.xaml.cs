@@ -454,6 +454,17 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IOpenable
     public string GetText() => _vm.GetText();
 
     /// <summary>
+    /// Inserts <paramref name="text"/> at the current caret position, replacing
+    /// the current selection if any. Participates in undo/redo.
+    /// </summary>
+    public void InsertText(string text) => _vm.InsertText(text);
+
+    /// <summary>
+    /// Returns the currently selected text, or an empty string when nothing is selected.
+    /// </summary>
+    public string GetSelectedText() => _vm.GetSelectedText();
+
+    /// <summary>
     /// Populates the editor with raw text, bypassing file I/O.
     /// Optionally applies a syntax language by name (e.g. "C#") and/or marks the
     /// document as read-only. Intended for plugin-generated content such as

@@ -29,11 +29,13 @@
 
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.MarkdownEditor.Core.Services;
@@ -92,6 +94,10 @@ public sealed partial class MarkdownEditorHost : UserControl,
     private readonly DispatcherTimer _syncScrollTimer;
     private double  _pendingScrollPct;
 
+    // Cached document length — updated after each render, used by ScheduleRefresh()
+    // to avoid calling GetText() on every keystroke.
+    private int _cachedDocLength;
+
     // --- Toolbar ----------------------------------------------------------
     private readonly ObservableCollection<EditorToolbarItem> _toolbarItems = new();
 
@@ -102,9 +108,10 @@ public sealed partial class MarkdownEditorHost : UserControl,
 
     // --- Status bar -------------------------------------------------------
     private readonly ObservableCollection<StatusBarItem> _statusItems = new();
-    private readonly StatusBarItem _sbView      = new() { Label = "View",  Tooltip = "Current view mode" };
-    private readonly StatusBarItem _sbWordCount = new() { Label = "Words", Tooltip = "Approximate word count" };
-    private readonly StatusBarItem _sbLineCount = new() { Label = "Lines", Tooltip = "Total line count" };
+    private readonly StatusBarItem _sbView        = new() { Label = "View",  Tooltip = "Current view mode" };
+    private readonly StatusBarItem _sbWordCount   = new() { Label = "Words", Tooltip = "Approximate word count" };
+    private readonly StatusBarItem _sbLineCount   = new() { Label = "Lines", Tooltip = "Total line count" };
+    private readonly StatusBarItem _sbReadingTime = new() { Label = "Read",  Tooltip = "Estimated reading time (200 wpm)" };
 
     // --- Construction -----------------------------------------------------
 
@@ -118,10 +125,10 @@ public sealed partial class MarkdownEditorHost : UserControl,
         _editorSearch  = _editor;
         _editorPersist = _editor;
 
-        // Auto-refresh timer (500 ms debounce)
+        // Auto-refresh timer — interval is set adaptively in ScheduleRefresh()
         _refreshTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(500),
+            Interval = TimeSpan.FromMilliseconds(300),
         };
         _refreshTimer.Tick += OnRefreshTimerTick;
 
@@ -133,7 +140,7 @@ public sealed partial class MarkdownEditorHost : UserControl,
         _syncScrollTimer.Tick += OnSyncScrollTimerTick;
 
         // Wire inner editor events
-        _editor.ModifiedChanged  += (_, _) => { ModifiedChanged?.Invoke(this, EventArgs.Empty); ScheduleRefresh(); UpdateWordLineCount(); };
+        _editor.ModifiedChanged  += (_, _) => { ModifiedChanged?.Invoke(this, EventArgs.Empty); ContentChanged?.Invoke(this, EventArgs.Empty); ScheduleRefresh(); };
         _editor.CanUndoChanged   += (_, _) => CanUndoChanged?.Invoke(this, EventArgs.Empty);
         _editor.CanRedoChanged   += (_, _) => CanRedoChanged?.Invoke(this, EventArgs.Empty);
         _editor.TitleChanged     += (_, s) => TitleChanged?.Invoke(this, s);
@@ -153,6 +160,18 @@ public sealed partial class MarkdownEditorHost : UserControl,
             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(href) { UseShellExecute = true }); }
             catch { /* ignore */ }
         };
+
+        // Preview pane context menu actions → delegate to host methods
+        _preview.PreviewContextMenuAction += OnPreviewContextMenuAction;
+
+        // Source editor context menu — FORMAT + INSERT groups
+        _editor.ContextMenu = BuildEditorContextMenu();
+
+        // Sync scroll checkmark whenever the preview context menu opens
+        _preview.ContextMenu!.Opened += (_, _) => _preview.SetSyncScrollChecked(_syncScroll);
+
+        // Intercept Ctrl+V for image paste before forwarding to the inner TextEditor.
+        PreviewKeyDown += OnPreviewKeyDown;
 
         // Keyboard shortcuts
         CommandBindings.Add(new CommandBinding(MdCommands.TogglePreview, (_, _) => CycleViewMode()));
@@ -233,14 +252,21 @@ public sealed partial class MarkdownEditorHost : UserControl,
     public event EventHandler<DocumentOperationEventArgs>?          OperationProgress;
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 
+    // --- Markdown-specific API (used by MarkdownOutlinePanel) -------------
+
+    /// <summary>Returns the raw Markdown text currently loaded in the editor.</summary>
+    public string GetText() => _editor.GetText() ?? string.Empty;
+
+    /// <summary>Raised by ModifiedChanged — re-exposed so the outline panel can subscribe.</summary>
+    public event EventHandler? ContentChanged;
+
     // --- IOpenableDocument ------------------------------------------------
 
     public async Task OpenAsync(string filePath, CancellationToken ct = default)
     {
         _filePath = filePath;
         await _editor.OpenAsync(filePath, ct);
-        UpdateWordLineCount();
-        await ForceRefreshAsync();
+        await ForceRefreshAsync();  // updates word count + cache + preview
     }
 
     // --- INavigableDocument -----------------------------------------------
@@ -313,6 +339,161 @@ public sealed partial class MarkdownEditorHost : UserControl,
     public void Replace(string replacement)    => _editorSearch.Replace(replacement);
     public void ReplaceAll(string replacement) => _editorSearch.ReplaceAll(replacement);
     public UIElement? GetCustomFiltersContent() => _editorSearch.GetCustomFiltersContent();
+
+    // --- Image paste (Ctrl+V with image data on clipboard) ----------------
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // Only intercept Ctrl+V and only when the clipboard contains image data.
+        if (e.Key != Key.V || (Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
+        if (!Clipboard.ContainsImage()) return;
+
+        e.Handled = true;  // prevent TextEditor from processing this paste
+        _ = PasteImageAsync();
+    }
+
+    private async Task PasteImageAsync()
+    {
+        try
+        {
+            var image = Clipboard.GetImage();
+            if (image is null) return;
+
+            string relativePath;
+
+            if (!string.IsNullOrEmpty(_filePath))
+            {
+                // Save next to the markdown file in an "assets" sub-folder.
+                var dir       = Path.GetDirectoryName(_filePath)!;
+                var assetsDir = Path.Combine(dir, "assets");
+                Directory.CreateDirectory(assetsDir);
+                var fileName = $"image-{DateTime.Now:yyyyMMdd-HHmmss}.png";
+                var fullPath = Path.Combine(assetsDir, fileName);
+
+                await Task.Run(() => SavePng(image, fullPath));
+                relativePath = $"assets/{fileName}";
+            }
+            else
+            {
+                // No backing file — embed as data URI (base64 PNG).
+                var base64 = await Task.Run(() => ImageToBase64(image));
+                relativePath = $"data:image/png;base64,{base64}";
+            }
+
+            InsertSnippet($"![pasted image]({relativePath})");
+        }
+        catch (Exception ex)
+        {
+            OutputMessage?.Invoke(this, $"[MarkdownEditor] Image paste failed: {ex.Message}");
+        }
+    }
+
+    private static void SavePng(BitmapSource image, string path)
+    {
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(image));
+        using var stream = File.Create(path);
+        encoder.Save(stream);
+    }
+
+    private static string ImageToBase64(BitmapSource image)
+    {
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(image));
+        using var ms = new MemoryStream();
+        encoder.Save(ms);
+        return Convert.ToBase64String(ms.ToArray());
+    }
+
+    // --- Insert / Format helpers ------------------------------------------
+
+    /// <summary>
+    /// Inserts a Markdown snippet at the current caret position.
+    /// Focuses the source editor first so the insertion lands in the right place.
+    /// </summary>
+    private void InsertSnippet(string snippet)
+    {
+        if (_viewMode == MdViewMode.PreviewOnly)
+            SetViewMode(MdViewMode.Split);
+        _editor.Focus();
+        _editor.InsertText(snippet);
+    }
+
+    /// <summary>
+    /// Wraps the current selection with <paramref name="before"/> / <paramref name="after"/> markers.
+    /// If nothing is selected, inserts the markers with a placeholder between them.
+    /// </summary>
+    private void WrapSelection(string before, string after, string placeholder = "text")
+    {
+        if (_viewMode == MdViewMode.PreviewOnly)
+            SetViewMode(MdViewMode.Split);
+        _editor.Focus();
+        var sel = _editor.GetSelectedText();
+        var inner = string.IsNullOrEmpty(sel) ? placeholder : sel;
+        _editor.InsertText($"{before}{inner}{after}");
+    }
+
+    // --- Context menu (preview pane) --------------------------------------
+
+    private void OnPreviewContextMenuAction(object? sender, MdPreviewContextAction action)
+    {
+        switch (action)
+        {
+            case MdPreviewContextAction.SourceOnly:       SetViewMode(MdViewMode.SourceOnly);   break;
+            case MdPreviewContextAction.SplitView:        SetViewMode(MdViewMode.Split);         break;
+            case MdPreviewContextAction.PreviewOnly:      SetViewMode(MdViewMode.PreviewOnly);   break;
+            case MdPreviewContextAction.Refresh:          _ = ForceRefreshAsync();               break;
+            case MdPreviewContextAction.ToggleSyncScroll: SetSyncScroll(!_syncScroll);           break;
+            case MdPreviewContextAction.CycleLayout:      CycleSplitLayout();                    break;
+        }
+    }
+
+    // --- Context menu (source editor) -------------------------------------
+
+    private ContextMenu BuildEditorContextMenu()
+    {
+        var menu = new ContextMenu();
+        menu.SetResourceReference(StyleProperty, "MD_ContextMenuStyle");
+
+        // FORMAT group
+        var fmtHeader = new MenuItem { Header = "FORMAT" };
+        fmtHeader.SetResourceReference(StyleProperty, "MD_GroupHeaderStyle");
+        menu.Items.Add(fmtHeader);
+
+        menu.Items.Add(MakeEditorMenuItem("Bold",          "Ctrl+B", () => WrapSelection("**", "**",  "bold text")));
+        menu.Items.Add(MakeEditorMenuItem("Italic",        "Ctrl+I", () => WrapSelection("_",  "_",   "italic text")));
+        menu.Items.Add(MakeEditorMenuItem("Strikethrough", "",       () => WrapSelection("~~", "~~",  "strikethrough")));
+        menu.Items.Add(MakeEditorMenuItem("Inline Code",   "",       () => WrapSelection("`",  "`",   "code")));
+
+        var sep1 = new Separator();
+        sep1.SetResourceReference(StyleProperty, "MD_GroupSeparatorStyle");
+        menu.Items.Add(sep1);
+
+        // INSERT group
+        var insHeader = new MenuItem { Header = "INSERT" };
+        insHeader.SetResourceReference(StyleProperty, "MD_GroupHeaderStyle");
+        menu.Items.Add(insHeader);
+
+        menu.Items.Add(MakeEditorMenuItem("Table",          "", () => InsertSnippet(
+            "\n| Header 1 | Header 2 | Header 3 |\n| --- | --- | --- |\n| Cell 1 | Cell 2 | Cell 3 |\n")));
+        menu.Items.Add(MakeEditorMenuItem("Code Block",     "", () => InsertSnippet("\n```\n\n```\n")));
+        menu.Items.Add(MakeEditorMenuItem("Link",           "", () => WrapSelection("[", "](url)", "link text")));
+        menu.Items.Add(MakeEditorMenuItem("Image",          "", () => InsertSnippet("![alt text](image.png)")));
+        menu.Items.Add(MakeEditorMenuItem("Horizontal Rule","", () => InsertSnippet("\n---\n")));
+
+        return menu;
+    }
+
+    private static MenuItem MakeEditorMenuItem(string header, string gesture, Action onClick)
+    {
+        var item = new MenuItem
+        {
+            Header           = header,
+            InputGestureText = gesture,
+        };
+        item.Click += (_, _) => onClick();
+        return item;
+    }
 
     // --- View mode & layout -----------------------------------------------
 
@@ -513,6 +694,14 @@ public sealed partial class MarkdownEditorHost : UserControl,
     private void ScheduleRefresh()
     {
         _refreshTimer.Stop();
+        // Adaptive debounce using cached length — avoids O(N) GetText() on every keystroke.
+        // _cachedDocLength is updated by ForceRefreshAsync() after each render.
+        _refreshTimer.Interval = _cachedDocLength switch
+        {
+            > 50_000 => TimeSpan.FromMilliseconds(1500),
+            > 10_000 => TimeSpan.FromMilliseconds(800),
+            _        => TimeSpan.FromMilliseconds(300),
+        };
         _refreshTimer.Start();
     }
 
@@ -524,12 +713,23 @@ public sealed partial class MarkdownEditorHost : UserControl,
 
     private async Task ForceRefreshAsync()
     {
+        _isDark = DetectDarkTheme();
+        var text = _editor.GetText();       // single GetText() per debounce period
+        _cachedDocLength = text.Length;     // update cache for next ScheduleRefresh()
+        UpdateWordLineCount(text);          // reuse already-fetched text (no 2nd GetText)
+
         if (_viewMode == MdViewMode.SourceOnly) return;
 
-        _isDark = DetectDarkTheme();
-        var text = _editor.GetText();
-        await _preview.RenderAsync(text, _isDark);
+        var hasMermaid = HasMermaidDiagram(text);
+        await _preview.RenderAsync(text, _isDark, hasMermaid);
     }
+
+    /// <summary>
+    /// Returns <see langword="true"/> if the markdown source contains at least one
+    /// mermaid fenced block. Used to skip the 2.9 MB mermaid.js bundle when not needed.
+    /// </summary>
+    private static bool HasMermaidDiagram(string? text)
+        => text != null && text.Contains("```mermaid", StringComparison.OrdinalIgnoreCase);
 
     // --- Sync scroll ------------------------------------------------------
 
@@ -598,9 +798,41 @@ public sealed partial class MarkdownEditorHost : UserControl,
             Command = new RelayCmd(async () => await ForceRefreshAsync()),
         };
 
+        // Insert pod
+        var insertItems = new ObservableCollection<EditorToolbarItem>
+        {
+            new() { Label = "Table",          Icon = "\uE8EC", Command = new RelayCmd(() => InsertSnippet("\n| Column 1 | Column 2 | Column 3 |\n|---|---|---|\n| Cell | Cell | Cell |\n")) },
+            new() { Label = "Code Block",     Icon = "\uE943", Command = new RelayCmd(() => InsertSnippet("\n```\n\n```\n")) },
+            new() { Label = "Link",           Icon = "\uE8C1", Command = new RelayCmd(() => InsertSnippet("[link text](https://example.com)")) },
+            new() { Label = "Image",          Icon = "\uEB9F", Command = new RelayCmd(() => InsertSnippet("![alt text](image.png)")) },
+            new() { Label = "Horizontal Rule",Icon = "\uE8EF", Command = new RelayCmd(() => InsertSnippet("\n---\n")) },
+        };
+        var podInsert = new EditorToolbarItem
+        {
+            Icon = "\uE710", Label = "Insert", Tooltip = "Insert Markdown element",
+            DropdownItems = insertItems,
+        };
+
+        // Format pod
+        var formatItems = new ObservableCollection<EditorToolbarItem>
+        {
+            new() { Label = "Bold",            Icon = "\uE8DD", Command = new RelayCmd(() => WrapSelection("**", "**", "bold text")) },
+            new() { Label = "Italic",          Icon = "\uE8DB", Command = new RelayCmd(() => WrapSelection("*", "*", "italic text")) },
+            new() { Label = "Strikethrough",   Icon = "\uEDE0", Command = new RelayCmd(() => WrapSelection("~~", "~~", "strikethrough")) },
+            new() { Label = "Inline Code",     Icon = "\uE943", Command = new RelayCmd(() => WrapSelection("`", "`", "code")) },
+        };
+        var podFormat = new EditorToolbarItem
+        {
+            Icon = "\uE8D2", Label = "Format", Tooltip = "Format selected text",
+            DropdownItems = formatItems,
+        };
+
         _toolbarItems.Add(_podView);
         _toolbarItems.Add(_podLayout);
         _toolbarItems.Add(sep);
+        _toolbarItems.Add(podInsert);
+        _toolbarItems.Add(podFormat);
+        _toolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
         _toolbarItems.Add(_podSync);
         _toolbarItems.Add(podRefresh);
 
@@ -640,6 +872,7 @@ public sealed partial class MarkdownEditorHost : UserControl,
         _statusItems.Add(_sbView);
         _statusItems.Add(_sbWordCount);
         _statusItems.Add(_sbLineCount);
+        _statusItems.Add(_sbReadingTime);
 
         UpdateStatusBar();
     }
@@ -651,20 +884,36 @@ public sealed partial class MarkdownEditorHost : UserControl,
             c.IsActive = c.DisplayName == _viewMode.ToString();
     }
 
-    private void UpdateWordLineCount()
+    private async void UpdateWordLineCount(string? text = null)
     {
-        var text = _editor.GetText();
+        text ??= _editor.GetText();
         if (string.IsNullOrEmpty(text))
         {
             _sbWordCount.Value = "0";
             _sbLineCount.Value = "0";
+            UpdateReadingTime(0);
             return;
         }
-        var words = text.Split(new[] { ' ', '\t', '\n', '\r' },
-            StringSplitOptions.RemoveEmptyEntries).Length;
-        var lines = text.Split('\n').Length;
+
+        // Run the counting off the UI thread to avoid blocking on large documents.
+        var (words, lines) = await Task.Run(() =>
+        {
+            var w = text.Split([' ', '\t', '\n', '\r'],
+                StringSplitOptions.RemoveEmptyEntries).Length;
+            var l = text.Split('\n').Length;
+            return (w, l);
+        });
+
         _sbWordCount.Value = words.ToString("N0");
         _sbLineCount.Value = lines.ToString("N0");
+        UpdateReadingTime(words);
+    }
+
+    private void UpdateReadingTime(int wordCount)
+    {
+        const int WpmAverage = 200;
+        var minutes = (int)Math.Ceiling(wordCount / (double)WpmAverage);
+        _sbReadingTime.Value = minutes <= 1 ? "< 1 min read" : $"~{minutes} min read";
     }
 
     // --- Helpers ----------------------------------------------------------

@@ -66,7 +66,11 @@ public static class MarkdownRenderService
     ///   A self-contained HTML string suitable for
     ///   <c>WebView2.NavigateToString()</c>.
     /// </returns>
-    public static string GetHtmlPage(string markdownText, bool isDarkTheme)
+    /// <param name="hasMermaid">
+    ///   Pass <see langword="false"/> when the source contains no mermaid blocks
+    ///   to skip the 2.9 MB mermaid.js bundle injection.
+    /// </param>
+    public static string GetHtmlPage(string markdownText, bool isDarkTheme, bool hasMermaid = true)
     {
         var ghCss        = isDarkTheme ? _ghDarkCss.Value    : _ghLightCss.Value;
         var hljsCss      = isDarkTheme ? _hljsDarkCss.Value  : _hljsLightCss.Value;
@@ -143,10 +147,13 @@ public static class MarkdownRenderService
         sb.AppendLine(_highlightJs.Value);
         sb.AppendLine("  </script>");
 
-        // mermaid.js
-        sb.AppendLine("  <script>");
-        sb.AppendLine(_mermaidJs.Value);
-        sb.AppendLine("  </script>");
+        // mermaid.js — only injected when the source contains at least one mermaid block
+        if (hasMermaid)
+        {
+            sb.AppendLine("  <script>");
+            sb.AppendLine(_mermaidJs.Value);
+            sb.AppendLine("  </script>");
+        }
 
         // classdiagram.js (VS-Like static diagram renderer)
         sb.AppendLine("  <script>");
@@ -165,9 +172,12 @@ public static class MarkdownRenderService
         sb.AppendLine("    });");
         sb.AppendLine();
 
-        // Configure mermaid
-        sb.AppendLine($"    mermaid.initialize({{ startOnLoad: false, theme: '{mermaidTheme}', securityLevel: 'loose' }});");
-        sb.AppendLine();
+        // Configure mermaid (only when mermaid.js was injected)
+        if (hasMermaid)
+        {
+            sb.AppendLine($"    mermaid.initialize({{ startOnLoad: false, theme: '{mermaidTheme}', securityLevel: 'loose' }});");
+            sb.AppendLine();
+        }
 
         // Custom renderer: intercept fenced code blocks
         sb.AppendLine("    const renderer = new marked.Renderer();");
@@ -213,9 +223,12 @@ public static class MarkdownRenderService
         sb.AppendLine("    document.getElementById('content').innerHTML = html;");
         sb.AppendLine();
 
-        // Run mermaid on all .mermaid divs
-        sb.AppendLine("    mermaid.run({ nodes: document.querySelectorAll('.mermaid') });");
-        sb.AppendLine();
+        // Run mermaid on all .mermaid divs (only when mermaid.js was injected)
+        if (hasMermaid)
+        {
+            sb.AppendLine("    mermaid.run({ nodes: document.querySelectorAll('.mermaid') });");
+            sb.AppendLine();
+        }
 
         // Run ClassDiagramPreview renderer on all .cd-preview divs
         sb.AppendLine($"    if (typeof ClassDiagramPreview !== 'undefined') {{");

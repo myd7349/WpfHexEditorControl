@@ -56,16 +56,17 @@ public static class MarkdownRenderService
     ///   When <see langword="true"/> uses the GitHub dark stylesheet;
     ///   otherwise uses the light stylesheet.
     /// </param>
-    /// <returns>
-    ///   A self-contained HTML string suitable for
-    ///   <c>WebView2.NavigateToString()</c>.
-    /// </returns>
-    public static string GetHtmlPage(string markdownText, bool isDarkTheme)
+    /// <param name="hasMermaid">
+    ///   When <see langword="false"/> the 2.9 MB mermaid.js bundle is omitted
+    ///   entirely. Pass <see langword="true"/> only when the source contains
+    ///   a <c>```mermaid</c> fenced block.
+    /// </param>
+    public static string GetHtmlPage(string markdownText, bool isDarkTheme, bool hasMermaid = true)
     {
-        var ghCss      = isDarkTheme ? _ghDarkCss.Value    : _ghLightCss.Value;
-        var hljsCss    = isDarkTheme ? _hljsDarkCss.Value  : _hljsLightCss.Value;
-        var bodyBg     = isDarkTheme ? "#0d1117" : "#ffffff";
-        var bodyColor  = isDarkTheme ? "#c9d1d9" : "#24292f";
+        var ghCss        = isDarkTheme ? _ghDarkCss.Value    : _ghLightCss.Value;
+        var hljsCss      = isDarkTheme ? _hljsDarkCss.Value  : _hljsLightCss.Value;
+        var bodyBg       = isDarkTheme ? "#0d1117" : "#ffffff";
+        var bodyColor    = isDarkTheme ? "#c9d1d9" : "#24292f";
         var mermaidTheme = isDarkTheme ? "dark" : "default";
 
         // Escape markdown for JSON embedding
@@ -130,10 +131,13 @@ public static class MarkdownRenderService
         sb.AppendLine(_highlightJs.Value);
         sb.AppendLine("  </script>");
 
-        // mermaid.js
-        sb.AppendLine("  <script>");
-        sb.AppendLine(_mermaidJs.Value);
-        sb.AppendLine("  </script>");
+        // mermaid.js — only injected when a ```mermaid block is present in the source
+        if (hasMermaid)
+        {
+            sb.AppendLine("  <script>");
+            sb.AppendLine(_mermaidJs.Value);
+            sb.AppendLine("  </script>");
+        }
 
         // Render script
         sb.AppendLine("  <script>");
@@ -147,8 +151,9 @@ public static class MarkdownRenderService
         sb.AppendLine("    });");
         sb.AppendLine();
 
-        // Configure mermaid
-        sb.AppendLine($"    mermaid.initialize({{ startOnLoad: false, theme: '{mermaidTheme}', securityLevel: 'loose' }});");
+        // Configure mermaid (only when bundle was injected)
+        if (hasMermaid)
+            sb.AppendLine($"    mermaid.initialize({{ startOnLoad: false, theme: '{mermaidTheme}', securityLevel: 'loose' }});");
         sb.AppendLine();
 
         // Custom renderer: intercept fenced code blocks to detect mermaid
@@ -188,8 +193,9 @@ public static class MarkdownRenderService
         sb.AppendLine("    document.getElementById('content').innerHTML = html;");
         sb.AppendLine();
 
-        // Run mermaid on all .mermaid divs
-        sb.AppendLine("    mermaid.run({ nodes: document.querySelectorAll('.mermaid') });");
+        // Run mermaid on all .mermaid divs (only when bundle was injected)
+        if (hasMermaid)
+            sb.AppendLine("    mermaid.run({ nodes: document.querySelectorAll('.mermaid') });");
         sb.AppendLine();
 
         // Expose scrollToLine for sync-scroll from C#

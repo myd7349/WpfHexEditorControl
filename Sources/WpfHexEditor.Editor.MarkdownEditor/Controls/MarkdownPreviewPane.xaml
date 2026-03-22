@@ -15,6 +15,33 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf">
 
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/WpfHexEditor.Editor.MarkdownEditor;component/Themes/MdContextMenu.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <UserControl.ContextMenu>
+        <ContextMenu Style="{StaticResource MD_ContextMenuStyle}">
+            <!-- VIEW group -->
+            <MenuItem Header="VIEW" Style="{StaticResource MD_GroupHeaderStyle}"/>
+            <MenuItem Header="Source Only"   InputGestureText="Ctrl+1" Click="OnCtxSourceOnly"/>
+            <MenuItem Header="Split View"    InputGestureText="Ctrl+2" Click="OnCtxSplitView"/>
+            <MenuItem Header="Preview Only"  InputGestureText="Ctrl+3" Click="OnCtxPreviewOnly"/>
+            <Separator Style="{StaticResource MD_GroupSeparatorStyle}"/>
+            <!-- ACTIONS group -->
+            <MenuItem Header="ACTIONS" Style="{StaticResource MD_GroupHeaderStyle}"/>
+            <MenuItem Header="Refresh Preview"  InputGestureText="F9"            Click="OnCtxRefresh"/>
+            <MenuItem x:Name="_ctxSyncScroll"
+                      Header="Sync Scroll"
+                      IsCheckable="True"
+                      Click="OnCtxSyncScroll"/>
+            <MenuItem Header="Cycle Layout"     InputGestureText="Ctrl+Shift+L"  Click="OnCtxCycleLayout"/>
+        </ContextMenu>
+    </UserControl.ContextMenu>
+
     <Grid>
         <!-- WebView2 — hidden until initialized to avoid white flash -->
         <wv2:WebView2 x:Name="_webView"

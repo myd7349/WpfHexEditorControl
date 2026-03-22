@@ -391,6 +391,14 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Header="_Markdown Outline" Click="OnShowMarkdownOutline"
+                                  ToolTip="Show Markdown Outline panel (heading navigator)">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE8C9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <!-- Plugin-contributed View menu items are injected here dynamically
                              by each plugin via IUIRegistry.RegisterMenuItem() at load time. -->
                         <Separator/>

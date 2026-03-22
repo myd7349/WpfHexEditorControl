@@ -26,6 +26,17 @@ using WpfHexEditor.Editor.MarkdownEditor.Core.Services;
 
 namespace WpfHexEditor.Editor.MarkdownEditor.Controls;
 
+/// <summary>Actions that can be triggered from the preview-pane context menu.</summary>
+public enum MdPreviewContextAction
+{
+    SourceOnly,
+    SplitView,
+    PreviewOnly,
+    Refresh,
+    ToggleSyncScroll,
+    CycleLayout,
+}
+
 /// <summary>
 /// WebView2-backed control that renders GitHub-Flavored Markdown as HTML.
 /// </summary>
@@ -47,6 +58,12 @@ public sealed partial class MarkdownPreviewPane : UserControl
     /// The string argument is the target URL.
     /// </summary>
     public event EventHandler<string>? LinkClicked;
+
+    /// <summary>
+    /// Raised by context menu items in the preview pane.
+    /// The host (<see cref="MarkdownEditorHost"/>) handles these actions.
+    /// </summary>
+    public event EventHandler<MdPreviewContextAction>? PreviewContextMenuAction;
 
     // --- Construction -----------------------------------------------------
 
@@ -93,7 +110,7 @@ public sealed partial class MarkdownPreviewPane : UserControl
 
             // Render any content that arrived before initialization completed
             if (!string.IsNullOrEmpty(_pendingMarkdown))
-                await RenderAsync(_pendingMarkdown, _pendingIsDark);
+                await RenderAsync(_pendingMarkdown, _pendingIsDark, _pendingHasMermaid);
         }
         catch (Exception ex) when (IsWebView2RuntimeMissing(ex))
         {
@@ -102,25 +119,33 @@ public sealed partial class MarkdownPreviewPane : UserControl
         }
     }
 
+    // Cached mermaid detection flag — updated each render call
+    private bool _pendingHasMermaid = true;
+
     /// <summary>
     /// Renders the given Markdown text as a full HTML page in the preview pane.
     /// Safe to call before <see cref="InitializeAsync"/> completes — the render
     /// will be queued and executed once initialization finishes.
     /// </summary>
-    public async Task RenderAsync(string markdownText, bool isDarkTheme)
+    /// <param name="hasMermaid">
+    ///   Pass <see langword="false"/> when the source contains no mermaid blocks
+    ///   to skip the 2.9 MB mermaid.js bundle injection.
+    /// </param>
+    public async Task RenderAsync(string markdownText, bool isDarkTheme, bool hasMermaid = true)
     {
         if (!_isInitialized)
         {
             // Queue for later; InitializeAsync will pick it up
-            _pendingMarkdown = markdownText;
-            _pendingIsDark   = isDarkTheme;
+            _pendingMarkdown    = markdownText;
+            _pendingIsDark      = isDarkTheme;
+            _pendingHasMermaid  = hasMermaid;
             return;
         }
 
         var stamp = System.Threading.Interlocked.Increment(ref _renderStamp);
 
         // Build HTML off the UI thread to keep it responsive during large docs
-        var html = await Task.Run(() => MarkdownRenderService.GetHtmlPage(markdownText, isDarkTheme));
+        var html = await Task.Run(() => MarkdownRenderService.GetHtmlPage(markdownText, isDarkTheme, hasMermaid));
 
         // Discard if a newer render was requested while we were working
         if (stamp != _renderStamp) return;
@@ -197,4 +222,35 @@ public sealed partial class MarkdownPreviewPane : UserControl
         => ex is WebView2RuntimeNotFoundException ||
            ex.Message.Contains("WebView2", StringComparison.OrdinalIgnoreCase) ||
            ex.InnerException is WebView2RuntimeNotFoundException;
+
+    // --- Context menu sync ------------------------------------------------
+
+    /// <summary>
+    /// Updates the Sync Scroll checkmark from the host when the panel opens.
+    /// </summary>
+    public void SetSyncScrollChecked(bool value)
+    {
+        if (_ctxSyncScroll is not null)
+            _ctxSyncScroll.IsChecked = value;
+    }
+
+    // --- Context menu handlers --------------------------------------------
+
+    private void OnCtxSourceOnly(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.SourceOnly);
+
+    private void OnCtxSplitView(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.SplitView);
+
+    private void OnCtxPreviewOnly(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.PreviewOnly);
+
+    private void OnCtxRefresh(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.Refresh);
+
+    private void OnCtxSyncScroll(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.ToggleSyncScroll);
+
+    private void OnCtxCycleLayout(object sender, RoutedEventArgs e)
+        => PreviewContextMenuAction?.Invoke(this, MdPreviewContextAction.CycleLayout);
 }

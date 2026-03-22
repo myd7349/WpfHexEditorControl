@@ -167,6 +167,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private const string OptionsContentId       = "panel-options";
     private const string FileComparisonPanelContentId    = "panel-file-comparison";
     private const string ArchivePanelContentId           = "panel-archive";
+    private const string MarkdownOutlinePanelContentId   = "panel-md-outline";
+
+    // Markdown Outline panel (persistent singleton)
+    private WpfHexEditor.Editor.MarkdownEditor.Panels.MarkdownOutlinePanel? _markdownOutlinePanel;
     private string _lastAppliedTheme = string.Empty;
 
     // TBL dropdown — tracks which project TBL item is applied per hex editor
@@ -416,29 +420,46 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Registers all embedded .whlang syntax definitions into <see cref="LanguageRegistry"/>
+    /// Registers all embedded syntax definitions into <see cref="LanguageRegistry"/>
     /// so that <see cref="CodeEditorFactory"/> can resolve the correct
     /// <see cref="ISyntaxHighlighter"/> for every file type it opens.
+    /// <para>
+    /// Loads embedded <c>.whfmt</c> files that carry a <c>syntaxDefinition</c> block
+    /// (detected by <see cref="EmbeddedFormatEntry.HasSyntaxDefinition"/>).
+    /// </para>
     /// Must be called before any editor factory is used.
     /// </summary>
     private static void LoadEmbeddedLanguageDefinitions()
     {
-        var catalog  = EmbeddedSyntaxCatalog.Instance;
         var registry = LanguageRegistry.Instance;
 
-        foreach (var entry in catalog.GetAll())
+        // Load .whfmt files that embed a syntaxDefinition block.
+        var formatCatalog = EmbeddedFormatCatalog.Instance;
+        foreach (var entry in formatCatalog.GetAll())
         {
+            if (!entry.HasSyntaxDefinition) continue;
             try
             {
-                var json = catalog.GetContent(entry.ResourceKey);
-                var def  = LanguageDefinitionSerializer.Parse(json);
+                var syntaxJson = formatCatalog.GetSyntaxDefinitionJson(entry.ResourceKey);
+                if (syntaxJson is null) continue;
+
+                var def = LanguageDefinitionSerializer.ParseSyntaxDefinitionBlock(
+                    syntaxJson,
+                    entry.Name,
+                    entry.Extensions,
+                    entry.PreferredEditor);
+
+                // .whfmt definitions take precedence over legacy .whlang definitions.
                 registry.RegisterBuiltin(def);
             }
             catch
             {
-                // Skip malformed or incomplete .whlang entries to avoid blocking startup.
+                // Skip malformed syntaxDefinition blocks to avoid blocking startup.
             }
         }
+
+        // Resolve Includes chains after all definitions are registered.
+        registry.ResolveIncludes();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -1182,6 +1203,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             TerminalPanelContentId         => CreateTerminalPanelContent(),
             PluginMonitorContentId         => CreatePluginMonitorPanelContent(),
             PluginManagerContentId         => CreatePluginManagerContent(),
+            MarkdownOutlinePanelContentId  => CreateMarkdownOutlinePanelContent(),
             _ when item.ContentId.StartsWith("doc-file-")      => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")       => WrapHexDocItemWithInfoBar(item),
             _ when item.ContentId.StartsWith("doc-projprops-") => CreateProjectPropertiesContent(item),
@@ -1289,6 +1311,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // FileComparisonPanel manages its own file selection internally
         var panel = new WpfHexEditor.Panels.FileOps.FileComparisonPanel();
         return panel;
+    }
+
+    private UIElement CreateMarkdownOutlinePanelContent()
+    {
+        _markdownOutlinePanel ??= new WpfHexEditor.Editor.MarkdownEditor.Panels.MarkdownOutlinePanel();
+        // Seed with the current active editor if it is already a Markdown editor.
+        if (_markdownOutlinePanel is not null && ActiveDocumentEditor is WpfHexEditor.Editor.MarkdownEditor.Controls.MarkdownEditorHost mdHost)
+            _markdownOutlinePanel.SetEditor(mdHost);
+        return _markdownOutlinePanel!;
     }
 
     private UIElement CreateArchivePanelContent()
@@ -2663,7 +2694,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void OnSEImportSyntaxDefinition(object? sender, AddItemRequestedEventArgs e)
     {
-        var catalog = EmbeddedSyntaxCatalog.Instance;
+        var catalog = EmbeddedFormatCatalog.Instance;
         var dlg     = new ImportEmbeddedSyntaxDialog(catalog, e.Project, e.TargetFolderId) { Owner = this };
         if (dlg.ShowDialog() != true || dlg.SelectedEntries.Count == 0) return;
 
@@ -2676,9 +2707,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                                  .Replace(' ', '_');
             var destPath = Path.Combine(destDir, safeName + ".whlang");
 
-            // Read the full embedded resource content and write it to disk.
-            var content = catalog.GetContent(entry.ResourceKey);
-            File.WriteAllText(destPath, content, System.Text.Encoding.UTF8);
+            // Extract the syntaxDefinition block from the .whfmt resource and write it as a .whlang file.
+            var syntaxJson = catalog.GetSyntaxDefinitionJson(entry.ResourceKey)
+                             ?? catalog.GetJson(entry.ResourceKey);
+            File.WriteAllText(destPath, syntaxJson, System.Text.Encoding.UTF8);
 
             // Await registration then open the file so the user sees the imported content.
             var item = await _solutionManager.AddItemAsync(
@@ -3640,6 +3672,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             _propertiesPanel?.SetProvider(null);
         }
+
+        // Sync Markdown Outline panel — only populated when a MarkdownEditorHost is active.
+        if (_markdownOutlinePanel is not null)
+            _markdownOutlinePanel.SetEditor(content as WpfHexEditor.Editor.MarkdownEditor.Controls.MarkdownEditorHost);
 
         // Sync active document in DocumentManager so IsActive / ActiveDocument are accurate.
         SyncActiveDocument(item.ContentId);
@@ -5410,6 +5446,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void OnShowErrorPanel(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Error List", ErrorPanelContentId, DockDirection.Bottom);
+
+    private void OnShowMarkdownOutline(object sender, RoutedEventArgs e)
+        => ShowOrCreatePanel("Markdown Outline", MarkdownOutlinePanelContentId, DockDirection.Left);
 
     private async System.Threading.Tasks.Task RefreshAnalysisPanelsAsync(HexEditorControl hex)
     {
