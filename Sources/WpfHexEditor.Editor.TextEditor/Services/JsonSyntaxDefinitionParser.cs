@@ -161,6 +161,12 @@ internal static class JsonSyntaxDefinitionParser
                     var pattern  = r.TryGetProperty("pattern",  out var pp) ? pp.GetString() ?? string.Empty : string.Empty;
                     var colorKey = r.TryGetProperty("colorKey", out var cp) ? cp.GetString() ?? string.Empty : string.Empty;
 
+                    // Fallback: derive colorKey from semantic type when not explicitly declared.
+                    // Enables .whfmt files designed for CodeEditor (type-only rules) to also
+                    // produce visible colors in the TextEditor's RegexSyntaxHighlighter.
+                    if (string.IsNullOrEmpty(colorKey) && !string.IsNullOrEmpty(type))
+                        colorKey = ResolveColorKeyFromType(type);
+
                     if (!string.IsNullOrEmpty(pattern))
                         rules.Add(new SyntaxRule { Type = type, Pattern = pattern, ColorKey = colorKey });
                 }
@@ -199,4 +205,60 @@ internal static class JsonSyntaxDefinitionParser
             return null;
         }
     }
+
+    // -----------------------------------------------------------------------
+    // Type → ColorKey fallback map
+    // -----------------------------------------------------------------------
+
+    // Maps semantic rule types (used by CodeEditor .whfmt files that omit colorKey)
+    // to standard TE_* theme brush keys used by TextEditor's RegexSyntaxHighlighter.
+    private static readonly Dictionary<string, string> _typeToColorKey =
+        new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Keyword",         "TE_Keyword"    },
+        { "ControlKeyword",  "TE_Keyword"    },
+        { "Type",            "TE_Type"       },
+        { "BuiltinType",     "TE_Type"       },
+        { "String",          "TE_String"     },
+        { "InterpolatedString", "TE_String"  },
+        { "VerbatimString",  "TE_String"     },
+        { "Char",            "TE_String"     },
+        { "Number",          "TE_Literal"    },
+        { "Literal",         "TE_Literal"    },
+        { "Bool",            "TE_Literal"    },
+        { "Null",            "TE_Literal"    },
+        { "Comment",         "TE_Comment"    },
+        { "BlockComment",    "TE_Comment"    },
+        { "DocComment",      "TE_Comment"    },
+        { "Preprocessor",    "TE_Directive"  },
+        { "Directive",       "TE_Directive"  },
+        { "Annotation",      "TE_Directive"  },
+        { "Decorator",       "TE_Directive"  },
+        { "Attribute",       "TE_Directive"  },
+        { "RegionName",      "TE_Directive"  },
+        { "RegionKeyword",   "TE_Directive"  },
+        { "ControlFlow",     "TE_Keyword"    },
+        { "NamespaceDecl",   "TE_Type"       },
+        { "UsingRef",        "TE_Directive"  },
+        { "UserType",        "TE_Type"       },
+        { "Operator",        "TE_Operator"   },
+        { "Punctuation",     "TE_Punctuation"},
+        { "Label",           "TE_Label"      },
+        { "Namespace",       "TE_Type"       },
+        { "Function",        "TE_Type"       },
+        { "Method",          "TE_Type"       },
+        { "Variable",        "TE_Label"      },
+        { "Parameter",       "TE_Label"      },
+        { "Property",        "TE_Label"      },
+        { "Field",           "TE_Label"      },
+        { "Identifier",      "TE_Label"      },
+    };
+
+    /// <summary>
+    /// Derives a <c>TE_*</c> color key from a semantic rule type when <c>colorKey</c>
+    /// is not explicitly declared in the <c>.whfmt</c> rule block.
+    /// Returns an empty string when no mapping is found (plain text rendering).
+    /// </summary>
+    private static string ResolveColorKeyFromType(string type)
+        => _typeToColorKey.TryGetValue(type, out var key) ? key : string.Empty;
 }

@@ -359,9 +359,32 @@ public sealed class DesignInteractionService
         element.RenderTransformOrigin = new Point(0.5, 0.5);
 
         if (element.RenderTransform is RotateTransform rt)
+        {
             rt.Angle = newAngle;
+        }
+        else if (element.RenderTransform is TransformGroup tg)
+        {
+            var existing = tg.Children.OfType<RotateTransform>().FirstOrDefault();
+            if (existing is not null)
+                existing.Angle = newAngle;
+            else
+                tg.Children.Add(new RotateTransform(newAngle));
+        }
         else
-            element.RenderTransform = new RotateTransform(newAngle);
+        {
+            // Preserve any existing transform by wrapping in a group.
+            if (element.RenderTransform is not null && element.RenderTransform != Transform.Identity)
+            {
+                var group = new TransformGroup();
+                group.Children.Add(element.RenderTransform);
+                group.Children.Add(new RotateTransform(newAngle));
+                element.RenderTransform = group;
+            }
+            else
+            {
+                element.RenderTransform = new RotateTransform(newAngle);
+            }
+        }
     }
 
     /// <summary>Called when the rotation drag is completed.</summary>
@@ -384,6 +407,45 @@ public sealed class DesignInteractionService
 
         OperationCommitted?.Invoke(this, new DesignOperationCommittedEventArgs(op, element));
         _rotateUid = -1;
+    }
+
+    // ── Skew API ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Applies a skew transform to <paramref name="element"/> live during a skew drag.
+    /// Writes into the element's existing <see cref="TransformGroup"/> when present;
+    /// otherwise wraps in a new group preserving any prior transform.
+    /// </summary>
+    public void OnSkewDelta(FrameworkElement element, double angleX, double angleY)
+    {
+        element.RenderTransformOrigin = new Point(0.5, 0.5);
+
+        if (element.RenderTransform is TransformGroup tg)
+        {
+            var sk = tg.Children.OfType<SkewTransform>().FirstOrDefault();
+            if (sk is not null)
+            {
+                sk.AngleX = angleX;
+                sk.AngleY = angleY;
+            }
+            else
+            {
+                tg.Children.Add(new SkewTransform(angleX, angleY));
+            }
+        }
+        else if (element.RenderTransform is SkewTransform existing)
+        {
+            existing.AngleX = angleX;
+            existing.AngleY = angleY;
+        }
+        else
+        {
+            var group = new TransformGroup();
+            if (element.RenderTransform is not null && element.RenderTransform != Transform.Identity)
+                group.Children.Add(element.RenderTransform);
+            group.Children.Add(new SkewTransform(angleX, angleY));
+            element.RenderTransform = group;
+        }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

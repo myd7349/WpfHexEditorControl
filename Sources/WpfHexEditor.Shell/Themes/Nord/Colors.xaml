@@ -415,6 +415,43 @@
     <SolidColorBrush x:Key="XD_TimelineKeyframeSelectedBrush"    Color="#D08770"/>
     <SolidColorBrush x:Key="XD_TimelineBackground"              Color="#2E3440"/>
     <SolidColorBrush x:Key="XD_KeyframeThumbBrush"              Color="#EBCB8B"/>
+    <SolidColorBrush x:Key="XD_RubberBandFillBrush"            Color="#408FBCBB"/>
+    <SolidColorBrush x:Key="XD_DimensionBadgeBackground"       Color="#C8181818"/>
+    <SolidColorBrush x:Key="XD_DimensionBadgeForeground"       Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="XD_MeasureGuideBrush"              Color="#FFFF8C00"/>
+    <SolidColorBrush x:Key="XD_MeasureLabelBackground"         Color="#C8181818"/>
+    <SolidColorBrush x:Key="XD_TransformOriginDotBrush"    Color="#B24C566A"/>
+    <SolidColorBrush x:Key="XD_TransformOriginActiveBrush" Color="#FF88C0D0"/>
+    <SolidColorBrush x:Key="XD_AngleBadgeBackground"       Color="#C82E3440"/>
+    <SolidColorBrush x:Key="XD_SkewHandleBrush"            Color="#FFB48EAD"/>
+    <SolidColorBrush x:Key="XD_BoxModelMarginBrush"      Color="#3CEBCB8B"/>
+    <SolidColorBrush x:Key="XD_BoxModelPaddingBrush"     Color="#3CA3BE8C"/>
+    <SolidColorBrush x:Key="XD_BoxModelBorderZoneBrush"  Color="#3C5E81AC"/>
+    <SolidColorBrush x:Key="XD_InlineEditBackground"     Color="#DC2E3440"/>
+    <SolidColorBrush x:Key="XD_DrawToolActiveBrush"     Color="#FF88C0D0"/>
+    <SolidColorBrush x:Key="XD_DrawPreviewStrokeBrush"  Color="#C888C0D0"/>
+    <SolidColorBrush x:Key="XD_DrawPreviewFillBrush"    Color="#2888C0D0"/>
+    <SolidColorBrush x:Key="XD_TemplateScopeBannerBrush"       Color="#DC242933"/>
+    <SolidColorBrush x:Key="XD_TemplateBreadcrumbBackground"   Color="#2888C0D0"/>
+    <SolidColorBrush x:Key="XD_TemplateBreadcrumbForeground"   Color="#FFD8DEE9"/>
+    <SolidColorBrush x:Key="XD_PlaybackBarBackground"    Color="#FF242933"/>
+    <SolidColorBrush x:Key="XD_PlayButtonBrush"          Color="#FFD8DEE9"/>
+    <SolidColorBrush x:Key="XD_PlaybackScrubberThumb"    Color="#FF88C0D0"/>
+    <SolidColorBrush x:Key="XD_EasingCurveStroke"        Color="#FF88C0D0"/>
+    <SolidColorBrush x:Key="XD_EasingHandleBrush"        Color="#FFB48EAD"/>
+    <SolidColorBrush x:Key="XD_ConstraintPinnedBrush"      Color="#FF88C0D0"/>
+    <SolidColorBrush x:Key="XD_ConstraintUnpinnedBrush"    Color="#FF4C566A"/>
+    <SolidColorBrush x:Key="XD_BreakpointActiveBackground" Color="#5088C0D0"/>
+    <SolidColorBrush x:Key="XD_SafeAreaGuideBrush"         Color="#40BF616A"/>
+    <SolidColorBrush x:Key="XD_GradientEditorLineBrush"   Color="#FF4C566A"/>
+    <SolidColorBrush x:Key="XD_GradientStopSelectedBrush" Color="#FFEBCB8B"/>
+    <SolidColorBrush x:Key="XD_BindingPickerBackground"   Color="#FF2E3440"/>
+    <SolidColorBrush x:Key="XD_BindingPickerSelectedBrush" Color="#4088C0D0"/>
+    <SolidColorBrush x:Key="XD_PerfOverlayBackground"     Color="#CC2E3440"/>
+    <SolidColorBrush x:Key="XD_PerfOverlayForeground"     Color="#FFECEFF4"/>
+    <SolidColorBrush x:Key="XD_PerfFpsGoodBrush"          Color="#FFA3BE8C"/>
+    <SolidColorBrush x:Key="XD_PerfFpsWarnBrush"          Color="#FFEBCB8B"/>
+    <SolidColorBrush x:Key="XD_PerfFpsBadBrush"           Color="#FFBF616A"/>
 
     <!-- Live Visual Tree Panel (LVT_*) -->
     <SolidColorBrush x:Key="LVT_NameBrush"                      Color="#88C0D0"/>

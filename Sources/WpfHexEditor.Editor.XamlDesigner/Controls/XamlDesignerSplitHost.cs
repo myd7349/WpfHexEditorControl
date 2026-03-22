@@ -138,6 +138,15 @@ public sealed class XamlDesignerSplitHost : Grid,
     private Border?               _errorOverlay;     // centred error card over the design pane
     private TextBlock?            _overlayDetail;    // detail text inside _errorOverlay
 
+    // ── Template editing (Phase 6) ────────────────────────────────────────────
+
+    private readonly TemplateEditingService _templateService  = new();
+    private          TemplateBreadcrumbBar?     _breadcrumbBar;
+
+    // ── Responsive breakpoint bar (Phase 8) ───────────────────────────────────
+
+    private ResponsiveBreakpointBar? _breakpointBar;
+
     // ── Overkill Undo/Redo — DesignUndoManager ────────────────────────────────
 
     private readonly DesignUndoManager _undoManager = new();
@@ -265,6 +274,7 @@ public sealed class XamlDesignerSplitHost : Grid,
     private readonly CoreStatusBarItem _sbZoom        = new() { Label = "Zoom",  Value = "100%" };
     private readonly CoreStatusBarItem _sbViewMode    = new() { Label = "View",   Value = "Split" };
     private readonly CoreStatusBarItem _sbLayout      = new() { Label = "Layout", Value = "Design Right" };
+    private readonly CoreStatusBarItem _sbRender      = new() { Label = "Render", Value = "—" };
 
     // ── Toolbar contributor ────────────────────────────────────────────────────
 
@@ -342,21 +352,45 @@ public sealed class XamlDesignerSplitHost : Grid,
         // XD_CanvasBackground gives the design surface its own visual identity so the
         // dock panel's dark background does not bleed through the transparent ZoomPanCanvas.
         _designPaneGrid.SetResourceReference(BackgroundProperty, "XD_CanvasBackground");
+        // Row 0: breadcrumb bar (auto-height, hidden when not in template mode)
+        // Row 1: ZoomPanCanvas (star)
+        // Row 2: horizontal scrollbar (auto)
+        _designPaneGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _designPaneGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         _designPaneGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         _designPaneGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         _designPaneGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        Grid.SetRow(_zoomPan,    0); Grid.SetColumn(_zoomPan,    0);
-        Grid.SetRow(_hScrollBar, 1); Grid.SetColumn(_hScrollBar, 0);
-        Grid.SetRow(_vScrollBar, 0); Grid.SetColumn(_vScrollBar, 1);
+        // Header panel (row 0, spans both columns):
+        //   - ResponsiveBreakpointBar (Phase 8) — always visible
+        //   - TemplateBreadcrumbBar   (Phase 6) — visible only in template-edit mode
+        _breakpointBar = new ResponsiveBreakpointBar();
+        _breakpointBar.BreakpointSelected += (_, w) =>
+        {
+            _designCanvas.CanvasPresetWidth = w;
+            _breakpointBar.SetActive(w);
+        };
+
+        _breadcrumbBar = new TemplateBreadcrumbBar();
+        _breadcrumbBar.ExitRequested += (_, _) => ExitTemplateEditScope();
+
+        var headerPanel = new StackPanel { Orientation = Orientation.Vertical };
+        headerPanel.Children.Add(_breakpointBar);
+        headerPanel.Children.Add(_breadcrumbBar);
+
+        Grid.SetRow(headerPanel, 0); Grid.SetColumnSpan(headerPanel, 2);
+        _designPaneGrid.Children.Add(headerPanel);
+
+        Grid.SetRow(_zoomPan,    1); Grid.SetColumn(_zoomPan,    0);
+        Grid.SetRow(_hScrollBar, 2); Grid.SetColumn(_hScrollBar, 0);
+        Grid.SetRow(_vScrollBar, 1); Grid.SetColumn(_vScrollBar, 1);
 
         // Corner rectangle filling the gap where both scrollbars meet.
         // Saved as a field so UpdateScrollBars() can collapse it when scrollbars are hidden,
         // preventing its explicit Width (17px) from keeping Col 1 at 17px when not needed.
         _scrollCorner = new Rectangle { Width = SystemParameters.VerticalScrollBarWidth };
         _scrollCorner.SetResourceReference(Rectangle.FillProperty, "DockSplitterBrush");
-        Grid.SetRow(_scrollCorner, 1); Grid.SetColumn(_scrollCorner, 1);
+        Grid.SetRow(_scrollCorner, 2); Grid.SetColumn(_scrollCorner, 1);
 
         _designPaneGrid.Children.Add(_zoomPan);
         _designPaneGrid.Children.Add(_hScrollBar);
@@ -569,7 +603,8 @@ public sealed class XamlDesignerSplitHost : Grid,
         _previewTimer.Tick += OnPreviewTimerTick;
 
         // -- Wire design interaction + undo (Phase 1 / Overkill) ------------
-        _interactionService.OperationCommitted += OnDesignOperationCommitted;
+        _interactionService.OperationCommitted    += OnDesignOperationCommitted;
+        _designCanvas.CanvasOperationCommitted    += OnDesignOperationCommitted;
 
         // -- Phase E4: forward snap guides from interaction service → overlay.
         _interactionService.SnapGuidesUpdated += (_, guides) =>
@@ -598,6 +633,11 @@ public sealed class XamlDesignerSplitHost : Grid,
         CommandBindings.Add(new CommandBinding(ApplicationCommands.Redo,
             (_, _) => Redo(),
             (_, e) => { e.CanExecute = CanRedo; e.Handled = true; }));
+
+        // -- Ctrl+Shift+F9: toggle performance overlay (Phase 10) -----------
+        InputBindings.Add(new KeyBinding(
+            new RelayCommand(_ => _designCanvas.ShowPerformanceOverlay = !_designCanvas.ShowPerformanceOverlay),
+            Key.F9, ModifierKeys.Control | ModifierKeys.Shift));
 
         // -- Deselect when clicking outside the design canvas (Phase E3) ----
         // A click anywhere in the ZoomPanCanvas viewport that does NOT land inside
@@ -964,6 +1004,7 @@ public sealed class XamlDesignerSplitHost : Grid,
             StatusBarItems.Add(_sbZoom);
             StatusBarItems.Add(_sbViewMode);
             StatusBarItems.Add(_sbLayout);
+            StatusBarItems.Add(_sbRender);
         }
 
         var el = _designCanvas.SelectedElement;
@@ -1132,6 +1173,32 @@ public sealed class XamlDesignerSplitHost : Grid,
 
         // P2: sync F4 after canvas re-renders with updated element position/size.
         Dispatcher.InvokeAsync(UpdateIdePropertyProvider, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    // ── Phase 6 — Template editing ────────────────────────────────────────────
+
+    private void EnterTemplateEditScope()
+    {
+        var selected = _designCanvas.SelectedElement;
+        if (selected is null) return;
+
+        int uid = _designCanvas.GetUidOf(selected);
+        if (uid < 0) return;
+
+        var rawXaml = _codeHost.PrimaryEditor.Document?.SaveToString() ?? string.Empty;
+        var result  = _templateService.ExtractTemplate(rawXaml, uid);
+        if (result is null) return;
+
+        _breadcrumbBar?.Refresh(_templateService.ScopeStack);
+    }
+
+    private void ExitTemplateEditScope()
+    {
+        _templateService.PopScope();
+        _breadcrumbBar?.Refresh(_templateService.ScopeStack);
+
+        if (!_templateService.IsInTemplateScope)
+            _breadcrumbBar?.Refresh(System.Array.Empty<TemplateScopeEntry>());
     }
 
     // ── Phase 5 — Alignment batch undo ────────────────────────────────────────
@@ -1408,6 +1475,8 @@ public sealed class XamlDesignerSplitHost : Grid,
             UpdateIdePropertyProvider();
             // Phase GG: refresh grid guide adorner so handle positions reflect new pixel sizes.
             _designCanvas.RefreshGridGuide();
+            // Phase 10: update render-time status bar item.
+            // The PerformanceOverlayAdorner tracks its own FPS — status bar shows element count.
         }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
@@ -2130,6 +2199,18 @@ public sealed class XamlDesignerSplitHost : Grid,
         menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("\uE8A5", "View Code",      new RelayCommand(_ => ApplyViewMode(ViewMode.CodeOnly)),                                     "F7"));
         menu.Items.Add(MakeItem("\uE946", "Properties",     new RelayCommand(_ => FocusPropertiesPanelRequested?.Invoke(this, EventArgs.Empty)),         "F4"));
+        menu.Items.Add(new Separator());
+
+        // Edit Template — enters template scope for the selected element.
+        var editTemplateItem = new MenuItem { Header = "Edit Template" };
+        editTemplateItem.SetResourceReference(MenuItem.ForegroundProperty, "DockMenuForegroundBrush");
+        editTemplateItem.Icon = MakeMenuIcon("\uE770");
+        menu.Opened += (_, _) =>
+        {
+            editTemplateItem.IsEnabled = _designCanvas.SelectedElement is not null;
+        };
+        editTemplateItem.Click += (_, _) => EnterTemplateEditScope();
+        menu.Items.Add(editTemplateItem);
 
         return menu;
     }

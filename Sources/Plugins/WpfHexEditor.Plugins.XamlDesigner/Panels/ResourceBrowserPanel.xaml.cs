@@ -20,6 +20,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Editor.XamlDesigner.Models;
 using WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 
@@ -31,6 +32,9 @@ namespace WpfHexEditor.Plugins.XamlDesigner.Panels;
 public partial class ResourceBrowserPanel : UserControl
 {
     private ResourceBrowserPanelViewModel _vm = new();
+
+    // DragDrop state.
+    private Point? _dragStartPoint;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -51,6 +55,12 @@ public partial class ResourceBrowserPanel : UserControl
 
     /// <summary>Raised when the user requests Go to Definition on a resource.</summary>
     public event EventHandler<(string key, int line)>? GoToDefinitionRequested;
+
+    /// <summary>
+    /// Raised when the user drags a resource swatch onto another element.
+    /// Args: (ResourceKey, AttributeName) — consumer decides how to patch XAML.
+    /// </summary>
+    public event EventHandler<(string ResourceKey, string AttributeName)>? ResourceDropIntended;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -112,6 +122,45 @@ public partial class ResourceBrowserPanel : UserControl
     {
         if (_vm.SelectedEntry?.PreviewText is { Length: > 0 } text)
             System.Windows.Clipboard.SetText(text);
+    }
+
+    // ── DragDrop source ───────────────────────────────────────────────────────
+
+    private void OnListMouseDown(object sender, MouseButtonEventArgs e)
+        => _dragStartPoint = e.GetPosition(ResourceListView);
+
+    private void OnListMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_dragStartPoint is null || e.LeftButton != MouseButtonState.Pressed) return;
+
+        var pos   = e.GetPosition(ResourceListView);
+        var delta = pos - _dragStartPoint.Value;
+        if (Math.Abs(delta.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(delta.Y) < SystemParameters.MinimumVerticalDragDistance)
+            return;
+
+        _dragStartPoint = null;
+
+        if (_vm.SelectedEntry is not { } entry) return;
+
+        // Build a DataObject containing the resource key and a suggested attribute name.
+        string attrName = InferAttributeName(entry);
+        var    data     = new DataObject("XD_ResourceKey",      entry.Key);
+        data.SetData("XD_ResourceAttributeName", attrName);
+        data.SetData(DataFormats.Text,            $"{{StaticResource {entry.Key}}}");
+
+        DragDrop.DoDragDrop(ResourceListView, data, DragDropEffects.Copy);
+        ResourceDropIntended?.Invoke(this, (entry.Key, attrName));
+    }
+
+    private static string InferAttributeName(ResourceEntryViewModel entry)
+    {
+        // Guess the attribute name from the resource type label.
+        if (entry.ValueType.Contains("Brush",       StringComparison.OrdinalIgnoreCase)) return "Background";
+        if (entry.ValueType.Contains("Style",       StringComparison.OrdinalIgnoreCase)) return "Style";
+        if (entry.ValueType.Contains("DataTemplate",StringComparison.OrdinalIgnoreCase)) return "ItemTemplate";
+        if (entry.ValueType.Contains("Template",    StringComparison.OrdinalIgnoreCase)) return "Template";
+        return "Tag"; // fallback
     }
 
     // ── Sort / scope toolbar handlers ─────────────────────────────────────────

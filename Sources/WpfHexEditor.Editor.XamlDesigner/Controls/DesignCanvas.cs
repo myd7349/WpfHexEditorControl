@@ -60,6 +60,36 @@ public sealed class DesignCanvas : Border
             typeof(DesignCanvas),
             new FrameworkPropertyMetadata(string.Empty, OnXamlSourceChanged));
 
+    /// <summary>
+    /// Gets or sets the currently active drawing tool.
+    /// When non-None, mouse events are routed to shape-draw mode rather than selection/move.
+    /// </summary>
+    public static readonly DependencyProperty ActiveDrawingToolProperty =
+        DependencyProperty.Register(
+            nameof(ActiveDrawingTool),
+            typeof(DrawingTool),
+            typeof(DesignCanvas),
+            new FrameworkPropertyMetadata(DrawingTool.None));
+
+    /// <summary>
+    /// When true, a <see cref="PerformanceOverlayAdorner"/> is shown in the top-right corner.
+    /// </summary>
+    public static readonly DependencyProperty ShowPerformanceOverlayProperty =
+        DependencyProperty.Register(
+            nameof(ShowPerformanceOverlay),
+            typeof(bool),
+            typeof(DesignCanvas),
+            new FrameworkPropertyMetadata(false, OnShowPerformanceOverlayChanged));
+
+    public bool ShowPerformanceOverlay
+    {
+        get => (bool)GetValue(ShowPerformanceOverlayProperty);
+        set => SetValue(ShowPerformanceOverlayProperty, value);
+    }
+
+    private static void OnShowPerformanceOverlayChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        => ((DesignCanvas)d).ApplyPerformanceOverlay((bool)e.NewValue);
+
     // ── Interaction ───────────────────────────────────────────────────────────
 
     private DesignInteractionService? _interaction;
@@ -85,6 +115,36 @@ public sealed class DesignCanvas : Border
     private RubberBandAdorner? _rubberBandAdorner;
     private bool               _isRubberBanding;
     private Point              _rubberBandStart;   // in DesignRoot coordinate space
+
+    // Group-move drag state: active when user drags within an existing multi-selection.
+    private bool  _isGroupMoving;
+    private Point _groupMoveStart;  // in DesignCanvas coordinate space
+
+    // Measure guide adorner — shown when Alt is held during mouse hover.
+    private MeasureGuideAdorner? _measureAdorner;
+
+    // Inline text edit adorner — shown on double-click of a text element.
+    private InlineTextEditAdorner? _inlineTextAdorner;
+
+    // Box model adorner — shown when Alt+Shift is held.
+    private BoxModelAdorner? _boxModelAdorner;
+
+    // ── Constraint adorner state ───────────────────────────────────────────────
+
+    private ConstraintAdorner?             _constraintAdorner;
+    private readonly ConstraintService     _constraintService = new();
+
+    // ── Performance overlay (Phase 10) ────────────────────────────────────────
+
+    private PerformanceOverlayAdorner?     _perfOverlay;
+    private readonly System.Diagnostics.Stopwatch _renderWatch = new();
+
+    // ── Shape draw state ───────────────────────────────────────────────────────
+
+    private ShapeDrawAdorner?   _drawAdorner;
+    private bool                _isDrawing;
+    private Point               _drawStart;      // in DesignRoot coordinate space
+    private readonly ShapeDrawingService _drawService = new();
 
     // ── Grid guide adorner ─────────────────────────────────────────────────────
 
@@ -147,6 +207,10 @@ public sealed class DesignCanvas : Border
         MouseLeave       += OnCanvasMouseLeave;
         MouseEnter       += OnCanvasMouseEnter;  // restore guide when mouse re-enters after adorner flicker
 
+        AllowDrop  = true;
+        DragOver  += OnCanvasDragOver;
+        Drop      += OnCanvasDrop;
+
         // Escape key:
         //   • 2+ elements selected → narrow to primary (first in list).
         //   • 1 element selected   → walk up to nearest selectable parent (deselects at root).
@@ -174,6 +238,55 @@ public sealed class DesignCanvas : Border
     {
         get => (string)GetValue(XamlSourceProperty);
         set => SetValue(XamlSourceProperty, value);
+    }
+
+    /// <summary>Currently active drawing tool. Non-None routes mouse to draw mode.</summary>
+    public DrawingTool ActiveDrawingTool
+    {
+        get => (DrawingTool)GetValue(ActiveDrawingToolProperty);
+        set => SetValue(ActiveDrawingToolProperty, value);
+    }
+
+    /// <summary>
+    /// Preset canvas width (responsive breakpoint). When set, the design root's width is
+    /// clamped to this value and a safe-area guide is drawn at the edge.
+    /// Set to NaN or 0 to use unrestricted width.
+    /// </summary>
+    public static readonly DependencyProperty CanvasPresetWidthProperty =
+        DependencyProperty.Register(
+            nameof(CanvasPresetWidth),
+            typeof(double),
+            typeof(DesignCanvas),
+            new FrameworkPropertyMetadata(double.NaN, OnCanvasPresetWidthChanged));
+
+    public double CanvasPresetWidth
+    {
+        get => (double)GetValue(CanvasPresetWidthProperty);
+        set => SetValue(CanvasPresetWidthProperty, value);
+    }
+
+    private static void OnCanvasPresetWidthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is DesignCanvas canvas)
+            canvas.ApplyCanvasPresetWidth((double)e.NewValue);
+    }
+
+    private void ApplyCanvasPresetWidth(double width)
+    {
+        if (DesignRoot is FrameworkElement rootFe)
+        {
+            if (double.IsNaN(width) || width <= 0)
+            {
+                rootFe.MaxWidth = double.PositiveInfinity;
+                rootFe.Width    = double.NaN;
+            }
+            else
+            {
+                rootFe.MaxWidth = width;
+                rootFe.Width    = width;
+            }
+        }
+        InvalidateVisual();
     }
 
     /// <summary>The last successfully rendered root UIElement.</summary>
@@ -418,7 +531,57 @@ public sealed class DesignCanvas : Border
             SelectedElementChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Adds <paramref name="el"/> to the selection without removing any existing members (Shift+Click).
+    /// If the element is already selected, this is a no-op.
+    /// </summary>
+    public void AddToSelection(UIElement el, bool suppressEvent = false)
+    {
+        if (el is null || _selectedElements.Contains(el)) return;
+
+        RemoveHoverAdorner();
+        _selectedElements.Add(el);
+        RebuildSelectionAdorners();
+
+        var primary        = _selectedElements[0];
+        SelectedElement    = primary;
+        SelectedXElement   = _mapper.GetXElement(primary);
+        SelectedElementUid = _mapper.GetUid(primary);
+
+        if (!suppressEvent)
+            SelectedElementChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the hit list contains no actual child elements —
+    /// only DesignRoot itself (fallback) or nothing. Used to detect "empty space" clicks
+    /// that should trigger the rubber-band marquee instead of selecting DesignRoot.
+    /// </summary>
+    private bool IsOnlyDesignRoot(List<UIElement> hits)
+        => hits.Count == 0 || (hits.Count == 1 && ReferenceEquals(hits[0], DesignRoot));
+
+    /// <summary>
+    /// Begins a coordinated group drag-move for all currently selected elements.
+    /// Called when the user clicks on an already-selected element in a multi-selection.
+    /// </summary>
+    private void StartGroupMove(Point canvasPosition)
+    {
+        if (_interaction is null) return;
+        var elements = _selectedElements.OfType<FrameworkElement>().ToList();
+        if (elements.Count == 0) return;
+        _interaction.OnMultiMoveStart(elements, canvasPosition);
+        _isGroupMoving  = true;
+        _groupMoveStart = canvasPosition;
+        CaptureMouse();
+    }
+
     // ── Grid guide events (forwarded from GridGuideAdorner) ───────────────────
+
+    /// <summary>
+    /// Fired when the canvas itself (not via DesignInteractionService) commits a design operation
+    /// — e.g. inline text edit. Subscribed by XamlDesignerSplitHost to push onto the undo stack.
+    /// </summary>
+    public event EventHandler<DesignOperationCommittedEventArgs>? CanvasOperationCommitted;
 
     /// <summary>Fired when the user drags a grid boundary grip to resize a column/row.</summary>
     public event EventHandler<GridGuideResizedEventArgs>?     GridGuideResized;
@@ -456,6 +619,8 @@ public sealed class DesignCanvas : Border
 
     private void RenderXaml(string xaml)
     {
+        _renderWatch.Restart();
+
         if (string.IsNullOrWhiteSpace(xaml))
         {
             // Clear adorners BEFORE removing content so AdornerLayer is still reachable.
@@ -567,6 +732,29 @@ public sealed class DesignCanvas : Border
             DesignRoot         = null;
             _presenter.Content = null;
             RenderError?.Invoke(this, ParseLineCol(ex.Message) with { FilePath = SourceFilePath });
+        }
+        finally
+        {
+            _renderWatch.Stop();
+            if (_perfOverlay is not null)
+            {
+                double ms = _renderWatch.Elapsed.TotalMilliseconds;
+                // Element count and max depth scan on Task.Run to avoid blocking the UI thread.
+                var root = DesignRoot;
+                if (root is not null)
+                {
+                    System.Threading.Tasks.Task.Run(() =>
+                    {
+                        var (count, depth) = ScanTreeStats(root);
+                        Dispatcher.InvokeAsync(() =>
+                            _perfOverlay?.Refresh(new Models.DesignCanvasStats(ms, count, depth, 0)));
+                    });
+                }
+                else
+                {
+                    _perfOverlay.Refresh(new Models.DesignCanvasStats(ms, 0, 0, 0));
+                }
+            }
         }
     }
 
@@ -740,15 +928,21 @@ public sealed class DesignCanvas : Border
             PlaceMultiSelectionAdorners();
     }
 
-    private static void RemoveElementAdorners(UIElement el)
+    private void RemoveElementAdorners(UIElement el)
     {
         var layer    = AdornerLayer.GetAdornerLayer(el);
         if (layer is null) return;
         var adorners = layer.GetAdorners(el);
         if (adorners is null) return;
         foreach (var a in adorners)
-            if (a is SelectionAdorner or ResizeAdorner)
+        {
+            if (a is ConstraintAdorner ca)
+                ca.PinToggled -= OnConstraintPinToggled;
+            if (a is SelectionAdorner or ResizeAdorner or ConstraintAdorner)
                 layer.Remove(a);
+        }
+        if (_constraintAdorner is not null && ReferenceEquals(_constraintAdorner.AdornedElement, el))
+            _constraintAdorner = null;
     }
 
     private void RemoveMultiAdorner()
@@ -789,10 +983,39 @@ public sealed class DesignCanvas : Border
         {
             int uid = _mapper.GetUid(el);
             layer.Add(new ResizeAdorner(el, _interaction, uid));
+
+            // Constraint adorner — only for FrameworkElements (needs alignment/margin APIs).
+            if (el is FrameworkElement fe)
+            {
+                var pins = _constraintService.GetPinnedEdges(fe);
+                _constraintAdorner = new ConstraintAdorner(el, pins);
+                _constraintAdorner.PinToggled += OnConstraintPinToggled;
+                layer.Add(_constraintAdorner);
+            }
         }
         else
         {
             layer.Add(new SelectionAdorner(el));
+        }
+    }
+
+    private void OnConstraintPinToggled(object? sender, PinnedEdges edge)
+    {
+        if (SelectedElement is not FrameworkElement fe) return;
+
+        var newPins = _constraintService.TogglePin(fe, edge);
+        _constraintAdorner?.Refresh(newPins);
+
+        // Commit alignment change to XAML.
+        int uid = GetUidOf(fe);
+        if (uid >= 0)
+        {
+            string ha = fe.HorizontalAlignment.ToString();
+            string va = fe.VerticalAlignment.ToString();
+            var opH = DesignOperation.CreatePropertyChange(uid, "HorizontalAlignment", null, ha);
+            var opV = DesignOperation.CreatePropertyChange(uid, "VerticalAlignment",   null, va);
+            CanvasOperationCommitted?.Invoke(this, new DesignOperationCommittedEventArgs(opH, fe));
+            CanvasOperationCommitted?.Invoke(this, new DesignOperationCommittedEventArgs(opV, fe));
         }
     }
 
@@ -1121,6 +1344,15 @@ public sealed class DesignCanvas : Border
     {
         if (DesignRoot is null) return;
 
+        // ── Draw mode: shape tool takes priority over selection/interaction ────
+        if (ActiveDrawingTool != DrawingTool.None && DesignRoot is IInputElement drawRoot)
+        {
+            StartDrawShape(e.GetPosition(drawRoot));
+            CaptureMouse();
+            e.Handled = true;
+            return;
+        }
+
         // Grid insert guide takes first priority: the adorner is non-hit-testable so its
         // bounds must be checked explicitly before any other click handling.
         if (HandleGridInsertClick(e)) return;
@@ -1131,8 +1363,9 @@ public sealed class DesignCanvas : Border
         if (IsSourceFromAdorner(e.OriginalSource as DependencyObject)) return;
 
         var clickPoint = e.GetPosition(_presenter);
-        bool isAlt  = (Keyboard.Modifiers & ModifierKeys.Alt)     != 0;
-        bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+        bool isAlt   = (Keyboard.Modifiers & ModifierKeys.Alt)     != 0;
+        bool isCtrl  = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+        bool isShift = (Keyboard.Modifiers & ModifierKeys.Shift)   != 0;
 
         if (!isAlt)
         {
@@ -1180,17 +1413,41 @@ public sealed class DesignCanvas : Border
             var target = _lastHitElements.FirstOrDefault(IsLeafElement)
                       ?? _lastHitElements.FirstOrDefault();
 
-            if (isCtrl && target is not null)
+            // "Empty space" = hit list empty, or only DesignRoot itself was hit (no actual child).
+            // This is the root cause fix: previously `target is null` was never true because
+            // DesignRoot was always appended as a fallback, preventing rubber-band from starting.
+            bool isEmptySpace = IsOnlyDesignRoot(_lastHitElements);
+
+            // Double-click — open inline text editor for text-content elements.
+            if (e.ClickCount == 2 && target is FrameworkElement dblFe && !isEmptySpace)
+            {
+                StartInlineTextEdit(dblFe);
+                e.Handled = true;
+                return;
+            }
+
+            if (isCtrl && target is not null && !isEmptySpace)
             {
                 // Ctrl+Click — toggle the element in / out of the multi-selection.
                 ToggleElementInSelection(target);
             }
-            else if (target is null)
+            else if (isShift && target is not null && !isEmptySpace)
+            {
+                // Shift+Click — add the element to the selection without removing others (VS standard).
+                AddToSelection(target);
+            }
+            else if (isEmptySpace)
             {
                 // Click on empty canvas space — clear selection and start rubber-band marquee.
                 SelectElement(null);
                 if (DesignRoot is IInputElement rootIe)
                     StartRubberBand(e.GetPosition(rootIe));
+            }
+            else if (target is not null && _selectedElements.Count > 1 && _selectedElements.Contains(target))
+            {
+                // Click on an already-selected element in a multi-selection → start group drag-move.
+                StartGroupMove(e.GetPosition(this));
+                e.Handled = true;
             }
             else
             {
@@ -1274,6 +1531,14 @@ public sealed class DesignCanvas : Border
 
     private void OnCanvasMouseMove(object sender, MouseEventArgs e)
     {
+        // Update shape draw adorner.
+        if (_isDrawing)
+        {
+            if (DesignRoot is IInputElement drawRoot3)
+                _drawAdorner?.Update(e.GetPosition(drawRoot3));
+            return;
+        }
+
         // Update rubber-band adorner while the user is dragging a selection marquee.
         if (_isRubberBanding)
         {
@@ -1282,6 +1547,16 @@ public sealed class DesignCanvas : Border
                 var current = e.GetPosition(rootIe);
                 _rubberBandAdorner?.UpdateBounds(_rubberBandStart, current);
             }
+            return;
+        }
+
+        // Group drag-move: translate all selected elements together.
+        if (_isGroupMoving && _interaction is not null)
+        {
+            var current  = e.GetPosition(this);
+            var elements = _selectedElements.OfType<FrameworkElement>().ToList();
+            _interaction.OnMultiMoveDelta(elements, current);
+            _multiAdorner?.Refresh(_selectedElements);
             return;
         }
 
@@ -1296,6 +1571,14 @@ public sealed class DesignCanvas : Border
 
         // Don't overlay hover on the already-selected element.
         UpdateHoverAdorner(ReferenceEquals(hitElement, SelectedElement) ? null : hitElement);
+
+        // Measure mode (Alt held): show distance lines from hovered element to nearest siblings.
+        bool isAltNow   = (Keyboard.Modifiers & ModifierKeys.Alt)   != 0;
+        bool isShiftNow = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+        UpdateMeasureGuideAdorner(isAltNow && !isShiftNow ? hitElement as FrameworkElement : null);
+
+        // Box model mode (Alt+Shift held): show margin/padding zones.
+        UpdateBoxModelAdorner(isAltNow && isShiftNow ? hitElement as FrameworkElement : null);
 
         // Grid insert guide: show only when the hovered Grid is selected.
         UpdateGridInsertAdorner(hitElement, mousePos);
@@ -1336,6 +1619,8 @@ public sealed class DesignCanvas : Border
     {
         if (_isRubberBanding) return;
         UpdateHoverAdorner(null);
+        _measureAdorner?.Clear();
+        _boxModelAdorner?.Clear();
 
         // WPF fires a spurious MouseLeave on the canvas each time a new adorner
         // (e.g. ResizeAdorner) is added to the AdornerLayer, even though the mouse
@@ -1351,6 +1636,32 @@ public sealed class DesignCanvas : Border
 
     private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
     {
+        // Complete a shape draw operation.
+        if (_isDrawing)
+        {
+            _isDrawing = false;
+            ReleaseMouseCapture();
+            if (_drawAdorner is not null && DesignRoot is IInputElement drawRoot2)
+                CommitDrawnShape(_drawAdorner.GetBounds());
+            RemoveDrawAdorner();
+            e.Handled = true;
+            return;
+        }
+
+        // Complete a group drag-move operation.
+        if (_isGroupMoving)
+        {
+            _isGroupMoving = false;
+            ReleaseMouseCapture();
+            if (_interaction is not null)
+            {
+                var elements = _selectedElements.OfType<FrameworkElement>().ToList();
+                _interaction.OnMultiMoveCompleted(elements);
+            }
+            e.Handled = true;
+            return;
+        }
+
         if (!_isRubberBanding) return;
         _isRubberBanding = false;
         ReleaseMouseCapture();
@@ -1419,6 +1730,272 @@ public sealed class DesignCanvas : Border
         }
 
         return hits.FirstOrDefault(IsLeafElement) ?? hits.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Shows or updates the <see cref="MeasureGuideAdorner"/> for Alt+hover distance display.
+    /// Pass null to clear.
+    /// </summary>
+    private void UpdateMeasureGuideAdorner(FrameworkElement? target)
+    {
+        if (DesignRoot is null) return;
+
+        if (target is null || ReferenceEquals(target, DesignRoot))
+        {
+            _measureAdorner?.Clear();
+            return;
+        }
+
+        // Ensure the adorner exists on DesignRoot's layer.
+        if (_measureAdorner is null)
+        {
+            var layer = AdornerLayer.GetAdornerLayer(DesignRoot);
+            if (layer is null) return;
+            _measureAdorner = new MeasureGuideAdorner(DesignRoot);
+            layer.Add(_measureAdorner);
+        }
+
+        // Collect siblings from DesignRoot's visual children.
+        var siblings = new List<FrameworkElement>();
+        if (DesignRoot is FrameworkElement rootFe)
+        {
+            int count = VisualTreeHelper.GetChildrenCount(rootFe);
+            for (int i = 0; i < count; i++)
+            {
+                if (VisualTreeHelper.GetChild(rootFe, i) is FrameworkElement child)
+                    siblings.Add(child);
+            }
+        }
+
+        _measureAdorner.Refresh(target, siblings);
+    }
+
+    // ── Inline text edit ──────────────────────────────────────────────────────
+
+    private void StartInlineTextEdit(FrameworkElement fe)
+    {
+        // Resolve the text content property.
+        string? currentText = fe switch
+        {
+            TextBlock tb  => tb.Text,
+            TextBox   tx  => tx.Text,
+            Label     lb  => lb.Content as string ?? lb.Content?.ToString(),
+            Button    bt  => bt.Content as string ?? bt.Content?.ToString(),
+            _             => null
+        };
+
+        if (currentText is null) return;
+
+        // Remove any existing inline adorner first.
+        RemoveInlineTextAdorner();
+
+        var layer = AdornerLayer.GetAdornerLayer(fe);
+        if (layer is null) return;
+
+        _inlineTextAdorner = new InlineTextEditAdorner(fe, currentText);
+        _inlineTextAdorner.TextCommitted += (_, newText) =>
+        {
+            ApplyTextChange(fe, newText);
+            _inlineTextAdorner = null;
+        };
+
+        layer.Add(_inlineTextAdorner);
+        _inlineTextAdorner.Activate();
+    }
+
+    private void RemoveInlineTextAdorner()
+    {
+        if (_inlineTextAdorner is null) return;
+        if (_inlineTextAdorner.AdornedElement is UIElement el)
+            AdornerLayer.GetAdornerLayer(el)?.Remove(_inlineTextAdorner);
+        _inlineTextAdorner = null;
+    }
+
+    private void ApplyTextChange(FrameworkElement fe, string newText)
+    {
+        switch (fe)
+        {
+            case TextBlock tb: tb.Text        = newText; break;
+            case TextBox   tx: tx.Text        = newText; break;
+            case Label     lb: lb.Content     = newText; break;
+            case Button    bt: bt.Content     = newText; break;
+        }
+
+        // Push the change back to XAML source via the existing sync service.
+        int uid = GetUidOf(fe);
+        if (uid >= 0)
+        {
+            string propName = fe is TextBlock or TextBox ? "Text" : "Content";
+            var op = DesignOperation.CreatePropertyChange(uid, propName, null, newText);
+            CanvasOperationCommitted?.Invoke(this, new DesignOperationCommittedEventArgs(op, fe));
+        }
+    }
+
+    // ── Box model overlay ─────────────────────────────────────────────────────
+
+    private void UpdateBoxModelAdorner(FrameworkElement? target)
+    {
+        if (target is null || DesignRoot is null)
+        {
+            _boxModelAdorner?.Clear();
+            return;
+        }
+
+        if (_boxModelAdorner is null || !ReferenceEquals(_boxModelAdorner.AdornedElement, target))
+        {
+            // Remove old adorner from previous element.
+            if (_boxModelAdorner is not null)
+            {
+                var oldLayer = AdornerLayer.GetAdornerLayer(_boxModelAdorner.AdornedElement);
+                oldLayer?.Remove(_boxModelAdorner);
+            }
+
+            var layer = AdornerLayer.GetAdornerLayer(target);
+            if (layer is null) return;
+
+            _boxModelAdorner = new BoxModelAdorner(target);
+            layer.Add(_boxModelAdorner);
+        }
+
+        var margin  = target.Margin;
+        var padding = target is Control ctrl ? ctrl.Padding : default;
+        _boxModelAdorner.Refresh(margin, padding);
+    }
+
+    // ── Shape draw helpers ────────────────────────────────────────────────────
+
+    private void StartDrawShape(Point startInRoot)
+    {
+        if (DesignRoot is null) return;
+
+        _drawStart = startInRoot;
+        _isDrawing = true;
+
+        // Create adorner on DesignRoot layer.
+        var layer = AdornerLayer.GetAdornerLayer(DesignRoot);
+        if (layer is null) { _isDrawing = false; return; }
+
+        _drawAdorner = new ShapeDrawAdorner(DesignRoot);
+        layer.Add(_drawAdorner);
+        _drawAdorner.Begin(ActiveDrawingTool, startInRoot);
+
+        // Switch cursor to cross-hair while drawing.
+        Cursor      = Cursors.Cross;
+        ForceCursor = true;
+    }
+
+    private void CommitDrawnShape(Rect boundsInRoot)
+    {
+        if (boundsInRoot.Width < 4 && boundsInRoot.Height < 4) return; // too small
+        if (DesignRoot is null) return;
+
+        string? xaml = _drawService.GenerateXaml(ActiveDrawingTool, boundsInRoot);
+        if (xaml is null) return;
+
+        // Inject the generated element into the live XAML and refresh.
+        var current = XamlSource ?? string.Empty;
+        var updated = _syncService.InjectChildElement(current, xaml);
+        if (updated is not null)
+        {
+            XamlSource = updated;
+            CanvasOperationCommitted?.Invoke(this,
+                new DesignOperationCommittedEventArgs(
+                    DesignOperation.CreateInsert(-1, ShapeDrawingService.GetToolName(ActiveDrawingTool)),
+                    null!));
+        }
+
+        // Restore normal cursor.
+        Cursor      = Cursors.Arrow;
+        ForceCursor = true;
+    }
+
+    private void RemoveDrawAdorner()
+    {
+        if (_drawAdorner is null) return;
+        if (DesignRoot is not null)
+        {
+            var layer = AdornerLayer.GetAdornerLayer(DesignRoot);
+            layer?.Remove(_drawAdorner);
+        }
+        _drawAdorner = null;
+    }
+
+    // ── Performance overlay ───────────────────────────────────────────────────
+
+    private void ApplyPerformanceOverlay(bool show)
+    {
+        if (DesignRoot is null) return;
+        var layer = AdornerLayer.GetAdornerLayer(DesignRoot);
+        if (layer is null) return;
+
+        if (show)
+        {
+            if (_perfOverlay is null)
+            {
+                _perfOverlay = new PerformanceOverlayAdorner(DesignRoot);
+                layer.Add(_perfOverlay);
+            }
+        }
+        else
+        {
+            if (_perfOverlay is not null)
+            {
+                _perfOverlay.Detach();
+                layer.Remove(_perfOverlay);
+                _perfOverlay = null;
+            }
+        }
+    }
+
+    private static (int Count, int MaxDepth) ScanTreeStats(UIElement root)
+    {
+        int count    = 0;
+        int maxDepth = 0;
+
+        void Walk(DependencyObject obj, int depth)
+        {
+            count++;
+            if (depth > maxDepth) maxDepth = depth;
+            int childCount = VisualTreeHelper.GetChildrenCount(obj);
+            for (int i = 0; i < childCount; i++)
+                Walk(VisualTreeHelper.GetChild(obj, i), depth + 1);
+        }
+
+        Walk(root, 0);
+        return (count, maxDepth);
+    }
+
+    // ── Resource DragDrop ─────────────────────────────────────────────────────
+
+    private void OnCanvasDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent("XD_ResourceKey")
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void OnCanvasDrop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent("XD_ResourceKey")) return;
+
+        string resourceKey = (string)e.Data.GetData("XD_ResourceKey");
+        string attrName    = e.Data.GetDataPresent("XD_ResourceAttributeName")
+            ? (string)e.Data.GetData("XD_ResourceAttributeName")
+            : "Background";
+
+        var dropPt = e.GetPosition(DesignRoot);
+        var target = HitTestElement(dropPt) as FrameworkElement;
+        if (target is null || ReferenceEquals(target, DesignRoot)) return;
+
+        int uid = GetUidOf(target);
+        if (uid < 0) return;
+
+        var op = DesignOperation.CreatePropertyChange(uid, attrName,
+            null, $"{{StaticResource {resourceKey}}}");
+        CanvasOperationCommitted?.Invoke(this, new DesignOperationCommittedEventArgs(op, target));
+
+        e.Handled = true;
     }
 
     private void UpdateHoverAdorner(UIElement? target)

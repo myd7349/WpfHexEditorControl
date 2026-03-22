@@ -17,6 +17,7 @@
 // ==========================================================
 
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 
@@ -169,6 +170,39 @@ public sealed class DesignToXamlSyncService
             return PatchRotation(rawXaml, op.ElementUid, angle ?? "0");
         }
         return PatchElement(rawXaml, op.ElementUid, op.After);
+    }
+
+    /// <summary>
+    /// Appends a child XAML element snippet to the root element's content.
+    /// Returns the modified XAML string, or null on parse error.
+    /// </summary>
+    /// <param name="rawXaml">Current XAML source.</param>
+    /// <param name="childXaml">Complete element snippet to inject (e.g. "&lt;Rectangle .../&gt;").</param>
+    public string? InjectChildElement(string rawXaml, string childXaml)
+    {
+        if (string.IsNullOrWhiteSpace(rawXaml) || string.IsNullOrWhiteSpace(childXaml))
+            return null;
+
+        try
+        {
+            var doc  = System.Xml.Linq.XDocument.Parse(rawXaml, System.Xml.Linq.LoadOptions.PreserveWhitespace);
+            var root = doc.Root;
+            if (root is null) return null;
+
+            var childDoc   = System.Xml.Linq.XDocument.Parse($"<root xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\">{childXaml}</root>");
+            var childEl    = childDoc.Root?.Elements().FirstOrDefault();
+            if (childEl is null) return null;
+
+            // Reparent into root's namespace context.
+            childEl.Remove();
+            root.Add(childEl);
+
+            return doc.ToString(System.Xml.Linq.SaveOptions.DisableFormatting);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>

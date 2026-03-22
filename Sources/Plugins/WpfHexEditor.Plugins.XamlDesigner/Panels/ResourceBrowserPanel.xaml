@@ -171,7 +171,9 @@
                   Background="Transparent"
                   BorderThickness="0"
                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                  KeyDown="OnListKeyDown">
+                  KeyDown="OnListKeyDown"
+                  PreviewMouseLeftButtonDown="OnListMouseDown"
+                  PreviewMouseMove="OnListMouseMove">
 
             <ListView.GroupStyle>
                 <GroupStyle>
