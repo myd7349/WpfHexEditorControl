@@ -1,19 +1,17 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
 // File: XamlOutlinePanelViewModel.cs
 // Author: Derek Tremblay
 // Created: 2026-03-16
 // Updated: 2026-03-19 — Search highlight, element count, breadcrumb
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.ViewModels).
 // Description:
 //     ViewModel for the XAML Outline dockable panel.
 //     Rebuilds the element tree when the design canvas parses new XAML.
 //     Exposes search filtering that dims non-matching nodes (IsMatch/DimOpacity).
 //     Exposes ElementCount/ElementCountLabel and BreadcrumbItems.
 //
-// Architecture Notes:
-//     INPC. Tree rebuild is synchronous (XElement is already parsed).
-//     SelectNodeByPath used for persistence restore.
-//     SearchHighlight recurses the full tree and sets IsMatch/DimOpacity per node.
+// Architecture: Plugin-owned panel ViewModel. Data flows from XamlDesignerPlugin via events.
 // ==========================================================
 
 using System;
@@ -24,7 +22,7 @@ using System.Windows.Input;
 using System.Xml.Linq;
 using WpfHexEditor.SDK.Commands;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 
 /// <summary>
 /// ViewModel for the XAML Outline panel.
@@ -181,12 +179,6 @@ public sealed class XamlOutlinePanelViewModel : INotifyPropertyChanged
 
     // ── Private — search ──────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Walks the entire node tree and sets <c>IsMatch</c> on every node.
-    /// When <paramref name="text"/> is empty every node is reset to IsMatch=true.
-    /// A node matches if its DisplayLabel or TagName contains the search string
-    /// (ordinal, case-insensitive).
-    /// </summary>
     private void SearchHighlight(string text)
     {
         foreach (var root in RootNodes)
@@ -203,7 +195,6 @@ public sealed class XamlOutlinePanelViewModel : INotifyPropertyChanged
             return true;
         }
 
-        // Check children first (so a parent stays visible if any child matches).
         bool anyChildMatches = false;
         foreach (var child in node.Children)
         {
@@ -221,9 +212,6 @@ public sealed class XamlOutlinePanelViewModel : INotifyPropertyChanged
 
     // ── Private — element count ───────────────────────────────────────────────
 
-    /// <summary>
-    /// Recursively counts all nodes in the collection (self + all descendants).
-    /// </summary>
     private static int CountElements(ObservableCollection<XamlOutlineNode> nodes)
     {
         int count = 0;
@@ -237,21 +225,14 @@ public sealed class XamlOutlinePanelViewModel : INotifyPropertyChanged
 
     // ── Private — breadcrumb ──────────────────────────────────────────────────
 
-    /// <summary>
-    /// Rebuilds the breadcrumb bar items from the selected node's ancestry path.
-    /// The ElementPath format is "TagName/TagName[0]/TagName[1]" — split on '/'.
-    /// </summary>
     private void RebuildBreadcrumb()
     {
         BreadcrumbItems.Clear();
         if (_selectedNode is null) return;
 
-        // ElementPath is slash-delimited, e.g. "Grid/StackPanel[0]/Button[2]".
-        // Strip index suffixes like [0] for a cleaner display.
         var segments = _selectedNode.ElementPath.Split('/');
         foreach (var seg in segments)
         {
-            // Strip "[N]" index suffix.
             int bracketIdx = seg.IndexOf('[');
             BreadcrumbItems.Add(bracketIdx >= 0 ? seg[..bracketIdx] : seg);
         }

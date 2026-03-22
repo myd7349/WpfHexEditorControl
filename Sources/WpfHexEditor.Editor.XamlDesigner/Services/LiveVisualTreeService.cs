@@ -20,7 +20,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using WpfHexEditor.Editor.XamlDesigner.ViewModels;
+using WpfHexEditor.Editor.XamlDesigner.Models;
 
 namespace WpfHexEditor.Editor.XamlDesigner.Services;
 

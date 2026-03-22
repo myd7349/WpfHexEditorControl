@@ -1,5 +1,6 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.Panels).
 // File: BindingInspectorPanel.xaml.cs
 // Author: Derek Tremblay
 // Created: 2026-03-18
@@ -32,7 +33,7 @@ using System.Windows.Threading;
 using WpfHexEditor.Editor.XamlDesigner.Services;
 using WpfHexEditor.SDK.UI;
 
-namespace WpfHexEditor.Editor.XamlDesigner.Panels;
+namespace WpfHexEditor.Plugins.XamlDesigner.Panels;
 
 /// <summary>
 /// Binding Inspector dockable panel — displays all active bindings on the

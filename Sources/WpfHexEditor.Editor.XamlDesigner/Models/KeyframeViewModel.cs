@@ -3,9 +3,13 @@
 // File: KeyframeViewModel.cs
 // Author: Derek Tremblay
 // Created: 2026-03-17
+// Updated: 2026-03-22 — Moved from ViewModels/ to Models/
+//                        (used by StoryboardSyncService and StoryboardExportService).
 // Description:
-//     ViewModel representing a single animation keyframe on the timeline.
+//     Domain model representing a single animation keyframe on the timeline.
 //     Wraps TimeSpan position, animated value, and easing function name.
+//     Built by StoryboardSyncService; consumed by AnimationTrackViewModel and
+//     AnimationTimelinePanelViewModel (plugin).
 //
 // Architecture Notes:
 //     INPC. IsSelected for timeline thumb selection.
@@ -14,7 +18,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Editor.XamlDesigner.Models;
 
 /// <summary>
 /// A single keyframe on the animation timeline.

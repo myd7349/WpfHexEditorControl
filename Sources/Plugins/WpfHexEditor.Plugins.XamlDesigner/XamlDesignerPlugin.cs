@@ -32,8 +32,8 @@
 using System.Windows;
 using WpfHexEditor.Editor.Core.Documents;
 using WpfHexEditor.Editor.XamlDesigner.Controls;
-using WpfHexEditor.Editor.XamlDesigner.Panels;
-using WpfHexEditor.Editor.XamlDesigner.ViewModels;
+using WpfHexEditor.Plugins.XamlDesigner.Panels;
+using WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 using WpfHexEditor.Plugins.XamlDesigner.Options;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
@@ -770,7 +770,7 @@ public sealed class XamlDesignerPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     /// <summary>
     /// Outline panel: Delete element — routes to XamlReorderService, applies via undo entry.
     /// </summary>
-    private void OnOutlineDeleteRequested(object? sender, WpfHexEditor.Editor.XamlDesigner.Panels.DeleteRequestedEventArgs e)
+    private void OnOutlineDeleteRequested(object? sender, WpfHexEditor.Plugins.XamlDesigner.Panels.DeleteRequestedEventArgs e)
     {
         if (_wiredHost?.Document is null || e.Node is null) return;
 
@@ -783,7 +783,7 @@ public sealed class XamlDesignerPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     /// <summary>
     /// Outline panel: Move element up or down among siblings.
     /// </summary>
-    private void OnOutlineMoveRequested(object? sender, WpfHexEditor.Editor.XamlDesigner.Panels.MoveRequestedEventArgs e)
+    private void OnOutlineMoveRequested(object? sender, WpfHexEditor.Plugins.XamlDesigner.Panels.MoveRequestedEventArgs e)
     {
         if (_wiredHost?.Document is null || e.Node is null) return;
 
@@ -800,7 +800,7 @@ public sealed class XamlDesignerPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     /// <summary>
     /// Outline panel: Wrap element in a container (Grid, StackPanel, Border).
     /// </summary>
-    private void OnOutlineWrapRequested(object? sender, WpfHexEditor.Editor.XamlDesigner.Panels.WrapRequestedEventArgs e)
+    private void OnOutlineWrapRequested(object? sender, WpfHexEditor.Plugins.XamlDesigner.Panels.WrapRequestedEventArgs e)
     {
         if (_wiredHost?.Document is null || e.Node is null) return;
 

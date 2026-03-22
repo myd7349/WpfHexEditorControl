@@ -14,7 +14,7 @@
 // ==========================================================
 
 using System.Windows;
-using WpfHexEditor.Editor.XamlDesigner.ViewModels;
+using WpfHexEditor.Editor.XamlDesigner.Models;
 
 namespace WpfHexEditor.Editor.XamlDesigner.Services;
 

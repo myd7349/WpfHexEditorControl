@@ -1,5 +1,6 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.Panels).
 // File: DesignHistoryPanel.xaml.cs
 // Author: Derek Tremblay
 // Created: 2026-03-18
@@ -22,9 +23,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WpfHexEditor.Editor.XamlDesigner.ViewModels;
+using WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 
-namespace WpfHexEditor.Editor.XamlDesigner.Panels;
+namespace WpfHexEditor.Plugins.XamlDesigner.Panels;
 
 /// <summary>
 /// Design History dockable panel — displays the full undo/redo history,

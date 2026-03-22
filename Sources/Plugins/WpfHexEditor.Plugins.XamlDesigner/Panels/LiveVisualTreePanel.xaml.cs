@@ -1,5 +1,6 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.Panels).
 // File: LiveVisualTreePanel.xaml.cs
 // Author: Derek Tremblay
 // Created: 2026-03-18
@@ -38,10 +39,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using WpfHexEditor.Editor.XamlDesigner.Services;
-using WpfHexEditor.Editor.XamlDesigner.ViewModels;
+using WpfHexEditor.Editor.XamlDesigner.Models;
 using WpfHexEditor.SDK.UI;
 
-namespace WpfHexEditor.Editor.XamlDesigner.Panels;
+namespace WpfHexEditor.Plugins.XamlDesigner.Panels;
 
 /// <summary>
 /// Live Visual Tree dockable panel — shows the runtime WPF visual tree of the design canvas.

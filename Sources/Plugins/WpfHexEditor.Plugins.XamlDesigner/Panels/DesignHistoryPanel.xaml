@@ -4,6 +4,7 @@
     Contributors: Claude Sonnet 4.6
     Updated: 2026-03-19 — Checkpoint star column, filter TextBox, history size label,
                           keyboard navigation, context menu, CheckpointsOnly toggle
+    Moved to plugin project: 2026-03-22
     File: DesignHistoryPanel.xaml
     Description: VS-Like dockable panel showing the full XAML designer undo/redo history.
                  Applied entries appear at full opacity; undone entries appear dimmed.
@@ -12,10 +13,10 @@
     ResourceDictionaries: WpfHexEditor.Shell/Themes/{Theme}/Colors.xaml
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.XamlDesigner.Panels.DesignHistoryPanel"
+<UserControl x:Class="WpfHexEditor.Plugins.XamlDesigner.Panels.DesignHistoryPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:WpfHexEditor.Editor.XamlDesigner.ViewModels"
+             xmlns:vm="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.ViewModels"
              MinHeight="80"
              Background="{DynamicResource XD_HistoryPanelBackground}">
 

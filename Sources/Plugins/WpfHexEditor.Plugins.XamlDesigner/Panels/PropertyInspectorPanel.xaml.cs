@@ -1,5 +1,6 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.Panels).
 // File: PropertyInspectorPanel.xaml.cs
 // Author: Derek Tremblay
 // Created: 2026-03-16
@@ -28,10 +29,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using WpfHexEditor.Editor.XamlDesigner.Models;
-using WpfHexEditor.Editor.XamlDesigner.ViewModels;
+using WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 using WpfHexEditor.SDK.UI;
 
-namespace WpfHexEditor.Editor.XamlDesigner.Panels;
+namespace WpfHexEditor.Plugins.XamlDesigner.Panels;
 
 /// <summary>
 /// Property Inspector dockable panel — lists DependencyProperties of the selected element.

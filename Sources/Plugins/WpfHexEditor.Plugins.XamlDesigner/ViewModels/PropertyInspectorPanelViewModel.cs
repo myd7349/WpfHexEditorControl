@@ -1,25 +1,17 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
 // File: PropertyInspectorPanelViewModel.cs
 // Author: Derek Tremblay
 // Created: 2026-03-16
-// Updated: 2026-03-19 — Added IsGroupedView toggle + ToggleGroupCommand.
-//                        When grouped: CategoryName GroupDescription active (existing).
-//                        When flat:    GroupDescriptions cleared, sorted alphabetically.
+// Updated: 2026-03-19 — IsGroupedView toggle + ToggleGroupCommand.
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.ViewModels).
 // Description:
 //     ViewModel for the XAML Property Inspector dockable panel.
 //     Reflects DependencyProperties from the selected element and
 //     supports filtering by name, hiding default values, and toggling
 //     between grouped (by category) and flat alphabetical views.
 //
-// Architecture Notes:
-//     INPC. Uses ICollectionView for filtering + grouping.
-//     PropertyInspectorService handles reflection.
-//     Phase D — XamlPatchCallback: external code (XamlDesignerSplitHost) sets
-//     this property so every PropertyInspectorEntry edit is routed to the XAML
-//     source text via DesignToXamlSyncService.
-//     ToggleGroupCommand: Strategy pattern — switches view mode without
-//     rebuilding the underlying collection.
+// Architecture: Plugin-owned panel ViewModel; uses PropertyInspectorService from editor core.
 // ==========================================================
 
 using System.Collections.ObjectModel;
@@ -34,7 +26,7 @@ using WpfHexEditor.Editor.XamlDesigner.Models;
 using WpfHexEditor.Editor.XamlDesigner.Services;
 using WpfHexEditor.SDK.Commands;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 
 /// <summary>
 /// ViewModel for the Property Inspector panel.
@@ -57,7 +49,6 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
         PropertiesView        = CollectionViewSource.GetDefaultView(_allEntries);
         PropertiesView.Filter = FilterProperty;
 
-        // Apply initial grouped layout.
         ApplyGroupedLayout();
 
         ToggleGroupCommand = new RelayCommand(_ => IsGroupedView = !IsGroupedView);
@@ -86,21 +77,10 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
 
     // ── Properties ────────────────────────────────────────────────────────────
 
-    /// <summary>Filtered and optionally grouped view of all property entries.</summary>
     public ICollectionView PropertiesView { get; }
 
-    /// <summary>
-    /// Called when the user edits a property value in the inspector.
-    /// Propagates the change to the XAML source text.
-    /// Set by XamlDesignerSplitHost after panel wiring.
-    /// Signature: (propertyName, newStringValue).
-    /// </summary>
     public Action<string, string?>? XamlPatchCallback { get; set; }
 
-    /// <summary>
-    /// The DependencyObject whose properties are displayed.
-    /// Set by the plugin when the design canvas selection changes.
-    /// </summary>
     public DependencyObject? SelectedObject
     {
         get => _selectedObject;
@@ -113,7 +93,6 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Property name filter text (case-insensitive substring match).</summary>
     public string FilterText
     {
         get => _filterText;
@@ -126,7 +105,6 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>When false (default), properties with their default values are hidden.</summary>
     public bool ShowDefaultValues
     {
         get => _showDefaultValues;
@@ -139,11 +117,6 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// When true: entries are grouped by CategoryName (VS-Like inspector grouping).
-    /// When false: GroupDescriptions are cleared and entries are sorted alphabetically.
-    /// Toggled via <see cref="ToggleGroupCommand"/>.
-    /// </summary>
     public bool IsGroupedView
     {
         get => _isGroupedView;
@@ -156,20 +129,10 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Toggles between grouped-by-category and flat-alphabetical views.</summary>
-    public ICommand ToggleGroupCommand { get; }
-
-    /// <summary>Resets all locally-set properties on the selected element back to their default values.</summary>
-    public ICommand ResetAllCommand { get; }
-
-    /// <summary>Copies all currently-visible property names and values to the clipboard.</summary>
+    public ICommand ToggleGroupCommand    { get; }
+    public ICommand ResetAllCommand       { get; }
     public ICommand CopyPropertiesCommand { get; }
 
-    /// <summary>
-    /// When false, attached properties (names containing ".") and inherited system properties
-    /// whose declaring type differs from the selected object's type are hidden.
-    /// Default is true (show all).
-    /// </summary>
     public bool ShowAttachedProperties
     {
         get => _showAttachedProperties;
@@ -200,8 +163,6 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
         var entries = _service.GetProperties(_selectedObject);
         foreach (var entry in entries)
         {
-            // Phase D: attach the XAML patch callback so every Value edit
-            // propagates to the XAML source text via XamlDesignerSplitHost.
             entry.SetXamlPatchCallback(XamlPatchCallback);
             _allEntries.Add(entry);
         }
@@ -213,20 +174,16 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
     {
         if (item is not PropertyInspectorEntry entry) return false;
 
-        // Hide defaults when ShowDefaultValues is false.
         if (!_showDefaultValues && entry.IsDefault) return false;
 
-        // Hide attached properties (names containing ".") when ShowAttachedProperties is false.
         if (!_showAttachedProperties && entry.PropertyName.Contains('.')) return false;
 
-        // Apply text filter.
         if (!string.IsNullOrEmpty(_filterText))
             return entry.PropertyName.Contains(_filterText, StringComparison.OrdinalIgnoreCase);
 
         return true;
     }
 
-    /// <summary>Switches to grouped-by-category layout.</summary>
     private void ApplyGroupedLayout()
     {
         PropertiesView.GroupDescriptions?.Clear();
@@ -238,7 +195,6 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
             PropertiesView.GroupDescriptions?.Add(
                 new PropertyGroupDescription(nameof(PropertyInspectorEntry.CategoryName)));
 
-        // Within each group: sort by PropertyName.
         PropertiesView.SortDescriptions.Add(
             new SortDescription(nameof(PropertyInspectorEntry.CategoryName), ListSortDirection.Ascending));
         PropertiesView.SortDescriptions.Add(
@@ -247,7 +203,6 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
         PropertiesView.Refresh();
     }
 
-    /// <summary>Switches to flat alphabetical layout (no group headers).</summary>
     private void ApplyFlatLayout()
     {
         PropertiesView.GroupDescriptions?.Clear();
@@ -267,4 +222,3 @@ public sealed class PropertyInspectorPanelViewModel : INotifyPropertyChanged
             ApplyFlatLayout();
     }
 }
-

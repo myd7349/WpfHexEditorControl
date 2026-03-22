@@ -3,9 +3,12 @@
 // File: ResourceEntryViewModel.cs
 // Author: Derek Tremblay
 // Created: 2026-03-17
+// Updated: 2026-03-22 — Moved from ViewModels/ to Models/
+//                        (used by ResourceScannerService and ResourceBrowserPanelViewModel).
 // Description:
-//     ViewModel representing a single resource entry in the Resource Browser panel.
+//     Domain model representing a single resource entry in the Resource Browser panel.
 //     Holds the resource key, value type, scope, and a computed preview string.
+//     Built by ResourceScannerService; consumed by ResourceBrowserPanelViewModel (plugin).
 //
 // Architecture Notes:
 //     INPC record-like object.
@@ -16,7 +19,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Editor.XamlDesigner.Models;
 
 /// <summary>
 /// A single resource entry for display in the Resource Browser panel.

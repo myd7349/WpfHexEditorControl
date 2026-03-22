@@ -11,11 +11,11 @@
 //          2026-03-19 — Added IsSearchMatch/IsCurrentSearchMatch for search highlight,
 //                        ShowDimensions toggle, RefreshDimsVisibility(),
 //                        GenerateXamlSnippet(), CopyXamlSnippetCommand.
+//          2026-03-22 — Moved from ViewModels/ to Models/ (used by LiveVisualTreeService).
 // Description:
-//     ViewModel wrapping a live WPF DependencyObject for display in the
-//     Visual Tree mode of the XamlOutlinePanel.
-//     Shows the runtime type name, optional x:Name / Name, and the actual
-//     dimensions if the object is a FrameworkElement.
+//     Domain model wrapping a live WPF DependencyObject for display in the
+//     Live Visual Tree panel. Built by LiveVisualTreeService; consumed by the
+//     LiveVisualTreePanel (plugin) and LiveVisualTreeService (editor).
 //
 // Architecture Notes:
 //     INPC. IsSelected / IsExpanded support two-way TreeView binding.
@@ -34,7 +34,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using WpfHexEditor.SDK.Commands;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Editor.XamlDesigner.Models;
 
 /// <summary>
 /// View model for a single node in the live visual tree.
@@ -368,4 +368,3 @@ public sealed class LiveTreeNode : INotifyPropertyChanged
         }
     }
 }
-

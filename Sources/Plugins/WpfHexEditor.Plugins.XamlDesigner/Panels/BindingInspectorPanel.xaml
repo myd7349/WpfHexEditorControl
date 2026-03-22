@@ -6,16 +6,17 @@
                           Validation badge, row expander (FallbackValue/TargetNullValue),
                           MultiBinding child expansion, CopyExpression toolbar button,
                           row context menu (Copy/GoToSource/InspectConverter).
+    Moved to plugin project: 2026-03-22
     Theme: Global theme via XD_* and DockBackgroundBrush tokens (DynamicResource)
     ResourceDictionaries: WpfHexEditor.Shell/Themes/{Theme}/Colors.xaml
     Panel: Binding Inspector — shows active bindings on the selected design canvas element.
     Columns: Status | Property | Path | Mode | Source | Converter | Trigger | Validation
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.XamlDesigner.Panels.BindingInspectorPanel"
+<UserControl x:Class="WpfHexEditor.Plugins.XamlDesigner.Panels.BindingInspectorPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Panels"
+             xmlns:local="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.Panels"
              Background="{DynamicResource DockBackgroundBrush}">
 
     <UserControl.Resources>

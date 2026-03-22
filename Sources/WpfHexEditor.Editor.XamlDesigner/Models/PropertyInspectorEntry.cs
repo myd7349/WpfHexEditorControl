@@ -105,7 +105,7 @@ public sealed class PropertyInspectorEntry : INotifyPropertyChanged
     /// Called by <see cref="ViewModels.PropertyInspectorPanelViewModel"/> so the
     /// callback can be supplied once it is known (avoids constructor over-coupling).
     /// </summary>
-    internal void SetXamlPatchCallback(Action<string, string?>? callback)
+    public void SetXamlPatchCallback(Action<string, string?>? callback)
         => _xamlPatchCallback = callback;
 
     // ── INPC ──────────────────────────────────────────────────────────────────

@@ -1,16 +1,18 @@
 <UserControl
-    x:Class="WpfHexEditor.Editor.XamlDesigner.Panels.AnimationTimelinePanel"
+    x:Class="WpfHexEditor.Plugins.XamlDesigner.Panels.AnimationTimelinePanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Panels"
-    xmlns:vm="clr-namespace:WpfHexEditor.Editor.XamlDesigner.ViewModels"
-    xmlns:ctrl="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Controls"
+    xmlns:local="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.Panels"
+    xmlns:vm="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.ViewModels"
+    xmlns:models="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Models;assembly=WpfHexEditor.Editor.XamlDesigner"
+    xmlns:ctrl="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Controls;assembly=WpfHexEditor.Editor.XamlDesigner"
     MinHeight="140">
 
     <!-- ==========================================================
-         Project: WpfHexEditor.Editor.XamlDesigner
+         Project: WpfHexEditor.Plugins.XamlDesigner
          File: AnimationTimelinePanel.xaml
          Created: 2026-03-17 | Updated: 2026-03-19
+         Moved to plugin project: 2026-03-22
          Description: Animation Timeline dockable panel.
                       Toolbar: Stop, Play/Pause, Add/Delete Keyframe, Loop,
                                AutoReverse, FrameRate, Export, Duration/Time labels,
@@ -340,7 +342,7 @@
                      BorderThickness="0"
                      x:Name="TrackHeaders">
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type vm:AnimationTrackViewModel}">
+                    <DataTemplate DataType="{x:Type models:AnimationTrackViewModel}">
                         <Grid x:Name="TrackHeaderRoot">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -418,7 +420,7 @@
                 <ItemsControl ItemsSource="{Binding Tracks}"
                               x:Name="KeyframeLanes">
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type vm:AnimationTrackViewModel}">
+                        <DataTemplate DataType="{x:Type models:AnimationTrackViewModel}">
                             <Canvas Height="24"
                                     Background="Transparent"
                                     ClipToBounds="True"

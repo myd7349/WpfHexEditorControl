@@ -11,17 +11,18 @@
         · Bold FontWeight DataTrigger on IsLocalValue=True rows.
         · 0.6 opacity DataTrigger on IsDefault=True rows.
         · Dim italic "(inherited)" suffix for inherited values.
+             2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.Panels).
     Theme: Global theme via XD_* and DockBackgroundBrush tokens (DynamicResource)
     ResourceDictionaries: WpfHexEditor.Shell/Themes/{Theme}/Colors.xaml
     Phase D: Rich property editor DataTemplates (Thickness, Enum, Numeric, Color, Font, Brush).
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.XamlDesigner.Panels.PropertyInspectorPanel"
+<UserControl x:Class="WpfHexEditor.Plugins.XamlDesigner.Panels.PropertyInspectorPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:WpfHexEditor.Editor.XamlDesigner.ViewModels"
-             xmlns:models="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Models"
-             xmlns:editors="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Controls.Editors"
+             xmlns:vm="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.ViewModels"
+             xmlns:models="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Models;assembly=WpfHexEditor.Editor.XamlDesigner"
+             xmlns:editors="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Controls.Editors;assembly=WpfHexEditor.Editor.XamlDesigner"
              Background="{DynamicResource DockBackgroundBrush}">
 
     <UserControl.Resources>

@@ -1,22 +1,18 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
 // File: AnimationTimelinePanelViewModel.cs
 // Author: Derek Tremblay
 // Created: 2026-03-17
 // Updated: 2026-03-19
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.ViewModels).
 // Description:
 //     ViewModel for the Animation Timeline panel.
 //     Coordinates the AnimationPreviewService (playback) and
 //     StoryboardSyncService (parse/serialize) with the timeline UI.
 //
-// Architecture Notes:
-//     INPC + RelayCommand.
-//     AnimationPreviewService is injected by XamlDesignerSplitHost after
-//     the DesignCanvas root is attached.
-//     XamlSource property drives track re-parse on every XAML change.
-//     New: FrameRate, IsLooping, AutoReverse, StoryboardNames,
-//          AddKeyframe, DeleteKeyframe, Export, AddTrack, RemoveTrack,
-//          MoveKeyframe, SetContextElement.
+// Architecture: Plugin-owned panel ViewModel; uses StoryboardSyncService + AnimationPreviewService
+//               from editor core. Domain models (AnimationTrackViewModel, KeyframeViewModel)
+//               from WpfHexEditor.Editor.XamlDesigner.Models.
 // ==========================================================
 
 using System.Collections.ObjectModel;
@@ -24,10 +20,11 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using WpfHexEditor.Editor.XamlDesigner.Models;
 using WpfHexEditor.Editor.XamlDesigner.Services;
 using WpfHexEditor.SDK.Commands;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 
 /// <summary>
 /// ViewModel for the animation timeline dockable panel.
@@ -57,27 +54,23 @@ public sealed class AnimationTimelinePanelViewModel : INotifyPropertyChanged
         StopCommand    = new RelayCommand(_ => Stop(),  _ => _previewService is not null);
         SeekCommand    = new RelayCommand(p => { if (p is TimeSpan ts) Seek(ts); });
 
-        AddKeyframeCommand    = new RelayCommand(_ => ExecuteAddKeyframe(),    _ => _selectedTrack is not null);
-        DeleteKeyframeCommand = new RelayCommand(p => ExecuteDeleteKeyframe(p as KeyframeViewModel));
+        AddKeyframeCommand      = new RelayCommand(_ => ExecuteAddKeyframe(),    _ => _selectedTrack is not null);
+        DeleteKeyframeCommand   = new RelayCommand(p => ExecuteDeleteKeyframe(p as KeyframeViewModel));
         ExportStoryboardCommand = new RelayCommand(_ => ExecuteExport());
-        AddTrackCommand       = new RelayCommand(_ => ExecuteAddTrack());
-        RemoveTrackCommand    = new RelayCommand(p => ExecuteRemoveTrack(p as AnimationTrackViewModel));
-        MoveKeyframeCommand   = new RelayCommand(p => ExecuteMoveKeyframe(p));
-        ZoomInCommand         = new RelayCommand(_ => PixelsPerSecond *= 1.5);
-        ZoomOutCommand        = new RelayCommand(_ => PixelsPerSecond /= 1.5);
+        AddTrackCommand         = new RelayCommand(_ => ExecuteAddTrack());
+        RemoveTrackCommand      = new RelayCommand(p => ExecuteRemoveTrack(p as AnimationTrackViewModel));
+        MoveKeyframeCommand     = new RelayCommand(p => ExecuteMoveKeyframe(p));
+        ZoomInCommand           = new RelayCommand(_ => PixelsPerSecond *= 1.5);
+        ZoomOutCommand          = new RelayCommand(_ => PixelsPerSecond /= 1.5);
     }
 
     // ── Static data ───────────────────────────────────────────────────────────
 
-    /// <summary>Allowed frame-rate values.</summary>
     public static IReadOnlyList<int> AvailableFrameRates { get; } = [12, 24, 30, 60];
-
-    /// <summary>Allowed playback speed multipliers.</summary>
     public static readonly IReadOnlyList<double> AvailablePlaybackSpeeds = [0.25, 0.5, 1.0, 2.0];
 
     // ── Properties ────────────────────────────────────────────────────────────
 
-    /// <summary>Current XAML being shown in the designer. Triggers track re-parse.</summary>
     public string XamlSource
     {
         get => _xamlSource;
@@ -115,7 +108,6 @@ public sealed class AnimationTimelinePanelViewModel : INotifyPropertyChanged
         set { if (_selectedTrack == value) return; _selectedTrack = value; OnPropertyChanged(); }
     }
 
-    /// <summary>Playback frame rate. Allowed values: 12, 24, 30, 60.</summary>
     public int FrameRate
     {
         get => _frameRate;
@@ -142,7 +134,6 @@ public sealed class AnimationTimelinePanelViewModel : INotifyPropertyChanged
 
     private double _playbackSpeed = 1.0;
 
-    /// <summary>Playback speed multiplier. Allowed values: 0.25, 0.5, 1.0, 2.0.</summary>
     public double PlaybackSpeed
     {
         get => _playbackSpeed;
@@ -151,13 +142,11 @@ public sealed class AnimationTimelinePanelViewModel : INotifyPropertyChanged
             if (Math.Abs(_playbackSpeed - value) < 0.001) return;
             _playbackSpeed = value;
             OnPropertyChanged();
-            // _previewService?.SetPlaybackSpeed(value);  — not yet implemented in service
         }
     }
 
     private double _pixelsPerSecond = 80.0;
 
-    /// <summary>Timeline zoom level expressed as pixels per second (clamped 20–400).</summary>
     public double PixelsPerSecond
     {
         get => _pixelsPerSecond;
@@ -170,14 +159,13 @@ public sealed class AnimationTimelinePanelViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Currently selected storyboard name from the parsed tracks.</summary>
     public string ActiveStoryboardName
     {
         get => _activeStoryboardName;
         set { if (_activeStoryboardName == value) return; _activeStoryboardName = value; OnPropertyChanged(); }
     }
 
-    public ObservableCollection<AnimationTrackViewModel> Tracks         { get; } = new();
+    public ObservableCollection<AnimationTrackViewModel> Tracks          { get; } = new();
     public ObservableCollection<string>                  StoryboardNames { get; } = new();
 
     // ── Commands ──────────────────────────────────────────────────────────────
@@ -197,20 +185,12 @@ public sealed class AnimationTimelinePanelViewModel : INotifyPropertyChanged
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Attaches a preview service (called by XamlDesignerSplitHost when the
-    /// DesignCanvas root is available).
-    /// </summary>
     public void AttachPreviewService(AnimationPreviewService service)
     {
         _previewService = service;
         _previewService.PlaybackStateChanged += OnPlaybackStateChanged;
     }
 
-    /// <summary>
-    /// Sets IsContextMatch=true on tracks whose TargetName matches
-    /// <paramref name="elementName"/>; false on all others.
-    /// </summary>
     public void SetContextElement(string? elementName)
     {
         foreach (var track in Tracks)

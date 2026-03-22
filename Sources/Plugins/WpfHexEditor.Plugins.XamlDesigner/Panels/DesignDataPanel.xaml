@@ -1,14 +1,15 @@
 <UserControl
-    x:Class="WpfHexEditor.Editor.XamlDesigner.Panels.DesignDataPanel"
+    x:Class="WpfHexEditor.Plugins.XamlDesigner.Panels.DesignDataPanel"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Panels"
+    xmlns:local="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.Panels"
     MinHeight="80">
 
     <!-- ==========================================================
-         Project: WpfHexEditor.Editor.XamlDesigner
+         Project: WpfHexEditor.Plugins.XamlDesigner
          File: DesignDataPanel.xaml
          Created: 2026-03-17 | Updated: 2026-03-19
+         Moved to plugin project: 2026-03-22
          Description: Design-Time Data dockable panel.
                       Toolbar: Refresh | Generate Mock Data | Pick Type…
                                | status label.

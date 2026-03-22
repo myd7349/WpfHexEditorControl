@@ -3,10 +3,13 @@
 // File: AnimationTrackViewModel.cs
 // Author: Derek Tremblay
 // Created: 2026-03-17
+// Updated: 2026-03-22 — Moved from ViewModels/ to Models/
+//                        (used by StoryboardSyncService and StoryboardExportService).
 // Description:
-//     ViewModel for a single animation track in the Timeline panel.
+//     Domain model for a single animation track in the Timeline panel.
 //     Represents one animated property on one target element.
 //     Contains an ordered list of KeyframeViewModels.
+//     Built by StoryboardSyncService; consumed by AnimationTimelinePanelViewModel (plugin).
 //
 // Architecture Notes:
 //     INPC. ObservableCollection<KeyframeViewModel> for binding to the timeline ruler.
@@ -16,7 +19,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Editor.XamlDesigner.Models;
 
 /// <summary>
 /// One animated property track on the timeline.

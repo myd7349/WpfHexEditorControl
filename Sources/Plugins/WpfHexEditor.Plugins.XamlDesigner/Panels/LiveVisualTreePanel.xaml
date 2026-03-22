@@ -20,16 +20,18 @@
                            G) Show/Hide Dimensions toggle (BtnShowDimensions)
                            H) Copy XAML Snippet context menu item
                            Search highlights on tree nodes (LVT_SearchHighlightBrush / LVT_SearchMatchBrush)
+             2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.Panels).
     Theme: Global theme via XD_* and DockBackgroundBrush tokens (DynamicResource)
     ResourceDictionaries: WpfHexEditor.Shell/Themes/{Theme}/Colors.xaml
     Panel: Live Visual Tree — shows the runtime WPF visual tree of the design canvas.
     Bidirectional sync: node selection → canvas highlight; canvas selection → node highlight.
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.XamlDesigner.Panels.LiveVisualTreePanel"
+<UserControl x:Class="WpfHexEditor.Plugins.XamlDesigner.Panels.LiveVisualTreePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:WpfHexEditor.Editor.XamlDesigner.ViewModels"
+             xmlns:vm="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.ViewModels"
+             xmlns:models="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Models;assembly=WpfHexEditor.Editor.XamlDesigner"
              Background="{DynamicResource DockBackgroundBrush}">
 
     <UserControl.Resources>
@@ -321,7 +323,7 @@
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type vm:LiveTreeNode}">
+                        <DataTemplate DataType="{x:Type models:LiveTreeNode}">
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="{Binding TypeName}"
                                         Style="{StaticResource XD_BreadcrumbButton}"
@@ -453,7 +455,7 @@
                 </Style>
             </TreeView.ItemContainerStyle>
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate DataType="{x:Type vm:LiveTreeNode}"
+                <HierarchicalDataTemplate DataType="{x:Type models:LiveTreeNode}"
                                           ItemsSource="{Binding Children}">
                     <!-- Grid wraps the node row to allow a search-highlight overlay layer -->
                     <Grid>

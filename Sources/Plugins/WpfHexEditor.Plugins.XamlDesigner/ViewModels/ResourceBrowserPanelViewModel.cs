@@ -1,20 +1,16 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
 // File: ResourceBrowserPanelViewModel.cs
 // Author: Derek Tremblay
 // Created: 2026-03-17
 // Updated: 2026-03-19
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.ViewModels).
 // Description:
 //     ViewModel for the Resource Browser dockable panel.
 //     Provides a filterable, grouped view of application resources
 //     and exposes commands for scanning, navigating, renaming, and copying.
 //
-// Architecture Notes:
-//     INPC. ICollectionView grouped by Scope.
-//     ResourceScannerService provides raw entries.
-//     ResourceUsageAnalyzer fills UsageCount post-scan.
-//     Duplicate detection groups entries by PreviewText.
-//     500ms debounce timer guards rapid successive scans.
+// Architecture: Plugin-owned panel ViewModel; uses ResourceScannerService from editor core.
 // ==========================================================
 
 using System.Collections.ObjectModel;
@@ -23,10 +19,11 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
+using WpfHexEditor.Editor.XamlDesigner.Models;
 using WpfHexEditor.Editor.XamlDesigner.Services;
 using WpfHexEditor.SDK.Commands;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 
 /// <summary>
 /// ViewModel for the Resource Browser panel.
@@ -89,7 +86,6 @@ public sealed class ResourceBrowserPanelViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>XAML source used by the usage analyzer. Set by the plugin host.</summary>
     public string XamlSource
     {
         get => _xamlSource;
@@ -107,15 +103,11 @@ public sealed class ResourceBrowserPanelViewModel : INotifyPropertyChanged
 
     // ── Events ────────────────────────────────────────────────────────────────
 
-    /// <summary>Raised when the user requests Find Usages on a resource entry.</summary>
     public event EventHandler<string>?                        FindUsagesRequested;
-
-    /// <summary>Raised when the user requests navigation to a resource definition.</summary>
     public event EventHandler<(string key, int line)>?        GoToDefinitionRequested;
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    /// <summary>Schedules a scan after a 500ms debounce delay.</summary>
     public void ScheduleRescan()
     {
         _debounceTimer?.Stop();
@@ -127,7 +119,6 @@ public sealed class ResourceBrowserPanelViewModel : INotifyPropertyChanged
         _debounceTimer.Start();
     }
 
-    /// <summary>Active sort mode: "Name", "Type", or "Usage".</summary>
     public string SortMode
     {
         get => _sortMode;
@@ -140,7 +131,6 @@ public sealed class ResourceBrowserPanelViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Active scope filter: "All", "Local", "Merged", or "App".</summary>
     public string ScopeFilter
     {
         get => _scopeFilter;
@@ -153,7 +143,6 @@ public sealed class ResourceBrowserPanelViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Rescans all application resources, fills usage counts, detects duplicates.</summary>
     public void Scan()
     {
         _entries.Clear();
@@ -198,7 +187,6 @@ public sealed class ResourceBrowserPanelViewModel : INotifyPropertyChanged
     {
         using (EntriesView.DeferRefresh())
         {
-            // Rebuild sort descriptions based on current sort mode.
             EntriesView.SortDescriptions.Clear();
             var sortDescription = _sortMode switch
             {
@@ -208,7 +196,6 @@ public sealed class ResourceBrowserPanelViewModel : INotifyPropertyChanged
             };
             EntriesView.SortDescriptions.Add(sortDescription);
 
-            // Reassign filter to fold in the scope constraint.
             EntriesView.Filter = FilterEntry;
         }
     }
@@ -259,7 +246,6 @@ public sealed class ResourceBrowserPanelViewModel : INotifyPropertyChanged
     {
         if (obj is not ResourceEntryViewModel entry) return false;
 
-        // Apply scope filter when not set to "All".
         if (_scopeFilter != "All" && entry.Scope != _scopeFilter)
             return false;
 

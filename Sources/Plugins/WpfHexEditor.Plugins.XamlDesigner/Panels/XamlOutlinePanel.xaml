@@ -4,14 +4,15 @@
     Contributors: Claude Sonnet 4.6
     Updated: 2026-03-19 — Search filter, semantic icons, DimOpacity, error badge,
                           context menu, breadcrumb bar
+             2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.Panels).
     Theme: Global theme via XD_* and DockBackgroundBrush tokens (DynamicResource)
     ResourceDictionaries: WpfHexEditor.Shell/Themes/{Theme}/Colors.xaml
 -->
 
-<UserControl x:Class="WpfHexEditor.Editor.XamlDesigner.Panels.XamlOutlinePanel"
+<UserControl x:Class="WpfHexEditor.Plugins.XamlDesigner.Panels.XamlOutlinePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:WpfHexEditor.Editor.XamlDesigner.ViewModels"
+             xmlns:vm="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.ViewModels"
              Background="{DynamicResource DockBackgroundBrush}">
 
     <UserControl.Resources>

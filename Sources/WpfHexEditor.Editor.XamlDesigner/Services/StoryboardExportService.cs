@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using WpfHexEditor.Editor.XamlDesigner.ViewModels;
+using WpfHexEditor.Editor.XamlDesigner.Models;
 
 namespace WpfHexEditor.Editor.XamlDesigner.Services;
 

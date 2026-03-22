@@ -1,17 +1,15 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
 // File: DesignHistoryEntryViewModel.cs
 // Author: Derek Tremblay
 // Created: 2026-03-18
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.ViewModels).
 // Description:
 //     ViewModel for a single row in the Design History Panel.
 //     Wraps an IDesignUndoEntry and exposes display-ready properties:
 //     icon glyph, applied/current state, opacity for undone entries.
 //
-// Architecture Notes:
-//     INPC ViewModel pattern.
-//     IsApplied / IsCurrent set externally by DesignHistoryPanelViewModel
-//     whenever the undo stack changes.
+// Architecture: Plugin-owned. Consumes IDesignUndoEntry from editor core Services.
 // ==========================================================
 
 using System;
@@ -20,28 +18,19 @@ using System.Runtime.CompilerServices;
 using WpfHexEditor.Editor.XamlDesigner.Models;
 using WpfHexEditor.Editor.XamlDesigner.Services;
 
-namespace WpfHexEditor.Editor.XamlDesigner.ViewModels;
+namespace WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 
 /// <summary>
 /// Represents a single entry in the Design History Panel list.
 /// </summary>
 public sealed class DesignHistoryEntryViewModel : INotifyPropertyChanged
 {
-    // ── Source entry ──────────────────────────────────────────────────────────
-
-    /// <summary>The underlying undo entry this VM wraps.</summary>
     public IDesignUndoEntry Source { get; }
-
-    // ── INPC state ────────────────────────────────────────────────────────────
 
     private bool _isApplied    = true;
     private bool _isCurrent;
     private bool _isCheckpoint;
 
-    /// <summary>
-    /// True when this entry is in the undo stack (has been applied).
-    /// False when this entry is in the redo stack (was undone).
-    /// </summary>
     public bool IsApplied
     {
         get => _isApplied;
@@ -54,9 +43,6 @@ public sealed class DesignHistoryEntryViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// True for the most recently applied entry (shows the ▶ marker).
-    /// </summary>
     public bool IsCurrent
     {
         get => _isCurrent;
@@ -68,10 +54,6 @@ public sealed class DesignHistoryEntryViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>
-    /// True when the user has starred this entry as a checkpoint.
-    /// Checkpoints survive Clear() if the manager preserves them.
-    /// </summary>
     public bool IsCheckpoint
     {
         get => _isCheckpoint;
@@ -83,25 +65,11 @@ public sealed class DesignHistoryEntryViewModel : INotifyPropertyChanged
         }
     }
 
-    // ── Derived display properties ────────────────────────────────────────────
+    public string   Description    => Source.Description;
+    public DateTime Timestamp      => Source.Timestamp;
+    public int      OperationCount => Source.OperationCount;
+    public double   OpacityFactor  => _isApplied ? 1.0 : 0.45;
 
-    /// <summary>Human-readable description.</summary>
-    public string Description  => Source.Description;
-
-    /// <summary>Timestamp of the operation.</summary>
-    public DateTime Timestamp  => Source.Timestamp;
-
-    /// <summary>Number of atomic operations bundled in this entry.</summary>
-    public int OperationCount  => Source.OperationCount;
-
-    /// <summary>
-    /// Opacity: 1.0 when applied, 0.45 when undone (greyed-out in history).
-    /// </summary>
-    public double OpacityFactor => _isApplied ? 1.0 : 0.45;
-
-    /// <summary>
-    /// Segoe MDL2 Assets glyph representing the operation type.
-    /// </summary>
     public string GlyphIcon => Source switch
     {
         SingleDesignUndoEntry s => s.Operation.Type switch
@@ -119,17 +87,10 @@ public sealed class DesignHistoryEntryViewModel : INotifyPropertyChanged
         _                       => "\uE71D"
     };
 
-    // ── Constructor ───────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Initialises the ViewModel from the given history entry.
-    /// </summary>
     public DesignHistoryEntryViewModel(IDesignUndoEntry source)
     {
         Source = source;
     }
-
-    // ── INotifyPropertyChanged ────────────────────────────────────────────────
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

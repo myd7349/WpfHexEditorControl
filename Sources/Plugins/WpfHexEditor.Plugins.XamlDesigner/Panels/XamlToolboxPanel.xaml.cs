@@ -1,5 +1,6 @@
 // ==========================================================
-// Project: WpfHexEditor.Editor.XamlDesigner
+// Project: WpfHexEditor.Plugins.XamlDesigner
+//          2026-03-22 — Moved to plugin project (WpfHexEditor.Plugins.XamlDesigner.Panels).
 // File: XamlToolboxPanel.xaml.cs
 // Author: Derek Tremblay
 // Created: 2026-03-17
@@ -23,9 +24,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using WpfHexEditor.Editor.XamlDesigner.Models;
 using WpfHexEditor.Editor.XamlDesigner.Services;
-using WpfHexEditor.Editor.XamlDesigner.ViewModels;
+using WpfHexEditor.Plugins.XamlDesigner.ViewModels;
 
-namespace WpfHexEditor.Editor.XamlDesigner.Panels;
+namespace WpfHexEditor.Plugins.XamlDesigner.Panels;
 
 /// <summary>
 /// XAML Toolbox dockable panel — lists all available WPF controls for drag-to-canvas.

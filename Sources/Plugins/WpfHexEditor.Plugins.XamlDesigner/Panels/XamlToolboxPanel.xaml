@@ -1,13 +1,14 @@
-<UserControl x:Class="WpfHexEditor.Editor.XamlDesigner.Panels.XamlToolboxPanel"
+<UserControl x:Class="WpfHexEditor.Plugins.XamlDesigner.Panels.XamlToolboxPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="clr-namespace:WpfHexEditor.Editor.XamlDesigner.ViewModels"
-             xmlns:models="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Models">
+             xmlns:vm="clr-namespace:WpfHexEditor.Plugins.XamlDesigner.ViewModels"
+             xmlns:models="clr-namespace:WpfHexEditor.Editor.XamlDesigner.Models;assembly=WpfHexEditor.Editor.XamlDesigner">
 
     <!-- ==========================================================
-         Project: WpfHexEditor.Editor.XamlDesigner
+         Project: WpfHexEditor.Plugins.XamlDesigner
          File: XamlToolboxPanel.xaml
          Created: 2026-03-17 | Updated: 2026-03-19
+         Moved to plugin project: 2026-03-22
          Description: VS-Like dockable XAML Toolbox panel.
                       Toolbar: Search TextBox | Favorites toggle.
                       Content: Favorites section, Recent section,
