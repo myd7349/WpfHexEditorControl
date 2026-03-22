@@ -1410,13 +1410,18 @@ public sealed class DesignCanvas : Border
             }
 
             // Prefer a leaf element (not a container with children); fall back to topmost.
-            var target = _lastHitElements.FirstOrDefault(IsLeafElement)
-                      ?? _lastHitElements.FirstOrDefault();
+            // leafTarget is captured separately so isEmptySpace can test it without re-calling FirstOrDefault.
+            var leafTarget = _lastHitElements.FirstOrDefault(IsLeafElement);
+            var target     = leafTarget ?? _lastHitElements.FirstOrDefault();
 
-            // "Empty space" = hit list empty, or only DesignRoot itself was hit (no actual child).
-            // This is the root cause fix: previously `target is null` was never true because
-            // DesignRoot was always appended as a fallback, preventing rubber-band from starting.
-            bool isEmptySpace = IsOnlyDesignRoot(_lastHitElements);
+            // VS-Like rubber-band rule: start marquee when no leaf design element is under the cursor.
+            // Covers two cases:
+            //   1. Truly empty space — hit list contains only DesignRoot or nothing.
+            //   2. Click on a container background (Grid, StackPanel…) — hit list has elements but
+            //      none are leaves (no Button/TextBox/Image directly under the cursor).
+            // Previously `IsOnlyDesignRoot` alone was not enough because transparent containers are
+            // always hit-testable, so leafTarget was null even when clicking "between" controls.
+            bool isEmptySpace = IsOnlyDesignRoot(_lastHitElements) || leafTarget is null;
 
             // Double-click — open inline text editor for text-content elements.
             if (e.ClickCount == 2 && target is FrameworkElement dblFe && !isEmptySpace)
@@ -2068,9 +2073,34 @@ public sealed class DesignCanvas : Border
     private IReadOnlyList<UIElement> CollectElementsInRubberBand(Rect rubberBandInRoot)
     {
         if (DesignRoot is not FrameworkElement root) return Array.Empty<UIElement>();
-        var result = new List<UIElement>();
-        CollectElementsInRectCore(root, rubberBandInRoot, root, result);
-        return result;
+
+        // Collect every visual element that intersects the rubber-band rect.
+        var all = new List<UIElement>();
+        CollectElementsInRectCore(root, rubberBandInRoot, root, all);
+
+        // Filter 1: keep only actual placed design elements (those that have an xd_uid).
+        //           This removes WPF template internals (ContentPresenter, Border-in-Button, etc.)
+        //           that have no uid and are not meaningful to the user.
+        var withUid = all.Where(el => _mapper.GetUid(el) >= 0).ToList();
+
+        // Filter 2: of the remaining elements remove any that are visual descendants of another
+        //           element also in the set — keep only the outermost (VS Blend behaviour).
+        return withUid
+            .Where(el => !withUid.Any(other =>
+                !ReferenceEquals(other, el) && IsVisualDescendant(el, other)))
+            .ToList();
+    }
+
+    /// <summary>Returns true when <paramref name="child"/> is anywhere inside <paramref name="ancestor"/> in the visual tree.</summary>
+    private static bool IsVisualDescendant(UIElement child, UIElement ancestor)
+    {
+        DependencyObject? cur = child;
+        while (cur is not null)
+        {
+            cur = VisualTreeHelper.GetParent(cur);
+            if (ReferenceEquals(cur, ancestor)) return true;
+        }
+        return false;
     }
 
     private static void CollectElementsInRectCore(
