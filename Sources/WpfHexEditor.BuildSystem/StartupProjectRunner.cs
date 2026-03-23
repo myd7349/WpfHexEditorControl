@@ -115,9 +115,11 @@ public sealed class StartupProjectRunner
         {
             var psi = new ProcessStartInfo(exePath)
             {
-                WorkingDirectory = Path.GetDirectoryName(exePath)!,
-                UseShellExecute  = false,  // false → reliable handle; UseShellExecute=true can silently return null on Win11
-                CreateNoWindow   = false,
+                WorkingDirectory        = Path.GetDirectoryName(exePath)!,
+                UseShellExecute         = false,
+                CreateNoWindow          = false,
+                RedirectStandardError   = true,
+                RedirectStandardOutput  = true,
             };
             proc = Process.Start(psi);
         }
@@ -133,23 +135,48 @@ public sealed class StartupProjectRunner
             return false;
         }
 
-        // Monitor in background — catches crashes at any point during the first 15s of startup
-        // (covers plugin loading, theme init, etc.) without blocking Ctrl+F5.
+        // Notify IDE and plugins that a new managed process has been started.
+        var launchTime = DateTime.UtcNow;
+        _eventBus.Publish(new ProcessLaunchedEvent
+        {
+            ProcessId   = proc.Id,
+            ProcessName = Path.GetFileNameWithoutExtension(exePath),
+            StartTime   = launchTime,
+            OutputPath  = exePath,
+        });
+
+        // Stream stderr/stdout and monitor exit — surfaces .NET unhandled exception details.
+        proc.OutputDataReceived += (_, e) => { if (e.Data is not null) Log(e.Data); };
+        proc.ErrorDataReceived  += (_, e) =>
+        {
+            if (e.Data is not null)
+                _eventBus.Publish(new BuildOutputLineEvent { Line = e.Data, IsError = true });
+        };
+        proc.BeginOutputReadLine();
+        proc.BeginErrorReadLine();
+
         _ = Task.Run(async () =>
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
             try
             {
-                await proc.WaitForExitAsync(cts.Token).ConfigureAwait(false);
-                // Process exited within 15s — unexpected for a normal app.
-                _eventBus.Publish(new BuildOutputLineEvent
+                await proc.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+
+                var duration = DateTime.UtcNow - launchTime;
+                _eventBus.Publish(new ProcessExitedEvent
                 {
-                    Line = $"-- Process exited unexpectedly (code {proc.ExitCode}). Check startup errors. --"
+                    ProcessId = proc.Id,
+                    ExitCode  = proc.ExitCode,
+                    Duration  = duration,
                 });
+
+                if (proc.ExitCode != 0)
+                    Log($"-- Process exited (code {proc.ExitCode}). Check startup errors. --");
+                else
+                    Log($"-- Process exited normally (code 0). --");
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
-                // Normal: process still running after 15s — all good.
+                Log($"-- Process monitor error: {ex.Message} --");
             }
             finally
             {

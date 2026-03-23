@@ -156,6 +156,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // QuickSearchBar instances for CodeEditor documents (CodeEditor has no embedded Canvas)
     private readonly Dictionary<CodeEditorControl, QuickSearchBar> _codeEditorBars = new();
 
+    // EditorEventAdapter bridges per-tab code-editor events to IIDEEventBus.
+    // Keyed by DockItem ContentId so adapters can be disposed on tab close.
+    private readonly Dictionary<string, WpfHexEditor.Editor.CodeEditor.Services.EditorEventAdapter> _editorEventAdapters = new();
+
     // M5: PropertyProvider cache — avoids recreating the provider on every tab switch
     private readonly Dictionary<UIElement, IPropertyProvider?> _propertyProviderCache = new();
 
@@ -2003,6 +2007,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 // Register as diagnostic source (e.g. TblEditor with IDiagnosticSource)
                 if (editor is IDiagnosticSource diagSrc)
                     EnsureErrorPanelInstance().AddSource(diagSrc);
+
+                // Bridge code-editor events to IIDEEventBus (diagnostics, save, open/close).
+                if (_ideEventBus != null && !string.IsNullOrEmpty(item.ContentId))
+                {
+                    var adapter = new WpfHexEditor.Editor.CodeEditor.Services.EditorEventAdapter(
+                        editor, _ideEventBus, filePath);
+                    _editorEventAdapters[item.ContentId] = adapter;
+                }
 
                 ActiveDocumentEditor       = editor;
                 ActiveStatusBarContributor = editor as IStatusBarContributor;
@@ -4109,6 +4121,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (ctrl is not HexEditorControl && ctrl is IDiagnosticSource closingDiag)
                 _errorPanel?.RemoveSource(closingDiag);
 
+            // Dispose EditorEventAdapter (stops publishing diagnostic/save events on EventBus).
+            if (_editorEventAdapters.Remove(item.ContentId, out var closingAdapter))
+                closingAdapter.Dispose();
+
             _propertyProviderCache.Remove(ctrl);  // M5: evict cached provider
             UnregisterDocument(item.ContentId);
             _contentCache.Remove(item.ContentId);
@@ -5782,14 +5798,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UpdateStatusBar();
     }
 
+    private const string FallbackThemeFile = "DarkTheme.xaml";
+    private const string FallbackThemeName = "DarkTheme";
+
     private void ApplyTheme(string themeFile, string themeName)
     {
-        Application.Current.Resources.MergedDictionaries.Clear();
-        Application.Current.Resources.MergedDictionaries.Add(
-            new ResourceDictionary
-            {
-                Source = new Uri($"pack://application:,,,/WpfHexEditor.Shell;component/Themes/{themeFile}")
-            });
+        try
+        {
+            Application.Current.Resources.MergedDictionaries.Clear();
+            Application.Current.Resources.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source = new Uri($"pack://application:,,,/WpfHexEditor.Shell;component/Themes/{themeFile}")
+                });
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or System.IO.FileNotFoundException or UriFormatException)
+        {
+            OutputLogger.Warn($"Theme '{themeName}' could not be loaded: {ex.Message}. Reverting to {FallbackThemeName}.");
+            AppSettingsService.Instance.Current.ActiveThemeName = string.Empty;
+            AppSettingsService.Instance.Save();
+            _lastAppliedTheme = string.Empty;
+            // Avoid recursion if the fallback itself is missing.
+            if (!themeFile.Equals(FallbackThemeFile, StringComparison.OrdinalIgnoreCase))
+                ApplyTheme(FallbackThemeFile, FallbackThemeName);
+            return;
+        }
         SyncAllHexEditorThemes();
         OutputLogger.Info($"Theme changed to {themeName}.");
 
