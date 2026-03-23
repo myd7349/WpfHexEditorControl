@@ -589,8 +589,7 @@
                     <MenuItem Header="_Plugins">
                         <MenuItem Header="_Plugin Manager"
                                   Command="{x:Static local:MainWindow.OpenPluginManagerCommand}"
-                                  CommandTarget="{Binding ElementName=ThisWindow}"
-                                  InputGestureText="Ctrl+Shift+P">
+                                  CommandTarget="{Binding ElementName=ThisWindow}">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE74C;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"

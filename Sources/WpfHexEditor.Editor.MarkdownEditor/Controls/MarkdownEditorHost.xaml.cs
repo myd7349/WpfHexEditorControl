@@ -184,7 +184,7 @@ public sealed partial class MarkdownEditorHost : UserControl,
         CommandBindings.Add(new CommandBinding(MdCommands.PreviewOnly,   (_, _) => SetViewMode(MdViewMode.PreviewOnly)));
         CommandBindings.Add(new CommandBinding(MdCommands.CycleLayout,   (_, _) => CycleSplitLayout()));
 
-        InputBindings.Add(new KeyBinding(MdCommands.TogglePreview,  new KeyGesture(Key.P,  ModifierKeys.Control | ModifierKeys.Shift)));
+        InputBindings.Add(new KeyBinding(MdCommands.TogglePreview,  new KeyGesture(Key.A,  ModifierKeys.Control | ModifierKeys.Shift)));
         InputBindings.Add(new KeyBinding(MdCommands.RefreshPreview, new KeyGesture(Key.F9)));
         InputBindings.Add(new KeyBinding(MdCommands.SourceOnly,     new KeyGesture(Key.D1, ModifierKeys.Control)));
         InputBindings.Add(new KeyBinding(MdCommands.SplitView,      new KeyGesture(Key.D2, ModifierKeys.Control)));
