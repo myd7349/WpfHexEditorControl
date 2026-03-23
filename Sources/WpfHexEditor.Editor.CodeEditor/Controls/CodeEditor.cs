@@ -169,6 +169,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // Null when no language server is configured for the current language.
         private WpfHexEditor.Editor.Core.LSP.ILspClient? _lspClient;
 
+        // Signature help popup — shown on '(' keystroke when an LSP client is active.
+        private SignatureHelpPopup? _signatureHelpPopup;
+
         // Monotonically increasing document version sent with every didChange notification.
         private int _lspDocVersion;
 
@@ -1740,6 +1743,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // Initialize SmartComplete popup (Phase 4)
             _smartCompletePopup = new SmartCompletePopup(this);
+
+            // Initialize LSP Signature Help popup
+            _signatureHelpPopup = new SignatureHelpPopup(this);
 
             // Initialize validator (Phase 5)
             _validator = new FormatSchemaValidator();
@@ -5674,6 +5680,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     {
                         TriggerSmartCompleteWithDelay();
                     }
+
+                    // Trigger LSP Signature Help on '('
+                    if (ch == '(' && _lspClient is not null)
+                        _ = TriggerSignatureHelpAsync();
                 }
                 // OPT-B: InvalidateVisual() removed — Document_TextChanged fires in the same
                 // call stack and already calls InvalidateVisual() or InvalidateMeasure() as
@@ -7907,6 +7917,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _lspClient = client;
             _hoverQuickInfoService?.SetLspClient(client);
             _ctrlClickService?.SetLspClient(client);
+            _signatureHelpPopup!.IsOpen = false;
             _lspDocVersion = 0;
 
             if (_lspClient is null) return;
@@ -7952,6 +7963,33 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             };
 
         /// <summary>
+        /// Calls textDocument/signatureHelp and shows the result in <see cref="_signatureHelpPopup"/>.
+        /// Fire-and-forget: errors are swallowed to never break typing.
+        /// </summary>
+        private async Task TriggerSignatureHelpAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null) return;
+            try
+            {
+                var sig = await _lspClient.SignatureHelpAsync(
+                    _currentFilePath, _cursorLine, _cursorColumn, CancellationToken.None)
+                    .ConfigureAwait(false);
+                if (sig is null) return;
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    var textLeft = ShowLineNumbers ? 70.0 : 4.0;  // TextAreaLeftOffset or LeftMargin
+                    var localX   = textLeft + _cursorColumn * _charWidth - _horizontalScrollOffset;
+                    var localY   = (_cursorLine - _firstVisibleLine) * _lineHeight;
+                    var screenPt = PointToScreen(new Point(localX, localY));
+                    _signatureHelpPopup?.Show(sig, screenPt);
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LSP] SignatureHelp: {ex.Message}");
+            }
+        }
+
         /// Feeds LSP push diagnostics into the editor's validation error list.
         /// Always called on the UI thread (guaranteed by LspClientImpl).
         /// </summary>
@@ -8440,6 +8478,27 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         /// <summary>Fired when the caret moves to a different line (debounced to line-level changes).</summary>
         public event EventHandler? CaretMoved;
+
+        /// <summary>
+        /// Exposes the folding engine so external adapters (e.g. EditorEventAdapter) can
+        /// subscribe to <see cref="Folding.FoldingEngine.RegionsChanged"/> without coupling
+        /// to the internal field.
+        /// </summary>
+        public Folding.FoldingEngine? FoldingEngine => _foldingEngine;
+
+        /// <summary>
+        /// Currently selected text, bounded to 4096 characters.
+        /// Returns <see cref="string.Empty"/> when nothing is selected.
+        /// </summary>
+        public string SelectedText
+        {
+            get
+            {
+                if (_selection.IsEmpty) return string.Empty;
+                var raw = _document.GetText(_selection.NormalizedStart, _selection.NormalizedEnd);
+                return raw.Length > 4096 ? raw[..4096] : raw;
+            }
+        }
 
         /// <summary>
         /// Raised when the user navigates to a reference in a different file via the

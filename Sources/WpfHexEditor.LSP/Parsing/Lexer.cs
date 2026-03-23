@@ -51,6 +51,9 @@ public sealed class Lexer
     /// <summary><c>true</c> when the lexer is inside an open block comment.</summary>
     public bool IsInsideBlockComment { get; internal set; }
 
+    /// <summary>Language identifier (e.g. "csharp", "json") from the underlying <see cref="LanguageDefinition"/>.</summary>
+    public string LanguageId => _language.Id;
+
     public Lexer(LanguageDefinition language)
     {
         _language = language ?? throw new ArgumentNullException(nameof(language));

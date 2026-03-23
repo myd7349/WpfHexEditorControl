@@ -17,13 +17,13 @@
 //     Pattern: Adapter / Event Bridge
 //     - Caller (MainWindow or DocumentHostService) creates one adapter per
 //       open code-editor tab, passing the file path it already knows.
-//     - Selection state (text, caret position) is not yet fully accessible
-//       from IDocumentEditor. SelectionChanged publishes a lightweight event;
-//       richer payload will be added when CodeEditor exposes caret state.
+//     - When the editor is a CodeEditor instance, the adapter also subscribes
+//       to CaretMoved and FoldingEngine.RegionsChanged for richer payloads.
 //     - Optional IDiagnosticSource subscription is established via an is-check
 //       so the adapter works with any IDocumentEditor, not just CodeEditor.
 // ==========================================================
 
+using CodeEditorControl = WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Events;
 using WpfHexEditor.Events.IDEEvents;
@@ -37,12 +37,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Services;
 /// </summary>
 public sealed class EditorEventAdapter : IDisposable
 {
-    private readonly IDocumentEditor  _editor;
-    private readonly IIDEEventBus     _bus;
-    private readonly string           _filePath;
+    private readonly IDocumentEditor    _editor;
+    private readonly IIDEEventBus       _bus;
+    private readonly string             _filePath;
     private readonly IDiagnosticSource? _diagnosticSource;
-    private          bool             _opened;
-    private          bool             _disposed;
+    private readonly CodeEditorControl? _codeEditor;
+    private          bool               _opened;
+    private          bool               _disposed;
 
     /// <summary>
     /// Creates an adapter for <paramref name="editor"/> and immediately
@@ -58,14 +59,24 @@ public sealed class EditorEventAdapter : IDisposable
         _filePath = filePath  ?? string.Empty;
 
         _diagnosticSource = editor as IDiagnosticSource;
+        _codeEditor       = editor as CodeEditorControl;
 
-        // Subscribe
+        // Subscribe to IDocumentEditor events.
         _editor.TitleChanged     += OnTitleChanged;
         _editor.ModifiedChanged  += OnModifiedChanged;
         _editor.SelectionChanged += OnSelectionChanged;
 
         if (_diagnosticSource is not null)
             _diagnosticSource.DiagnosticsChanged += OnDiagnosticsChanged;
+
+        // Subscribe to CodeEditor-specific events when the editor is a CodeEditor.
+        if (_codeEditor is not null)
+        {
+            _codeEditor.CaretMoved += OnCaretMoved;
+
+            if (_codeEditor.FoldingEngine is not null)
+                _codeEditor.FoldingEngine.RegionsChanged += OnFoldingRegionsChanged;
+        }
 
         // Publish the open event immediately.
         PublishOpened();
@@ -89,6 +100,14 @@ public sealed class EditorEventAdapter : IDisposable
         if (_diagnosticSource is not null)
             _diagnosticSource.DiagnosticsChanged -= OnDiagnosticsChanged;
 
+        if (_codeEditor is not null)
+        {
+            _codeEditor.CaretMoved -= OnCaretMoved;
+
+            if (_codeEditor.FoldingEngine is not null)
+                _codeEditor.FoldingEngine.RegionsChanged -= OnFoldingRegionsChanged;
+        }
+
         _bus.Publish(new CodeEditorDocumentClosedEvent { FilePath = _filePath });
     }
 
@@ -110,15 +129,33 @@ public sealed class EditorEventAdapter : IDisposable
 
     private void OnSelectionChanged(object? sender, EventArgs e)
     {
-        // Publish a lightweight selection event. The rich text payload (selected
-        // characters, caret line/column) requires CodeEditor to expose internal
-        // selection state — tracked for a future enhancement.
+        var selectedText = _codeEditor?.SelectedText ?? string.Empty;
         _bus.Publish(new CodeEditorTextSelectionChangedEvent
         {
             FilePath        = _filePath,
-            SelectedText    = string.Empty,  // populated when CodeEditor exposes selection
-            SelectionStart  = 0,
-            SelectionLength = 0,
+            SelectedText    = selectedText,
+            SelectionStart  = 0,                      // linear offset not exposed; length is sufficient for consumers
+            SelectionLength = selectedText.Length,
+        });
+    }
+
+    private void OnCaretMoved(object? sender, EventArgs e)
+    {
+        _bus.Publish(new CodeEditorCursorMovedEvent
+        {
+            FilePath = _filePath,
+            Line     = _codeEditor!.CursorLine   + 1,  // 0-based → 1-based
+            Column   = _codeEditor!.CursorColumn + 1,
+        });
+    }
+
+    private void OnFoldingRegionsChanged(object? sender, EventArgs e)
+    {
+        var collapsed = _codeEditor!.FoldingEngine!.Regions.Count(r => r.IsCollapsed);
+        _bus.Publish(new CodeEditorFoldingChangedEvent
+        {
+            FilePath      = _filePath,
+            CollapsedCount = collapsed,
         });
     }
 
@@ -150,7 +187,7 @@ public sealed class EditorEventAdapter : IDisposable
         _bus.Publish(new CodeEditorDocumentOpenedEvent
         {
             FilePath   = _filePath,
-            LanguageId = string.Empty,  // language detection will be wired via LanguageDefinitionManager (Phase 2)
+            LanguageId = string.Empty,  // language detection wired via LanguageDefinitionManager (Phase 2)
         });
     }
 }

@@ -180,6 +180,9 @@ public sealed class BuildSystem : IBuildSystem
 
         try
         {
+            int completed = 0;
+            int total     = Math.Max(1, targetList.Count);
+
             foreach (var (filePath, config) in targetList)
             {
                 linkedCts.Token.ThrowIfCancellationRequested();
@@ -205,6 +208,13 @@ public sealed class BuildSystem : IBuildSystem
                     succeeded++;
                 else
                     failed++;
+
+                completed++;
+                _eventBus.Publish(new BuildProgressUpdatedEvent
+                {
+                    ProgressPercent = completed * 100 / total,
+                    StatusText      = $"{System.IO.Path.GetFileNameWithoutExtension(filePath)} — {(result.IsSuccess ? "succeeded" : "failed")}",
+                });
             }
 
             sw.Stop();

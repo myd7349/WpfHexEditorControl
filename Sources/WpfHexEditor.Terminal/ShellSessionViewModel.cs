@@ -30,6 +30,7 @@ using System.Windows.Input;
 using WpfHexEditor.Core.Terminal;
 using WpfHexEditor.Core.Terminal.Macros;
 using WpfHexEditor.Core.Terminal.ShellSession;
+using WpfHexEditor.Events.IDEEvents;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Focus;
 
@@ -397,6 +398,14 @@ public sealed class ShellSessionViewModel : INotifyPropertyChanged, IDisposable,
         Session.History.Push(input);
         CommandInput = string.Empty;
         AppendLine($"> {input}", TerminalOutputKind.Info);
+
+        // Publish IDE event so plugins can observe terminal commands.
+        _ideHostContext.IDEEvents.Publish(new TerminalCommandExecutedEvent
+        {
+            Source    = "TerminalPanel",
+            Command   = input,
+            ShellType = Session.ShellType.ToString(),
+        });
 
         // External shell: forward to process stdin.
         if (Session.ShellType != TerminalShellType.HxTerminal && _shellInput is not null)

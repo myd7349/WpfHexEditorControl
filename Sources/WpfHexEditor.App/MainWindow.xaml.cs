@@ -153,6 +153,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Last file path synced to the Solution Explorer (used to re-reveal after a solution reload)
     private string? _lastSyncFilePath;
 
+    // Last workspace path published to IIDEEventBus (used as PreviousWorkspacePath on next change)
+    private string? _lastWorkspacePath;
+
     // QuickSearchBar instances for CodeEditor documents (CodeEditor has no embedded Canvas)
     private readonly Dictionary<CodeEditorControl, QuickSearchBar> _codeEditorBars = new();
 
@@ -675,6 +678,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnSolutionChanged(object? sender, SolutionChangedEventArgs e)
     {
         HasSolution = _solutionManager.CurrentSolution != null;
+
+        // Publish WorkspaceChangedEvent so plugins can react to solution open/close.
+        if (_ideEventBus is not null)
+        {
+            var newPath = e.Solution?.FilePath;
+            _ideEventBus.Publish(new WpfHexEditor.Events.IDEEvents.WorkspaceChangedEvent
+            {
+                Source               = "MainWindow",
+                WorkspacePath        = newPath,
+                PreviousWorkspacePath = _lastWorkspacePath,
+            });
+            _lastWorkspacePath = newPath;
+        }
 
         // Refresh any "doc-projprops-*" tabs that showed "Projet introuvable." at layout-restore
         // time because the solution was not yet loaded when the content factory ran.
@@ -4124,6 +4140,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Dispose EditorEventAdapter (stops publishing diagnostic/save events on EventBus).
             if (_editorEventAdapters.Remove(item.ContentId, out var closingAdapter))
                 closingAdapter.Dispose();
+
+            // Publish FileClosedEvent for any document tab that carries a file path.
+            if (_ideEventBus is not null &&
+                item.Metadata.TryGetValue("FilePath", out var closedFilePath) &&
+                !string.IsNullOrEmpty(closedFilePath))
+            {
+                _ideEventBus.Publish(new WpfHexEditor.Events.IDEEvents.FileClosedEvent
+                {
+                    Source   = "MainWindow",
+                    FilePath = closedFilePath,
+                });
+            }
 
             _propertyProviderCache.Remove(ctrl);  // M5: evict cached provider
             UnregisterDocument(item.ContentId);
