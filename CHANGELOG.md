@@ -6,6 +6,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
+## [0.6.3.2] — 2026-03-22 — Docking, Format Catalog & XAML Designer Fixes
+
+### 🐛 Fixed — Docking System
+
+- **Incremental visual tree (M2.1)** — `DockEngine` fires `ItemAddedToGroup`/`ItemRemovedFromGroup` events; `DockTabControl` gains `AddTab`/`RemoveTab`; `DockControl` skips full `RebuildVisualTree` on incremental tab changes; `DocumentTabHost.ClearEmptyPlaceholder()` removes Start tab before first document
+- **WeakEvent subscriptions (M2.4)** — `DockControl.AttachEngine()` now uses lambdas capturing `WeakReference<DockControl>` for all 8 engine events; `DetachEngine()` unsubscribes and nulls them — breaks the strong reference from `DockEngine` to `DockControl`
+- **Undo/redo layout (M3.3)** — `IDockCommand.Redo()` default interface method; `LayoutSnapshotCommand.Redo()` restores `_afterSnapshot` to avoid stale `DockItem` refs; `DockControl` gains `CommandStack` + `ExecuteUndoable()` helper; Float/AutoHide/Dock/AutoHideAll/RestoreAll commands now undoable; `Ctrl+Shift+Z` / `Ctrl+Shift+Y` bound to Undo/RedoLayout
+- **Undock drag-follows-cursor** — `DockDragManager.BeginFloatingDrag` accepts pre-captured `cursorDip` from `BeginDrag`/`BeginGroupDrag` to avoid stale `Mouse.GetPosition` after HWND creation
+- **Float dimensions preserved on undock** — `ApplySizeToFloatDimensions` captures only the compact axis per `LastDockSide` (Width for Left/Right, Height for Top/Bottom) so undocked panels keep their docked size
+- **NaN DoubleAnimation crash in AutoHide** — `ShowForItem` now cancels both axis animations before any Width/Height assignment; `hideAnim.Completed` guarded with `if (_isOpen) return`
+- **`_layoutWasRestoredFromFile` not set on default layout** — `LoadDefaultLayoutFromResource()` now sets the flag so plugin panels absent from `defaultLayout.json` are correctly deferred on first launch
+
+### 🐛 Fixed — Format Catalog & Code Editor (.whfmt JSONC)
+
+- **JSONC comment handling in `EmbeddedFormatCatalog`** — added `JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }` to both `LoadHeader()` and `GetSyntaxDefinitionJson()` parse sites; formats with `/* */` headers now load correctly
+- **All 454 `.whfmt` headers converted** — `//` line-comment headers replaced with `/* */` block comments across all format definitions; UTF-8 BOM stripped; `CSharp.whfmt` missing opening `{` restored
+- **`PatternFoldingStrategy` comment-awareness** — brace patterns (`\{`/`\}`) are now matched against the line text with the comment portion stripped via `_lineCommentPrefix`; prevents spurious fold regions from `{`/`}` inside JSONC comment lines
+- **`LanguageFoldingStrategyBuilder`** — forwards `lineCommentPrefix` to `PatternFoldingStrategy` constructor
+- **`CodeEditor`** — passes `newLang?.LineCommentPrefix` to `LanguageFoldingStrategyBuilder.Build()`
+
+### 🐛 Fixed — XAML Designer
+
+- **Persistent canvas border rectangle** — removed `SetResourceReference(BorderBrushProperty, "XD_CanvasBorderBrush")` and `BorderThickness = new Thickness(1)` from `DesignCanvas` constructor; these were added during visual polish and caused a permanent 1px border rectangle visible at all times even with no file loaded
+
+---
+
 ## [0.6.3] — 2026-03-22 — Class Diagram Plugin Fixes
 
 ### 🐛 Fixed — Class Diagram Plugin Menu & Solution Explorer
