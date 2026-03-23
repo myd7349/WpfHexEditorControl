@@ -382,6 +382,21 @@
     <Style TargetType="DataGridCell">
         <Setter Property="Foreground"      Value="{DynamicResource DockMenuForegroundBrush}" />
         <Setter Property="BorderThickness" Value="0" />
+        <!-- Minimal template so TemplateBinding Background is always used —
+             removes the default InactiveSelectionHighlight white border that
+             appears when the DataGrid loses keyboard focus. -->
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{DynamicResource DockAccentBrush}" />
