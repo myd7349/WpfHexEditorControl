@@ -25,4 +25,10 @@ public interface IMenuAdapter
     /// </summary>
     /// <param name="uiId">Unique identifier of the menu item to remove.</param>
     void RemoveMenuItem(string uiId);
+
+    /// <summary>
+    /// Returns a snapshot of all currently registered menu item descriptors keyed by their UI ID.
+    /// Used by the Command Palette to enumerate plugin-contributed commands.
+    /// </summary>
+    IReadOnlyDictionary<string, MenuItemDescriptor> GetAllMenuItems();
 }

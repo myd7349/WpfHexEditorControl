@@ -363,6 +363,16 @@
 
                     <!-- ═══════════ View ═══════════ -->
                     <MenuItem Header="_View">
+                        <MenuItem Header="_Command Palette"
+                                  Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}"
+                                  InputGestureText="Ctrl+Shift+P">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
                         <MenuItem Header="_Solution Explorer" Click="OnShowSolutionExplorer" InputGestureText="Ctrl+Alt+L">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -579,8 +589,7 @@
                     <MenuItem Header="_Plugins">
                         <MenuItem Header="_Plugin Manager"
                                   Command="{x:Static local:MainWindow.OpenPluginManagerCommand}"
-                                  CommandTarget="{Binding ElementName=ThisWindow}"
-                                  InputGestureText="Ctrl+Shift+P">
+                                  CommandTarget="{Binding ElementName=ThisWindow}">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE74C;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -872,11 +881,73 @@
                     </MenuItem>
                 </Menu>
 
-                <!-- Title (center, fills remaining space) -->
-                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                           FontSize="12" IsHitTestVisible="False" />
+                <!-- Title Bar Command Palette Launcher (VS Code-style centered button) -->
+                <Button x:Name="TitleBarSearchButton"
+                        Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}"
+                        WindowChrome.IsHitTestVisibleInChrome="True"
+                        ToolTip="Command Palette (Ctrl+Shift+P)"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Stretch"
+                        Width="380"
+                        Cursor="Hand"
+                        Padding="8,0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background"       Value="{DynamicResource TB_SearchBackgroundBrush}"/>
+                            <Setter Property="BorderBrush"      Value="{DynamicResource TB_SearchBorderBrush}"/>
+                            <Setter Property="BorderThickness"  Value="1"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="4"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background"
+                                                        Value="{DynamicResource TB_SearchHoverBackgroundBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bd" Property="Background"
+                                                        Value="{DynamicResource TB_SearchActiveBackgroundBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                    <StackPanel Orientation="Horizontal">
+                        <!-- Search icon -->
+                        <TextBlock Text="&#xE721;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TB_SearchHintBrush}"
+                                   Margin="0,0,6,0"/>
+                        <!-- Solution name or IDE name (updated from code-behind) -->
+                        <TextBlock x:Name="TitleBarSearchLabel"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Text="&lt;Wpf:HexEditor Studio /&gt;"
+                                   FontStyle="Italic"
+                                   Foreground="{DynamicResource TB_SearchHintBrush}"
+                                   Margin="0,0,8,0"/>
+                        <!-- Shortcut hint -->
+                        <TextBlock Text="Ctrl+Shift+P"
+                                   FontSize="11"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.55"
+                                   Foreground="{DynamicResource TB_SearchHintBrush}"/>
+                    </StackPanel>
+                </Button>
             </DockPanel>
         </Border>
 
@@ -885,7 +956,8 @@
              │  New▾  Open▾  │ 💾 💾All │ │  ↩ Undo  ↪ Redo  │ ✂ ⧉ 📋 │ │  🔍 Find  │ ↓ ↑ │ │  🔍 Explorer  │ ≡  │ ⚙  │ ▪ Output │ │  Layout▾     │ │ [editor actions] │ │ 🔤 TBL▾       │
              └────────────────────────┘ └───────────────────────────┘ └────────────────┘ └──────────────────────────────────┘ └──────────────┘ └──────────────────┘ └────────────────┘
                      Pod File                    Pod Edit                   Pod Find                     Pod View                  Pod Layout      Pod contextuel       Pod TBL        -->
-        <ToolBar Grid.Row="1" Style="{DynamicResource DockDarkToolBarStyle}">
+        <Border Grid.Row="1" Style="{DynamicResource DockToolBarContainerStyle}">
+        <WrapPanel x:Name="MainToolBarPanel" Orientation="Horizontal" ItemHeight="30">
 
             <!-- ── Home ──────────────────────────────────────────────────── -->
             <Border Style="{DynamicResource DockToolBarPodStyle}">
@@ -1500,7 +1572,8 @@
                 </StackPanel>
             </Border>
 
-        </ToolBar>
+        </WrapPanel>
+        </Border>
 
         <!-- Main Dock Area + Plugin InfoBar wrapper -->
         <Grid Grid.Row="2">
@@ -1722,7 +1795,7 @@
         <KeyBinding Key="F3"               Command="{x:Static local:MainWindow.FindNextCommand}" />
         <KeyBinding Gesture="Shift+F3"     Command="{x:Static local:MainWindow.FindPreviousCommand}" />
         <KeyBinding Gesture="Ctrl+G"       Command="{x:Static local:MainWindow.GoToOffsetCommand}" />
-        <KeyBinding Gesture="Ctrl+Shift+P" Command="{x:Static local:MainWindow.OpenPluginManagerCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+P" Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}" />
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.New}"   Executed="OnNewFile" />
@@ -1735,6 +1808,7 @@
         <CommandBinding Command="{x:Static local:MainWindow.FindPreviousCommand}"    Executed="OnFindPrevious" />
         <CommandBinding Command="{x:Static local:MainWindow.WriteToDiskCommand}"  Executed="OnWriteToDisk" />
         <CommandBinding Command="{x:Static local:MainWindow.GoToOffsetCommand}"   Executed="OnGoToOffset" />
-        <CommandBinding Command="{x:Static local:MainWindow.OpenPluginManagerCommand}" Executed="OnOpenPluginManager" />
+        <CommandBinding Command="{x:Static local:MainWindow.OpenPluginManagerCommand}"  Executed="OnOpenPluginManager" />
+        <CommandBinding Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}" Executed="OnShowCommandPalette" />
     </Window.CommandBindings>
 </Window>

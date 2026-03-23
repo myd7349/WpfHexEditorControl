@@ -1,4 +1,4 @@
-<!-- ==========================================================
+﻿<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: DarkGlass/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -552,4 +552,28 @@
     <SolidColorBrush x:Key="CD_SearchCurrentMatchBrush"      Color="#A87B29" />
     <SolidColorBrush x:Key="CD_ErrorBannerBackground"        Color="#6C1A1A" />
     <SolidColorBrush x:Key="CD_ErrorBannerForeground"        Color="#F48771" />
+
+    <!-- Command Palette tokens -->
+    <SolidColorBrush x:Key="CP_BackgroundBrush"      Color="#1E1E2E" />
+    <SolidColorBrush x:Key="CP_InputBackgroundBrush" Color="#131320" />
+    <SolidColorBrush x:Key="CP_HighlightBrush"       Color="#2E2E4E" />
+    <SolidColorBrush x:Key="CP_TextBrush"            Color="#D0D0F0" />
+    <SolidColorBrush x:Key="CP_SecondaryTextBrush"   Color="#8080A0" />
+    <SolidColorBrush x:Key="CP_BorderBrush"          Color="#4040A0" />
+
+    <!-- ── Keyboard Shortcuts Page (KSP_*) ──────────────────────────────── -->
+    <SolidColorBrush x:Key="KSP_DataGridBackground"  Color="#18191E" />
+    <SolidColorBrush x:Key="KSP_CellForeground"      Color="#CDD6F4" />
+    <SolidColorBrush x:Key="KSP_HintForeground"      Color="#6C7086" />
+    <SolidColorBrush x:Key="KSP_RowHoverBackground"  Color="#24252B" />
+    <SolidColorBrush x:Key="KSP_EditBackground"      Color="#18191E" />
+    <SolidColorBrush x:Key="KSP_EditBorder"          Color="#3A3D47" />
+
+    <!-- ── Title Bar Search Launcher (TB_Search*) ───────────────────────── -->
+    <SolidColorBrush x:Key="TB_SearchBackgroundBrush"       Color="#1E2029" />
+    <SolidColorBrush x:Key="TB_SearchBorderBrush"           Color="#454860" />
+    <SolidColorBrush x:Key="TB_SearchTextBrush"             Color="#CDD6F4" />
+    <SolidColorBrush x:Key="TB_SearchHintBrush"             Color="#6C7086" />
+    <SolidColorBrush x:Key="TB_SearchHoverBackgroundBrush"  Color="#2C2E3A" />
+    <SolidColorBrush x:Key="TB_SearchActiveBackgroundBrush" Color="#89B4FA" />
 </ResourceDictionary>

@@ -114,6 +114,7 @@ public partial class MainWindow
 
             var dockingAdapter = _dockingAdapter;
             var menuAdapter = new MenuAdapter(MainMenuBar);
+            _menuAdapter = menuAdapter;
             var statusBarAdapter = new StatusBarAdapter(AppStatusBar);
 
             // 2. Build PluginHost singletons
@@ -157,7 +158,8 @@ public partial class MainWindow
                 ideEvents:           _ideEventBus,
                 capabilityRegistry:  capabilityAdapter,
                 extensionRegistry:   extensionRegistry,
-                solutionManager:     _solutionManager);
+                solutionManager:     _solutionManager,
+                commandRegistry:     new WpfHexEditor.PluginHost.SdkCommandRegistryAdapter(_commandRegistry));
 
             // 3. Create orchestrator
             _ideHostContext = hostContext;

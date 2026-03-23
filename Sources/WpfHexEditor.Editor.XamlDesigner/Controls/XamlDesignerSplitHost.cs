@@ -2169,7 +2169,7 @@ public sealed class XamlDesignerSplitHost : Grid,
             Icon      = "\uE8EA",
             IsToggle  = true,
             IsChecked = _autoPreviewEnabled,
-            Tooltip   = "Toggle auto-preview (Ctrl+Shift+P)",
+            Tooltip   = "Toggle auto-preview (Ctrl+Shift+A)",
             Command   = new RelayCommand(_ =>
             {
                 _autoPreviewEnabled       = !_autoPreviewEnabled;
@@ -2445,7 +2445,7 @@ public sealed class XamlDesignerSplitHost : Grid,
 
     /// <summary>
     /// Handles keyboard shortcuts at the Grid (host) level:
-    ///   Ctrl+1/2/3 — view modes | Ctrl+±/0 — zoom | Ctrl+Shift+P — auto-preview | F7 — view code
+    ///   Ctrl+1/2/3 — view modes | Ctrl+±/0 — zoom | Ctrl+Shift+A — auto-preview | F7 — view code
     /// </summary>
     private void OnGridKeyDown(object sender, KeyEventArgs e)
     {
@@ -2508,7 +2508,7 @@ public sealed class XamlDesignerSplitHost : Grid,
             return;
         }
 
-        if (ctrl && shift && e.Key == Key.P)
+        if (ctrl && shift && e.Key == Key.A)
         {
             _autoPreviewEnabled       = !_autoPreviewEnabled;
             _btnAutoPreview.IsChecked = _autoPreviewEnabled;

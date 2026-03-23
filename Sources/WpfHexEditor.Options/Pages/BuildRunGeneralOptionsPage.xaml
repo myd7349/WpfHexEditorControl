@@ -89,5 +89,34 @@
                   Margin="0,0,0,8"
                   Checked="OnCheckChanged" Unchecked="OnCheckChanged"/>
 
+        <Separator Margin="0,12,0,12" Background="{DynamicResource DockBorderBrush}"/>
+
+        <!-- ── Run ───────────────────────────────────────────────────────── -->
+        <TextBlock Text="Run"
+                   FontWeight="SemiBold" FontSize="13"
+                   Foreground="{DynamicResource DockMenuForegroundBrush}"
+                   Margin="0,0,0,10"/>
+
+        <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220"/>
+                <ColumnDefinition Width="160"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="On run, when build errors occur:"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+            <ComboBox x:Name="CbOnRunBuildError" Grid.Column="1"
+                      SelectionChanged="OnComboChanged">
+                <ComboBoxItem Content="Do not launch" Tag="DoNotLaunch"/>
+                <ComboBoxItem Content="Launch"        Tag="Launch"/>
+            </ComboBox>
+        </Grid>
+
+        <CheckBox x:Name="CheckShowOutputOnRun"
+                  Content="Show Output window when run starts"
+                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                  Margin="0,0,0,8"
+                  Checked="OnCheckChanged" Unchecked="OnCheckChanged"/>
+
     </StackPanel>
 </UserControl>

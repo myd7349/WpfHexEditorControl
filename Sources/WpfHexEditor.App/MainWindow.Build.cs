@@ -23,6 +23,7 @@ using WpfHexEditor.BuildSystem;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Events.IDEEvents;
+using WpfHexEditor.Options;
 using WpfHexEditor.Panels.IDE.Panels;
 
 namespace WpfHexEditor.App;
@@ -129,7 +130,8 @@ public partial class MainWindow
 
         _configManager   = new ConfigurationManager();
         _buildSystem     = new BuildSystem.BuildSystem(_solutionManager, _ideEventBus, _configManager);
-        _startupRunner   = new StartupProjectRunner(_solutionManager, _buildSystem, _ideEventBus, _configManager);
+        _startupRunner   = new StartupProjectRunner(_solutionManager, _buildSystem, _ideEventBus, _configManager,
+            abortOnBuildError: () => AppSettingsService.Instance.Current.BuildRun.OnRunWhenBuildError == RunOnBuildError.DoNotLaunch);
 
         // Wire output adapter (routes build lines → OutputPanel).
         if (_outputService is not null)
@@ -491,11 +493,18 @@ public partial class MainWindow
             || vp.OutputType.Equals("WinExe", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Minimal inline ICommand for the Ctrl+Shift+B binding.</summary>
-    private sealed class RelayCommand(Action<object?> execute) : ICommand
+    /// <summary>Minimal inline ICommand used for ad-hoc bindings (Build, Command Palette, etc.).</summary>
+    private sealed class RelayCommand(
+        Action<object?> execute,
+        Func<object?, bool>? canExecute = null) : ICommand
     {
-        public bool CanExecute(object? parameter) => true;
-        public void Execute(object? parameter) => execute(parameter);
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add    => System.Windows.Input.CommandManager.RequerySuggested += value;
+            remove => System.Windows.Input.CommandManager.RequerySuggested -= value;
+        }
+
+        public bool CanExecute(object? parameter) => canExecute?.Invoke(parameter) ?? true;
+        public void Execute(object? parameter)    => execute(parameter);
     }
 }

@@ -105,6 +105,15 @@ public sealed class AppSettings
 
     /// <summary>In-IDE plugin development options.</summary>
     public PluginDevSettings PluginDev { get; set; } = new();
+
+    // -- IDE > Keyboard Shortcuts -------------------------------------------------
+
+    /// <summary>
+    /// User-overridden keyboard gestures keyed by command ID (e.g. "File.Save" → "Ctrl+Alt+S").
+    /// When a command ID is absent, the built-in default gesture applies.
+    /// An empty-string value means the user explicitly unbound the gesture.
+    /// </summary>
+    public Dictionary<string, string> KeyBindingOverrides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>Build &amp; Run general options.</summary>
@@ -128,6 +137,12 @@ public sealed class BuildRunSettings
     /// <summary>Show Output panel when a build produces errors.</summary>
     public bool ShowOutputOnBuildError { get; set; } = true;
 
+    /// <summary>Action when Ctrl+F5 is triggered and the build produced errors.</summary>
+    public RunOnBuildError OnRunWhenBuildError { get; set; } = RunOnBuildError.DoNotLaunch;
+
+    /// <summary>Show Output panel automatically when a run starts.</summary>
+    public bool ShowOutputOnRunStart { get; set; }
+
     /// <summary>Treat nullable warnings as errors (C# 8+ projects).</summary>
     public bool TreatNullableWarningsAsErrors { get; set; }
 
@@ -140,6 +155,9 @@ public sealed class BuildRunSettings
     /// <summary>Default warning level (0–9). MSBuild /warn:N.</summary>
     public int DefaultWarningLevel { get; set; } = 4;
 }
+
+/// <summary>Action to take when starting a run and the build produced errors.</summary>
+public enum RunOnBuildError { DoNotLaunch, Launch }
 
 // ----------------------------------------------------------------------------
 // Solution Explorer Settings
@@ -532,4 +550,13 @@ public sealed class PluginDevSettings
 
     /// <summary>Show "Plugin Dev Mode" indicator in the main window status bar.</summary>
     public bool ShowStatusBarIndicator { get; set; } = true;
+
+    // -- IDE > Keyboard Shortcuts ----------------------------------------
+
+    /// <summary>
+    /// User-overridden keyboard gestures keyed by command ID (e.g. "File.Save" → "Ctrl+Alt+S").
+    /// When a command ID is absent, the built-in default gesture applies.
+    /// An empty-string value means the user explicitly unbound the gesture.
+    /// </summary>
+    public Dictionary<string, string> KeyBindingOverrides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
