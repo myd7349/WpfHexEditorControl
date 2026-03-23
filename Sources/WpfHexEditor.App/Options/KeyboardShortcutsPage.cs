@@ -16,6 +16,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Commands;
 using WpfHexEditor.Options;
 
@@ -180,6 +181,20 @@ public sealed class KeyboardShortcutsPage : UserControl, IOptionsPage
 
     public void Load(AppSettings _)
     {
+        // Shadow SystemColors highlight brushes inside the DataGrid's own resource scope.
+        // WPF DataGrid's default row/cell ControlTemplates use
+        //   {DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}
+        // for the "selected but not focused" state, which resolves to system-white.
+        // Overriding the key in _grid.Resources makes the lookup find our accent
+        // brush first — without touching Application.Resources or template internals.
+        if (Application.Current.Resources["DockAccentBrush"] is Brush accentBrush)
+        {
+            _grid.Resources[SystemColors.HighlightBrushKey]                   = accentBrush;
+            _grid.Resources[SystemColors.HighlightTextBrushKey]               = Brushes.White;
+            _grid.Resources[SystemColors.InactiveSelectionHighlightBrushKey]  = accentBrush;
+            _grid.Resources[SystemColors.InactiveSelectionHighlightTextBrushKey] = Brushes.White;
+        }
+
         _rows.Clear();
         foreach (var cmd in _registry.GetAll())
         {
