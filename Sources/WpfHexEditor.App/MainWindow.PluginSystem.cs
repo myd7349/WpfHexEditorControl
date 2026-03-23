@@ -158,7 +158,8 @@ public partial class MainWindow
                 ideEvents:           _ideEventBus,
                 capabilityRegistry:  capabilityAdapter,
                 extensionRegistry:   extensionRegistry,
-                solutionManager:     _solutionManager);
+                solutionManager:     _solutionManager,
+                commandRegistry:     new WpfHexEditor.PluginHost.SdkCommandRegistryAdapter(_commandRegistry));
 
             // 3. Create orchestrator
             _ideHostContext = hostContext;

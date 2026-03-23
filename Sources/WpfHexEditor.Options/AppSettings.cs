@@ -105,6 +105,15 @@ public sealed class AppSettings
 
     /// <summary>In-IDE plugin development options.</summary>
     public PluginDevSettings PluginDev { get; set; } = new();
+
+    // -- IDE > Keyboard Shortcuts -------------------------------------------------
+
+    /// <summary>
+    /// User-overridden keyboard gestures keyed by command ID (e.g. "File.Save" → "Ctrl+Alt+S").
+    /// When a command ID is absent, the built-in default gesture applies.
+    /// An empty-string value means the user explicitly unbound the gesture.
+    /// </summary>
+    public Dictionary<string, string> KeyBindingOverrides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>Build &amp; Run general options.</summary>

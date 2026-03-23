@@ -81,6 +81,9 @@ public sealed class IDEHostContext : IIDEHostContext
     /// <inheritdoc />
     public WpfHexEditor.Editor.Core.LSP.ILspServerRegistry? LspServers { get; init; }
 
+    /// <inheritdoc />
+    public WpfHexEditor.SDK.Commands.ICommandRegistry? CommandRegistry { get; }
+
     public IDEHostContext(
         IDocumentHostService documentHost,
         ISolutionExplorerService solutionExplorer,
@@ -98,7 +101,8 @@ public sealed class IDEHostContext : IIDEHostContext
         IIDEEventBus ideEvents,
         IPluginCapabilityRegistry capabilityRegistry,
         IExtensionRegistry extensionRegistry,
-        ISolutionManager? solutionManager = null)
+        ISolutionManager? solutionManager = null,
+        WpfHexEditor.SDK.Commands.ICommandRegistry? commandRegistry = null)
     {
         DocumentHost        = documentHost        ?? throw new ArgumentNullException(nameof(documentHost));
         SolutionExplorer    = solutionExplorer    ?? throw new ArgumentNullException(nameof(solutionExplorer));
@@ -117,5 +121,6 @@ public sealed class IDEHostContext : IIDEHostContext
         CapabilityRegistry  = capabilityRegistry  ?? throw new ArgumentNullException(nameof(capabilityRegistry));
         ExtensionRegistry   = extensionRegistry   ?? throw new ArgumentNullException(nameof(extensionRegistry));
         SolutionManager     = solutionManager;
+        CommandRegistry     = commandRegistry;
     }
 }

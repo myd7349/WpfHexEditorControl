@@ -257,13 +257,9 @@ public sealed class KeyboardShortcutsPage : UserControl, IOptionsPage
         factory.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler((s, e) =>
         {
             if (e.Key != Key.Return) return;
-            if (s is TextBox tb
-                && tb.DataContext is ShortcutRow row
-                && tb.TemplatedParent?.TemplatedParent is DataGridCell cell
-                && cell.DataContext is ShortcutRow sameRow)
+            if (s is TextBox tb && tb.DataContext is ShortcutRow row)
             {
-                CommitGesture(sameRow, tb.Text);
-                // Close edit mode
+                CommitGesture(row, tb.Text);
                 _grid.CommitEdit(DataGridEditingUnit.Cell, exitEditingMode: true);
             }
         }));
