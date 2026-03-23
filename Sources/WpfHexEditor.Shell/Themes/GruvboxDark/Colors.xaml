@@ -1,4 +1,4 @@
-<!-- ==========================================================
+﻿<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: GruvboxDark/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -536,4 +536,12 @@
     <SolidColorBrush x:Key="CD_SearchCurrentMatchBrush"      Color="#A87B29" />
     <SolidColorBrush x:Key="CD_ErrorBannerBackground"        Color="#6C1A1A" />
     <SolidColorBrush x:Key="CD_ErrorBannerForeground"        Color="#F48771" />
+
+    <!-- Command Palette tokens -->
+    <SolidColorBrush x:Key="CP_BackgroundBrush"      Color="#3C3836" />
+    <SolidColorBrush x:Key="CP_InputBackgroundBrush" Color="#282828" />
+    <SolidColorBrush x:Key="CP_HighlightBrush"       Color="#504945" />
+    <SolidColorBrush x:Key="CP_TextBrush"            Color="#EBDBB2" />
+    <SolidColorBrush x:Key="CP_SecondaryTextBrush"   Color="#928374" />
+    <SolidColorBrush x:Key="CP_BorderBrush"          Color="#504945" />
 </ResourceDictionary>

@@ -363,6 +363,16 @@
 
                     <!-- ═══════════ View ═══════════ -->
                     <MenuItem Header="_View">
+                        <MenuItem Header="_Command Palette"
+                                  Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}"
+                                  InputGestureText="Ctrl+Shift+P">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
                         <MenuItem Header="_Solution Explorer" Click="OnShowSolutionExplorer" InputGestureText="Ctrl+Alt+L">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="13"
@@ -1722,7 +1732,7 @@
         <KeyBinding Key="F3"               Command="{x:Static local:MainWindow.FindNextCommand}" />
         <KeyBinding Gesture="Shift+F3"     Command="{x:Static local:MainWindow.FindPreviousCommand}" />
         <KeyBinding Gesture="Ctrl+G"       Command="{x:Static local:MainWindow.GoToOffsetCommand}" />
-        <KeyBinding Gesture="Ctrl+Shift+P" Command="{x:Static local:MainWindow.OpenPluginManagerCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+P" Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}" />
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.New}"   Executed="OnNewFile" />
@@ -1735,6 +1745,7 @@
         <CommandBinding Command="{x:Static local:MainWindow.FindPreviousCommand}"    Executed="OnFindPrevious" />
         <CommandBinding Command="{x:Static local:MainWindow.WriteToDiskCommand}"  Executed="OnWriteToDisk" />
         <CommandBinding Command="{x:Static local:MainWindow.GoToOffsetCommand}"   Executed="OnGoToOffset" />
-        <CommandBinding Command="{x:Static local:MainWindow.OpenPluginManagerCommand}" Executed="OnOpenPluginManager" />
+        <CommandBinding Command="{x:Static local:MainWindow.OpenPluginManagerCommand}"  Executed="OnOpenPluginManager" />
+        <CommandBinding Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}" Executed="OnShowCommandPalette" />
     </Window.CommandBindings>
 </Window>

@@ -1,4 +1,4 @@
-<!-- ==========================================================
+﻿<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: Forest/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -529,4 +529,12 @@
     <SolidColorBrush x:Key="CD_SearchCurrentMatchBrush"      Color="#A87B29" />
     <SolidColorBrush x:Key="CD_ErrorBannerBackground"        Color="#6C1A1A" />
     <SolidColorBrush x:Key="CD_ErrorBannerForeground"        Color="#F48771" />
+
+    <!-- Command Palette tokens -->
+    <SolidColorBrush x:Key="CP_BackgroundBrush"      Color="#1A2A1A" />
+    <SolidColorBrush x:Key="CP_InputBackgroundBrush" Color="#112211" />
+    <SolidColorBrush x:Key="CP_HighlightBrush"       Color="#2A3A2A" />
+    <SolidColorBrush x:Key="CP_TextBrush"            Color="#D0E8D0" />
+    <SolidColorBrush x:Key="CP_SecondaryTextBrush"   Color="#7AAE62" />
+    <SolidColorBrush x:Key="CP_BorderBrush"          Color="#3A5A3A" />
 </ResourceDictionary>

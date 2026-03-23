@@ -1,4 +1,4 @@
-<!-- ==========================================================
+﻿<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: HighContrast/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -530,4 +530,12 @@
     <SolidColorBrush x:Key="CD_SearchCurrentMatchBrush"      Color="#A87B29" />
     <SolidColorBrush x:Key="CD_ErrorBannerBackground"        Color="#6C1A1A" />
     <SolidColorBrush x:Key="CD_ErrorBannerForeground"        Color="#F48771" />
+
+    <!-- Command Palette tokens -->
+    <SolidColorBrush x:Key="CP_BackgroundBrush"      Color="#000000" />
+    <SolidColorBrush x:Key="CP_InputBackgroundBrush" Color="#000000" />
+    <SolidColorBrush x:Key="CP_HighlightBrush"       Color="#0078D4" />
+    <SolidColorBrush x:Key="CP_TextBrush"            Color="#FFFFFF" />
+    <SolidColorBrush x:Key="CP_SecondaryTextBrush"   Color="#C8C8C8" />
+    <SolidColorBrush x:Key="CP_BorderBrush"          Color="#FFFFFF" />
 </ResourceDictionary>

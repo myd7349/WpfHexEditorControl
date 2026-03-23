@@ -1,4 +1,4 @@
-<!-- ==========================================================
+﻿<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: Light/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -547,4 +547,12 @@
     <SolidColorBrush x:Key="CD_SearchCurrentMatchBrush"      Color="#FFB946" />
     <SolidColorBrush x:Key="CD_ErrorBannerBackground"        Color="#FFF0F0" />
     <SolidColorBrush x:Key="CD_ErrorBannerForeground"        Color="#C00000" />
+
+    <!-- Command Palette tokens -->
+    <SolidColorBrush x:Key="CP_BackgroundBrush"      Color="#F5F5F5" />
+    <SolidColorBrush x:Key="CP_InputBackgroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="CP_HighlightBrush"       Color="#BDD6F0" />
+    <SolidColorBrush x:Key="CP_TextBrush"            Color="#1E1E1E" />
+    <SolidColorBrush x:Key="CP_SecondaryTextBrush"   Color="#717171" />
+    <SolidColorBrush x:Key="CP_BorderBrush"          Color="#C5C5C5" />
 </ResourceDictionary>

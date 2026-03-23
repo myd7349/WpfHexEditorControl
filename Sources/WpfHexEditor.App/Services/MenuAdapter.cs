@@ -23,6 +23,9 @@ public sealed class MenuAdapter : IMenuAdapter
     // uiId → added MenuItem
     private readonly Dictionary<string, MenuItem> _addedItems = new(StringComparer.OrdinalIgnoreCase);
 
+    // uiId → original descriptor (for Command Palette enumeration)
+    private readonly Dictionary<string, MenuItemDescriptor> _descriptors = new(StringComparer.OrdinalIgnoreCase);
+
     // (normalised parentPath + group) → Separator element that heads that group block
     private readonly Dictionary<string, Separator> _groupSeparators = new(StringComparer.OrdinalIgnoreCase);
 
@@ -88,6 +91,7 @@ public sealed class MenuAdapter : IMenuAdapter
         }
 
         _addedItems[uiId] = item;
+        _descriptors[uiId] = descriptor;
     }
 
     /// <inheritdoc />
@@ -99,6 +103,7 @@ public sealed class MenuAdapter : IMenuAdapter
             parent.Items.Remove(item);
 
         _addedItems.Remove(uiId);
+        _descriptors.Remove(uiId);
 
         // Remove the group separator if this was the last item in the group.
         foreach (var kv in _groupMembers)
@@ -115,6 +120,9 @@ public sealed class MenuAdapter : IMenuAdapter
             break;
         }
     }
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, MenuItemDescriptor> GetAllMenuItems() => _descriptors;
 
     private ItemsControl FindOrCreateParent(string parentPath)
     {

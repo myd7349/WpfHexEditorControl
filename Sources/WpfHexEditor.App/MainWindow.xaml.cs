@@ -100,9 +100,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         "GoToOffset", typeof(MainWindow),
         new InputGestureCollection { new KeyGesture(Key.G, ModifierKeys.Control) });
 
-    /// <summary>Ctrl+Shift+P — opens the Plugin Manager panel.</summary>
+    /// <summary>Opens the Plugin Manager panel (no default gesture; accessible via menu).</summary>
     public static readonly RoutedCommand OpenPluginManagerCommand = new RoutedCommand(
-        "OpenPluginManager", typeof(MainWindow),
+        "OpenPluginManager", typeof(MainWindow));
+
+    /// <summary>Ctrl+Shift+P — opens the Command Palette overlay.</summary>
+    public static readonly RoutedCommand ShowCommandPaletteCommand = new RoutedCommand(
+        "ShowCommandPalette", typeof(MainWindow),
         new InputGestureCollection { new KeyGesture(Key.P, ModifierKeys.Control | ModifierKeys.Shift) });
 
     // --- Constants -----------------------------------------------------
@@ -188,6 +192,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // FileOps panels (persistent singletons)
     private WpfHexEditor.Panels.FileOps.ArchiveStructurePanel? _archivePanel;
+
+    // MenuAdapter — captured after plugin system initialises; used by CommandPalette
+    private MenuAdapter? _menuAdapter;
 
     // SolutionManager
     private readonly ISolutionManager _solutionManager = SolutionManager.Instance;

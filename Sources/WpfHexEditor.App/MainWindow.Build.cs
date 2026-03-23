@@ -491,11 +491,18 @@ public partial class MainWindow
             || vp.OutputType.Equals("WinExe", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Minimal inline ICommand for the Ctrl+Shift+B binding.</summary>
-    private sealed class RelayCommand(Action<object?> execute) : ICommand
+    /// <summary>Minimal inline ICommand used for ad-hoc bindings (Build, Command Palette, etc.).</summary>
+    private sealed class RelayCommand(
+        Action<object?> execute,
+        Func<object?, bool>? canExecute = null) : ICommand
     {
-        public bool CanExecute(object? parameter) => true;
-        public void Execute(object? parameter) => execute(parameter);
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add    => System.Windows.Input.CommandManager.RequerySuggested += value;
+            remove => System.Windows.Input.CommandManager.RequerySuggested -= value;
+        }
+
+        public bool CanExecute(object? parameter) => canExecute?.Invoke(parameter) ?? true;
+        public void Execute(object? parameter)    => execute(parameter);
     }
 }

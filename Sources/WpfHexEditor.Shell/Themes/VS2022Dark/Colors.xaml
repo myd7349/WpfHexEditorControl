@@ -1,4 +1,4 @@
-<!-- ==========================================================
+﻿<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: VS2022Dark/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -544,4 +544,12 @@
     <SolidColorBrush x:Key="CD_SearchCurrentMatchBrush"      Color="#A87B29" />
     <SolidColorBrush x:Key="CD_ErrorBannerBackground"        Color="#6C1A1A" />
     <SolidColorBrush x:Key="CD_ErrorBannerForeground"        Color="#F48771" />
+
+    <!-- Command Palette tokens -->
+    <SolidColorBrush x:Key="CP_BackgroundBrush"      Color="#252526" />
+    <SolidColorBrush x:Key="CP_InputBackgroundBrush" Color="#1E1E1E" />
+    <SolidColorBrush x:Key="CP_HighlightBrush"       Color="#04395E" />
+    <SolidColorBrush x:Key="CP_TextBrush"            Color="#CCCCCC" />
+    <SolidColorBrush x:Key="CP_SecondaryTextBrush"   Color="#6A6A6A" />
+    <SolidColorBrush x:Key="CP_BorderBrush"          Color="#454545" />
 </ResourceDictionary>

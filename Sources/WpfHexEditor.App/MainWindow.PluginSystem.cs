@@ -114,6 +114,7 @@ public partial class MainWindow
 
             var dockingAdapter = _dockingAdapter;
             var menuAdapter = new MenuAdapter(MainMenuBar);
+            _menuAdapter = menuAdapter;
             var statusBarAdapter = new StatusBarAdapter(AppStatusBar);
 
             // 2. Build PluginHost singletons

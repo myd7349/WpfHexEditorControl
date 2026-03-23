@@ -1,4 +1,4 @@
-<!-- ==========================================================
+﻿<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: CatppuccinLatte/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -530,4 +530,12 @@
     <SolidColorBrush x:Key="CD_SearchCurrentMatchBrush"      Color="#FFB946" />
     <SolidColorBrush x:Key="CD_ErrorBannerBackground"        Color="#FFF0F0" />
     <SolidColorBrush x:Key="CD_ErrorBannerForeground"        Color="#C00000" />
+
+    <!-- Command Palette tokens -->
+    <SolidColorBrush x:Key="CP_BackgroundBrush"      Color="#EFF1F5" />
+    <SolidColorBrush x:Key="CP_InputBackgroundBrush" Color="#E6E9EF" />
+    <SolidColorBrush x:Key="CP_HighlightBrush"       Color="#CCD0DA" />
+    <SolidColorBrush x:Key="CP_TextBrush"            Color="#4C4F69" />
+    <SolidColorBrush x:Key="CP_SecondaryTextBrush"   Color="#6C6F85" />
+    <SolidColorBrush x:Key="CP_BorderBrush"          Color="#BCC0CC" />
 </ResourceDictionary>
