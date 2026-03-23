@@ -137,6 +137,12 @@ public sealed class BuildRunSettings
     /// <summary>Show Output panel when a build produces errors.</summary>
     public bool ShowOutputOnBuildError { get; set; } = true;
 
+    /// <summary>Action when Ctrl+F5 is triggered and the build produced errors.</summary>
+    public RunOnBuildError OnRunWhenBuildError { get; set; } = RunOnBuildError.DoNotLaunch;
+
+    /// <summary>Show Output panel automatically when a run starts.</summary>
+    public bool ShowOutputOnRunStart { get; set; }
+
     /// <summary>Treat nullable warnings as errors (C# 8+ projects).</summary>
     public bool TreatNullableWarningsAsErrors { get; set; }
 
@@ -149,6 +155,9 @@ public sealed class BuildRunSettings
     /// <summary>Default warning level (0–9). MSBuild /warn:N.</summary>
     public int DefaultWarningLevel { get; set; } = 4;
 }
+
+/// <summary>Action to take when starting a run and the build produced errors.</summary>
+public enum RunOnBuildError { DoNotLaunch, Launch }
 
 // ----------------------------------------------------------------------------
 // Solution Explorer Settings

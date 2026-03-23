@@ -465,6 +465,17 @@
         </Setter>
     </Style>
 
+    <!-- Wrapping toolbar host — replaces ToolBar to enable automatic multi-row wrap.
+         Pair with a WrapPanel(ItemHeight=30) inside. -->
+    <Style x:Key="DockToolBarContainerStyle" TargetType="Border">
+        <Setter Property="Background"          Value="{DynamicResource DockToolBarBackgroundBrush}"/>
+        <Setter Property="BorderBrush"         Value="{DynamicResource DockMenuBorderBrush}"/>
+        <Setter Property="BorderThickness"     Value="0,0,0,1"/>
+        <Setter Property="Padding"             Value="3,0"/>
+        <Setter Property="MinHeight"           Value="30"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
     <!-- Themed ToolTip — matches menu background/foreground (VS2026-style) -->
     <Style TargetType="{x:Type ToolTip}">
         <Setter Property="Background"      Value="{DynamicResource DockMenuBackgroundBrush}"/>

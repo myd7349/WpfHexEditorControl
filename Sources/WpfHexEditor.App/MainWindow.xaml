@@ -956,7 +956,8 @@
              │  New▾  Open▾  │ 💾 💾All │ │  ↩ Undo  ↪ Redo  │ ✂ ⧉ 📋 │ │  🔍 Find  │ ↓ ↑ │ │  🔍 Explorer  │ ≡  │ ⚙  │ ▪ Output │ │  Layout▾     │ │ [editor actions] │ │ 🔤 TBL▾       │
              └────────────────────────┘ └───────────────────────────┘ └────────────────┘ └──────────────────────────────────┘ └──────────────┘ └──────────────────┘ └────────────────┘
                      Pod File                    Pod Edit                   Pod Find                     Pod View                  Pod Layout      Pod contextuel       Pod TBL        -->
-        <ToolBar Grid.Row="1" Style="{DynamicResource DockDarkToolBarStyle}">
+        <Border Grid.Row="1" Style="{DynamicResource DockToolBarContainerStyle}">
+        <WrapPanel x:Name="MainToolBarPanel" Orientation="Horizontal" ItemHeight="30">
 
             <!-- ── Home ──────────────────────────────────────────────────── -->
             <Border Style="{DynamicResource DockToolBarPodStyle}">
@@ -1571,7 +1572,8 @@
                 </StackPanel>
             </Border>
 
-        </ToolBar>
+        </WrapPanel>
+        </Border>
 
         <!-- Main Dock Area + Plugin InfoBar wrapper -->
         <Grid Grid.Row="2">

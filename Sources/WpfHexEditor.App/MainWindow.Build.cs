@@ -23,6 +23,7 @@ using WpfHexEditor.BuildSystem;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Events.IDEEvents;
+using WpfHexEditor.Options;
 using WpfHexEditor.Panels.IDE.Panels;
 
 namespace WpfHexEditor.App;
@@ -129,7 +130,8 @@ public partial class MainWindow
 
         _configManager   = new ConfigurationManager();
         _buildSystem     = new BuildSystem.BuildSystem(_solutionManager, _ideEventBus, _configManager);
-        _startupRunner   = new StartupProjectRunner(_solutionManager, _buildSystem, _ideEventBus, _configManager);
+        _startupRunner   = new StartupProjectRunner(_solutionManager, _buildSystem, _ideEventBus, _configManager,
+            abortOnBuildError: () => AppSettingsService.Instance.Current.BuildRun.OnRunWhenBuildError == RunOnBuildError.DoNotLaunch);
 
         // Wire output adapter (routes build lines → OutputPanel).
         if (_outputService is not null)

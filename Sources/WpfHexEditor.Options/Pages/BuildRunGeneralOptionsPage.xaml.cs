@@ -32,8 +32,10 @@ public sealed partial class BuildRunGeneralOptionsPage : UserControl, IOptionsPa
             CheckRunInProcess.IsChecked    = b.RunInProcess;
             CheckShowOnStart.IsChecked     = b.ShowOutputOnBuildStart;
             CheckShowOnError.IsChecked     = b.ShowOutputOnBuildError;
+            CheckShowOutputOnRun.IsChecked = b.ShowOutputOnRunStart;
             TxtMaxParallel.Text            = b.MaxParallelProjects.ToString();
             SelectComboByTag(CbVerbosity, b.OutputVerbosity);
+            SelectComboByTag(CbOnRunBuildError, b.OnRunWhenBuildError.ToString());
         }
         finally { _loading = false; }
     }
@@ -45,7 +47,11 @@ public sealed partial class BuildRunGeneralOptionsPage : UserControl, IOptionsPa
         b.RunInProcess          = CheckRunInProcess.IsChecked == true;
         b.ShowOutputOnBuildStart = CheckShowOnStart.IsChecked == true;
         b.ShowOutputOnBuildError = CheckShowOnError.IsChecked == true;
-        b.OutputVerbosity       = (CbVerbosity.SelectedItem as ComboBoxItem)?.Tag as string ?? "Minimal";
+        b.ShowOutputOnRunStart   = CheckShowOutputOnRun.IsChecked == true;
+        b.OutputVerbosity        = (CbVerbosity.SelectedItem as ComboBoxItem)?.Tag as string ?? "Minimal";
+        b.OnRunWhenBuildError    = Enum.TryParse<RunOnBuildError>(
+            (CbOnRunBuildError.SelectedItem as ComboBoxItem)?.Tag as string, out var r)
+            ? r : RunOnBuildError.DoNotLaunch;
 
         if (int.TryParse(TxtMaxParallel.Text, out var n) && n > 0)
             b.MaxParallelProjects = n;

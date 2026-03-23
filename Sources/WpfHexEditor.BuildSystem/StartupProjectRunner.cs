@@ -32,10 +32,16 @@ namespace WpfHexEditor.BuildSystem;
 /// </summary>
 public sealed class StartupProjectRunner
 {
-    private readonly ISolutionManager    _solutionManager;
-    private readonly IBuildSystem        _buildSystem;
-    private readonly IIDEEventBus        _eventBus;
+    private readonly ISolutionManager     _solutionManager;
+    private readonly IBuildSystem         _buildSystem;
+    private readonly IIDEEventBus         _eventBus;
     private readonly ConfigurationManager _configManager;
+
+    /// <summary>
+    /// Returns <c>true</c> when the run should be aborted after a build error.
+    /// Injected as a delegate so BuildSystem does not reference the Options assembly.
+    /// </summary>
+    private readonly Func<bool> _abortOnBuildError;
 
     // -----------------------------------------------------------------------
 
@@ -43,12 +49,14 @@ public sealed class StartupProjectRunner
         ISolutionManager     solutionManager,
         IBuildSystem         buildSystem,
         IIDEEventBus         eventBus,
-        ConfigurationManager configManager)
+        ConfigurationManager configManager,
+        Func<bool>?          abortOnBuildError = null)
     {
-        _solutionManager = solutionManager ?? throw new ArgumentNullException(nameof(solutionManager));
-        _buildSystem      = buildSystem      ?? throw new ArgumentNullException(nameof(buildSystem));
-        _eventBus         = eventBus         ?? throw new ArgumentNullException(nameof(eventBus));
-        _configManager    = configManager    ?? throw new ArgumentNullException(nameof(configManager));
+        _solutionManager   = solutionManager ?? throw new ArgumentNullException(nameof(solutionManager));
+        _buildSystem        = buildSystem      ?? throw new ArgumentNullException(nameof(buildSystem));
+        _eventBus           = eventBus         ?? throw new ArgumentNullException(nameof(eventBus));
+        _configManager      = configManager    ?? throw new ArgumentNullException(nameof(configManager));
+        _abortOnBuildError  = abortOnBuildError ?? (() => true);  // default: do not launch on error
     }
 
     // -----------------------------------------------------------------------
@@ -70,7 +78,7 @@ public sealed class StartupProjectRunner
 
         // Build the solution first (incremental).
         var buildResult = await _buildSystem.BuildSolutionAsync(ct);
-        if (!buildResult.IsSuccess)
+        if (!buildResult.IsSuccess && _abortOnBuildError())
         {
             Log("-- Run aborted: build failed. --");
             return false;
@@ -99,23 +107,43 @@ public sealed class StartupProjectRunner
             return false;
         }
 
-        // Launch as a detached process (fire-and-forget — like VS Ctrl+F5).
+        // Launch as a detached process — like VS "Start Without Debugging" (Ctrl+F5).
         Log($"-- Starting: {Path.GetFileName(exePath)} --");
 
+        Process? proc;
         try
         {
             var psi = new ProcessStartInfo(exePath)
             {
                 WorkingDirectory = Path.GetDirectoryName(exePath)!,
-                UseShellExecute  = true,   // UseShellExecute=true → detached, no console capture
+                UseShellExecute  = false,  // false → reliable handle; UseShellExecute=true can silently return null on Win11
+                CreateNoWindow   = false,
             };
-            Process.Start(psi);
+            proc = Process.Start(psi);
         }
         catch (Exception ex)
         {
             Log($"Failed to launch '{exePath}': {ex.Message}");
             return false;
         }
+
+        if (proc is null)
+        {
+            Log($"ERROR: Launch returned no process handle for '{Path.GetFileName(exePath)}'.");
+            return false;
+        }
+
+        // Liveness check in background — catches immediate startup crashes without blocking Ctrl+F5.
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(1500).ConfigureAwait(false);
+            if (proc.HasExited)
+                _eventBus.Publish(new BuildOutputLineEvent
+                {
+                    Line = $"-- Process exited immediately (code {proc.ExitCode}). Check startup errors. --"
+                });
+            proc.Dispose();
+        }, CancellationToken.None);
 
         return true;
     }
@@ -173,6 +201,15 @@ public sealed class StartupProjectRunner
         {
             Log($"[TargetPath] stdout='{stdout.Trim()}' exitCode={proc.ExitCode}");
             return null;
+        }
+
+        // For .NET SDK Exe/WinExe projects, TargetPath is the managed .dll but
+        // the AppHost launcher is the .exe with the same base name.
+        if (path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+        {
+            var appHostPath = Path.ChangeExtension(path, ".exe");
+            if (File.Exists(appHostPath))
+                return appHostPath;
         }
 
         return path;
