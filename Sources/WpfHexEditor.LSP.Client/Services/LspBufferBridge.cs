@@ -28,7 +28,7 @@ namespace WpfHexEditor.LSP.Client.Services;
 /// Bridges one <see cref="IDocumentBuffer"/> to one <see cref="ILspClient"/>.
 /// Dispose to send textDocument/didClose and stop the debounce timer.
 /// </summary>
-internal sealed class LspBufferBridge : IDisposable
+public sealed class LspBufferBridge : IDisposable
 {
     private readonly ILspClient      _client;
     private readonly IDocumentBuffer _buffer;
@@ -37,7 +37,7 @@ internal sealed class LspBufferBridge : IDisposable
     private          int             _pendingVersion;
     private          bool            _disposed;
 
-    internal LspBufferBridge(ILspClient client, IDocumentBuffer buffer)
+    public LspBufferBridge(ILspClient client, IDocumentBuffer buffer)
     {
         _client = client;
         _buffer = buffer;

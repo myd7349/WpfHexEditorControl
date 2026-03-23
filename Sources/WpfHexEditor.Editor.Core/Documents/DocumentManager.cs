@@ -162,6 +162,13 @@ public sealed class DocumentManager : IDocumentManager
     public IDocumentBuffer? GetBufferForFile(string filePath)
         => _buffers.TryGetValue(filePath, out var buf) ? buf : null;
 
+    public DocumentModel? FindDocumentByBuffer(IDocumentBuffer buffer)
+    {
+        foreach (var doc in _documents)
+            if (ReferenceEquals(doc.Buffer, buffer)) return doc;
+        return null;
+    }
+
     // -- IDocumentManager : Dirty check -----------------------------------
 
     public IReadOnlyList<DocumentModel> GetDirty()

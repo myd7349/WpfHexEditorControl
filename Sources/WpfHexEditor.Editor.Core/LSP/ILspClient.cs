@@ -85,6 +85,36 @@ public sealed class LspDiagnosticsReceivedEventArgs : EventArgs
     public required IReadOnlyList<LspDiagnostic> Diagnostics { get; init; }
 }
 
+/// <summary>A single text replacement within a document (0-based coordinates).</summary>
+public sealed class LspTextEdit
+{
+    public required int    StartLine   { get; init; }
+    public required int    StartColumn { get; init; }
+    public required int    EndLine     { get; init; }
+    public required int    EndColumn   { get; init; }
+    public required string NewText     { get; init; }
+}
+
+/// <summary>
+/// A workspace-wide set of text edits keyed by file path.
+/// Apply edits bottom-up (reverse line order) within each file to avoid offset drift.
+/// </summary>
+public sealed class LspWorkspaceEdit
+{
+    public required IReadOnlyDictionary<string, IReadOnlyList<LspTextEdit>> Changes { get; init; }
+}
+
+/// <summary>A code action (quick fix or refactoring) returned by the language server.</summary>
+public sealed class LspCodeAction
+{
+    public required string   Title       { get; init; }
+    /// <summary>"quickfix", "refactor.rewrite", etc. May be null.</summary>
+    public          string?  Kind        { get; init; }
+    public          bool     IsPreferred { get; init; }
+    /// <summary>Null for Command-only actions (server-side execution — not supported).</summary>
+    public LspWorkspaceEdit? Edit        { get; init; }
+}
+
 // ── ILspClient interface ───────────────────────────────────────────────────────
 
 /// <summary>
@@ -162,6 +192,27 @@ public interface ILspClient : IAsyncDisposable
     /// </summary>
     Task<string?> SignatureHelpAsync(
         string filePath, int line, int column, CancellationToken ct = default);
+
+    // ── Code Actions ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Requests textDocument/codeAction at the given (0-based) range.
+    /// Returns an empty list when actions are unavailable or the server does not support them.
+    /// </summary>
+    Task<IReadOnlyList<LspCodeAction>> CodeActionAsync(
+        string filePath,
+        int startLine, int startColumn,
+        int endLine,   int endColumn,
+        CancellationToken ct = default);
+
+    // ── Rename ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Requests textDocument/rename. Returns null when rename is unavailable or rejected.
+    /// </summary>
+    Task<LspWorkspaceEdit?> RenameAsync(
+        string filePath, int line, int column, string newName,
+        CancellationToken ct = default);
 
     // ── Push Notifications ────────────────────────────────────────────────────
 

@@ -77,6 +77,12 @@ public interface IDocumentManager
     /// </summary>
     IDocumentBuffer? GetBufferForFile(string filePath);
 
+    /// <summary>
+    /// Returns the <see cref="DocumentModel"/> whose buffer is the given instance,
+    /// or <c>null</c> when no document owns that buffer.
+    /// </summary>
+    DocumentModel? FindDocumentByBuffer(IDocumentBuffer buffer);
+
     // -- Dirty check -----------------------------------------------------------
 
     /// <summary>Returns all open documents that have unsaved changes.</summary>

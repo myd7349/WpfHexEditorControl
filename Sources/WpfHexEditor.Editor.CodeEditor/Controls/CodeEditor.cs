@@ -30,6 +30,7 @@ using WpfHexEditor.Core;
 using WpfHexEditor.Core.Settings;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.Core.Documents;
+using WpfHexEditor.Editor.Core.LSP;
 using WpfHexEditor.Editor.CodeEditor.Options;
 using WpfHexEditor.ProjectSystem.Languages;
 using WpfHexEditor.Editor.CodeEditor.Selection;
@@ -44,7 +45,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
     /// Phase 2: Syntax highlighting with CodeSyntaxHighlighter
     /// Future phases will add: SmartComplete, validation
     /// </summary>
-    public class CodeEditor : FrameworkElement, IDocumentEditor, IBufferAwareEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, INavigableDocument, IStatusBarContributor, ISearchTarget, IEditorPersistable
+    public class CodeEditor : FrameworkElement, IDocumentEditor, IBufferAwareEditor, ILspAwareEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, INavigableDocument, IStatusBarContributor, ISearchTarget, IEditorPersistable
     {
         #region Fields - Document Model
 
@@ -175,7 +176,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private WpfHexEditor.Editor.Core.LSP.ILspClient? _lspClient;
 
         // Signature help popup — shown on '(' keystroke when an LSP client is active.
-        private SignatureHelpPopup? _signatureHelpPopup;
+        private SignatureHelpPopup?     _signatureHelpPopup;
+
+        // Code action popup — shown on Ctrl+. when an LSP client is active.
+        private LspCodeActionPopup?     _lspCodeActionPopup;
+
+        // Rename popup — shown on F2 when an LSP client is active.
+        private LspRenamePopup?         _lspRenamePopup;
+
+        // Document manager injected by LspDocumentBridgeService for workspace-wide edits.
+        private IDocumentManager?       _lspDocumentManager;
 
         // Monotonically increasing document version sent with every didChange notification.
         private int _lspDocVersion;
@@ -1750,7 +1760,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _smartCompletePopup = new SmartCompletePopup(this);
 
             // Initialize LSP Signature Help popup
-            _signatureHelpPopup = new SignatureHelpPopup(this);
+            _signatureHelpPopup     = new SignatureHelpPopup(this);
+
+            // Initialize LSP Code Action popup (Ctrl+.) and Rename popup (F2)
+            _lspCodeActionPopup     = new LspCodeActionPopup(this);
+            _lspRenamePopup         = new LspRenamePopup(this);
 
             // Initialize validator (Phase 5)
             _validator = new FormatSchemaValidator();
@@ -2468,6 +2482,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             contextMenu.Opened += (_, _) =>
                 findRefsMenuItem.IsEnabled = EnableFindAllReferences
                                              && _document is not null;
+
+            // Quick Fix (LSP Code Actions)
+            var quickFixMenuItem = new MenuItem
+            {
+                Header           = "_Quick Fix…",
+                InputGestureText = "Ctrl+.",
+                Icon             = MakeMenuIcon("\uE73E"),
+            };
+            quickFixMenuItem.Click += (_, _) => _ = ShowCodeActionsAsync();
+            contextMenu.Items.Add(quickFixMenuItem);
+
+            // Rename Symbol (LSP Rename)
+            var renameMenuItem = new MenuItem
+            {
+                Header           = "_Rename Symbol",
+                InputGestureText = "F2",
+                Icon             = MakeMenuIcon("\uE70F"),
+            };
+            renameMenuItem.Click += (_, _) => _ = StartRenameAsync();
+            contextMenu.Items.Add(renameMenuItem);
+
+            // Enable/disable LSP items based on whether a client is active.
+            contextMenu.Opened += (_, _) =>
+            {
+                var lspActive = _lspClient is not null;
+                quickFixMenuItem.IsEnabled = lspActive;
+                renameMenuItem.IsEnabled   = lspActive;
+            };
 
             // Separator
             contextMenu.Items.Add(new Separator());
@@ -5412,6 +5454,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
+            // Ctrl+. — LSP Code Actions (quick fix / refactor)
+            if (e.Key == Key.OemPeriod && ctrlPressed && !shiftPressed && !altPressed)
+            {
+                e.Handled = true;
+                _ = ShowCodeActionsAsync();
+                return;
+            }
+
+            // F2 — LSP Rename Symbol
+            if (e.Key == Key.F2 && !ctrlPressed && !shiftPressed && !altPressed)
+            {
+                e.Handled = true;
+                _ = StartRenameAsync();
+                return;
+            }
+
             // Cancel any pending outline chord on any key press without Ctrl held.
             if (!ctrlPressed) _outlineChordPending = false;
 
@@ -7960,6 +8018,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
         }
 
+        /// <summary>
+        /// Injects the document manager for workspace-wide edit application (ILspAwareEditor).
+        /// </summary>
+        public void SetDocumentManager(IDocumentManager manager)
+            => _lspDocumentManager = manager;
+
         /// <summary>Maps a file extension to an LSP language identifier.</summary>
         private static string DetectLanguageId(string filePath) =>
             Path.GetExtension(filePath).ToLowerInvariant() switch
@@ -8001,6 +8065,147 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 System.Diagnostics.Debug.WriteLine($"[LSP] SignatureHelp: {ex.Message}");
             }
+        }
+
+        // ── LSP Code Actions (Ctrl+.) ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Invokes textDocument/codeAction at the caret position and shows a popup
+        /// listing the available quick fixes / refactors.
+        /// Fire-and-forget: errors are swallowed so they never break editing.
+        /// </summary>
+        private async Task ShowCodeActionsAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null) return;
+            try
+            {
+                var actions = await _lspClient.CodeActionAsync(
+                    _currentFilePath,
+                    _cursorLine, _cursorColumn,
+                    _cursorLine, _cursorColumn,
+                    CancellationToken.None).ConfigureAwait(true);
+
+                if (actions.Count == 0) return;
+
+                var textLeft = ShowLineNumbers ? 70.0 : 4.0;
+                var localX   = textLeft + _cursorColumn * _charWidth - _horizontalScrollOffset;
+                var localY   = (_cursorLine - _firstVisibleLine + 1) * _lineHeight;
+                var screenPt = PointToScreen(new Point(localX, localY));
+
+                var selected = await _lspCodeActionPopup!
+                    .ShowAsync(actions, screenPt.X, screenPt.Y).ConfigureAwait(true);
+
+                if (selected?.Edit is not null)
+                    ApplyWorkspaceEdit(selected.Edit);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LSP] CodeAction: {ex.Message}");
+            }
+        }
+
+        // ── LSP Rename (F2) ───────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Shows an inline rename popup over the caret, then applies the workspace edit
+        /// returned by textDocument/rename.
+        /// </summary>
+        private async Task StartRenameAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null) return;
+            try
+            {
+                var currentWord = GetWordAtCaret();
+
+                var textLeft = ShowLineNumbers ? 70.0 : 4.0;
+                var localX   = textLeft + _cursorColumn * _charWidth - _horizontalScrollOffset;
+                var localY   = (_cursorLine - _firstVisibleLine) * _lineHeight;
+                var screenPt = PointToScreen(new Point(localX, localY));
+
+                var newName = await _lspRenamePopup!
+                    .ShowAsync(currentWord, screenPt.X, screenPt.Y).ConfigureAwait(true);
+
+                if (string.IsNullOrEmpty(newName) || newName == currentWord) return;
+
+                var edit = await _lspClient.RenameAsync(
+                    _currentFilePath, _cursorLine, _cursorColumn, newName,
+                    CancellationToken.None).ConfigureAwait(true);
+
+                if (edit is not null)
+                    ApplyWorkspaceEdit(edit);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LSP] Rename: {ex.Message}");
+            }
+        }
+
+        // ── Workspace Edit Application ────────────────────────────────────────────
+
+        /// <summary>
+        /// Applies a workspace edit to all affected open buffers.
+        /// Edits within each file are applied bottom-up to avoid offset drift.
+        /// </summary>
+        private void ApplyWorkspaceEdit(LspWorkspaceEdit edit)
+        {
+            foreach (var (filePath, edits) in edit.Changes)
+            {
+                var buf = _lspDocumentManager?.GetBufferForFile(filePath)
+                       ?? (_buffer?.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase) == true
+                           ? _buffer : null);
+                if (buf is null) continue;
+
+                var ordered = edits
+                    .OrderByDescending(e => e.StartLine)
+                    .ThenByDescending(e => e.StartColumn);
+
+                var text = buf.Text;
+                foreach (var e in ordered)
+                    text = ApplyTextEdit(text, e);
+
+                buf.SetText(text, source: null);
+            }
+        }
+
+        /// <summary>Applies a single <see cref="LspTextEdit"/> to a text string (0-based coordinates).</summary>
+        private static string ApplyTextEdit(string text, LspTextEdit edit)
+        {
+            var lines = text.Split('\n');
+            if (edit.StartLine >= lines.Length) return text;
+
+            var startLine = lines[edit.StartLine];
+            var endLine   = edit.EndLine < lines.Length ? lines[edit.EndLine] : string.Empty;
+
+            var startCol = Math.Min(edit.StartColumn, startLine.Length);
+            var endCol   = Math.Min(edit.EndColumn,   endLine.Length);
+
+            var before = startLine[..startCol];
+            var after  = endLine[endCol..];
+
+            var newLines = new List<string>(lines.Length);
+            for (var i = 0; i < edit.StartLine; i++) newLines.Add(lines[i]);
+            newLines.Add(before + edit.NewText + after);
+            for (var i = edit.EndLine + 1; i < lines.Length; i++) newLines.Add(lines[i]);
+
+            return string.Join("\n", newLines);
+        }
+
+        /// <summary>Returns the word under the current caret position (identifier chars only).</summary>
+        private string GetWordAtCaret()
+        {
+            if (_document is null || _cursorLine >= _document.Lines.Count) return string.Empty;
+            var line = _document.Lines[_cursorLine].Text ?? string.Empty;
+            if (_cursorColumn > line.Length) return string.Empty;
+
+            var start = _cursorColumn;
+            while (start > 0 && (char.IsLetterOrDigit(line[start - 1]) || line[start - 1] == '_'))
+                start--;
+
+            var end = _cursorColumn;
+            while (end < line.Length && (char.IsLetterOrDigit(line[end]) || line[end] == '_'))
+                end++;
+
+            return line[start..end];
         }
 
         /// Feeds LSP push diagnostics into the editor's validation error list.

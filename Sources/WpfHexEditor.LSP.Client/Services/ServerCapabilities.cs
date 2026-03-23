@@ -26,6 +26,8 @@ internal sealed class ServerCapabilities
     internal bool HasDefinitionProvider     { get; init; }
     internal bool HasReferencesProvider     { get; init; }
     internal bool HasSignatureHelpProvider  { get; init; }
+    internal bool HasCodeActionProvider     { get; init; }
+    internal bool HasRenameProvider         { get; init; }
 
     /// <summary>
     /// Parses the capabilities from the raw <c>initialize</c> response node.
@@ -45,6 +47,8 @@ internal sealed class ServerCapabilities
             HasDefinitionProvider    = IsEnabled(caps["definitionProvider"]),
             HasReferencesProvider    = IsEnabled(caps["referencesProvider"]),
             HasSignatureHelpProvider = IsEnabled(caps["signatureHelpProvider"]),
+            HasCodeActionProvider    = IsEnabled(caps["codeActionProvider"]),
+            HasRenameProvider        = IsEnabled(caps["renameProvider"]),
         };
     }
 
@@ -65,5 +69,7 @@ internal sealed class ServerCapabilities
         HasDefinitionProvider    = true,
         HasReferencesProvider    = true,
         HasSignatureHelpProvider = true,
+        HasCodeActionProvider    = true,
+        HasRenameProvider        = true,
     };
 }

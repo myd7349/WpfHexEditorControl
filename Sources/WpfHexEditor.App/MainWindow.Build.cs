@@ -197,8 +197,11 @@ public partial class MainWindow
         }
 
         // Watch project directories for file changes (incremental build dirty tracking).
-        _solutionManager.SolutionOpened += (_, _) => WatchSolutionProjects();
-        _solutionManager.SolutionClosed += (_, _) => UnwatchSolutionProjects();
+        _solutionManager.SolutionChanged += (_, e) =>
+        {
+            if (e.Kind == SolutionChangeKind.Opened)  WatchSolutionProjects();
+            if (e.Kind == SolutionChangeKind.Closed)  UnwatchSolutionProjects();
+        };
 
         // Subscribe to dirty-state changes to update Solution Explorer project nodes.
         _ideEventBus.Subscribe<ProjectDirtyChangedEvent>(OnProjectDirtyChanged);

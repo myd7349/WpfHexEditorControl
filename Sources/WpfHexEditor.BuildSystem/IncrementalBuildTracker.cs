@@ -24,7 +24,7 @@ namespace WpfHexEditor.BuildSystem;
 /// <summary>
 /// Timestamp-based <see cref="IIncrementalBuildTracker"/> implementation.
 /// </summary>
-internal sealed class IncrementalBuildTracker : IIncrementalBuildTracker
+public sealed class IncrementalBuildTracker : IIncrementalBuildTracker
 {
     // projectId → UTC ticks at last successful build
     private readonly Dictionary<string, long> _snapshots

@@ -205,7 +205,7 @@ public sealed class BuildSystem : IBuildSystem
         var config  = _configurationManager.ActiveConfiguration;
         var targets = allProjects
             .Where(p => toBuild.Contains(p.Id) && !string.IsNullOrEmpty(p.ProjectFilePath))
-            .Select(p => (p.ProjectFilePath!, config))
+            .Select(p => (p.ProjectFilePath!, (IBuildConfiguration)config))
             .ToList();
 
         return await RunBuildAsync(targets, rebuild: false, ct);

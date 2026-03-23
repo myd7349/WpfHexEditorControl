@@ -97,6 +97,15 @@ internal sealed class LspDocumentBridgeService : IDisposable
             var bridge = new LspBufferBridge(client, buffer);
             _bridges[buffer.FilePath] = bridge;
             _log($"[LSP] Bridge created: {System.IO.Path.GetFileName(buffer.FilePath)} → {entry.LanguageId}");
+
+            // Inject the LSP client into any ILspAwareEditor so it can invoke
+            // Code Actions and Rename directly (e.g. CodeEditor via Ctrl+. / F2).
+            var doc = _documentManager.FindDocumentByBuffer(buffer);
+            if (doc?.AssociatedEditor is ILspAwareEditor lspEditor)
+            {
+                lspEditor.SetLspClient(client);
+                lspEditor.SetDocumentManager(_documentManager);
+            }
         }
         catch (Exception ex)
         {
@@ -112,6 +121,10 @@ internal sealed class LspDocumentBridgeService : IDisposable
             bridge.Dispose();
             _bridges.Remove(buffer.FilePath);
         }
+
+        // Clear the LSP client reference on the editor so it no longer tries to use it.
+        if (doc.AssociatedEditor is ILspAwareEditor lspEditor)
+            lspEditor.SetLspClient(null);
     }
 
     // ── IDisposable ───────────────────────────────────────────────────────────
