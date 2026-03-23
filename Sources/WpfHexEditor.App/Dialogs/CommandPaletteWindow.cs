@@ -27,6 +27,7 @@ public sealed class CommandPaletteWindow : Window
     private readonly Point? _anchor;
     private readonly TextBox _searchBox;
     private readonly ListBox _resultsList;
+    private bool _closingStarted;
 
     public CommandPaletteWindow(CommandPaletteService service, Window owner, Point? anchor = null)
     {
@@ -139,7 +140,7 @@ public sealed class CommandPaletteWindow : Window
 
         // ─── Keyboard handling ─────────────────────────────────────────────────────
         _searchBox.PreviewKeyDown += OnSearchBoxKeyDown;
-        Deactivated += (_, _) => Close();
+        Deactivated += (_, _) => { if (!_closingStarted) Close(); };
 
         Loaded += OnLoaded;
     }
@@ -210,6 +211,7 @@ public sealed class CommandPaletteWindow : Window
         if (_resultsList.SelectedItem is not CommandPaletteEntry entry) return;
         if (entry.Command?.CanExecute(entry.CommandParameter) == true)
         {
+            _closingStarted = true;
             Close();
             entry.Command.Execute(entry.CommandParameter);
         }
