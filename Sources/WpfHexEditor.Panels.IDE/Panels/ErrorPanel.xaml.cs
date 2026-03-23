@@ -42,6 +42,15 @@ public partial class ErrorPanel : UserControl, IErrorPanel
         set { _scope = value; SyncScopeCombo(); ApplyFilter(); }
     }
 
+    /// <summary>Name of the currently active project; used for <see cref="ErrorPanelScope.CurrentProject"/> filtering.</summary>
+    public string CurrentProjectName  { get; set; } = string.Empty;
+
+    /// <summary>Absolute path of the currently active document; used for <see cref="ErrorPanelScope.CurrentDocument"/> filtering.</summary>
+    public string CurrentDocumentPath { get; set; } = string.Empty;
+
+    /// <summary>Re-applies the current filter. Call when <see cref="CurrentProjectName"/> or <see cref="CurrentDocumentPath"/> change.</summary>
+    public void RefreshFilter() => ApplyFilter();
+
     public event EventHandler<DiagnosticEntry>? EntryNavigationRequested;
 
     /// <summary>
@@ -160,6 +169,22 @@ public partial class ErrorPanel : UserControl, IErrorPanel
                 (entry.FileName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)    ||
                 (entry.ProjectName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true);
             if (!contains) { e.Accepted = false; return; }
+        }
+
+        // Scope filter
+        if (_scope == ErrorPanelScope.CurrentProject && !string.IsNullOrEmpty(CurrentProjectName))
+        {
+            if (!string.Equals(entry.ProjectName, CurrentProjectName, StringComparison.OrdinalIgnoreCase))
+            { e.Accepted = false; return; }
+        }
+        else if (_scope == ErrorPanelScope.CurrentDocument && !string.IsNullOrEmpty(CurrentDocumentPath))
+        {
+            var matchPath = !string.IsNullOrEmpty(entry.FilePath) &&
+                            string.Equals(entry.FilePath, CurrentDocumentPath, StringComparison.OrdinalIgnoreCase);
+            var matchName = !matchPath &&
+                            !string.IsNullOrEmpty(entry.FileName) &&
+                            string.Equals(entry.FileName, System.IO.Path.GetFileName(CurrentDocumentPath), StringComparison.OrdinalIgnoreCase);
+            if (!matchPath && !matchName) { e.Accepted = false; return; }
         }
 
         e.Accepted = true;

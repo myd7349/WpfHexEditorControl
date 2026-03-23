@@ -82,6 +82,19 @@ public sealed record ProcessLaunchedEvent : IDEEventBase
 }
 
 /// <summary>
+/// Published when a project's incremental-build dirty state changes.
+/// DiagnosticTools / Solution Explorer subscribe to show a dirty indicator.
+/// </summary>
+public sealed record ProjectDirtyChangedEvent : IDEEventBase
+{
+    /// <summary>The project whose dirty state changed.</summary>
+    public string ProjectId { get; init; } = string.Empty;
+
+    /// <summary><see langword="true"/> when the project is now dirty; <see langword="false"/> when it became clean.</summary>
+    public bool IsDirty { get; init; }
+}
+
+/// <summary>
 /// Published when a process that was started via "Start Without Debugging" exits.
 /// </summary>
 public sealed record ProcessExitedEvent : IDEEventBase

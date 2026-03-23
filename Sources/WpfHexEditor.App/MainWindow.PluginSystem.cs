@@ -53,6 +53,7 @@ public partial class MainWindow
     private IDEHostContext? _ideHostContext;
     private IDEEventBus? _ideEventBus;
     private DocumentHostService? _documentHostService;
+    private WpfHexEditor.App.Services.LspDocumentBridgeService? _lspBridgeService;
     private readonly FocusContextService _focusContextService = new();
 
     // Service adapters (lazily set in InitializePluginSystemAsync after layout is ready)
@@ -149,6 +150,12 @@ public partial class MainWindow
                     "Servers",
                     () => new WpfHexEditor.App.Options.LspServersOptionsPage(capturedLsp),
                     categoryIcon: "🔌");
+
+                // ADR-DOC-01: Wire document buffer changes to the LSP server.
+                _lspBridgeService = new WpfHexEditor.App.Services.LspDocumentBridgeService(
+                    _documentManager,
+                    lspRegistry,
+                    msg => OutputLogger.PluginInfo(msg));
             }
 
             var hostContext = new IDEHostContext(
@@ -831,6 +838,8 @@ public partial class MainWindow
             _hexEditorService.SelectionChanged -= OnHexEditorSelectionChanged;
         await _pluginHost.DisposeAsync().ConfigureAwait(false);
         _pluginHost = null;
+        _lspBridgeService?.Dispose();
+        _lspBridgeService = null;
         _ideEventBus?.Dispose();
         _ideEventBus = null;
         if (_serviceProvider is IAsyncDisposable asyncDisposable)

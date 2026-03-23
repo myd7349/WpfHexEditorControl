@@ -150,6 +150,18 @@ public sealed class ProjectNodeVm : SolutionExplorerNodeVm
         set { _isModified = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
     }
 
+    private bool _isBuildDirty;
+
+    /// <summary>
+    /// True when the project has source file changes since its last successful build.
+    /// Drives a small orange dot indicator next to the project name.
+    /// </summary>
+    public bool IsBuildDirty
+    {
+        get => _isBuildDirty;
+        set { if (_isBuildDirty == value) return; _isBuildDirty = value; OnPropertyChanged(); }
+    }
+
     private bool _isStartup;
 
     /// <summary>

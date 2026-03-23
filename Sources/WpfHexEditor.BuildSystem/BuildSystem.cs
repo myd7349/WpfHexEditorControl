@@ -30,10 +30,11 @@ namespace WpfHexEditor.BuildSystem;
 /// </summary>
 public sealed class BuildSystem : IBuildSystem
 {
-    private readonly ISolutionManager       _solutionManager;
-    private readonly IIDEEventBus           _eventBus;
-    private readonly ConfigurationManager   _configurationManager;
+    private readonly ISolutionManager        _solutionManager;
+    private readonly IIDEEventBus            _eventBus;
+    private readonly ConfigurationManager    _configurationManager;
     private readonly BuildDependencyResolver _resolver = new();
+    private readonly IIncrementalBuildTracker? _tracker;
 
     private readonly List<IBuildAdapter>    _adapters = [];
     private CancellationTokenSource?        _activeCts;
@@ -41,13 +42,15 @@ public sealed class BuildSystem : IBuildSystem
     // -----------------------------------------------------------------------
 
     public BuildSystem(
-        ISolutionManager     solutionManager,
-        IIDEEventBus         eventBus,
-        ConfigurationManager configurationManager)
+        ISolutionManager      solutionManager,
+        IIDEEventBus          eventBus,
+        ConfigurationManager  configurationManager,
+        IIncrementalBuildTracker? tracker = null)
     {
         _solutionManager      = solutionManager      ?? throw new ArgumentNullException(nameof(solutionManager));
         _eventBus             = eventBus             ?? throw new ArgumentNullException(nameof(eventBus));
         _configurationManager = configurationManager ?? throw new ArgumentNullException(nameof(configurationManager));
+        _tracker              = tracker;
     }
 
     // -----------------------------------------------------------------------
@@ -146,6 +149,118 @@ public sealed class BuildSystem : IBuildSystem
     }
 
     // -----------------------------------------------------------------------
+    // Incremental / dirty build
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the project has source file changes
+    /// since the last successful build, or when no build baseline exists.
+    /// Always <see langword="true"/> when no tracker is configured.
+    /// </summary>
+    public bool IsProjectDirty(string projectId)
+        => _tracker?.IsProjectDirty(projectId) ?? true;
+
+    /// <summary>
+    /// Builds only projects that are dirty (changed since last build) plus their
+    /// transitive dependents.  Falls back to a full solution build when all projects
+    /// are dirty or no tracker is configured.
+    /// </summary>
+    public async Task<BuildResult> BuildDirtyAsync(CancellationToken ct = default)
+    {
+        if (_tracker is null || _solutionManager.CurrentSolution is null)
+            return await BuildSolutionAsync(ct);
+
+        var allProjects = _solutionManager.CurrentSolution.Projects;
+        if (allProjects.Count == 0)
+        {
+            _eventBus.Publish(new BuildOutputLineEvent { Line = "[Build Dirty] No projects in solution." });
+            return new BuildResult(true, [], [], TimeSpan.Zero);
+        }
+
+        var dirtyIds = _tracker.GetDirtyProjects(allProjects.Select(p => p.Id));
+        if (dirtyIds.Count == 0)
+        {
+            _eventBus.Publish(new BuildOutputLineEvent { Line = "[Build Dirty] All projects up-to-date — nothing to build." });
+            return new BuildResult(true, [], [], TimeSpan.Zero);
+        }
+
+        // If everything is dirty (e.g. first launch), a full build is equivalent.
+        if (dirtyIds.Count == allProjects.Count)
+            return await BuildSolutionAsync(ct);
+
+        // Build reverse-dependency map: projectId → list of projects that depend on it.
+        var reverseDeps = BuildReverseDependencyMap(allProjects);
+
+        // Expand dirty set to include all transitive dependents.
+        var toBuild = ExpandWithDependents(dirtyIds, reverseDeps);
+
+        _eventBus.Publish(new BuildOutputLineEvent
+        {
+            Line = $"[Build Dirty] Building {toBuild.Count} of {allProjects.Count} project(s): "
+                 + string.Join(", ", toBuild.Select(id =>
+                     allProjects.FirstOrDefault(p => p.Id == id)?.Name ?? id))
+        });
+
+        // Collect ordered targets respecting build order.
+        var config  = _configurationManager.ActiveConfiguration;
+        var targets = allProjects
+            .Where(p => toBuild.Contains(p.Id) && !string.IsNullOrEmpty(p.ProjectFilePath))
+            .Select(p => (p.ProjectFilePath!, config))
+            .ToList();
+
+        return await RunBuildAsync(targets, rebuild: false, ct);
+    }
+
+    /// <summary>Builds the reverse dependency map: projectId → [projects that depend on it].</summary>
+    private Dictionary<string, List<string>> BuildReverseDependencyMap(
+        IReadOnlyList<IProject> projects)
+    {
+        var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var p in projects)
+        {
+            if (p is not IProjectWithReferences withRefs) continue;
+            foreach (var dep in withRefs.ProjectReferences)
+            {
+                // dep is a file path; map it to the in-solution project id.
+                var depProject = projects.FirstOrDefault(q =>
+                    string.Equals(q.ProjectFilePath, dep, StringComparison.OrdinalIgnoreCase));
+                if (depProject is null) continue;
+
+                if (!map.TryGetValue(depProject.Id, out var list))
+                    map[depProject.Id] = list = [];
+                list.Add(p.Id);
+            }
+        }
+
+        return map;
+    }
+
+    /// <summary>
+    /// Expands a dirty set to include all transitive dependents (BFS on the reverse graph).
+    /// </summary>
+    private static HashSet<string> ExpandWithDependents(
+        IReadOnlyList<string>                     dirty,
+        Dictionary<string, List<string>>          reverseDeps)
+    {
+        var result = new HashSet<string>(dirty, StringComparer.OrdinalIgnoreCase);
+        var queue  = new Queue<string>(dirty);
+
+        while (queue.Count > 0)
+        {
+            var id = queue.Dequeue();
+            if (!reverseDeps.TryGetValue(id, out var dependents)) continue;
+            foreach (var dep in dependents)
+            {
+                if (result.Add(dep))
+                    queue.Enqueue(dep);
+            }
+        }
+
+        return result;
+    }
+
+    // -----------------------------------------------------------------------
     // Adapter registration
     // -----------------------------------------------------------------------
 
@@ -205,7 +320,17 @@ public sealed class BuildSystem : IBuildSystem
                 warnings.AddRange(result.Warnings);
 
                 if (result.IsSuccess)
+                {
                     succeeded++;
+                    // Record a clean baseline for incremental tracking.
+                    if (_tracker is not null)
+                    {
+                        var projId = _solutionManager.CurrentSolution?.Projects
+                            .FirstOrDefault(p => string.Equals(p.ProjectFilePath, filePath,
+                                StringComparison.OrdinalIgnoreCase))?.Id;
+                        if (projId is not null) _tracker.RecordSuccess(projId);
+                    }
+                }
                 else
                     failed++;
 

@@ -34,13 +34,15 @@ public partial class MainWindow
     // Build infrastructure (lazy-initialized after plugin system is ready)
     // -----------------------------------------------------------------------
 
-    private BuildSystem.BuildSystem?    _buildSystem;
-    private ConfigurationManager?       _configManager;
-    private BuildOutputAdapter?         _buildOutputAdapter;
-    private BuildErrorListAdapter?      _buildErrorListAdapter;
-    private BuildStatusBarAdapter?      _buildStatusBarAdapter;
-    private StartupProjectRunner?       _startupRunner;
-    private IDisposable[]?              _buildStateRefreshSubs;
+    private BuildSystem.BuildSystem?      _buildSystem;
+    private ConfigurationManager?         _configManager;
+    private BuildOutputAdapter?           _buildOutputAdapter;
+    private BuildErrorListAdapter?        _buildErrorListAdapter;
+    private BuildStatusBarAdapter?        _buildStatusBarAdapter;
+    private StartupProjectRunner?         _startupRunner;
+    private IDisposable[]?                _buildStateRefreshSubs;
+    private IncrementalBuildTracker?      _incrementalTracker;
+    private BuildFileWatcher?             _buildFileWatcher;
 
     // -----------------------------------------------------------------------
     // Properties (bound in XAML)
@@ -128,8 +130,10 @@ public partial class MainWindow
     {
         if (_ideEventBus is null) return;
 
-        _configManager   = new ConfigurationManager();
-        _buildSystem     = new BuildSystem.BuildSystem(_solutionManager, _ideEventBus, _configManager);
+        _configManager       = new ConfigurationManager();
+        _incrementalTracker  = new IncrementalBuildTracker(_ideEventBus);
+        _buildFileWatcher    = new BuildFileWatcher(_incrementalTracker);
+        _buildSystem         = new BuildSystem.BuildSystem(_solutionManager, _ideEventBus, _configManager, _incrementalTracker);
         _startupRunner   = new StartupProjectRunner(_solutionManager, _buildSystem, _ideEventBus, _configManager,
             abortOnBuildError: () => AppSettingsService.Instance.Current.BuildRun.OnRunWhenBuildError == RunOnBuildError.DoNotLaunch);
 
@@ -191,6 +195,19 @@ public partial class MainWindow
                 OnPropertyChanged(nameof(CanRunStartupProject));
             };
         }
+
+        // Watch project directories for file changes (incremental build dirty tracking).
+        _solutionManager.SolutionOpened += (_, _) => WatchSolutionProjects();
+        _solutionManager.SolutionClosed += (_, _) => UnwatchSolutionProjects();
+
+        // Subscribe to dirty-state changes to update Solution Explorer project nodes.
+        _ideEventBus.Subscribe<ProjectDirtyChangedEvent>(OnProjectDirtyChanged);
+
+        // Ctrl+Alt+F7 → Build Dirty (incremental).
+        var buildDirtyGesture = new KeyBinding(
+            new RelayCommand(async _ => await RunBuildDirtyAsync()),
+            Key.F7, ModifierKeys.Control | ModifierKeys.Alt);
+        InputBindings.Add(buildDirtyGesture);
     }
 
     // -----------------------------------------------------------------------
@@ -248,7 +265,7 @@ public partial class MainWindow
     {
         if (_startupRunner is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         // Start the task first — the sync preamble inside RunAsync calls BuildSolutionAsync
         // which sets _activeCts before its first true await, so RefreshBuildProperties()
         // here correctly sees HasActiveBuild=true and disables Build/Rebuild/Clean.
@@ -262,7 +279,7 @@ public partial class MainWindow
     {
         if (_buildSystem is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         if (_solutionManager.CurrentSolution is null
             || _solutionManager.CurrentSolution.Projects.Count == 0)
         {
@@ -289,7 +306,7 @@ public partial class MainWindow
         var startup = _solutionManager.CurrentSolution.StartupProject;
         if (startup is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         _buildErrorListAdapter?.ClearDiagnostics();
         var buildTask = _buildSystem.BuildProjectAsync(startup.Id);
         RefreshBuildProperties();
@@ -305,7 +322,7 @@ public partial class MainWindow
     {
         if (_buildSystem is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         if (_solutionManager.CurrentSolution is null
             || _solutionManager.CurrentSolution.Projects.Count == 0)
         {
@@ -329,7 +346,7 @@ public partial class MainWindow
         var startup = _solutionManager.CurrentSolution.StartupProject;
         if (startup is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         _buildErrorListAdapter?.ClearDiagnostics();
         var rebuildTask = _buildSystem.RebuildProjectAsync(startup.Id);
         RefreshBuildProperties();
@@ -345,7 +362,7 @@ public partial class MainWindow
     {
         if (_buildSystem is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         // Start clean synchronously so _activeCts is set before RefreshBuildProperties().
         var cleanTask = _buildSystem.CleanSolutionAsync();
         RefreshBuildProperties();
@@ -359,7 +376,7 @@ public partial class MainWindow
         var startup = _solutionManager.CurrentSolution.StartupProject;
         if (startup is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         var cleanTask = _buildSystem.CleanProjectAsync(startup.Id);
         RefreshBuildProperties();
         await cleanTask;
@@ -372,7 +389,7 @@ public partial class MainWindow
     {
         if (_buildSystem is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         _buildErrorListAdapter?.ClearDiagnostics();
         var buildTask = _buildSystem.BuildProjectAsync(projectId);
         RefreshBuildProperties();
@@ -388,7 +405,7 @@ public partial class MainWindow
     {
         if (_buildSystem is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         _buildErrorListAdapter?.ClearDiagnostics();
         var rebuildTask = _buildSystem.RebuildProjectAsync(projectId);
         RefreshBuildProperties();
@@ -404,7 +421,7 @@ public partial class MainWindow
     {
         if (_buildSystem is null) return;
         ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
-        OutputLogger.FocusChannel(OutputLogger.SourceBuild);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
         var cleanTask = _buildSystem.CleanProjectAsync(projectId);
         RefreshBuildProperties();
         await cleanTask;
@@ -480,6 +497,48 @@ public partial class MainWindow
         };
         if (dlg.ShowDialog() == true)
             RefreshStartupProjectList();
+    }
+
+    // -----------------------------------------------------------------------
+    // Incremental build helpers
+    // -----------------------------------------------------------------------
+
+    private void WatchSolutionProjects()
+    {
+        if (_buildFileWatcher is null || _solutionManager.CurrentSolution is null) return;
+        foreach (var p in _solutionManager.CurrentSolution.Projects)
+        {
+            if (!string.IsNullOrEmpty(p.ProjectFilePath))
+                _buildFileWatcher.Watch(p.Id, p.ProjectFilePath);
+        }
+    }
+
+    private void UnwatchSolutionProjects()
+    {
+        if (_buildFileWatcher is null || _solutionManager.CurrentSolution is null) return;
+        foreach (var p in _solutionManager.CurrentSolution.Projects)
+            _buildFileWatcher.Unwatch(p.Id);
+    }
+
+    private void OnProjectDirtyChanged(ProjectDirtyChangedEvent e)
+    {
+        Dispatcher.InvokeAsync(() => _solutionExplorerPanel?.SetProjectDirty(e.ProjectId, e.IsDirty));
+    }
+
+    private async Task RunBuildDirtyAsync()
+    {
+        if (_buildSystem is null) return;
+        ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
+        OutputLogger.ClearChannel(OutputLogger.SourceBuild);
+        _buildErrorListAdapter?.ClearDiagnostics();
+        var buildTask = _buildSystem.BuildDirtyAsync();
+        RefreshBuildProperties();
+        try
+        {
+            var result = await buildTask;
+            _buildErrorListAdapter?.SetDiagnostics(result.Errors.Concat(result.Warnings));
+        }
+        finally { RefreshBuildProperties(); }
     }
 
     // A project is launchable only when it is an MSBuild project with an

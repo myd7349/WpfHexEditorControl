@@ -29,6 +29,7 @@ using WpfHexEditor.Editor.CodeEditor.NavigationBar;
 using WpfHexEditor.Core;
 using WpfHexEditor.Core.Settings;
 using WpfHexEditor.Editor.Core;
+using WpfHexEditor.Editor.Core.Documents;
 using WpfHexEditor.Editor.CodeEditor.Options;
 using WpfHexEditor.ProjectSystem.Languages;
 using WpfHexEditor.Editor.CodeEditor.Selection;
@@ -43,11 +44,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
     /// Phase 2: Syntax highlighting with CodeSyntaxHighlighter
     /// Future phases will add: SmartComplete, validation
     /// </summary>
-    public class CodeEditor : FrameworkElement, IDocumentEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, INavigableDocument, IStatusBarContributor, ISearchTarget, IEditorPersistable
+    public class CodeEditor : FrameworkElement, IDocumentEditor, IBufferAwareEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, INavigableDocument, IStatusBarContributor, ISearchTarget, IEditorPersistable
     {
         #region Fields - Document Model
 
         private CodeDocument _document;
+
+        // -- IBufferAwareEditor -------------------------------------------
+        private IDocumentBuffer? _buffer;
+        private bool             _suppressBufferSync;
         private int _cursorLine = 0;        // Current cursor line (0-based)
         private int _cursorColumn = 0;      // Current cursor column (0-based)
         private TextSelection _selection;   // Current text selection
@@ -7463,6 +7468,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (lineCountChanged)
                 _linePositionsDirty = true; // OPT-D: new/deleted lines shift subsequent Y positions
 
+            // Propagate change to shared buffer (IBufferAwareEditor).
+            if (_buffer is not null && !_suppressBufferSync)
+            {
+                _suppressBufferSync = true;
+                try   { _buffer.SetText(GetText(), source: this); }
+                finally { _suppressBufferSync = false; }
+            }
+
             if (lineCountChanged || maxWidthChanged)
                 InvalidateMeasure(); // scrollbar ranges may have changed
             else
@@ -8546,6 +8559,46 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         #endregion
+
+        // ═══════════════════════════════════════════════════════════════════
+        // IBufferAwareEditor
+        // ═══════════════════════════════════════════════════════════════════
+
+        /// <inheritdoc/>
+        public void AttachBuffer(IDocumentBuffer buffer)
+        {
+            if (_buffer is not null) DetachBuffer();
+            _buffer = buffer;
+
+            // Push current editor content into the buffer (editor is authoritative on attach).
+            _suppressBufferSync = true;
+            try   { buffer.SetText(GetText(), source: this); }
+            finally { _suppressBufferSync = false; }
+
+            buffer.Changed += OnBufferChanged;
+        }
+
+        /// <inheritdoc/>
+        public void DetachBuffer()
+        {
+            if (_buffer is null) return;
+            _buffer.Changed -= OnBufferChanged;
+            _buffer = null;
+        }
+
+        private void OnBufferChanged(object? sender, DocumentBufferChangedEventArgs e)
+        {
+            // Ignore changes we originated to prevent feedback loops.
+            if (_suppressBufferSync || ReferenceEquals(e.Source, this)) return;
+
+            // Another editor updated the buffer — sync our content.
+            _suppressBufferSync = true;
+            try   { _document.LoadFromString(e.NewText); }
+            finally { _suppressBufferSync = false; }
+
+            _undoEngine.Reset();
+            InvalidateVisual();
+        }
 
         // -- IPropertyProviderSource -------------------------------------------
         private WpfHexEditor.Editor.CodeEditor.CodeEditorPropertyProvider? _propertyProvider;
