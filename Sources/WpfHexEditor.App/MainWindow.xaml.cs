@@ -1497,7 +1497,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Background file monitor source (always registered — stays empty when no solution)
             _errorPanel.AddSource(_fileMonitorSource);
         }
+        PushOpenDocumentsToErrorPanel();
         return _errorPanel;
+    }
+
+    private void PushOpenDocumentsToErrorPanel()
+    {
+        if (_errorPanel is null) return;
+        var paths = _documentManager.OpenDocuments
+            .Select(d => d.FilePath)
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Cast<string>()
+            .ToList();
+        _errorPanel.SetOpenDocuments(paths);
     }
 
     private void OnErrorEntryNavigation(object? sender, DiagnosticEntry e)
@@ -4285,6 +4297,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             _propertyProviderCache.Remove(ctrl);  // M5: evict cached provider
             UnregisterDocument(item.ContentId);
+            PushOpenDocumentsToErrorPanel();
             _contentCache.Remove(item.ContentId);
             _displayContent.Remove(item.ContentId);   // must clear both caches so reopen gets a fresh editor
         }
