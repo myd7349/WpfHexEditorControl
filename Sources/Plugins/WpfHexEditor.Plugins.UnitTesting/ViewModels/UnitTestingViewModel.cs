@@ -18,6 +18,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
 using WpfHexEditor.Plugins.UnitTesting.Models;
+using WpfHexEditor.Plugins.UnitTesting.Options;
 
 namespace WpfHexEditor.Plugins.UnitTesting.ViewModels;
 
@@ -152,12 +153,51 @@ public sealed class UnitTestingViewModel : INotifyPropertyChanged
 
     public bool CanRunFailed  => FailCount > 0 && !IsRunning;
 
+    // ── Layout options ───────────────────────────────────────────────────────
+
+    private bool _showRatioBar = UnitTestingOptions.Instance.ShowRatioBar;
+
+    public bool ShowRatioBar
+    {
+        get => _showRatioBar;
+        set => Set(ref _showRatioBar, value);
+    }
+
     // ── Constructor ──────────────────────────────────────────────────────────
 
     public UnitTestingViewModel()
     {
         FilteredResults = CollectionViewSource.GetDefaultView(_results);
         FilteredResults.Filter = FilterRow;
+        ApplyOptions();
+    }
+
+    /// <summary>Re-reads <see cref="UnitTestingOptions"/> and applies grouping/sorting/visibility.</summary>
+    public void ApplyOptions()
+    {
+        var opts = UnitTestingOptions.Instance;
+
+        ShowRatioBar = opts.ShowRatioBar;
+
+        // Grouping
+        FilteredResults.GroupDescriptions.Clear();
+        if (opts.GroupByClass)
+            FilteredResults.GroupDescriptions.Add(new PropertyGroupDescription(nameof(TestResultRow.ClassName)));
+
+        // Sorting
+        FilteredResults.SortDescriptions.Clear();
+        switch (opts.SortBy)
+        {
+            case SortOrder.Outcome:
+                FilteredResults.SortDescriptions.Add(new SortDescription(nameof(TestResultRow.Outcome), ListSortDirection.Ascending));
+                break;
+            case SortOrder.Duration:
+                FilteredResults.SortDescriptions.Add(new SortDescription(nameof(TestResultRow.DurationMs), ListSortDirection.Descending));
+                break;
+            default: // Name
+                FilteredResults.SortDescriptions.Add(new SortDescription(nameof(TestResultRow.Display), ListSortDirection.Ascending));
+                break;
+        }
     }
 
     private bool FilterRow(object obj)

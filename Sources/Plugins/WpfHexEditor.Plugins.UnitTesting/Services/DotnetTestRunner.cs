@@ -64,7 +64,17 @@ public sealed class DotnetTestRunner
             var stderrTask = DrainStreamAsync(proc.StandardError,  progress, ct);
 
             await Task.WhenAll(stdoutTask, stderrTask).ConfigureAwait(false);
-            await proc.WaitForExitAsync(ct).ConfigureAwait(false);
+
+            try
+            {
+                await proc.WaitForExitAsync(ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Kill the entire process tree so dotnet test doesn't linger.
+                try { proc.Kill(entireProcessTree: true); } catch { /* ignore */ }
+                throw;
+            }
 
             return TrxParser.Parse(trxFile);
         }

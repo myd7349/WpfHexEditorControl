@@ -4,8 +4,9 @@
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-23
+// Updated: 2026-03-24 (ADR-UT-04 — IPluginWithOptions + AutoRunOnBuild + auto-expand)
 // Description:
-//     Plugin entry point for the Unit Testing Panel (ADR-UT-01).
+//     Plugin entry point for the Unit Testing Panel (ADR-UT-01 → ADR-UT-04).
 //
 //     Flow:
 //       1. InitializeAsync — registers dockable panel, View menu item,
@@ -24,6 +25,7 @@ using System.IO;
 using System.Windows;
 using WpfHexEditor.Events.IDEEvents;
 using WpfHexEditor.Plugins.UnitTesting.Models;
+using WpfHexEditor.Plugins.UnitTesting.Options;
 using WpfHexEditor.Plugins.UnitTesting.Services;
 using WpfHexEditor.Plugins.UnitTesting.ViewModels;
 using WpfHexEditor.Plugins.UnitTesting.Views;
@@ -39,7 +41,7 @@ namespace WpfHexEditor.Plugins.UnitTesting;
 /// Unit Testing Panel plugin — discovers test projects in the loaded solution
 /// and runs <c>dotnet test</c> on each, displaying results in a dockable panel.
 /// </summary>
-public sealed class UnitTestingPlugin : IWpfHexEditorPlugin
+public sealed class UnitTestingPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 {
     private const string PanelUiId = "WpfHexEditor.Plugins.UnitTesting.Panel";
 
@@ -47,6 +49,7 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin
     private UnitTestingViewModel? _vm;
     private UnitTestingPanel?     _panel;
 
+    private UnitTestingOptionsPage? _optionsPage;
     private IDisposable? _subBuildSucceeded;
 
     private CancellationTokenSource? _runCts;
@@ -73,10 +76,10 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin
 
         // Must create UI on UI thread — InitializeAsync is called there.
         _panel = new UnitTestingPanel(_vm);
-        _panel.RunAllRequested     += (_, _)    => _ = RunAllAsync();
-        _panel.StopRequested       += (_, _)    => StopRun();
-        _panel.RunFailedRequested  += (_, _)    => _ = RunFailedAsync();
-        _panel.RunThisTestRequested += (_, row) => _ = RunThisTestAsync(row);
+        _panel.RunAllRequested      += (_, _)    => _ = RunAllAsync();
+        _panel.StopRequested        += (_, _)    => StopRun();
+        _panel.RunFailedRequested   += (_, _)    => _ = RunFailedAsync();
+        _panel.RunThisTestRequested += (_, row)  => _ = RunThisTestAsync(row);
 
         // Register dockable panel.
         context.UIRegistry.RegisterPanel(
@@ -105,10 +108,11 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin
                 Command    = new RelayCommand(_ => context.UIRegistry.TogglePanel(PanelUiId)),
             });
 
-        // Auto-run on successful build.
+        // Auto-run on successful build (respects AutoRunOnBuild option).
         _subBuildSucceeded = context.IDEEvents.Subscribe<BuildSucceededEvent>(_ev =>
         {
-            Application.Current?.Dispatcher.InvokeAsync(() => { _ = RunAllAsync(); });
+            if (UnitTestingOptions.Instance.AutoRunOnBuild)
+                Application.Current?.Dispatcher.InvokeAsync(() => { _ = RunAllAsync(); });
         });
 
         return Task.CompletedTask;
@@ -118,10 +122,35 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin
     {
         _subBuildSucceeded?.Dispose();
         StopRun();
-        _panel = null;
-        _vm    = null;
+        _panel       = null;
+        _vm          = null;
+        _optionsPage = null;
         return Task.CompletedTask;
     }
+
+    // ── IPluginWithOptions ───────────────────────────────────────────────────
+
+    public System.Windows.FrameworkElement CreateOptionsPage()
+    {
+        _optionsPage = new UnitTestingOptionsPage();
+        _optionsPage.Load();
+        return _optionsPage;
+    }
+
+    public void SaveOptions()
+    {
+        _optionsPage?.Save();
+        _vm?.ApplyOptions();
+    }
+
+    public void LoadOptions()
+    {
+        UnitTestingOptions.Invalidate();
+        _optionsPage?.Load();
+    }
+
+    public string GetOptionsCategory()     => "Testing";
+    public string GetOptionsCategoryIcon() => "\uE9E6"; // Segoe MDL2: BulletedList
 
     // ── Test execution ───────────────────────────────────────────────────────
 
@@ -174,6 +203,13 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin
                     {
                         _vm.RemoveRunningPlaceholder(placeholder);
                         _vm.AddResults(results);
+
+                        if (UnitTestingOptions.Instance.AutoExpandDetailOnFailure
+                            && _vm.SelectedResult is null)
+                        {
+                            _vm.SelectedResult = _vm.Results
+                                .FirstOrDefault(r => r.Outcome == TestOutcome.Failed);
+                        }
                     });
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
