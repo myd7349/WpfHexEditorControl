@@ -34,6 +34,14 @@ internal sealed class LspDefinitionProvider
         string filePath, int line, int column, CancellationToken ct)
         => QueryLocationsAsync("textDocument/definition", filePath, line, column, ct);
 
+    internal Task<IReadOnlyList<LspLocation>> GetImplementationAsync(
+        string filePath, int line, int column, CancellationToken ct)
+        => QueryLocationsAsync("textDocument/implementation", filePath, line, column, ct);
+
+    internal Task<IReadOnlyList<LspLocation>> GetTypeDefinitionAsync(
+        string filePath, int line, int column, CancellationToken ct)
+        => QueryLocationsAsync("textDocument/typeDefinition", filePath, line, column, ct);
+
     internal Task<IReadOnlyList<LspLocation>> GetReferencesAsync(
         string filePath, int line, int column, CancellationToken ct)
     {

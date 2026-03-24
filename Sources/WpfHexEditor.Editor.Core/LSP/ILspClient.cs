@@ -238,6 +238,20 @@ public interface ILspClient : IAsyncDisposable
     Task<IReadOnlyList<LspLocation>> ReferencesAsync(
         string filePath, int line, int column, CancellationToken ct = default);
 
+    /// <summary>
+    /// Requests textDocument/implementation. Returns an empty list when the server
+    /// does not support it or no implementations are found.
+    /// </summary>
+    Task<IReadOnlyList<LspLocation>> ImplementationAsync(
+        string filePath, int line, int column, CancellationToken ct = default);
+
+    /// <summary>
+    /// Requests textDocument/typeDefinition. Returns an empty list when the server
+    /// does not support it or no type definition is found.
+    /// </summary>
+    Task<IReadOnlyList<LspLocation>> TypeDefinitionAsync(
+        string filePath, int line, int column, CancellationToken ct = default);
+
     // ── Signature Help ────────────────────────────────────────────────────────
 
     /// <summary>

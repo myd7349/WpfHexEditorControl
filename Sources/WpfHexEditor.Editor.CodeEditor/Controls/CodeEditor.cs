@@ -2503,12 +2503,45 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             renameMenuItem.Click += (_, _) => _ = StartRenameAsync();
             contextMenu.Items.Add(renameMenuItem);
 
+            // Go to Definition (F12)
+            var goToDefMenuItem = new MenuItem
+            {
+                Header           = "_Go to Definition",
+                InputGestureText = "F12",
+                Icon             = MakeMenuIcon("\uE8A9"),
+            };
+            goToDefMenuItem.Click += (_, _) => _ = GoToDefinitionAtCaretAsync();
+            contextMenu.Items.Add(goToDefMenuItem);
+
+            // Go to Implementation (Ctrl+F12)
+            var goToImplMenuItem = new MenuItem
+            {
+                Header           = "Go to _Implementation",
+                InputGestureText = "Ctrl+F12",
+                Icon             = MakeMenuIcon("\uE8A9"),
+            };
+            goToImplMenuItem.Click += (_, _) => _ = GoToImplementationAtCaretAsync();
+            contextMenu.Items.Add(goToImplMenuItem);
+
+            // Peek Definition (Alt+F12)
+            var peekDefMenuItem = new MenuItem
+            {
+                Header           = "_Peek Definition",
+                InputGestureText = "Alt+F12",
+                Icon             = MakeMenuIcon("\uE7C3"),
+            };
+            peekDefMenuItem.Click += (_, _) => _ = ShowPeekDefinitionAsync();
+            contextMenu.Items.Add(peekDefMenuItem);
+
             // Enable/disable LSP items based on whether a client is active.
             contextMenu.Opened += (_, _) =>
             {
                 var lspActive = _lspClient is not null;
-                quickFixMenuItem.IsEnabled = lspActive;
-                renameMenuItem.IsEnabled   = lspActive;
+                quickFixMenuItem.IsEnabled  = lspActive;
+                renameMenuItem.IsEnabled    = lspActive;
+                goToDefMenuItem.IsEnabled   = lspActive;
+                goToImplMenuItem.IsEnabled  = lspActive;
+                peekDefMenuItem.IsEnabled   = lspActive;
             };
 
             // Separator
@@ -5470,6 +5503,46 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
+            // F12 — Go to Definition
+            if (e.Key == Key.F12 && !ctrlPressed && !shiftPressed && !altPressed)
+            {
+                e.Handled = true;
+                _ = GoToDefinitionAtCaretAsync();
+                return;
+            }
+
+            // Alt+F12 — Peek Definition (inline popup)
+            if (e.Key == Key.F12 && altPressed && !ctrlPressed && !shiftPressed)
+            {
+                e.Handled = true;
+                _ = ShowPeekDefinitionAsync();
+                return;
+            }
+
+            // Ctrl+F12 — Go to Implementation
+            if (e.Key == Key.F12 && ctrlPressed && !shiftPressed && !altPressed)
+            {
+                e.Handled = true;
+                _ = GoToImplementationAtCaretAsync();
+                return;
+            }
+
+            // Alt+Left — Navigate Back
+            if (e.Key == Key.Left && altPressed && !ctrlPressed && !shiftPressed)
+            {
+                e.Handled = true;
+                NavigateBack();
+                return;
+            }
+
+            // Alt+Right — Navigate Forward
+            if (e.Key == Key.Right && altPressed && !ctrlPressed && !shiftPressed)
+            {
+                e.Handled = true;
+                NavigateForward();
+                return;
+            }
+
             // Cancel any pending outline chord on any key press without Ctrl held.
             if (!ctrlPressed) _outlineChordPending = false;
 
@@ -8232,6 +8305,119 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             return line[start..end];
         }
 
+        // ── Navigation History (Alt+Left / Alt+Right) ────────────────────────────
+
+        private readonly record struct NavEntry(string? FilePath, int Line, int Column);
+        private readonly List<NavEntry> _navHistory = new(64);
+        private int _navIndex = -1;
+
+        private void PushNavigation(string? filePath, int line, int col)
+        {
+            // Truncate any forward history on new navigation.
+            if (_navIndex < _navHistory.Count - 1)
+                _navHistory.RemoveRange(_navIndex + 1, _navHistory.Count - _navIndex - 1);
+            _navHistory.Add(new NavEntry(filePath, line, col));
+            if (_navHistory.Count > 50) _navHistory.RemoveAt(0);
+            _navIndex = _navHistory.Count - 1;
+        }
+
+        private void NavigateBack()
+        {
+            if (_navIndex <= 0) return;
+            _navIndex--;
+            ApplyNavEntry(_navHistory[_navIndex]);
+        }
+
+        private void NavigateForward()
+        {
+            if (_navIndex >= _navHistory.Count - 1) return;
+            _navIndex++;
+            ApplyNavEntry(_navHistory[_navIndex]);
+        }
+
+        private void ApplyNavEntry(NavEntry entry)
+        {
+            if (entry.FilePath is null
+                || entry.FilePath.Equals(_currentFilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                NavigateToLine(entry.Line);
+            }
+            else
+            {
+                ReferenceNavigationRequested?.Invoke(this, new ReferencesNavigationEventArgs
+                {
+                    FilePath = entry.FilePath,
+                    Line     = entry.Line   + 1,
+                    Column   = entry.Column + 1
+                });
+            }
+        }
+
+        // ── Keyboard-shortcut definition navigation helpers ───────────────────────
+
+        /// <summary>
+        /// Invoked by F12 — resolves definition at the caret and navigates.
+        /// </summary>
+        private async Task GoToDefinitionAtCaretAsync()
+        {
+            var word = GetWordAtCaret();
+            if (string.IsNullOrEmpty(word)) return;
+            var zone = new SymbolHitZone(_cursorLine, _cursorColumn,
+                _cursorColumn + word.Length, word, string.Empty, 0, 0, false);
+            await NavigateToDefinitionAsync(zone).ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Invoked by Alt+F12 — shows a Peek Definition popup below the caret.
+        /// </summary>
+        private async Task ShowPeekDefinitionAsync()
+        {
+            _foldPeekPopup ??= new FoldPeekPopup();
+            _foldPeekPopup.GoToDefinitionRequested = () => _ = GoToDefinitionAtCaretAsync();
+
+            var word = _hoveredSymbolZone?.SymbolName ?? GetWordAtCaret();
+
+            await _foldPeekPopup.ShowDefinitionAsync(this, word, async () =>
+            {
+                if (_lspClient?.IsInitialized == true && _currentFilePath is not null)
+                {
+                    using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    var locs = await _lspClient.DefinitionAsync(
+                        _currentFilePath, _cursorLine, _cursorColumn, cts.Token).ConfigureAwait(true);
+                    if (locs.Count > 0)
+                    {
+                        var loc  = locs[0];
+                        bool isMeta = loc.Uri.Contains("metadata:", StringComparison.OrdinalIgnoreCase);
+                        if (!isMeta && Uri.TryCreate(loc.Uri, UriKind.Absolute, out var u)
+                            && System.IO.File.Exists(u.LocalPath))
+                        {
+                            var text = await System.IO.File.ReadAllTextAsync(u.LocalPath).ConfigureAwait(true);
+                            return (text, loc.StartLine + 1);
+                        }
+                    }
+                }
+                return (string.Empty, 0);
+            }).ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Invoked by Ctrl+F12 — go to all implementations of the symbol at caret.
+        /// </summary>
+        private async Task GoToImplementationAtCaretAsync()
+        {
+            if (_lspClient?.IsInitialized != true || _currentFilePath is null) return;
+            PushNavigation(_currentFilePath, _cursorLine, _cursorColumn);
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+            try
+            {
+                var locs = await _lspClient.ImplementationAsync(
+                    _currentFilePath, _cursorLine, _cursorColumn, cts.Token).ConfigureAwait(true);
+                if (locs.Count > 0)
+                    await HandleDefinitionLocationsAsync(locs, GetWordAtCaret()).ConfigureAwait(true);
+            }
+            catch { /* LSP unavailable — silently ignore */ }
+        }
+
         /// Feeds LSP push diagnostics into the editor's validation error list.
         /// Always called on the UI thread (guaranteed by LspClientImpl).
         /// </summary>
@@ -9234,6 +9420,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private async Task NavigateToDefinitionAsync(SymbolHitZone zone)
         {
             _quickInfoPopup?.Hide();
+            PushNavigation(_currentFilePath, _cursorLine, _cursorColumn);
 
             // 1. Already resolved to an in-project file — navigate directly.
             if (!string.IsNullOrEmpty(zone.TargetFilePath) && !zone.IsExternal)
@@ -9350,13 +9537,19 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
 
             var loc = locations[0];
-            bool isMetadata = loc.Uri.StartsWith("metadata:", StringComparison.OrdinalIgnoreCase)
-                           || loc.Uri.StartsWith("omnisharp-metadata:", StringComparison.OrdinalIgnoreCase);
+            bool isMetadata = loc.Uri.StartsWith("metadata:",            StringComparison.OrdinalIgnoreCase)
+                           || loc.Uri.StartsWith("omnisharp-metadata:",  StringComparison.OrdinalIgnoreCase)
+                           || loc.Uri.StartsWith("csharp-metadata:",     StringComparison.OrdinalIgnoreCase)
+                           || loc.Uri.StartsWith("dotnet://metadata",    StringComparison.OrdinalIgnoreCase)
+                           || loc.Uri.Contains("?assembly=",             StringComparison.OrdinalIgnoreCase);
 
             if (isMetadata)
             {
-                // Pass the raw URI so the host can parse assembly/type from the query string.
-                HandleExternalDefinitionAsync(symbolName, loc.Uri);
+                // Pass the raw URI + target line so the host can parse assembly/type and
+                // scroll directly to the declaration after decompilation.
+                HandleExternalDefinitionAsync(symbolName, loc.Uri,
+                    targetLine:   loc.StartLine + 1,
+                    targetColumn: loc.StartColumn + 1);
                 return;
             }
 
@@ -9388,10 +9581,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// Fires <see cref="GoToExternalDefinitionRequested"/> so the IDE host can route
         /// to AssemblyExplorer or open a decompiled-source tab.
         /// </summary>
-        private void HandleExternalDefinitionAsync(string symbolName, string? metadataUri = null)
+        private void HandleExternalDefinitionAsync(
+            string symbolName,
+            string? metadataUri  = null,
+            int     targetLine   = 0,
+            int     targetColumn = 0)
         {
             GoToExternalDefinitionRequested?.Invoke(this,
-                new GoToExternalDefinitionEventArgs(symbolName, _currentFilePath, metadataUri));
+                new GoToExternalDefinitionEventArgs(
+                    symbolName, _currentFilePath, metadataUri, targetLine, targetColumn));
         }
 
         // ═══════════════════════════════════════════════════════════════════════
@@ -9481,14 +9679,27 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         public string? MetadataUri { get; }
 
+        /// <summary>
+        /// 1-based line number within the decompiled source to navigate to after opening.
+        /// 0 means unknown — host should call <c>FindSymbolLineInSource</c> as fallback.
+        /// </summary>
+        public int TargetLine { get; }
+
+        /// <summary>1-based column within <see cref="TargetLine"/>. 0 means unknown.</summary>
+        public int TargetColumn { get; }
+
         internal GoToExternalDefinitionEventArgs(
             string  symbolName,
             string? sourceFilePath,
-            string? metadataUri = null)
+            string? metadataUri  = null,
+            int     targetLine   = 0,
+            int     targetColumn = 0)
         {
             SymbolName     = symbolName;
             SourceFilePath = sourceFilePath;
             MetadataUri    = metadataUri;
+            TargetLine     = targetLine;
+            TargetColumn   = targetColumn;
         }
     }
 

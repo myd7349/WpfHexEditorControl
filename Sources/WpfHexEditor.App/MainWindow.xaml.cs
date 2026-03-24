@@ -48,6 +48,7 @@ using WpfHexEditor.Editor.ChangesetEditor;
 using WpfHexEditor.Editor.MarkdownEditor;
 using WpfHexEditor.Editor.ClassDiagram;
 using WpfHexEditor.Editor.XamlDesigner;
+using WpfHexEditor.Editor.ResxEditor;
 using WpfHexEditor.Panels.IDE;
 using WpfHexEditor.Panels.IDE.Panels;
 using WpfHexEditor.Panels.IDE.Services;
@@ -515,6 +516,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _editorRegistry.Register(new ChangesetEditorFactory());
         _editorRegistry.Register(new ClassDiagramFactory());
         _editorRegistry.Register(new XamlDesignerFactory());
+        _editorRegistry.Register(new ResxEditorFactory());
 
         // Register VS-style project templates
         ProjectTemplateRegistry.RegisterDefaults();
@@ -1656,9 +1658,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (assemblyName is null)
         {
-            OutputLogger.Info(
-                $"[Go to Definition] '{e.SymbolName}' is in an external assembly. " +
-                "Load the assembly in Assembly Explorer to navigate to its decompiled source.");
+            // No metadata URI — symbol is either in-project (workspace scan missed it)
+            // or LSP isn't active. "Load in Assembly Explorer" only applies when we have
+            // an actual external assembly reference.
+            var hint = e.MetadataUri is null
+                ? "Try opening the declaring file directly, or ensure the LSP server is running."
+                : "Load the assembly in Assembly Explorer to navigate to its decompiled source.";
+            OutputLogger.Info($"[Go to Definition] Definition of '{e.SymbolName}' not found. {hint}");
             return;
         }
 
@@ -1682,34 +1688,46 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         try
         {
-            // Analyze + decompile on a background thread.
-            var engine = new AssemblyAnalysisEngine();
-            var model  = await engine.AnalyzeAsync(dllPath).ConfigureAwait(true);
-
-            var emitter    = new CSharpSkeletonEmitter();
-            var targetType = model.Types.FirstOrDefault(t =>
-                string.Equals(t.Name,     typeName ?? e.SymbolName, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(t.FullName, typeName ?? e.SymbolName, StringComparison.OrdinalIgnoreCase));
-
-            var source = targetType is not null
-                ? emitter.EmitType(targetType)
-                : emitter.EmitAssemblyInfo(model);   // fallback: show assembly overview
-
-            // Create a read-only TextEditor tab with the decompiled C# skeleton.
-            var label = targetType?.Name ?? assemblyName;
-            var te    = new WpfHexEditor.Editor.TextEditor.Controls.TextEditor();
-            te.SetContentDirect(source, readOnly: true, languageName: "C#");
-
-            _dockingAdapter!.AddDocumentTab(uiId, te,
-                new DocumentDescriptor { Title = $"{label} (decompiled)", CanClose = true });
-
-            // Scroll to the line that declares the requested symbol.
-            if (targetType is not null)
+            // Try full ILSpy decompilation first (real method bodies).
+            // Fall back to the reflection-based skeleton emitter if ILSpy fails.
+            string source;
+            try
             {
-                int targetLine = FindSymbolLineInSource(source, e.SymbolName);
-                if (targetLine > 0)
-                    te.GoToLine(targetLine);
+                source = await IlSpyTypeDecompiler
+                    .DecompileTypeAsync(dllPath, typeName, System.Threading.CancellationToken.None)
+                    .ConfigureAwait(true);
             }
+            catch
+            {
+                var engine     = new AssemblyAnalysisEngine();
+                var model      = await engine.AnalyzeAsync(dllPath).ConfigureAwait(true);
+                var emitter    = new CSharpSkeletonEmitter();
+                var targetType = model.Types.FirstOrDefault(t =>
+                    string.Equals(t.Name,     typeName ?? e.SymbolName, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(t.FullName, typeName ?? e.SymbolName, StringComparison.OrdinalIgnoreCase));
+                source = targetType is not null
+                    ? emitter.EmitType(targetType)
+                    : emitter.EmitAssemblyInfo(model);
+            }
+
+            // Open a read-only CodeEditor tab (full C# syntax highlighting).
+            var shortType = (typeName ?? assemblyName).Split('.').Last().Split('`')[0];
+            var ce        = new CodeEditorControl();
+            ce.LoadText(source);
+            ce.IsReadOnly = true;
+            ce.Language   = WpfHexEditor.ProjectSystem.Languages.LanguageRegistry.Instance
+                               .FindById("csharp");
+
+            _dockingAdapter!.AddDocumentTab(uiId, ce,
+                new DocumentDescriptor { Title = $"[decompiled] {shortType}", CanClose = true });
+
+            // Navigate to the target line: prefer LSP-supplied line, then symbol scan.
+            int targetLine = e.TargetLine > 0
+                ? e.TargetLine
+                : FindSymbolLineInSource(source, e.SymbolName);
+            if (targetLine > 0 && ce is INavigableDocument nav)
+                Dispatcher.InvokeAsync(() => nav.NavigateTo(targetLine - 1, 0),
+                    System.Windows.Threading.DispatcherPriority.Loaded);
         }
         catch (Exception ex)
         {
@@ -1719,8 +1737,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Parses the assembly name and type name from an OmniSharp / LSP metadata URI.
-    /// Format: omnisharp-metadata:?assembly=System.Console&amp;type=System.Console&amp;...
+    /// Parses the assembly name and type name from an OmniSharp / Roslyn LSP metadata URI.
+    /// Supports two formats:
+    ///   Format A (query-string): omnisharp-metadata:?assembly=System.Console&amp;type=System.Console
+    ///   Format B (path-based):   csharp-metadata://System.Collections.Concurrent/ConcurrentDictionary.cs
     /// Returns (null, null) when the URI is null or cannot be parsed.
     /// </summary>
     private static (string? AssemblyName, string? TypeName) ParseMetadataUri(string? uri)
@@ -1729,28 +1749,37 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         try
         {
+            // Format A: query-string  ?assembly=X&type=Y
             int q = uri.IndexOf('?');
-            if (q < 0) return (null, null);
-
-            string? assemblyName = null, typeName = null;
-
-            foreach (var part in uri.AsSpan(q + 1).ToString().Split('&'))
+            if (q >= 0)
             {
-                int idx = part.IndexOf('=');
-                if (idx < 0) continue;
-
-                var key   = part[..idx];
-                var value = Uri.UnescapeDataString(part[(idx + 1)..]);
-
-                if (key.Equals("assembly", StringComparison.OrdinalIgnoreCase))
-                    assemblyName = value;
-                else if (key.Equals("type", StringComparison.OrdinalIgnoreCase))
-                    typeName = value;
+                string? asm = null, type = null;
+                foreach (var part in uri[(q + 1)..].Split('&'))
+                {
+                    int eq = part.IndexOf('=');
+                    if (eq < 0) continue;
+                    var key = part[..eq];
+                    var val = Uri.UnescapeDataString(part[(eq + 1)..]);
+                    if (key.Equals("assembly", StringComparison.OrdinalIgnoreCase)) asm  = val;
+                    if (key.Equals("type",     StringComparison.OrdinalIgnoreCase)) type = val;
+                }
+                if (asm is not null) return (asm, type);
             }
 
-            return (assemblyName, typeName);
+            // Format B: path-based  csharp-metadata://AssemblyName/TypeName.cs
+            if (Uri.TryCreate(uri, UriKind.Absolute, out var parsed))
+            {
+                var asmFromHost = parsed.Host is { Length: > 0 } h ? Uri.UnescapeDataString(h) : null;
+                var segments    = parsed.AbsolutePath.Trim('/').Split('/');
+                var asmFromPath = segments.Length > 0 ? Uri.UnescapeDataString(segments[0]) : null;
+                var typeRaw     = segments.Length > 1 ? Uri.UnescapeDataString(segments[1]) : null;
+                var type        = typeRaw is not null ? Path.GetFileNameWithoutExtension(typeRaw) : null;
+                var asm         = asmFromHost ?? asmFromPath;
+                if (!string.IsNullOrEmpty(asm)) return (asm, type);
+            }
         }
-        catch { return (null, null); }
+        catch { /* fall through */ }
+        return (null, null);
     }
 
     /// <summary>
@@ -1773,7 +1802,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (File.Exists(runtimePath)) return runtimePath;
         }
 
-        // 3. NuGet package cache — first match under %USERPROFILE%\.nuget\packages.
+        // 3. .NET shared runtime (covers BCL facade assemblies not in the runtime dir).
+        var dotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT")
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet");
+        foreach (var flavor in new[] { "Microsoft.NETCore.App", "Microsoft.WindowsDesktop.App" })
+        {
+            var shared = Path.Combine(dotnetRoot, "shared", flavor);
+            if (!Directory.Exists(shared)) continue;
+            var latest = Directory.EnumerateDirectories(shared)
+                .OrderByDescending(d => d, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+            if (latest is null) continue;
+            var candidate = Path.Combine(latest, assemblyName + ".dll");
+            if (File.Exists(candidate)) return candidate;
+        }
+
+        // 4. NuGet package cache — first match under %USERPROFILE%\.nuget\packages.
         var nugetCache = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             ".nuget", "packages");

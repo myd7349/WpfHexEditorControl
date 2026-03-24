@@ -30,7 +30,7 @@ internal static class WorkspaceFileCache
 {
     // ── Constants ─────────────────────────────────────────────────────────────
 
-    private const int  MaxFiles     = 500;
+    private const int  MaxFiles     = 5_000;
     private const long MaxFileBytes = 2L * 1024 * 1024; // 2 MB
 
     // ── State ─────────────────────────────────────────────────────────────────

@@ -606,4 +606,32 @@
     <SolidColorBrush x:Key="MKT_InstalledBadge"         Color="#107C10" />
     <SolidColorBrush x:Key="MKT_StarFilled"             Color="#CA8A00" />
     <SolidColorBrush x:Key="MKT_StarEmpty"              Color="#8A8070" />
+    <!-- Peek Definition popup tokens (GD_*) -->
+    <SolidColorBrush x:Key="GD_PeekBackground"       Color="#1E1E1E" />
+    <SolidColorBrush x:Key="GD_PeekBorder"           Color="#454545" />
+    <SolidColorBrush x:Key="GD_PeekTitleBar"         Color="#2D2D2D" />
+    <SolidColorBrush x:Key="GD_PeekTitleForeground"  Color="#D4D4D4" />
+    <SolidColorBrush x:Key="GD_PeekNavLinkForeground" Color="#569CD6" />
+
+    <!-- RESX Editor tokens (RES_*) â€” inserted by Add-ResxTokens.ps1 -->
+    <SolidColorBrush x:Key="RES_BackgroundBrush"          Color="#1A2216" />
+    <SolidColorBrush x:Key="RES_ForegroundBrush"          Color="#C8D8C0" />
+    <SolidColorBrush x:Key="RES_HeaderBackgroundBrush"    Color="#243020" />
+    <SolidColorBrush x:Key="RES_HeaderForegroundBrush"    Color="#7A9A72" />
+    <SolidColorBrush x:Key="RES_RowAlternateBrush"        Color="#162012" />
+    <SolidColorBrush x:Key="RES_SelectedRowBrush"         Color="#2E5A22" />
+    <SolidColorBrush x:Key="RES_SelectedRowForegroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="RES_HoverRowBrush"            Color="#1E2C1A" />
+    <SolidColorBrush x:Key="RES_StringTypeBadgeBrush"     Color="#2E7D32" />
+    <SolidColorBrush x:Key="RES_ImageTypeBadgeBrush"      Color="#1565C0" />
+    <SolidColorBrush x:Key="RES_BinaryTypeBadgeBrush"     Color="#E65100" />
+    <SolidColorBrush x:Key="RES_FileRefTypeBadgeBrush"    Color="#6A1B9A" />
+    <SolidColorBrush x:Key="RES_DuplicateKeyBrush"        Color="#C62828" />
+    <SolidColorBrush x:Key="RES_MissingTranslationBrush"  Color="#F57F17" />
+    <SolidColorBrush x:Key="RES_CellEditorBackgroundBrush" Color="#1A2216" />
+    <SolidColorBrush x:Key="RES_CommentForegroundBrush"   Color="#6AAA5A" />
+    <SolidColorBrush x:Key="RES_SeparatorBrush"           Color="#2E3E28" />
+    <SolidColorBrush x:Key="RES_LocaleMatchBrush"         Color="#1A3A18" />
+    <SolidColorBrush x:Key="RES_LocaleMissingBrush"       Color="#3A1A18" />
+    <SolidColorBrush x:Key="RES_ToolbarBackgroundBrush"   Color="#243020" />
 </ResourceDictionary>

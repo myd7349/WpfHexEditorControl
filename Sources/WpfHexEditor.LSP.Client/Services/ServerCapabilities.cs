@@ -21,13 +21,15 @@ namespace WpfHexEditor.LSP.Client.Services;
 /// </summary>
 internal sealed class ServerCapabilities
 {
-    internal bool HasCompletionProvider     { get; init; }
-    internal bool HasHoverProvider          { get; init; }
-    internal bool HasDefinitionProvider     { get; init; }
-    internal bool HasReferencesProvider     { get; init; }
-    internal bool HasSignatureHelpProvider  { get; init; }
-    internal bool HasCodeActionProvider     { get; init; }
-    internal bool HasRenameProvider         { get; init; }
+    internal bool HasCompletionProvider       { get; init; }
+    internal bool HasHoverProvider            { get; init; }
+    internal bool HasDefinitionProvider       { get; init; }
+    internal bool HasReferencesProvider       { get; init; }
+    internal bool HasSignatureHelpProvider    { get; init; }
+    internal bool HasCodeActionProvider       { get; init; }
+    internal bool HasRenameProvider           { get; init; }
+    internal bool HasImplementationProvider   { get; init; }
+    internal bool HasTypeDefinitionProvider   { get; init; }
 
     /// <summary>
     /// Parses the capabilities from the raw <c>initialize</c> response node.
@@ -42,13 +44,15 @@ internal sealed class ServerCapabilities
 
         return new ServerCapabilities
         {
-            HasCompletionProvider    = IsEnabled(caps["completionProvider"]),
-            HasHoverProvider         = IsEnabled(caps["hoverProvider"]),
-            HasDefinitionProvider    = IsEnabled(caps["definitionProvider"]),
-            HasReferencesProvider    = IsEnabled(caps["referencesProvider"]),
-            HasSignatureHelpProvider = IsEnabled(caps["signatureHelpProvider"]),
-            HasCodeActionProvider    = IsEnabled(caps["codeActionProvider"]),
-            HasRenameProvider        = IsEnabled(caps["renameProvider"]),
+            HasCompletionProvider     = IsEnabled(caps["completionProvider"]),
+            HasHoverProvider          = IsEnabled(caps["hoverProvider"]),
+            HasDefinitionProvider     = IsEnabled(caps["definitionProvider"]),
+            HasReferencesProvider     = IsEnabled(caps["referencesProvider"]),
+            HasSignatureHelpProvider  = IsEnabled(caps["signatureHelpProvider"]),
+            HasCodeActionProvider     = IsEnabled(caps["codeActionProvider"]),
+            HasRenameProvider         = IsEnabled(caps["renameProvider"]),
+            HasImplementationProvider = IsEnabled(caps["implementationProvider"]),
+            HasTypeDefinitionProvider = IsEnabled(caps["typeDefinitionProvider"]),
         };
     }
 
@@ -64,12 +68,14 @@ internal sealed class ServerCapabilities
 
     private static ServerCapabilities AllEnabled() => new()
     {
-        HasCompletionProvider    = true,
-        HasHoverProvider         = true,
-        HasDefinitionProvider    = true,
-        HasReferencesProvider    = true,
-        HasSignatureHelpProvider = true,
-        HasCodeActionProvider    = true,
-        HasRenameProvider        = true,
+        HasCompletionProvider     = true,
+        HasHoverProvider          = true,
+        HasDefinitionProvider     = true,
+        HasReferencesProvider     = true,
+        HasSignatureHelpProvider  = true,
+        HasCodeActionProvider     = true,
+        HasRenameProvider         = true,
+        HasImplementationProvider = true,
+        HasTypeDefinitionProvider = true,
     };
 }

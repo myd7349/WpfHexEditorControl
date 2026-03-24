@@ -135,6 +135,22 @@ public sealed class LspClientImpl : ILspClient
         return _definition.GetReferencesAsync(filePath, line, column, ct);
     }
 
+    public Task<IReadOnlyList<LspLocation>> ImplementationAsync(
+        string filePath, int line, int column, CancellationToken ct = default)
+    {
+        if (_definition is null || !Capabilities.HasImplementationProvider)
+            return Task.FromResult<IReadOnlyList<LspLocation>>(Array.Empty<LspLocation>());
+        return _definition.GetImplementationAsync(filePath, line, column, ct);
+    }
+
+    public Task<IReadOnlyList<LspLocation>> TypeDefinitionAsync(
+        string filePath, int line, int column, CancellationToken ct = default)
+    {
+        if (_definition is null || !Capabilities.HasTypeDefinitionProvider)
+            return Task.FromResult<IReadOnlyList<LspLocation>>(Array.Empty<LspLocation>());
+        return _definition.GetTypeDefinitionAsync(filePath, line, column, ct);
+    }
+
     // ── ILspClient: signature help ─────────────────────────────────────────────
 
     public async Task<string?> SignatureHelpAsync(

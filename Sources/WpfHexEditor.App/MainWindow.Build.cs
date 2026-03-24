@@ -133,7 +133,10 @@ public partial class MainWindow
         _configManager       = new ConfigurationManager();
         _incrementalTracker  = new IncrementalBuildTracker(_ideEventBus);
         _buildFileWatcher    = new BuildFileWatcher(_incrementalTracker);
-        _buildSystem         = new BuildSystem.BuildSystem(_solutionManager, _ideEventBus, _configManager, _incrementalTracker);
+        _buildSystem         = new BuildSystem.BuildSystem(_solutionManager, _ideEventBus, _configManager, _incrementalTracker)
+        {
+            MaxParallelProjects = AppSettingsService.Instance.Current.BuildRun.MaxParallelProjects,
+        };
         _startupRunner   = new StartupProjectRunner(_solutionManager, _buildSystem, _ideEventBus, _configManager,
             abortOnBuildError: () => AppSettingsService.Instance.Current.BuildRun.OnRunWhenBuildError == RunOnBuildError.DoNotLaunch);
 

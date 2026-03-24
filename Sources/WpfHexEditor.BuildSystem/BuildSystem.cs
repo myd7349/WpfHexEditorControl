@@ -19,6 +19,7 @@
 //     - CancellationToken plumbed through all async calls.
 // ==========================================================
 
+using System.Collections.Concurrent;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Events;
 using WpfHexEditor.Events.IDEEvents;
@@ -38,6 +39,12 @@ public sealed class BuildSystem : IBuildSystem
 
     private readonly List<IBuildAdapter>    _adapters = [];
     private CancellationTokenSource?        _activeCts;
+
+    /// <summary>
+    /// Maximum number of project builds that may execute concurrently.
+    /// Defaults to 4; set from <c>AppSettings.MaxParallelProjects</c> before building.
+    /// </summary>
+    public int MaxParallelProjects { get; set; } = 4;
 
     // -----------------------------------------------------------------------
 
@@ -286,61 +293,90 @@ public sealed class BuildSystem : IBuildSystem
         var startedAt  = DateTime.Now;
         var targetList = targets.ToList(); // materialise once to get total count
         var sw         = System.Diagnostics.Stopwatch.StartNew();
-        var errors     = new List<BuildDiagnostic>();
-        var warnings   = new List<BuildDiagnostic>();
-        var succeeded  = 0;
-        var failed     = 0;
+        // Thread-safe accumulation across parallel builds.
+        var bagErrors   = new ConcurrentBag<BuildDiagnostic>();
+        var bagWarnings = new ConcurrentBag<BuildDiagnostic>();
+        // int[] of length 1 is a heap-allocated cell that can be passed by-ref into Interlocked.
+        int[] cntSucceeded = [0];
+        int[] cntFailed    = [0];
+        int[] cntCompleted = [0];
+
+        // Declare list aliases used by the catch/finally blocks below.
+        List<BuildDiagnostic> errors   = [];
+        List<BuildDiagnostic> warnings = [];
+        int succeeded = 0;
+        int failed    = 0;
 
         _eventBus.Publish(new BuildStartedEvent { StartedAt = startedAt });
 
         try
         {
-            int completed = 0;
-            int total     = Math.Max(1, targetList.Count);
+            int total = Math.Max(1, targetList.Count);
+            int degree = Math.Max(1, MaxParallelProjects);
 
-            foreach (var (filePath, config) in targetList)
+            using var semaphore = new SemaphoreSlim(degree, degree);
+
+            var buildTasks = targetList.Select(async tuple =>
             {
-                linkedCts.Token.ThrowIfCancellationRequested();
-
-                var adapter = FindAdapter(filePath);
-                if (adapter is null)
+                await semaphore.WaitAsync(linkedCts.Token).ConfigureAwait(false);
+                try
                 {
-                    errors.Add(new BuildDiagnostic(filePath, null, null, "BUILD001",
-                        $"No build adapter found for '{System.IO.Path.GetFileName(filePath)}'.",
-                        DiagnosticSeverity.Error));
-                    failed++;
-                    break; // no adapter — treat as hard failure
-                }
+                    linkedCts.Token.ThrowIfCancellationRequested();
 
-                var progress = new Progress<string>(line =>
-                    _eventBus.Publish(new BuildOutputLineEvent { Line = line }));
-
-                var result = await adapter.BuildAsync(filePath, config, progress, linkedCts.Token);
-                errors.AddRange(result.Errors);
-                warnings.AddRange(result.Warnings);
-
-                if (result.IsSuccess)
-                {
-                    succeeded++;
-                    // Record a clean baseline for incremental tracking.
-                    if (_tracker is not null)
+                    var (filePath, config) = tuple;
+                    var adapter = FindAdapter(filePath);
+                    if (adapter is null)
                     {
-                        var projId = _solutionManager.CurrentSolution?.Projects
-                            .FirstOrDefault(p => string.Equals(p.ProjectFilePath, filePath,
-                                StringComparison.OrdinalIgnoreCase))?.Id;
-                        if (projId is not null) _tracker.RecordSuccess(projId);
+                        bagErrors.Add(new BuildDiagnostic(filePath, null, null, "BUILD001",
+                            $"No build adapter found for '{System.IO.Path.GetFileName(filePath)}'.",
+                            DiagnosticSeverity.Error));
+                        Interlocked.Increment(ref cntFailed[0]);
+                        linkedCts.Cancel(); // hard failure — abort remaining work
+                        return;
                     }
-                }
-                else
-                    failed++;
 
-                completed++;
-                _eventBus.Publish(new BuildProgressUpdatedEvent
+                    var progress = new Progress<string>(line =>
+                        _eventBus.Publish(new BuildOutputLineEvent { Line = line }));
+
+                    var result = await adapter.BuildAsync(filePath, config, progress, linkedCts.Token)
+                                              .ConfigureAwait(false);
+                    foreach (var e in result.Errors)   bagErrors.Add(e);
+                    foreach (var w in result.Warnings) bagWarnings.Add(w);
+
+                    if (result.IsSuccess)
+                    {
+                        Interlocked.Increment(ref cntSucceeded[0]);
+                        if (_tracker is not null)
+                        {
+                            var projId = _solutionManager.CurrentSolution?.Projects
+                                .FirstOrDefault(p => string.Equals(p.ProjectFilePath, filePath,
+                                    StringComparison.OrdinalIgnoreCase))?.Id;
+                            if (projId is not null) _tracker.RecordSuccess(projId);
+                        }
+                    }
+                    else
+                        Interlocked.Increment(ref cntFailed[0]);
+
+                    var done = Interlocked.Increment(ref cntCompleted[0]);
+                    _eventBus.Publish(new BuildProgressUpdatedEvent
+                    {
+                        ProgressPercent = done * 100 / total,
+                        StatusText      = $"{System.IO.Path.GetFileNameWithoutExtension(filePath)} — {(result.IsSuccess ? "succeeded" : "failed")}",
+                    });
+                }
+                finally
                 {
-                    ProgressPercent = completed * 100 / total,
-                    StatusText      = $"{System.IO.Path.GetFileNameWithoutExtension(filePath)} — {(result.IsSuccess ? "succeeded" : "failed")}",
-                });
-            }
+                    semaphore.Release();
+                }
+            }).ToList();
+
+            await Task.WhenAll(buildTasks);
+
+            // Materialise to stable lists for the post-build event publishing below.
+            errors    = [.. bagErrors];
+            warnings  = [.. bagWarnings];
+            succeeded = cntSucceeded[0];
+            failed    = cntFailed[0];
 
             sw.Stop();
             var skipped = targetList.Count - succeeded - failed;
@@ -375,14 +411,16 @@ public sealed class BuildSystem : IBuildSystem
         {
             sw.Stop();
             _eventBus.Publish(new BuildCancelledEvent());
-            return new BuildResult(false, errors, warnings, sw.Elapsed);
+            // Include any partial diagnostics collected before cancellation.
+            return new BuildResult(false, [.. bagErrors], [.. bagWarnings], sw.Elapsed);
         }
         catch (Exception ex)
         {
             // Surface unexpected adapter / infrastructure failures so they appear in the
             // Output panel instead of being silently swallowed by the caller's fire-and-forget.
             sw.Stop();
-            errors.Add(new BuildDiagnostic(
+            var partialErrors = bagErrors.ToList();
+            partialErrors.Add(new BuildDiagnostic(
                 FilePath: null, Line: null, Column: null,
                 Code: "BUILD002",
                 Message: $"Build engine error: {ex.GetType().Name}: {ex.Message}",
@@ -390,15 +428,15 @@ public sealed class BuildSystem : IBuildSystem
             _eventBus.Publish(new BuildOutputLineEvent { Line = $"  BUILD002: {ex}" });
             _eventBus.Publish(new BuildFailedEvent
             {
-                ErrorCount     = 1,
-                Warnings       = 0,
+                ErrorCount     = partialErrors.Count,
+                Warnings       = bagWarnings.Count,
                 Duration       = sw.Elapsed,
                 StartedAt      = startedAt,
-                SucceededCount = succeeded,
-                FailedCount    = failed + 1,
-                SkippedCount   = targetList.Count - succeeded - failed - 1,
+                SucceededCount = cntSucceeded[0],
+                FailedCount    = cntFailed[0] + 1,
+                SkippedCount   = targetList.Count - cntSucceeded[0] - cntFailed[0] - 1,
             });
-            return new BuildResult(false, errors, warnings, sw.Elapsed);
+            return new BuildResult(false, partialErrors, [.. bagWarnings], sw.Elapsed);
         }
         finally
         {
