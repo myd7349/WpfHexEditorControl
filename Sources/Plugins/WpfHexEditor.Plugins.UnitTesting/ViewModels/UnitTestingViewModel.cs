@@ -14,6 +14,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using WpfHexEditor.Plugins.UnitTesting.Models;
@@ -314,9 +315,15 @@ public sealed class UnitTestingViewModel : INotifyPropertyChanged
         return node;
     }
 
-    /// <summary>Walks the tree and sets IsVisible on every node based on current filter/search.</summary>
+    /// <summary>
+    /// Walks the tree and sets IsVisible on every node based on current filter/search.
+    /// Supports structured <c>key:value</c> queries (état/nom/classe/projet/erreur/espace).
+    /// </summary>
     private void ApplyFilter()
     {
+        var (filterKey, filterValue) = ParseSearchToken(_searchText);
+        bool hasFilter = !string.IsNullOrWhiteSpace(filterValue);
+
         foreach (var proj in ProjectNodes)
         {
             bool anyProjVisible = false;
@@ -328,9 +335,19 @@ public sealed class UnitTestingViewModel : INotifyPropertyChanged
                     bool matchOutcome = _filterMode == "All"
                         || test.Outcome == TestOutcome.NotRun
                         || test.Outcome.ToString() == _filterMode;
-                    bool matchSearch  = string.IsNullOrWhiteSpace(_searchText)
-                        || test.Display.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
-                        || cls.FullClassName.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+
+                    bool matchSearch = !hasFilter || filterKey switch
+                    {
+                        "état"   or "etat"  => MatchOutcome(test, filterValue),
+                        "nom"               => test.Display.Contains(filterValue, StringComparison.OrdinalIgnoreCase),
+                        "classe"            => cls.FullClassName.Contains(filterValue, StringComparison.OrdinalIgnoreCase),
+                        "projet"            => proj.ProjectName.Contains(filterValue, StringComparison.OrdinalIgnoreCase),
+                        "erreur"            => test.ErrorMessage?.Contains(filterValue, StringComparison.OrdinalIgnoreCase) == true,
+                        "espace"            => GetNamespace(cls.FullClassName).Contains(filterValue, StringComparison.OrdinalIgnoreCase),
+                        _                   => test.Display.Contains(filterValue, StringComparison.OrdinalIgnoreCase)
+                                               || cls.FullClassName.Contains(filterValue, StringComparison.OrdinalIgnoreCase),
+                    };
+
                     test.IsVisible = matchOutcome && matchSearch;
                     if (test.IsVisible) anyClsVisible = true;
                 }
@@ -339,6 +356,30 @@ public sealed class UnitTestingViewModel : INotifyPropertyChanged
             }
             proj.IsVisible = anyProjVisible || proj.IsRunning;
         }
+    }
+
+    private static (string key, string value) ParseSearchToken(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return (string.Empty, string.Empty);
+        var colon = text.IndexOf(':');
+        if (colon <= 0) return (string.Empty, text.Trim());
+        return (text[..colon].Trim().ToLowerInvariant(), text[(colon + 1)..].Trim());
+    }
+
+    private static bool MatchOutcome(TestResultRow test, string value) =>
+        value.ToLowerInvariant() switch
+        {
+            "réussite" or "reussite" or "passed" or "ok"  => test.Outcome == TestOutcome.Passed,
+            "échec"    or "echec"    or "failed"  or "fail" => test.Outcome == TestOutcome.Failed,
+            "ignoré"   or "ignore"   or "skipped" or "skip" => test.Outcome == TestOutcome.Skipped,
+            _                                               => test.Outcome.ToString()
+                                                               .Contains(value, StringComparison.OrdinalIgnoreCase),
+        };
+
+    private static string GetNamespace(string fullClassName)
+    {
+        var dot = fullClassName.LastIndexOf('.');
+        return dot > 0 ? fullClassName[..dot] : string.Empty;
     }
 
     // ── INotifyPropertyChanged ────────────────────────────────────────────────
@@ -370,13 +411,14 @@ public sealed class TestProjectNode : INotifyPropertyChanged
 
     public bool IsExpanded      { get => _isExpanded;      set => Set(ref _isExpanded,      value); }
     public bool IsRunning       { get => _isRunning;       set { Set(ref _isRunning,       value); Raise(nameof(OutcomeGlyph)); } }
-    public int  PassCount       { get => _passCount;       set { Set(ref _passCount,       value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); } }
-    public int  FailCount       { get => _failCount;       set { Set(ref _failCount,       value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); Raise(nameof(HasFailures)); } }
-    public int  SkipCount       { get => _skipCount;       set { Set(ref _skipCount,       value); Raise(nameof(TotalCount)); } }
+    public int  PassCount       { get => _passCount;       set { Set(ref _passCount,       value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); Raise(nameof(HasRun)); } }
+    public int  FailCount       { get => _failCount;       set { Set(ref _failCount,       value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); Raise(nameof(HasFailures)); Raise(nameof(HasRun)); } }
+    public int  SkipCount       { get => _skipCount;       set { Set(ref _skipCount,       value); Raise(nameof(TotalCount)); Raise(nameof(HasRun)); } }
     public int  NotRunCount     { get => _notRunCount;     set { Set(ref _notRunCount,     value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); } }
     public int  TotalDurationMs { get => _totalDurationMs; set { Set(ref _totalDurationMs, value); Raise(nameof(TotalDurationText)); } }
     public int  TotalCount   => PassCount + FailCount + SkipCount + NotRunCount;
     public bool HasFailures  => FailCount > 0;
+    public bool HasRun       => PassCount + FailCount + SkipCount > 0;
     public bool IsVisible    { get => _isVisible;    set => Set(ref _isVisible,   value); }
 
     public string TotalDurationText => TotalDurationMs >= 1000
@@ -387,7 +429,7 @@ public sealed class TestProjectNode : INotifyPropertyChanged
         IsRunning                    ? "\uE8A2"   // spinner
         : FailCount > 0              ? "\uEB90"   // red ✗
         : PassCount + SkipCount > 0  ? "\uE930"   // green ✓
-        : "\uE73E";                               // hollow circle = not yet run
+        : "\uE73E";                               // pending circle = not yet run
 
     public TestProjectNode(string name) => ProjectName = name;
 
@@ -404,18 +446,19 @@ public sealed class TestClassNode : INotifyPropertyChanged
     public string ShortClassName { get; }
     public ObservableCollection<TestResultRow> Tests { get; } = [];
 
-    private bool _isExpanded = true;
+    private bool _isExpanded;  // collapsed by default — expanding the project shows classes, not all tests
     private int  _passCount, _failCount, _skipCount, _notRunCount, _totalDurationMs;
     private bool _isVisible = true;
 
     public bool IsExpanded      { get => _isExpanded;      set => Set(ref _isExpanded,      value); }
-    public int  PassCount       { get => _passCount;       set { Set(ref _passCount,       value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); } }
-    public int  FailCount       { get => _failCount;       set { Set(ref _failCount,       value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); Raise(nameof(HasFailures)); } }
-    public int  SkipCount       { get => _skipCount;       set { Set(ref _skipCount,       value); Raise(nameof(TotalCount)); } }
+    public int  PassCount       { get => _passCount;       set { Set(ref _passCount,       value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); Raise(nameof(HasRun)); } }
+    public int  FailCount       { get => _failCount;       set { Set(ref _failCount,       value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); Raise(nameof(HasFailures)); Raise(nameof(HasRun)); } }
+    public int  SkipCount       { get => _skipCount;       set { Set(ref _skipCount,       value); Raise(nameof(TotalCount)); Raise(nameof(HasRun)); } }
     public int  NotRunCount     { get => _notRunCount;     set { Set(ref _notRunCount,     value); Raise(nameof(TotalCount)); Raise(nameof(OutcomeGlyph)); } }
     public int  TotalDurationMs { get => _totalDurationMs; set { Set(ref _totalDurationMs, value); Raise(nameof(TotalDurationText)); } }
     public int  TotalCount   => PassCount + FailCount + SkipCount + NotRunCount;
     public bool HasFailures  => FailCount > 0;
+    public bool HasRun       => PassCount + FailCount + SkipCount > 0;
     public bool IsVisible    { get => _isVisible;    set => Set(ref _isVisible,   value); }
 
     public string TotalDurationText => TotalDurationMs >= 1000
@@ -425,7 +468,7 @@ public sealed class TestClassNode : INotifyPropertyChanged
     public string OutcomeGlyph =>
         FailCount > 0               ? "\uEB90"   // red ✗
         : PassCount + SkipCount > 0 ? "\uE930"   // green ✓
-        : "\uE73E";                              // hollow circle = not yet run
+        : "\uE73E";                              // pending circle = not yet run
 
     public TestClassNode(string fullName)
     {
@@ -487,6 +530,9 @@ public sealed class TestResultRow : INotifyPropertyChanged
         Notify(nameof(StackTrace));
         Notify(nameof(HasDetail));
         Notify(nameof(AssemblyName));
+        Notify(nameof(SourceFile));
+        Notify(nameof(SourceLine));
+        Notify(nameof(HasSource));
     }
 
     public string      Display    { get; }
@@ -499,6 +545,10 @@ public sealed class TestResultRow : INotifyPropertyChanged
     public string? StackTrace   => _result?.StackTrace;
     public string  AssemblyName => _result?.AssemblyName ?? string.Empty;
     public bool    HasDetail    => ErrorMessage is not null || StackTrace is not null;
+
+    public string? SourceFile => _result?.SourceFile;
+    public int     SourceLine => _result?.SourceLine ?? 0;
+    public bool    HasSource  => SourceFile is not null && File.Exists(SourceFile);
 
     /// <summary>Short class name (last dot-segment) shown in the Caractéristiques column.</summary>
     public string ShortClassName

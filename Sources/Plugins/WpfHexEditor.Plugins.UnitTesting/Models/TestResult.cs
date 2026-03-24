@@ -24,4 +24,6 @@ public sealed record TestResult(
     TimeSpan    Duration,
     string?     ErrorMessage,
     string?     StackTrace,
-    string      ProjectName = "");
+    string      ProjectName  = "",
+    string?     SourceFile   = null,   // absolute path — from stack trace or project dir search
+    int         SourceLine   = 0);     // 1-based; 0 = open at top

@@ -66,12 +66,28 @@ public sealed class DotnetTestDiscoverer
         string? line;
         while ((line = await proc.StandardOutput.ReadLineAsync(ct).ConfigureAwait(false)) is not null)
         {
-            if (line.TrimStart().StartsWith("The following Tests are available",
-                    StringComparison.Ordinal))
+            if (!inList)
             {
-                inList = true;
-                continue;
+                // English header — works on all locales where dotnet ships English.
+                if (line.TrimStart().StartsWith("The following Tests are available",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    inList = true;
+                    continue;
+                }
+
+                // Locale fallback for --no-build pass: output contains NO build noise, so
+                // any 4-space-indented dotted line that appears IS a fully-qualified test name.
+                // This handles French/German/etc. locales where the header text differs.
+                if (noBuild
+                    && line.StartsWith("    ", StringComparison.Ordinal)
+                    && line.TrimStart().Contains('.'))
+                {
+                    inList = true;
+                    // fall through — first test name is on this line
+                }
             }
+
             if (inList && line.StartsWith("    ", StringComparison.Ordinal))
                 names.Add(line.Trim());
         }

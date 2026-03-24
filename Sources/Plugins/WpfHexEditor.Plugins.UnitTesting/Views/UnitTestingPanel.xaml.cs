@@ -32,6 +32,7 @@ public partial class UnitTestingPanel : UserControl
     public event EventHandler?                 StopRequested;
     public event EventHandler<string?>?        RunFailedRequested;
     public event EventHandler<TestResultRow?>? RunThisTestRequested;
+    public event EventHandler<TestResultRow?>? GoToSourceRequested;
 
     private UnitTestingViewModel Vm => (UnitTestingViewModel)DataContext;
 
@@ -76,7 +77,41 @@ public partial class UnitTestingPanel : UserControl
     // ── Search box ────────────────────────────────────────────────────────────
 
     private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
-        => Vm.SearchText = SearchBox.Text;
+    {
+        Vm.SearchText = SearchBox.Text;
+        if (!string.IsNullOrEmpty(SearchBox.Text))
+            SearchSuggestionsPopup.IsOpen = false;
+    }
+
+    private void OnSearchBoxGotFocus(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(SearchBox.Text))
+            SearchSuggestionsPopup.IsOpen = true;
+    }
+
+    private void OnSearchBoxKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key != System.Windows.Input.Key.Escape) return;
+        SearchSuggestionsPopup.IsOpen = false;
+        SearchBox.Clear();
+        Vm.SearchText = string.Empty;
+    }
+
+    private void OnFilterChipClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not string prefix) return;
+        SearchSuggestionsPopup.IsOpen = false;
+        SearchBox.Text       = prefix;
+        Vm.SearchText        = prefix;
+        SearchBox.Focus();
+        SearchBox.CaretIndex = prefix.Length;
+    }
+
+    private void OnGoToSourceClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: TestResultRow row } && row.HasSource)
+            GoToSourceRequested?.Invoke(this, row);
+    }
 
     private void OnClearSearch(object sender, RoutedEventArgs e)
     {

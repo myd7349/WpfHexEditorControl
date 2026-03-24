@@ -9,6 +9,7 @@
 // ==========================================================
 
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using WpfHexEditor.Plugins.UnitTesting.Models;
 
@@ -84,6 +85,8 @@ public static class TrxParser
                     stackTrace = ei?.Element(Ns + "StackTrace")?.Value?.Trim();
                 }
 
+                ParseSourceLocation(stackTrace, className, out var sourceFile, out var sourceLine);
+
                 results.Add(new TestResult(
                     TestName:     testName,
                     ClassName:    className,
@@ -91,7 +94,9 @@ public static class TrxParser
                     Outcome:      outcome,
                     Duration:     duration,
                     ErrorMessage: errorMsg,
-                    StackTrace:   stackTrace));
+                    StackTrace:   stackTrace,
+                    SourceFile:   sourceFile,
+                    SourceLine:   sourceLine));
             }
 
             return results;
@@ -100,5 +105,36 @@ public static class TrxParser
         {
             return [];
         }
+    }
+
+    /// <summary>
+    /// Extracts the source file path and 1-based line number from a .NET stack trace.
+    /// Prefers a frame whose file name contains the test class short name (user code first).
+    /// Falls back to the last frame with a <c>.cs:line N</c> entry.
+    /// </summary>
+    private static void ParseSourceLocation(string? stackTrace, string className,
+        out string? file, out int line)
+    {
+        file = null; line = 0;
+        if (string.IsNullOrWhiteSpace(stackTrace)) return;
+
+        var matches = Regex.Matches(stackTrace, @" in (.+\.cs):line (\d+)");
+        if (matches.Count == 0) return;
+
+        var shortClass = className.Contains('.')
+            ? className[(className.LastIndexOf('.') + 1)..]
+            : className;
+
+        Match? best = null;
+        foreach (Match m in matches)
+        {
+            if (Path.GetFileNameWithoutExtension(m.Groups[1].Value)
+                    .Equals(shortClass, StringComparison.OrdinalIgnoreCase))
+            { best = m; break; }
+        }
+        best ??= matches[^1];
+
+        file = best.Groups[1].Value.Trim();
+        line = int.TryParse(best.Groups[2].Value, out var n) ? n : 0;
     }
 }

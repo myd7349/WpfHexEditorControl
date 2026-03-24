@@ -82,6 +82,7 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         _panel.StopRequested        += (_, _)    => StopRun();
         _panel.RunFailedRequested   += (_, _)    => _ = RunFailedAsync();
         _panel.RunThisTestRequested += (_, row)  => _ = RunThisTestAsync(row);
+        _panel.GoToSourceRequested  += (_, row)  => NavigateToSource(row);
 
         // Register dockable panel.
         context.UIRegistry.RegisterPanel(
@@ -208,8 +209,9 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
                 try
                 {
-                    var results = await _runner.RunAsync(proj, testFilter, progress, ct)
-                                               .ConfigureAwait(false);
+                    var rawResults = await _runner.RunAsync(proj, testFilter, progress, ct)
+                                                  .ConfigureAwait(false);
+                    var results = EnrichWithSourcePaths(proj, rawResults);
 
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
@@ -224,7 +226,14 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                         }
                     });
                 }
-                catch (Exception ex) when (ex is not OperationCanceledException)
+                catch (OperationCanceledException)
+                {
+                    // Ensure project node spinner stops even when the run is cancelled.
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                        _vm.RemoveRunningPlaceholder());
+                    throw; // propagate so outer catch sets StatusText = "Run cancelled."
+                }
+                catch (Exception ex)
                 {
                     _context?.Output.Write("Unit Testing", $"[Error] {projName}: {ex.Message}");
                     await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -244,7 +253,13 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         }
         finally
         {
-            _vm.IsRunning = false;
+            // Dispatch to the UI thread — PropertyChanged from a background thread
+            // can be silently dropped under load, leaving the ProgressBar stuck visible.
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (_vm is not null)
+                    _vm.IsRunning = false;
+            });
             _runCts?.Dispose();
             _runCts = null;
         }
@@ -339,6 +354,61 @@ public sealed class UnitTestingPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                 || content.Contains("Microsoft.NET.Test.Sdk", StringComparison.OrdinalIgnoreCase);
         }
         catch { return false; }
+    }
+
+    private void NavigateToSource(TestResultRow? row)
+    {
+        if (row?.SourceFile is not string path) return;
+        if (row.SourceLine > 0)
+            _context?.DocumentHost.ActivateAndNavigateTo(path, row.SourceLine, column: 1);
+        else
+            _context?.DocumentHost.OpenDocument(path);
+    }
+
+    /// <summary>
+    /// For tests whose <see cref="TestResult.SourceFile"/> is null (e.g. passing tests with no
+    /// stack trace), searches the project directory for a <c>.cs</c> file matching the class name.
+    /// </summary>
+    private static IReadOnlyList<TestResult> EnrichWithSourcePaths(
+        string projFilePath, IReadOnlyList<TestResult> results)
+    {
+        var projDir  = Path.GetDirectoryName(projFilePath) ?? string.Empty;
+        var fileCache = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        var enriched  = new List<TestResult>(results.Count);
+
+        foreach (var r in results)
+        {
+            if (r.SourceFile is not null)
+            {
+                enriched.Add(r);
+                continue;
+            }
+
+            var shortClass = r.ClassName.Contains('.')
+                ? r.ClassName[(r.ClassName.LastIndexOf('.') + 1)..]
+                : r.ClassName;
+
+            if (!fileCache.TryGetValue(shortClass, out var found))
+            {
+                found = FindCsFile(projDir, shortClass);
+                fileCache[shortClass] = found;
+            }
+
+            enriched.Add(found is not null ? r with { SourceFile = found } : r);
+        }
+
+        return enriched;
+    }
+
+    private static string? FindCsFile(string dir, string className)
+    {
+        try
+        {
+            return Directory
+                .EnumerateFiles(dir, $"{className}.cs", SearchOption.AllDirectories)
+                .FirstOrDefault();
+        }
+        catch { return null; }
     }
 
     private static string BuildSummary(int pass, int fail, int skip)

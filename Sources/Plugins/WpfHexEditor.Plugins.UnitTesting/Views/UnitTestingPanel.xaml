@@ -25,6 +25,39 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Source hyperlink button style — underlined when enabled, plain text when disabled -->
+        <Style x:Key="UT_SourceLinkStyle" TargetType="Button">
+            <Setter Property="Background"       Value="Transparent"/>
+            <Setter Property="BorderThickness"  Value="0"/>
+            <Setter Property="Padding"          Value="0"/>
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="FontSize"         Value="11"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <TextBlock x:Name="Tb"
+                                   Text="{TemplateBinding Content}"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextDecorations="Underline"
+                                   Foreground="{DynamicResource UT_SelectionBrush}"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Tb" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Cursor"          Value="Arrow"/>
+                                <Setter TargetName="Tb" Property="TextDecorations" Value="{x:Null}"/>
+                                <Setter TargetName="Tb" Property="Foreground"
+                                        Value="{DynamicResource PFP_TextBrush}"/>
+                                <Setter TargetName="Tb" Property="Opacity" Value="0.75"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Filter toggle button style (pill shape, no WPF chrome) -->
         <Style x:Key="FilterToggleStyle" TargetType="ToggleButton">
             <Setter Property="Padding"          Value="5,2"/>
@@ -40,21 +73,23 @@
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Bd"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="2"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="4"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource UT_SelectionBrush}"/>
-                            </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background"
                                         Value="{DynamicResource UT_HoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource UT_SelectionBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush"
+                                        Value="{DynamicResource UT_SelectionBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -65,13 +100,13 @@
         <!-- Search box style (no Aero2 blue focus chrome) -->
         <Style x:Key="SearchBoxStyle" TargetType="TextBox">
             <Setter Property="Background"               Value="{DynamicResource UT_SearchBoxBrush}"/>
-            <Setter Property="Foreground"               Value="{DynamicResource DockWindowForegroundBrush}"/>
+            <Setter Property="Foreground"               Value="{DynamicResource PFP_TextBrush}"/>
             <Setter Property="BorderBrush"              Value="{DynamicResource DockSplitterBrush}"/>
             <Setter Property="BorderThickness"          Value="1"/>
             <Setter Property="Padding"                  Value="4,2,22,2"/>
             <Setter Property="FontSize"                 Value="11"/>
             <Setter Property="FocusVisualStyle"         Value="{x:Null}"/>
-            <Setter Property="CaretBrush"               Value="{DynamicResource DockWindowForegroundBrush}"/>
+            <Setter Property="CaretBrush"               Value="{DynamicResource PFP_TextBrush}"/>
             <Setter Property="SelectionBrush"           Value="{DynamicResource UT_SelectionBrush}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
@@ -90,6 +125,45 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="Bd" Property="BorderBrush"
+                                        Value="{DynamicResource UT_SelectionBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Search filter chip style (pill buttons in the suggestions popup) -->
+        <Style x:Key="SearchChipStyle" TargetType="Button">
+            <Setter Property="Padding"          Value="7,3"/>
+            <Setter Property="Margin"           Value="3,3,0,0"/>
+            <Setter Property="FontSize"         Value="11"/>
+            <Setter Property="Background"       Value="{DynamicResource UT_SearchBoxBrush}"/>
+            <Setter Property="Foreground"       Value="{DynamicResource PFP_TextBrush}"/>
+            <Setter Property="BorderBrush"      Value="{DynamicResource DockSplitterBrush}"/>
+            <Setter Property="BorderThickness"  Value="1"/>
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource UT_HoverBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush"
+                                        Value="{DynamicResource UT_SelectionBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
                                         Value="{DynamicResource UT_SelectionBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -155,7 +229,7 @@
                            FontSize="12">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="{DynamicResource DockWindowForegroundBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PFP_TextBrush}"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding Outcome}" Value="Failed">
                                     <Setter Property="Foreground" Value="{DynamicResource UT_FailForegroundBrush}"/>
@@ -172,7 +246,7 @@
                 <TextBlock Grid.Column="2" VerticalAlignment="Center"
                            HorizontalAlignment="Right" Margin="0,0,4,0"
                            FontSize="11" Opacity="0.6"
-                           Foreground="{DynamicResource DockWindowForegroundBrush}">
+                           Foreground="{DynamicResource PFP_TextBrush}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Text"       Value=""/>
@@ -194,7 +268,7 @@
                            Margin="4,0,0,0" VerticalAlignment="Center"
                            FontSize="11" Opacity="0.55"
                            TextTrimming="CharacterEllipsis"
-                           Foreground="{DynamicResource DockWindowForegroundBrush}">
+                           Foreground="{DynamicResource PFP_TextBrush}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -311,8 +385,8 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE9E6;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                        Margin="0,0,3,0" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource DockWindowForegroundBrush}"/>
-                            <TextBlock FontSize="11" Foreground="{DynamicResource DockWindowForegroundBrush}"
+                                       Foreground="{DynamicResource PFP_TextBrush}"/>
+                            <TextBlock FontSize="11" Foreground="{DynamicResource PFP_TextBrush}"
                                        Text="{Binding TotalCount}"/>
                         </StackPanel>
                     </ToggleButton>
@@ -417,16 +491,20 @@
                     </Button>
                 </StackPanel>
 
-                <!-- CENTER: search box (fills remaining space) -->
-                <Grid VerticalAlignment="Center" Margin="6,0">
+                <!-- CENTER: search box with filter-chip suggestions popup -->
+                <Grid x:Name="SearchBoxGrid" VerticalAlignment="Center" Margin="6,0">
+
                     <TextBox x:Name="SearchBox"
                              Style="{StaticResource SearchBoxStyle}"
-                             TextChanged="OnSearchTextChanged"/>
+                             TextChanged="OnSearchTextChanged"
+                             GotFocus="OnSearchBoxGotFocus"
+                             KeyDown="OnSearchBoxKeyDown"/>
+
                     <!-- Placeholder text -->
                     <TextBlock IsHitTestVisible="False" Text="Search (Ctrl+I)…"
                                FontSize="11" Opacity="0.40"
                                VerticalAlignment="Center" Margin="6,0,0,0"
-                               Foreground="{DynamicResource DockWindowForegroundBrush}">
+                               Foreground="{DynamicResource PFP_TextBrush}">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -438,14 +516,15 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
-                    <!-- Clear button -->
+
+                    <!-- Clear button — default Visible, collapsed only when empty (bug fix) -->
                     <Button HorizontalAlignment="Right" VerticalAlignment="Center"
                             Width="18" Height="18" Margin="0,0,2,0"
                             Background="Transparent" BorderThickness="0"
                             Cursor="Hand" Click="OnClearSearch" ToolTip="Clear search">
                         <Button.Style>
                             <Style TargetType="Button">
-                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Setter Property="Visibility" Value="Visible"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding Text.Length, ElementName=SearchBox, FallbackValue=0}" Value="0">
                                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -455,8 +534,39 @@
                         </Button.Style>
                         <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets"
                                    FontSize="9" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                     </Button>
+
+                    <!-- Filter chips popup — opens on focus when search box is empty -->
+                    <Popup x:Name="SearchSuggestionsPopup"
+                           PlacementTarget="{Binding ElementName=SearchBoxGrid}"
+                           Placement="Bottom"
+                           StaysOpen="True"
+                           AllowsTransparency="True"
+                           HorizontalOffset="0">
+                        <Border Background="{DynamicResource UT_SearchBoxBrush}"
+                                BorderBrush="{DynamicResource UT_SelectionBrush}"
+                                BorderThickness="1" CornerRadius="4" Padding="8,6">
+                            <Border.Effect>
+                                <DropShadowEffect ShadowDepth="3" BlurRadius="8"
+                                                  Opacity="0.35" Direction="270"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <TextBlock Text="Ajouter un filtre de recherche"
+                                           FontSize="10" Opacity="0.55" Margin="3,0,0,6"
+                                           Foreground="{DynamicResource PFP_TextBrush}"/>
+                                <WrapPanel>
+                                    <Button Content="État"             Tag="état:"   Style="{StaticResource SearchChipStyle}" Click="OnFilterChipClicked"/>
+                                    <Button Content="Nom complet"      Tag="nom:"    Style="{StaticResource SearchChipStyle}" Click="OnFilterChipClicked"/>
+                                    <Button Content="Classe"           Tag="classe:" Style="{StaticResource SearchChipStyle}" Click="OnFilterChipClicked"/>
+                                    <Button Content="Projet"           Tag="projet:" Style="{StaticResource SearchChipStyle}" Click="OnFilterChipClicked"/>
+                                    <Button Content="Message d'erreur" Tag="erreur:" Style="{StaticResource SearchChipStyle}" Click="OnFilterChipClicked"/>
+                                    <Button Content="Espace de noms"   Tag="espace:" Style="{StaticResource SearchChipStyle}" Click="OnFilterChipClicked"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+
                 </Grid>
 
             </DockPanel>
@@ -501,19 +611,19 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Test"
                                    FontSize="11" FontWeight="SemiBold" Opacity="0.75"
-                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                         <TextBlock Grid.Column="1" Text="Durée"
                                    FontSize="11" FontWeight="SemiBold" Opacity="0.75"
                                    HorizontalAlignment="Right" Margin="0,0,4,0"
-                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                         <TextBlock Grid.Column="2" Text="Caractéristiques"
                                    FontSize="11" FontWeight="SemiBold" Opacity="0.75"
                                    Margin="4,0,0,0" TextTrimming="CharacterEllipsis"
-                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                         <TextBlock Grid.Column="3" Text="Message d'erreur"
                                    FontSize="11" FontWeight="SemiBold" Opacity="0.75"
                                    Margin="4,0,0,0" TextTrimming="CharacterEllipsis"
-                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                     </Grid>
                 </Border>
 
@@ -542,13 +652,23 @@
                                 <TextBlock.RenderTransform><RotateTransform/></TextBlock.RenderTransform>
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="{DynamicResource UT_PassForegroundBrush}"/>
+                                        <!-- Default: neutral dim colour (not-yet-run) -->
+                                        <Setter Property="Foreground" Value="{DynamicResource PFP_TextBrush}"/>
+                                        <Setter Property="Opacity"    Value="0.45"/>
                                         <Style.Triggers>
+                                            <!-- Project has results: green pass -->
+                                            <DataTrigger Binding="{Binding HasRun}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource UT_PassForegroundBrush}"/>
+                                                <Setter Property="Opacity"    Value="1"/>
+                                            </DataTrigger>
+                                            <!-- Any failure overrides green -->
                                             <DataTrigger Binding="{Binding HasFailures}" Value="True">
                                                 <Setter Property="Foreground" Value="{DynamicResource UT_FailForegroundBrush}"/>
+                                                <Setter Property="Opacity"    Value="1"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding IsRunning}" Value="True">
                                                 <Setter Property="Foreground" Value="{DynamicResource UT_SkipForegroundBrush}"/>
+                                                <Setter Property="Opacity"    Value="1"/>
                                                 <DataTrigger.EnterActions>
                                                     <BeginStoryboard x:Name="ProjSpinBegin" Storyboard="{StaticResource SpinStoryboard}"/>
                                                 </DataTrigger.EnterActions>
@@ -563,10 +683,10 @@
                             <TextBlock Text="{Binding ProjectName}"
                                        FontWeight="SemiBold" FontSize="12"
                                        VerticalAlignment="Center"
-                                       Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                       Foreground="{DynamicResource PFP_TextBrush}"/>
                             <TextBlock Text="{Binding TotalCount, StringFormat=' ({0})'}"
                                        FontSize="11" Opacity="0.55" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                       Foreground="{DynamicResource PFP_TextBrush}"/>
                         </StackPanel>
                     </HierarchicalDataTemplate>
 
@@ -580,10 +700,17 @@
                                        VerticalAlignment="Center" Margin="0,0,4,0">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="{DynamicResource UT_PassForegroundBrush}"/>
+                                        <!-- Default: neutral dim colour (not-yet-run) -->
+                                        <Setter Property="Foreground" Value="{DynamicResource PFP_TextBrush}"/>
+                                        <Setter Property="Opacity"    Value="0.45"/>
                                         <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasRun}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource UT_PassForegroundBrush}"/>
+                                                <Setter Property="Opacity"    Value="1"/>
+                                            </DataTrigger>
                                             <DataTrigger Binding="{Binding HasFailures}" Value="True">
                                                 <Setter Property="Foreground" Value="{DynamicResource UT_FailForegroundBrush}"/>
+                                                <Setter Property="Opacity"    Value="1"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -591,10 +718,10 @@
                             </TextBlock>
                             <TextBlock Text="{Binding ShortClassName}"
                                        FontSize="11" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                       Foreground="{DynamicResource PFP_TextBrush}"/>
                             <TextBlock Text="{Binding TotalCount, StringFormat=' ({0})'}"
                                        FontSize="11" Opacity="0.5" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                       Foreground="{DynamicResource PFP_TextBrush}"/>
                         </StackPanel>
                     </HierarchicalDataTemplate>
 
@@ -659,28 +786,28 @@
 
                                     <TextBlock DockPanel.Dock="Top" Text="Group summary"
                                                FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                     <TextBlock DockPanel.Dock="Top" Text="{Binding ProjectName}"
                                                FontSize="12" Margin="8,0,0,2"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,2">
                                         <TextBlock Text="Tests in group: " FontSize="11" Opacity="0.75"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                         <TextBlock Text="{Binding TotalCount}" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                     </StackPanel>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,6">
                                         <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets"
                                                    FontSize="10" Margin="0,0,4,0" VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}" Opacity="0.6"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}" Opacity="0.6"/>
                                         <TextBlock Text="Total duration: " FontSize="11" Opacity="0.75"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                         <TextBlock Text="{Binding TotalDurationText}" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                     </StackPanel>
                                     <TextBlock DockPanel.Dock="Top" Text="Results"
                                                FontSize="11" FontWeight="SemiBold" Margin="0,0,0,2"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,1">
                                         <TextBlock Text="&#xE930;" FontFamily="Segoe MDL2 Assets" FontSize="11"
                                                    Margin="0,0,6,0" VerticalAlignment="Center"
@@ -721,28 +848,28 @@
                                     </StackPanel>
                                     <TextBlock DockPanel.Dock="Top" Text="Group summary"
                                                FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                     <TextBlock DockPanel.Dock="Top" Text="{Binding ShortClassName}"
                                                FontSize="12" Margin="8,0,0,2"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,2">
                                         <TextBlock Text="Tests in group: " FontSize="11" Opacity="0.75"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                         <TextBlock Text="{Binding TotalCount}" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                     </StackPanel>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,6">
                                         <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets"
                                                    FontSize="10" Margin="0,0,4,0" VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}" Opacity="0.6"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}" Opacity="0.6"/>
                                         <TextBlock Text="Total duration: " FontSize="11" Opacity="0.75"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                         <TextBlock Text="{Binding TotalDurationText}" FontSize="11" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                     </StackPanel>
                                     <TextBlock DockPanel.Dock="Top" Text="Results"
                                                FontSize="11" FontWeight="SemiBold" Margin="0,0,0,2"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,1">
                                         <TextBlock Text="&#xE930;" FontFamily="Segoe MDL2 Assets" FontSize="11"
                                                    Margin="0,0,6,0" VerticalAlignment="Center"
@@ -784,13 +911,13 @@
                                             Click="OnCopyStackTraceClicked" ToolTip="Copy Stack Trace">
                                         <TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets"
                                                    FontSize="12" VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                                   Foreground="{DynamicResource PFP_TextBrush}"/>
                                     </Button>
                                 </StackPanel>
 
                                 <TextBlock DockPanel.Dock="Top" Text="Test detail"
                                            FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"
-                                           Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                           Foreground="{DynamicResource PFP_TextBrush}"/>
 
                                 <!-- Test name with outcome glyph -->
                                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,2">
@@ -814,38 +941,40 @@
                                     <TextBlock Text="{Binding Display}"
                                                FontFamily="Cascadia Mono, Consolas, monospace"
                                                FontSize="11" TextTrimming="CharacterEllipsis"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                 </StackPanel>
 
-                                <!-- Source (class name) -->
+                                <!-- Source — clickable link when HasSource=true -->
                                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="16,0,0,2">
                                     <TextBlock Text="&#xE8F4;" FontFamily="Segoe MDL2 Assets"
                                                FontSize="10" Margin="0,0,4,0" VerticalAlignment="Center"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}" Opacity="0.6"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}" Opacity="0.6"/>
                                     <TextBlock Text="Source: " FontSize="11" Opacity="0.75"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
-                                    <TextBlock Text="{Binding ShortClassName}"
-                                               FontSize="11" TextTrimming="CharacterEllipsis"
-                                               Foreground="{DynamicResource UT_SelectionBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
+                                    <Button Content="{Binding ShortClassName}"
+                                            Tag="{Binding}"
+                                            Style="{StaticResource UT_SourceLinkStyle}"
+                                            IsEnabled="{Binding HasSource}"
+                                            Click="OnGoToSourceClicked"/>
                                 </StackPanel>
 
                                 <!-- Duration -->
                                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="16,0,0,6">
                                     <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets"
                                                FontSize="10" Margin="0,0,4,0" VerticalAlignment="Center"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}" Opacity="0.6"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}" Opacity="0.6"/>
                                     <TextBlock Text="Duration: " FontSize="11" Opacity="0.75"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                     <TextBlock Text="{Binding DurationMs, StringFormat='{}{0} ms'}"
                                                FontSize="11" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                               Foreground="{DynamicResource PFP_TextBrush}"/>
                                 </StackPanel>
 
                                 <!-- Error + stack (only if failed) -->
                                 <TextBlock DockPanel.Dock="Top"
                                            Text="{Binding ErrorMessage}"
                                            FontSize="11" TextWrapping="Wrap" Margin="0,0,0,4"
-                                           Foreground="{DynamicResource DockWindowForegroundBrush}"
+                                           Foreground="{DynamicResource PFP_TextBrush}"
                                            Visibility="{Binding HasDetail, Converter={StaticResource BoolToVis}}"/>
                                 <ScrollViewer DockPanel.Dock="Top"
                                               VerticalScrollBarVisibility="Auto"
@@ -856,7 +985,7 @@
                                              Background="Transparent" BorderThickness="0"
                                              FontFamily="Cascadia Mono, Consolas, monospace"
                                              FontSize="11" TextWrapping="NoWrap"
-                                             Foreground="{DynamicResource DockWindowForegroundBrush}"/>
+                                             Foreground="{DynamicResource PFP_TextBrush}"/>
                                 </ScrollViewer>
                             </DockPanel>
                         </DataTemplate>
@@ -886,7 +1015,7 @@
                 BorderThickness="0,1,0,0"
                 Padding="6,3">
             <TextBlock Text="{Binding StatusText}"
-                       Foreground="{DynamicResource DockWindowForegroundBrush}"
+                       Foreground="{DynamicResource PFP_TextBrush}"
                        FontSize="11" Opacity="0.75"
                        TextTrimming="CharacterEllipsis"/>
         </Border>
