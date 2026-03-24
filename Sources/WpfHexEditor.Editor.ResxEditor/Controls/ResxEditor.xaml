@@ -160,13 +160,9 @@
     </UserControl.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
 
         <!-- Main entry DataGrid -->
-        <DataGrid Grid.Row="0"
+        <DataGrid
                   x:Name="EntriesGrid"
                   ItemsSource="{Binding FilteredEntries}"
                   SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
@@ -223,39 +219,24 @@
                                         CellTemplateSelector="{StaticResource CellSelector}">
                 </DataGridTemplateColumn>
 
+                <!-- Comment column — inline editable -->
+                <DataGridTemplateColumn Header="Comment"
+                                        Width="*" MinWidth="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding Comment, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{DynamicResource RES_CommentForegroundBrush}"
+                                     VerticalAlignment="Center"
+                                     AcceptsReturn="False"
+                                     TextWrapping="NoWrap"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
             </DataGrid.Columns>
         </DataGrid>
-
-        <!-- Comment row + separator -->
-        <Grid Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="1"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <Border Grid.Row="0"
-                    Background="{DynamicResource RES_SeparatorBrush}"/>
-
-            <DockPanel Grid.Row="1"
-                       Margin="4,4,4,4"
-                       LastChildFill="True">
-                <TextBlock DockPanel.Dock="Left"
-                           Text="Comment:"
-                           Foreground="{DynamicResource RES_CommentForegroundBrush}"
-                           FontSize="11"
-                           VerticalAlignment="Center"
-                           Margin="0,0,6,0"/>
-                <TextBox x:Name="CommentBox"
-                         Text="{Binding SelectedEntry.Comment, UpdateSourceTrigger=PropertyChanged, FallbackValue=''}"
-                         Background="{DynamicResource RES_CellEditorBackgroundBrush}"
-                         Foreground="{DynamicResource RES_CommentForegroundBrush}"
-                         BorderBrush="{DynamicResource RES_SeparatorBrush}"
-                         BorderThickness="1"
-                         Padding="4,2"
-                         FontSize="11"
-                         IsReadOnly="{Binding IsReadOnly}"/>
-            </DockPanel>
-        </Grid>
 
     </Grid>
 </UserControl>

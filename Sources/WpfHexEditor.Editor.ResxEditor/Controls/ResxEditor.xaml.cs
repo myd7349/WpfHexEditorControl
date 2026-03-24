@@ -263,7 +263,7 @@ public partial class ResxEditor : UserControl,
             Icon    = "\uE710",   // Add — Segoe MDL2
             Label   = "Add",
             Tooltip = "Add new entry (Ins)",
-            Command = _vm.AddCommand
+            Command = new ViewModels.RelayCommand(_ => ExecuteAddAndNavigate(), _ => !_vm.IsReadOnly)
         });
         ToolbarItems.Add(new EditorToolbarItem
         {
@@ -454,7 +454,7 @@ public partial class ResxEditor : UserControl,
     {
         if (e.Key == Key.Z && Keyboard.Modifiers == ModifierKeys.Control) { _vm.Undo(); e.Handled = true; }
         if (e.Key == Key.Y && Keyboard.Modifiers == ModifierKeys.Control) { _vm.Redo(); e.Handled = true; }
-        if (e.Key == Key.Insert && Keyboard.Modifiers == ModifierKeys.None) { _vm.AddCommand.Execute(null); e.Handled = true; }
+        if (e.Key == Key.Insert && Keyboard.Modifiers == ModifierKeys.None) { ExecuteAddAndNavigate(); e.Handled = true; }
         if (e.Key == Key.Delete && Keyboard.Modifiers == ModifierKeys.None && _vm.SelectedEntry is not null) { _vm.DeleteCommand.Execute(null); e.Handled = true; }
         if (e.Key == Key.G && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift)) { _ = GenerateDesignerAsync(); e.Handled = true; }
     }
@@ -467,17 +467,57 @@ public partial class ResxEditor : UserControl,
         if (e.EditAction != DataGridEditAction.Commit) return;
         if (e.Row.Item is not ResxEntryViewModel vm) return;
 
-        // Capture the edit into the undo stack
         var colHeader = e.Column.Header?.ToString() ?? string.Empty;
-        if (e.EditingElement is TextBox tb)
+
+        if (colHeader is "Name" or "Value")
         {
+            if (e.EditingElement is not TextBox tb) return;
             var newVal = tb.Text;
             var field  = colHeader == "Name" ? nameof(ResxEntryViewModel.Name) : nameof(ResxEntryViewModel.Value);
             var oldVal = field == nameof(ResxEntryViewModel.Name) ? vm.SourceEntry.Name : vm.SourceEntry.Value;
-
             if (newVal != oldVal)
                 _vm.Push(new ResxEditEntryAction(vm, field, oldVal, newVal));
         }
+        else if (colHeader == "Comment")
+        {
+            var tb = e.EditingElement as TextBox
+                  ?? FindVisualChild<TextBox>(e.EditingElement);
+            if (tb is null) return;
+            var newComment = tb.Text;
+            var oldComment = vm.Comment;
+            if (newComment == oldComment) return;
+            vm.SetCommentSilent(oldComment);
+            _vm.Push(new ResxEditEntryAction(vm, nameof(ResxEntryViewModel.Comment),
+                                             oldComment, newComment));
+        }
+    }
+
+    private void ExecuteAddAndNavigate()
+    {
+        _vm.AddCommand.Execute(null);
+        var entry = _vm.SelectedEntry;
+        if (entry is null) return;
+        EntriesGrid.ScrollIntoView(entry);
+        EntriesGrid.Dispatcher.InvokeAsync(() =>
+        {
+            var row = EntriesGrid.ItemContainerGenerator.ContainerFromItem(entry) as DataGridRow;
+            if (row is null) return;
+            EntriesGrid.CurrentCell = new DataGridCellInfo(entry, EntriesGrid.Columns[0]);
+            EntriesGrid.BeginEdit();
+        }, System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
+    {
+        if (parent is null) return null;
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is T t) return t;
+            var result = FindVisualChild<T>(child);
+            if (result is not null) return result;
+        }
+        return null;
     }
 
     private void EntriesGrid_LoadingRow(object sender, DataGridRowEventArgs e)

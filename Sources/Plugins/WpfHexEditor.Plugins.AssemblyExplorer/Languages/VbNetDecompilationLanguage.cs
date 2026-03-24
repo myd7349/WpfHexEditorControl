@@ -37,6 +37,7 @@ public sealed class VbNetDecompilationLanguage : IDecompilationLanguage
     public string  DisplayName        => "VB.NET";
     public string  FileExtension      => ".vb";
     public string? EditorLanguageName => "VB.NET";
+    public string  GlyphCode          => "\uE8C9"; // Segoe MDL2 "Tag"
 
     /// <inheritdoc/>
     /// <remarks>

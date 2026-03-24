@@ -14,10 +14,9 @@
     ".xsl",
     ".xslt",
     ".xhtml",
-    ".resx",
     ".svg"
   ],
-  "description": "XML-derived markup source files: XSLT stylesheets, XHTML documents, .NET resource files, and SVG vector graphics.",
+  "description": "XML-derived markup source files: XSLT stylesheets, XHTML documents, and SVG vector graphics.",
   "category": "Programming",
   "author": "WPFHexaEditor Team",
   "preferredEditor": "code-editor",
@@ -64,7 +63,6 @@
       ".svg",
       ".nfo",
       ".config",
-      ".resx",
       ".csproj",
       ".vbproj",
       ".fsproj"

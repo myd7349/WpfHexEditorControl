@@ -95,6 +95,7 @@ public sealed class AssemblyExplorerPlugin : IWpfHexEditorPlugin, IPluginWithOpt
         // Must happen before building the backend so the VM can resolve languages from the registry.
         DecompilationLanguageRegistry.Register(CSharpDecompilationLanguage.Instance);
         DecompilationLanguageRegistry.Register(new VbNetDecompilationLanguage());
+        DecompilationLanguageRegistry.Register(IlDecompilationLanguage.Instance);
 
         // Build internal services
         _analysisEngine    = new AssemblyAnalysisEngine();

@@ -69,7 +69,17 @@
       <PluginDestDir>$(MSBuildThisFileDirectory)..\..\WpfHexEditor.App\bin\$(Configuration)\net8.0-windows\Plugins\$(AssemblyName)\</PluginDestDir>
     </PropertyGroup>
     <MakeDir Directories="$(PluginDestDir)" />
+    <!-- Core plugin DLLs -->
     <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)$(AssemblyName).deps.json;$(OutputPath)manifest.json;$(OutputPath)WpfHexEditor.Core.AssemblyAnalysis.dll;$(OutputPath)ICSharpCode.Decompiler.dll;$(OutputPath)ICSharpCode.CodeConverter.dll" DestinationFolder="$(PluginDestDir)" SkipUnchangedFiles="true" />
+    <!-- Roslyn transitive deps needed by ICSharpCode.CodeConverter (VB.NET conversion).
+         The host ALC does not always expose these; copy them alongside the plugin so
+         the plugin's isolated ALC can resolve them. Uses an ItemGroup inside the Target
+         so the glob expands at execution time (after NuGet restore).
+         Covers: Microsoft.CodeAnalysis.dll, .CSharp.dll, .VisualBasic.dll, .Workspaces.* -->
+    <ItemGroup>
+      <_RoslynDlls Include="$(OutputPath)Microsoft.CodeAnalysis*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_RoslynDlls)" DestinationFolder="$(PluginDestDir)" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>
