@@ -28,9 +28,9 @@
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="Bd"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="2"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="4"
                                 Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center"
@@ -47,7 +47,7 @@
                                 <Setter TargetName="Bd" Property="Background"
                                         Value="{DynamicResource ERR_FilterActiveBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderBrush"
-                                        Value="{DynamicResource ERR_GridLinesBrush}"/>
+                                        Value="{DynamicResource ERR_FilterActiveBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

@@ -34,8 +34,10 @@ using IAssemblyAnalysisEngine = WpfHexEditor.Core.AssemblyAnalysis.Services.IAss
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WpfHexEditor.Editor.CodeEditor.Controls;
 using WpfHexEditor.Editor.TextEditor.Controls;
 using WpfHexEditor.Editor.TextEditor.Models;
+using WpfHexEditor.ProjectSystem.Languages;
 using WpfHexEditor.Plugins.AssemblyExplorer.Events;
 using WpfHexEditor.Plugins.AssemblyExplorer.Options;
 using WpfHexEditor.Plugins.AssemblyExplorer.Services;
@@ -1010,43 +1012,36 @@ public sealed class AssemblyExplorerViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Builds a syntax-highlighted TextEditor for the decompiled code document tab.
-    /// When <paramref name="installLinks"/> is true and <paramref name="assembly"/> is provided,
-    /// installs goto-definition links for PascalCase type names found in the decompiled text.
+    /// Builds a full <see cref="CodeEditorSplitHost"/> tab for the decompiled code.
+    /// Syntax highlighting, folding, and search are provided by the host code editor.
+    /// The <paramref name="installLinks"/> and <paramref name="assembly"/> parameters are
+    /// retained for signature compatibility but are no longer needed — the CodeEditor
+    /// handles navigation natively via its LSP/symbol infrastructure.
     /// </summary>
     private UIElement BuildDecompiledCodeEditor(
-        string        text,
-        bool          installLinks,
-        string?       editorLanguageName,
+        string         text,
+        bool           installLinks,
+        string?        editorLanguageName,
         AssemblyModel? assembly = null)
     {
-        var editor = new TextEditor
+        var host = new CodeEditorSplitHost();
+
+        // Map decompilation display names → LanguageRegistry IDs.
+        // Decompilation is already complete at this point (called after await Task.Run),
+        // so we load the text synchronously on the UI thread.
+        var langId = editorLanguageName switch
         {
-            IsReadOnly      = true,
-            BorderThickness = new Thickness(0)
+            "C#"     => "csharp",
+            "VB.NET" => "vb",
+            { } s    => s,
+            null     => "csharp"
         };
+        var lang = LanguageRegistry.Instance.FindById(langId);
+        if (lang is not null) host.SetLanguage(lang);
+        host.IsReadOnly = true;
+        host.PrimaryEditor.LoadText(text);
 
-        // Show a lightweight placeholder immediately so the tab appears without delay.
-        // Content is loaded at Background priority — fast enough to appear before the user
-        // can interact, yet after the docking system finishes rendering the new tab.
-        editor.SetContentDirect(string.Empty, readOnly: true, languageName: editorLanguageName);
-
-        editor.Dispatcher.BeginInvoke(
-            System.Windows.Threading.DispatcherPriority.Background,
-            (System.Action)(() =>
-            {
-                if (installLinks && assembly is not null)
-                {
-                    var links = BuildTextLinks(text, assembly);
-                    editor.SetContentWithLinks(text, links, readOnly: true, languageName: editorLanguageName);
-                }
-                else
-                {
-                    editor.SetContentDirect(text, readOnly: true, languageName: editorLanguageName);
-                }
-            }));
-
-        return editor;
+        return host;
     }
 
     /// <summary>

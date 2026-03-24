@@ -254,6 +254,12 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
                 ? contextualHighlighter.BuildContext(linesSnapshot)
                 : null;
 
+            // Track whether any line was actually (re-)highlighted this run.
+            // When all lines are cache-hits (needed[i]=false for every i), there is no new
+            // highlight data and posting HighlightsComputed would trigger an unnecessary
+            // full re-render — creating an infinite DoFullRender ↔ HighlightsComputed loop.
+            bool anyHighlighted = false;
+
             // Pass 1 — visible range first (lowest latency)
             for (int i = 0; i < count && !token.IsCancellationRequested; i++)
             {
@@ -263,7 +269,10 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
                     ? contextualHighlighter!.Highlight(texts[i], indices[i], ctx)
                     : highlighter!.Highlight(texts[i]);
                 if (li < cache.Count && !token.IsCancellationRequested)
-                    cache[li] = result;
+                {
+                    cache[li]      = result;
+                    anyHighlighted = true;
+                }
             }
 
             // Pass 2 — buffer lines (smoother pre-fetch for upcoming scroll)
@@ -275,10 +284,17 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
                     ? contextualHighlighter!.Highlight(texts[i], indices[i], ctx)
                     : highlighter!.Highlight(texts[i]);
                 if (li < cache.Count && !token.IsCancellationRequested)
-                    cache[li] = result;
+                {
+                    cache[li]      = result;
+                    anyHighlighted = true;
+                }
             }
 
-            if (!token.IsCancellationRequested && syncCtx is not null)
+            // Only notify the viewport when there is actually new highlight data.
+            // Skipping the notification when anyHighlighted=false breaks the infinite
+            // render loop: DoFullRender → ScheduleHighlightAsync (cache-hit, no work)
+            // → HighlightsComputed → QueueFullRender → DoFullRender → …
+            if (!token.IsCancellationRequested && syncCtx is not null && anyHighlighted)
             {
                 int completedFirst = firstVisible;
                 int completedLast  = Math.Min(lastVisible, bufEnd);
@@ -748,7 +764,10 @@ internal sealed class TextEditorViewModel : INotifyPropertyChanged
     public async Task LoadFileAsync(string filePath, Encoding? encoding = null, CancellationToken ct = default)
     {
         encoding ??= Encoding.UTF8;
-        var text = await File.ReadAllTextAsync(filePath, encoding, ct);
+        string text;
+        using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var sr = new StreamReader(fs, encoding))
+            text = await sr.ReadToEndAsync(ct).ConfigureAwait(false);
 
         // SplitLines is pure computation (no WPF access) â€” safe on background thread.
         // This prevents the UI thread from being blocked on large file parsing.

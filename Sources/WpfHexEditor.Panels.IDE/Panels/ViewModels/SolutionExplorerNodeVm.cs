@@ -162,6 +162,15 @@ public sealed class ProjectNodeVm : SolutionExplorerNodeVm
         set { if (_isBuildDirty == value) return; _isBuildDirty = value; OnPropertyChanged(); }
     }
 
+    private bool _isBuilding;
+
+    /// <summary>True while this project is actively being compiled. Drives the spinner animation.</summary>
+    public bool IsBuilding
+    {
+        get => _isBuilding;
+        set { if (_isBuilding == value) return; _isBuilding = value; OnPropertyChanged(); }
+    }
+
     private bool _isStartup;
 
     /// <summary>

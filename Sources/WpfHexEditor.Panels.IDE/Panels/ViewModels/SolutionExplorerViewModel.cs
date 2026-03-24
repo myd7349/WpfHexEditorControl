@@ -1350,6 +1350,37 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Sets <see cref="ProjectNodeVm.IsBuilding"/> for the project whose file path matches
+    /// <paramref name="projectFilePath"/>. Must be called on the UI thread.
+    /// </summary>
+    public void SetProjectBuilding(string projectFilePath, bool isBuilding)
+    {
+        var normalizedPath = Path.GetFullPath(projectFilePath);
+        foreach (var node in Roots.OfType<SolutionNodeVm>()
+                                   .SelectMany(s => s.Children)
+                                   .OfType<ProjectNodeVm>())
+        {
+            var nodePath = node.Source.ProjectFilePath;
+            if (!string.IsNullOrEmpty(nodePath) &&
+                string.Equals(Path.GetFullPath(nodePath), normalizedPath,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                node.IsBuilding = isBuilding;
+                return;
+            }
+        }
+    }
+
+    /// <summary>Clears <see cref="ProjectNodeVm.IsBuilding"/> on all project nodes (build cancelled).</summary>
+    public void ClearAllBuilding()
+    {
+        foreach (var node in Roots.OfType<SolutionNodeVm>()
+                                   .SelectMany(s => s.Children)
+                                   .OfType<ProjectNodeVm>())
+            node.IsBuilding = false;
+    }
+
     // -- INPC -----------------------------------------------------------------
 
     public event PropertyChangedEventHandler? PropertyChanged;

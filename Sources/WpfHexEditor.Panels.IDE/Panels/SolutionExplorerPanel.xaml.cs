@@ -109,6 +109,14 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
     public void SetProjectDirty(string projectId, bool isDirty)
         => _vm.SetProjectDirty(projectId, isDirty);
 
+    /// <summary>Marks the project as actively building. Must be called on the UI thread.</summary>
+    public void SetProjectBuilding(string projectFilePath, bool isBuilding)
+        => _vm.SetProjectBuilding(projectFilePath, isBuilding);
+
+    /// <summary>Clears the building state on all project nodes (build cancelled).</summary>
+    public void ClearAllBuilding()
+        => _vm.ClearAllBuilding();
+
     /// <summary>
     /// Sets the delegate that resolves plugin-contributed context menu items.
     /// Called by MainWindow after the UIRegistry is ready.

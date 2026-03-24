@@ -7976,7 +7976,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
-            var text = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+            string text;
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var sr = new StreamReader(fs, System.Text.Encoding.UTF8))
+                text = sr.ReadToEnd();
             LoadText(text);
             _currentFilePath = filePath;
             if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = filePath;
@@ -8003,7 +8006,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 (text, lines) = await Task.Run(() =>
                 {
-                    var raw   = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
+                    string raw;
+                    using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var sr = new StreamReader(fs, System.Text.Encoding.UTF8))
+                        raw = sr.ReadToEnd();
                     var parts = raw.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
                     var arr   = new CodeLine[parts.Length == 0 ? 1 : parts.Length];
                     for (int i = 0; i < parts.Length; i++)

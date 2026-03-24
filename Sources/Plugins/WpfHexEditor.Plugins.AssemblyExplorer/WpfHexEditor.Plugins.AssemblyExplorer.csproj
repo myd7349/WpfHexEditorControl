@@ -56,9 +56,12 @@
          App output directory and is resolved via the host AssemblyLoadContext fallback
          at runtime — no copy to Plugins dir required. -->
     <ProjectReference Include="..\..\WpfHexEditor.Editor.Core\WpfHexEditor.Editor.Core.csproj" />
-    <!-- TextEditor: provides syntax-highlighted decompiled code tabs. DLL resolved via
-         host AssemblyLoadContext fallback at runtime — no copy to Plugins dir required. -->
+    <!-- TextEditor: still referenced for SetContentWithLinks / TextLink types used in helpers. -->
     <ProjectReference Include="..\..\WpfHexEditor.Editor.TextEditor\WpfHexEditor.Editor.TextEditor.csproj" />
+    <!-- CodeEditor: provides CodeEditorSplitHost for decompiled code tabs. DLL (and its
+         transitive deps: WpfHexEditor.ProjectSystem, WpfHexEditor.Definitions, etc.) are
+         resolved via the host AssemblyLoadContext fallback at runtime — no copy required. -->
+    <ProjectReference Include="..\..\WpfHexEditor.Editor.CodeEditor\WpfHexEditor.Editor.CodeEditor.csproj" />
   </ItemGroup>
 
   <Import Project="..\..\WpfHexEditor.SDK\Build\WpfHexEditor.SDK.targets" />
@@ -80,6 +83,12 @@
       <_RoslynDlls Include="$(OutputPath)Microsoft.CodeAnalysis*.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(_RoslynDlls)" DestinationFolder="$(PluginDestDir)" SkipUnchangedFiles="true" />
+    <!-- VS Threading transitive deps needed by ICSharpCode.CodeConverter (VB.NET conversion).
+         Covers: Microsoft.VisualStudio.Threading.dll, .Validation.dll, .Composition.dll, etc. -->
+    <ItemGroup>
+      <_VsThreadingDlls Include="$(OutputPath)Microsoft.VisualStudio.*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_VsThreadingDlls)" DestinationFolder="$(PluginDestDir)" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>
