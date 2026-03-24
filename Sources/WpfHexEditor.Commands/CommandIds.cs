@@ -56,7 +56,11 @@ public static class CommandIds
         public const string Output            = "View.Output";
         public const string ErrorList         = "View.ErrorList";
         public const string MarkdownOutline   = "View.MarkdownOutline";
-        public const string CompareFiles      = "View.CompareFiles";
+        public const string CompareFiles           = "View.CompareFiles";
+        public const string CompareWithActiveEditor = "View.Compare.WithActiveEditor";
+        public const string CompareWithClipboard    = "View.Compare.WithClipboard";
+        public const string CompareWithHead         = "View.Compare.WithHead";
+        public const string CompareReopenLast       = "View.Compare.ReopenLast";
         public const string EntropyAnalysis   = "View.EntropyAnalysis";
         public const string Terminal          = "View.Terminal";
         public const string Options           = "View.Options";
@@ -88,6 +92,24 @@ public static class CommandIds
         public const string Load              = "Layout.Load";
         public const string Reset             = "Layout.Reset";
         public const string ToggleLock        = "Layout.ToggleLock";
+    }
+
+    public static class Debug
+    {
+        public const string StartDebugging       = "Debug.StartDebugging";
+        public const string StopDebugging        = "Debug.StopDebugging";
+        public const string RestartDebugging     = "Debug.RestartDebugging";
+        public const string Continue             = "Debug.Continue";
+        public const string StepOver             = "Debug.StepOver";
+        public const string StepInto             = "Debug.StepInto";
+        public const string StepOut              = "Debug.StepOut";
+        public const string ToggleBreakpoint     = "Debug.ToggleBreakpoint";
+        public const string DeleteAllBreakpoints = "Debug.DeleteAllBreakpoints";
+        public const string AttachToProcess      = "Debug.AttachToProcess";
+        public const string ShowBreakpoints      = "Debug.ShowBreakpoints";
+        public const string ShowCallStack        = "Debug.ShowCallStack";
+        public const string ShowLocals           = "Debug.ShowLocals";
+        public const string ShowWatch            = "Debug.ShowWatch";
     }
 
     public static class Plugins

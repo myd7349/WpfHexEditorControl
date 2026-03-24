@@ -19,6 +19,7 @@ using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
 using WpfHexEditor.Plugins.FileComparison.Views;
+using WpfHexEditor.Plugins.FileComparison.Services;
 
 namespace WpfHexEditor.Plugins.FileComparison;
 
@@ -30,8 +31,8 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
 {
     private const string PanelUiId = "WpfHexEditor.Plugins.FileComparison.Panel.FileComparisonPanel";
 
-    private IIDEHostContext?      _context;
-    private FileComparisonPanel?  _panel;
+    private IIDEHostContext?  _context;
+    private DiffHubPanel?     _panel;
 
     public string  Id      => "WpfHexEditor.Plugins.FileComparison";
     public string  Name    => "File Comparison";
@@ -48,7 +49,14 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
     public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
     {
         _context = context;
-        _panel   = new FileComparisonPanel();
+        _panel   = new DiffHubPanel();
+
+        // Wire "Open in Viewer" → open a DiffViewer tab via the command registry
+        _panel.OpenInViewerRequested += (_, paths) =>
+        {
+            var cmd = context.CommandRegistry?.Find("View.CompareFiles")?.Command;
+            cmd?.Execute(new[] { paths.Left, paths.Right });
+        };
 
         context.UIRegistry.RegisterPanel(
             PanelUiId,
@@ -56,7 +64,7 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
             Id,
             new PanelDescriptor
             {
-                Title           = "File Comparison",
+                Title           = "Diff Hub",
                 DefaultDockSide = "Bottom",
                 DefaultAutoHide = true,
                 CanClose        = true
@@ -68,12 +76,16 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
             Id,
             new MenuItemDescriptor
             {
-                Header     = "File _Comparison",
+                Header     = "_Diff Hub",
                 ParentPath = "View",
                 Group      = "FileTools",
                 IconGlyph  = "\uE93D",
                 Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(PanelUiId))
             });
+
+        // Register Solution Explorer right-click contributor ("Compare with…")
+        context.UIRegistry.RegisterContextMenuContributor(
+            Id, new SolutionExplorerCompareContributor(context));
 
         // Pre-fill File 1 when a hex file is opened — user just needs to pick File 2.
         context.HexEditor.FileOpened += OnHexFileOpened;

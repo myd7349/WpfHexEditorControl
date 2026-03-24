@@ -119,6 +119,16 @@ public sealed class AppSettings
 
     /// <summary>Command Palette ("Fuzzy Bar") appearance and behaviour settings.</summary>
     public CommandPaletteSettings CommandPalette { get; set; } = new();
+
+    // -- Compare Files --------------------------------------------------------
+
+    /// <summary>Compare Files viewer preferences and recent comparison history.</summary>
+    public ComparisonSettings Comparison { get; set; } = new();
+
+    // -- Debugger -------------------------------------------------------------
+
+    /// <summary>Integrated debugger preferences and persisted breakpoints.</summary>
+    public DebuggerSettings Debugger { get; set; } = new();
 }
 
 // ─── Command Palette ──────────────────────────────────────────────────────────

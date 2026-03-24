@@ -653,4 +653,20 @@
 
     <SolidColorBrush x:Key="UT_RunningRowBrush"           Color="#1E2A28" />
     <SolidColorBrush x:Key="UT_SearchBoxBrush"            Color="#181825" />
+
+    <!-- Diff tokens (DF_*) - inserted by Add-DiffTokens.ps1 -->
+    <SolidColorBrush x:Key="DF_ModifiedLineBrush"     Color="#36300A" />
+    <SolidColorBrush x:Key="DF_InsertedLineBrush"     Color="#0E2A14" />
+    <SolidColorBrush x:Key="DF_DeletedLineBrush"      Color="#2A1020" />
+    <SolidColorBrush x:Key="DF_IdenticalLineBrush"    Color="Transparent" />
+    <SolidColorBrush x:Key="DF_CharModifiedBrush"     Color="#F9E2AF" />
+    <SolidColorBrush x:Key="DF_FoldMarkerForeground"  Color="#6C7086" />
+    <SolidColorBrush x:Key="DF_FoldMarkerBackground"  Color="#313244" />
+    <SolidColorBrush x:Key="DF_MinimapModified"       Color="#F9E2AF" />
+    <SolidColorBrush x:Key="DF_MinimapInserted"       Color="#A6E3A1" />
+    <SolidColorBrush x:Key="DF_MinimapDeleted"        Color="#F38BA8" />
+    <SolidColorBrush x:Key="DF_MinimapIdentical"      Color="#45475A" />
+    <SolidColorBrush x:Key="DF_PatchedBrush"          Color="#162A20" />
+    <SolidColorBrush x:Key="DF_PickerBackground"      Color="#313244" />
+    <SolidColorBrush x:Key="DF_PickerHighlightBrush"  Color="#45475A" />
 </ResourceDictionary>

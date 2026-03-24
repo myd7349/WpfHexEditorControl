@@ -127,6 +127,23 @@ public partial class MainWindow
             () => OnShowMarkdownOutline(this, null!));
         Reg(CommandIds.View.CompareFiles,  "Compare Files…",         "View",    "Ctrl+Alt+D",     null,
             () => OnCompareFiles(this, null!));
+        Reg(CommandIds.View.CompareWithActiveEditor, "Compare File with Active Editor", "View / Compare",
+            null, null,
+            () =>
+            {
+                var path = _documentManager.ActiveDocument?.FilePath;
+                if (!string.IsNullOrEmpty(path))
+                    _ = _compareFileLaunchService?.LaunchWithLeftAsync(path);
+            });
+        Reg(CommandIds.View.CompareWithClipboard, "Compare Active File with Clipboard", "View / Compare",
+            null, null,
+            () => LaunchCompareWithClipboard());
+        Reg(CommandIds.View.CompareWithHead, "Compare with HEAD (Git)", "View / Compare",
+            null, null,
+            () => _ = LaunchCompareWithHeadAsync());
+        Reg(CommandIds.View.CompareReopenLast, "Reopen Last Comparison", "View / Compare",
+            null, null,
+            () => _ = (_compareFileLaunchService?.ReopenLastAsync() ?? Task.CompletedTask));
         Reg(CommandIds.View.EntropyAnalysis,"Entropy Analysis…",     "View",    null,             null,
             () => OnEntropyAnalysis(this, null!));
         Reg(CommandIds.View.Terminal,      "Terminal",               "View",    null,             "\uE756",

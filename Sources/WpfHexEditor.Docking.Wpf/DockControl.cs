@@ -201,6 +201,13 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     public Func<DockItem, object>? ContentFactory { get; set; }
 
     /// <summary>
+    /// Optional factory injected by the application shell to add extra context-menu items
+    /// to every tab (e.g. "Compare with…").  Forwarded to each <see cref="DockTabControl"/>
+    /// when it is created.
+    /// </summary>
+    public Func<DockItem, IReadOnlyList<MenuItem>>? TabExtraMenuItemsFactory { get; set; }
+
+    /// <summary>
     /// Optional async content factory. When set and <see cref="ContentFactory"/> is null,
     /// tabs show an indeterminate progress bar until the async factory completes.
     /// </summary>
@@ -964,7 +971,8 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     private DockTabControl CreateTabControlForGroup(DockGroupNode group)
     {
         var tabControl = new DockTabControl();
-        tabControl.TabStripPlacement = Dock.Bottom;
+        tabControl.TabStripPlacement     = Dock.Bottom;
+        tabControl.ExtraMenuItemsFactory = TabExtraMenuItemsFactory;
         tabControl.Bind(group, CachedContentFactory);
         WireTabControlEvents(tabControl);
         TabHoverPreview.Attach(tabControl);

@@ -67,6 +67,14 @@ public class DockTabControl : TabControl
     public event Action<DockItem>? TabStickyToggleRequested;
     public event Action<DockItem, int>? TabReorderRequested;
 
+    /// <summary>
+    /// Optional factory that injects extra <see cref="MenuItem"/> entries at the bottom of
+    /// a tab's context menu (after a separator).  Set by the application shell to provide
+    /// "Compare with…" and similar extensibility items without coupling the docking library
+    /// to application logic.
+    /// </summary>
+    public Func<DockItem, IReadOnlyList<MenuItem>>? ExtraMenuItemsFactory { get; set; }
+
     private Func<DockItem, object>? _contentFactory;
     private int  _dragOriginalModelIndex = -1;
     private int  _currentInsertionIdx    = -1;
@@ -761,6 +769,15 @@ public class DockTabHeader : StackPanel
             };
             closeAllButPinnedItem.Click += (_, _) => CloseAllButPinnedRequested?.Invoke();
             menu.Items.Add(closeAllButPinnedItem);
+        }
+
+        // Extensibility: let the application shell inject extra items (e.g. "Compare with…")
+        var extraItems = ExtraMenuItemsFactory?.Invoke(item);
+        if (extraItems is { Count: > 0 })
+        {
+            menu.Items.Add(new Separator());
+            foreach (var mi in extraItems)
+                menu.Items.Add(mi);
         }
 
         return menu;

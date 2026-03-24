@@ -209,6 +209,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // MenuAdapter — captured after plugin system initialises; used by CommandPalette
     private MenuAdapter? _menuAdapter;
 
+    // Compare Files launch service — orchestrates smart file picking + history
+    private CompareFileLaunchService? _compareFileLaunchService;
+
     // SolutionManager
     private readonly ISolutionManager _solutionManager = SolutionManager.Instance;
 
@@ -530,6 +533,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Load user settings then apply persisted theme before layout loads
         AppSettingsService.Instance.Load();
         LoadKeyBindingOverrides();   // populate gesture overrides from settings
+        InitCompareFileLaunchService();
         ApplyThemeFromSettings();
         InitAutoSerializeTimer();
 
@@ -559,8 +563,42 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Register Command Palette options page
         InitCommandPaletteOptions();
 
+        // Register Comparison options page
+        WpfHexEditor.Options.OptionsPageRegistry.RegisterDynamic(
+            "Editor", "Compare Files",
+            () => new WpfHexEditor.App.Options.ComparisonOptionsPage(
+                AppSettingsService.Instance.Current.Comparison,
+                AppSettingsService.Instance),
+            "\uE8A5");
+
         // Plugin system — fire-and-forget after layout is ready
         _ = InitializePluginSystemAsync();
+    }
+
+    private void InitCompareFileLaunchService()
+    {
+        var settings = AppSettingsService.Instance.Current.Comparison;
+        _compareFileLaunchService = new WpfHexEditor.App.Services.CompareFileLaunchService(
+            ownerWindow    : this,
+            documentManager: _documentManager,
+            settings       : settings,
+            settingsService: AppSettingsService.Instance,
+            openDiffViewer : OpenDiffViewerTab);
+    }
+
+    /// <summary>Creates and docks a DiffViewer tab for two file paths.</summary>
+    private void OpenDiffViewerTab(string leftPath, string rightPath)
+    {
+        _documentCounter++;
+        var contentId = $"doc-diff-{_documentCounter}";
+        var viewer    = new WpfHexEditor.Editor.DiffViewer.Controls.DiffViewer();
+        var title     = $"{System.IO.Path.GetFileName(leftPath)} ↔ {System.IO.Path.GetFileName(rightPath)}";
+
+        StoreContent(contentId, viewer);
+        var item = new DockItem { Title = title, ContentId = contentId };
+        _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+        DockHost.RebuildVisualTree();
+        _ = viewer.CompareAsync(leftPath, rightPath);
     }
 
     private void InitAutoSerializeTimer()
@@ -1214,9 +1252,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _isLocked = false;
         LockMenuItem.IsChecked = false;
 
-        DockHost.ContentFactory    = CreateContentForItem;
-        DockHost.TabCloseRequested += OnTabCloseRequested;
-        DockHost.ActiveItemChanged += OnActiveDocumentChanged;
+        DockHost.ContentFactory             = CreateContentForItem;
+        DockHost.TabExtraMenuItemsFactory   = BuildTabCompareMenuItems;
+        DockHost.TabCloseRequested         += OnTabCloseRequested;
+        DockHost.ActiveItemChanged         += OnActiveDocumentChanged;
         DockHost.Layout = _layout;
 
         // DockHost.Layout creates its own DockEngine internally (OnLayoutChanged).
@@ -1938,6 +1977,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ApplyHexEditorDefaults(hexEditor);
         hexEditor.ShowStatusBar       = false;
         hexEditor.ShowProgressOverlay = false;  // App handles progress in its own status bar
+
+        // Wire Compare-file context menu events → CompareFileLaunchService
+        hexEditor.CompareFileRequested += (_, e) =>
+            _ = _compareFileLaunchService?.LaunchAsync(e.FilePath) ?? Task.CompletedTask;
+        hexEditor.CompareSelectionRequested += (_, e) =>
+        {
+            if (e.IsTempFile && e.FilePath is not null)
+                _compareFileLaunchService?.TrackTempFile(e.FilePath);
+            _ = _compareFileLaunchService?.LaunchAsync(e.FilePath) ?? Task.CompletedTask;
+        };
 
         // -- Phase 12: in-memory new document --------------------------
         if (isNewFile)
@@ -4241,6 +4290,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     ActiveHexEditor      = null;
                     // RefreshText.Text  = ""; // Removed - handled via StatusBarContributor
                 }
+                // Unregister BEFORE Close() so that TitleChanged("Untitled") fired by
+                // FileName="" in Close() has no DocumentModel subscriber still active.
+                UnregisterDocument(item.ContentId);
                 hex.Close();   // Release the underlying FileStream immediately
             }
 
@@ -4274,7 +4326,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             }
 
             _propertyProviderCache.Remove(ctrl);  // M5: evict cached provider
-            UnregisterDocument(item.ContentId);
+            if (ctrl is not HexEditorControl)
+                UnregisterDocument(item.ContentId);  // already called above for HexEditorControl
             PushOpenDocumentsToErrorPanel();
             _contentCache.Remove(item.ContentId);
             _displayContent.Remove(item.ContentId);   // must clear both caches so reopen gets a fresh editor
@@ -5689,23 +5742,85 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         => ShowOrCreatePanel("Properties", "panel-properties", DockDirection.Right);
 
     private void OnCompareFiles(object sender, RoutedEventArgs e)
+        => _ = (_compareFileLaunchService?.LaunchAsync() ?? Task.CompletedTask);
+
+    /// <summary>
+    /// Builds the extra "Compare with…" context menu items injected into every document tab.
+    /// </summary>
+    private IReadOnlyList<System.Windows.Controls.MenuItem> BuildTabCompareMenuItems(DockItem item)
     {
-        var dlgLeft = new OpenFileDialog { Title = "Select LEFT file for comparison", Multiselect = false };
-        if (dlgLeft.ShowDialog() != true) return;
+        if (!item.Metadata.TryGetValue("FilePath", out var filePath) ||
+            string.IsNullOrEmpty(filePath))
+            return [];
 
-        var dlgRight = new OpenFileDialog { Title = "Select RIGHT file for comparison", Multiselect = false };
-        if (dlgRight.ShowDialog() != true) return;
+        var compareWithActive = new System.Windows.Controls.MenuItem
+        {
+            Header = "Compare with Active Editor",
+            Icon   = new System.Windows.Controls.TextBlock
+            {
+                Text       = "\uE8A5",
+                FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+                FontSize   = 12
+            }
+        };
+        compareWithActive.Click += (_, _) => _ = (_compareFileLaunchService?.LaunchWithLeftAsync(filePath) ?? Task.CompletedTask);
 
-        _documentCounter++;
-        var contentId = $"doc-diff-{_documentCounter}";
-        var viewer    = new WpfHexEditor.Editor.DiffViewer.Controls.DiffViewer();
-        var title     = $"{Path.GetFileName(dlgLeft.FileName)} ↔ {Path.GetFileName(dlgRight.FileName)}";
+        var compareWithAnother = new System.Windows.Controls.MenuItem
+        {
+            Header = "Compare with Another File…",
+            Icon   = new System.Windows.Controls.TextBlock
+            {
+                Text       = "\uE8B7",
+                FontFamily = new System.Windows.Media.FontFamily("Segoe MDL2 Assets"),
+                FontSize   = 12
+            }
+        };
+        compareWithAnother.Click += (_, _) => _ = (_compareFileLaunchService?.LaunchAsync(filePath) ?? Task.CompletedTask);
 
-        StoreContent(contentId, viewer);
-        var item = new DockItem { Title = title, ContentId = contentId };
-        _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
-        DockHost.RebuildVisualTree();
-        _ = viewer.CompareAsync(dlgLeft.FileName, dlgRight.FileName);
+        return [compareWithActive, compareWithAnother];
+    }
+
+    private void LaunchCompareWithClipboard()
+    {
+        var clipText = Clipboard.GetText();
+        if (string.IsNullOrEmpty(clipText)) return;
+
+        // Write clipboard content to a temp file then launch
+        var tmp = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(), "WpfHexEditor",
+            $"clipboard_{DateTime.UtcNow:yyyyMMdd_HHmmss}.txt");
+        System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(tmp)!);
+        System.IO.File.WriteAllText(tmp, clipText);
+        _compareFileLaunchService?.TrackTempFile(tmp);
+
+        var activePath = _documentManager.ActiveDocument?.FilePath;
+        _ = _compareFileLaunchService?.LaunchAsync(activePath, tmp);
+    }
+
+    private async Task LaunchCompareWithHeadAsync()
+    {
+        var activePath = _documentManager.ActiveDocument?.FilePath;
+        if (string.IsNullOrEmpty(activePath)) return;
+
+        var git = new WpfHexEditor.Core.Diff.Services.GitDiffService();
+        var repoRoot = git.GetRepoRoot(activePath);
+        if (repoRoot is null)
+        {
+            MessageBox.Show("No git repository found for this file.", "Compare with HEAD",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var tempPath = await git.ExtractRefVersionAsync(repoRoot, "HEAD", activePath);
+        if (tempPath is null)
+        {
+            MessageBox.Show("Could not extract HEAD version from git.", "Compare with HEAD",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        _compareFileLaunchService?.TrackTempFile(tempPath);
+        _ = _compareFileLaunchService?.LaunchAsync(tempPath, activePath);
     }
 
     private void OnEntropyAnalysis(object sender, RoutedEventArgs e)

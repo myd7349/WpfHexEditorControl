@@ -168,9 +168,10 @@ public partial class MainWindow
         // is already null and HasActiveBuild correctly returns false.
         _buildStateRefreshSubs =
         [
-            _ideEventBus.Subscribe<BuildSucceededEvent>(_ => Dispatcher.InvokeAsync(RefreshBuildProperties)),
-            _ideEventBus.Subscribe<BuildFailedEvent>   (_ => Dispatcher.InvokeAsync(RefreshBuildProperties)),
-            _ideEventBus.Subscribe<BuildCancelledEvent>(_ => Dispatcher.InvokeAsync(RefreshBuildProperties)),
+            _ideEventBus.Subscribe<BuildStartedEvent>   (OnProjectBuildStarted),
+            _ideEventBus.Subscribe<BuildSucceededEvent> (e => { OnProjectBuildEnded(e.ProjectPath); Dispatcher.InvokeAsync(RefreshBuildProperties); }),
+            _ideEventBus.Subscribe<BuildFailedEvent>    (e => { OnProjectBuildEnded(e.ProjectPath); Dispatcher.InvokeAsync(RefreshBuildProperties); }),
+            _ideEventBus.Subscribe<BuildCancelledEvent> (_ => { Dispatcher.InvokeAsync(() => _solutionExplorerPanel?.ClearAllBuilding()); Dispatcher.InvokeAsync(RefreshBuildProperties); }),
         ];
 
         // Register Ctrl+Shift+B → Build Solution.
@@ -530,6 +531,12 @@ public partial class MainWindow
     {
         Dispatcher.InvokeAsync(() => _solutionExplorerPanel?.SetProjectDirty(e.ProjectId, e.IsDirty));
     }
+
+    private void OnProjectBuildStarted(BuildStartedEvent e)
+        => Dispatcher.InvokeAsync(() => _solutionExplorerPanel?.SetProjectBuilding(e.ProjectPath, true));
+
+    private void OnProjectBuildEnded(string projectPath)
+        => Dispatcher.InvokeAsync(() => _solutionExplorerPanel?.SetProjectBuilding(projectPath, false));
 
     private async Task RunBuildDirtyAsync()
     {
