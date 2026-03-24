@@ -7552,7 +7552,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (!_enableSmartComplete || _smartCompletePopup == null)
                 return;
 
-            _smartCompletePopup.CaretScreenPoint = ComputeCaretScreenPoint(belowCaret: true);
             _smartCompletePopup.TriggerImmediate();
         }
 
@@ -7564,7 +7563,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (!_enableSmartComplete || _smartCompletePopup == null)
                 return;
 
-            _smartCompletePopup.CaretScreenPoint = ComputeCaretScreenPoint(belowCaret: true);
             _smartCompletePopup.TriggerWithDelay(SmartCompleteDelay);
         }
 
@@ -7579,6 +7577,19 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             var localX   = textLeft + _cursorColumn * _charWidth - _horizontalScrollOffset;
             var localY   = (_cursorLine - _firstVisibleLine + (belowCaret ? 1 : 0)) * _lineHeight;
             return PointToScreen(new Point(localX, localY));
+        }
+
+        /// <summary>
+        /// Returns the caret's bounding rectangle in the editor's local coordinate space.
+        /// Used by <see cref="SmartCompletePopup"/> for DPI-safe popup placement via
+        /// <see cref="System.Windows.Controls.Primitives.PlacementMode.Bottom"/>.
+        /// </summary>
+        internal Rect GetCaretDisplayRect()
+        {
+            var textLeft = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+            var x        = textLeft + _cursorColumn * _charWidth - _horizontalScrollOffset;
+            var y        = (_cursorLine - _firstVisibleLine) * _lineHeight;
+            return new Rect(x, y, 1, _lineHeight);
         }
 
         /// <summary>

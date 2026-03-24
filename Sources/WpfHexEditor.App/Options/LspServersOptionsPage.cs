@@ -59,6 +59,13 @@ public sealed class LspServersOptionsPage : UserControl, IOptionsPage
     {
         _registry = registry;
 
+        // Merge DialogStyles locally so KSP_* keys survive ApplyTheme() clearing App resources.
+        Resources.MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri(
+                "pack://application:,,,/WpfHexEditor.App;component/Themes/DialogStyles.xaml")
+        });
+
         // ── Toolbar ────────────────────────────────────────────────────────────
         var addBtn    = MakeButton("Add",    OnAdd);
         var removeBtn = MakeButton("Remove", OnRemove);
@@ -112,6 +119,10 @@ public sealed class LspServersOptionsPage : UserControl, IOptionsPage
             Binding = new Binding(nameof(LspServerRow.Arguments)) { Mode = BindingMode.TwoWay },
             Width   = new DataGridLength(1, DataGridLengthUnitType.Star),
         });
+
+        _grid.SetResourceReference(DataGrid.StyleProperty,    "KSP_DataGridStyle");
+        _grid.SetResourceReference(DataGrid.RowStyleProperty, "KSP_DataGridRowStyle");
+        _grid.ClearValue(DataGrid.RowBackgroundProperty);
 
         _grid.CellEditEnding += OnCellEditEnding;
 

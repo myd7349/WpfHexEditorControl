@@ -43,12 +43,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // LSP integration
         private ILspClient? _lspClient;
 
-        /// <summary>
-        /// Screen position of the caret. Must be set by <c>CodeEditor</c> before
-        /// calling <see cref="TriggerImmediate"/> or <see cref="TriggerWithDelay"/>.
-        /// </summary>
-        public Point CaretScreenPoint { get; set; }
-
         /// <summary>Current file path, kept in sync by CodeEditor.SetLspClient wiring.</summary>
         internal string? CurrentFilePath { get; set; }
 
@@ -452,16 +446,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
-        /// Positions the popup at the screen coordinates previously set via <see cref="CaretScreenPoint"/>.
-        /// Uses PlacementMode.Absolute so the popup appears directly below the caret regardless of
-        /// where the CodeEditor control is on screen or how far it has scrolled.
+        /// Positions the popup directly below the caret using the editor's local coordinate rect.
+        /// <see cref="PlacementMode.Bottom"/> + <see cref="Popup.PlacementRectangle"/> keeps all
+        /// positioning in device-independent pixels — WPF handles DPI and monitor boundaries.
         /// </summary>
         private void PositionPopup()
         {
-            PlacementTarget  = _editor;
-            Placement        = PlacementMode.Absolute;
-            HorizontalOffset = CaretScreenPoint.X;
-            VerticalOffset   = CaretScreenPoint.Y;
+            PlacementTarget    = _editor;
+            PlacementRectangle = _editor.GetCaretDisplayRect();
+            Placement          = PlacementMode.Bottom;
+            HorizontalOffset   = 0;
+            VerticalOffset     = 0;
         }
 
         /// <summary>

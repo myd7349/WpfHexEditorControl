@@ -6,6 +6,152 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
+## [0.7.0] — 2026-03-23 — LSP Engine, Command Palette, Diagnostic Tools & Major IDE Expansion
+
+This release is the largest since v0.6.0, delivering a production-grade LSP client engine, a VS Code-style Command Palette with 9 search modes, a Diagnostic Tools plugin, a fully dockable Search Panel, a centralized Command System, IDE-wide EventBus full coverage, Document Model Phase 1, incremental builds with dirty tracking, Class Diagram 10-phase overkill, XAML Designer Phase 3, Markdown Editor IDE integration, Code Editor multi-caret + word wrap + data-driven folding, DI infrastructure, and dozens of theme/stability fixes across all 18 themes.
+
+### ✨ Added — LSP Client Engine (ADR-DI-01 + ADR-LSP-01 + ADR-LSP-02)
+
+- **`AppServiceCollection`** — `Microsoft.Extensions.DependencyInjection`-backed service provider wired in `MainWindow`; `MainWindowServiceArgs` record; `BuildServiceAdapters()` extracted; `_serviceProvider` disposed in `ShutdownPluginSystemAsync`
+- **`LspClientImpl`** — full JSON-RPC LSP client over stdio; server lifecycle (`initialize` / `shutdown` / `exit`); `ServerCapabilities` parse (`null` / `bool` / `JsonObject` variants for all capability flags); capability-gated dispatch for all 10 providers
+- **`LspDocumentSync`** — `DidOpen` / `DidChange` / `DidClose` per open document; `FromUri()` static helper (`file:///` → local path)
+- **Completion** — `SmartCompletePopup` wired to LSP (`SetLspClient()`); async `ShowSuggestions()`; `MapLspItem()` / `LspKindToGlyph()`; LSP-first with local fallback
+- **Hover quick-info** — `HoverQuickInfoService` (already done in prior release)
+- **Signature help** — `SignatureHelpPopup` (Popup, `PlacementMode.Absolute`); triggered on `'('` in `CodeEditor.OnTextInput`; capability-gated
+- **Code actions** — `LspCodeActionProvider` (`textDocument/codeAction`); `LspCodeActionPopup` (promise-based Popup + ListBox, `CE_*` tokens); `Ctrl+.` in `CodeEditor`; context menu "Quick Fix…"
+- **Rename symbol** — `LspRenameProvider` (`textDocument/rename`); `LspRenamePopup` (TextBox, pre-filled + SelectAll); `F2` in `CodeEditor`; context menu "Rename Symbol"; `ApplyWorkspaceEdit()` bottom-up via buffer
+- **`LspEditParser`** — shared static helpers: `ParseWorkspaceEdit` supports both `changes` and `documentChanges` formats
+- **Breadcrumb bar** — `LspBreadcrumbBar` 22px row in `CodeEditorSplitHost`; debounced 200 ms `CaretMoved`; `BC_*` tokens; `CodeEditorSplitHost` implements `ILspAwareEditor`
+- **LSP status bar** — `LspStatusBarAdapter` (`WpfHexEditor.App.Services` namespace); subscribes `ServerStateChanged`; displays server state per language
+- **Workspace symbols** — `WorkspaceSymbolsPopup` (mirrors `CommandPaletteWindow`); `ListBoxItem.IsSelectedProperty`; opened via `Ctrl+T`
+- **Inlay hints** — `LspInlayHintsLayer` (Layers/ folder); 500 ms debounce; `CE_InlayHint*` tokens
+- **Code lens** — `LspCodeLensLayer` (Layers/ folder); 800 ms debounce; `CE_CodeLens*` tokens
+- **Semantic tokens** — `LspSemanticTokensLayer` (Layers/ folder); 1 s debounce; `SE_*` overlay rectangles
+- **`ILspAwareEditor`** — opt-in: `SetLspClient(ILspClient?)` + `SetDocumentManager(IDocumentManager)`; `LspDocumentBridgeService` resolves via `FindDocumentByBuffer` → calls `SetLspClient` + `SetDocumentManager` on doc open; clears on unregister
+- **`LspServersOptionsPage`** — code-behind UserControl with DataGrid, Add/Remove/Browse; registered as `"Language Server Protocol" > "Servers"`
+- **30 new theme tokens** — `SC_*` / `BC_*` / `LSP_*` / `CE_*` / `SE_*` / `PE_*` / `PD_*` / `MKT_*` × 18 themes via PowerShell
+
+### ✨ Added — Command System + Command Palette (ADR-CMD-01 + ADR-CP-01/02/03)
+
+- **`WpfHexEditor.Commands` project** — `CommandDefinition` record; `ICommandRegistry` / `CommandRegistry` (thread-safe); `IKeyBindingService` / `KeyBindingService`; `CommandIds` (~45 constants); decoupled from `AppSettings` via `OverridesChanged` callback pattern
+- **`MainWindow.Commands.cs`** — registers all ~45 built-in commands; wires `OverridesChanged` → persist to `AppSettings.KeyBindingOverrides` + save; `LoadKeyBindingOverrides()` on startup
+- **`KeyboardShortcutsPage`** — code-behind DataGrid + search + inline edit + reset; registered via `OptionsPageRegistry.RegisterDynamic`
+- **Title bar launcher** — `TitleBarSearchButton` (380px wide, `WindowChrome.IsHitTestVisibleInChrome`); `TitleBarSearchLabel` shows solution name (SemiBold) or `<Wpf:HexEditor Studio />` (Italic); `TB_Search*` tokens × 18 themes
+- **`CommandPaletteWindow`** — code-behind only, VS Code-style non-modal overlay; 9 search modes: `>` commands, `@` symbols (LSP), `:` go-to-line, `#` files (solution), `%` content grep, `?` help, Tab cycle; `Ctrl+Shift+P` shortcut
+- **`CommandPaletteService`** — 3-tier fuzzy scoring (prefix 1000 / substring 500 / subsequence 100); `FrequencyBoost` (+300 / +150 / +50 by recency); `ContextBoost` (+200); `BuildEmptyQueryResults` shows recents first
+- **`CommandPaletteSettings`** — 14 properties: `WindowWidth` / `ShowIconGlyphs` / `ShowCategoryHeaders` / `ShowGestureHints` / `DescriptionMode` / `HighlightMatchChars` / `MaxResults` / `SearchDebounceMs` / `DefaultMode` / `ShowRecentCommands` / `RecentCommandsCount` / `FrequencyBoostEnabled` / `ContextBoostEnabled` / `CommandHistory`; `MaxGrepResults` / `MaxGrepFileSizeBytes` for `%` grep mode
+- **`CommandPaletteOptionsPage`** — 5-section options page (Appearance/Description/Search/Recents/Modes) with Reset; registered under `"Command Palette" > "Général"`
+- **ADR-CP-03 file search + content grep** — `#` mode: solution file index with fuzzy path matching; `%` mode: async file-content grep with `MaxGrepFileSizeBytes` guard, progress indicator, cancellable
+- **`CP_*` + `KSP_*` tokens** — 12 + 6 tokens × 18 themes
+
+### ✨ Added — Diagnostic Tools Plugin (ADR-DT-01 + ADR-DT-02)
+
+- **`WpfHexEditor.Plugins.DiagnosticTools`** — priority 45; subscribes `ProcessLaunchedEvent` / `ProcessExitedEvent` on `IIDEEventBus`
+- **`ProcessMonitor`** — 500 ms CPU% + memory polling via `PerformanceCounter` + GC APIs
+- **`EventCounterReader`** — EventPipe `System.Runtime` provider (GC, threadpool, exceptions) via `Microsoft.Diagnostics.NETCore.Client`
+- **`DiagnosticsSession`** — per-process session coordinating monitor + event reader
+- **`HeapSnapshotService`** — `DiagnosticsClient.WriteDump(DumpType.WithHeap)` → `%TEMP%\WpfHexEditor\<pid>_<timestamp>.gcdump`
+- **`DiagnosticToolsPanel.xaml`** — 4 tabs: Summary / Events / CPU / Memory
+- **`CpuGraphControl` / `MemoryGraphControl`** — `DrawingVisual`, 120-point ring-buffer, auto-scale Y, `LineTo` with `isSmoothJoin`
+- **8 `DT_*` tokens** × 18 themes; `Microsoft.Diagnostics.NETCore.Client 0.2.510501` + `Microsoft.Diagnostics.Tracing.TraceEvent 3.1.7` NuGet refs
+
+### ✨ Added — Document Model Phase 1 (ADR-DOC-01 + ADR-DOC-02)
+
+- **`IDocumentBuffer` / `DocumentBuffer`** — thread-safe shared in-memory content buffer; `DocumentBufferChangedEventArgs`; `Dispatcher`-marshalled `Changed` event
+- **`IBufferAwareEditor`** — opt-in: `AttachBuffer(IDocumentBuffer)` + `DetachBuffer()`; implemented by `CodeEditor`, `TextEditor`, `MarkdownEditorHost`, `CodeEditorSplitHost`, `XamlDesignerSplitHost`
+- **`DocumentModel.Buffer`** — `IDocumentBuffer? Buffer { get; internal set; }` on all open documents
+- **`DocumentManager`** — `GetBuffer()` / `GetBufferForFile()`; `_buffers` dict (keyed by filepath, `OrdinalIgnoreCase`); `ResolveLanguageId()` map (10 entries); buffer create/attach in `AttachEditor()`; release/detach in `Unregister()`
+- **`LspBufferBridge`** — subscribes `IDocumentBuffer.Changed` → `ILspClient.DidChange` with 300 ms `DispatcherTimer` debounce; sends `DidOpen` on construct and `DidClose` on Dispose
+- **`LspDocumentBridgeService`** — coordinates bridges; one `ILspClient` per language ID (lazy init); wired in `MainWindow.PluginSystem.cs`; disposed in `ShutdownPluginSystemAsync`
+- **`FindDocumentByBuffer(IDocumentBuffer)`** — O(n) scan added to `IDocumentManager` + `DocumentManager`
+
+### ✨ Added — IDE EventBus Full Coverage (ADR-EB-01 + ADR-EB-02)
+
+- **39 typed events** — `RegisterWellKnownEvents()` expanded 10 → 36 → 39 types; `FileClosedEvent` / `WorkspaceChangedEvent` / `TerminalCommandExecutedEvent` / `CodeEditorCommandExecutedEvent` fully published
+- **`CodeEditorCursorMovedEvent`** — `EditorEventAdapter` subscribes `CodeEditor.CaretMoved` (1-based line/col)
+- **`CodeEditorFoldingChangedEvent`** — subscribes `FoldingEngine.RegionsChanged` (CollapsedCount)
+- **`CodeEditorSelectionChangedEvent`** — uses `_codeEditor.SelectedText` (max 4096 chars)
+- **`BuildProgressUpdatedEvent`** — `BuildSystem.RunBuildAsync()` fires after each project (`ProgressPercent`)
+- **`ParseCompletedEvent`** — `IncrementalParser.ParseCompleted` event + `ParseCompletedEventArgs`; `EventBusIntegration.TrackParser()` / `UntrackParser()` for LSP pipeline coordination
+- **`ProcessLaunchedEvent` / `ProcessExitedEvent`** — `StartupProjectRunner` monitors stdout/stderr and publishes; consumed by `DiagnosticTools` plugin
+- **Solution Explorer + generic editor adapters** (ADR-EB-02) — 3 additional publisher adapters
+
+### ✨ Added — Incremental Build (ADR-BUILD-03 + ADR-BUILD-CE-01)
+
+- **`IIncrementalBuildTracker` / `IncrementalBuildTracker`** — FSW per project dir; `BuildFileWatcher`; `BuildSystem.BuildDirtyAsync()` builds only dirty projects + transitive dependents
+- **`Ctrl+Alt+F7`** — incremental build shortcut
+- **Solution Explorer dirty dot** — orange `●` indicator via `IsBuildDirty` on `ProjectNodeVm` + `DataTrigger`
+- **Gutter diagnostics** — `CE_GutterError` / `CE_GutterWarning` tokens × 18 themes; `RenderValidationGlyph()` uses `TryFindResource`; `CodeScrollMarkerPanel.UpdateDiagnosticMarkers()` error/warning ticks on scrollbar
+- **Multi-caret** — `_caretManager` wired; `Ctrl+Alt+Click` adds secondary caret; `Ctrl+D` = `SelectNextOccurrence()`; secondary carets rendered at 60% opacity
+- **`CodeEditorSplitHost`** implements `IDiagnosticSource` (forwarding)
+- **`EditorEventAdapter`** — instantiated per code-editor tab in `MainWindow.xaml.cs`, disposed on close
+
+### ✨ Added — Search Panel (Dockable, VS-Style)
+
+- **`ISearchable` / `ISearchPanel`** — contracts in `Editor.Core`
+- **`RegexSearchEngine`** + `SearchMode.Regex/HexRegex` + `SearchCapabilities` [Flags] enum
+- **`IByteSearchSource`** in `WpfHexEditor.Core.Search.Services`; `ITextSearchSource` in `Editor.Core`
+- **`SearchPanelViewModel`** — async search dispatch; result collection; navigation; export commands; routes to `ByteSearchService` / `TextSearchService` / `RegexSearchEngine` by mode
+- **`SearchPanel.xaml`** — 4-row VS-style layout (toolbar / inputs / virtualized ListView / status); implements `ISearchPanel`
+- **`HexEditor.SearchableIntegration.cs`** (partial class) — explicit `ISearchable` + `IByteSearchSource`
+- **`CodeEditorSplitHost` + `TblEditor`** implement `ISearchable` + `ITextSearchSource`
+- **`Ctrl+Shift+F`** — replaces old `AdvancedSearchCommand`; opens dockable `SearchPanel`
+- **14 `SP_*` tokens** × 18 themes
+
+### ✨ Added — Class Diagram Overkill (ADR-CD-OVK-01)
+
+- **10-phase overhaul** — DSL v2 (generics, packages, notes, stereotypes, `GenericTypeParser`); Layout v2 (Force-Directed Fruchterman-Reingold + Hierarchical Sugiyama + Swimlane, `Ctrl+Shift+A` cycle); Canvas v2 (`MultiSelectAdorner`, `InPlaceEditAdorner`, `DiagramClipboardService`, `DiagramAlignmentService`); Orthogonal + Bézier arrow routing (A* on 10px grid); Roslyn incremental analysis cache; 6 panel VMs upgraded; Export v2 (PlantUML, XMI 2.1, Interactive SVG); Minimap + Grid overlay; Performance (`DiagramSpatialIndex` O(1), 3-LOD `VirtualDiagramCanvas`); Plugin live sync (1 s rate limit, `DiagramFilterService`, `NavigateToSourceService`)
+- **46 new `CD_*` tokens** × 18 themes
+
+### ✨ Added — XAML Designer Phase 3 (ADR-XD-03)
+
+- **Phase 10 completion** — `ConstraintAdorner` / `ConstraintService` / `ResponsiveBreakpointBar`; `GradientEditorAdorner`; `BindingPathPickerPopup`; `ResourceReferenceService.ApplyResourceReference`; `PerformanceOverlayAdorner` / `DesignCanvasStats` (`Ctrl+Shift+F9`)
+- **40 new `XD_*` tokens** × 18 themes
+- **9 panels migrated** to `WpfHexEditor.Plugins.XamlDesigner` (ADR-XD-02); 4 domain types promoted to Models/
+
+### ✨ Added — Markdown Editor Full IDE Integration
+
+- **`MD.whfmt`** routes `.md` to markdown-editor; lazy `mermaid.js` (detects `HasMermaidDiagram`); adaptive debounce 300 / 800 / 1500 ms; off-thread word count + reading time
+- **Image paste** — `Ctrl+V` → writes to `assets/` as PNG or base64 inline
+- **Insert / Format toolbar pods**; **`MarkdownOutlinePanel`** (H1–H6 tree, 400 ms debounce, off-thread)
+- **Context menus** — `MdContextMenu.xaml` with `MD_ContextMenuStyle` tokens; VIEW+ACTIONS groups on preview; FORMAT+INSERT groups on source editor
+
+### ✨ Added — Code Editor Improvements
+
+- **Word wrap** — `IsWordWrapEnabled` toggle; prefix-sum wrap map (`_wrapHeights[]` / `_wrapOffsets[]`); `RenderTextContentWrapped` / `RenderSelectionWrapped` paths; H-scrollbar auto-hides
+- **Multi-caret** — `Ctrl+Alt+Click` adds caret; `Ctrl+D` = `SelectNextOccurrence()`; secondary carets at 60% opacity
+- **Data-driven folding** — `FoldingRules` record; 4 strategies: `PatternFoldingStrategy` / `NamedRegionFoldingStrategy` / `TagFoldingStrategy` / `HeadingFoldingStrategy`; `LanguageFoldingStrategyBuilder`; 4 `.whfmt` formats migrated; XAML/XML multi-line tag folding; XMLC comment block folding
+- **Scope guide lines fix** — `ComputeScopeGuideX()` uses `startLine` (opening tag indent) instead of `startLine+1`
+- **Horizontal caret auto-scroll** — `EnsureCaretHorizontallyVisible` hooked to `CaretStatus` in TextEditor; `EnsureCursorColumnVisible` moved before virtual-scroll guard in CodeEditor
+
+### ✨ Added — Docking Engine Improvements
+
+- **`WpfHexEditor.Docking.Wpf` extracted** (ADR-055) — split from `WpfHexEditor.Shell`; contains all WPF docking controls + themes; `Shell` is now theme-XAML-only; pack URIs updated cross-assembly
+- **Auto-Hide grouped behavior** — pin hides the entire group; one `AutoHideGroupId` per group; flyout shows inline tab strip for multi-item groups; context menu (Show/Float/Close) with `GroupFloatRequested` / `GroupCloseRequested`; `ShowForItem` cancels both axis animations before assignment; `BeginAnimation(...,null)` releases hold on resize
+- **Theme persistence** (ADR-052) — `ApplyTheme()` now persists `ActiveThemeName` + saves + sets `_lastAppliedTheme`; `LoadDefaultLayoutFromResource()` reads embedded `defaultLayout.json`; `OnResetLayout()` restores from resource
+- **Docking Sprint 3** — incremental visual tree (M2.1): `ItemAddedToGroup` / `ItemRemovedFromGroup` events, `_tabControlCache`, `AddTab` / `RemoveTab`; WeakEvent subscriptions (M2.4): 8 weak-reference lambdas in `AttachEngine()`; undo/redo layout (M3.3): `LayoutSnapshotCommand.Redo()` uses `_afterSnapshot`, `Ctrl+Shift+Z/Y`
+
+### ✨ Added — Plugin Sandbox Signing (ADR-SB-01)
+
+- **`ValidateSignature()`** — checks `IsSigned` / file exists / ≥8 bytes; `[SECURITY]` prefix on hash mismatch for signed plugins; `SIGNED` / `unsigned` log per plugin
+
+### 🐛 Fixed
+
+- **UI freeze on hex/decompile tab open** — eliminated synchronous work on UI thread during tab activation; async pipeline enforced throughout
+- **`LspServersOptionsPage` theme** — merged `DialogStyles.xaml` locally; `SetResourceReference` for DataGrid/Row styles; page now follows active theme
+- **`CommandPaletteOptionsPage` theme** — merged `DialogStyles.xaml` locally; `MakeSectionHeader` / `MakeInfoText` use `SetResourceReference("CP_SecondaryTextBrush")`; TextBox / Button / RadioButton / CheckBox now theme-aware
+- **`AutoHideBar` NaN crash** — `ShowForItem` cancels both axis animations + explicit `From=0`; `hideAnim.Completed` guarded with `if (_isOpen) return`
+- **Auto-hide bar buttons** — `UpdateItems` now creates one button per item (not per group)
+- **XAML Designer non-renderable root** — `DesignCanvas.PeekRootTagName()` + `s_nonRenderableRoots` set; early exit for `ResourceDictionary` / `Style` / `DataTemplate` etc.; `XamlRenderErrorKind.NonRenderableRoot` auto switches to CodeOnly + blue info banner; `ElementSupportsTagAttribute("Color")` fix (Color struct excluded from `Tag` injection)
+- **Solution Explorer search** — 4 modes (FileName / Name+Content / ContentOnly / Regex); `ControlTemplate.Triggers DataTrigger` for `IsSearchVisible` (Style.Triggers broken for TreeViewItem); 2-char minimum + `_searchActive` flag
+- **XAML fold guide X position** — `ComputeScopeGuideX()` uses `startLine` (tag's own indent, not `startLine+1`)
+- **`.whlang` → `.whfmt` JSONC** — `JsonCommentHandling.Skip` + `AllowTrailingCommas` at both parse sites; `PatternFoldingStrategy` strips line comments before brace matching; 454 `.whfmt` headers converted to `/* */` block comments
+- **Class Diagram context menu** — `PlacementTarget = this` before `IsOpen = true` to prevent off-screen rendering
+- **Class Diagram DSL body extraction** — `openBrace = source.IndexOf('{', typeMatch.Groups[5].Index + typeMatch.Groups[5].Length)` avoids consuming class `{` in regex terminal
+- **`CommandPaletteWindow` hover theme** — explicit `Transparent` default bg + `IsMouseOver` trigger using `CP_HoverBrush`; `CP_HoverBrush` token × 18 themes
+
+---
+
 ## [0.6.3.2] — 2026-03-22 — Docking, Format Catalog & XAML Designer Fixes
 
 ### 🐛 Fixed — Docking System
