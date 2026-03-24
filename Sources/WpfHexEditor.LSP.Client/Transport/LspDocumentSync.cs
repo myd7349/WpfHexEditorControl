@@ -82,4 +82,15 @@ internal sealed class LspDocumentSync
     }
 
     internal static string ToUri(string filePath) => PathToUri(filePath);
+
+    /// <summary>Converts an LSP file:/// URI back to a local file system path.</summary>
+    internal static string FromUri(string uri)
+    {
+        if (uri.StartsWith("file:///", StringComparison.OrdinalIgnoreCase))
+        {
+            var path = uri[8..].Replace('/', System.IO.Path.DirectorySeparatorChar);
+            return Uri.UnescapeDataString(path);
+        }
+        return Uri.UnescapeDataString(uri);
+    }
 }

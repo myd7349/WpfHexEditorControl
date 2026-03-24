@@ -38,6 +38,13 @@ public sealed class IncrementalParser
 
     public string FilePath { get; }
 
+    /// <summary>
+    /// Fired after every completed parse (full or incremental).
+    /// Consumers (e.g. <see cref="WpfHexEditor.LSP.Integration.EventBusIntegration"/>)
+    /// subscribe to forward the event to the IDE event bus.
+    /// </summary>
+    public event EventHandler<ParseCompletedEventArgs>? ParseCompleted;
+
     public IncrementalParser(string filePath, Lexer lexer)
     {
         FilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
@@ -64,7 +71,9 @@ public sealed class IncrementalParser
             _tokens[i] = _lexer.TokenizeLine(lines[i], i);
         }
 
-        return Snapshot();
+        var result = Snapshot();
+        ParseCompleted?.Invoke(this, new ParseCompletedEventArgs(FilePath, lines.Count, _lexer.LanguageId));
+        return result;
     }
 
     /// <summary>
@@ -100,7 +109,9 @@ public sealed class IncrementalParser
             propagate++;
         }
 
-        return Snapshot();
+        var result = Snapshot();
+        ParseCompleted?.Invoke(this, new ParseCompletedEventArgs(FilePath, _tokens.Count, _lexer.LanguageId));
+        return result;
     }
 
     // -----------------------------------------------------------------------
@@ -114,3 +125,6 @@ public sealed class IncrementalParser
         return [.. text.Split('\n').Select(l => l.TrimEnd('\r'))];
     }
 }
+
+/// <summary>Event arguments for <see cref="IncrementalParser.ParseCompleted"/>.</summary>
+public sealed record ParseCompletedEventArgs(string FilePath, int LineCount, string LanguageId);

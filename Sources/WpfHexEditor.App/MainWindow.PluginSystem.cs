@@ -22,6 +22,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using WpfHexEditor.App.Services;
 using WpfHexEditor.SDK.Events;
 using WpfHexEditor.Core.Terminal;
@@ -47,10 +48,13 @@ namespace WpfHexEditor.App;
 public partial class MainWindow
 {
     // --- Plugin system singletons ---------------------------------------
+    private IServiceProvider? _serviceProvider;
     private WpfPluginHost? _pluginHost;
     private IDEHostContext? _ideHostContext;
     private IDEEventBus? _ideEventBus;
     private DocumentHostService? _documentHostService;
+    private WpfHexEditor.App.Services.LspDocumentBridgeService? _lspBridgeService;
+    private WpfHexEditor.App.Services.LspStatusBarAdapter?      _lspStatusBarAdapter;
     private readonly FocusContextService _focusContextService = new();
 
     // Service adapters (lazily set in InitializePluginSystemAsync after layout is ready)
@@ -96,26 +100,25 @@ public partial class MainWindow
     {
         try
         {
-            // 1. Build service adapters
-            _hexEditorService = new HexEditorServiceImpl();
-            _outputService = new OutputServiceImpl();
-            _errorPanelService = new ErrorPanelServiceImpl();
-            _themeService = new ThemeServiceImpl();
-            _terminalService = new TerminalServiceImpl();
+            // 1. Build service adapters and register in DI container.
+            BuildServiceAdapters(out var serviceArgs);
+            var sc = new ServiceCollection();
+            sc.AddAppServices(serviceArgs);
+            _serviceProvider = sc.BuildServiceProvider();
 
-            if (_errorPanel is not null)
-                _errorPanelService.SetErrorPanel(_errorPanel);
+            // Resolve adapters from container and assign to fields for backward compatibility.
+            _hexEditorService  = (HexEditorServiceImpl)  _serviceProvider.GetRequiredService<WpfHexEditor.SDK.Contracts.Services.IHexEditorService>();
+            _outputService     = (OutputServiceImpl)     _serviceProvider.GetRequiredService<WpfHexEditor.SDK.Contracts.Services.IOutputService>();
+            _errorPanelService = (ErrorPanelServiceImpl) _serviceProvider.GetRequiredService<WpfHexEditor.SDK.Contracts.Services.IErrorPanelService>();
+            _themeService      = (ThemeServiceImpl)      _serviceProvider.GetRequiredService<WpfHexEditor.SDK.Contracts.IThemeService>();
+            _terminalService   = (TerminalServiceImpl)   _serviceProvider.GetRequiredService<WpfHexEditor.SDK.Contracts.Services.ITerminalService>();
+            _dockingAdapter    = (DockingAdapter)        _serviceProvider.GetRequiredService<WpfHexEditor.PluginHost.Adapters.IDockingAdapter>();
+            _menuAdapter       = (MenuAdapter)           _serviceProvider.GetRequiredService<WpfHexEditor.PluginHost.Adapters.IMenuAdapter>();
+            _documentHostService = (DocumentHostService) _serviceProvider.GetRequiredService<WpfHexEditor.SDK.Contracts.Services.IDocumentHostService>();
 
-            _dockingAdapter = new DockingAdapter(_engine, _layout, DockHost, StoreContent, _layoutWasRestoredFromFile);
-
-            // Seed the left-side anchor with the built-in Solution Explorer so that plugin panels
-            // declaring DefaultDockSide = "Left" are automatically tabbed into the same group.
-            _dockingAdapter.SeedSideAnchor(DockDirection.Left, SolutionExplorerContentId);
-
-            var dockingAdapter = _dockingAdapter;
-            var menuAdapter = new MenuAdapter(MainMenuBar);
-            _menuAdapter = menuAdapter;
-            var statusBarAdapter = new StatusBarAdapter(AppStatusBar);
+            var dockingAdapter   = _dockingAdapter;
+            var menuAdapter      = _menuAdapter;
+            var statusBarAdapter = (StatusBarAdapter) _serviceProvider.GetRequiredService<WpfHexEditor.PluginHost.Adapters.IStatusBarAdapter>();
 
             // 2. Build PluginHost singletons
             var permissionService = new PermissionService();
@@ -134,12 +137,32 @@ public partial class MainWindow
             var capabilityAdapter = new PluginCapabilityRegistryAdapter();
             var extensionRegistry = new ExtensionRegistry();
 
-            // DocumentHostService bridges the high-level document API to MainWindow's
-            // docking infrastructure via the openFileHandler callback.
-            _documentHostService = new DocumentHostService(
-                _documentManager,
-                (path, editorId) => Dispatcher.InvokeAsync(() =>
-                    OpenStandaloneFileWithEditor(path, editorId)).Task);
+            // LSP server registry — best-effort: failures must not block IDE startup.
+            WpfHexEditor.Editor.Core.LSP.ILspServerRegistry? lspRegistry = null;
+            try { lspRegistry = new WpfHexEditor.LSP.Client.Services.LspServerRegistry(Dispatcher); }
+            catch (Exception ex) { OutputLogger.PluginError($"[LSP] Registry init failed: {ex.Message}"); }
+
+            // LSP-4: Options page for LSP server configuration.
+            if (lspRegistry is not null)
+            {
+                var capturedLsp = lspRegistry;
+                OptionsPageRegistry.RegisterDynamic(
+                    "Language Server Protocol",
+                    "Servers",
+                    () => new WpfHexEditor.App.Options.LspServersOptionsPage(capturedLsp),
+                    categoryIcon: "🔌");
+
+                // ADR-DOC-01: Wire document buffer changes to the LSP server.
+                _lspBridgeService = new WpfHexEditor.App.Services.LspDocumentBridgeService(
+                    _documentManager,
+                    lspRegistry,
+                    msg => OutputLogger.PluginInfo(msg));
+
+                // LSP-02-D: Status bar indicator for LSP server state.
+                _lspStatusBarAdapter = new WpfHexEditor.App.Services.LspStatusBarAdapter(
+                    _lspBridgeService,
+                    onErrorClick: () => OpenSettingsAt("Language Server Protocol", "Servers"));
+            }
 
             var hostContext = new IDEHostContext(
                 documentHost:        _documentHostService,
@@ -159,7 +182,10 @@ public partial class MainWindow
                 capabilityRegistry:  capabilityAdapter,
                 extensionRegistry:   extensionRegistry,
                 solutionManager:     _solutionManager,
-                commandRegistry:     new WpfHexEditor.PluginHost.SdkCommandRegistryAdapter(_commandRegistry));
+                commandRegistry:     new WpfHexEditor.PluginHost.SdkCommandRegistryAdapter(_commandRegistry))
+            {
+                LspServers = lspRegistry
+            };
 
             // 3. Create orchestrator
             _ideHostContext = hostContext;
@@ -695,6 +721,35 @@ public partial class MainWindow
         OutputLogger.PluginInfo($"[DevWatch] Watching '{pluginId}' → {dir}");
     }
 
+    // --- New Plugin Wizard (Ctrl+Alt+N) ----------------------------------
+
+    private void OnNewPluginWizard(object sender, RoutedEventArgs e)
+    {
+        var wizard = new WpfHexEditor.PluginDev.UI.NewPluginWizardWindow
+        {
+            Owner = this,
+        };
+        wizard.ShowDialog();
+    }
+
+    // --- Plugin Hot-Reload (Ctrl+Shift+R) --------------------------------
+
+    private void OnPluginHotReload(object sender, RoutedEventArgs e)
+    {
+        if (_pluginDevLoader is null)
+        {
+            OutputLogger.PluginWarn("[HotReload] No active plugin dev session — use Plugin Dev Watch first.");
+            return;
+        }
+
+        // The PluginDevLoader in PluginHost does not expose a direct hot-reload
+        // by project path from the App layer; we log a helpful hint instead.
+        // Full hot-reload is triggered automatically when AutoRebuildOnSave is on
+        // and a source file changes, or manually via the PluginDevToolbar.
+        OutputLogger.PluginInfo("[HotReload] Hot-reload is managed by the Plugin Dev toolbar. " +
+            "Ensure the Plugin Dev Watch is active and AutoRebuildOnSave is enabled in Options.");
+    }
+
     // --- Content factories for panels that may be restored from layout --
 
     /// <summary>
@@ -818,8 +873,17 @@ public partial class MainWindow
             _hexEditorService.SelectionChanged -= OnHexEditorSelectionChanged;
         await _pluginHost.DisposeAsync().ConfigureAwait(false);
         _pluginHost = null;
+        _lspStatusBarAdapter?.Dispose();
+        _lspStatusBarAdapter = null;
+        _lspBridgeService?.Dispose();
+        _lspBridgeService = null;
         _ideEventBus?.Dispose();
         _ideEventBus = null;
+        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+        else
+            (_serviceProvider as IDisposable)?.Dispose();
+        _serviceProvider = null;
     }
 
     // --- IDE EventBus publishers -----------------------------------------
@@ -856,20 +920,55 @@ public partial class MainWindow
         });
     }
 
-    /// <summary>Registers the 10 well-known IDE event types in the EventBus registry.</summary>
+    /// <summary>Registers all well-known IDE event types in the EventBus registry.</summary>
     private static void RegisterWellKnownEvents(IDEEventBus bus)
     {
         var reg = bus.EventRegistry;
+
+        // --- File / Document lifecycle ---
         reg.Register(typeof(FileOpenedEvent),               "File Opened",                "MainWindow");
         reg.Register(typeof(FileClosedEvent),               "File Closed",                "MainWindow");
         reg.Register(typeof(WorkspaceChangedEvent),         "Workspace Changed",          "MainWindow");
-        reg.Register(typeof(DocumentSavedEvent),            "Document Saved",             "MainWindow");
+        reg.Register(typeof(DocumentSavedEvent),            "Document Saved",             "CodeEditor");
+
+        // --- Hex editor ---
         reg.Register(typeof(EditorSelectionChangedEvent),   "Editor Selection Changed",   "HexEditorService");
-        reg.Register(typeof(PluginLoadedEvent),             "Plugin Loaded",              "WpfPluginHost");
-        reg.Register(typeof(PluginUnloadedEvent),           "Plugin Unloaded",            "WpfPluginHost");
-        reg.Register(typeof(TerminalCommandExecutedEvent),  "Terminal Command Executed",  "TerminalPanel");
+
+        // --- Code editor ---
+        reg.Register(typeof(CodeEditorDocumentOpenedEvent),          "Code Document Opened",       "CodeEditor");
+        reg.Register(typeof(CodeEditorDocumentClosedEvent),          "Code Document Closed",       "CodeEditor");
+        reg.Register(typeof(CodeEditorTextSelectionChangedEvent),    "Code Selection Changed",     "CodeEditor");
+        reg.Register(typeof(CodeEditorDiagnosticsUpdatedEvent),      "Code Diagnostics Updated",   "CodeEditor");
+        reg.Register(typeof(CodeEditorCursorMovedEvent),             "Code Cursor Moved",          "CodeEditor");
+        reg.Register(typeof(CodeEditorCommandExecutedEvent),         "Code Command Executed",      "CodeEditor");
+        reg.Register(typeof(CodeEditorFoldingChangedEvent),          "Code Folding Changed",       "CodeEditor");
+
+        // --- LSP engine ---
+        reg.Register(typeof(LspSymbolTableUpdatedEvent),    "LSP Symbol Table Updated",   "LspEngine");
+        reg.Register(typeof(LspDiagnosticsUpdatedEvent),    "LSP Diagnostics Updated",    "LspEngine");
+        reg.Register(typeof(LspDocumentParsedEvent),        "LSP Document Parsed",        "LspEngine");
+
+        // --- Build system ---
         reg.Register(typeof(BuildStartedEvent),             "Build Started",              "BuildService");
         reg.Register(typeof(BuildSucceededEvent),           "Build Succeeded",            "BuildService");
+        reg.Register(typeof(BuildFailedEvent),              "Build Failed",               "BuildService");
+        reg.Register(typeof(BuildCancelledEvent),           "Build Cancelled",            "BuildService");
+        reg.Register(typeof(BuildOutputLineEvent),          "Build Output Line",          "BuildService");
+        reg.Register(typeof(BuildProgressUpdatedEvent),     "Build Progress Updated",     "BuildService");
+        reg.Register(typeof(ProcessLaunchedEvent),          "Process Launched",           "StartupProjectRunner");
+        reg.Register(typeof(ProcessExitedEvent),            "Process Exited",             "StartupProjectRunner");
+
+        // --- Plugin lifecycle ---
+        reg.Register(typeof(PluginLoadedEvent),             "Plugin Loaded",              "WpfPluginHost");
+        reg.Register(typeof(PluginUnloadedEvent),           "Plugin Unloaded",            "WpfPluginHost");
+
+        // --- Terminal ---
+        reg.Register(typeof(TerminalCommandExecutedEvent),  "Terminal Command Executed",  "TerminalPanel");
+
+        // --- Solution Explorer ---
+        reg.Register(typeof(ProjectItemAddedEvent),   "Project Item Added",   "SolutionManager");
+        reg.Register(typeof(ProjectItemRemovedEvent), "Project Item Removed", "SolutionManager");
+        reg.Register(typeof(ProjectItemRenamedEvent), "Project Item Renamed", "SolutionManager");
     }
 
     // --- Minimal helpers ------------------------------------------------
@@ -897,5 +996,44 @@ public partial class MainWindow
         public bool    CanRedo      => _editor?.CanRedo ?? false;
         public void    Undo()       => _editor?.Undo();
         public void    Redo()       => _editor?.Redo();
+    }
+
+    // ── DI-3: Service adapter factory ────────────────────────────────────────────────
+    // Extracted from InitializePluginSystemAsync to keep the composition root clean.
+    // All instances that require WPF elements (DockHost, AppStatusBar, etc.) as
+    // constructor arguments are built here and passed to the DI container as singletons.
+    // ─────────────────────────────────────────────────────────────────────────────────
+
+    private void BuildServiceAdapters(out MainWindowServiceArgs args)
+    {
+        var hexEditor  = new HexEditorServiceImpl();
+        var output     = new OutputServiceImpl();
+        var errorPanel = new ErrorPanelServiceImpl();
+        var theme      = new ThemeServiceImpl();
+        var terminal   = new TerminalServiceImpl();
+
+        if (_errorPanel is not null)
+            errorPanel.SetErrorPanel(_errorPanel);
+
+        var docking = new DockingAdapter(_engine, _layout, DockHost, StoreContent, _layoutWasRestoredFromFile);
+        docking.SeedSideAnchor(DockDirection.Left, SolutionExplorerContentId);
+
+        var menu       = new MenuAdapter(MainMenuBar);
+        var statusBar  = new StatusBarAdapter(AppStatusBar);
+        var docHost    = new DocumentHostService(
+            _documentManager,
+            (path, editorId) => Dispatcher.InvokeAsync(() =>
+                OpenStandaloneFileWithEditor(path, editorId)).Task);
+
+        args = new MainWindowServiceArgs(
+            HexEditorService:    hexEditor,
+            OutputService:       output,
+            ErrorPanelService:   errorPanel,
+            ThemeService:        theme,
+            TerminalService:     terminal,
+            DockingAdapter:      docking,
+            MenuAdapter:         menu,
+            StatusBarAdapter:    statusBar,
+            DocumentHostService: docHost);
     }
 }

@@ -110,6 +110,14 @@ public sealed class DocumentModel : INotifyPropertyChanged
     /// <summary>The live editor instance, or <c>null</c> before the tab is first opened (lazy).</summary>
     public IDocumentEditor? AssociatedEditor => _associatedEditor;
 
+    // -- Shared buffer (set by DocumentManager when editor is IBufferAwareEditor) --
+
+    /// <summary>
+    /// Shared content buffer, non-null only when the editor implements
+    /// <see cref="IBufferAwareEditor"/> and a <see cref="FilePath"/> is known.
+    /// </summary>
+    public IDocumentBuffer? Buffer { get; internal set; }
+
     // -- Construction ------------------------------------------------------
 
     public DocumentModel(string contentId, string? filePath, string? projectItemId, string? editorId)

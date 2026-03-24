@@ -1329,6 +1329,27 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
         }
     }
 
+    // -- Incremental build dirty tracking -------------------------------------
+
+    /// <summary>
+    /// Updates the <see cref="ProjectNodeVm.IsBuildDirty"/> flag for the matching project node.
+    /// Called from <c>MainWindow.Build.cs</c> when the IncrementalBuildTracker fires.
+    /// Must be called on the UI thread.
+    /// </summary>
+    public void SetProjectDirty(string projectId, bool isDirty)
+    {
+        foreach (var node in Roots.OfType<SolutionNodeVm>()
+                                   .SelectMany(s => s.Children)
+                                   .OfType<ProjectNodeVm>())
+        {
+            if (node.Source.Id.Equals(projectId, StringComparison.OrdinalIgnoreCase))
+            {
+                node.IsBuildDirty = isDirty;
+                return;
+            }
+        }
+    }
+
     // -- INPC -----------------------------------------------------------------
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -248,6 +248,15 @@
                                Style="{StaticResource NodeLabel}"
                                Text="{Binding DisplayName}"
                                FontWeight="SemiBold"/>
+                    <!-- Build-dirty indicator: small orange dot, hidden when clean -->
+                    <TextBlock x:Name="DirtyDot"
+                               Text="&#x25CF;"
+                               FontSize="7"
+                               Foreground="#E07020"
+                               Margin="3,0,0,0"
+                               VerticalAlignment="Center"
+                               Visibility="Collapsed"
+                               ToolTip="Project has changes since last build (Ctrl+Alt+F7 to build dirty)" />
                 </StackPanel>
                 <!-- Inline rename TextBox (IsEditing = true) -->
                 <TextBox x:Name="ProjectInlineEditBox"
@@ -267,6 +276,10 @@
                 <!-- Startup project → bold (VS behaviour) -->
                 <DataTrigger Binding="{Binding IsStartup}" Value="True">
                     <Setter TargetName="ProjectNameLabel" Property="FontWeight" Value="Bold"/>
+                </DataTrigger>
+                <!-- Build-dirty → show orange dot -->
+                <DataTrigger Binding="{Binding IsBuildDirty}" Value="True">
+                    <Setter TargetName="DirtyDot" Property="Visibility" Value="Visible"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsEditing}" Value="True">
                     <Setter TargetName="ProjectDisplayPanel"  Property="Visibility" Value="Collapsed"/>

@@ -320,6 +320,23 @@
     <SolidColorBrush x:Key="CE_CurrentLine"   Color="#F8F8F8"/>
     <SolidColorBrush x:Key="CE_Selection"         Color="#BDD7EE"/>
     <SolidColorBrush x:Key="CE_SelectionInactive" Color="#D6D6D6"/>
+    <SolidColorBrush x:Key="CE_GutterError"       Color="#F44747"/>
+    <SolidColorBrush x:Key="CE_GutterWarning"     Color="#FF8C00"/>
+
+    <SolidColorBrush x:Key="DT_PanelBackground"     Color="{StaticResource DockBackgroundColor}" />
+    <SolidColorBrush x:Key="DT_PanelForeground"     Color="{StaticResource DockMenuForegroundColor}" />
+    <SolidColorBrush x:Key="DT_SectionHeader"       Color="#0070C1" />
+    <SolidColorBrush x:Key="DT_GraphBackground"     Color="#FFFFFF" />
+    <SolidColorBrush x:Key="DT_GraphBorder"         Color="{StaticResource DockBorderColor}" />
+    <SolidColorBrush x:Key="DT_ToolbarBackground"   Color="{StaticResource DockMenuBackgroundColor}" />
+    <SolidColorBrush x:Key="DT_EventListBackground" Color="{StaticResource DockBackgroundColor}" />
+    <SolidColorBrush x:Key="DT_StatusForeground"    Color="#0070C1" />
+    <SolidColorBrush x:Key="DT_CpuLineColor"    Color="#0070C1" />
+    <SolidColorBrush x:Key="DT_CpuFillColor"    Color="#CCE4F7" />
+    <SolidColorBrush x:Key="DT_MemoryLineColor" Color="#107C10" />
+    <SolidColorBrush x:Key="DT_MemoryFillColor" Color="#D4EDDA" />
+    <SolidColorBrush x:Key="DT_GraphGridLine"   Color="#E0E0E0" />
+    <SolidColorBrush x:Key="DT_GraphLabelFg"    Color="#666666" />
 
     <!-- CE_QuickInfo_* — Quick Info hover popup (Office) -->
     <SolidColorBrush x:Key="CE_QuickInfo_Background"        Color="#FAFAFA"/>
@@ -559,6 +576,10 @@
     <SolidColorBrush x:Key="CP_TextBrush"            Color="#1E1E1E" />
     <SolidColorBrush x:Key="CP_SecondaryTextBrush"   Color="#666666" />
     <SolidColorBrush x:Key="CP_BorderBrush"          Color="#C8C8C8" />
+    <SolidColorBrush x:Key="CP_HoverBrush"           Color="#E7F2FF" />
+    <SolidColorBrush x:Key="CP_MatchHighlightBrush"  Color="#0078D4" />
+    <SolidColorBrush x:Key="CP_GroupHeaderBrush"     Color="#E9E9E9" />
+    <SolidColorBrush x:Key="CP_DescPanelBrush"       Color="#F0F0F0" />
 
     <!-- ── Keyboard Shortcuts Page (KSP_*) ──────────────────────────────── -->
     <SolidColorBrush x:Key="KSP_DataGridBackground"  Color="#F0F0F0" />
@@ -575,4 +596,36 @@
     <SolidColorBrush x:Key="TB_SearchHintBrush"             Color="#777777" />
     <SolidColorBrush x:Key="TB_SearchHoverBackgroundBrush"  Color="#DCDCDC" />
     <SolidColorBrush x:Key="TB_SearchActiveBackgroundBrush" Color="#0066CC" />
+
+    <!-- __ LSP OVERKILL-TRIO Tokens _________________________________________________ -->
+    <SolidColorBrush x:Key="SC_KindIconForeground"      Color="#212121" />
+    <SolidColorBrush x:Key="BC_Background"              Color="#F5F5F5" />
+    <SolidColorBrush x:Key="BC_Foreground"              Color="#212121" />
+    <SolidColorBrush x:Key="BC_SeparatorForeground"     Color="#909090" />
+    <SolidColorBrush x:Key="BC_HoverBackground"         Color="#EBEBEB" />
+    <SolidColorBrush x:Key="LSP_ReadyDot"               Color="#107C10" />
+    <SolidColorBrush x:Key="LSP_ConnectingDot"          Color="#767676" />
+    <SolidColorBrush x:Key="LSP_ErrorDot"               Color="#A4262C" />
+    <SolidColorBrush x:Key="CE_InlayHintForeground"     Color="#909090" />
+    <SolidColorBrush x:Key="CE_InlayHintBackground"     Color="#EBEBEB" />
+    <SolidColorBrush x:Key="CE_CodeLensForeground"      Color="#909090" />
+    <SolidColorBrush x:Key="CE_CodeLensHoverBackground" Color="#EBEBEB" />
+    <SolidColorBrush x:Key="SE_TypeColor"               Color="#201E66F5" />
+    <SolidColorBrush x:Key="SE_MethodColor"             Color="#20795E26" />
+    <SolidColorBrush x:Key="SE_VariableColor"           Color="#20001080" />
+    <SolidColorBrush x:Key="SE_ParameterColor"          Color="#20001080" />
+    <SolidColorBrush x:Key="SE_NamespaceColor"          Color="#20767676" />
+    <SolidColorBrush x:Key="SE_KeywordColor"            Color="#200000FF" />
+    <SolidColorBrush x:Key="SE_StringColor"             Color="#20A31515" />
+    <SolidColorBrush x:Key="SE_NumberColor"             Color="#20098658" />
+    <SolidColorBrush x:Key="PE_ReverseHighlightBorder"  Color="#E65C00" />
+    <SolidColorBrush x:Key="PD_StatusReady"             Color="#107C10" />
+    <SolidColorBrush x:Key="PD_StatusBuilding"          Color="#CA5010" />
+    <SolidColorBrush x:Key="PD_StatusError"             Color="#A4262C" />
+    <SolidColorBrush x:Key="MKT_CardBackground"         Color="#F5F5F5" />
+    <SolidColorBrush x:Key="MKT_CardBorder"             Color="#DEDEDE" />
+    <SolidColorBrush x:Key="MKT_InstallBtn"             Color="#217346" />
+    <SolidColorBrush x:Key="MKT_InstalledBadge"         Color="#107C10" />
+    <SolidColorBrush x:Key="MKT_StarFilled"             Color="#CA8A00" />
+    <SolidColorBrush x:Key="MKT_StarEmpty"              Color="#909090" />
 </ResourceDictionary>

@@ -48,4 +48,18 @@ public interface IBuildSystem
 
     /// <summary>Requests cancellation of the active build. No-op if no build is running.</summary>
     void CancelBuild();
+
+    /// <summary>
+    /// Builds only projects whose source files changed since the last successful build,
+    /// plus their transitive dependents.
+    /// Falls back to a full solution build when all projects are dirty or no tracker is active.
+    /// </summary>
+    Task<BuildResult> BuildDirtyAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns <see langword="true"/> when the project has file changes since
+    /// its last successful build (or when no baseline exists).
+    /// Always returns <see langword="true"/> when incremental tracking is not configured.
+    /// </summary>
+    bool IsProjectDirty(string projectId);
 }

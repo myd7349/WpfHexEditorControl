@@ -812,6 +812,9 @@ file sealed class NullDocumentHostService : WpfHexEditor.SDK.Contracts.Services.
         public void Unregister(string contentId) { }
         public void SetActive(string contentId)  { }
         public IReadOnlyList<WpfHexEditor.Editor.Core.Documents.DocumentModel> GetDirty() => [];
+        public WpfHexEditor.Editor.Core.Documents.IDocumentBuffer? GetBuffer(string contentId) => null;
+        public WpfHexEditor.Editor.Core.Documents.IDocumentBuffer? GetBufferForFile(string filePath) => null;
+        public WpfHexEditor.Editor.Core.Documents.DocumentModel? FindDocumentByBuffer(WpfHexEditor.Editor.Core.Documents.IDocumentBuffer buffer) => null;
 
 #pragma warning disable 67
         public event EventHandler<WpfHexEditor.Editor.Core.Documents.DocumentModel>?  DocumentRegistered;

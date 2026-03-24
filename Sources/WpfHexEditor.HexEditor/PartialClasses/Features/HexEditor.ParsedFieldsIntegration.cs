@@ -120,7 +120,7 @@ namespace WpfHexEditor.HexEditor
 
         // Performance tracking
         private int _parsedFieldCount;
-        private const int MaxFieldsLimit = 10000; // Safety limit to prevent UI freeze
+        private const int MaxFieldsLimit = 500; // Safety limit to prevent UI freeze from binding storms
         private const int DepthLimit = 10; // Maximum recursion depth
 
         // Auto-refresh throttling
@@ -438,7 +438,7 @@ namespace WpfHexEditor.HexEditor
                     // Parse all blocks from the format definition
                     if (_detectedFormat.Blocks != null)
                         ParseBlocks(_detectedFormat.Blocks, 0, panel);
-                });
+                }, System.Windows.Threading.DispatcherPriority.Background);
             }
             catch (Exception ex)
             {

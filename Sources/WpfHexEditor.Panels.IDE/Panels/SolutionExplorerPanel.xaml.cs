@@ -102,6 +102,14 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         => _editorFactories = factories;
 
     /// <summary>
+    /// Updates the build-dirty indicator on the matching project node.
+    /// Called by MainWindow when the IncrementalBuildTracker fires a dirty-state change.
+    /// Must be called on the UI thread.
+    /// </summary>
+    public void SetProjectDirty(string projectId, bool isDirty)
+        => _vm.SetProjectDirty(projectId, isDirty);
+
+    /// <summary>
     /// Sets the delegate that resolves plugin-contributed context menu items.
     /// Called by MainWindow after the UIRegistry is ready.
     /// </summary>

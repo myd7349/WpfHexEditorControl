@@ -22,8 +22,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using WpfHexEditor.Core.Events;
 using WpfHexEditor.HexEditor.Controls;
 using WpfHexEditor.Core.Models;
 using WpfHexEditor.HexEditor.ViewModels;
@@ -247,20 +249,67 @@ namespace WpfHexEditor.HexEditor
             // Auto-detect format if enabled
             // Run in background to avoid blocking UI
             //System.Diagnostics.Debug.WriteLine($"[FileOperations] EnableAutoFormatDetection = {EnableAutoFormatDetection}");
-            if (EnableAutoFormatDetection)
+            if (EnableAutoFormatDetection && Stream != null && Stream.Length > 0)
             {
-                //System.Diagnostics.Debug.WriteLine($"[FileOperations] Scheduling format detection for: {filePath}");
-                Dispatcher.BeginInvoke(new Action(() =>
+                // Snapshot bytes on UI thread — stream access is not thread-safe across threads.
+                var bytesToRead = (int)Math.Min(Stream.Length, 1024 * 1024);
+                var sample = new byte[bytesToRead];
+                var savedPos = Stream.Position;
+                Stream.Position = 0;
+                var bytesRead = Stream.Read(sample, 0, bytesToRead);
+                Stream.Position = savedPos;
+                if (bytesRead < bytesToRead) Array.Resize(ref sample, bytesRead);
+
+                // CPU-intensive detection on a thread-pool thread so the UI thread stays responsive.
+                var capturedPath = filePath;
+                _ = Task.Run(async () =>
                 {
-                    //System.Diagnostics.Debug.WriteLine($"[FileOperations] Executing scheduled format detection");
-                    var result = AutoDetectAndApplyFormat(filePath);
-                    //System.Diagnostics.Debug.WriteLine($"[FileOperations] Format detection completed. Success: {result.Success}, Format: {result.Format?.FormatName ?? "None"}");
-                    if (result.Success && ShowFormatDetectionStatus)
+                    try
                     {
-                        StatusText.Text = $"Format detected: {result.Format?.FormatName ?? "Unknown"}";
-                        RaiseHexStatusChanged();
+                        var result = _formatDetectionService.DetectFormat(sample, capturedPath, null);
+
+                        await Dispatcher.InvokeAsync(() =>
+                        {
+                            if (result.Success && result.Blocks?.Count > 0)
+                            {
+                                ClearCustomBackgroundBlock();
+                                foreach (var b in result.Blocks)
+                                    AddCustomBackgroundBlock(b);
+
+                                var fileLen = Length;
+                                if (fileLen > 0)
+                                    foreach (var b in _customBackgroundService.GetAllBlocks())
+                                        if (b.Length >= fileLen * 0.8) b.ShowInTooltip = false;
+
+                                _detectedFormat      = result.Format;
+                                _detectionVariables  = result.Variables;
+                                _detectionCandidates = result.Candidates;
+
+                                RefreshParsedFields();
+                                UpdateEnrichedFormatPanel(result.Format);
+
+                                FormatDetected?.Invoke(this, new FormatDetectedEventArgs
+                                {
+                                    Success         = true,
+                                    Format          = result.Format,
+                                    Blocks          = result.Blocks,
+                                    DetectionTimeMs = result.DetectionTimeMs,
+                                });
+                            }
+
+                            if (ShowFormatDetectionStatus)
+                                StatusText.Text = result.Success
+                                    ? $"Format detected: {result.Format?.FormatName ?? "Unknown"}"
+                                    : string.Empty;
+                            RaiseHexStatusChanged();
+
+                        }, System.Windows.Threading.DispatcherPriority.Background);
                     }
-                }), System.Windows.Threading.DispatcherPriority.Background);
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[FormatDetection] Background error: {ex.Message}");
+                    }
+                });
             }
             else
             {

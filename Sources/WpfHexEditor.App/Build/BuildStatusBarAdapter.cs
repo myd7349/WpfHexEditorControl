@@ -64,10 +64,10 @@ internal sealed class BuildStatusBarAdapter : IDisposable
         => _update($"Building... {e.StatusText}", "\uE8B1", true);
 
     private void OnBuildSucceeded(BuildSucceededEvent e)
-        => _update($"Build succeeded  ({e.WarningCount} warning(s))", "\uE930", true);
+        => _update($"Build succeeded  ({e.WarningCount} warning(s))  {e.Duration.TotalSeconds:F1}s", "\uE930", true);
 
     private void OnBuildFailed(BuildFailedEvent e)
-        => _update($"Build failed  ({e.ErrorCount} error(s))", "\xEA39", true);
+        => _update($"Build failed  ({e.ErrorCount} error(s))  {e.Duration.TotalSeconds:F1}s", "\xEA39", true);
 
     private void OnBuildCancelled(BuildCancelledEvent _)
         => _update("Build cancelled", "\uE711", true);

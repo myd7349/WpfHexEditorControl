@@ -113,12 +113,12 @@ public sealed class KeyboardShortcutsPage : UserControl, IOptionsPage
         _grid.SetResourceReference(DataGrid.StyleProperty,     "KSP_DataGridStyle");
         _grid.SetResourceReference(DataGrid.RowStyleProperty,  "KSP_DataGridRowStyle");
 
-        // Set as local values (precedence 3) so DataGrid reliably propagates them to containers.
-        // RowBackground = Transparent → no colour transferred to rows; cells own the selection.
-        // CellStyle set via Style Setter is unreliable for generated-container propagation.
-        _grid.RowBackground            = Brushes.Transparent;
-        _grid.AlternatingRowBackground = Brushes.Transparent;
-        _grid.CellStyle                = BuildCellStyle();
+        // ClearValue so TransferProperty calls row.ClearValue(Background) instead of SetCurrentValue.
+        // SetCurrentValue is at WPF precedence level 4 (above style triggers at level 5) — it would
+        // prevent the IsSelected trigger from firing.  With UnsetValue, ClearValue is called on each
+        // row and the style trigger wins cleanly.
+        _grid.ClearValue(DataGrid.RowBackgroundProperty);
+        _grid.ClearValue(DataGrid.AlternatingRowBackgroundProperty);
 
         // Category column
         var catCol = new DataGridTextColumn
@@ -153,7 +153,7 @@ public sealed class KeyboardShortcutsPage : UserControl, IOptionsPage
         defCol.ElementStyle = MakeTextStyle("KSP_HintForeground");
         _grid.Columns.Add(defCol);
 
-        // Current gesture column (editable TextBox template)
+        // Current gesture column (key-capture template)
         var currentGestureCol = new DataGridTemplateColumn
         {
             Header = "Shortcut",
@@ -171,6 +171,15 @@ public sealed class KeyboardShortcutsPage : UserControl, IOptionsPage
         };
         resetCol.CellTemplate = BuildResetButtonTemplate();
         _grid.Columns.Add(resetCol);
+
+        // Assign CellStyle per column as a local value (more reliable than DataGrid.CellStyle
+        // which travels through an unreliable SetCurrentValue propagation path).
+        var cellStyle = BuildCellStyle();
+        catCol.CellStyle          = cellStyle;
+        nameCol.CellStyle         = cellStyle;
+        defCol.CellStyle          = cellStyle;
+        currentGestureCol.CellStyle = cellStyle;
+        resetCol.CellStyle        = cellStyle;
 
         // Group header rows (category separators)
         _grid.GroupStyle.Add(BuildGroupStyle());
@@ -330,24 +339,83 @@ public sealed class KeyboardShortcutsPage : UserControl, IOptionsPage
 
     private DataTemplate BuildGestureEditTemplate()
     {
+        // Key-capture cell: user presses the desired key combination rather than typing text.
+        // IsReadOnly=true prevents free typing.  Conflict detection scans _rows inline.
+        var page    = this;
         var factory = new FrameworkElementFactory(typeof(TextBox));
-        factory.SetBinding(TextBox.TextProperty,
-            new Binding(nameof(ShortcutRow.CurrentGesture)) { UpdateSourceTrigger = UpdateSourceTrigger.LostFocus });
-        factory.SetValue(TextBox.PaddingProperty, new Thickness(4, 2, 4, 2));
+        factory.SetValue(TextBox.IsReadOnlyProperty,      true);
+        factory.SetValue(TextBox.TextProperty,            "Press shortcut\u2026");
+        factory.SetValue(TextBox.PaddingProperty,         new Thickness(4, 2, 4, 2));
         factory.SetValue(TextBox.BorderThicknessProperty, new Thickness(1));
         factory.SetResourceReference(TextBox.BackgroundProperty,  "KSP_EditBackground");
-        factory.SetResourceReference(TextBox.ForegroundProperty,  "KSP_CellForeground");
+        factory.SetResourceReference(TextBox.ForegroundProperty,  "KSP_HintForeground");
         factory.SetResourceReference(TextBox.BorderBrushProperty, "KSP_EditBorder");
 
-        // Commit when Enter is pressed
-        factory.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler((s, e) =>
+        factory.AddHandler(UIElement.PreviewKeyDownEvent, new KeyEventHandler((s, e) =>
         {
-            if (e.Key != Key.Return) return;
-            if (s is TextBox tb && tb.DataContext is ShortcutRow row)
+            if (s is not TextBox tb) return;
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+
+            // Ignore standalone modifier keys — don't let them move DataGrid row focus.
+            if (key is Key.LeftCtrl  or Key.RightCtrl  or Key.LeftShift or Key.RightShift
+                     or Key.LeftAlt  or Key.RightAlt   or Key.LWin      or Key.RWin
+                     or Key.None) { e.Handled = true; return; }
+
+            // Escape → pass through so DataGrid's default cancel-edit fires.
+            if (key == Key.Escape) return;
+
+            // Tab → pass through for DataGrid cell navigation (not a capturable gesture).
+            if (key == Key.Tab) return;
+
+            // Enter with a stashed conflict gesture → confirm override.
+            if (key == Key.Return && tb.Tag is string pending
+                && tb.DataContext is ShortcutRow confirmRow)
             {
-                CommitGesture(row, tb.Text);
-                _grid.CommitEdit(DataGridEditingUnit.Cell, exitEditingMode: true);
+                page.CommitGesture(confirmRow, pending);
+                page._grid.CommitEdit(DataGridEditingUnit.Cell, exitEditingMode: true);
+                e.Handled = true; return;
             }
+
+            // Plain Enter (no modifiers, no pending conflict) → exit edit without capturing.
+            if (key == Key.Return && Keyboard.Modifiers == ModifierKeys.None && tb.Tag is null)
+            {
+                page._grid.CommitEdit(DataGridEditingUnit.Cell, exitEditingMode: true);
+                e.Handled = true; return;
+            }
+
+            // All other keys (Del, Backspace, F-keys, arrows, alphanumeric…) fall through to capture.
+
+            // Build gesture string from current modifier state + pressed key.
+            var mods  = Keyboard.Modifiers;
+            var parts = new System.Collections.Generic.List<string>(4);
+            if ((mods & ModifierKeys.Control) != 0) parts.Add("Ctrl");
+            if ((mods & ModifierKeys.Shift)   != 0) parts.Add("Shift");
+            if ((mods & ModifierKeys.Alt)     != 0) parts.Add("Alt");
+            parts.Add(key.ToString());
+            var gesture = string.Join("+", parts);
+
+            tb.SetResourceReference(TextBox.ForegroundProperty, "KSP_CellForeground");
+            tb.Text = gesture;
+            tb.Tag  = null;
+
+            if (tb.DataContext is ShortcutRow row)
+            {
+                var conflict = page._rows.FirstOrDefault(r =>
+                    r.CommandId != row.CommandId &&
+                    string.Equals(r.CurrentGesture, gesture, StringComparison.OrdinalIgnoreCase));
+
+                if (conflict != null)
+                {
+                    tb.BorderBrush = Brushes.IndianRed;
+                    tb.ToolTip     = $"\u26a0 Also used by: {conflict.Category} \u203a {conflict.Name}. Enter to override, Esc to cancel.";
+                    tb.Tag = gesture;   // stash so Enter-path above can confirm
+                    e.Handled = true; return;
+                }
+
+                page.CommitGesture(row, gesture);
+                page._grid.CommitEdit(DataGridEditingUnit.Cell, exitEditingMode: true);
+            }
+            e.Handled = true;
         }));
 
         return new DataTemplate { VisualTree = factory };

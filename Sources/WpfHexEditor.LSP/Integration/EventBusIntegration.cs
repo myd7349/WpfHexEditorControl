@@ -13,12 +13,15 @@
 //     Pattern: Adapter / Bridge
 //     - Subscribes to SymbolTableManager.SymbolTableUpdated and
 //       DiagnosticsEngine.DiagnosticsUpdated.
+//     - TrackParser / UntrackParser allow the LSP pipeline to forward
+//       IncrementalParser.ParseCompleted events to LspDocumentParsedEvent.
 //     - Publishes IDE events using records defined in WpfHexEditor.Events.
 //     - IDisposable: unsubscribes on disposal to prevent memory leaks.
 // ==========================================================
 
 using WpfHexEditor.Events;
 using WpfHexEditor.LSP.Diagnostics;
+using WpfHexEditor.LSP.Parsing;
 using WpfHexEditor.LSP.Symbols;
 
 namespace WpfHexEditor.LSP.Integration;
@@ -41,14 +44,39 @@ public sealed class EventBusIntegration : IDisposable
         _symbolTableManager = symbolTableManager ?? throw new ArgumentNullException(nameof(symbolTableManager));
         _diagnosticsEngine  = diagnosticsEngine  ?? throw new ArgumentNullException(nameof(diagnosticsEngine));
 
-        _symbolTableManager.SymbolTableUpdated    += OnSymbolTableUpdated;
-        _diagnosticsEngine.DiagnosticsUpdated     += OnDiagnosticsUpdated;
+        _symbolTableManager.SymbolTableUpdated += OnSymbolTableUpdated;
+        _diagnosticsEngine.DiagnosticsUpdated  += OnDiagnosticsUpdated;
     }
 
     public void Dispose()
     {
-        _symbolTableManager.SymbolTableUpdated    -= OnSymbolTableUpdated;
-        _diagnosticsEngine.DiagnosticsUpdated     -= OnDiagnosticsUpdated;
+        _symbolTableManager.SymbolTableUpdated -= OnSymbolTableUpdated;
+        _diagnosticsEngine.DiagnosticsUpdated  -= OnDiagnosticsUpdated;
+    }
+
+    // -----------------------------------------------------------------------
+    // Parser tracking
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Subscribes to <paramref name="parser"/>'s <see cref="IncrementalParser.ParseCompleted"/>
+    /// event so that a <see cref="LspDocumentParsedEvent"/> is published on the bus after
+    /// each full or incremental parse. Call when a document's LSP parser is created.
+    /// </summary>
+    public void TrackParser(IncrementalParser parser)
+    {
+        if (parser is not null)
+            parser.ParseCompleted += OnParsed;
+    }
+
+    /// <summary>
+    /// Unsubscribes from <paramref name="parser"/>'s parse events.
+    /// Call when the document is closed.
+    /// </summary>
+    public void UntrackParser(IncrementalParser parser)
+    {
+        if (parser is not null)
+            parser.ParseCompleted -= OnParsed;
     }
 
     // -----------------------------------------------------------------------
@@ -65,6 +93,16 @@ public sealed class EventBusIntegration : IDisposable
             FilePath     = result.FilePath,
             ErrorCount   = result.Entries.Count(e => e.Severity == WpfHexEditor.Editor.Core.DiagnosticSeverity.Error),
             WarningCount = result.Entries.Count(e => e.Severity == WpfHexEditor.Editor.Core.DiagnosticSeverity.Warning),
+        });
+    }
+
+    private void OnParsed(object? sender, ParseCompletedEventArgs e)
+    {
+        _eventBus.Publish(new LspDocumentParsedEvent
+        {
+            FilePath   = e.FilePath,
+            LanguageId = e.LanguageId,
+            LineCount  = e.LineCount,
         });
     }
 }

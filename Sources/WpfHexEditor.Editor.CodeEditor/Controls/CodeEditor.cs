@@ -29,10 +29,13 @@ using WpfHexEditor.Editor.CodeEditor.NavigationBar;
 using WpfHexEditor.Core;
 using WpfHexEditor.Core.Settings;
 using WpfHexEditor.Editor.Core;
+using WpfHexEditor.Editor.Core.Documents;
+using WpfHexEditor.Editor.Core.LSP;
 using WpfHexEditor.Editor.CodeEditor.Options;
 using WpfHexEditor.ProjectSystem.Languages;
 using WpfHexEditor.Editor.CodeEditor.Selection;
 using WpfHexEditor.Editor.CodeEditor.Input;
+using WpfHexEditor.Editor.CodeEditor.MultiCaret;
 
 namespace WpfHexEditor.Editor.CodeEditor.Controls
 {
@@ -42,15 +45,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
     /// Phase 2: Syntax highlighting with CodeSyntaxHighlighter
     /// Future phases will add: SmartComplete, validation
     /// </summary>
-    public class CodeEditor : FrameworkElement, IDocumentEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, INavigableDocument, IStatusBarContributor, ISearchTarget, IEditorPersistable
+    public class CodeEditor : FrameworkElement, IDocumentEditor, IBufferAwareEditor, ILspAwareEditor, IDiagnosticSource, IPropertyProviderSource, IOpenableDocument, INavigableDocument, IStatusBarContributor, ISearchTarget, IEditorPersistable
     {
         #region Fields - Document Model
 
         private CodeDocument _document;
+
+        // -- IBufferAwareEditor -------------------------------------------
+        private IDocumentBuffer? _buffer;
+        private bool             _suppressBufferSync;
         private int _cursorLine = 0;        // Current cursor line (0-based)
         private int _cursorColumn = 0;      // Current cursor column (0-based)
         private TextSelection _selection;   // Current text selection
         private int _lastNotifiedCursorLine = -1; // Tracks last CaretMoved notification line
+
+        // Multi-caret manager — index 0 is always the primary caret.
+        private readonly CaretManager _caretManager = new();
 
         #endregion
 
@@ -165,6 +175,18 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // Null when no language server is configured for the current language.
         private WpfHexEditor.Editor.Core.LSP.ILspClient? _lspClient;
 
+        // Signature help popup — shown on '(' keystroke when an LSP client is active.
+        private SignatureHelpPopup?     _signatureHelpPopup;
+
+        // Code action popup — shown on Ctrl+. when an LSP client is active.
+        private LspCodeActionPopup?     _lspCodeActionPopup;
+
+        // Rename popup — shown on F2 when an LSP client is active.
+        private LspRenamePopup?         _lspRenamePopup;
+
+        // Document manager injected by LspDocumentBridgeService for workspace-wide edits.
+        private IDocumentManager?       _lspDocumentManager;
+
         // Monotonically increasing document version sent with every didChange notification.
         private int _lspDocVersion;
 
@@ -209,6 +231,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             "FindAllReferences",
             typeof(CodeEditor),
             new InputGestureCollection { new KeyGesture(Key.F12, ModifierKeys.Shift) });
+
+        /// <summary>
+        /// Routed command for "Select Next Occurrence" — Ctrl+D (VS Code behaviour).
+        /// Adds the next occurrence of the word/selection as a secondary caret selection.
+        /// </summary>
+        public static readonly RoutedUICommand SelectNextOccurrenceCommand = new(
+            "Select Next Occurrence",
+            "SelectNextOccurrence",
+            typeof(CodeEditor),
+            new InputGestureCollection { new KeyGesture(Key.D, ModifierKeys.Control) });
 
         #endregion
 
@@ -1727,6 +1759,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Initialize SmartComplete popup (Phase 4)
             _smartCompletePopup = new SmartCompletePopup(this);
 
+            // Initialize LSP Signature Help popup
+            _signatureHelpPopup     = new SignatureHelpPopup(this);
+
+            // Initialize LSP Code Action popup (Ctrl+.) and Rename popup (F2)
+            _lspCodeActionPopup     = new LspCodeActionPopup(this);
+            _lspRenamePopup         = new LspRenamePopup(this);
+
             // Initialize validator (Phase 5)
             _validator = new FormatSchemaValidator();
             _validationTimer = new System.Windows.Threading.DispatcherTimer();
@@ -1773,6 +1812,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _caretTimer = new System.Windows.Threading.DispatcherTimer();
             _caretTimer.Tick += CaretTimer_Tick;
             UpdateCaretBlinkTimer();
+
+            // Multi-caret: any change → redraw so secondary carets appear immediately.
+            _caretManager.CaretsChanged += (_, _) => InvalidateVisual();
+
+            // Diagnostics → refresh scroll-marker panel tick marks whenever validation runs.
+            DiagnosticsChanged += (_, _) => UpdateDiagnosticScrollMarkers();
 
             // Initialize smooth scroll timer
             _smoothScrollTimer = new System.Windows.Threading.DispatcherTimer();
@@ -2438,6 +2483,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 findRefsMenuItem.IsEnabled = EnableFindAllReferences
                                              && _document is not null;
 
+            // Quick Fix (LSP Code Actions)
+            var quickFixMenuItem = new MenuItem
+            {
+                Header           = "_Quick Fix…",
+                InputGestureText = "Ctrl+.",
+                Icon             = MakeMenuIcon("\uE73E"),
+            };
+            quickFixMenuItem.Click += (_, _) => _ = ShowCodeActionsAsync();
+            contextMenu.Items.Add(quickFixMenuItem);
+
+            // Rename Symbol (LSP Rename)
+            var renameMenuItem = new MenuItem
+            {
+                Header           = "_Rename Symbol",
+                InputGestureText = "F2",
+                Icon             = MakeMenuIcon("\uE70F"),
+            };
+            renameMenuItem.Click += (_, _) => _ = StartRenameAsync();
+            contextMenu.Items.Add(renameMenuItem);
+
+            // Enable/disable LSP items based on whether a client is active.
+            contextMenu.Opened += (_, _) =>
+            {
+                var lspActive = _lspClient is not null;
+                quickFixMenuItem.IsEnabled = lspActive;
+                renameMenuItem.IsEnabled   = lspActive;
+            };
+
             // Separator
             contextMenu.Items.Add(new Separator());
 
@@ -2590,6 +2663,63 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 async (_, _) => await FindAllReferencesAsync(),
                 (_, e) => e.CanExecute = EnableFindAllReferences
                                          && _document is not null));
+
+            // Select Next Occurrence (Ctrl+D) — multi-caret word selection.
+            CommandBindings.Add(new CommandBinding(
+                SelectNextOccurrenceCommand,
+                (_, _) => SelectNextOccurrence(),
+                (_, e) => e.CanExecute = _document is not null));
+        }
+
+        /// <summary>
+        /// Selects the next occurrence of the word at the caret (or the current selection text)
+        /// and adds a secondary caret at that position. VS Code Ctrl+D behaviour.
+        /// </summary>
+        private void SelectNextOccurrence()
+        {
+            if (_document == null) return;
+
+            string word = _selection.IsEmpty
+                ? GetWordAtCursor()
+                : _document.GetText(_selection.NormalizedStart, _selection.NormalizedEnd);
+
+            if (string.IsNullOrEmpty(word)) return;
+
+            // Start search from the current caret position (or end of the last caret).
+            int startLine = _caretManager.IsMultiCaret
+                ? _caretManager.Carets[^1].Line
+                : _cursorLine;
+            int startCol  = _caretManager.IsMultiCaret
+                ? _caretManager.Carets[^1].Column + 1
+                : _cursorColumn + 1;
+
+            int totalLines = _document.Lines.Count;
+            for (int pass = 0; pass < 2; pass++) // allow wrap-around once
+            {
+                for (int li = (pass == 0 ? startLine : 0);
+                     li < totalLines;
+                     li++)
+                {
+                    string lineText = _document.Lines[li].Text;
+                    int searchFrom  = (pass == 0 && li == startLine) ? Math.Min(startCol, lineText.Length) : 0;
+                    int idx         = lineText.IndexOf(word, searchFrom, StringComparison.Ordinal);
+
+                    if (idx >= 0)
+                    {
+                        _caretManager.AddCaret(li, idx + word.Length);
+                        // Also update primary caret to the new position.
+                        _cursorLine   = li;
+                        _cursorColumn = idx + word.Length;
+                        EnsureCursorVisible();
+                        NotifyCaretMovedIfChanged();
+                        InvalidateVisual();
+                        return;
+                    }
+                }
+                // Wrap: restart from top on second pass.
+                startLine = 0;
+                startCol  = 0;
+            }
         }
 
         private void FormatJsonMenuItem_Click(object sender, RoutedEventArgs e)
@@ -4018,9 +4148,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             if (worstSeverity == ValidationSeverity.Info) return; // No glyph for Info
 
+            // Use themed CE_GutterError / CE_GutterWarning when available; fall back to static pens.
             Brush glyphBrush = worstSeverity == ValidationSeverity.Error
-                ? s_squigglyError.Brush
-                : s_squigglyWarning.Brush;
+                ? (TryFindResource("CE_GutterError")   as Brush ?? s_squigglyError.Brush)
+                : (TryFindResource("CE_GutterWarning") as Brush ?? s_squigglyWarning.Brush);
 
             double glyphSize = Math.Min(_lineHeight * 0.6, 12);
             double glyphX    = 5;
@@ -4963,6 +5094,29 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             dc.DrawLine(cursorPen,
                 new Point(x, y),
                 new Point(x, y + _lineHeight - 2));
+
+            // Secondary carets (multi-caret editing) — drawn at 60% opacity.
+            if (_caretManager.IsMultiCaret)
+            {
+                var carets    = _caretManager.Carets;
+                var secondaryColor = Color.FromArgb(
+                    (byte)(caretColor.A * 0.6),
+                    caretColor.R, caretColor.G, caretColor.B);
+                var secondaryPen = new Pen(new SolidColorBrush(secondaryColor), CaretWidth);
+                secondaryPen.Freeze();
+                double textLeftSec = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+
+                for (int ci = 1; ci < carets.Count; ci++)
+                {
+                    var c = carets[ci];
+                    if (c.Line < _firstVisibleLine || c.Line > _lastVisibleLine) continue;
+
+                    double sx = textLeftSec + c.Column * _charWidth;
+                    double sy = _lineYLookup.TryGetValue(c.Line, out double scy) ? scy
+                        : TopMargin + (c.Line - _firstVisibleLine) * _lineHeight;
+                    dc.DrawLine(secondaryPen, new Point(sx, sy), new Point(sx, sy + _lineHeight - 2));
+                }
+            }
         }
 
         /// <summary>
@@ -5300,6 +5454,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
+            // Ctrl+. — LSP Code Actions (quick fix / refactor)
+            if (e.Key == Key.OemPeriod && ctrlPressed && !shiftPressed && !altPressed)
+            {
+                e.Handled = true;
+                _ = ShowCodeActionsAsync();
+                return;
+            }
+
+            // F2 — LSP Rename Symbol
+            if (e.Key == Key.F2 && !ctrlPressed && !shiftPressed && !altPressed)
+            {
+                e.Handled = true;
+                _ = StartRenameAsync();
+                return;
+            }
+
             // Cancel any pending outline chord on any key press without Ctrl held.
             if (!ctrlPressed) _outlineChordPending = false;
 
@@ -5573,6 +5743,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     {
                         TriggerSmartCompleteWithDelay();
                     }
+
+                    // Trigger LSP Signature Help on '('
+                    if (ch == '(' && _lspClient is not null)
+                        _ = TriggerSignatureHelpAsync();
                 }
                 // OPT-B: InvalidateVisual() removed — Document_TextChanged fires in the same
                 // call stack and already calls InvalidateVisual() or InvalidateMeasure() as
@@ -6245,6 +6419,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 && _lineYLookup.TryGetValue(textPos.Line, out double codeTextY)
                 && pos.Y < codeTextY)
             {
+                e.Handled = true;
+                return;
+            }
+
+            // Ctrl+Alt+Click → add a secondary caret at the clicked position.
+            bool ctrlAltDown = (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt))
+                                == (ModifierKeys.Control | ModifierKeys.Alt);
+            if (ctrlAltDown && e.LeftButton == MouseButtonState.Pressed && e.ClickCount == 1)
+            {
+                _caretManager.AddCaret(textPos.Line, textPos.Column);
                 e.Handled = true;
                 return;
             }
@@ -7342,6 +7526,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (lineCountChanged)
                 _linePositionsDirty = true; // OPT-D: new/deleted lines shift subsequent Y positions
 
+            // Propagate change to shared buffer (IBufferAwareEditor).
+            if (_buffer is not null && !_suppressBufferSync)
+            {
+                _suppressBufferSync = true;
+                try   { _buffer.SetText(GetText(), source: this); }
+                finally { _suppressBufferSync = false; }
+            }
+
             if (lineCountChanged || maxWidthChanged)
                 InvalidateMeasure(); // scrollbar ranges may have changed
             else
@@ -7372,6 +7564,32 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
 
             _smartCompletePopup.TriggerWithDelay(SmartCompleteDelay);
+        }
+
+        /// <summary>
+        /// Computes the screen coordinates of the current caret position.
+        /// When <paramref name="belowCaret"/> is true the Y coordinate is shifted one line down
+        /// so popups appear beneath the caret line rather than overlapping it.
+        /// </summary>
+        private Point ComputeCaretScreenPoint(bool belowCaret = false)
+        {
+            var textLeft = ShowLineNumbers ? 70.0 : 4.0;
+            var localX   = textLeft + _cursorColumn * _charWidth - _horizontalScrollOffset;
+            var localY   = (_cursorLine - _firstVisibleLine + (belowCaret ? 1 : 0)) * _lineHeight;
+            return PointToScreen(new Point(localX, localY));
+        }
+
+        /// <summary>
+        /// Returns the caret's bounding rectangle in the editor's local coordinate space.
+        /// Used by <see cref="SmartCompletePopup"/> for DPI-safe popup placement via
+        /// <see cref="System.Windows.Controls.Primitives.PlacementMode.Bottom"/>.
+        /// </summary>
+        internal Rect GetCaretDisplayRect()
+        {
+            var textLeft = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+            var x        = textLeft + _cursorColumn * _charWidth - _horizontalScrollOffset;
+            var y        = (_cursorLine - _firstVisibleLine) * _lineHeight;
+            return new Rect(x, y, 1, _lineHeight);
         }
 
         /// <summary>
@@ -7667,6 +7885,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
 
             _currentFilePath = filePath;
+            if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = filePath;
             _undoEngine.MarkSaved();  // Stamp save-point so Undo can detect "back to clean".
             _isDirty = false;
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
@@ -7687,6 +7906,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             var text = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
             LoadText(text);
             _currentFilePath = filePath;
+            if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = filePath;
             TitleChanged?.Invoke(this, BuildTitle());
             StatusMessage?.Invoke(this, $"Opened: {Path.GetFileName(filePath)}");
             RefreshJsonStatusBarItems();
@@ -7747,6 +7967,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _lineNumberCache.Clear();
             InvalidateMeasure();
             _currentFilePath = filePath;
+            if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = filePath;
 
             // Re-attach InlineHints with the resolved file path so workspace-wide
             // counting uses the correct extension filter.
@@ -7796,6 +8017,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _lspClient = client;
             _hoverQuickInfoService?.SetLspClient(client);
             _ctrlClickService?.SetLspClient(client);
+            if (_smartCompletePopup is not null)
+            {
+                _smartCompletePopup.SetLspClient(client);
+                _smartCompletePopup.CurrentFilePath = _currentFilePath;
+            }
+            _signatureHelpPopup!.IsOpen = false;
             _lspDocVersion = 0;
 
             if (_lspClient is null) return;
@@ -7825,6 +8052,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
         }
 
+        /// <summary>
+        /// Injects the document manager for workspace-wide edit application (ILspAwareEditor).
+        /// </summary>
+        public void SetDocumentManager(IDocumentManager manager)
+            => _lspDocumentManager = manager;
+
         /// <summary>Maps a file extension to an LSP language identifier.</summary>
         private static string DetectLanguageId(string filePath) =>
             Path.GetExtension(filePath).ToLowerInvariant() switch
@@ -7841,6 +8074,164 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             };
 
         /// <summary>
+        /// Calls textDocument/signatureHelp and shows the result in <see cref="_signatureHelpPopup"/>.
+        /// Fire-and-forget: errors are swallowed to never break typing.
+        /// </summary>
+        private async Task TriggerSignatureHelpAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null) return;
+            try
+            {
+                var sig = await _lspClient.SignatureHelpAsync(
+                    _currentFilePath, _cursorLine, _cursorColumn, CancellationToken.None)
+                    .ConfigureAwait(false);
+                if (sig is null) return;
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    _signatureHelpPopup?.Show(sig, ComputeCaretScreenPoint(belowCaret: false));
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LSP] SignatureHelp: {ex.Message}");
+            }
+        }
+
+        // ── LSP Code Actions (Ctrl+.) ─────────────────────────────────────────────
+
+        /// <summary>
+        /// Invokes textDocument/codeAction at the caret position and shows a popup
+        /// listing the available quick fixes / refactors.
+        /// Fire-and-forget: errors are swallowed so they never break editing.
+        /// </summary>
+        private async Task ShowCodeActionsAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null) return;
+            try
+            {
+                var actions = await _lspClient.CodeActionAsync(
+                    _currentFilePath,
+                    _cursorLine, _cursorColumn,
+                    _cursorLine, _cursorColumn,
+                    CancellationToken.None).ConfigureAwait(true);
+
+                if (actions.Count == 0) return;
+
+                var screenPt = ComputeCaretScreenPoint(belowCaret: true);
+
+                var selected = await _lspCodeActionPopup!
+                    .ShowAsync(actions, screenPt.X, screenPt.Y).ConfigureAwait(true);
+
+                if (selected?.Edit is not null)
+                    ApplyWorkspaceEdit(selected.Edit);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LSP] CodeAction: {ex.Message}");
+            }
+        }
+
+        // ── LSP Rename (F2) ───────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Shows an inline rename popup over the caret, then applies the workspace edit
+        /// returned by textDocument/rename.
+        /// </summary>
+        private async Task StartRenameAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null) return;
+            try
+            {
+                var currentWord = GetWordAtCaret();
+
+                var screenPt = ComputeCaretScreenPoint(belowCaret: false);
+
+                var newName = await _lspRenamePopup!
+                    .ShowAsync(currentWord, screenPt.X, screenPt.Y).ConfigureAwait(true);
+
+                if (string.IsNullOrEmpty(newName) || newName == currentWord) return;
+
+                var edit = await _lspClient.RenameAsync(
+                    _currentFilePath, _cursorLine, _cursorColumn, newName,
+                    CancellationToken.None).ConfigureAwait(true);
+
+                if (edit is not null)
+                    ApplyWorkspaceEdit(edit);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LSP] Rename: {ex.Message}");
+            }
+        }
+
+        // ── Workspace Edit Application ────────────────────────────────────────────
+
+        /// <summary>
+        /// Applies a workspace edit to all affected open buffers.
+        /// Edits within each file are applied bottom-up to avoid offset drift.
+        /// </summary>
+        private void ApplyWorkspaceEdit(LspWorkspaceEdit edit)
+        {
+            foreach (var (filePath, edits) in edit.Changes)
+            {
+                var buf = _lspDocumentManager?.GetBufferForFile(filePath)
+                       ?? (_buffer?.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase) == true
+                           ? _buffer : null);
+                if (buf is null) continue;
+
+                var ordered = edits
+                    .OrderByDescending(e => e.StartLine)
+                    .ThenByDescending(e => e.StartColumn);
+
+                var text = buf.Text;
+                foreach (var e in ordered)
+                    text = ApplyTextEdit(text, e);
+
+                buf.SetText(text, source: null);
+            }
+        }
+
+        /// <summary>Applies a single <see cref="LspTextEdit"/> to a text string (0-based coordinates).</summary>
+        private static string ApplyTextEdit(string text, LspTextEdit edit)
+        {
+            var lines = text.Split('\n');
+            if (edit.StartLine >= lines.Length) return text;
+
+            var startLine = lines[edit.StartLine];
+            var endLine   = edit.EndLine < lines.Length ? lines[edit.EndLine] : string.Empty;
+
+            var startCol = Math.Min(edit.StartColumn, startLine.Length);
+            var endCol   = Math.Min(edit.EndColumn,   endLine.Length);
+
+            var before = startLine[..startCol];
+            var after  = endLine[endCol..];
+
+            var newLines = new List<string>(lines.Length);
+            for (var i = 0; i < edit.StartLine; i++) newLines.Add(lines[i]);
+            newLines.Add(before + edit.NewText + after);
+            for (var i = edit.EndLine + 1; i < lines.Length; i++) newLines.Add(lines[i]);
+
+            return string.Join("\n", newLines);
+        }
+
+        /// <summary>Returns the word under the current caret position (identifier chars only).</summary>
+        private string GetWordAtCaret()
+        {
+            if (_document is null || _cursorLine >= _document.Lines.Count) return string.Empty;
+            var line = _document.Lines[_cursorLine].Text ?? string.Empty;
+            if (_cursorColumn > line.Length) return string.Empty;
+
+            var start = _cursorColumn;
+            while (start > 0 && (char.IsLetterOrDigit(line[start - 1]) || line[start - 1] == '_'))
+                start--;
+
+            var end = _cursorColumn;
+            while (end < line.Length && (char.IsLetterOrDigit(line[end]) || line[end] == '_'))
+                end++;
+
+            return line[start..end];
+        }
+
         /// Feeds LSP push diagnostics into the editor's validation error list.
         /// Always called on the UI thread (guaranteed by LspClientImpl).
         /// </summary>
@@ -8310,6 +8701,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             _document = new Models.CodeDocument();
             _currentFilePath = null;
+            if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = null;
             _isDirty = false;
             _cursorLine = 0;
             _cursorColumn = 0;
@@ -8329,6 +8721,27 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         /// <summary>Fired when the caret moves to a different line (debounced to line-level changes).</summary>
         public event EventHandler? CaretMoved;
+
+        /// <summary>
+        /// Exposes the folding engine so external adapters (e.g. EditorEventAdapter) can
+        /// subscribe to <see cref="Folding.FoldingEngine.RegionsChanged"/> without coupling
+        /// to the internal field.
+        /// </summary>
+        public Folding.FoldingEngine? FoldingEngine => _foldingEngine;
+
+        /// <summary>
+        /// Currently selected text, bounded to 4096 characters.
+        /// Returns <see cref="string.Empty"/> when nothing is selected.
+        /// </summary>
+        public string SelectedText
+        {
+            get
+            {
+                if (_selection.IsEmpty) return string.Empty;
+                var raw = _document.GetText(_selection.NormalizedStart, _selection.NormalizedEnd);
+                return raw.Length > 4096 ? raw[..4096] : raw;
+            }
+        }
 
         /// <summary>
         /// Raised when the user navigates to a reference in a different file via the
@@ -8376,6 +8789,46 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         #endregion
+
+        // ═══════════════════════════════════════════════════════════════════
+        // IBufferAwareEditor
+        // ═══════════════════════════════════════════════════════════════════
+
+        /// <inheritdoc/>
+        public void AttachBuffer(IDocumentBuffer buffer)
+        {
+            if (_buffer is not null) DetachBuffer();
+            _buffer = buffer;
+
+            // Push current editor content into the buffer (editor is authoritative on attach).
+            _suppressBufferSync = true;
+            try   { buffer.SetText(GetText(), source: this); }
+            finally { _suppressBufferSync = false; }
+
+            buffer.Changed += OnBufferChanged;
+        }
+
+        /// <inheritdoc/>
+        public void DetachBuffer()
+        {
+            if (_buffer is null) return;
+            _buffer.Changed -= OnBufferChanged;
+            _buffer = null;
+        }
+
+        private void OnBufferChanged(object? sender, DocumentBufferChangedEventArgs e)
+        {
+            // Ignore changes we originated to prevent feedback loops.
+            if (_suppressBufferSync || ReferenceEquals(e.Source, this)) return;
+
+            // Another editor updated the buffer — sync our content.
+            _suppressBufferSync = true;
+            try   { _document.LoadFromString(e.NewText); }
+            finally { _suppressBufferSync = false; }
+
+            _undoEngine.Reset();
+            InvalidateVisual();
+        }
 
         // -- IPropertyProviderSource -------------------------------------------
         private WpfHexEditor.Editor.CodeEditor.CodeEditorPropertyProvider? _propertyProvider;
@@ -8540,6 +8993,31 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 Line:        ve.Line + 1,
                 Column:      ve.Column + 1
             )).ToList();
+        }
+
+        /// <summary>
+        /// Pushes error and warning line indices from the current validation state to
+        /// <see cref="_codeScrollMarkerPanel"/> so red/amber ticks appear on the scrollbar.
+        /// Called automatically whenever <see cref="DiagnosticsChanged"/> fires.
+        /// </summary>
+        private void UpdateDiagnosticScrollMarkers()
+        {
+            if (_codeScrollMarkerPanel == null) return;
+
+            var errorLines   = new List<int>();
+            var warningLines = new List<int>();
+
+            foreach (var (line, errors) in _validationByLine)
+            {
+                bool hasError = errors.Any(e => e.Severity == Models.ValidationSeverity.Error);
+                if (hasError)
+                    errorLines.Add(line);
+                else
+                    warningLines.Add(line);
+            }
+
+            _codeScrollMarkerPanel.UpdateDiagnosticMarkers(errorLines, warningLines,
+                _document?.Lines.Count ?? 1);
         }
 
         // ═══════════════════════════════════════════════════════════════════════

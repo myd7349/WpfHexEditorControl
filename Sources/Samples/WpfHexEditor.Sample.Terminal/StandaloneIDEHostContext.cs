@@ -85,6 +85,9 @@ file sealed class NullDocumentHostService : IDocumentHostService
         public void SetActive(string contentId)  { }
 
         public IReadOnlyList<DocumentModel> GetDirty() => [];
+        public IDocumentBuffer? GetBuffer(string contentId) => null;
+        public IDocumentBuffer? GetBufferForFile(string filePath) => null;
+        public DocumentModel? FindDocumentByBuffer(IDocumentBuffer buffer) => null;
 
 #pragma warning disable 67
         public event EventHandler<DocumentModel>?  DocumentRegistered;

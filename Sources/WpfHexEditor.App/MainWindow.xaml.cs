@@ -153,8 +153,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Last file path synced to the Solution Explorer (used to re-reveal after a solution reload)
     private string? _lastSyncFilePath;
 
+    // Last workspace path published to IIDEEventBus (used as PreviousWorkspacePath on next change)
+    private string? _lastWorkspacePath;
+
     // QuickSearchBar instances for CodeEditor documents (CodeEditor has no embedded Canvas)
     private readonly Dictionary<CodeEditorControl, QuickSearchBar> _codeEditorBars = new();
+
+    // EditorEventAdapter (CodeEditor) and GenericDocumentAdapter (all other editors)
+    // both bridge per-tab editor events to IIDEEventBus.
+    // Keyed by DockItem ContentId so adapters can be disposed on tab close.
+    private readonly Dictionary<string, IDisposable> _editorEventAdapters = new();
 
     // M5: PropertyProvider cache — avoids recreating the provider on every tab switch
     private readonly Dictionary<UIElement, IPropertyProvider?> _propertyProviderCache = new();
@@ -480,9 +488,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitDocumentManager();
 
         // Wire SolutionManager events before restoring layout
-        _solutionManager.SolutionChanged      += OnSolutionChanged;
-        _solutionManager.ProjectChanged       += OnProjectChanged;
-        _solutionManager.ItemAdded            += OnProjectItemAdded;
+        _solutionManager.SolutionChanged       += OnSolutionChanged;
+        _solutionManager.ProjectChanged        += OnProjectChanged;
+        _solutionManager.ItemAdded             += OnProjectItemAdded;
+        _solutionManager.ItemRemoved           += OnProjectItemRemoved;
         _solutionManager.FormatUpgradeRequired += OnFormatUpgradeRequired;
 
         // Populate LanguageRegistry with all embedded .whlang syntax definitions.
@@ -525,6 +534,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         TryRestoreSession();
         HandleStartupFile();
 
+        // Pre-warm the embedded format JSON cache on a background thread so that the first
+        // "Open Assembly File in Hex Editor" never blocks the UI thread on stream I/O.
+        _ = Task.Run(() => WpfHexEditor.Definitions.EmbeddedFormatCatalog.Instance.PreWarm());
+
         // Deferred theme sync: catches editors that the docking system creates lazily
         // (ContentFactory called on first render pass) or via async session restore.
         Dispatcher.InvokeAsync(SyncAllHexEditorThemes, System.Windows.Threading.DispatcherPriority.Background);
@@ -537,6 +550,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "IDE", "Keyboard Shortcuts",
             () => new WpfHexEditor.App.Options.KeyboardShortcutsPage(_commandRegistry, _keyBindingService),
             "⌨");
+
+        // Register Command Palette options page
+        InitCommandPaletteOptions();
 
         // Plugin system — fire-and-forget after layout is ready
         _ = InitializePluginSystemAsync();
@@ -672,6 +688,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         HasSolution = _solutionManager.CurrentSolution != null;
 
+        // Publish WorkspaceChangedEvent so plugins can react to solution open/close.
+        if (_ideEventBus is not null)
+        {
+            var newPath = e.Solution?.FilePath;
+            _ideEventBus.Publish(new WpfHexEditor.Events.IDEEvents.WorkspaceChangedEvent
+            {
+                Source               = "MainWindow",
+                WorkspacePath        = newPath,
+                PreviousWorkspacePath = _lastWorkspacePath,
+            });
+            _lastWorkspacePath = newPath;
+        }
+
         // Refresh any "doc-projprops-*" tabs that showed "Projet introuvable." at layout-restore
         // time because the solution was not yet loaded when the content factory ran.
         if (_pendingProjectPropertiesContentIds.Count > 0 && _solutionManager.CurrentSolution != null)
@@ -790,10 +819,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
 
+        _ideEventBus?.Publish(new WpfHexEditor.Events.IDEEvents.ProjectItemAddedEvent
+        {
+            Source    = "SolutionManager",
+            FilePath  = e.Item.AbsolutePath,
+            ProjectId = e.Project.Id,
+            ItemType  = e.Item.ItemType.ToString(),
+        });
+
         // When a FormatDefinition is added, inject it into all open HexEditors
         // that belong to the same project so ParsedFields auto-detects the new format.
         if (e.Item.ItemType == ProjectItemType.FormatDefinition)
             InjectFormatDefinitionToOpenEditors(e.Project, e.Item.AbsolutePath);
+    }
+
+    private void OnProjectItemRemoved(object? sender, ProjectItemEventArgs e)
+    {
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+
+        _ideEventBus?.Publish(new WpfHexEditor.Events.IDEEvents.ProjectItemRemovedEvent
+        {
+            Source    = "SolutionManager",
+            FilePath  = e.Item.AbsolutePath,
+            ProjectId = e.Project.Id,
+            ItemType  = e.Item.ItemType.ToString(),
+        });
     }
 
     /// <summary>
@@ -2004,6 +2054,26 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 if (editor is IDiagnosticSource diagSrc)
                     EnsureErrorPanelInstance().AddSource(diagSrc);
 
+                // Publish FileOpenedEvent so plugins with fileExtension activation triggers fire.
+                if (_ideEventBus is not null && !string.IsNullOrEmpty(filePath))
+                    _ideEventBus.Publish(new WpfHexEditor.Events.IDEEvents.FileOpenedEvent
+                    {
+                        Source        = "MainWindow",
+                        FilePath      = filePath,
+                        FileExtension = Path.GetExtension(filePath),
+                        FileSize      = File.Exists(filePath) ? new FileInfo(filePath).Length : 0L,
+                    });
+
+                // Bridge editor lifecycle events to IIDEEventBus.
+                // EditorEventAdapter handles all IDocumentEditor types; it adds richer
+                // caret/folding payloads only when the editor is a CodeEditorControl.
+                if (_ideEventBus != null && !string.IsNullOrEmpty(item.ContentId))
+                {
+                    var adapter = new WpfHexEditor.Editor.CodeEditor.Services.EditorEventAdapter(
+                        editor, _ideEventBus, filePath);
+                    _editorEventAdapters[item.ContentId] = adapter;
+                }
+
                 ActiveDocumentEditor       = editor;
                 ActiveStatusBarContributor = editor as IStatusBarContributor;
 
@@ -2154,6 +2224,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 splitHost.ReferenceNavigationRequested   += OnCodeEditorReferenceNavigation;
                 splitHost.FindAllReferencesDockRequested += OnFindAllReferencesDockRequested;
                 splitHost.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
+            }
+
+            // Publish FileOpenedEvent so plugins with fileExtension activation triggers fire.
+            if (_ideEventBus is not null && !string.IsNullOrEmpty(filePath))
+                _ideEventBus.Publish(new WpfHexEditor.Events.IDEEvents.FileOpenedEvent
+                {
+                    Source        = "MainWindow",
+                    FilePath      = filePath,
+                    FileExtension = Path.GetExtension(filePath),
+                    FileSize      = File.Exists(filePath) ? new FileInfo(filePath).Length : 0L,
+                });
+
+            // Bridge editor lifecycle events to IIDEEventBus.
+            // CodeEditor gets the rich EditorEventAdapter; all other IDocumentEditor types
+            // get the lightweight GenericDocumentAdapter (save signal only).
+            if (_ideEventBus is not null && !string.IsNullOrEmpty(item.ContentId))
+            {
+                IDisposable adapter = editor is CodeEditorControl or CodeEditorSplitHost
+                    ? new WpfHexEditor.Editor.CodeEditor.Services.EditorEventAdapter(editor, _ideEventBus, filePath)
+                    : new Services.GenericDocumentAdapter(editor, _ideEventBus, filePath);
+                _editorEventAdapters[item.ContentId] = adapter;
             }
 
             return display;
@@ -3206,6 +3297,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_contentCache.TryGetValue(contentId, out var ctrl) && ctrl is HexEditorControl hex)
             hex.OpenFile(e.Item.AbsolutePath);
 
+        _ideEventBus?.Publish(new WpfHexEditor.Events.IDEEvents.ProjectItemRenamedEvent
+        {
+            Source    = "SolutionManager",
+            OldPath   = e.OldAbsolutePath,
+            NewPath   = e.Item.AbsolutePath,
+            ProjectId = e.Project.Id,
+        });
+
         OutputLogger.Info($"Renamed '{e.OldName}' → '{e.Item.Name}'");
     }
 
@@ -3729,6 +3828,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _solutionExplorerPanel?.SyncWithFile(syncPath);
         }
 
+        // Sync Error Panel scope context — CurrentDocument uses syncPath; CurrentProject resolved from solution.
+        if (_errorPanel is not null)
+        {
+            _errorPanel.CurrentDocumentPath = syncPath ?? string.Empty;
+            _errorPanel.CurrentProjectName  = _solutionManager.CurrentSolution?
+                .Projects.FirstOrDefault(p => p.FindItemByPath(syncPath ?? string.Empty) is not null)?.Name
+                ?? string.Empty;
+            _errorPanel.RefreshFilter();
+        }
+
         // Sync Properties panel provider (M5: cached per editor instance)
         if (content is IPropertyProviderSource providerSource)
         {
@@ -4108,6 +4217,22 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Disconnect IDiagnosticSource for non-HexEditor registry-based editors (e.g. TblEditor)
             if (ctrl is not HexEditorControl && ctrl is IDiagnosticSource closingDiag)
                 _errorPanel?.RemoveSource(closingDiag);
+
+            // Dispose EditorEventAdapter (stops publishing diagnostic/save events on EventBus).
+            if (_editorEventAdapters.Remove(item.ContentId, out var closingAdapter))
+                closingAdapter.Dispose();
+
+            // Publish FileClosedEvent for any document tab that carries a file path.
+            if (_ideEventBus is not null &&
+                item.Metadata.TryGetValue("FilePath", out var closedFilePath) &&
+                !string.IsNullOrEmpty(closedFilePath))
+            {
+                _ideEventBus.Publish(new WpfHexEditor.Events.IDEEvents.FileClosedEvent
+                {
+                    Source   = "MainWindow",
+                    FilePath = closedFilePath,
+                });
+            }
 
             _propertyProviderCache.Remove(ctrl);  // M5: evict cached provider
             UnregisterDocument(item.ContentId);
@@ -5782,14 +5907,31 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         UpdateStatusBar();
     }
 
+    private const string FallbackThemeFile = "DarkTheme.xaml";
+    private const string FallbackThemeName = "DarkTheme";
+
     private void ApplyTheme(string themeFile, string themeName)
     {
-        Application.Current.Resources.MergedDictionaries.Clear();
-        Application.Current.Resources.MergedDictionaries.Add(
-            new ResourceDictionary
-            {
-                Source = new Uri($"pack://application:,,,/WpfHexEditor.Shell;component/Themes/{themeFile}")
-            });
+        try
+        {
+            Application.Current.Resources.MergedDictionaries.Clear();
+            Application.Current.Resources.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source = new Uri($"pack://application:,,,/WpfHexEditor.Shell;component/Themes/{themeFile}")
+                });
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or System.IO.FileNotFoundException or UriFormatException)
+        {
+            OutputLogger.Warn($"Theme '{themeName}' could not be loaded: {ex.Message}. Reverting to {FallbackThemeName}.");
+            AppSettingsService.Instance.Current.ActiveThemeName = string.Empty;
+            AppSettingsService.Instance.Save();
+            _lastAppliedTheme = string.Empty;
+            // Avoid recursion if the fallback itself is missing.
+            if (!themeFile.Equals(FallbackThemeFile, StringComparison.OrdinalIgnoreCase))
+                ApplyTheme(FallbackThemeFile, FallbackThemeName);
+            return;
+        }
         SyncAllHexEditorThemes();
         OutputLogger.Info($"Theme changed to {themeName}.");
 

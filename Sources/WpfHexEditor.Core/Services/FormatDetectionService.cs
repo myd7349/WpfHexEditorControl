@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using WpfHexEditor.Core;
 using WpfHexEditor.Core.Bytes;
 using WpfHexEditor.Core.FormatDetection;
@@ -214,31 +215,38 @@ namespace WpfHexEditor.Core.Services
             // Step 1: Analyze content (text vs binary)
             var contentAnalysis = _contentAnalyzer.Analyze(data);
 
-            // Step 2: Multi-tier detection
-
-            // TIER 1: Strong signatures (required: true, unique/strong)
-            var tier1 = DetectWithStrongSignatures(data, fileName, contentAnalysis, byteProvider);
-            candidates.AddRange(tier1);
-
-            // Early exit if high-confidence match found
-            if (tier1.Any(c => c.ConfidenceScore >= 0.9))
+            // Step 2: Multi-tier detection — abort after 3 s to prevent UI hangs on complex formats.
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            try
             {
-                return CreateResult(tier1.OrderByDescending(c => c.ConfidenceScore).First(),
-                                  candidates, contentAnalysis, sw);
+                // TIER 1: Strong signatures (required: true, unique/strong)
+                var tier1 = DetectWithStrongSignatures(data, fileName, contentAnalysis, byteProvider, cts.Token);
+                candidates.AddRange(tier1);
+
+                // Early exit if high-confidence match found
+                if (tier1.Any(c => c.ConfidenceScore >= 0.9))
+                {
+                    return CreateResult(tier1.OrderByDescending(c => c.ConfidenceScore).First(),
+                                      candidates, contentAnalysis, sw);
+                }
+
+                // TIER 2: Text format detection (if appears to be text)
+                if (contentAnalysis.IsLikelyText)
+                {
+                    var tier2 = DetectTextFormats(data, fileName, contentAnalysis, byteProvider, cts.Token);
+                    candidates.AddRange(tier2);
+                }
+
+                // TIER 3: Weak signatures (only if no strong match)
+                if (!candidates.Any())
+                {
+                    var tier3 = DetectWithWeakSignatures(data, fileName, contentAnalysis, byteProvider, cts.Token);
+                    candidates.AddRange(tier3);
+                }
             }
-
-            // TIER 2: Text format detection (if appears to be text)
-            if (contentAnalysis.IsLikelyText)
+            catch (OperationCanceledException)
             {
-                var tier2 = DetectTextFormats(data, fileName, contentAnalysis, byteProvider);
-                candidates.AddRange(tier2);
-            }
-
-            // TIER 3: Weak signatures (only if no strong match)
-            if (!candidates.Any())
-            {
-                var tier3 = DetectWithWeakSignatures(data, fileName, contentAnalysis, byteProvider);
-                candidates.AddRange(tier3);
+                Debug.WriteLine("[FormatDetection] Detection timed out after 3 s — returning best candidate so far.");
             }
 
             // Step 3: Score and rank candidates
@@ -296,7 +304,7 @@ namespace WpfHexEditor.Core.Services
         /// <summary>
         /// TIER 1: Detect formats with strong signatures (required: true, unique/strong)
         /// </summary>
-        private List<FormatMatchCandidate> DetectWithStrongSignatures(byte[] data, string fileName, ContentAnalysisResult contentAnalysis, ByteProvider byteProvider)
+        private List<FormatMatchCandidate> DetectWithStrongSignatures(byte[] data, string fileName, ContentAnalysisResult contentAnalysis, ByteProvider byteProvider, CancellationToken ct = default)
         {
             var candidates = new List<FormatMatchCandidate>();
 
@@ -311,6 +319,7 @@ namespace WpfHexEditor.Core.Services
 
             foreach (var format in formatsByPriority)
             {
+                ct.ThrowIfCancellationRequested();
                 if (TryDetectFormat(data, format, out var blocks, out var variables, byteProvider))
                 {
                     var candidate = new FormatMatchCandidate
@@ -336,7 +345,7 @@ namespace WpfHexEditor.Core.Services
         /// <summary>
         /// TIER 2: Detect text-based formats using content heuristics
         /// </summary>
-        private List<FormatMatchCandidate> DetectTextFormats(byte[] data, string fileName, ContentAnalysisResult contentAnalysis, ByteProvider byteProvider)
+        private List<FormatMatchCandidate> DetectTextFormats(byte[] data, string fileName, ContentAnalysisResult contentAnalysis, ByteProvider byteProvider, CancellationToken ct = default)
         {
             var candidates = new List<FormatMatchCandidate>();
 
@@ -345,6 +354,7 @@ namespace WpfHexEditor.Core.Services
 
             foreach (var format in textFormats)
             {
+                ct.ThrowIfCancellationRequested();
                 double contentScore = 0.0;
 
                 // Check if content matches expected pattern
@@ -385,7 +395,7 @@ namespace WpfHexEditor.Core.Services
         /// <summary>
         /// TIER 3: Detect formats with weak/no signatures (last resort)
         /// </summary>
-        private List<FormatMatchCandidate> DetectWithWeakSignatures(byte[] data, string fileName, ContentAnalysisResult contentAnalysis, ByteProvider byteProvider)
+        private List<FormatMatchCandidate> DetectWithWeakSignatures(byte[] data, string fileName, ContentAnalysisResult contentAnalysis, ByteProvider byteProvider, CancellationToken ct = default)
         {
             var candidates = new List<FormatMatchCandidate>();
 
@@ -399,6 +409,7 @@ namespace WpfHexEditor.Core.Services
 
             foreach (var format in extensionMatches)
             {
+                ct.ThrowIfCancellationRequested();
                 if (TryDetectFormat(data, format, out var blocks, out var variables, byteProvider))
                 {
                     var candidate = new FormatMatchCandidate

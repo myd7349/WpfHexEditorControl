@@ -63,6 +63,26 @@ public interface IDocumentManager
     /// </summary>
     void SetActive(string contentId);
 
+    // -- Buffer access ---------------------------------------------------------
+
+    /// <summary>
+    /// Returns the shared <see cref="IDocumentBuffer"/> for the registered document, or
+    /// <c>null</c> if the editor does not implement <see cref="IBufferAwareEditor"/>.
+    /// </summary>
+    IDocumentBuffer? GetBuffer(string contentId);
+
+    /// <summary>
+    /// Returns the shared <see cref="IDocumentBuffer"/> for the given file path (any open tab),
+    /// or <c>null</c> if no buffer exists for that path.
+    /// </summary>
+    IDocumentBuffer? GetBufferForFile(string filePath);
+
+    /// <summary>
+    /// Returns the <see cref="DocumentModel"/> whose buffer is the given instance,
+    /// or <c>null</c> when no document owns that buffer.
+    /// </summary>
+    DocumentModel? FindDocumentByBuffer(IDocumentBuffer buffer);
+
     // -- Dirty check -----------------------------------------------------------
 
     /// <summary>Returns all open documents that have unsaved changes.</summary>

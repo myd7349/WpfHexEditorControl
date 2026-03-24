@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using WpfHexEditor.Editor.Core.LSP;
 using WpfHexEditor.LSP.Client.Providers;
+using WpfHexEditor.LSP.Client.Services;
 using WpfHexEditor.LSP.Client.Transport;
 
 namespace WpfHexEditor.LSP.Client;
@@ -42,10 +43,15 @@ public sealed class LspClientImpl : ILspClient
     private LspCompletionProvider?    _completion;
     private LspHoverProvider?         _hover;
     private LspDefinitionProvider?    _definition;
+    private LspCodeActionProvider?    _codeAction;
+    private LspRenameProvider?        _rename;
 
     // ── ILspClient: lifecycle ──────────────────────────────────────────────────
 
     public bool IsInitialized { get; private set; }
+
+    /// <summary>Server capability flags — valid after <see cref="InitializeAsync"/> completes.</summary>
+    internal ServerCapabilities Capabilities { get; private set; } = ServerCapabilities.Parse(null);
 
     internal LspClientImpl(
         string  executablePath,
@@ -66,14 +72,17 @@ public sealed class LspClientImpl : ILspClient
                        .ConfigureAwait(false);
 
         var channel = _process.Channel;
-        _sync       = new LspDocumentSync(channel);
-        _completion = new LspCompletionProvider(channel);
-        _hover      = new LspHoverProvider(channel);
-        _definition = new LspDefinitionProvider(channel);
+        _sync        = new LspDocumentSync(channel);
+        _completion  = new LspCompletionProvider(channel);
+        _hover       = new LspHoverProvider(channel);
+        _definition  = new LspDefinitionProvider(channel);
+        _codeAction  = new LspCodeActionProvider(channel);
+        _rename      = new LspRenameProvider(channel);
 
         // Subscribe to push diagnostics.
         channel.NotificationReceived += OnNotificationReceived;
 
+        Capabilities  = _process.Capabilities;
         IsInitialized = true;
     }
 
@@ -93,7 +102,7 @@ public sealed class LspClientImpl : ILspClient
     public Task<IReadOnlyList<LspCompletionItem>> CompletionAsync(
         string filePath, int line, int column, CancellationToken ct = default)
     {
-        if (_completion is null)
+        if (_completion is null || !Capabilities.HasCompletionProvider)
             return Task.FromResult<IReadOnlyList<LspCompletionItem>>(Array.Empty<LspCompletionItem>());
         return _completion.GetAsync(filePath, line, column, ct);
     }
@@ -103,7 +112,8 @@ public sealed class LspClientImpl : ILspClient
     public Task<LspHoverResult?> HoverAsync(
         string filePath, int line, int column, CancellationToken ct = default)
     {
-        if (_hover is null) return Task.FromResult<LspHoverResult?>(null);
+        if (_hover is null || !Capabilities.HasHoverProvider)
+            return Task.FromResult<LspHoverResult?>(null);
         return _hover.GetAsync(filePath, line, column, ct);
     }
 
@@ -112,7 +122,7 @@ public sealed class LspClientImpl : ILspClient
     public Task<IReadOnlyList<LspLocation>> DefinitionAsync(
         string filePath, int line, int column, CancellationToken ct = default)
     {
-        if (_definition is null)
+        if (_definition is null || !Capabilities.HasDefinitionProvider)
             return Task.FromResult<IReadOnlyList<LspLocation>>(Array.Empty<LspLocation>());
         return _definition.GetDefinitionAsync(filePath, line, column, ct);
     }
@@ -120,7 +130,7 @@ public sealed class LspClientImpl : ILspClient
     public Task<IReadOnlyList<LspLocation>> ReferencesAsync(
         string filePath, int line, int column, CancellationToken ct = default)
     {
-        if (_definition is null)
+        if (_definition is null || !Capabilities.HasReferencesProvider)
             return Task.FromResult<IReadOnlyList<LspLocation>>(Array.Empty<LspLocation>());
         return _definition.GetReferencesAsync(filePath, line, column, ct);
     }
@@ -130,7 +140,7 @@ public sealed class LspClientImpl : ILspClient
     public async Task<string?> SignatureHelpAsync(
         string filePath, int line, int column, CancellationToken ct = default)
     {
-        if (_process is null) return null;
+        if (_process is null || !Capabilities.HasSignatureHelpProvider) return null;
 
         var uri    = LspDocumentSync.ToUri(filePath);
         var @params = new { textDocument = new { uri }, position = new { line, character = column } };
@@ -142,6 +152,51 @@ public sealed class LspClientImpl : ILspClient
         // Return the label of the first active signature, or null.
         return result?["signatures"]?[0]?["label"]?.GetValue<string>();
     }
+
+    // ── ILspClient: code actions ──────────────────────────────────────────────
+
+    public Task<IReadOnlyList<LspCodeAction>> CodeActionAsync(
+        string filePath, int startLine, int startColumn, int endLine, int endColumn,
+        CancellationToken ct = default)
+    {
+        if (_codeAction is null || !Capabilities.HasCodeActionProvider)
+            return Task.FromResult<IReadOnlyList<LspCodeAction>>(Array.Empty<LspCodeAction>());
+        return _codeAction.GetAsync(filePath, startLine, startColumn, endLine, endColumn, ct);
+    }
+
+    // ── ILspClient: rename ────────────────────────────────────────────────────
+
+    public Task<LspWorkspaceEdit?> RenameAsync(
+        string filePath, int line, int column, string newName, CancellationToken ct = default)
+    {
+        if (_rename is null || !Capabilities.HasRenameProvider)
+            return Task.FromResult<LspWorkspaceEdit?>(null);
+        return _rename.GetAsync(filePath, line, column, newName, ct);
+    }
+
+    // ── ILspClient: document symbols ─────────────────────────────────────────
+
+    public Task<IReadOnlyList<LspDocumentSymbol>> DocumentSymbolsAsync(
+        string filePath, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<LspDocumentSymbol>>(Array.Empty<LspDocumentSymbol>());
+
+    // ── ILspClient: workspace symbols ────────────────────────────────────────
+
+    public Task<IReadOnlyList<LspWorkspaceSymbol>> WorkspaceSymbolsAsync(
+        string query, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<LspWorkspaceSymbol>>(Array.Empty<LspWorkspaceSymbol>());
+
+    // ── ILspClient: inlay hints ───────────────────────────────────────────────
+
+    public Task<IReadOnlyList<LspInlayHint>> InlayHintsAsync(
+        string filePath, int startLine, int endLine, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<LspInlayHint>>(Array.Empty<LspInlayHint>());
+
+    // ── ILspClient: semantic tokens ───────────────────────────────────────────
+
+    public Task<LspSemanticTokensResult?> SemanticTokensAsync(
+        string filePath, CancellationToken ct = default)
+        => Task.FromResult<LspSemanticTokensResult?>(null);
 
     // ── ILspClient: diagnostics push ──────────────────────────────────────────
 

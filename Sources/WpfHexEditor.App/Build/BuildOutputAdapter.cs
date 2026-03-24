@@ -56,7 +56,12 @@ internal sealed class BuildOutputAdapter : IDisposable
         => OutputLogger.BuildRaw("========== Build started ==========");
 
     private void OnOutputLine(BuildOutputLineEvent e)
-        => _output.Write("Build", e.Line);
+    {
+        if (e.IsError)
+            OutputLogger.BuildError(e.Line);
+        else
+            _output.Write("Build", e.Line);
+    }
 
     private static readonly Brush _successBrush = MakeBrush(78, 201, 176);
     private static readonly Brush _errorBrush   = MakeBrush(240,  80,  60);

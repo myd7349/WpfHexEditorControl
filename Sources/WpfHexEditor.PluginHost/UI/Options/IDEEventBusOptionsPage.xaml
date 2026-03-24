@@ -105,21 +105,36 @@
                                 </Setter.Value>
                             </Setter>
                         </Style>
-                        <!-- Row items -->
+                        <!-- Row items — OverridesDefaultStyle required to bypass Aero2 chrome -->
                         <Style TargetType="ListViewItem">
-                            <Setter Property="Background"       Value="Transparent"/>
-                            <Setter Property="Foreground"       Value="{DynamicResource PFP_TextBrush}"/>
-                            <Setter Property="BorderThickness"  Value="0"/>
-                            <Setter Property="Padding"          Value="0"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource DockAccentBrush}"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource PFP_BorderBrush}"/>
-                                </Trigger>
-                            </Style.Triggers>
+                            <Setter Property="OverridesDefaultStyle" Value="True"/>
+                            <Setter Property="SnapsToDevicePixels"   Value="True"/>
+                            <Setter Property="Background"            Value="Transparent"/>
+                            <Setter Property="Foreground"            Value="{DynamicResource PFP_TextBrush}"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Padding"               Value="8,4"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListViewItem">
+                                        <Border x:Name="Bd"
+                                                Background="{TemplateBinding Background}"
+                                                SnapsToDevicePixels="True">
+                                            <GridViewRowPresenter Columns="{TemplateBinding GridView.ColumnCollection}"
+                                                                  Content="{TemplateBinding Content}"
+                                                                  Margin="{TemplateBinding Padding}"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DockAccentBrush}"/>
+                                                <Setter Property="Foreground"                  Value="{DynamicResource DockMenuForegroundBrush}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PFP_BorderBrush}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
                         </Style>
                     </ListView.Resources>
                     <ListView.View>
@@ -191,11 +206,32 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
                 <ListBox.ItemContainerStyle>
+                    <!-- OverridesDefaultStyle required to bypass Aero2 chrome -->
                     <Style TargetType="ListBoxItem">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="Padding" Value="4,1"/>
-                        <Setter Property="Foreground" Value="{DynamicResource PFP_TextBrush}"/>
+                        <Setter Property="OverridesDefaultStyle" Value="True"/>
+                        <Setter Property="SnapsToDevicePixels"   Value="True"/>
+                        <Setter Property="Background"            Value="Transparent"/>
+                        <Setter Property="BorderThickness"       Value="0"/>
+                        <Setter Property="Padding"               Value="4,1"/>
+                        <Setter Property="Foreground"            Value="{DynamicResource PFP_TextBrush}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="Bd"
+                                            Background="{TemplateBinding Background}"
+                                            Padding="{TemplateBinding Padding}"
+                                            SnapsToDevicePixels="True">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DockAccentBrush}"/>
+                                            <Setter Property="Foreground"                  Value="{DynamicResource DockMenuForegroundBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                 </ListBox.ItemContainerStyle>
             </ListBox>
