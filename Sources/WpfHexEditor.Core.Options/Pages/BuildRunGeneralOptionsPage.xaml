@@ -18,7 +18,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
 
-    <StackPanel Margin="0,0,0,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,0,16">
 
         <!-- ── General ───────────────────────────────────────────────────── -->
         <TextBlock Text="General"
@@ -118,5 +119,6 @@
                   Margin="0,0,0,8"
                   Checked="OnCheckChanged" Unchecked="OnCheckChanged"/>
 
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

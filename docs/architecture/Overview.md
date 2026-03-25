@@ -35,17 +35,22 @@
 - 🏗️ **Clean MVVM Architecture** — 16 specialized services
 - 🔄 **Comprehensive Undo/Redo** with granular control
 
-### IDE Application (2026-03)
-- 🖥️ **VS-style docking** — float, dock, auto-hide, colored tabs, 8 themes
-- 📁 **Project system** — `.whsln` / `.whproj`, virtual & physical folders, item links
-- 🔌 **Plugin editors** — `IDocumentEditor` contract (Hex, CodeEditor, TBL, Text, ImageViewer, DiffViewer…)
-- 🗂️ **IDE panels** — ParsedFields, DataInspector, SolutionExplorer, Properties, ErrorPanel, PluginMonitoring
+### IDE Application (2026-03 — v0.6.3.7)
+- 🖥️ **VS-style docking** — float, dock, auto-hide, colored tabs, 18 themes
+- 📁 **Project system** — `.whsln` / `.whproj`, virtual & physical folders, item links; **VS `.sln`/`.csproj` open + MSBuild build** with incremental dirty tracking
+- 🔌 **Plugin editors** — `IDocumentEditor` contract (Hex, CodeEditor, TBL, Text, ImageViewer, DiffViewer, XAML Designer, Markdown, Script, Structure, Entropy, Disassembly, Assembly Explorer, Diff…)
+- 🗂️ **IDE panels** — ParsedFields, DataInspector, SolutionExplorer, Properties, ErrorPanel, PluginMonitoring, SearchPanel, FindReferencesPanel, UnitTestingPanel, DiagnosticToolsPanel
 - 🔍 **400+ File Format Auto-Detection** with binary templates and signature matching
 - 📊 **Data Inspector** with 40+ data type interpretations
-- ⚖️ **File Diff** for side-by-side binary comparison
-- 🔌 **Plugin System** — SDK contracts, `WpfPluginHost`, watchdog, sandbox (out-of-process IPC)
+- 🔌 **Plugin System** — SDK contracts, `WpfPluginHost`, watchdog, sandbox (out-of-process IPC), plugin signing
 - 💻 **Terminal Panel** — `TerminalMode`, `HxScriptEngine`, 31+ commands, 6 export formats
 - 🖼️ **ImageViewer** — zoom/pan, transform pipeline, crop with handles, `IImageTransform`
+- 🐛 **Debugger UI** — debug menu + toolbar pod, execution line highlight, breakpoint info popup, gutter hover ghost, non-executable line validation, debug status bar
+- 📦 **Workspace System** — `.whidews` ZIP+JSON format; save/restore layout, solution, open files, theme
+- ⚡ **Command Palette** — `Ctrl+Shift+P`; 9 modes; frequency boost; content grep; `Ctrl+P` quick file open
+- 🔬 **LSP Engine** — full JSON-RPC client; 10 providers; F# (`fsautocomplete`) + VB.NET (OmniSharp) servers
+- 📋 **Sticky Scroll** — scope headers pinned at top with line numbers; allocation-free rendering
+- 🔗 **Find All References** — `Shift+F12`; solution-wide reference counting; dockable panel; `F8` navigation
 - 🗂️ **Sample.Docking** — standalone WPF docking sample (2 themes, layout persistence)
 
 ---

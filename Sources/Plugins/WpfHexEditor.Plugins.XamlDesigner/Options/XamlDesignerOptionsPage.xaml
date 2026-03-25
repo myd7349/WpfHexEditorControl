@@ -16,7 +16,8 @@
              Foreground="{DynamicResource PFP_TextBrush}"
              Padding="12">
 
-    <StackPanel>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
 
         <!-- Section: Preview -->
         <TextBlock Text="Live Preview"
@@ -130,5 +131,6 @@
                   Foreground="{DynamicResource PFP_TextBrush}"
                   Margin="0,0,0,4"/>
 
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

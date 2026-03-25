@@ -6,7 +6,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
-  [![IDE Version](https://img.shields.io/badge/IDE-v0.6.3.6-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
+  [![IDE Version](https://img.shields.io/badge/IDE-v0.6.3.7-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![Status](https://img.shields.io/badge/Status-Active%20Development-orange)](https://github.com/abbaye/WpfHexEditorIDE/commits/master)
   [![Roadmap](https://img.shields.io/badge/Roadmap-ROADMAP.md-brightgreen)](ROADMAP.md)
@@ -102,7 +102,7 @@ WpfHexEditor uses a **plugin architecture** (`IDocumentEditor`) — every editor
 |--------|--------|----------|-------------|
 | **[Hex Editor](Sources/WpfHexEditor.HexEditor/README.md)** | ✅ Active | ~75% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL, status bar contributor |
 | **[TBL Editor](Sources/WpfHexEditor.Editor.TblEditor/README.md)** | ✅ Active | ~80% | Character table editor for custom encodings and ROM hacking |
-| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ✅ Active | ~75% | Multi-language code editor — VS-like navigation bar, 55+ language definitions, URL hover/click, find/replace, split view; **Ctrl+Click** cross-file nav + external symbol decompilation; Alt+Click rect selection; drag-to-move; shared `UndoEngine`; `#region` colorization; data-driven folding (4 strategies); **word wrap**; **multi-caret** (`Ctrl+Alt+Click`, `Ctrl+D`); gutter diagnostics + scrollbar markers; **LSP** breadcrumb bar, inlay hints, code lens, semantic tokens, code actions (`Ctrl+.`), rename (`F2`), signature help, workspace symbols |
+| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ✅ Active | ~85% | Multi-language code editor — VS-like navigation bar, 55+ language definitions (incl. **F# + VB.NET**), URL hover/click, find/replace, split view; **Ctrl+Click** cross-file nav + external symbol decompilation; Alt+Click rect selection; drag-to-move; shared `UndoEngine`; `#region` colorization; data-driven folding (4 strategies); **word wrap**; **multi-caret** (`Ctrl+Alt+Click`, `Ctrl+D`); gutter diagnostics + scrollbar markers; **auto-close brackets/quotes** + skip-over + wrap-selection; **end-of-block hover hint** (`}` / `#endregion` / `</Tag>`); **word highlight** (VS Code style); **sticky scroll** with line numbers (#160); **Find All References** (`Shift+F12`) + dockable panel + `F8` nav; **LSP** breadcrumb bar, inlay hints, code lens, semantic tokens, code actions (`Ctrl+.`), rename (`F2`), signature help, workspace symbols |
 | **[XAML Designer](Sources/WpfHexEditor.Editor.XamlDesigner/README.md)** | ✅ Active | ~70% | Full split-pane XAML designer — live WPF rendering canvas with **bidirectional sync** (canvas↔code, ~95%); move/resize/rotate handles; property inspector (F4); multi-select + alignment guides; snap grid; `#region` colorization; error card overlay; **4 split layouts** (`Ctrl+Shift+L`); zoom/pan; VS-like `Ctrl+Z/Y` undo/redo with `DesignHistoryPanel`; Toolbox, Resource Browser, Design Data and Animation panels; right-click context menu; `Ctrl+1/2/3` view modes |
 | **[Text Editor](Sources/WpfHexEditor.Editor.TextEditor/README.md)** | ✅ Active | ~50% | Text editing with 26 embedded language definitions, auto-detection by extension, encoding support |
 | **[Script Editor](Sources/WpfHexEditor.Editor.ScriptEditor/README.md)** | 🔧 Active | ~10% | `.hxscript` editor with syntax highlighting, run-in-terminal integration, `HxScriptEngine` backend (#177) |
@@ -372,27 +372,37 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, and
 
 | Feature | Status | Feature # |
 |---------|--------|-----------|
+| **Sticky Scroll** — scope header pinned at top; line numbers in gutter; 6 options; syntax-highlighted; allocation-free `OnRender` | ✅ Done v0.6.3.7 | #160 |
+| **Find All References** — `Shift+F12`; `WorkspaceFileCache`; dockable `FindReferencesPanel`; scope filter; `F8`/`Shift+F8` nav; inline hints | ✅ Done v0.6.3.7 | #157 |
+| **Auto-close Brackets & Quotes** — auto-insert, skip-over, wrap-selection; 4 options; language-scoped | ✅ Done v0.6.3.7 | #163 |
+| **Quick File Open** — `Ctrl+P` → Command Palette `#` file mode | ✅ Done v0.6.3.7 | #179 |
+| **Integrated Debugger UI** — Debug menu, toolbar pod, execution line highlight, gutter hover ghost, debug status bar, `BreakpointInfoPopup`, non-executable line validation | ✅ Done v0.6.3.7 | #44, #90 |
+| **Workspace System** — `.whidews` ZIP+JSON format, 5 async handlers, layout/solution/file restore, options page | ✅ Done v0.6.3.7 | #77 |
+| **F# / VB.NET Language Support** — `.whfmt` definitions, LSP servers, project templates, ILSpy decompilation | ✅ Done v0.6.3.7 | — |
+| **Compare Files Overkill** — `DiffEngine` + Myers/Binary/Semantic algorithms, `GitDiffService`, `DiffExportService`, `SolutionExplorerCompareContributor`, 14 `DF_*` tokens | ✅ Done v0.6.3.7 | — |
+| **DiffHub Document Viewer** — full-tab `DiffViewerDocument`, word-level diff, overview ruler, `Alt+Up/Down` nav | ✅ Done v0.6.3.7 | — |
+| **End-of-Block Hover Hint** — hover `}` / `#endregion` / `</Tag>` → VS-style popup with opening scope; `ET_*` tokens | ✅ Done v0.6.3.7 | — |
+| **Build Progress Bar** — inline `ProgressBar` in build status bar item | ✅ Done v0.6.3.7 | — |
+| **InlineHints Pre-warming** — solution open triggers background `WorkspaceFileCache` rebuild + line cache warm-up | ✅ Done v0.6.3.7 | — |
+| **Perf: Sticky Scroll** — infinite render loop eliminated (100% CPU / 567 MB); O(N) scan; allocation-free `OnRender`; batch yields; search debounce | ✅ Done v0.6.3.7 | — |
 | **IDE EventBus** — 39 typed events, IPC bridge, Phase 1–3 coverage | ✅ Done v0.6.3.6 | #80 |
 | **Command Palette** — `Ctrl+Shift+P`, 9 modes (commands/symbols/line/files/grep/…), frequency boost, content grep | ✅ Done v0.6.3.6 | #133 |
 | **Command System Central** — `CommandRegistry`, `KeyBindingService`, `KeyboardShortcutsPage`, TitleBar launcher | ✅ Done v0.6.3.6 | #78 |
 | **LSP Engine** — full JSON-RPC client; 10 providers; completion, sig-help, code actions, rename, inlay hints, code lens, semantic tokens | ✅ Done v0.6.3.6 | #85–86 |
-| **Code Editor — Phase 2** — go-to-references, peek definition, code formatting, sticky scroll, minimap, bracket pair colorization, auto-close brackets, smart indentation, column rulers, gutter change markers, expand/collapse all folds, color swatch preview | 🔧 In Progress ~75% | #157–168 |
+| **Code Editor — Phase 2 remaining** — peek definition, code formatting, minimap, bracket pair colorization, smart indentation, column rulers, gutter change markers, expand/collapse all folds, color swatch preview | 🔧 In Progress ~85% | #158–168 |
 | **Editors Phase 2** — TextEditor multi-caret/LSP, ImageViewer histogram/batch-export, DiffViewer 3-way merge, StructureEditor live sync, EntropyViewer export, AudioViewer full impl, TileEditor full impl, JsonEditor full impl, ScriptEditor debugger/REPL, DisassemblyViewer x86/ARM decoding | 🔜 Planned | #169–178 |
-| **IDE Infrastructure Phase 2** — Quick File Open (`Ctrl+P`), Terminal ANSI/SSH/REPL/macros, Build parallel/cancel/cache, Docking float persistence, EventBus async, Project lazy-load/workspace-search, Settings profiles/workspaces | 🔜 Planned | #179–185 |
 | **Plugins Phase 2** — AssemblyExplorer IlSpy backend, ArchiveStructure in-place edit, FileComparison diff algorithm + patch export, DiagnosticTools flame graph + leak heuristics | 🔜 Planned | #186–189 |
 | **LSP Phase 3 + Roslyn** — call hierarchy, linked editing, inline value hints, LSP 3.18 pull-diagnostics, Roslyn-based C#/VB.NET/F# parser | 🔜 Planned | #190–191 |
 | **Document Model Phase 1** — `IDocumentBuffer`, `LspBufferBridge`, `IBufferAwareEditor` for all editors | ✅ Done v0.6.3.6 | #107 |
 | **Diagnostic Tools Plugin** — EventPipe CPU/mem graphs, heap snapshot, 4-tab panel | ✅ Done v0.6.3.6 | — |
-| **Dockable Search Panel** — `Ctrl+Shift+F`; hex/text/regex/TBL modes; HexEditor + CodeEditor + TblEditor | ✅ Done v0.6.3.6 | — |
+| **Dockable Search Panel** — `Ctrl+Shift+F`; hex/text/regex/TBL modes | ✅ Done v0.6.3.6 | — |
 | **Incremental Build** — dirty tracking FSW, `BuildDirtyAsync()`, `Ctrl+Alt+F7`, orange dot in Solution Explorer | ✅ Done v0.6.3.6 | #103 |
 | **DI Infrastructure** — `AppServiceCollection` (`Microsoft.Extensions.DependencyInjection`) | ✅ Done v0.6.3.6 | #36 |
-| **Plugin Lazy Loading** — file-extension & command triggers, `Dormant` state | ✅ Done v0.4.0 | #77 |
 | **VS `.sln` / `.csproj` support + MSBuild build** | ✅ Done v0.5.0 | #101–103 |
-| **Assembly Explorer — ILSpy backend, VB.NET, CFG, Diff, Search, XRef, Ctrl+Click decompile** | 🔧 In Progress ~70% | #104–106 |
+| **Assembly Explorer** — .NET PE tree + C# decompilation → Code Editor tab | 🔧 In Progress ~75% | #104–106 |
 | **Document Model Phase 2** — multi-editor collaboration, undo/redo unification, hex editor buffer | 🔧 In Progress ~40% | #107 |
 | **Integrated Terminal** — full multi-shell + macro | 🔧 In Progress ~70% | #92 |
 | **Code Intelligence (SmartComplete / Snippets / AI suggestions)** | 🔜 Planned | #86–89 |
-| **Integrated Debugger** | 🔜 Planned | #44, #90 |
 | **Git Integration** | 🔜 Planned | #91 |
 | **Plugin Marketplace & Auto-Update** | 🔜 Planned | #41–43 |
 | **IDE Localization Engine** — full IDE UI (HexEditor control already 19 languages) | 🔜 Planned | #100 |

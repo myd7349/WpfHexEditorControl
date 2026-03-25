@@ -7,7 +7,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
 
-    <StackPanel Margin="0,0,0,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,0,16">
 
         <!-- ── Apparence ──────────────────────────────────────────────────── -->
         <TextBlock Text="Appearance"
@@ -33,5 +34,6 @@
                    Opacity="0.65"
                    Margin="0,4,0,0"/>
 
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

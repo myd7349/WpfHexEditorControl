@@ -149,6 +149,103 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         #endregion
 
+        #region Sticky Scroll (#160)
+
+        /// <summary>
+        /// Builds the ordered scope-chain visible in the sticky header for the current
+        /// first-visible line.  Returns scopes that contain <paramref name="firstLine"/>
+        /// ordered from outermost to innermost, limited to <see cref="_stickyScrollMaxLines"/>
+        /// and filtered by <see cref="_stickyScrollMinScopeLines"/>.
+        /// </summary>
+        private List<FoldingRegion> FindScopeChainAt(int firstLine)
+        {
+            if (_foldingEngine is null || _document is null) return [];
+
+            // O(N) single pass: insertion-sort into a small bounded list (max _stickyScrollMaxLines).
+            // Avoids the O(N log N) LINQ .OrderBy() that ran on every scroll frame.
+            var result = new List<FoldingRegion>(_stickyScrollMaxLines + 1);
+            foreach (var r in _foldingEngine.Regions)
+            {
+                if (r.IsCollapsed || r.StartLine >= firstLine || r.EndLine < firstLine) continue;
+                if ((r.EndLine - r.StartLine) < _stickyScrollMinScopeLines) continue;
+
+                // Binary-search insertion point to keep list sorted by StartLine ascending.
+                int ins = result.Count;
+                while (ins > 0 && result[ins - 1].StartLine > r.StartLine) ins--;
+                result.Insert(ins, r);
+
+                // Trim to window: keep only the innermost MaxLines entries.
+                if (result.Count > _stickyScrollMaxLines)
+                    result.RemoveAt(0);
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Recomputes the sticky header entries from the current viewport and pushes them
+        /// to <see cref="_stickyScrollHeader"/>.  Called from <see cref="OnRender"/> and
+        /// after scroll/option changes.
+        /// </summary>
+        private void UpdateStickyScrollHeader()
+        {
+            if (_stickyScrollHeader is null) return;
+
+            if (!_stickyScrollEnabled || _document is null || _foldingEngine is null
+                || _lineHeight <= 0 || _typeface is null)
+            {
+                _stickyScrollHeader.Update(
+                    Array.Empty<StickyScrollEntry>(), 0, 0, _typeface ?? new Typeface("Consolas"),
+                    _fontSize, 0, 1.0, false, false,
+                    false, 0, 0, null, null);
+                return;
+            }
+
+            // Use unbuffered first visible line for sticky scroll: _firstVisibleLine includes
+            // VirtualizationEngine's render buffer (default 10 lines) which would cause headers
+            // to appear up to 10 lines before the scope declaration has actually scrolled off the top.
+            int stickyLine = (_lineHeight > 0)
+                ? Math.Max(0, (int)(_verticalScrollOffset / _lineHeight))
+                : _firstVisibleLine;
+            var chain   = FindScopeChainAt(stickyLine);
+            var entries = new List<StickyScrollEntry>(chain.Count);
+            double ppdip = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+
+            var activeHighlighter = (ISyntaxHighlighter?)ExternalHighlighter ?? _highlighter;
+
+            foreach (var region in chain)
+            {
+                if (region.StartLine >= _document.Lines.Count) continue;
+                var line = _document.Lines[region.StartLine];
+                var text = line.Text ?? string.Empty;
+
+                IReadOnlyList<SyntaxHighlightToken> tokens = Array.Empty<SyntaxHighlightToken>();
+                if (_stickyScrollSyntaxHighlight && activeHighlighter != null)
+                {
+                    try
+                    {
+                        tokens = activeHighlighter.Highlight(text, region.StartLine)
+                            .Select(t => t with
+                            {
+                                Foreground = ResolveBrushForKind(t.Kind) ?? t.Foreground
+                            })
+                            .ToList<SyntaxHighlightToken>();
+                    }
+                    catch { /* highlighter not ready — fall back to plain */ }
+                }
+
+                entries.Add(new StickyScrollEntry(region.StartLine, tokens, text));
+            }
+
+            double textX = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+            _stickyScrollHeader.Update(
+                entries, _lineHeight, _charWidth, _typeface, _fontSize,
+                textX, ppdip, _stickyScrollSyntaxHighlight, _stickyScrollClickToNavigate,
+                ShowLineNumbers, LineNumberWidth, LineNumberMargin,
+                _lineNumberTypeface, LineNumberForeground);
+        }
+
+        #endregion
+
         #region Outlining Commands (Ctrl+M chord)
 
         /// <summary>Toggle the fold region that starts on the cursor line (Ctrl+M, Ctrl+M).</summary>
@@ -585,6 +682,23 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _linePositionsDirty = false;
             }
 
+            // Sticky scroll header: refresh only when the first visible line changes.
+            // Guard: never call InvalidateArrange() unconditionally inside OnRender —
+            // it creates a WPF layout → render → layout cycle (infinite loop).
+            // Gate on _lastStickyFirstLine so caret-blink / word-highlight renders are free. (ADR-IH-PERF-02)
+            if (_firstVisibleLine != _lastStickyFirstLine)
+            {
+                _lastStickyFirstLine = _firstVisibleLine;
+                UpdateStickyScrollHeader();
+                int newCount = _stickyScrollHeader?.RequiredHeight > 0
+                    ? (int)(_stickyScrollHeader.RequiredHeight / _lineHeight) : 0;
+                if (newCount != _stickyScrollLastEntryCount)
+                {
+                    _stickyScrollLastEntryCount = newCount;
+                    InvalidateArrange(); // re-position header at its new height
+                }
+            }
+
             // -- Clip to content area (prevent drawing over scrollbars) --
             dc.PushClip(new RectangleGeometry(new Rect(0, 0, contentW, contentH)));
 
@@ -791,6 +905,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _gutterControl.Arrange(showGutter
                     ? new Rect(BreakpointGutterControl.GutterWidth, 0, _gutterControl.Width, contentH)
                     : new Rect(0, 0, 0, 0));
+            }
+
+            // Sticky scroll header: spans the full width above the text area (y=0, x=0).
+            if (_stickyScrollHeader != null)
+            {
+                if (_stickyScrollEnabled)
+                {
+                    double headerH = _stickyScrollHeader.RequiredHeight;
+                    _stickyScrollHeader.Visibility = headerH > 0 ? Visibility.Visible : Visibility.Collapsed;
+                    _stickyScrollHeader.Arrange(new Rect(0, 0, contentW, headerH > 0 ? headerH : 0));
+                }
+                else
+                {
+                    _stickyScrollHeader.Visibility = Visibility.Collapsed;
+                    _stickyScrollHeader.Arrange(new Rect(0, 0, 0, 0));
+                }
             }
 
             UpdateScrollBars(contentW, contentH);

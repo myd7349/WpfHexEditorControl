@@ -11,7 +11,8 @@
              xmlns:cp="clr-namespace:WpfHexEditor.ColorPicker.Controls;assembly=WpfHexEditor.ColorPicker"
              Background="Transparent">
 
-    <StackPanel Margin="0,0,0,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,0,16">
 
         <!-- ── General ───────────────────────────────────────────────────────── -->
         <TextBlock Text="General"
@@ -352,5 +353,6 @@
                 BorderBrush="{DynamicResource DockBorderBrush}"
                 HorizontalAlignment="Left"/>
 
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>
