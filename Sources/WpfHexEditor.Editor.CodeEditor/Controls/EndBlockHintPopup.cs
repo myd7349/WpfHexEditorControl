@@ -361,7 +361,7 @@ internal sealed class EndBlockHintPopup : Popup
             VerticalAlignment = VerticalAlignment.Center,
             Margin            = new Thickness(0),
         };
-        tb.SetResourceReference(TextBlock.ForegroundProperty, "ET_MetaForeground");
+        tb.SetResourceReference(TextBlock.ForegroundProperty, "ET_HeaderForeground");
 
         var pill = new Border
         {
