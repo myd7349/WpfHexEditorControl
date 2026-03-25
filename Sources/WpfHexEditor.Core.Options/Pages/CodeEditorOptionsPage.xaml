@@ -18,7 +18,8 @@
              xmlns:cp="clr-namespace:WpfHexEditor.ColorPicker.Controls;assembly=WpfHexEditor.ColorPicker"
              Background="Transparent">
 
-    <StackPanel Margin="0,0,0,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,0,16">
 
         <!-- ── Font ──────────────────────────────────────────────────────── -->
         <TextBlock Text="Font"
@@ -467,5 +468,6 @@
                             ColorChanged="OnColorPickerChanged"/>
         </Grid>
 
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

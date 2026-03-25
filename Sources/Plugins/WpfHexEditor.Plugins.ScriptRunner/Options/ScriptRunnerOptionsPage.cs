@@ -137,6 +137,7 @@ public sealed class ScriptRunnerOptionsPage : UserControl
             TickFrequency       = tickFreq,
             IsSnapToTickEnabled = true,
             VerticalAlignment   = VerticalAlignment.Center,
+            MinWidth            = 120,
         };
         slider.ValueChanged += (_, e) => label.Text = ((int)e.NewValue).ToString();
 

@@ -263,7 +263,8 @@ public sealed class TabsOptionsPage : UserControl, IOptionsPage
             Maximum             = max,
             TickFrequency       = tickFreq,
             IsSnapToTickEnabled = true,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment   = VerticalAlignment.Center,
+            MinWidth            = 120,
         };
 
         slider.ValueChanged += (_, e) =>
@@ -275,23 +276,20 @@ public sealed class TabsOptionsPage : UserControl, IOptionsPage
         return (slider, label);
     }
 
-    private static StackPanel MakeSliderRow(string labelText, Slider slider, TextBlock valueLabel)
+    private static Grid MakeSliderRow(string labelText, Slider slider, TextBlock valueLabel)
     {
-        var row = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Margin      = new Thickness(0, 4, 0, 4),
-        };
+        var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
 
-        row.Children.Add(new TextBlock
-        {
-            Text              = labelText,
-            Width             = 120,
-            VerticalAlignment = VerticalAlignment.Center,
-        });
-        row.Children.Add(slider);
-        row.Children.Add(valueLabel);
-
-        return row;
+        var label = new TextBlock { Text = labelText, VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(label,      0);
+        Grid.SetColumn(slider,     1);
+        Grid.SetColumn(valueLabel, 2);
+        grid.Children.Add(label);
+        grid.Children.Add(slider);
+        grid.Children.Add(valueLabel);
+        return grid;
     }
 }

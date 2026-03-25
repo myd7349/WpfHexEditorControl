@@ -13,7 +13,8 @@
              xmlns:cp="clr-namespace:WpfHexEditor.ColorPicker.Controls;assembly=WpfHexEditor.ColorPicker"
              Background="Transparent">
 
-    <StackPanel Margin="0,0,0,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,0,16">
 
         <!-- ── Log-Level Colours ──────────────────────────────────────────── -->
         <TextBlock Text="Log-Level Colours"
@@ -105,5 +106,6 @@
                 BorderBrush="{DynamicResource DockBorderBrush}"
                 HorizontalAlignment="Left"/>
 
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

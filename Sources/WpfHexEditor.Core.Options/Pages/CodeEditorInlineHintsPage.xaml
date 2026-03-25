@@ -59,7 +59,8 @@
         </Style>
     </UserControl.Resources>
 
-    <StackPanel Margin="0,0,0,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,0,16">
 
         <!-- ── Inline Hints ──────────────────────────────────────────────────── -->
         <TextBlock Text="Inline Hints"
@@ -197,5 +198,6 @@
 
         </StackPanel>
 
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>

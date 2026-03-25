@@ -173,7 +173,7 @@ public sealed class CommandPaletteWindow : Window
             FontWeight        = FontWeights.SemiBold,
             Margin            = new Thickness(0, 0, 4, 0)
         };
-        _modeTagText.SetResourceReference(TextBlock.ForegroundProperty, "CP_HighlightBrush");
+        _modeTagText.SetResourceReference(TextBlock.ForegroundProperty, "CP_TextBrush");
         _modeTagBorder = new Border
         {
             CornerRadius    = new CornerRadius(3),

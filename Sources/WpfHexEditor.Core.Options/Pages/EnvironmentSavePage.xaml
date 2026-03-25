@@ -7,7 +7,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="Transparent">
 
-    <StackPanel Margin="0,0,0,16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,0,16">
 
         <!-- ── Save Mode ──────────────────────────────────────────────────── -->
         <TextBlock Text="Save Mode"
@@ -113,5 +114,6 @@
                    FontStyle="Italic"
                    Margin="0,6,0,0"/>
 
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>
