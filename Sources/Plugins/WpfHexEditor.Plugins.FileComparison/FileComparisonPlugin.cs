@@ -3,9 +3,11 @@
 // File: FileComparisonPlugin.cs
 // Description:
 //     Plugin entry point for the File Comparison feature.
-//     - Registers the DiffHubPanel as a compact launcher panel (bottom dock).
-//     - Subscribes to CompareCompleted → opens a DiffViewerDocument document tab.
-//     - Deduplicates tabs by left+right path pair (reuses existing tab).
+//     - DiffHubPanel is lazy: registered as a document tab on first demand (not at startup).
+//     - "Compare with Another File…" uses a native OpenFileDialog (CommandRegistry is
+//       unreachable from plugin ALC — DIM returns null).
+//     - CompareCompleted → OpenDiffViewerTab; DiffHub panel stays hidden during normal compare.
+//     - Deduplicates viewer tabs by left+right path pair (reuses existing tab).
 //     - Pre-fills File 1 with the active hex file for a one-click diff workflow.
 //
 // Architecture Notes:
@@ -30,8 +32,8 @@ namespace WpfHexEditor.Plugins.FileComparison;
 
 /// <summary>
 /// Plugin entry point for the File Comparison feature.
-/// The launcher panel stays docked at the bottom; comparison results open as
-/// full document tabs (<see cref="DiffViewerDocument"/>).
+/// DiffHub is opened lazily as a document tab (not a docked panel).
+/// Comparison results always open as <see cref="DiffViewerDocument"/> tabs in the main area.
 /// </summary>
 public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
 {
@@ -39,6 +41,7 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
 
     private IIDEHostContext?  _context;
     private DiffHubPanel?     _panel;
+    private bool              _diffHubDocumentOpen;
 
     // ── Tab deduplication ────────────────────────────────────────────────────
     private readonly Dictionary<string, DiffViewerDocument> _openViewers = new(StringComparer.OrdinalIgnoreCase);
@@ -63,20 +66,28 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
         // Wire compare-completed → open document tab
         _panel.CompareCompleted += (_, result) => OpenDiffViewerTab(result);
 
-        // Legacy "Open in Viewer" (used by DiffServiceAdapter / terminal diff-open):
-        // simply run a fresh compare and the tab will open via CompareCompleted.
-
-        context.UIRegistry.RegisterPanel(
-            PanelUiId,
-            _panel,
-            Id,
-            new PanelDescriptor
+        // Lazy helper — registers DiffHub as a document tab on first call,
+        // then activates it via ShowPanel on subsequent calls.
+        void ShowDiffHubDocument()
+        {
+            if (!_diffHubDocumentOpen)
             {
-                Title           = "Diff Hub",
-                DefaultDockSide = "Bottom",
-                DefaultAutoHide = true,
-                CanClose        = true
-            });
+                context.UIRegistry.RegisterDocumentTab(
+                    PanelUiId,
+                    _panel!,
+                    Id,
+                    new DocumentDescriptor
+                    {
+                        Title    = "Diff Hub",
+                        CanClose = true
+                    });
+                _diffHubDocumentOpen = true;
+            }
+            else
+            {
+                context.UIRegistry.ShowPanel(PanelUiId);
+            }
+        }
 
         context.UIRegistry.RegisterMenuItem(
             $"{Id}.Menu.Show",
@@ -87,39 +98,49 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
                 ParentPath = "View",
                 Group      = "FileTools",
                 IconGlyph  = "\uE93D",
-                Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(PanelUiId))
+                Command    = new RelayCommand(_ => ShowDiffHubDocument())
             });
 
         context.UIRegistry.RegisterContextMenuContributor(Id,
             new SolutionExplorerCompareContributor(
                 context,
-                compareWithFile: (left, right) =>
+                compareWithFile: async (left, right) =>
                 {
                     if (!string.IsNullOrEmpty(right))
                     {
+                        // Both paths known (git extraction etc.) → compare directly.
+                        // CompareCompleted fires → OpenDiffViewerTab opens the viewer tab.
                         _panel!.OpenFiles(left, right);
-                        context.UIRegistry.ShowPanel(PanelUiId);
+                        return;
                     }
-                    else
-                    {
-                        var cmd = context.CommandRegistry?.Find("View.CompareFiles")?.Command;
-                        if (cmd is not null)
-                            cmd.Execute(left);
-                        else
-                        {
-                            _panel!.SuggestFile1(left);
-                            context.UIRegistry.ShowPanel(PanelUiId);
-                        }
-                    }
+
+                    // Show VS Code-style in-IDE file picker.
+                    // GetSolutionFilePaths() covers both WH (.whsln) and VS (.sln) solutions —
+                    // VsSolutionLoader injects VS solutions into ISolutionManager.CurrentSolution.
+                    var solutionFiles = context.SolutionExplorer.GetSolutionFilePaths();
+                    var openFiles     = context.SolutionExplorer.GetOpenFilePaths();
+                    var slnPath       = context.SolutionExplorer.ActiveSolutionPath;
+                    var owner         = System.Windows.Application.Current.MainWindow;
+
+                    var picked = await CompareFilePickerPopup.ShowAsync(owner, left, solutionFiles, openFiles, slnPath);
+                    if (!string.IsNullOrEmpty(picked))
+                        _panel!.OpenFiles(left, picked);
+                    // CompareCompleted → OpenDiffViewerTab (DiffHub panel stays hidden)
                 },
                 compareWithActiveEditor: nodePath =>
                 {
                     var activeDoc = context.DocumentHost?.Documents?.ActiveDocument?.FilePath;
                     if (!string.IsNullOrEmpty(activeDoc))
+                    {
+                        // Both files known → compare directly; viewer tab opens via CompareCompleted.
                         _panel!.OpenFiles(nodePath, activeDoc);
+                    }
                     else
+                    {
+                        // No active editor — pre-fill File 1 and open the hub so user can pick File 2.
                         _panel!.SuggestFile1(nodePath);
-                    context.UIRegistry.ShowPanel(PanelUiId);
+                        ShowDiffHubDocument();
+                    }
                 }));
 
         context.HexEditor.FileOpened += OnHexFileOpened;
@@ -130,7 +151,7 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
                 new DiffEngine(),
                 _panel,
                 PanelUiId,
-                () => context.UIRegistry.ShowPanel(PanelUiId)));
+                () => ShowDiffHubDocument()));
 
         return Task.CompletedTask;
     }
@@ -141,6 +162,7 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
             _context.HexEditor.FileOpened -= OnHexFileOpened;
 
         _openViewers.Clear();
+        _diffHubDocumentOpen = false;
         _panel   = null;
         _context = null;
         return Task.CompletedTask;

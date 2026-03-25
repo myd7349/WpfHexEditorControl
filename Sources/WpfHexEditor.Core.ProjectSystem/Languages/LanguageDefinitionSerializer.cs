@@ -233,6 +233,7 @@ public static class LanguageDefinitionSerializer
             Includes                  = dto.Includes ?? [],
             EditorHint                = preferredEditor,
             FoldingRules              = MapFoldingRules(dto.FoldingRules),
+            BreakpointRules           = MapBreakpointRules(dto.BreakpointRules),
         };
     }
 
@@ -271,6 +272,15 @@ public static class LanguageDefinitionSerializer
             HeadingBased            = dto.HeadingBased,
             MinHeadingLevel         = dto.MinHeadingLevel,
             EndOfBlockHint          = MapEndOfBlockHint(dto.EndOfBlockHint),
+        };
+    }
+
+    private static BreakpointRules? MapBreakpointRules(BreakpointRulesDto? dto)
+    {
+        if (dto is null) return null;
+        return new BreakpointRules
+        {
+            NonExecutablePatterns = dto.NonExecutablePatterns ?? [],
         };
     }
 
@@ -357,6 +367,9 @@ public static class LanguageDefinitionSerializer
         public bool                  IsDefault                { get; set; }
         public List<string>?         Includes                 { get; set; }
         public FoldingRulesDto?      FoldingRules             { get; set; }
+
+        [JsonPropertyName("breakpointRules")]
+        public BreakpointRulesDto?   BreakpointRules          { get; set; }
     }
 
     private sealed class FoldingRulesDto
@@ -374,6 +387,12 @@ public static class LanguageDefinitionSerializer
         [JsonPropertyName("headingBased")]         public bool          HeadingBased         { get; set; }
         [JsonPropertyName("minHeadingLevel")]      public int           MinHeadingLevel      { get; set; } = 2;
         [JsonPropertyName("endOfBlockHint")]       public EndOfBlockHintDto? EndOfBlockHint  { get; set; }
+    }
+
+    private sealed class BreakpointRulesDto
+    {
+        [JsonPropertyName("nonExecutablePatterns")]
+        public string[]? NonExecutablePatterns { get; set; }
     }
 
     private sealed class EndOfBlockHintDto

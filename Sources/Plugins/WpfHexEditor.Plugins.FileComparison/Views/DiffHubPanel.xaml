@@ -79,7 +79,8 @@
                              Height="24" FontSize="11" Padding="4,2"
                              AllowDrop="True" Drop="OnFile1Drop" DragOver="OnDragOver"
                              VerticalContentAlignment="Center"/>
-                    <Button Grid.Column="1" Width="26" Height="24" Margin="2,0,0,0"
+                    <Button Grid.Column="1" Style="{DynamicResource XD_ToolbarIconButtonStyle}"
+                            Width="26" Height="24" Margin="2,0,0,0"
                             Click="OnBrowseFile1_Click" ToolTip="Browse…">
                         <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
                     </Button>
@@ -107,7 +108,8 @@
                              Height="24" FontSize="11" Padding="4,2"
                              AllowDrop="True" Drop="OnFile2Drop" DragOver="OnDragOver"
                              VerticalContentAlignment="Center"/>
-                    <Button Grid.Column="1" Width="26" Height="24" Margin="2,0,0,0"
+                    <Button Grid.Column="1" Style="{DynamicResource XD_ToolbarIconButtonStyle}"
+                            Width="26" Height="24" Margin="2,0,0,0"
                             Click="OnBrowseFile2_Click" ToolTip="Browse…">
                         <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
                     </Button>

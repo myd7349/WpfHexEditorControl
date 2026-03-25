@@ -92,6 +92,18 @@
       <_VsThreadingDlls Include="$(OutputPath)Microsoft.VisualStudio.*.dll" />
     </ItemGroup>
     <Copy SourceFiles="@(_VsThreadingDlls)" DestinationFolder="$(PluginDestDir)" SkipUnchangedFiles="true" />
+    <!-- System.Composition MEF assemblies (version 9.0.0) required by ICSharpCode.CodeConverter
+         via Microsoft.VisualStudio.Composition. The .NET 8 SDK suppresses copy-local for these
+         because System.Composition.* also ships as inbox assemblies at version 8.0.0.0 with the
+         shared framework — so CopyLocalLockFileAssemblies=true does NOT place them in $(OutputPath).
+         CodeConverter 10.x requires 9.0.0.0; to avoid the version mismatch we copy the 9.0.0
+         DLLs directly from the global NuGet package cache, bypassing the SDK suppression.
+         Note: $(NuGetPackageRoot) = C:\Users\<user>\.nuget\packages\ (trailing backslash).
+               Backslash separators used throughout to avoid MSBuild glob issues on Windows. -->
+    <ItemGroup>
+      <_SystemCompositionDlls Include="$(NuGetPackageRoot)system.composition.*\9.0.0\lib\net8.0\*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_SystemCompositionDlls)" DestinationFolder="$(PluginDestDir)" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

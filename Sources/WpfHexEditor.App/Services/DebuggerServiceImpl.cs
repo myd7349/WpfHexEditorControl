@@ -250,6 +250,46 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
         return isNowSet;
     }
 
+    public async Task UpdateBreakpointAsync(string filePath, int line, string? condition, bool isEnabled)
+    {
+        lock (_lock)
+        {
+            int idx = _breakpoints.FindIndex(
+                b => string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase) && b.Line == line);
+            if (idx < 0) return;
+
+            // BreakpointLocation is an init-only record — replace with a `with` expression.
+            _breakpoints[idx] = _breakpoints[idx] with
+            {
+                Condition = condition ?? string.Empty,
+                IsEnabled = isEnabled,
+            };
+        }
+
+        SavePersistedBreakpoints();
+        BreakpointsChanged?.Invoke(this, EventArgs.Empty);
+
+        if (_client is not null && _session.IsActive)
+            await SyncBreakpointsForFileAsync(_client, filePath);
+    }
+
+    public async Task DeleteBreakpointAsync(string filePath, int line)
+    {
+        lock (_lock)
+        {
+            var bp = _breakpoints.FirstOrDefault(
+                b => string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase) && b.Line == line);
+            if (bp is null) return;
+            _breakpoints.Remove(bp);
+        }
+
+        SavePersistedBreakpoints();
+        BreakpointsChanged?.Invoke(this, EventArgs.Empty);
+
+        if (_client is not null && _session.IsActive)
+            await SyncBreakpointsForFileAsync(_client, filePath);
+    }
+
     public async Task ClearAllBreakpointsAsync()
     {
         IReadOnlyList<string> files;

@@ -62,6 +62,17 @@
       "namedRegionStart": "^\\s*#region\\b(.*)$",
       "namedRegionEnd":   "^\\s*#endregion\\b",
       "endOfBlockHint": { "enabled": true, "maxContextLines": 3, "triggerBrace": true, "triggerDirective": true }
+    },
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "^\\s*//",
+        "^\\s*/\\*",
+        "^\\s*\\*",
+        "^\\s*$",
+        "^\\s*namespace\\b",
+        "^\\s*#region\\b",
+        "^\\s*#endregion\\b"
+      ]
     }
   }
 }

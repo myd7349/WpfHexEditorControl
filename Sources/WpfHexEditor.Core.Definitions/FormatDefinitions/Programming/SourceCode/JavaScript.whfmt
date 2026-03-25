@@ -51,6 +51,15 @@
       "startPatterns": ["\\{"],
       "endPatterns":   ["\\}"],
       "endOfBlockHint": { "enabled": true, "maxContextLines": 3, "triggerBrace": true, "triggerDirective": false }
+    },
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "^\\s*//",
+        "^\\s*/\\*",
+        "^\\s*\\*",
+        "^\\s*$",
+        "^\\s*export\\s+(?:default\\s+)?(?:interface|type|enum)\\b"
+      ]
     }
   }
 }

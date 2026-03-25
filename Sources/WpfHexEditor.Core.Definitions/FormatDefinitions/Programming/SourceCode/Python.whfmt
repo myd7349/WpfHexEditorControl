@@ -49,6 +49,14 @@
       "indentTabWidth": 4,
       "blockStartPattern": "^\\s*(?:def|class|if|elif|else|for|while|with|try|except|finally|async\\s+def|async\\s+for|async\\s+with)\\b",
       "endOfBlockHint": { "enabled": false }
+    },
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "^\\s*#",
+        "^\\s*$",
+        "^\\s*\"\"\"",
+        "^\\s*'''"
+      ]
     }
   }
 }

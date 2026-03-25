@@ -93,7 +93,7 @@ public sealed class GitRefPickerPopup : Window
             FontWeight = FontWeights.SemiBold,
             Opacity   = 0.7
         };
-        _titleText.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        _titleText.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
         panel.Children.Add(_titleText);
 
         // Spinner (visible while loading)
@@ -106,7 +106,7 @@ public sealed class GitRefPickerPopup : Window
             FontFamily      = new FontFamily("Segoe MDL2 Assets, Segoe UI"),
             Visibility      = Visibility.Visible
         };
-        _spinnerText.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        _spinnerText.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
         panel.Children.Add(_spinnerText);
 
         // Search box
@@ -121,7 +121,7 @@ public sealed class GitRefPickerPopup : Window
             Visibility        = Visibility.Collapsed   // hidden until refs are loaded
         };
         _searchBox.SetResourceReference(BackgroundProperty,   "DockTabBackgroundBrush");
-        _searchBox.SetResourceReference(ForegroundProperty,   "DockForegroundBrush");
+        _searchBox.SetResourceReference(ForegroundProperty,   "DockMenuForegroundBrush");
         _searchBox.SetResourceReference(BorderBrushProperty,  "DockSplitterBrush");
         _searchBox.TextChanged += (_, _) => FilterList(_searchBox.Text);
         panel.Children.Add(_searchBox);
@@ -142,7 +142,7 @@ public sealed class GitRefPickerPopup : Window
         };
         ScrollViewer.SetHorizontalScrollBarVisibility(_resultsList, ScrollBarVisibility.Disabled);
         _resultsList.SetResourceReference(BackgroundProperty,  "DF_PickerBackground");
-        _resultsList.SetResourceReference(ForegroundProperty,  "DockForegroundBrush");
+        _resultsList.SetResourceReference(ForegroundProperty,  "DockMenuForegroundBrush");
         _resultsList.MouseDoubleClick += (_, _) => CommitSelectedItem();
         _resultsList.KeyDown += OnListKeyDown;
         panel.Children.Add(_resultsList);
@@ -217,7 +217,7 @@ public sealed class GitRefPickerPopup : Window
             FontSize     = 12,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
-        tb.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        tb.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
 
         var item = new ListBoxItem
         {

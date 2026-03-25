@@ -24,8 +24,8 @@ internal sealed class SolutionExplorerCompareContributor : ISolutionExplorerCont
 {
     private readonly IIDEHostContext        _context;
     private readonly GitDiffService         _git = new();
-    private readonly Action<string, string?> _compareWithFile;
-    private readonly Action<string>          _compareWithActiveEditor;
+    private readonly Func<string, string?, Task> _compareWithFile;
+    private readonly Action<string>              _compareWithActiveEditor;
 
     // Cache: nodePath → (repoRoot or null), so IsGitRepository() doesn't walk FS on every click
     private readonly Dictionary<string, string?> _gitRootCache =
@@ -40,9 +40,9 @@ internal sealed class SolutionExplorerCompareContributor : ISolutionExplorerCont
     ///   Called with leftPath; the delegate resolves the active document as right side.
     /// </param>
     public SolutionExplorerCompareContributor(
-        IIDEHostContext          context,
-        Action<string, string?>  compareWithFile,
-        Action<string>           compareWithActiveEditor)
+        IIDEHostContext              context,
+        Func<string, string?, Task>  compareWithFile,
+        Action<string>               compareWithActiveEditor)
     {
         _context                 = context;
         _compareWithFile         = compareWithFile;
@@ -67,7 +67,7 @@ internal sealed class SolutionExplorerCompareContributor : ISolutionExplorerCont
             // Always-visible: nodePath as left, picker for right (user selects in panel)
             SolutionContextMenuItem.Item(
                 header:    "Compare with Another File…",
-                command:   new RelayCommand(_ => _compareWithFile(nodePath, null)),
+                command:   new RelayCommand(_ => _ = _compareWithFile(nodePath, null)),
                 iconGlyph: "\uE8B7"),
         };
 
@@ -104,7 +104,7 @@ internal sealed class SolutionExplorerCompareContributor : ISolutionExplorerCont
     {
         var tempPath = await _git.ExtractRefVersionAsync(repoRoot, "HEAD", filePath);
         if (tempPath is null) return;
-        _compareWithFile(tempPath, filePath);
+        await _compareWithFile(tempPath, filePath);
     }
 
     private async Task InvokeCompareWithRefAsync(string filePath, string repoRoot, GitRefPickerMode mode)
@@ -123,7 +123,7 @@ internal sealed class SolutionExplorerCompareContributor : ISolutionExplorerCont
         var tempPath = await _git.ExtractRefVersionAsync(repoRoot, refs[0], filePath);
         if (tempPath is null) return;
 
-        _compareWithFile(tempPath, filePath);
+        await _compareWithFile(tempPath, filePath);
     }
 
     private string? GetCachedRepoRoot(string filePath)

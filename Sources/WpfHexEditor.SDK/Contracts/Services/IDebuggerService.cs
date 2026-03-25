@@ -87,6 +87,17 @@ public interface IDebuggerService
     /// <summary>Toggle a breakpoint at the given file/line. Returns the new state.</summary>
     Task<bool> ToggleBreakpointAsync(string filePath, int line, string? condition = null);
 
+    /// <summary>
+    /// Update an existing breakpoint's condition and/or enabled state.
+    /// No-op when no breakpoint exists at that location.
+    /// </summary>
+    Task UpdateBreakpointAsync(string filePath, int line, string? condition, bool isEnabled);
+
+    /// <summary>
+    /// Explicitly delete a breakpoint. No-op when no breakpoint exists at that location.
+    /// </summary>
+    Task DeleteBreakpointAsync(string filePath, int line);
+
     /// <summary>Remove all breakpoints.</summary>
     Task ClearAllBreakpointsAsync();
 

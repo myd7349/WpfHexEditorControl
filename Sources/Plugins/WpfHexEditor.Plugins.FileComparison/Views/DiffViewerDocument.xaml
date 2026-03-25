@@ -77,13 +77,15 @@
 
                 <!-- Left: navigation + view toggle -->
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Command="{Binding PrevDiffCommand}"
-                            Padding="6,2" Margin="0,0,2,0"
+                    <Button Style="{DynamicResource XD_ToolbarIconButtonStyle}"
+                            Width="Auto" Padding="6,2" Margin="0,0,2,0"
+                            Command="{Binding PrevDiffCommand}"
                             ToolTip="Previous difference (Alt+Up)">
                         <TextBlock Text="&#xE76B;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
                     </Button>
-                    <Button Command="{Binding NextDiffCommand}"
-                            Padding="6,2" Margin="0,0,6,0"
+                    <Button Style="{DynamicResource XD_ToolbarIconButtonStyle}"
+                            Width="Auto" Padding="6,2" Margin="0,0,6,0"
+                            Command="{Binding NextDiffCommand}"
                             ToolTip="Next difference (Alt+Down)">
                         <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
                     </Button>
@@ -91,8 +93,9 @@
                                FontSize="11" Opacity="0.6" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <Separator Width="1" Height="16"
                                Background="{DynamicResource DockBorderBrush}" Margin="0,0,8,0"/>
-                    <ToggleButton IsChecked="{Binding IsSideBySide}"
-                                  Padding="6,2"
+                    <ToggleButton Style="{DynamicResource XD_ToolbarToggleButtonStyle}"
+                                  Width="Auto" Padding="6,2"
+                                  IsChecked="{Binding IsSideBySide}"
                                   ToolTip="Side by side / Unified">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE8A0;" FontFamily="Segoe MDL2 Assets"

@@ -104,7 +104,7 @@ public sealed class CompareFilePickerWindow : Window
             FontWeight= FontWeights.SemiBold,
             Opacity   = 0.7
         };
-        _titleText.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        _titleText.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
         panel.Children.Add(_titleText);
 
         // Search box
@@ -118,7 +118,7 @@ public sealed class CompareFilePickerWindow : Window
             VerticalContentAlignment = VerticalAlignment.Center
         };
         _searchBox.SetResourceReference(BackgroundProperty, "DockTabBackgroundBrush");
-        _searchBox.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        _searchBox.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
         _searchBox.SetResourceReference(BorderBrushProperty, "DockSplitterBrush");
         _searchBox.TextChanged += OnSearchChanged;
         panel.Children.Add(_searchBox);
@@ -149,7 +149,7 @@ public sealed class CompareFilePickerWindow : Window
         };
         ScrollViewer.SetHorizontalScrollBarVisibility(_resultsList, ScrollBarVisibility.Disabled);
         _resultsList.SetResourceReference(BackgroundProperty, "DF_PickerBackground");
-        _resultsList.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        _resultsList.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
         _resultsList.MouseDoubleClick += (_, _) => CommitSelectedItem();
         _resultsList.KeyDown += OnListKeyDown;
         panel.Children.Add(_resultsList);
@@ -221,7 +221,7 @@ public sealed class CompareFilePickerWindow : Window
     private ListBoxItem BuildGroupHeader(string title)
     {
         var tb = new TextBlock { Text = title, FontSize = 10, FontWeight = FontWeights.Bold, Opacity = 0.6 };
-        tb.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        tb.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
         return new ListBoxItem
         {
             Content    = tb,
@@ -239,7 +239,7 @@ public sealed class CompareFilePickerWindow : Window
 
         var icon = new TextBlock { Text = "\uE8A5", FontFamily = new FontFamily("Segoe MDL2 Assets"),
             FontSize = 12, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 6, 0), Opacity = 0.7 };
-        icon.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        icon.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
         Grid.SetColumn(icon, 0);
         grid.Children.Add(icon);
 
@@ -251,7 +251,7 @@ public sealed class CompareFilePickerWindow : Window
             FontSize     = 12,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
-        nameText.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        nameText.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
         namePanel.Children.Add(nameText);
 
         if (!string.IsNullOrEmpty(subtitle))
@@ -263,7 +263,7 @@ public sealed class CompareFilePickerWindow : Window
                 Opacity      = 0.5,
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
-            subText.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+            subText.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
             namePanel.Children.Add(subText);
         }
 
@@ -285,18 +285,42 @@ public sealed class CompareFilePickerWindow : Window
 
     private Button MakeQuickButton(string text, string? path)
     {
+        const string btnTemplateXaml =
+            "<ControlTemplate " +
+            "  xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' " +
+            "  xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' " +
+            "  TargetType='{x:Type Button}'>" +
+            "  <Border Background='{TemplateBinding Background}' " +
+            "          BorderBrush='{TemplateBinding BorderBrush}' " +
+            "          BorderThickness='{TemplateBinding BorderThickness}' " +
+            "          CornerRadius='3' Padding='{TemplateBinding Padding}'>" +
+            "    <ContentPresenter HorizontalAlignment='Left' VerticalAlignment='Center'/>" +
+            "  </Border>" +
+            "</ControlTemplate>";
+        var btnTemplate = (ControlTemplate)System.Windows.Markup.XamlReader.Parse(btnTemplateXaml);
+
+        var btnStyle = new Style(typeof(Button));
+        btnStyle.Setters.Add(new Setter(OverridesDefaultStyleProperty, true));
+        btnStyle.Setters.Add(new Setter(FocusVisualStyleProperty,      null));
+        btnStyle.Setters.Add(new Setter(TemplateProperty,              btnTemplate));
+        var hoverTrigger = new Trigger { Property = IsMouseOverProperty, Value = true };
+        hoverTrigger.Setters.Add(new Setter(BackgroundProperty,
+            new DynamicResourceExtension("DF_PickerHighlightBrush")));
+        btnStyle.Triggers.Add(hoverTrigger);
+
         var btn = new Button
         {
-            Content     = text,
-            Tag         = path,
-            Margin      = new Thickness(0, 0, 6, 0),
-            Padding     = new Thickness(6, 2, 6, 2),
-            FontSize    = 11,
+            Content         = text,
+            Tag             = path,
+            Margin          = new Thickness(0, 0, 6, 0),
+            Padding         = new Thickness(6, 2, 6, 2),
+            FontSize        = 11,
             BorderThickness = new Thickness(1),
-            Cursor      = Cursors.Hand
+            Cursor          = Cursors.Hand,
+            Style           = btnStyle
         };
-        btn.SetResourceReference(BackgroundProperty, "DockTabBackgroundBrush");
-        btn.SetResourceReference(ForegroundProperty, "DockForegroundBrush");
+        btn.SetResourceReference(BackgroundProperty,  "DockTabBackgroundBrush");
+        btn.SetResourceReference(ForegroundProperty,  "DockMenuForegroundBrush");
         btn.SetResourceReference(BorderBrushProperty, "DockSplitterBrush");
         btn.Click += (_, _) =>
         {

@@ -398,6 +398,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // 1-based execution line (null when no debug session is paused).
         private int? _executionLineOneBased;
 
+        // Breakpoint placement validation + info popup (ADR-DBG-BP-01).
+        private IBreakpointSource?      _bpSource;
+        private BreakpointInfoPopup?    _bpInfoPopup;
+        private IReadOnlyList<Regex>    _bpNonExecutableRegexes = Array.Empty<Regex>();
+
         // True between the first Ctrl+M press and the second chord key (outlining commands).
         private bool _outlineChordPending;
 
@@ -816,6 +821,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 editor._foldingEngine.Analyze(editor._document.Lines);
                 editor.InvalidateVisual();
             }
+
+            // Compile breakpoint placement validation regexes from BreakpointRules.
+            editor.RebuildBreakpointValidation(newLang);
+        }
+
+        private void RebuildBreakpointValidation(LanguageDefinition? lang)
+        {
+            var patterns = lang?.BreakpointRules?.NonExecutablePatterns ?? Array.Empty<string>();
+            var compiled = new List<Regex>(patterns.Count);
+            foreach (var p in patterns)
+            {
+                try   { compiled.Add(new Regex(p, RegexOptions.Compiled)); }
+                catch { /* malformed pattern — skip silently */              }
+            }
+            _bpNonExecutableRegexes = compiled;
+
+            if (_breakpointGutterControl is null) return;
+            _breakpointGutterControl.ValidateLine = compiled.Count == 0
+                ? (Func<int, bool>?)null
+                : line =>
+                {
+                    string text = (line >= 1 && line <= _document?.Lines.Count)
+                        ? (_document.Lines[line - 1].Text ?? string.Empty)
+                        : string.Empty;
+                    foreach (var r in _bpNonExecutableRegexes)
+                        if (r.IsMatch(text)) return false;
+                    return true;
+                };
         }
 
         public static readonly DependencyProperty EnableValidationProperty =
@@ -1924,6 +1957,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // Breakpoint gutter (ADR-DBG-01): positioned to the left of fold markers.
             _breakpointGutterControl = new BreakpointGutterControl();
+            _breakpointGutterControl.RightClickRequested += OnBreakpointRightClick;
             _scrollBarChildren.Add(_breakpointGutterControl);
 
             // Initialize word-highlight scroll marker overlay.
@@ -8198,6 +8232,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         public void SetBreakpointSource(IBreakpointSource? source)
         {
+            _bpSource = source;
             _breakpointGutterControl?.SetBreakpointSource(source);
             _breakpointGutterControl?.SetFilePath(_currentFilePath);
         }
@@ -8211,6 +8246,18 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _executionLineOneBased = oneBased;
             _breakpointGutterControl?.SetExecutionLine(oneBased);
             InvalidateVisual(); // redraw execution line highlight in content area
+        }
+
+        private void OnBreakpointRightClick(string filePath, int line1)
+        {
+            if (_bpSource is null || _breakpointGutterControl is null) return;
+
+            _bpInfoPopup ??= new BreakpointInfoPopup();
+
+            // Position the popup at the top-left of the gutter so WPF can
+            // keep it visible relative to the PlacementTarget.
+            var offset = _breakpointGutterControl.TranslatePoint(new Point(0, 0), this);
+            _bpInfoPopup.Show(_breakpointGutterControl, _bpSource, filePath, line1, offset);
         }
 
         // ─────────────────────────────────────────────────────────────────────────

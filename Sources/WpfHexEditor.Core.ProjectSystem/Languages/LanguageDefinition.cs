@@ -95,6 +95,12 @@ public sealed class LanguageDefinition
     /// Null = no explicit rules → CodeEditor uses its built-in default strategy.
     /// </summary>
     public FoldingRules? FoldingRules { get; init; }
+
+    /// <summary>
+    /// Breakpoint placement rules for this language.
+    /// Null = no restrictions (all lines are valid breakpoint targets).
+    /// </summary>
+    public BreakpointRules? BreakpointRules { get; init; }
 }
 
 /// <summary>Maps a regex pattern to a token kind for syntax highlighting.</summary>
@@ -199,6 +205,25 @@ public sealed record FoldingRules
 // File: EndOfBlockHintSettings.cs (embedded in LanguageDefinition.cs)
 // Description: Per-language configuration for the end-of-block hover hint.
 // ==========================================================
+
+// ==========================================================
+// File: BreakpointRules.cs (embedded in LanguageDefinition.cs)
+// Description: Per-language breakpoint placement rules.
+// ==========================================================
+
+/// <summary>
+/// Controls where breakpoints may be placed in this language.
+/// </summary>
+public sealed record BreakpointRules
+{
+    /// <summary>
+    /// Regex patterns applied to each line's raw text.
+    /// A line matching ANY pattern is considered non-executable and
+    /// may not receive a breakpoint (e.g. comment-only, blank, bare brace).
+    /// An empty list means all lines are valid targets.
+    /// </summary>
+    public IReadOnlyList<string> NonExecutablePatterns { get; init; } = [];
+}
 
 /// <summary>
 /// Controls the end-of-block hover hint for a language.

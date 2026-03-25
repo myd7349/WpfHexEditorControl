@@ -3,8 +3,10 @@
 // File: Controls/BreakpointGutterControl.cs
 // Description:
 //     VS-style breakpoint gutter strip rendered in the CodeEditor line-number area.
-//     Click to toggle breakpoints; renders red circles (active), outlined circles
-//     (disabled), and a yellow arrow for the current execution line.
+//     Left-click toggles breakpoints; right-click on an existing breakpoint fires
+//     RightClickRequested so the App layer can show a BreakpointInfoPopup.
+//     Validates line executable-status via the ValidateLine callback (set by CodeEditor
+//     from the active language's NonExecutablePatterns).
 // Architecture:
 //     FrameworkElement with DrawingContext rendering (same as GutterControl).
 //     Decoupled from DebuggerService via IBreakpointSource interface —
@@ -12,10 +14,17 @@
 // ==========================================================
 
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace WpfHexEditor.Editor.CodeEditor.Controls;
+
+// ── Minimal breakpoint data record (avoids SDK dependency on CodeEditor) ─────
+
+/// <summary>Read-only snapshot of a breakpoint state used by BreakpointInfoPopup.</summary>
+public sealed record BreakpointInfo(string? Condition, bool IsEnabled);
 
 /// <summary>
 /// Minimal interface allowing the App layer to inject breakpoint toggle
@@ -28,6 +37,18 @@ public interface IBreakpointSource
 
     /// <summary>Toggle a breakpoint at the given location (async fire-and-forget).</summary>
     void Toggle(string filePath, int line);
+
+    /// <summary>Returns full breakpoint info, or null if none exists at that location.</summary>
+    BreakpointInfo? GetBreakpoint(string filePath, int line);
+
+    /// <summary>Update the condition of an existing breakpoint (fire-and-forget).</summary>
+    void SetCondition(string filePath, int line, string? condition);
+
+    /// <summary>Enable or disable an existing breakpoint (fire-and-forget).</summary>
+    void SetEnabled(string filePath, int line, bool enabled);
+
+    /// <summary>Delete an existing breakpoint (fire-and-forget).</summary>
+    void Delete(string filePath, int line);
 }
 
 /// <summary>
@@ -40,9 +61,9 @@ internal sealed class BreakpointGutterControl : FrameworkElement
 
     internal const double GutterWidth = 16.0;
 
-    private static readonly Brush BpActiveBrush    = new SolidColorBrush(Color.FromRgb(0xE5, 0x14, 0x00)); // DB_BreakpointActiveBrush
+    private static readonly Brush BpActiveBrush    = new SolidColorBrush(Color.FromRgb(0xE5, 0x14, 0x00));
     private static readonly Brush BpDisabledBrush  = Brushes.DimGray;
-    private static readonly Brush ExecutionBrush   = new SolidColorBrush(Color.FromRgb(0xFF, 0xDD, 0x00)); // DB_ExecutionLineBrush
+    private static readonly Brush ExecutionBrush   = new SolidColorBrush(Color.FromRgb(0xFF, 0xDD, 0x00));
     private static readonly Brush ExecutionLineBg  = new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xDD, 0x00));
     private static readonly Pen   BpDisabledPen    = new(BpDisabledBrush, 1.5);
 
@@ -61,6 +82,23 @@ internal sealed class BreakpointGutterControl : FrameworkElement
     private IReadOnlyDictionary<int, double> _lineYLookup = new Dictionary<int, double>();
     private Brush              _backgroundBrush = Brushes.Transparent;
     private int                _hoverLine = -1;          // 1-based, -1 = no hover
+
+    // ── Extensibility ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Optional callback — returns <c>false</c> when the given 1-based line is
+    /// non-executable (e.g. comment, blank, bare brace). Set by CodeEditor from
+    /// the active language's <c>BreakpointRules.NonExecutablePatterns</c>.
+    /// Null = all lines are valid.
+    /// </summary>
+    public Func<int, bool>? ValidateLine { get; set; }
+
+    /// <summary>
+    /// Fires when the user right-clicks a line that has an active breakpoint.
+    /// Args: (filePath, 1-based line).
+    /// The App layer should open a <c>BreakpointInfoPopup</c> in response.
+    /// </summary>
+    internal event Action<string, int>? RightClickRequested;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -142,7 +180,6 @@ internal sealed class BreakpointGutterControl : FrameworkElement
             if (_executionLine.HasValue && _executionLine.Value == line1)
             {
                 DrawExecutionArrow(dc, cx, cy);
-                // Also tint the full row background
                 dc.DrawRectangle(ExecutionLineBg, null, new Rect(0, y, ActualWidth, _lineHeight));
                 continue;
             }
@@ -158,7 +195,6 @@ internal sealed class BreakpointGutterControl : FrameworkElement
 
     private static void DrawExecutionArrow(DrawingContext dc, double cx, double cy)
     {
-        // Yellow right-pointing arrow (▶)
         var pts = new[]
         {
             new Point(cx - 4, cy - 5),
@@ -184,13 +220,35 @@ internal sealed class BreakpointGutterControl : FrameworkElement
 
         var pos   = e.GetPosition(this);
         var line1 = HitTestLine(pos.Y);
-        if (line1 > 0) _source.Toggle(_filePath, line1);
+        if (line1 < 1) return;
+
+        // Reject non-executable lines according to the active language rules.
+        if (ValidateLine != null && !ValidateLine(line1))
+        {
+            ShowInvalidLineFeedback();
+            e.Handled = true;
+            return;
+        }
+
+        _source.Toggle(_filePath, line1);
+        e.Handled = true;
+    }
+
+    protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
+    {
+        base.OnMouseRightButtonUp(e);
+
+        if (_source is null || string.IsNullOrEmpty(_filePath) || _lineHeight <= 0) return;
+
+        int line1 = HitTestLine(e.GetPosition(this).Y);
+        if (line1 >= 1 && _source.HasBreakpoint(_filePath, line1))
+            RightClickRequested?.Invoke(_filePath, line1);
+
         e.Handled = true;
     }
 
     private int HitTestLine(double y)
     {
-        // Walk visible range to find which 1-based line y falls in
         for (int i = _firstVisibleLine; i <= _lastVisibleLine; i++)
         {
             if (!_lineYLookup.TryGetValue(i, out double lineY))
@@ -214,5 +272,34 @@ internal sealed class BreakpointGutterControl : FrameworkElement
         if (_hoverLine == -1) return;
         _hoverLine = -1;
         InvalidateVisual();
+    }
+
+    // ── Validation feedback ───────────────────────────────────────────────────
+
+    private void ShowInvalidLineFeedback()
+    {
+        // Close any previous tip first.
+        if (ToolTip is ToolTip existing && existing.IsOpen)
+            existing.IsOpen = false;
+
+        // PlacementMode.Mouse positions near the cursor; StaysOpen keeps it
+        // visible for the full 1.5s regardless of mouse movement.
+        var tip = new ToolTip
+        {
+            Content    = "Cannot place breakpoint on this line",
+            Placement  = System.Windows.Controls.Primitives.PlacementMode.Mouse,
+            StaysOpen  = true
+        };
+        ToolTip    = tip;
+        tip.IsOpen = true;
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1500) };
+        timer.Tick += (_, _) =>
+        {
+            tip.IsOpen = false;
+            timer.Stop();
+            ToolTip = "Click to toggle breakpoint";
+        };
+        timer.Start();
     }
 }

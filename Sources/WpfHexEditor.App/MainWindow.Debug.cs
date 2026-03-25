@@ -368,10 +368,38 @@ public partial class MainWindow
         public bool HasBreakpoint(string filePath, int line) =>
             _svc.Breakpoints.Any(b =>
                 string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
-                && b.Line == line
-                && b.IsEnabled);
+                && b.Line == line);
 
         public void Toggle(string filePath, int line) =>
             _ = _svc.ToggleBreakpointAsync(filePath, line);
+
+        public BreakpointInfo? GetBreakpoint(string filePath, int line)
+        {
+            var bp = _svc.Breakpoints.FirstOrDefault(b =>
+                string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                && b.Line == line);
+            return bp is null ? null : new BreakpointInfo(bp.Condition, bp.IsEnabled);
+        }
+
+        public void SetCondition(string filePath, int line, string? condition)
+        {
+            var bp = _svc.Breakpoints.FirstOrDefault(b =>
+                string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                && b.Line == line);
+            if (bp is null) return;
+            _ = _svc.UpdateBreakpointAsync(filePath, line, condition, bp.IsEnabled);
+        }
+
+        public void SetEnabled(string filePath, int line, bool enabled)
+        {
+            var bp = _svc.Breakpoints.FirstOrDefault(b =>
+                string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                && b.Line == line);
+            if (bp is null) return;
+            _ = _svc.UpdateBreakpointAsync(filePath, line, bp.Condition, enabled);
+        }
+
+        public void Delete(string filePath, int line) =>
+            _ = _svc.DeleteBreakpointAsync(filePath, line);
     }
 }

@@ -92,6 +92,16 @@ public sealed class TerminalPanelViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(AvailableEncodings));
             OnPropertyChanged(nameof(SelectedEncoding));
             OnPropertyChanged(nameof(HasActiveSession));
+            // Refresh per-session command proxies so bound toolbar buttons re-target the new session.
+            OnPropertyChanged(nameof(RunCommand));
+            OnPropertyChanged(nameof(CancelCommand));
+            OnPropertyChanged(nameof(ClearOutputCommand));
+            OnPropertyChanged(nameof(ToggleWordWrapCommand));
+            OnPropertyChanged(nameof(IncreaseFontCommand));
+            OnPropertyChanged(nameof(DecreaseFontCommand));
+            OnPropertyChanged(nameof(ToggleTimestampsCommand));
+            OnPropertyChanged(nameof(TogglePauseCommand));
+            OnPropertyChanged(nameof(ToggleFindCommand));
         }
     }
 
@@ -513,7 +523,11 @@ public sealed class TerminalPanelViewModel : INotifyPropertyChanged, IDisposable
 
     private sealed class RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null) : ICommand
     {
-        public event EventHandler? CanExecuteChanged { add { } remove { } }
+        public event EventHandler? CanExecuteChanged
+        {
+            add    => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
+        }
         public bool CanExecute(object? parameter) => canExecute?.Invoke(parameter) ?? true;
         public void Execute(object? parameter) => execute(parameter);
     }
