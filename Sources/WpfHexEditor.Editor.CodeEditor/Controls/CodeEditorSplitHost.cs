@@ -46,7 +46,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls;
 /// Both editors share the same <see cref="CodeDocument"/>; scroll positions
 /// and caret positions are independent.
 /// </summary>
-public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEditor, IOpenableDocument, INavigableDocument, IStatusBarContributor, IDiagnosticSource, ILspAwareEditor
+public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEditor, IOpenableDocument, INavigableDocument, IStatusBarContributor, IRefreshTimeReporter, IDiagnosticSource, ILspAwareEditor
 {
     #region Child controls
 
@@ -536,6 +536,13 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
 
     /// <inheritdoc />
     public void RefreshStatusBarItems() => _activeEditor.RefreshJsonStatusBarItems();
+
+    // ═══════════════════════════════════════════════════════════════════
+    // IRefreshTimeReporter — forwards to the active (focused) editor pane
+    // ═══════════════════════════════════════════════════════════════════
+
+    /// <inheritdoc />
+    public EditorStatusBarItem? RefreshTimeStatusBarItem => _activeEditor.RefreshTimeStatusBarItem;
 
     // ═══════════════════════════════════════════════════════════════════
     // IDiagnosticSource — forwards to _primaryEditor

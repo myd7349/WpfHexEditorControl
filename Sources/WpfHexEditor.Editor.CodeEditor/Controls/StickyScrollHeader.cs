@@ -144,9 +144,16 @@ internal sealed class StickyScrollHeader : FrameworkElement
 
             if (syntaxHighlight && entry.Tokens.Count > 0)
             {
+                // Base pass: draw full line in default foreground so plain text
+                // (identifiers, spaces, punctuation) not covered by any token stays visible.
+                var baseFt = new FormattedText(
+                    entry.PlainText, CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight, typeface, fontSize, _cachedFg, pixelsPerDip);
+                rowSegments.Add((textX, baseFt));
+
                 foreach (var token in entry.Tokens)
                 {
-                    double tokenX = textX + token.StartColumn * charWidth;
+                    double tokenX = textX + StickyVisualX(entry.PlainText, token.StartColumn, charWidth);
                     var tf = token.IsBold
                         ? new Typeface(typeface.FontFamily, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal)
                         : typeface;
@@ -225,6 +232,20 @@ internal sealed class StickyScrollHeader : FrameworkElement
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Computes the visual X offset for <paramref name="col"/> in <paramref name="lineText"/>,
+    /// expanding tabs to <c>4 × charWidth</c> — mirrors GlyphRunRenderer.ComputeVisualX.
+    /// </summary>
+    private static double StickyVisualX(string lineText, int col, double charWidth)
+    {
+        const int tabSize = 4;
+        double x = 0;
+        int limit = Math.Min(col, lineText.Length);
+        for (int i = 0; i < limit; i++)
+            x += lineText[i] == '\t' ? charWidth * tabSize : charWidth;
+        return x;
+    }
 
     private static object? TryFindRes(string key)
     {
