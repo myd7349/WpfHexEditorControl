@@ -14,7 +14,10 @@
 //     Pattern: Custom FrameworkElement with DrawingContext rendering.
 //     Hosted as a visual child of CodeEditor (not a XAML element).
 //     Receives pre-computed scope chain from CodeEditor.Rendering.cs.
-//     Theme resources CE_StickyScroll* are resolved via Application.Current.
+//     Theme resources CE_StickyScroll* are resolved once in Update()
+//     and cached as fields — TryFindResource is never called in OnRender.
+//     FormattedText objects are also cached per entry in Update() so
+//     OnRender only calls DrawText on pre-built objects (zero allocation).
 // ==========================================================
 
 using System.Collections.Generic;
@@ -38,17 +41,38 @@ internal readonly record struct StickyScrollEntry(int StartLine, IReadOnlyList<S
 /// </summary>
 internal sealed class StickyScrollHeader : FrameworkElement
 {
-    // ── State ──────────────────────────────────────────────────────────────
+    // ── Static frozen fallback brushes/pens (allocated once per AppDomain) ──
+
+    private static readonly Brush s_defaultBg;
+    private static readonly Brush s_defaultBorder;
+    private static readonly Brush s_defaultFg     = Brushes.LightGray;
+    private static readonly Brush s_sepBrush;
+
+    static StickyScrollHeader()
+    {
+        s_defaultBg = new SolidColorBrush(Color.FromArgb(0xF0, 0x20, 0x20, 0x20));
+        s_defaultBg.Freeze();
+        s_defaultBorder = new SolidColorBrush(Color.FromArgb(0x60, 0x80, 0x80, 0x80));
+        s_defaultBorder.Freeze();
+        s_sepBrush = new SolidColorBrush(Color.FromArgb(0x20, 0x80, 0x80, 0x80));
+        s_sepBrush.Freeze();
+    }
+
+    // ── Render state (set once in Update, used many times in OnRender) ──────
 
     private IReadOnlyList<StickyScrollEntry> _entries     = Array.Empty<StickyScrollEntry>();
     private double                           _lineHeight;
-    private double                           _charWidth;
-    private Typeface?                        _typeface;
-    private double                           _fontSize;
-    private double                           _textX;         // left edge of text area (after gutter)
-    private double                           _pixelsPerDip  = 1.0;
-    private bool                             _syntaxHighlight = true;
     private bool                             _clickToNavigate = true;
+
+    // Cached brushes/pens (resolved from theme in Update(), never in OnRender).
+    private Brush?  _cachedBg;
+    private Brush?  _cachedFg;
+    private Pen?    _cachedBorderPen;
+    private Pen?    _cachedSepPen;
+
+    // Cached FormattedText rows (built in Update(), drawn in OnRender).
+    // Index = entry index; each item is a list of (x-offset, FormattedText) pairs.
+    private List<List<(double X, FormattedText Ft)>>? _cachedRows;
 
     // ── Events ─────────────────────────────────────────────────────────────
 
@@ -61,6 +85,7 @@ internal sealed class StickyScrollHeader : FrameworkElement
 
     /// <summary>
     /// Update the scope chain entries and trigger a redraw.
+    /// Called only when <c>_firstVisibleLine</c> changes — not on every render frame.
     /// </summary>
     public void Update(
         IReadOnlyList<StickyScrollEntry> entries,
@@ -71,17 +96,78 @@ internal sealed class StickyScrollHeader : FrameworkElement
         double textX,
         double pixelsPerDip,
         bool syntaxHighlight,
-        bool clickToNavigate)
+        bool clickToNavigate,
+        bool showLineNumbers,
+        double lineNumberWidth,
+        double lineNumberMargin,
+        Typeface? lineNumberTypeface,
+        Brush? lineNumberForeground)
     {
-        _entries          = entries;
-        _lineHeight       = lineHeight;
-        _charWidth        = charWidth;
-        _typeface         = typeface;
-        _fontSize         = fontSize;
-        _textX            = textX;
-        _pixelsPerDip     = pixelsPerDip;
-        _syntaxHighlight  = syntaxHighlight;
-        _clickToNavigate  = clickToNavigate;
+        _entries         = entries;
+        _lineHeight      = lineHeight;
+        _clickToNavigate = clickToNavigate;
+
+        // Resolve theme brushes once here; OnRender uses cached fields.
+        _cachedBg  = TryFindRes("CE_StickyScrollBackground") as Brush ?? s_defaultBg;
+        _cachedFg  = TryFindRes("CE_StickyScrollForeground") as Brush ?? s_defaultFg;
+        var border = TryFindRes("CE_StickyScrollBorder")     as Brush ?? s_defaultBorder;
+
+        var borderPen = new Pen(border, 1.0);
+        borderPen.Freeze();
+        _cachedBorderPen = borderPen;
+
+        var sepPen = new Pen(s_sepBrush, 1.0);
+        sepPen.Freeze();
+        _cachedSepPen = sepPen;
+
+        // Pre-build FormattedText objects so OnRender only calls DrawText.
+        _cachedRows = new List<List<(double, FormattedText)>>(entries.Count);
+
+        var lnBrush    = lineNumberForeground ?? s_defaultFg;
+        var lnTypeface = lineNumberTypeface   ?? typeface;
+
+        foreach (var entry in entries)
+        {
+            var rowSegments = new List<(double X, FormattedText Ft)>();
+
+            // Line number — right-aligned in the gutter, same style as editor line numbers.
+            if (showLineNumbers && lineNumberWidth > 0)
+            {
+                var lnFt = new FormattedText(
+                    (entry.StartLine + 1).ToString(),
+                    CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    lnTypeface, fontSize, lnBrush, pixelsPerDip);
+                double lnX = lineNumberWidth - lnFt.Width - lineNumberMargin;
+                rowSegments.Add((lnX, lnFt));
+            }
+
+            if (syntaxHighlight && entry.Tokens.Count > 0)
+            {
+                foreach (var token in entry.Tokens)
+                {
+                    double tokenX = textX + token.StartColumn * charWidth;
+                    var tf = token.IsBold
+                        ? new Typeface(typeface.FontFamily, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal)
+                        : typeface;
+                    var brush = token.Foreground ?? _cachedFg;
+                    var ft = new FormattedText(
+                        token.Text, CultureInfo.CurrentCulture,
+                        FlowDirection.LeftToRight, tf, fontSize, brush, pixelsPerDip);
+                    if (token.IsItalic) ft.SetFontStyle(FontStyles.Italic);
+                    rowSegments.Add((tokenX, ft));
+                }
+            }
+            else
+            {
+                var ft = new FormattedText(
+                    entry.PlainText, CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight, typeface, fontSize, _cachedFg, pixelsPerDip);
+                rowSegments.Add((textX, ft));
+            }
+
+            _cachedRows.Add(rowSegments);
+        }
 
         InvalidateVisual();
     }
@@ -93,66 +179,29 @@ internal sealed class StickyScrollHeader : FrameworkElement
 
     protected override void OnRender(DrawingContext dc)
     {
-        if (_entries.Count == 0 || _lineHeight <= 0 || _typeface is null) return;
-
-        var bg     = TryFindRes("CE_StickyScrollBackground") as Brush
-                     ?? new SolidColorBrush(Color.FromArgb(0xF0, 0x20, 0x20, 0x20));
-        var border = TryFindRes("CE_StickyScrollBorder") as Brush
-                     ?? new SolidColorBrush(Color.FromArgb(0x60, 0x80, 0x80, 0x80));
-        var fg     = TryFindRes("CE_StickyScrollForeground") as Brush
-                     ?? Brushes.LightGray;
+        if (_entries.Count == 0 || _lineHeight <= 0
+            || _cachedBg is null || _cachedRows is null) return;
 
         double w = ActualWidth;
         double h = _entries.Count * _lineHeight;
 
-        // Background panel
-        dc.DrawRectangle(bg, null, new Rect(0, 0, w, h));
+        // Background panel — single rect, no allocation.
+        dc.DrawRectangle(_cachedBg, null, new Rect(0, 0, w, h));
 
-        // Bottom border line
-        var borderPen = new Pen(border, 1.0);
-        dc.DrawLine(borderPen, new Point(0, h), new Point(w, h));
+        // Bottom border line.
+        dc.DrawLine(_cachedBorderPen, new Point(0, h), new Point(w, h));
 
-        // Render each scope line
-        for (int i = 0; i < _entries.Count; i++)
+        // Render each scope line from pre-built FormattedText objects.
+        for (int i = 0; i < _cachedRows.Count; i++)
         {
-            var entry = _entries[i];
             double y = i * _lineHeight;
 
-            if (_syntaxHighlight && entry.Tokens.Count > 0)
-            {
-                // Render token by token
-                foreach (var token in entry.Tokens)
-                {
-                    double tokenX = _textX + token.StartColumn * _charWidth;
-                    if (tokenX > w) break;
+            foreach (var (x, ft) in _cachedRows[i])
+                dc.DrawText(ft, new Point(x, y));
 
-                    var typeface = token.IsBold ? new Typeface(_typeface.FontFamily,
-                        FontStyles.Normal, FontWeights.Bold, FontStretches.Normal) : _typeface;
-                    var brush = token.Foreground ?? fg;
-
-                    var ft = new FormattedText(
-                        token.Text, CultureInfo.CurrentCulture,
-                        FlowDirection.LeftToRight, typeface, _fontSize, brush, _pixelsPerDip);
-
-                    if (token.IsItalic) ft.SetFontStyle(FontStyles.Italic);
-                    dc.DrawText(ft, new Point(tokenX, y));
-                }
-            }
-            else
-            {
-                // Plain text fallback
-                var ft = new FormattedText(
-                    entry.PlainText, CultureInfo.CurrentCulture,
-                    FlowDirection.LeftToRight, _typeface, _fontSize, fg, _pixelsPerDip);
-                dc.DrawText(ft, new Point(_textX, y));
-            }
-
-            // Subtle separator between rows (except last)
+            // Subtle separator between rows (except last).
             if (i < _entries.Count - 1)
-            {
-                var sepPen = new Pen(new SolidColorBrush(Color.FromArgb(0x20, 0x80, 0x80, 0x80)), 1.0);
-                dc.DrawLine(sepPen, new Point(0, y + _lineHeight), new Point(w, y + _lineHeight));
-            }
+                dc.DrawLine(_cachedSepPen, new Point(0, y + _lineHeight), new Point(w, y + _lineHeight));
         }
     }
 
@@ -163,7 +212,7 @@ internal sealed class StickyScrollHeader : FrameworkElement
         base.OnMouseLeftButtonDown(e);
         if (!_clickToNavigate || _lineHeight <= 0 || _entries.Count == 0) return;
 
-        var pos   = e.GetPosition(this);
+        var pos    = e.GetPosition(this);
         int rowIdx = Math.Max(0, Math.Min((int)(pos.Y / _lineHeight), _entries.Count - 1));
         ScopeClicked?.Invoke(this, _entries[rowIdx].StartLine);
         e.Handled = true;

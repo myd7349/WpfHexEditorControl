@@ -446,6 +446,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private bool   _stickyScrollClickToNavigate = true;
         private double _stickyScrollOpacity         = 0.95;
         private int    _stickyScrollMinScopeLines   = 5;
+        // Perf: track last known sticky state to gate InvalidateArrange() (ADR-IH-PERF-02).
+        private int    _stickyScrollLastEntryCount  = -1;
+        private int    _lastStickyFirstLine         = -1;
 
         // Breakpoint placement validation + info popup (ADR-DBG-BP-01).
         private IBreakpointSource?      _bpSource;

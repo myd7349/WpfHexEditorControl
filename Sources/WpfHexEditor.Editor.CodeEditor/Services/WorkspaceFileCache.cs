@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Core.ProjectSystem.Services;
 
@@ -117,21 +118,64 @@ internal static class WorkspaceFileCache
     }
 
     /// <summary>
-    /// Clears the line cache and rebuilds the solution path list from
-    /// <see cref="SolutionManager.Instance"/>.
+    /// Clears the line cache instantly on the calling thread, then rebuilds
+    /// the solution path list and pre-warms the line cache on a background
+    /// thread.  <see cref="WorkspaceChanged"/> fires after the path list is
+    /// ready so subscribers always see a consistent (possibly empty) snapshot.
     /// </summary>
+    /// <remarks>
+    /// ADR-IH-PERF-01: previously, <see cref="BuildSolutionPaths"/> ran
+    /// synchronously on the UI thread (via <c>SolutionManager.SolutionChanged</c>),
+    /// causing a perceptible freeze on large solutions (≥ 500 files).
+    /// Moving it to <c>Task.Run</c> eliminates the freeze entirely.
+    /// </remarks>
     internal static void Invalidate()
     {
+        // Clear caches immediately — fast path, no disk I/O.
         _lock.EnterWriteLock();
         try
         {
             _lineCache.Clear();
-            _solutionPaths = BuildSolutionPaths();
+            _solutionPaths = [];
         }
         finally { _lock.ExitWriteLock(); }
 
-        // Notify subscribers outside the lock to prevent deadlocks.
+        // Rebuild paths + pre-warm line cache off the calling thread.
+        _ = Task.Run(RebuildAndWarmAsync);
+    }
+
+    /// <summary>
+    /// Background worker:
+    ///   Phase A — enumerate solution file paths (File.Exists × N, off UI thread).
+    ///   Phase B — fire <see cref="WorkspaceChanged"/> so subscribers can react.
+    ///   Phase C — pro-actively read each source file into the line cache so that
+    ///              the first <see cref="InlineHintsService.ComputeHintsData"/> call
+    ///              finds warm data instead of triggering sequential disk reads.
+    /// </summary>
+    private static async Task RebuildAndWarmAsync()
+    {
+        // Phase A: build path list (File.Exists per item — the former freeze point).
+        var paths = BuildSolutionPaths();
+
+        _lock.EnterWriteLock();
+        try { _solutionPaths = paths; }
+        finally { _lock.ExitWriteLock(); }
+
+        // Phase B: notify subscribers.  WorkspaceChanged is documented to fire on
+        // an arbitrary thread; subscribers that touch WPF must marshal themselves.
         WorkspaceChanged?.Invoke();
+
+        // Phase C: pre-warm the line cache file by file.
+        // GetLines() is idempotent, size-capped, and thread-safe.
+        // Yield every 20 files (not every file) to avoid 5,000 thread-pool
+        // continuations while still allowing LSP / folding to interleave.
+        int i = 0;
+        foreach (var path in paths)
+        {
+            GetLines(path);
+            if (++i % 20 == 0)
+                await Task.Yield();
+        }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

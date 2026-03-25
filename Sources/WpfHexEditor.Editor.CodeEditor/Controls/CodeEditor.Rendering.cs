@@ -161,18 +161,24 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             if (_foldingEngine is null || _document is null) return [];
 
-            var containing = _foldingEngine.Regions
-                .Where(r => !r.IsCollapsed
-                            && r.StartLine < firstLine
-                            && r.EndLine >= firstLine
-                            && (r.EndLine - r.StartLine) >= _stickyScrollMinScopeLines)
-                .OrderBy(r => r.StartLine)
-                .ToList();
+            // O(N) single pass: insertion-sort into a small bounded list (max _stickyScrollMaxLines).
+            // Avoids the O(N log N) LINQ .OrderBy() that ran on every scroll frame.
+            var result = new List<FoldingRegion>(_stickyScrollMaxLines + 1);
+            foreach (var r in _foldingEngine.Regions)
+            {
+                if (r.IsCollapsed || r.StartLine >= firstLine || r.EndLine < firstLine) continue;
+                if ((r.EndLine - r.StartLine) < _stickyScrollMinScopeLines) continue;
 
-            if (containing.Count > _stickyScrollMaxLines)
-                containing = containing.Skip(containing.Count - _stickyScrollMaxLines).ToList();
+                // Binary-search insertion point to keep list sorted by StartLine ascending.
+                int ins = result.Count;
+                while (ins > 0 && result[ins - 1].StartLine > r.StartLine) ins--;
+                result.Insert(ins, r);
 
-            return containing;
+                // Trim to window: keep only the innermost MaxLines entries.
+                if (result.Count > _stickyScrollMaxLines)
+                    result.RemoveAt(0);
+            }
+            return result;
         }
 
         /// <summary>
@@ -189,7 +195,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 _stickyScrollHeader.Update(
                     Array.Empty<StickyScrollEntry>(), 0, 0, _typeface ?? new Typeface("Consolas"),
-                    _fontSize, 0, 1.0, false, false);
+                    _fontSize, 0, 1.0, false, false,
+                    false, 0, 0, null, null);
                 return;
             }
 
@@ -226,7 +233,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double textX = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
             _stickyScrollHeader.Update(
                 entries, _lineHeight, _charWidth, _typeface, _fontSize,
-                textX, ppdip, _stickyScrollSyntaxHighlight, _stickyScrollClickToNavigate);
+                textX, ppdip, _stickyScrollSyntaxHighlight, _stickyScrollClickToNavigate,
+                ShowLineNumbers, LineNumberWidth, LineNumberMargin,
+                _lineNumberTypeface, LineNumberForeground);
         }
 
         #endregion
@@ -667,12 +676,21 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _linePositionsDirty = false;
             }
 
-            // Sticky scroll header: refresh when the visible line range changes.
-            if (_firstVisibleLine != prevFirstVisible || _lastVisibleLine != prevLastVisible
-                || _stickyScrollHeader?.RequiredHeight == 0)
+            // Sticky scroll header: refresh only when the first visible line changes.
+            // Guard: never call InvalidateArrange() unconditionally inside OnRender —
+            // it creates a WPF layout → render → layout cycle (infinite loop).
+            // Gate on _lastStickyFirstLine so caret-blink / word-highlight renders are free. (ADR-IH-PERF-02)
+            if (_firstVisibleLine != _lastStickyFirstLine)
             {
+                _lastStickyFirstLine = _firstVisibleLine;
                 UpdateStickyScrollHeader();
-                InvalidateArrange(); // re-position header at its new height
+                int newCount = _stickyScrollHeader?.RequiredHeight > 0
+                    ? (int)(_stickyScrollHeader.RequiredHeight / _lineHeight) : 0;
+                if (newCount != _stickyScrollLastEntryCount)
+                {
+                    _stickyScrollLastEntryCount = newCount;
+                    InvalidateArrange(); // re-position header at its new height
+                }
             }
 
             // -- Clip to content area (prevent drawing over scrollbars) --

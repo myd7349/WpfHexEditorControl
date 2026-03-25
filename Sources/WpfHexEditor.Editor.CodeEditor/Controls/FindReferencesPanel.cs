@@ -25,6 +25,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace WpfHexEditor.Editor.CodeEditor.Controls;
 
@@ -52,6 +53,9 @@ public sealed class FindReferencesPanel : UserControl
     private readonly List<ReferencesNavigationEventArgs> _navItems = new();
     private int _navIndex = -1;
 
+    // Debounce timer for search box (200 ms) to avoid filtering on every keystroke.
+    private readonly DispatcherTimer _filterDebounce;
+
     #endregion
 
     #region Events
@@ -77,6 +81,9 @@ public sealed class FindReferencesPanel : UserControl
 
     public FindReferencesPanel()
     {
+        _filterDebounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _filterDebounce.Tick += (_, _) => { _filterDebounce.Stop(); ApplyFilter(); };
+
         BuildUI();
         Focusable = true;
         KeyDown  += OnPanelKeyDown;
@@ -308,7 +315,7 @@ public sealed class FindReferencesPanel : UserControl
         };
         _searchBox.SetResourceReference(TextBox.BackgroundProperty, "TE_Background");
         _searchBox.SetResourceReference(TextBox.ForegroundProperty, "TE_Foreground");
-        _searchBox.TextChanged += (_, _) => ApplyFilter();
+        _searchBox.TextChanged += (_, _) => { _filterDebounce.Stop(); _filterDebounce.Start(); };
 
         filterRow.Children.Add(_scopeCombo);
         filterRow.Children.Add(_searchBox);
