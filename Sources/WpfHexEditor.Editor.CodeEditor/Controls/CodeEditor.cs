@@ -9414,8 +9414,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private bool IsEndBlockHintEnabled()
         {
             if (_foldingEngine is null || _document is null) return false;
-            var s = WpfHexEditor.Core.Options.AppSettingsService.Instance.Current.CodeEditorDefaults;
-            if (!s.EndOfBlockHintEnabled) return false;
+            if (!ShowEndOfBlockHint) return false;
             return Language?.FoldingRules?.EndOfBlockHint?.IsEnabled ?? true;
         }
 
@@ -9475,7 +9474,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void OnEndBlockHintNavigate(int startLine0)
         {
-            NavigateTo(startLine0, 0);
+            NavigateToLine(startLine0);
         }
 
         /// <summary>
