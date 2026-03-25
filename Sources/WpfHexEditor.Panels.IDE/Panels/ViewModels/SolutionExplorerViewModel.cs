@@ -419,15 +419,16 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
         // Solution Folders come first; collect which project names are inside a folder.
         var folderedNames = CollectFolderedProjectNames(_solution.RootFolders);
 
-        foreach (var folder in _solution.RootFolders)
+        foreach (var folder in _solution.RootFolders
+                     .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
             solutionNode.Children.Add(BuildSolutionFolderNode(folder, _solution));
 
-        // Unfoldered projects follow directly under the solution node.
+        // Unfoldered projects follow directly under the solution node — alphabetical.
         var startupId = _solution.StartupProject?.Id;
-        foreach (var project in _solution.Projects)
+        foreach (var project in _solution.Projects
+                     .Where(p => !folderedNames.Contains(p.Name))
+                     .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase))
         {
-            if (folderedNames.Contains(project.Name)) continue;
-
             var projNode = _showAllFiles
                 ? BuildProjectNodePhysical(project)
                 : BuildProjectNode(project);
@@ -630,12 +631,12 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
         var node      = new SolutionFolderNodeVm(folder, solution) { IsExpanded = true };
         var startupId = solution.StartupProject?.Id;
 
-        // Nested solution folders first (recursive).
-        foreach (var child in folder.Children)
+        // Nested solution folders first (recursive) — alphabetical.
+        foreach (var child in folder.Children.OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
             node.Children.Add(BuildSolutionFolderNode(child, solution));
 
-        // Projects inside this folder.
-        foreach (var projectName in folder.ProjectIds)
+        // Projects inside this folder — alphabetical.
+        foreach (var projectName in folder.ProjectIds.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
         {
             var project = solution.Projects.FirstOrDefault(p => p.Name == projectName);
             if (project is null) continue;
