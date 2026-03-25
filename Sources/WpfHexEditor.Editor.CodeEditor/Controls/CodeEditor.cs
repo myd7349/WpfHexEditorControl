@@ -2059,6 +2059,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             ShowInlineHints             = options.ShowInlineHints;
             InlineHintsVisibleKinds     = options.InlineHintsVisibleKinds;
             EnableWordHighlight      = options.EnableWordHighlight;
+            ShowEndOfBlockHint      = options.ShowEndOfBlockHint;
+            EndOfBlockHintDelayMs   = options.EndOfBlockHintDelayMs;
 
             // Syntax color overrides — set local value to override the DynamicResource binding.
             // A null override clears the local value so DynamicResource (CE_*) takes effect again.

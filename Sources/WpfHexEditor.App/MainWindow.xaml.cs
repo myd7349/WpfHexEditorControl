@@ -5240,6 +5240,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 ce.InlineHintsVisibleKinds = settings.CodeEditorDefaults.InlineHintsVisibleKinds == 0
                     ? WpfHexEditor.Editor.Core.InlineHintsSymbolKinds.All
                     : (WpfHexEditor.Editor.Core.InlineHintsSymbolKinds)settings.CodeEditorDefaults.InlineHintsVisibleKinds;
+                ce.ShowEndOfBlockHint    = settings.CodeEditorDefaults.EndOfBlockHintEnabled;
+                ce.EndOfBlockHintDelayMs = settings.CodeEditorDefaults.EndOfBlockHintDelayMs;
                 ApplySyntaxColorOverrides(ce, settings.CodeEditorDefaults);
                 break;
             case WpfHexEditor.Editor.TextEditor.Controls.TextEditor te:
