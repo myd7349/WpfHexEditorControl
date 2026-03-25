@@ -14,7 +14,6 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using WpfHexEditor.Core.Options;
 
 namespace WpfHexEditor.App.Options;
@@ -47,38 +46,22 @@ public sealed class TabPreviewOptionsPage : UserControl, IOptionsPage
     public TabPreviewOptionsPage()
     {
         // ── Enable ───────────────────────────────────────────────────────────
-        _enableCheck = new CheckBox { Content = "Enable tab hover preview", Margin = new Thickness(0, 0, 0, 4) };
+        _enableCheck = new CheckBox { Content = "Enable tab hover preview", Margin = new Thickness(0, 4, 0, 4) };
         _enableCheck.Checked   += OnChanged;
         _enableCheck.Unchecked += OnChanged;
 
-        var enableGroup = MakeGroup("Preview", _enableCheck);
-
         // ── Appearance ───────────────────────────────────────────────────────
-        _showFileNameCheck = new CheckBox { Content = "Show filename in footer", Margin = new Thickness(0, 0, 0, 4) };
+        _showFileNameCheck = new CheckBox { Content = "Show filename in footer", Margin = new Thickness(0, 4, 0, 4) };
         _showFileNameCheck.Checked   += OnChanged;
         _showFileNameCheck.Unchecked += OnChanged;
-
-        var appearanceGroup = MakeGroup("Appearance", _showFileNameCheck);
 
         // ── Size ─────────────────────────────────────────────────────────────
         (_widthSlider,  _widthLabel)  = MakeSlider("Width:",  100, 400, 1);
         (_heightSlider, _heightLabel) = MakeSlider("Height:", 80,  300, 1);
 
-        var sizePanel = new StackPanel();
-        sizePanel.Children.Add(MakeSliderRow("Width (px):",  _widthSlider,  _widthLabel));
-        sizePanel.Children.Add(MakeSliderRow("Height (px):", _heightSlider, _heightLabel));
-
-        var sizeGroup = MakeGroup("Size", sizePanel);
-
         // ── Delays ───────────────────────────────────────────────────────────
         (_openDelaySlider,  _openDelayLabel)  = MakeSlider("Open delay:",  100, 1000, 50);
         (_closeDelaySlider, _closeDelayLabel) = MakeSlider("Close delay:", 50,  500,  10);
-
-        var delayPanel = new StackPanel();
-        delayPanel.Children.Add(MakeSliderRow("Open delay (ms):",  _openDelaySlider,  _openDelayLabel));
-        delayPanel.Children.Add(MakeSliderRow("Close delay (ms):", _closeDelaySlider, _closeDelayLabel));
-
-        var delayGroup = MakeGroup("Delays", delayPanel);
 
         // ── Root layout ──────────────────────────────────────────────────────
         var root = new StackPanel
@@ -86,10 +69,20 @@ public sealed class TabPreviewOptionsPage : UserControl, IOptionsPage
             Orientation = Orientation.Vertical,
             Margin      = new Thickness(12, 8, 12, 8)
         };
-        root.Children.Add(enableGroup);
-        root.Children.Add(appearanceGroup);
-        root.Children.Add(sizeGroup);
-        root.Children.Add(delayGroup);
+
+        root.Children.Add(MakeSectionHeader("Preview"));
+        root.Children.Add(_enableCheck);
+
+        root.Children.Add(MakeSectionHeader("Appearance"));
+        root.Children.Add(_showFileNameCheck);
+
+        root.Children.Add(MakeSectionHeader("Size"));
+        root.Children.Add(MakeSliderRow("Width (px):",  _widthSlider,  _widthLabel));
+        root.Children.Add(MakeSliderRow("Height (px):", _heightSlider, _heightLabel));
+
+        root.Children.Add(MakeSectionHeader("Delays"));
+        root.Children.Add(MakeSliderRow("Open delay (ms):",  _openDelaySlider,  _openDelayLabel));
+        root.Children.Add(MakeSliderRow("Close delay (ms):", _closeDelaySlider, _closeDelayLabel));
 
         Content = new ScrollViewer
         {
@@ -129,14 +122,12 @@ public sealed class TabPreviewOptionsPage : UserControl, IOptionsPage
 
     private void OnChanged(object sender, RoutedEventArgs e) => Changed?.Invoke(this, EventArgs.Empty);
 
-    private static GroupBox MakeGroup(string header, UIElement content)
-        => new()
-        {
-            Header  = header,
-            Margin  = new Thickness(0, 0, 0, 8),
-            Padding = new Thickness(8, 4, 8, 8),
-            Content = content
-        };
+    private static TextBlock MakeSectionHeader(string title) => new()
+    {
+        Text       = title,
+        FontWeight = FontWeights.SemiBold,
+        Margin     = new Thickness(0, 8, 0, 4)
+    };
 
     private (Slider slider, TextBlock label) MakeSlider(string name, double min, double max, double tickFreq)
     {
