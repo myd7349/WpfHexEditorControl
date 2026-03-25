@@ -1905,6 +1905,15 @@
                     <TextBlock x:Name="BuildStatusIcon" Text="&#xE8B1;" FontFamily="Segoe MDL2 Assets" FontSize="11"
                                Foreground="{DynamicResource DockTabActiveTextBrush}"
                                VerticalAlignment="Center" Margin="4,0,4,0"/>
+                    <ProgressBar x:Name="BuildProgressBar"
+                                 Width="80" Height="6"
+                                 Minimum="0" Maximum="100" Value="0"
+                                 Visibility="Collapsed"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,6,0"
+                                 Foreground="{DynamicResource DockTabActiveTextBrush}"
+                                 Background="{DynamicResource DockBorderBrush}"
+                                 BorderThickness="0"/>
                     <TextBlock x:Name="BuildStatusText"
                                Foreground="{DynamicResource DockTabActiveTextBrush}"
                                FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
