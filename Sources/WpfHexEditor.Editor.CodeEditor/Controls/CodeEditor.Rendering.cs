@@ -200,11 +200,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
-            // Use unbuffered first visible line for sticky scroll: _firstVisibleLine includes
-            // VirtualizationEngine's render buffer (default 10 lines) which would cause headers
-            // to appear up to 10 lines before the scope declaration has actually scrolled off the top.
+            // Compute the first visible CONTENT line — below the sticky header itself.
+            // The header occupies RequiredHeight px at the top of the viewport, so we must
+            // add that offset before dividing; otherwise FindScopeChainAt receives the line
+            // under pixel 0 (under the header) and the scope chain appears N lines too early.
+            double headerH = _stickyScrollHeader?.RequiredHeight ?? 0;
             int stickyLine = (_lineHeight > 0)
-                ? Math.Max(0, (int)(_verticalScrollOffset / _lineHeight))
+                ? Math.Max(0, (int)((_verticalScrollOffset + headerH) / _lineHeight))
                 : _firstVisibleLine;
             var chain   = FindScopeChainAt(stickyLine);
             var entries = new List<StickyScrollEntry>(chain.Count);
