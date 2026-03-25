@@ -762,7 +762,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         public static readonly DependencyProperty EndOfBlockHintDelayMsProperty =
             DependencyProperty.Register(nameof(EndOfBlockHintDelayMs), typeof(int), typeof(CodeEditor),
-                new FrameworkPropertyMetadata(400, OnEndOfBlockHintDelayChanged));
+                new FrameworkPropertyMetadata(600, OnEndOfBlockHintDelayChanged));
 
         [Category("Features")]
         [DisplayName("End-of-Block Hint Delay (ms)")]
@@ -1951,7 +1951,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // End-of-block hint timer — fires after hover dwell on a closing token.
             _endBlockHintTimer       = new System.Windows.Threading.DispatcherTimer
-                                       { Interval = TimeSpan.FromMilliseconds(400) }; // default; updated via EndOfBlockHintDelayMs DP
+                                       { Interval = TimeSpan.FromMilliseconds(600) }; // default; updated via EndOfBlockHintDelayMs DP
             _endBlockHintTimer.Tick += OnEndBlockHintTimerTick;
 
             // Apply theme resource bindings when connected to the visual tree

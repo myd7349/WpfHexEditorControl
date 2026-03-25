@@ -364,7 +364,7 @@ public sealed class CodeEditorDefaultSettings
     /// Milliseconds the cursor must dwell over a closing token before the
     /// end-of-block hint popup appears. Range: 100–2000. Default: 400.
     /// </summary>
-    public int EndOfBlockHintDelayMs { get; set; } = 400;
+    public int EndOfBlockHintDelayMs { get; set; } = 600;
 
     // -- InlineHints ---------------------------------------------------------
 

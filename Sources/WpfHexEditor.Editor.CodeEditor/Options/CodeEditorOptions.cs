@@ -175,7 +175,7 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
     }
 
     private bool _showEndOfBlockHint    = true;
-    private int  _endOfBlockHintDelayMs = 400;
+    private int  _endOfBlockHintDelayMs = 600;
 
     /// <summary>
     /// When true, hovering over }, #endregion, &lt;/Tag&gt; shows the matching opening line(s).
