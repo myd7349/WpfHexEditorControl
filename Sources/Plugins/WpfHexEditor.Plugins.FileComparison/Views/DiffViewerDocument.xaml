@@ -108,19 +108,19 @@
                     <Border Background="{DynamicResource DF_ModifiedLineBrush}"
                             CornerRadius="3" Padding="6,1" Margin="2,0">
                         <TextBlock FontSize="11">
-                            <Run Text="&#x2260; "/><Run Text="{Binding ModifiedCount}"/>
+                            <Run Text="&#x2260; "/><Run Text="{Binding ModifiedCount, Mode=OneWay}"/>
                         </TextBlock>
                     </Border>
                     <Border Background="{DynamicResource DF_InsertedLineBrush}"
                             CornerRadius="3" Padding="6,1" Margin="2,0">
                         <TextBlock FontSize="11">
-                            <Run Text="+ "/><Run Text="{Binding AddedCount}"/>
+                            <Run Text="+ "/><Run Text="{Binding AddedCount, Mode=OneWay}"/>
                         </TextBlock>
                     </Border>
                     <Border Background="{DynamicResource DF_DeletedLineBrush}"
                             CornerRadius="3" Padding="6,1" Margin="2,0">
                         <TextBlock FontSize="11">
-                            <Run Text="&#x2212; "/><Run Text="{Binding RemovedCount}"/>
+                            <Run Text="&#x2212; "/><Run Text="{Binding RemovedCount, Mode=OneWay}"/>
                         </TextBlock>
                     </Border>
                     <TextBlock Text="{Binding SimilarityText}"
