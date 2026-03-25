@@ -6,6 +6,143 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
+## [0.6.3.7] — 2026-03-25 — Debugger UI, Workspace System, Sticky Scroll, Find All References & Performance
+
+This release delivers a fully wired VS-style debugger UI, a `.whidews` workspace system, sticky scroll with line numbers, Find All References (Shift+F12), auto-close brackets/quotes, F#/VB.NET language support, a redesigned New File Dialog, Compare Files overkill upgrade (Phases A–H), DiffHub document viewer redesign, end-of-block hover hints, build progress bar, Quick File Open (Ctrl+P), InlineHints background pre-warming, 3 phases of architectural refactoring, and a critical performance fix that eliminates a 100% CPU / 567 MB infinite render loop introduced by the sticky scroll implementation.
+
+### ✨ Added — Integrated Debugger UI (ADR-DBG-02 + ADR-DBG-BP-01)
+
+- **Debug menu** (`_Debug`) in `MainWindow.xaml` — Start/Stop/Restart Debugging, Step Over/Into/Out, Toggle Breakpoint, Delete All Breakpoints, Show Debug Panels, Attach to Process
+- **Debug toolbar pod** — `DebugToolBar` WrapPanel in main toolbar; Continue/Pause/Stop + Step Over/Into/Out buttons; `Visibility=Collapsed` by default, shown on `DebugSessionStartedEvent`, hidden on `DebugSessionEndedEvent`
+- **Execution line highlight** — `DB_ExecutionLineBackgroundBrush` (semi-transparent yellow) drawn in `OnRender` after current-line highlight; `_executionLineOneBased` field; `DB_ExecutionLineBrush` (opaque) for the gutter arrow
+- **Gutter hover ghost** — `BreakpointGutterControl` tracks `_hoverLine` on `MouseMove`/`MouseLeave`; draws outline circle (`BpDisabledPen`) on hovered lines with no active breakpoint
+- **Gutter overlap fix** — `BreakpointGutterControl` at `x=0`; `GutterControl` (fold) moved to `x=BreakpointGutterControl.GutterWidth` (16 px) in `ArrangeOverride`
+- **Debug status bar** — `DbgStatusItem` + `DbgStatusText` (yellow `#FFDD00`); shows `"Paused at file:line"` on pause, hidden on resume/end
+- **`BreakpointInfoPopup`** (new) — right-click gutter → VS-style popup: location, editable condition `TextBox`, Enable/Disable toggle, Delete, Save; `IBreakpointSource` extended with `GetBreakpoint`/`SetCondition`/`SetEnabled`/`Delete` returning `BreakpointInfo` record
+- **Non-executable line validation** — `LanguageDefinition.BreakpointRules` record (`NonExecutablePatterns: IReadOnlyList<string>`) compiled to `List<Regex>` in `CodeEditor.RebuildBreakpointValidation()` on language change; left-click on non-executable line shows 1.5 s tooltip "Cannot place breakpoint on this line"
+- **`IDebuggerService`** extended — `UpdateBreakpointAsync(filePath, line, condition, isEnabled)` + `DeleteBreakpointAsync(filePath, line)` implemented in `DebuggerServiceImpl.cs`
+- **`breakpointRules` block** added to CSharp, JavaScript, TypeScript, Python `.whfmt` files
+- `DB_*` tokens already in all 18 `Colors.xaml` files via prior session; `_debugStartedSub` wired to `_subscriptions`
+
+### ✨ Added — Workspace System `.whidews` (ADR-WS-01)
+
+- **`WpfHexEditor.Core.Workspaces`** — `WorkspaceManager`, `WorkspaceSerializer` (ZIP + JSON: manifest / layout / solution / openfiles / settings), `WorkspaceModels` records (`WorkspaceCapture`, `WorkspaceState`, `OpenFileEntry`, …)
+- **`IWorkspaceService`** SDK contract + `WorkspaceOpenedServiceEventArgs`; `IDEHostContext.Workspace` (nullable); `WorkspaceServiceImpl` bridges `IWorkspaceManager` → `IWorkspaceService` with Dispatcher marshalling
+- **`MainWindow.Workspace.cs`** partial class — `InitializeWorkspaceSystem()`, 5 async handlers (New/Open/Save/SaveAs/Close), `CaptureWorkspaceState()` (`SnapshotEditorConfigs()` + `DockLayoutSerializer.Serialize`), `ApplyWorkspaceStateAsync()` (theme/layout/solution/files), `UpdateWorkspaceStatusBar()`
+- **File menu Workspace submenu** — 5 items; status bar `WorkspaceStatusItem` + `WorkspaceStatusText`
+- **`WorkspaceSettings`** — 5 prefs: `PromptSaveOnClose`, `RestoreSolution`, `RestoreFiles`, `RestoreTheme`, `RecentWorkspacePath`; `WorkspaceOptionsPage` (Category=Environment)
+- **5 Workspace command IDs** in `CommandIds.cs`; registered in `MainWindow.Commands.cs`
+
+### ✨ Added — New File Dialog Redesign (ADR-NFD-01)
+
+- **860×540 3-panel dialog** — sidebar (categories), center (template grid/list), description panel
+- **23 templates across 5 categories** — General / C# .NET / Script / Data / Web; `DotNetFileTemplates.cs` (7), `WebFileTemplates.cs` (4), `ScriptFileTemplates.cs` (3), `DataFileTemplates.cs` (3)
+- **Grid/list view toggle**, search, sort, category filter; `IFileTemplate` gained `Category` + `IconGlyph` via default interface members (no breaking change)
+
+### ✨ Added — Compare Files Overkill Upgrade (ADR-DIFF-01)
+
+- **`WpfHexEditor.Core.Diff`** — `DiffEngine`, `MyersDiffAlgorithm`, `BinaryDiffAlgorithm`, `SemanticDiffAlgorithm`, `DiffModeDetector`, `GitDiffService`, `DiffExportService`
+- **`GitRefPickerPopup`** — floating branch/commit picker; `CompareFileLaunchService` orchestrator
+- **4 new `CommandIds`** — `CompareWithActiveEditor/Clipboard/Head/ReopenLast`; `DockTabControl.ExtraMenuItemsFactory` + `DockControl.TabExtraMenuItemsFactory` extensibility hooks
+- **`SolutionExplorerCompareContributor`** — always shows Compare with Active/Another File; conditionally shows Compare with HEAD/Branch/Commit when `.git` detected (cached repo root)
+- **`ComparisonOptionsPage`** (`IOptionsPage`, Category=Editor)
+- **`DiffHubPanel`** (6-row XAML: toolbar/inputs/ratio-bar/search/tabs/status) + `DiffHubViewModel` (INPC, `DiffEngine`, filter+search, history up to 20 entries)
+- **14 `DF_*` tokens** × 18 `Colors.xaml` files
+
+### ✨ Added — DiffHub Document Viewer Redesign (ADR-DIFF-02)
+
+- **`DiffViewerDocument`** (new) — opens as a full document tab (4-row layout: toolbar/inputs/sync-scroll side-by-side/overview ruler)
+- **`DiffViewerViewModel`** — INPC, parallel `LeftRows`/`RightRows`, word-level segments, `Alt+Up/Down` navigation
+- **`DiffHubPanel`** simplified to compact launcher (file inputs + history only); **8 new `DF_*` tokens v2** × 18 themes
+- Tab dedup: `_openViewers Dictionary<string, DiffViewerDocument>` keyed by `"diff://{left}|{right}"`
+
+### ✨ Added — End-of-Block Hover Hint (ADR-EBH-01)
+
+- **`EndBlockHintPopup`** (new) — hover over `}`, `#endregion`, `</Tag>` → VS-style popup showing the matching opening line(s); grace timer 200 ms; `ET_*` tokens; syntax-colored header via `ISyntaxHighlighter.Highlight()`; meta row with pills (region name, nesting depth)
+- **`ShowEndOfBlockHint`** + **`EndOfBlockHintDelayMs`** DPs in `CodeEditor`; hover timer (default 600 ms); `HandleEndBlockHintHover`, `FindRegionEndingAt`, `OnEndBlockHintNavigate` → `NavigateToLine`
+- **`LanguageDefinition.EndOfBlockHintSettings`** record + `EndOfBlockHintDto`; `endOfBlockHint` block added to 18 `.whfmt` files
+- `AppSettings.EndOfBlockHintEnabled`/`EndOfBlockHintDelayMs`; `ApplyOptions()` wired; **18 `ET_*` tokens** × 18 themes
+
+### ✨ Added — Build Progress Bar (ADR-BUILD-SB-01)
+
+- **`<ProgressBar>`** in `BuildStatusItem` (MainWindow.xaml) — 80 px wide, 6 px tall, `Visibility=Collapsed` by default
+- **`BuildStatusBarAdapter`** — `_update` callback extended to `Action<string,string,bool,int>` (progressPercent: 0–100 = show, -1 = hide); `OnProgress` passes `e.ProgressPercent`
+- **`MainWindow.Build.cs`** — `UpdateBuildStatusBar` extended; sets `BuildProgressBar.Value` + `Visibility` on each `BuildProgressUpdatedEvent`
+
+### ✨ Added — Find All References / InlineHints (#157)
+
+- **`WorkspaceFileCache`** — static thread-safe singleton (`ReaderWriterLockSlim`); `GetPathsForExtensions()` / `GetLines()`; caps: 5 000 files, 2 MB/file; `WorkspaceChanged` event; subscribes `SolutionManager.SolutionChanged`
+- **`InlineHintsService`** — `ComputeHintsData()` background worker; regex-based reference counting across solution; `ReferenceHint` record
+- **`InlineHints` layer** — `CE_InlineHint*` tokens; clickable "N références" above each declaration; click opens `FindReferencesPanel`
+- **`ReferencesPopup`** → **`FindReferencesPanel`** — dockable VS2022-style panel; `ReferenceGroup` tree; title bar with refresh/close; scope filter `ComboBox`; search `TextBox`; `F8`/`Shift+F8` navigation; `Shift+F12` keybinding
+- **`InlineHintsVisibleKinds`** bitmask (`InlineHintsSymbolKinds` enum, 12 kinds); **`CodeEditorInlineHintsPage`** options page
+
+### ✨ Added — Auto-close Brackets & Quotes (#163)
+
+- **`AutoClosingBrackets`**, **`AutoClosingQuotes`**, **`SkipOverClosingChar`**, **`WrapSelectionInPairs`** — 4 new options in `CodeEditorOptions`; wired in `ApplyOptions()`
+- Auto-insert matching `)` `]` `}` `"` `'` on type; skip-over existing closing char; wrap selection in pair when opening char typed with selection active
+- Options section added to `CodeEditorOptionsPage`
+
+### ✨ Added — Quick File Open (#179)
+
+- **`Ctrl+P`** binding → `CommandPaletteService.OpenWithPrefix("#")` (file search mode)
+- **`CommandPaletteOptionsPage`** section for `#` mode settings
+
+### ✨ Added — F# / VB.NET Language Support
+
+- **`FSharp.whfmt`** + **`VBNet.whfmt`** — full syntax definitions with folding, highlighting, breakpoint rules
+- **`LspServerRegistry`** — `fsautocomplete` entry (F#) + OmniSharp `vb` entry (VB.NET)
+- **`DocumentManager.ResolveLanguageId()`** + **`CodeEditor.LSP.cs`** language ID maps updated for `"fsharp"` / `"vb"`
+- **`IlSpyTypeDecompiler._decompLangMap`** — VB.NET decompilation support
+- **F# / VB.NET project templates** — `FSharpConsoleApp`, `FSharpClassLib`, `VbNetConsoleApp` registered in template registry
+
+### ✨ Added — Sticky Scroll (#160)
+
+- **`StickyScrollHeader`** (new `FrameworkElement`) — renders N scope signature lines pinned at the top; `StickyScrollEntry` record; `ScopeClicked` event → `NavigateToLine`; theme tokens `CE_StickyScrollBackground/Foreground/Border` × 18 themes
+- **`FindScopeChainAt(int firstLine)`** — O(N) insertion-sorted scan (replaces O(N log N) LINQ `.OrderBy()`); bounded to `_stickyScrollMaxLines`
+- **`UpdateStickyScrollHeader()`** — syntax-highlighted entries via `ISyntaxHighlighter.Highlight()`; wired in `OnRender` (scroll-gated) and `ArrangeOverride`
+- **Line numbers in gutter** — `Update()` pre-builds right-aligned line number `FormattedText` using editor's `LineNumberForeground` + `_lineNumberTypeface`; matches editor gutter style exactly
+- **6 options** in `CodeEditorOptions`: `StickyScrollEnabled`, `StickyScrollMaxLines`, `StickyScrollSyntaxHighlight`, `StickyScrollClickToNavigate`, `StickyScrollOpacity`, `StickyScrollMinScopeLines`
+- **`ApplyStickyScrollSettings()`** public API on `CodeEditor`; wired in `MainWindow.ApplyEditorSettings()`
+
+### ✨ Added — InlineHints Background Pre-warming
+
+- **`WorkspaceFileCache.Invalidate()`** refactored — clears caches instantly (microseconds), then `_ = Task.Run(RebuildAndWarmAsync)`
+- **`RebuildAndWarmAsync()`** — Phase A: `BuildSolutionPaths()` off UI thread; Phase B: fire `WorkspaceChanged`; Phase C: pre-warm line cache (yield every 20 files)
+- Eliminates IDE freeze on solution open that previously blocked the UI thread with `File.Exists()` × 5 000
+
+### ✨ Added — Assembly Explorer Fix (ADR-AE-01)
+
+- **`BuildDecompiledCodeEditor()`** now creates `CodeEditorSplitHost` instead of `TextEditor`; maps `EditorLanguageName` display names → LanguageRegistry IDs (`"C#"` → `"csharp"`, `"VB.NET"` → `"vb"`); sets language via `host.SetLanguage(lang)`, marks `host.IsReadOnly = true`
+- **`ProjectReference`** to `WpfHexEditor.Editor.CodeEditor` added to `AssemblyExplorer` (compile-only; resolved via ALC at runtime)
+
+### ✨ Added — Unit Testing Panel — Context-Sensitive Detail Panel (ADR-UT-12)
+
+- **`UnitTestingViewModel.SelectedNode (object?)`** replaces direct `SelectedResult` assignment; syncs `SelectedResult = value as TestResultRow` for backward compat
+- **`TestProjectNode` + `TestClassNode`** — `TotalDurationMs` / `TotalDurationText` computed properties; `AddResults()` accumulates on both
+- **Detail pane** — `ContentControl Content="{Binding SelectedNode}"` with 3 implicit `DataTemplate`s (project / class / test result), each with a Run action button
+
+### ✨ Added — Architectural Refactoring Phases 1–3 (ADR-REF-01)
+
+- **Phase 1** — `RelayCommand` consolidation (~29 files → SDK canonical); `ExecuteBuildOperationAsync` helper; `CompositeDisposable` for event subscriptions; `ShowOrDockPanel` helper
+- **Phase 2** — `BreakpointPersistenceManager` extracted from `DebuggerServiceImpl`; `ExternalShellProcessManager` extracted from `ShellSessionViewModel` (shell process lifecycle + stdio piping); `RichTextBoxFindService` extracted from `TerminalPanel.xaml.cs`
+- **Phase 3** — `CodeEditor.cs` (10 007 lines) split into 5 partial class files: `Core` / `Rendering` / `Input` / `Document` / `LSP`
+
+### ⚡ Performance — Sticky Scroll Render Loop + 5 Optimizations (ADR-IH-PERF-02)
+
+- **FIX 1+2 — CRITICAL: Infinite render loop eliminated** — `|| _stickyScrollHeader?.RequiredHeight == 0` condition in `OnRender` was always true outside any scope → `InvalidateArrange()` every frame → 100% CPU + 567 MB memory pressure; replaced with `_lastStickyFirstLine` guard so `UpdateStickyScrollHeader()` runs only when viewport scrolls; `InvalidateArrange()` gated on `_stickyScrollLastEntryCount` change
+- **FIX 3 — HIGH: `FindScopeChainAt()`** — O(N log N) LINQ `.OrderBy()` per scroll frame → O(N) single-pass insertion into bounded list
+- **FIX 4 — HIGH: `StickyScrollHeader` allocation-free `OnRender`** — `TryFindResource`, `new Pen()`, `new SolidColorBrush()`, `new FormattedText()` moved from `OnRender` into `Update()` (called only on scroll); static frozen fallback brushes/pens; `OnRender` calls only `DrawText` on pre-built objects
+- **FIX 5 — MEDIUM: `WorkspaceFileCache` batch yields** — `await Task.Yield()` per file (5 000 continuations) → yield every 20 files (~250 continuations)
+- **FIX 6 — MEDIUM: `FindReferencesPanel` debounce** — 200 ms `DispatcherTimer` on search `TextBox.TextChanged`; scope `ComboBox.SelectionChanged` remains instant
+
+### 🐛 Fixed
+
+- **TextEditor scrollbar never appearing** — `TextViewport` had `VerticalAlignment="Stretch"` inside `ScrollViewer` inner `Grid` → viewport always filled ScrollViewer height → scroll extent never exceeded viewport → scrollbar never showed; fix: `VerticalAlignment="Top"`
+- **Sticky scroll infinite render loop** — see Performance section above
+
+---
+
 ## [0.6.3.6] — 2026-03-23 — LSP Engine, Command Palette, Diagnostic Tools & Major IDE Expansion
 
 This release is the largest since v0.6.0, delivering a production-grade LSP client engine, a VS Code-style Command Palette with 9 search modes, a Diagnostic Tools plugin, a fully dockable Search Panel, a centralized Command System, IDE-wide EventBus full coverage, Document Model Phase 1, incremental builds with dirty tracking, Class Diagram 10-phase overkill, XAML Designer Phase 3, Markdown Editor IDE integration, Code Editor multi-caret + word wrap + data-driven folding, DI infrastructure, and dozens of theme/stability fixes across all 18 themes.
