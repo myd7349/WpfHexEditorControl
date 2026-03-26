@@ -141,7 +141,7 @@ namespace WpfHexEditor.HexEditor
                                 // Switch active format — same path as ParsedFieldsPanel candidate switch
                                 _detectedFormat      = capture.Format;
                                 _detectionVariables  = capture.Variables;
-                                ParseFieldsAsync();
+                                RefreshParsedFields();
                                 RefreshToolbarItems();
                                 RefreshStatusBarItemValues();
                             })

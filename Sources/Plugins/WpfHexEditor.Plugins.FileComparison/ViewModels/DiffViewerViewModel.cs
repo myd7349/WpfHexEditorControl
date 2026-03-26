@@ -101,6 +101,10 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
 
     private readonly DiffEngineService     _engine          = new();
     private readonly FormatDetectionService _formatDetector = new();
+    // DiffViewerDataSource adapters available for external consumers (e.g. FormatParsingService)
+    // to attach format parsing to individual diff sides without duplicating detection logic.
+    private WpfHexEditor.Plugins.FileComparison.Services.DiffViewerDataSource? _leftDataSource;
+    private WpfHexEditor.Plugins.FileComparison.Services.DiffViewerDataSource? _rightDataSource;
 
     // ── Format detection ──────────────────────────────────────────────────────
 
@@ -508,6 +512,12 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
         RightFormat = rFmt;
         StatsPanel.LeftFormat  = lFmt;
         StatsPanel.RightFormat = rFmt;
+
+        // Create IBinaryDataSource adapters for external consumers
+        _leftDataSource?.Dispose();
+        _rightDataSource?.Dispose();
+        _leftDataSource  = new Services.DiffViewerDataSource(result.LeftPath);
+        _rightDataSource = new Services.DiffViewerDataSource(result.RightPath);
         OnPropertyChanged(nameof(LeftFormatBadge));
         OnPropertyChanged(nameof(RightFormatBadge));
         OnPropertyChanged(nameof(HasLeftFormat));

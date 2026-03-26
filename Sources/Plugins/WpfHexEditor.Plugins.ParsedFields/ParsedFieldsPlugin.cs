@@ -2,26 +2,24 @@
 // Project: WpfHexEditor.Plugins.ParsedFields
 // File: ParsedFieldsPlugin.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
+// Contributors: Claude Sonnet 4.6, Claude (Anthropic)
 // Created: 2026-03-07
 // Description:
 //     Plugin entry point for the Parsed Fields panel.
-//     Moves the panel from direct MainWindow management into the plugin system,
-//     making it independently registerable, dockable, and lifecycle-managed.
+//     Uses IFormatParsingService (editor-agnostic) when available,
+//     falling back to IHexEditorService for backward compatibility.
 //
 // Architecture Notes:
 //     Pattern: Observer + Mediator
-//     - Subscribes to IHexEditorService.ActiveEditorChanged to reconnect the panel
-//       on tab switches (replaces MainWindow's direct Connect/Disconnect calls).
-//     - Subscribes to TemplateApplyRequestedEvent via IPluginEventBus to receive
-//       blocks from CustomParserTemplatePlugin (replaces MainWindow handler).
-//     - The 5 bidirectional HexEditor↔ParsedFieldsPanel events (FieldSelected,
-//       RefreshRequested, FormatterChanged, FieldValueEdited, FormatCandidateSelected)
-//       are auto-wired via HexEditorControl's ParsedFieldsPanelProperty DP.
+//     - When IFormatParsingService is available: panel wiring, format detection,
+//       field selection, and bookmark navigation all go through the shared service.
+//     - Fallback: legacy IHexEditorService.ConnectParsedFieldsPanel path.
+//     - TemplateApplyRequestedEvent and GrammarAppliedEvent always use EventBus.
 // ==========================================================
 
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.Core.FormatDetection;
+using WpfHexEditor.Core.Interfaces;
 using WpfHexEditor.Core.ViewModels;
 using WpfHexEditor.Plugins.ParsedFields.Views;
 using WpfHexEditor.SDK.Contracts;
@@ -34,14 +32,14 @@ namespace WpfHexEditor.Plugins.ParsedFields;
 
 /// <summary>
 /// Plugin registering the Parsed Fields panel (Right dock).
-/// Manages the HexEditor ↔ ParsedFieldsPanel bidirectional connection and
-/// routes <see cref="TemplateApplyRequestedEvent"/> from the CustomParser plugin.
+/// Prefers <see cref="IFormatParsingService"/> for editor-agnostic wiring;
+/// falls back to <see cref="IHexEditorService"/> legacy path when unavailable.
 /// </summary>
 public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
 {
     public string  Id      => "WpfHexEditor.Plugins.ParsedFields";
     public string  Name    => "Parsed Fields";
-    public Version Version => new(0, 5, 0);
+    public Version Version => new(0, 6, 1);
 
     public PluginCapabilities Capabilities => new()
     {
@@ -55,6 +53,7 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
     private IIDEHostContext?   _context;
     private IDisposable?       _templateSub;
     private IDisposable?       _grammarSub;
+    private bool               _usesFormatParsingService;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -91,17 +90,34 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
                                  "WpfHexEditor.Plugins.ParsedFields.Panel.ParsedFieldsPanel"))
             });
 
-        // Connect to the current active editor immediately (if any file is already open).
-        if (context.HexEditor.IsActive)
-            context.HexEditor.ConnectParsedFieldsPanel(_panel);
+        // ── Prefer IFormatParsingService (editor-agnostic) ───────────────
+        var formatParsing = context.FormatParsing;
+        if (formatParsing != null)
+        {
+            _usesFormatParsingService = true;
 
-        // Wire bookmark navigation: clicking a section chip scrolls the hex editor.
+            // Connect panel to the shared service
+            formatParsing.ConnectPanel(_panel);
+
+            // Format detection events come from the service
+            formatParsing.FormatDetected += OnServiceFormatDetected;
+            formatParsing.Cleared += OnServiceCleared;
+        }
+        else
+        {
+            // ── Fallback: legacy IHexEditorService path ──────────────────
+            _usesFormatParsingService = false;
+
+            if (context.HexEditor.IsActive)
+                context.HexEditor.ConnectParsedFieldsPanel(_panel);
+
+            context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
+            context.HexEditor.FileOpened          += OnFileOpened;
+            context.HexEditor.FormatDetected      += OnFormatDetected;
+        }
+
+        // Wire bookmark navigation (works with both paths).
         _panel.NavigateToOffsetRequested += OnNavigateToOffsetRequested;
-
-        // Reconnect when the active tab changes.
-        context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
-        context.HexEditor.FileOpened          += OnFileOpened;
-        context.HexEditor.FormatDetected      += OnFormatDetected;
 
         // Route TemplateApplyRequestedEvent to this panel (was handled by MainWindow).
         _templateSub = context.EventBus.Subscribe<TemplateApplyRequestedEvent>(OnTemplateApplyRequested);
@@ -119,10 +135,19 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
 
         if (_context != null)
         {
-            _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
-            _context.HexEditor.FileOpened          -= OnFileOpened;
-            _context.HexEditor.FormatDetected      -= OnFormatDetected;
-            _context.HexEditor.DisconnectParsedFieldsPanel();
+            if (_usesFormatParsingService && _context.FormatParsing != null)
+            {
+                _context.FormatParsing.FormatDetected -= OnServiceFormatDetected;
+                _context.FormatParsing.Cleared -= OnServiceCleared;
+                _context.FormatParsing.DisconnectPanel();
+            }
+            else
+            {
+                _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
+                _context.HexEditor.FileOpened          -= OnFileOpened;
+                _context.HexEditor.FormatDetected      -= OnFormatDetected;
+                _context.HexEditor.DisconnectParsedFieldsPanel();
+            }
         }
 
         if (_panel != null)
@@ -133,47 +158,40 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
         return Task.CompletedTask;
     }
 
-    // ── HexEditor event handlers ───────────────────────────────────────────
+    // ── IFormatParsingService event handlers ──────────────────────────────
 
-    /// <summary>
-    /// Forwards a bookmark navigation request to the hex editor:
-    /// scrolls the viewport to <paramref name="e"/> and places the caret there.
-    /// </summary>
+    private void OnServiceFormatDetected(object? sender, WpfHexEditor.Core.Events.FormatDetectedEventArgs e)
+    {
+        if (_panel is null || !e.Success) return;
+        _panel.Dispatcher.InvokeAsync(() => _panel.SetEnrichedFormat(e.Format));
+    }
+
+    private void OnServiceCleared(object? sender, EventArgs e)
+    {
+        _panel?.Dispatcher.InvokeAsync(() => _panel?.Clear());
+    }
+
+    // ── Legacy IHexEditorService event handlers ──────────────────────────
+
     private void OnNavigateToOffsetRequested(object? sender, long e)
     {
         if (_context?.HexEditor.IsActive == true)
             _context.HexEditor.NavigateTo(e);
     }
 
-    /// <summary>
-    /// Reconnects the panel to the newly active editor after a tab switch.
-    /// The previous editor is disconnected automatically by DisconnectParsedFieldsPanel().
-    /// </summary>
     private void OnActiveEditorChanged(object? sender, EventArgs e)
     {
         if (_panel is null || _context is null) return;
         _context.HexEditor.DisconnectParsedFieldsPanel();
         if (_context.HexEditor.IsActive)
             _context.HexEditor.ConnectParsedFieldsPanel(_panel);
-        // Enriched data is re-populated by OnParsedFieldsPanelChanged inside the HexEditor DP callback
-        // (calls newPanel.SetEnrichedFormat(_detectedFormat) when reconnecting to an already-detected editor).
     }
 
-    /// <summary>Clears the panel when a new file is opened (no parsed fields yet).</summary>
     private void OnFileOpened(object? sender, EventArgs e)
     {
         _panel?.Clear();
-        // Do NOT call SetEnrichedFormat(null) here.
-        // AutoDetectAndApplyFormat is queued at Background priority before this deferred
-        // FileOpened event; clearing here causes the enriched section to appear then vanish.
-        // Safety: Clear() sets FormatInfo.IsDetected=false → parent Border collapses → any
-        // stale enriched data is hidden until format detection re-runs and sets IsDetected=true.
     }
 
-    /// <summary>
-    /// Receives format detection result and pushes enriched metadata into the panel.
-    /// RawFormatDefinition is cast to FormatDefinition — available to bundled plugins via SDK→HexEditor.
-    /// </summary>
     private void OnFormatDetected(object? sender, FormatDetectedArgs e)
     {
         if (_panel is null) return;
@@ -181,12 +199,8 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
         _panel.Dispatcher.InvokeAsync(() => _panel.SetEnrichedFormat(format));
     }
 
-    // ── EventBus handler ──────────────────────────────────────────────────
+    // ── EventBus handlers (shared by both paths) ─────────────────────────
 
-    /// <summary>
-    /// Receives parsed blocks from the CustomParserTemplate plugin via EventBus
-    /// and populates this panel — replaces the MainWindow.PluginSystem handler.
-    /// </summary>
     private void OnTemplateApplyRequested(TemplateApplyRequestedEvent evt)
     {
         if (_panel is null || _context?.HexEditor.IsActive != true) return;
@@ -212,11 +226,6 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
         });
     }
 
-    /// <summary>
-    /// Receives UFWB grammar parse results from SynalysisGrammarPlugin (issue #177)
-    /// and populates this panel with the structured fields.
-    /// Pattern identical to OnTemplateApplyRequested.
-    /// </summary>
     private void OnGrammarApplied(GrammarAppliedEvent evt)
     {
         if (_panel is null || _context?.HexEditor.IsActive != true) return;
@@ -244,8 +253,7 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
                 });
             }
 
-            // Show grammar name as the format info header.
-            _panel.FormatInfo = new WpfHexEditor.Core.Interfaces.FormatInfo
+            _panel.FormatInfo = new FormatInfo
             {
                 IsDetected  = true,
                 Name        = evt.GrammarName,

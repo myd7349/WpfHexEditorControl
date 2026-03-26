@@ -17,6 +17,7 @@
 
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Core.Events;
+using WpfHexEditor.Core.Interfaces;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
 using System.Linq;
@@ -98,6 +99,9 @@ public sealed class IDEHostContext : IIDEHostContext
     public WpfHexEditor.SDK.Contracts.Services.IWorkspaceService? Workspace { get; }
 
     /// <inheritdoc />
+    public IFormatParsingService? FormatParsing { get; }
+
+    /// <inheritdoc />
     /// Resolved lazily from <see cref="ExtensionRegistry"/> — set by UnitTesting plugin on init.
     public ITestRunnerService? TestRunner
         => ExtensionRegistry.GetExtensions<ITestRunnerService>().FirstOrDefault();
@@ -129,7 +133,8 @@ public sealed class IDEHostContext : IIDEHostContext
         WpfHexEditor.SDK.Contracts.Services.IDebuggerService? debuggerService = null,
         WpfHexEditor.SDK.Contracts.Services.IScriptingService? scriptingService = null,
         IBuildSystem? buildSystem = null,
-        WpfHexEditor.SDK.Contracts.Services.IWorkspaceService? workspaceService = null)
+        WpfHexEditor.SDK.Contracts.Services.IWorkspaceService? workspaceService = null,
+        IFormatParsingService? formatParsingService = null)
     {
         DocumentHost        = documentHost        ?? throw new ArgumentNullException(nameof(documentHost));
         SolutionExplorer    = solutionExplorer    ?? throw new ArgumentNullException(nameof(solutionExplorer));
@@ -153,5 +158,6 @@ public sealed class IDEHostContext : IIDEHostContext
         Scripting           = scriptingService;
         BuildSystem         = buildSystem;
         Workspace           = workspaceService;
+        FormatParsing       = formatParsingService;
     }
 }

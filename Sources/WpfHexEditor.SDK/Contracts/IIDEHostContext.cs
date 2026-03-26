@@ -7,6 +7,7 @@
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.Core.LSP;
 using WpfHexEditor.Core.Events;
+using WpfHexEditor.Core.Interfaces;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts.Services;
 
@@ -176,6 +177,16 @@ public interface IIDEHostContext
     /// Null when the FileComparison plugin is not loaded.
     /// </summary>
     IDiffService? DiffService => null;
+
+    // -- Format Parsing -------------------------------------------------------
+
+    /// <summary>
+    /// Universal format detection and field parsing service.
+    /// Decoupled from any specific editor — works with any <see cref="IBinaryDataSource"/>.
+    /// Auto-attaches to the active editor on tab switch when the editor provides a data source.
+    /// Null when format parsing is not available.
+    /// </summary>
+    IFormatParsingService? FormatParsing => null;
 
     // -- Workspace System -----------------------------------------------------
 

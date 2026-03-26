@@ -191,6 +191,9 @@ public partial class MainWindow
             try { InitializeWorkspaceSystem(); }
             catch (Exception ex) { OutputLogger.PluginError($"[Workspace] Init failed: {ex.Message}"); }
 
+            // Format Parsing Service — universal, editor-agnostic format detection + field parsing
+            var formatParsingService = new WpfHexEditor.Core.Services.FormatParsing.FormatParsingService();
+
             var hostContext = new IDEHostContext(
                 documentHost:        _documentHostService,
                 solutionExplorer:    solutionService,
@@ -213,7 +216,8 @@ public partial class MainWindow
                 debuggerService:     _debuggerService,
                 scriptingService:    _scriptingService,
                 buildSystem:         _buildSystem,
-                workspaceService:    _workspaceServiceImpl)
+                workspaceService:    _workspaceServiceImpl,
+                formatParsingService: formatParsingService)
             {
                 LspServers = lspRegistry
             };

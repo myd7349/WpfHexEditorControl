@@ -18,7 +18,6 @@ using System.Windows.Threading;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.Interfaces;
 using WpfHexEditor.Core.ViewModels;
-using WpfHexEditor.HexEditor.ViewModels;
 using WpfHexEditor.Plugins.ParsedFields.Dialogs;
 using WpfHexEditor.SDK.UI;
 
