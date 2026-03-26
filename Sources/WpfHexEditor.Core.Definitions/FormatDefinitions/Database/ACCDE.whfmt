@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Microsoft Access Compiled Database
    Category:  Database
    Ext:       .accde
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Microsoft Access Compiled Database",
   "version": "1.12",
   "extensions": [

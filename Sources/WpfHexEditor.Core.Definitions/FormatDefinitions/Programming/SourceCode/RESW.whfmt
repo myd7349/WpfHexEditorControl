@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Windows Store Resource File
    Category:  Programming/SourceCode
    Ext:       .resw
@@ -8,6 +8,7 @@
    ============================================================ */
 
 {
+  "diffMode": "binary",
   "formatName": "Windows Store Resource File",
   "version": "1.0",
   "extensions": [".resw"],

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Amazon Kindle eBook
    Category:  Documents
    Ext:       .azw, .azw3
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Amazon Kindle eBook",
   "version": "1.10",
   "extensions": [

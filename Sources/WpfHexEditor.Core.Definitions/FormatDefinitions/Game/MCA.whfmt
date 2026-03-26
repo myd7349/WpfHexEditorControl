@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Minecraft Anvil Region
    Category:  Game
    Ext:       .mca
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Minecraft Anvil Region",
   "version": "1.12",
   "extensions": [

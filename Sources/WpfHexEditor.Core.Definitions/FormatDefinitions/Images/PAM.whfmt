@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Portable Arbitrary Map
    Category:  Images
    Ext:       .pam
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Portable Arbitrary Map",
   "version": "1.13",
   "extensions": [

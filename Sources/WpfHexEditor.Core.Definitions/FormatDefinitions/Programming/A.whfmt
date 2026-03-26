@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Static Library Archive
    Category:  Programming
    Ext:       .a
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Static Library Archive",
   "version": "1.12",
   "extensions": [

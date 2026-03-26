@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Zstandard Compressed
    Category:  Archives
    Ext:       .zst, .zstd
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Zstandard Compressed",
   "version": "1.10",
   "extensions": [

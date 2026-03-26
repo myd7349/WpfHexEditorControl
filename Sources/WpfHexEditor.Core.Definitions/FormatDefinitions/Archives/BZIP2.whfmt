@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    BZIP2 Compressed File
    Category:  Archives
    Ext:       .bz2, .bzip2
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "BZIP2 Compressed File",
   "version": "1.10",
   "extensions": [

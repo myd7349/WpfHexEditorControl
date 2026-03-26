@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    SQLite Database
    Category:  Database
    Ext:       .sqlite, .db, .sqlite3, .db3
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "SQLite Database",
   "version": "2.0",
   "extensions": [

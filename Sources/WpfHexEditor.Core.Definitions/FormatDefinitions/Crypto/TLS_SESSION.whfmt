@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    TLS Session Ticket
    Category:  Crypto
    Ext:       .ticket, .session
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "TLS Session Ticket",
   "version": "1.12",
   "extensions": [

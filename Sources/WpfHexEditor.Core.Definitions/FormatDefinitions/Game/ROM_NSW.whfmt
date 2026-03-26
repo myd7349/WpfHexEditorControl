@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Nintendo Switch Package
    Category:  Game
    Ext:       .nsp, .xci, .nca
@@ -9,6 +9,7 @@
    Updated:   2026-03-01
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Nintendo Switch Package",
   "version": "1.13",
   "extensions": [

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    WebAssembly Binary
    Category:  Programming
    Ext:       .wasm
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "WebAssembly Binary",
   "version": "1.11",
   "extensions": [

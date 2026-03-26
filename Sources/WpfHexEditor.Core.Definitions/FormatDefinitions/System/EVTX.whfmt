@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Windows Event Log XML
    Category:  System
    Ext:       .evtx
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Windows Event Log XML",
   "version": "1.12",
   "extensions": [

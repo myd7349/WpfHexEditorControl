@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Snappy Compression
    Category:  Archives
    Ext:       .snappy, .sz
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Snappy Compression",
   "version": "1.10",
   "extensions": [

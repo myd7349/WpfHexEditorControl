@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    RealMedia Variable Bitrate
    Category:  Video
    Ext:       .rmvb
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "RealMedia Variable Bitrate",
   "version": "1.13",
   "extensions": [

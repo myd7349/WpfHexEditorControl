@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    HTML Source File
    Category:  Programming
    Ext:       .html, .htm
@@ -8,6 +8,7 @@
    ============================================================ */
 
 {
+  "diffMode": "semantic",
   "formatName": "HTML Source File",
   "version": "2.3",
   "extensions": [

@@ -132,6 +132,15 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
         return json;
     }
 
+    /// <inheritdoc/>
+    public EmbeddedFormatEntry? GetByExtension(string extension)
+    {
+        if (string.IsNullOrEmpty(extension)) return null;
+        var ext = extension.StartsWith('.') ? extension : '.' + extension;
+        return GetAll().FirstOrDefault(e =>
+            e.Extensions.Any(x => x.Equals(ext, StringComparison.OrdinalIgnoreCase)));
+    }
+
     /// <summary>
     /// Pre-warms the JSON cache for all embedded format entries by reading
     /// every resource key into <see cref="_jsonCache"/>.
@@ -217,7 +226,10 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
         // Detect presence of a syntaxDefinition block for language registration.
         bool hasSyntaxDef = root.TryGetProperty("syntaxDefinition", out _);
 
-        return new EmbeddedFormatEntry(resourceKey, name, category, description, extensions, quality, version, author, platform, preferredEditor, isTextFormat, hasSyntaxDef);
+        // Preferred diff mode declared at the .whfmt root ("text", "semantic", "binary").
+        var diffMode = GetString(root, "diffMode");
+
+        return new EmbeddedFormatEntry(resourceKey, name, category, description, extensions, quality, version, author, platform, preferredEditor, isTextFormat, hasSyntaxDef, diffMode);
     }
 
     private static string? GetString(JsonElement root, string property)
@@ -289,7 +301,7 @@ public sealed class EmbeddedFormatCatalog : IEmbeddedFormatCatalog
                 extensions, QualityScore: 70,
                 Version: "", Author: author,
                 Platform: "", PreferredEditor: "hex-editor",
-                IsTextFormat: false);
+                IsTextFormat: false, HasSyntaxDefinition: false, DiffMode: null);
         }
 
         return null;

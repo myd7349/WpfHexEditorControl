@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    xdelta / VCDIFF Patch
    Category:  RomHacking
    Ext:       .xdelta, .xdiff, .vcdiff
@@ -8,6 +8,7 @@
    Updated:   2026-03-01
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "xdelta / VCDIFF Patch",
   "version": "1.0",
   "extensions": [

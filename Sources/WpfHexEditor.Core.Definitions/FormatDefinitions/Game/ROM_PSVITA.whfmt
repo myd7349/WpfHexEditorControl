@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    PlayStation Vita Package
    Category:  Game
    Ext:       .vpk, .pkg
@@ -9,6 +9,7 @@
    Updated:   2026-03-01
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "PlayStation Vita Package",
   "version": "2.4",
   "extensions": [

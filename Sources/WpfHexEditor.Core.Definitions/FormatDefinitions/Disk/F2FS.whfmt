@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    F2FS (Flash-Friendly File System)
    Category:  Disk
    Ext:       .f2fs
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "F2FS (Flash-Friendly File System)",
   "version": "1.10",
   "extensions": [

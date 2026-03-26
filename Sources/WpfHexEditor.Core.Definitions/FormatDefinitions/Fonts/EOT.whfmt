@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Embedded OpenType Font
    Category:  Fonts
    Ext:       .eot
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Embedded OpenType Font",
   "version": "2.2",
   "extensions": [

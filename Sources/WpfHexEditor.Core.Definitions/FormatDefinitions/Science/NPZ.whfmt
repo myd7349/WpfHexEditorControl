@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    NumPy Compressed Archive
    Category:  Science
    Ext:       .npz
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "NumPy Compressed Archive",
   "version": "2.0",
   "extensions": [

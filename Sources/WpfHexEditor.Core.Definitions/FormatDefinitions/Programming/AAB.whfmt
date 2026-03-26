@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Android App Bundle
    Category:  Programming
    Ext:       .aab
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Android App Bundle",
   "version": "2.0",
   "extensions": [

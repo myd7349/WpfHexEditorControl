@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Encapsulated Packet
    Category:  Network
    Ext:       .encap
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Encapsulated Packet",
   "version": "1.12",
   "extensions": [

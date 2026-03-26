@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Mach-O Executable
    Category:  Executables
    Editor:    hex-editor
@@ -8,6 +8,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Mach-O Executable",
   "version": "1.11",
   "extensions": [

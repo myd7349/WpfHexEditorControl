@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    DICOM Medical Image
    Category:  Medical
    Ext:       .dcm, .dicom
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "DICOM Medical Image",
   "version": "1.13",
   "extensions": [

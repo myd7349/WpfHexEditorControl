@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    TypeScript Source File
    Category:  Programming
    Ext:       .ts, .tsx, .mts, .cts
@@ -8,6 +8,7 @@
    ============================================================ */
 
 {
+  "diffMode": "text",
   "formatName": "TypeScript Source File",
   "version": "2.0",
   "extensions": [

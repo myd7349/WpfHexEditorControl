@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Meridian Lossless Packing
    Category:  Audio
    Ext:       .mlp
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Meridian Lossless Packing",
   "version": "1.12",
   "extensions": [

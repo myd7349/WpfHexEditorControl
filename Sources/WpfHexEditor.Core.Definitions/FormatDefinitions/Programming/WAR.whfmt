@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Web Application Archive
    Category:  Programming
    Ext:       .war
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Web Application Archive",
   "version": "2.0",
   "extensions": [

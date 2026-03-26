@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Syslog Binary Format
    Category:  System
    Ext:       .syslog, .log
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Syslog Binary Format",
   "version": "1.12",
   "extensions": [

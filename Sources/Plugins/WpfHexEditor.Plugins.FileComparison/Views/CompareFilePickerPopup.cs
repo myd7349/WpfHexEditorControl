@@ -17,6 +17,7 @@
 
 using System.IO;
 using System.Runtime.InteropServices;
+using WpfHexEditor.Core.Definitions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -34,6 +35,7 @@ internal sealed class CompareFilePickerPopup : Window
 {
     // ── Controls ──────────────────────────────────────────────────────────────
     private readonly TextBox  _searchBox;
+    private readonly string   _leftFilePath;
     private readonly ListBox  _resultsList;
 
     // ── State ─────────────────────────────────────────────────────────────────
@@ -78,6 +80,7 @@ internal sealed class CompareFilePickerPopup : Window
         IReadOnlyList<string> openFilePaths,
         string?               solutionBasePath)
     {
+        _leftFilePath     = leftFilePath;
         _solutionFiles    = solutionFiles;
         _openFilePaths    = openFilePaths;
         _solutionBasePath = solutionBasePath is not null
@@ -322,6 +325,7 @@ internal sealed class CompareFilePickerPopup : Window
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var icon = new TextBlock
         {
@@ -362,6 +366,31 @@ internal sealed class CompareFilePickerPopup : Window
 
         Grid.SetColumn(namePanel, 1);
         grid.Children.Add(namePanel);
+
+        // Diff mode badge — pair-resolved from both files via whfmt "diffMode" root field.
+        var leftMode  = EmbeddedFormatCatalog.Instance.GetByExtension(Path.GetExtension(_leftFilePath))?.DiffMode;
+        var rightMode = EmbeddedFormatCatalog.Instance.GetByExtension(Path.GetExtension(filePath))?.DiffMode;
+        var label = ResolveDiffMode(leftMode, rightMode) switch
+        {
+            "semantic" => "Structured",
+            "text"     => "Text",
+            _          => "Binary"
+        };
+
+        var badgeText = new TextBlock { Text = label, FontSize = 9, FontWeight = FontWeights.SemiBold };
+        badgeText.SetResourceReference(ForegroundProperty, "CP_SecondaryTextBrush");
+
+        var badge = new Border
+        {
+            CornerRadius      = new CornerRadius(3),
+            Padding           = new Thickness(5, 1, 5, 1),
+            Margin            = new Thickness(8, 0, 2, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child             = badgeText
+        };
+        badge.SetResourceReference(Border.BackgroundProperty, "CP_GroupHeaderBrush");
+        Grid.SetColumn(badge, 2);
+        grid.Children.Add(badge);
 
         // Hover/selection highlight is handled by ItemContainerStyle triggers — no per-item
         // MouseEnter/MouseLeave handlers needed.
@@ -454,6 +483,19 @@ internal sealed class CompareFilePickerPopup : Window
         _tcs.TrySetResult(null);
     }
 
+    /// <summary>
+    /// Resolves the effective diff mode for a file pair.
+    /// Rules: either Binary (or unknown) → Binary; both Structured → Structured; otherwise → Text.
+    /// </summary>
+    private static string ResolveDiffMode(string? left, string? right)
+    {
+        var l = left  ?? "binary";
+        var r = right ?? "binary";
+        if (l == "binary" || r == "binary") return "binary";
+        if (l == "semantic" && r == "semantic") return "semantic";
+        return "text";
+    }
+
     private void BrowseForFile()
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
@@ -461,7 +503,7 @@ internal sealed class CompareFilePickerPopup : Window
             Title  = "Select file to compare",
             Filter = "All files (*.*)|*.*"
         };
-        if (dlg.ShowDialog(this) == true)
+        if (dlg.ShowDialog(Owner) == true)
             Commit(dlg.FileName);
     }
 }

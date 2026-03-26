@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    DER Certificate
    Category:  Certificates
    Ext:       .der, .cer, .crt
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "DER Certificate",
   "version": "1.11",
   "extensions": [

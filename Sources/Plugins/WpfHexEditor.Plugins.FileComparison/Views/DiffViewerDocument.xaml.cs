@@ -24,8 +24,7 @@ namespace WpfHexEditor.Plugins.FileComparison.Views;
 
 public sealed partial class DiffViewerDocument : UserControl
 {
-    private const double RowHeight       = 18.0;
-    private const double BinaryRowHeight = 22.0;
+    private const double RowHeight = 18.0;
 
     private DiffViewerViewModel? _vm;
     private bool                 _scrollSyncing;
@@ -154,7 +153,7 @@ public sealed partial class DiffViewerDocument : UserControl
             var totalRows = _vm.BinaryHexRows.Count;
             if (totalRows == 0) return;
             var rowIdx = (int)(fraction * totalRows);
-            BinaryHexScroll.ScrollToVerticalOffset(Math.Max(0, rowIdx) * BinaryRowHeight);
+            BinaryHexScroll.ScrollToVerticalOffset(Math.Max(0, rowIdx) * BinaryDiffCanvas.EffectiveRowH);
         }
         else
         {
@@ -256,8 +255,9 @@ public sealed partial class DiffViewerDocument : UserControl
         if (rowIdx < 0) return;
         if (_vm?.IsBinaryMode == true)
         {
-            var offset = rowIdx * BinaryRowHeight;
-            BinaryHexScroll.ScrollToVerticalOffset(Math.Max(0, offset - BinaryRowHeight * 3));
+            var rowH   = BinaryDiffCanvas.EffectiveRowH;
+            var offset = rowIdx * rowH;
+            BinaryHexScroll.ScrollToVerticalOffset(Math.Max(0, offset - rowH * 3));
         }
         else
         {

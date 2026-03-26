@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Advanced Systems Format
    Category:  Video
    Ext:       .asf
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Advanced Systems Format",
   "version": "1.12",
   "extensions": [

@@ -320,6 +320,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    /// <summary>True while a non-editor tab (Options, …) is the active document.
+    /// Blocks incidental keyboard-focus returns to background editors from re-filling
+    /// the status bar. Cleared by OnActiveDocumentChanged when a real editor tab is
+    /// selected, and by PreviewMouseDown when the user explicitly clicks an editor pane.</summary>
+    private bool _isNonEditorTabActive;
+
     private IStatusBarContributor? _activeStatusBarContributor;
     public IStatusBarContributor? ActiveStatusBarContributor
     {
@@ -1381,12 +1387,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             displayElement.IsKeyboardFocusWithinChanged += (_, e) =>
             {
-                // IsMouseOver guard: only sync when the mouse is physically inside the
-                // editor pane.  This filters out incidental focus returns that happen
-                // when a non-editor tab (Options…) is clicked and WPF briefly routes
-                // focus back to the last focused element in the other split pane.
-                if ((bool)e.NewValue && displayElement.IsMouseOver)
+                // Skip while a non-editor tab (Options…) is active — this is an
+                // incidental focus return caused by WPF routing focus back to the
+                // last focused element after the non-editor tab header is clicked.
+                // PreviewMouseDown below handles the genuine explicit-click case.
+                if ((bool)e.NewValue && !_isNonEditorTabActive)
                     SyncStatusBarToFocusedEditor(contentId);
+            };
+
+            // Explicit mouse click inside this editor pane: restore status bar even if a
+            // non-editor tab was previously focused.  IsKeyboardFocusWithinChanged is not
+            // reliable for this case because WPF mouse-state (IsMouseOver) may not yet
+            // reflect the new position at the time that event fires.
+            displayElement.PreviewMouseDown += (_, _) =>
+            {
+                if (_isNonEditorTabActive)
+                {
+                    _isNonEditorTabActive = false;
+                    SyncStatusBarToFocusedEditor(contentId);
+                }
             };
         }
     }
@@ -3902,12 +3921,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             if (ActiveDocumentEditor is null || item.ContentId == OptionsContentId)
             {
+                _isNonEditorTabActive      = true;
                 ActiveToolbarContributor   = null;
                 ActiveStatusBarContributor = null;
                 ActiveDocumentEditor       = null;
             }
             return;
         }
+
+        // Real editor tab selected — cancel any non-editor lock.
+        _isNonEditorTabActive = false;
 
         // Content not yet materialized (lazy tab never selected): clear and exit.
         if (!_contentCache.TryGetValue(item.ContentId, out var content))

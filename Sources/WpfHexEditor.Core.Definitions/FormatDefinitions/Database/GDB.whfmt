@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    InterBase/Firebird Database (Legacy)
    Category:  Database
    Ext:       .gdb
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "InterBase/Firebird Database (Legacy)",
   "version": "1.11",
   "extensions": [

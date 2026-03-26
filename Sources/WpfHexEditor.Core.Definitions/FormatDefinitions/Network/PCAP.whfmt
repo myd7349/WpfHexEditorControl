@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    PCAP Network Capture
    Category:  Network
    Ext:       .pcap, .cap
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "PCAP Network Capture",
   "version": "1.12",
   "extensions": [

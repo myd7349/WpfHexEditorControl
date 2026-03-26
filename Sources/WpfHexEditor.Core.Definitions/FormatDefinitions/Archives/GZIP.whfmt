@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    GZIP Compressed File
    Category:  Archives
    Ext:       .gz, .gzip
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "GZIP Compressed File",
   "version": "2.0",
   "extensions": [

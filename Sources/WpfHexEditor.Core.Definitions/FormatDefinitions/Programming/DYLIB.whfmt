@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    macOS Dynamic Library
    Category:  Programming
    Ext:       .dylib
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "macOS Dynamic Library",
   "version": "1.13",
   "extensions": [

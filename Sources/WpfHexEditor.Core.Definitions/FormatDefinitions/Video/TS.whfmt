@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    MPEG Transport Stream
    Category:  Video
    Ext:       .ts, .tsv, .tsa
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "MPEG Transport Stream",
   "version": "1.10",
   "extensions": [

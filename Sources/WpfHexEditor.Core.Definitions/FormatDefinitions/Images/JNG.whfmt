@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    JPEG Network Graphics
    Category:  Images
    Ext:       .jng
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "JPEG Network Graphics",
   "version": "1.12",
   "extensions": [

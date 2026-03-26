@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    NRRD Medical Image
    Category:  Medical
    Ext:       .nrrd, .nhdr
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "NRRD Medical Image",
   "version": "1.12",
   "extensions": [

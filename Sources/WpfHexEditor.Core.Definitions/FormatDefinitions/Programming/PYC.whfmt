@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Python Compiled Bytecode
    Category:  Programming
    Ext:       .pyc, .pyo
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Python Compiled Bytecode",
   "version": "2.3",
   "extensions": [

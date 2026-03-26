@@ -4,8 +4,7 @@
              xmlns:vm="clr-namespace:WpfHexEditor.Plugins.FileComparison.ViewModels"
              xmlns:views="clr-namespace:WpfHexEditor.Plugins.FileComparison.Views"
              xmlns:ctrl="clr-namespace:WpfHexEditor.Plugins.FileComparison.Views.Controls"
-             xmlns:conv="clr-namespace:WpfHexEditor.Plugins.FileComparison.Converters"
-             xmlns:diff="clr-namespace:WpfHexEditor.Core.Diff.Models;assembly=WpfHexEditor.Core.Diff">
+             xmlns:conv="clr-namespace:WpfHexEditor.Plugins.FileComparison.Converters">
 
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter    x:Key="BoolToVis"/>
@@ -56,100 +55,6 @@
                     </ItemsControl>
                 </Border>
             </Grid>
-        </DataTemplate>
-
-        <!-- ── BinaryHexByteCell inner template (used by hex + ascii ItemsControls) ── -->
-        <DataTemplate x:Key="HexCellTemplate" DataType="{x:Type diff:BinaryHexByteCell}">
-            <Border Width="20" Height="22"
-                    Background="{Binding Kind, Converter={StaticResource ByteKindToBrush}}">
-                <TextBlock Text="{Binding HexText}"
-                           FontFamily="Consolas" FontSize="10"
-                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Foreground="{DynamicResource DockMenuForegroundBrush}"/>
-            </Border>
-        </DataTemplate>
-
-        <DataTemplate x:Key="AsciiCellTemplate" DataType="{x:Type diff:BinaryHexByteCell}">
-            <TextBlock Text="{Binding AsciiChar}"
-                       Width="8" FontFamily="Consolas" FontSize="10"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Foreground="{Binding IsPrintable, Converter={StaticResource AsciiColorConv}}"/>
-        </DataTemplate>
-
-        <!-- ── BinaryHexDiffRow row template ── -->
-        <!--
-            Layout per row (height=22, fixed — required for recycling virtualizer):
-            [OffsetL] [16 HexCells L] [16 AsciiCells L] ‖ [OffsetR] [16 HexCells R] [16 AsciiCells R]
-            Collapsed-context rows show only a fold banner.
-        -->
-        <DataTemplate x:Key="BinaryHexRowTemplate" DataType="{x:Type diff:BinaryHexDiffRow}">
-            <Grid Height="22">
-
-                <!-- ── Collapsed context banner (shown when IsCollapsedContext=True) ── -->
-                <Border x:Name="CollapsedBanner"
-                        Background="{DynamicResource BDiff_CollapsedContextBrush}"
-                        Visibility="Collapsed">
-                    <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center"
-                               FontFamily="Consolas" FontSize="10" FontStyle="Italic"
-                               Foreground="{DynamicResource BDiff_CollapsedContextFgBrush}">
-                        <Run Text="&#x2015;&#x2015;&#x2015; "/>
-                        <Run Text="{Binding CollapsedRowCount, Mode=OneWay}"/>
-                        <Run Text=" identical rows &#x2015;&#x2015;&#x2015;"/>
-                    </TextBlock>
-                </Border>
-
-                <!-- ── Normal hex dump row ── -->
-                <Border x:Name="NormalRow"
-                        Background="{DynamicResource BDiff_ContextRowBackgroundBrush}">
-                    <!-- 7 elements per row vs 64 containers previously -->
-                    <StackPanel Orientation="Horizontal">
-
-                        <!-- Left offset -->
-                        <Border Background="{DynamicResource BDiff_OffsetBackgroundBrush}"
-                                Padding="4,0" Width="68">
-                            <TextBlock Text="{Binding LeftOffsetText}"
-                                       FontFamily="Consolas" FontSize="10"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource BDiff_OffsetForegroundBrush}"/>
-                        </Border>
-
-                        <!-- Left hex cells — custom DrawingContext renderer (16×20px) -->
-                        <ctrl:HexRowPresenter Row="{Binding}" Side="Left" Width="320" Height="22"/>
-
-                        <!-- Left ASCII — custom DrawingContext renderer (16×8px) -->
-                        <ctrl:AsciiRowPresenter Row="{Binding}" Side="Left"
-                                                Width="128" Height="22" Margin="4,0,0,0"/>
-
-                        <!-- Centre separator -->
-                        <Border Width="2" Margin="6,2"
-                                Background="{DynamicResource BDiff_SeparatorBrush}"/>
-
-                        <!-- Right offset -->
-                        <Border Background="{DynamicResource BDiff_OffsetBackgroundBrush}"
-                                Padding="4,0" Width="68">
-                            <TextBlock Text="{Binding RightOffsetText}"
-                                       FontFamily="Consolas" FontSize="10"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource BDiff_OffsetForegroundBrush}"/>
-                        </Border>
-
-                        <!-- Right hex cells -->
-                        <ctrl:HexRowPresenter Row="{Binding}" Side="Right" Width="320" Height="22"/>
-
-                        <!-- Right ASCII -->
-                        <ctrl:AsciiRowPresenter Row="{Binding}" Side="Right"
-                                                Width="128" Height="22" Margin="4,0,0,0"/>
-
-                    </StackPanel>
-                </Border>
-
-            </Grid>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding IsCollapsedContext}" Value="True">
-                    <Setter TargetName="CollapsedBanner" Property="Visibility" Value="Visible"/>
-                    <Setter TargetName="NormalRow"       Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
-            </DataTemplate.Triggers>
         </DataTemplate>
 
     </UserControl.Resources>
@@ -386,31 +291,18 @@
             </ScrollViewer>
 
             <!-- ── Binary hex dump pane (Grid.Column spans 0-2, hidden in text mode) ── -->
+            <!-- CanContentScroll="True" routes scroll events to BinaryDiffCanvas.IScrollInfo -->
             <ScrollViewer x:Name="BinaryHexScroll"
                           Grid.Column="0" Grid.ColumnSpan="3"
                           ScrollChanged="OnBinaryHexScrollChanged"
+                          CanContentScroll="True"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           Visibility="{Binding IsBinaryMode, Converter={StaticResource BoolToVis}}">
-                <ItemsControl x:Name="BinaryHexList"
-                              ItemsSource="{Binding BinaryHexRows}"
-                              ItemTemplate="{StaticResource BinaryHexRowTemplate}"
-                              ScrollViewer.CanContentScroll="True"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling"
-                              VirtualizingPanel.ScrollUnit="Item"
-                              Focusable="False">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemContainerStyle>
-                        <Style TargetType="ContentPresenter">
-                            <Setter Property="Height" Value="22"/>
-                        </Style>
-                    </ItemsControl.ItemContainerStyle>
-                </ItemsControl>
+                <ctrl:BinaryDiffCanvas x:Name="BinaryDiffCanvas"
+                                       Rows="{Binding BinaryHexRows}"
+                                       ZoomLevel="{Binding ZoomLevel, Mode=TwoWay}"
+                                       Focusable="True"/>
             </ScrollViewer>
 
             <!-- Loading overlay — shown while background row-build is running -->

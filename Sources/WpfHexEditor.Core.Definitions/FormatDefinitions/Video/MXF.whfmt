@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Material Exchange Format
    Category:  Video
    Ext:       .mxf
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Material Exchange Format",
   "version": "2.3",
   "extensions": [

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    SQLite Write-Ahead Log
    Category:  Database
    Ext:       .wal, -wal
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "SQLite Write-Ahead Log",
   "version": "1.11",
   "extensions": [

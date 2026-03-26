@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Windows Media Video
    Category:  Video
    Ext:       .wmv, .wma, .asf
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Windows Media Video",
   "version": "1.11",
   "extensions": [

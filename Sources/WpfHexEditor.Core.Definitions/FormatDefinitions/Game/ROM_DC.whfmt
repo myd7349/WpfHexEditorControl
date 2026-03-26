@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Sega Dreamcast Disc Image
    Category:  Game
    Ext:       .gdi, .cdi, .iso
@@ -9,6 +9,7 @@
    Updated:   2026-03-01
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Sega Dreamcast Disc Image",
   "version": "1.12",
   "extensions": [

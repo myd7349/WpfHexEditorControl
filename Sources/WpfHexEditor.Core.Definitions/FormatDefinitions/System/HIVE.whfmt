@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Windows Registry Hive
    Category:  System
    Ext:       , .hiv
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Windows Registry Hive",
   "version": "1.11",
   "extensions": [

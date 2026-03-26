@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    PlayStation 2 Disc Image
    Category:  Game
    Ext:       .iso, .bin
@@ -9,6 +9,7 @@
    Updated:   2026-03-01
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "PlayStation 2 Disc Image",
   "version": "1.12",
   "extensions": [

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Configuration File
    Category:  Programming
    Ext:       .ini, .cfg, .conf, .config, .properties, .env, .inf
@@ -8,6 +8,7 @@
    ============================================================ */
 
 {
+  "diffMode": "binary",
   "formatName": "Configuration File",
   "version": "1.0",
   "extensions": [".ini", ".cfg", ".conf", ".config", ".properties", ".env", ".inf"],

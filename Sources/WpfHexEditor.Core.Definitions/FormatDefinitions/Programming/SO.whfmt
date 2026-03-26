@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Linux Shared Object
    Category:  Programming
    Ext:       .so
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Linux Shared Object",
   "version": "1.13",
   "extensions": [

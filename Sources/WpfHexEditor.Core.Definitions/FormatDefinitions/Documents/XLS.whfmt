@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Excel Workbook (Legacy)
    Category:  Documents
    Ext:       .xls
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Excel Workbook (Legacy)",
   "version": "1.11",
   "extensions": [

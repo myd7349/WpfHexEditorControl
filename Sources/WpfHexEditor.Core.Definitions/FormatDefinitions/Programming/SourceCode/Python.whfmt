@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Python Source File
    Category:  Programming
    Ext:       .py, .pyw, .pyi
@@ -8,6 +8,7 @@
    ============================================================ */
 
 {
+  "diffMode": "text",
   "formatName": "Python Source File",
   "version": "2.0",
   "extensions": [".py", ".pyw", ".pyi"],

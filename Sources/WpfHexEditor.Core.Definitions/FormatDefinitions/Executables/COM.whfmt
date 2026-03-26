@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    DOS COM Executable
    Category:  Executables
    Ext:       .com
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "DOS COM Executable",
   "version": "2.3",
   "extensions": [

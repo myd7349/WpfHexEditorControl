@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Qpress Compression
    Category:  Archives
    Ext:       .qp, .qpress
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Qpress Compression",
   "version": "1.12",
   "extensions": [

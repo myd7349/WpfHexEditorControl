@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    FITS Astronomical Data
    Category:  Science
    Ext:       .fits, .fit
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "FITS Astronomical Data",
   "version": "1.12",
   "extensions": [

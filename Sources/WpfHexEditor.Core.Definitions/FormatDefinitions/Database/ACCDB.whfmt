@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Microsoft Access 2007+ Database
    Category:  Database
    Ext:       .accdb
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Microsoft Access 2007+ Database",
   "version": "1.12",
   "extensions": [

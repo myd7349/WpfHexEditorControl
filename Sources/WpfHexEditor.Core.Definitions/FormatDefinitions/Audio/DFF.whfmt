@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    DSD Interchange File Format
    Category:  Audio
    Ext:       .dff
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "DSD Interchange File Format",
   "version": "1.12",
   "extensions": [

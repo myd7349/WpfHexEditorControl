@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    MGH/MGZ Medical Image
    Category:  Medical
    Ext:       .mgh, .mgz
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "MGH/MGZ Medical Image",
   "version": "1.12",
   "extensions": [

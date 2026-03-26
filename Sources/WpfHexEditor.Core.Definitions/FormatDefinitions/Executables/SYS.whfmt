@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Windows System Driver
    Category:  Executables
    Ext:       .sys
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Windows System Driver",
   "version": "1.12",
   "extensions": [

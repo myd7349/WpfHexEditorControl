@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    PowerPoint Presentation
    Category:  Documents
    Ext:       .pptx
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "PowerPoint Presentation",
   "version": "2.0",
   "extensions": [

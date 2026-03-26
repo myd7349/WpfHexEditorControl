@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Markdown Document
    Category:  Documents
    Ext:       .md, .markdown, .mkd, .mdx
@@ -8,6 +8,7 @@
    ============================================================ */
 
 {
+  "diffMode": "binary",
   "formatName": "Markdown Document",
   "version": "1.0",
   "extensions": [".md", ".markdown", ".mkd", ".mdx"],

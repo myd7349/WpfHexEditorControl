@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Multiple-image Network Graphics
    Category:  Images
    Ext:       .mng
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Multiple-image Network Graphics",
   "version": "1.12",
   "extensions": [

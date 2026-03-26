@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Lotus Notes NSF Database
    Category:  Database
    Ext:       .nsf
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Lotus Notes NSF Database",
   "version": "1.10",
   "extensions": [

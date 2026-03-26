@@ -62,6 +62,7 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     private bool             _useBlockAlignment   = false;
     private bool             _isRecomparing       = false;
     private bool             _isLoading           = false;
+    private double           _zoomLevel           = 1.0;
     private CancellationTokenSource? _rebuildCts;
 
     // ── Services ─────────────────────────────────────────────────────────────
@@ -162,6 +163,13 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     {
         get => _isLoading;
         private set => SetField(ref _isLoading, value);
+    }
+
+    /// <summary>Canvas zoom level (0.5–4.0, default 1.0). TwoWay-bound to BinaryDiffCanvas.ZoomLevel.</summary>
+    public double ZoomLevel
+    {
+        get => _zoomLevel;
+        set => SetField(ref _zoomLevel, Math.Clamp(value, 0.5, 4.0));
     }
 
     // ── Binary diff mode ─────────────────────────────────────────────────────

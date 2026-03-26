@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    PFRO Registry Data
    Category:  System
    Editor:    hex-editor
@@ -8,6 +8,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "PFRO Registry Data",
   "version": "1.12",
   "extensions": [

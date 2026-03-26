@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    PEM Certificate
    Category:  Certificates
    Ext:       .pem, .crt, .cer
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "PEM Certificate",
   "version": "1.11",
   "extensions": [

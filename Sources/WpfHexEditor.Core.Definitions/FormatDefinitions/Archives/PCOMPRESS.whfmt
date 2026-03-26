@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Parallel Compression Archive
    Category:  Archives
    Ext:       .pz
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Parallel Compression Archive",
   "version": "1.12",
   "extensions": [

@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Photoshop Document
    Category:  Images
    Ext:       .psd, .psb
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Photoshop Document",
   "version": "2.0",
   "extensions": [

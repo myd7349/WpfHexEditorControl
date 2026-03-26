@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    PostScript Document
    Category:  Documents
    Ext:       .ps, .eps
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "PostScript Document",
   "version": "1.12",
   "extensions": [

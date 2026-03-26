@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Virtual Memory Dump
    Category:  System
    Ext:       .vmem, .vmsn
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Virtual Memory Dump",
   "version": "1.12",
   "extensions": [

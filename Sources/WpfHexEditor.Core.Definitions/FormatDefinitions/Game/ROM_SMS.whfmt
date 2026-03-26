@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Sega Master System ROM
    Category:  Game
    Ext:       .sms, .gg
@@ -9,6 +9,7 @@
    Updated:   2026-03-01
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Sega Master System ROM",
   "version": "1.11",
   "extensions": [

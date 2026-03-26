@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Microsoft Network Monitor
    Category:  Network
    Ext:       .cap
@@ -9,6 +9,7 @@
    Updated:   2026-02-24
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Microsoft Network Monitor",
   "version": "1.12",
   "extensions": [

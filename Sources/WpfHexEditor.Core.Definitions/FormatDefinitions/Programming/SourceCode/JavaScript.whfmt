@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    JavaScript Source File
    Category:  Programming
    Ext:       .js, .mjs, .cjs, .jsx
@@ -8,6 +8,7 @@
    ============================================================ */
 
 {
+  "diffMode": "text",
   "formatName": "JavaScript Source File",
   "version": "2.0",
   "extensions": [".js", ".mjs", ".cjs", ".jsx"],

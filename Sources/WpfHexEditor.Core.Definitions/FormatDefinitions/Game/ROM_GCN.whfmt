@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Nintendo GameCube Disc
    Category:  Game
    Ext:       .gcm, .iso
@@ -9,6 +9,7 @@
    Updated:   2026-03-01
    ============================================================ */
 {
+  "diffMode": "binary",
   "formatName": "Nintendo GameCube Disc",
   "version": "2.5",
   "extensions": [
