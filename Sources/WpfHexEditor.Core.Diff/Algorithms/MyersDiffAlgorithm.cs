@@ -432,11 +432,12 @@ public sealed class MyersDiffAlgorithm : IDiffAlgorithm
                 case TextLineKind.InsertedRight: ins++; break;
             }
         }
+        int modPairs = mod / 2; // FlushPaired always emits 2 TextDiffLine rows per conceptual modified pair
         return new TextDiffStats
         {
-            TotalLines    = lines.Count,
+            TotalLines    = eq + modPairs + del + ins,
             EqualLines    = eq,
-            ModifiedLines = mod,
+            ModifiedLines = modPairs,
             DeletedLines  = del,
             InsertedLines = ins
         };
