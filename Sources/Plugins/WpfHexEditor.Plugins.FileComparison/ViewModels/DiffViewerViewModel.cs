@@ -17,6 +17,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows.Input;
+using WpfHexEditor.Core;
 using WpfHexEditor.Core.Diff.Models;
 using WpfHexEditor.Core.Diff.Services;
 using WpfHexEditor.Core.Events;
@@ -78,14 +79,19 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     public FormatDetectionResult? LeftFormat
     {
         get => _leftFormat;
-        private set => SetField(ref _leftFormat, value);
+        private set { SetField(ref _leftFormat, value); OnPropertyChanged(nameof(LeftFormatBlocks)); }
     }
 
     public FormatDetectionResult? RightFormat
     {
         get => _rightFormat;
-        private set => SetField(ref _rightFormat, value);
+        private set { SetField(ref _rightFormat, value); OnPropertyChanged(nameof(RightFormatBlocks)); }
     }
+
+    /// <summary>Format-field overlay blocks for the left file, sourced from the .whfmt interpreter.</summary>
+    public IReadOnlyList<CustomBackgroundBlock>? LeftFormatBlocks  => _leftFormat?.Blocks;
+    /// <summary>Format-field overlay blocks for the right file, sourced from the .whfmt interpreter.</summary>
+    public IReadOnlyList<CustomBackgroundBlock>? RightFormatBlocks => _rightFormat?.Blocks;
 
     /// <summary>Format name badge text for the left file (e.g. "PE/EXE · 97%").</summary>
     public string LeftFormatBadge  => BuildFormatBadge(_leftFormat);

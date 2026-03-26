@@ -11,11 +11,13 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Core;
 using WpfHexEditor.Core.Diff.Models;
 
 namespace WpfHexEditor.Plugins.FileComparison.Views.Controls;
@@ -71,6 +73,11 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
     private readonly Dictionary<string, FormattedText> _offsetFtCache = new(capacity: 32);
     private readonly Dictionary<int,    FormattedText> _collFtCache   = new(capacity: 8);
 
+    // ── Format-field overlay sorted caches ───────────────────────────────────
+
+    private List<CustomBackgroundBlock>? _sortedBlocksLeft;
+    private List<CustomBackgroundBlock>? _sortedBlocksRight;
+
     // ── Render-time measurement ────────────────────────────────────────────────
 
     private readonly Stopwatch _renderStopwatch = new();
@@ -110,6 +117,33 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
         get => (double)GetValue(ZoomLevelProperty);
         set => SetValue(ZoomLevelProperty, value);
     }
+
+    public static readonly DependencyProperty FormatBlocksLeftProperty =
+        DependencyProperty.Register(
+            nameof(FormatBlocksLeft),
+            typeof(IReadOnlyList<CustomBackgroundBlock>),
+            typeof(BinaryDiffCanvas),
+            new FrameworkPropertyMetadata(null, OnFormatBlocksChanged));
+
+    public static readonly DependencyProperty FormatBlocksRightProperty =
+        DependencyProperty.Register(
+            nameof(FormatBlocksRight),
+            typeof(IReadOnlyList<CustomBackgroundBlock>),
+            typeof(BinaryDiffCanvas),
+            new FrameworkPropertyMetadata(null, OnFormatBlocksChanged));
+
+    public IReadOnlyList<CustomBackgroundBlock>? FormatBlocksLeft
+    {
+        get => (IReadOnlyList<CustomBackgroundBlock>?)GetValue(FormatBlocksLeftProperty);
+        set => SetValue(FormatBlocksLeftProperty, value);
+    }
+
+    public IReadOnlyList<CustomBackgroundBlock>? FormatBlocksRight
+    {
+        get => (IReadOnlyList<CustomBackgroundBlock>?)GetValue(FormatBlocksRightProperty);
+        set => SetValue(FormatBlocksRightProperty, value);
+    }
+
 
     /// <summary>Raised when <see cref="ZoomLevel"/> changes (mirrors HexViewport pattern).</summary>
     public event Action<BinaryDiffCanvas, double>? ZoomLevelChanged;
@@ -240,6 +274,24 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
         base.OnPreviewMouseWheel(e);
     }
 
+    // ── Format blocks change ──────────────────────────────────────────────────
+
+    private static void OnFormatBlocksChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var c = (BinaryDiffCanvas)d;
+        var sorted = SortBlocks(e.NewValue as IReadOnlyList<CustomBackgroundBlock>);
+        if (e.Property == FormatBlocksLeftProperty)
+            c._sortedBlocksLeft  = sorted;
+        else
+            c._sortedBlocksRight = sorted;
+        c.InvalidateVisual();
+    }
+
+    private static List<CustomBackgroundBlock>? SortBlocks(IReadOnlyList<CustomBackgroundBlock>? source)
+        => source is { Count: > 0 }
+            ? source.OrderBy(b => b.StartOffset).ToList()
+            : null;
+
     // ── Rows change ──────────────────────────────────────────────────────────
 
     private static void OnRowsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -325,8 +377,8 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
 
         // ── Left side ────────────────────────────────────────────────────────
         DrawOffset(dc, row.LeftOffsetText, 0, y);
-        DrawHexCells(dc, row.LeftCells, offsetW, y);
-        DrawAsciiCells(dc, row.LeftCells, offsetW + n * cellW, y);
+        DrawHexCells  (dc, row.LeftCells, offsetW,             y, row.LeftOffset,  _sortedBlocksLeft);
+        DrawAsciiCells(dc, row.LeftCells, offsetW + n * cellW, y, row.LeftOffset,  _sortedBlocksLeft);
 
         // ── Separator ────────────────────────────────────────────────────────
         double sepX = offsetW + n * cellW + n * asciiW;
@@ -336,8 +388,8 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
         // ── Right side ───────────────────────────────────────────────────────
         double rx = sepX + sepW;
         DrawOffset(dc, row.RightOffsetText, rx, y);
-        DrawHexCells(dc, row.RightCells, rx + offsetW, y);
-        DrawAsciiCells(dc, row.RightCells, rx + offsetW + n * cellW, y);
+        DrawHexCells  (dc, row.RightCells, rx + offsetW,             y, row.RightOffset, _sortedBlocksRight);
+        DrawAsciiCells(dc, row.RightCells, rx + offsetW + n * cellW, y, row.RightOffset, _sortedBlocksRight);
     }
 
     private void DrawOffset(DrawingContext dc, string text, double x, double y)
@@ -352,7 +404,8 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
     }
 
     private void DrawHexCells(DrawingContext dc,
-        IReadOnlyList<BinaryHexByteCell> cells, double x, double y)
+        IReadOnlyList<BinaryHexByteCell> cells, double x, double y,
+        long? baseOffset, List<CustomBackgroundBlock>? formatBlocks)
     {
         var cellW = EffectiveCellW;
         var rowH  = EffectiveRowH;
@@ -362,11 +415,19 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
             var cell = cells[i];
             double cx = x + i * cellW;
 
-            // Background
+            // 1. Diff colour background
             var bg = ResolveCellBg(cell.Kind);
             dc.DrawRectangle(bg, null, new Rect(cx, y, cellW, rowH));
 
-            // Text (skip blank padding)
+            // 2. Format field overlay (semi-transparent, on top of diff colour)
+            if (baseOffset.HasValue && formatBlocks is { Count: > 0 })
+            {
+                var fmtBlock = FindBlock(formatBlocks, baseOffset.Value + i);
+                if (fmtBlock is not null)
+                    dc.DrawRectangle(fmtBlock.GetTransparentBrush(), null, new Rect(cx, y, cellW, rowH));
+            }
+
+            // 3. Text (skip blank padding)
             if (cell.HexText.Length > 0 && cell.HexText != "  ")
             {
                 var cache = i % 2 == 0 ? _hexFt1Cache : _hexFt2Cache;
@@ -378,7 +439,8 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
     }
 
     private void DrawAsciiCells(DrawingContext dc,
-        IReadOnlyList<BinaryHexByteCell> cells, double x, double y)
+        IReadOnlyList<BinaryHexByteCell> cells, double x, double y,
+        long? baseOffset, List<CustomBackgroundBlock>? formatBlocks)
     {
         var asciiW = EffectiveAsciiW;
         var rowH   = EffectiveRowH;
@@ -388,8 +450,17 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
             var cell = cells[i];
             if (cell.Kind == BinaryByteKind.Padding) continue;
 
-            double cx  = x + i * asciiW;
-            var    ft  = GetOrCreateFt(_asciiFtCache, cell.AsciiChar, _asciiFgBrush!);
+            double cx = x + i * asciiW;
+
+            // Format field overlay on ASCII column
+            if (baseOffset.HasValue && formatBlocks is { Count: > 0 })
+            {
+                var fmtBlock = FindBlock(formatBlocks, baseOffset.Value + i);
+                if (fmtBlock is not null)
+                    dc.DrawRectangle(fmtBlock.GetTransparentBrush(), null, new Rect(cx, y, asciiW, rowH));
+            }
+
+            var ft = GetOrCreateFt(_asciiFtCache, cell.AsciiChar, _asciiFgBrush!);
             dc.DrawText(ft, new Point(cx, y + rowH / 2 - ft.Height / 2));
         }
     }
@@ -439,6 +510,67 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
         _asciiFtCache.Clear();
         _offsetFtCache.Clear();
         _collFtCache.Clear();
+    }
+
+    // ── Format block lookup ───────────────────────────────────────────────────
+
+    /// <summary>Binary search on a StartOffset-sorted list. Returns the block covering <paramref name="offset"/>, or null.</summary>
+    private static CustomBackgroundBlock? FindBlock(List<CustomBackgroundBlock> blocks, long offset)
+    {
+        int lo = 0, hi = blocks.Count - 1;
+        while (lo <= hi)
+        {
+            int mid = (lo + hi) >> 1;
+            var b   = blocks[mid];
+            if      (offset < b.StartOffset) hi = mid - 1;
+            else if (offset >= b.StopOffset) lo = mid + 1;
+            else return b;
+        }
+        return null;
+    }
+
+    // ── Hover tooltip ─────────────────────────────────────────────────────────
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        var tip = ResolveTooltipAtPoint(e.GetPosition(this));
+        ToolTip = tip is not null ? new ToolTip { Content = tip } : null;
+    }
+
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        ToolTip = null;
+    }
+
+    private string? ResolveTooltipAtPoint(Point pos)
+    {
+        var rows = Rows;
+        if (rows is null) return null;
+
+        double rowH      = EffectiveRowH;
+        double adjustedX = pos.X + _horizontalOffset;
+        int    rowIdx    = (int)((_verticalOffset + pos.Y) / rowH);
+        if (rowIdx < 0 || rowIdx >= rows.Count) return null;
+
+        var row    = rows[rowIdx];
+        var n      = BinaryHexDiffRow.BytesPerRow;
+        double cellW   = EffectiveCellW;
+        double offsetW = EffectiveOffsetW;
+        double leftEnd = offsetW + n * cellW + n * EffectiveAsciiW;
+        double rightStart = leftEnd + EffectiveSepW;
+
+        bool   isLeft    = adjustedX < leftEnd;
+        long?  baseOff   = isLeft ? row.LeftOffset  : row.RightOffset;
+        var    blocks    = isLeft ? _sortedBlocksLeft : _sortedBlocksRight;
+        if (baseOff is null || blocks is null) return null;
+
+        double relX    = adjustedX - (isLeft ? offsetW : rightStart + offsetW);
+        int    cellIdx = (int)(relX / cellW);
+        if (cellIdx < 0 || cellIdx >= n) return null;
+
+        return FindBlock(blocks, baseOff.Value + cellIdx)?.Description;
     }
 
     // ── Brush resolution ─────────────────────────────────────────────────────

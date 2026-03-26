@@ -302,6 +302,8 @@
                 <ctrl:BinaryDiffCanvas x:Name="BinaryDiffCanvas"
                                        Rows="{Binding BinaryHexRows}"
                                        ZoomLevel="{Binding ZoomLevel, Mode=TwoWay}"
+                                       FormatBlocksLeft="{Binding LeftFormatBlocks}"
+                                       FormatBlocksRight="{Binding RightFormatBlocks}"
                                        Focusable="True"/>
             </ScrollViewer>
 
