@@ -125,7 +125,10 @@ public sealed class DiffHubViewModel : INotifyPropertyChanged
 
         try
         {
-            var result = await _engine.CompareAsync(_file1Path, _file2Path, ct: ct);
+            // RetainFullBytes=true so BinaryHexRowBuilder can reconstruct equal gaps for the hex view.
+            var binOpts = new BinaryDiffOptions { RetainFullBytes = true };
+            var result = await _engine.CompareAsync(_file1Path, _file2Path,
+                binaryOptions: binOpts, ct: ct);
             LastResult = result;
 
             BuildStatusText(result);

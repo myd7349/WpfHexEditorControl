@@ -15,9 +15,17 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Windows.Input;
 using WpfHexEditor.Core.Diff.Models;
+using WpfHexEditor.Core.Diff.Services;
+using WpfHexEditor.Core.Events;
+using WpfHexEditor.Core.Services;
+using WpfHexEditor.Editor.Core.Helpers;
 using WpfHexEditor.SDK.Commands;
+
+// Alias to avoid ambiguity with System.Windows.Input.ICommand
+using DiffEngineService = WpfHexEditor.Core.Diff.Services.DiffEngine;
 
 namespace WpfHexEditor.Plugins.FileComparison.ViewModels;
 
@@ -47,9 +55,54 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     // ── State ────────────────────────────────────────────────────────────────
 
     private DiffEngineResult _result;
-    private int              _currentDiffIndex = -1;
-    private bool             _isSideBySide     = true;
-    private string           _filterMode       = "All";
+    private int              _currentDiffIndex   = -1;
+    private bool             _isSideBySide        = true;
+    private string           _filterMode          = "All";
+    private int              _binaryContextLines  = 3;
+    private bool             _useBlockAlignment   = false;
+    private bool             _isRecomparing       = false;
+    private bool             _isLoading           = false;
+    private CancellationTokenSource? _rebuildCts;
+
+    // ── Services ─────────────────────────────────────────────────────────────
+
+    private readonly DiffEngineService     _engine          = new();
+    private readonly FormatDetectionService _formatDetector = new();
+
+    // ── Format detection ──────────────────────────────────────────────────────
+
+    private FormatDetectionResult? _leftFormat;
+    private FormatDetectionResult? _rightFormat;
+
+    public FormatDetectionResult? LeftFormat
+    {
+        get => _leftFormat;
+        private set => SetField(ref _leftFormat, value);
+    }
+
+    public FormatDetectionResult? RightFormat
+    {
+        get => _rightFormat;
+        private set => SetField(ref _rightFormat, value);
+    }
+
+    /// <summary>Format name badge text for the left file (e.g. "PE/EXE · 97%").</summary>
+    public string LeftFormatBadge  => BuildFormatBadge(_leftFormat);
+    /// <summary>Format name badge text for the right file.</summary>
+    public string RightFormatBadge => BuildFormatBadge(_rightFormat);
+
+    public bool HasLeftFormat  => _leftFormat is { Success: true };
+    public bool HasRightFormat => _rightFormat is { Success: true };
+
+    private static string BuildFormatBadge(FormatDetectionResult? r)
+    {
+        if (r is not { Success: true, Format: { } fmt }) return string.Empty;
+        return $"{fmt.FormatName} · {r.Confidence:P0}";
+    }
+
+    // ── Stats panel ───────────────────────────────────────────────────────────
+
+    public BinaryStatsPanelViewModel StatsPanel { get; } = new();
 
     // ── Diff-block index for navigation ──────────────────────────────────────
 
@@ -71,6 +124,13 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
         FilterModifiedCommand = new RelayCommand(_ => FilterMode = "Modified");
         FilterAddedCommand    = new RelayCommand(_ => FilterMode = "Added");
         FilterRemovedCommand  = new RelayCommand(_ => FilterMode = "Removed");
+        ExpandContextCommand  = new RelayCommand(_ => BinaryContextLines = int.MaxValue);
+        RecompareCommand      = new RelayCommand(_ => _ = RecompareAsync(), _ => !_isRecomparing);
+        ToggleStatsCommand    = new RelayCommand(_ => StatsPanel.IsVisible = !StatsPanel.IsVisible);
+
+        UpdateStatsPanel(_result);
+        _ = RunEntropyAsync(_result);
+        _ = RunFormatDetectionAsync(_result);
     }
 
     // ── Result metadata ──────────────────────────────────────────────────────
@@ -93,8 +153,36 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
 
     // ── Row lists ────────────────────────────────────────────────────────────
 
-    public ObservableCollection<DiffLineRow> LeftRows  { get; } = [];
-    public ObservableCollection<DiffLineRow> RightRows { get; } = [];
+    public ObservableCollection<DiffLineRow>          LeftRows      { get; } = [];
+    public ObservableCollection<DiffLineRow>          RightRows     { get; } = [];
+    public BulkObservableCollection<BinaryHexDiffRow> BinaryHexRows { get; } = new();
+
+    /// <summary>True while binary hex rows are being built on a background thread.</summary>
+    public bool IsLoading
+    {
+        get => _isLoading;
+        private set => SetField(ref _isLoading, value);
+    }
+
+    // ── Binary diff mode ─────────────────────────────────────────────────────
+
+    /// <summary><see langword="true"/> when the result is a binary comparison (hex dump view).</summary>
+    public bool IsBinaryMode => _result.EffectiveMode == DiffMode.Binary;
+
+    /// <summary>
+    /// Number of equal rows to keep on each side of a diff row in the hex dump view.
+    /// Set to <see cref="int.MaxValue"/> to show all rows (no folding).
+    /// </summary>
+    public int BinaryContextLines
+    {
+        get => _binaryContextLines;
+        set
+        {
+            if (!SetField(ref _binaryContextLines, value)) return;
+            if (_result.BinaryResult is { } bin)
+                StartRebuildAsync(bin);
+        }
+    }
 
     // ── Navigation ───────────────────────────────────────────────────────────
 
@@ -116,13 +204,37 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     public bool CanGoPrev      => _currentDiffIndex > 0;
     public bool CanGoNext      => _currentDiffIndex < DiffBlockCount - 1;
 
-    public ICommand PrevDiffCommand   { get; }
-    public ICommand NextDiffCommand   { get; }
-    public ICommand ToggleViewCommand { get; }
-    public ICommand FilterAllCommand      { get; }
-    public ICommand FilterModifiedCommand { get; }
-    public ICommand FilterAddedCommand    { get; }
-    public ICommand FilterRemovedCommand  { get; }
+    public ICommand PrevDiffCommand      { get; }
+    public ICommand NextDiffCommand      { get; }
+    public ICommand ToggleViewCommand    { get; }
+    public ICommand FilterAllCommand     { get; }
+    public ICommand FilterModifiedCommand{ get; }
+    public ICommand FilterAddedCommand   { get; }
+    public ICommand FilterRemovedCommand { get; }
+    /// <summary>Expands all collapsed context rows (sets <see cref="BinaryContextLines"/> to ∞).</summary>
+    public ICommand ExpandContextCommand { get; }
+    /// <summary>Re-runs the binary comparison with the current algorithm setting.</summary>
+    public ICommand RecompareCommand     { get; }
+    /// <summary>Toggles the stats/entropy panel drawer.</summary>
+    public ICommand ToggleStatsCommand   { get; }
+
+    // ── Block-alignment toggle ────────────────────────────────────────────────
+
+    /// <summary>
+    /// When <see langword="true"/>, binary comparison uses the block-aligned Rabin-Karp+LCS
+    /// algorithm; when <see langword="false"/>, uses the fast byte-scan algorithm.
+    /// Toggling automatically triggers a re-compare.
+    /// </summary>
+    public bool UseBlockAlignment
+    {
+        get => _useBlockAlignment;
+        set
+        {
+            if (!SetField(ref _useBlockAlignment, value)) return;
+            if (IsBinaryMode)
+                _ = RecompareAsync();
+        }
+    }
 
     /// <summary>Row index of the current diff block (used by the view to scroll).</summary>
     public int CurrentDiffRowIndex => _diffBlockStartIndices.Count > 0 && _currentDiffIndex >= 0
@@ -153,12 +265,96 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
         _result = result;
         LeftRows.Clear();
         RightRows.Clear();
+        BinaryHexRows.Clear();
         _diffBlockStartIndices.Clear();
         _currentDiffIndex = -1;
         BuildRows(result);
         BuildDiffBlockIndex();
         ComputeStats(result);
+        UpdateStatsPanel(result);
+        _ = RunEntropyAsync(result);
+        _ = RunFormatDetectionAsync(result);
         OnPropertyChanged(string.Empty);   // refresh all
+    }
+
+    // ── Recompare ─────────────────────────────────────────────────────────────
+
+    private void UpdateStatsPanel(DiffEngineResult result)
+    {
+        StatsPanel.LeftFileName  = Path.GetFileName(result.LeftPath);
+        StatsPanel.RightFileName = Path.GetFileName(result.RightPath);
+        if (result.BinaryResult is { } bin)
+        {
+            StatsPanel.LeftFileSize  = bin.Stats.LeftFileSize;
+            StatsPanel.RightFileSize = bin.Stats.RightFileSize;
+            StatsPanel.Stats         = bin.Stats;
+        }
+    }
+
+    private async Task RunFormatDetectionAsync(DiffEngineResult result)
+    {
+        if (result.BinaryResult is not { FullLeftBytes: { } leftBytes, FullRightBytes: { } rightBytes })
+            return;
+
+        var leftName  = Path.GetFileName(result.LeftPath);
+        var rightName = Path.GetFileName(result.RightPath);
+
+        // Cap to first 4 KB — all magic-byte signatures are within the file header.
+        const int MaxDetectBytes = 4096;
+        var leftHeader  = leftBytes.Length  > MaxDetectBytes ? leftBytes[..MaxDetectBytes]  : leftBytes;
+        var rightHeader = rightBytes.Length > MaxDetectBytes ? rightBytes[..MaxDetectBytes] : rightBytes;
+
+        var (lFmt, rFmt) = await Task.Run(() =>
+        {
+            var l = _formatDetector.DetectFormat(leftHeader,  leftName);
+            var r = _formatDetector.DetectFormat(rightHeader, rightName);
+            return (l, r);
+        }).ConfigureAwait(false);
+
+        LeftFormat  = lFmt;
+        RightFormat = rFmt;
+        StatsPanel.LeftFormat  = lFmt;
+        StatsPanel.RightFormat = rFmt;
+        OnPropertyChanged(nameof(LeftFormatBadge));
+        OnPropertyChanged(nameof(RightFormatBadge));
+        OnPropertyChanged(nameof(HasLeftFormat));
+        OnPropertyChanged(nameof(HasRightFormat));
+    }
+
+    private async Task RunEntropyAsync(DiffEngineResult result)
+    {
+        if (result.BinaryResult is not { FullLeftBytes: { } leftBytes, FullRightBytes: { } rightBytes })
+            return;
+
+        var analysis = await Task.Run(() =>
+            WpfHexEditor.Core.Diff.Services.BinaryEntropyAnalyzer.Analyze(leftBytes, rightBytes))
+            .ConfigureAwait(false);
+
+        StatsPanel.Analysis = analysis;
+    }
+
+    private async Task RecompareAsync()
+    {
+        if (_isRecomparing) return;
+        _isRecomparing = true;
+        CommandManager.InvalidateRequerySuggested();
+        try
+        {
+            var opts = new BinaryDiffOptions
+            {
+                RetainFullBytes   = true,
+                UseBlockAlignment = _useBlockAlignment,
+                BlockSize         = 64
+            };
+            var result = await _engine.CompareAsync(_result.LeftPath, _result.RightPath,
+                binaryOptions: opts).ConfigureAwait(false);
+            LoadResult(result);
+        }
+        finally
+        {
+            _isRecomparing = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
     }
 
     // ── Build logic ───────────────────────────────────────────────────────────
@@ -249,30 +445,72 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     }
 
     private void BuildBinaryRows(BinaryDiffResult bin)
-    {
-        foreach (var region in bin.Regions)
-        {
-            var kind = region.Kind.ToString();
-            var leftContent  = $"0x{region.LeftOffset:X8}";
-            var rightContent = $"0x{region.RightOffset:X8}";
+        => StartRebuildAsync(bin);
 
-            LeftRows.Add(new DiffLineRow
+    /// <summary>Cancels any in-flight rebuild and starts a new one.</summary>
+    private void StartRebuildAsync(BinaryDiffResult bin)
+    {
+        _rebuildCts?.Cancel();
+        _rebuildCts?.Dispose();
+        _rebuildCts = new CancellationTokenSource();
+        _ = RebuildBinaryHexRowsAsync(bin, _rebuildCts.Token);
+    }
+
+    private async Task RebuildBinaryHexRowsAsync(BinaryDiffResult bin, CancellationToken ct = default)
+    {
+        IsLoading = true;
+        try
+        {
+            var contextLines = _binaryContextLines;
+            var (rows, indices) = await Task.Run(() =>
             {
-                Content  = leftContent,
-                Kind     = kind,
-                Segments = SingleSegment(leftContent, kind != "Equal")
-            });
-            RightRows.Add(new DiffLineRow
-            {
-                Content  = rightContent,
-                Kind     = kind,
-                Segments = SingleSegment(rightContent, kind != "Equal")
-            });
+                var r   = BinaryHexRowBuilder.BuildRows(bin, contextLines);
+                var idx = BuildDiffBlockIndicesFromRows(r);
+                return (r, idx);
+            }, ct).ConfigureAwait(false);
+
+            ct.ThrowIfCancellationRequested();
+
+            BinaryHexRows.ReplaceAll(rows);
+            _diffBlockStartIndices.Clear();
+            foreach (var i in indices) _diffBlockStartIndices.Add(i);
+            _currentDiffIndex = -1;
+            OnPropertyChanged(nameof(DiffBlockCount));
+            OnPropertyChanged(nameof(CanGoPrev));
+            OnPropertyChanged(nameof(CanGoNext));
+            OnPropertyChanged(nameof(CurrentDiffRowIndex));
+            CommandManager.InvalidateRequerySuggested();
         }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer rebuild — discard silently.
+        }
+        finally
+        {
+            if (!ct.IsCancellationRequested)
+                IsLoading = false;
+        }
+    }
+
+    private static List<int> BuildDiffBlockIndicesFromRows(IReadOnlyList<BinaryHexDiffRow> rows)
+    {
+        var indices = new List<int>();
+        bool inBlock = false;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            var row = rows[i];
+            if (row.IsCollapsedContext) { inBlock = false; continue; }
+            if (row.HasDiff && !inBlock) { indices.Add(i); inBlock = true; }
+            else if (!row.HasDiff)       { inBlock = false; }
+        }
+        return indices;
     }
 
     private void BuildDiffBlockIndex()
     {
+        // Binary mode builds its own index inside RebuildBinaryHexRows.
+        if (IsBinaryMode) return;
+
         bool inBlock = false;
         for (int i = 0; i < LeftRows.Count; i++)
         {
@@ -299,9 +537,9 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
         }
         else if (result.BinaryResult is { } bin)
         {
-            ModifiedCount = bin.Stats.TotalRegions;
-            AddedCount    = 0;
-            RemovedCount  = 0;
+            ModifiedCount = bin.Stats.ModifiedCount;
+            AddedCount    = bin.Stats.InsertedCount;
+            RemovedCount  = bin.Stats.DeletedCount;
         }
     }
 

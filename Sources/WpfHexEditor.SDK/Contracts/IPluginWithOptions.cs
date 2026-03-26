@@ -39,9 +39,9 @@ public interface IPluginWithOptions
     string GetOptionsCategory() => "Plugins";
 
     /// <summary>
-    /// Optional: Returns an emoji/icon for the options category.
-    /// Default: "ðŸ”Œ"
-    /// Example: "ðŸ“Š" for data plugins, "âœï¸" for editors, "ðŸ›" for debuggers
+    /// Optional: Returns an icon prefix for the options category header.
+    /// Use BMP Unicode symbols (≤ U+FFFF) to avoid 4-byte emoji encoding issues.
+    /// Default: "⚙" (U+2699 GEAR — safe, renders in all WPF themes).
     /// </summary>
-    string GetOptionsCategoryIcon() => "ðŸ”Œ";
+    string GetOptionsCategoryIcon() => "⚙";
 }

@@ -264,13 +264,16 @@ public class FloatingWindow : Window
             _titleBlock.Text = node.ActiveItem.Title;
             UpdateIcon(node.ActiveItem);
 
-            // Keep title bar in sync when dockItem.Title changes (e.g. "file *" dirty flag)
-            node.ActiveItem.PropertyChanged += (_, e) =>
+            // Keep title bar in sync when dockItem.Title changes (e.g. "file *" dirty flag).
+            // Capture the item reference in a local — node.ActiveItem may become null later
+            // when items are moved between groups during split operations.
+            var capturedItem = node.ActiveItem;
+            capturedItem.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName == nameof(DockItem.Title))
                 {
-                    Title = node.ActiveItem.Title;
-                    _titleBlock.Text = node.ActiveItem.Title;
+                    Title = capturedItem.Title;
+                    _titleBlock.Text = capturedItem.Title;
                 }
             };
         }

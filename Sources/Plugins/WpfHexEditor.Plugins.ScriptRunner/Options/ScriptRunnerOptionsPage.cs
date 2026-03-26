@@ -8,8 +8,8 @@
 //
 // Architecture Notes:
 //     Code-behind-only UserControl (no XAML).
-//     Slider rows use a 3-column Grid (fixed label | star slider | fixed value)
-//     so that the slider track stretches to fill available width.
+//     Slider rows use DockPanel + LastChildFill so the slider track
+//     fills all available width without explicit Width calculations.
 //     Foreground is bound via SetResourceReference so text inherits
 //     the active theme's DockMenuForegroundBrush.
 // ==========================================================
@@ -56,6 +56,9 @@ public sealed class ScriptRunnerOptionsPage : UserControl
             Padding             = new Thickness(10, 4, 10, 4),
             Margin              = new Thickness(0, 12, 0, 0),
         };
+        resetButton.SetResourceReference(BackgroundProperty,  "Panel_ToolbarBrush");
+        resetButton.SetResourceReference(ForegroundProperty,  "DockMenuForegroundBrush");
+        resetButton.SetResourceReference(BorderBrushProperty, "DockBorderBrush");
         resetButton.Click += OnReset;
 
         var root = new StackPanel
@@ -80,16 +83,6 @@ public sealed class ScriptRunnerOptionsPage : UserControl
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Content = root,
         };
-
-        SizeChanged += (_, e) => { if (e.WidthChanged) ApplySliderWidths(e.NewSize.Width); };
-        Loaded      += (_, _) => ApplySliderWidths(ActualWidth);
-    }
-
-    // Slider widths = pageWidth – StackPanel margins (12+12) – label col (120) – value col (44)
-    private void ApplySliderWidths(double pageWidth)
-    {
-        double w = Math.Max(pageWidth - 188, 80);
-        _maxHistorySlider.Width = w;
     }
 
     // ── Load / Save / Reset ───────────────────────────────────────────────────
@@ -156,24 +149,27 @@ public sealed class ScriptRunnerOptionsPage : UserControl
     }
 
     /// <summary>
-    /// 3-column Grid: [120px label] [* slider] [44px value].
-    /// Star column stretches slider track to fill available width.
+    /// DockPanel row: [120px label | LastChildFill slider | 44px value].
     /// </summary>
-    private static Grid MakeSliderRow(string labelText, Slider slider, TextBlock valueLabel)
+    private static DockPanel MakeSliderRow(string labelText, Slider slider, TextBlock valueLabel)
     {
-        var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
+        var dock = new DockPanel { Margin = new Thickness(0, 4, 0, 4) };
 
-        var label = new TextBlock { Text = labelText, VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetColumn(label,      0);
-        Grid.SetColumn(slider,     1);
-        Grid.SetColumn(valueLabel, 2);
-        grid.Children.Add(label);
-        grid.Children.Add(slider);
-        grid.Children.Add(valueLabel);
-        return grid;
+        var label = new TextBlock
+        {
+            Text              = labelText,
+            Width             = 120,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        DockPanel.SetDock(label,      Dock.Left);
+        DockPanel.SetDock(valueLabel, Dock.Right);
+
+        dock.Children.Add(label);
+        dock.Children.Add(valueLabel);
+        dock.Children.Add(slider);
+
+        return dock;
     }
 
     private static Grid MakeLabeledRow(string labelText, Control control)

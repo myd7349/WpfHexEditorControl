@@ -8,10 +8,9 @@
 //
 // Architecture Notes:
 //     Code-behind-only UserControl (no XAML).
-//     Slider rows use a 3-column Grid (fixed label | star slider | fixed value)
-//     so that the slider track stretches to fill available width.
-//     Foreground is bound via SetResourceReference so all text inherits
-//     the active theme's DockMenuForegroundBrush.
+//     Slider rows use DockPanel + LastChildFill — the slider fills all
+//     remaining width naturally without hardcoded sizes or SizeChanged hacks.
+//     Foreground / button colours bind to DynamicResource theme brushes.
 // ==========================================================
 
 using System;
@@ -61,6 +60,9 @@ public sealed class DiagnosticToolsOptionsPage : UserControl
             Padding             = new Thickness(10, 4, 10, 4),
             Margin              = new Thickness(0, 8, 0, 0),
         };
+        resetButton.SetResourceReference(BackgroundProperty,  "Panel_ToolbarBrush");
+        resetButton.SetResourceReference(ForegroundProperty,  "DockMenuForegroundBrush");
+        resetButton.SetResourceReference(BorderBrushProperty, "DockBorderBrush");
         resetButton.Click += OnReset;
 
         var root = new StackPanel
@@ -68,9 +70,6 @@ public sealed class DiagnosticToolsOptionsPage : UserControl
             Orientation = Orientation.Vertical,
             Margin      = new Thickness(12, 8, 12, 8),
         };
-
-        // Foreground inherits from DynamicResource so all child TextBlocks
-        // automatically pick up the active theme colour.
         root.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
 
         root.Children.Add(MakeSectionHeader("Sampling"));
@@ -90,21 +89,6 @@ public sealed class DiagnosticToolsOptionsPage : UserControl
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Content = root,
         };
-
-        // Drive slider widths from the page's actual width so they always fill
-        // the available space regardless of how the host container measures us.
-        SizeChanged += (_, e) => { if (e.WidthChanged) ApplySliderWidths(e.NewSize.Width); };
-        Loaded      += (_, _) => ApplySliderWidths(ActualWidth);
-    }
-
-    // Slider widths = pageWidth – StackPanel margins (12+12) – label col (160) – value col (60)
-    private void ApplySliderWidths(double pageWidth)
-    {
-        double w = Math.Max(pageWidth - 244, 80);
-        _pollIntervalSlider.Width = w;
-        _ringCapacitySlider.Width = w;
-        _eventMaxSlider.Width     = w;
-        _metricMaxSlider.Width    = w;
     }
 
     // ── Load / Save / Reset ───────────────────────────────────────────────────
@@ -172,30 +156,27 @@ public sealed class DiagnosticToolsOptionsPage : UserControl
     }
 
     /// <summary>
-    /// 3-column Grid: [160px label] [* slider] [60px value].
-    /// The star column makes the slider track fill all available width.
+    /// DockPanel row: [160px label] [LastChildFill slider] [60px value].
+    /// The slider fills all remaining width — no hardcoded size, no SizeChanged.
     /// </summary>
-    private static Grid MakeSliderRow(string labelText, Slider slider, TextBlock valueLabel)
+    private static DockPanel MakeSliderRow(string labelText, Slider slider, TextBlock valueLabel)
     {
-        var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+        var dock = new DockPanel { Margin = new Thickness(0, 4, 0, 4) };
 
         var label = new TextBlock
         {
             Text              = labelText,
+            Width             = 160,
             VerticalAlignment = VerticalAlignment.Center,
         };
 
-        Grid.SetColumn(label,      0);
-        Grid.SetColumn(slider,     1);
-        Grid.SetColumn(valueLabel, 2);
+        DockPanel.SetDock(label,      Dock.Left);
+        DockPanel.SetDock(valueLabel, Dock.Right);
 
-        grid.Children.Add(label);
-        grid.Children.Add(slider);
-        grid.Children.Add(valueLabel);
+        dock.Children.Add(label);
+        dock.Children.Add(valueLabel);
+        dock.Children.Add(slider);   // last → LastChildFill
 
-        return grid;
+        return dock;
     }
 }

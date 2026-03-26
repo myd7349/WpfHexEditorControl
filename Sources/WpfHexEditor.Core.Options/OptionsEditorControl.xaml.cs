@@ -108,7 +108,7 @@ public sealed partial class OptionsEditorControl : UserControl
         foreach (var group in groups)
         {
             // Use the icon from the first descriptor in the group (all pages in same category should have same icon)
-            var icon = group.FirstOrDefault()?.CategoryIcon ?? "📂";
+            var icon = group.FirstOrDefault()?.CategoryIcon ?? "⚙";
 
             var catItem = new TreeViewItem
             {

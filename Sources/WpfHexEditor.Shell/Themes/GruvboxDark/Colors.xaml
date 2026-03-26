@@ -721,4 +721,20 @@
     <SolidColorBrush x:Key="CE_StickyScrollBackground" Color="#3C3836" />
     <SolidColorBrush x:Key="CE_StickyScrollForeground" Color="#EBDBB2" />
     <SolidColorBrush x:Key="CE_StickyScrollBorder"     Color="#504945" />
+
+    <!-- BDiff tokens (BDiff_*) â€” inserted by Add-BDiffTokens.ps1 -->
+    <SolidColorBrush x:Key="BDiff_EqualByteBrush"            Color="#00000000" />
+    <SolidColorBrush x:Key="BDiff_ModifiedByteBrush"         Color="#352D00" />
+    <SolidColorBrush x:Key="BDiff_ModifiedByteStrongBrush"   Color="#4A3E00" />
+    <SolidColorBrush x:Key="BDiff_InsertedByteBrush"         Color="#1A2A10" />
+    <SolidColorBrush x:Key="BDiff_DeletedByteBrush"          Color="#2A1010" />
+    <SolidColorBrush x:Key="BDiff_PaddingBrush"              Color="#1D2021" />
+    <SolidColorBrush x:Key="BDiff_OffsetForegroundBrush"     Color="#928374" />
+    <SolidColorBrush x:Key="BDiff_OffsetBackgroundBrush"     Color="#1D2021" />
+    <SolidColorBrush x:Key="BDiff_SeparatorBrush"            Color="#3C3836" />
+    <SolidColorBrush x:Key="BDiff_AsciiForegroundBrush"      Color="#EBDBB2" />
+    <SolidColorBrush x:Key="BDiff_AsciiNonPrintableBrush"    Color="#504945" />
+    <SolidColorBrush x:Key="BDiff_ContextRowBackgroundBrush" Color="#1D2021" />
+    <SolidColorBrush x:Key="BDiff_CollapsedContextBrush"     Color="#282828" />
+    <SolidColorBrush x:Key="BDiff_CollapsedContextFgBrush"   Color="#928374" />
 </ResourceDictionary>

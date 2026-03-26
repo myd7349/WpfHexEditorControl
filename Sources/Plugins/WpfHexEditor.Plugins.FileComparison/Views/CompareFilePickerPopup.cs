@@ -11,7 +11,7 @@
 //     Mirrors WpfHexEditor.App/Dialogs/CompareFilePickerWindow (App layer),
 //     which cannot be referenced from the plugin ALC.
 //     Returns Task<string?> via TaskCompletionSource (promise pattern).
-//     Uses DF_* + DockForegroundBrush tokens (all present in Colors.xaml).
+//     Uses CP_* tokens (same palette as the Command Palette — present in all Colors.xaml).
 //     Opens anchored to the cursor position via GetCursorPos P/Invoke.
 // ==========================================================
 
@@ -103,8 +103,8 @@ internal sealed class CompareFilePickerPopup : Window
             BorderThickness = new Thickness(1),
             Padding         = new Thickness(0, 0, 0, 6)
         };
-        outerBorder.SetResourceReference(Border.BackgroundProperty,  "DF_PickerBackground");
-        outerBorder.SetResourceReference(Border.BorderBrushProperty, "DockSplitterBrush");
+        outerBorder.SetResourceReference(Border.BackgroundProperty,  "CP_BackgroundBrush");
+        outerBorder.SetResourceReference(Border.BorderBrushProperty, "CP_BorderBrush");
 
         var panel = new StackPanel();
         outerBorder.Child = panel;
@@ -118,7 +118,7 @@ internal sealed class CompareFilePickerPopup : Window
             Margin     = new Thickness(10, 8, 10, 4),
             Opacity    = 0.7
         };
-        title.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
+        title.SetResourceReference(ForegroundProperty, "CP_TextBrush");
         panel.Children.Add(title);
 
         // Search box
@@ -131,9 +131,9 @@ internal sealed class CompareFilePickerPopup : Window
             Padding                  = new Thickness(6, 3, 6, 3),
             VerticalContentAlignment = VerticalAlignment.Center
         };
-        _searchBox.SetResourceReference(BackgroundProperty,   "DockTabBackgroundBrush");
-        _searchBox.SetResourceReference(ForegroundProperty,   "DockMenuForegroundBrush");
-        _searchBox.SetResourceReference(BorderBrushProperty,  "DockSplitterBrush");
+        _searchBox.SetResourceReference(BackgroundProperty,   "CP_InputBackgroundBrush");
+        _searchBox.SetResourceReference(ForegroundProperty,   "CP_TextBrush");
+        _searchBox.SetResourceReference(BorderBrushProperty,  "CP_BorderBrush");
         _searchBox.TextChanged += (_, _) => PopulateList(_searchBox.Text);
         panel.Children.Add(_searchBox);
 
@@ -145,13 +145,13 @@ internal sealed class CompareFilePickerPopup : Window
 
         // Separator
         var sep = new Border { Height = 1, Margin = new Thickness(0, 2, 0, 2) };
-        sep.SetResourceReference(BackgroundProperty, "DockSplitterBrush");
+        sep.SetResourceReference(BackgroundProperty, "CP_BorderBrush");
         panel.Children.Add(sep);
 
         // Results list — replace the entire ListBoxItem ControlTemplate via XAML parsing so that
         // WPF's default chrome (selection rect, FocusVisualStyle dots, SystemColors.HighlightBrush
         // internal triggers) is fully removed.  The Border.Background TemplateBinding picks up the
-        // value set by our Style triggers (hover/selected → DF_PickerHighlightBrush).
+        // value set by our Style triggers (hover → CP_HoverBrush / selected → CP_HighlightBrush).
         const string itemTemplateXaml =
             "<ControlTemplate " +
             "  xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' " +
@@ -176,17 +176,16 @@ internal sealed class CompareFilePickerPopup : Window
         itemStyle.Setters.Add(new Setter(TemplateProperty,              itemTemplate));
         // Set foreground explicitly so text remains readable regardless of theme tokens.
         itemStyle.Setters.Add(new Setter(ForegroundProperty,
-            new DynamicResourceExtension("DockMenuForegroundBrush")));
+            new DynamicResourceExtension("CP_TextBrush")));
 
-        // Hover → subtle theme row highlight (same token used by Solution Explorer).
-        // Selected → full accent brush, so the two states are visually distinct.
+        // Hover → subtle row highlight. Selected → accent, matching the Command Palette palette.
         var hoverTrigger    = new Trigger { Property = IsMouseOverProperty, Value = true };
         hoverTrigger.Setters.Add(new Setter(BackgroundProperty,
-            new DynamicResourceExtension("SE_HoverBrush")));
+            new DynamicResourceExtension("CP_HoverBrush")));
 
         var selectedTrigger = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
         selectedTrigger.Setters.Add(new Setter(BackgroundProperty,
-            new DynamicResourceExtension("DF_PickerHighlightBrush")));
+            new DynamicResourceExtension("CP_HighlightBrush")));
 
         itemStyle.Triggers.Add(hoverTrigger);
         itemStyle.Triggers.Add(selectedTrigger);
@@ -200,8 +199,8 @@ internal sealed class CompareFilePickerPopup : Window
             ItemContainerStyle   = itemStyle
         };
         ScrollViewer.SetHorizontalScrollBarVisibility(_resultsList, ScrollBarVisibility.Disabled);
-        _resultsList.SetResourceReference(BackgroundProperty, "DF_PickerBackground");
-        _resultsList.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
+        _resultsList.SetResourceReference(BackgroundProperty, "CP_BackgroundBrush");
+        _resultsList.SetResourceReference(ForegroundProperty, "CP_TextBrush");
         _resultsList.MouseDoubleClick += (_, _) => CommitSelectedItem();
         _resultsList.KeyDown          += OnListKeyDown;
         panel.Children.Add(_resultsList);
@@ -304,8 +303,8 @@ internal sealed class CompareFilePickerPopup : Window
 
     private ListBoxItem BuildGroupHeader(string text)
     {
-        var tb = new TextBlock { Text = text, FontSize = 10, FontWeight = FontWeights.Bold, Opacity = 0.6 };
-        tb.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
+        var tb = new TextBlock { Text = text, FontSize = 10, FontWeight = FontWeights.Bold };
+        tb.SetResourceReference(ForegroundProperty, "CP_SecondaryTextBrush");
         return new ListBoxItem
         {
             Content         = tb,
@@ -333,7 +332,7 @@ internal sealed class CompareFilePickerPopup : Window
             Margin            = new Thickness(0, 2, 6, 0),
             Opacity           = 0.7
         };
-        icon.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
+        icon.SetResourceReference(ForegroundProperty, "CP_TextBrush");
         Grid.SetColumn(icon, 0);
         grid.Children.Add(icon);
 
@@ -345,7 +344,7 @@ internal sealed class CompareFilePickerPopup : Window
             FontSize     = 12,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
-        nameText.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
+        nameText.SetResourceReference(ForegroundProperty, "CP_TextBrush");
         namePanel.Children.Add(nameText);
 
         if (!string.IsNullOrEmpty(subtitle))
@@ -355,10 +354,9 @@ internal sealed class CompareFilePickerPopup : Window
                 Text         = subtitle,
                 FontSize     = 10,
                 FontStyle    = FontStyles.Italic,
-                Opacity      = 0.55,
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
-            subText.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
+            subText.SetResourceReference(ForegroundProperty, "CP_SecondaryTextBrush");
             namePanel.Children.Add(subText);
         }
 
@@ -398,7 +396,7 @@ internal sealed class CompareFilePickerPopup : Window
         btnStyle.Setters.Add(new Setter(TemplateProperty,              btnTemplate));
         var hoverTrigger = new Trigger { Property = IsMouseOverProperty, Value = true };
         hoverTrigger.Setters.Add(new Setter(BackgroundProperty,
-            new DynamicResourceExtension("SE_HoverBrush")));
+            new DynamicResourceExtension("CP_HoverBrush")));
         btnStyle.Triggers.Add(hoverTrigger);
 
         var btn = new Button
@@ -412,9 +410,9 @@ internal sealed class CompareFilePickerPopup : Window
             Cursor          = Cursors.Hand,
             Style           = btnStyle
         };
-        btn.SetResourceReference(BackgroundProperty,  "DockTabBackgroundBrush");
-        btn.SetResourceReference(ForegroundProperty,  "DockMenuForegroundBrush");
-        btn.SetResourceReference(BorderBrushProperty, "DockSplitterBrush");
+        btn.SetResourceReference(BackgroundProperty,  "CP_InputBackgroundBrush");
+        btn.SetResourceReference(ForegroundProperty,  "CP_TextBrush");
+        btn.SetResourceReference(BorderBrushProperty, "CP_BorderBrush");
         btn.Click += (_, _) =>
         {
             if (path is not null)

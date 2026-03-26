@@ -18,9 +18,10 @@ public sealed class DiffEngine
     private const long MaxReadBytes = 50L * 1024 * 1024; // 50 MB cap for Myers
 
     // Singleton algorithm instances (stateless — safe to share)
-    private static readonly BinaryDiffAlgorithm   _binary   = new();
-    private static readonly MyersDiffAlgorithm    _myers    = new();
-    private static readonly SemanticDiffAlgorithm _semantic = new();
+    private static readonly BinaryDiffAlgorithm        _binary       = new();
+    private static readonly BlockAlignedBinaryAlgorithm _blockAligned = new();
+    private static readonly MyersDiffAlgorithm          _myers        = new();
+    private static readonly SemanticDiffAlgorithm       _semantic     = new();
 
     /// <summary>
     /// Compares two files asynchronously and returns a <see cref="DiffEngineResult"/>.
@@ -30,18 +31,25 @@ public sealed class DiffEngine
     /// <param name="leftPath">Path of the left (original) file.</param>
     /// <param name="rightPath">Path of the right (modified) file.</param>
     /// <param name="mode">Requested mode; <see cref="DiffMode.Auto"/> auto-detects.</param>
+    /// <param name="binaryOptions">
+    /// Options for the binary comparison path (algorithm selection, full-byte retention).
+    /// Pass <see langword="null"/> to use <see cref="BinaryDiffOptions.Default"/>.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     public async Task<DiffEngineResult> CompareAsync(string leftPath, string rightPath,
-        DiffMode mode = DiffMode.Auto, CancellationToken ct = default)
+        DiffMode mode = DiffMode.Auto,
+        BinaryDiffOptions? binaryOptions = null,
+        CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
+        binaryOptions ??= BinaryDiffOptions.Default;
 
         var effectiveMode = mode == DiffMode.Auto
             ? DiffModeDetector.DetectForPair(leftPath, rightPath)
             : mode;
 
         if (effectiveMode == DiffMode.Binary)
-            return await Task.Run(() => CompareBinary(leftPath, rightPath, effectiveMode, ct), ct)
+            return await Task.Run(() => CompareBinary(leftPath, rightPath, effectiveMode, ct, null, binaryOptions), ct)
                              .ConfigureAwait(false);
 
         var leftInfo  = new FileInfo(leftPath);
@@ -50,7 +58,7 @@ public sealed class DiffEngine
         if (leftInfo.Length > MaxReadBytes || rightInfo.Length > MaxReadBytes)
         {
             var reason = $"File exceeds {MaxReadBytes / (1024 * 1024)} MB — using binary comparison";
-            return await Task.Run(() => CompareBinary(leftPath, rightPath, DiffMode.Binary, ct, reason), ct)
+            return await Task.Run(() => CompareBinary(leftPath, rightPath, DiffMode.Binary, ct, reason, binaryOptions), ct)
                              .ConfigureAwait(false);
         }
 
@@ -98,8 +106,11 @@ public sealed class DiffEngine
     }
 
     private static DiffEngineResult CompareBinary(string leftPath, string rightPath,
-        DiffMode mode, CancellationToken ct, string? fallbackReason = null)
+        DiffMode mode, CancellationToken ct, string? fallbackReason = null,
+        BinaryDiffOptions? options = null)
     {
+        options ??= BinaryDiffOptions.Default;
+
         byte[] leftBytes, rightBytes;
         string? truncReason = null;
 
@@ -111,9 +122,19 @@ public sealed class DiffEngine
 
         ct.ThrowIfCancellationRequested();
 
-        var result = _binary.ComputeBytes(leftBytes, rightBytes);
-        if (truncReason is not null)
-            result = new BinaryDiffResult { Regions = result.Regions, Stats = result.Stats, Truncated = true, TruncatedReason = truncReason };
+        var result = options.UseBlockAlignment
+            ? _blockAligned.ComputeBytes(leftBytes, rightBytes, options.BlockSize)
+            : _binary.ComputeBytes(leftBytes, rightBytes);
+
+        result = new BinaryDiffResult
+        {
+            Regions         = result.Regions,
+            Stats           = result.Stats,
+            Truncated       = result.Truncated || truncReason is not null,
+            TruncatedReason = truncReason ?? result.TruncatedReason,
+            FullLeftBytes   = options.RetainFullBytes ? leftBytes  : null,
+            FullRightBytes  = options.RetainFullBytes ? rightBytes : null,
+        };
 
         return new DiffEngineResult
         {

@@ -1800,7 +1800,8 @@
         <StatusBar x:Name="AppStatusBar" Grid.Row="3" Background="{DynamicResource DockTabActiveBrush}">
 
             <!-- Active editor interactive items (IStatusBarContributor) -->
-            <StatusBarItem>
+            <!-- Visibility controlled imperatively from ActiveStatusBarContributor setter -->
+            <StatusBarItem x:Name="EditorStatusBarItem">
                 <ItemsControl ItemsSource="{Binding ActiveStatusBarContributor.StatusBarItems, ElementName=ThisWindow}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>

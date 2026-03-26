@@ -150,19 +150,6 @@ public sealed class TabsOptionsPage : UserControl, IOptionsPage
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Content = root,
         };
-
-        SizeChanged += (_, e) => { if (e.WidthChanged) ApplySliderWidths(e.NewSize.Width); };
-        Loaded      += (_, _) => ApplySliderWidths(ActualWidth);
-    }
-
-    // Slider widths = pageWidth – StackPanel margins (12+12) – label col (140) – value col (44)
-    private void ApplySliderWidths(double pageWidth)
-    {
-        double w = Math.Max(pageWidth - 208, 80);
-        _widthSlider.Width      = w;
-        _heightSlider.Width     = w;
-        _openDelaySlider.Width  = w;
-        _closeDelaySlider.Width = w;
     }
 
     // ── IOptionsPage ─────────────────────────────────────────────────────────
@@ -290,20 +277,27 @@ public sealed class TabsOptionsPage : UserControl, IOptionsPage
         return (slider, label);
     }
 
-    private static Grid MakeSliderRow(string labelText, Slider slider, TextBlock valueLabel)
+    /// <summary>
+    /// DockPanel row: [140px label | LastChildFill slider | 44px value].
+    /// </summary>
+    private static DockPanel MakeSliderRow(string labelText, Slider slider, TextBlock valueLabel)
     {
-        var grid = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
+        var dock = new DockPanel { Margin = new Thickness(0, 4, 0, 4) };
 
-        var label = new TextBlock { Text = labelText, VerticalAlignment = VerticalAlignment.Center };
-        Grid.SetColumn(label,      0);
-        Grid.SetColumn(slider,     1);
-        Grid.SetColumn(valueLabel, 2);
-        grid.Children.Add(label);
-        grid.Children.Add(slider);
-        grid.Children.Add(valueLabel);
-        return grid;
+        var label = new TextBlock
+        {
+            Text              = labelText,
+            Width             = 140,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        DockPanel.SetDock(label,      Dock.Left);
+        DockPanel.SetDock(valueLabel, Dock.Right);
+
+        dock.Children.Add(label);
+        dock.Children.Add(valueLabel);
+        dock.Children.Add(slider);
+
+        return dock;
     }
 }

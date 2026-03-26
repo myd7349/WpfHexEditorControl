@@ -332,6 +332,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             _activeStatusBarContributor = value;
 
+            // Show/hide the editor-contributed items container immediately —
+            // avoids relying on WPF's dotted-path binding update to clear the items.
+            if (EditorStatusBarItem != null)
+                EditorStatusBarItem.Visibility = value is null ? Visibility.Collapsed : Visibility.Visible;
+
             // Subscribe to new editor's refresh time item
             if (_activeStatusBarContributor is IRefreshTimeReporter currentReporter)
                 SubscribeToRefreshTimeUpdates(currentReporter);
@@ -1376,7 +1381,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             displayElement.IsKeyboardFocusWithinChanged += (_, e) =>
             {
-                if ((bool)e.NewValue)
+                // IsMouseOver guard: only sync when the mouse is physically inside the
+                // editor pane.  This filters out incidental focus returns that happen
+                // when a non-editor tab (Options…) is clicked and WPF briefly routes
+                // focus back to the last focused element in the other split pane.
+                if ((bool)e.NewValue && displayElement.IsMouseOver)
                     SyncStatusBarToFocusedEditor(contentId);
             };
         }
@@ -3894,7 +3903,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (ActiveDocumentEditor is null || item.ContentId == OptionsContentId)
             {
                 ActiveToolbarContributor   = null;
-                ActiveStatusBarContributor = _defaultStatusBarContributor;
+                ActiveStatusBarContributor = null;
                 ActiveDocumentEditor       = null;
             }
             return;

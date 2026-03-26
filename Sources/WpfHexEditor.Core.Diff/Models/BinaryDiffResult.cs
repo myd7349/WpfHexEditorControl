@@ -55,4 +55,17 @@ public sealed class BinaryDiffResult
     public BinaryDiffStats                 Stats      { get; init; } = new();
     public bool                            Truncated  { get; init; }
     public string?                         TruncatedReason { get; init; }
+
+    /// <summary>
+    /// Full raw bytes of the left file, retained only when
+    /// <see cref="BinaryDiffOptions.RetainFullBytes"/> was <see langword="true"/>.
+    /// Used by <c>BinaryHexRowBuilder</c> to reconstruct equal gaps between regions.
+    /// </summary>
+    public byte[]? FullLeftBytes  { get; init; }
+
+    /// <summary>
+    /// Full raw bytes of the right file, retained only when
+    /// <see cref="BinaryDiffOptions.RetainFullBytes"/> was <see langword="true"/>.
+    /// </summary>
+    public byte[]? FullRightBytes { get; init; }
 }

@@ -827,9 +827,14 @@ public class DockTabHeader : StackPanel
             // Checking this BEFORE _isReordering prevents the reorder state from permanently blocking float.
             if (Math.Abs(diff.Y) > FloatThresholdY)
             {
+                var wasReordering = _isReordering;
                 _isReordering = false;
                 _isDragging   = true;
                 ReleaseMouseCapture();
+                // Clean up the reorder ghost/adorner before starting the float.
+                // Without this, the Popup stays IsOpen=true and gets orphaned by RebuildVisualTree().
+                if (wasReordering)
+                    ReorderCancelled?.Invoke();
                 DragStarted?.Invoke();
                 return;
             }
@@ -865,10 +870,12 @@ public class DockTabHeader : StackPanel
     {
         if (_isReordering)
         {
-            // Guard: Visual may be detached during float transition — skip drop if no HWND.
-            if (PresentationSource.FromVisual(this) is null) return;
-            ReorderDropped?.Invoke(PointToScreen(e.GetPosition(this)));
             _isReordering = false;
+            // Guard: Visual may be detached during float transition — cancel reorder instead of drop.
+            if (PresentationSource.FromVisual(this) is not null)
+                ReorderDropped?.Invoke(PointToScreen(e.GetPosition(this)));
+            else
+                ReorderCancelled?.Invoke();
         }
         _isDragging = false;
         ReleaseMouseCapture();

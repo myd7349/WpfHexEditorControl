@@ -619,9 +619,17 @@ public class DockDragManager
 
         _panelOverlay?.Hide();
         _edgeOverlay?.Hide();
-        HideSnapPreview();
-        _snapPreview?.Close();
-        _snapPreview = null;
+
+        // Always clean up snap preview — even if a prior step threw.
+        try
+        {
+            HideSnapPreview();
+        }
+        finally
+        {
+            _snapPreview?.Close();
+            _snapPreview = null;
+        }
     }
 
     /// <summary>

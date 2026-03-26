@@ -50,6 +50,17 @@ public sealed class BoolToVisibilityConverter : IValueConverter
         => value is Visibility.Visible;
 }
 
+/// <summary>Converts a bool to Visibility — true → Collapsed, false → Visible (inverse).</summary>
+[ValueConversion(typeof(bool), typeof(Visibility))]
+public sealed class NotBoolToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is true ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is Visibility.Collapsed;
+}
+
 /// <summary>
 /// Converts a DiffLineRow.Kind string to the matching row-background brush
 /// using the DF_* dynamic resources from the active theme.

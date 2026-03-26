@@ -12,7 +12,7 @@
 <UserControl x:Class="WpfHexEditor.PluginDev.Options.PluginDevOptionsPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="{DynamicResource DockMenuBackgroundBrush}"
+             Background="Transparent"
              Foreground="{DynamicResource DockMenuForegroundBrush}">
 
     <StackPanel Margin="12,8" MaxWidth="520">

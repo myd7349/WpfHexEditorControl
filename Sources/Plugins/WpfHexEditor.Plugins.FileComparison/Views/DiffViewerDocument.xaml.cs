@@ -18,12 +18,14 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using WpfHexEditor.Core.Diff.Models;
 using WpfHexEditor.Plugins.FileComparison.ViewModels;
+using BinaryByteKind = WpfHexEditor.Core.Diff.Models.BinaryByteKind;
 
 namespace WpfHexEditor.Plugins.FileComparison.Views;
 
 public sealed partial class DiffViewerDocument : UserControl
 {
-    private const double RowHeight = 18.0;
+    private const double RowHeight       = 18.0;
+    private const double BinaryRowHeight = 22.0;
 
     private DiffViewerViewModel? _vm;
     private bool                 _scrollSyncing;
@@ -40,7 +42,8 @@ public sealed partial class DiffViewerDocument : UserControl
         vm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(DiffViewerViewModel.CurrentDiffIndex)
-                                or nameof(DiffViewerViewModel.LeftRows))
+                                or nameof(DiffViewerViewModel.LeftRows)
+                                or nameof(DiffViewerViewModel.BinaryHexRows))
             {
                 ScrollToDiff(vm.CurrentDiffRowIndex);
             }
@@ -83,6 +86,55 @@ public sealed partial class DiffViewerDocument : UserControl
         if (_rulerDirty) { PaintRuler(); _rulerDirty = false; }
     }
 
+    private void OnBinaryHexScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (_rulerDirty) { PaintRuler(); _rulerDirty = false; }
+    }
+
+    // ── Binary hex toolbar handlers ───────────────────────────────────────────
+
+    private void OnContextLinesChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null) return;
+        if (ContextLinesCombo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+        {
+            _vm.BinaryContextLines = tag == "-1" ? int.MaxValue : int.Parse(tag);
+            _rulerDirty = true;
+            PaintRuler();
+        }
+    }
+
+    private void OnCopyHexClicked(object sender, RoutedEventArgs e)
+    {
+        if (_vm is null) return;
+        var sb = new System.Text.StringBuilder();
+        foreach (var row in _vm.BinaryHexRows)
+        {
+            if (row.IsCollapsedContext)
+            {
+                sb.AppendLine($"--- {row.CollapsedRowCount} identical rows ---");
+                continue;
+            }
+            sb.Append(row.LeftOffsetText);
+            sb.Append("  ");
+            foreach (var cell in row.LeftCells)
+                sb.Append(cell.HexText + " ");
+            sb.Append(" |");
+            foreach (var cell in row.LeftCells)
+                sb.Append(cell.AsciiChar);
+            sb.Append("  ||  ");
+            sb.Append(row.RightOffsetText);
+            sb.Append("  ");
+            foreach (var cell in row.RightCells)
+                sb.Append(cell.HexText + " ");
+            sb.Append(" |");
+            foreach (var cell in row.RightCells)
+                sb.Append(cell.AsciiChar);
+            sb.AppendLine();
+        }
+        Clipboard.SetText(sb.ToString());
+    }
+
     // ── Overview ruler ────────────────────────────────────────────────────────
 
     private void OnRulerSizeChanged(object sender, SizeChangedEventArgs e)
@@ -94,14 +146,23 @@ public sealed partial class DiffViewerDocument : UserControl
     private void OnRulerClicked(object sender, MouseButtonEventArgs e)
     {
         if (_vm is null) return;
-        var totalRows = _vm.LeftRows.Count;
-        if (totalRows == 0) return;
+        var clickY    = e.GetPosition(OverviewRuler).Y;
+        var fraction  = clickY / OverviewRuler.ActualHeight;
 
-        var clickY   = e.GetPosition(OverviewRuler).Y;
-        var fraction = clickY / OverviewRuler.ActualHeight;
-        var rowIdx   = (int)(fraction * totalRows);
-        var offset   = Math.Max(0, rowIdx) * RowHeight;
-        LeftScroll.ScrollToVerticalOffset(offset);
+        if (_vm.IsBinaryMode)
+        {
+            var totalRows = _vm.BinaryHexRows.Count;
+            if (totalRows == 0) return;
+            var rowIdx = (int)(fraction * totalRows);
+            BinaryHexScroll.ScrollToVerticalOffset(Math.Max(0, rowIdx) * BinaryRowHeight);
+        }
+        else
+        {
+            var totalRows = _vm.LeftRows.Count;
+            if (totalRows == 0) return;
+            var rowIdx = (int)(fraction * totalRows);
+            LeftScroll.ScrollToVerticalOffset(Math.Max(0, rowIdx) * RowHeight);
+        }
     }
 
     private void PaintRuler()
@@ -109,44 +170,80 @@ public sealed partial class DiffViewerDocument : UserControl
         OverviewRuler.Children.Clear();
         if (_vm is null) return;
 
-        var rows      = _vm.LeftRows;
-        var totalRows = rows.Count;
-        if (totalRows == 0) return;
-
         var rulerH = OverviewRuler.ActualHeight;
         var rulerW = OverviewRuler.ActualWidth;
         if (rulerH <= 0 || rulerW <= 0) return;
 
-        var modBrush  = TryBrush("DF_OverviewModifiedBrush")  ?? Brushes.Orange;
-        var addBrush  = TryBrush("DF_OverviewAddedBrush")     ?? Brushes.Green;
-        var remBrush  = TryBrush("DF_OverviewRemovedBrush")   ?? Brushes.Red;
+        var modBrush = TryBrush("DF_OverviewModifiedBrush") ?? Brushes.Orange;
+        var addBrush = TryBrush("DF_OverviewAddedBrush")    ?? Brushes.Green;
+        var remBrush = TryBrush("DF_OverviewRemovedBrush")  ?? Brushes.Red;
+
+        if (_vm.IsBinaryMode)
+            PaintBinaryRuler(rulerH, rulerW, modBrush, addBrush, remBrush);
+        else
+            PaintTextRuler(rulerH, rulerW, modBrush, addBrush, remBrush);
+
+        _rulerDirty = false;
+    }
+
+    private void PaintTextRuler(double rulerH, double rulerW,
+        Brush modBrush, Brush addBrush, Brush remBrush)
+    {
+        var rows      = _vm!.LeftRows;
+        var totalRows = rows.Count;
+        if (totalRows == 0) return;
 
         double rowH = rulerH / totalRows;
         double minH = Math.Max(rowH, 3.0);
 
         for (int i = 0; i < totalRows; i++)
         {
-            var kind = rows[i].Kind;
-            Brush? brush = kind switch
+            Brush? brush = rows[i].Kind switch
             {
-                "Modified"     => modBrush,
-                "InsertedRight"=> addBrush,
-                "DeletedLeft"  => remBrush,
-                _              => null
+                "Modified"      => modBrush,
+                "InsertedRight" => addBrush,
+                "DeletedLeft"   => remBrush,
+                _               => null
             };
             if (brush is null) continue;
 
-            var rect = new Rectangle
-            {
-                Fill   = brush,
-                Width  = rulerW,
-                Height = minH
-            };
+            var rect = new Rectangle { Fill = brush, Width = rulerW, Height = minH };
             Canvas.SetTop(rect, i * rowH);
             OverviewRuler.Children.Add(rect);
         }
+    }
 
-        _rulerDirty = false;
+    private void PaintBinaryRuler(double rulerH, double rulerW,
+        Brush modBrush, Brush addBrush, Brush remBrush)
+    {
+        var rows      = _vm!.BinaryHexRows;
+        var totalRows = rows.Count;
+        if (totalRows == 0) return;
+
+        double rowH = rulerH / totalRows;
+        double minH = Math.Max(rowH, 2.0);
+
+        for (int i = 0; i < totalRows; i++)
+        {
+            var row = rows[i];
+            if (!row.HasDiff) continue;
+
+            // Pick brush by dominant kind in the row
+            Brush brush = modBrush;
+            foreach (var cell in row.LeftCells)
+            {
+                if (cell.Kind == BinaryByteKind.DeletedLeft)   { brush = remBrush; break; }
+                if (cell.Kind == BinaryByteKind.InsertedRight) { brush = addBrush; break; }
+            }
+            foreach (var cell in row.RightCells)
+            {
+                if (cell.Kind == BinaryByteKind.InsertedRight) { brush = addBrush; break; }
+            }
+
+            var rect = new Rectangle { Fill = brush, Width = rulerW, Height = minH };
+            Canvas.SetTop(rect, i * rowH);
+            OverviewRuler.Children.Add(rect);
+        }
     }
 
     private Brush? TryBrush(string key)
@@ -157,9 +254,16 @@ public sealed partial class DiffViewerDocument : UserControl
     private void ScrollToDiff(int rowIdx)
     {
         if (rowIdx < 0) return;
-        var offset = rowIdx * RowHeight;
-        // Scroll so the diff block appears 3 rows from the top
-        LeftScroll.ScrollToVerticalOffset(Math.Max(0, offset - RowHeight * 3));
+        if (_vm?.IsBinaryMode == true)
+        {
+            var offset = rowIdx * BinaryRowHeight;
+            BinaryHexScroll.ScrollToVerticalOffset(Math.Max(0, offset - BinaryRowHeight * 3));
+        }
+        else
+        {
+            var offset = rowIdx * RowHeight;
+            LeftScroll.ScrollToVerticalOffset(Math.Max(0, offset - RowHeight * 3));
+        }
     }
 
     // ── Keyboard shortcuts ───────────────────────────────────────────────────
