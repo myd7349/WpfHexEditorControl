@@ -574,7 +574,7 @@ namespace WpfHexEditor.HexEditor
                                     Description = block.Description ?? "",
                                     Color = "#E3F2FD",  // Light blue background for metadata
                                     IsValid = true,  // Mark as valid (not an error/warning)
-                                    FieldIcon = "ℹ️",  // Information icon for metadata
+                                    FieldIcon = "\uE946",  // Info / computed value (Segoe MDL2 Assets)
                                     IndentLevel = depth,
                                     GroupName = "Computed Values"
                                 };
@@ -714,7 +714,7 @@ namespace WpfHexEditor.HexEditor
                                     IndentLevel = depth + 1,
                                     GroupName = "Bitfields",
                                     IsValid = true,
-                                    FieldIcon = "\U0001f527"
+                                    FieldIcon = "\uE71D"  // Flag bits / bitfield (Segoe MDL2 Assets)
                                 };
                                 panel.ParsedFields.Add(subField);
                                 _parsedFieldCount++;

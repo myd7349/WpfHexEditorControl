@@ -1,4 +1,4 @@
-//////////////////////////////////////////////
+﻿//////////////////////////////////////////////
 // GNU Affero General Public License v3.0 - 2026
 // Author : Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Sonnet 4.5, Claude Sonnet 4.6
@@ -604,12 +604,14 @@ namespace WpfHexEditor.Core.ViewModels
             {
                 return blockType.ToLowerInvariant() switch
                 {
-                    "signature" => "ðŸ”–",
-                    "field" => GetIconForValueType(valueType),
-                    "conditional" => "ðŸ”€",
-                    "loop" => "ðŸ”",
-                    "action" => "âš¡",
-                    _ => "ðŸ“„"
+                    "signature"   => "\uE8A4",  // Bookmark
+                    "field"       => GetIconForValueType(valueType),
+                    "conditional" => "\uE752",  // Branch / decision
+                    "loop"        => "\uE72C",  // Sync (circular arrows)
+                    "action"      => "\uE756",  // Go / forward
+                    "bitfield"    => "\uE71D",  // Flag bits
+                    "metadata"    => "\uE946",  // Info / computed
+                    _             => GetIconForValueType(valueType)
                 };
             }
 
@@ -622,18 +624,20 @@ namespace WpfHexEditor.Core.ViewModels
         private static string GetIconForValueType(string valueType)
         {
             if (string.IsNullOrEmpty(valueType))
-                return "ðŸ“„";
+                return "\uE8EF";  // NumberSymbol (fallback)
 
             return valueType.ToLowerInvariant() switch
             {
-                "string" or "ascii" or "utf8" or "utf16" => "ðŸ“",
-                "uint8" or "byte" or "int8" or "sbyte" => "ðŸ”¢",
-                "uint16" or "ushort" or "int16" or "short" => "ðŸ”¢",
-                "uint32" or "uint" or "int32" or "int" => "ðŸ”¢",
-                "uint64" or "ulong" or "int64" or "long" => "ðŸ”¢",
-                "float" or "double" => "ðŸ“Š",
-                "bytes" => "ðŸ“¦",
-                _ => "ðŸ“„"
+                "string" or "ascii" or "utf8" or "utf16"                  => "\uE8AB",  // Font / text
+                "uint8"  or "byte"  or "int8"  or "sbyte"                 => "\uE8EF",  // NumberSymbol
+                "uint16" or "ushort" or "int16" or "short"                => "\uE8EF",
+                "uint32" or "uint"   or "int32" or "int"                  => "\uE8EF",
+                "uint64" or "ulong"  or "int64" or "long"                 => "\uE8EF",
+                "float"  or "double"                                      => "\uE8EF",
+                "bytes"                                                   => "\uE7C3",  // Page / binary
+                "bitfield"                                                => "\uE71D",  // Flags / bitfield
+                "metadata" or "computed"                                  => "\uE946",  // Info / computed
+                _                                                         => "\uE8EF"
             };
         }
 

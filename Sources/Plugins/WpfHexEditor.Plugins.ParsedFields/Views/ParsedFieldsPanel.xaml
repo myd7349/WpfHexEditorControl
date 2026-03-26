@@ -89,6 +89,7 @@
                     <!-- Icon -->
                     <TextBlock Grid.Row="0" Grid.RowSpan="4" Grid.Column="1"
                                Text="{Binding FieldIcon}"
+                               FontFamily="Segoe MDL2 Assets"
                                FontSize="14"
                                Margin="0,0,6,0"
                                VerticalAlignment="Center"
@@ -942,6 +943,7 @@
                                         VerticalAlignment="Stretch"/>
                                 <!-- Icon -->
                                 <TextBlock Text="{Binding FieldIcon}"
+                                           FontFamily="Segoe MDL2 Assets"
                                            FontSize="13"
                                            Margin="0,0,5,0"
                                            VerticalAlignment="Center"/>
