@@ -56,7 +56,7 @@
 ### 🪟 VS-Style Docking *(🔧 100% in-house engine)*
 - **Float, dock, auto-hide** any panel
 - **Colored tabs** with per-document customization
-- **8 built-in themes** (Dark, Light, VS2022Dark, DarkGlass, Minimal, Office, Cyberpunk, VisualStudio)
+- **18 built-in themes** (Dark, Light, VS2022Dark, DarkGlass, Minimal, Office, Cyberpunk, VisualStudio...)
 - **Tab placement** left / right / bottom
 
 </td>
