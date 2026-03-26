@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using WpfHexEditor.Core;
 using WpfHexEditor.Core.Events;
@@ -132,6 +133,10 @@ namespace WpfHexEditor.HexEditor
         // E3 — format-driven bookmarks: track which offsets were auto-registered so they
         // can be cleared when a new format is loaded without disturbing user bookmarks.
         private readonly List<long> _formatBookmarkOffsets = new List<long>();
+
+        // Assertion-to-field linking: extracts C-style identifiers from assertion expressions
+        private static readonly Regex _identifierRegex =
+            new(@"\b[a-zA-Z_][a-zA-Z0-9_]*\b", RegexOptions.Compiled);
 
         #endregion
 
@@ -520,6 +525,10 @@ namespace WpfHexEditor.HexEditor
                         .Where(a => !a.Passed)
                         .ToList();
                     panel.FormatInfo.ForensicAlerts = forensicAlerts?.Count > 0 ? forensicAlerts : null;
+
+                    // Link assertion failures to individual fields (⚠ icon on the field that owns the variable)
+                    if (forensicAlerts?.Count > 0)
+                        ApplyAssertionFailuresToFields(forensicAlerts, panel.ParsedFields);
 
                     // D4 — Inspector groups: build from whfmt inspector.groups
                     var inspDef = _detectedFormat.Inspector;
@@ -1175,6 +1184,78 @@ namespace WpfHexEditor.HexEditor
         {
             ParseFieldsAsync();
         }
+
+        #region Assertion → Field Linking
+
+        /// <summary>
+        /// Links failed assertion results to individual parsed fields by matching
+        /// variable names in the assertion expression to field StoreAs values.
+        /// Sets IsValid=false + ValidationMessage on matched fields so the ⚠ icon appears.
+        /// </summary>
+        private static void ApplyAssertionFailuresToFields(
+            List<WpfHexEditor.Core.FormatDetection.AssertionResult> failedAssertions,
+            ObservableCollection<ParsedFieldViewModel> fields)
+        {
+            if (failedAssertions == null || failedAssertions.Count == 0 || fields == null || fields.Count == 0)
+                return;
+
+            // Build map: variableName → (message, severityRank)
+            // severityRank: error=0, warning=1, info=2 (lower = more severe)
+            var varToAssertion = new Dictionary<string, (string message, int rank)>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var a in failedAssertions)
+            {
+                if (string.IsNullOrWhiteSpace(a.Expression)) continue;
+                int rank = a.Severity switch { "error" => 0, "warning" => 1, _ => 2 };
+                string msg = a.Message ?? $"Assertion failed: {a.Name}";
+
+                foreach (Match m in _identifierRegex.Matches(a.Expression))
+                {
+                    string varName = m.Value;
+
+                    // Skip hex literal fragments (e.g. the "FF" in "0xFF")
+                    if (m.Index >= 2 && a.Expression[m.Index - 1] == 'x' && a.Expression[m.Index - 2] == '0')
+                        continue;
+
+                    // Keep only the most severe assertion per variable
+                    if (!varToAssertion.TryGetValue(varName, out var existing) || rank < existing.rank)
+                        varToAssertion[varName] = (msg, rank);
+                }
+            }
+
+            if (varToAssertion.Count == 0) return;
+
+            ApplyToFieldTree(fields, varToAssertion);
+        }
+
+        private static void ApplyToFieldTree(
+            IEnumerable<ParsedFieldViewModel> fields,
+            Dictionary<string, (string message, int rank)> varToAssertion)
+        {
+            foreach (var field in fields)
+            {
+                var storeAs = field.BlockDefinition?.StoreAs;
+                if (!string.IsNullOrWhiteSpace(storeAs) && varToAssertion.TryGetValue(storeAs, out var info))
+                {
+                    if (field.IsValid)
+                    {
+                        field.IsValid = false;
+                        field.ValidationMessage = info.message;
+                    }
+                    else
+                    {
+                        // Append to existing validation error
+                        field.ValidationMessage = field.ValidationMessage + "\n" + info.message;
+                    }
+                }
+
+                // Recurse into children (repeating groups, conditionals, loops)
+                if (field.ChildItems?.Count > 0)
+                    ApplyToFieldTree(field.ChildItems, varToAssertion);
+            }
+        }
+
+        #endregion
 
         /// <summary>
         /// Clear format detection state (called when file is closed)
