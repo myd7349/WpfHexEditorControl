@@ -64,7 +64,12 @@ public sealed record EmbeddedFormatEntry(
     /// Whether the .whfmt file contains a <c>syntaxDefinition</c> block that can be
     /// parsed into a <see cref="WpfHexEditor.ProjectSystem.Languages.LanguageDefinition"/>.
     /// </summary>
-    bool HasSyntaxDefinition = false);
+    bool HasSyntaxDefinition = false,
+    /// <summary>
+    /// Preferred diff algorithm declared in the .whfmt root field <c>"diffMode"</c>.
+    /// Values: <c>"text"</c>, <c>"semantic"</c>, <c>"binary"</c>. Null when absent.
+    /// </summary>
+    string? DiffMode = null);
 
 /// <summary>
 /// Read-only catalog of the embedded format definitions shipped with the assembly.
@@ -89,4 +94,11 @@ public interface IEmbeddedFormatCatalog
     /// Returns the full JSON content for the given resource key.
     /// </summary>
     string GetJson(string resourceKey);
+
+    /// <summary>
+    /// Returns the first entry whose <see cref="EmbeddedFormatEntry.Extensions"/> list contains
+    /// <paramref name="extension"/> (case-insensitive, leading dot optional).
+    /// Returns <c>null</c> if no matching format is registered.
+    /// </summary>
+    EmbeddedFormatEntry? GetByExtension(string extension);
 }

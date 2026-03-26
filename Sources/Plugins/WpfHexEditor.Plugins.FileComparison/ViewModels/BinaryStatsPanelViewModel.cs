@@ -21,7 +21,7 @@ public sealed class BinaryStatsPanelViewModel : INotifyPropertyChanged
     private string                 _rightFileName = string.Empty;
     private long                   _leftFileSize  = 0;
     private long                   _rightFileSize = 0;
-    private bool                   _isVisible     = false;
+    private bool                   _isVisible     = true;
     private FormatDetectionResult? _leftFormat;
     private FormatDetectionResult? _rightFormat;
 

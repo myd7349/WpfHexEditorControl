@@ -12,8 +12,30 @@ using WpfHexEditor.SDK.Commands;
 
 namespace WpfHexEditor.Plugins.FileComparison.Views;
 
-public sealed partial class DiffViewerDocument : IStatusBarContributor, IEditorToolbarContributor
+public sealed partial class DiffViewerDocument : IStatusBarContributor, IEditorToolbarContributor, IRefreshTimeReporter
 {
+    // ── IRefreshTimeReporter ──────────────────────────────────────────────────
+
+    private readonly StatusBarItem _sbRefreshTime = new()
+    {
+        Label   = "Refresh",
+        Tooltip = "Binary diff canvas render time per frame",
+        Value   = "—",
+    };
+
+    /// <inheritdoc />
+    public StatusBarItem? RefreshTimeStatusBarItem => _sbRefreshTime;
+
+    /// <summary>
+    /// Called once the XAML canvas is ready (after InitializeComponent).
+    /// Wires the canvas render-time event to the status bar item.
+    /// </summary>
+    internal void WireRefreshTimeReporter()
+    {
+        if (BinaryDiffCanvas is null) return;
+        BinaryDiffCanvas.RefreshTimeUpdated += (_, ms) => _sbRefreshTime.Value = $"{ms} ms";
+    }
+
     // ── Status bar ────────────────────────────────────────────────────────────
 
     private ObservableCollection<StatusBarItem>? _statusBarItems;

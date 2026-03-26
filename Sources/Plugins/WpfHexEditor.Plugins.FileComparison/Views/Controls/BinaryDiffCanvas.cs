@@ -9,6 +9,7 @@
 //                FrameworkElement.OnRender is the single draw call per frame.
 
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -69,6 +70,16 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
     private readonly Dictionary<string, FormattedText> _asciiFtCache  = new(capacity: 100);
     private readonly Dictionary<string, FormattedText> _offsetFtCache = new(capacity: 32);
     private readonly Dictionary<int,    FormattedText> _collFtCache   = new(capacity: 8);
+
+    // ── Render-time measurement ────────────────────────────────────────────────
+
+    private readonly Stopwatch _renderStopwatch = new();
+
+    /// <summary>
+    /// Raised at the end of each <see cref="OnRender"/> call with the elapsed milliseconds.
+    /// Wire to a <see cref="WpfHexEditor.Editor.Core.StatusBarItem"/> to surface the metric.
+    /// </summary>
+    internal event EventHandler<long>? RefreshTimeUpdated;
 
     // ── DependencyProperties ─────────────────────────────────────────────────
 
@@ -255,11 +266,15 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
 
     protected override void OnRender(DrawingContext dc)
     {
+        _renderStopwatch.Restart();
+
         var rows = Rows;
         if (rows is null || rows.Count == 0)
         {
             dc.DrawRectangle(_bgBrush ?? Brushes.Transparent, null,
                 new Rect(0, 0, ActualWidth, ActualHeight));
+            _renderStopwatch.Stop();
+            RefreshTimeUpdated?.Invoke(this, _renderStopwatch.ElapsedMilliseconds);
             return;
         }
 
@@ -288,6 +303,9 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
 
         dc.Pop(); // translate
         dc.Pop(); // clip
+
+        _renderStopwatch.Stop();
+        RefreshTimeUpdated?.Invoke(this, _renderStopwatch.ElapsedMilliseconds);
     }
 
     private void DrawRow(DrawingContext dc, BinaryHexDiffRow row, double y)

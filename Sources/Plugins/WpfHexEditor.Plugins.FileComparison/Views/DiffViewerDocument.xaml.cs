@@ -28,7 +28,8 @@ public sealed partial class DiffViewerDocument : UserControl
 
     private DiffViewerViewModel? _vm;
     private bool                 _scrollSyncing;
-    private bool                 _rulerDirty = true;
+    private bool                 _rulerDirty    = true;
+    private double               _statsPanelWidth = 240.0;
 
     // ── Constructor ──────────────────────────────────────────────────────────
 
@@ -48,11 +49,41 @@ public sealed partial class DiffViewerDocument : UserControl
             }
         };
 
+        vm.StatsPanel.PropertyChanged += OnStatsPanelPropertyChanged;
+
         Loaded += (_, _) =>
         {
+            WireRefreshTimeReporter();
             UpdateStatusBar();
             PaintRuler();
+            // Sync initial column width with IsVisible default state.
+            ApplyStatsPanelColumnWidth(vm.StatsPanel.IsVisible);
         };
+    }
+
+    private void OnStatsPanelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(BinaryStatsPanelViewModel.IsVisible)) return;
+        Dispatcher.InvokeAsync(() => ApplyStatsPanelColumnWidth(_vm!.StatsPanel.IsVisible));
+    }
+
+    private void ApplyStatsPanelColumnWidth(bool isVisible)
+    {
+        var col = OuterGrid.ColumnDefinitions[1];
+        if (isVisible)
+        {
+            col.MinWidth = 180;
+            col.MaxWidth = 400;
+            col.Width    = new GridLength(_statsPanelWidth, GridUnitType.Pixel);
+        }
+        else
+        {
+            // Save current width so it can be restored on re-show.
+            if (col.ActualWidth > 0) _statsPanelWidth = col.ActualWidth;
+            col.MinWidth = 0;
+            col.MaxWidth = double.PositiveInfinity;
+            col.Width    = new GridLength(0, GridUnitType.Pixel);
+        }
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -144,23 +175,37 @@ public sealed partial class DiffViewerDocument : UserControl
 
     private void OnRulerClicked(object sender, MouseButtonEventArgs e)
     {
+        OverviewRuler.CaptureMouse();
+        ScrollToRulerFraction(e.GetPosition(OverviewRuler).Y);
+    }
+
+    private void OnRulerDragged(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed) return;
+        ScrollToRulerFraction(e.GetPosition(OverviewRuler).Y);
+    }
+
+    private void OnRulerReleased(object sender, MouseButtonEventArgs e)
+    {
+        OverviewRuler.ReleaseMouseCapture();
+    }
+
+    private void ScrollToRulerFraction(double y)
+    {
         if (_vm is null) return;
-        var clickY    = e.GetPosition(OverviewRuler).Y;
-        var fraction  = clickY / OverviewRuler.ActualHeight;
+        var fraction = Math.Clamp(y / OverviewRuler.ActualHeight, 0.0, 1.0);
 
         if (_vm.IsBinaryMode)
         {
             var totalRows = _vm.BinaryHexRows.Count;
             if (totalRows == 0) return;
-            var rowIdx = (int)(fraction * totalRows);
-            BinaryHexScroll.ScrollToVerticalOffset(Math.Max(0, rowIdx) * BinaryDiffCanvas.EffectiveRowH);
+            BinaryHexScroll.ScrollToVerticalOffset((int)(fraction * totalRows) * BinaryDiffCanvas.EffectiveRowH);
         }
         else
         {
             var totalRows = _vm.LeftRows.Count;
             if (totalRows == 0) return;
-            var rowIdx = (int)(fraction * totalRows);
-            LeftScroll.ScrollToVerticalOffset(Math.Max(0, rowIdx) * RowHeight);
+            LeftScroll.ScrollToVerticalOffset((int)(fraction * totalRows) * RowHeight);
         }
     }
 
