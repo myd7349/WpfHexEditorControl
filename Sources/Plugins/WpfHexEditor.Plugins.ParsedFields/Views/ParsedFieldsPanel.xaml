@@ -696,7 +696,7 @@
                                                       Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Grid Padding="8,2">
+                                                    <Grid Margin="8,2">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="*"/>

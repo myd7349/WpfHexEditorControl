@@ -540,8 +540,8 @@ namespace WpfHexEditor.HexEditor
                                 foreach (var varName in g.Fields)
                                 {
                                     string val = "—";
-                                    if (_variableContext != null && _variableContext.TryGet(varName, out var varVal))
-                                        val = varVal?.ToString() ?? "null";
+                                    if (_variableContext != null && _variableContext.HasVariable(varName))
+                                        val = _variableContext.GetVariable(varName)?.ToString() ?? "null";
                                     item.Fields.Add(new WpfHexEditor.Core.Interfaces.InspectorFieldItem
                                     {
                                         Name         = varName,
@@ -555,8 +555,8 @@ namespace WpfHexEditor.HexEditor
 
                         // Inspector badge
                         if (!string.IsNullOrEmpty(inspDef.Badge) && _variableContext != null
-                            && _variableContext.TryGet(inspDef.Badge, out var badgeVal))
-                            panel.FormatInfo.InspectorBadge = badgeVal?.ToString();
+                            && _variableContext.HasVariable(inspDef.Badge))
+                            panel.FormatInfo.InspectorBadge = _variableContext.GetVariable(inspDef.Badge)?.ToString();
                     }
                     else
                     {
