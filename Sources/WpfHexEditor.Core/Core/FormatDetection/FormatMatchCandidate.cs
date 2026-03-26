@@ -80,6 +80,12 @@ namespace WpfHexEditor.Core.FormatDetection
         /// </summary>
         public Dictionary<string, object> Variables { get; set; } = new Dictionary<string, object>();
 
+        /// <summary>
+        /// D3 — Assertion results collected during block execution.
+        /// Failed entries are shown in the Forensic Alerts section.
+        /// </summary>
+        public List<AssertionResult> AssertionResults { get; set; } = new List<AssertionResult>();
+
         public override string ToString()
         {
             return $"{Format?.FormatName} (Tier {(int)Tier}, Confidence: {ConfidenceScore:P0})";

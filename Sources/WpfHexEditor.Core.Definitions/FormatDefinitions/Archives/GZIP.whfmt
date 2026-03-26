@@ -293,6 +293,11 @@
       "description": "Extra flags byte hinting at the compression level used (2 = max compression, 4 = fastest)"
     }
   ],
+  "assertions": [
+    { "name": "GZIP magic", "expression": "gzipMagic == 35615", "severity": "error", "message": "Invalid GZIP signature — expected 1F 8B" }
+  ],
+  "forensic": { "category": "archive", "riskLevel": "low" },
+  "aiHints": { "analysisContext": "GZIP compressed file — check ID1/ID2 magic, compression method (8=deflate), flags, mtime, and original filename in FLG.FNAME", "suggestedInspections": ["Check FLG byte for FNAME/FEXTRA/FCOMMENT/FHCRC flags", "Inspect OS field for origin platform"] },
   "MimeTypes": [
     "application/gzip",
     "application/x-gzip"

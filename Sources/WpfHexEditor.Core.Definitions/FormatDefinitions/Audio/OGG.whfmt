@@ -360,6 +360,22 @@
     "PriorityFormat": true,
     "AutoRefined": false
   },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Ogg is a page-based bitstream container where each page carries a CRC-32 checksum over the full page. Forensic analysis should verify per-page CRCs, confirm monotonically increasing pageSequenceNumber values (gaps indicate missing/deleted pages), and inspect the BOS page payload for the codec identification header to determine the embedded codec (Vorbis, Opus, FLAC, or Theora).",
+    "knownVulnerabilities": [],
+    "suggestedInspections": []
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "First OGG Page (BOS)", "offsetVar": "currentOffset", "icon": "\uE8A9" }
+    ]
+  },
   "TechnicalDetails": {
     "AudioFormat": true,
     "Endianness": "little-endian",

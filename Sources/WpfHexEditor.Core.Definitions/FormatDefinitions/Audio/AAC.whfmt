@@ -485,5 +485,18 @@
     "SamplesPerFrame": 1024,
     "Endianness": "big-endian",
     "SyncPattern": "0xFFF (12 bits)"
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AAC audio with ADTS framing; verify sync word 0xFFF1, profile index, channel config and frame length fields.",
+    "suggestedInspections": [
+      "Verify ADTS sync word (0xFFF) and MPEG version bit at offset 0",
+      "Check sampling frequency index (0-12) for valid rate and channel configuration",
+      "Validate frame length field spans header + raw data block size"
+    ]
   }
 }

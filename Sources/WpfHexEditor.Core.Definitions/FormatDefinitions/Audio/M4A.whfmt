@@ -152,5 +152,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "MPEG-4 audio container (AAC/ALAC); 'ftyp' box at offset 4 with major brand 'M4A ' indicates iTunes-origin audio.",
+    "suggestedInspections": [
+      "Verify 'ftyp' box at offset 4 with major brand 'M4A ' (0x4D344120)",
+      "Inspect 'moov' atom for 'esds' descriptor containing AAC codec configuration",
+      "Check 'udta' and 'meta' atoms for embedded iTunes metadata and DRM flags"
+    ]
   }
 }

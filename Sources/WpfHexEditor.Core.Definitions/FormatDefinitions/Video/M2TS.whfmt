@@ -115,5 +115,18 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Blu-ray BDAV transport stream; 192-byte packets with 4-byte timestamp prefix before each 188-byte MPEG-TS packet.",
+    "suggestedInspections": [
+      "Verify sync byte 0x47 at byte offset 4 (after 4-byte timestamp prefix) and every 192 bytes",
+      "Check 4-byte Blu-ray timestamp prefix for arrival time clock (ATC) values",
+      "Inspect PAT and PMT tables in TS packets for stream PIDs and codec identification"
+    ]
   }
 }

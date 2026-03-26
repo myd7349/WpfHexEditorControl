@@ -100,6 +100,22 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
+  "forensic": {
+    "category": "data",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Apache Parquet stores data in a columnar format with a PAR1 magic at both the start and end of file; the footer metadata (Thrift-encoded FileMetaData) sits before the trailing magic and encodes schema, row groups, and column chunk offsets. Forensic inspection should verify both magic bytes match and that all column chunk offsets are within the file bounds.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": [
+      "Confirm both the leading PAR1 magic (offset 0) and the trailing PAR1 magic (last 4 bytes) are present and identical",
+      "Read the 4-byte footer length at bytes [-8..-5] and verify the Thrift FileMetaData fits within the declared length",
+      "Enumerate row group and column chunk offsets from the footer to ensure all chunks are within the file boundary",
+      "Inspect the schema tree in FileMetaData for field names and types that reveal the data structure without reading row data"
+    ]
+  },
   "TechnicalDetails": {},
   "functions": {
     "readUInt32LE": "Read executable header"

@@ -109,6 +109,19 @@
     "AutoRefined": true
   },
   "TechnicalDetails": {},
+  "forensic": {
+    "category": "science",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "FITS astronomical image/data; starts with 'SIMPLE  =' keyword; 2880-byte fixed-block header units with ASCII keyword=value cards.",
+    "suggestedInspections": [
+      "Parse mandatory keywords: SIMPLE, BITPIX, NAXIS, NAXISn to determine data dimensions and type",
+      "Verify header block alignment (each HDU header is a multiple of 2880 bytes)",
+      "Inspect extension HDUs (XTENSION keyword) for binary tables or image arrays appended after primary HDU"
+    ]
+  },
   "functions": {
     "readUInt32BE": "Read scientific header",
     "multiply": "Calculate dimensions"

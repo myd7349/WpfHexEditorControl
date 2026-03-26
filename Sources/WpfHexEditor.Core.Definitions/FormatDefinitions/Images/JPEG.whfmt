@@ -294,6 +294,12 @@
       "description": "true if progressive encoding (SOF2), false if baseline sequential (SOF0)"
     }
   ],
+  "assertions": [
+    { "name": "SOI marker", "expression": "soiMarker == 65496", "severity": "error", "message": "Missing JPEG SOI marker FFD8" }
+  ],
+  "navigation": { "bookmarks": [{ "name": "SOI Marker", "offset": 0, "icon": "\uE8A5" }, { "name": "SOS Marker (scan data)", "offset": 0, "icon": "\uE768" }] },
+  "forensic": { "category": "image", "riskLevel": "low" },
+  "aiHints": { "analysisContext": "JPEG image — inspect JFIF/Exif APP0/APP1 headers, comment markers, and SOF markers for resolution", "suggestedInspections": ["Check APP1 Exif for GPS metadata", "Inspect JFIF APP0 for thumbnail data"] },
   "MimeTypes": [
     "image/jpeg",
     "image/jpg"

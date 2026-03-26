@@ -114,5 +114,18 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "forensic": {
+    "category": "document",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Rich Text Format document; text-based with control words; historically exploited for obfuscated shellcode via \\objdata and \\pict.",
+    "suggestedInspections": [
+      "Verify '{\\rtf' (0x7B5C727466) signature at offset 0 and RTF version digit following",
+      "Scan for \\objdata, \\objocx, and \\pict control words that may embed OLE objects or shellcode",
+      "Inspect \\stylesheet and \\info groups for obfuscated control sequences or hex-encoded payloads"
+    ]
   }
 }

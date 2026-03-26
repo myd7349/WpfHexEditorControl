@@ -112,6 +112,27 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
+  "forensic": {
+    "category": "disk",
+    "riskLevel": "high",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "NTFS volumes begin with a 512-byte boot sector (BPB) containing the 'NTFS    ' OEM ID at offset 3, cluster size, MFT offset, and MFT mirror offset. The Master File Table starts at the cluster offset given in the BPB; each MFT record is 1024 bytes with 'FILE' signature. Forensic analysis focuses on MFT record sequence numbers, $LogFile journal, $UsnJrnl change log, and hidden Alternate Data Streams.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": [
+      "Parse the BPB to locate the MFT start cluster and navigate to the Master File Table for file enumeration",
+      "Scan for MFT records with the IN_USE flag cleared to enumerate deleted files available for recovery",
+      "Search the $UsnJrnl ($Extend\\$UsnJrnl) change journal for a timestamped record of all file system changes",
+      "Enumerate Alternate Data Streams (ADS) via MFT attribute type 0x80 with non-empty stream names to find hidden data"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "Boot Sector (BPB)", "offsetVar": "currentOffset", "icon": "\uE8A9" }
+    ]
+  },
   "TechnicalDetails": {},
   "functions": {
     "readUInt32LE": "Read file header",

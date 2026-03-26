@@ -474,13 +474,18 @@ namespace WpfHexEditor.HexEditor
                         }
                     }
 
-                    // Store the detected format, variables, and candidates for parsed fields panel
+                    // Store the detected format, variables, candidates, and assertion results
                     _detectedFormat = result.Format;
                     _detectionVariables = result.Variables; // Variables from function execution
                     _detectionCandidates = result.Candidates; // All candidates for format selector
+                    _detectionAssertions = result.AssertionResults; // D3 — assertion results for forensic panel
 
                     // Parse fields for the parsed fields panel (Issue #111)
                     RefreshParsedFields();
+
+                    // E4/E5 — Refresh toolbar + status bar so the Format chip shows the detected name
+                    RefreshToolbarItems();
+                    RefreshStatusBarItemValues();
 
                     // Update enriched format panel with detected format
                     UpdateEnrichedFormatPanel(result.Format);

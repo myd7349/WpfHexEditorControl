@@ -113,6 +113,7 @@ namespace WpfHexEditor.HexEditor
         private FormatDefinition _detectedFormat;
         private Dictionary<string, object> _detectionVariables; // Variables from function execution
         private List<FormatMatchCandidate> _detectionCandidates; // All candidates from detection
+        private List<WpfHexEditor.Core.FormatDetection.AssertionResult> _detectionAssertions; // D3 — assertion results
         private VariableContext _variableContext;
         private ExpressionEvaluator _expressionEvaluator;
         private readonly FormattedValueCache _formattedValueCache = new FormattedValueCache();
@@ -127,6 +128,10 @@ namespace WpfHexEditor.HexEditor
         private System.Windows.Threading.DispatcherTimer _autoRefreshTimer;
         private bool _pendingAutoRefresh;
         private const int AutoRefreshDelayMs = 500; // Delay before auto-refresh triggers
+
+        // E3 — format-driven bookmarks: track which offsets were auto-registered so they
+        // can be cleared when a new format is loaded without disturbing user bookmarks.
+        private readonly List<long> _formatBookmarkOffsets = new List<long>();
 
         #endregion
 
@@ -155,6 +160,13 @@ namespace WpfHexEditor.HexEditor
             // Events are wired via OnParsedFieldsPanelChanged when ParsedFieldsPanel DP is set.
             // Subscribe to byte modification events for auto-refresh
             ByteModified += HexEditor_ByteModified;
+
+            // E2 — Field-click selection: subscribe after HexViewport is fully initialized (Loaded)
+            Loaded += (_, __) =>
+            {
+                if (HexViewport != null)
+                    HexViewport.ByteClicked += HexViewport_ByteClickedForFieldSelect;
+            };
         }
 
         #endregion
@@ -195,6 +207,32 @@ namespace WpfHexEditor.HexEditor
             {
                 System.Diagnostics.Debug.WriteLine($"Error selecting field: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// E2 — Field-click selection.
+        /// When the user clicks a byte that belongs to a whfmt-parsed CustomBackgroundBlock,
+        /// extend the selection to cover the full field range so the entire field is highlighted.
+        /// Blocks with ShowInTooltip=false (whole-file coverage sentinel blocks) are skipped.
+        /// </summary>
+        private void HexViewport_ByteClickedForFieldSelect(object sender, long position)
+        {
+            if (_viewModel == null) return;
+
+            // Only act when a format is loaded (field blocks are present)
+            if (_detectedFormat == null) return;
+
+            var block = GetCustomBackgroundBlock(position);
+            if (block == null || !block.ShowInTooltip || block.Length <= 1) return;
+
+            // If the user already has the full field selected, do nothing (avoid selection loop)
+            long selStart = Math.Min(SelectionStart, SelectionStop);
+            long selStop  = Math.Max(SelectionStart, SelectionStop);
+            if (selStart == block.StartOffset && selStop == block.StopOffset - 1) return;
+
+            _viewModel.SetSelectionRange(
+                new VirtualPosition(block.StartOffset),
+                new VirtualPosition(block.StopOffset - 1));
         }
 
         /// <summary>
@@ -438,6 +476,50 @@ namespace WpfHexEditor.HexEditor
                     // Parse all blocks from the format definition
                     if (_detectedFormat.Blocks != null)
                         ParseBlocks(_detectedFormat.Blocks, 0, panel);
+
+                    // E3 — Register navigation bookmarks derived from format variables.
+                    // Clear previous format bookmarks (user bookmarks are left untouched).
+                    foreach (var prev in _formatBookmarkOffsets) RemoveBookmark(prev);
+                    _formatBookmarkOffsets.Clear();
+
+                    var navDef = _detectedFormat.Navigation;
+                    var panelBookmarks = new System.Collections.ObjectModel.ObservableCollection<WpfHexEditor.Core.Interfaces.FormatNavigationBookmark>();
+
+                    if (navDef?.Bookmarks != null)
+                    {
+                        foreach (var bm in navDef.Bookmarks)
+                        {
+                            if (string.IsNullOrWhiteSpace(bm.OffsetVar)) continue;
+                            var varValue = _variableContext?.GetVariable(bm.OffsetVar);
+                            if (varValue == null) continue;
+
+                            long offset;
+                            try { offset = Convert.ToInt64(varValue); }
+                            catch { continue; }
+                            if (offset < 0 || offset >= Length) continue;
+
+                            SetBookmark(offset);
+                            _formatBookmarkOffsets.Add(offset);
+
+                            panelBookmarks.Add(new WpfHexEditor.Core.Interfaces.FormatNavigationBookmark
+                            {
+                                Name = bm.Name ?? bm.OffsetVar,
+                                Offset = offset,
+                                Icon = bm.Icon,
+                                Color = bm.Color,
+                                Description = $"0x{offset:X8}"
+                            });
+                        }
+                    }
+
+                    // Setting via property triggers HasBookmarks notification and hides/shows the strip
+                    panel.FormatInfo.Bookmarks = panelBookmarks.Count > 0 ? panelBookmarks : null;
+
+                    // D3 — Forensic alerts: expose failed/warning assertions from detection run
+                    var forensicAlerts = _detectionAssertions?
+                        .Where(a => !a.Passed)
+                        .ToList();
+                    panel.FormatInfo.ForensicAlerts = forensicAlerts?.Count > 0 ? forensicAlerts : null;
                 }, System.Windows.Threading.DispatcherPriority.Background);
             }
             catch (Exception ex)

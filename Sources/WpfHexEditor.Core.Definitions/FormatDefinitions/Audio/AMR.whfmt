@@ -114,5 +114,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AMR narrowband voice codec used in mobile networks; file begins with '#!AMR\\n' magic, followed by frame header bytes.",
+    "suggestedInspections": [
+      "Verify 6-byte magic header '#!AMR\\n' (0x2321414D520A) at offset 0",
+      "Check frame type byte (bits 6-3) for valid AMR mode index (0-7)",
+      "Inspect quality bit (bit 2) per frame for packet loss or corruption indicators"
+    ]
   }
 }

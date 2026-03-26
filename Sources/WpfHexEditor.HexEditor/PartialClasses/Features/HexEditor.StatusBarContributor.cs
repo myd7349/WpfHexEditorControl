@@ -48,6 +48,9 @@ namespace WpfHexEditor.HexEditor
         private StatusBarItem _sbCopyMode       = null!;
         private StatusBarItem _sbRefreshTime    = null!;
 
+        // E5 — Format status bar item
+        private StatusBarItem _sbFormat         = null!;
+
         // ═══════════════════════════════════════════════════════════════════
         // IStatusBarContributor
         // ═══════════════════════════════════════════════════════════════════
@@ -243,6 +246,14 @@ namespace WpfHexEditor.HexEditor
                 });
             }
 
+            // E5 — Format name (display-only; updated when format detection completes) ------
+            _sbFormat = new StatusBarItem
+            {
+                Label   = "Format",
+                Tooltip = "Detected file format. Open ParsedFields panel for field details.",
+                Value   = "—"
+            };
+
             // -- Refresh time (display-only, updated by HexViewport) -----------
             // Note: This is exposed as a separate field (_sbRefreshTime) but NOT included
             // in the returned collection, because MainWindow displays it separately on the
@@ -267,7 +278,8 @@ namespace WpfHexEditor.HexEditor
                 _sbOffsetVisual,
                 _sbDataVisual,
                 _sbByteGrouping,
-                _sbCopyMode
+                _sbCopyMode,
+                _sbFormat          // E5 — active format name
                 // _sbRefreshTime is NOT included here - displayed separately on the right
             };
         }
@@ -355,6 +367,14 @@ namespace WpfHexEditor.HexEditor
             var copyLabel = DefaultCopyToClipboardMode.ToString();
             _sbCopyMode.Value = copyLabel;
             foreach (var c in _sbCopyMode.Choices) c.IsActive = c.DisplayName == copyLabel;
+
+            // E5 — Active format name (display-only)
+            if (_sbFormat != null)
+            {
+                _sbFormat.Value = _detectedFormat != null
+                    ? _detectedFormat.FormatName ?? "—"
+                    : "—";
+            }
         }
     }
 }

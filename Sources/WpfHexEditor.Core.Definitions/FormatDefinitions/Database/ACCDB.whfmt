@@ -119,5 +119,18 @@
   "functions": {
     "readUInt32LE": "Read DB header",
     "extractASCIIString": "Read schema"
+  },
+  "forensic": {
+    "category": "database",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Microsoft Access 2007+ ACCDB (ACE engine); supports VBA macros, linked tables, and encrypted pages.",
+    "suggestedInspections": [
+      "Verify 'Standard ACE Database' signature and ACE engine version",
+      "Check for password-protected or encrypted database pages",
+      "Inspect embedded VBA project streams for macro content"
+    ]
   }
 }

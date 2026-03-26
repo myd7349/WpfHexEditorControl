@@ -131,6 +131,19 @@
     "ImagesFormat": true,
     "BitDepth": 8
   },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "OpenEXR HDR image; magic 0x762F3101; supports 16/32-bit float channels, multi-part files, and deep image data.",
+    "suggestedInspections": [
+      "Verify magic number and version field (byte 4) for multi-part or deep-image flags",
+      "Parse attribute list to locate 'dataWindow', 'channels', and 'compression' metadata",
+      "Inspect channel list for unusual channel names that may indicate steganographic data"
+    ]
+  },
   "functions": {
     "readUInt32LE": "Read dimensions",
     "multiply": "Calculate pixels",

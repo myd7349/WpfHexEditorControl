@@ -122,5 +122,18 @@
   "functions": {
     "readUInt32LE": "Read executable header",
     "calculateCRC32": "Validate"
+  },
+  "forensic": {
+    "category": "executable",
+    "riskLevel": "high",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "DOS COM executable; flat binary loaded at CS:0100h; no header — entire file is raw x86 code.",
+    "suggestedInspections": [
+      "Disassemble from offset 0x0000 to identify entry-point instructions",
+      "Scan for interrupt calls (INT 21h, INT 13h) that indicate DOS API or direct disk access",
+      "Check for self-modifying code patterns common in DOS malware"
+    ]
   }
 }

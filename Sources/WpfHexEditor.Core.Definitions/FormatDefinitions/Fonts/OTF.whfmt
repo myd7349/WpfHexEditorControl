@@ -352,6 +352,24 @@
     "PriorityFormat": true,
     "AutoRefined": false
   },
+  "forensic": {
+    "category": "font",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "OpenType CFF fonts embed PostScript Type 2 charstring programs in the CFF table, which have historically been exploited via stack overflow in font parsing engines. Check for a DSIG table (digital signature) to confirm the font has not been tampered with post-signing. Ensure table offsets and lengths do not overlap or exceed the file boundary.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": []
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "Offset Table", "offsetVar": "currentOffset", "icon": "\uE8A9" },
+      { "name": "Table 1 Data", "offsetVar": "table1Offset", "icon": "\uE8A9" },
+      { "name": "Table 2 Data", "offsetVar": "table2Offset", "icon": "\uE8A9" }
+    ]
+  },
   "TechnicalDetails": {
     "FontFormat": true,
     "primary_extension": ".otf",

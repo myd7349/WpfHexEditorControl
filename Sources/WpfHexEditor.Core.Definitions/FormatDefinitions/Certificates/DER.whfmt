@@ -128,6 +128,27 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "DER-encoded X.509 certificates begin with an ASN.1 SEQUENCE tag (0x30) followed by a multi-byte length. The certificate contains three nested structures: TBSCertificate (version, serial, algorithm, issuer, validity, subject, public key), SignatureAlgorithm, and Signature. Forensic inspection should verify the validity period, check for revoked serial numbers against CRLs, and examine the Subject Alternative Names extension for unexpected domains.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": [
+      "Verify certificate validity period (notBefore / notAfter) against current date",
+      "Check Subject Alternative Names extension for unexpected or wildcard domains",
+      "Inspect issuer chain to confirm the certificate traces to a trusted root CA",
+      "Cross-reference serial number against published CRL or OCSP endpoint"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "ASN.1 Certificate Root", "offsetVar": "currentOffset", "icon": "\uE8A9" }
+    ]
+  },
   "TechnicalDetails": {},
   "functions": {
     "readUInt32BE": "Read certificate",

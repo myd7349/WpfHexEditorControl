@@ -290,6 +290,9 @@
       "description": "Index into the Global Color Table used for screen background (only valid when GCT is present)"
     }
   ],
+  "versionDetection": { "field": "gifVersion", "map": { "7": "GIF87a", "9": "GIF89a" } },
+  "forensic": { "category": "image", "riskLevel": "low" },
+  "aiHints": { "analysisContext": "GIF image — check header version (87a/89a), logical screen descriptor, and color tables", "suggestedInspections": ["Check for animation frames (GIF89a)", "Inspect transparency index"] },
   "MimeTypes": [
     "image/gif"
   ],

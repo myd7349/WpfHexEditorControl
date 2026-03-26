@@ -378,6 +378,24 @@
     "PriorityFormat": true,
     "AutoRefined": false
   },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "BMP files embed pixel data at a variable offset (pixelDataOffset) and may carry data steganographically in low-order bits or in the gap between the header and pixel data. Verify that pixelDataOffset matches the expected header + color-table size, and inspect non-zero reserved fields which indicate non-conforming writers.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": []
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "BMP File Header", "offsetVar": "currentOffset", "icon": "\uE8A9" },
+      { "name": "DIB Header", "offsetVar": "dibHeaderSize", "icon": "\uE8A9" },
+      { "name": "Pixel Data", "offsetVar": "pixelDataOffset", "icon": "\uEB9F" }
+    ]
+  },
   "TechnicalDetails": {
     "ImageFormat": true,
     "Endianness": "little-endian",

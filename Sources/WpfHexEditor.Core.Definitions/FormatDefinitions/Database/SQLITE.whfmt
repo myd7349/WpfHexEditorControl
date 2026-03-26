@@ -435,6 +435,11 @@
       "description": "Number of unused pages on the freelist available for reuse"
     }
   ],
+  "assertions": [
+    { "name": "SQLite magic", "expression": "sqliteMagic == 1397208883", "severity": "error", "message": "Invalid SQLite signature — expected 'SQLi'" }
+  ],
+  "forensic": { "category": "database", "riskLevel": "medium" },
+  "aiHints": { "analysisContext": "SQLite database — check 100-byte header: page size, file format version, reserved bytes, and schema layer version", "suggestedInspections": ["Decode page size (bytes at offset 16-17)", "Check schema format number (1-4)", "Inspect text encoding (1=UTF-8, 2=UTF-16LE, 3=UTF-16BE)"] },
   "software": [
     "SQLite",
     "DB Browser for SQLite",

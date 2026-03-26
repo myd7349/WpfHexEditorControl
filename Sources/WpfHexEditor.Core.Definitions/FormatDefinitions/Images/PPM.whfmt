@@ -117,5 +117,18 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Netpbm Portable Pixmap; P3 (ASCII) or P6 (binary); RGB color image with plain-text header declaring width, height, maxval.",
+    "suggestedInspections": [
+      "Confirm magic token is 'P3' or 'P6' and maxval is between 1 and 65535",
+      "For P6: verify binary RGB data length matches width × height × 3 × bytes-per-sample",
+      "Scan header comment lines for embedded text or covert channel content"
+    ]
   }
 }

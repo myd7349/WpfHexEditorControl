@@ -307,6 +307,68 @@ namespace WpfHexEditor.Core.ViewModels
             }
         }
 
+        // ── Tree hierarchy (C1) ────────────────────────────────────────────────
+        private bool _isGroup;
+        private bool _isExpanded = true;
+        private System.Collections.ObjectModel.ObservableCollection<ParsedFieldViewModel> _children;
+
+        /// <summary>Whether this node is a group container (repeating block, nested struct group).</summary>
+        public bool IsGroup
+        {
+            get => _isGroup;
+            set
+            {
+                if (_isGroup != value)
+                {
+                    _isGroup = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(GroupLabel));
+                    OnPropertyChanged(nameof(FieldIcon));
+                }
+            }
+        }
+
+        /// <summary>Whether the tree node is expanded (C1).</summary>
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Children for repeating/nested groups — null when no children so the TreeView
+        /// does not render an expand toggle on leaf nodes.
+        /// </summary>
+        public System.Collections.ObjectModel.ObservableCollection<ParsedFieldViewModel>? ChildItems
+            => _children?.Count > 0 ? _children : null;
+
+        /// <summary>Whether this node has at least one child.</summary>
+        public bool HasChildren => _children?.Count > 0;
+
+        /// <summary>Display label: "Name [N entries]" for groups, plain Name otherwise.</summary>
+        public string GroupLabel => IsGroup
+            ? $"{Name ?? string.Empty} [{_children?.Count ?? 0} {(_children?.Count == 1 ? "entry" : "entries")}]"
+            : (Name ?? string.Empty);
+
+        /// <summary>Adds a child to this group node, refreshing computed tree properties.</summary>
+        public void AddChild(ParsedFieldViewModel child)
+        {
+            _children ??= new System.Collections.ObjectModel.ObservableCollection<ParsedFieldViewModel>();
+            _children.Add(child);
+            OnPropertyChanged(nameof(ChildItems));
+            OnPropertyChanged(nameof(HasChildren));
+            OnPropertyChanged(nameof(GroupLabel));
+        }
+
+        // ── End tree hierarchy ──────────────────────────────────────────────────
+
         private FieldDisplayMode _displayMode = FieldDisplayMode.Auto;
 
         /// <summary>

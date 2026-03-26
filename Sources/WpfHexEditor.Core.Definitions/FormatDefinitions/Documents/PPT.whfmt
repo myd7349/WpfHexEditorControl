@@ -121,5 +121,18 @@
   },
   "functions": {
     "readUInt32LE": "Read executable header"
+  },
+  "forensic": {
+    "category": "document",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Legacy PowerPoint OLE2 compound document; PowerPoint Document stream contains atom records; may embed VBA and OLE objects.",
+    "suggestedInspections": [
+      "Verify OLE2 signature D0CF11E0A1B11AE1 at offset 0 and locate 'PowerPoint Document' stream in directory",
+      "Scan OLE2 directory for 'VBA' storage and macro presence in presentation",
+      "Inspect CurrentUser atom and UserEditAtom records for last-save information and embedded object references"
+    ]
   }
 }

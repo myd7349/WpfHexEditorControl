@@ -108,6 +108,26 @@ namespace WpfHexEditor.Core
         /// </summary>
         public bool ShowInTooltip { get; set; } = true;
 
+        // ── Rich format-field tooltip metadata (E1) ──────────────────────────
+        /// <summary>
+        /// Value type from the whfmt field definition (e.g. "uint16", "ascii8", "guid").
+        /// Null when this block was not created from a parsed format field.
+        /// </summary>
+        public string FieldValueType { get; set; }
+
+        /// <summary>
+        /// Decoded, human-readable value of this field (e.g. "0x8664 → AMD64 (x64)").
+        /// Populated by the format script interpreter when the field has a mapped value.
+        /// </summary>
+        public string FieldDisplayValue { get; set; }
+
+        /// <summary>
+        /// Raw bytes of this field formatted as a hex string (e.g. "64 86").
+        /// Populated by the format script interpreter.
+        /// </summary>
+        public string FieldRawHex { get; set; }
+        // ── End rich tooltip metadata ─────────────────────────────────────────
+
         /// <summary>
         /// Get or set the color used in the visual
         /// Setting this property invalidates the cached brush

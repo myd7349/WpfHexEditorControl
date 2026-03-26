@@ -34,6 +34,7 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         private ObservableCollection<ParsedFieldViewModel> _filteredFields;
         private ObservableCollection<ParsedFieldViewModel> _metadataFields;
         private ObservableCollection<InsightChip> _insightChips;
+        private ObservableCollection<ParsedFieldViewModel> _treeRootItems;
         private FormatInfo _formatInfo;
         private string _searchText;
         private bool _showBookmarksOnly;
@@ -49,10 +50,11 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
             InitializeComponent();
             DataContext = this;
             // Initialize collections FIRST to avoid NullReferenceException in ApplyFilter()
-            FilteredFields = new ObservableCollection<ParsedFieldViewModel>();
-            MetadataFields = new ObservableCollection<ParsedFieldViewModel>();
-            InsightChips = new ObservableCollection<InsightChip>();
-            ParsedFields = new ObservableCollection<ParsedFieldViewModel>();
+            FilteredFields    = new ObservableCollection<ParsedFieldViewModel>();
+            MetadataFields    = new ObservableCollection<ParsedFieldViewModel>();
+            InsightChips      = new ObservableCollection<InsightChip>();
+            ParsedFields      = new ObservableCollection<ParsedFieldViewModel>();
+            TreeRootItems     = new ObservableCollection<ParsedFieldViewModel>();
 
             // Set up CollectionView grouping for section headers (C3)
             var view = CollectionViewSource.GetDefaultView(FilteredFields);
@@ -140,6 +142,19 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         }
 
         /// <summary>
+        /// Root items for the TreeView — built from FilteredFields with group hierarchy (C1).
+        /// </summary>
+        public ObservableCollection<ParsedFieldViewModel> TreeRootItems
+        {
+            get => _treeRootItems;
+            private set
+            {
+                _treeRootItems = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
         /// Total file size in bytes for coverage bar calculation (C6)
         /// </summary>
         public long TotalFileSize
@@ -209,6 +224,12 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         /// Event fired when a field is selected
         /// </summary>
         public event EventHandler<ParsedFieldViewModel> FieldSelected;
+
+        /// <summary>
+        /// Event raised when the user clicks a navigation bookmark chip. (C6)
+        /// The long value is the absolute byte offset to navigate to.
+        /// </summary>
+        public event EventHandler<long> NavigateToOffsetRequested;
 
         /// <summary>
         /// Event fired when the refresh button is clicked
@@ -355,6 +376,45 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
             if (FieldsListBox.SelectedItem is ParsedFieldViewModel field)
             {
                 FieldSelected?.Invoke(this, field);
+            }
+        }
+
+        /// <summary>
+        /// TreeView selection handler.  Syncs the hidden FieldsListBox.SelectedItem so all
+        /// existing context-menu click handlers continue to work without changes. (C1)
+        /// </summary>
+        private void FieldsTreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is ParsedFieldViewModel field && !field.IsGroup)
+            {
+                // Sync hidden ListBox → all context menu handlers keep working unchanged
+                FieldsListBox.SelectedItem = field;
+                HasSelection = true;
+                FieldSelected?.Invoke(this, field);
+            }
+            else
+            {
+                FieldsListBox.SelectedItem = null;
+                HasSelection = e.NewValue != null;
+            }
+        }
+
+        private void FieldsTreeView_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (FieldsTreeView.SelectedItem is not ParsedFieldViewModel field || field.IsGroup)
+                return;
+
+            switch (e.Key)
+            {
+                case System.Windows.Input.Key.Enter:
+                    EditField(field);
+                    e.Handled = true;
+                    break;
+                case System.Windows.Input.Key.C when
+                    (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0:
+                    System.Windows.Clipboard.SetText(field.ActiveFormattedValue ?? string.Empty);
+                    e.Handled = true;
+                    break;
             }
         }
 
@@ -537,11 +597,18 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
 
         private void FieldItem_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            // Double-click on a field item opens the edit dialog
-            if (sender is System.Windows.Controls.ListBoxItem item && item.Content is ParsedFieldViewModel field)
+            // Works for both ListBoxItem (legacy) and TreeViewItem (C1 tree view)
+            ParsedFieldViewModel field = sender switch
+            {
+                System.Windows.Controls.ListBoxItem li => li.Content as ParsedFieldViewModel,
+                System.Windows.Controls.TreeViewItem tvi => tvi.DataContext as ParsedFieldViewModel,
+                _ => null
+            };
+
+            if (field != null && !field.IsGroup)
             {
                 EditField(field);
-                e.Handled = true; // Prevent event bubbling
+                e.Handled = true;
             }
         }
 
@@ -606,6 +673,56 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         private void ExportAll_Click(object sender, RoutedEventArgs e)
         {
             // This will be handled by submenu items
+        }
+
+        /// <summary>Copy selected field value as C# byte array literal. (C3)</summary>
+        private void CopyValueCSharpBytes_Click(object sender, RoutedEventArgs e)
+        {
+            if (FieldsListBox.SelectedItem is not ParsedFieldViewModel field) return;
+            var raw = field.RawValue as byte[];
+            if (raw == null && field.RawValue is byte b) raw = new[] { b };
+            if (raw == null) { System.Windows.Clipboard.SetText(field.ActiveFormattedValue ?? ""); return; }
+            var literal = "new byte[] { " + string.Join(", ", raw.Select(x => $"0x{x:X2}")) + " }";
+            System.Windows.Clipboard.SetText(literal);
+        }
+
+        /// <summary>Copy selected field value as Python bytes literal. (C3)</summary>
+        private void CopyValuePythonBytes_Click(object sender, RoutedEventArgs e)
+        {
+            if (FieldsListBox.SelectedItem is not ParsedFieldViewModel field) return;
+            var raw = field.RawValue as byte[];
+            if (raw == null && field.RawValue is byte b) raw = new[] { b };
+            if (raw == null) { System.Windows.Clipboard.SetText(field.ActiveFormattedValue ?? ""); return; }
+            var literal = "b'" + string.Concat(raw.Select(x => $"\\x{x:x2}")) + "'";
+            System.Windows.Clipboard.SetText(literal);
+        }
+
+        /// <summary>
+        /// Navigate to the offset associated with a bookmark chip click. (C6)
+        /// </summary>
+        private void NavigatorBookmark_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn &&
+                btn.Tag is WpfHexEditor.Core.Interfaces.FormatNavigationBookmark bookmark)
+            {
+                NavigateToOffsetRequested?.Invoke(this, bookmark.Offset);
+            }
+        }
+
+        /// <summary>Expand all group nodes in the tree. (C1)</summary>
+        private void ExpandAllGroups_Click(object sender, RoutedEventArgs e)
+        {
+            if (TreeRootItems == null) return;
+            foreach (var node in TreeRootItems)
+                if (node.IsGroup) node.IsExpanded = true;
+        }
+
+        /// <summary>Collapse all group nodes in the tree. (C1)</summary>
+        private void CollapseAllGroups_Click(object sender, RoutedEventArgs e)
+        {
+            if (TreeRootItems == null) return;
+            foreach (var node in TreeRootItems)
+                if (node.IsGroup) node.IsExpanded = false;
         }
 
         private void ExportAsText_Click(object sender, RoutedEventArgs e)
@@ -869,12 +986,34 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         }
 
         /// <summary>
-        /// Scroll to and select a specific field
+        /// Selects a specific field in the TreeView, expanding its parent group if needed. (C1)
         /// </summary>
         public void SelectField(ParsedFieldViewModel field)
         {
-            FieldsListBox.SelectedItem = field;
-            FieldsListBox.ScrollIntoView(field);
+            if (field == null) return;
+
+            // Ensure the parent group is expanded so the item is visible
+            if (TreeRootItems != null)
+            {
+                foreach (var root in TreeRootItems)
+                {
+                    if (root.IsGroup && root.ChildItems != null)
+                    {
+                        foreach (var child in root.ChildItems)
+                        {
+                            if (ReferenceEquals(child, field))
+                            {
+                                root.IsExpanded = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Mark the field as selected (bound to TreeViewItem.IsSelected)
+            foreach (var f in FilteredFields)
+                f.IsSelected = ReferenceEquals(f, field);
         }
 
         /// <summary>
@@ -885,6 +1024,7 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
             RemoveEnrichedFields();
             ParsedFields.Clear();
             FilteredFields.Clear();
+            TreeRootItems = new ObservableCollection<ParsedFieldViewModel>();
             FormatInfo = new FormatInfo();
         }
 
@@ -1032,6 +1172,9 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
 
             // Update byte coverage bar (C6)
             UpdateCoverageBar();
+
+            // Rebuild TreeView hierarchy (C1)
+            RebuildTree();
         }
 
         /// <summary>
@@ -1234,6 +1377,50 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
             CoverageProgressBar.Value = percent;
             CoverageText.Text = $"{percent:F0}% parsed ({coveredBytes:N0} / {TotalFileSize:N0} bytes)";
             CoverageBarSection.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Builds <see cref="TreeRootItems"/> from <see cref="FilteredFields"/> by grouping
+        /// fields under named group nodes.  Fields that are already group containers
+        /// (IsGroup=true, e.g. repeating block entries) retain their own Children. (C1)
+        /// </summary>
+        private void RebuildTree()
+        {
+            var roots = new System.Collections.Generic.List<ParsedFieldViewModel>();
+
+            // Group by GroupName — preserve insertion order
+            var groups = FilteredFields
+                .GroupBy(f => f.GroupName ?? string.Empty)
+                .ToList();
+
+            foreach (var g in groups)
+            {
+                if (string.IsNullOrEmpty(g.Key))
+                {
+                    // Ungrouped → add directly to root
+                    foreach (var f in g)
+                        roots.Add(f);
+                }
+                else
+                {
+                    // Named group → create collapsible parent node (expand all except metadata)
+                    var first = g.First();
+                    var groupNode = new ParsedFieldViewModel
+                    {
+                        Name          = g.Key,
+                        IsGroup       = true,
+                        IsExpanded    = !string.Equals(g.Key, EnrichedGroupName, StringComparison.Ordinal),
+                        Color         = first.Color,
+                        ValueType     = "group",
+                        FormattedValue = string.Empty
+                    };
+                    foreach (var f in g)
+                        groupNode.AddChild(f);
+                    roots.Add(groupNode);
+                }
+            }
+
+            TreeRootItems = new ObservableCollection<ParsedFieldViewModel>(roots);
         }
 
         /// <summary>

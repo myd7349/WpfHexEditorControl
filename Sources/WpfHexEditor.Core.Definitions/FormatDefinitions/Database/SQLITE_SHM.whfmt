@@ -119,5 +119,18 @@
   "functions": {
     "readUInt32LE": "Read DB header",
     "extractASCIIString": "Read schema"
+  },
+  "forensic": {
+    "category": "database",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "SQLite shared-memory index for WAL mode; ephemeral file mapping read/write lock state between concurrent readers.",
+    "suggestedInspections": [
+      "Confirm file is exactly 32 KB (8 shared-memory regions × 4 KB)",
+      "Inspect wal-index header for mxFrame and salt fields to assess WAL state",
+      "Cross-reference with companion .wal file to detect inconsistent lock state"
+    ]
   }
 }

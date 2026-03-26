@@ -529,5 +529,18 @@
     "FrameSamples": 1536,
     "SyncWordSize": 2,
     "CRCPolynomial": "x^16 + x^15 + x^2 + 1"
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AC3/Dolby Digital surround audio; each sync frame starts with 0x0B77, followed by CRC1, sample rate and bitrate codes.",
+    "suggestedInspections": [
+      "Verify sync word 0x0B77 at offset 0 and CRC1 integrity at bytes 2-3",
+      "Check bsid value: 0-8 = standard AC-3, 16 = E-AC-3 (Dolby Digital Plus)",
+      "Validate acmod channel layout and lfeon subwoofer flag combination"
+    ]
   }
 }

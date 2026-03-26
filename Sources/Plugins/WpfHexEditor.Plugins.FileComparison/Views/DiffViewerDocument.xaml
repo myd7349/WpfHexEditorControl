@@ -66,6 +66,7 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>   <!-- F4 mismatch banner -->
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -185,12 +186,45 @@
                     <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
                 </Button>
 
+                <!-- F3 — Format overlay toggle -->
+                <ToggleButton Style="{DynamicResource XD_ToolbarIconButtonStyle}"
+                              Width="Auto" Padding="6,2"
+                              IsChecked="{Binding ShowFormatOverlay, Mode=TwoWay}"
+                              ToolTip="Toggle whfmt format-field color overlay"
+                              Visibility="{Binding IsBinaryMode, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="&#xE7C1;" FontFamily="Segoe MDL2 Assets" FontSize="11"/>
+                </ToggleButton>
+
+                <!-- F2 — Structure Diff tab toggle -->
+                <ToggleButton Style="{DynamicResource XD_ToolbarToggleButtonStyle}"
+                              Width="Auto" Padding="6,2"
+                              IsChecked="{Binding IsStructureDiffMode, Mode=TwoWay}"
+                              Command="{Binding ToggleStructureDiffCommand}"
+                              ToolTip="Show field-level structure diff (requires same format on both sides)"
+                              Visibility="{Binding HasStructureDiff, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="11" Margin="0,0,4,0"/>
+                        <TextBlock Text="Structure" FontSize="11" FontFamily="Segoe UI"/>
+                    </StackPanel>
+                </ToggleButton>
+
                 <Grid/>
             </DockPanel>
         </Border>
 
-        <!-- ── Row 1: File headers ── -->
-        <Grid Grid.Row="1">
+        <!-- ── Row 1: F4 — Format mismatch warning banner ── -->
+        <Border Grid.Row="1" Grid.ColumnSpan="2"
+                Background="#FFD700" Padding="8,4"
+                Visibility="{Binding IsFormatMismatch, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding FormatMismatchMessage}"
+                       FontSize="11" FontWeight="SemiBold"
+                       Foreground="#4A3700"
+                       TextTrimming="CharacterEllipsis"/>
+        </Border>
+
+        <!-- ── Row 2: File headers ── -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="4"/>
@@ -241,8 +275,8 @@
             </Border>
         </Grid>
 
-        <!-- ── Row 2: Content area (text panes OR binary hex list) ── -->
-        <Grid Grid.Row="2">
+        <!-- ── Row 3: Content area (text panes OR binary hex list) ── -->
+        <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="4"/>
@@ -302,8 +336,8 @@
                 <ctrl:BinaryDiffCanvas x:Name="BinaryDiffCanvas"
                                        Rows="{Binding BinaryHexRows}"
                                        ZoomLevel="{Binding ZoomLevel, Mode=TwoWay}"
-                                       FormatBlocksLeft="{Binding LeftFormatBlocks}"
-                                       FormatBlocksRight="{Binding RightFormatBlocks}"
+                                       FormatBlocksLeft="{Binding ActiveLeftFormatBlocks}"
+                                       FormatBlocksRight="{Binding ActiveRightFormatBlocks}"
                                        Focusable="True"/>
             </ScrollViewer>
 
@@ -321,6 +355,123 @@
                 </StackPanel>
             </Border>
 
+            <!-- ── F2 Structure Diff overlay (spans columns 0-2, shown when IsStructureDiffMode) ── -->
+            <Border Grid.Column="0" Grid.ColumnSpan="3"
+                    Background="{DynamicResource DockTabBackgroundBrush}"
+                    Visibility="{Binding IsStructureDiffMode, Converter={StaticResource BoolToVis}}">
+                <DockPanel>
+                    <!-- Column header -->
+                    <Grid DockPanel.Dock="Top"
+                          Background="{DynamicResource DF_GutterBackgroundBrush}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="160" MinWidth="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text=" " FontSize="11" FontWeight="SemiBold" Padding="4,3"/>
+                        <TextBlock Grid.Column="1" Text="Field" FontSize="11" FontWeight="SemiBold" Padding="4,3"
+                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                        <TextBlock Grid.Column="2" Text="{Binding LeftFileName}" FontSize="11" FontWeight="SemiBold" Padding="4,3"
+                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                        <TextBlock Grid.Column="3" Text="{Binding RightFileName}" FontSize="11" FontWeight="SemiBold" Padding="4,3"
+                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                    </Grid>
+                    <!-- Rows -->
+                    <ListView ItemsSource="{Binding StructureDiffRows}"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              BorderThickness="0">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:StructureDiffRow}">
+                                <Grid Height="18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="160" MinWidth="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <!-- status glyph -->
+                                    <TextBlock Grid.Column="0" Text="{Binding StatusGlyph}"
+                                               FontSize="11" FontFamily="Consolas"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsChanged}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DF_ModifiedLineBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsOnlyInLeft}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DF_DeletedLineBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsOnlyInRight}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DF_InsertedLineBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <!-- field name + offset hint -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding FieldName}"
+                                                   FontSize="11" FontFamily="Segoe UI"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                                    </StackPanel>
+                                    <!-- left hex value -->
+                                    <TextBlock Grid.Column="2" Text="{Binding LeftHex}"
+                                               FontSize="10" FontFamily="Consolas"
+                                               VerticalAlignment="Center" Padding="4,0"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding LeftOffsetHex}"
+                                               Foreground="{DynamicResource DockMenuForegroundBrush}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsChanged}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource DF_ModifiedLineBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsOnlyInLeft}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource DF_DeletedLineBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <!-- right hex value -->
+                                    <TextBlock Grid.Column="3" Text="{Binding RightHex}"
+                                               FontSize="10" FontFamily="Consolas"
+                                               VerticalAlignment="Center" Padding="4,0"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding RightOffsetHex}"
+                                               Foreground="{DynamicResource DockMenuForegroundBrush}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsChanged}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource DF_ModifiedLineBrush}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsOnlyInRight}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource DF_InsertedLineBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </DockPanel>
+            </Border>
+
             <!-- Overview ruler -->
             <Canvas x:Name="OverviewRuler" Grid.Column="3"
                     Background="{DynamicResource DF_OverviewRulerBackgroundBrush}"
@@ -331,8 +482,8 @@
                     SizeChanged="OnRulerSizeChanged"/>
         </Grid>
 
-        <!-- ── Row 3: Status bar ── -->
-        <Border Grid.Row="3"
+        <!-- ── Row 4: Status bar ── -->
+        <Border Grid.Row="4"
                 Background="{DynamicResource DockStatusBarBackgroundBrush}"
                 BorderBrush="{DynamicResource DockSplitterBrush}" BorderThickness="0,1,0,0">
             <TextBlock x:Name="StatusBar" Padding="8,2" FontSize="11"
@@ -341,12 +492,12 @@
         </Border>
 
         <!-- ── Stats panel drawer (Column 1, spans all rows) ── -->
-        <GridSplitter Grid.Column="1" Grid.RowSpan="4"
+        <GridSplitter Grid.Column="1" Grid.RowSpan="5"
                       Width="4" HorizontalAlignment="Left"
                       Background="{DynamicResource DockSplitterBrush}"
                       ResizeBehavior="PreviousAndCurrent"
                       Visibility="{Binding StatsPanel.IsVisible, Converter={StaticResource BoolToVis}}"/>
-        <Border Grid.Column="1" Grid.RowSpan="4"
+        <Border Grid.Column="1" Grid.RowSpan="5"
                 HorizontalAlignment="Stretch"
                 Background="{DynamicResource DockTabBackgroundBrush}"
                 BorderBrush="{DynamicResource DockBorderBrush}"

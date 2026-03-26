@@ -11,6 +11,7 @@
 //////////////////////////////////////////////
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -132,6 +133,44 @@ namespace WpfHexEditor.Core.Interfaces
         public bool HasReferences => References != null &&
             (References.Specifications?.Count > 0 || References.WebLinks?.Count > 0);
 
+        // ── Navigation bookmarks from whfmt navigation.bookmarks (C6) ──────────
+        private ObservableCollection<FormatNavigationBookmark> _bookmarks;
+
+        public ObservableCollection<FormatNavigationBookmark> Bookmarks
+        {
+            get => _bookmarks;
+            set
+            {
+                _bookmarks = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasBookmarks));
+            }
+        }
+
+        public bool HasBookmarks => _bookmarks?.Count > 0;
+
+        // ── D3 — Forensic alerts from whfmt assertions ───────────────────────
+        private List<AssertionResult> _forensicAlerts;
+
+        /// <summary>
+        /// Assertion results (failed or warning) collected during format detection.
+        /// Displayed in the Forensic Alerts section of the ParsedFieldsPanel.
+        /// </summary>
+        public List<AssertionResult> ForensicAlerts
+        {
+            get => _forensicAlerts;
+            set
+            {
+                _forensicAlerts = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasForensicAlerts));
+                OnPropertyChanged(nameof(ForensicAlertCount));
+            }
+        }
+
+        public bool HasForensicAlerts => _forensicAlerts?.Count > 0;
+        public int ForensicAlertCount => _forensicAlerts?.Count ?? 0;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -155,6 +194,19 @@ namespace WpfHexEditor.Core.Interfaces
     {
         public FormatMatchCandidate Candidate { get; }
         public FormatCandidateSelectedEventArgs(FormatMatchCandidate candidate) => Candidate = candidate;
+    }
+
+    /// <summary>
+    /// A navigation bookmark from whfmt navigation.bookmarks (C6).
+    /// </summary>
+    public class FormatNavigationBookmark
+    {
+        public string Name        { get; set; }
+        public long   Offset      { get; set; }
+        public string Icon        { get; set; }
+        public string Color       { get; set; }
+        public string Description { get; set; }
+        public override string ToString() => Name;
     }
 
     /// <summary>

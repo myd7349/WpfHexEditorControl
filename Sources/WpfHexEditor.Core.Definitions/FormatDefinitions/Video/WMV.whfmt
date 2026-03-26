@@ -125,5 +125,18 @@
   "TechnicalDetails": {
     "VideoFormat": true,
     "Platform": "Windows"
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Windows Media Video in ASF container; 16-byte GUID header object at offset 0 identifies the ASF structure.",
+    "suggestedInspections": [
+      "Verify ASF Header Object GUID (30 26 B2 75 8E 66 CF 11) at offset 0",
+      "Inspect Stream Properties Object for video codec GUID (WMV1/WMV2/WMV3/WMVA)",
+      "Check Extended Content Description Object for duration, bitrate and resolution metadata"
+    ]
   }
 }

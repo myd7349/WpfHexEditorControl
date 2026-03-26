@@ -120,5 +120,18 @@
   "functions": {
     "readUInt32LE": "Read DB header",
     "extractASCIIString": "Read schema"
+  },
+  "forensic": {
+    "category": "database",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Microsoft Access MDB (Jet 3/4); OLE Compound Document container; may hold VBA macros and embedded objects.",
+    "suggestedInspections": [
+      "Verify 'Standard Jet DB' signature at offset 0 and check Jet version byte",
+      "Scan for embedded OLE streams that may contain macro code",
+      "Inspect table schema pages for unexpected or obfuscated table names"
+    ]
   }
 }

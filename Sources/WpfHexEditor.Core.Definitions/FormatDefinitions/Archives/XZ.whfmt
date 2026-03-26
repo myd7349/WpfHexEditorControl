@@ -124,5 +124,18 @@
   "TechnicalDetails": {
     "CompressionMethod": "LZMA2",
     "ArchivesFormat": true
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "XZ compressed file using LZMA2 algorithm; magic 0xFD377A585A00; widely used for Linux kernel and package distribution.",
+    "suggestedInspections": [
+      "Verify 6-byte magic header and stream flags CRC-32 at bytes 6–9",
+      "Decode block headers to identify LZMA2 filter chain and dictionary size",
+      "Validate stream index and footer CRC-32 for complete stream integrity"
+    ]
   }
 }

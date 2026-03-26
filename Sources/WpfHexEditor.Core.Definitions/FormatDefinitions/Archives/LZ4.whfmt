@@ -137,5 +137,18 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "LZ4 frame-format compressed stream; magic 0x184D2204; extremely fast decompression used in databases and real-time pipelines.",
+    "suggestedInspections": [
+      "Verify magic number 0x04224D18 (LE) and FLG/BD flag bytes",
+      "Check content size field if B.Indep flag is set to validate expected output size",
+      "Inspect header checksum (xxHash32) for frame integrity"
+    ]
   }
 }

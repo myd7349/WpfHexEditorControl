@@ -141,6 +141,27 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
+  "forensic": {
+    "category": "network",
+    "riskLevel": "medium",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "PCAPNG uses a block-based structure starting with a Section Header Block (SHB) whose byte-order magic (0x1A2B3C4D) determines endianness. Unlike PCAP, PCAPNG supports multiple interfaces, comments, and name resolution blocks. The byteOrderMagic value distinguishes little-endian from big-endian captures, and blockTotalLength is repeated at block end as a integrity check.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": [
+      "Verify byteOrderMagic (0x1A2B3C4D) to determine file endianness before parsing further blocks",
+      "Confirm blockTotalLength matches the repeated length at the block end for each block",
+      "Enumerate Interface Description Blocks (IDB) to identify captured interfaces and link types",
+      "Inspect Name Resolution Blocks (NRB) which may expose internal hostnames or IP mappings"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "Section Header Block", "offsetVar": "currentOffset", "icon": "\uE8A9" }
+    ]
+  },
   "TechnicalDetails": {},
   "functions": {
     "readUInt32LE": "Read PCAP header",

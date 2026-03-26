@@ -317,6 +317,8 @@
       "description": "Total file size formatted as a human-readable string (KB/MB/GB)"
     }
   ],
+  "forensic": { "category": "image", "riskLevel": "low" },
+  "aiHints": { "analysisContext": "WebP image (RIFF container) — check RIFF/WEBP header, then VP8/VP8L/VP8X chunk type for lossy/lossless/extended", "suggestedInspections": ["Check for VP8X extended features (animation, alpha, EXIF, XMP)", "Identify VP8 vs VP8L encoding"] },
   "MimeTypes": [
     "image/webp"
   ],

@@ -131,5 +131,18 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "MPEG-1/2 video stream; sequence header start code 0x000001B3 carries width, height, aspect ratio and frame rate.",
+    "suggestedInspections": [
+      "Verify sequence header start code 0x000001B3 at offset 0",
+      "Check 12-bit width and height packed fields at bytes 4-6 for valid resolution",
+      "Inspect aspect ratio code and frame rate code against MPEG standard lookup tables"
+    ]
   }
 }

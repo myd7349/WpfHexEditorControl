@@ -287,6 +287,8 @@
       "description": "Total uncompressed size of all entries in the package (bytes)"
     }
   ],
+  "forensic": { "category": "document", "riskLevel": "medium" },
+  "aiHints": { "analysisContext": "OOXML Word document (ZIP container) — contains word/document.xml, _rels/.rels, [Content_Types].xml", "suggestedInspections": ["Check word/document.xml for macro references", "Inspect _rels/ for external relationship targets"] },
   "MimeTypes": [
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ],

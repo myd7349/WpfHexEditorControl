@@ -133,5 +133,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Monkey's Audio lossless codec; header starts with 'MAC ' magic and includes version, compression level and frame count.",
+    "suggestedInspections": [
+      "Verify 'MAC ' (0x4D414320) signature at offset 0",
+      "Check version field (offset 4) and compression level (0=Fast, 5000=Insane)",
+      "Inspect total frames count against file size for truncation detection"
+    ]
   }
 }

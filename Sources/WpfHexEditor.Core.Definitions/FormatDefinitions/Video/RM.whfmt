@@ -114,5 +114,18 @@
   },
   "functions": {
     "readUInt32LE": "Read executable header"
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "RealMedia container; '.RMF' signature at offset 0 followed by file version and number of headers.",
+    "suggestedInspections": [
+      "Verify '.RMF' (0x2E524D46) signature at offset 0 and file version field",
+      "Inspect PROP chunk for duration, bitrate, number of streams and flags",
+      "Check MDPR chunk per stream for stream type, codec ID and MIME type"
+    ]
   }
 }

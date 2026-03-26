@@ -280,6 +280,9 @@
       "description": "Human-readable file size with appropriate units"
     }
   ],
+  "navigation": { "bookmarks": [{ "name": "PDF Header", "offset": 0, "icon": "\uE8A5" }] },
+  "forensic": { "category": "document", "riskLevel": "medium", "suspiciousPatterns": [{ "name": "JavaScript in PDF", "condition": "false", "description": "PDF may contain embedded JavaScript — inspect with PDF reader" }] },
+  "aiHints": { "analysisContext": "PDF document — check %PDF- version header, cross-reference table (xref), trailer dictionary, and end-of-file %%EOF marker", "suggestedInspections": ["Check PDF version (1.4-2.0)", "Look for /JavaScript /JS /AA /OpenAction entries indicating active content"] },
   "MimeTypes": [
     "application/pdf"
   ],

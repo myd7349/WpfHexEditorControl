@@ -326,6 +326,12 @@
       "description": "Result of CRC-32 integrity check: true if computed CRC matches stored CRC at offset 29"
     }
   ],
+  "assertions": [
+    { "name": "PNG magic", "expression": "pngSignature == -8552249625308161526", "severity": "error", "message": "Invalid PNG signature" }
+  ],
+  "navigation": { "bookmarks": [{ "name": "IHDR chunk", "offset": 8, "icon": "\uE8A5" }] },
+  "forensic": { "category": "image", "riskLevel": "low" },
+  "aiHints": { "analysisContext": "PNG image — check IHDR dimensions, bit depth, color type, and chunk integrity via CRC32", "suggestedInspections": ["Verify each chunk CRC", "Check for embedded tEXt/zTXt metadata"] },
   "MimeTypes": [
     "image/png"
   ],

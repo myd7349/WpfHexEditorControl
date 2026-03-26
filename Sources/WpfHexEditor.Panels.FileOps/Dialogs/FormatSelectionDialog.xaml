@@ -133,7 +133,7 @@
                                 <Run Text="Tier:"/>
                                 <Run Text="{Binding Tier}" FontWeight="SemiBold"/>
                                 <Run Text=" • "/>
-                                <Run Text="{Binding Blocks.Count}" FontWeight="SemiBold"/>
+                                <Run Text="{Binding Blocks.Count, Mode=OneWay}" FontWeight="SemiBold"/>
                                 <Run Text="blocks parsed"/>
                             </TextBlock>
 

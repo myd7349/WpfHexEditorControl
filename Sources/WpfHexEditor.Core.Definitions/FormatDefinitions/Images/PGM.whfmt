@@ -117,5 +117,18 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Netpbm Portable Graymap; P2 (ASCII) or P5 (binary); plain-text header with width, height, and maxval (≤ 65535).",
+    "suggestedInspections": [
+      "Confirm magic token is 'P2' or 'P5' and maxval is between 1 and 65535",
+      "For P5: verify binary data length matches width × height × (1 or 2) bytes per pixel",
+      "Scan header comments for embedded metadata or anomalous whitespace sequences"
+    ]
   }
 }

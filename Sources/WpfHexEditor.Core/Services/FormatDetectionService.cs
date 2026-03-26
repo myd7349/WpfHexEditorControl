@@ -257,21 +257,35 @@ namespace WpfHexEditor.Core.Services
         }
 
         /// <summary>
-        /// Try to detect a specific format
+        /// Try to detect a specific format.
+        /// v2.0: also checks entropy hints, multi-signature rules, checksums, and assertions.
         /// </summary>
-        private bool TryDetectFormat(byte[] data, FormatDefinition format, out List<CustomBackgroundBlock> blocks, out Dictionary<string, object> variables, ByteProvider byteProvider = null)
+        private bool TryDetectFormat(byte[] data, FormatDefinition format,
+            out List<CustomBackgroundBlock> blocks,
+            out Dictionary<string, object> variables,
+            ByteProvider byteProvider = null,
+            List<AssertionResult> assertionResultsOut = null)
         {
-            blocks = new List<CustomBackgroundBlock>();
+            blocks    = new List<CustomBackgroundBlock>();
             variables = new Dictionary<string, object>();
 
             if (format == null || !format.IsValid())
                 return false;
 
-            // Check signature
+            // Check signature (legacy single + v2.0 multi)
             if (format.Detection != null && format.Detection.Required)
             {
                 if (!CheckSignature(data, format.Detection))
                     return false;
+            }
+
+            // v2.0: entropy hint check (fast 512-byte sample)
+            if (format.Detection?.EntropyHint != null)
+            {
+                double entropy = ComputeEntropy(data);
+                var hint = format.Detection.EntropyHint;
+                if (entropy < hint.Min) return false;
+                if (entropy > hint.Max) return false;
             }
 
             // Generate blocks using interpreter
@@ -281,20 +295,44 @@ namespace WpfHexEditor.Core.Services
 
                 // Execute built-in functions first (populates variables)
                 if (format.Functions != null && format.Functions.Count > 0)
-                {
                     interpreter.ExecuteFunctions(format.Functions);
-                }
 
                 blocks = interpreter.ExecuteBlocks(format.Blocks);
 
                 // Copy variables from interpreter (includes function results)
                 variables = new Dictionary<string, object>(interpreter.Variables);
 
+                // v2.0: run checksums — any error-severity failure reduces confidence (logged only here)
+                if (format.Checksums != null && format.Checksums.Count > 0)
+                {
+                    var checksumEngine = new ChecksumEngine();
+                    var csResults = checksumEngine.Execute(format.Checksums, data, variables);
+                    foreach (var r in csResults)
+                    {
+                        if (!r.IsValid)
+                            Debug.WriteLine($"[FormatDetection] Checksum '{r.Name}' failed: {r.ErrorMessage}");
+                    }
+                }
+
+                // v2.0: run assertions — log failures (do not block detection)
+                if (format.Assertions != null && format.Assertions.Count > 0)
+                {
+                    var runner = new AssertionRunner();
+                    var assertResults = runner.Run(format.Assertions, variables);
+                    foreach (var r in assertResults)
+                    {
+                        if (!r.Passed)
+                            Debug.WriteLine($"[FormatDetection] Assertion '{r.Name}' failed: {r.Message}");
+                    }
+                    // D3 — pass assertion results out for ForensicAlerts panel
+                    assertionResultsOut?.AddRange(assertResults);
+                }
+
                 return blocks.Count > 0;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[FormatDetection] Error executing format {format.FormatName}: {ex.Message}");
+                Debug.WriteLine($"[FormatDetection] Error executing format {format.FormatName}: {ex.Message}");
                 return false;
             }
         }
@@ -320,7 +358,8 @@ namespace WpfHexEditor.Core.Services
             foreach (var format in formatsByPriority)
             {
                 ct.ThrowIfCancellationRequested();
-                if (TryDetectFormat(data, format, out var blocks, out var variables, byteProvider))
+                var assertOut1 = new List<AssertionResult>();
+                if (TryDetectFormat(data, format, out var blocks, out var variables, byteProvider, assertOut1))
                 {
                     var candidate = new FormatMatchCandidate
                     {
@@ -328,7 +367,8 @@ namespace WpfHexEditor.Core.Services
                         Blocks = blocks,
                         Variables = variables,
                         Tier = MatchTier.StrongSignature,
-                        SignatureConfidence = CalculateSignatureConfidence(format.Detection)
+                        SignatureConfidence = CalculateSignatureConfidence(format.Detection),
+                        AssertionResults = assertOut1
                     };
 
                     candidates.Add(candidate);
@@ -372,7 +412,8 @@ namespace WpfHexEditor.Core.Services
                 }
 
                 // Try block generation
-                if (TryDetectFormat(data, format, out var blocks, out var variables, byteProvider))
+                var assertOut2 = new List<AssertionResult>();
+                if (TryDetectFormat(data, format, out var blocks, out var variables, byteProvider, assertOut2))
                 {
                     contentScore += 0.2;
 
@@ -382,7 +423,8 @@ namespace WpfHexEditor.Core.Services
                         Blocks = blocks,
                         Variables = variables,
                         Tier = MatchTier.ContentBased,
-                        ContentConfidence = contentScore
+                        ContentConfidence = contentScore,
+                        AssertionResults = assertOut2
                     };
 
                     candidates.Add(candidate);
@@ -410,7 +452,8 @@ namespace WpfHexEditor.Core.Services
             foreach (var format in extensionMatches)
             {
                 ct.ThrowIfCancellationRequested();
-                if (TryDetectFormat(data, format, out var blocks, out var variables, byteProvider))
+                var assertOut3 = new List<AssertionResult>();
+                if (TryDetectFormat(data, format, out var blocks, out var variables, byteProvider, assertOut3))
                 {
                     var candidate = new FormatMatchCandidate
                     {
@@ -418,7 +461,8 @@ namespace WpfHexEditor.Core.Services
                         Blocks = blocks,
                         Variables = variables,
                         Tier = MatchTier.FallbackWeak,
-                        ExtensionConfidence = 0.6  // Lower confidence for weak matches
+                        ExtensionConfidence = 0.6,  // Lower confidence for weak matches
+                        AssertionResults = assertOut3
                     };
 
                     candidates.Add(candidate);
@@ -557,7 +601,9 @@ namespace WpfHexEditor.Core.Services
                 Confidence = best.ConfidenceScore,
                 Candidates = candidates,
                 ContentAnalysis = contentAnalysis,
-                DetectionTimeMs = sw.Elapsed.TotalMilliseconds
+                DetectionTimeMs = sw.Elapsed.TotalMilliseconds,
+                // D3 — propagate assertion results from winning candidate
+                AssertionResults = best.AssertionResults ?? new List<AssertionResult>()
             };
 
             // Auto-select if high confidence
@@ -617,18 +663,26 @@ namespace WpfHexEditor.Core.Services
         /// </summary>
         private SignatureStrength GetSignatureStrength(DetectionRule detection)
         {
-            if (detection == null || string.IsNullOrWhiteSpace(detection.Signature))
+            if (detection == null)
                 return SignatureStrength.None;
+
+            // v2.0: format with only a Signatures[] array — treat as at least Medium
+            if (string.IsNullOrWhiteSpace(detection.Signature))
+            {
+                if (detection.Signatures != null && detection.Signatures.Count > 0)
+                    return detection.Strength != SignatureStrength.Medium ? detection.Strength : SignatureStrength.Medium;
+                return SignatureStrength.None;
+            }
 
             // Use configured strength if available
             if (detection.Strength != SignatureStrength.Medium)  // Medium is default
                 return detection.Strength;
 
             // Auto-classify based on signature length and common patterns
-            var sig = detection.Signature;
+            var sig = detection.Signature.Replace(" ", "").Replace("-", "");
 
             // Very weak signatures
-            if (sig == "00" || sig == "FF" || sig.Length == 2)
+            if (sig.Length <= 2)
                 return SignatureStrength.Weak;
 
             // Unique/strong signatures (8+ bytes)
@@ -822,6 +876,45 @@ namespace WpfHexEditor.Core.Services
             if (detection == null || !detection.IsValid())
                 return false;
 
+            // ── v2.0: multi-signature OR logic ──────────────────────────────────
+            if (detection.Signatures != null && detection.Signatures.Count > 0)
+            {
+                string matchMode = detection.MatchMode ?? "any";
+                bool anyMatched = false;
+
+                foreach (var sig in detection.Signatures)
+                {
+                    if (sig == null || string.IsNullOrWhiteSpace(sig.Value))
+                        continue;
+
+                    byte[] sigBytes = ParseHexSignature(sig.Value);
+                    if (sigBytes == null) continue;
+
+                    long sigOffset = sig.Offset;
+                    if (sigOffset < 0 || sigOffset + sigBytes.Length > data.Length) continue;
+
+                    bool matched = true;
+                    for (int i = 0; i < sigBytes.Length; i++)
+                    {
+                        if (data[sigOffset + i] != sigBytes[i]) { matched = false; break; }
+                    }
+
+                    if (matched)
+                    {
+                        anyMatched = true;
+                        if (string.Equals(matchMode, "any", StringComparison.OrdinalIgnoreCase))
+                            return true; // short-circuit on first match
+                    }
+                    else if (string.Equals(matchMode, "all", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false; // any miss fails "all" mode
+                    }
+                }
+
+                return anyMatched;
+            }
+
+            // ── Legacy single-signature ──────────────────────────────────────────
             var signatureBytes = detection.GetSignatureBytes();
             if (signatureBytes == null)
                 return false;
@@ -830,7 +923,6 @@ namespace WpfHexEditor.Core.Services
             if (offset < 0 || offset + signatureBytes.Length > data.Length)
                 return false;
 
-            // Compare bytes
             for (int i = 0; i < signatureBytes.Length; i++)
             {
                 if (data[offset + i] != signatureBytes[i])
@@ -838,6 +930,42 @@ namespace WpfHexEditor.Core.Services
             }
 
             return true;
+        }
+
+        /// <summary>Parses a hex string (space-separated or compact) into bytes.</summary>
+        private static byte[] ParseHexSignature(string hex)
+        {
+            if (string.IsNullOrWhiteSpace(hex)) return null;
+            try
+            {
+                var clean = hex.Replace(" ", "").Replace("-", "");
+                if (clean.Length % 2 != 0) return null;
+                var bytes = new byte[clean.Length / 2];
+                for (int i = 0; i < bytes.Length; i++)
+                    bytes[i] = Convert.ToByte(clean.Substring(i * 2, 2), 16);
+                return bytes;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>
+        /// Computes Shannon entropy of a byte sample (0.0–8.0 bits/byte).
+        /// Uses at most <paramref name="sampleSize"/> bytes from offset 0.
+        /// </summary>
+        private static double ComputeEntropy(byte[] data, int sampleSize = 512)
+        {
+            if (data == null || data.Length == 0) return 0.0;
+            int len = Math.Min(sampleSize, data.Length);
+            var freq = new int[256];
+            for (int i = 0; i < len; i++) freq[data[i]]++;
+            double entropy = 0.0;
+            for (int i = 0; i < 256; i++)
+            {
+                if (freq[i] == 0) continue;
+                double p = (double)freq[i] / len;
+                entropy -= p * Math.Log(p, 2);
+            }
+            return entropy;
         }
 
         /// <summary>

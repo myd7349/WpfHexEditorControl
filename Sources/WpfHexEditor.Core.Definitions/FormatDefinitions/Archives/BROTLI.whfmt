@@ -115,5 +115,18 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Brotli compressed stream (RFC 7932); no fixed file header — detection relies on context (HTTP Content-Encoding: br).",
+    "suggestedInspections": [
+      "Attempt decompression and verify output is a recognizable format",
+      "Check window-size bits in first byte to assess decompressor memory requirements",
+      "Correlate with HTTP response headers or transport context to confirm encoding"
+    ]
   }
 }

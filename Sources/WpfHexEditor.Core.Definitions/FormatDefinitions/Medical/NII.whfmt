@@ -122,6 +122,19 @@
     "AutoRefined": true
   },
   "TechnicalDetails": {},
+  "forensic": {
+    "category": "medical",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "NIfTI-1 neuroimaging file; 348-byte header at offset 0; voxel data follows immediately (single .nii) or in paired .img file.",
+    "suggestedInspections": [
+      "Verify header size field equals 348 and check magic field ('n+1\\0' or 'ni1\\0')",
+      "Parse dim[] array to determine image dimensions, data type (datatype field), and voxel sizes",
+      "Inspect vox_offset to locate start of image data and validate against file length"
+    ]
+  },
   "functions": {
     "readUInt32LE": "Read medical header",
     "extractASCIIString": "Read patient",

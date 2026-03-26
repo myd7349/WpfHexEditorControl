@@ -745,4 +745,14 @@
     <SolidColorBrush x:Key="BDiff_ContextRowBackgroundBrush" Color="#1A1A1A" />
     <SolidColorBrush x:Key="BDiff_CollapsedContextBrush"     Color="#252526" />
     <SolidColorBrush x:Key="BDiff_CollapsedContextFgBrush"   Color="#858585" />
+    <!-- whfmt v2.0 tokens (WF_*) - inserted by Add-WhfmtV2Tokens.ps1 -->
+    <SolidColorBrush x:Key="WF_RepeatingGroupBackground"  Color="#252526" />
+    <SolidColorBrush x:Key="WF_AssertionErrorBrush"       Color="#E51400" />
+    <SolidColorBrush x:Key="WF_AssertionWarningBrush"     Color="#FF8C00" />
+    <SolidColorBrush x:Key="WF_ForensicAlertBrush"        Color="#FFDD00" />
+    <SolidColorBrush x:Key="WF_PointerArrowBrush"         Color="#4EC9B0" />
+    <SolidColorBrush x:Key="WF_BitfieldSubrowBrush"       Color="#2D2D30" />
+    <SolidColorBrush x:Key="WF_InspectorGroupHeaderBrush" Color="#3C3C3C" />
+    <SolidColorBrush x:Key="WF_NavigatorBookmarkBrush"    Color="#007ACC" />
+    <SolidColorBrush x:Key="WF_ConfidenceBadgeBrush"      Color="#388A34" />
 </ResourceDictionary>

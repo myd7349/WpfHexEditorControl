@@ -231,6 +231,12 @@
       "description": "Human-readable central directory size"
     }
   ],
+  "assertions": [
+    { "name": "PK signature", "expression": "pkSignature == 1347093252", "severity": "error", "message": "Missing PK\\003\\004 signature — not a valid ZIP file" }
+  ],
+  "navigation": { "bookmarks": [{ "name": "Local File Header", "offset": 0, "icon": "\uE8A5" }] },
+  "forensic": { "category": "archive", "riskLevel": "low", "suspiciousPatterns": [{ "name": "ZIP bomb potential", "condition": "uncompressedSize > 1073741824", "severity": "warning", "description": "Extremely large uncompressed size relative to compressed size" }] },
+  "aiHints": { "analysisContext": "ZIP archive — inspect local file headers, central directory, and EOCD record", "suggestedInspections": ["Check for ZIP64 end of central directory", "Inspect first entry filename for OOXML detection"] },
   "software": [
     "WinZip",
     "7-Zip",

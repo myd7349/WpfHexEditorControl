@@ -287,6 +287,22 @@
     "PriorityFormat": true,
     "AutoRefined": false
   },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "HEIC/HEIF files are ISOBMFF containers; each box has a 4-byte size followed by a 4-byte type tag. Beyond the ftyp box, the 'meta' box contains item-property associations and Exif/XMP metadata that may carry GPS coordinates or device identifiers. The 'mdat' box holds the compressed HEVC bitstream. Verify that the major brand is consistent with declared compatible brands.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": []
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "ftyp Box", "offsetVar": "currentOffset", "icon": "\uE8A9" }
+    ]
+  },
   "TechnicalDetails": {
     "ImagesFormat": true,
     "Endianness": "big-endian (network byte order)",

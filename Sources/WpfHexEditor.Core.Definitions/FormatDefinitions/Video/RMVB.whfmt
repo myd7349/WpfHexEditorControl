@@ -95,5 +95,18 @@
   "TechnicalDetails": {
     "VideoFormat": true
   },
-  "functions": {}
+  "functions": {},
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "RealMedia Variable Bitrate container; shares '.RMF' signature with RM but uses VBR encoding for better quality.",
+    "suggestedInspections": [
+      "Verify '.RMF' (0x2E524D46) signature at offset 0 identical to RM format",
+      "Inspect PROP chunk average and maximum bitrate fields to confirm VBR encoding",
+      "Check MDPR stream headers for RealVideo codec version and encoded dimensions"
+    ]
+  }
 }

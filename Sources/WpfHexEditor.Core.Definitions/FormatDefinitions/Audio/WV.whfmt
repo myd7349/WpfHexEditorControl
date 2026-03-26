@@ -120,5 +120,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "WavPack hybrid lossless audio; each block starts with 'wvpk' signature followed by block size, version and sample count.",
+    "suggestedInspections": [
+      "Verify 'wvpk' (0x7776706B) signature at offset 0 of each block",
+      "Check block flags for hybrid mode, floating point, and DSD audio indicators",
+      "Validate CRC32 at end of each block for data integrity"
+    ]
   }
 }

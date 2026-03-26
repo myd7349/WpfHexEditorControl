@@ -125,6 +125,22 @@
     "PriorityFormat": false,
     "AutoRefined": false
   },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "ICO files contain a directory of images at multiple sizes; each directory entry holds an offset to the embedded image data (BMP or PNG). Malformed ICO files have been a historical attack vector via Windows Explorer thumbnail parsing. Inspect imageCount for abnormally large values and verify each image offset is within the file.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": []
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "ICO Directory Header", "offsetVar": "currentOffset", "icon": "\uE8A9" }
+    ]
+  },
   "TechnicalDetails": {
     "ImagesFormat": true,
     "Platform": "Windows"

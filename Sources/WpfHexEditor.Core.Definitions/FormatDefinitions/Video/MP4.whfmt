@@ -291,6 +291,8 @@
       "description": "Total file size formatted as a human-readable string (KB/MB/GB)"
     }
   ],
+  "forensic": { "category": "video", "riskLevel": "low" },
+  "aiHints": { "analysisContext": "MP4/ISOBMFF container — iterate 4-byte length + 4-byte FourCC boxes: ftyp, moov, mdat, free. Check ftyp brand.", "suggestedInspections": ["Check ftyp compatible brands", "Look for udta boxes with metadata", "Inspect mvhd for creation/modification time"] },
   "MimeTypes": [
     "video/mp4",
     "audio/mp4"

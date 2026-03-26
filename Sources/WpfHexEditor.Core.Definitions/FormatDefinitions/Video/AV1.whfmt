@@ -126,5 +126,18 @@
   "functions": {
     "readUInt32LE": "Read video header",
     "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AV1 open video codec in IVF container; 'DKIF' magic with codec FourCC 'AV01'; royalty-free successor to VP9.",
+    "suggestedInspections": [
+      "Verify 'DKIF' (0x444B4946) IVF header signature at offset 0",
+      "Check codec FourCC at bytes 8-11 for 'AV01' identifying AV1 bitstream",
+      "Inspect AV1 sequence header OBU for profile, color config and operating points"
+    ]
   }
 }

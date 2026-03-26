@@ -140,5 +140,18 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Raw LZMA compressed stream (legacy format); 13-byte header: 1-byte properties, 4-byte dictionary size, 8-byte uncompressed size.",
+    "suggestedInspections": [
+      "Decode properties byte to extract lc, lp, pb parameters (lc + lp must be ≤ 4)",
+      "Check uncompressed size field — 0xFFFFFFFFFFFFFFFF indicates unknown/streaming",
+      "Verify dictionary size is a power of two between 4 KB and 1.5 GB"
+    ]
   }
 }

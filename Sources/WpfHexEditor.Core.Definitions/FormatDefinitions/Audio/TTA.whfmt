@@ -122,5 +122,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "True Audio lossless format; 'TTA1' signature at offset 0 is followed by channels, bit depth, sample rate and CRC32.",
+    "suggestedInspections": [
+      "Verify 'TTA1' (0x54544131) signature at offset 0",
+      "Validate header CRC32 at bytes 14-17 against the preceding 14 header bytes",
+      "Check channels, bits per sample and sample rate fields for valid PCM audio parameters"
+    ]
   }
 }

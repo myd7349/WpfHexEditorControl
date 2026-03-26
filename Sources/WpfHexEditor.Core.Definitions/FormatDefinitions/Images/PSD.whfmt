@@ -335,6 +335,17 @@
     "PriorityFormat": true,
     "AutoRefined": false
   },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "PSD/PSB files contain five major sections after the 26-byte header: Color Mode Data, Image Resources (metadata), Layer and Mask Info, Image Compression, and Image Data. The Image Resources section can carry extensive metadata including GPS coordinates, copyright, and editing history. Non-zero reserved bytes in the header are a reliable corruption indicator.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": []
+  },
   "TechnicalDetails": {
     "ImagesFormat": true,
     "Endianness": "big-endian",

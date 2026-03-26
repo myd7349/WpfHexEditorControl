@@ -128,6 +128,19 @@
     "AutoRefined": true
   },
   "TechnicalDetails": {},
+  "forensic": {
+    "category": "medical",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "DICOM medical image; 128-byte preamble + 'DICM' tag; contains patient PII in data elements before pixel data.",
+    "suggestedInspections": [
+      "Verify 'DICM' prefix at offset 128 and parse data element transfer syntax UID",
+      "Scan data elements for patient name (0010,0010), ID (0010,0020), and date (0010,0030) — PII risk",
+      "Inspect pixel data element (7FE0,0010) dimensions and bits-allocated against image metadata"
+    ]
+  },
   "functions": {
     "readUInt32LE": "Read width and height",
     "multiply": "Calculate total pixels",

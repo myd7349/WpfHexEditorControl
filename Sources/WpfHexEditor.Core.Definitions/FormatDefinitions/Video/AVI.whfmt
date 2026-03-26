@@ -454,5 +454,18 @@
     "MaxFileSize": "~2 GB (AVI 1.0), ~256 GB (OpenDML AVI 2.0)",
     "SupportsInterleaving": true,
     "SupportsIndex": true
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AVI RIFF container; 'RIFF' + 'AVI ' at offsets 0/8, followed by 'hdrl' LIST with avih 56-byte main header.",
+    "suggestedInspections": [
+      "Verify 'RIFF' signature at offset 0 and 'AVI ' form type at offset 8",
+      "Inspect avih flags for HASINDEX and ISINTERLEAVED bits and validate totalFrames against file size",
+      "Check microsecondsPerFrame for valid frame rate (33333=30fps, 40000=25fps) and width/height dimensions"
+    ]
   }
 }

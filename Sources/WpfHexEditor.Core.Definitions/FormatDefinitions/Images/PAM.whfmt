@@ -134,6 +134,19 @@
     "ImagesFormat": true,
     "BitDepth": 8
   },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Netpbm Portable Arbitrary Map (P7); extensible header with TUPLTYPE; supports arbitrary channel counts including alpha.",
+    "suggestedInspections": [
+      "Verify 'P7' magic and parse named header fields: WIDTH, HEIGHT, DEPTH, MAXVAL, TUPLTYPE, ENDHDR",
+      "Validate binary data length matches WIDTH × HEIGHT × DEPTH × bytes-per-sample",
+      "Check TUPLTYPE for non-standard values that may indicate unconventional channel usage"
+    ]
+  },
   "functions": {
     "readUInt32LE": "Read header",
     "calculateCRC32": "Validate",

@@ -117,5 +117,18 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Netpbm Portable Bitmap; P1 (ASCII) or P4 (binary); plain-text header declares width/height; 1-bit monochrome pixel data.",
+    "suggestedInspections": [
+      "Confirm magic token is 'P1' or 'P4' followed by whitespace-delimited dimensions",
+      "For P4: verify binary pixel data length matches ceil(width/8) × height bytes",
+      "Scan header comments (lines starting with '#') for embedded metadata or hidden text"
+    ]
   }
 }

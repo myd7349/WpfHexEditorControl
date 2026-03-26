@@ -49,6 +49,36 @@ public sealed class DiffWordSegment
     public bool   IsChanged { get; init; }
 }
 
+/// <summary>
+/// F2 — One row in the Structure Diff grid.
+/// Represents a matched (or unmatched) field from the whfmt block layout.
+/// </summary>
+public sealed class StructureDiffRow
+{
+    public string FieldName    { get; init; } = string.Empty;
+    public long   LeftOffset   { get; init; }
+    public long   RightOffset  { get; init; }
+    public long   LeftLength   { get; init; }
+    public long   RightLength  { get; init; }
+    public string LeftHex      { get; init; } = string.Empty;
+    public string RightHex     { get; init; } = string.Empty;
+    /// <summary>True when the field exists on left but not right.</summary>
+    public bool   IsOnlyInLeft  { get; init; }
+    /// <summary>True when the field exists on right but not left.</summary>
+    public bool   IsOnlyInRight { get; init; }
+    /// <summary>True when both sides have the field but bytes differ.</summary>
+    public bool   IsChanged     { get; init; }
+    public bool   IsEqual       => !IsOnlyInLeft && !IsOnlyInRight && !IsChanged;
+
+    public string StatusGlyph => IsOnlyInLeft  ? "−"
+                               : IsOnlyInRight ? "+"
+                               : IsChanged     ? "≠"
+                               : "=";
+
+    public string LeftOffsetHex  => IsOnlyInRight ? "—" : $"0x{LeftOffset:X}";
+    public string RightOffsetHex => IsOnlyInLeft  ? "—" : $"0x{RightOffset:X}";
+}
+
 // ── ViewModel ──────────────────────────────────────────────────────────────
 
 public sealed class DiffViewerViewModel : INotifyPropertyChanged
@@ -64,6 +94,7 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     private bool             _isRecomparing       = false;
     private bool             _isLoading           = false;
     private double           _zoomLevel           = 1.0;
+    private bool             _isStructureDiffMode = false;
     private CancellationTokenSource? _rebuildCts;
 
     // ── Services ─────────────────────────────────────────────────────────────
@@ -111,6 +142,148 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
 
     public BinaryStatsPanelViewModel StatsPanel { get; } = new();
 
+    // ── F3 — Format overlay toggle ────────────────────────────────────────────
+
+    private bool _showFormatOverlay = true;
+
+    /// <summary>
+    /// When <see langword="true"/> the format-field color blocks are drawn on the BinaryDiffCanvas
+    /// underneath the diff highlights. Controlled by the Format Overlay toolbar toggle.
+    /// </summary>
+    public bool ShowFormatOverlay
+    {
+        get => _showFormatOverlay;
+        set
+        {
+            if (!SetField(ref _showFormatOverlay, value)) return;
+            // Expose the active blocks (or null to suppress) so BinaryDiffCanvas binds correctly.
+            OnPropertyChanged(nameof(ActiveLeftFormatBlocks));
+            OnPropertyChanged(nameof(ActiveRightFormatBlocks));
+        }
+    }
+
+    /// <summary>Left format blocks, or null when the overlay is toggled off.</summary>
+    public IReadOnlyList<CustomBackgroundBlock>? ActiveLeftFormatBlocks
+        => _showFormatOverlay ? LeftFormatBlocks : null;
+
+    /// <summary>Right format blocks, or null when the overlay is toggled off.</summary>
+    public IReadOnlyList<CustomBackgroundBlock>? ActiveRightFormatBlocks
+        => _showFormatOverlay ? RightFormatBlocks : null;
+
+    // ── F2 — Structure Diff ───────────────────────────────────────────────────
+
+    /// <summary>Rows for the field-level structure diff grid.</summary>
+    public ObservableCollection<StructureDiffRow> StructureDiffRows { get; } = [];
+
+    /// <summary>True when structure diff rows are available (same format detected on both sides).</summary>
+    public bool HasStructureDiff => StructureDiffRows.Count > 0;
+
+    /// <summary>True when the Structure Diff tab is shown instead of the hex diff view.</summary>
+    public bool IsStructureDiffMode
+    {
+        get => _isStructureDiffMode;
+        set => SetField(ref _isStructureDiffMode, value);
+    }
+
+    /// <summary>F2 — Toggles between hex diff view and structure diff view.</summary>
+    public ICommand ToggleStructureDiffCommand { get; private set; }
+
+    private void BuildStructureDiff(byte[] leftBytes, byte[] rightBytes)
+    {
+        StructureDiffRows.Clear();
+
+        var leftBlocks  = _leftFormat?.Blocks;
+        var rightBlocks = _rightFormat?.Blocks;
+        if (leftBlocks is null || rightBlocks is null) return;
+
+        // Index right blocks by description for O(1) lookup
+        var rightIndex = new Dictionary<string, CustomBackgroundBlock>(StringComparer.Ordinal);
+        foreach (var b in rightBlocks)
+            if (!string.IsNullOrEmpty(b.Description) && b.ShowInTooltip)
+                rightIndex.TryAdd(b.Description, b);
+
+        var rightSeen = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var lb in leftBlocks)
+        {
+            if (string.IsNullOrEmpty(lb.Description) || !lb.ShowInTooltip) continue;
+
+            if (rightIndex.TryGetValue(lb.Description, out var rb))
+            {
+                rightSeen.Add(lb.Description);
+                var leftSlice  = ExtractHex(leftBytes,  lb.StartOffset, lb.Length);
+                var rightSlice = ExtractHex(rightBytes, rb.StartOffset, rb.Length);
+                var changed    = leftSlice != rightSlice;
+
+                StructureDiffRows.Add(new StructureDiffRow
+                {
+                    FieldName    = lb.Description,
+                    LeftOffset   = lb.StartOffset,
+                    RightOffset  = rb.StartOffset,
+                    LeftLength   = lb.Length,
+                    RightLength  = rb.Length,
+                    LeftHex      = leftSlice,
+                    RightHex     = rightSlice,
+                    IsChanged    = changed
+                });
+            }
+            else
+            {
+                StructureDiffRows.Add(new StructureDiffRow
+                {
+                    FieldName    = lb.Description,
+                    LeftOffset   = lb.StartOffset,
+                    LeftLength   = lb.Length,
+                    LeftHex      = ExtractHex(leftBytes, lb.StartOffset, lb.Length),
+                    IsOnlyInLeft = true
+                });
+            }
+        }
+
+        // Emit right-only entries
+        foreach (var rb in rightBlocks)
+        {
+            if (string.IsNullOrEmpty(rb.Description) || !rb.ShowInTooltip) continue;
+            if (rightSeen.Contains(rb.Description)) continue;
+
+            StructureDiffRows.Add(new StructureDiffRow
+            {
+                FieldName     = rb.Description,
+                RightOffset   = rb.StartOffset,
+                RightLength   = rb.Length,
+                RightHex      = ExtractHex(rightBytes, rb.StartOffset, rb.Length),
+                IsOnlyInRight = true
+            });
+        }
+
+        OnPropertyChanged(nameof(HasStructureDiff));
+    }
+
+    private static string ExtractHex(byte[] data, long offset, long length)
+    {
+        const int MaxDisplayBytes = 16;
+        if (offset < 0 || offset >= data.Length) return "—";
+        var count = (int)Math.Min(length, Math.Min(MaxDisplayBytes, data.Length - offset));
+        var hex = BitConverter.ToString(data, (int)offset, count).Replace("-", " ");
+        return length > MaxDisplayBytes ? hex + " …" : hex;
+    }
+
+    // ── F4 — Format mismatch banner ───────────────────────────────────────────
+
+    /// <summary>
+    /// True when both sides have a detected format but they differ from each other.
+    /// Triggers the yellow warning banner in the view.
+    /// </summary>
+    public bool IsFormatMismatch
+        => HasLeftFormat && HasRightFormat
+        && _leftFormat!.Format?.FormatName != _rightFormat!.Format?.FormatName;
+
+    /// <summary>Human-readable mismatch message for the banner.</summary>
+    public string FormatMismatchMessage
+        => IsFormatMismatch
+            ? $"⚠  Files are different formats: {_leftFormat!.Format?.FormatName} (left)  vs  {_rightFormat!.Format?.FormatName} (right)"
+            : string.Empty;
+
     // ── Diff-block index for navigation ──────────────────────────────────────
 
     private readonly List<int> _diffBlockStartIndices = [];
@@ -133,7 +306,10 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
         FilterRemovedCommand  = new RelayCommand(_ => FilterMode = "Removed");
         ExpandContextCommand  = new RelayCommand(_ => BinaryContextLines = int.MaxValue);
         RecompareCommand      = new RelayCommand(_ => _ = RecompareAsync(), _ => !_isRecomparing);
-        ToggleStatsCommand    = new RelayCommand(_ => StatsPanel.IsVisible = !StatsPanel.IsVisible);
+        ToggleStatsCommand            = new RelayCommand(_ => StatsPanel.IsVisible = !StatsPanel.IsVisible);
+        ToggleFormatOverlayCommand    = new RelayCommand(_ => ShowFormatOverlay = !ShowFormatOverlay);
+        ToggleStructureDiffCommand    = new RelayCommand(_ => IsStructureDiffMode = !IsStructureDiffMode,
+                                                         _ => HasStructureDiff);
 
         UpdateStatsPanel(_result);
         _ = RunEntropyAsync(_result);
@@ -231,6 +407,8 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     public ICommand RecompareCommand     { get; }
     /// <summary>Toggles the stats/entropy panel drawer.</summary>
     public ICommand ToggleStatsCommand   { get; }
+    /// <summary>F3 — Toggles the whfmt format-field color overlay on the binary diff canvas.</summary>
+    public ICommand ToggleFormatOverlayCommand { get; }
 
     // ── Block-alignment toggle ────────────────────────────────────────────────
 
@@ -280,6 +458,7 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
         LeftRows.Clear();
         RightRows.Clear();
         BinaryHexRows.Clear();
+        StructureDiffRows.Clear();
         _diffBlockStartIndices.Clear();
         _currentDiffIndex = -1;
         BuildRows(result);
@@ -333,6 +512,20 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(RightFormatBadge));
         OnPropertyChanged(nameof(HasLeftFormat));
         OnPropertyChanged(nameof(HasRightFormat));
+        // F3 — propagate active overlay blocks (respects ShowFormatOverlay toggle)
+        OnPropertyChanged(nameof(ActiveLeftFormatBlocks));
+        OnPropertyChanged(nameof(ActiveRightFormatBlocks));
+        // F4 — trigger mismatch banner
+        OnPropertyChanged(nameof(IsFormatMismatch));
+        OnPropertyChanged(nameof(FormatMismatchMessage));
+
+        // F2 — build structure diff when both sides share the same format
+        if (!IsFormatMismatch
+            && result.BinaryResult is { FullLeftBytes: { } lb2, FullRightBytes: { } rb2 })
+        {
+            BuildStructureDiff(lb2, rb2);
+            CommandManager.InvalidateRequerySuggested(); // update ToggleStructureDiffCommand CanExecute
+        }
     }
 
     private async Task RunEntropyAsync(DiffEngineResult result)

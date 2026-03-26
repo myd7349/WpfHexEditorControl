@@ -123,5 +123,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Opus audio in Ogg container; first page carries 'OpusHead' identification header with version, channels and pre-skip.",
+    "suggestedInspections": [
+      "Verify 'OggS' capture pattern at offset 0 and 'OpusHead' magic in first packet payload",
+      "Check Opus version byte (must be 1) and channel count in identification header",
+      "Inspect output gain field and channel mapping family for multi-channel configuration"
+    ]
   }
 }

@@ -151,6 +151,22 @@
     "PriorityFormat": false,
     "AutoRefined": true
   },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": [],
+    "knownMaliciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AIFF uses an IFF FORM container with big-endian chunk lengths. Key forensic points: the COMM chunk contains the authoritative channel count, sample frames, bit depth, and 80-bit extended sample rate; the SSND chunk holds the audio payload with an optional offset and blockSize that can hide data in the gap before audio samples.",
+    "knownVulnerabilities": [],
+    "suggestedInspections": []
+  },
+  "navigation": {
+    "bookmarks": [
+      { "name": "FORM Chunk", "offsetVar": "currentOffset", "icon": "\uE8A9" }
+    ]
+  },
   "TechnicalDetails": {
     "AudioFormat": true
   }

@@ -122,5 +122,18 @@
   "functions": {
     "readUInt32LE": "Read DB header",
     "extractASCIIString": "Read schema"
+  },
+  "forensic": {
+    "category": "database",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "SQLite WAL journal file; contains uncommitted or recently committed transactions not yet checkpointed to the main DB.",
+    "suggestedInspections": [
+      "Verify WAL magic (0x377F0682 BE or 0x377F0683 LE) and salt values",
+      "Enumerate WAL frames to reconstruct transaction history",
+      "Compare page checksums against main database for consistency"
+    ]
   }
 }
