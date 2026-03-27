@@ -761,15 +761,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 var execBrush = TryFindResource("DB_ExecutionLineBackgroundBrush") as System.Windows.Media.Brush
                                 ?? new System.Windows.Media.SolidColorBrush(
                                        System.Windows.Media.Color.FromArgb(0x40, 0xFF, 0xDD, 0x00));
-                int execEnd0  = ResolveStatementEndLine(execLine0);
+                var (execStart0, execEnd0) = ResolveStatementSpan(execLine0);
                 double bpLeft = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
 
-                if (execLine0 == execEnd0)
+                if (execStart0 == execEnd0)
                 {
                     // Single-line — simple rounded rect.
-                    if (_lineYLookup.TryGetValue(execLine0, out double ey) && _document != null)
+                    if (_lineYLookup.TryGetValue(execStart0, out double ey) && _document != null)
                     {
-                        double w = Math.Max(_document.Lines[execLine0].Length * _charWidth, _charWidth);
+                        double w = Math.Max(_document.Lines[execStart0].Length * _charWidth, _charWidth);
                         dc.DrawRoundedRectangle(execBrush, null,
                             new Rect(bpLeft, ey, w, _lineHeight),
                             SelectionCornerRadius, SelectionCornerRadius);
@@ -779,13 +779,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 {
                     // Multi-line — union rounded segments (same pattern as selection).
                     var segs = new List<Geometry>();
-                    for (int j = execLine0; j <= execEnd0; j++)
+                    for (int j = execStart0; j <= execEnd0; j++)
                     {
                         if (!_lineYLookup.TryGetValue(j, out double ly) || _document == null) continue;
                         double w    = Math.Max(_document.Lines[j].Length * _charWidth, _charWidth);
-                        double yAdj = j == execLine0 ? ly : ly - SelectionCornerRadius;
-                        double hAdj = j == execLine0 ? _lineHeight + SelectionCornerRadius
-                                    : j == execEnd0  ? _lineHeight + SelectionCornerRadius
+                        double yAdj = j == execStart0 ? ly : ly - SelectionCornerRadius;
+                        double hAdj = j == execStart0 ? _lineHeight + SelectionCornerRadius
+                                    : j == execEnd0   ? _lineHeight + SelectionCornerRadius
                                     : _lineHeight + SelectionCornerRadius * 2;
                         segs.Add(new RectangleGeometry(new Rect(bpLeft, yAdj, w, hAdj),
                             SelectionCornerRadius, SelectionCornerRadius));
@@ -827,34 +827,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                               : bpBrush;
                     if (brush is null) continue;
 
-                    int endLine0 = ResolveStatementEndLine(i);
+                    var (startLine0, endLine0) = ResolveStatementSpan(i);
 
-                    if (i == endLine0)
+                    if (startLine0 == endLine0)
                     {
                         // Single-line — simple rounded rect.
-                        if (_lineYLookup.TryGetValue(i, out double ly) && _document != null)
+                        if (_lineYLookup.TryGetValue(startLine0, out double ly) && _document != null)
                         {
-                            double w = Math.Max(_document.Lines[i].Length * _charWidth, _charWidth);
+                            double w = Math.Max(_document.Lines[startLine0].Length * _charWidth, _charWidth);
                             dc.DrawRoundedRectangle(brush, null,
                                 new Rect(bpLeft, ly, w, _lineHeight),
                                 SelectionCornerRadius, SelectionCornerRadius);
-                            highlightedLines.Add(i);
+                            highlightedLines.Add(startLine0);
                         }
                     }
                     else
                     {
                         // Multi-line — union rounded segments.
                         var segs = new List<Geometry>();
-                        for (int j = i; j <= endLine0; j++)
+                        for (int j = startLine0; j <= endLine0; j++)
                         {
                             if (highlightedLines.Contains(j)) continue;
                             if (_executionLineOneBased == j + 1) continue;
                             if (!_lineYLookup.TryGetValue(j, out double ly) || _document == null) continue;
 
                             double w    = Math.Max(_document.Lines[j].Length * _charWidth, _charWidth);
-                            double yAdj = j == i        ? ly : ly - SelectionCornerRadius;
-                            double hAdj = j == i        ? _lineHeight + SelectionCornerRadius
-                                        : j == endLine0 ? _lineHeight + SelectionCornerRadius
+                            double yAdj = j == startLine0 ? ly : ly - SelectionCornerRadius;
+                            double hAdj = j == startLine0 ? _lineHeight + SelectionCornerRadius
+                                        : j == endLine0   ? _lineHeight + SelectionCornerRadius
                                         : _lineHeight + SelectionCornerRadius * 2;
                             segs.Add(new RectangleGeometry(new Rect(bpLeft, yAdj, w, hAdj),
                                 SelectionCornerRadius, SelectionCornerRadius));
@@ -1481,6 +1481,47 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             return best is not null
                 ? Math.Max(continuationEnd, best.EndLine)
                 : continuationEnd;
+        }
+
+        /// <summary>
+        /// Given a 0-based line, scans BACKWARD to find the first line of the
+        /// containing statement. A line N is a continuation of line N-1 when
+        /// line N-1 matches any continuation pattern (i.e. it does not end with
+        /// a statement terminator like <c>;</c>, <c>{</c>, or <c>}</c>).
+        /// Returns <paramref name="line0"/> when no backward expansion is needed.
+        /// </summary>
+        private int ResolveStatementStartLine(int line0)
+        {
+            if (_bpContinuationRegexes.Count == 0 || _document is null)
+                return line0;
+
+            int minLine = Math.Max(0, line0 - _bpMaxScanLines);
+            int current = line0;
+
+            while (current > minLine)
+            {
+                string prevText = (_document.Lines[current - 1].Text ?? string.Empty).TrimEnd();
+                bool continues = false;
+                foreach (var r in _bpContinuationRegexes)
+                {
+                    if (r.IsMatch(prevText)) { continues = true; break; }
+                }
+                if (!continues) break;
+                current--;
+            }
+
+            return current;
+        }
+
+        /// <summary>
+        /// Returns the full 0-based [start, end] span for the statement
+        /// containing the given 0-based line.
+        /// </summary>
+        internal (int start0, int end0) ResolveStatementSpan(int line0)
+        {
+            int start = ResolveStatementStartLine(line0);
+            int end   = ResolveStatementEndLine(start);
+            return (start, end);
         }
 
         /// <summary>

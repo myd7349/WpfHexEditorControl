@@ -101,6 +101,14 @@ internal sealed class BreakpointGutterControl : FrameworkElement
     public Func<int, bool>? ValidateLine { get; set; }
 
     /// <summary>
+    /// Optional callback for statement-span aware breakpoint placement.
+    /// Input: 1-based clicked line. Output: 1-based line where the BP should
+    /// actually be placed (supports move semantics), or <c>null</c> to reject.
+    /// When null (not set), no statement-span enforcement is performed.
+    /// </summary>
+    public Func<int, int?>? ResolveBreakpointLine { get; set; }
+
+    /// <summary>
     /// Fires when the user right-clicks a line that has an active breakpoint.
     /// Args: (filePath, 1-based line).
     /// The App layer should open a <c>BreakpointInfoPopup</c> in response.
@@ -256,6 +264,20 @@ internal sealed class BreakpointGutterControl : FrameworkElement
             ShowInvalidLineFeedback();
             e.Handled = true;
             return;
+        }
+
+        // Statement-span enforcement: 1 instruction = 1 breakpoint.
+        // May move an existing BP from another line of the same statement.
+        if (ResolveBreakpointLine != null)
+        {
+            int? resolved = ResolveBreakpointLine(line1);
+            if (resolved is null)
+            {
+                ShowInvalidLineFeedback();
+                e.Handled = true;
+                return;
+            }
+            line1 = resolved.Value;
         }
 
         _source.Toggle(_filePath, line1);

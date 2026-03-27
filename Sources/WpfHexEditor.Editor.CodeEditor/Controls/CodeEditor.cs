@@ -947,6 +947,43 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         if (r.IsMatch(text)) return false;
                     return true;
                 };
+
+            // Statement-span enforcement: 1 instruction = 1 breakpoint.
+            // Uses MOVE semantics — clicking a different line of the same
+            // statement moves the existing BP rather than adding a second.
+            _breakpointGutterControl.ResolveBreakpointLine = contCompiled.Count == 0
+                ? null
+                : clickedLine1 =>
+                {
+                    int line0 = clickedLine1 - 1;
+                    var (start0, end0) = ResolveStatementSpan(line0);
+
+                    var existingBps = _bpSource?.GetBreakpointLines(_currentFilePath ?? string.Empty)
+                                      ?? (IReadOnlyList<int>)Array.Empty<int>();
+
+                    int? existingInSpan = null;
+                    foreach (int bp1 in existingBps)
+                    {
+                        int bp0 = bp1 - 1;
+                        if (bp0 >= start0 && bp0 <= end0)
+                        {
+                            existingInSpan = bp1;
+                            break;
+                        }
+                    }
+
+                    // No existing BP in this statement → allow placement.
+                    if (existingInSpan is null)
+                        return clickedLine1;
+
+                    // Clicking the same line → normal toggle (remove).
+                    if (existingInSpan.Value == clickedLine1)
+                        return clickedLine1;
+
+                    // Move: remove old BP, return clicked line for Toggle to place new one.
+                    _bpSource!.Delete(_currentFilePath!, existingInSpan.Value);
+                    return clickedLine1;
+                };
         }
 
         public static readonly DependencyProperty EnableValidationProperty =
