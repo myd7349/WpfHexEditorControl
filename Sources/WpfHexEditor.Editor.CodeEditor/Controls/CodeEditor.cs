@@ -3306,6 +3306,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
+        /// Maximum scroll offset in pixels. Matches <c>_vScrollBar.Maximum</c> which
+        /// accounts for TopMargin, folded lines, and inline hints.
+        /// Used by the minimap to match the scrollbar range exactly.
+        /// </summary>
+        public double MaxScrollOffset
+            => _vScrollBar?.Maximum
+               ?? Math.Max(0, _virtualizationEngine?.TotalHeight - _virtualizationEngine?.ViewportHeight ?? 0);
+
+        /// <summary>
+        /// Scrolls the viewport to an exact pixel offset.
+        /// Does NOT move the caret. No line-boundary quantization.
+        /// Used by the minimap for sub-line-precision scrolling.
+        /// </summary>
+        public void ScrollViewToOffset(double pixelOffset)
+        {
+            if (_virtualizationEngine == null) return;
+            double maxOffset = MaxScrollOffset;
+            var newOffset = Math.Clamp(pixelOffset, 0, maxOffset);
+            _verticalScrollOffset = newOffset;
+            _currentScrollOffset = newOffset;
+            _targetScrollOffset = newOffset;
+            _virtualizationEngine.ScrollOffset = newOffset;
+            _virtualizationEngine.CalculateVisibleRange();
+            SyncVScrollBar();
+            InvalidateVisual();
+        }
+
+        /// <summary>
         /// Scroll viewport horizontally by pixel amount (used by pan mode and Shift+Wheel).
         /// </summary>
         private void ScrollHorizontal(double delta)

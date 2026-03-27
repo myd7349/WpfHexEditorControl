@@ -125,7 +125,16 @@ public class DocumentTabHost : DockTabControl
         };
 
         SetResourceReference(StyleProperty, styleName);
-        // OnApplyTemplate is called automatically after the style change, which re-wires parts.
+
+        // Only schedule Rebind if already bound (Node != null).
+        // During initial construction, Bind() will be called explicitly by DockControl.CreateDocumentHost.
+        // Scheduling Rebind on every construction causes a deferred Items.Clear() + re-add
+        // that races with tab activation and resets the selected tab.
+        if (Node is not null)
+        {
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,
+                new Action(Rebind));
+        }
     }
 
     // --- Mouse wheel on tab strip ---------------------------------------------

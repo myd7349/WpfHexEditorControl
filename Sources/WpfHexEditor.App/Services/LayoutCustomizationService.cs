@@ -233,12 +233,18 @@ internal sealed class LayoutCustomizationService
     /// <summary>Apply persisted layout settings on app startup.</summary>
     public void RestoreFromSettings(LayoutSettings settings)
     {
-        _applyToggle("menubar",   settings.ShowMenuBar);
-        _applyToggle("toolbar",   settings.ShowToolbar);
-        _applyToggle("statusbar", settings.ShowStatusBar);
+        // Visibility toggles — only apply if non-default (hidden)
+        if (!settings.ShowMenuBar)   _applyToggle("menubar",   false);
+        if (!settings.ShowToolbar)   _applyToggle("toolbar",   false);
+        if (!settings.ShowStatusBar) _applyToggle("statusbar", false);
 
-        _applyPosition("toolbar-position", settings.ToolbarPosition);
-        _applyPosition("panel-dock-side",  settings.DefaultPanelDockSide);
-        _applyPosition("tab-position",     settings.TabBarPosition);
+        // Positions — only apply if changed from defaults to avoid triggering
+        // DocumentTabHost.Rebind (deferred via Dispatcher) which races with tab activation.
+        if (settings.ToolbarPosition != "Top")
+            _applyPosition("toolbar-position", settings.ToolbarPosition);
+        if (settings.DefaultPanelDockSide != "Right")
+            _applyPosition("panel-dock-side", settings.DefaultPanelDockSide);
+        if (settings.TabBarPosition != "Top")
+            _applyPosition("tab-position", settings.TabBarPosition);
     }
 }

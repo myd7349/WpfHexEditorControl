@@ -167,7 +167,7 @@ public sealed class CustomizeLayoutPopup : Window
         stack.Children.Add(BuildSectionHeader("POSITION"));
 
         stack.Children.Add(BuildRadioRow("toolbar-position", "Toolbar Position",
-            new[] { ("Top", "Top"), ("Bottom", "Bottom"), ("Left", "Left"), ("Right", "Right") },
+            new[] { ("Top", "Top"), ("Bottom", "Bottom") },
             settings.ToolbarPosition));
 
         stack.Children.Add(BuildRadioRow("panel-dock-side", "Panel Default Side",

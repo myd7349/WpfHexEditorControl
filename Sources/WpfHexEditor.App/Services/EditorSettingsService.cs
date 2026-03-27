@@ -105,6 +105,14 @@ internal static class EditorSettingsService
         hex.PreloadByteInEditorMode              = d.PreloadByteInEditorMode;
 
         hex.ByteToolTipDisplayMode               = d.ByteToolTipDisplayMode;
+
+        // Breadcrumb bar
+        hex.ShowBreadcrumbBar             = d.ShowBreadcrumbBar;
+        hex.BreadcrumbOffsetFormat        = (WpfHexEditor.HexEditor.Controls.BreadcrumbOffsetFormat)d.BreadcrumbOffsetFormat;
+        hex.BreadcrumbShowFormatInfo      = d.BreadcrumbShowFormatInfo;
+        hex.BreadcrumbShowFieldPath       = d.BreadcrumbShowFieldPath;
+        hex.BreadcrumbShowSelectionLength = d.BreadcrumbShowSelectionLength;
+        hex.BreadcrumbFontSize            = d.BreadcrumbFontSize;
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────

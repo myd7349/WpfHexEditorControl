@@ -236,6 +236,7 @@ public sealed class DockingAdapter : IDockingAdapter
 
         _storeContent(uiId, content);
         _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+        if (item.Owner is { } docOwner) docOwner.ActiveItem = item;
         if (!_rebuildSuspended) _dockHost.RebuildVisualTree();
     }
 

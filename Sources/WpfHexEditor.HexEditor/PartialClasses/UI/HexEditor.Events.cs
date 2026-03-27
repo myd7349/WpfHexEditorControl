@@ -901,9 +901,8 @@ namespace WpfHexEditor.HexEditor
             if (lineHeight <= 0)
                 return; // Not initialized yet
 
-            // Use BaseGrid.RowDefinitions[1].ActualHeight (EXACTLY like V1 does)
-            // Row 0 = Header, Row 1 = Content area, Row 2 = Status bar
-            double actualHeight = BaseGrid.RowDefinitions[1].ActualHeight;
+            // Use ContentScroller.ActualHeight — row indices shift when breadcrumb bar is inserted
+            double actualHeight = ContentScroller.ActualHeight;
             if (actualHeight <= 0)
                 return; // Not initialized yet
 

@@ -615,6 +615,7 @@ namespace WpfHexEditor.HexEditor
         {
             SelectionChanged?.Invoke(this, e);
             RaiseDocumentEditorSelectionChanged();
+            UpdateBreadcrumb();
         }
 
         /// <summary>

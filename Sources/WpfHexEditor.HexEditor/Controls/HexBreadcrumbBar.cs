@@ -2,120 +2,500 @@
 // Project: WpfHexEditor.HexEditor
 // File: Controls/HexBreadcrumbBar.cs
 // Description:
-//     Contextual breadcrumb bar for the HexEditor showing:
-//     - Current offset (hex + decimal)
-//     - Detected format name + confidence
-//     - Active parsed field path (when available)
-//     Updates on selection change / cursor move.
+//     Interactive navigable breadcrumb bar for the HexEditor.
+//     Displays hierarchical format path (e.g. "PE/COFF Executable 95% › DOS Header › e_lfanew").
+//     Each segment is clickable to navigate to the corresponding offset.
+//     Chevron dropdowns show sibling nodes for quick jump navigation.
+//     Navigation bookmarks rendered as icon chips for quick access.
 // Architecture:
-//     Standalone FrameworkElement using DrawingContext for fast rendering.
-//     Reads state from the parent HexEditor via SetState() calls.
+//     Border-based WPF control using StackPanel + TextBlock segments.
+//     Follows LspBreadcrumbBar pattern (CodeEditor). Theme tokens: BC_*.
 //////////////////////////////////////////////
 
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Core.Interfaces;
 
 namespace WpfHexEditor.HexEditor.Controls;
 
-/// <summary>
-/// Breadcrumb bar showing offset, format, and field context for the active HexEditor.
-/// </summary>
-public sealed class HexBreadcrumbBar : FrameworkElement
+/// <summary>How the offset is displayed in the breadcrumb bar.</summary>
+public enum BreadcrumbOffsetFormat
 {
-    private long _offset;
-    private string _formatName = "";
-    private int _confidence;
-    private string _fieldPath = "";
+    /// <summary>Show hex only: 0x0001A4</summary>
+    Hex,
+    /// <summary>Show decimal only: 420</summary>
+    Decimal,
+    /// <summary>Show both: 0x0001A4 (420)</summary>
+    Both,
+}
 
-    private static readonly Typeface TypefaceNormal = new("Segoe UI");
-    private static readonly Typeface TypefaceMono   = new("Consolas");
-    private static readonly Brush SeparatorBrush = new SolidColorBrush(Color.FromArgb(80, 128, 128, 128));
-    private static readonly Pen SeparatorPen = new(SeparatorBrush, 1);
+/// <summary>
+/// A single segment in the breadcrumb path (format → group → field).
+/// </summary>
+public sealed class BreadcrumbSegment
+{
+    public string Name { get; init; } = "";
+    public long Offset { get; init; }
+    public int Length { get; init; }
+    public bool IsGroup { get; init; }
+    public string? Color { get; init; }
+    public List<BreadcrumbSegment>? Siblings { get; init; }
+    public bool IsFormat { get; init; }
+    public int Confidence { get; init; }
+}
+
+/// <summary>
+/// Interactive breadcrumb bar: clickable segments, chevron dropdowns, bookmark chips.
+/// Fires <see cref="NavigateRequested"/> when user clicks a segment to jump to an offset.
+/// </summary>
+public sealed class HexBreadcrumbBar : Border
+{
+    // ── Layout ────────────────────────────────────────────────────────────────
+    private readonly StackPanel _rootPanel;
+    private readonly TextBlock _offsetText;
+    private readonly TextBlock _selLenText;
+    private readonly Border _separator1;
+    private readonly StackPanel _pathPanel;
+    private readonly Border _separator2;
+    private readonly StackPanel _bookmarkPanel;
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    private long _offset;
+    private long _selectionLength;
+    private List<BreadcrumbSegment> _segments = new();
+    private Popup? _activePopup;
+
+    // ── Configurable ──────────────────────────────────────────────────────────
+    public BreadcrumbOffsetFormat OffsetFormat { get; set; } = BreadcrumbOffsetFormat.Both;
+    public bool ShowFormatInfo { get; set; } = true;
+    public bool ShowFieldPath { get; set; } = true;
+    public bool ShowSelectionLength { get; set; } = true;
+    public new double FontSize { get; set; } = 11.5;
+    public double BarHeight
+    {
+        get => Height;
+        set => Height = value;
+    }
+
+    // ── Events ────────────────────────────────────────────────────────────────
+    /// <summary>Raised when user clicks a breadcrumb segment or bookmark to navigate.</summary>
+    public event EventHandler<long>? NavigateRequested;
+
+    // ── Static brushes ────────────────────────────────────────────────────────
+    private static readonly Brush SeparatorLineBrush;
 
     static HexBreadcrumbBar()
     {
-        SeparatorBrush.Freeze();
-        SeparatorPen.Freeze();
+        SeparatorLineBrush = new SolidColorBrush(Color.FromArgb(80, 128, 128, 128));
+        SeparatorLineBrush.Freeze();
     }
 
+    // ── Constructor ───────────────────────────────────────────────────────────
     public HexBreadcrumbBar()
     {
         Height = 22;
+        Padding = new Thickness(6, 0, 6, 0);
         SnapsToDevicePixels = true;
-    }
+        SetResourceReference(BackgroundProperty, "BC_Background");
+        BorderThickness = new Thickness(0, 0, 0, 1);
+        BorderBrush = SeparatorLineBrush;
 
-    /// <summary>Updates the displayed state. Call on selection/cursor change.</summary>
-    public void SetState(long offset, string? formatName = null, int confidence = 0, string? fieldPath = null)
-    {
-        _offset     = offset;
-        _formatName = formatName ?? "";
-        _confidence = confidence;
-        _fieldPath  = fieldPath ?? "";
-        InvalidateVisual();
-    }
-
-    protected override Size MeasureOverride(Size availableSize)
-        => new(availableSize.Width, 22);
-
-    protected override void OnRender(DrawingContext dc)
-    {
-        var w = ActualWidth;
-        var h = ActualHeight;
-        if (w < 1) return;
-
-        // Background
-        var bg = TryFindResource("DockTabBackgroundBrush") as Brush
-              ?? new SolidColorBrush(Color.FromRgb(30, 30, 30));
-        dc.DrawRectangle(bg, null, new Rect(0, 0, w, h));
-
-        var fg = TryFindResource("DockMenuForegroundBrush") as Brush ?? Brushes.LightGray;
-        var accentFg = TryFindResource("Panel_ToolbarButtonActiveBrush") as Brush ?? Brushes.CornflowerBlue;
-        double x = 6;
-
-        // Offset segment
-        var offsetText = Format($"0x{_offset:X8}", TypefaceMono, 11.5, accentFg);
-        dc.DrawText(offsetText, new Point(x, (h - offsetText.Height) / 2));
-        x += offsetText.Width + 4;
-
-        var decText = Format($"({_offset:N0})", TypefaceNormal, 10, fg);
-        dc.DrawText(decText, new Point(x, (h - decText.Height) / 2));
-        x += decText.Width + 8;
-
-        // Separator
-        dc.DrawLine(SeparatorPen, new Point(x, 3), new Point(x, h - 3));
-        x += 8;
-
-        // Format segment
-        if (!string.IsNullOrEmpty(_formatName))
+        _offsetText = new TextBlock
         {
-            var fmtText = Format(_formatName, TypefaceNormal, 11, fg);
-            dc.DrawText(fmtText, new Point(x, (h - fmtText.Height) / 2));
-            x += fmtText.Width + 4;
+            VerticalAlignment = VerticalAlignment.Center,
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = FontSize,
+            Cursor = Cursors.Arrow,
+        };
+        _offsetText.SetResourceReference(TextBlock.ForegroundProperty, "Panel_ToolbarButtonActiveBrush");
 
-            if (_confidence > 0)
+        _selLenText = new TextBlock
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = FontSize - 1.5,
+            Margin = new Thickness(6, 0, 0, 0),
+            Visibility = Visibility.Collapsed,
+        };
+        _selLenText.SetResourceReference(TextBlock.ForegroundProperty, "BC_Foreground");
+
+        _separator1 = CreateSeparatorBorder();
+        _pathPanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        _separator2 = CreateSeparatorBorder();
+        _separator2.Visibility = Visibility.Collapsed;
+        _bookmarkPanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+
+        _rootPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        _rootPanel.Children.Add(_offsetText);
+        _rootPanel.Children.Add(_selLenText);
+        _rootPanel.Children.Add(_separator1);
+        _rootPanel.Children.Add(_pathPanel);
+        _rootPanel.Children.Add(_separator2);
+        _rootPanel.Children.Add(_bookmarkPanel);
+
+        Child = _rootPanel;
+    }
+
+    // ── Public API ────────────────────────────────────────────────────────────
+
+    /// <summary>Updates the breadcrumb state. Call on selection change.</summary>
+    public void SetState(long offset, long selectionLength, string? formatName, int confidence,
+        List<BreadcrumbSegment>? segments)
+    {
+        _offset = offset;
+        _selectionLength = selectionLength;
+        _segments = segments ?? new List<BreadcrumbSegment>();
+
+        UpdateOffsetDisplay();
+        UpdateSelectionDisplay();
+        RenderPathSegments();
+    }
+
+    /// <summary>Sets navigation bookmark chips from the format's bookmark definitions.</summary>
+    public void SetBookmarks(IEnumerable<FormatNavigationBookmark>? bookmarks)
+    {
+        _bookmarkPanel.Children.Clear();
+
+        if (bookmarks == null)
+        {
+            _separator2.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var list = bookmarks.ToList();
+        if (list.Count == 0)
+        {
+            _separator2.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        _separator2.Visibility = Visibility.Visible;
+
+        foreach (var bm in list)
+        {
+            var chip = new Border
             {
-                var confText = Format($"{_confidence}%", TypefaceNormal, 9.5,
-                    _confidence >= 80 ? Brushes.LimeGreen : Brushes.Orange);
-                dc.DrawText(confText, new Point(x, (h - confText.Height) / 2));
-                x += confText.Width + 8;
+                CornerRadius = new CornerRadius(3),
+                Padding = new Thickness(4, 1, 4, 1),
+                Margin = new Thickness(2, 0, 2, 0),
+                Cursor = Cursors.Hand,
+                ToolTip = $"{bm.Name}\nOffset: 0x{bm.Offset:X8}",
+                Tag = bm.Offset,
+                SnapsToDevicePixels = true,
+            };
+            chip.SetResourceReference(BackgroundProperty, "BC_HoverBackground");
+
+            var chipText = new TextBlock
+            {
+                FontSize = FontSize - 2,
+                VerticalAlignment = VerticalAlignment.Center,
+                Text = string.IsNullOrEmpty(bm.Icon) ? bm.Name : $"{bm.Icon} {bm.Name}",
+            };
+            chipText.SetResourceReference(TextBlock.ForegroundProperty, "BC_Foreground");
+            chip.Child = chipText;
+
+            chip.MouseEnter += (_, _) => chip.SetResourceReference(BackgroundProperty, "SE_HoverBrush");
+            chip.MouseLeave += (_, _) => chip.SetResourceReference(BackgroundProperty, "BC_HoverBackground");
+            chip.MouseLeftButtonDown += (s, e) =>
+            {
+                if (s is Border b && b.Tag is long bmOffset)
+                {
+                    NavigateRequested?.Invoke(this, bmOffset);
+                    e.Handled = true;
+                }
+            };
+
+            _bookmarkPanel.Children.Add(chip);
+        }
+    }
+
+    // ── Private: Offset display ───────────────────────────────────────────────
+
+    private void UpdateOffsetDisplay()
+    {
+        _offsetText.FontSize = FontSize;
+        _offsetText.Text = OffsetFormat switch
+        {
+            BreadcrumbOffsetFormat.Hex => $"0x{_offset:X8}",
+            BreadcrumbOffsetFormat.Decimal => $"{_offset:N0}",
+            _ => $"0x{_offset:X8} ({_offset:N0})",
+        };
+    }
+
+    private void UpdateSelectionDisplay()
+    {
+        if (ShowSelectionLength && _selectionLength > 1)
+        {
+            _selLenText.Text = $"[{_selectionLength:N0} bytes]";
+            _selLenText.FontSize = FontSize - 1.5;
+            _selLenText.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            _selLenText.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    // ── Private: Path segments ────────────────────────────────────────────────
+
+    private void RenderPathSegments()
+    {
+        _pathPanel.Children.Clear();
+
+        if (_segments.Count == 0)
+        {
+            _separator1.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        _separator1.Visibility = Visibility.Visible;
+
+        for (int i = 0; i < _segments.Count; i++)
+        {
+            var seg = _segments[i];
+            bool isLast = i == _segments.Count - 1;
+
+            // Separator chevron before each segment (except first)
+            if (i > 0)
+            {
+                var sep = new TextBlock
+                {
+                    Text = " \u203A ",  // ›
+                    VerticalAlignment = VerticalAlignment.Center,
+                    FontSize = FontSize,
+                };
+                sep.SetResourceReference(TextBlock.ForegroundProperty, "BC_SeparatorForeground");
+                _pathPanel.Children.Add(sep);
             }
 
-            dc.DrawLine(SeparatorPen, new Point(x, 3), new Point(x, h - 3));
-            x += 8;
-        }
+            // Segment container (label + optional chevron)
+            var segPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
 
-        // Field path segment
-        if (!string.IsNullOrEmpty(_fieldPath))
-        {
-            var fieldText = Format(_fieldPath, TypefaceNormal, 11, accentFg);
-            dc.DrawText(fieldText, new Point(x, (h - fieldText.Height) / 2));
+            // Format segment: name + confidence badge
+            if (seg.IsFormat && ShowFormatInfo)
+            {
+                var fmtLabel = CreateSegmentLabel(seg.Name, isLast, seg.Offset);
+                segPanel.Children.Add(fmtLabel);
+
+                if (seg.Confidence > 0)
+                {
+                    var confLabel = new TextBlock
+                    {
+                        Text = $" {seg.Confidence}%",
+                        VerticalAlignment = VerticalAlignment.Center,
+                        FontSize = FontSize - 2.5,
+                        Margin = new Thickness(2, 0, 0, 0),
+                        Foreground = seg.Confidence >= 80
+                            ? new SolidColorBrush(Colors.LimeGreen)
+                            : new SolidColorBrush(Colors.Orange),
+                    };
+                    segPanel.Children.Add(confLabel);
+                }
+            }
+            else if (!seg.IsFormat)
+            {
+                var label = CreateSegmentLabel(seg.Name, isLast, seg.Offset);
+                segPanel.Children.Add(label);
+            }
+            else
+            {
+                // Format segment but ShowFormatInfo is false — skip
+                continue;
+            }
+
+            // Chevron dropdown button (for non-leaf segments with siblings)
+            if (!isLast && seg.Siblings?.Count > 0)
+            {
+                var chevron = new TextBlock
+                {
+                    Text = " \u25BE",  // ▾
+                    VerticalAlignment = VerticalAlignment.Center,
+                    FontSize = FontSize - 2,
+                    Cursor = Cursors.Hand,
+                    Padding = new Thickness(1, 0, 2, 0),
+                    Tag = seg,
+                };
+                chevron.SetResourceReference(TextBlock.ForegroundProperty, "BC_SeparatorForeground");
+                chevron.MouseEnter += (_, _) => chevron.SetResourceReference(TextBlock.ForegroundProperty, "BC_Foreground");
+                chevron.MouseLeave += (_, _) => chevron.SetResourceReference(TextBlock.ForegroundProperty, "BC_SeparatorForeground");
+                chevron.MouseLeftButtonDown += OnChevronClick;
+                segPanel.Children.Add(chevron);
+            }
+
+            _pathPanel.Children.Add(segPanel);
         }
     }
 
-    private static FormattedText Format(string text, Typeface tf, double size, Brush fg)
+    private TextBlock CreateSegmentLabel(string text, bool isLast, long offset)
     {
-        return new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            tf, size, fg, VisualTreeHelper.GetDpi(new DrawingVisual()).PixelsPerDip);
+        var lbl = new TextBlock
+        {
+            Text = text,
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = FontSize,
+            FontWeight = isLast ? FontWeights.SemiBold : FontWeights.Normal,
+            Cursor = Cursors.Hand,
+            Padding = new Thickness(2, 1, 2, 1),
+            Tag = offset,
+        };
+
+        if (isLast)
+            lbl.SetResourceReference(TextBlock.ForegroundProperty, "Panel_ToolbarButtonActiveBrush");
+        else
+            lbl.SetResourceReference(TextBlock.ForegroundProperty, "BC_Foreground");
+
+        lbl.MouseEnter += (_, _) => lbl.SetResourceReference(BackgroundProperty, "BC_HoverBackground");
+        lbl.MouseLeave += (_, _) => lbl.Background = Brushes.Transparent;
+        lbl.MouseLeftButtonDown += OnSegmentClick;
+
+        return lbl;
+    }
+
+    // ── Click handlers ────────────────────────────────────────────────────────
+
+    private void OnSegmentClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is TextBlock tb && tb.Tag is long offset)
+        {
+            NavigateRequested?.Invoke(this, offset);
+            e.Handled = true;
+        }
+    }
+
+    private void OnChevronClick(object sender, MouseButtonEventArgs e)
+    {
+        CloseActivePopup();
+
+        if (sender is not TextBlock chevron || chevron.Tag is not BreadcrumbSegment seg)
+            return;
+        if (seg.Siblings == null || seg.Siblings.Count == 0)
+            return;
+
+        var popup = new Popup
+        {
+            PlacementTarget = chevron,
+            Placement = PlacementMode.Bottom,
+            StaysOpen = false,
+            AllowsTransparency = true,
+        };
+
+        var listBox = new ListBox
+        {
+            MaxHeight = 300,
+            MinWidth = 180,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(0),
+        };
+        listBox.SetResourceReference(BackgroundProperty, "BC_Background");
+        listBox.SetResourceReference(BorderBrushProperty, "BC_SeparatorForeground");
+
+        // Add current node (highlighted) + siblings
+        var allItems = new List<BreadcrumbSegment> { seg };
+        allItems.AddRange(seg.Siblings);
+        allItems.Sort((a, b) => a.Offset.CompareTo(b.Offset));
+
+        foreach (var item in allItems)
+        {
+            var itemPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(4, 2, 4, 2),
+            };
+
+            var nameText = new TextBlock
+            {
+                Text = item.Name,
+                FontSize = FontSize,
+                VerticalAlignment = VerticalAlignment.Center,
+                FontWeight = item.Offset == seg.Offset ? FontWeights.SemiBold : FontWeights.Normal,
+            };
+            nameText.SetResourceReference(TextBlock.ForegroundProperty, "BC_Foreground");
+
+            var offsetLabel = new TextBlock
+            {
+                Text = $"  0x{item.Offset:X}",
+                FontSize = FontSize - 2,
+                VerticalAlignment = VerticalAlignment.Center,
+                FontFamily = new FontFamily("Consolas"),
+                Opacity = 0.6,
+            };
+            offsetLabel.SetResourceReference(TextBlock.ForegroundProperty, "BC_Foreground");
+
+            itemPanel.Children.Add(nameText);
+            itemPanel.Children.Add(offsetLabel);
+
+            var lbi = new ListBoxItem
+            {
+                Content = itemPanel,
+                Tag = item.Offset,
+                Cursor = Cursors.Hand,
+                Padding = new Thickness(6, 3, 6, 3),
+            };
+
+            if (item.Offset == seg.Offset)
+                lbi.SetResourceReference(BackgroundProperty, "BC_HoverBackground");
+
+            lbi.MouseLeftButtonUp += (s, _) =>
+            {
+                if (s is ListBoxItem li && li.Tag is long targetOffset)
+                {
+                    NavigateRequested?.Invoke(this, targetOffset);
+                    popup.IsOpen = false;
+                }
+            };
+
+            listBox.Items.Add(lbi);
+        }
+
+        popup.Child = new Border
+        {
+            Child = listBox,
+            CornerRadius = new CornerRadius(4),
+            Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                BlurRadius = 8,
+                Opacity = 0.3,
+                ShadowDepth = 2,
+            },
+        };
+
+        popup.Closed += (_, _) => { if (_activePopup == popup) _activePopup = null; };
+        _activePopup = popup;
+        popup.IsOpen = true;
+        e.Handled = true;
+    }
+
+    private void CloseActivePopup()
+    {
+        if (_activePopup is { IsOpen: true })
+            _activePopup.IsOpen = false;
+        _activePopup = null;
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    private static Border CreateSeparatorBorder()
+    {
+        return new Border
+        {
+            Width = 1,
+            Margin = new Thickness(8, 3, 8, 3),
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Background = SeparatorLineBrush,
+        };
     }
 }

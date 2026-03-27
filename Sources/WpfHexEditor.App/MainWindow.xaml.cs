@@ -564,9 +564,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         RebuildTblItemList();   // must be before LoadSavedLayoutOrDefault so SyncTblDropdown finds items
         LoadSavedLayoutOrDefault();
-        InitLayoutCustomization();  // must be after LoadSavedLayoutOrDefault
+        InitLayoutCustomization();  // creates service + chord keys (no restore yet)
         PopulateRecentMenus();
         TryRestoreSession();
+        RestoreLayoutPreferences(); // apply saved layout prefs AFTER session restore
         HandleStartupFile();
 
         // Pre-warm the embedded format JSON cache on a background thread so that the first
@@ -620,6 +621,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "Environment", "Docking",
             () => new WpfHexEditor.App.Options.DockingOptionsPage(),
             "\uE8A0");
+
+        // Register Code Editor options page (General, Brackets, Hints, Minimap)
+        WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
+            "Editor", "Code Editor",
+            () => new WpfHexEditor.App.Options.CodeEditorOptionsPage(),
+            "\uE943");
 
         // Register Debugger options page
         WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
@@ -1155,6 +1162,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void HandleStartupFile()
     {
+        // --diff left right → open DiffViewer immediately
+        if (App.StartupDiffPaths is { } diff)
+        {
+            _ = _compareFileLaunchService?.LaunchAsync(diff.Left, diff.Right);
+            return;
+        }
+
         var path = App.StartupFilePath;
         if (string.IsNullOrEmpty(path)) return;
 
@@ -2544,6 +2558,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             dockItem.Metadata["EditorConfigJson"] = editorConfigJson;
 
         _engine.Dock(dockItem, _layout.MainDocumentHost, DockDirection.Center);
+        if (dockItem.Owner is { } dockOwner) dockOwner.ActiveItem = dockItem;
         DockHost.RebuildVisualTree();
         UpdateStatusBar();
         _solutionManager.PushRecentFile(item.AbsolutePath);
@@ -3224,6 +3239,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Metadata  = { ["FilePath"] = filePath }
         };
         _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+        if (item.Owner is { } itemOwner) itemOwner.ActiveItem = item;
         DockHost.RebuildVisualTree();
         UpdateStatusBar();
         _solutionManager.PushRecentFile(filePath);

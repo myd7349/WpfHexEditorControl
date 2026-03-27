@@ -227,29 +227,26 @@ public sealed class MinimapControl : FrameworkElement
         int totalLines = doc.Lines.Count;
         double scale = ComputeScale(totalLines, h);
 
-        // For proportional mode with large files, compute a scroll offset
-        // so the editor's visible area stays centered in the minimap.
+        // Read pixel-exact values from VE — no RenderBuffer inflation.
+        // scrollRatio matches the scrollbar exactly.
         double minimapScrollOffset = 0;
-        int editorFirstVisible = 0;
-        int editorVisibleCount = 0;
+        double scrollRatio = 0;
+        int actualVisibleLines = 0;
+        double veLineHeight = 20;
 
         if (_editor.VirtualizationEngine is { } ve && ve.TotalLines > 0)
         {
-            editorFirstVisible = ve.FirstVisibleLine;
-            editorVisibleCount = ve.VisibleLineCount;
+            veLineHeight = ve.LineHeight > 0 ? ve.LineHeight : 20;
+            double maxScrollOffset = Math.Max(1, _editor.MaxScrollOffset);
+            scrollRatio = Math.Clamp(ve.ScrollOffset / maxScrollOffset, 0, 1);
+            actualVisibleLines = (int)Math.Ceiling(ve.ViewportHeight / veLineHeight);
         }
 
         double totalMinimapHeight = totalLines * scale;
         if (totalMinimapHeight > h)
         {
-            // Proportional scroll: minimap scrolls in sync with editor.
-            // At editor top (ratio=0) → minimap shows first lines.
-            // At editor bottom (ratio=1) → minimap shows last lines.
-            // Guarantees ALL lines are reachable.
-            double editorMaxScroll = Math.Max(1.0, totalLines - editorVisibleCount);
-            double editorScrollRatio = Math.Clamp((double)editorFirstVisible / editorMaxScroll, 0, 1);
-            double minimapMaxScroll = totalMinimapHeight - h;
-            minimapScrollOffset = editorScrollRatio * minimapMaxScroll / scale;
+            double minimapMaxScrollLines = (totalMinimapHeight - h) / scale;
+            minimapScrollOffset = scrollRatio * minimapMaxScrollLines;
         }
 
         _lastMinimapScrollOffset = minimapScrollOffset;
@@ -300,22 +297,21 @@ public sealed class MinimapControl : FrameworkElement
         // Content height — slider and hover band are clamped to this
         double contentHeight = Math.Min(totalMinimapHeight, h);
 
-        // Hover highlight band
-        if (_isMouseOver && !_isDragging && _hoverY >= 0 && editorVisibleCount > 0)
+        // Hover highlight band — uses actualVisibleLines (no buffer)
+        if (_isMouseOver && !_isDragging && _hoverY >= 0 && actualVisibleLines > 0)
         {
-            double bandHeight = Math.Max(editorVisibleCount * scale, 10);
-            double bandTop = Math.Clamp(_hoverY - bandHeight / 2, 0, contentHeight - bandHeight);
-            dc.DrawRectangle(HoverBandBrush, null, new Rect(0, bandTop, w, bandHeight));
+            double bandH = Math.Max((actualVisibleLines / (double)totalLines) * contentHeight, 10);
+            double bandTop = Math.Clamp(_hoverY - bandH / 2, 0, contentHeight - bandH);
+            dc.DrawRectangle(HoverBandBrush, null, new Rect(0, bandTop, w, bandH));
         }
 
-        // Viewport slider — clamped to content area, not full minimap height
+        // Viewport slider — uses scrollRatio (pixel-exact, matches scrollbar)
         bool showSlider = _sliderMode == MinimapSliderMode.Always || _isMouseOver;
-        if (showSlider && editorVisibleCount > 0)
+        if (showSlider && actualVisibleLines > 0)
         {
-            double vpTop = (editorFirstVisible - minimapScrollOffset) * scale;
-            double vpHeight = Math.Max(editorVisibleCount * scale, 10);
-            vpTop = Math.Clamp(vpTop, 0, Math.Max(contentHeight - 1, 0));
-            vpHeight = Math.Min(vpHeight, Math.Max(contentHeight - vpTop, 1));
+            double vpHeight = Math.Max((actualVisibleLines / (double)totalLines) * contentHeight, 10);
+            double sliderRange = Math.Max(contentHeight - vpHeight, 1);
+            double vpTop = scrollRatio * sliderRange;
 
             dc.DrawRectangle(ViewportBrush, ViewportPen, new Rect(0, vpTop, w, vpHeight));
         }
@@ -332,11 +328,16 @@ public sealed class MinimapControl : FrameworkElement
     {
         if (totalLines <= 0) return RowHeight;
 
+        // MinRowHeight ensures drawH (scale × RowFillRatio) is ≥ 1px,
+        // preventing sub-pixel aliasing on large files. Overflow is handled
+        // by the proportional scroll in OnRender.
+        const double MinRowHeight = 1.0 / RowFillRatio; // ≈ 1.82
+
         return _verticalSize switch
         {
             MinimapVerticalSize.Fill => viewportHeight / totalLines,
-            MinimapVerticalSize.Fit => Math.Clamp(viewportHeight / totalLines, 1.0, RowHeight),
-            _ /* Proportional */ => Math.Min(RowHeight, viewportHeight / totalLines),
+            MinimapVerticalSize.Fit => Math.Clamp(viewportHeight / totalLines, MinRowHeight, RowHeight),
+            _ /* Proportional */ => Math.Clamp(viewportHeight / totalLines, MinRowHeight, RowHeight),
         };
     }
 
@@ -479,24 +480,28 @@ public sealed class MinimapControl : FrameworkElement
 
     private void NavigateToY(double y)
     {
-        if (_editor?.Document is null) return;
+        if (_editor?.Document is null || _editor.VirtualizationEngine is not { } ve) return;
         int totalLines = _editor.Document.Lines.Count;
         double h = ActualHeight;
         double scale = ComputeScale(totalLines, h);
-        int visibleCount = _editor.VirtualizationEngine?.VisibleLineCount ?? 0;
+        double veLineHeight = ve.LineHeight > 0 ? ve.LineHeight : 20;
+        int actualVisibleLines = (int)Math.Ceiling(ve.ViewportHeight / veLineHeight);
+        if (totalLines <= 0 || actualVisibleLines <= 0) return;
 
-        double totalContentHeight = totalLines * scale;
-        if (totalContentHeight < 1) return;
+        // Same formula as slider rendering — exact inverse.
+        double contentHeight = Math.Min(totalLines * scale, h);
+        double vpHeight = Math.Max((actualVisibleLines / (double)totalLines) * contentHeight, 10);
+        double sliderRange = Math.Max(contentHeight - vpHeight, 1);
 
-        // Convert viewport-relative Y to absolute position in full content,
-        // accounting for the minimap's own scroll offset.
-        double absoluteY = y + _lastMinimapScrollOffset * scale;
-        double clickRatio = Math.Clamp(absoluteY / totalContentHeight, 0, 1);
+        // Center the slider on the click position
+        double vpTop = Math.Clamp(y - vpHeight / 2, 0, sliderRange);
+        double scrollRatio = vpTop / sliderRange;
 
-        // Map proportionally to the full editor scroll range.
-        int editorMaxTopLine = Math.Max(0, totalLines - visibleCount);
-        int topLine = (int)(clickRatio * editorMaxTopLine);
-        _editor.ScrollViewToLine(topLine);
+        // Apply ratio to pixel-based max scroll — exact same range as scrollbar.
+        // Use ScrollViewToOffset for sub-line precision (no quantization loss).
+        double maxScrollOffset = Math.Max(1, _editor.MaxScrollOffset);
+        double targetOffset = scrollRatio * maxScrollOffset;
+        _editor.ScrollViewToOffset(targetOffset);
     }
 
     // ── Context menu ─────────────────────────────────────────────────────────
