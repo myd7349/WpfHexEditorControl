@@ -239,15 +239,52 @@ public partial class MainWindow
             return;
         }
 
+        // Build before debugging (same as Start Without Debugging).
+        if (_buildSystem is not null)
+        {
+            ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
+            OutputLogger.ClearChannel(OutputLogger.SourceBuild);
+            var buildResult = await _buildSystem.BuildSolutionAsync();
+            if (!buildResult.IsSuccess)
+            {
+                _buildErrorListAdapter?.SetDiagnostics(buildResult.Errors.Concat(buildResult.Warnings));
+                MessageBox.Show(
+                    "Build failed. Fix the errors before debugging.",
+                    "Start Debugging", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            _buildErrorListAdapter?.SetDiagnostics(buildResult.Errors.Concat(buildResult.Warnings));
+        }
+
         // Derive output exe path using the active build configuration.
         var projDir   = Path.GetDirectoryName(startupProject.ProjectFilePath) ?? ".";
         var projName  = Path.GetFileNameWithoutExtension(startupProject.ProjectFilePath);
         var cfgName   = _configManager?.ActiveConfiguration.Name ?? "Debug";
-        var programPath = Path.Combine(projDir, "bin", cfgName, "net8.0-windows", projName + ".exe");
 
-        // Fall back to DLL for non-WinExe projects (dotnet run style).
+        // Scan bin/{cfg}/ for the actual TFM directory (avoids hardcoding net8.0-windows).
+        string? programPath = null;
+        var binCfgDir = Path.Combine(projDir, "bin", cfgName);
+        if (Directory.Exists(binCfgDir))
+        {
+            foreach (var tfmDir in Directory.GetDirectories(binCfgDir))
+            {
+                var candidate = Path.Combine(tfmDir, projName + ".exe");
+                if (File.Exists(candidate)) { programPath = candidate; break; }
+                candidate = Path.Combine(tfmDir, projName + ".dll");
+                if (File.Exists(candidate)) { programPath = candidate; break; }
+            }
+        }
+        // Fallback to the conventional path if scan found nothing.
+        programPath ??= Path.Combine(projDir, "bin", cfgName, "net8.0-windows", projName + ".exe");
+
         if (!File.Exists(programPath))
-            programPath = Path.Combine(projDir, "bin", cfgName, "net8.0-windows", projName + ".dll");
+        {
+            MessageBox.Show(
+                $"Cannot find the program to debug:\n{programPath}\n\n" +
+                "The project was built but the output executable was not found.",
+                "Start Debugging", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         var launchConfig = new DebugLaunchConfig
         {
