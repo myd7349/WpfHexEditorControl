@@ -255,6 +255,27 @@ namespace WpfHexEditor.Core.Services.FormatParsing
             ParseFieldsOnDispatcher();
         }
 
+        // ── Format Catalog Loading ────────────────────────────────────────
+
+        /// <summary>
+        /// Load format definitions into the internal FormatDetectionService.
+        /// Must be called before <see cref="DetectAndParseAsync"/> to enable format recognition.
+        /// Typically called with entries from <c>EmbeddedFormatCatalog.Instance.GetAll()</c>.
+        /// </summary>
+        public void LoadFormats(IEnumerable<(string json, string? category)> formats)
+        {
+            foreach (var (json, category) in formats)
+            {
+                if (string.IsNullOrEmpty(json)) continue;
+                var fmt = _detectionService.ImportFromJson(json);
+                if (fmt != null)
+                    fmt.Category ??= category;
+            }
+        }
+
+        /// <summary>Number of format definitions currently loaded.</summary>
+        public int LoadedFormatCount => _detectionService.GetFormatCount();
+
         // ── IFormatParsingService: State ─────────────────────────────────
 
         public FormatDetectionResult? LastDetectionResult => _lastResult;

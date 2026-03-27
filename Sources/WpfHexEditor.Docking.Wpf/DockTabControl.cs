@@ -13,6 +13,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.Shell.Automation;
 
@@ -63,6 +64,7 @@ public class DockTabControl : TabControl
     public event Action<DockItem>? TabAutoHideRequested;
     public event Action<DockItem>? TabHideRequested;
     public event Action<DockItem>? TabDockAsDocumentRequested;
+    public event Action<DockItem>? TabRestoreToToolPanelRequested;
     public event Action<DockItem>? TabPinToggleRequested;
     public event Action<DockItem>? TabStickyToggleRequested;
     public event Action<DockItem, int>? TabReorderRequested;
@@ -141,7 +143,21 @@ public class DockTabControl : TabControl
             foreach (var added in e.AddedItems)
             {
                 if (added is TabItem { Tag: DockItem item } tab && tab.Content is LazyContentPlaceholder)
-                    tab.Content = _contentFactory.Invoke(item);
+                {
+                    if (item.Metadata.ContainsKey("_pluginPanel"))
+                    {
+                        tab.Content = new PluginLoadingPlaceholder();
+                        var factory = _contentFactory;
+                        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+                        {
+                            tab.Content = factory.Invoke(item);
+                        });
+                    }
+                    else
+                    {
+                        tab.Content = _contentFactory.Invoke(item);
+                    }
+                }
             }
         }
 
@@ -165,8 +181,9 @@ public class DockTabControl : TabControl
         header.FloatRequested           += () => TabFloatRequested?.Invoke(item);
         header.AutoHideRequested        += () => TabAutoHideRequested?.Invoke(item);
         header.HideRequested            += () => TabHideRequested?.Invoke(item);
-        header.DockAsDocumentRequested  += () => TabDockAsDocumentRequested?.Invoke(item);
-        header.CloseAllRequested        += () => CloseAllItems();
+        header.DockAsDocumentRequested      += () => TabDockAsDocumentRequested?.Invoke(item);
+        header.RestoreToToolPanelRequested  += () => TabRestoreToToolPanelRequested?.Invoke(item);
+        header.CloseAllRequested            += () => CloseAllItems();
         header.CloseAllButThisRequested += () => CloseAllButItem(item);
         header.PinToggleRequested       += () => TabPinToggleRequested?.Invoke(item);
         header.StickyToggleRequested    += () => TabStickyToggleRequested?.Invoke(item);
@@ -175,15 +192,41 @@ public class DockTabControl : TabControl
         header.ReorderDropped           += pos => OnHeaderReorderDropped(item, pos);
         header.ReorderCancelled         += () => OnHeaderReorderCancelled(item);
 
+        object tabContent;
+        bool deferPluginContent = false;
+        if (contentFactory is null)
+        {
+            tabContent = DefaultContent(item);
+        }
+        else if (isActive && item.Metadata.ContainsKey("_pluginPanel"))
+        {
+            tabContent = new PluginLoadingPlaceholder();
+            deferPluginContent = true;
+        }
+        else if (isActive)
+        {
+            tabContent = contentFactory.Invoke(item);
+        }
+        else
+        {
+            tabContent = new LazyContentPlaceholder(item);
+        }
+
         var tabItem = new TabItem
         {
             Header = header,
             Tag = item,
-            Content = isActive || contentFactory is null
-                ? (contentFactory?.Invoke(item) ?? DefaultContent(item))
-                : new LazyContentPlaceholder(item)
+            Content = tabContent
         };
         tabItem.SetResourceReference(StyleProperty, "DockTabItemStyle");
+
+        if (deferPluginContent)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+            {
+                tabItem.Content = contentFactory!.Invoke(item);
+            });
+        }
 
         return tabItem;
     }
@@ -367,6 +410,58 @@ public class DockTabControl : TabControl
     };
 
     /// <summary>
+    /// Standalone placeholder shown while a plugin panel is being created.
+    /// Displays a blue "+" icon, "Loading…" text, and an indeterminate progress bar
+    /// on a dark scrim. Gets replaced directly via <c>tab.Content = realContent</c>.
+    /// </summary>
+    private sealed class PluginLoadingPlaceholder : Border
+    {
+        public PluginLoadingPlaceholder()
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0xCC, 0x1E, 0x1E, 0x1E));
+
+            var icon = new TextBlock
+            {
+                Text = "\uE710",
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 28,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0xA5, 0xFA)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var label = new TextBlock
+            {
+                Text = "Loading\u2026",
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var progress = new ProgressBar
+            {
+                IsIndeterminate = true,
+                Width = 140,
+                Height = 4,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0xA5, 0xFA))
+            };
+
+            var stack = new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            stack.Children.Add(icon);
+            stack.Children.Add(label);
+            stack.Children.Add(progress);
+
+            Child = stack;
+        }
+    }
+
+    /// <summary>
     /// Lightweight placeholder shown for non-active tabs until they are first selected.
     /// </summary>
     private sealed class LazyContentPlaceholder : TextBlock
@@ -461,6 +556,7 @@ public class DockTabHeader : StackPanel
     public event Action? AutoHideRequested;
     public event Action? HideRequested;
     public event Action? DockAsDocumentRequested;
+    public event Action? RestoreToToolPanelRequested;
     public event Action? CloseAllRequested;
     public event Action? CloseAllButThisRequested;
     public event Action? PinToggleRequested;
@@ -732,6 +828,16 @@ public class DockTabHeader : StackPanel
             };
             dockAsDocItem.Click += (_, _) => DockAsDocumentRequested?.Invoke();
             menu.Items.Add(dockAsDocItem);
+        }
+        else if (item.Metadata.TryGetValue("_promotedPanel", out _))
+        {
+            var restoreItem = new MenuItem
+            {
+                Header = "Dock as Tool Window",
+                Icon   = MakeMenuIcon("\uE8A0")  // DockLeft
+            };
+            restoreItem.Click += (_, _) => RestoreToToolPanelRequested?.Invoke();
+            menu.Items.Add(restoreItem);
         }
 
         var hideItem = new MenuItem

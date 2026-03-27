@@ -135,6 +135,15 @@ public class DockWorkspace
     }
 
     /// <summary>
+    /// Restores a promoted panel from the document area back to its original tool panel side.
+    /// </summary>
+    public void RestoreToToolPanel(DockItem item)
+    {
+        Engine?.RestoreToToolPanel(item);
+        _host.RebuildVisualTree();
+    }
+
+    /// <summary>
     /// Closes an item (respects <see cref="IDockHost.BeforeCloseCallback"/>).
     /// </summary>
     public void Close(DockItem item)

@@ -196,7 +196,7 @@
                         <ItemsControl x:Name="PatternsListBox">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="{DynamicResource PFP_ItemHoverBrush}"
+                                    <Border Background="{DynamicResource Panel_ItemHoverBrush}"
                                             BorderBrush="{DynamicResource PFP_BorderBrush}"
                                             BorderThickness="1" CornerRadius="3"
                                             Padding="8" Margin="0,0,0,4">

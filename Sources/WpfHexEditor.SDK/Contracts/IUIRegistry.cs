@@ -102,6 +102,22 @@ public interface IUIRegistry
     /// </summary>
     bool IsPanelVisible(string uiId);
 
+    // -- Panel Visibility Events -----------------------------------------------
+
+    /// <summary>
+    /// Raised when a panel transitions from hidden/closed to visible (docked, floated, or auto-hide).
+    /// The event argument is the panel's uiId string.
+    /// Raised on the UI thread.
+    /// </summary>
+    event EventHandler<string>? PanelShown;
+
+    /// <summary>
+    /// Raised when a panel transitions from visible to hidden/closed.
+    /// The event argument is the panel's uiId string.
+    /// Raised on the UI thread.
+    /// </summary>
+    event EventHandler<string>? PanelHidden;
+
     // -- Solution Explorer Context Menu Contributors --------------------------
 
     /// <summary>

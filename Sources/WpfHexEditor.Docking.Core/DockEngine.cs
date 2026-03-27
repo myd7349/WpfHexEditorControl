@@ -310,15 +310,35 @@ public class DockEngine
     /// Vertical split:   index 0 → Top,  index &gt; 0 → Bottom.
     /// Falls back to Bottom when the group has no parent split (e.g. it is the root).
     /// </summary>
+    /// <summary>
+    /// Infers the dock side of a group by walking up the layout tree.
+    /// When a group is inside a horizontal split (side-by-side panels) that is itself
+    /// inside a vertical split (top/bottom zone), the vertical split determines the
+    /// dock side — the horizontal split is just internal sub-layout within that zone.
+    /// </summary>
     private static DockSide InferDockSide(DockGroupNode group)
     {
-        if (group.Parent is not DockSplitNode parent)
-            return DockSide.Bottom;
+        DockNode current = group;
+        while (current.Parent is DockSplitNode parent)
+        {
+            var isFirst = parent.Children.Count > 0 && parent.Children[0] == current;
 
-        var isFirst = parent.Children.Count > 0 && parent.Children[0] == group;
-        return parent.Orientation == SplitOrientation.Horizontal
-            ? (isFirst ? DockSide.Left : DockSide.Right)
-            : (isFirst ? DockSide.Top  : DockSide.Bottom);
+            if (parent.Orientation == SplitOrientation.Vertical)
+                return isFirst ? DockSide.Top : DockSide.Bottom;
+
+            // Horizontal split: check if nested inside a vertical split (bottom/top zone
+            // containing side-by-side panels). The vertical split is the dominant axis.
+            if (parent.Parent is DockSplitNode grandParent &&
+                grandParent.Orientation == SplitOrientation.Vertical)
+            {
+                var gpIsFirst = grandParent.Children.Count > 0 && grandParent.Children[0] == parent;
+                return gpIsFirst ? DockSide.Top : DockSide.Bottom;
+            }
+
+            return isFirst ? DockSide.Left : DockSide.Right;
+        }
+
+        return DockSide.Bottom;
     }
 
     /// <summary>
@@ -343,9 +363,37 @@ public class DockEngine
     public void DockAsDocument(DockItem item, DocumentHostNode? target = null)
     {
         ArgumentNullException.ThrowIfNull(item);
+
+        // Tag non-document items so they can be restored to their original tool panel position.
+        if (item.Owner is not DocumentHostNode)
+            item.Metadata["_promotedPanel"] = "true";
+
         target ??= Layout.MainDocumentHost;
         Layout.HiddenItems.Remove(item);
         Dock(item, target, DockDirection.Center);
+    }
+
+    /// <summary>
+    /// Restores a promoted panel from the document area back to its original tool panel side.
+    /// Uses <see cref="DockItem.LastDockSide"/> to determine the restore direction.
+    /// </summary>
+    public void RestoreToToolPanel(DockItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        item.Owner?.RemoveItem(item);
+        item.Metadata.Remove("_promotedPanel");
+
+        var direction = item.LastDockSide switch
+        {
+            DockSide.Left   => DockDirection.Left,
+            DockSide.Right  => DockDirection.Right,
+            DockSide.Top    => DockDirection.Top,
+            DockSide.Bottom => DockDirection.Bottom,
+            _               => DockDirection.Bottom
+        };
+
+        Dock(item, Layout.MainDocumentHost, direction);
     }
 
     /// <summary>

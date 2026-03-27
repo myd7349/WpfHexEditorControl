@@ -68,7 +68,7 @@
                                     <Condition Property="IsSelected"  Value="False"/>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource PFP_ItemHoverBrush}"/>
+                                <Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -384,7 +384,7 @@
                                                                 <Style.Triggers>
                                                                     <Trigger Property="IsMouseOver" Value="True">
                                                                         <Setter Property="Background"
-                                                                                Value="{DynamicResource PFP_ItemHoverBrush}"/>
+                                                                                Value="{DynamicResource Panel_ItemHoverBrush}"/>
                                                                     </Trigger>
                                                                 </Style.Triggers>
                                                             </Style>

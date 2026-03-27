@@ -46,6 +46,9 @@ public static class DockCommands
     public static readonly RoutedUICommand DockAsDocument = new(
         "Dock as Tabbed Document", nameof(DockAsDocument), typeof(DockCommands));
 
+    public static readonly RoutedUICommand RestoreToToolPanel = new(
+        "Dock as Tool Window", nameof(RestoreToToolPanel), typeof(DockCommands));
+
     public static readonly RoutedUICommand CloseAll = new(
         "Close All", nameof(CloseAll), typeof(DockCommands));
 

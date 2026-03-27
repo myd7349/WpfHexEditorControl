@@ -248,6 +248,8 @@ file sealed class NullUIRegistry : IUIRegistry
     public void TogglePanel(string uiId)                                                                   { }
     public void FocusPanel(string uiId)                                                                    { }
     public bool IsPanelVisible(string uiId)                                                               => true;
+    public event EventHandler<string>? PanelShown;
+    public event EventHandler<string>? PanelHidden;
     public void RegisterContextMenuContributor(string pluginId, ISolutionExplorerContextMenuContributor contributor) { }
     public void UnregisterContextMenuContributor(string pluginId) { }
     public IReadOnlyList<ISolutionExplorerContextMenuContributor> GetContextMenuContributors() => [];

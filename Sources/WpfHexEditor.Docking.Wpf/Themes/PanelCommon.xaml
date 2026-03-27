@@ -418,13 +418,13 @@
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background"
-                                    Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>
+                                    Value="{DynamicResource Panel_ItemHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Bd" Property="Background"
-                                    Value="{DynamicResource SE_SelectedBrush}"/>
+                                    Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                             <Setter Property="Foreground"
-                                    Value="{DynamicResource PFP_ItemSelectedForegroundBrush}"/>
+                                    Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -432,7 +432,15 @@
                                 <Condition Property="IsMouseOver"  Value="True"/>
                             </MultiTrigger.Conditions>
                             <Setter TargetName="Bd" Property="Background"
-                                    Value="{DynamicResource SE_SelectedBrush}"/>
+                                    Value="{DynamicResource Panel_ItemSelectedBrush}"/>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected"        Value="True"/>
+                                <Condition Property="IsSelectionActive" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{DynamicResource Panel_ItemInactiveSelectedBrush}"/>
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>

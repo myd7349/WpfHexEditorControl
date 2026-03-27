@@ -71,6 +71,7 @@
     <SolidColorBrush x:Key="DockBackgroundBrush"           Color="{StaticResource DockBackgroundColor}" />
     <SolidColorBrush x:Key="DockBorderBrush"               Color="{StaticResource DockBorderColor}" />
     <SolidColorBrush x:Key="DockTabActiveBrush"            Color="{StaticResource DockTabActiveColor}" />
+    <SolidColorBrush x:Key="DockAutoHideIndicatorBrush" Color="{StaticResource DockTabActiveColor}" />
     <SolidColorBrush x:Key="DockTabInactiveBrush"          Color="{StaticResource DockTabInactiveColor}" />
     <SolidColorBrush x:Key="DockTabHoverBrush"             Color="{StaticResource DockTabHoverColor}" />
     <SolidColorBrush x:Key="DockTabSelectedHoverBrush"     Color="{StaticResource DockTabSelectedHoverColor}" />

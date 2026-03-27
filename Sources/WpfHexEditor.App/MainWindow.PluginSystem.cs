@@ -1053,6 +1053,7 @@ public partial class MainWindow
 
         var docking = new DockingAdapter(_engine, _layout, DockHost, StoreContent, _layoutWasRestoredFromFile);
         docking.SeedSideAnchor(DockDirection.Left, SolutionExplorerContentId);
+        docking.SeedSideAnchor(DockDirection.Bottom, ErrorPanelContentId);
 
         var menu       = new MenuAdapter(MainMenuBar);
         var statusBar  = new StatusBarAdapter(AppStatusBar);

@@ -54,4 +54,10 @@ public interface IDockingAdapter
     /// explicitly hidden panels return false.
     /// </summary>
     bool IsPanelVisible(string uiId);
+
+    /// <summary>Raised when a panel transitions from hidden/closed to visible.</summary>
+    event EventHandler<string>? PanelShown;
+
+    /// <summary>Raised when a panel transitions from visible to hidden/closed.</summary>
+    event EventHandler<string>? PanelHidden;
 }

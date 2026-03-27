@@ -3273,6 +3273,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnSolutionExplorerItemSelected(object? sender, ProjectItemEventArgs e)
     {
         _propertiesPanel?.SetProvider(new ProjectItemPropertyProvider(e.Item));
+
+        // Publish file preview event for ParsedFields panel (and any other consumers).
+        var filePath = e.Item?.AbsolutePath;
+        if (!string.IsNullOrEmpty(filePath) && System.IO.File.Exists(filePath))
+        {
+            _ideHostContext?.EventBus?.Publish(new WpfHexEditor.SDK.Events.FilePreviewRequestedEvent
+            {
+                FilePath = filePath,
+                SourcePanelId = "SolutionExplorer"
+            });
+        }
     }
 
     private async void OnSolutionExplorerItemRenameRequested(object? sender, ProjectItemEventArgs e)

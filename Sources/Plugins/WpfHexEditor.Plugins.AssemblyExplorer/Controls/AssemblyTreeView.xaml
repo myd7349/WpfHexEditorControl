@@ -118,13 +118,13 @@
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource PFP_ItemHoverBrush}"/>
+                                        Value="{DynamicResource Panel_ItemHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource PFP_ItemSelectedBrush}"/>
+                                        Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                                 <Setter Property="Foreground"
-                                        Value="{DynamicResource PFP_ItemSelectedForegroundBrush}"/>
+                                        Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
                             </Trigger>
                             <!-- Keep selection visible when TreeView loses keyboard focus -->
                             <MultiTrigger>
@@ -133,7 +133,7 @@
                                     <Condition Property="IsSelectionActive" Value="False"/>
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource PFP_ItemSelectedBrush}"/>
+                                        Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
                             </MultiTrigger>
                             <!-- Deep filter: collapse nodes not matching search -->

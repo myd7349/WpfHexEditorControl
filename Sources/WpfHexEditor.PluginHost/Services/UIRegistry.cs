@@ -211,6 +211,20 @@ public sealed class UIRegistry : IUIRegistry
     public void FocusPanel(string uiId)     => _dockingAdapter.FocusDockablePanel(uiId);
     public bool IsPanelVisible(string uiId) => _dockingAdapter.IsPanelVisible(uiId);
 
+    /// <inheritdoc />
+    public event EventHandler<string>? PanelShown
+    {
+        add    => _dockingAdapter.PanelShown += value;
+        remove => _dockingAdapter.PanelShown -= value;
+    }
+
+    /// <inheritdoc />
+    public event EventHandler<string>? PanelHidden
+    {
+        add    => _dockingAdapter.PanelHidden += value;
+        remove => _dockingAdapter.PanelHidden -= value;
+    }
+
     private void RemoveByKind(string uiId, UIElementKind kind)
     {
         switch (kind)

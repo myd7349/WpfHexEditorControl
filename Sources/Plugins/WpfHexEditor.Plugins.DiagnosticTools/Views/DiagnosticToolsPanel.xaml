@@ -47,17 +47,6 @@
             </Setter>
         </Style>
 
-        <Style TargetType="ComboBox">
-            <Setter Property="Foreground"  Value="{DynamicResource DT_PanelForeground}" />
-            <Setter Property="Background"  Value="{DynamicResource DT_GraphBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource DT_GraphBorder}" />
-        </Style>
-
-        <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground"  Value="{DynamicResource DT_PanelForeground}" />
-            <Setter Property="Background"  Value="{DynamicResource DT_GraphBackground}" />
-        </Style>
-
         <Style x:Key="SectionLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource DT_SectionHeader}" />
             <Setter Property="FontWeight" Value="SemiBold" />

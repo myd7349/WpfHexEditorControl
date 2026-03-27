@@ -32,7 +32,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SE_HoverBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -127,13 +127,13 @@
                                  system, not by INotifyPropertyChanged, so only a Trigger (not a DataTrigger)
                                  reliably fires on mouse-enter/leave. -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RowBg" Property="Background" Value="{DynamicResource SE_HoverBrush}"/>
+                                <Setter TargetName="RowBg" Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
                             </Trigger>
                             <!-- Selection visual driven by ViewModel.IsSelected — decoupled from WPF's
                                  single-select TreeViewItem.IsSelected. Declared AFTER hover so it takes
                                  priority when both conditions are true (selected + hovered). -->
                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                <Setter TargetName="RowBg"  Property="Background" Value="{DynamicResource SE_SelectedBrush}"/>
+                                <Setter TargetName="RowBg"  Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                                 <Setter TargetName="Accent" Property="Visibility" Value="Visible"/>
                             </DataTrigger>
                             <Trigger Property="HasItems"  Value="False">
@@ -196,10 +196,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SE_HoverBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SE_SelectedBrush}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
