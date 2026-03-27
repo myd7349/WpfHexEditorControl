@@ -103,7 +103,7 @@ internal sealed class BreakpointGutterControl : FrameworkElement
     /// Args: (filePath, 1-based line).
     /// The App layer should open a <c>BreakpointInfoPopup</c> in response.
     /// </summary>
-    internal event Action<string, int>? RightClickRequested;
+    internal event Action<string, int, double>? RightClickRequested;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -260,9 +260,10 @@ internal sealed class BreakpointGutterControl : FrameworkElement
 
         if (_source is null || string.IsNullOrEmpty(_filePath) || _lineHeight <= 0) return;
 
-        int line1 = HitTestLine(e.GetPosition(this).Y);
+        var pos   = e.GetPosition(this);
+        int line1 = HitTestLine(pos.Y);
         if (line1 >= 1 && _source.HasBreakpoint(_filePath, line1))
-            RightClickRequested?.Invoke(_filePath, line1);
+            RightClickRequested?.Invoke(_filePath, line1, pos.Y);
 
         e.Handled = true;
     }

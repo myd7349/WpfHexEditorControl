@@ -84,15 +84,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             InvalidateVisual(); // redraw execution line highlight in content area
         }
 
-        private void OnBreakpointRightClick(string filePath, int line1)
+        private void OnBreakpointRightClick(string filePath, int line1, double clickY)
         {
             if (_bpSource is null || _breakpointGutterControl is null) return;
 
             _bpInfoPopup ??= new BreakpointInfoPopup();
 
-            // Position the popup at the top-left of the gutter so WPF can
-            // keep it visible relative to the PlacementTarget.
-            var offset = _breakpointGutterControl.TranslatePoint(new Point(0, 0), this);
+            // Position the popup to the right of the gutter, at the clicked line's Y.
+            // PlacementMode.Relative offsets are relative to PlacementTarget (the gutter).
+            var offset = new Point(BreakpointGutterControl.GutterWidth, clickY);
             _bpInfoPopup.Show(_breakpointGutterControl, _bpSource, filePath, line1, offset);
         }
 
@@ -152,8 +152,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void OnBpHoverEditCondition(string filePath, int line1)
         {
-            // Delegate to the existing right-click popup
-            OnBreakpointRightClick(filePath, line1);
+            // _lineYLookup Y values are shared with the gutter — use directly.
+            double clickY = _lineYLookup.TryGetValue(line1 - 1, out double ly) ? ly : 0;
+            OnBreakpointRightClick(filePath, line1, clickY);
         }
 
         internal void DismissBreakpointHover()

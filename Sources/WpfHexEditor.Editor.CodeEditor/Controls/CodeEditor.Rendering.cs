@@ -744,7 +744,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // 3. Current line highlight (spans visible text area, no H offset)
             RenderCurrentLineHighlight(dc, contentW, contentH);
 
-            // 3a. Execution line highlight — yellow tint across the full text area when debugger is paused.
+            // -- Text area clip + horizontal translate -------------------
+            dc.PushClip(new RectangleGeometry(new Rect(textLeft, 0, Math.Max(0, contentW - textLeft), contentH)));
+
+            // 3b. InlineHints hints — drawn inside the text-area clip but WITHOUT the
+            //     H-scroll transform so they stay anchored at the left edge.
+            RenderInlineHints(dc);
+
+            dc.PushTransform(new System.Windows.Media.TranslateTransform(-_horizontalScrollOffset, 0));
+
+            // 3a. Execution line highlight — code-width rounded rect, scrolls with text.
             //     Extends to multi-line statement extent via continuation patterns.
             if (_executionLineOneBased.HasValue)
             {
@@ -752,22 +761,54 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 var execBrush = TryFindResource("DB_ExecutionLineBackgroundBrush") as System.Windows.Media.Brush
                                 ?? new System.Windows.Media.SolidColorBrush(
                                        System.Windows.Media.Color.FromArgb(0x40, 0xFF, 0xDD, 0x00));
-                int execEnd0 = ResolveStatementEndLine(execLine0);
-                for (int j = execLine0; j <= execEnd0; j++)
+                int execEnd0  = ResolveStatementEndLine(execLine0);
+                double bpLeft = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+
+                if (execLine0 == execEnd0)
                 {
-                    if (_lineYLookup.TryGetValue(j, out double execY))
-                        dc.DrawRectangle(execBrush, null,
-                            new Rect(textLeft, execY, Math.Max(0, contentW - textLeft), _lineHeight));
+                    // Single-line — simple rounded rect.
+                    if (_lineYLookup.TryGetValue(execLine0, out double ey) && _document != null)
+                    {
+                        double w = Math.Max(_document.Lines[execLine0].Length * _charWidth, _charWidth);
+                        dc.DrawRoundedRectangle(execBrush, null,
+                            new Rect(bpLeft, ey, w, _lineHeight),
+                            SelectionCornerRadius, SelectionCornerRadius);
+                    }
+                }
+                else
+                {
+                    // Multi-line — union rounded segments (same pattern as selection).
+                    var segs = new List<Geometry>();
+                    for (int j = execLine0; j <= execEnd0; j++)
+                    {
+                        if (!_lineYLookup.TryGetValue(j, out double ly) || _document == null) continue;
+                        double w    = Math.Max(_document.Lines[j].Length * _charWidth, _charWidth);
+                        double yAdj = j == execLine0 ? ly : ly - SelectionCornerRadius;
+                        double hAdj = j == execLine0 ? _lineHeight + SelectionCornerRadius
+                                    : j == execEnd0  ? _lineHeight + SelectionCornerRadius
+                                    : _lineHeight + SelectionCornerRadius * 2;
+                        segs.Add(new RectangleGeometry(new Rect(bpLeft, yAdj, w, hAdj),
+                            SelectionCornerRadius, SelectionCornerRadius));
+                    }
+                    if (segs.Count > 0)
+                    {
+                        Geometry combined = segs[0];
+                        for (int s = 1; s < segs.Count; s++)
+                            combined = Geometry.Combine(combined, segs[s], GeometryCombineMode.Union, null);
+                        combined.Freeze();
+                        dc.DrawGeometry(execBrush, null, combined);
+                    }
                 }
             }
 
-            // 3b. Breakpoint line highlights — tinted background for lines with breakpoints.
+            // 3c. Breakpoint line highlights — code-width rounded rect, scrolls with text.
             //     Extends to multi-line statement extent via continuation patterns.
             if (ShowBreakpointLineHighlight && _bpSource is not null && !string.IsNullOrEmpty(_currentFilePath))
             {
                 var bpBrush     = TryFindResource("DB_BreakpointLineBackgroundBrush") as System.Windows.Media.Brush;
                 var bpCondBrush = TryFindResource("DB_BreakpointLineConditionalBackgroundBrush") as System.Windows.Media.Brush;
                 var bpOffBrush  = TryFindResource("DB_BreakpointLineDisabledBackgroundBrush") as System.Windows.Media.Brush;
+                double bpLeft   = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
 
                 var highlightedLines = new HashSet<int>();
 
@@ -776,8 +817,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     if (highlightedLines.Contains(i)) continue;
 
                     int line1 = i + 1;
-
-                    // Execution line takes precedence — skip if debugger is paused here.
                     if (_executionLineOneBased == line1) continue;
 
                     var info = _bpSource.GetBreakpoint(_currentFilePath, line1);
@@ -790,28 +829,48 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
                     int endLine0 = ResolveStatementEndLine(i);
 
-                    for (int j = i; j <= endLine0; j++)
+                    if (i == endLine0)
                     {
-                        if (highlightedLines.Contains(j)) continue;
-                        if (_executionLineOneBased == j + 1) continue;
-
-                        if (_lineYLookup.TryGetValue(j, out double lineY))
+                        // Single-line — simple rounded rect.
+                        if (_lineYLookup.TryGetValue(i, out double ly) && _document != null)
                         {
-                            dc.DrawRectangle(brush, null, new Rect(0, lineY, contentW, _lineHeight));
+                            double w = Math.Max(_document.Lines[i].Length * _charWidth, _charWidth);
+                            dc.DrawRoundedRectangle(brush, null,
+                                new Rect(bpLeft, ly, w, _lineHeight),
+                                SelectionCornerRadius, SelectionCornerRadius);
+                            highlightedLines.Add(i);
+                        }
+                    }
+                    else
+                    {
+                        // Multi-line — union rounded segments.
+                        var segs = new List<Geometry>();
+                        for (int j = i; j <= endLine0; j++)
+                        {
+                            if (highlightedLines.Contains(j)) continue;
+                            if (_executionLineOneBased == j + 1) continue;
+                            if (!_lineYLookup.TryGetValue(j, out double ly) || _document == null) continue;
+
+                            double w    = Math.Max(_document.Lines[j].Length * _charWidth, _charWidth);
+                            double yAdj = j == i        ? ly : ly - SelectionCornerRadius;
+                            double hAdj = j == i        ? _lineHeight + SelectionCornerRadius
+                                        : j == endLine0 ? _lineHeight + SelectionCornerRadius
+                                        : _lineHeight + SelectionCornerRadius * 2;
+                            segs.Add(new RectangleGeometry(new Rect(bpLeft, yAdj, w, hAdj),
+                                SelectionCornerRadius, SelectionCornerRadius));
                             highlightedLines.Add(j);
+                        }
+                        if (segs.Count > 0)
+                        {
+                            Geometry combined = segs[0];
+                            for (int s = 1; s < segs.Count; s++)
+                                combined = Geometry.Combine(combined, segs[s], GeometryCombineMode.Union, null);
+                            combined.Freeze();
+                            dc.DrawGeometry(brush, null, combined);
                         }
                     }
                 }
             }
-
-            // -- Text area clip + horizontal translate -------------------
-            dc.PushClip(new RectangleGeometry(new Rect(textLeft, 0, Math.Max(0, contentW - textLeft), contentH)));
-
-            // 3b. InlineHints hints — drawn inside the text-area clip but WITHOUT the
-            //     H-scroll transform so they stay anchored at the left edge.
-            RenderInlineHints(dc);
-
-            dc.PushTransform(new System.Windows.Media.TranslateTransform(-_horizontalScrollOffset, 0));
 
             // 4. Find result highlights
             RenderFindResults(dc);
