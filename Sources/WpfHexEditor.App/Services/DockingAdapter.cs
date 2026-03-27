@@ -399,4 +399,12 @@ public sealed class DockingAdapter : IDockingAdapter
         // Docked, Float and AutoHide are all reachable by the user without opening a file again.
         return item.State != DockItemState.Hidden;
     }
+
+    /// <summary>
+    /// Returns the <see cref="PanelDescriptor.DefaultDockSide"/> for a registered panel,
+    /// or <c>null</c> if the panel ID is unknown.
+    /// Used by <see cref="ViewMenu.ViewMenuOrganizer"/> for dock-side organization mode.
+    /// </summary>
+    public string? GetPanelDockSide(string uiId)
+        => _allKnownPanels.TryGetValue(uiId, out var entry) ? entry.Descriptor.DefaultDockSide : null;
 }

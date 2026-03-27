@@ -410,72 +410,8 @@
                     </MenuItem>
 
                     <!-- ═══════════ View ═══════════ -->
-                    <MenuItem Header="_View">
-                        <MenuItem Header="_Command Palette"
-                                  Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}"
-                                  InputGestureText="Ctrl+Shift+P">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <Separator />
-                        <MenuItem Header="_Solution Explorer" Click="OnShowSolutionExplorer" InputGestureText="Ctrl+Alt+L">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Properties" Click="OnShowProperties" InputGestureText="F4">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Output" Click="OnShowOutput">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE7C3;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Error List" Click="OnShowErrorPanel">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Markdown Outline" Click="OnShowMarkdownOutline"
-                                  ToolTip="Show Markdown Outline panel (heading navigator)">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE8C9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <!-- Plugin-contributed View menu items are injected here dynamically
-                             by each plugin via IUIRegistry.RegisterMenuItem() at load time. -->
-                        <Separator/>
-                        <MenuItem Header="_Compare Files…" Click="OnCompareFiles" InputGestureText="Ctrl+Alt+D">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE93D;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Entropy Analysis…" Click="OnEntropyAnalysis"
-                                  ToolTip="Analyse entropy and byte distribution of the active file">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                    </MenuItem>
+                    <!-- Content is generated dynamically by ViewMenuOrganizer.RebuildMenu() -->
+                    <MenuItem Header="_View" x:Name="ViewMenu" />
 
                     <!-- ═══════════ Project ═══════════ (enabled when solution loaded AND no operation active) -->
                     <MenuItem Header="_Project"

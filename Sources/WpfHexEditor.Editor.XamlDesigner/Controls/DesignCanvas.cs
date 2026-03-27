@@ -2238,6 +2238,30 @@ public sealed class DesignCanvas : Border
             @"\s+BasedOn=""\{(?:Static|Dynamic)Resource\s+[^}]+\}""",
             string.Empty);
 
+        // Strip CommandBinding / InputBinding elements — they reference code-behind commands
+        // (e.g. {x:Static local:MainWindow.WriteToDiskCommand}) that cannot resolve in the
+        // designer sandbox after clr-namespace prefixes are stripped, causing XamlParseException
+        // "Value cannot be null (Parameter 'value')" on CommandBinding.Command.
+        xaml = Regex.Replace(
+            xaml,
+            @"<CommandBinding\b[^/]*/\s*>",
+            string.Empty);
+        xaml = Regex.Replace(
+            xaml,
+            @"<InputBinding\b[^/]*/\s*>",
+            string.Empty);
+        // Strip now-empty CommandBindings / InputBindings wrappers.
+        xaml = Regex.Replace(
+            xaml,
+            @"<\w+\.CommandBindings>\s*</\w+\.CommandBindings>",
+            string.Empty,
+            RegexOptions.Singleline);
+        xaml = Regex.Replace(
+            xaml,
+            @"<\w+\.InputBindings>\s*</\w+\.InputBindings>",
+            string.Empty,
+            RegexOptions.Singleline);
+
         xaml = Regex.Replace(
             xaml,
             @"\s+\w+=""(On[A-Za-z][A-Za-z0-9_]*|[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]+)""",

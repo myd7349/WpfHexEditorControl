@@ -100,6 +100,7 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
     // ── Render-time measurement ────────────────────────────────────────────────
 
     private readonly Stopwatch _renderStopwatch = new();
+    private RectangleGeometry? _clipGeo;
 
     /// <summary>
     /// Raised at the end of each <see cref="OnRender"/> call with the elapsed milliseconds.
@@ -419,7 +420,12 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
         var lastRow    = Math.Min(rows.Count - 1, firstRow + visible);
 
         // Clip + translate for horizontal offset
-        dc.PushClip(new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight)));
+        if (_clipGeo is null || _clipGeo.Rect.Width != ActualWidth || _clipGeo.Rect.Height != ActualHeight)
+        {
+            _clipGeo = new RectangleGeometry(new Rect(0, 0, ActualWidth, ActualHeight));
+            _clipGeo.Freeze();
+        }
+        dc.PushClip(_clipGeo);
         dc.PushTransform(new TranslateTransform(-_horizontalOffset, 0));
 
         // Full background
@@ -793,11 +799,11 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
         _delBrush  = TryFindResource("BDiff_DeletedByteBrush")           as Brush;
         _padBrush  = TryFindResource("BDiff_PaddingBrush")               as Brush;
         _collBgBrush= TryFindResource("BDiff_CollapsedContextBrush")     as Brush
-                     ?? new SolidColorBrush(Color.FromArgb(0xFF, 0x30, 0x30, 0x30));
+                     ?? FreezeBrush(new SolidColorBrush(Color.FromArgb(0xFF, 0x30, 0x30, 0x30)));
         _collFgBrush= TryFindResource("BDiff_CollapsedContextFgBrush")   as Brush
                      ?? Brushes.Silver;
         _hoverBrush = TryFindResource("BDiff_HoverBrush") as Brush
-                     ?? new SolidColorBrush(Color.FromArgb(0x50, 0x64, 0x96, 0xFF));
+                     ?? FreezeBrush(new SolidColorBrush(Color.FromArgb(0x50, 0x64, 0x96, 0xFF)));
 
         _brushesDirty = false;
 
@@ -808,9 +814,11 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
     private Brush? ColorToBrush(string key)
     {
         if (TryFindResource(key) is Color c)
-            return new SolidColorBrush(c);
+            return FreezeBrush(new SolidColorBrush(c));
         return null;
     }
+
+    private static SolidColorBrush FreezeBrush(SolidColorBrush b) { b.Freeze(); return b; }
 
     private void EnsureTypeface()
     {
@@ -841,6 +849,92 @@ public sealed class BinaryDiffCanvas : FrameworkElement, IScrollInfo
         base.OnVisualParentChanged(oldParent);
         _brushesDirty = true;
         InvalidateVisual();
+    }
+
+    // ── Context menu ──────────────────────────────────────────────────────────
+
+    /// <summary>Raised when the user requests navigation to a HexEditor offset.</summary>
+    public event EventHandler<long>? NavigateToOffsetRequested;
+
+    protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
+    {
+        base.OnMouseRightButtonUp(e);
+        var pos  = e.GetPosition(this);
+        var rows = Rows;
+        var menu = new ContextMenu();
+
+        var (rowIdx, cellIdx, isLeft) = ResolveHoverCell(pos);
+
+        if (rowIdx >= 0 && rows is not null && rowIdx < rows.Count && cellIdx >= 0)
+        {
+            var row   = rows[rowIdx];
+            var cells = isLeft ? row.LeftCells : row.RightCells;
+            long? baseOff = isLeft ? row.LeftOffset : row.RightOffset;
+
+            if (cellIdx < cells.Count)
+            {
+                var cell = cells[cellIdx];
+                long offset = baseOff.HasValue ? baseOff.Value + cellIdx : 0;
+
+                menu.Items.Add(MakeMenuItem($"Copy Byte Value: {cell.HexText}", () =>
+                    Clipboard.SetText(cell.HexText), "\uE8C8"));
+                menu.Items.Add(MakeMenuItem($"Copy Offset: 0x{offset:X8}", () =>
+                    Clipboard.SetText($"0x{offset:X8}"), "\uE71B"));
+
+                menu.Items.Add(new Separator());
+                menu.Items.Add(MakeMenuItem("Go to Offset in HexEditor", () =>
+                    NavigateToOffsetRequested?.Invoke(this, offset), "\uE8A7"));
+            }
+        }
+
+        // Copy all left / right
+        if (rows is { Count: > 0 })
+        {
+            if (menu.Items.Count > 0) menu.Items.Add(new Separator());
+            menu.Items.Add(MakeMenuItem("Copy Left Hex Dump", () =>
+                Clipboard.SetText(BuildHexDump(rows, true)), "\uE8C8"));
+            menu.Items.Add(MakeMenuItem("Copy Right Hex Dump", () =>
+                Clipboard.SetText(BuildHexDump(rows, false)), "\uE8C8"));
+        }
+
+        if (menu.Items.Count > 0)
+        {
+            menu.IsOpen = true;
+            e.Handled = true;
+        }
+    }
+
+    private static string BuildHexDump(IReadOnlyList<BinaryHexDiffRow> rows, bool left)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var row in rows)
+        {
+            if (row.IsCollapsedContext) { sb.AppendLine($"--- {row.CollapsedRowCount} identical rows ---"); continue; }
+            var cells = left ? row.LeftCells : row.RightCells;
+            sb.Append(left ? row.LeftOffsetText : row.RightOffsetText);
+            sb.Append("  ");
+            foreach (var c in cells) sb.Append(c.HexText + " ");
+            sb.Append(" |");
+            foreach (var c in cells) sb.Append(c.AsciiChar);
+            sb.AppendLine();
+        }
+        return sb.ToString();
+    }
+
+    private static MenuItem MakeMenuItem(string header, Action action, string? iconGlyph = null)
+    {
+        var item = new MenuItem { Header = header };
+        item.Click += (_, _) => action();
+        if (iconGlyph is not null)
+            item.Icon = new System.Windows.Controls.TextBlock
+            {
+                Text = iconGlyph,
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 13,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+        return item;
     }
 
     // ── Resource change notification ─────────────────────────────────────────

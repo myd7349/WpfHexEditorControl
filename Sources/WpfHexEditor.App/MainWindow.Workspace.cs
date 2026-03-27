@@ -221,7 +221,7 @@ public partial class MainWindow
             try
             {
                 var layoutRoot = DockLayoutSerializer.Deserialize(state.Layout);
-                PruneStaleDocumentItems(layoutRoot);
+                Services.LayoutPersistenceService.PruneStaleDocumentItems(layoutRoot);
                 ApplyLayout(layoutRoot);
             }
             catch (Exception ex)

@@ -37,4 +37,12 @@ public sealed class PanelDescriptor
     /// Use for secondary panels that should not consume screen space by default.
     /// </summary>
     public bool DefaultAutoHide { get; init; }
+
+    /// <summary>
+    /// Functional category for View menu dynamic organization
+    /// (e.g., "Analysis", "Design", "Data &amp; Files", "Core IDE").
+    /// When null, the ViewMenuOrganizer infers the category from the panel title
+    /// or defaults to "Other".
+    /// </summary>
+    public string? Category { get; init; }
 }

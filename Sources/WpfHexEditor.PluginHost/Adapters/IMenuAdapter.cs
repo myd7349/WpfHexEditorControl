@@ -31,4 +31,18 @@ public interface IMenuAdapter
     /// Used by the Command Palette to enumerate plugin-contributed commands.
     /// </summary>
     IReadOnlyDictionary<string, MenuItemDescriptor> GetAllMenuItems();
+
+    /// <summary>
+    /// Raised when a View-parented menu item is added or removed.
+    /// The <see cref="ViewMenuOrganizer"/> subscribes to trigger a rebuild.
+    /// Default implementation is a no-op for backward compatibility.
+    /// </summary>
+    event Action? ViewItemsChanged { add { } remove { } }
+
+    /// <summary>
+    /// Returns only the View-parented menu item descriptors (intercepted for dynamic organization).
+    /// Default implementation returns an empty dictionary for backward compatibility.
+    /// </summary>
+    IReadOnlyDictionary<string, MenuItemDescriptor> GetAllViewMenuItems()
+        => new Dictionary<string, MenuItemDescriptor>();
 }

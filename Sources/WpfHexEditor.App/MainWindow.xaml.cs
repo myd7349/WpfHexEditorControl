@@ -620,6 +620,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             () => new WpfHexEditor.App.Options.DebuggerOptionsPage(),
             "\uEBE8");
 
+        // Register View Menu options page
+        WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
+            "Environment", "View Menu",
+            () => new WpfHexEditor.App.Options.ViewMenuOptionsPage(),
+            "\uE700");
+
         // Plugin system — fire-and-forget after layout is ready
         _ = InitializePluginSystemAsync();
     }

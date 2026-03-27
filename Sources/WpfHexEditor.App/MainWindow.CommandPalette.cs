@@ -67,6 +67,8 @@ public partial class MainWindow
             foreach (var (uiId, descriptor) in _menuAdapter.GetAllMenuItems())
             {
                 if (descriptor.Command is null) continue;
+                if (string.Equals(descriptor.ParentPath?.TrimStart('_'), "View", StringComparison.OrdinalIgnoreCase))
+                    continue; // View items enriched below
                 var category = string.IsNullOrWhiteSpace(descriptor.ParentPath)
                     ? "Plugins"
                     : StripAccessKey(descriptor.ParentPath);
@@ -77,6 +79,25 @@ public partial class MainWindow
                     IconGlyph:        descriptor.IconGlyph,
                     Command:          descriptor.Command,
                     CommandParameter: descriptor.CommandParameter));
+            }
+        }
+
+        if (_viewMenuOrganizer is not null)
+        {
+            var vmSettings = AppSettingsService.Instance.Current.ViewMenu;
+            foreach (var ve in _viewMenuOrganizer.GetAllEntries())
+            {
+                if (ve.Command is null) continue;
+                var classified = Services.ViewMenu.ViewMenuClassifier.Classify(ve, vmSettings);
+                var paletteCat = string.IsNullOrWhiteSpace(classified) || classified == "Other"
+                    ? "View" : $"View / {classified}";
+                entries.Add(new CommandPaletteEntry(
+                    Name:             StripAccessKey(ve.Header),
+                    Category:         paletteCat,
+                    GestureText:      ve.GestureText,
+                    IconGlyph:        ve.IconGlyph,
+                    Command:          ve.Command,
+                    CommandParameter: ve.CommandParameter));
             }
         }
 
@@ -149,12 +170,17 @@ public partial class MainWindow
                 Command:     cmd.Command))
             .ToList();
 
-        // 2. Plugin-contributed menu items
+        // 2. Plugin-contributed menu items (non-View paths handled here;
+        //    View-path items are enriched with subcategory from ViewMenuOrganizer below).
         if (_menuAdapter is not null)
         {
             foreach (var (uiId, descriptor) in _menuAdapter.GetAllMenuItems())
             {
                 if (descriptor.Command is null) continue;
+
+                // Skip View-parented items — they're added with richer categories below.
+                if (string.Equals(descriptor.ParentPath?.TrimStart('_'), "View", StringComparison.OrdinalIgnoreCase))
+                    continue;
 
                 var category = string.IsNullOrWhiteSpace(descriptor.ParentPath)
                     ? "Plugins"
@@ -167,6 +193,28 @@ public partial class MainWindow
                     IconGlyph:        descriptor.IconGlyph,
                     Command:          descriptor.Command,
                     CommandParameter: descriptor.CommandParameter));
+            }
+        }
+
+        // 2b. View menu entries (built-in + plugin) with rich subcategories.
+        //     Uses the ViewMenuClassifier to produce "View / Analysis", "View / Design", etc.
+        if (_viewMenuOrganizer is not null)
+        {
+            var vmSettings = AppSettingsService.Instance.Current.ViewMenu;
+            foreach (var ve in _viewMenuOrganizer.GetAllEntries())
+            {
+                if (ve.Command is null) continue;
+                var classified = Services.ViewMenu.ViewMenuClassifier.Classify(ve, vmSettings);
+                var paletteCat = string.IsNullOrWhiteSpace(classified) || classified == "Other"
+                    ? "View"
+                    : $"View / {classified}";
+                entries.Add(new CommandPaletteEntry(
+                    Name:             StripAccessKey(ve.Header),
+                    Category:         paletteCat,
+                    GestureText:      ve.GestureText,
+                    IconGlyph:        ve.IconGlyph,
+                    Command:          ve.Command,
+                    CommandParameter: ve.CommandParameter));
             }
         }
 

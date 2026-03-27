@@ -39,6 +39,9 @@ public sealed class AppSettingsService
 
     // -- Load / Save -------------------------------------------------------
 
+    /// <summary>Current schema version. Increment when adding/renaming/removing settings fields.</summary>
+    public const int CurrentSettingsVersion = 1;
+
     public void Load()
     {
         try
@@ -46,11 +49,33 @@ public sealed class AppSettingsService
             if (!File.Exists(SettingsPath)) return;
             var json     = File.ReadAllText(SettingsPath);
             var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
-            if (settings != null) Current = settings;
+            if (settings != null)
+            {
+                Current = settings;
+                MigrateIfNeeded();
+            }
         }
         catch
         {
             Current = new AppSettings();
+        }
+    }
+
+    /// <summary>
+    /// Applies incremental migrations when loading settings from an older version.
+    /// Each migration block upgrades from version N to N+1.
+    /// </summary>
+    private void MigrateIfNeeded()
+    {
+        bool changed = false;
+
+        // Example migration: version 0 → 1 (initial schema)
+        // if (Current.SettingsVersion < 1) { /* migrate fields */ changed = true; }
+
+        if (changed || Current.SettingsVersion < CurrentSettingsVersion)
+        {
+            Current.SettingsVersion = CurrentSettingsVersion;
+            Save();
         }
     }
 

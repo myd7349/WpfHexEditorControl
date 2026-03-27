@@ -756,6 +756,7 @@
     <SolidColorBrush x:Key="BDiff_CollapsedContextBrush"     Color="#F0F0F0" />
     <SolidColorBrush x:Key="BDiff_CollapsedContextFgBrush"   Color="#AAAAAA" />
     <SolidColorBrush x:Key="BDiff_HoverBrush"              Color="#504472C4" />
+    <SolidColorBrush x:Key="TDiff_HoverSegmentBrush"        Color="#40CC8800" />
     <!-- whfmt v2.0 tokens (WF_*) - inserted by Add-WhfmtV2Tokens.ps1 -->
     <SolidColorBrush x:Key="WF_RepeatingGroupBackground"  Color="#F0F0F0" />
     <SolidColorBrush x:Key="WF_AssertionErrorBrush"       Color="#C00000" />

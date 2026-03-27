@@ -65,6 +65,13 @@ public static class CommandIds
         public const string EntropyAnalysis   = "View.EntropyAnalysis";
         public const string Terminal          = "View.Terminal";
         public const string Options           = "View.Options";
+
+        // View Menu Organization
+        public const string ViewMenuModeFlat        = "View.MenuMode.Flat";
+        public const string ViewMenuModeCategorized = "View.MenuMode.Categorized";
+        public const string ViewMenuModeByDockSide  = "View.MenuMode.ByDockSide";
+        public const string PinViewItem             = "View.PinItem";
+        public const string UnpinViewItem           = "View.UnpinItem";
     }
 
     public static class Project

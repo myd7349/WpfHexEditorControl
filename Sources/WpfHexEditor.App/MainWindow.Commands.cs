@@ -138,6 +138,8 @@ public partial class MainWindow
             () => OnShowOutput(this, null!));
         Reg(CommandIds.View.ErrorList,     "Error List",             "View",    null,             "\uE783",
             () => OnShowErrorPanel(this, null!));
+        Reg("View.Bookmarks",             "Bookmarks",              "View",    "Ctrl+F2",        "\uE8A4",
+            () => OnShowBookmarks(this, null!));
         Reg(CommandIds.View.MarkdownOutline,"Markdown Outline",      "View",    null,             null,
             () => OnShowMarkdownOutline(this, null!));
         RegP(CommandIds.View.CompareFiles, "Compare Files…", "View", "Ctrl+Alt+D", null,
@@ -183,6 +185,14 @@ public partial class MainWindow
             () => OnOpenTerminal(this, null!));
         Reg(CommandIds.View.Options,       "Options…",               "View",    null,             "\uE713",
             () => OnSettings(this, null!));
+
+        // ── View Menu Organization ────────────────────────────────────────
+        Reg(CommandIds.View.ViewMenuModeFlat,       "View Menu: Flat Mode",       "View / Organize", null, "\uE700",
+            () => _viewMenuOrganizer?.SetMode(WpfHexEditor.Core.Options.ViewMenuOrganizationMode.Flat));
+        Reg(CommandIds.View.ViewMenuModeCategorized,"View Menu: Categorized Mode","View / Organize", null, "\uE700",
+            () => _viewMenuOrganizer?.SetMode(WpfHexEditor.Core.Options.ViewMenuOrganizationMode.Categorized));
+        Reg(CommandIds.View.ViewMenuModeByDockSide, "View Menu: By Dock Side",    "View / Organize", null, "\uE700",
+            () => _viewMenuOrganizer?.SetMode(WpfHexEditor.Core.Options.ViewMenuOrganizationMode.ByDockSide));
 
         // ── Project ─────────────────────────────────────────────────────────
         Reg(CommandIds.Project.AddNewItem,    "Add New Item…",       "Project", "Ctrl+Shift+A",   "\uE710",

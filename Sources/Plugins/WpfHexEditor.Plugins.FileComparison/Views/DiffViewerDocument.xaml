@@ -12,51 +12,6 @@
         <conv:KindToBrushConverter         x:Key="KindToBrush"/>
         <conv:BinaryByteKindToBrushConverter  x:Key="ByteKindToBrush"/>
         <conv:AsciiPrintableToColorConverter  x:Key="AsciiColorConv"/>
-
-        <!-- ── DiffLineRow row template (text diff panes) ── -->
-        <DataTemplate x:Key="DiffRowTemplate" DataType="{x:Type vm:DiffLineRow}">
-            <Grid Height="18">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="44"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0"
-                        Background="{DynamicResource DF_GutterBackgroundBrush}">
-                    <TextBlock Text="{Binding LineNumber}"
-                               FontFamily="Consolas" FontSize="11"
-                               HorizontalAlignment="Right" Padding="0,1,4,0"
-                               Foreground="{DynamicResource DF_LineNumberForegroundBrush}"/>
-                </Border>
-                <Border Grid.Column="1"
-                        Background="{Binding Kind, Converter={StaticResource KindToBrush}}"
-                        Padding="4,0">
-                    <ItemsControl ItemsSource="{Binding Segments}" Focusable="False">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:DiffWordSegment}">
-                                <TextBlock Text="{Binding Text}"
-                                           FontFamily="Consolas" FontSize="11"
-                                           VerticalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsChanged}" Value="True">
-                                                    <Setter Property="Background"
-                                                            Value="{DynamicResource DF_WordModifiedBrush}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Border>
-            </Grid>
-        </DataTemplate>
-
     </UserControl.Resources>
 
     <Grid x:Name="OuterGrid">
@@ -284,44 +239,21 @@
                 <ColumnDefinition Width="12"/>
             </Grid.ColumnDefinitions>
 
-            <!-- ── Text diff side-by-side panes (hidden in binary mode) ── -->
-            <ScrollViewer x:Name="LeftScroll" Grid.Column="0"
-                          ScrollChanged="OnLeftScrollChanged"
-                          HorizontalScrollBarVisibility="Auto"
-                          VerticalScrollBarVisibility="Hidden"
-                          Visibility="{Binding IsBinaryMode, Converter={StaticResource NotBoolToVis}}">
-                <ItemsControl x:Name="LeftList"
-                              ItemsSource="{Binding LeftRows}"
-                              ItemTemplate="{StaticResource DiffRowTemplate}"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling"
-                              Focusable="False">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-            </ScrollViewer>
-
-            <GridSplitter Grid.Column="1" Width="4"
-                          Background="{DynamicResource DockSplitterBrush}"
-                          HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext"
-                          Visibility="{Binding IsBinaryMode, Converter={StaticResource NotBoolToVis}}"/>
-
-            <ScrollViewer x:Name="RightScroll" Grid.Column="2"
-                          ScrollChanged="OnRightScrollChanged"
+            <!-- ── Text diff canvas (single element replaces dual ItemsControls) ── -->
+            <ScrollViewer x:Name="TextDiffScroll"
+                          Grid.Column="0" Grid.ColumnSpan="3"
+                          ScrollChanged="OnTextDiffScrollChanged"
+                          CanContentScroll="True"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           Visibility="{Binding IsBinaryMode, Converter={StaticResource NotBoolToVis}}">
-                <ItemsControl x:Name="RightList"
-                              ItemsSource="{Binding RightRows}"
-                              ItemTemplate="{StaticResource DiffRowTemplate}"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling"
-                              Focusable="False">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
+                <ctrl:TextDiffCanvas x:Name="TextDiffCanvas"
+                                      LeftRows="{Binding LeftRows}"
+                                      RightRows="{Binding RightRows}"
+                                      ZoomLevel="{Binding ZoomLevel, Mode=TwoWay}"
+                                      HexFontFamily="{Binding HexFontFamily}"
+                                      HexFontSize="{Binding HexFontSize}"
+                                      Focusable="True"/>
             </ScrollViewer>
 
             <!-- ── Binary hex dump pane (Grid.Column spans 0-2, hidden in text mode) ── -->
@@ -357,122 +289,21 @@
                 </StackPanel>
             </Border>
 
-            <!-- ── F2 Structure Diff overlay (spans columns 0-2, shown when IsStructureDiffMode) ── -->
-            <Border Grid.Column="0" Grid.ColumnSpan="3"
-                    Background="{DynamicResource DockTabBackgroundBrush}"
-                    Visibility="{Binding IsStructureDiffMode, Converter={StaticResource BoolToVis}}">
-                <DockPanel>
-                    <!-- Column header -->
-                    <Grid DockPanel.Dock="Top"
-                          Background="{DynamicResource DF_GutterBackgroundBrush}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="20"/>
-                            <ColumnDefinition Width="160" MinWidth="100"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text=" " FontSize="11" FontWeight="SemiBold" Padding="4,3"/>
-                        <TextBlock Grid.Column="1" Text="Field" FontSize="11" FontWeight="SemiBold" Padding="4,3"
-                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
-                        <TextBlock Grid.Column="2" Text="{Binding LeftFileName}" FontSize="11" FontWeight="SemiBold" Padding="4,3"
-                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
-                        <TextBlock Grid.Column="3" Text="{Binding RightFileName}" FontSize="11" FontWeight="SemiBold" Padding="4,3"
-                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
-                    </Grid>
-                    <!-- Rows -->
-                    <ListView ItemsSource="{Binding StructureDiffRows}"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling"
-                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                              BorderThickness="0">
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="Padding" Value="0"/>
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                        <ListView.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:StructureDiffRow}">
-                                <Grid Height="18">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="20"/>
-                                        <ColumnDefinition Width="160" MinWidth="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <!-- status glyph -->
-                                    <TextBlock Grid.Column="0" Text="{Binding StatusGlyph}"
-                                               FontSize="11" FontFamily="Consolas"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsChanged}" Value="True">
-                                                        <Setter Property="Foreground" Value="{DynamicResource DF_ModifiedLineBrush}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsOnlyInLeft}" Value="True">
-                                                        <Setter Property="Foreground" Value="{DynamicResource DF_DeletedLineBrush}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsOnlyInRight}" Value="True">
-                                                        <Setter Property="Foreground" Value="{DynamicResource DF_InsertedLineBrush}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <!-- field name + offset hint -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding FieldName}"
-                                                   FontSize="11" FontFamily="Segoe UI"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
-                                    </StackPanel>
-                                    <!-- left hex value -->
-                                    <TextBlock Grid.Column="2" Text="{Binding LeftHex}"
-                                               FontSize="10" FontFamily="Consolas"
-                                               VerticalAlignment="Center" Padding="4,0"
-                                               TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding LeftOffsetHex}"
-                                               Foreground="{DynamicResource DockMenuForegroundBrush}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsChanged}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource DF_ModifiedLineBrush}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsOnlyInLeft}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource DF_DeletedLineBrush}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                    <!-- right hex value -->
-                                    <TextBlock Grid.Column="3" Text="{Binding RightHex}"
-                                               FontSize="10" FontFamily="Consolas"
-                                               VerticalAlignment="Center" Padding="4,0"
-                                               TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding RightOffsetHex}"
-                                               Foreground="{DynamicResource DockMenuForegroundBrush}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsChanged}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource DF_ModifiedLineBrush}"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsOnlyInRight}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource DF_InsertedLineBrush}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </DockPanel>
-            </Border>
+            <!-- ── F2 Structure Diff canvas (spans columns 0-2, shown when IsStructureDiffMode) ── -->
+            <ScrollViewer Grid.Column="0" Grid.ColumnSpan="3"
+                          CanContentScroll="True"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto"
+                          Visibility="{Binding IsStructureDiffMode, Converter={StaticResource BoolToVis}}">
+                <ctrl:StructureDiffCanvas x:Name="StructureDiffCanvas"
+                                           Rows="{Binding StructureDiffRows}"
+                                           LeftFileName="{Binding LeftFileName}"
+                                           RightFileName="{Binding RightFileName}"
+                                           ZoomLevel="{Binding ZoomLevel, Mode=TwoWay}"
+                                           HexFontFamily="{Binding HexFontFamily}"
+                                           HexFontSize="{Binding HexFontSize}"
+                                           Focusable="True"/>
+            </ScrollViewer>
 
             <!-- Overview ruler -->
             <Canvas x:Name="OverviewRuler" Grid.Column="3"
