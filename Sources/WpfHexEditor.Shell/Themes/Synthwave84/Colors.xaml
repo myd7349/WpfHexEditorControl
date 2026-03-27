@@ -756,4 +756,14 @@
     <SolidColorBrush x:Key="WF_InspectorGroupHeaderBrush" Color="#3B2B62" />
     <SolidColorBrush x:Key="WF_NavigatorBookmarkBrush"    Color="#FF7EDB" />
     <SolidColorBrush x:Key="WF_ConfidenceBadgeBrush"      Color="#36F9F6" />
+
+    <!-- Customize Layout tokens (CL_*) â€” inserted by Add-CustomizeLayoutTokens.ps1 -->
+    <SolidColorBrush x:Key="CL_BackgroundBrush"      Color="#262335" />
+    <SolidColorBrush x:Key="CL_SectionHeaderBrush"    Color="#6644AA" />
+    <SolidColorBrush x:Key="CL_ToggleActiveBrush"     Color="#FF7EDB" />
+    <SolidColorBrush x:Key="CL_ToggleInactiveBrush"   Color="#463465" />
+    <SolidColorBrush x:Key="CL_RadioSelectedBrush"    Color="#FF7EDB" />
+    <SolidColorBrush x:Key="CL_RadioUnselectedBrush"  Color="#34294F" />
+    <SolidColorBrush x:Key="CL_HoverBrush"            Color="#342850" />
+    <SolidColorBrush x:Key="CL_ModeBadgeBrush"        Color="#72F1B8" />
 </ResourceDictionary>

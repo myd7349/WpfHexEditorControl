@@ -91,6 +91,7 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
     private string           _filterMode          = "All";
     private int              _binaryContextLines  = 3;
     private bool             _useBlockAlignment   = false;
+    private bool             _ignoreWhitespace    = false;
     private bool             _isRecomparing       = false;
     private bool             _isLoading           = false;
     private double           _zoomLevel           = 1.0;
@@ -469,6 +470,20 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// When <see langword="true"/>, whitespace differences are ignored during line comparison.
+    /// Toggling triggers a recompare.
+    /// </summary>
+    public bool IgnoreWhitespace
+    {
+        get => _ignoreWhitespace;
+        set
+        {
+            if (!SetField(ref _ignoreWhitespace, value)) return;
+            _ = RecompareAsync();
+        }
+    }
+
     /// <summary>Row index of the current diff block (used by the view to scroll).</summary>
     public int CurrentDiffRowIndex => _diffBlockStartIndices.Count > 0 && _currentDiffIndex >= 0
         ? _diffBlockStartIndices[_currentDiffIndex]
@@ -600,8 +615,12 @@ public sealed class DiffViewerViewModel : INotifyPropertyChanged
                 UseBlockAlignment = _useBlockAlignment,
                 BlockSize         = 64
             };
+            var compareOpts = new DiffCompareOptions
+            {
+                IgnoreWhitespace = _ignoreWhitespace
+            };
             var result = await _engine.CompareAsync(_result.LeftPath, _result.RightPath,
-                binaryOptions: opts).ConfigureAwait(false);
+                binaryOptions: opts, compareOptions: compareOpts).ConfigureAwait(false);
             LoadResult(result);
         }
         finally

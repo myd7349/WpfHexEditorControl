@@ -5,6 +5,7 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Linq;
 using System.Windows;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
@@ -407,4 +408,17 @@ public sealed class DockingAdapter : IDockingAdapter
     /// </summary>
     public string? GetPanelDockSide(string uiId)
         => _allKnownPanels.TryGetValue(uiId, out var entry) ? entry.Descriptor.DefaultDockSide : null;
+
+    /// <summary>
+    /// Returns the current visibility state of all known panels.
+    /// Used by the Customize Layout popup to populate toggle rows.
+    /// </summary>
+    public IReadOnlyList<(string Id, string Title, bool IsVisible)> GetAllKnownPanelStates()
+    {
+        return _allKnownPanels.Select(kvp => (
+            kvp.Key,
+            kvp.Value.Descriptor.Title,
+            IsPanelVisible(kvp.Key)
+        )).ToList();
+    }
 }

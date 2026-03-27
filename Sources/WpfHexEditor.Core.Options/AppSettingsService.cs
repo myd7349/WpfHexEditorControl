@@ -64,13 +64,23 @@ public sealed class AppSettingsService
     /// <summary>
     /// Applies incremental migrations when loading settings from an older version.
     /// Each migration block upgrades from version N to N+1.
+    /// Add a new block for each schema change — never modify existing blocks.
     /// </summary>
     private void MigrateIfNeeded()
     {
         bool changed = false;
 
-        // Example migration: version 0 → 1 (initial schema)
-        // if (Current.SettingsVersion < 1) { /* migrate fields */ changed = true; }
+        // Migration: v0 → v1 (2026-03-27)
+        // Added: SettingsVersion field, BreakpointLineHighlightEnabled, SDK 2.0 alignment
+        if (Current.SettingsVersion < 1)
+        {
+            // Ensure new fields have sensible defaults for users upgrading from pre-versioned settings
+            Current.CodeEditorDefaults.BreakpointLineHighlightEnabled = true;
+            changed = true;
+        }
+
+        // Future migrations go here:
+        // if (Current.SettingsVersion < 2) { /* v1 → v2 migration */ changed = true; }
 
         if (changed || Current.SettingsVersion < CurrentSettingsVersion)
         {

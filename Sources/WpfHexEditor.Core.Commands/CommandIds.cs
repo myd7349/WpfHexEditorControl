@@ -100,6 +100,14 @@ public static class CommandIds
         public const string Load              = "Layout.Load";
         public const string Reset             = "Layout.Reset";
         public const string ToggleLock        = "Layout.ToggleLock";
+        public const string CustomizeLayout   = "Layout.CustomizeLayout";
+        public const string FullScreen        = "Layout.FullScreen";
+        public const string ZenMode           = "Layout.ZenMode";
+        public const string FocusedMode       = "Layout.FocusedMode";
+        public const string PresentationMode  = "Layout.PresentationMode";
+        public const string ToggleMenuBar     = "Layout.ToggleMenuBar";
+        public const string ToggleToolbar     = "Layout.ToggleToolbar";
+        public const string ToggleStatusBar   = "Layout.ToggleStatusBar";
     }
 
     public static class Debug

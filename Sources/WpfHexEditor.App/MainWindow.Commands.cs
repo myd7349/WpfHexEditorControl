@@ -231,6 +231,22 @@ public partial class MainWindow
             () => OnResetLayout(this, null!));
         Reg(CommandIds.Layout.ToggleLock, "Toggle Locked Layout",   "Layout",   null,             null,
             () => OnToggleLock(this, null!));
+        Reg(CommandIds.Layout.CustomizeLayout, "Customize Layout…",    "Layout",   "Ctrl+Shift+L",   "\uE713",
+            () => OnCustomizeLayout());
+        Reg(CommandIds.Layout.FullScreen,      "Full Screen",          "Layout",   "F11",            "\uE740",
+            () => OnToggleFullScreen());
+        Reg(CommandIds.Layout.ZenMode,         "Zen Mode",             "Layout",   null,             "\uE78B",
+            () => OnToggleZenMode());
+        Reg(CommandIds.Layout.FocusedMode,     "Focused Mode",         "Layout",   null,             "\uE71D",
+            () => OnToggleFocusedMode());
+        Reg(CommandIds.Layout.PresentationMode,"Presentation Mode",    "Layout",   null,             "\uE8A3",
+            () => OnTogglePresentationMode());
+        Reg(CommandIds.Layout.ToggleMenuBar,   "Toggle Menu Bar",      "Layout",   null,             null,
+            () => OnToggleMenuBar());
+        Reg(CommandIds.Layout.ToggleToolbar,   "Toggle Toolbar",       "Layout",   null,             null,
+            () => OnToggleToolbar());
+        Reg(CommandIds.Layout.ToggleStatusBar, "Toggle Status Bar",    "Layout",   null,             null,
+            () => OnToggleStatusBar());
 
         // ── Plugins ──────────────────────────────────────────────────────────
         Reg(CommandIds.Plugins.OpenManager,   "Plugin Manager",     "Plugins",  null,             "\uE74C",

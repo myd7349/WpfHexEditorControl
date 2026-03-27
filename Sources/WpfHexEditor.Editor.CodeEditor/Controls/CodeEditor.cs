@@ -328,6 +328,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         #region Fields - Virtual Scrolling (Phase 11)
 
         private VirtualizationEngine _virtualizationEngine;
+
+        /// <summary>Exposes virtualization engine for minimap viewport tracking.</summary>
+        internal VirtualizationEngine VirtualizationEngine => _virtualizationEngine;
+
         private double _verticalScrollOffset = 0;
         private double _horizontalScrollOffset = 0;
         private double _maxContentWidth = 0;

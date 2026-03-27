@@ -28,4 +28,10 @@ public interface IDiffAlgorithm
     /// <param name="rightLines">Lines from the right (modified) file.</param>
     /// <returns>A <see cref="TextDiffResult"/> describing all differing lines.</returns>
     TextDiffResult ComputeLines(string[] leftLines, string[] rightLines);
+
+    /// <summary>
+    /// Compute line-level differences with comparison options (whitespace handling, etc.).
+    /// </summary>
+    TextDiffResult ComputeLines(string[] leftLines, string[] rightLines, DiffCompareOptions options)
+        => ComputeLines(leftLines, rightLines); // default: ignore options for backward compat
 }

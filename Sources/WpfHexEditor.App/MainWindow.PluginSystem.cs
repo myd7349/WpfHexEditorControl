@@ -119,6 +119,10 @@ public partial class MainWindow
             _menuAdapter       = (MenuAdapter)           _serviceProvider.GetRequiredService<WpfHexEditor.PluginHost.Adapters.IMenuAdapter>();
             _documentHostService = (DocumentHostService) _serviceProvider.GetRequiredService<WpfHexEditor.SDK.Contracts.Services.IDocumentHostService>();
 
+            // Sync ThemeServiceImpl with the theme we already applied during early boot
+            // (ApplyThemeFromSettingsEarly ran before this service was created).
+            _themeService?.SyncCurrentTheme(AppSettingsService.Instance.Current.ActiveThemeName);
+
             var dockingAdapter   = _dockingAdapter;
             var menuAdapter      = _menuAdapter;
             var statusBarAdapter = (StatusBarAdapter) _serviceProvider.GetRequiredService<WpfHexEditor.PluginHost.Adapters.IStatusBarAdapter>();

@@ -39,10 +39,12 @@ public sealed class DiffEngine
     public async Task<DiffEngineResult> CompareAsync(string leftPath, string rightPath,
         DiffMode mode = DiffMode.Auto,
         BinaryDiffOptions? binaryOptions = null,
+        DiffCompareOptions? compareOptions = null,
         CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
-        binaryOptions ??= BinaryDiffOptions.Default;
+        binaryOptions  ??= BinaryDiffOptions.Default;
+        compareOptions ??= DiffCompareOptions.Default;
 
         var effectiveMode = mode == DiffMode.Auto
             ? DiffModeDetector.DetectForPair(leftPath, rightPath)
@@ -78,6 +80,7 @@ public sealed class DiffEngine
 
         // CPU-bound algorithm on ThreadPool.
         var capturedMode = effectiveMode;
+        var capturedOpts = compareOptions;
         return await Task.Run(() =>
         {
             ct.ThrowIfCancellationRequested();
@@ -86,12 +89,12 @@ public sealed class DiffEngine
             string? fallbackReason = null;
             try
             {
-                textResult = algo.ComputeLines(leftLines, rightLines);
+                textResult = algo.ComputeLines(leftLines, rightLines, capturedOpts);
             }
             catch
             {
                 fallbackReason = "Diff algorithm failed — falling back to Myers";
-                textResult     = _myers.ComputeLines(leftLines, rightLines);
+                textResult     = _myers.ComputeLines(leftLines, rightLines, capturedOpts);
                 capturedMode   = DiffMode.Text;
             }
             return new DiffEngineResult

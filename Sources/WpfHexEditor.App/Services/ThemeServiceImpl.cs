@@ -56,6 +56,17 @@ public sealed class ThemeServiceImpl : IThemeService
     // ── Public API ───────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Syncs internal state with a theme that was already applied during early boot
+    /// (before this service existed). Called once from <c>InitializePluginSystemAsync</c>.
+    /// </summary>
+    public void SyncCurrentTheme(string themeName)
+    {
+        if (string.IsNullOrWhiteSpace(themeName)) return;
+        _currentTheme    = themeName;
+        _lastAppliedTheme = themeName;
+    }
+
+    /// <summary>
     /// Applies the theme saved in AppSettings. No-op if already applied.
     /// </summary>
     public void ApplyFromSettings()

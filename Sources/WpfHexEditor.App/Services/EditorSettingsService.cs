@@ -45,9 +45,12 @@ internal static class EditorSettingsService
         }
 
         // CodeEditorSplitHost wraps two CodeEditor instances
-        if (editor is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost splitHost
-            && splitHost.RefreshTimeStatusBarItem is { } shRt)
-            shRt.IsVisible = settings.CodeEditorDefaults.ShowRefreshRateInStatusBar;
+        if (editor is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost splitHost)
+        {
+            if (splitHost.RefreshTimeStatusBarItem is { } shRt)
+                shRt.IsVisible = settings.CodeEditorDefaults.ShowRefreshRateInStatusBar;
+            splitHost.ShowMinimap = settings.CodeEditorDefaults.ShowMinimap;
+        }
     }
 
     /// <summary>

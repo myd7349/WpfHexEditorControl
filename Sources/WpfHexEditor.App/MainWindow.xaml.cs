@@ -555,7 +555,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AppSettingsService.Instance.Load();
         LoadKeyBindingOverrides();   // populate gesture overrides from settings
         InitCompareFileLaunchService();
-        ApplyThemeFromSettings();
+        ApplyThemeFromSettingsEarly(); // Direct XAML load — _themeService not yet available
         ApplyTabPreviewSettings();   // push persisted thumbnail settings to DockHost
         ApplyAutoHideSettings();     // push persisted auto-hide timing to DockHost
         WpfHexEditor.Core.Options.TabPreviewAppSettings.Changed += ApplyTabPreviewSettings;
@@ -564,6 +564,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         RebuildTblItemList();   // must be before LoadSavedLayoutOrDefault so SyncTblDropdown finds items
         LoadSavedLayoutOrDefault();
+        InitLayoutCustomization();  // must be after LoadSavedLayoutOrDefault
         PopulateRecentMenus();
         TryRestoreSession();
         HandleStartupFile();
@@ -607,6 +608,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "Environment", "Tabs",
             () => new WpfHexEditor.App.Options.TabsOptionsPage(DockHost.TabBarSettings),
             "\uE7C4");
+
+        // Register Layout options page (Customize Layout defaults)
+        WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
+            "Environment", "Layout",
+            () => new WpfHexEditor.App.Options.LayoutOptionsPage(),
+            "\uE713");
 
         // Register Docking options page (Auto-Hide timing + Layout Profiles)
         WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
@@ -5238,6 +5245,32 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     private void ApplyThemeFromSettings() => _themeService?.ApplyFromSettings();
+
+    /// <summary>
+    /// Applies the persisted theme directly from AppSettings during early startup,
+    /// before <see cref="ThemeServiceImpl"/> is created by the plugin system.
+    /// Once <c>_themeService</c> is available, it takes over via <see cref="ApplyThemeFromSettings"/>.
+    /// </summary>
+    private static void ApplyThemeFromSettingsEarly()
+    {
+        var stem = AppSettingsService.Instance.Current.ActiveThemeName;
+        if (string.IsNullOrWhiteSpace(stem)) stem = "DarkTheme";
+
+        const string prefix = "pack://application:,,,/WpfHexEditor.Shell;component/Themes/";
+        try
+        {
+            Application.Current.Resources.MergedDictionaries.Clear();
+            Application.Current.Resources.MergedDictionaries.Add(
+                new ResourceDictionary { Source = new Uri($"{prefix}{stem}.xaml") });
+        }
+        catch
+        {
+            // Saved theme file missing or corrupt — fall back to DarkTheme
+            Application.Current.Resources.MergedDictionaries.Clear();
+            Application.Current.Resources.MergedDictionaries.Add(
+                new ResourceDictionary { Source = new Uri($"{prefix}DarkTheme.xaml") });
+        }
+    }
 
     /// <summary>
     /// Copies <see cref="TabPreviewAppSettings"/> values from <see cref="AppSettings"/> into

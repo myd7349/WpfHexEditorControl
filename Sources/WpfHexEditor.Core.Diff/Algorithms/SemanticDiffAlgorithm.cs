@@ -28,6 +28,9 @@ public sealed class SemanticDiffAlgorithm : IDiffAlgorithm
         => _myers.ComputeBytes(left, right);
 
     public TextDiffResult ComputeLines(string[] leftLines, string[] rightLines)
+        => ComputeLines(leftLines, rightLines, DiffCompareOptions.Default);
+
+    public TextDiffResult ComputeLines(string[] leftLines, string[] rightLines, DiffCompareOptions options)
     {
         // Re-join lines to detect format from content
         var leftText  = string.Join("\n", leftLines);
@@ -46,10 +49,11 @@ public sealed class SemanticDiffAlgorithm : IDiffAlgorithm
             // Fall through to Myers
         }
 
+        var fallback = _myers.ComputeLines(leftLines, rightLines, options);
         return new TextDiffResult
         {
-            Lines          = _myers.ComputeLines(leftLines, rightLines).Lines,
-            Stats          = _myers.ComputeLines(leftLines, rightLines).Stats,
+            Lines          = fallback.Lines,
+            Stats          = fallback.Stats,
             FallbackReason = "Semantic parse failed — using Myers line diff"
         };
     }

@@ -90,6 +90,17 @@
                             Click="OnCloseWindow" ToolTip="Close" />
                 </StackPanel>
 
+                <!-- Customize Layout button (right, before window buttons) -->
+                <Button x:Name="CustomizeLayoutButton"
+                        DockPanel.Dock="Right"
+                        Click="OnCustomizeLayoutButtonClick"
+                        WindowChrome.IsHitTestVisibleInChrome="True"
+                        ToolTip="Customize Layout (Ctrl+Shift+L)"
+                        Style="{DynamicResource TitleBarButtonStyle}"
+                        Content="&#xE713;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="13" />
+
                 <!-- Logo (VS2022/VS Code style — far left, click = system menu) -->
                 <Image DockPanel.Dock="Left"
                        Source="pack://application:,,,/WpfHexEditor.App;component/Logo.ico"

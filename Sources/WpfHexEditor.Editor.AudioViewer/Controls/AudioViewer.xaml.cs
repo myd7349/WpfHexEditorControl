@@ -22,6 +22,8 @@ public sealed partial class AudioViewer : UserControl, IDocumentEditor, IOpenabl
     /// <summary>
     /// Creates a new <see cref="AudioViewer"/>.
     /// </summary>
+    private byte[] _waveformData = [];
+
     public AudioViewer()
     {
         InitializeComponent();
@@ -34,6 +36,12 @@ public sealed partial class AudioViewer : UserControl, IDocumentEditor, IOpenabl
         PasteCommand     = new RelayCommand(() => { }, () => false);
         DeleteCommand    = new RelayCommand(() => { }, () => false);
         SelectAllCommand = new RelayCommand(() => { }, () => false);
+
+        WaveformCanvas.SizeChanged += (_, _) =>
+        {
+            if (_waveformData.Length > 0)
+                RenderWaveform(_waveformData);
+        };
     }
 
     // -- IDocumentEditor — State ------------------------------------------
@@ -211,7 +219,7 @@ public sealed partial class AudioViewer : UserControl, IDocumentEditor, IOpenabl
                             // Read samples for waveform (cap at 2MB)
                             var dataLen = Math.Min(chunkSize, 2 * 1024 * 1024);
                             var data = br.ReadBytes(dataLen);
-                            Dispatcher.Invoke(() => RenderWaveform(data));
+                            Dispatcher.Invoke(() => { _waveformData = data; RenderWaveform(data); });
                             Dispatcher.Invoke(() => StatusText.Text = $"{filePath} | {fs.Length:N0} bytes");
                             return;
                         }
@@ -230,6 +238,7 @@ public sealed partial class AudioViewer : UserControl, IDocumentEditor, IOpenabl
             Dispatcher.Invoke(() =>
             {
                 FormatInfo.Text = $"Raw audio bytes | {Path.GetExtension(filePath).ToUpperInvariant()}";
+                _waveformData = raw;
                 RenderWaveform(raw);
                 StatusText.Text = $"{filePath} | {fs.Length:N0} bytes";
             });

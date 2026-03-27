@@ -188,6 +188,68 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
         Children.Add(_searchBarCanvas);
 
         PreviewKeyDown += OnHostPreviewKeyDown;
+
+        // -- Minimap (right-side code overview) --------------------------------
+        // Default to Visible — EditorSettingsService.Apply() will override from user settings.
+        // Using Visible as default ensures minimap works even if Apply() hasn't been called yet.
+        _minimap = new MinimapControl { MinimapWidth = 80, Visibility = Visibility.Visible };
+        ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        SetColumn(_minimap, 1);
+        SetRow(_minimap, 0);
+        SetRowSpan(_minimap, 5);
+        Children.Add(_minimap);
+
+        // Coalesced minimap refresh — fires at most every 150ms on scroll/edit
+        _minimapRefreshTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(150)
+        };
+        _minimapRefreshTimer.Tick += (_, _) =>
+        {
+            _minimapRefreshTimer.Stop();
+            if (ShowMinimap) _minimap.Refresh();
+        };
+        _primaryEditor.LayoutUpdated += (_, _) => RequestMinimapRefresh();
+
+        // Wire minimap to editor on first Loaded (ensures Document is initialized)
+        Loaded += (_, _) =>
+        {
+            if (_minimap.Visibility == Visibility.Visible)
+            {
+                _minimap.SetEditor(_primaryEditor);
+                _minimap.Refresh();
+            }
+        };
+    }
+
+    #endregion
+
+    #region Minimap
+
+    private readonly MinimapControl _minimap;
+    private readonly System.Windows.Threading.DispatcherTimer _minimapRefreshTimer;
+
+    private void RequestMinimapRefresh()
+    {
+        if (!ShowMinimap) return;
+        if (!_minimapRefreshTimer.IsEnabled)
+            _minimapRefreshTimer.Start();
+    }
+
+    /// <summary>Shows or hides the code overview minimap.</summary>
+    public bool ShowMinimap
+    {
+        get => _minimap.Visibility == Visibility.Visible;
+        set
+        {
+            _minimap.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+            if (value)
+            {
+                _minimap.SetEditor(_primaryEditor);
+                _minimap.Refresh();
+            }
+        }
     }
 
     #endregion

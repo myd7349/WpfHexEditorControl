@@ -64,6 +64,18 @@
                             <TextBlock Text="Side by side" FontSize="11" FontFamily="Segoe UI"/>
                         </StackPanel>
                     </ToggleButton>
+                    <!-- Text mode: Ignore whitespace toggle -->
+                    <ToggleButton Style="{DynamicResource XD_ToolbarToggleButtonStyle}"
+                                  Width="Auto" Padding="6,2" Margin="4,0,0,0"
+                                  IsChecked="{Binding IgnoreWhitespace}"
+                                  Visibility="{Binding IsBinaryMode, Converter={StaticResource NotBoolToVis}}"
+                                  ToolTip="Ignore leading/trailing whitespace when comparing lines">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8AB;" FontFamily="Segoe MDL2 Assets"
+                                       FontSize="11" Margin="0,0,4,0"/>
+                            <TextBlock Text="Ignore WS" FontSize="11" FontFamily="Segoe UI"/>
+                        </StackPanel>
+                    </ToggleButton>
                     <!-- Binary mode: Context lines selector -->
                     <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding IsBinaryMode, Converter={StaticResource BoolToVis}}"

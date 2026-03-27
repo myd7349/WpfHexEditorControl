@@ -242,33 +242,57 @@ public sealed class ViewMenuOrganizer
 
     private void RenderFlat(IReadOnlyList<ViewMenuCategory> categories, IReadOnlyList<ViewMenuEntry> allEntries)
     {
-        if (categories.Count == 0) return;
+        if (allEntries.Count == 0) return;
 
-        var items = categories[0].Items;
-        string? lastGroup = null;
+        var settings = Settings;
 
-        foreach (var entry in items)
+        // Group items by classified category, sorted alphabetically within each group.
+        // One separator between category boundaries — clean flat layout.
+        var orderedCats = ViewMenuClassifier.GetOrderedCategories();
+        var grouped = allEntries
+            .GroupBy(e => ViewMenuClassifier.Classify(e, settings), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g =>
+            {
+                // Use canonical category order so Core IDE comes first
+                for (int i = 0; i < orderedCats.Count; i++)
+                    if (string.Equals(orderedCats[i], g.Key, StringComparison.OrdinalIgnoreCase))
+                        return i;
+                return 999;
+            })
+            .ToList();
+
+        var isFirst = true;
+        foreach (var group in grouped)
         {
-            // Insert separator between different groups
-            if (entry.Group is not null && !string.Equals(entry.Group, lastGroup, StringComparison.OrdinalIgnoreCase))
-            {
-                if (lastGroup is not null)
-                    _viewMenuItem.Items.Add(new Separator());
-                lastGroup = entry.Group;
-            }
-            else if (entry.IsBuiltIn && lastGroup is null)
-            {
-                // Built-in items have no Group — detect transition from built-in to plugin
-            }
+            if (!isFirst)
+                _viewMenuItem.Items.Add(new Separator());
+            isFirst = false;
 
-            _viewMenuItem.Items.Add(BuildMenuItem(entry));
+            foreach (var entry in group.OrderBy(e => StripAccessKey(e.Header), StringComparer.OrdinalIgnoreCase))
+                _viewMenuItem.Items.Add(BuildMenuItem(entry));
         }
     }
 
     private void RenderCategorized(IReadOnlyList<ViewMenuCategory> categories, ViewMenuSettings settings)
     {
+        // Phase 1: "Core IDE" items render at root level (VS-style — essentials always visible)
+        var coreCategory = categories.FirstOrDefault(c =>
+            string.Equals(c.Name, ViewMenuClassifier.CoreIDE, StringComparison.OrdinalIgnoreCase));
+
+        if (coreCategory is not null && coreCategory.Items.Count > 0)
+        {
+            foreach (var entry in coreCategory.Items)
+                _viewMenuItem.Items.Add(BuildMenuItem(entry));
+            _viewMenuItem.Items.Add(new Separator());
+        }
+
+        // Phase 2: All other categories as submenus
         foreach (var cat in categories)
         {
+            // Skip Core IDE — already rendered at root
+            if (string.Equals(cat.Name, ViewMenuClassifier.CoreIDE, StringComparison.OrdinalIgnoreCase))
+                continue;
+
             if (cat.Items.Count == 0 && settings.CollapseEmptyCategories)
                 continue;
 
