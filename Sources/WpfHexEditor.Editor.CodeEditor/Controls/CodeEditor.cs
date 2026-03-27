@@ -800,6 +800,21 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 TimeSpan.FromMilliseconds(Math.Max(200, (int)e.NewValue)));
         }
 
+        // ── Breakpoint Line Highlight DP ──────────────────────────────────────
+
+        public static readonly DependencyProperty ShowBreakpointLineHighlightProperty =
+            DependencyProperty.Register(nameof(ShowBreakpointLineHighlight), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true, (d, _) => (d as CodeEditor)?.InvalidateVisual()));
+
+        [Category("Features")]
+        [DisplayName("Highlight Breakpoint Lines")]
+        [Description("When true, breakpoint lines are highlighted with a semi-transparent background tint.")]
+        public bool ShowBreakpointLineHighlight
+        {
+            get => (bool)GetValue(ShowBreakpointLineHighlightProperty);
+            set => SetValue(ShowBreakpointLineHighlightProperty, value);
+        }
+
         // ── End-of-Block Hint DPs ─────────────────────────────────────────────
 
         public static readonly DependencyProperty ShowEndOfBlockHintProperty =

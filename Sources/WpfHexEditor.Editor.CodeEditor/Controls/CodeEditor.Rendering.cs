@@ -758,6 +758,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 }
             }
 
+            // 3b. Breakpoint line highlights — tinted background for lines with breakpoints.
+            if (ShowBreakpointLineHighlight && _bpSource is not null && !string.IsNullOrEmpty(_currentFilePath))
+            {
+                var bpBrush     = TryFindResource("DB_BreakpointLineBackgroundBrush") as System.Windows.Media.Brush;
+                var bpCondBrush = TryFindResource("DB_BreakpointLineConditionalBackgroundBrush") as System.Windows.Media.Brush;
+                var bpOffBrush  = TryFindResource("DB_BreakpointLineDisabledBackgroundBrush") as System.Windows.Media.Brush;
+
+                for (int i = _firstVisibleLine; i <= _lastVisibleLine; i++)
+                {
+                    int line1 = i + 1;
+
+                    // Execution line takes precedence — skip if debugger is paused here.
+                    if (_executionLineOneBased == line1) continue;
+
+                    var info = _bpSource.GetBreakpoint(_currentFilePath, line1);
+                    if (info is null) continue;
+
+                    if (!_lineYLookup.TryGetValue(i, out double bpY)) continue;
+
+                    var brush = !info.IsEnabled ? bpOffBrush
+                              : !string.IsNullOrEmpty(info.Condition) ? bpCondBrush
+                              : bpBrush;
+
+                    if (brush is not null)
+                        dc.DrawRectangle(brush, null, new Rect(0, bpY, contentW, _lineHeight));
+                }
+            }
+
             // -- Text area clip + horizontal translate -------------------
             dc.PushClip(new RectangleGeometry(new Rect(textLeft, 0, Math.Max(0, contentW - textLeft), contentH)));
 

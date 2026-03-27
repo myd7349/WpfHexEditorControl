@@ -96,6 +96,73 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _bpInfoPopup.Show(_breakpointGutterControl, _bpSource, filePath, line1, offset);
         }
 
+        // ── Breakpoint hover popup ────────────────────────────────────────────
+
+        private BreakpointHoverPopup? _bpHoverPopup;
+        private int _bpHoverLine = -1;
+        private System.Windows.Threading.DispatcherTimer? _bpHoverTimer;
+
+        internal void HandleBreakpointHover(int hoverLine0)
+        {
+            if (!ShowBreakpointLineHighlight || _bpSource is null || string.IsNullOrEmpty(_currentFilePath))
+            {
+                DismissBreakpointHover();
+                return;
+            }
+
+            if (hoverLine0 == _bpHoverLine) return; // jitter guard
+            _bpHoverLine = hoverLine0;
+            _bpHoverTimer?.Stop();
+
+            int line1 = hoverLine0 + 1;
+            var info = _bpSource.GetBreakpoint(_currentFilePath, line1);
+            if (info is null)
+            {
+                DismissBreakpointHover();
+                return;
+            }
+
+            // Debounce 400ms before showing popup
+            _bpHoverTimer ??= new System.Windows.Threading.DispatcherTimer();
+            _bpHoverTimer.Interval = TimeSpan.FromMilliseconds(400);
+            _bpHoverTimer.Tick -= OnBpHoverTimerTick;
+            _bpHoverTimer.Tick += OnBpHoverTimerTick;
+            _bpHoverTimer.Start();
+        }
+
+        private void OnBpHoverTimerTick(object? sender, EventArgs e)
+        {
+            _bpHoverTimer?.Stop();
+            if (_bpSource is null || string.IsNullOrEmpty(_currentFilePath)) return;
+
+            int line1 = _bpHoverLine + 1;
+            var info = _bpSource.GetBreakpoint(_currentFilePath, line1);
+            if (info is null) return;
+
+            if (!_lineYLookup.TryGetValue(_bpHoverLine, out double lineY)) return;
+
+            _bpHoverPopup ??= new BreakpointHoverPopup();
+            _bpHoverPopup.EditConditionRequested -= OnBpHoverEditCondition;
+            _bpHoverPopup.EditConditionRequested += OnBpHoverEditCondition;
+
+            var anchorRect = new Rect(TextAreaLeftOffset, lineY, Math.Max(1, ActualWidth - TextAreaLeftOffset), _lineHeight);
+            _bpHoverPopup.Show(this, _bpSource, _currentFilePath, line1, info,
+                _document?.Lines, ExternalHighlighter, anchorRect);
+        }
+
+        private void OnBpHoverEditCondition(string filePath, int line1)
+        {
+            // Delegate to the existing right-click popup
+            OnBreakpointRightClick(filePath, line1);
+        }
+
+        internal void DismissBreakpointHover()
+        {
+            _bpHoverTimer?.Stop();
+            _bpHoverLine = -1;
+            if (_bpHoverPopup is not null) _bpHoverPopup.IsOpen = false;
+        }
+
         // ─────────────────────────────────────────────────────────────────────────
 
         public void SetLspClient(WpfHexEditor.Editor.Core.LSP.ILspClient? client)

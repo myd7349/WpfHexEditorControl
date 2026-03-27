@@ -49,6 +49,9 @@ public interface IBreakpointSource
 
     /// <summary>Delete an existing breakpoint (fire-and-forget).</summary>
     void Delete(string filePath, int line);
+
+    /// <summary>Returns all breakpoint line numbers for the given file (1-based). Empty if none.</summary>
+    IReadOnlyList<int> GetBreakpointLines(string filePath);
 }
 
 /// <summary>
@@ -61,11 +64,13 @@ internal sealed class BreakpointGutterControl : FrameworkElement
 
     internal const double GutterWidth = 16.0;
 
-    private static readonly Brush BpActiveBrush    = new SolidColorBrush(Color.FromRgb(0xE5, 0x14, 0x00));
-    private static readonly Brush BpDisabledBrush  = Brushes.DimGray;
-    private static readonly Brush ExecutionBrush   = new SolidColorBrush(Color.FromRgb(0xFF, 0xDD, 0x00));
-    private static readonly Brush ExecutionLineBg  = new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xDD, 0x00));
-    private static readonly Pen   BpDisabledPen    = new(BpDisabledBrush, 1.5);
+    private static readonly Brush BpActiveBrush      = new SolidColorBrush(Color.FromRgb(0xE5, 0x14, 0x00));
+    private static readonly Brush BpConditionalBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0x8A, 0x1E));
+    private static readonly Brush BpDisabledBrush    = Brushes.DimGray;
+    private static readonly Brush ExecutionBrush     = new SolidColorBrush(Color.FromRgb(0xFF, 0xDD, 0x00));
+    private static readonly Brush ExecutionLineBg    = new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xDD, 0x00));
+    private static readonly Pen   BpDisabledPen      = new(BpDisabledBrush, 1.5);
+    private static readonly Pen   BpDisabledDashPen  = new(BpDisabledBrush, 1.2) { DashStyle = DashStyles.Dash };
 
     private const double CircleRadius  = 5.5;
     private const double ArrowPadding  = 2.0;
@@ -105,9 +110,11 @@ internal sealed class BreakpointGutterControl : FrameworkElement
     static BreakpointGutterControl()
     {
         BpActiveBrush.Freeze();
+        BpConditionalBrush.Freeze();
         ExecutionBrush.Freeze();
         ExecutionLineBg.Freeze();
         BpDisabledPen.Freeze();
+        BpDisabledDashPen.Freeze();
     }
 
     public BreakpointGutterControl()
@@ -184,10 +191,23 @@ internal sealed class BreakpointGutterControl : FrameworkElement
                 continue;
             }
 
-            // Breakpoint circle
-            if (_source is not null && !string.IsNullOrEmpty(_filePath) && _source.HasBreakpoint(_filePath, line1))
-                dc.DrawEllipse(BpActiveBrush, null, new Point(cx, cy), CircleRadius, CircleRadius);
-            // Ghost circle on hover (no existing breakpoint)
+            // Breakpoint circle — differentiate active / conditional / disabled
+            if (_source is not null && !string.IsNullOrEmpty(_filePath))
+            {
+                var bpInfo = _source.GetBreakpoint(_filePath, line1);
+                if (bpInfo is not null)
+                {
+                    if (!bpInfo.IsEnabled)
+                        dc.DrawEllipse(BpDisabledBrush, BpDisabledDashPen, new Point(cx, cy), CircleRadius, CircleRadius);
+                    else if (!string.IsNullOrEmpty(bpInfo.Condition))
+                        dc.DrawEllipse(BpConditionalBrush, null, new Point(cx, cy), CircleRadius, CircleRadius);
+                    else
+                        dc.DrawEllipse(BpActiveBrush, null, new Point(cx, cy), CircleRadius, CircleRadius);
+                }
+                // Ghost circle on hover (no existing breakpoint)
+                else if (_hoverLine == line1)
+                    dc.DrawEllipse(null, BpDisabledPen, new Point(cx, cy), CircleRadius, CircleRadius);
+            }
             else if (_hoverLine == line1)
                 dc.DrawEllipse(null, BpDisabledPen, new Point(cx, cy), CircleRadius, CircleRadius);
         }

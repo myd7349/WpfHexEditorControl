@@ -14,6 +14,14 @@ namespace WpfHexEditor.Core.Options;
 /// </summary>
 public sealed class AppSettings
 {
+    // -- Settings Version ------------------------------------------------
+
+    /// <summary>
+    /// Schema version for migration. Increment when adding/renaming/removing fields.
+    /// AppSettingsService checks this on load and applies migration transforms.
+    /// </summary>
+    public int SettingsVersion { get; set; } = 1;
+
     // -- Environment > General -------------------------------------------
 
     /// <summary>
@@ -139,6 +147,11 @@ public sealed class AppSettings
 
     /// <summary>Docking tab thumbnail hover-preview options.</summary>
     public TabPreviewAppSettings TabPreview { get; set; } = new();
+
+    // -- View Menu Organization ---------------------------------------------------
+
+    /// <summary>Dynamic View menu organization preferences.</summary>
+    public ViewMenuSettings ViewMenu { get; set; } = new();
 
     // -- Docking — Auto-Hide Timing -----------------------------------------------
 
@@ -508,6 +521,12 @@ public sealed class CodeEditorDefaultSettings
     /// a compact popup with the matching opening line(s) and navigation link.
     /// </summary>
     public bool EndOfBlockHintEnabled { get; set; } = true;
+
+    /// <summary>
+    /// When true, breakpoint lines are highlighted with a semi-transparent background
+    /// tint (red=active, orange=conditional, gray=disabled).
+    /// </summary>
+    public bool BreakpointLineHighlightEnabled { get; set; } = true;
 
     /// <summary>
     /// Milliseconds the cursor must dwell over a closing token before the

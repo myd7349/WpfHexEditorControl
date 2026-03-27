@@ -121,6 +121,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         "WpfHexEditor", "App", "session.json");
 
     private const string SolutionExplorerContentId    = "panel-solution-explorer";
+    private const string BookmarksPanelContentId      = "panel-bookmarks";
 
     // --- Fields --------------------------------------------------------
     private DockLayoutRoot _layout = null!;
@@ -181,6 +182,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Error Panel (persistent singleton)
     private ErrorPanel? _errorPanel;
+    private WpfHexEditor.Panels.IDE.Panels.BookmarksPanel? _bookmarksPanel;
     private const string ErrorPanelContentId         = "panel-errors";
     private const string FindReferencesPanelContentId = "panel-find-references";
     private WpfHexEditor.Editor.CodeEditor.Controls.FindReferencesPanel? _findReferencesPanel;
@@ -520,7 +522,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // can resolve ExternalHighlighter via LanguageRegistry.GetLanguageForFile().
         LoadEmbeddedLanguageDefinitions();
 
+        // Register decompiler backends
+        WpfHexEditor.Core.Decompiler.DecompilerRegistry.Register(new WpfHexEditor.Core.Decompiler.DotNetReflectionDecompiler());
+
         // Register editor factories (doc-proj-* dispatcher)
+        // JsonEditor before CodeEditor so .json/.jsonc files get dedicated JSON toolbar
+        _editorRegistry.Register(new WpfHexEditor.Editor.JsonEditor.JsonEditorFactory());
         _editorRegistry.Register(new TblEditorFactory());
         _editorRegistry.Register(new CodeEditorFactory());
         _editorRegistry.Register(new MarkdownEditorFactory()); // must be before TextEditorFactory
@@ -973,23 +980,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void LoadSavedLayoutOrDefault()
     {
-        if (File.Exists(LayoutFilePath))
+        var layout = Services.LayoutPersistenceService.LoadFromDisk();
+        if (layout is not null)
         {
-            try
-            {
-                var layout = DockLayoutSerializer.Deserialize(File.ReadAllText(LayoutFilePath));
-                RestoreWindowState(layout);
-                PruneStaleDocumentItems(layout);
-                ApplyLayout(layout);
-                EnsureErrorPanel();
-                _layoutWasRestoredFromFile = true;
-                OutputLogger.Debug($"Layout restored from: {LayoutFilePath}");
-                return;
-            }
-            catch (Exception ex)
-            {
-                OutputLogger.Error($"Failed to restore layout: {ex.Message}");
-            }
+            RestoreWindowState(layout);
+            Services.LayoutPersistenceService.PruneStaleDocumentItems(layout);
+            ApplyLayout(layout);
+            EnsureErrorPanel();
+            _layoutWasRestoredFromFile = true;
+            OutputLogger.Debug($"Layout restored from: {Services.LayoutPersistenceService.LayoutFilePath}");
+            return;
         }
 
         OutputLogger.Debug("No saved layout found, using defaults.");
@@ -1010,83 +1010,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             WindowState = WindowState.Maximized;
     }
 
-    /// <summary>
-    /// Removes document tabs whose backing file no longer exists on disk.
-    /// Called before ApplyLayout to prevent creating editor instances for missing files.
-    /// </summary>
-    private void PruneStaleDocumentItems(DockLayoutRoot layout)
-    {
-        var pruned = new List<string>();
-        PruneStaleItemsFromNode(layout.RootNode, pruned);
-        PruneStaleItemsFromList(layout.FloatingItems, pruned);
-        PruneStaleItemsFromList(layout.AutoHideItems, pruned);
-        PruneStaleItemsFromList(layout.HiddenItems,   pruned);
-
-        if (pruned.Count > 0)
-            OutputLogger.Info(
-                $"Layout restore: skipped {pruned.Count} document(s) — file no longer exists: " +
-                string.Join(", ", pruned));
-    }
-
-    private static void PruneStaleItemsFromNode(DockNode node, List<string> pruned)
-    {
-        switch (node)
-        {
-            case DockGroupNode group:
-                foreach (var item in group.Items.ToList())
-                {
-                    if (IsStaleDocumentItem(item, out var label))
-                    {
-                        group.RemoveItem(item);
-                        pruned.Add(label);
-                    }
-                }
-                break;
-
-            case DockSplitNode split:
-                foreach (var child in split.Children)
-                    PruneStaleItemsFromNode(child, pruned);
-                break;
-        }
-    }
-
-    private static void PruneStaleItemsFromList(List<DockItem> items, List<string> pruned)
-    {
-        for (int i = items.Count - 1; i >= 0; i--)
-        {
-            if (IsStaleDocumentItem(items[i], out var label))
-            {
-                items.RemoveAt(i);
-                pruned.Add(label);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Returns true if <paramref name="item"/> is a file-backed document whose physical file is missing.
-    /// In-memory new files (IsNewFile=true) and items without a FilePath are excluded.
-    /// </summary>
-    private static bool IsStaleDocumentItem(DockItem item, out string label)
-    {
-        label = string.Empty;
-
-        bool isDocument = item.ContentId.StartsWith("doc-file-")
-                       || item.ContentId.StartsWith("doc-hex-")
-                       || item.ContentId.StartsWith("doc-proj-");
-        if (!isDocument) return false;
-
-        if (!item.Metadata.TryGetValue("FilePath", out var filePath) || filePath is null)
-            return false;
-
-        // In-memory new documents have no physical backing file
-        if (item.Metadata.TryGetValue("IsNewFile", out var isNew) && isNew == "true")
-            return false;
-
-        if (File.Exists(filePath)) return false;
-
-        label = item.Title ?? Path.GetFileName(filePath) ?? filePath;
-        return true;
-    }
+    // Layout pruning logic moved to Services.LayoutPersistenceService (Phase 4 refactoring)
 
     private void AutoSaveLayout()
     {
@@ -1114,9 +1038,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // Snapshot current editor state into each DockItem.Metadata before serialising.
             SnapshotEditorConfigs();
 
-            Directory.CreateDirectory(Path.GetDirectoryName(LayoutFilePath)!);
-            File.WriteAllText(LayoutFilePath, DockLayoutSerializer.Serialize(_layout));
-            OutputLogger.Debug($"Layout auto-saved to: {LayoutFilePath}");
+            Services.LayoutPersistenceService.SaveToDisk(_layout);
             SaveSession();
 
             // Persist SE collapse state to .whsln.user sidecar (fire-and-forget, non-blocking).
@@ -1249,7 +1171,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 using var reader = new System.IO.StreamReader(stream);
                 var layout = DockLayoutSerializer.Deserialize(reader.ReadToEnd());
                 if (restoreWindowState) RestoreWindowState(layout);
-                PruneStaleDocumentItems(layout);
+                Services.LayoutPersistenceService.PruneStaleDocumentItems(layout);
                 ApplyLayout(layout);
                 EnsureErrorPanel();
                 _layoutWasRestoredFromFile = true; // treat embedded default like a restored layout — defer plugin panels absent from it
@@ -1429,6 +1351,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             FileComparisonPanelContentId   => CreateFileComparisonContent(),
             ArchivePanelContentId          => CreateArchivePanelContent(),
             OptionsContentId               => CreateOptionsContent(),
+            BookmarksPanelContentId        => CreateBookmarksPanelContent(),
             "doc-welcome"                  => CreateWelcomeContent(),
             TerminalPanelContentId         => CreateTerminalPanelContent(),
             PluginMonitorContentId         => CreatePluginMonitorPanelContent(),
@@ -1562,6 +1485,35 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     private UIElement CreateErrorPanelContent() => EnsureErrorPanelInstance();
+
+    private UIElement CreateBookmarksPanelContent()
+    {
+        if (_bookmarksPanel is not null) return _bookmarksPanel;
+        _bookmarksPanel = new WpfHexEditor.Panels.IDE.Panels.BookmarksPanel
+        {
+            GetBookmarks = () =>
+            {
+                var hex = ActiveHexEditor;
+                if (hex is null) return [];
+                return hex.GetBookmarks()
+                    .Select(offset => new WpfHexEditor.Panels.IDE.Panels.BookmarkRow
+                    {
+                        Offset    = offset,
+                        OffsetHex = $"0x{offset:X8}",
+                    })
+                    .ToList();
+            }
+        };
+        _bookmarksPanel.NavigateToOffsetRequested += offset =>
+        {
+            ActiveHexEditor?.SetPosition(offset);
+        };
+        _bookmarksPanel.ClearAllRequested += () =>
+        {
+            ActiveHexEditor?.ClearAllBookmarks();
+        };
+        return _bookmarksPanel;
+    }
 
     private UIElement CreateOptionsContent()
     {
@@ -5316,146 +5268,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             s.FloatingWindowFadeInMs);
     }
 
-    /// <summary>
-    /// Applies per-editor-type user settings (scroll speed, etc.) to a newly created editor.
-    /// Called once per editor instance from <see cref="CreateSmartFileEditorContent"/>.
-    /// </summary>
-    private static void ApplyEditorSettings(IDocumentEditor editor)
-    {
-        var settings = AppSettingsService.Instance.Current;
+    private static void ApplyEditorSettings(IDocumentEditor editor) => Services.EditorSettingsService.Apply(editor);
 
-        switch (editor)
-        {
-            case WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor ce:
-                ce.MouseWheelSpeed         = settings.CodeEditorDefaults.MouseWheelSpeed;
-                ce.ZoomLevel               = settings.CodeEditorDefaults.DefaultZoom;
-                ce.FoldToggleOnDoubleClick = settings.CodeEditorDefaults.FoldToggleOnDoubleClick;
-                ce.IsWordWrapEnabled       = settings.CodeEditorDefaults.WordWrap;
-                ce.ShowInlineHints            = settings.CodeEditorDefaults.ShowInlineHints;
-                // Treat 0 as All (migration: old settings.json without InlineHintsVisibleKinds defaults to 0).
-                ce.InlineHintsVisibleKinds = settings.CodeEditorDefaults.InlineHintsVisibleKinds == 0
-                    ? WpfHexEditor.Editor.Core.InlineHintsSymbolKinds.All
-                    : (WpfHexEditor.Editor.Core.InlineHintsSymbolKinds)settings.CodeEditorDefaults.InlineHintsVisibleKinds;
-                ce.ShowEndOfBlockHint    = settings.CodeEditorDefaults.EndOfBlockHintEnabled;
-                ce.EndOfBlockHintDelayMs = settings.CodeEditorDefaults.EndOfBlockHintDelayMs;
-                ce.EnableAutoClosingBrackets = settings.CodeEditorDefaults.AutoClosingBrackets;
-                ce.EnableAutoClosingQuotes   = settings.CodeEditorDefaults.AutoClosingQuotes;
-                ce.SkipOverClosingChar       = settings.CodeEditorDefaults.SkipOverClosingChar;
-                ce.WrapSelectionInPairs      = settings.CodeEditorDefaults.WrapSelectionInPairs;
-                var ss = settings.CodeEditorDefaults.StickyScroll;
-                ce.ApplyStickyScrollSettings(
-                    ss.Enabled, ss.MaxLines, ss.SyntaxHighlight,
-                    ss.ClickToNavigate, ss.Opacity, ss.MinScopeLines);
-                ApplySyntaxColorOverrides(ce, settings.CodeEditorDefaults);
-                if (ce.RefreshTimeStatusBarItem is { } ceRt)
-                    ceRt.IsVisible = settings.CodeEditorDefaults.ShowRefreshRateInStatusBar;
-                break;
-            case WpfHexEditor.Editor.TextEditor.Controls.TextEditor te:
-                te.MouseWheelSpeed  = settings.TextEditorDefaults.MouseWheelSpeed;
-                te.ZoomLevel        = settings.TextEditorDefaults.DefaultZoom;
-                te.IsWordWrapEnabled = settings.TextEditorDefaults.WordWrap;
-                if (te.RefreshTimeStatusBarItem is { } teRt)
-                    teRt.IsVisible = settings.TextEditorDefaults.ShowRefreshRateInStatusBar;
-                break;
-            case WpfHexEditor.HexEditor.HexEditor hexEd:
-                hexEd.ShowRefreshTimeInStatusBar = settings.HexEditorDefaults.ShowRefreshRateInStatusBar;
-                break;
-        }
+    // Editor settings logic (ApplyEditorSettings body, ApplySyntaxColorOverrides, TryParseHexColor)
+    // moved to Services.EditorSettingsService (Phase 4 refactoring)
 
-        // Apply refresh rate visibility for CodeEditorSplitHost (wraps two CodeEditor instances)
-        if (editor is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost splitHost
-            && splitHost.RefreshTimeStatusBarItem is { } shRt)
-            shRt.IsVisible = settings.CodeEditorDefaults.ShowRefreshRateInStatusBar;
-    }
-
-    /// <summary>
-    /// Applies all stored syntax colour overrides from <paramref name="ce"/> settings
-    /// to the live <paramref name="editor"/> instance.
-    /// An empty string means "use theme default" (no override).
-    /// </summary>
-    private static void ApplySyntaxColorOverrides(
-        WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor editor,
-        CodeEditorDefaultSettings ce)
-    {
-        Apply(SyntaxTokenKind.Keyword,    ce.KeywordColor);
-        Apply(SyntaxTokenKind.String,     ce.StringColor);
-        Apply(SyntaxTokenKind.Number,     ce.NumberColor);
-        Apply(SyntaxTokenKind.Comment,    ce.CommentColor);
-        Apply(SyntaxTokenKind.Type,       ce.TypeColor);
-        Apply(SyntaxTokenKind.Identifier, ce.IdentifierColor);
-        Apply(SyntaxTokenKind.Operator,   ce.OperatorColor);
-        Apply(SyntaxTokenKind.Bracket,    ce.BracketColor);
-        Apply(SyntaxTokenKind.Attribute,  ce.AttributeColor);
-
-        void Apply(SyntaxTokenKind k, string? hex)
-            => editor.SetSyntaxColorOverride(k, TryParseHexColor(hex, out var c) ? c : null);
-    }
-
-    private static bool TryParseHexColor(string? hex, out System.Windows.Media.Color color)
-    {
-        color = default;
-        if (string.IsNullOrWhiteSpace(hex)) return false;
-        try
-        {
-            color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex.Trim());
-            return true;
-        }
-        catch { return false; }
-    }
-
-    private void ApplyHexEditorDefaults(HexEditorControl hex)
-    {
-        var d = AppSettingsService.Instance.Current.HexEditorDefaults;
-
-        // Display
-        hex.BytePerLine           = d.BytePerLine;
-        hex.ShowOffset            = d.ShowOffset;
-        hex.ShowAscii             = d.ShowAscii;
-        hex.DataStringVisual      = d.DataStringVisual;
-        hex.OffSetStringVisual    = d.OffSetStringVisual;
-        hex.ByteGrouping          = d.ByteGrouping;
-        hex.ByteSpacerPositioning = d.ByteSpacerPositioning;
-
-        // Editing
-        hex.EditMode              = d.DefaultEditMode;
-        hex.AllowZoom             = d.AllowZoom;
-        hex.MouseWheelSpeed       = d.MouseWheelSpeed;
-        hex.AllowFileDrop         = d.AllowFileDrop;
-
-        // Data interpretation
-        hex.ByteSize                    = d.ByteSize;
-        hex.ByteOrder                   = d.ByteOrder;
-        hex.DefaultCopyToClipboardMode  = d.DefaultCopyToClipboardMode;
-        hex.ByteSpacerVisualStyle       = d.ByteSpacerVisualStyle;
-
-        // Scroll markers
-        hex.ShowBookmarkMarkers     = d.ShowBookmarkMarkers;
-        hex.ShowModifiedMarkers     = d.ShowModifiedMarkers;
-        hex.ShowInsertedMarkers     = d.ShowInsertedMarkers;
-        hex.ShowDeletedMarkers      = d.ShowDeletedMarkers;
-        hex.ShowSearchResultMarkers = d.ShowSearchResultMarkers;
-
-        // Status bar visibility
-        hex.ShowRefreshTimeInStatusBar = d.ShowRefreshRateInStatusBar;
-        hex.ShowStatusMessage          = d.ShowStatusMessage;
-        hex.ShowFileSizeInStatusBar    = d.ShowFileSizeInStatusBar;
-        hex.ShowSelectionInStatusBar   = d.ShowSelectionInStatusBar;
-        hex.ShowPositionInStatusBar    = d.ShowPositionInStatusBar;
-        hex.ShowEditModeInStatusBar    = d.ShowEditModeInStatusBar;
-        hex.ShowBytesPerLineInStatusBar = d.ShowBytesPerLineInStatusBar;
-
-        // Advanced behaviour
-        hex.AllowAutoHighLightSelectionByte      = d.AllowAutoHighLightSelectionByte;
-        hex.AllowAutoSelectSameByteAtDoubleClick = d.AllowAutoSelectSameByteAtDoubleClick;
-        hex.AllowContextMenu                     = d.AllowContextMenu;
-        hex.AllowDeleteByte                      = d.AllowDeleteByte;
-        hex.AllowExtend                          = d.AllowExtend;
-        hex.FileDroppingConfirmation             = d.FileDroppingConfirmation;
-        hex.PreloadByteInEditorMode              = d.PreloadByteInEditorMode;
-
-        // Tooltip
-        hex.ByteToolTipDisplayMode               = d.ByteToolTipDisplayMode;
-    }
+    private void ApplyHexEditorDefaults(HexEditorControl hex) => Services.EditorSettingsService.ApplyHexDefaults(hex);
 
     // --- Menu: Project -------------------------------------------------
 
@@ -6054,6 +5872,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnShowErrorPanel(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Error List", ErrorPanelContentId, DockDirection.Bottom);
 
+    private void OnShowBookmarks(object sender, RoutedEventArgs e)
+    {
+        ShowOrCreatePanel("Bookmarks", BookmarksPanelContentId, DockDirection.Bottom);
+        _bookmarksPanel?.Refresh();
+    }
+
     private void OnShowMarkdownOutline(object sender, RoutedEventArgs e)
         => ShowOrCreatePanel("Markdown Outline", MarkdownOutlinePanelContentId, DockDirection.Left);
 
@@ -6268,7 +6092,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         try
         {
             var layout = DockLayoutSerializer.Deserialize(File.ReadAllText(dlg.FileName));
-            PruneStaleDocumentItems(layout);
+            Services.LayoutPersistenceService.PruneStaleDocumentItems(layout);
             _contentCache.Clear();
             ApplyLayout(layout);
             OutputLogger.Debug($"Layout loaded from: {dlg.FileName}");

@@ -701,6 +701,9 @@
     <SolidColorBrush x:Key="DB_BreakpointConditionalBrush"   Color="#CC6600" />
     <SolidColorBrush x:Key="DB_ExecutionLineBrush"           Color="#DDCC00" />
     <SolidColorBrush x:Key="DB_ExecutionLineBackgroundBrush" Color="#30DDCC00" />
+    <SolidColorBrush x:Key="DB_BreakpointLineBackgroundBrush"            Color="#30E51400" />
+    <SolidColorBrush x:Key="DB_BreakpointLineDisabledBackgroundBrush"    Color="#18808080" />
+    <SolidColorBrush x:Key="DB_BreakpointLineConditionalBackgroundBrush" Color="#30CC7700" />
     <SolidColorBrush x:Key="DB_ExceptionLineBrush"           Color="#CC0000" />
     <SolidColorBrush x:Key="DB_CallStackActiveBrush"         Color="#1E8A6E" />
     <SolidColorBrush x:Key="DB_WatchErrorBrush"              Color="#CC0000" />

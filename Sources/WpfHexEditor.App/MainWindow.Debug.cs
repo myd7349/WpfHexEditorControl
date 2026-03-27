@@ -417,5 +417,11 @@ public partial class MainWindow
 
         public void Delete(string filePath, int line) =>
             _ = _svc.DeleteBreakpointAsync(filePath, line);
+
+        public IReadOnlyList<int> GetBreakpointLines(string filePath) =>
+            _svc.Breakpoints
+                .Where(b => string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+                .Select(b => b.Line)
+                .ToList();
     }
 }
