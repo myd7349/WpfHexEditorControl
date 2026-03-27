@@ -766,6 +766,7 @@
     <SolidColorBrush x:Key="CL_ToggleActiveBrush"     Color="#BD93F9" />
     <SolidColorBrush x:Key="CL_ToggleInactiveBrush"   Color="#44475A" />
     <SolidColorBrush x:Key="CL_RadioSelectedBrush"    Color="#BD93F9" />
+    <SolidColorBrush x:Key="CL_RadioSelectedForegroundBrush" Color="#000000" />
     <SolidColorBrush x:Key="CL_RadioUnselectedBrush"  Color="#383A4A" />
     <SolidColorBrush x:Key="CL_HoverBrush"            Color="#3A3D50" />
     <SolidColorBrush x:Key="CL_ModeBadgeBrush"        Color="#50FA7B" />

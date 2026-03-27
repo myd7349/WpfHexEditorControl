@@ -73,6 +73,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Title Bar (VS Code style: menu inline + title center + window buttons right) -->
@@ -1651,7 +1652,7 @@
         </Border>
 
         <!-- Main Dock Area + Plugin InfoBar wrapper -->
-        <Grid Grid.Row="2">
+        <Grid x:Name="ContentGrid" Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -1744,7 +1745,7 @@
         </Grid>
 
         <!-- Status Bar — VS2022-style: adapts to the active document -->
-        <StatusBar x:Name="AppStatusBar" Grid.Row="3" Background="{DynamicResource DockTabActiveBrush}">
+        <StatusBar x:Name="AppStatusBar" Grid.Row="4" Background="{DynamicResource DockTabActiveBrush}">
 
             <!-- Active editor interactive items (IStatusBarContributor) -->
             <!-- Visibility controlled imperatively from ActiveStatusBarContributor setter -->

@@ -6229,6 +6229,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         foreach (var editor in FindVisualChildren<HexEditorControl>(this))
             editor.ApplyThemeFromResources();
 
+        // Invalidate minimap theme caches so token colors update.
+        foreach (var splitHost in FindVisualChildren<WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost>(this))
+            splitHost.InvalidateMinimapThemeCache();
+
         // Also sync editors that are cached but not yet in the visual tree
         // (background tabs whose ContentFactory was called but the DockHost
         // hasn't added them to the live visual tree yet).
@@ -6236,6 +6240,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             if (content is HexEditorControl cached)
                 cached.ApplyThemeFromResources();
+            else if (content is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost cachedHost)
+                cachedHost.InvalidateMinimapThemeCache();
         }
     }
 

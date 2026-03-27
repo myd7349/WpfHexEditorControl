@@ -3288,6 +3288,24 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
+        /// Scrolls the viewport so the given 0-based line is at the top.
+        /// Does NOT move the caret or clear selection.
+        /// Used by the minimap for scroll-only interaction.
+        /// </summary>
+        public void ScrollViewToLine(int lineIndex)
+        {
+            if (_virtualizationEngine == null) return;
+            var newOffset = _virtualizationEngine.ScrollToLine(lineIndex);
+            _verticalScrollOffset = newOffset;
+            _currentScrollOffset = newOffset;
+            _targetScrollOffset = newOffset;
+            _virtualizationEngine.ScrollOffset = newOffset;
+            _virtualizationEngine.CalculateVisibleRange();
+            SyncVScrollBar();
+            InvalidateVisual();
+        }
+
+        /// <summary>
         /// Scroll viewport horizontally by pixel amount (used by pan mode and Shift+Wheel).
         /// </summary>
         private void ScrollHorizontal(double delta)

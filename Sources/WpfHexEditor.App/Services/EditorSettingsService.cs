@@ -50,6 +50,10 @@ internal static class EditorSettingsService
             if (splitHost.RefreshTimeStatusBarItem is { } shRt)
                 shRt.IsVisible = settings.CodeEditorDefaults.ShowRefreshRateInStatusBar;
             splitHost.ShowMinimap = settings.CodeEditorDefaults.ShowMinimap;
+            splitHost.MinimapRenderCharacters = settings.CodeEditorDefaults.MinimapRenderCharacters;
+            splitHost.MinimapVerticalSize = (WpfHexEditor.Editor.CodeEditor.Controls.MinimapVerticalSize)settings.CodeEditorDefaults.MinimapVerticalSize;
+            splitHost.MinimapSliderMode = (WpfHexEditor.Editor.CodeEditor.Controls.MinimapSliderMode)settings.CodeEditorDefaults.MinimapSliderMode;
+            splitHost.MinimapSide = (WpfHexEditor.Editor.CodeEditor.Controls.MinimapSide)settings.CodeEditorDefaults.MinimapSide;
         }
     }
 

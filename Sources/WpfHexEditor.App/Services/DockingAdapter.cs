@@ -49,6 +49,12 @@ public sealed class DockingAdapter : IDockingAdapter
     // A single rebuild is performed by ResumeRebuild() at the end of the batch.
     private bool _rebuildSuspended;
 
+    /// <summary>
+    /// When set, overrides <see cref="PanelDescriptor.DefaultDockSide"/> for newly docked panels.
+    /// Set by the Customize Layout popup's "Panel Default Side" option.
+    /// </summary>
+    public string? DefaultDockSideOverride { get; set; }
+
     public DockingAdapter(
         DockEngine engine,
         DockLayoutRoot layout,
@@ -161,7 +167,8 @@ public sealed class DockingAdapter : IDockingAdapter
     // Used both for first-run auto-dock and for on-demand deferred dock.
     private void DockNewPanel(string uiId, UIElement content, PanelDescriptor descriptor)
     {
-        var direction = descriptor.DefaultDockSide?.ToLowerInvariant() switch
+        var effectiveSide = DefaultDockSideOverride ?? descriptor.DefaultDockSide;
+        var direction = effectiveSide?.ToLowerInvariant() switch
         {
             "left"   => DockDirection.Left,
             "bottom" => DockDirection.Bottom,

@@ -117,10 +117,11 @@ public class DocumentTabHost : DockTabControl
     {
         var styleName = (Settings?.MultiRowTabs == true, Settings?.TabPlacement) switch
         {
-            (true, _)                       => "DocumentTabHostMultiRowStyle",
-            (_, DocumentTabPlacement.Left)  => "DocumentTabHostLeftStyle",
-            (_, DocumentTabPlacement.Right) => "DocumentTabHostRightStyle",
-            _                               => "DocumentTabHostStyle"
+            (true, _)                        => "DocumentTabHostMultiRowStyle",
+            (_, DocumentTabPlacement.Left)   => "DocumentTabHostLeftStyle",
+            (_, DocumentTabPlacement.Right)  => "DocumentTabHostRightStyle",
+            (_, DocumentTabPlacement.Bottom) => "DocumentTabHostBottomStyle",
+            _                                => "DocumentTabHostStyle"
         };
 
         SetResourceReference(StyleProperty, styleName);

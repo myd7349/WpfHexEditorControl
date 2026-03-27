@@ -223,20 +223,114 @@ public partial class MainWindow
         switch (groupId)
         {
             case "toolbar-position":
-                // Move toolbar between Grid.Row 1 and 3
-                var toolbarRow = value == "Bottom" ? 3 : 1;
-                Grid.SetRow(MainToolBarPanel, toolbarRow);
+                ApplyToolbarPosition(value);
                 break;
 
             case "panel-dock-side":
-                // Store preference — used when new panels are docked
-                // No immediate visual change needed
+                // Override default dock side for newly opened panels
+                if (_dockingAdapter != null)
+                    _dockingAdapter.DefaultDockSideOverride = value;
                 break;
 
             case "tab-position":
-                // Preference stored in LayoutSettings; applied on next layout rebuild
+                // Change document tab strip placement via DocumentTabBarSettings
+                if (DockHost.TabBarSettings is { } tabSettings)
+                {
+                    tabSettings.TabPlacement = value == "Bottom"
+                        ? WpfHexEditor.Docking.Core.DocumentTabPlacement.Bottom
+                        : WpfHexEditor.Docking.Core.DocumentTabPlacement.Top;
+                }
                 break;
         }
+    }
+
+    /// <summary>
+    /// Moves the toolbar to Top/Bottom/Left/Right.
+    /// Top/Bottom: toolbar stays in RootGrid rows (1 or 3), horizontal orientation.
+    /// Left/Right: toolbar is reparented into ContentGrid as a column, vertical orientation.
+    /// </summary>
+    private void ApplyToolbarPosition(string position)
+    {
+        if (MainToolBarPanel.Parent is not Border toolbarBorder) return;
+        var rootGrid = RootGrid;
+        var contentGrid = ContentGrid;
+
+        // Remove from current parent
+        if (toolbarBorder.Parent is Panel currentParent)
+            currentParent.Children.Remove(toolbarBorder);
+        else if (toolbarBorder.Parent is Grid currentGrid)
+            currentGrid.Children.Remove(toolbarBorder);
+
+        switch (position)
+        {
+            case "Top":
+                MainToolBarPanel.Orientation = System.Windows.Controls.Orientation.Horizontal;
+                Grid.SetRow(toolbarBorder, 1);
+                Grid.SetColumn(toolbarBorder, 0);
+                if (!rootGrid.Children.Contains(toolbarBorder))
+                    rootGrid.Children.Add(toolbarBorder);
+                // Ensure ContentGrid column definitions are clean
+                RemoveToolbarColumns();
+                break;
+
+            case "Bottom":
+                MainToolBarPanel.Orientation = System.Windows.Controls.Orientation.Horizontal;
+                Grid.SetRow(toolbarBorder, 3);
+                Grid.SetColumn(toolbarBorder, 0);
+                if (!rootGrid.Children.Contains(toolbarBorder))
+                    rootGrid.Children.Add(toolbarBorder);
+                RemoveToolbarColumns();
+                break;
+
+            case "Left":
+                MainToolBarPanel.Orientation = System.Windows.Controls.Orientation.Vertical;
+                EnsureToolbarColumn(isRight: false);
+                Grid.SetRow(toolbarBorder, 0);
+                Grid.SetRowSpan(toolbarBorder, 2);
+                Grid.SetColumn(toolbarBorder, 0);
+                if (!contentGrid.Children.Contains(toolbarBorder))
+                    contentGrid.Children.Add(toolbarBorder);
+                // Push DockHost and info bars to column 1
+                Grid.SetColumn(DockHost, 1);
+                break;
+
+            case "Right":
+                MainToolBarPanel.Orientation = System.Windows.Controls.Orientation.Vertical;
+                EnsureToolbarColumn(isRight: true);
+                Grid.SetRow(toolbarBorder, 0);
+                Grid.SetRowSpan(toolbarBorder, 2);
+                Grid.SetColumn(toolbarBorder, 1);
+                if (!contentGrid.Children.Contains(toolbarBorder))
+                    contentGrid.Children.Add(toolbarBorder);
+                Grid.SetColumn(DockHost, 0);
+                break;
+        }
+    }
+
+    private void EnsureToolbarColumn(bool isRight)
+    {
+        // ContentGrid needs 2 columns: Auto (toolbar) + * (content) or vice versa
+        if (ContentGrid.ColumnDefinitions.Count >= 2) return;
+        ContentGrid.ColumnDefinitions.Clear();
+        if (isRight)
+        {
+            ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        }
+        else
+        {
+            ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            ContentGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        }
+    }
+
+    private void RemoveToolbarColumns()
+    {
+        if (ContentGrid.ColumnDefinitions.Count == 0) return;
+        ContentGrid.ColumnDefinitions.Clear();
+        // Reset all ContentGrid children to column 0
+        foreach (UIElement child in ContentGrid.Children)
+            Grid.SetColumn(child, 0);
     }
 
     private void ApplyFontScale(double scale)

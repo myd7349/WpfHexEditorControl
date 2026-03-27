@@ -544,6 +544,18 @@ public sealed class CodeEditorDefaultSettings
     /// <summary>Show a VS Code-style code overview minimap on the right side of the editor.</summary>
     public bool ShowMinimap { get; set; } = true;
 
+    /// <summary>Render individual syntax tokens as colored blocks (true) or single rect per line (false).</summary>
+    public bool MinimapRenderCharacters { get; set; } = true;
+
+    /// <summary>Vertical sizing mode: 0=Proportional, 1=Fill, 2=Fit.</summary>
+    public int MinimapVerticalSize { get; set; }
+
+    /// <summary>Viewport slider visibility: 0=Always, 1=MouseOver.</summary>
+    public int MinimapSliderMode { get; set; }
+
+    /// <summary>Minimap placement: 0=Left, 1=Right.</summary>
+    public int MinimapSide { get; set; } = 1;
+
     // -- InlineHints ---------------------------------------------------------
 
     /// <summary>

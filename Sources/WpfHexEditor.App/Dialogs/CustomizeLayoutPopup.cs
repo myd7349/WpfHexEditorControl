@@ -63,6 +63,13 @@ public sealed class CustomizeLayoutPopup : Window
     // ── Debounce save ─────────────────────────────────────────────────────
     private readonly DispatcherTimer _saveDebounce;
 
+    // ── Radio event guard ─────────────────────────────────────────────────
+    private bool _suppressRadioEvents;
+
+    // ── Cached dark foreground for selected pills ─────────────────────────
+    private static readonly SolidColorBrush SelectedPillForeground =
+        new(Color.FromRgb(0x1E, 0x1E, 0x1E));
+
     // ── Cached pill template ──────────────────────────────────────────────
     private static ControlTemplate? _pillTemplate;
 
@@ -160,7 +167,7 @@ public sealed class CustomizeLayoutPopup : Window
         stack.Children.Add(BuildSectionHeader("POSITION"));
 
         stack.Children.Add(BuildRadioRow("toolbar-position", "Toolbar Position",
-            new[] { ("Top", "Top"), ("Bottom", "Bottom") },
+            new[] { ("Top", "Top"), ("Bottom", "Bottom"), ("Left", "Left"), ("Right", "Right") },
             settings.ToolbarPosition));
 
         stack.Children.Add(BuildRadioRow("panel-dock-side", "Panel Default Side",
@@ -228,9 +235,12 @@ public sealed class CustomizeLayoutPopup : Window
             Cursor            = Cursors.Hand,
             ToolTip           = "Reset to defaults",
             Padding           = new Thickness(4, 2, 4, 2),
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            Template          = BuildIconButtonTemplate()
         };
         resetBtn.SetResourceReference(ForegroundProperty, "CP_SecondaryTextBrush");
+        resetBtn.MouseEnter += (_, _) => resetBtn.SetResourceReference(BackgroundProperty, "CP_HoverBrush");
+        resetBtn.MouseLeave += (_, _) => resetBtn.Background = Brushes.Transparent;
         resetBtn.Click += OnResetDefaults;
         DockPanel.SetDock(resetBtn, Dock.Right);
         dock.Children.Add(resetBtn);
@@ -371,9 +381,21 @@ public sealed class CustomizeLayoutPopup : Window
             // Style the pill
             ApplyRadioPillStyle(pill, value == selectedValue);
 
+            // Hover — highlight background + ensure readable foreground
+            pill.MouseEnter += (_, _) =>
+            {
+                pill.SetResourceReference(BackgroundProperty, "CP_HighlightBrush");
+                pill.SetResourceReference(ForegroundProperty, "CP_TextBrush");
+            };
+            pill.MouseLeave += (_, _) =>
+                ApplyRadioPillStyle(pill, pill.IsChecked == true);
+
             var capturedValue = value;
             pill.Checked += (_, _) =>
             {
+                if (_suppressRadioEvents) return;
+                _suppressRadioEvents = true;
+
                 // Uncheck others in group
                 foreach (var (btn, _) in groupButtons)
                 {
@@ -384,12 +406,17 @@ public sealed class CustomizeLayoutPopup : Window
                     }
                 }
                 ApplyRadioPillStyle(pill, true);
+
+                _suppressRadioEvents = false;
+
                 _onRadioChange(groupId, capturedValue);
                 DebounceSave();
             };
 
             pill.Unchecked += (_, _) =>
             {
+                if (_suppressRadioEvents) return;
+
                 // Prevent unchecking the only checked pill
                 var anyChecked = groupButtons.Any(b => b.Btn.IsChecked == true);
                 if (!anyChecked)
@@ -527,8 +554,41 @@ public sealed class CustomizeLayoutPopup : Window
 
         pill.SetResourceReference(BackgroundProperty,
             isSelected ? "CL_RadioSelectedBrush" : "CL_RadioUnselectedBrush");
+
+        // Foreground from theme tokens — each theme controls contrast
         pill.SetResourceReference(ForegroundProperty,
-            isSelected ? "CP_BackgroundBrush" : "CP_TextBrush");
+            isSelected ? "CL_RadioSelectedForegroundBrush" : "CP_TextBrush");
+
+        // Border on unselected pills for visibility against popup bg
+        if (isSelected)
+        {
+            pill.BorderThickness = new Thickness(0);
+        }
+        else
+        {
+            pill.BorderThickness = new Thickness(1);
+            pill.SetResourceReference(BorderBrushProperty, "CP_BorderBrush");
+        }
+    }
+
+    /// <summary>Minimal button template that respects Background and has no default chrome.</summary>
+    private static ControlTemplate BuildIconButtonTemplate()
+    {
+        var template = new ControlTemplate(typeof(Button));
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+        border.SetBinding(Border.BackgroundProperty, new Binding("Background")
+            { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        border.SetBinding(Border.PaddingProperty, new Binding("Padding")
+            { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(VerticalAlignmentProperty, VerticalAlignment.Center);
+        border.AppendChild(presenter);
+
+        template.VisualTree = border;
+        return template;
     }
 
     private static ControlTemplate BuildPillTemplate()
@@ -536,11 +596,15 @@ public sealed class CustomizeLayoutPopup : Window
         if (_pillTemplate is not null) return _pillTemplate;
 
         var template = new ControlTemplate(typeof(ToggleButton));
-        var border = new FrameworkElementFactory(typeof(Border));
+        var border = new FrameworkElementFactory(typeof(Border), "Bd");
         border.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
         border.SetBinding(Border.BackgroundProperty, new Binding("Background")
             { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
         border.SetBinding(Border.PaddingProperty, new Binding("Padding")
+            { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        border.SetBinding(Border.BorderBrushProperty, new Binding("BorderBrush")
+            { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
+        border.SetBinding(Border.BorderThicknessProperty, new Binding("BorderThickness")
             { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
 
         var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
