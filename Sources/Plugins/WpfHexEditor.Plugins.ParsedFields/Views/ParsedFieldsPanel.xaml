@@ -21,6 +21,48 @@
         <!-- Collapses groups whose name matches the ConverterParameter (default: "Format Metadata") -->
         <local:GroupNameToExpandedConverter x:Key="GroupNameToExpandedConverter"/>
 
+        <!-- Override WPF inactive-selection system colors so ListBox and TreeView keep
+             the same selection highlight when the panel loses keyboard focus. -->
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
+                         Color="#2A2A32"/>
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
+                         Color="#FFFFFF"/>
+
+        <!-- Style for navigator bookmark buttons (section tabs like PE Header, COFF Header…) -->
+        <Style x:Key="PFP_NavBookmarkButtonStyle" TargetType="Button">
+            <Setter Property="Foreground"   Value="{DynamicResource PFP_TextBrush}"/>
+            <Setter Property="Background"   Value="{DynamicResource PFP_SectionBackgroundBrush}"/>
+            <Setter Property="BorderBrush"  Value="{DynamicResource PFP_BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"      Value="6,2"/>
+            <Setter Property="Cursor"       Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"  Value="{DynamicResource Panel_ItemHoverBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PFP_ItemSelectedBorderBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource PFP_AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Style for field items with improved colors -->
         <Style x:Key="FieldItemStyle" TargetType="ListBoxItem">
             <Setter Property="Padding" Value="10,6"/>
@@ -32,12 +74,12 @@
             <EventSetter Event="MouseDoubleClick" Handler="FieldItem_MouseDoubleClick"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource PFP_ItemSelectedBrush}"/>
-                    <Setter Property="Foreground" Value="{DynamicResource PFP_ItemSelectedForegroundBrush}"/>
+                    <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
                     <Setter Property="BorderBrush" Value="{DynamicResource PFP_ItemSelectedBorderBrush}"/>
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource PFP_ItemHoverBrush}"/>
+                    <Setter Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
                     <Setter Property="BorderBrush" Value="{DynamicResource PFP_BorderBrush}"/>
                 </Trigger>
                 <MultiTrigger>
@@ -45,7 +87,7 @@
                         <Condition Property="IsSelected" Value="True"/>
                         <Condition Property="IsMouseOver" Value="True"/>
                     </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="{DynamicResource PFP_ItemSelectedHoverBrush}"/>
+                    <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                 </MultiTrigger>
             </Style.Triggers>
         </Style>
@@ -89,6 +131,7 @@
                     <!-- Icon -->
                     <TextBlock Grid.Row="0" Grid.RowSpan="4" Grid.Column="1"
                                Text="{Binding FieldIcon}"
+                               FontFamily="Segoe MDL2 Assets"
                                FontSize="14"
                                Margin="0,0,6,0"
                                VerticalAlignment="Center"
@@ -152,16 +195,36 @@
 
                         <TextBlock Grid.Column="0"
                                    Text="Value: "
-                                   FontSize="11"
-                                   Foreground="{DynamicResource PFP_SubTextBrush}"/>
+                                   FontSize="11">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource PFP_SubTextBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
 
                         <TextBlock Grid.Column="1"
                                    Text="{Binding ActiveFormattedValue}"
                                    FontSize="11"
                                    FontFamily="Consolas"
-                                   Foreground="{DynamicResource PFP_ValueBrush}"
                                    TextWrapping="Wrap"
-                                   ToolTip="{Binding DetailedTooltip}"/>
+                                   ToolTip="{Binding DetailedTooltip}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource PFP_ValueBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
 
                         <!-- Display mode toggle H/D/B (C7) -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="4,0,0,0"
@@ -190,8 +253,17 @@
                     <!-- Field details -->
                     <TextBlock Grid.Row="2" Grid.Column="4"
                                Margin="0,2,0,0"
-                               FontSize="10"
-                               Foreground="{DynamicResource PFP_PlaceholderBrush}">
+                               FontSize="10">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{DynamicResource PFP_PlaceholderBrush}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
                         <Run Text="{Binding RangeDisplay, Mode=OneWay}"/>
                         <Run Text=" • "/>
                         <Run Text="{Binding ValueType, Mode=OneWay}"/>
@@ -559,6 +631,153 @@
                 <TextBlock FontSize="11" Foreground="{DynamicResource PFP_SubTextBrush}" TextWrapping="Wrap"
                            Text="{Binding FormatInfo.Description}"/>
 
+                <!-- Format Navigator bookmarks (C6) — shown when whfmt provides navigation.bookmarks -->
+                <ItemsControl Margin="0,6,0,0"
+                              ItemsSource="{Binding FormatInfo.Bookmarks}"
+                              Visibility="{Binding FormatInfo.HasBookmarks, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Margin="0,0,5,3"
+                                    Padding="6,2"
+                                    Tag="{Binding}"
+                                    Click="NavigatorBookmark_Click"
+                                    ToolTip="{Binding Description}"
+                                    Style="{DynamicResource PFP_NavBookmarkButtonStyle}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding Icon}" FontSize="11" Margin="0,0,4,0"
+                                               Visibility="{Binding Icon, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    <TextBlock Text="{Binding Name}" FontSize="10"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- D3 — Forensic Alerts: failed assertions from whfmt assertions[] -->
+                <Border Margin="0,6,0,0"
+                        CornerRadius="4"
+                        Background="{DynamicResource WF_ForensicAlertBrush}"
+                        Padding="8,6"
+                        Visibility="{Binding FormatInfo.HasForensicAlerts, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="&#xE7BA;  Forensic Alerts"
+                                   FontSize="10" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource WF_AssertionErrorBrush}"
+                                   Margin="0,0,0,4"/>
+                        <ItemsControl ItemsSource="{Binding FormatInfo.ForensicAlerts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,1">
+                                        <TextBlock DockPanel.Dock="Left"
+                                                   Width="50"
+                                                   FontSize="10" FontWeight="SemiBold"
+                                                   Text="{Binding Severity}"
+                                                   Foreground="{DynamicResource WF_AssertionErrorBrush}"/>
+                                        <TextBlock FontSize="10" TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource PFP_SubTextBrush}"
+                                                   Text="{Binding Message}"/>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- D4 — Inspector: grouped field accordion from whfmt inspector.groups -->
+                <StackPanel Margin="0,6,0,0"
+                            Visibility="{Binding FormatInfo.HasInspectorGroups, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <!-- Inspector badge -->
+                    <Border CornerRadius="4" Padding="6,2" Margin="0,0,0,4"
+                            Background="{DynamicResource DockAccentBrush}"
+                            HorizontalAlignment="Left"
+                            Visibility="{Binding FormatInfo.HasInspectorBadge, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding FormatInfo.InspectorBadge}"
+                                   FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                    </Border>
+                    <!-- Groups -->
+                    <ItemsControl ItemsSource="{Binding FormatInfo.InspectorGroups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,3"
+                                        CornerRadius="3"
+                                        BorderThickness="1"
+                                        BorderBrush="{DynamicResource PFP_BorderBrush}">
+                                    <StackPanel>
+                                        <!-- Group header (click to expand/collapse) -->
+                                        <Border Padding="6,3" Background="{DynamicResource WF_InspectorGroupHeaderBrush}"
+                                                CornerRadius="3,3,0,0"
+                                                Cursor="Hand">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Icon}" FontSize="11" Margin="0,0,4,0"
+                                                           Visibility="{Binding Icon, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                <TextBlock Text="{Binding Title}" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <!-- Fields (shown when expanded) -->
+                                        <ItemsControl ItemsSource="{Binding Fields}"
+                                                      Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="8,2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="{Binding Name}"
+                                                                   FontSize="10" Opacity="0.7"
+                                                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding DisplayValue}"
+                                                                   FontSize="10" FontFamily="Consolas"
+                                                                   HorizontalAlignment="Right"
+                                                                   Foreground="{DynamicResource PFP_AccentBrush}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- D5 — Export templates from whfmt exportTemplates -->
+                <StackPanel Margin="0,6,0,0"
+                            Visibility="{Binding FormatInfo.HasExportTemplates, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="&#xE78C;  Export As"
+                               FontSize="10" FontWeight="SemiBold" Margin="0,0,0,4"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.7"/>
+                    <ItemsControl ItemsSource="{Binding FormatInfo.ExportTemplates}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Margin="0,0,5,3"
+                                        Padding="6,2"
+                                        Tag="{Binding}"
+                                        Click="ExportTemplate_Click"
+                                        ToolTip="{Binding Format}"
+                                        Style="{DynamicResource {x:Static ToolBar.ButtonStyleKey}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Icon}" FontSize="11" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding Name}" FontSize="10"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
             </StackPanel>
         </Border>
 
@@ -634,7 +853,8 @@
             </Grid>
         </Border>
 
-        <!-- Fields list — metadata, enriched, and parsed fields as collapsible groups -->
+        <!-- Hidden backing ListBox — keeps FilteredFields in sync so existing context-menu
+             click handlers (FieldsListBox.SelectedItem) continue to work unchanged. (C1) -->
         <ListBox x:Name="FieldsListBox"
                  Grid.Row="5"
                  ItemsSource="{Binding FilteredFields}"
@@ -642,6 +862,7 @@
                  ItemContainerStyle="{StaticResource FieldItemStyle}"
                  SelectionChanged="FieldsListBox_SelectionChanged"
                  KeyDown="FieldsListBox_KeyDown"
+                 Visibility="Collapsed"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  Background="{DynamicResource PFP_PanelBackgroundBrush}"
                  BorderThickness="0"
@@ -649,7 +870,7 @@
                  VirtualizingPanel.VirtualizationMode="Recycling"
                  VirtualizingPanel.CacheLength="20,20"
                  VirtualizingPanel.CacheLengthUnit="Item">
-            <!-- Group Style for collapsible section headers (C3) -->
+            <!-- Group Style preserved for backward compat (panel hidden) -->
             <ListBox.GroupStyle>
                 <GroupStyle>
                     <GroupStyle.ContainerStyle>
@@ -815,6 +1036,201 @@
                 </Style>
             </ListBox.Style>
         </ListBox>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             TreeView — hierarchical structure view (C1)
+             Group nodes (IsGroup=true) show expandable sections with child count.
+             Leaf nodes reuse the existing FieldTemplate via ContentPresenter.
+             The hidden ListBox above stays in sync for context-menu handler compat.
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <TreeView x:Name="FieldsTreeView"
+                  Grid.Row="5"
+                  ItemsSource="{Binding TreeRootItems}"
+                  SelectedItemChanged="FieldsTreeView_SelectedItemChanged"
+                  KeyDown="FieldsTreeView_KeyDown"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  Background="{DynamicResource PFP_PanelBackgroundBrush}"
+                  BorderThickness="0"
+                  VirtualizingPanel.IsVirtualizing="True"
+                  VirtualizingPanel.VirtualizationMode="Recycling">
+
+            <!-- ── Container style: expand/collapse + selection/hover colors ── -->
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="TreeViewItem">
+                    <Setter Property="IsExpanded"  Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                    <Setter Property="IsSelected"  Value="{Binding IsSelected, Mode=TwoWay}"/>
+                    <Setter Property="Padding"     Value="0"/>
+                    <Setter Property="Margin"      Value="0,1,0,0"/>
+                    <Setter Property="Background"  Value="Transparent"/>
+                    <Setter Property="Foreground"  Value="{DynamicResource PFP_TextBrush}"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <EventSetter Event="MouseDoubleClick" Handler="FieldItem_MouseDoubleClick"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="False"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
+                        </MultiTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TreeView.ItemContainerStyle>
+
+            <!-- ── HierarchicalDataTemplate: group header OR field leaf ── -->
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate ItemsSource="{Binding ChildItems}">
+                    <Grid>
+                        <!-- ── Group node (IsGroup=true) ────────────────────── -->
+                        <Border Padding="6,5"
+                                Visibility="{Binding IsGroup, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Color strip -->
+                                <Border Width="4" Margin="0,0,8,0"
+                                        Background="{Binding Color}"
+                                        CornerRadius="2"
+                                        VerticalAlignment="Stretch"/>
+                                <!-- Icon -->
+                                <TextBlock Text="{Binding FieldIcon}"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="13"
+                                           Margin="0,0,5,0"
+                                           VerticalAlignment="Center"/>
+                                <!-- Group name + entry count -->
+                                <TextBlock Text="{Binding Name}"
+                                           FontWeight="SemiBold"
+                                           FontSize="12"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource PFP_AccentBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <Border CornerRadius="8"
+                                        Background="{DynamicResource PFP_GroupBadgeBackgroundBrush}"
+                                        Padding="6,1"
+                                        Margin="6,0,0,0"
+                                        VerticalAlignment="Center">
+                                    <TextBlock FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PFP_TextBrush}">
+                                        <Run Text="{Binding ChildItems.Count, Mode=OneWay, FallbackValue=0}"/>
+                                        <Run Text="entries"/>
+                                    </TextBlock>
+                                </Border>
+                                <!-- Validation badge for group (shows if any child has errors) -->
+                                <TextBlock Text="&#x26A0;"
+                                           FontSize="11"
+                                           Margin="6,0,0,0"
+                                           Foreground="{DynamicResource WF_AssertionWarningBrush}"
+                                           VerticalAlignment="Center"
+                                           ToolTip="This group contains fields with validation errors"
+                                           Visibility="{Binding IsValid, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Field leaf (IsGroup=false): reuses FieldTemplate ── -->
+                        <ContentPresenter
+                            ContentTemplate="{StaticResource FieldTemplate}"
+                            Content="{Binding}"
+                            Visibility="{Binding IsGroup, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    </Grid>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+
+            <!-- ── Context menu (mirrors ListBox context menu for tree items) ── -->
+            <TreeView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Edit Value..." Click="EditValue_Click">
+                        <MenuItem.Icon><TextBlock Text="&#x270F;" FontSize="14"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Toggle Bookmark" Click="ToggleBookmark_Click">
+                        <MenuItem.Icon><TextBlock Text="&#x2B50;" FontSize="14"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Copy Offset" Click="CopyOffset_Click">
+                        <MenuItem.Icon><TextBlock Text="&#x1F4CC;" FontSize="14"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Jump to Offset..." Click="JumpToOffset_Click">
+                        <MenuItem.Icon><TextBlock Text="&#x1F50D;" FontSize="14"/></MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Copy Value">
+                        <MenuItem.Icon><TextBlock Text="&#x1F4CB;" FontSize="14"/></MenuItem.Icon>
+                        <MenuItem Header="As Displayed"  Click="CopyValue_Click"/>
+                        <MenuItem Header="As Hex"        Click="CopyValueHex_Click"/>
+                        <MenuItem Header="As Decimal"    Click="CopyValueDecimal_Click"/>
+                        <MenuItem Header="As Binary"     Click="CopyValueBinary_Click"/>
+                        <MenuItem Header="As C# bytes"   Click="CopyValueCSharpBytes_Click"/>
+                        <MenuItem Header="As Python bytes" Click="CopyValuePythonBytes_Click"/>
+                    </MenuItem>
+                    <MenuItem Header="Copy Details" Click="CopyDetails_Click">
+                        <MenuItem.Icon><TextBlock Text="&#x1F4C4;" FontSize="14"/></MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Find Similar Values..." Click="FindSimilar_Click">
+                        <MenuItem.Icon><TextBlock Text="&#x1F50D;" FontSize="14"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Show in Data Inspector" Click="ShowInDataInspector_Click">
+                        <MenuItem.Icon><TextBlock Text="&#x1F52C;" FontSize="14"/></MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Expand All Groups"   Click="ExpandAllGroups_Click"/>
+                    <MenuItem Header="Collapse All Groups" Click="CollapseAllGroups_Click"/>
+                    <Separator/>
+                    <MenuItem Header="Export All Fields...">
+                        <MenuItem.Icon><TextBlock Text="&#x1F4BE;" FontSize="14"/></MenuItem.Icon>
+                        <MenuItem Header="As Text"     Click="ExportAsText_Click"/>
+                        <MenuItem Header="As JSON"     Click="ExportAsJson_Click"/>
+                        <MenuItem Header="As CSV"      Click="ExportAsCsv_Click"/>
+                        <MenuItem Header="As XML"      Click="ExportAsXml_Click"/>
+                        <MenuItem Header="As HTML"     Click="ExportAsHtml_Click"/>
+                        <MenuItem Header="As Markdown" Click="ExportAsMarkdown_Click"/>
+                    </MenuItem>
+                </ContextMenu>
+            </TreeView.ContextMenu>
+
+            <!-- Empty-state template -->
+            <TreeView.Style>
+                <Style TargetType="TreeView">
+                    <Style.Triggers>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="TreeView">
+                                        <Border Background="{DynamicResource PFP_PanelBackgroundBrush}">
+                                            <TextBlock Text="No fields parsed yet.&#x0a;Open a file to see its structure."
+                                                       HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center"
+                                                       TextAlignment="Center"
+                                                       Foreground="{DynamicResource PFP_PlaceholderBrush}"
+                                                       FontSize="12"
+                                                       Margin="20"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </TreeView.Style>
+        </TreeView>
 
         <!-- Status bar -->
         <Border Grid.Row="6"

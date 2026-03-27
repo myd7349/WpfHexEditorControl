@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Monkey's Audio
    Category:  Audio
    Ext:       .ape
@@ -133,5 +133,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Monkey's Audio lossless compression",
+    "suggestedInspections": [
+      "Validate Monkey's Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
   }
 }

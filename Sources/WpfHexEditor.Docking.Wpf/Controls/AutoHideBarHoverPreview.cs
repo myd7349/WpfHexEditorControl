@@ -153,9 +153,13 @@ public sealed class AutoHideBarHoverPreview
 
     private void WireButtons()
     {
-        foreach (UIElement child in _owner.Children)
+        foreach (UIElement child in _owner.ItemChildren)
         {
-            if (child is not Button btn) continue;
+            // Buttons are wrapped in a Grid (indicator + button); find the Button inside.
+            var btn = child is Grid wrapper
+                ? wrapper.Children.OfType<Button>().FirstOrDefault()
+                : child as Button;
+            if (btn is null) continue;
 
             DockItem? item = btn.Tag switch
             {

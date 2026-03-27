@@ -3385,9 +3385,19 @@ namespace WpfHexEditor.HexEditor.Controls
                 if (block != null && !string.IsNullOrWhiteSpace(block.Description))
                 {
                     sb.AppendLine();
-                    sb.AppendLine($"📋 Field: {block.Description}");
-                    sb.AppendLine($"Range: 0x{block.StartOffset:X8} - 0x{block.StopOffset:X8}");
-                    sb.AppendLine($"Length: {block.Length} byte(s)");
+                    sb.AppendLine($"───────────────────────────────────");
+                    sb.AppendLine($"📋 {block.Description}");
+                    sb.AppendLine($"Offset: 0x{block.StartOffset:X8}   Length: {block.Length} byte{(block.Length != 1 ? "s" : "")}");
+
+                    // Rich field info from whfmt parser (E1)
+                    if (!string.IsNullOrWhiteSpace(block.FieldValueType))
+                        sb.AppendLine($"Type:   {block.FieldValueType}");
+
+                    if (!string.IsNullOrWhiteSpace(block.FieldRawHex))
+                        sb.AppendLine($"Raw:    {block.FieldRawHex}");
+
+                    if (!string.IsNullOrWhiteSpace(block.FieldDisplayValue))
+                        sb.AppendLine($"Value:  {block.FieldDisplayValue}");
                 }
             }
 

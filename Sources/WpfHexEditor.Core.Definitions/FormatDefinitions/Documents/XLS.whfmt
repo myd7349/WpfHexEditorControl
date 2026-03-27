@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Excel Workbook (Legacy)
    Category:  Documents
    Ext:       .xls
@@ -121,5 +121,18 @@
   },
   "functions": {
     "readUInt32LE": "Read executable header"
+  },
+  "forensic": {
+    "category": "document",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Microsoft Excel 97-2003 workbook (OLE2)",
+    "suggestedInspections": [
+      "Validate Excel Workbook (Legacy) file signature and container structure",
+      "Check for embedded macros, scripts, or active content",
+      "Inspect document metadata: author, timestamps, revisions"
+    ]
   }
 }

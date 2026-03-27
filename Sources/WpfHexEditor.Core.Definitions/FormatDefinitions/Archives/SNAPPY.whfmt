@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Snappy Compression
    Category:  Archives
    Ext:       .snappy, .sz
@@ -133,5 +133,18 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Snappy compressed stream format developed by Google, optimized for speed rather than compression ratio",
+    "suggestedInspections": [
+      "Verify Snappy Compression file header, compression method, and stored CRCs",
+      "Check central directory or entry table for consistency",
+      "Inspect individual entry sizes for truncation or overflow"
+    ]
   }
 }

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Windows Media Audio
    Category:  Audio
    Ext:       .wma
@@ -112,5 +112,18 @@
   "TechnicalDetails": {
     "AudioFormat": true,
     "Platform": "Windows"
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Microsoft Windows Media Audio lossy audio codec",
+    "suggestedInspections": [
+      "Validate Windows Media Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
   }
 }

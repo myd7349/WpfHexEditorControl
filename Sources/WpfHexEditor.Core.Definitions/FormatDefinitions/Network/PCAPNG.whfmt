@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    PCAPNG Network Capture
    Category:  Network
    Ext:       .pcapng
@@ -140,6 +140,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "network",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "PCAP Next Generation - Enhanced packet capture format",
+    "suggestedInspections": [
+      "Validate PCAPNG Network Capture file header: magic, version, link-layer type",
+      "Check packet record timestamps and capture lengths",
+      "Inspect captured protocol headers (Ethernet/IP/TCP/UDP)"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Section Header Block",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

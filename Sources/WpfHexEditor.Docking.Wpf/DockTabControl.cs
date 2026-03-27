@@ -13,6 +13,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using WpfHexEditor.Docking.Core.Nodes;
 using WpfHexEditor.Shell.Automation;
 
@@ -63,9 +64,15 @@ public class DockTabControl : TabControl
     public event Action<DockItem>? TabAutoHideRequested;
     public event Action<DockItem>? TabHideRequested;
     public event Action<DockItem>? TabDockAsDocumentRequested;
+    public event Action<DockItem>? TabRestoreToToolPanelRequested;
     public event Action<DockItem>? TabPinToggleRequested;
     public event Action<DockItem>? TabStickyToggleRequested;
     public event Action<DockItem, int>? TabReorderRequested;
+    public event Action<DockItem>? TabNewVerticalGroupRequested;
+    public event Action<DockItem>? TabNewHorizontalGroupRequested;
+    public event Action<DockItem>? TabMoveToNextGroupRequested;
+    public event Action<DockItem>? TabMoveToPreviousGroupRequested;
+    public event Action<DockItem>? TabCloseGroupRequested;
 
     /// <summary>
     /// Optional factory that injects extra <see cref="MenuItem"/> entries at the bottom of
@@ -74,6 +81,12 @@ public class DockTabControl : TabControl
     /// to application logic.
     /// </summary>
     public Func<DockItem, IReadOnlyList<MenuItem>>? ExtraMenuItemsFactory { get; set; }
+
+    /// <summary>
+    /// Callback used by tab headers to determine whether multiple document hosts exist.
+    /// Set by <see cref="DockControl"/> when creating tab controls.
+    /// </summary>
+    public Func<bool>? HasMultipleDocumentHostsCheck { get; set; }
 
     private Func<DockItem, object>? _contentFactory;
     private int  _dragOriginalModelIndex = -1;
@@ -87,10 +100,20 @@ public class DockTabControl : TabControl
         _contentFactory = contentFactory;
         Items.Clear();
 
+        bool seenPinned = false;
+        bool separatorPlaced = false;
         foreach (var item in node.Items)
         {
             var isActive = item == node.ActiveItem;
             var tabItem = CreateTabItem(item, contentFactory, isActive);
+            // Pin separator: add left margin on first unpinned tab after pinned tabs
+            if (item.IsPinned)
+                seenPinned = true;
+            else if (seenPinned && !separatorPlaced)
+            {
+                tabItem.Margin = new Thickness(6, 0, 0, 0);
+                separatorPlaced = true;
+            }
             Items.Add(tabItem);
         }
 
@@ -141,7 +164,21 @@ public class DockTabControl : TabControl
             foreach (var added in e.AddedItems)
             {
                 if (added is TabItem { Tag: DockItem item } tab && tab.Content is LazyContentPlaceholder)
-                    tab.Content = _contentFactory.Invoke(item);
+                {
+                    if (item.Metadata.ContainsKey("_pluginPanel"))
+                    {
+                        tab.Content = new PluginLoadingPlaceholder();
+                        var factory = _contentFactory;
+                        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+                        {
+                            tab.Content = factory.Invoke(item);
+                        });
+                    }
+                    else
+                    {
+                        tab.Content = _contentFactory.Invoke(item);
+                    }
+                }
             }
         }
 
@@ -165,25 +202,58 @@ public class DockTabControl : TabControl
         header.FloatRequested           += () => TabFloatRequested?.Invoke(item);
         header.AutoHideRequested        += () => TabAutoHideRequested?.Invoke(item);
         header.HideRequested            += () => TabHideRequested?.Invoke(item);
-        header.DockAsDocumentRequested  += () => TabDockAsDocumentRequested?.Invoke(item);
-        header.CloseAllRequested        += () => CloseAllItems();
+        header.DockAsDocumentRequested      += () => TabDockAsDocumentRequested?.Invoke(item);
+        header.RestoreToToolPanelRequested  += () => TabRestoreToToolPanelRequested?.Invoke(item);
+        header.CloseAllRequested            += () => CloseAllItems();
         header.CloseAllButThisRequested += () => CloseAllButItem(item);
         header.PinToggleRequested       += () => TabPinToggleRequested?.Invoke(item);
         header.StickyToggleRequested    += () => TabStickyToggleRequested?.Invoke(item);
         header.CloseAllButPinnedRequested += () => CloseAllButPinnedItems();
+        header.NewVerticalGroupRequested  += () => TabNewVerticalGroupRequested?.Invoke(item);
+        header.NewHorizontalGroupRequested += () => TabNewHorizontalGroupRequested?.Invoke(item);
+        header.MoveToNextGroupRequested   += () => TabMoveToNextGroupRequested?.Invoke(item);
+        header.MoveToPreviousGroupRequested += () => TabMoveToPreviousGroupRequested?.Invoke(item);
+        header.CloseGroupRequested        += () => TabCloseGroupRequested?.Invoke(item);
+        header.HasMultipleDocumentHostsCheck = HasMultipleDocumentHostsCheck;
         header.ReorderDragging          += pos => OnHeaderReorderDragging(item, pos);
         header.ReorderDropped           += pos => OnHeaderReorderDropped(item, pos);
         header.ReorderCancelled         += () => OnHeaderReorderCancelled(item);
+
+        object tabContent;
+        bool deferPluginContent = false;
+        if (contentFactory is null)
+        {
+            tabContent = DefaultContent(item);
+        }
+        else if (isActive && item.Metadata.ContainsKey("_pluginPanel"))
+        {
+            tabContent = new PluginLoadingPlaceholder();
+            deferPluginContent = true;
+        }
+        else if (isActive)
+        {
+            tabContent = contentFactory.Invoke(item);
+        }
+        else
+        {
+            tabContent = new LazyContentPlaceholder(item);
+        }
 
         var tabItem = new TabItem
         {
             Header = header,
             Tag = item,
-            Content = isActive || contentFactory is null
-                ? (contentFactory?.Invoke(item) ?? DefaultContent(item))
-                : new LazyContentPlaceholder(item)
+            Content = tabContent
         };
         tabItem.SetResourceReference(StyleProperty, "DockTabItemStyle");
+
+        if (deferPluginContent)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+            {
+                tabItem.Content = contentFactory!.Invoke(item);
+            });
+        }
 
         return tabItem;
     }
@@ -367,6 +437,58 @@ public class DockTabControl : TabControl
     };
 
     /// <summary>
+    /// Standalone placeholder shown while a plugin panel is being created.
+    /// Displays a blue "+" icon, "Loading…" text, and an indeterminate progress bar
+    /// on a dark scrim. Gets replaced directly via <c>tab.Content = realContent</c>.
+    /// </summary>
+    private sealed class PluginLoadingPlaceholder : Border
+    {
+        public PluginLoadingPlaceholder()
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0xCC, 0x1E, 0x1E, 0x1E));
+
+            var icon = new TextBlock
+            {
+                Text = "\uE710",
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 28,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0xA5, 0xFA)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var label = new TextBlock
+            {
+                Text = "Loading\u2026",
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = Brushes.White,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var progress = new ProgressBar
+            {
+                IsIndeterminate = true,
+                Width = 140,
+                Height = 4,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0xA5, 0xFA))
+            };
+
+            var stack = new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            stack.Children.Add(icon);
+            stack.Children.Add(label);
+            stack.Children.Add(progress);
+
+            Child = stack;
+        }
+    }
+
+    /// <summary>
     /// Lightweight placeholder shown for non-active tabs until they are first selected.
     /// </summary>
     private sealed class LazyContentPlaceholder : TextBlock
@@ -461,17 +583,31 @@ public class DockTabHeader : StackPanel
     public event Action? AutoHideRequested;
     public event Action? HideRequested;
     public event Action? DockAsDocumentRequested;
+    public event Action? RestoreToToolPanelRequested;
     public event Action? CloseAllRequested;
     public event Action? CloseAllButThisRequested;
     public event Action? PinToggleRequested;
     public event Action? StickyToggleRequested;
     public event Action? CloseAllButPinnedRequested;
+    public event Action? NewVerticalGroupRequested;
+    public event Action? NewHorizontalGroupRequested;
+    public event Action? MoveToNextGroupRequested;
+    public event Action? MoveToPreviousGroupRequested;
+    public event Action? CloseGroupRequested;
 
     /// <summary>
     /// Set by <see cref="DockTabControl.CreateTabItem"/> so the context menu can include
     /// application-injected items (e.g. "Compare with…").
     /// </summary>
     public Func<DockItem, IReadOnlyList<MenuItem>>? ExtraMenuItemsFactory { get; set; }
+
+    /// <summary>
+    /// Callback to check whether multiple document hosts exist.
+    /// Set by the owning <see cref="DockTabControl"/>.
+    /// </summary>
+    public Func<bool>? HasMultipleDocumentHostsCheck { get; set; }
+
+    private bool _hasMultipleDocumentHosts;
 
     public DockTabHeader(DockItem item)
     {
@@ -496,7 +632,7 @@ public class DockTabHeader : StackPanel
 
         _titleBlock = new TextBlock
         {
-            Text             = item.Title,
+            Text             = item.IsDirty ? item.Title + " \u2022" : item.Title,
             VerticalAlignment = VerticalAlignment.Center,
             Margin           = new Thickness(0, 0, 4, 0),
             TextTrimming     = TextTrimming.CharacterEllipsis
@@ -513,11 +649,12 @@ public class DockTabHeader : StackPanel
             });
         Children.Add(_titleBlock);
 
-        // React to title changes (e.g. "file *" dirty flag)
+        // React to title / dirty changes
         item.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(DockItem.Title) && _titleBlock is not null)
-                _titleBlock.Text = item.Title;
+            if (_titleBlock is null) return;
+            if (e.PropertyName is nameof(DockItem.Title) or nameof(DockItem.IsDirty))
+                _titleBlock.Text = item.IsDirty ? item.Title + " \u2022" : item.Title;
         };
 
         // Pin button (auto-hide toggle) — only for tool panels, not documents
@@ -582,7 +719,12 @@ public class DockTabHeader : StackPanel
             Children.Add(_closeButton);
         }
 
-        // Context menu
+        // Context menu — rebuilt on each right-click so multi-host state is fresh
+        ContextMenuOpening += (_, _) =>
+        {
+            _hasMultipleDocumentHosts = HasMultipleDocumentHostsCheck?.Invoke() ?? false;
+            ContextMenu = BuildContextMenu(_item);
+        };
         ContextMenu = BuildContextMenu(item);
 
         MouseLeftButtonDown += OnMouseLeftButtonDown;
@@ -704,6 +846,59 @@ public class DockTabHeader : StackPanel
             menu.Items.Add(new Separator());
         }
 
+        // Document tab group operations (VS2022 "New Vertical/Horizontal Tab Group")
+        if (item.Owner is DocumentHostNode)
+        {
+            var newVertGroup = new MenuItem
+            {
+                Header = "New Vertical Tab Group",
+                Icon   = MakeMenuIcon("\uE746") // SplitVertical
+            };
+            newVertGroup.Click += (_, _) => NewVerticalGroupRequested?.Invoke();
+            menu.Items.Add(newVertGroup);
+
+            var newHorizGroup = new MenuItem
+            {
+                Header = "New Horizontal Tab Group",
+                Icon   = MakeMenuIcon("\uE748") // SplitHorizontal
+            };
+            newHorizGroup.Click += (_, _) => NewHorizontalGroupRequested?.Invoke();
+            menu.Items.Add(newHorizGroup);
+
+            // Move to Next/Previous only when multiple document hosts exist
+            var moveNextGroup = new MenuItem
+            {
+                Header    = "Move to Next Tab Group",
+                Icon      = MakeMenuIcon("\uE72A"), // Forward
+                IsEnabled = _hasMultipleDocumentHosts
+            };
+            moveNextGroup.Click += (_, _) => MoveToNextGroupRequested?.Invoke();
+            menu.Items.Add(moveNextGroup);
+
+            var movePrevGroup = new MenuItem
+            {
+                Header    = "Move to Previous Tab Group",
+                Icon      = MakeMenuIcon("\uE72B"), // Back
+                IsEnabled = _hasMultipleDocumentHosts
+            };
+            movePrevGroup.Click += (_, _) => MoveToPreviousGroupRequested?.Invoke();
+            menu.Items.Add(movePrevGroup);
+
+            // Close tab group (only for non-main document hosts)
+            if (_hasMultipleDocumentHosts)
+            {
+                var closeGroupItem = new MenuItem
+                {
+                    Header = "Close Tab Group",
+                    Icon   = MakeMenuIcon("\uE8BB") // ChromeClose
+                };
+                closeGroupItem.Click += (_, _) => CloseGroupRequested?.Invoke();
+                menu.Items.Add(closeGroupItem);
+            }
+
+            menu.Items.Add(new Separator());
+        }
+
         if (item.CanFloat)
         {
             var floatItem = new MenuItem
@@ -732,6 +927,16 @@ public class DockTabHeader : StackPanel
             };
             dockAsDocItem.Click += (_, _) => DockAsDocumentRequested?.Invoke();
             menu.Items.Add(dockAsDocItem);
+        }
+        else if (item.Metadata.TryGetValue("_promotedPanel", out _))
+        {
+            var restoreItem = new MenuItem
+            {
+                Header = "Dock as Tool Window",
+                Icon   = MakeMenuIcon("\uE8A0")  // DockLeft
+            };
+            restoreItem.Click += (_, _) => RestoreToToolPanelRequested?.Invoke();
+            menu.Items.Add(restoreItem);
         }
 
         var hideItem = new MenuItem

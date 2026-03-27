@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Protocol Buffers
    Category:  Data
    Ext:       .pb, .protobuf
@@ -98,6 +98,19 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "data",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Google Protocol Buffers binary serialization format",
+    "suggestedInspections": [
+      "Validate Protocol Buffers schema header and encoding markers",
+      "Check nested structure depth and field type tags",
+      "Inspect string encodings and numeric value boundaries"
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

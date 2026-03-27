@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    AVI Video
    Category:  Video
    Ext:       .avi
@@ -454,5 +454,18 @@
     "MaxFileSize": "~2 GB (AVI 1.0), ~256 GB (OpenDML AVI 2.0)",
     "SupportsInterleaving": true,
     "SupportsIndex": true
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Audio Video Interleave (AVI) is a RIFF-based multimedia container format developed by Microsoft. The file st...",
+    "suggestedInspections": [
+      "Validate AVI Video container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

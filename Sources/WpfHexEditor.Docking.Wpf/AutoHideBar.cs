@@ -32,10 +32,19 @@ namespace WpfHexEditor.Shell;
 
 /// <summary>
 /// A bar on the edge of the dock area that shows buttons for auto-hidden panels.
+/// Uses a Border wrapper for a 1px content-facing separator (VS2022 style).
 /// </summary>
-public class AutoHideBar : StackPanel
+public class AutoHideBar : Border
 {
+    private readonly StackPanel _itemsPanel;
+
     public Dock Position { get; }
+
+    /// <summary>
+    /// Exposes the items panel children for external iteration
+    /// (e.g., <see cref="Controls.AutoHideBarHoverPreview"/>).
+    /// </summary>
+    public UIElementCollection ItemChildren => _itemsPanel.Children;
 
     /// <summary>
     /// Raised when a panel button (or group button) is clicked to show/toggle its flyout.
@@ -59,13 +68,37 @@ public class AutoHideBar : StackPanel
     /// </summary>
     public event Action? ItemsUpdated;
 
+    /// <summary>
+    /// Holds references to the indicator border and label text block for each tab button.
+    /// </summary>
+    private sealed record AutoHideTabVisuals(Border Indicator, TextBlock Label);
+
+    /// <summary>Tracks which wrapper is currently the active (flyout-open) tab, if any.</summary>
+    private Grid? _activeWrapper;
+
     public AutoHideBar(Dock position)
     {
         Position = position;
-        Orientation = position is Dock.Top or Dock.Bottom
-            ? Orientation.Horizontal
-            : Orientation.Vertical;
+        _itemsPanel = new StackPanel
+        {
+            Orientation = position is Dock.Top or Dock.Bottom
+                ? Orientation.Horizontal
+                : Orientation.Vertical
+        };
+        Child = _itemsPanel;
+
         SetResourceReference(BackgroundProperty, "DockMenuBackgroundBrush");
+        SetResourceReference(BorderBrushProperty, "DockBorderBrush");
+
+        // 1px separator on the outer edge (same side as dock position)
+        BorderThickness = position switch
+        {
+            Dock.Left   => new Thickness(1, 0, 0, 0),
+            Dock.Right  => new Thickness(0, 0, 1, 0),
+            Dock.Top    => new Thickness(0, 1, 0, 0),
+            Dock.Bottom => new Thickness(0, 0, 0, 1),
+            _           => new Thickness(0)
+        };
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() =>
@@ -73,42 +106,37 @@ public class AutoHideBar : StackPanel
 
     /// <summary>
     /// Updates the bar with the given auto-hide items.
-    /// Items that share an <see cref="DockItem.AutoHideGroupId"/> are merged into a single button.
+    /// Each item gets its own independent button (VS-like behavior), even when
+    /// items share an <see cref="DockItem.AutoHideGroupId"/> for virtual group restore.
     /// </summary>
     public void UpdateItems(IEnumerable<DockItem> items)
     {
-        Children.Clear();
+        _itemsPanel.Children.Clear();
+        bool isVertical = Position is Dock.Left or Dock.Right;
 
-        // Group by AutoHideGroupId; items without an ID each form their own single-item group.
-        var groups = items
-            .GroupBy(i => (object?)i.AutoHideGroupId ?? (object)i)
-            .Select(g => g.ToList())
-            .ToList();
-
-        foreach (var groupItems in groups)
+        foreach (var item in items)
         {
-            var label = groupItems.Count == 1
-                ? groupItems[0].Title
-                : string.Join(" \u00b7 ", groupItems.Select(i => i.Title));  // U+00B7 = middle dot
+            var textBlock = new TextBlock
+            {
+                Text = item.Title,
+                LayoutTransform = isVertical
+                    ? new RotateTransform(Position == Dock.Left ? -90 : 90)
+                    : Transform.Identity
+            };
+            textBlock.SetResourceReference(TextBlock.ForegroundProperty, "DockTabTextBrush");
 
             var button = new Button
             {
-                Content = new TextBlock
-                {
-                    Text = label,
-                    LayoutTransform = Position is Dock.Left or Dock.Right
-                        ? new RotateTransform(Position == Dock.Left ? -90 : 90)
-                        : Transform.Identity
-                },
-                Padding = new Thickness(6, 4, 6, 4),
-                Margin  = new Thickness(1),
-                Tag     = groupItems
+                Content = textBlock,
+                Padding = new Thickness(8, 6, 8, 6),
+                Margin  = new Thickness(0),
+                Tag     = new List<DockItem> { item }
             };
 
             // Apply themed style so IsMouseOver uses DockTabHoverBrush instead of default WPF chrome.
             button.SetResourceReference(FrameworkElement.StyleProperty, "DockTitleButtonStyle");
-            AutomationProperties.SetName(button, $"Show {label}");
-            var captured = (IReadOnlyList<DockItem>)groupItems;
+            AutomationProperties.SetName(button, $"Show {item.Title}");
+            var captured = (IReadOnlyList<DockItem>)new List<DockItem> { item };
             button.Click += (_, _) => GroupClicked?.Invoke(captured);
 
             // VS-like right-click context menu: Show / Float / — / Close
@@ -139,26 +167,94 @@ public class AutoHideBar : StackPanel
                 mi.SetResourceReference(MenuItem.ForegroundProperty, "DockMenuForegroundBrush");
             button.ContextMenu = ctxMenu;
 
-            Children.Add(button);
+            // VS2022 accent indicator strip (3px) on the content-facing edge,
+            // placed OUTSIDE the button so it isn't affected by text rotation.
+            // Always visible — active tab gets brighter accent color via SetActiveGroup.
+            var indicator = new Border { Opacity = 0 };
+            indicator.SetResourceReference(Border.BackgroundProperty, "DockAutoHideIndicatorBrush");
+
+            var wrapper = new Grid();
+
+            if (isVertical)
+            {
+                // Vertical bar: indicator is a 3px-wide strip on the outer edge
+                indicator.Width = 3;
+                indicator.HorizontalAlignment = Position == Dock.Left
+                    ? HorizontalAlignment.Left
+                    : HorizontalAlignment.Right;
+                indicator.VerticalAlignment = VerticalAlignment.Stretch;
+                indicator.Margin = new Thickness(0, 2, 0, 2);
+            }
+            else
+            {
+                // Horizontal bar: indicator is a 3px-tall strip on the outer edge
+                indicator.Height = 3;
+                indicator.VerticalAlignment = Position == Dock.Top
+                    ? VerticalAlignment.Top
+                    : VerticalAlignment.Bottom;
+                indicator.HorizontalAlignment = HorizontalAlignment.Stretch;
+                indicator.Margin = new Thickness(2, 0, 2, 0);
+            }
+
+            wrapper.Children.Add(button);
+            wrapper.Children.Add(indicator);
+            wrapper.Tag = new AutoHideTabVisuals(indicator, textBlock);
+
+            // Hover: brighten indicator + text on mouse over (unless already active)
+            wrapper.MouseEnter += (s, _) =>
+            {
+                if (s is not Grid w || w == _activeWrapper) return;
+                if (w.Tag is not AutoHideTabVisuals v) return;
+                v.Indicator.Opacity = 1.0;
+                v.Label.SetResourceReference(TextBlock.ForegroundProperty, "DockTabActiveTextBrush");
+            };
+            wrapper.MouseLeave += (s, _) =>
+            {
+                if (s is not Grid w || w == _activeWrapper) return;
+                if (w.Tag is not AutoHideTabVisuals v) return;
+                v.Indicator.Opacity = 0;
+                v.Label.SetResourceReference(TextBlock.ForegroundProperty, "DockTabTextBrush");
+            };
+
+            _itemsPanel.Children.Add(wrapper);
         }
 
-        Visibility = Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        Visibility = _itemsPanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         ItemsUpdated?.Invoke();
     }
 
     /// <summary>
-    /// Highlights the bar button(s) whose group contains any of the given items (SemiBold font weight).
+    /// Highlights the bar button whose group contains any of the given items.
+    /// Active tab gets bright accent indicator + white text (VS2022 style).
+    /// Inactive tabs keep the indicator visible at a subdued opacity.
     /// Pass <c>null</c> to clear all highlights.
     /// </summary>
     public void SetActiveGroup(IReadOnlyList<DockItem>? items)
     {
-        foreach (UIElement child in Children)
+        _activeWrapper = null;
+
+        foreach (UIElement child in _itemsPanel.Children)
         {
-            if (child is not Button btn) continue;
+            if (child is not Grid wrapper) continue;
+            if (wrapper.Tag is not AutoHideTabVisuals visuals) continue;
+
+            // Find the button inside the wrapper to check its Tag
+            var btn = wrapper.Children.OfType<Button>().FirstOrDefault();
+            if (btn is null) continue;
+
             var isActive = items is not null
                 && btn.Tag is IReadOnlyList<DockItem> group
                 && group.Any(i => items.Contains(i));
-            btn.FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal;
+
+            if (isActive)
+                _activeWrapper = wrapper;
+
+            // Indicator: active = full opacity, inactive = hidden
+            visuals.Indicator.Opacity = isActive ? 1.0 : 0;
+
+            // Text color
+            visuals.Label.SetResourceReference(TextBlock.ForegroundProperty,
+                isActive ? "DockTabActiveTextBrush" : "DockTabTextBrush");
         }
     }
 }
@@ -185,6 +281,14 @@ public class AutoHideFlyout : Grid
     private const double DefaultTopBottomSize = 250;
     private const double MinSize              = 80;
     private const double ResizeThickness      = 6;
+
+    /// <summary>
+    /// Optional configurable timing. When null, uses built-in defaults.
+    /// </summary>
+    public AutoHideSettings? Settings { get; set; }
+
+    private int OpenAnimMs => Settings?.SlideAnimationMs ?? 120;
+    private int CloseAnimMs => Settings?.SlideAnimationMs > 0 ? Math.Max(Settings.SlideAnimationMs / 2, 60) : 100;
 
     private IReadOnlyList<DockItem> _currentGroup = [];
     private StackPanel? _tabStrip;
@@ -542,7 +646,7 @@ public class AutoHideFlyout : Grid
         Visibility = Visibility.Visible;
 
         var showAnim = new DoubleAnimation(0, targetSize,
-            new Duration(TimeSpan.FromMilliseconds(120)))
+            new Duration(TimeSpan.FromMilliseconds(OpenAnimMs)))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
@@ -573,7 +677,10 @@ public class AutoHideFlyout : Grid
         bool isHorizontal = _currentSide is DockSide.Left or DockSide.Right;
 
         var hideAnim = new DoubleAnimation(0,
-            new Duration(TimeSpan.FromMilliseconds(100)));
+            new Duration(TimeSpan.FromMilliseconds(CloseAnimMs)))
+        {
+            EasingFunction = DockAnimationHelper.GetFlyoutEase()
+        };
         hideAnim.Completed += (_, _) =>
         {
             if (_isOpen) return;  // ShowForItem was called before hide animation completed

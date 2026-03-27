@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Blu-ray MPEG-2 Transport Stream
    Category:  Video
    Ext:       .m2ts
@@ -115,5 +115,18 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Blu-ray Disc Audio-Video (BDAV) MPEG-2 Transport Stream container",
+    "suggestedInspections": [
+      "Validate Blu-ray MPEG-2 Transport Stream container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

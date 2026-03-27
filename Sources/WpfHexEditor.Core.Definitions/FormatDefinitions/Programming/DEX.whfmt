@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Android DEX File
    Category:  Programming
    Ext:       .dex
@@ -110,6 +110,19 @@
       "description": "Human-readable file size"
     }
   ],
+  "forensic": {
+    "category": "programming",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Dalvik Executable - Android bytecode",
+    "suggestedInspections": [
+      "Verify Android DEX File magic number and format version identifier",
+      "Check symbol/string table integrity and section boundaries",
+      "Inspect code section offsets, relocations, and debug info"
+    ]
+  },
   "software": [
     "Android Runtime (ART)",
     "Dalvik VM",

@@ -64,7 +64,17 @@ public sealed class DockingAdapter : IDockingAdapter
         // Re-defer known panels when they are removed from the layout (e.g. user clicks X).
         // This allows ShowDockablePanel / ToggleDockablePanel to re-dock them on the next call.
         _engine.LayoutChanged += ReSyncDeferredOnClose;
+
+        // Forward dock engine show/hide events as PanelShown/PanelHidden
+        _engine.ItemShown  += item => PanelShown?.Invoke(this, item.ContentId);
+        _engine.ItemHidden += item => PanelHidden?.Invoke(this, item.ContentId);
     }
+
+    /// <inheritdoc />
+    public event EventHandler<string>? PanelShown;
+
+    /// <inheritdoc />
+    public event EventHandler<string>? PanelHidden;
 
     /// <summary>
     /// Suppresses <see cref="DockControl.RebuildVisualTree"/> calls during a bulk operation
@@ -98,6 +108,7 @@ public sealed class DockingAdapter : IDockingAdapter
             // prevent the panel from being closed or hide property changes from plugin updates.
             existing.CanClose = descriptor.CanClose;
             existing.Title    = descriptor.Title;
+            existing.Metadata["_pluginPanel"] = "1";
             _storeContent(uiId, content);
             // Evict the stale placeholder from DockControl's internal cache so ContentFactory
             // is called again on the next rebuild, returning the real plugin UIElement.
@@ -163,6 +174,7 @@ public sealed class DockingAdapter : IDockingAdapter
             Title     = descriptor.Title,
             CanClose  = descriptor.CanClose
         };
+        item.Metadata["_pluginPanel"] = "1";
 
         _storeContent(uiId, content);
 

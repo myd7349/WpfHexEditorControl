@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Brotli Compression
    Category:  Archives
    Ext:       .br
@@ -115,5 +115,18 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Brotli compressed format developed by Google, used for web compression and file compression",
+    "suggestedInspections": [
+      "Verify Brotli Compression file header, compression method, and stored CRCs",
+      "Check central directory or entry table for consistency",
+      "Inspect individual entry sizes for truncation or overflow"
+    ]
   }
 }

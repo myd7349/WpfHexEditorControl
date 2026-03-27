@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    HDF4 Data File
    Category:  Science
    Ext:       .hdf, .hdf4
@@ -109,6 +109,19 @@
     "AutoRefined": true
   },
   "TechnicalDetails": {},
+  "forensic": {
+    "category": "science",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Hierarchical Data Format v4",
+    "suggestedInspections": [
+      "Validate HDF4 Data File file header, data type, and dimension fields",
+      "Check axis labels, units, and calibration metadata",
+      "Inspect data array boundaries and fill/missing value markers"
+    ]
+  },
   "functions": {
     "readUInt32BE": "Read scientific header",
     "multiply": "Calculate dimensions"

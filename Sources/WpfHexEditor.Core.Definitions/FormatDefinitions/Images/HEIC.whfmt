@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    HEIF/HEIC Image
    Category:  Images
    Ext:       .heic, .heif, .hif
@@ -286,6 +286,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
+  },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "High Efficiency Image Format (HEIF/HEIC) based on the ISO Base Media File Format (ISOBMFF/MP4). Files begin ...",
+    "suggestedInspections": [
+      "Validate HEIF/HEIC Image signature, image dimensions, and color model",
+      "Check pixel data offset, compression type, and scanline alignment",
+      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ftyp Box",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {
     "ImagesFormat": true,

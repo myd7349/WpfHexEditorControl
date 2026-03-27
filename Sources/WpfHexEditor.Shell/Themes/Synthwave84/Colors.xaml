@@ -71,6 +71,7 @@
     <SolidColorBrush x:Key="DockBackgroundBrush"           Color="{StaticResource DockBackgroundColor}" />
     <SolidColorBrush x:Key="DockBorderBrush"               Color="{StaticResource DockBorderColor}" />
     <SolidColorBrush x:Key="DockTabActiveBrush"            Color="{StaticResource DockTabActiveColor}" />
+    <SolidColorBrush x:Key="DockAutoHideIndicatorBrush" Color="{StaticResource DockTabActiveColor}" />
     <SolidColorBrush x:Key="DockTabInactiveBrush"          Color="{StaticResource DockTabInactiveColor}" />
     <SolidColorBrush x:Key="DockTabHoverBrush"             Color="{StaticResource DockTabHoverColor}" />
     <SolidColorBrush x:Key="DockTabSelectedHoverBrush"     Color="{StaticResource DockTabSelectedHoverColor}" />
@@ -259,6 +260,12 @@
     <SolidColorBrush x:Key="Panel_ToolbarBorderBrush"       Color="#6644AA"/>
     <SolidColorBrush x:Key="DockGroupHeaderBrush"           Color="#1A1826"/>
     <SolidColorBrush x:Key="Panel_ToolbarButtonHoverBrush"  Color="#34294F"/>
+
+    <!-- Standardized item selection / hover tokens (used by PanelCommon + ContentControls) -->
+    <SolidColorBrush x:Key="Panel_ItemHoverBrush"              Color="#34294F"/>
+    <SolidColorBrush x:Key="Panel_ItemSelectedBrush"           Color="#4A2A5A"/>
+    <SolidColorBrush x:Key="Panel_ItemSelectedForegroundBrush" Color="#FF7EDB"/>
+    <SolidColorBrush x:Key="Panel_ItemInactiveSelectedBrush"   Color="#3A2048"/>
     <SolidColorBrush x:Key="Panel_ToolbarButtonActiveBrush" Color="#463465"/>
     <SolidColorBrush x:Key="Panel_ToolbarForegroundBrush"   Color="#F0F0F5"/>
     <SolidColorBrush x:Key="PFP_ToolbarBrush"               Color="#2A2139"/>
@@ -736,4 +743,14 @@
     <SolidColorBrush x:Key="BDiff_ContextRowBackgroundBrush" Color="#1A1A2E" />
     <SolidColorBrush x:Key="BDiff_CollapsedContextBrush"     Color="#16162A" />
     <SolidColorBrush x:Key="BDiff_CollapsedContextFgBrush"   Color="#848CA8" />
+    <!-- whfmt v2.0 tokens (WF_*) - inserted by Add-WhfmtV2Tokens.ps1 -->
+    <SolidColorBrush x:Key="WF_RepeatingGroupBackground"  Color="#1A1033" />
+    <SolidColorBrush x:Key="WF_AssertionErrorBrush"       Color="#FE4450" />
+    <SolidColorBrush x:Key="WF_AssertionWarningBrush"     Color="#FC9867" />
+    <SolidColorBrush x:Key="WF_ForensicAlertBrush"        Color="#FFE261" />
+    <SolidColorBrush x:Key="WF_PointerArrowBrush"         Color="#72F1B8" />
+    <SolidColorBrush x:Key="WF_BitfieldSubrowBrush"       Color="#2B1B52" />
+    <SolidColorBrush x:Key="WF_InspectorGroupHeaderBrush" Color="#3B2B62" />
+    <SolidColorBrush x:Key="WF_NavigatorBookmarkBrush"    Color="#FF7EDB" />
+    <SolidColorBrush x:Key="WF_ConfidenceBadgeBrush"      Color="#36F9F6" />
 </ResourceDictionary>

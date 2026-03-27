@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    DOS COM Executable
    Category:  Executables
    Ext:       .com
@@ -122,5 +122,18 @@
   "functions": {
     "readUInt32LE": "Read executable header",
     "calculateCRC32": "Validate"
+  },
+  "forensic": {
+    "category": "executable",
+    "riskLevel": "high",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "DOS Command file - Simple executable",
+    "suggestedInspections": [
+      "Verify DOS COM Executable signature, section table, and entry point",
+      "Check import/export tables for suspicious library references",
+      "Inspect section entropy for packing, encryption, or hollowing"
+    ]
   }
 }

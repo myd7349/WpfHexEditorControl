@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    VMware Virtual Disk
    Category:  Disk
    Ext:       .vmdk
@@ -132,6 +132,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "disk",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "VMware virtual disk format",
+    "suggestedInspections": [
+      "Verify VMware Virtual Disk superblock/boot sector signature and version",
+      "Check partition/volume layout and allocation bitmap",
+      "Inspect filesystem journal and metadata consistency"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Sparse Extent Header",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

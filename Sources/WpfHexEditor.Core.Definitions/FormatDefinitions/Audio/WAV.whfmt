@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    WAV Audio
    Category:  Audio
    Ext:       .wav, .wave
@@ -150,7 +150,7 @@
         "2": "Microsoft ADPCM",
         "3": "IEEE 754 Float",
         "6": "ITU G.711 A-law",
-        "7": "ITU G.711 \u00b5-law",
+        "7": "ITU G.711 µ-law",
         "17": "IMA ADPCM",
         "85": "MPEG Layer III",
         "65534": "Extensible (WAVEFORMATEXTENSIBLE)"
@@ -321,6 +321,43 @@
     "PriorityFormat": true,
     "AutoRefined": false
   },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Waveform Audio File Format - A RIFF-based container for uncompressed (PCM) and compressed audio. The file be...",
+    "suggestedInspections": [
+      "Validate WAV Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "RIFF Header",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
+  },
+  "assertions": [
+    {
+      "name": "Valid RIFF Signature",
+      "expression": "riffSignature == 0x46464952",
+      "severity": "error",
+      "message": "Invalid RIFF signature: first 4 bytes must be 'RIFF' (0x52494646); file is not a valid WAV container."
+    },
+    {
+      "name": "ByteRate Consistency",
+      "field": "byteRate",
+      "condition": "byteRate == sampleRate * numChannels * bitsPerSample / 8",
+      "severity": "warning",
+      "message": "WAV byteRate should equal sampleRate × numChannels × bitsPerSample / 8; mismatch suggests a malformed or manipulated header."
+    }
+  ],
   "TechnicalDetails": {
     "AudioFormat": true,
     "Container": "RIFF (Resource Interchange File Format)",

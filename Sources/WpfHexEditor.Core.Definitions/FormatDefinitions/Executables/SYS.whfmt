@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Windows System Driver
    Category:  Executables
    Ext:       .sys
@@ -126,5 +126,18 @@
   "functions": {
     "readUInt32LE": "Read Windows driver header",
     "extractASCIIString": "Extract driver name"
+  },
+  "forensic": {
+    "category": "executable",
+    "riskLevel": "high",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Windows device driver file",
+    "suggestedInspections": [
+      "Verify Windows System Driver signature, section table, and entry point",
+      "Check import/export tables for suspicious library references",
+      "Inspect section entropy for packing, encryption, or hollowing"
+    ]
   }
 }

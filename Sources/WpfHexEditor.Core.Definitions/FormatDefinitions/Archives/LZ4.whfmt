@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    LZ4 Compressed
    Category:  Archives
    Ext:       .lz4
@@ -137,5 +137,18 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "LZ4 compression format - Extremely fast",
+    "suggestedInspections": [
+      "Verify LZ4 Compressed file header, compression method, and stored CRCs",
+      "Check central directory or entry table for consistency",
+      "Inspect individual entry sizes for truncation or overflow"
+    ]
   }
 }

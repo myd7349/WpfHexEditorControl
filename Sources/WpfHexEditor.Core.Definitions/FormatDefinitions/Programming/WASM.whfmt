@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    WebAssembly Binary
    Category:  Programming
    Ext:       .wasm
@@ -76,6 +76,27 @@
       "valueType": "ascii"
     }
   ],
+  "assertions": [
+    {
+      "name": "WASM magic",
+      "expression": "wasmMagic == 1836278016",
+      "severity": "error",
+      "message": "Invalid WebAssembly magic — expected 0x6D736100"
+    }
+  ],
+  "forensic": {
+    "category": "programming",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "WebAssembly binary format",
+    "suggestedInspections": [
+      "Verify WebAssembly Binary magic number and format version identifier",
+      "Check symbol/string table integrity and section boundaries",
+      "Inspect code section offsets, relocations, and debug info"
+    ]
+  },
   "software": [
     "Web browsers",
     "Node.js",

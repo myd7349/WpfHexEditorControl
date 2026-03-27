@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    RAR Archive
    Category:  Archives
    Ext:       .rar
@@ -8,7 +8,6 @@
    Detection: signature=526172211A07 @ offset 0
    Updated:   2026-02-24
    ============================================================ */
-
 {
   "diffMode": "binary",
   "formatName": "RAR Archive",
@@ -345,6 +344,33 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "RAR archive format created by Eugene Roshal. Supports high compression ratios, solid archives, multi-volume ...",
+    "suggestedInspections": [
+      "Verify RAR Archive file header, compression method, and stored CRCs",
+      "Check central directory or entry table for consistency",
+      "Inspect individual entry sizes for truncation or overflow"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Archive Header Start",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      },
+      {
+        "name": "First File Block",
+        "offsetVar": "totalHeaderBytes",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {
     "ArchivesFormat": true,

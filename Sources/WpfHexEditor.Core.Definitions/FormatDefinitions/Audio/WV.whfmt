@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    WavPack Audio
    Category:  Audio
    Ext:       .wv
@@ -120,5 +120,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "WavPack hybrid lossless audio compression format",
+    "suggestedInspections": [
+      "Validate WavPack Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
   }
 }

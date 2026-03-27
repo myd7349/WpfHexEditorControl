@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    VP8 Video
    Category:  Video
    Ext:       .vp8, .ivf
@@ -124,5 +124,18 @@
   "functions": {
     "readUInt32LE": "Read video header",
     "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "VP8 video codec, open video compression format developed by Google",
+    "suggestedInspections": [
+      "Validate VP8 Video container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

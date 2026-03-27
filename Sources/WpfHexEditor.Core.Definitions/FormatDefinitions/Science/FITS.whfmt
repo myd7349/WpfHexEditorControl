@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    FITS Astronomical Data
    Category:  Science
    Ext:       .fits, .fit
@@ -109,6 +109,19 @@
     "AutoRefined": true
   },
   "TechnicalDetails": {},
+  "forensic": {
+    "category": "science",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Flexible Image Transport System - Astronomy",
+    "suggestedInspections": [
+      "Validate FITS Astronomical Data file header, data type, and dimension fields",
+      "Check axis labels, units, and calibration metadata",
+      "Inspect data array boundaries and fill/missing value markers"
+    ]
+  },
   "functions": {
     "readUInt32BE": "Read scientific header",
     "multiply": "Calculate dimensions"

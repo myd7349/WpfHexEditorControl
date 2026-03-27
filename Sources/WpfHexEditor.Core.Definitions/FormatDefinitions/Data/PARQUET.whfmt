@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Apache Parquet
    Category:  Data
    Ext:       .parquet
@@ -99,6 +99,19 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "data",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Apache Parquet columnar storage format",
+    "suggestedInspections": [
+      "Validate Apache Parquet schema header and encoding markers",
+      "Check nested structure depth and field type tags",
+      "Inspect string encodings and numeric value boundaries"
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

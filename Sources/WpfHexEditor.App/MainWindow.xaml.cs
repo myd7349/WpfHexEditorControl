@@ -550,7 +550,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitCompareFileLaunchService();
         ApplyThemeFromSettings();
         ApplyTabPreviewSettings();   // push persisted thumbnail settings to DockHost
+        ApplyAutoHideSettings();     // push persisted auto-hide timing to DockHost
         WpfHexEditor.Core.Options.TabPreviewAppSettings.Changed += ApplyTabPreviewSettings;
+        WpfHexEditor.Core.Options.AutoHideAppSettings.Changed   += ApplyAutoHideSettings;
         InitAutoSerializeTimer();
 
         RebuildTblItemList();   // must be before LoadSavedLayoutOrDefault so SyncTblDropdown finds items
@@ -598,6 +600,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "Environment", "Tabs",
             () => new WpfHexEditor.App.Options.TabsOptionsPage(DockHost.TabBarSettings),
             "\uE7C4");
+
+        // Register Docking options page (Auto-Hide timing + Layout Profiles)
+        WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
+            "Environment", "Docking",
+            () => new WpfHexEditor.App.Options.DockingOptionsPage(),
+            "\uE8A0");
 
         // Register Debugger options page
         WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
@@ -3273,6 +3281,17 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void OnSolutionExplorerItemSelected(object? sender, ProjectItemEventArgs e)
     {
         _propertiesPanel?.SetProvider(new ProjectItemPropertyProvider(e.Item));
+
+        // Publish file preview event for ParsedFields panel (and any other consumers).
+        var filePath = e.Item?.AbsolutePath;
+        if (!string.IsNullOrEmpty(filePath) && System.IO.File.Exists(filePath))
+        {
+            _ideHostContext?.EventBus?.Publish(new WpfHexEditor.SDK.Events.FilePreviewRequestedEvent
+            {
+                FilePath = filePath,
+                SourcePanelId = "SolutionExplorer"
+            });
+        }
     }
 
     private async void OnSolutionExplorerItemRenameRequested(object? sender, ProjectItemEventArgs e)
@@ -5263,6 +5282,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         DockHost.TabPreviewSettings.OpenDelayMs   = s.OpenDelayMs;
         DockHost.TabPreviewSettings.CloseDelayMs  = s.CloseDelayMs;
         DockHost.RefreshTabPreviewSettings();
+    }
+
+    /// <summary>
+    /// Pushes persisted auto-hide timing settings to <see cref="DockHost.AutoHideSettings"/>.
+    /// </summary>
+    private void ApplyAutoHideSettings()
+    {
+        var s = AppSettingsService.Instance.Current;
+        DockHost.AutoHideSettings.HoverOpenDelayMs  = s.AutoHideOpenDelayMs;
+        DockHost.AutoHideSettings.HoverCloseDelayMs = s.AutoHideCloseDelayMs;
+        DockHost.AutoHideSettings.SlideAnimationMs  = s.AutoHideSlideAnimationMs;
+
+        // Push animation durations to DockControl → internal DockAnimationHelper
+        DockHost.ApplyAnimationSettings(
+            s.DockAnimationsEnabled,
+            s.DockOverlayFadeInMs,
+            s.DockOverlayFadeOutMs,
+            s.FloatingWindowFadeInMs);
     }
 
     /// <summary>

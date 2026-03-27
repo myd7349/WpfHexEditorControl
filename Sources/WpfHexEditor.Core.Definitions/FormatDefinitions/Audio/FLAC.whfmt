@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    FLAC Audio
    Category:  Audio
    Ext:       .flac
@@ -338,6 +338,27 @@
       "description": "Minimum and maximum block size in samples used by the encoder"
     }
   ],
+  "assertions": [
+    {
+      "name": "fLaC marker",
+      "expression": "flacSignature == 1716281667",
+      "severity": "error",
+      "message": "Missing fLaC stream marker"
+    }
+  ],
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Free Lossless Audio Codec - An open-source lossless audio compression format. The file begins with a 4-byte ...",
+    "suggestedInspections": [
+      "Validate FLAC Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
+  },
   "MimeTypes": [
     "audio/flac",
     "audio/x-flac"

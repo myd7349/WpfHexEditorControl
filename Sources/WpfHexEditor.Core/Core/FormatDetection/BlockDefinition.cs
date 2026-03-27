@@ -4,10 +4,13 @@
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude (Anthropic)
 // Created: 2026-03-06
+// Updated: 2026-03-25 — whfmt v2.0: repeating/union/nested/pointer blocks,
+//     offsetFrom+offsetAdd pattern, colorCycle, trueLabel/falseLabel,
+//     all new block types added to IsValid().
 // Description:
-//     Represents a single block definition within a .whfmt format file,
-//     which can be a simple field, file signature, conditional branch,
-//     loop construct, or action directive.
+//     Represents a single block definition within a .whfmt format file.
+//     Supports: signature, field, metadata, conditional, loop, action,
+//     computeFromVariables, repeating, union, nested, pointer.
 //
 // Architecture Notes:
 //     Data model parsed from JSON format definitions. Used by FormatScriptInterpreter
@@ -37,13 +40,24 @@ namespace WpfHexEditor.Core.FormatDetection
         public string Name { get; set; }
 
         /// <summary>
-        /// Offset where this block starts
-        /// Can be:
-        /// - int: Absolute offset (e.g., 0, 4, 16)
-        /// - "var:name": Variable reference (e.g., "var:currentOffset")
-        /// - "calc:expression": Calculated expression (e.g., "calc:currentOffset + 46")
+        /// Offset where this block starts.
+        /// Can be: int | "var:name" | "calc:expression"
+        /// If OffsetFrom is set, this field is ignored — use OffsetFrom + OffsetAdd instead.
         /// </summary>
         public object Offset { get; set; }
+
+        /// <summary>
+        /// Variable name whose value is used as the base offset.
+        /// Used with OffsetAdd: effectiveOffset = variables[OffsetFrom] + OffsetAdd.
+        /// Example: "peHeaderOffset" → reads offset from that variable.
+        /// </summary>
+        public string OffsetFrom { get; set; }
+
+        /// <summary>
+        /// Additional bytes added to the OffsetFrom base.
+        /// Can be: int | "calc:expression". Defaults to 0.
+        /// </summary>
+        public object OffsetAdd { get; set; }
 
         /// <summary>
         /// Length of this block in bytes
@@ -121,20 +135,92 @@ namespace WpfHexEditor.Core.FormatDetection
 
         #region Conditional Block Properties
 
-        /// <summary>
-        /// Condition for conditional blocks
-        /// </summary>
+        /// <summary>Condition for conditional and loop blocks.</summary>
         public ConditionDefinition Condition { get; set; }
 
-        /// <summary>
-        /// Blocks to execute if condition is true (conditional blocks)
-        /// </summary>
+        /// <summary>Blocks to execute if condition is true.</summary>
         public List<BlockDefinition> Then { get; set; }
 
-        /// <summary>
-        /// Blocks to execute if condition is false (optional)
-        /// </summary>
+        /// <summary>Blocks to execute if condition is false (optional).</summary>
         public List<BlockDefinition> Else { get; set; }
+
+        /// <summary>
+        /// Label shown when condition is true (for display in parsed fields panel).
+        /// Example: "This file is a DLL"
+        /// </summary>
+        public string TrueLabel { get; set; }
+
+        /// <summary>
+        /// Label shown when condition is false.
+        /// Example: "This file is an EXE"
+        /// </summary>
+        public string FalseLabel { get; set; }
+
+        #endregion
+
+        #region Repeating Block Properties (v2.0)
+
+        /// <summary>
+        /// Sub-field definitions for repeating and union blocks.
+        /// Each entry describes one field within a single repeated entry.
+        /// </summary>
+        public List<BlockDefinition> Fields { get; set; }
+
+        /// <summary>
+        /// Fixed byte size of each repeated entry. Used to advance the base offset per iteration.
+        /// Can be: int | "var:name" | "calc:expression"
+        /// </summary>
+        public object EntrySize { get; set; }
+
+        /// <summary>
+        /// Name of the variable to store the current iteration index (0-based).
+        /// Example: "sectionIndex" → accessible in field offset expressions.
+        /// </summary>
+        public string IndexVar { get; set; }
+
+        /// <summary>
+        /// Array of hex color strings to cycle through for successive repeated entries.
+        /// Example: ["#FF6B6B", "#4ECDC4", "#FFE66D"]
+        /// </summary>
+        public List<string> ColorCycle { get; set; }
+
+        #endregion
+
+        #region Union Block Properties (v2.0)
+
+        /// <summary>
+        /// Condition variable name used to select the active union variant.
+        /// The string value of variables[Condition] is matched against Variants keys.
+        /// </summary>
+        public string UnionCondition { get; set; }
+
+        /// <summary>
+        /// Variants for union blocks. Key = condition value (string).
+        /// Each variant can specify a different length, valueType, and color.
+        /// </summary>
+        public Dictionary<string, UnionVariant> Variants { get; set; }
+
+        #endregion
+
+        #region Nested / Pointer Block Properties (v2.0)
+
+        /// <summary>
+        /// Reference to an external struct definition (without file extension).
+        /// Example: "structs/PE_OptionalHeader" → loaded from embedded catalog.
+        /// </summary>
+        public string StructRef { get; set; }
+
+        /// <summary>
+        /// Variable name containing the target offset for pointer blocks.
+        /// The pointer block creates a jump annotation in the structure view.
+        /// </summary>
+        public string TargetVar { get; set; }
+
+        /// <summary>
+        /// Display label for pointer blocks shown in the structure tree.
+        /// Example: "→ PE Header"
+        /// </summary>
+        public string Label { get; set; }
 
         #endregion
 
@@ -190,7 +276,9 @@ namespace WpfHexEditor.Core.FormatDetection
         #endregion
 
         /// <summary>
-        /// Validate this block definition
+        /// Validate this block definition.
+        /// New v2 block types (repeating/union/nested/pointer) are always accepted
+        /// with minimal validation so old engines silently skip unknown types.
         /// </summary>
         public bool IsValid()
         {
@@ -201,31 +289,42 @@ namespace WpfHexEditor.Core.FormatDetection
             {
                 case "signature":
                 case "field":
-                    // Must have offset, length, and color
-                    return Offset != null && Length != null && !string.IsNullOrWhiteSpace(Color);
+                    // Must have (offset OR offsetFrom) + length + color
+                    bool hasOffset = Offset != null || !string.IsNullOrWhiteSpace(OffsetFrom);
+                    return hasOffset && Length != null && !string.IsNullOrWhiteSpace(Color);
 
                 case "metadata":
-                    // Metadata blocks just need a name and variable
                     return !string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Variable);
 
                 case "conditional":
-                    // Must have condition and then blocks
                     return Condition != null && Then != null && Then.Count > 0;
 
                 case "loop":
-                    // Must have condition, body, and reasonable max iterations
-                    return Condition != null && Body != null && Body.Count > 0 && MaxIterations > 0 && MaxIterations <= 100000;
+                    return Condition != null && Body != null && Body.Count > 0
+                           && MaxIterations > 0 && MaxIterations <= 100000;
 
                 case "action":
-                    // Must have action and variable
                     return !string.IsNullOrWhiteSpace(Action) && !string.IsNullOrWhiteSpace(Variable);
 
                 case "computefromvariables":
-                    // Must have expression and storeAs
                     return !string.IsNullOrWhiteSpace(Expression) && !string.IsNullOrWhiteSpace(StoreAs);
 
+                // v2.0 new block types — accept with minimal requirements
+                case "repeating":
+                    return !string.IsNullOrWhiteSpace(Name) && Count != null;
+
+                case "union":
+                    return !string.IsNullOrWhiteSpace(Name) && Variants != null && Variants.Count > 0;
+
+                case "nested":
+                    return !string.IsNullOrWhiteSpace(StructRef);
+
+                case "pointer":
+                    return !string.IsNullOrWhiteSpace(TargetVar);
+
                 default:
-                    return false;
+                    // Unknown block types silently pass — forward-compatibility
+                    return true;
             }
         }
 
@@ -317,6 +416,31 @@ namespace WpfHexEditor.Core.FormatDetection
         {
             return $"{Type}: {Name} @ {Offset} (len: {Length})";
         }
+    }
+
+    /// <summary>
+    /// A single variant within a union block.
+    /// Describes the layout when the union's condition matches this variant's key.
+    /// </summary>
+    public class UnionVariant
+    {
+        /// <summary>Length of this variant in bytes. Can be int | "var:name" | "calc:expression".</summary>
+        public object Length { get; set; }
+
+        /// <summary>Value type for decoding this variant (e.g., "ipv4", "uint32", "utf8").</summary>
+        public string ValueType { get; set; }
+
+        /// <summary>Background color for this variant's highlight (#RRGGBB).</summary>
+        public string Color { get; set; }
+
+        /// <summary>Opacity 0.0–1.0. Default 0.3.</summary>
+        public double Opacity { get; set; } = 0.3;
+
+        /// <summary>Optional nested sub-fields for this variant.</summary>
+        public List<BlockDefinition> Fields { get; set; }
+
+        /// <summary>Human-readable description of this variant.</summary>
+        public string Description { get; set; }
     }
 
     /// <summary>

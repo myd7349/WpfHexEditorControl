@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    True Audio
    Category:  Audio
    Ext:       .tta
@@ -122,5 +122,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "True Audio lossless audio compression format",
+    "suggestedInspections": [
+      "Validate True Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
   }
 }

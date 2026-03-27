@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Python Compiled Bytecode
    Category:  Programming
    Ext:       .pyc, .pyo
@@ -128,6 +128,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "programming",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Python compiled bytecode file",
+    "suggestedInspections": [
+      "Verify Python Compiled Bytecode magic number and format version identifier",
+      "Check symbol/string table integrity and section boundaries",
+      "Inspect code section offsets, relocations, and debug info"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "PYC Header",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {}
 }

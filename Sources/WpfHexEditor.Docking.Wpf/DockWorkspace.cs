@@ -135,6 +135,15 @@ public class DockWorkspace
     }
 
     /// <summary>
+    /// Restores a promoted panel from the document area back to its original tool panel side.
+    /// </summary>
+    public void RestoreToToolPanel(DockItem item)
+    {
+        Engine?.RestoreToToolPanel(item);
+        _host.RebuildVisualTree();
+    }
+
+    /// <summary>
     /// Closes an item (respects <see cref="IDockHost.BeforeCloseCallback"/>).
     /// </summary>
     public void Close(DockItem item)
@@ -158,6 +167,12 @@ public class DockWorkspace
         _commandStack.Execute(cmd);
         _host.RebuildVisualTree();
     }
+
+    /// <summary>Saves the current layout to quick slot 1–4.</summary>
+    public void SaveQuickProfile(int slot) => SaveProfile($"QuickSlot_{slot}");
+
+    /// <summary>Loads quick slot 1–4 if it exists.</summary>
+    public bool LoadQuickProfile(int slot) => LoadProfile($"QuickSlot_{slot}");
 
     public bool CanUndo => _commandStack.CanUndo;
     public bool CanRedo => _commandStack.CanRedo;

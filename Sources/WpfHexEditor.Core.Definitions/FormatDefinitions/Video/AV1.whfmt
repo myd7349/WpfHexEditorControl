@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    AV1 Video
    Category:  Video
    Ext:       .av1, .ivf
@@ -126,5 +126,18 @@
   "functions": {
     "readUInt32LE": "Read video header",
     "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AOMedia Video 1 (AV1) open, royalty-free video coding format",
+    "suggestedInspections": [
+      "Validate AV1 Video container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

@@ -110,6 +110,13 @@ namespace WpfHexEditor.Core.Events
         /// </summary>
         public Dictionary<string, object> Variables { get; set; } = new Dictionary<string, object>();
 
+        /// <summary>
+        /// D3 — Assertion results collected during block execution.
+        /// Failed assertions are shown in the Forensic Alerts section of ParsedFieldsPanel.
+        /// </summary>
+        public List<WpfHexEditor.Core.FormatDetection.AssertionResult> AssertionResults { get; set; }
+            = new List<WpfHexEditor.Core.FormatDetection.AssertionResult>();
+
         public override string ToString()
         {
             if (Success)

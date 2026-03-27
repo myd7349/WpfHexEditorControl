@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    AVCHD Video
    Category:  Video
    Ext:       .mts, .m2ts
@@ -124,5 +124,18 @@
   "functions": {
     "readUInt32LE": "Read video header",
     "computeFromVariables(width * height, totalPixels)": "Calculate total pixels"
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AVCHD (Advanced Video Coding High Definition) video format used by camcorders",
+    "suggestedInspections": [
+      "Validate AVCHD Video container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

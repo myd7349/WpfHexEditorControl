@@ -2,29 +2,34 @@
 // Project: WpfHexEditor.Plugins.ParsedFields
 // File: ParsedFieldsPlugin.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
+// Contributors: Claude Sonnet 4.6, Claude (Anthropic)
 // Created: 2026-03-07
+// Refactored: 2026-03-26
 // Description:
 //     Plugin entry point for the Parsed Fields panel.
-//     Moves the panel from direct MainWindow management into the plugin system,
-//     making it independently registerable, dockable, and lifecycle-managed.
+//     Two coexisting paths:
+//       1. HexEditor tabs → legacy ConnectParsedFieldsPanel (per-tab FormatParsingService)
+//       2. Non-hex documents / Explorer previews → plugin-owned _previewService
+//     Lazy rendering: only parses when panel is visible.
 //
 // Architecture Notes:
-//     Pattern: Observer + Mediator
-//     - Subscribes to IHexEditorService.ActiveEditorChanged to reconnect the panel
-//       on tab switches (replaces MainWindow's direct Connect/Disconnect calls).
-//     - Subscribes to TemplateApplyRequestedEvent via IPluginEventBus to receive
-//       blocks from CustomParserTemplatePlugin (replaces MainWindow handler).
-//     - The 5 bidirectional HexEditor↔ParsedFieldsPanel events (FieldSelected,
-//       RefreshRequested, FormatterChanged, FieldValueEdited, FormatCandidateSelected)
-//       are auto-wired via HexEditorControl's ParsedFieldsPanelProperty DP.
+//     Each HexEditor tab owns its own FormatParsingService + HexEditorDataSource.
+//     This plugin owns a SEPARATE _previewService for non-hex previews (Solution
+//     Explorer file clicks, Assembly Explorer members, non-hex document tabs).
+//     OnActiveEditorChanged disconnects the preview service so HexEditor takes over.
+//     OnFocusChanged skips "hex" document types — those are handled by the legacy path.
 // ==========================================================
 
+using System.IO;
+using System.Linq;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.Core.FormatDetection;
+using WpfHexEditor.Core.Interfaces;
+using WpfHexEditor.Core.Services.FormatParsing;
 using WpfHexEditor.Core.ViewModels;
 using WpfHexEditor.Plugins.ParsedFields.Views;
 using WpfHexEditor.SDK.Contracts;
+using WpfHexEditor.SDK.Contracts.Focus;
 using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Events;
@@ -34,14 +39,14 @@ namespace WpfHexEditor.Plugins.ParsedFields;
 
 /// <summary>
 /// Plugin registering the Parsed Fields panel (Right dock).
-/// Manages the HexEditor ↔ ParsedFieldsPanel bidirectional connection and
-/// routes <see cref="TemplateApplyRequestedEvent"/> from the CustomParser plugin.
+/// HexEditor tabs use legacy ConnectParsedFieldsPanel; all other sources use a
+/// plugin-owned preview FormatParsingService.
 /// </summary>
 public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
 {
     public string  Id      => "WpfHexEditor.Plugins.ParsedFields";
     public string  Name    => "Parsed Fields";
-    public Version Version => new(0, 5, 0);
+    public Version Version => new(0, 7, 1);
 
     public PluginCapabilities Capabilities => new()
     {
@@ -51,10 +56,26 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
         WriteOutput      = false
     };
 
+    private const string PanelUiId = "WpfHexEditor.Plugins.ParsedFields.Panel.ParsedFieldsPanel";
+
     private ParsedFieldsPanel? _panel;
     private IIDEHostContext?   _context;
     private IDisposable?       _templateSub;
     private IDisposable?       _grammarSub;
+    private IDisposable?       _filePreviewSub;
+    private IDisposable?       _assemblyMemberSub;
+
+    // ── Preview service (owned by plugin — separate from HexEditor's per-tab service) ──
+    private FormatParsingService? _previewService;
+    private GenericFileDataSource? _previewDataSource;
+    private string? _lastPreviewFilePath;
+    private bool _isPreviewActive; // true when preview service owns the panel
+    // _previewFormatsLoaded removed — shared catalog loaded at app startup via FormatCatalogService
+
+    // ── Lazy update state ────────────────────────────────────────────────────
+    private bool _isPanelVisible = true;
+    private ParsedFieldsUpdateRequestedEvent? _pendingUpdate;
+    private bool _hexEditorHandledLastSwitch; // set by OnActiveEditorChanged, cleared by OnFocusChanged
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -63,48 +84,53 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
         _context = context;
         _panel   = new ParsedFieldsPanel();
 
-        // Register the panel (Right dock — same side as before).
-        context.UIRegistry.RegisterPanel(
-            "WpfHexEditor.Plugins.ParsedFields.Panel.ParsedFieldsPanel",
-            _panel,
-            Id,
-            new PanelDescriptor
-            {
-                Title           = "Parsed Fields",
-                DefaultDockSide = "Right",
-                DefaultAutoHide = false,
-                CanClose        = true,
-                PreferredWidth  = 340
-            });
+        // Register the panel (Right dock).
+        context.UIRegistry.RegisterPanel(PanelUiId, _panel, Id, new PanelDescriptor
+        {
+            Title           = "Parsed Fields",
+            DefaultDockSide = "Right",
+            DefaultAutoHide = false,
+            CanClose        = true,
+            PreferredWidth  = 340
+        });
 
-        // Register View menu item so the user can show/hide this panel.
-        context.UIRegistry.RegisterMenuItem(
-            $"{Id}.Menu.Show",
-            Id,
-            new MenuItemDescriptor
-            {
-                Header     = "_Parsed Fields",
-                ParentPath = "View",
-                Group      = "Analysis",
-                IconGlyph  = "\uE81E",
-                Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(
-                                 "WpfHexEditor.Plugins.ParsedFields.Panel.ParsedFieldsPanel"))
-            });
+        // Register View menu item.
+        context.UIRegistry.RegisterMenuItem($"{Id}.Menu.Show", Id, new MenuItemDescriptor
+        {
+            Header     = "_Parsed Fields",
+            ParentPath = "View",
+            Group      = "Analysis",
+            IconGlyph  = "\uE81E",
+            Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(PanelUiId))
+        });
 
-        // Connect to the current active editor immediately (if any file is already open).
+        // ── Panel visibility tracking (lazy updates) ─────────────────────
+        _isPanelVisible = context.UIRegistry.IsPanelVisible(PanelUiId);
+        context.UIRegistry.PanelShown  += OnPanelShown;
+        context.UIRegistry.PanelHidden += OnPanelHidden;
+
+        // ── ALWAYS wire legacy HexEditor path (handles HexEditor tabs) ───
         if (context.HexEditor.IsActive)
             context.HexEditor.ConnectParsedFieldsPanel(_panel);
-
-        // Reconnect when the active tab changes.
         context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
         context.HexEditor.FileOpened          += OnFileOpened;
         context.HexEditor.FormatDetected      += OnFormatDetected;
 
-        // Route TemplateApplyRequestedEvent to this panel (was handled by MainWindow).
-        _templateSub = context.EventBus.Subscribe<TemplateApplyRequestedEvent>(OnTemplateApplyRequested);
+        // ── Focus change → preview for non-hex documents ─────────────────
+        context.FocusContext.FocusChanged += OnFocusChanged;
 
-        // Route GrammarAppliedEvent from SynalysisGrammarPlugin (issue #177).
-        _grammarSub = context.EventBus.Subscribe<GrammarAppliedEvent>(OnGrammarApplied);
+        // ── Solution Explorer file selection → preview ───────────────────
+        _filePreviewSub = context.EventBus.Subscribe<FilePreviewRequestedEvent>(OnFilePreviewRequested);
+
+        // ── Assembly Explorer member selection → PE fields ───────────────
+        _assemblyMemberSub = context.EventBus.Subscribe<AssemblyNavigationRequestedEvent>(OnAssemblyNavigationRequested);
+
+        // ── Bookmark navigation ──────────────────────────────────────────
+        _panel.NavigateToOffsetRequested += OnNavigateToOffsetRequested;
+
+        // ── Template / Grammar EventBus routes ───────────────────────────
+        _templateSub = context.EventBus.Subscribe<TemplateApplyRequestedEvent>(OnTemplateApplyRequested);
+        _grammarSub  = context.EventBus.Subscribe<GrammarAppliedEvent>(OnGrammarApplied);
 
         return Task.CompletedTask;
     }
@@ -113,51 +139,271 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
     {
         _templateSub?.Dispose();
         _grammarSub?.Dispose();
+        _filePreviewSub?.Dispose();
+        _assemblyMemberSub?.Dispose();
+
+        // Cleanup preview service
+        _previewService?.DisconnectPanel();
+        _previewService?.Clear();
+        _previewDataSource?.Dispose();
 
         if (_context != null)
         {
+            _context.UIRegistry.PanelShown  -= OnPanelShown;
+            _context.UIRegistry.PanelHidden -= OnPanelHidden;
+            _context.FocusContext.FocusChanged -= OnFocusChanged;
+
+            // Legacy HexEditor path (always wired)
             _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
             _context.HexEditor.FileOpened          -= OnFileOpened;
             _context.HexEditor.FormatDetected      -= OnFormatDetected;
             _context.HexEditor.DisconnectParsedFieldsPanel();
         }
 
+        if (_panel != null)
+            _panel.NavigateToOffsetRequested -= OnNavigateToOffsetRequested;
+
         _panel   = null;
         _context = null;
         return Task.CompletedTask;
     }
 
-    // ── HexEditor event handlers ───────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    // Lazy Update Infrastructure
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void QueueOrExecuteUpdate(ParsedFieldsUpdateRequestedEvent update)
+    {
+        if (_isPanelVisible)
+            ExecuteUpdate(update);
+        else
+            _pendingUpdate = update;
+    }
+
+    private void OnPanelShown(object? sender, string uiId)
+    {
+        if (uiId != PanelUiId) return;
+        _isPanelVisible = true;
+
+        if (_pendingUpdate != null)
+        {
+            var pending = _pendingUpdate;
+            _pendingUpdate = null;
+            ExecuteUpdate(pending);
+        }
+    }
+
+    private void OnPanelHidden(object? sender, string uiId)
+    {
+        if (uiId != PanelUiId) return;
+        _isPanelVisible = false;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Preview Service Management
+    // ══════════════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Reconnects the panel to the newly active editor after a tab switch.
-    /// The previous editor is disconnected automatically by DisconnectParsedFieldsPanel().
+    /// Attach a preview data source for a non-HexEditor file.
+    /// Uses the plugin-owned _previewService (never touches HexEditor's per-tab service).
+    /// </summary>
+    private void ActivatePreview(string? filePath)
+    {
+        if (_panel == null) return;
+        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return;
+
+        // Dedup: don't re-parse the same file
+        if (string.Equals(filePath, _lastPreviewFilePath, StringComparison.OrdinalIgnoreCase)
+            && _previewService?.ActiveFormat != null)
+            return;
+
+        // Disconnect HexEditor's panel connection — preview takes over
+        _context?.HexEditor.DisconnectParsedFieldsPanel();
+
+        // Create preview service on first use (uses shared catalog via FormatDetectionService.EffectiveFormats)
+        _previewService ??= new FormatParsingService();
+
+        // Connect panel to preview service (steals it from HexEditor)
+        if (!_isPreviewActive)
+        {
+            _previewService.ConnectPanel(_panel);
+            _previewService.FormatDetected += OnPreviewFormatDetected;
+            _isPreviewActive = true;
+        }
+
+        // Attach new data source
+        _previewDataSource?.Dispose();
+        _previewDataSource = new GenericFileDataSource(filePath);
+        _previewService.Attach(_previewDataSource); // autoDetect=true → DetectAndParseAsync
+        _lastPreviewFilePath = filePath;
+    }
+
+    /// <summary>
+    /// Deactivate preview mode — HexEditor takes panel ownership back.
+    /// </summary>
+    private void DeactivatePreview()
+    {
+        if (_isPreviewActive && _previewService != null)
+        {
+            _previewService.FormatDetected -= OnPreviewFormatDetected;
+            _previewService.DisconnectPanel();
+            _previewService.Clear();
+            _isPreviewActive = false;
+        }
+
+        _previewDataSource?.Dispose();
+        _previewDataSource = null;
+        _lastPreviewFilePath = null;
+    }
+
+    private void OnPreviewFormatDetected(object? sender, WpfHexEditor.Core.Events.FormatDetectedEventArgs e)
+    {
+        if (_panel is null || !e.Success) return;
+        _panel.Dispatcher.InvokeAsync(() => _panel.SetEnrichedFormat(e.Format));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ExecuteUpdate Orchestrator (for non-HexEditor sources only)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void ExecuteUpdate(ParsedFieldsUpdateRequestedEvent update)
+    {
+        if (_panel == null || _context == null) return;
+
+        _panel.Dispatcher.InvokeAsync(() =>
+        {
+            try
+            {
+                switch (update.SourceKind)
+                {
+                    case "document":
+                    case "explorer":
+                        ActivatePreview(update.FilePath);
+                        break;
+
+                    case "assembly":
+                        HandleAssemblyUpdate(update);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ParsedFieldsPlugin] Update error: {ex.Message}");
+            }
+        }, System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    private void HandleAssemblyUpdate(ParsedFieldsUpdateRequestedEvent update)
+    {
+        // If a HexEditor is active with a PE file, navigate to the PE offset
+        if (_context!.HexEditor.IsActive && update.PeOffset > 0)
+        {
+            _context.HexEditor.NavigateTo(update.PeOffset);
+            return;
+        }
+
+        // No HexEditor open — open a preview data source for the PE file
+        if (!string.IsNullOrEmpty(update.FilePath) && File.Exists(update.FilePath))
+            ActivatePreview(update.FilePath);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Event Handlers — Context Change Sources
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Document tab focus changed. For non-HexEditor tabs (CodeEditor, TextEditor, etc.),
+    /// activates preview mode. HexEditor tabs are handled by OnActiveEditorChanged instead.
+    /// Deferred to Background priority so OnActiveEditorChanged has time to set
+    /// _hexEditorHandledLastSwitch before this callback checks it.
+    /// </summary>
+    private void OnFocusChanged(object? sender, FocusChangedEventArgs e)
+    {
+        if (e.ActiveDocument == null) return;
+        if (e.ActiveDocument.ContentId == e.PreviousDocument?.ContentId) return;
+
+        var filePath = e.ActiveDocument.FilePath;
+        if (string.IsNullOrEmpty(filePath)) return;
+
+        // Clear the flag — OnActiveEditorChanged will set it back to true if it fires
+        _hexEditorHandledLastSwitch = false;
+
+        // Defer to ContextIdle priority (LOWER than Background) so OnActiveEditorChanged
+        // (which fires at Background) has already run and set the flag by the time we check.
+        _panel?.Dispatcher.InvokeAsync(() =>
+        {
+            // If HexEditor claimed this tab switch, skip — it already reconnected the panel
+            if (_hexEditorHandledLastSwitch) return;
+
+            // Non-hex document — activate preview
+            QueueOrExecuteUpdate(new ParsedFieldsUpdateRequestedEvent
+            {
+                FilePath = filePath,
+                SourceKind = "document"
+            });
+        }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+    }
+
+    /// <summary>Solution Explorer file selected → preview format.</summary>
+    private void OnFilePreviewRequested(FilePreviewRequestedEvent evt)
+    {
+        if (string.IsNullOrEmpty(evt.FilePath) || !File.Exists(evt.FilePath)) return;
+
+        QueueOrExecuteUpdate(new ParsedFieldsUpdateRequestedEvent
+        {
+            FilePath = evt.FilePath,
+            SourceKind = "explorer"
+        });
+    }
+
+    /// <summary>Assembly Explorer member selected → show PE fields.</summary>
+    private void OnAssemblyNavigationRequested(AssemblyNavigationRequestedEvent evt)
+    {
+        if (evt.PeOffset <= 0) return;
+
+        QueueOrExecuteUpdate(new ParsedFieldsUpdateRequestedEvent
+        {
+            FilePath = string.IsNullOrEmpty(evt.FilePath) ? null : evt.FilePath,
+            SourceKind = "assembly",
+            PeOffset = evt.PeOffset
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Legacy HexEditor Event Handlers (ALWAYS active — handles HexEditor tabs)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void OnNavigateToOffsetRequested(object? sender, long e)
+    {
+        if (_context?.HexEditor.IsActive == true)
+            _context.HexEditor.NavigateTo(e);
+    }
+
+    /// <summary>
+    /// HexEditor tab switched. Deactivate preview service and reconnect
+    /// the panel to the new HexEditor's per-tab FormatParsingService.
+    /// Only fires when the new active tab IS a HexEditor.
     /// </summary>
     private void OnActiveEditorChanged(object? sender, EventArgs e)
     {
         if (_panel is null || _context is null) return;
+
+        // Signal that HexEditor handled this tab switch — OnFocusChanged should skip
+        _hexEditorHandledLastSwitch = true;
+
+        // Deactivate preview — HexEditor takes panel ownership
+        DeactivatePreview();
+
         _context.HexEditor.DisconnectParsedFieldsPanel();
         if (_context.HexEditor.IsActive)
             _context.HexEditor.ConnectParsedFieldsPanel(_panel);
-        // Enriched data is re-populated by OnParsedFieldsPanelChanged inside the HexEditor DP callback
-        // (calls newPanel.SetEnrichedFormat(_detectedFormat) when reconnecting to an already-detected editor).
     }
 
-    /// <summary>Clears the panel when a new file is opened (no parsed fields yet).</summary>
     private void OnFileOpened(object? sender, EventArgs e)
     {
         _panel?.Clear();
-        // Do NOT call SetEnrichedFormat(null) here.
-        // AutoDetectAndApplyFormat is queued at Background priority before this deferred
-        // FileOpened event; clearing here causes the enriched section to appear then vanish.
-        // Safety: Clear() sets FormatInfo.IsDetected=false → parent Border collapses → any
-        // stale enriched data is hidden until format detection re-runs and sets IsDetected=true.
     }
 
-    /// <summary>
-    /// Receives format detection result and pushes enriched metadata into the panel.
-    /// RawFormatDefinition is cast to FormatDefinition — available to bundled plugins via SDK→HexEditor.
-    /// </summary>
     private void OnFormatDetected(object? sender, FormatDetectedArgs e)
     {
         if (_panel is null) return;
@@ -165,12 +411,10 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
         _panel.Dispatcher.InvokeAsync(() => _panel.SetEnrichedFormat(format));
     }
 
-    // ── EventBus handler ──────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+    // EventBus Handlers (Template / Grammar — shared by all paths)
+    // ══════════════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Receives parsed blocks from the CustomParserTemplate plugin via EventBus
-    /// and populates this panel — replaces the MainWindow.PluginSystem handler.
-    /// </summary>
     private void OnTemplateApplyRequested(TemplateApplyRequestedEvent evt)
     {
         if (_panel is null || _context?.HexEditor.IsActive != true) return;
@@ -191,16 +435,10 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
                     FormattedValue = block.DisplayValue ?? string.Empty
                 });
             }
-
             _panel.RefreshView();
         });
     }
 
-    /// <summary>
-    /// Receives UFWB grammar parse results from SynalysisGrammarPlugin (issue #177)
-    /// and populates this panel with the structured fields.
-    /// Pattern identical to OnTemplateApplyRequested.
-    /// </summary>
     private void OnGrammarApplied(GrammarAppliedEvent evt)
     {
         if (_panel is null || _context?.HexEditor.IsActive != true) return;
@@ -228,14 +466,12 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
                 });
             }
 
-            // Show grammar name as the format info header.
-            _panel.FormatInfo = new WpfHexEditor.Core.Interfaces.FormatInfo
+            _panel.FormatInfo = new FormatInfo
             {
                 IsDetected  = true,
                 Name        = evt.GrammarName,
                 Description = $"Parsed via UFWB grammar — {evt.Fields.Count} fields",
             };
-
             _panel.RefreshView();
         });
     }

@@ -68,7 +68,22 @@ public partial class AssemblyExplorerPanel : UserControl
 
         // Wire EventBus publishing from ViewModel events
         ViewModel.AssemblyLoaded += (_, evt) => eventBus.Publish(evt);
-        ViewModel.MemberSelected += (_, evt) => eventBus.Publish(evt);
+        ViewModel.MemberSelected += (_, evt) =>
+        {
+            eventBus.Publish(evt);
+
+            // Also publish SDK-level event for cross-plugin consumers (ParsedFields, etc.)
+            if (ViewModel.SelectedNode is { } selNode)
+            {
+                eventBus.Publish(new WpfHexEditor.SDK.Events.AssemblyNavigationRequestedEvent
+                {
+                    FilePath   = selNode.OwnerFilePath ?? string.Empty,
+                    MemberName = evt.NodeDisplayName,
+                    PeOffset   = evt.PeOffset,
+                    NodeKind   = evt.NodeKind
+                });
+            }
+        };
 
         // Wire new v2.0 tree events
         MainTreeView.HighlightInHexEditorRequested += OnHighlightInHexEditor;

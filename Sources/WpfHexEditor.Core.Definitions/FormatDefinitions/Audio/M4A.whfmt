@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    M4A Audio
    Category:  Audio
    Ext:       .m4a, .m4b, .m4p
@@ -152,5 +152,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "MPEG-4 Audio - AAC audio container",
+    "suggestedInspections": [
+      "Validate M4A Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
   }
 }

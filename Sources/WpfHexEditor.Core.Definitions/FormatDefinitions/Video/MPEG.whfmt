@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    MPEG Video
    Category:  Video
    Ext:       .mpg, .mpeg, .m2v
@@ -131,5 +131,18 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "MPEG-1/2 video stream",
+    "suggestedInspections": [
+      "Validate MPEG Video container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

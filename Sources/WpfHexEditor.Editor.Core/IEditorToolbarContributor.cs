@@ -34,14 +34,19 @@ public sealed class EditorToolbarItem : INotifyPropertyChanged
     private bool    _isEnabled = true;
     private bool    _isChecked;
     private string? _tooltip;
+    private string? _label;
 
     /// <summary>
     /// Segoe MDL2 Assets character code, e.g. <c>"\uE74E"</c> (Save).
     /// </summary>
     public string? Icon { get; init; }
 
-    /// <summary>Optional text label displayed beside the icon.</summary>
-    public string? Label { get; init; }
+    /// <summary>Optional text label displayed beside the icon.  Mutable so callers can update it at runtime.</summary>
+    public string? Label
+    {
+        get => _label;
+        set { if (_label == value) return; _label = value; OnPropertyChanged(); }
+    }
 
     /// <summary>
     /// Tooltip shown on hover.  Mutable so callers can update it at runtime

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    BSON (Binary JSON)
    Category:  Data
    Ext:       .bson
@@ -103,6 +103,19 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "data",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Binary JSON format used by MongoDB",
+    "suggestedInspections": [
+      "Validate BSON (Binary JSON) schema header and encoding markers",
+      "Check nested structure depth and field type tags",
+      "Inspect string encodings and numeric value boundaries"
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

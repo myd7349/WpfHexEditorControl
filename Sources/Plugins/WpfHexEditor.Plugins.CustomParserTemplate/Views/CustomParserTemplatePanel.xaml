@@ -77,8 +77,8 @@
                         <Setter Property="Padding"         Value="4,2"/>
                         <Style.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource SE_SelectedBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource PFP_ItemSelectedForegroundBrush}"/>
+                                <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -90,7 +90,7 @@
                         <Setter Property="Foreground" Value="{DynamicResource PFP_TextBrush}"/>
                         <Style.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource SE_SelectedBrush}"/>
+                                <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>
@@ -142,8 +142,8 @@
                             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                             <Style.Triggers>
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource SE_SelectedBrush}"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource PFP_ItemSelectedForegroundBrush}"/>
+                                    <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource Panel_ItemSelectedForegroundBrush}"/>
                                 </Trigger>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Background" Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>

@@ -17,6 +17,7 @@
 //
 // ==========================================================
 
+using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
 
 namespace WpfHexEditor.Shell;
@@ -35,9 +36,15 @@ internal sealed class DockTabEventWirer : IDisposable
     private readonly Action<DockItem> _autoHideHandler;
     private readonly Action<DockItem> _hideHandler;
     private readonly Action<DockItem> _dockAsDocumentHandler;
+    private readonly Action<DockItem> _restoreToToolPanelHandler;
     private readonly Action<DockItem> _pinToggleHandler;
     private readonly Action<DockItem, int> _reorderHandler;
     private readonly Action<IReadOnlyList<DockItem>> _batchCloseHandler;
+    private readonly Action<DockItem> _newVerticalGroupHandler;
+    private readonly Action<DockItem> _newHorizontalGroupHandler;
+    private readonly Action<DockItem> _moveToNextGroupHandler;
+    private readonly Action<DockItem> _moveToPreviousGroupHandler;
+    private readonly Action<DockItem> _closeGroupHandler;
 
     public DockTabEventWirer(DockTabControl tabControl, DockControl host)
     {
@@ -57,11 +64,13 @@ internal sealed class DockTabEventWirer : IDisposable
         _autoHideHandler = item =>
         {
             if (host.Engine is null) return;
-            // Auto-hide the entire group so all tabs move together
+            // Auto-hide the entire group so all tabs move together.
+            // AutoHideGroup assigns a shared AutoHideGroupId so restoring
+            // any one item brings back the whole tab group.
             if (item.Owner is { } group)
                 host.Engine.AutoHideGroup(group);
             else
-                host.Engine.AutoHide(item);  // fallback: item already detached from its group
+                host.Engine.AutoHide(item);
             host.RebuildVisualTree();
         };
 
@@ -76,6 +85,13 @@ internal sealed class DockTabEventWirer : IDisposable
         {
             if (host.Engine is null) return;
             host.Engine.DockAsDocument(item);
+            host.RebuildVisualTree();
+        };
+
+        _restoreToToolPanelHandler = item =>
+        {
+            if (host.Engine is null) return;
+            host.Engine.RestoreToToolPanel(item);
             host.RebuildVisualTree();
         };
 
@@ -123,15 +139,27 @@ internal sealed class DockTabEventWirer : IDisposable
             host.EndBatchClose();
         };
 
+        _newVerticalGroupHandler = item => host.HandleNewTabGroup(item, DockDirection.Right);
+        _newHorizontalGroupHandler = item => host.HandleNewTabGroup(item, DockDirection.Bottom);
+        _moveToNextGroupHandler = item => host.HandleMoveToAdjacentGroup(item, forward: true);
+        _moveToPreviousGroupHandler = item => host.HandleMoveToAdjacentGroup(item, forward: false);
+        _closeGroupHandler = item => host.HandleCloseTabGroup(item);
+
         _tabControl.TabCloseRequested            += _closeHandler;
         _tabControl.TabBatchCloseRequested       += _batchCloseHandler;
         _tabControl.TabDragStarted               += _dragHandler;
         _tabControl.TabFloatRequested            += _floatHandler;
         _tabControl.TabAutoHideRequested         += _autoHideHandler;
         _tabControl.TabHideRequested             += _hideHandler;
-        _tabControl.TabDockAsDocumentRequested   += _dockAsDocumentHandler;
-        _tabControl.TabPinToggleRequested        += _pinToggleHandler;
+        _tabControl.TabDockAsDocumentRequested       += _dockAsDocumentHandler;
+        _tabControl.TabRestoreToToolPanelRequested   += _restoreToToolPanelHandler;
+        _tabControl.TabPinToggleRequested            += _pinToggleHandler;
         _tabControl.TabReorderRequested          += _reorderHandler;
+        _tabControl.TabNewVerticalGroupRequested     += _newVerticalGroupHandler;
+        _tabControl.TabNewHorizontalGroupRequested   += _newHorizontalGroupHandler;
+        _tabControl.TabMoveToNextGroupRequested      += _moveToNextGroupHandler;
+        _tabControl.TabMoveToPreviousGroupRequested  += _moveToPreviousGroupHandler;
+        _tabControl.TabCloseGroupRequested           += _closeGroupHandler;
     }
 
     public void Dispose()
@@ -142,8 +170,14 @@ internal sealed class DockTabEventWirer : IDisposable
         _tabControl.TabFloatRequested            -= _floatHandler;
         _tabControl.TabAutoHideRequested         -= _autoHideHandler;
         _tabControl.TabHideRequested             -= _hideHandler;
-        _tabControl.TabDockAsDocumentRequested   -= _dockAsDocumentHandler;
-        _tabControl.TabPinToggleRequested        -= _pinToggleHandler;
+        _tabControl.TabDockAsDocumentRequested       -= _dockAsDocumentHandler;
+        _tabControl.TabRestoreToToolPanelRequested   -= _restoreToToolPanelHandler;
+        _tabControl.TabPinToggleRequested            -= _pinToggleHandler;
         _tabControl.TabReorderRequested          -= _reorderHandler;
+        _tabControl.TabNewVerticalGroupRequested     -= _newVerticalGroupHandler;
+        _tabControl.TabNewHorizontalGroupRequested   -= _newHorizontalGroupHandler;
+        _tabControl.TabMoveToNextGroupRequested      -= _moveToNextGroupHandler;
+        _tabControl.TabMoveToPreviousGroupRequested  -= _moveToPreviousGroupHandler;
+        _tabControl.TabCloseGroupRequested           -= _closeGroupHandler;
     }
 }

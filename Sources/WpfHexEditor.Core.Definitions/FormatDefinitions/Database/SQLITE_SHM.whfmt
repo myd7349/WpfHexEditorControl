@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    SQLite Shared Memory
    Category:  Database
    Ext:       .shm, -shm
@@ -119,5 +119,18 @@
   "functions": {
     "readUInt32LE": "Read DB header",
     "extractASCIIString": "Read schema"
+  },
+  "forensic": {
+    "category": "database",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "SQLite shared-memory file for WAL mode coordination",
+    "suggestedInspections": [
+      "Verify SQLite Shared Memory file header, page size, and version fields",
+      "Check B-tree/index page pointers and free page list",
+      "Inspect record format, schema tables, and journal state"
+    ]
   }
 }

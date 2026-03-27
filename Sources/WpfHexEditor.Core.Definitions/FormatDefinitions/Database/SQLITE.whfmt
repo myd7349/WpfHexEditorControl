@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    SQLite Database
    Category:  Database
    Ext:       .sqlite, .db, .sqlite3, .db3
@@ -435,6 +435,27 @@
       "description": "Number of unused pages on the freelist available for reuse"
     }
   ],
+  "assertions": [
+    {
+      "name": "SQLite magic",
+      "expression": "sqliteMagic == 1397208883",
+      "severity": "error",
+      "message": "Invalid SQLite signature — expected 'SQLi'"
+    }
+  ],
+  "forensic": {
+    "category": "database",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "SQLite database file format. SQLite is a self-contained, serverless, zero-configuration, transactional SQL d...",
+    "suggestedInspections": [
+      "Verify SQLite Database file header, page size, and version fields",
+      "Check B-tree/index page pointers and free page list",
+      "Inspect record format, schema tables, and journal state"
+    ]
+  },
   "software": [
     "SQLite",
     "DB Browser for SQLite",

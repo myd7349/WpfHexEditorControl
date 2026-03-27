@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    DER Certificate
    Category:  Certificates
    Ext:       .der, .cer, .crt
@@ -127,6 +127,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "certificate",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Distinguished Encoding Rules - X.509 certificate",
+    "suggestedInspections": [
+      "Verify DER Certificate ASN.1 structure, tag-length-value encoding",
+      "Check certificate dates, issuer DN, and key algorithm OIDs",
+      "Inspect extensions (SAN, key usage) and signature algorithm"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ASN.1 Certificate Root",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    NTFS Filesystem
    Category:  Disk
    Ext:       .ntfs
@@ -111,6 +111,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "disk",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Windows NT File System",
+    "suggestedInspections": [
+      "Verify NTFS Filesystem superblock/boot sector signature and version",
+      "Check partition/volume layout and allocation bitmap",
+      "Inspect filesystem journal and metadata consistency"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Boot Sector (BPB)",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

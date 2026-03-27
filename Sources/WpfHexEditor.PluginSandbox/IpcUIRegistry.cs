@@ -287,6 +287,10 @@ internal sealed class IpcUIRegistry : IUIRegistry
         return true;
     }
 
+    // Sandbox plugins cannot receive dock events — stubs for interface compliance.
+    public event EventHandler<string>? PanelShown;
+    public event EventHandler<string>? PanelHidden;
+
     private void SendPanelAction(string contentId, string action)
     {
         _ = _channel.SendAsync(new SandboxEnvelope

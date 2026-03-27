@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Zstandard Compressed
    Category:  Archives
    Ext:       .zst, .zstd
@@ -108,5 +108,18 @@
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "SupportsEncryption": false
+  },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Zstandard compression format by Facebook",
+    "suggestedInspections": [
+      "Verify Zstandard Compressed file header, compression method, and stored CRCs",
+      "Check central directory or entry table for consistency",
+      "Inspect individual entry sizes for truncation or overflow"
+    ]
   }
 }

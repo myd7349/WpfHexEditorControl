@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Rich Text Format
    Category:  Documents
    Ext:       .rtf
@@ -46,7 +46,7 @@
     "version": 1,
     "title": "Unknown",
     "author": "Unknown",
-  "preferredEditor": "hex-editor",
+    "preferredEditor": "hex-editor",
     "subject": "Unknown",
     "pages": 0,
     "defaultFont": 0,
@@ -114,5 +114,18 @@
   },
   "TechnicalDetails": {
     "DocumentFormat": true
+  },
+  "forensic": {
+    "category": "document",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Rich Text Format document",
+    "suggestedInspections": [
+      "Validate Rich Text Format file signature and container structure",
+      "Check for embedded macros, scripts, or active content",
+      "Inspect document metadata: author, timestamps, revisions"
+    ]
   }
 }

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    ELF Executable
    Category:  Executables
    Ext:       , .so, .o, .elf
@@ -8,7 +8,6 @@
    Detection: signature=7F454C46 @ offset 0
    Updated:   2026-02-24
    ============================================================ */
-
 {
   "diffMode": "binary",
   "formatName": "ELF Executable",
@@ -434,6 +433,53 @@
       "description": "Number of sections defined in the section header table"
     }
   ],
+  "assertions": [
+    {
+      "name": "ELF magic",
+      "expression": "elfMagic == 1179403647",
+      "severity": "error",
+      "message": "Invalid ELF magic — expected 0x7F454C46"
+    }
+  ],
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ELF Header",
+        "offset": 0,
+        "icon": ""
+      },
+      {
+        "name": "Program Headers",
+        "offsetVar": "programHeaderOffset",
+        "icon": ""
+      },
+      {
+        "name": "Section Headers",
+        "offsetVar": "sectionHeaderOffset",
+        "icon": ""
+      }
+    ]
+  },
+  "forensic": {
+    "category": "executable",
+    "riskLevel": "high",
+    "suspiciousPatterns": [
+      {
+        "name": "Stripped binary",
+        "condition": "sectionHeaderCount == 0",
+        "severity": "warning",
+        "description": "No section headers — binary has been stripped"
+      }
+    ]
+  },
+  "aiHints": {
+    "analysisContext": "Executable and Linkable Format (ELF) - the standard binary format for executables, object code, shared libra...",
+    "suggestedInspections": [
+      "Verify ELF Executable signature, section table, and entry point",
+      "Check import/export tables for suspicious library references",
+      "Inspect section entropy for packing, encryption, or hollowing"
+    ]
+  },
   "software": [
     "Linux OS",
     "GCC",

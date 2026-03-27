@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    TAR Archive
    Category:  Archives
    Ext:       .tar
@@ -346,6 +346,34 @@
     "PriorityFormat": true,
     "AutoRefined": false
   },
+  "forensic": {
+    "category": "archive",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "POSIX TAR (Tape Archive) format stores files sequentially in 512-byte blocks without compression. Each file ...",
+    "suggestedInspections": [
+      "Verify TAR Archive file header, compression method, and stored CRCs",
+      "Check central directory or entry table for consistency",
+      "Inspect individual entry sizes for truncation or overflow"
+    ]
+  },
+  "assertions": [
+    {
+      "name": "Header Checksum Presence",
+      "field": "headerChecksum",
+      "condition": "headerChecksum != '' && headerChecksum != '        '",
+      "severity": "warning",
+      "message": "TAR header checksum field should be a non-empty octal ASCII string; blank checksum may indicate a corrupt or crafted header."
+    },
+    {
+      "name": "File Size Multiple of 512",
+      "expression": "fileSize % 512 == 0",
+      "severity": "warning",
+      "message": "TAR archives store data in 512-byte blocks; a file size not divisible by 512 indicates truncation or corruption."
+    }
+  ],
   "TechnicalDetails": {
     "ArchivesFormat": true,
     "Endianness": "N/A (octal ASCII strings)",

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Portable Arbitrary Map
    Category:  Images
    Ext:       .pam
@@ -133,6 +133,19 @@
   "TechnicalDetails": {
     "ImagesFormat": true,
     "BitDepth": 8
+  },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Netpbm Portable Arbitrary Map (any format)",
+    "suggestedInspections": [
+      "Validate Portable Arbitrary Map signature, image dimensions, and color model",
+      "Check pixel data offset, compression type, and scanline alignment",
+      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+    ]
   },
   "functions": {
     "readUInt32LE": "Read header",

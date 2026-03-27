@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    RealMedia Variable Bitrate
    Category:  Video
    Ext:       .rmvb
@@ -95,5 +95,18 @@
   "TechnicalDetails": {
     "VideoFormat": true
   },
-  "functions": {}
+  "functions": {},
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "RealMedia variable bitrate container developed by RealNetworks",
+    "suggestedInspections": [
+      "Validate RealMedia Variable Bitrate container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
+  }
 }

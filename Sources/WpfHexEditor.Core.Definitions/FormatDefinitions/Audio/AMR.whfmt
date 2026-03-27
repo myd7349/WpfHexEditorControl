@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Adaptive Multi-Rate
    Category:  Audio
    Ext:       .amr
@@ -114,5 +114,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "AMR audio codec optimized for speech coding, used in GSM and 3G mobile networks",
+    "suggestedInspections": [
+      "Validate Adaptive Multi-Rate header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
   }
 }

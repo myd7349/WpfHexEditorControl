@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    AAC Audio
    Category:  Audio
    Ext:       .aac
@@ -485,5 +485,18 @@
     "SamplesPerFrame": 1024,
     "Endianness": "big-endian",
     "SyncPattern": "0xFFF (12 bits)"
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Advanced Audio Coding with ADTS (Audio Data Transport Stream) framing - high-quality lossy audio codec stand...",
+    "suggestedInspections": [
+      "Validate AAC Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
   }
 }

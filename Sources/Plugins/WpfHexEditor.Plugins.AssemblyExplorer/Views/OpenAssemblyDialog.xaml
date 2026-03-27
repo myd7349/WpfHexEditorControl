@@ -187,7 +187,7 @@
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="Bd" Property="Background"
-                                                Value="{DynamicResource PFP_ItemHoverBrush}"/>
+                                                Value="{DynamicResource Panel_ItemHoverBrush}"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="Bd" Property="BorderBrush"
@@ -213,10 +213,10 @@
                     <Setter Property="BorderBrush"                Value="{DynamicResource DockBorderBrush}"/>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource PFP_ItemHoverBrush}"/>
+                            <Setter Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource PFP_ItemSelectedBrush}"/>
+                            <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                         </Trigger>
                     </Style.Triggers>
                 </Style>
@@ -428,10 +428,10 @@
                                 <Setter Property="Background" Value="Transparent"/>
                                 <Style.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource PFP_ItemHoverBrush}"/>
+                                        <Setter Property="Background" Value="{DynamicResource Panel_ItemHoverBrush}"/>
                                     </Trigger>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource PFP_ItemSelectedBrush}"/>
+                                        <Setter Property="Background" Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>

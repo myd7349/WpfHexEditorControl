@@ -83,13 +83,13 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource UT_HoverBrush}"/>
+                                        Value="{DynamicResource Panel_ItemHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource UT_SelectionBrush}"/>
+                                        Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderBrush"
-                                        Value="{DynamicResource UT_SelectionBrush}"/>
+                                        Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -107,7 +107,7 @@
             <Setter Property="FontSize"                 Value="11"/>
             <Setter Property="FocusVisualStyle"         Value="{x:Null}"/>
             <Setter Property="CaretBrush"               Value="{DynamicResource PFP_TextBrush}"/>
-            <Setter Property="SelectionBrush"           Value="{DynamicResource UT_SelectionBrush}"/>
+            <Setter Property="SelectionBrush"           Value="{DynamicResource Panel_ItemSelectedBrush}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -125,7 +125,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
                                 <Setter TargetName="Bd" Property="BorderBrush"
-                                        Value="{DynamicResource UT_SelectionBrush}"/>
+                                        Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -158,13 +158,13 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource UT_HoverBrush}"/>
+                                        Value="{DynamicResource Panel_ItemHoverBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderBrush"
-                                        Value="{DynamicResource UT_SelectionBrush}"/>
+                                        Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background"
-                                        Value="{DynamicResource UT_SelectionBrush}"/>
+                                        Value="{DynamicResource Panel_ItemSelectedBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -545,7 +545,7 @@
                            AllowsTransparency="True"
                            HorizontalOffset="0">
                         <Border Background="{DynamicResource UT_SearchBoxBrush}"
-                                BorderBrush="{DynamicResource UT_SelectionBrush}"
+                                BorderBrush="{DynamicResource Panel_ItemSelectedBrush}"
                                 BorderThickness="1" CornerRadius="4" Padding="8,6">
                             <Border.Effect>
                                 <DropShadowEffect ShadowDepth="3" BlurRadius="8"

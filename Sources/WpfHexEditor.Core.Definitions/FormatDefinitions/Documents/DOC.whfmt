@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Word Document (Legacy)
    Category:  Documents
    Ext:       .doc
@@ -133,5 +133,18 @@
   },
   "functions": {
     "readUInt32LE": "Read executable header"
+  },
+  "forensic": {
+    "category": "document",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Microsoft Word 97-2003 document (OLE2)",
+    "suggestedInspections": [
+      "Validate Word Document (Legacy) file signature and container structure",
+      "Check for embedded macros, scripts, or active content",
+      "Inspect document metadata: author, timestamps, revisions"
+    ]
   }
 }

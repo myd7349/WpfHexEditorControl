@@ -283,7 +283,7 @@
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="Bd" Property="Background"
-                                                Value="{DynamicResource PFP_ItemHoverBrush}"/>
+                                                Value="{DynamicResource Panel_ItemHoverBrush}"/>
                                         <Setter TargetName="Bd" Property="BorderBrush"
                                                 Value="{DynamicResource PFP_InputBorderBrush}"/>
                                     </Trigger>

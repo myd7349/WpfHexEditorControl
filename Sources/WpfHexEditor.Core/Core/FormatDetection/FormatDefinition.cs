@@ -106,6 +106,64 @@ namespace WpfHexEditor.Core.FormatDetection
         /// </summary>
         public List<string> UseCases { get; set; } = new List<string>();
 
+        // ── whfmt v2.0 top-level fields ─────────────────────────────────────────
+
+        /// <summary>
+        /// Preferred diff algorithm: "text", "semantic", or "binary".
+        /// Used by DiffViewer to select the appropriate comparison engine.
+        /// </summary>
+        public string DiffMode { get; set; }
+
+        /// <summary>
+        /// Describes how to detect the format version from file content,
+        /// enabling dispatch to version-specific block sets (VersionedBlocks).
+        /// </summary>
+        public FormatVersionDetection VersionDetection { get; set; }
+
+        /// <summary>
+        /// Version-specific block sets, keyed by the version string returned by VersionDetection.
+        /// Example: { "PE32": [...], "PE32+": [...] }
+        /// </summary>
+        public Dictionary<string, List<BlockDefinition>> VersionedBlocks { get; set; }
+
+        /// <summary>
+        /// Checksum validation rules evaluated after block interpretation.
+        /// </summary>
+        public List<ChecksumDefinition> Checksums { get; set; }
+
+        /// <summary>
+        /// Assertion rules that must hold for a well-formed file.
+        /// Failures populate the ForensicAlerts panel.
+        /// </summary>
+        public List<AssertionDefinition> Assertions { get; set; }
+
+        /// <summary>
+        /// Forensic / security metadata: suspicious patterns, risk level, known attack vectors.
+        /// </summary>
+        public ForensicDefinition Forensic { get; set; }
+
+        /// <summary>
+        /// Named navigation bookmarks derived from parsed variables (entry points, header offsets…).
+        /// </summary>
+        public NavigationDefinition Navigation { get; set; }
+
+        /// <summary>
+        /// Declares how parsed fields are grouped and displayed in the Format Inspector panel.
+        /// </summary>
+        public InspectorDefinition Inspector { get; set; }
+
+        /// <summary>
+        /// Export templates that let users extract structured data from the active file.
+        /// </summary>
+        public List<ExportTemplate> ExportTemplates { get; set; }
+
+        /// <summary>
+        /// Contextual hints for AI-assisted analysis.
+        /// </summary>
+        public AiHints AiHints { get; set; }
+
+        // ── end v2.0 fields ──────────────────────────────────────────────────────
+
         /// <summary>
         /// Preferred editor factory ID for files matching this format.
         /// When null, the editor is derived automatically: IsTextFormat=true → "code-editor";
@@ -148,15 +206,39 @@ namespace WpfHexEditor.Core.FormatDetection
     }
 
     /// <summary>
-    /// Detection rule for identifying file formats
-    /// Uses magic bytes (signature) at a specific offset
+    /// Detection rule for identifying file formats.
+    /// Supports single-signature (legacy) and multi-signature (v2.0) detection.
     /// </summary>
     public class DetectionRule
     {
         /// <summary>
-        /// Hex signature to match (e.g., "504B0304" for ZIP)
+        /// Legacy single hex signature (e.g., "504B0304" for ZIP).
+        /// If Signatures array is provided, this field is ignored.
         /// </summary>
         public string Signature { get; set; }
+
+        /// <summary>
+        /// v2.0: Multiple alternative signatures (OR logic by default).
+        /// Any one match is sufficient to trigger detection (matchMode = "any").
+        /// </summary>
+        public List<SignatureEntry> Signatures { get; set; }
+
+        /// <summary>
+        /// v2.0: How to combine multi-signature matches: "any" (default) or "all".
+        /// </summary>
+        public string MatchMode { get; set; } = "any";
+
+        /// <summary>
+        /// v2.0: Entropy hint — expected Shannon entropy range for valid files.
+        /// Used as a secondary signal when signature matching is ambiguous.
+        /// </summary>
+        public EntropyHint EntropyHint { get; set; }
+
+        /// <summary>
+        /// v2.0: Minimum weighted confidence score (0.0–1.0) across all signals.
+        /// Default: 0.70 (70%).
+        /// </summary>
+        public double MinimumScore { get; set; } = 0.70;
 
         /// <summary>
         /// Offset where signature should appear (usually 0)
@@ -193,21 +275,22 @@ namespace WpfHexEditor.Core.FormatDetection
         public double MinConfidenceThreshold { get; set; } = 0.7;
 
         /// <summary>
-        /// Validate this detection rule
+        /// Validate this detection rule.
+        /// v2.0: accepts rules with only a Signatures array and no legacy Signature.
         /// </summary>
         public bool IsValid()
         {
-            // Allow empty signature if not required (for text formats without magic bytes)
-            if (string.IsNullOrWhiteSpace(Signature))
-            {
-                return !Required; // Valid if signature is optional
-            }
+            // v2.0 multi-signature array takes precedence
+            if (Signatures != null && Signatures.Count > 0)
+                return true;
 
-            // Signature must be valid hex string (even number of hex digits)
+            // Legacy single-signature path
+            if (string.IsNullOrWhiteSpace(Signature))
+                return !Required; // valid when optional
+
             if (Signature.Length % 2 != 0)
                 return false;
 
-            // Check all characters are valid hex
             foreach (char c in Signature)
             {
                 if (!System.Uri.IsHexDigit(c))
@@ -476,6 +559,216 @@ namespace WpfHexEditor.Core.FormatDetection
         /// </summary>
         public List<string> RelatedFormats { get; set; } = new List<string>();
     }
+
+    // ── whfmt v2.0 Supporting Classes ────────────────────────────────────────
+
+    /// <summary>A single signature entry in a multi-signature detection rule.</summary>
+    public class SignatureEntry
+    {
+        /// <summary>Hex bytes to match (e.g., "FF FB").</summary>
+        public string Value { get; set; }
+        /// <summary>File offset where the signature must appear. Default 0.</summary>
+        public long Offset { get; set; }
+        /// <summary>Human-readable label for this variant (e.g., "MP3 no ID3").</summary>
+        public string Label { get; set; }
+        /// <summary>Confidence weight contribution (0.0–1.0). Default 0.9.</summary>
+        public double Weight { get; set; } = 0.9;
+    }
+
+    /// <summary>Expected Shannon entropy range for format detection hints.</summary>
+    public class EntropyHint
+    {
+        /// <summary>Minimum expected entropy (0.0–8.0).</summary>
+        public double Min { get; set; }
+        /// <summary>Maximum expected entropy (0.0–8.0). Default 8.0.</summary>
+        public double Max { get; set; } = 8.0;
+    }
+
+    /// <summary>Version detection config — reads a field value and maps it to a version string.</summary>
+    public class FormatVersionDetection
+    {
+        /// <summary>Variable name set by a prior field block whose value drives version selection.</summary>
+        public string Field { get; set; }
+        /// <summary>Maps raw field values (as strings) to version labels.</summary>
+        public Dictionary<string, string> Map { get; set; }
+    }
+
+    /// <summary>Checksum validation rule applied after block interpretation.</summary>
+    public class ChecksumDefinition
+    {
+        /// <summary>Display name for this checksum rule.</summary>
+        public string Name { get; set; }
+        /// <summary>Algorithm: "crc32", "crc16", "md5", "sha1", "sha256", "adler32".</summary>
+        public string Algorithm { get; set; }
+        /// <summary>Byte range to compute checksum over.</summary>
+        public ChecksumRange DataRange { get; set; }
+        /// <summary>Location where the expected checksum is stored in the file.</summary>
+        public ChecksumStoredAt StoredAt { get; set; }
+        /// <summary>Data type of the stored checksum field ("uint32", "uint32be", etc.).</summary>
+        public string StoredType { get; set; }
+        /// <summary>Expected checksum hex string (alternative to StoredAt — known fixed value).</summary>
+        public string ExpectedValue { get; set; }
+        /// <summary>Severity if checksum fails: "error", "warning", "info". Default "warning".</summary>
+        public string Severity { get; set; } = "warning";
+    }
+
+    /// <summary>Byte range specification using variable names.</summary>
+    public class ChecksumRange
+    {
+        /// <summary>Variable name holding the start offset.</summary>
+        public string OffsetVar { get; set; }
+        /// <summary>Variable name holding the length.</summary>
+        public string LengthVar { get; set; }
+        /// <summary>Fixed start offset (alternative to OffsetVar).</summary>
+        public long? FixedOffset { get; set; }
+        /// <summary>Fixed length (alternative to LengthVar).</summary>
+        public long? FixedLength { get; set; }
+    }
+
+    /// <summary>Location of the stored checksum value in the file.</summary>
+    public class ChecksumStoredAt
+    {
+        /// <summary>Variable name holding the offset of the stored checksum.</summary>
+        public string OffsetVar { get; set; }
+        /// <summary>Fixed offset of the stored checksum.</summary>
+        public long? FixedOffset { get; set; }
+        /// <summary>Byte length of the stored checksum field (e.g. 4 for CRC32).</summary>
+        public int Length { get; set; }
+        /// <summary>Endianness of the stored value: "little" | "big". Default "little".</summary>
+        public string Endianness { get; set; }
+    }
+
+    /// <summary>An assertion that must hold for a well-formed file.</summary>
+    public class AssertionDefinition
+    {
+        /// <summary>Display name for this assertion.</summary>
+        public string Name { get; set; }
+        /// <summary>Boolean expression evaluated against parsed variables.</summary>
+        public string Expression { get; set; }
+        /// <summary>Severity if assertion fails: "error", "warning", "info". Default "warning".</summary>
+        public string Severity { get; set; } = "warning";
+        /// <summary>Human-readable failure message shown in Forensic Alerts panel.</summary>
+        public string Message { get; set; }
+    }
+
+    /// <summary>Forensic / security metadata for the format.</summary>
+    public class ForensicDefinition
+    {
+        /// <summary>Format category for forensic purposes (e.g., "executable", "document").</summary>
+        public string Category { get; set; }
+        /// <summary>Inherent risk level: "low", "medium", "high". Default "low".</summary>
+        public string RiskLevel { get; set; } = "low";
+        /// <summary>Patterns that warrant forensic attention when detected.</summary>
+        public List<ForensicPattern> SuspiciousPatterns { get; set; }
+        /// <summary>Patterns that are definitively malicious / corrupted.</summary>
+        public List<ForensicPattern> KnownMaliciousPatterns { get; set; }
+    }
+
+    /// <summary>A single forensic detection pattern.</summary>
+    public class ForensicPattern
+    {
+        /// <summary>Display name for this pattern.</summary>
+        public string Name { get; set; }
+        /// <summary>Boolean expression to detect this pattern (uses parsed variables).</summary>
+        public string Condition { get; set; }
+        /// <summary>Optional entropy threshold that must also be exceeded (7.0–8.0).</summary>
+        public double? EntropyThreshold { get; set; }
+        /// <summary>Severity: "error", "warning", "info". Default "warning".</summary>
+        public string Severity { get; set; } = "warning";
+        /// <summary>Human-readable description shown in Forensic Alerts panel.</summary>
+        public string Description { get; set; }
+    }
+
+    /// <summary>Named navigation bookmarks derived from parsed variables.</summary>
+    public class NavigationDefinition
+    {
+        /// <summary>Named jump targets (e.g., Entry Point, PE Header).</summary>
+        public List<NavigationBookmark> Bookmarks { get; set; }
+        /// <summary>Follow-pointer targets (jump to the value stored in a variable).</summary>
+        public List<NavigationPointer> Pointers { get; set; }
+    }
+
+    /// <summary>A named bookmark at an offset stored in a variable.</summary>
+    public class NavigationBookmark
+    {
+        /// <summary>Display name (e.g., "Entry Point").</summary>
+        public string Name { get; set; }
+        /// <summary>Variable whose value is the target offset.</summary>
+        public string OffsetVar { get; set; }
+        /// <summary>Segoe MDL2 glyph character for the icon (e.g., "\uE768").</summary>
+        public string Icon { get; set; }
+        /// <summary>Hex highlight color for this bookmark (#RRGGBB).</summary>
+        public string Color { get; set; }
+    }
+
+    /// <summary>A "follow pointer" jump annotation in the structure view.</summary>
+    public class NavigationPointer
+    {
+        /// <summary>Display label (e.g., "Follow e_lfanew").</summary>
+        public string Name { get; set; }
+        /// <summary>Variable holding the pointer value (target offset).</summary>
+        public string OffsetVar { get; set; }
+    }
+
+    /// <summary>Inspector panel layout — how parsed fields are grouped and displayed.</summary>
+    public class InspectorDefinition
+    {
+        /// <summary>Field groups shown as collapsible sections in the inspector.</summary>
+        public List<InspectorGroup> Groups { get; set; }
+        /// <summary>Variable name whose value is shown as a badge chip (e.g., "peMachineName").</summary>
+        public string Badge { get; set; }
+        /// <summary>Variable name of the primary / most important field.</summary>
+        public string PrimaryField { get; set; }
+        /// <summary>Whether to display the QualityMetrics.CompletenessScore. Default false.</summary>
+        public bool ShowQualityScore { get; set; }
+    }
+
+    /// <summary>A collapsible group within the inspector panel.</summary>
+    public class InspectorGroup
+    {
+        /// <summary>Group header title.</summary>
+        public string Title { get; set; }
+        /// <summary>Segoe MDL2 glyph for the group icon.</summary>
+        public string Icon { get; set; }
+        /// <summary>Whether the group starts collapsed. Default false.</summary>
+        public bool Collapsed { get; set; }
+        /// <summary>Whether this group is highlighted (accent background). Default false.</summary>
+        public bool Highlight { get; set; }
+        /// <summary>Variable names of fields to display in this group.</summary>
+        public List<string> Fields { get; set; }
+    }
+
+    /// <summary>Export template for extracting structured data from the active file.</summary>
+    public class ExportTemplate
+    {
+        /// <summary>Display name for this template.</summary>
+        public string Name { get; set; }
+        /// <summary>Output format: "json", "csv", "c-struct", "python-bytes", "xml".</summary>
+        public string Format { get; set; }
+        /// <summary>Variable names to include (for json/c-struct templates).</summary>
+        public List<string> Fields { get; set; }
+        /// <summary>Source repeating block name (for csv templates). Prefix: "repeating:".</summary>
+        public string Source { get; set; }
+        /// <summary>Column names to include from the repeating block (for csv).</summary>
+        public List<string> Columns { get; set; }
+        /// <summary>Struct name override for c-struct output.</summary>
+        public string StructName { get; set; }
+    }
+
+    /// <summary>Contextual hints for AI-assisted analysis.</summary>
+    public class AiHints
+    {
+        /// <summary>Brief analysis context for LLM prompts.</summary>
+        public string AnalysisContext { get; set; }
+        /// <summary>Known vulnerability patterns relevant to this format.</summary>
+        public List<string> KnownVulnerabilities { get; set; }
+        /// <summary>Suggested manual inspections for analysts.</summary>
+        public List<string> SuggestedInspections { get; set; }
+        /// <summary>Forensic context (e.g., "common in malware analysis").</summary>
+        public string ForensicContext { get; set; }
+    }
+
+    // ── end v2.0 supporting classes ───────────────────────────────────────────
 
     /// <summary>
     /// Technical details specific to the format type

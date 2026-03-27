@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    AIFF Audio
    Category:  Audio
    Ext:       .aiff, .aif, .aifc
@@ -150,6 +150,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Audio Interchange File Format - Apple audio format",
+    "suggestedInspections": [
+      "Validate AIFF Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "FORM Chunk",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {
     "AudioFormat": true

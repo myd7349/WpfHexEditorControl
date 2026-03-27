@@ -4,6 +4,9 @@
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude (Anthropic)
 // Created: 2026-03-06
+// Updated: 2026-03-25 — whfmt v2.0: repeating/union/nested/pointer blocks,
+//     OffsetFrom+OffsetAdd resolution, TypeDecoderRegistry integration,
+//     _contextBaseOffset for relative sub-field offsets.
 // Description:
 //     Interprets and executes format definition scripts (.whfmt) against a
 //     binary stream, evaluating block definitions to extract parsed fields,
@@ -14,6 +17,8 @@
 //     VariableContext during script execution. Produces ParsedField objects and
 //     SolidColorBrush-annotated overlay entries. Contains WPF brush references
 //     for overlay color assignment.
+//     v2.0: _contextBaseOffset supports relative offsets in repeating/nested blocks.
+//           TypeDecoderRegistry handles all new valueType tokens (ascii8, guid, ipv4, ...).
 //
 // ==========================================================
 
@@ -36,8 +41,30 @@ namespace WpfHexEditor.Core.FormatDetection
         private readonly Dictionary<string, object> _variables;
         private readonly List<CustomBackgroundBlock> _generatedBlocks;
         private readonly ByteProvider _byteProvider;
+
+        /// <summary>
+        /// Optional resolver for nested struct references (block.StructRef).
+        /// Called with the structRef string; returns the block list to execute, or null.
+        /// Injected by FormatDetectionService so FormatScriptInterpreter has no hard
+        /// dependency on EmbeddedFormatCatalog (cross-project).
+        /// </summary>
+        public Func<string, List<BlockDefinition>> NestedStructResolver { get; set; }
+
         private int _executionDepth = 0;
         private const int MaxExecutionDepth = 50; // Prevent infinite recursion
+
+        /// <summary>
+        /// Base offset added to plain integer field offsets within repeating/nested block contexts.
+        /// 0 at top level; set to entry base offset when executing repeating block sub-fields.
+        /// </summary>
+        private long _contextBaseOffset = 0;
+
+        // Default color palette for repeating blocks without explicit colorCycle
+        private static readonly string[] DefaultColorCycle =
+        {
+            "#FF6B6B", "#4ECDC4", "#FFE66D", "#95E1D3", "#FFA07A",
+            "#A8E6CF", "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE"
+        };
 
         /// <summary>
         /// Get the variables dictionary (includes values set by functions)
@@ -229,20 +256,53 @@ namespace WpfHexEditor.Core.FormatDetection
                     ExecuteComputeFromVariablesBlock(block);
                     break;
 
+                // ── v2.0 block types ─────────────────────────────────────────────
+                case "repeating":
+                    ExecuteRepeatingBlock(block);
+                    break;
+
+                case "union":
+                    ExecuteUnionBlock(block);
+                    break;
+
+                case "nested":
+                    ExecuteNestedBlock(block);
+                    break;
+
+                case "pointer":
+                    ExecutePointerBlock(block);
+                    break;
+
                 default:
-                    // Unknown block type, skip
+                    // Unknown block type — silently skip (forward compatibility)
                     break;
             }
         }
 
         /// <summary>
-        /// Execute a field/signature block (creates a CustomBackgroundBlock)
+        /// Execute a field/signature block (creates a CustomBackgroundBlock).
+        /// Resolves offset via OffsetFrom+OffsetAdd (v2.0) or plain Offset + _contextBaseOffset.
         /// Also reads and stores field value when StoreAs and ValueType are defined.
         /// </summary>
         private void ExecuteFieldBlock(BlockDefinition block)
         {
-            // Resolve offset
-            var offset = EvaluateOffset(block.Offset);
+            // Resolve offset — v2.0: OffsetFrom+OffsetAdd takes priority over Offset
+            long? offset;
+            if (!string.IsNullOrWhiteSpace(block.OffsetFrom))
+            {
+                if (!_variables.TryGetValue(block.OffsetFrom, out var baseVar))
+                    return; // Base variable not yet populated
+                long baseOff = Convert.ToInt64(baseVar);
+                long addOff  = block.OffsetAdd != null ? (EvaluateOffset(block.OffsetAdd) ?? 0L) : 0L;
+                offset = baseOff + addOff;
+            }
+            else
+            {
+                offset = EvaluateOffset(block.Offset);
+                if (offset.HasValue)
+                    offset = offset.Value + _contextBaseOffset;
+            }
+
             if (offset == null || offset < 0 || offset >= _data.Length)
                 return; // Invalid offset
 
@@ -316,6 +376,35 @@ namespace WpfHexEditor.Core.FormatDetection
                 brush,
                 description,
                 block.Opacity);
+
+            // Populate rich tooltip metadata (E1) ────────────────────────────
+            if (!string.IsNullOrWhiteSpace(block.ValueType))
+            {
+                customBlock.FieldValueType = block.ValueType;
+
+                // Raw hex of the field bytes
+                int rawLen = (int)Math.Min(length.Value, _data.Length - offset.Value);
+                if (rawLen > 0)
+                {
+                    customBlock.FieldRawHex = BitConverter.ToString(_data, (int)offset.Value, rawLen)
+                        .Replace("-", " ");
+                }
+
+                // Display value: prefer mapped name, fall back to stored value
+                if (!string.IsNullOrWhiteSpace(block.MappedValueStoreAs) &&
+                    _variables.TryGetValue(block.MappedValueStoreAs, out var mapVal) && mapVal != null)
+                {
+                    // "0x8664 → AMD64 (x64)"
+                    string rawHex = customBlock.FieldRawHex ?? string.Empty;
+                    customBlock.FieldDisplayValue = $"{rawHex} \u2192 {mapVal}";
+                }
+                else if (!string.IsNullOrWhiteSpace(block.StoreAs) &&
+                         _variables.TryGetValue(block.StoreAs, out var sv) && sv != null)
+                {
+                    customBlock.FieldDisplayValue = sv.ToString();
+                }
+            }
+            // ─────────────────────────────────────────────────────────────────
 
             _generatedBlocks.Add(customBlock);
         }
@@ -431,8 +520,12 @@ namespace WpfHexEditor.Core.FormatDetection
                         return System.BitConverter.ToString(bytes).Replace("-", " ");
                     }
 
+                    // ── v2.0 types: delegate to TypeDecoderRegistry ─────────────────
                     default:
-                        return null;
+                    {
+                        string decoded = TypeDecoderRegistry.Decode(valueType, _data, offset, length, bigEndian);
+                        return decoded; // string or null
+                    }
                 }
             }
             catch
@@ -578,6 +671,240 @@ namespace WpfHexEditor.Core.FormatDetection
                 // Expression evaluation failed, set default value
                 _variables[block.StoreAs] = 0L;
             }
+        }
+
+        // ── v2.0 Block Handlers ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Execute a repeating block — iterates N times over a table of entries,
+        /// creating one colored overlay block per entry.  Sub-fields are executed
+        /// with _contextBaseOffset pointing to the entry's start so their plain
+        /// integer offsets are interpreted as relative (entry-local) values.
+        /// </summary>
+        private void ExecuteRepeatingBlock(BlockDefinition block)
+        {
+            // Resolve entry count
+            var countRaw = EvaluateOffset(block.Count);
+            if (countRaw == null || countRaw <= 0)
+                return;
+
+            int count = (int)Math.Min(countRaw.Value, block.MaxIterations > 0 ? block.MaxIterations : 1000);
+
+            // Resolve table start offset via OffsetFrom+OffsetAdd or Offset
+            long tableStart;
+            if (!string.IsNullOrWhiteSpace(block.OffsetFrom))
+            {
+                if (!_variables.TryGetValue(block.OffsetFrom, out var baseVar))
+                    return;
+                long addOff = block.OffsetAdd != null ? (EvaluateOffset(block.OffsetAdd) ?? 0L) : 0L;
+                tableStart = Convert.ToInt64(baseVar) + addOff;
+            }
+            else
+            {
+                var ts = EvaluateOffset(block.Offset);
+                if (ts == null) return;
+                tableStart = ts.Value + _contextBaseOffset;
+            }
+
+            // Resolve entry size
+            long entrySize = 0;
+            if (block.EntrySize != null)
+            {
+                var es = EvaluateOffset(block.EntrySize);
+                if (es.HasValue) entrySize = es.Value;
+            }
+
+            // Colour cycle
+            var colors = (block.ColorCycle != null && block.ColorCycle.Count > 0)
+                ? block.ColorCycle
+                : new System.Collections.Generic.List<string>(DefaultColorCycle);
+
+            // Save depth guard — repeating shares MaxExecutionDepth budget
+            long savedBase = _contextBaseOffset;
+
+            for (int i = 0; i < count; i++)
+            {
+                long entryBase = tableStart + (long)i * entrySize;
+                if (entryBase >= _data.Length)
+                    break;
+
+                // Set indexVar if specified
+                if (!string.IsNullOrWhiteSpace(block.IndexVar))
+                    _variables[block.IndexVar] = (long)i;
+
+                // Execute sub-fields relative to entryBase
+                if (block.Fields != null && block.Fields.Count > 0)
+                {
+                    _contextBaseOffset = entryBase;
+                    ExecuteBlocks(block.Fields);
+                }
+
+                // Create a single entry-level highlight block
+                if (entrySize > 0 && !string.IsNullOrWhiteSpace(colors[i % colors.Count]))
+                {
+                    string colorStr = colors[i % colors.Count];
+                    var brush = ParseColor(colorStr) ?? Brushes.Transparent;
+                    string desc = block.Description != null
+                        ? block.Description.Replace("$iteration$", i.ToString())
+                        : $"{block.Name} [{i}]";
+
+                    long visLen = Math.Min(entrySize, _data.Length - entryBase);
+                    if (visLen > 0)
+                    {
+                        _generatedBlocks.Add(new CustomBackgroundBlock(
+                            entryBase, visLen, brush, desc, block.Opacity > 0 ? block.Opacity : 0.15));
+                    }
+                }
+            }
+
+            _contextBaseOffset = savedBase;
+
+            // Clean up indexVar
+            if (!string.IsNullOrWhiteSpace(block.IndexVar))
+                _variables.Remove(block.IndexVar);
+        }
+
+        /// <summary>
+        /// Execute a union block — selects the matching variant based on a condition
+        /// variable, then highlights the same offset with that variant's type/color.
+        /// </summary>
+        private void ExecuteUnionBlock(BlockDefinition block)
+        {
+            if (block.Variants == null || block.Variants.Count == 0)
+                return;
+
+            // Resolve discriminant
+            string key = null;
+            if (!string.IsNullOrWhiteSpace(block.UnionCondition) &&
+                _variables.TryGetValue(block.UnionCondition, out var condVal))
+            {
+                key = condVal?.ToString();
+            }
+
+            // Fallback: try block.Condition variable
+            if (key == null && block.Condition != null &&
+                !string.IsNullOrWhiteSpace(block.Condition.Field))
+            {
+                var f = block.Condition.Field.StartsWith("var:")
+                    ? block.Condition.Field.Substring(4)
+                    : block.Condition.Field;
+                if (_variables.TryGetValue(f, out var cv))
+                    key = cv?.ToString();
+            }
+
+            if (key == null || !block.Variants.TryGetValue(key, out var variant))
+                return;
+
+            // Resolve offset
+            long? offset;
+            if (!string.IsNullOrWhiteSpace(block.OffsetFrom))
+            {
+                if (!_variables.TryGetValue(block.OffsetFrom, out var bv)) return;
+                long add = block.OffsetAdd != null ? (EvaluateOffset(block.OffsetAdd) ?? 0L) : 0L;
+                offset = Convert.ToInt64(bv) + add;
+            }
+            else
+            {
+                offset = EvaluateOffset(block.Offset);
+                if (offset.HasValue) offset = offset.Value + _contextBaseOffset;
+            }
+            if (offset == null || offset < 0 || offset >= _data.Length) return;
+
+            // Resolve variant length
+            long? length = null;
+            if (variant.Length != null)
+                length = EvaluateOffset(variant.Length);
+            if (length == null || length <= 0) return;
+
+            // Decode and store value if variant has valueType + block has storeAs
+            if (!string.IsNullOrWhiteSpace(variant.ValueType) && !string.IsNullOrWhiteSpace(block.StoreAs))
+            {
+                var val = ReadFieldValue(offset.Value, (int)length.Value, variant.ValueType, null);
+                if (val != null) _variables[block.StoreAs] = val;
+            }
+
+            // Execute variant sub-fields if any
+            if (variant.Fields != null && variant.Fields.Count > 0)
+            {
+                long savedBase = _contextBaseOffset;
+                _contextBaseOffset = offset.Value;
+                ExecuteBlocks(variant.Fields);
+                _contextBaseOffset = savedBase;
+            }
+
+            // Highlight block
+            var brush = ParseColor(variant.Color ?? block.Color) ?? Brushes.Gray;
+            double opacity = variant.Opacity > 0 ? variant.Opacity : (block.Opacity > 0 ? block.Opacity : 0.3);
+            string desc = variant.Description ?? block.Description ?? block.Name ?? "Union";
+            long visLen = Math.Min(length.Value, _data.Length - offset.Value);
+            if (visLen > 0)
+            {
+                _generatedBlocks.Add(new CustomBackgroundBlock(
+                    offset.Value, visLen, brush, desc, opacity));
+            }
+        }
+
+        /// <summary>
+        /// Execute a nested struct block — resolves an external struct via <see cref="NestedStructResolver"/>
+        /// and executes its blocks at the resolved base offset.
+        /// If no resolver is configured the block is silently skipped.
+        /// </summary>
+        private void ExecuteNestedBlock(BlockDefinition block)
+        {
+            if (string.IsNullOrWhiteSpace(block.StructRef) || NestedStructResolver == null)
+                return;
+
+            // Resolve base offset
+            long? baseOffset;
+            if (!string.IsNullOrWhiteSpace(block.OffsetFrom))
+            {
+                if (!_variables.TryGetValue(block.OffsetFrom, out var bv)) return;
+                long add = block.OffsetAdd != null ? (EvaluateOffset(block.OffsetAdd) ?? 0L) : 0L;
+                baseOffset = Convert.ToInt64(bv) + add;
+            }
+            else
+            {
+                baseOffset = EvaluateOffset(block.Offset);
+                if (baseOffset.HasValue) baseOffset = baseOffset.Value + _contextBaseOffset;
+            }
+            if (baseOffset == null || baseOffset < 0 || baseOffset >= _data.Length)
+                return;
+
+            var structBlocks = NestedStructResolver(block.StructRef);
+            if (structBlocks == null || structBlocks.Count == 0)
+                return;
+
+            long savedBase = _contextBaseOffset;
+            _contextBaseOffset = baseOffset.Value;
+            ExecuteBlocks(structBlocks);
+            _contextBaseOffset = savedBase;
+        }
+
+        /// <summary>
+        /// Execute a pointer block — creates a jump-target annotation block
+        /// at the offset stored in the named variable.
+        /// </summary>
+        private void ExecutePointerBlock(BlockDefinition block)
+        {
+            if (string.IsNullOrWhiteSpace(block.TargetVar))
+                return;
+
+            if (!_variables.TryGetValue(block.TargetVar, out var targetVal))
+                return;
+
+            long targetOffset;
+            try { targetOffset = Convert.ToInt64(targetVal); }
+            catch { return; }
+
+            if (targetOffset < 0 || targetOffset >= _data.Length)
+                return;
+
+            var brush = ParseColor(block.Color ?? "#FFC6FF") ?? Brushes.Plum;
+            string desc = block.Label ?? block.Name ?? $"→ {block.TargetVar}";
+
+            // Pointer blocks highlight a single byte at the target to mark the jump destination
+            _generatedBlocks.Add(new CustomBackgroundBlock(
+                targetOffset, 1, brush, desc, block.Opacity > 0 ? block.Opacity : 0.4));
         }
 
         #endregion

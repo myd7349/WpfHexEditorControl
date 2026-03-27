@@ -117,13 +117,13 @@ public class DockDragManager
             targetNode = _dockControl.Layout?.MainDocumentHost;
         var isSelfDrag = targetNode != null && targetNode == _originalGroup;
 
-        // Documents: compass only over DocumentTabHost.
-        // Panels: compass only over regular DockTabControl (NOT DocumentTabHost).
-        // Allowing panels to see the compass over DocumentTabHost would let the user drop a tool
-        // panel into the document zone (Center), which corrupts item.IsDocument.
+        // Panels + promoted panels: compass everywhere (panels + document zone).
+        // Real documents: compass only over DocumentTabHost (cannot dock into tool panels).
+        // Center drops on DocumentHostNode are routed through DockAsDocument() with _promotedPanel metadata.
         bool isDocumentDrag = _draggedItem?.IsDocument == true;
+        bool isPromotedPanel = _draggedItem?.Metadata.ContainsKey("_promotedPanel") == true;
         bool showCompass = !isSelfDrag && targetTab != null && targetNode != null
-            && (isDocumentDrag ? targetTab is DocumentTabHost : targetTab is not DocumentTabHost);
+            && (!isDocumentDrag || isPromotedPanel || targetTab is DocumentTabHost);
 
         // --- Panel overlay ---
         if (showCompass)
@@ -373,12 +373,9 @@ public class DockDragManager
 
         if (dockBounds.Contains(screenPos))
         {
-            // Show edge overlay only for panel drags (documents use the panel compass on DocumentTabHost)
-            if (_draggedItem?.IsDocument == true)
-            {
-                if (_edgeOverlay.IsVisible) { _edgeOverlay.HighlightedDirection = null; _edgeOverlay.Hide(); }
-            }
-            else if (!_edgeOverlay.IsVisible)
+            // Show edge overlay for all drags (panels, promoted panels, documents).
+            // Inner indicators split the document zone; outer indicators dock at root level.
+            if (!_edgeOverlay.IsVisible)
             {
                 _edgeOverlay.ShowOverTarget(_dockControl.CenterHost);
             }
@@ -417,12 +414,25 @@ public class DockDragManager
             // Multi-item floating group: dock ALL items, not just the active one
             var floatingItems = _sourceFloatingWindow.Node?.Items.ToList();
 
-            // Defense-in-depth: never dock a tool panel into DocumentHostNode via Center.
-            // Fix B prevents the compass from appearing there, but guard here as a safety net.
-            if (!isDocumentDrop
-                && _lastDirection.Value == DockDirection.Center
-                && _targetGroup is DocumentHostNode)
+            // Panel dropped on DocumentHostNode: route through DockAsDocument (Center)
+            // or standard Dock (edge split). DockAsDocument tags the item with _promotedPanel
+            // metadata so it can be restored to its original tool panel position.
+            if (!isDocumentDrop && _targetGroup is DocumentHostNode)
             {
+                if (_lastDirection.Value == DockDirection.Center)
+                {
+                    var items = _sourceFloatingWindow.Node?.Items.ToList() ?? [_draggedItem!];
+                    foreach (var item in items)
+                        engine.DockAsDocument(item);
+                }
+                else
+                {
+                    engine.Dock(_draggedItem, _targetGroup, _lastDirection.Value);
+                }
+
+                _dockControl.RebuildVisualTree();
+                if (_sourceFloatingWindow.IsLoaded)
+                    _sourceFloatingWindow.Close();
                 EndFloatingDrag();
                 return;
             }

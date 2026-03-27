@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    DICOM Medical Image
    Category:  Medical
    Ext:       .dcm, .dicom
@@ -128,6 +128,19 @@
     "AutoRefined": true
   },
   "TechnicalDetails": {},
+  "forensic": {
+    "category": "medical",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Digital Imaging and Communications in Medicine",
+    "suggestedInspections": [
+      "Verify DICOM Medical Image preamble, magic bytes, and transfer syntax",
+      "Check image matrix dimensions, voxel spacing, and data type",
+      "Inspect patient/study metadata tags and private sequences"
+    ]
+  },
   "functions": {
     "readUInt32LE": "Read width and height",
     "multiply": "Calculate total pixels",

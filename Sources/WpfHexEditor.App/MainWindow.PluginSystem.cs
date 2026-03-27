@@ -18,6 +18,7 @@
 //          so PluginHost never references WpfHexEditor.App directly.
 
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -191,6 +192,19 @@ public partial class MainWindow
             try { InitializeWorkspaceSystem(); }
             catch (Exception ex) { OutputLogger.PluginError($"[Workspace] Init failed: {ex.Message}"); }
 
+            // ── Format Catalog: load all whfmt formats ONCE into shared static catalog ──
+            var formatCatalog = new WpfHexEditor.Core.Services.FormatCatalogService();
+            var embeddedEntries = WpfHexEditor.Core.Definitions.EmbeddedFormatCatalog.Instance.GetAll()
+                .Select(e => (WpfHexEditor.Core.Definitions.EmbeddedFormatCatalog.Instance.GetJson(e.ResourceKey), (string?)e.Category));
+            var externalDir = System.IO.Path.Combine(
+                System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "",
+                "FormatDefinitions");
+            formatCatalog.Initialize(embeddedEntries, externalDir);
+            OutputLogger.Info($"[FormatCatalog] {formatCatalog.FormatCount} formats loaded (shared pipeline)");
+
+            // Format Parsing Service — universal, editor-agnostic format detection + field parsing
+            var formatParsingService = new WpfHexEditor.Core.Services.FormatParsing.FormatParsingService();
+
             var hostContext = new IDEHostContext(
                 documentHost:        _documentHostService,
                 solutionExplorer:    solutionService,
@@ -213,7 +227,9 @@ public partial class MainWindow
                 debuggerService:     _debuggerService,
                 scriptingService:    _scriptingService,
                 buildSystem:         _buildSystem,
-                workspaceService:    _workspaceServiceImpl)
+                workspaceService:    _workspaceServiceImpl,
+                formatParsingService: formatParsingService,
+                formatCatalogService: formatCatalog)
             {
                 LspServers = lspRegistry
             };
@@ -1049,6 +1065,7 @@ public partial class MainWindow
 
         var docking = new DockingAdapter(_engine, _layout, DockHost, StoreContent, _layoutWasRestoredFromFile);
         docking.SeedSideAnchor(DockDirection.Left, SolutionExplorerContentId);
+        docking.SeedSideAnchor(DockDirection.Bottom, ErrorPanelContentId);
 
         var menu       = new MenuAdapter(MainMenuBar);
         var statusBar  = new StatusBarAdapter(AppStatusBar);

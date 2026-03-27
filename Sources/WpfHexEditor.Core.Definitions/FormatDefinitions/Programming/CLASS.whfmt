@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Java Class File
    Category:  Programming
    Ext:       .class
@@ -91,6 +91,27 @@
       "endianness": "big"
     }
   ],
+  "assertions": [
+    {
+      "name": "CAFEBABE magic",
+      "expression": "classMagic == -889275714",
+      "severity": "error",
+      "message": "Invalid Java class magic — expected 0xCAFEBABE"
+    }
+  ],
+  "forensic": {
+    "category": "programming",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Java compiled bytecode",
+    "suggestedInspections": [
+      "Verify Java Class File magic number and format version identifier",
+      "Check symbol/string table integrity and section boundaries",
+      "Inspect code section offsets, relocations, and debug info"
+    ]
+  },
   "software": [
     "Java Virtual Machine",
     "Java IDEs",

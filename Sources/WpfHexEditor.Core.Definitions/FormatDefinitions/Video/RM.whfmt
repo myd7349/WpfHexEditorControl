@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    RealMedia
    Category:  Video
    Ext:       .rm, .ra
@@ -114,5 +114,18 @@
   },
   "functions": {
     "readUInt32LE": "Read executable header"
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "RealMedia multimedia container format developed by RealNetworks",
+    "suggestedInspections": [
+      "Validate RealMedia container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

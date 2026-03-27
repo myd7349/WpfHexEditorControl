@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    MessagePack
    Category:  Data
    Ext:       .msgpack, .mp
@@ -98,6 +98,19 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "data",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "MessagePack binary serialization format",
+    "suggestedInspections": [
+      "Validate MessagePack schema header and encoding markers",
+      "Check nested structure depth and field type tags",
+      "Inspect string encodings and numeric value boundaries"
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

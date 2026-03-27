@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    OGG Audio
    Category:  Audio
    Ext:       .ogg, .oga, .ogv
@@ -359,6 +359,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Ogg is a free, open container format maintained by the Xiph.Org Foundation. The file is composed of pages, e...",
+    "suggestedInspections": [
+      "Validate OGG Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "First OGG Page (BOS)",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {
     "AudioFormat": true,

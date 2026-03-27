@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    ISO Disk Image
    Category:  Disk
    Ext:       .iso
@@ -127,6 +127,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "disk",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "ISO 9660 CD/DVD image format",
+    "suggestedInspections": [
+      "Verify ISO Disk Image superblock/boot sector signature and version",
+      "Check partition/volume layout and allocation bitmap",
+      "Inspect filesystem journal and metadata consistency"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "Primary Volume Descriptor",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {}
 }

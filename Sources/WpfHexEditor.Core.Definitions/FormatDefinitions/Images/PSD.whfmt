@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Photoshop Document
    Category:  Images
    Ext:       .psd, .psb
@@ -334,6 +334,19 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": true,
     "AutoRefined": false
+  },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Adobe Photoshop native document format. PSD (Photoshop Document) and PSB (Photoshop Big/Large Document) stor...",
+    "suggestedInspections": [
+      "Validate Photoshop Document signature, image dimensions, and color model",
+      "Check pixel data offset, compression type, and scanline alignment",
+      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+    ]
   },
   "TechnicalDetails": {
     "ImagesFormat": true,

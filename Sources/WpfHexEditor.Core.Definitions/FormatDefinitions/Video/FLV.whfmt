@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Flash Video
    Category:  Video
    Ext:       .flv
@@ -151,5 +151,18 @@
   },
   "TechnicalDetails": {
     "VideoFormat": true
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Adobe Flash Video format",
+    "suggestedInspections": [
+      "Validate Flash Video container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

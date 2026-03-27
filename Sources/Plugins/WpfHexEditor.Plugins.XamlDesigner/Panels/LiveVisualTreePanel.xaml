@@ -451,7 +451,7 @@
                   VirtualizingPanel.IsVirtualizing="True"
                   VirtualizingPanel.VirtualizationMode="Recycling">
             <!-- PanelTreeViewItemStyle provides a full ControlTemplate with themed hover/selection
-                 (Panel_ToolbarButtonHoverBrush / SE_SelectedBrush). The inline BasedOn layer adds
+                 (Panel_ItemHoverBrush / Panel_ItemSelectedBrush). The inline BasedOn layer adds
                  only the TwoWay VM bindings for expand/select state sync. -->
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem" BasedOn="{StaticResource PanelTreeViewItemStyle}">

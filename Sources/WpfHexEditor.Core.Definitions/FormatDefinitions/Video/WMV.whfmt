@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Windows Media Video
    Category:  Video
    Ext:       .wmv, .wma, .asf
@@ -125,5 +125,18 @@
   "TechnicalDetails": {
     "VideoFormat": true,
     "Platform": "Windows"
+  },
+  "forensic": {
+    "category": "video",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Windows Media Video/Audio format (ASF container)",
+    "suggestedInspections": [
+      "Validate Windows Media Video container magic, box/atom sizes, and codec FourCC",
+      "Check track/stream layout, frame index, and timing fields",
+      "Inspect audio-video sync, keyframe distribution, and metadata"
+    ]
   }
 }

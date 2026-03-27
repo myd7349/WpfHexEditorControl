@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    PCAP Network Capture
    Category:  Network
    Ext:       .pcap, .cap
@@ -183,6 +183,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": true
+  },
+  "forensic": {
+    "category": "network",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Packet Capture file - Network traffic recording",
+    "suggestedInspections": [
+      "Validate PCAP Network Capture file header: magic, version, link-layer type",
+      "Check packet record timestamps and capture lengths",
+      "Inspect captured protocol headers (Ethernet/IP/TCP/UDP)"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "PCAP Global Header",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {},
   "functions": {

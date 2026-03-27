@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    PowerPoint Presentation (Legacy)
    Category:  Documents
    Ext:       .ppt
@@ -121,5 +121,18 @@
   },
   "functions": {
     "readUInt32LE": "Read executable header"
+  },
+  "forensic": {
+    "category": "document",
+    "riskLevel": "medium",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Microsoft PowerPoint 97-2003 presentation (OLE2)",
+    "suggestedInspections": [
+      "Validate PowerPoint Presentation (Legacy) file signature and container structure",
+      "Check for embedded macros, scripts, or active content",
+      "Inspect document metadata: author, timestamps, revisions"
+    ]
   }
 }

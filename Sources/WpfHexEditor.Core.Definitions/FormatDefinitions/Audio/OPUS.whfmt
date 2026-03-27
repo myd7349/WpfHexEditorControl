@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    Opus Audio
    Category:  Audio
    Ext:       .opus
@@ -123,5 +123,18 @@
   },
   "TechnicalDetails": {
     "AudioFormat": true
+  },
+  "forensic": {
+    "category": "audio",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "Opus lossy audio codec designed for interactive speech and audio transmission",
+    "suggestedInspections": [
+      "Validate Opus Audio header: sample rate, channels, bit depth, codec ID",
+      "Check frame/block alignment and data chunk boundaries",
+      "Verify metadata tags (ID3, Vorbis comment) are well-formed"
+    ]
   }
 }

@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Format:    ICO Icon
    Category:  Images
    Ext:       .ico
@@ -124,6 +124,28 @@
     "LastUpdated": "2026-02-24",
     "PriorityFormat": false,
     "AutoRefined": false
+  },
+  "forensic": {
+    "category": "image",
+    "riskLevel": "low",
+    "suspiciousPatterns": []
+  },
+  "aiHints": {
+    "analysisContext": "ICO Icon - image format",
+    "suggestedInspections": [
+      "Validate ICO Icon signature, image dimensions, and color model",
+      "Check pixel data offset, compression type, and scanline alignment",
+      "Inspect color profile (ICC), EXIF metadata, and chunk CRCs"
+    ]
+  },
+  "navigation": {
+    "bookmarks": [
+      {
+        "name": "ICO Directory Header",
+        "offsetVar": "currentOffset",
+        "icon": ""
+      }
+    ]
   },
   "TechnicalDetails": {
     "ImagesFormat": true,
