@@ -167,7 +167,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             _bpHoverTimer?.Stop();
             _bpHoverLine = -1;
-            if (_bpHoverPopup is not null) _bpHoverPopup.IsOpen = false;
+            // Use the popup's own grace timer rather than immediate close,
+            // so the user has time to move the mouse into the popup.
+            _bpHoverPopup?.OnEditorMouseLeft();
         }
 
         // ─────────────────────────────────────────────────────────────────────────

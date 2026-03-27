@@ -57,7 +57,7 @@ internal sealed class BreakpointInfoPopup : Popup
         AllowsTransparency = true;
         Placement          = PlacementMode.Relative;
 
-        _graceTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _graceTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
         _graceTimer.Tick    += (_, _) => { _graceTimer.Stop(); IsOpen = false; };
 
         // ── Header row ────────────────────────────────────────────────────────
@@ -260,7 +260,7 @@ internal sealed class BreakpointInfoPopup : Popup
 
         PlacementTarget  = host;
         HorizontalOffset = gutterOffset.X;
-        VerticalOffset   = gutterOffset.Y - 4;
+        VerticalOffset   = gutterOffset.Y;
         IsOpen           = true;
 
         // Move focus into the condition box for quick editing.
