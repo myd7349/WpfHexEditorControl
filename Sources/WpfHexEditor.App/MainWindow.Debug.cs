@@ -239,21 +239,20 @@ public partial class MainWindow
             return;
         }
 
-        // Build before debugging (same as Start Without Debugging).
+        // Build startup project before debugging (fast — only the target project, not the full solution).
         if (_buildSystem is not null)
         {
             ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
             OutputLogger.ClearChannel(OutputLogger.SourceBuild);
-            var buildResult = await _buildSystem.BuildSolutionAsync();
+            var buildResult = await _buildSystem.BuildProjectAsync(startupProject.Id);
+            _buildErrorListAdapter?.SetDiagnostics(buildResult.Errors.Concat(buildResult.Warnings));
             if (!buildResult.IsSuccess)
             {
-                _buildErrorListAdapter?.SetDiagnostics(buildResult.Errors.Concat(buildResult.Warnings));
                 MessageBox.Show(
                     "Build failed. Fix the errors before debugging.",
                     "Start Debugging", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            _buildErrorListAdapter?.SetDiagnostics(buildResult.Errors.Concat(buildResult.Warnings));
         }
 
         // Derive output exe path using the active build configuration.
