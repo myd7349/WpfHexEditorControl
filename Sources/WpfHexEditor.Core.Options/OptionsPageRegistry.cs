@@ -48,6 +48,9 @@ public static class OptionsPageRegistry
         // Build & Run
         new("Build & Run",        "General",          () => new BuildRunGeneralOptionsPage(), "🔨"),
         new("Build & Run",        "Compiler",         () => new BuildCompilerOptionsPage(),   "🔨"),
+
+        // Debugger
+        new("Debugger",           "Breakpoints",      () => new DebuggerBreakpointOptionsPage(), "🐛"),
     ];
 
     /// <summary>

@@ -83,6 +83,11 @@ public partial class BreakpointExplorerPanel : UserControl
         if (row is not null) Vm?.DeleteCommand.Execute(row);
     }
 
+    // ── VS XML Import / Export ───────────────────────────────────────────
+
+    private void OnImportBreakpoints(object sender, RoutedEventArgs e) => Vm?.ImportCommand.Execute(null);
+    private void OnExportBreakpoints(object sender, RoutedEventArgs e) => Vm?.ExportCommand.Execute(null);
+
     private BreakpointRowEx? GetSelectedRow() =>
         Vm?.SelectedBreakpoint ?? FlatList.SelectedItem as BreakpointRowEx;
 }

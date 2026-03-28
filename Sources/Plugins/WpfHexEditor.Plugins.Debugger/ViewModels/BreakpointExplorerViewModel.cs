@@ -16,6 +16,8 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.Win32;
+using WpfHexEditor.Plugins.Debugger.Services;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
@@ -76,6 +78,8 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
     public ICommand ToggleEnabledCommand { get; }
     public ICommand GoToSourceCommand  { get; }
     public ICommand CopyLocationCommand { get; }
+    public ICommand ImportCommand       { get; }
+    public ICommand ExportCommand       { get; }
 
     // ── Constructor ──────────────────────────────────────────────────────────
 
@@ -92,6 +96,8 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
         ToggleEnabledCommand = new RelayCommand(async p => { if (p is BreakpointRowEx r) await _debugger.UpdateBreakpointAsync(r.FilePath, r.Line, r.Condition, !r.IsEnabled); });
         GoToSourceCommand    = new RelayCommand(p => NavigateToBreakpoint(p as BreakpointRowEx));
         CopyLocationCommand  = new RelayCommand(p => { if (p is BreakpointRowEx r) Clipboard.SetText(r.DisplayLocation); });
+        ImportCommand        = new RelayCommand(_ => ImportFromVsXml());
+        ExportCommand        = new RelayCommand(_ => ExportToVsXml(), _ => _debugger.Breakpoints.Count > 0);
 
         Refresh();
     }
@@ -171,6 +177,63 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
     {
         if (row is null || _context is null) return;
         _context.DocumentHost.ActivateAndNavigateTo(row.FilePath, row.Line, 0);
+    }
+
+    // ── VS XML Import / Export ──────────────────────────────────────────
+
+    private async void ImportFromVsXml()
+    {
+        var dlg = new OpenFileDialog
+        {
+            Title  = "Import Breakpoints from VS XML",
+            Filter = "VS Breakpoint XML (*.xml)|*.xml|All Files (*.*)|*.*",
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        var imported = VsBreakpointXmlService.ImportFromXml(dlg.FileName);
+        if (imported.Count == 0)
+        {
+            MessageBox.Show("No valid breakpoints found in the file.", "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var existing = _debugger.Breakpoints;
+        int added = 0, skipped = 0;
+
+        foreach (var bp in imported)
+        {
+            bool duplicate = existing.Any(e =>
+                string.Equals(e.FilePath, bp.FilePath, StringComparison.OrdinalIgnoreCase)
+                && e.Line == bp.Line);
+
+            if (duplicate) { skipped++; continue; }
+
+            await _debugger.ToggleBreakpointAsync(bp.FilePath, bp.Line, bp.Condition);
+            if (!bp.IsEnabled)
+                await _debugger.UpdateBreakpointAsync(bp.FilePath, bp.Line, bp.Condition, false);
+            added++;
+        }
+
+        MessageBox.Show(
+            $"Imported {added} breakpoint{(added != 1 ? "s" : "")}" +
+            (skipped > 0 ? $" ({skipped} duplicate{(skipped != 1 ? "s" : "")} skipped)" : "") + ".",
+            "Import Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void ExportToVsXml()
+    {
+        var dlg = new SaveFileDialog
+        {
+            Title    = "Export Breakpoints to VS XML",
+            Filter   = "VS Breakpoint XML (*.xml)|*.xml",
+            FileName = "breakpoints.xml",
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        VsBreakpointXmlService.ExportToXml(dlg.FileName, _debugger.Breakpoints);
+        MessageBox.Show(
+            $"Exported {_debugger.Breakpoints.Count} breakpoint{(_debugger.Breakpoints.Count != 1 ? "s" : "")}.",
+            "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     // ── INPC ─────────────────────────────────────────────────────────────────

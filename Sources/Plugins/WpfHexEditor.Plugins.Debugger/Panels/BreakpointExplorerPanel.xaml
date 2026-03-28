@@ -49,6 +49,17 @@
 
                 <Separator DockPanel.Dock="Left" Width="1" Margin="6,2" />
 
+                <!-- Import from VS XML -->
+                <Button DockPanel.Dock="Left" Command="{Binding ImportCommand}" ToolTip="Import Breakpoints (VS XML)"
+                        Content="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                        Background="Transparent" BorderThickness="0" Padding="4,2" />
+                <!-- Export to VS XML -->
+                <Button DockPanel.Dock="Left" Command="{Binding ExportCommand}" ToolTip="Export Breakpoints (VS XML)"
+                        Content="&#xEDE1;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                        Background="Transparent" BorderThickness="0" Padding="4,2" />
+
+                <Separator DockPanel.Dock="Left" Width="1" Margin="6,2" />
+
                 <!-- Group By -->
                 <TextBlock DockPanel.Dock="Left" Text="Group:" VerticalAlignment="Center" FontSize="11"
                            Foreground="{DynamicResource PanelForeground}" Margin="2,0,4,0" />
@@ -166,6 +177,17 @@
                     <MenuItem Header="Delete" Click="OnDeleteSelected">
                         <MenuItem.Icon>
                             <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator />
+                    <MenuItem Header="Import from VS XML..." Click="OnImportBreakpoints">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Export All to VS XML..." Click="OnExportBreakpoints">
+                        <MenuItem.Icon>
+                            <TextBlock Text="&#xEDE1;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
                         </MenuItem.Icon>
                     </MenuItem>
                 </ContextMenu>

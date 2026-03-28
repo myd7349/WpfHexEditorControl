@@ -340,7 +340,19 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
             _currentSolutionPath = newSolutionFilePath;
 
             // Load breakpoints for the new context.
-            _breakpoints.AddRange(_persistence.LoadForContext(newSolutionFilePath));
+            var loaded = _persistence.LoadForContext(newSolutionFilePath);
+            _breakpoints.AddRange(loaded);
+
+            // Auto-import from VS XML when .whide store is empty and option is enabled.
+            if (loaded.Count == 0 && !string.IsNullOrEmpty(newSolutionFilePath))
+            {
+                var imported = _persistence.TryAutoImportFromVs(newSolutionFilePath);
+                if (imported.Count > 0)
+                {
+                    _breakpoints.AddRange(imported);
+                    _persistence.SaveForContext(newSolutionFilePath, _breakpoints);
+                }
+            }
         }
 
         BreakpointsChanged?.Invoke(this, EventArgs.Empty);
