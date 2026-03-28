@@ -67,6 +67,9 @@
                 <!-- Search box -->
                 <TextBox x:Name="SearchBox" DockPanel.Dock="Left" Width="180"
                          VerticalContentAlignment="Center" FontSize="11"
+                         Background="{DynamicResource DockBackgroundBrush}"
+                         BorderBrush="{DynamicResource DockBorderBrush}"
+                         BorderThickness="1"
                          Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
 
                 <Separator DockPanel.Dock="Left" Width="1" Margin="6,2"
