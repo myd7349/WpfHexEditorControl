@@ -5,6 +5,7 @@
 //////////////////////////////////////////////
 
 using System.IO;
+using System.Reflection.PortableExecutable;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.DisassemblyViewer.Controls;
 
@@ -12,8 +13,8 @@ namespace WpfHexEditor.Editor.DisassemblyViewer;
 
 /// <summary>
 /// Factory that registers the <see cref="DisassemblyViewer"/> with the
-/// <see cref="IEditorRegistry"/> so the host application can open binary/executable
-/// files automatically by extension.
+/// <see cref="IEditorRegistry"/> so the host application can open .NET assemblies
+/// automatically by extension. Only opens managed PE files (has CLI metadata).
 /// </summary>
 public sealed class DisassemblyViewerFactory : IEditorFactory
 {
@@ -26,7 +27,17 @@ public sealed class DisassemblyViewerFactory : IEditorFactory
     public bool CanOpen(string filePath)
     {
         var ext = Path.GetExtension(filePath)?.ToLowerInvariant();
-        return !string.IsNullOrEmpty(ext) && _descriptor.SupportedExtensions.Contains(ext);
+        if (string.IsNullOrEmpty(ext) || !_descriptor.SupportedExtensions.Contains(ext))
+            return false;
+
+        // Only claim managed PE files — native DLLs/EXEs should open in HexEditor
+        try
+        {
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using var pe = new PEReader(fs);
+            return pe.HasMetadata;
+        }
+        catch { return false; }
     }
 
     /// <inheritdoc/>
@@ -37,11 +48,7 @@ file sealed class DisassemblyViewerDescriptor : IEditorDescriptor
 {
     public string Id          => "disassembly-viewer";
     public string DisplayName => "Disassembly Viewer";
-    public string Description => "Read-only disassembly viewer stub. Planned for a future sprint (requires Iced/Capstone.NET).";
+    public string Description => "Read-only .NET assembly viewer. Reflects types, members, and metadata from managed PE files.";
 
-    /// <summary>
-    /// Empty while DisassemblyViewer is a stub — binary/ROM files fall through to HexEditor.
-    /// Populate once Iced/Capstone.NET integration is complete.
-    /// </summary>
-    public IReadOnlyList<string> SupportedExtensions => [];
+    public IReadOnlyList<string> SupportedExtensions => [".dll", ".exe"];
 }

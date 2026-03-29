@@ -10,6 +10,7 @@
 
 using System.Windows.Input;
 using WpfHexEditor.Core.Commands;
+using WpfHexEditor.Docking.Core;
 using WpfHexEditor.SDK.Commands;
 
 namespace WpfHexEditor.App;
@@ -138,6 +139,8 @@ public partial class MainWindow
             () => OnShowOutput(this, null!));
         Reg(CommandIds.View.ErrorList,     "Error List",             "View",    null,             "\uE783",
             () => OnShowErrorPanel(this, null!));
+        Reg("View.Bookmarks",             "Bookmarks",              "View",    "Ctrl+F2",        "\uE8A4",
+            () => OnShowBookmarks(this, null!));
         Reg(CommandIds.View.MarkdownOutline,"Markdown Outline",      "View",    null,             null,
             () => OnShowMarkdownOutline(this, null!));
         RegP(CommandIds.View.CompareFiles, "Compare Files…", "View", "Ctrl+Alt+D", null,
@@ -184,6 +187,14 @@ public partial class MainWindow
         Reg(CommandIds.View.Options,       "Options…",               "View",    null,             "\uE713",
             () => OnSettings(this, null!));
 
+        // ── View Menu Organization ────────────────────────────────────────
+        Reg(CommandIds.View.ViewMenuModeFlat,       "View Menu: Flat Mode",       "View / Organize", null, "\uE700",
+            () => _viewMenuOrganizer?.SetMode(WpfHexEditor.Core.Options.ViewMenuOrganizationMode.Flat));
+        Reg(CommandIds.View.ViewMenuModeCategorized,"View Menu: Categorized Mode","View / Organize", null, "\uE700",
+            () => _viewMenuOrganizer?.SetMode(WpfHexEditor.Core.Options.ViewMenuOrganizationMode.Categorized));
+        Reg(CommandIds.View.ViewMenuModeByDockSide, "View Menu: By Dock Side",    "View / Organize", null, "\uE700",
+            () => _viewMenuOrganizer?.SetMode(WpfHexEditor.Core.Options.ViewMenuOrganizationMode.ByDockSide));
+
         // ── Project ─────────────────────────────────────────────────────────
         Reg(CommandIds.Project.AddNewItem,    "Add New Item…",       "Project", "Ctrl+Shift+A",   "\uE710",
             () => OnProjectAddNewItem(this, null!));
@@ -221,6 +232,22 @@ public partial class MainWindow
             () => OnResetLayout(this, null!));
         Reg(CommandIds.Layout.ToggleLock, "Toggle Locked Layout",   "Layout",   null,             null,
             () => OnToggleLock(this, null!));
+        Reg(CommandIds.Layout.CustomizeLayout, "Customize Layout…",    "Layout",   "Ctrl+Shift+L",   "\uE713",
+            () => OnCustomizeLayout());
+        Reg(CommandIds.Layout.FullScreen,      "Full Screen",          "Layout",   "F11",            "\uE740",
+            () => OnToggleFullScreen());
+        Reg(CommandIds.Layout.ZenMode,         "Zen Mode",             "Layout",   null,             "\uE78B",
+            () => OnToggleZenMode());
+        Reg(CommandIds.Layout.FocusedMode,     "Focused Mode",         "Layout",   null,             "\uE71D",
+            () => OnToggleFocusedMode());
+        Reg(CommandIds.Layout.PresentationMode,"Presentation Mode",    "Layout",   null,             "\uE8A3",
+            () => OnTogglePresentationMode());
+        Reg(CommandIds.Layout.ToggleMenuBar,   "Toggle Menu Bar",      "Layout",   null,             null,
+            () => OnToggleMenuBar());
+        Reg(CommandIds.Layout.ToggleToolbar,   "Toggle Toolbar",       "Layout",   null,             null,
+            () => OnToggleToolbar());
+        Reg(CommandIds.Layout.ToggleStatusBar, "Toggle Status Bar",    "Layout",   null,             null,
+            () => OnToggleStatusBar());
 
         // ── Plugins ──────────────────────────────────────────────────────────
         Reg(CommandIds.Plugins.OpenManager,   "Plugin Manager",     "Plugins",  null,             "\uE74C",
@@ -249,26 +276,38 @@ public partial class MainWindow
             () => ExecuteGoToImplementationOnActiveEditor());
 
         // ── Debug ────────────────────────────────────────────────────────────
-        Reg(CommandIds.Debug.StartDebugging,       "Start Debugging",          "Debug", "F5",            "\uE768",
+        Reg(CommandIds.Debug.StartDebugging,           "Start Debugging",            "Debug", "F5",            "\uE768",
             () => OnDebugStartOrContinue());
-        Reg(CommandIds.Debug.StopDebugging,        "Stop Debugging",           "Debug", "Shift+F5",      "\uE71A",
+        Reg(CommandIds.Debug.StartWithoutDebugging,    "Start Without Debugging",    "Debug", "Ctrl+F5",       "\uEDB5",
+            () => _ = RunStartupProjectAsync());
+        Reg(CommandIds.Debug.StopDebugging,            "Stop Debugging",             "Debug", "Shift+F5",      "\uE71A",
             () => _ = _debuggerService?.StopSessionAsync());
-        Reg(CommandIds.Debug.RestartDebugging,     "Restart Debugging",        "Debug", "Ctrl+Shift+F5", "\uE72C",
+        Reg(CommandIds.Debug.RestartDebugging,         "Restart Debugging",          "Debug", "Ctrl+Shift+F5", "\uE72C",
             () => OnDebugRestart());
-        Reg(CommandIds.Debug.Continue,             "Continue",                 "Debug", null,            "\uE768",
+        Reg(CommandIds.Debug.Continue,                 "Continue",                   "Debug", null,            "\uE768",
             () => _ = _debuggerService?.ContinueAsync());
-        Reg(CommandIds.Debug.StepOver,             "Step Over",                "Debug", "F10",           "\uE7EE",
+        Reg(CommandIds.Debug.Pause,                    "Pause",                      "Debug", null,            "\uE769",
+            () => _ = _debuggerService?.PauseAsync());
+        Reg(CommandIds.Debug.StepOver,                 "Step Over",                  "Debug", "F10",           "\uE7EE",
             () => _ = _debuggerService?.StepOverAsync());
-        Reg(CommandIds.Debug.StepInto,             "Step Into",                "Debug", "F11",           "\uE70D",
+        Reg(CommandIds.Debug.StepInto,                 "Step Into",                  "Debug", "F11",           "\uE70D",
             () => _ = _debuggerService?.StepIntoAsync());
-        Reg(CommandIds.Debug.StepOut,              "Step Out",                 "Debug", "Shift+F11",     "\uE70E",
+        Reg(CommandIds.Debug.StepOut,                  "Step Out",                   "Debug", "Shift+F11",     "\uE70E",
             () => _ = _debuggerService?.StepOutAsync());
-        Reg(CommandIds.Debug.ToggleBreakpoint,     "Toggle Breakpoint",        "Debug", "F9",            "\uE7C1",
+        Reg(CommandIds.Debug.ToggleBreakpoint,         "Toggle Breakpoint",          "Debug", "F9",            "\uE7C1",
             () => OnToggleBreakpoint());
-        Reg(CommandIds.Debug.DeleteAllBreakpoints, "Delete All Breakpoints",   "Debug", "Ctrl+Shift+F9", null,
+        Reg(CommandIds.Debug.DeleteAllBreakpoints,     "Delete All Breakpoints",     "Debug", "Ctrl+Shift+F9", "\uE74D",
             () => _ = _debuggerService?.ClearAllBreakpointsAsync());
-        Reg(CommandIds.Debug.AttachToProcess,      "Attach to Process…",       "Debug", "Ctrl+Alt+P",    null,
+        Reg(CommandIds.Debug.AttachToProcess,          "Attach to Process\u2026",    "Debug", "Ctrl+Alt+P",    "\uE71B",
             () => OnAttachToProcess());
+        Reg(CommandIds.Debug.ShowBreakpoints,          "Show Breakpoints",           "Debug", null,            "\uEBE8",
+            () => ShowOrCreatePanel("Breakpoints", "panel-dbg-breakpoints", DockDirection.Bottom));
+        Reg(CommandIds.Debug.ShowCallStack,            "Show Call Stack",            "Debug", null,            "\uE81E",
+            () => ShowOrCreatePanel("Call Stack",  "panel-dbg-callstack",   DockDirection.Bottom));
+        Reg(CommandIds.Debug.ShowLocals,               "Show Locals",                "Debug", null,            "\uE943",
+            () => ShowOrCreatePanel("Locals",      "panel-dbg-locals",      DockDirection.Bottom));
+        Reg(CommandIds.Debug.ShowWatch,                "Show Watch",                 "Debug", null,            "\uE7B3",
+            () => ShowOrCreatePanel("Watch",       "panel-dbg-watch",       DockDirection.Bottom));
     }
 
     // -----------------------------------------------------------------------

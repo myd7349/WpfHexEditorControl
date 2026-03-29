@@ -17,26 +17,45 @@ public partial class App : Application
     /// </summary>
     public static string? StartupFilePath { get; private set; }
 
+    /// <summary>
+    /// When set, MainWindow opens a DiffViewer comparing these two files on startup.
+    /// Usage: WpfHexEditor.exe --diff "left.bin" "right.bin"
+    /// </summary>
+    public static (string Left, string Right)? StartupDiffPaths { get; private set; }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        StartupFilePath = ParseStartupFilePath(e.Args);
+        ParseCommandLine(e.Args);
     }
 
-    private static string? ParseStartupFilePath(string[] args)
+    private static void ParseCommandLine(string[] args)
     {
-        if (args.Length == 0) return null;
+        if (args.Length == 0) return;
 
-        // Pattern 1: --open "path"
+        // Pattern 1: --diff "left" "right"
+        for (int i = 0; i < args.Length - 2; i++)
+        {
+            if (args[i].Equals("--diff", StringComparison.OrdinalIgnoreCase))
+            {
+                StartupDiffPaths = (args[i + 1], args[i + 2]);
+                return;
+            }
+        }
+
+        // Pattern 2: --open "path"
         for (int i = 0; i < args.Length - 1; i++)
+        {
             if (args[i].Equals("--open", StringComparison.OrdinalIgnoreCase))
-                return args[i + 1];
+            {
+                StartupFilePath = args[i + 1];
+                return;
+            }
+        }
 
-        // Pattern 2: bare path as first argument (file association, drag-and-drop)
+        // Pattern 3: bare path as first argument (file association, drag-and-drop)
         var first = args[0];
         if (!first.StartsWith('-') && File.Exists(first))
-            return first;
-
-        return null;
+            StartupFilePath = first;
     }
 }

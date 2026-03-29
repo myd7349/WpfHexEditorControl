@@ -199,17 +199,41 @@ public class TabOverflowButton : Button
             };
 
             // --- Header panel ---
+            var titleText = tabItem.Header is DockTabHeader dth ? ExtractTitle(dth) : tabItem.Header?.ToString() ?? "Tab";
             var title = new TextBlock
             {
-                Text              = tabItem.Header is DockTabHeader dth ? ExtractTitle(dth) : tabItem.Header?.ToString() ?? "Tab",
+                Text              = titleText,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming      = TextTrimming.CharacterEllipsis,
-                Margin            = new Thickness(0, 0, 6, 0)
+                MaxWidth          = 300,
+                Margin            = new Thickness(0, 0, 6, 0),
+                ToolTip           = titleText
             };
 
+            // --- Editor name badge (italic, dimmed, right-aligned) ---
+            TextBlock? editorBadge = null;
+            if (tabItem.Tag is DockItem di
+                && di.Metadata.TryGetValue("EditorDisplayName", out var editorDisplayName)
+                && !string.IsNullOrEmpty(editorDisplayName))
+            {
+                editorBadge = new TextBlock
+                {
+                    Text              = editorDisplayName,
+                    FontStyle         = FontStyles.Italic,
+                    Opacity           = 0.55,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin            = new Thickness(8, 0, 6, 0),
+                    TextTrimming      = TextTrimming.CharacterEllipsis,
+                    MaxWidth          = 120
+                };
+                editorBadge.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush");
+            }
+
             DockPanel.SetDock(closeBox, Dock.Right);
-            var headerPanel = new DockPanel { LastChildFill = true, MinWidth = 200 };
+            if (editorBadge is not null) DockPanel.SetDock(editorBadge, Dock.Right);
+            var headerPanel = new DockPanel { LastChildFill = true, MinWidth = 200, MaxWidth = 480 };
             headerPanel.Children.Add(closeBox);
+            if (editorBadge is not null) headerPanel.Children.Add(editorBadge);
             headerPanel.Children.Add(title);
 
             var menuItem = new MenuItem

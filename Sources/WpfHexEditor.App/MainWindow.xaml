@@ -73,6 +73,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Title Bar (VS Code style: menu inline + title center + window buttons right) -->
@@ -89,6 +90,17 @@
                     <Button Content="&#xE106;" Style="{DynamicResource TitleBarCloseButtonStyle}"
                             Click="OnCloseWindow" ToolTip="Close" />
                 </StackPanel>
+
+                <!-- Customize Layout button (right, before window buttons) -->
+                <Button x:Name="CustomizeLayoutButton"
+                        DockPanel.Dock="Right"
+                        Click="OnCustomizeLayoutButtonClick"
+                        WindowChrome.IsHitTestVisibleInChrome="True"
+                        ToolTip="Customize Layout (Ctrl+Shift+L)"
+                        Style="{DynamicResource TitleBarButtonStyle}"
+                        Content="&#xE713;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="13" />
 
                 <!-- Logo (VS2022/VS Code style — far left, click = system menu) -->
                 <Image DockPanel.Dock="Left"
@@ -309,7 +321,7 @@
                     <!-- ═══════════ Edit ═══════════ -->
                     <MenuItem Header="_Edit"
                               IsEnabled="{Binding IsMenuEnabled, ElementName=ThisWindow}">
-                        <MenuItem Header="_Undo"
+                        <MenuItem Header="{Binding ActiveDocumentEditor.UndoDescription, ElementName=ThisWindow, FallbackValue='_Undo'}"
                                   Command="{Binding ActiveDocumentEditor.UndoCommand, ElementName=ThisWindow}"
                                   InputGestureText="Ctrl+Z">
                             <MenuItem.Icon>
@@ -318,7 +330,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="_Redo"
+                        <MenuItem Header="{Binding ActiveDocumentEditor.RedoDescription, ElementName=ThisWindow, FallbackValue='_Redo'}"
                                   Command="{Binding ActiveDocumentEditor.RedoCommand, ElementName=ThisWindow}"
                                   InputGestureText="Ctrl+Y">
                             <MenuItem.Icon>
@@ -410,72 +422,8 @@
                     </MenuItem>
 
                     <!-- ═══════════ View ═══════════ -->
-                    <MenuItem Header="_View">
-                        <MenuItem Header="_Command Palette"
-                                  Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}"
-                                  InputGestureText="Ctrl+Shift+P">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <Separator />
-                        <MenuItem Header="_Solution Explorer" Click="OnShowSolutionExplorer" InputGestureText="Ctrl+Alt+L">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Properties" Click="OnShowProperties" InputGestureText="F4">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Output" Click="OnShowOutput">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE7C3;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Error List" Click="OnShowErrorPanel">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE783;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Markdown Outline" Click="OnShowMarkdownOutline"
-                                  ToolTip="Show Markdown Outline panel (heading navigator)">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE8C9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <!-- Plugin-contributed View menu items are injected here dynamically
-                             by each plugin via IUIRegistry.RegisterMenuItem() at load time. -->
-                        <Separator/>
-                        <MenuItem Header="_Compare Files…" Click="OnCompareFiles" InputGestureText="Ctrl+Alt+D">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE93D;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="_Entropy Analysis…" Click="OnEntropyAnalysis"
-                                  ToolTip="Analyse entropy and byte distribution of the active file">
-                            <MenuItem.Icon>
-                                <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-                    </MenuItem>
+                    <!-- Content is generated dynamically by ViewMenuOrganizer.RebuildMenu() -->
+                    <MenuItem Header="_View" x:Name="ViewMenu" />
 
                     <!-- ═══════════ Project ═══════════ (enabled when solution loaded AND no operation active) -->
                     <MenuItem Header="_Project"
@@ -578,31 +526,8 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ═══════════ Debug ═══════════ -->
-                    <MenuItem Header="_Debug" IsEnabled="{Binding IsMenuEnabled, ElementName=ThisWindow}">
-                        <!-- Start / Stop -->
-                        <MenuItem Header="Start _Debugging"          Click="OnDebugStart"          InputGestureText="F5"            />
-                        <MenuItem Header="Start _Without Debugging"  Click="OnRunStartupProject"   InputGestureText="Ctrl+F5"       />
-                        <MenuItem Header="S_top Debugging"           Click="OnDebugStop"           InputGestureText="Shift+F5"      />
-                        <MenuItem Header="_Restart"                  Click="OnDebugRestart"        InputGestureText="Ctrl+Shift+F5" />
-                        <Separator/>
-                        <!-- Stepping -->
-                        <MenuItem Header="Step _Over"                Click="OnDebugStepOver"       InputGestureText="F10"           />
-                        <MenuItem Header="Step _Into"                Click="OnDebugStepInto"       InputGestureText="F11"           />
-                        <MenuItem Header="Step O_ut"                 Click="OnDebugStepOut"        InputGestureText="Shift+F11"     />
-                        <Separator/>
-                        <!-- Breakpoints -->
-                        <MenuItem Header="Toggle _Breakpoint"        Click="OnDebugToggleBp"       InputGestureText="F9"            />
-                        <MenuItem Header="_Delete All Breakpoints"   Click="OnDebugDeleteAllBps"   InputGestureText="Ctrl+Shift+F9" />
-                        <Separator/>
-                        <!-- Panels -->
-                        <MenuItem Header="Show _Breakpoints"         Click="OnShowDebugBreakpoints"/>
-                        <MenuItem Header="Show _Call Stack"          Click="OnShowDebugCallStack"  />
-                        <MenuItem Header="Show _Locals"              Click="OnShowDebugLocals"     />
-                        <MenuItem Header="Show _Watch"               Click="OnShowDebugWatch"      />
-                        <Separator/>
-                        <MenuItem Header="_Attach to Process…"       Click="OnAttachToProcess"     InputGestureText="Ctrl+Alt+P"    />
-                    </MenuItem>
+                    <!-- ═══════════ Debug (dynamic — populated by DebugMenuOrganizer) ═══════════ -->
+                    <MenuItem Header="_Debug" x:Name="DebugMenu" IsEnabled="{Binding IsMenuEnabled, ElementName=ThisWindow}" />
 
                     <!-- ═══════════ Layout ═══════════ -->
                     <MenuItem Header="_Layout">
@@ -1139,15 +1064,15 @@
             <Border Style="{DynamicResource DockToolBarPodStyle}">
                 <StackPanel Orientation="Horizontal">
 
-                    <!-- Undo / Redo — Command bindings -->
+                    <!-- Undo / Redo — Command bindings with dynamic description tooltips -->
                     <Button Command="{Binding ActiveDocumentEditor.UndoCommand, ElementName=ThisWindow}"
-                            ToolTip="Undo (Ctrl+Z)"
+                            ToolTip="{Binding ActiveDocumentEditor.UndoDescription, ElementName=ThisWindow, FallbackValue='Undo (Ctrl+Z)'}"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
                         <TextBlock Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    VerticalAlignment="Center"/>
                     </Button>
                     <Button Command="{Binding ActiveDocumentEditor.RedoCommand, ElementName=ThisWindow}"
-                            ToolTip="Redo (Ctrl+Y)"
+                            ToolTip="{Binding ActiveDocumentEditor.RedoDescription, ElementName=ThisWindow, FallbackValue='Redo (Ctrl+Y)'}"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
                         <TextBlock Text="&#xE7A6;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    VerticalAlignment="Center"/>
@@ -1704,7 +1629,7 @@
         </Border>
 
         <!-- Main Dock Area + Plugin InfoBar wrapper -->
-        <Grid Grid.Row="2">
+        <Grid x:Name="ContentGrid" Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -1797,7 +1722,7 @@
         </Grid>
 
         <!-- Status Bar — VS2022-style: adapts to the active document -->
-        <StatusBar x:Name="AppStatusBar" Grid.Row="3" Background="{DynamicResource DockTabActiveBrush}">
+        <StatusBar x:Name="AppStatusBar" Grid.Row="4" Background="{DynamicResource DockTabActiveBrush}">
 
             <!-- Active editor interactive items (IStatusBarContributor) -->
             <!-- Visibility controlled imperatively from ActiveStatusBarContributor setter -->

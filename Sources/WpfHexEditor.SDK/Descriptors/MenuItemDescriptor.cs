@@ -48,4 +48,12 @@ public sealed class MenuItemDescriptor
     /// Example: "Analysis", "FileTools", "Statistics".
     /// </summary>
     public string? Group { get; init; }
+
+    /// <summary>
+    /// Functional category for View menu dynamic organization
+    /// (e.g., "Analysis", "Design", "Data &amp; Files", "Core IDE").
+    /// When null, the ViewMenuOrganizer infers the category from <see cref="Group"/>,
+    /// header keyword matching, or falls back to "Other".
+    /// </summary>
+    public string? Category { get; init; }
 }

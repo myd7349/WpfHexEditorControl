@@ -559,6 +559,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _quickInfoPopup?.OnEditorMouseLeft();
             _hoverQuickInfoService?.Cancel();
 
+            // Start breakpoint hover grace timer.
+            _bpHoverTimer?.Stop();
+            _bpHoverLine = -1;
+            _bpHoverPopup?.OnEditorMouseLeft();
+
             // Clear Ctrl+hover state on mouse leave.
             if (_ctrlDown)
             {
@@ -1361,6 +1366,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
                 // End-of-block hint — show popup when cursor is on a region's closing line.
                 HandleEndBlockHintHover(hoverPos.Line);
+
+                // Breakpoint hover popup — show when hovering a breakpoint-highlighted line.
+                HandleBreakpointHover(hoverPos.Line);
 
                 // Ctrl+hover symbol underline.
                 // Enabled when: (a) no LanguageDefinition is registered for this file type

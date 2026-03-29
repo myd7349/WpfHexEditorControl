@@ -119,9 +119,18 @@ public partial class MainWindow
             _menuAdapter       = (MenuAdapter)           _serviceProvider.GetRequiredService<WpfHexEditor.PluginHost.Adapters.IMenuAdapter>();
             _documentHostService = (DocumentHostService) _serviceProvider.GetRequiredService<WpfHexEditor.SDK.Contracts.Services.IDocumentHostService>();
 
+            // Sync ThemeServiceImpl with the theme we already applied during early boot
+            // (ApplyThemeFromSettingsEarly ran before this service was created).
+            _themeService?.SyncCurrentTheme(AppSettingsService.Instance.Current.ActiveThemeName);
+
             var dockingAdapter   = _dockingAdapter;
             var menuAdapter      = _menuAdapter;
             var statusBarAdapter = (StatusBarAdapter) _serviceProvider.GetRequiredService<WpfHexEditor.PluginHost.Adapters.IStatusBarAdapter>();
+
+            // Initialize the dynamic View & Debug menu systems BEFORE plugins load,
+            // so plugin-contributed items trigger ViewItemsChanged/DebugItemsChanged → RebuildMenu().
+            InitViewMenuOrganizer();
+            InitDebugMenuOrganizer();
 
             // 2. Build PluginHost singletons
             var permissionService = new PermissionService();
@@ -1057,7 +1066,11 @@ public partial class MainWindow
         var hexEditor  = new HexEditorServiceImpl();
         var output     = new OutputServiceImpl();
         var errorPanel = new ErrorPanelServiceImpl();
-        var theme      = new ThemeServiceImpl();
+        var theme      = new ThemeServiceImpl
+        {
+            SyncHexEditors      = SyncAllHexEditorThemes,
+            NotifySandboxPlugins = themeXaml => _pluginHost?.NotifyThemeChangedAsync(themeXaml) ?? Task.CompletedTask,
+        };
         var terminal   = new TerminalServiceImpl();
 
         if (_errorPanel is not null)

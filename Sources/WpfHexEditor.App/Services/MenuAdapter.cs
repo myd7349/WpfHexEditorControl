@@ -13,18 +13,25 @@ namespace WpfHexEditor.App.Services;
 
 /// <summary>
 /// Bridges the PluginHost IMenuAdapter contract to the MainWindow WPF menu.
-/// Supports top-level "Tools", "View", "Edit" parent paths; creates new
-/// top-level menus if the parent path is unrecognised.
+/// Items with <c>ParentPath == "View"</c> are intercepted and stored for the
+/// <see cref="ViewMenu.ViewMenuOrganizer"/> instead of being added directly to the menu.
+/// All other parent paths (Tools, Debug, etc.) are handled normally.
 /// </summary>
 public sealed class MenuAdapter : IMenuAdapter
 {
     private readonly Menu _mainMenu;
 
-    // uiId → added MenuItem
+    // uiId → added MenuItem (non-View items only)
     private readonly Dictionary<string, MenuItem> _addedItems = new(StringComparer.OrdinalIgnoreCase);
 
-    // uiId → original descriptor (for Command Palette enumeration)
+    // uiId → original descriptor (all items, for Command Palette enumeration)
     private readonly Dictionary<string, MenuItemDescriptor> _descriptors = new(StringComparer.OrdinalIgnoreCase);
+
+    // uiId → original descriptor (View-parented items only, for ViewMenuOrganizer)
+    private readonly Dictionary<string, MenuItemDescriptor> _viewDescriptors = new(StringComparer.OrdinalIgnoreCase);
+
+    // uiId → original descriptor (Debug-parented items only, for DebugMenuOrganizer)
+    private readonly Dictionary<string, MenuItemDescriptor> _debugDescriptors = new(StringComparer.OrdinalIgnoreCase);
 
     // (normalised parentPath + group) → Separator element that heads that group block
     private readonly Dictionary<string, Separator> _groupSeparators = new(StringComparer.OrdinalIgnoreCase);
@@ -38,10 +45,37 @@ public sealed class MenuAdapter : IMenuAdapter
     }
 
     /// <inheritdoc />
+    public event Action? ViewItemsChanged;
+
+    /// <inheritdoc />
+    public event Action? DebugItemsChanged;
+
+    /// <inheritdoc />
     public void AddMenuItem(string uiId, MenuItemDescriptor descriptor)
     {
-        if (_addedItems.ContainsKey(uiId)) return;
+        if (_descriptors.ContainsKey(uiId)) return;
 
+        _descriptors[uiId] = descriptor;
+
+        // View-parented items are intercepted — store but do not create WPF MenuItems.
+        // The ViewMenuOrganizer will build the View menu dynamically.
+        if (IsViewParent(descriptor.ParentPath))
+        {
+            _viewDescriptors[uiId] = descriptor;
+            ViewItemsChanged?.Invoke();
+            return;
+        }
+
+        // Debug-parented items are intercepted — store but do not create WPF MenuItems.
+        // The DebugMenuOrganizer will build the Debug menu dynamically.
+        if (IsDebugParent(descriptor.ParentPath))
+        {
+            _debugDescriptors[uiId] = descriptor;
+            DebugItemsChanged?.Invoke();
+            return;
+        }
+
+        // Non-View items: create WPF MenuItem and add to parent as before
         var item = new MenuItem
         {
             Header             = descriptor.Header,
@@ -91,19 +125,34 @@ public sealed class MenuAdapter : IMenuAdapter
         }
 
         _addedItems[uiId] = item;
-        _descriptors[uiId] = descriptor;
     }
 
     /// <inheritdoc />
     public void RemoveMenuItem(string uiId)
     {
+        _descriptors.Remove(uiId);
+
+        // View-parented item?
+        if (_viewDescriptors.Remove(uiId))
+        {
+            ViewItemsChanged?.Invoke();
+            return;
+        }
+
+        // Debug-parented item?
+        if (_debugDescriptors.Remove(uiId))
+        {
+            DebugItemsChanged?.Invoke();
+            return;
+        }
+
+        // Non-View item: remove WPF MenuItem
         if (!_addedItems.TryGetValue(uiId, out var item)) return;
 
         if (item.Parent is ItemsControl parent)
             parent.Items.Remove(item);
 
         _addedItems.Remove(uiId);
-        _descriptors.Remove(uiId);
 
         // Remove the group separator if this was the last item in the group.
         foreach (var kv in _groupMembers)
@@ -123,6 +172,18 @@ public sealed class MenuAdapter : IMenuAdapter
 
     /// <inheritdoc />
     public IReadOnlyDictionary<string, MenuItemDescriptor> GetAllMenuItems() => _descriptors;
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, MenuItemDescriptor> GetAllViewMenuItems() => _viewDescriptors;
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, MenuItemDescriptor> GetAllDebugMenuItems() => _debugDescriptors;
+
+    private static bool IsViewParent(string parentPath)
+        => string.Equals(parentPath?.TrimStart('_'), "View", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsDebugParent(string parentPath)
+        => string.Equals(parentPath?.TrimStart('_'), "Debug", StringComparison.OrdinalIgnoreCase);
 
     private ItemsControl FindOrCreateParent(string parentPath)
     {

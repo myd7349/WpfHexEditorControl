@@ -754,7 +754,9 @@
     <SolidColorBrush x:Key="BDiff_AsciiNonPrintableBrush"    Color="#555555" />
     <SolidColorBrush x:Key="BDiff_ContextRowBackgroundBrush" Color="#1A1A1A" />
     <SolidColorBrush x:Key="BDiff_CollapsedContextBrush"     Color="#252526" />
-    <SolidColorBrush x:Key="BDiff_CollapsedContextFgBrush"   Color="#858585" />
+    <SolidColorBrush x:Key="BDiff_CollapsedContextFgBrush"   Color="#858585" />
+    <SolidColorBrush x:Key="BDiff_HoverBrush"              Color="#506496FF" />
+    <SolidColorBrush x:Key="TDiff_HoverSegmentBrush"        Color="#50FFCC00" />
     <!-- whfmt v2.0 tokens (WF_*) - inserted by Add-WhfmtV2Tokens.ps1 -->
     <SolidColorBrush x:Key="WF_RepeatingGroupBackground"  Color="#252526" />
     <SolidColorBrush x:Key="WF_AssertionErrorBrush"       Color="#E51400" />
@@ -765,4 +767,15 @@
     <SolidColorBrush x:Key="WF_InspectorGroupHeaderBrush" Color="#3C3C3C" />
     <SolidColorBrush x:Key="WF_NavigatorBookmarkBrush"    Color="#007ACC" />
     <SolidColorBrush x:Key="WF_ConfidenceBadgeBrush"      Color="#388A34" />
+
+    <!-- Customize Layout tokens (CL_*) â€” inserted by Add-CustomizeLayoutTokens.ps1 -->
+    <SolidColorBrush x:Key="CL_BackgroundBrush"      Color="#252526" />
+    <SolidColorBrush x:Key="CL_SectionHeaderBrush"    Color="#6A6A6A" />
+    <SolidColorBrush x:Key="CL_ToggleActiveBrush"     Color="#007ACC" />
+    <SolidColorBrush x:Key="CL_ToggleInactiveBrush"   Color="#4D4D4D" />
+    <SolidColorBrush x:Key="CL_RadioSelectedBrush"    Color="#007ACC" />
+    <SolidColorBrush x:Key="CL_RadioSelectedForegroundBrush" Color="#000000" />
+    <SolidColorBrush x:Key="CL_RadioUnselectedBrush"  Color="#333333" />
+    <SolidColorBrush x:Key="CL_HoverBrush"            Color="#1A2D3E" />
+    <SolidColorBrush x:Key="CL_ModeBadgeBrush"        Color="#388A34" />
 </ResourceDictionary>

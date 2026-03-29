@@ -40,6 +40,7 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
     // Breakpoint list (IDE-managed, synced to adapter per file)
     private readonly List<BreakpointLocation>    _breakpoints = [];
     private readonly BreakpointPersistenceManager _persistence;
+    private string? _currentSolutionPath;
 
     // ── IDebuggerService properties ───────────────────────────────────────────
 
@@ -55,7 +56,7 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
     public IReadOnlyList<DebugBreakpointInfo> Breakpoints =>
         _breakpoints.Select(b => new DebugBreakpointInfo(
             b.FilePath, b.Line, string.IsNullOrEmpty(b.Condition) ? null : b.Condition,
-            b.IsEnabled, b.IsVerified)).ToList();
+            b.IsEnabled, b.IsVerified, b.HitCount)).ToList();
 
     public DebuggerServiceImpl(IIDEEventBus eventBus, AppSettings settings)
     {
@@ -71,6 +72,13 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
     public async Task LaunchAsync(DebugLaunchConfig config)
     {
         if (_session.IsActive) await StopSessionAsync();
+
+        // Reset hit counts for the new session.
+        lock (_lock)
+        {
+            for (int i = 0; i < _breakpoints.Count; i++)
+                _breakpoints[i] = _breakpoints[i] with { HitCount = 0 };
+        }
 
         var adapterPath = DebugAdapterLocator.Locate(_settings.Debugger.NetCoreDbgPath);
         if (adapterPath is null)
@@ -190,6 +198,12 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
         await _client.StepOutAsync(new StepArgs(_session.ActiveThreadId));
     }
 
+    public async Task PauseAsync()
+    {
+        if (_client is null || !_session.IsActive || _session.IsPaused) return;
+        await _client.PauseAsync(new PauseArgs(_session.ActiveThreadId));
+    }
+
     // ── IDebuggerService — inspection ─────────────────────────────────────────
 
     public async Task<IReadOnlyList<DebugFrameInfo>> GetCallStackAsync()
@@ -243,7 +257,7 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
             }
         }
 
-        _persistence.Save(_breakpoints);
+        _persistence.SaveForContext(_currentSolutionPath, _breakpoints);
         BreakpointsChanged?.Invoke(this, EventArgs.Empty);
 
         if (_client is not null && _session.IsActive)
@@ -268,7 +282,7 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
             };
         }
 
-        _persistence.Save(_breakpoints);
+        _persistence.SaveForContext(_currentSolutionPath, _breakpoints);
         BreakpointsChanged?.Invoke(this, EventArgs.Empty);
 
         if (_client is not null && _session.IsActive)
@@ -285,7 +299,7 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
             _breakpoints.Remove(bp);
         }
 
-        _persistence.Save(_breakpoints);
+        _persistence.SaveForContext(_currentSolutionPath, _breakpoints);
         BreakpointsChanged?.Invoke(this, EventArgs.Empty);
 
         if (_client is not null && _session.IsActive)
@@ -301,12 +315,76 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
             _breakpoints.Clear();
         }
 
-        _persistence.Save(_breakpoints);
+        _persistence.SaveForContext(_currentSolutionPath, _breakpoints);
         BreakpointsChanged?.Invoke(this, EventArgs.Empty);
 
         if (_client is not null && _session.IsActive)
             foreach (var file in files)
                 await SyncBreakpointsForFileAsync(_client, file);
+    }
+
+    // ── Solution lifecycle ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Called when the active solution changes. Saves breakpoints for the old solution,
+    /// clears the list, and loads breakpoints for the new solution (or global fallback).
+    /// </summary>
+    public void OnSolutionChanged(string? newSolutionFilePath)
+    {
+        lock (_lock)
+        {
+            // Save current breakpoints to the old context before switching.
+            _persistence.SaveForContext(_currentSolutionPath, _breakpoints);
+            _breakpoints.Clear();
+
+            _currentSolutionPath = newSolutionFilePath;
+
+            // Load breakpoints for the new context.
+            var loaded = _persistence.LoadForContext(newSolutionFilePath);
+            _breakpoints.AddRange(loaded);
+
+            // Auto-import from VS XML when .whide store is empty and option is enabled.
+            if (loaded.Count == 0 && !string.IsNullOrEmpty(newSolutionFilePath))
+            {
+                var imported = _persistence.TryAutoImportFromVs(newSolutionFilePath);
+                if (imported.Count > 0)
+                {
+                    _breakpoints.AddRange(imported);
+                    _persistence.SaveForContext(newSolutionFilePath, _breakpoints);
+                }
+            }
+        }
+
+        BreakpointsChanged?.Invoke(this, EventArgs.Empty);
+
+        // Sync with active DAP client if a session is running.
+        if (_client is not null && _session.IsActive)
+            _ = SyncAllBreakpointsAsync(_client);
+    }
+
+    // ── Hit count ────────────────────────────────────────────────────────────
+
+    public int GetHitCount(string filePath, int line)
+    {
+        lock (_lock)
+        {
+            var bp = _breakpoints.FirstOrDefault(b =>
+                string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase) && b.Line == line);
+            return bp?.HitCount ?? 0;
+        }
+    }
+
+    /// <summary>Increment hit count for the breakpoint at the given location.</summary>
+    internal void IncrementHitCount(string filePath, int line)
+    {
+        lock (_lock)
+        {
+            int idx = _breakpoints.FindIndex(b =>
+                string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase) && b.Line == line);
+            if (idx >= 0)
+                _breakpoints[idx] = _breakpoints[idx] with { HitCount = _breakpoints[idx].HitCount + 1 };
+        }
+        BreakpointsChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ── Stop ──────────────────────────────────────────────────────────────────
@@ -375,10 +453,23 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
             });
 
             if (e.Reason == StopReason.Breakpoint)
+            {
+                if (!string.IsNullOrEmpty(filePath) && line > 0)
+                    IncrementHitCount(filePath, line);
+
                 _eventBus.Publish(new BreakpointHitEvent
                 {
                     FilePath = filePath, Line = line, ThreadId = e.ThreadId ?? 1,
                     Source   = nameof(DebuggerServiceImpl)
+                });
+            }
+            else if (e.Reason == StopReason.Exception)
+                _eventBus.Publish(new ExceptionHitEvent
+                {
+                    ExceptionType = e.Description ?? "Exception",
+                    Message       = e.Text ?? string.Empty,
+                    FilePath      = filePath, Line = line,
+                    Source        = nameof(DebuggerServiceImpl)
                 });
             else if (e.Reason is StopReason.Step or StopReason.Goto)
                 _eventBus.Publish(new StepCompletedEvent

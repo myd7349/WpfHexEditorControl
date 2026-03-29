@@ -84,16 +84,92 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             InvalidateVisual(); // redraw execution line highlight in content area
         }
 
-        private void OnBreakpointRightClick(string filePath, int line1)
+        private void OnBreakpointRightClick(string filePath, int line1, double clickY)
         {
             if (_bpSource is null || _breakpointGutterControl is null) return;
 
             _bpInfoPopup ??= new BreakpointInfoPopup();
 
-            // Position the popup at the top-left of the gutter so WPF can
-            // keep it visible relative to the PlacementTarget.
-            var offset = _breakpointGutterControl.TranslatePoint(new Point(0, 0), this);
-            _bpInfoPopup.Show(_breakpointGutterControl, _bpSource, filePath, line1, offset);
+            // Position the popup to the right of the gutter, at the clicked line's Y.
+            // PlacementMode.Relative offsets are relative to PlacementTarget (the gutter).
+            var offset = new Point(BreakpointGutterControl.GutterWidth, clickY);
+            _bpInfoPopup.Show(_breakpointGutterControl, _bpSource, filePath, line1, offset, _lineHeight);
+        }
+
+        // ── Breakpoint hover popup ────────────────────────────────────────────
+
+        private BreakpointHoverPopup? _bpHoverPopup;
+        private int _bpHoverLine = -1;
+        private System.Windows.Threading.DispatcherTimer? _bpHoverTimer;
+
+        internal void HandleBreakpointHover(int hoverLine0)
+        {
+            if (!ShowBreakpointLineHighlight || _bpSource is null || string.IsNullOrEmpty(_currentFilePath))
+            {
+                DismissBreakpointHover();
+                return;
+            }
+
+            if (hoverLine0 == _bpHoverLine) return; // jitter guard
+            _bpHoverLine = hoverLine0;
+            _bpHoverTimer?.Stop();
+
+            int line1 = hoverLine0 + 1;
+            var info = _bpSource.GetBreakpoint(_currentFilePath, line1);
+            if (info is null)
+            {
+                DismissBreakpointHover();
+                return;
+            }
+
+            // Debounce 400ms before showing popup
+            _bpHoverTimer ??= new System.Windows.Threading.DispatcherTimer();
+            _bpHoverTimer.Interval = TimeSpan.FromMilliseconds(400);
+            _bpHoverTimer.Tick -= OnBpHoverTimerTick;
+            _bpHoverTimer.Tick += OnBpHoverTimerTick;
+            _bpHoverTimer.Start();
+        }
+
+        private void OnBpHoverTimerTick(object? sender, EventArgs e)
+        {
+            _bpHoverTimer?.Stop();
+            if (_bpSource is null || string.IsNullOrEmpty(_currentFilePath)) return;
+
+            int line1 = _bpHoverLine + 1;
+            var info = _bpSource.GetBreakpoint(_currentFilePath, line1);
+            if (info is null) return;
+
+            if (!_lineYLookup.TryGetValue(_bpHoverLine, out double lineY)) return;
+
+            _bpHoverPopup ??= new BreakpointHoverPopup();
+            _bpHoverPopup.EditConditionRequested -= OnBpHoverEditCondition;
+            _bpHoverPopup.EditConditionRequested += OnBpHoverEditCondition;
+
+            var anchorRect = new Rect(TextAreaLeftOffset, lineY, Math.Max(1, ActualWidth - TextAreaLeftOffset), _lineHeight);
+            _bpHoverPopup.Show(this, _bpSource, _currentFilePath, line1, info,
+                _document?.Lines, ExternalHighlighter, anchorRect);
+        }
+
+        private void OnBpHoverEditCondition(string filePath, int line1)
+        {
+            // _lineYLookup Y values are shared with the gutter — use directly.
+            double clickY = _lineYLookup.TryGetValue(line1 - 1, out double ly) ? ly : 0;
+            OnBreakpointRightClick(filePath, line1, clickY);
+        }
+
+        /// <summary>Gutter hover dwell — delegate to the same breakpoint hover pipeline.</summary>
+        private void OnGutterBreakpointHover(string filePath, int line1)
+        {
+            HandleBreakpointHover(line1 - 1);
+        }
+
+        internal void DismissBreakpointHover()
+        {
+            _bpHoverTimer?.Stop();
+            _bpHoverLine = -1;
+            // Use the popup's own grace timer rather than immediate close,
+            // so the user has time to move the mouse into the popup.
+            _bpHoverPopup?.OnEditorMouseLeft();
         }
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -921,7 +997,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _ctrlClickService?.Dispose();
             _ctrlClickService = null;
 
-            _document = new Models.CodeDocument();
+            // Do NOT replace _document with a new empty instance here.
+            // Replacing it causes an immediate blank re-render via InvalidateVisual(),
+            // which persists whenever Close() is called before OpenAsync() completes
+            // (e.g. during tab-reload or rapid file switching). The existing document
+            // content stays visible until OpenAsync() loads the next file.
             _currentFilePath = null;
             if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = null;
             _isDirty = false;
@@ -930,7 +1010,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _selection.Clear();
             _undoEngine.Reset();
             _validationErrors.Clear();
-            InvalidateVisual();
+            // Do NOT call InvalidateVisual() — the tab is either being removed from the
+            // visual tree (no render needed) or OpenAsync() will trigger the next render.
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
             TitleChanged?.Invoke(this, BuildTitle());
             DiagnosticsChanged?.Invoke(this, EventArgs.Empty);

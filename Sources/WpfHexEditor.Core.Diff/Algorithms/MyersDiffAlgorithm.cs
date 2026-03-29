@@ -39,8 +39,11 @@ public sealed class MyersDiffAlgorithm : IDiffAlgorithm
     // -----------------------------------------------------------------------
 
     public TextDiffResult ComputeLines(string[] leftLines, string[] rightLines)
+        => ComputeLines(leftLines, rightLines, DiffCompareOptions.Default);
+
+    public TextDiffResult ComputeLines(string[] leftLines, string[] rightLines, DiffCompareOptions options)
     {
-        var edits  = ShortestEditLines(leftLines, rightLines);
+        var edits  = ShortestEditLines(leftLines, rightLines, options.IgnoreWhitespace);
         var lines  = BuildTextLines(edits, leftLines, rightLines);
         return new TextDiffResult
         {
@@ -142,19 +145,30 @@ public sealed class MyersDiffAlgorithm : IDiffAlgorithm
     // Line-based variant (uses string equality, not byte equality)
     // -----------------------------------------------------------------------
 
-    private static List<DiffEdit> ShortestEditLines(string[] a, string[] b)
+    private static List<DiffEdit> ShortestEditLines(string[] a, string[] b, bool ignoreWhitespace = false)
     {
         int n = a.Length, m = b.Length;
         int max = n + m;
         if (max == 0) return [];
+
+        // When ignoring whitespace, compare trimmed versions for equality but
+        // preserve original content in the output. Build normalized arrays once.
+        string[] aNorm = a, bNorm = b;
+        if (ignoreWhitespace)
+        {
+            aNorm = new string[n];
+            bNorm = new string[m];
+            for (int i = 0; i < n; i++) aNorm[i] = NormalizeWhitespace(a[i]);
+            for (int i = 0; i < m; i++) bNorm[i] = NormalizeWhitespace(b[i]);
+        }
 
         // Pre-hash all lines for O(1) inequality fast-path — avoids O(line-length) string
         // equality on every Myers diagonal step (OPT-PERF-02). Full Ordinal compare is still
         // done on hash matches to handle collisions correctly.
         var aHash = new int[n];
         var bHash = new int[m];
-        for (int i = 0; i < n; i++) aHash[i] = a[i].GetHashCode();
-        for (int i = 0; i < m; i++) bHash[i] = b[i].GetHashCode();
+        for (int i = 0; i < n; i++) aHash[i] = aNorm[i].GetHashCode();
+        for (int i = 0; i < m; i++) bHash[i] = bNorm[i].GetHashCode();
 
         var vSnapshots = new List<int[]>();
         var v = new int[2 * max + 1];
@@ -175,7 +189,7 @@ public sealed class MyersDiffAlgorithm : IDiffAlgorithm
                 int y = x - k;
                 while (x < n && y < m
                     && aHash[x] == bHash[y]
-                    && string.Equals(a[x], b[y], StringComparison.Ordinal))
+                    && string.Equals(aNorm[x], bNorm[y], StringComparison.Ordinal))
                 { x++; y++; }
 
                 v[idx] = x;
@@ -184,6 +198,43 @@ public sealed class MyersDiffAlgorithm : IDiffAlgorithm
             }
         }
         return BacktrackLines(vSnapshots, n, m, max);
+    }
+
+    /// <summary>
+    /// Normalizes a line for whitespace-insensitive comparison:
+    /// trims leading/trailing whitespace and collapses internal runs to single spaces.
+    /// </summary>
+    private static string NormalizeWhitespace(string line)
+    {
+        var trimmed = line.AsSpan().Trim();
+        if (trimmed.IsEmpty) return string.Empty;
+
+        // Fast path: no internal whitespace runs
+        bool hasRun = false;
+        for (int i = 1; i < trimmed.Length; i++)
+        {
+            if (char.IsWhiteSpace(trimmed[i]) && char.IsWhiteSpace(trimmed[i - 1]))
+            { hasRun = true; break; }
+        }
+        if (!hasRun) return trimmed.ToString();
+
+        // Collapse internal whitespace runs to single space
+        var sb = new System.Text.StringBuilder(trimmed.Length);
+        bool prevWs = false;
+        foreach (char ch in trimmed)
+        {
+            if (char.IsWhiteSpace(ch))
+            {
+                if (!prevWs) sb.Append(' ');
+                prevWs = true;
+            }
+            else
+            {
+                sb.Append(ch);
+                prevWs = false;
+            }
+        }
+        return sb.ToString();
     }
 
     private static List<DiffEdit> BacktrackLines(List<int[]> vSnapshots, int n, int m, int offset)
@@ -241,39 +292,78 @@ public sealed class MyersDiffAlgorithm : IDiffAlgorithm
 
         void FlushPaired()
         {
-            int pairs = Math.Min(deletedBuf.Count, insertedBuf.Count);
-            for (int i = 0; i < pairs; i++)
+            int delCount = deletedBuf.Count;
+            int insCount = insertedBuf.Count;
+
+            if (delCount == 0 && insCount == 0) return;
+
+            // Build similarity-based pairing when buffers are small enough.
+            // Greedy: pick the best-similarity pair, emit it, repeat.
+            // Unmatched lines (below threshold) stay as pure Delete/Insert.
+            const int MaxSmartPairSize = 50;
+            const double MinSimilarity = 0.35;
+
+            if (delCount > 0 && insCount > 0 && delCount <= MaxSmartPairSize && insCount <= MaxSmartPairSize)
             {
-                var del = deletedBuf[i];
-                var ins = insertedBuf[i];
-                // Mark as Modified pair and attach word-level diff
-                var wordEdits = del.Content.Length <= MaxCharLevelLength && ins.Content.Length <= MaxCharLevelLength
-                    ? ComputeWordEdits(del.Content, ins.Content)
-                    : (IReadOnlyList<DiffEdit>)[];
-                var modified = new TextDiffLine
+                var usedDel = new bool[delCount];
+                var usedIns = new bool[insCount];
+                var pairs = new List<(int di, int ii, double sim)>();
+
+                // Compute pairwise similarity scores
+                for (int di = 0; di < delCount; di++)
+                    for (int ii = 0; ii < insCount; ii++)
+                    {
+                        double sim = LineSimilarity(deletedBuf[di].Content, insertedBuf[ii].Content);
+                        if (sim >= MinSimilarity)
+                            pairs.Add((di, ii, sim));
+                    }
+
+                // Greedy: pick best similarity first, preserving source order
+                pairs.Sort((a, b) => b.sim.CompareTo(a.sim));
+
+                var matched = new List<(int di, int ii)>();
+                foreach (var (di, ii, sim) in pairs)
                 {
-                    Kind            = TextLineKind.Modified,
-                    Content         = del.Content,
-                    LeftLineNumber  = del.LeftLineNumber,
-                    RightLineNumber = del.RightLineNumber,
-                    WordEdits       = wordEdits
-                };
-                var modifiedIns = new TextDiffLine
+                    if (usedDel[di] || usedIns[ii]) continue;
+                    usedDel[di] = true;
+                    usedIns[ii] = true;
+                    matched.Add((di, ii));
+                }
+
+                // Emit in source order (by delete index)
+                matched.Sort((a, b) => a.di.CompareTo(b.di));
+
+                int nextDel = 0, nextIns = 0;
+                foreach (var (di, ii) in matched)
                 {
-                    Kind            = TextLineKind.Modified,
-                    Content         = ins.Content,
-                    LeftLineNumber  = ins.LeftLineNumber,
-                    RightLineNumber = ins.RightLineNumber,
-                    WordEdits       = wordEdits
-                };
-                modified.CounterpartLine    = modifiedIns;
-                modifiedIns.CounterpartLine = modified;
-                result.Add(modified);
-                result.Add(modifiedIns);
+                    // Emit unmatched deletes before this pair
+                    for (; nextDel < di; nextDel++)
+                        if (!usedDel[nextDel]) result.Add(deletedBuf[nextDel]);
+                    // Emit unmatched inserts before this pair
+                    for (; nextIns < ii; nextIns++)
+                        if (!usedIns[nextIns]) result.Add(insertedBuf[nextIns]);
+
+                    EmitModifiedPair(deletedBuf[di], insertedBuf[ii], result);
+                    nextDel = di + 1;
+                    nextIns = ii + 1;
+                }
+
+                // Emit remaining unmatched
+                for (; nextDel < delCount; nextDel++)
+                    if (!usedDel[nextDel]) result.Add(deletedBuf[nextDel]);
+                for (; nextIns < insCount; nextIns++)
+                    if (!usedIns[nextIns]) result.Add(insertedBuf[nextIns]);
             }
-            // Remainder as pure deletions/insertions
-            for (int i = pairs; i < deletedBuf.Count;  i++) result.Add(deletedBuf[i]);
-            for (int i = pairs; i < insertedBuf.Count; i++) result.Add(insertedBuf[i]);
+            else
+            {
+                // Large buffers: positional pairing (perf guard)
+                int positionalPairs = Math.Min(delCount, insCount);
+                for (int i = 0; i < positionalPairs; i++)
+                    EmitModifiedPair(deletedBuf[i], insertedBuf[i], result);
+                for (int i = positionalPairs; i < delCount;  i++) result.Add(deletedBuf[i]);
+                for (int i = positionalPairs; i < insCount; i++) result.Add(insertedBuf[i]);
+            }
+
             deletedBuf.Clear();
             insertedBuf.Clear();
         }
@@ -321,6 +411,72 @@ public sealed class MyersDiffAlgorithm : IDiffAlgorithm
 
         FlushPaired();
         return result;
+    }
+
+    // -----------------------------------------------------------------------
+    // Pairing helpers
+    // -----------------------------------------------------------------------
+
+    private static void EmitModifiedPair(TextDiffLine del, TextDiffLine ins, List<TextDiffLine> result)
+    {
+        var wordEdits = del.Content.Length <= MaxCharLevelLength && ins.Content.Length <= MaxCharLevelLength
+            ? ComputeWordEdits(del.Content, ins.Content)
+            : (IReadOnlyList<DiffEdit>)[];
+        var modified = new TextDiffLine
+        {
+            Kind            = TextLineKind.Modified,
+            Content         = del.Content,
+            LeftLineNumber  = del.LeftLineNumber,
+            RightLineNumber = del.RightLineNumber,
+            WordEdits       = wordEdits
+        };
+        var modifiedIns = new TextDiffLine
+        {
+            Kind            = TextLineKind.Modified,
+            Content         = ins.Content,
+            LeftLineNumber  = ins.LeftLineNumber,
+            RightLineNumber = ins.RightLineNumber,
+            WordEdits       = wordEdits
+        };
+        modified.CounterpartLine    = modifiedIns;
+        modifiedIns.CounterpartLine = modified;
+        result.Add(modified);
+        result.Add(modifiedIns);
+    }
+
+    /// <summary>
+    /// Quick similarity ratio between two lines: 2 × (common chars) / (total chars).
+    /// Uses a frequency-based approximation for speed (O(n+m), no allocation beyond stackalloc).
+    /// </summary>
+    private static double LineSimilarity(string a, string b)
+    {
+        if (a.Length == 0 && b.Length == 0) return 1.0;
+        if (a.Length == 0 || b.Length == 0) return 0.0;
+
+        // Character frequency counts (ASCII fast path)
+        Span<int> freqA = stackalloc int[128];
+        Span<int> freqB = stackalloc int[128];
+        freqA.Clear();
+        freqB.Clear();
+
+        int nonAsciiA = 0, nonAsciiB = 0;
+        foreach (char c in a)
+        {
+            if (c < 128) freqA[c]++;
+            else nonAsciiA++;
+        }
+        foreach (char c in b)
+        {
+            if (c < 128) freqB[c]++;
+            else nonAsciiB++;
+        }
+
+        int common = 0;
+        for (int i = 0; i < 128; i++)
+            common += Math.Min(freqA[i], freqB[i]);
+        common += Math.Min(nonAsciiA, nonAsciiB);
+
+        return 2.0 * common / (a.Length + b.Length);
     }
 
     // -----------------------------------------------------------------------

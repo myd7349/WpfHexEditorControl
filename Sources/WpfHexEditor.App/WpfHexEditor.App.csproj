@@ -37,6 +37,7 @@
     <ProjectReference Include="..\WpfHexEditor.Core.ProjectSystem\WpfHexEditor.Core.ProjectSystem.csproj" />
     <ProjectReference Include="..\WpfHexEditor.Editor.TblEditor\WpfHexEditor.Editor.TblEditor.csproj" />
     <ProjectReference Include="..\WpfHexEditor.Editor.CodeEditor\WpfHexEditor.Editor.CodeEditor.csproj" />
+    <ProjectReference Include="..\WpfHexEditor.Editor.JsonEditor\WpfHexEditor.Editor.JsonEditor.csproj" />
     <ProjectReference Include="..\WpfHexEditor.Editor.TextEditor\WpfHexEditor.Editor.TextEditor.csproj" />
     <ProjectReference Include="..\WpfHexEditor.Editor.ImageViewer\WpfHexEditor.Editor.ImageViewer.csproj" />
     <ProjectReference Include="..\WpfHexEditor.Editor.EntropyViewer\WpfHexEditor.Editor.EntropyViewer.csproj" />
@@ -133,6 +134,13 @@
     <ProjectReference Include="..\Plugins\WpfHexEditor.Plugins.ScriptRunner\WpfHexEditor.Plugins.ScriptRunner.csproj"
                       ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     <ProjectReference Include="..\WpfHexEditor.Core.Commands\WpfHexEditor.Core.Commands.csproj" />
+  </ItemGroup>
+
+  <!-- Bundled debug adapter (netcoredbg) — copied to output/tools/netcoredbg/ -->
+  <ItemGroup>
+    <None Include="..\..\tools\netcoredbg\**"
+          CopyToOutputDirectory="PreserveNewest"
+          LinkBase="tools\netcoredbg" />
   </ItemGroup>
 
 </Project>

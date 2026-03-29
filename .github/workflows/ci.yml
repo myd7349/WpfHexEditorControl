@@ -9,7 +9,6 @@ on:
 
 env:
   SOLUTION_PATH: 'Sources/WpfHexEditorControl.sln'
-  TEST_PROJECT_PATH: 'Sources/Tests/WpfHexEditor.Tests/WpfHexEditor.Tests.csproj'
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
@@ -49,13 +48,26 @@ jobs:
 
     - name: 🧪 Run tests - ${{ matrix.configuration }} / ${{ matrix.framework }}
       run: |
-        dotnet test ${{ env.TEST_PROJECT_PATH }} `
+        dotnet test Sources/WpfHexEditor.Tests/WpfHexEditor.Tests.csproj `
           --configuration ${{ matrix.configuration }} `
-          --framework ${{ matrix.framework }} `
-          --no-build `
-          --verbosity normal `
-          --logger "trx;LogFileName=test-results-${{ matrix.configuration }}-${{ matrix.framework }}.trx" `
-          --collect:"XPlat Code Coverage"
+          --no-build --verbosity normal `
+          --logger "trx;LogFileName=test-results-main.trx"
+        dotnet test Sources/WpfHexEditor.Core.Diff.Tests/WpfHexEditor.Core.Diff.Tests.csproj `
+          --configuration ${{ matrix.configuration }} `
+          --no-build --verbosity normal `
+          --logger "trx;LogFileName=test-results-diff.trx"
+        dotnet test Sources/WpfHexEditor.Core.Workspaces.Tests/WpfHexEditor.Core.Workspaces.Tests.csproj `
+          --configuration ${{ matrix.configuration }} `
+          --no-build --verbosity normal `
+          --logger "trx;LogFileName=test-results-workspaces.trx"
+        dotnet test Sources/WpfHexEditor.BinaryAnalysis.Tests/WpfHexEditor.BinaryAnalysis.Tests.csproj `
+          --configuration ${{ matrix.configuration }} `
+          --no-build --verbosity normal `
+          --logger "trx;LogFileName=test-results-binanalysis.trx"
+        dotnet test Sources/WpfHexEditor.Docking.Tests/WpfHexEditor.Docking.Tests.csproj `
+          --configuration ${{ matrix.configuration }} `
+          --no-build --verbosity normal `
+          --logger "trx;LogFileName=test-results-docking.trx"
 
     - name: 📊 Upload test results
       uses: actions/upload-artifact@v4
@@ -97,12 +109,12 @@ jobs:
           --configuration Release `
           --no-restore
 
-    - name: 📦 Create NuGet package
+    - name: 📦 Create NuGet packages
       run: |
         dotnet pack Sources/WPFHexaEditor/WpfHexEditorCore.csproj `
-          --configuration Release `
-          --no-build `
-          --output ./artifacts
+          --configuration Release --no-build --output ./artifacts
+        dotnet pack Sources/WpfHexEditor.SDK/WpfHexEditor.SDK.csproj `
+          --configuration Release --no-build --output ./artifacts
 
     - name: 📤 Upload NuGet package artifact
       uses: actions/upload-artifact@v4

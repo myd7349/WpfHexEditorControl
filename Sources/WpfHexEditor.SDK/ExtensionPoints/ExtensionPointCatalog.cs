@@ -32,6 +32,7 @@ public static class ExtensionPointCatalog
             ["BinaryParser"]    = typeof(IBinaryParserExtension),
             ["Decompiler"]      = typeof(IDecompilerExtension),
             ["QuickInfo"]       = typeof(IQuickInfoProvider),
+            ["Minimap"]         = typeof(IMinimapExtension),
         };
 
     /// <summary>

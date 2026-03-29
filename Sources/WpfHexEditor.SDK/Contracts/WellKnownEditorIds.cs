@@ -69,4 +69,7 @@ public static class WellKnownEditorIds
 
     /// <summary>Changeset (diff patch) editor (.whchg).</summary>
     public const string ChangesetEditor = "changeset-editor";
+
+    /// <summary>Dedicated JSON/JSONC editor with format, minify, and validation.</summary>
+    public const string JsonEditor = "json-editor";
 }

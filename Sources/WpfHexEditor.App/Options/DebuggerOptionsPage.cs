@@ -35,6 +35,7 @@ public sealed class DebuggerOptionsPage : UserControl, IOptionsPage
     private readonly TextBox  _adapterPathBox;
     private readonly CheckBox _stopAtEntryCheck;
     private readonly CheckBox _showReturnValuesCheck;
+    private readonly CheckBox _bpLineHighlightCheck;
 
     private bool _loading;
 
@@ -111,6 +112,18 @@ public sealed class DebuggerOptionsPage : UserControl, IOptionsPage
         root.Children.Add(_stopAtEntryCheck);
         root.Children.Add(_showReturnValuesCheck);
 
+        // ── Editor Integration ──────────────────────────────────────────────
+        _bpLineHighlightCheck = new CheckBox
+        {
+            Content = "Highlight breakpoint lines in editor (red/orange/gray tint)",
+            Margin = new Thickness(0, 4, 0, 4),
+        };
+        _bpLineHighlightCheck.Checked   += OnChanged;
+        _bpLineHighlightCheck.Unchecked += OnChanged;
+
+        root.Children.Add(MakeSectionHeader("Editor Integration"));
+        root.Children.Add(_bpLineHighlightCheck);
+
         Content = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -129,6 +142,7 @@ public sealed class DebuggerOptionsPage : UserControl, IOptionsPage
             _adapterPathBox.Text              = s.NetCoreDbgPath;
             _stopAtEntryCheck.IsChecked       = s.StopAtEntry;
             _showReturnValuesCheck.IsChecked  = s.ShowReturnValues;
+            _bpLineHighlightCheck.IsChecked   = settings.CodeEditorDefaults.BreakpointLineHighlightEnabled;
         }
         finally
         {
@@ -142,6 +156,7 @@ public sealed class DebuggerOptionsPage : UserControl, IOptionsPage
         s.NetCoreDbgPath   = _adapterPathBox.Text.Trim();
         s.StopAtEntry      = _stopAtEntryCheck.IsChecked  == true;
         s.ShowReturnValues = _showReturnValuesCheck.IsChecked == true;
+        settings.CodeEditorDefaults.BreakpointLineHighlightEnabled = _bpLineHighlightCheck.IsChecked == true;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

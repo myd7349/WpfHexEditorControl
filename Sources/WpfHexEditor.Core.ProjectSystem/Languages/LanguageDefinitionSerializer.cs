@@ -280,7 +280,10 @@ public static class LanguageDefinitionSerializer
         if (dto is null) return null;
         return new BreakpointRules
         {
-            NonExecutablePatterns = dto.NonExecutablePatterns ?? [],
+            NonExecutablePatterns          = dto.NonExecutablePatterns ?? [],
+            StatementContinuationPatterns  = dto.StatementContinuationPatterns ?? [],
+            MaxStatementScanLines          = dto.MaxStatementScanLines ?? 20,
+            BlockScopeHighlight            = dto.BlockScopeHighlight ?? true,
         };
     }
 
@@ -393,6 +396,15 @@ public static class LanguageDefinitionSerializer
     {
         [JsonPropertyName("nonExecutablePatterns")]
         public string[]? NonExecutablePatterns { get; set; }
+
+        [JsonPropertyName("statementContinuationPatterns")]
+        public string[]? StatementContinuationPatterns { get; set; }
+
+        [JsonPropertyName("maxStatementScanLines")]
+        public int? MaxStatementScanLines { get; set; }
+
+        [JsonPropertyName("blockScopeHighlight")]
+        public bool? BlockScopeHighlight { get; set; }
     }
 
     private sealed class EndOfBlockHintDto

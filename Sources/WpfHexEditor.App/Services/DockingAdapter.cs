@@ -5,6 +5,7 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
+using System.Linq;
 using System.Windows;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
@@ -47,6 +48,12 @@ public sealed class DockingAdapter : IDockingAdapter
     // Bulk-load optimization: when suspended, all RebuildVisualTree() calls are skipped.
     // A single rebuild is performed by ResumeRebuild() at the end of the batch.
     private bool _rebuildSuspended;
+
+    /// <summary>
+    /// When set, overrides <see cref="PanelDescriptor.DefaultDockSide"/> for newly docked panels.
+    /// Set by the Customize Layout popup's "Panel Default Side" option.
+    /// </summary>
+    public string? DefaultDockSideOverride { get; set; }
 
     public DockingAdapter(
         DockEngine engine,
@@ -160,7 +167,8 @@ public sealed class DockingAdapter : IDockingAdapter
     // Used both for first-run auto-dock and for on-demand deferred dock.
     private void DockNewPanel(string uiId, UIElement content, PanelDescriptor descriptor)
     {
-        var direction = descriptor.DefaultDockSide?.ToLowerInvariant() switch
+        var effectiveSide = DefaultDockSideOverride ?? descriptor.DefaultDockSide;
+        var direction = effectiveSide?.ToLowerInvariant() switch
         {
             "left"   => DockDirection.Left,
             "bottom" => DockDirection.Bottom,
@@ -228,6 +236,7 @@ public sealed class DockingAdapter : IDockingAdapter
 
         _storeContent(uiId, content);
         _engine.Dock(item, _layout.MainDocumentHost, DockDirection.Center);
+        if (item.Owner is { } docOwner) docOwner.ActiveItem = item;
         if (!_rebuildSuspended) _dockHost.RebuildVisualTree();
     }
 
@@ -398,5 +407,26 @@ public sealed class DockingAdapter : IDockingAdapter
         // Hidden state means the user explicitly closed or hid the panel.
         // Docked, Float and AutoHide are all reachable by the user without opening a file again.
         return item.State != DockItemState.Hidden;
+    }
+
+    /// <summary>
+    /// Returns the <see cref="PanelDescriptor.DefaultDockSide"/> for a registered panel,
+    /// or <c>null</c> if the panel ID is unknown.
+    /// Used by <see cref="ViewMenu.ViewMenuOrganizer"/> for dock-side organization mode.
+    /// </summary>
+    public string? GetPanelDockSide(string uiId)
+        => _allKnownPanels.TryGetValue(uiId, out var entry) ? entry.Descriptor.DefaultDockSide : null;
+
+    /// <summary>
+    /// Returns the current visibility state of all known panels.
+    /// Used by the Customize Layout popup to populate toggle rows.
+    /// </summary>
+    public IReadOnlyList<(string Id, string Title, bool IsVisible)> GetAllKnownPanelStates()
+    {
+        return _allKnownPanels.Select(kvp => (
+            kvp.Key,
+            kvp.Value.Descriptor.Title,
+            IsPanelVisible(kvp.Key)
+        )).ToList();
     }
 }

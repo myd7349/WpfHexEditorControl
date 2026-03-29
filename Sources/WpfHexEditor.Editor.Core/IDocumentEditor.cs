@@ -31,6 +31,18 @@ public interface IDocumentEditor
     int RedoCount { get => 0; }
 
     /// <summary>
+    /// Human-readable description of the next undo step (e.g. "Paste 50 bytes").
+    /// Empty string or "Undo" when unsupported or nothing to undo.
+    /// </summary>
+    string UndoDescription { get => "Undo"; }
+
+    /// <summary>
+    /// Human-readable description of the next redo step.
+    /// Empty string or "Redo" when unsupported or nothing to redo.
+    /// </summary>
+    string RedoDescription { get => "Redo"; }
+
+    /// <summary>
     /// Title displayed in the host tab ("file.bin", "file.bin *" if dirty).
     /// </summary>
     string Title { get; }

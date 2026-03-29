@@ -40,7 +40,7 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
     private readonly List<IDisposable> _subs = [];
 
     // Panel view-models
-    private BreakpointsPanelViewModel?  _bpVm;
+    private BreakpointExplorerViewModel? _bpVm;
     private CallStackPanelViewModel?    _csVm;
     private LocalsPanelViewModel?       _locVm;
     private WatchesPanelViewModel?      _watchVm;
@@ -58,7 +58,7 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
         }
 
         // Create view-models
-        _bpVm      = new BreakpointsPanelViewModel(_debugger);
+        _bpVm      = new BreakpointExplorerViewModel(_debugger, context);
         _csVm      = new CallStackPanelViewModel(_debugger, context);
         _locVm     = new LocalsPanelViewModel(_debugger);
         _watchVm   = new WatchesPanelViewModel(_debugger);
@@ -72,7 +72,7 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
         // Register panels
         var ui = context.UIRegistry;
 
-        ui.RegisterPanel("panel-dbg-breakpoints", new BreakpointsPanel { DataContext = _bpVm }, Id,
+        ui.RegisterPanel("panel-dbg-breakpoints", new BreakpointExplorerPanel { DataContext = _bpVm }, Id,
             new PanelDescriptor { Title = "Breakpoints", DefaultDockSide = "Bottom", DefaultAutoHide = false });
 
         ui.RegisterPanel("panel-dbg-callstack", new CallStackPanel { DataContext = _csVm }, Id,
@@ -88,15 +88,16 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
             new PanelDescriptor { Title = "Debug Console", DefaultDockSide = "Bottom", DefaultAutoHide = false });
 
         // Contribute Debug menu — one RegisterMenuItem call per item (no Children support in SDK)
-        ui.RegisterMenuItem($"{Id}.Menu.Continue",   Id, new MenuItemDescriptor { Header = "_Continue",              ParentPath = "Debug", GestureText = "F5",            Group = "Session", Command = new RelayCommand(_ => _ = _debugger?.ContinueAsync()) });
-        ui.RegisterMenuItem($"{Id}.Menu.StepOver",   Id, new MenuItemDescriptor { Header = "Step _Over",             ParentPath = "Debug", GestureText = "F10",           Group = "Step",    Command = new RelayCommand(_ => _ = _debugger?.StepOverAsync()) });
-        ui.RegisterMenuItem($"{Id}.Menu.StepInto",   Id, new MenuItemDescriptor { Header = "Step _Into",             ParentPath = "Debug", GestureText = "F11",           Group = "Step",    Command = new RelayCommand(_ => _ = _debugger?.StepIntoAsync()) });
-        ui.RegisterMenuItem($"{Id}.Menu.StepOut",    Id, new MenuItemDescriptor { Header = "Step Ou_t",              ParentPath = "Debug", GestureText = "Shift+F11",     Group = "Step",    Command = new RelayCommand(_ => _ = _debugger?.StepOutAsync()) });
-        ui.RegisterMenuItem($"{Id}.Menu.ClearBps",   Id, new MenuItemDescriptor { Header = "Delete _All Breakpoints",ParentPath = "Debug", GestureText = "Ctrl+Shift+F9", Group = "Breakpoints", Command = new RelayCommand(_ => _ = _debugger?.ClearAllBreakpointsAsync()) });
-        ui.RegisterMenuItem($"{Id}.Menu.ShowBps",    Id, new MenuItemDescriptor { Header = "Show _Breakpoints",      ParentPath = "Debug", Group = "Panels",  Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-breakpoints")) });
-        ui.RegisterMenuItem($"{Id}.Menu.ShowCs",     Id, new MenuItemDescriptor { Header = "Show _Call Stack",       ParentPath = "Debug", Group = "Panels",  Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-callstack")) });
-        ui.RegisterMenuItem($"{Id}.Menu.ShowLocals", Id, new MenuItemDescriptor { Header = "Show _Locals",           ParentPath = "Debug", Group = "Panels",  Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-locals")) });
-        ui.RegisterMenuItem($"{Id}.Menu.ShowWatch",  Id, new MenuItemDescriptor { Header = "Show _Watch",            ParentPath = "Debug", Group = "Panels",  Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-watch")) });
+        // Icons included for Command Palette; DebugMenuOrganizer deduplicates against built-in entries.
+        ui.RegisterMenuItem($"{Id}.Menu.Continue",   Id, new MenuItemDescriptor { Header = "_Continue",              ParentPath = "Debug", GestureText = "F5",            Group = "Session",     IconGlyph = "\uE768", Command = new RelayCommand(_ => _ = _debugger?.ContinueAsync()) });
+        ui.RegisterMenuItem($"{Id}.Menu.StepOver",   Id, new MenuItemDescriptor { Header = "Step _Over",             ParentPath = "Debug", GestureText = "F10",           Group = "Stepping",    IconGlyph = "\uE7EE", Command = new RelayCommand(_ => _ = _debugger?.StepOverAsync()) });
+        ui.RegisterMenuItem($"{Id}.Menu.StepInto",   Id, new MenuItemDescriptor { Header = "Step _Into",             ParentPath = "Debug", GestureText = "F11",           Group = "Stepping",    IconGlyph = "\uE70D", Command = new RelayCommand(_ => _ = _debugger?.StepIntoAsync()) });
+        ui.RegisterMenuItem($"{Id}.Menu.StepOut",    Id, new MenuItemDescriptor { Header = "Step Ou_t",              ParentPath = "Debug", GestureText = "Shift+F11",     Group = "Stepping",    IconGlyph = "\uE70E", Command = new RelayCommand(_ => _ = _debugger?.StepOutAsync()) });
+        ui.RegisterMenuItem($"{Id}.Menu.ClearBps",   Id, new MenuItemDescriptor { Header = "Delete _All Breakpoints",ParentPath = "Debug", GestureText = "Ctrl+Shift+F9", Group = "Breakpoints", IconGlyph = "\uE74D", Command = new RelayCommand(_ => _ = _debugger?.ClearAllBreakpointsAsync()) });
+        ui.RegisterMenuItem($"{Id}.Menu.ShowBps",    Id, new MenuItemDescriptor { Header = "Show _Breakpoints",      ParentPath = "Debug", Group = "Panels", IconGlyph = "\uEBE8", Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-breakpoints")) });
+        ui.RegisterMenuItem($"{Id}.Menu.ShowCs",     Id, new MenuItemDescriptor { Header = "Show _Call Stack",       ParentPath = "Debug", Group = "Panels", IconGlyph = "\uE81E", Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-callstack")) });
+        ui.RegisterMenuItem($"{Id}.Menu.ShowLocals", Id, new MenuItemDescriptor { Header = "Show _Locals",           ParentPath = "Debug", Group = "Panels", IconGlyph = "\uE943", Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-locals")) });
+        ui.RegisterMenuItem($"{Id}.Menu.ShowWatch",  Id, new MenuItemDescriptor { Header = "Show _Watch",            ParentPath = "Debug", Group = "Panels", IconGlyph = "\uE7B3", Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-watch")) });
 
         return Task.CompletedTask;
     }

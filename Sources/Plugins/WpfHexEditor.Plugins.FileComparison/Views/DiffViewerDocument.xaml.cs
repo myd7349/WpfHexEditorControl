@@ -3,11 +3,12 @@
 // File: Views/DiffViewerDocument.xaml.cs
 // Description:
 //     Code-behind for DiffViewerDocument — VS-style side-by-side diff viewer.
-//     Handles synchronized scrolling, overview ruler painting, and keyboard shortcuts.
+//     Handles overview ruler painting, keyboard shortcuts, and canvas event wiring.
 //
 // Architecture Notes:
 //     View-only: all data logic lives in DiffViewerViewModel.
 //     Ruler is painted on demand when the layout changes or result loads.
+//     TextDiffCanvas and StructureDiffCanvas replaced the old ItemsControl/ListView.
 // ==========================================================
 
 using System.IO;
@@ -23,12 +24,10 @@ using BinaryByteKind = WpfHexEditor.Core.Diff.Models.BinaryByteKind;
 namespace WpfHexEditor.Plugins.FileComparison.Views;
 
 public sealed partial class DiffViewerDocument : UserControl
-{
-    private const double RowHeight = 18.0;
 
+{
     private DiffViewerViewModel? _vm;
-    private bool                 _scrollSyncing;
-    private bool                 _rulerDirty    = true;
+    private bool                 _rulerDirty      = true;
     private double               _statsPanelWidth = 240.0;
 
     // ── Constructor ──────────────────────────────────────────────────────────
@@ -51,12 +50,18 @@ public sealed partial class DiffViewerDocument : UserControl
 
         vm.StatsPanel.PropertyChanged += OnStatsPanelPropertyChanged;
 
+        // Wire hover events from BinaryDiffCanvas
+        BinaryDiffCanvas.FocusedSideChanged += (_, isLeft) => _vm!.IsLeftSideFocused = isLeft;
+        BinaryDiffCanvas.HoverCellChanged   += OnHoverCellChanged;
+
+        // Wire hover events from TextDiffCanvas
+        TextDiffCanvas.HoverRowChanged += OnTextHoverRowChanged;
+
         Loaded += (_, _) =>
         {
             WireRefreshTimeReporter();
             UpdateStatusBar();
             PaintRuler();
-            // Sync initial column width with IsVisible default state.
             ApplyStatsPanelColumnWidth(vm.StatsPanel.IsVisible);
         };
     }
@@ -78,7 +83,6 @@ public sealed partial class DiffViewerDocument : UserControl
         }
         else
         {
-            // Save current width so it can be restored on re-show.
             if (col.ActualWidth > 0) _statsPanelWidth = col.ActualWidth;
             col.MinWidth = 0;
             col.MaxWidth = double.PositiveInfinity;
@@ -97,22 +101,10 @@ public sealed partial class DiffViewerDocument : UserControl
         PaintRuler();
     }
 
-    // ── Synchronized scrolling ────────────────────────────────────────────────
+    // ── Scroll change handlers ───────────────────────────────────────────────
 
-    private void OnLeftScrollChanged(object sender, ScrollChangedEventArgs e)
+    private void OnTextDiffScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        if (_scrollSyncing) return;
-        _scrollSyncing = true;
-        RightScroll.ScrollToVerticalOffset(e.VerticalOffset);
-        _scrollSyncing = false;
-    }
-
-    private void OnRightScrollChanged(object sender, ScrollChangedEventArgs e)
-    {
-        if (_scrollSyncing) return;
-        _scrollSyncing = true;
-        LeftScroll.ScrollToVerticalOffset(e.VerticalOffset);
-        _scrollSyncing = false;
         if (_rulerDirty) { PaintRuler(); _rulerDirty = false; }
     }
 
@@ -205,7 +197,7 @@ public sealed partial class DiffViewerDocument : UserControl
         {
             var totalRows = _vm.LeftRows.Count;
             if (totalRows == 0) return;
-            LeftScroll.ScrollToVerticalOffset((int)(fraction * totalRows) * RowHeight);
+            TextDiffScroll.ScrollToVerticalOffset((int)(fraction * totalRows) * TextDiffCanvas.EffectiveRowH);
         }
     }
 
@@ -272,7 +264,6 @@ public sealed partial class DiffViewerDocument : UserControl
             var row = rows[i];
             if (!row.HasDiff) continue;
 
-            // Pick brush by dominant kind in the row
             Brush brush = modBrush;
             foreach (var cell in row.LeftCells)
             {
@@ -306,8 +297,9 @@ public sealed partial class DiffViewerDocument : UserControl
         }
         else
         {
-            var offset = rowIdx * RowHeight;
-            LeftScroll.ScrollToVerticalOffset(Math.Max(0, offset - RowHeight * 3));
+            var rowH   = TextDiffCanvas.EffectiveRowH;
+            var offset = rowIdx * rowH;
+            TextDiffScroll.ScrollToVerticalOffset(Math.Max(0, offset - rowH * 3));
         }
     }
 
@@ -340,5 +332,37 @@ public sealed partial class DiffViewerDocument : UserControl
         if (_vm is null) return;
         StatusBar.Text = $"{System.IO.Path.GetFileName(_vm.LeftPath)}  \u2194  {System.IO.Path.GetFileName(_vm.RightPath)}" +
                          $"   |   {_vm.TotalDiffCount} differences   |   {_vm.SimilarityText}";
+    }
+
+    private void OnHoverCellChanged(object? sender, Controls.BinaryDiffCanvas.HoverCellInfo info)
+    {
+        if (_vm is null) return;
+        if (info.RowIndex < 0 || info.CellIndex < 0)
+        {
+            UpdateStatusBar();
+            return;
+        }
+        var side = info.IsLeft ? "Left" : "Right";
+        StatusBar.Text = $"{side}  |  Offset: 0x{info.Offset:X8}  |  Value: {info.HexText}" +
+                         $"   |   {_vm.TotalDiffCount} differences   |   {_vm.SimilarityText}";
+    }
+
+    private void OnTextHoverRowChanged(object? sender, (int RowIndex, bool IsLeft) info)
+    {
+        if (_vm is null) return;
+        if (info.RowIndex < 0)
+        {
+            UpdateStatusBar();
+            return;
+        }
+        var rows = info.IsLeft ? _vm.LeftRows : _vm.RightRows;
+        var side = info.IsLeft ? "Left" : "Right";
+        if (info.RowIndex < rows.Count)
+        {
+            var row = rows[info.RowIndex];
+            var lineInfo = row.LineNumber.HasValue ? $"Line {row.LineNumber}" : "—";
+            StatusBar.Text = $"{side}  |  {lineInfo}  |  {row.Kind}" +
+                             $"   |   {_vm.TotalDiffCount} differences   |   {_vm.SimilarityText}";
+        }
     }
 }

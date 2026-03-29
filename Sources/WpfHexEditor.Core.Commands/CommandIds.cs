@@ -65,6 +65,13 @@ public static class CommandIds
         public const string EntropyAnalysis   = "View.EntropyAnalysis";
         public const string Terminal          = "View.Terminal";
         public const string Options           = "View.Options";
+
+        // View Menu Organization
+        public const string ViewMenuModeFlat        = "View.MenuMode.Flat";
+        public const string ViewMenuModeCategorized = "View.MenuMode.Categorized";
+        public const string ViewMenuModeByDockSide  = "View.MenuMode.ByDockSide";
+        public const string PinViewItem             = "View.PinItem";
+        public const string UnpinViewItem           = "View.UnpinItem";
     }
 
     public static class Project
@@ -93,6 +100,14 @@ public static class CommandIds
         public const string Load              = "Layout.Load";
         public const string Reset             = "Layout.Reset";
         public const string ToggleLock        = "Layout.ToggleLock";
+        public const string CustomizeLayout   = "Layout.CustomizeLayout";
+        public const string FullScreen        = "Layout.FullScreen";
+        public const string ZenMode           = "Layout.ZenMode";
+        public const string FocusedMode       = "Layout.FocusedMode";
+        public const string PresentationMode  = "Layout.PresentationMode";
+        public const string ToggleMenuBar     = "Layout.ToggleMenuBar";
+        public const string ToggleToolbar     = "Layout.ToggleToolbar";
+        public const string ToggleStatusBar   = "Layout.ToggleStatusBar";
     }
 
     public static class Debug
@@ -110,7 +125,9 @@ public static class CommandIds
         public const string ShowBreakpoints      = "Debug.ShowBreakpoints";
         public const string ShowCallStack        = "Debug.ShowCallStack";
         public const string ShowLocals           = "Debug.ShowLocals";
-        public const string ShowWatch            = "Debug.ShowWatch";
+        public const string StartWithoutDebugging = "Debug.StartWithoutDebugging";
+        public const string Pause                 = "Debug.Pause";
+        public const string ShowWatch             = "Debug.ShowWatch";
     }
 
     public static class Workspace

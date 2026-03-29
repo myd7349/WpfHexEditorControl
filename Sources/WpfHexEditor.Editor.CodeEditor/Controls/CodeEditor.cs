@@ -116,6 +116,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             set => SetValue(ExternalHighlighterProperty, value);
         }
 
+        /// <summary>
+        /// The active syntax highlighter: <see cref="ExternalHighlighter"/> if set,
+        /// otherwise the built-in <see cref="CodeSyntaxHighlighter"/>.
+        /// Used by the minimap for on-demand token fallback when TokensCache is not ready.
+        /// </summary>
+        public ISyntaxHighlighter? ActiveHighlighter
+            => (ISyntaxHighlighter?)ExternalHighlighter ?? _highlighter;
+
         private static void OnExternalHighlighterChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not CodeEditor editor) return;
@@ -328,6 +336,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         #region Fields - Virtual Scrolling (Phase 11)
 
         private VirtualizationEngine _virtualizationEngine;
+
+        /// <summary>Exposes virtualization engine for minimap viewport tracking.</summary>
+        internal VirtualizationEngine VirtualizationEngine => _virtualizationEngine;
+
         private double _verticalScrollOffset = 0;
         private double _horizontalScrollOffset = 0;
         private double _maxContentWidth = 0;
@@ -458,6 +470,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private IBreakpointSource?      _bpSource;
         private BreakpointInfoPopup?    _bpInfoPopup;
         private IReadOnlyList<Regex>    _bpNonExecutableRegexes = Array.Empty<Regex>();
+        private IReadOnlyList<Regex>    _bpContinuationRegexes  = Array.Empty<Regex>();
+        private int                     _bpMaxScanLines         = 20;
+        private bool                    _bpBlockScopeHighlight  = true;
 
         // True between the first Ctrl+M press and the second chord key (outlining commands).
         private bool _outlineChordPending;
@@ -800,6 +815,21 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 TimeSpan.FromMilliseconds(Math.Max(200, (int)e.NewValue)));
         }
 
+        // ── Breakpoint Line Highlight DP ──────────────────────────────────────
+
+        public static readonly DependencyProperty ShowBreakpointLineHighlightProperty =
+            DependencyProperty.Register(nameof(ShowBreakpointLineHighlight), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true, (d, _) => (d as CodeEditor)?.InvalidateVisual()));
+
+        [Category("Features")]
+        [DisplayName("Highlight Breakpoint Lines")]
+        [Description("When true, breakpoint lines are highlighted with a semi-transparent background tint.")]
+        public bool ShowBreakpointLineHighlight
+        {
+            get => (bool)GetValue(ShowBreakpointLineHighlightProperty);
+            set => SetValue(ShowBreakpointLineHighlightProperty, value);
+        }
+
         // ── End-of-Block Hint DPs ─────────────────────────────────────────────
 
         public static readonly DependencyProperty ShowEndOfBlockHintProperty =
@@ -893,6 +923,18 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
             _bpNonExecutableRegexes = compiled;
 
+            // Compile statement continuation regexes for multi-line highlight.
+            var contPatterns = lang?.BreakpointRules?.StatementContinuationPatterns ?? Array.Empty<string>();
+            var contCompiled = new List<Regex>(contPatterns.Count);
+            foreach (var cp in contPatterns)
+            {
+                try   { contCompiled.Add(new Regex(cp, RegexOptions.Compiled)); }
+                catch { /* malformed pattern — skip silently */                   }
+            }
+            _bpContinuationRegexes = contCompiled;
+            _bpMaxScanLines        = lang?.BreakpointRules?.MaxStatementScanLines ?? 20;
+            _bpBlockScopeHighlight = lang?.BreakpointRules?.BlockScopeHighlight ?? true;
+
             if (_breakpointGutterControl is null) return;
             _breakpointGutterControl.ValidateLine = compiled.Count == 0
                 ? (Func<int, bool>?)null
@@ -904,6 +946,45 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     foreach (var r in _bpNonExecutableRegexes)
                         if (r.IsMatch(text)) return false;
                     return true;
+                };
+
+            // Statement-span enforcement: 1 instruction = 1 breakpoint.
+            // The BP is always anchored to the FIRST line of the statement,
+            // regardless of which line the user clicked.
+            _breakpointGutterControl.ResolveBreakpointLine = contCompiled.Count == 0
+                ? null
+                : clickedLine1 =>
+                {
+                    int line0 = clickedLine1 - 1;
+                    var (start0, end0) = ResolveStatementSpan(line0);
+
+                    int firstLine1 = start0 + 1; // 1-based first line of the statement
+
+                    var existingBps = _bpSource?.GetBreakpointLines(_currentFilePath ?? string.Empty)
+                                      ?? (IReadOnlyList<int>)Array.Empty<int>();
+
+                    int? existingInSpan = null;
+                    foreach (int bp1 in existingBps)
+                    {
+                        int bp0 = bp1 - 1;
+                        if (bp0 >= start0 && bp0 <= end0)
+                        {
+                            existingInSpan = bp1;
+                            break;
+                        }
+                    }
+
+                    // No existing BP in this statement → place on the first line.
+                    if (existingInSpan is null)
+                        return firstLine1;
+
+                    // BP already on the first line → toggle it off.
+                    if (existingInSpan.Value == firstLine1)
+                        return firstLine1;
+
+                    // BP on a non-first line (anomalous state): move it to the first line.
+                    _bpSource!.Delete(_currentFilePath!, existingInSpan.Value);
+                    return firstLine1;
                 };
         }
 
@@ -2044,6 +2125,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Breakpoint gutter (ADR-DBG-01): positioned to the left of fold markers.
             _breakpointGutterControl = new BreakpointGutterControl();
             _breakpointGutterControl.RightClickRequested += OnBreakpointRightClick;
+            _breakpointGutterControl.HoverBreakpointRequested += OnGutterBreakpointHover;
             _scrollBarChildren.Add(_breakpointGutterControl);
 
             // Initialize word-highlight scroll marker overlay.
@@ -3266,6 +3348,52 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 SyncVScrollBar();
                 InvalidateVisual();
             }
+        }
+
+        /// <summary>
+        /// Scrolls the viewport so the given 0-based line is at the top.
+        /// Does NOT move the caret or clear selection.
+        /// Used by the minimap for scroll-only interaction.
+        /// </summary>
+        public void ScrollViewToLine(int lineIndex)
+        {
+            if (_virtualizationEngine == null) return;
+            var newOffset = _virtualizationEngine.ScrollToLine(lineIndex);
+            _verticalScrollOffset = newOffset;
+            _currentScrollOffset = newOffset;
+            _targetScrollOffset = newOffset;
+            _virtualizationEngine.ScrollOffset = newOffset;
+            _virtualizationEngine.CalculateVisibleRange();
+            SyncVScrollBar();
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Maximum scroll offset in pixels. Matches <c>_vScrollBar.Maximum</c> which
+        /// accounts for TopMargin, folded lines, and inline hints.
+        /// Used by the minimap to match the scrollbar range exactly.
+        /// </summary>
+        public double MaxScrollOffset
+            => _vScrollBar?.Maximum
+               ?? Math.Max(0, _virtualizationEngine?.TotalHeight - _virtualizationEngine?.ViewportHeight ?? 0);
+
+        /// <summary>
+        /// Scrolls the viewport to an exact pixel offset.
+        /// Does NOT move the caret. No line-boundary quantization.
+        /// Used by the minimap for sub-line-precision scrolling.
+        /// </summary>
+        public void ScrollViewToOffset(double pixelOffset)
+        {
+            if (_virtualizationEngine == null) return;
+            double maxOffset = MaxScrollOffset;
+            var newOffset = Math.Clamp(pixelOffset, 0, maxOffset);
+            _verticalScrollOffset = newOffset;
+            _currentScrollOffset = newOffset;
+            _targetScrollOffset = newOffset;
+            _virtualizationEngine.ScrollOffset = newOffset;
+            _virtualizationEngine.CalculateVisibleRange();
+            SyncVScrollBar();
+            InvalidateVisual();
         }
 
         /// <summary>

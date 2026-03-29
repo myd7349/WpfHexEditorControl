@@ -106,6 +106,18 @@
         "triggerBrace": true,
         "triggerDirective": false
       }
+    },
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "^\\s*//",
+        "^\\s*/\\*",
+        "^\\s*\\*",
+        "^\\s*$",
+        "^\\s*import\\b"
+      ],
+      "statementContinuationPatterns": [
+        "[^;{}]\\s*$"
+      ]
     }
   },
   "forensic": {

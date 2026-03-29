@@ -39,6 +39,9 @@ public sealed class AppSettingsService
 
     // -- Load / Save -------------------------------------------------------
 
+    /// <summary>Current schema version. Increment when adding/renaming/removing settings fields.</summary>
+    public const int CurrentSettingsVersion = 1;
+
     public void Load()
     {
         try
@@ -46,11 +49,43 @@ public sealed class AppSettingsService
             if (!File.Exists(SettingsPath)) return;
             var json     = File.ReadAllText(SettingsPath);
             var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
-            if (settings != null) Current = settings;
+            if (settings != null)
+            {
+                Current = settings;
+                MigrateIfNeeded();
+            }
         }
         catch
         {
             Current = new AppSettings();
+        }
+    }
+
+    /// <summary>
+    /// Applies incremental migrations when loading settings from an older version.
+    /// Each migration block upgrades from version N to N+1.
+    /// Add a new block for each schema change — never modify existing blocks.
+    /// </summary>
+    private void MigrateIfNeeded()
+    {
+        bool changed = false;
+
+        // Migration: v0 → v1 (2026-03-27)
+        // Added: SettingsVersion field, BreakpointLineHighlightEnabled, SDK 2.0 alignment
+        if (Current.SettingsVersion < 1)
+        {
+            // Ensure new fields have sensible defaults for users upgrading from pre-versioned settings
+            Current.CodeEditorDefaults.BreakpointLineHighlightEnabled = true;
+            changed = true;
+        }
+
+        // Future migrations go here:
+        // if (Current.SettingsVersion < 2) { /* v1 → v2 migration */ changed = true; }
+
+        if (changed || Current.SettingsVersion < CurrentSettingsVersion)
+        {
+            Current.SettingsVersion = CurrentSettingsVersion;
+            Save();
         }
     }
 

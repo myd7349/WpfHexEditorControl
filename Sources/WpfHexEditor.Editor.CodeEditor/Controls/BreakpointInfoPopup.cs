@@ -57,7 +57,7 @@ internal sealed class BreakpointInfoPopup : Popup
         AllowsTransparency = true;
         Placement          = PlacementMode.Relative;
 
-        _graceTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+        _graceTimer          = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
         _graceTimer.Tick    += (_, _) => { _graceTimer.Stop(); IsOpen = false; };
 
         // ── Header row ────────────────────────────────────────────────────────
@@ -242,7 +242,8 @@ internal sealed class BreakpointInfoPopup : Popup
         IBreakpointSource  source,
         string             filePath,
         int                line1Based,
-        Point              gutterOffset)
+        Point              gutterOffset,
+        double             lineHeight = 0)
     {
         _source   = source;
         _filePath = filePath;
@@ -260,7 +261,8 @@ internal sealed class BreakpointInfoPopup : Popup
 
         PlacementTarget  = host;
         HorizontalOffset = gutterOffset.X;
-        VerticalOffset   = gutterOffset.Y - 4;
+        // Position popup 2 line heights above the mouse/click position.
+        VerticalOffset   = lineHeight > 0 ? gutterOffset.Y - 2 * lineHeight : gutterOffset.Y;
         IsOpen           = true;
 
         // Move focus into the condition box for quick editing.

@@ -331,4 +331,50 @@
         </Setter>
     </Style>
 
+    <!-- Document tab host — Bottom placement (tab strip below content) -->
+    <Style x:Key="DocumentTabHostBottomStyle" TargetType="{x:Type TabControl}">
+        <Setter Property="Background" Value="{DynamicResource DockBackgroundBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabControl}">
+                    <Grid KeyboardNavigation.TabNavigation="Local" SnapsToDevicePixels="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ContentPresenter Grid.Row="0"
+                                          x:Name="PART_SelectedContentHost"
+                                          ContentSource="SelectedContent"
+                                          KeyboardNavigation.TabNavigation="Local"
+                                          KeyboardNavigation.DirectionalNavigation="Contained" />
+                        <Border Grid.Row="1"
+                                Background="{DynamicResource DockMenuBackgroundBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <controls:TabOverflowPanel x:Name="PART_OverflowPanel"
+                                                           IsItemsHost="True"
+                                                           Background="Transparent"
+                                                           Margin="4,0,4,2"
+                                                           Grid.Column="0" />
+                                <controls:TabOverflowButton Grid.Column="1"
+                                                            ShowAllDocuments="True"
+                                                            OverflowPanel="{Binding ElementName=PART_OverflowPanel}"
+                                                            Foreground="{DynamicResource DockMenuForegroundBrush}" />
+                                <controls:TabConfigButton x:Name="PART_ConfigButton"
+                                                          Grid.Column="2"
+                                                          Foreground="{DynamicResource DockMenuForegroundBrush}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

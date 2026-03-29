@@ -16,12 +16,16 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using WpfHexEditor.Core.Debugger.Models;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Editor.CodeEditor.Controls;
 using WpfHexEditor.Editor.CodeEditor;
 using WpfHexEditor.Core.Events.IDEEvents;
 using WpfHexEditor.Core.Options;
+using WpfHexEditor.SDK.Commands;
+using WpfHexEditor.App.Services;
+using WpfHexEditor.Editor.Core;
 
 namespace WpfHexEditor.App;
 
@@ -32,6 +36,9 @@ public partial class MainWindow
 
     // IDisposable subscriptions for debug events (disposed on shutdown).
     private IDisposable[]? _debugSubs;
+
+    // Stored handler reference for BreakpointsChanged (so we can unsubscribe on shutdown).
+    private EventHandler? _bpChangedHandler;
 
     // ── Initialisation ────────────────────────────────────────────────────────
 
@@ -46,8 +53,8 @@ public partial class MainWindow
         _bpSourceAdapter = new BreakpointSourceAdapter(_debuggerService);
 
         // When breakpoints change, refresh all open CodeEditor gutters.
-        _debuggerService.BreakpointsChanged += (_, _) =>
-            Dispatcher.InvokeAsync(RefreshAllBreakpointGutters);
+        _bpChangedHandler = (_, _) => Dispatcher.InvokeAsync(RefreshAllBreakpointGutters);
+        _debuggerService.BreakpointsChanged += _bpChangedHandler;
 
         _debugSubs =
         [
@@ -82,6 +89,25 @@ public partial class MainWindow
         // WireBreakpointSourceToEditor() is a no-op when _bpSourceAdapter is null (it runs before
         // this method), so we must explicitly push the adapter to all existing CodeEditors now.
         RefreshAllBreakpointGutters();
+
+        // Solution lifecycle → load/save per-solution breakpoints.
+        _solutionManager.SolutionChanged += OnSolutionChangedForBreakpoints;
+
+        // If a solution is already open (e.g. workspace restore), load its breakpoints now.
+        if (_solutionManager.CurrentSolution is not null)
+            (_debuggerService as DebuggerServiceImpl)?.OnSolutionChanged(_solutionManager.CurrentSolution.FilePath);
+
+        // Register keyboard shortcuts for debug commands.
+        // InputGestureText on MenuItems is display-only — actual WPF InputBindings are required.
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => OnDebugStartOrContinue()),           Key.F5,  ModifierKeys.None));
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => _ = _debuggerService?.StopSessionAsync()),  Key.F5,  ModifierKeys.Shift));
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => OnDebugRestart()),                   Key.F5,  ModifierKeys.Control | ModifierKeys.Shift));
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => OnToggleBreakpoint()),               Key.F9,  ModifierKeys.None));
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => _ = _debuggerService?.ClearAllBreakpointsAsync()), Key.F9, ModifierKeys.Control | ModifierKeys.Shift));
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => _ = _debuggerService?.StepOverAsync()),     Key.F10, ModifierKeys.None));
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => _ = _debuggerService?.StepIntoAsync()),     Key.F11, ModifierKeys.None));
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => _ = _debuggerService?.StepOutAsync()),      Key.F11, ModifierKeys.Shift));
+        InputBindings.Add(new KeyBinding(new RelayCommand(_ => OnAttachToProcess()),                Key.P,   ModifierKeys.Control | ModifierKeys.Alt));
     }
 
     // ── Gutter wiring ─────────────────────────────────────────────────────────
@@ -213,15 +239,51 @@ public partial class MainWindow
             return;
         }
 
+        // Build startup project before debugging (fast — only the target project, not the full solution).
+        if (_buildSystem is not null)
+        {
+            ShowOrCreatePanel("Output", "panel-output", DockDirection.Bottom);
+            OutputLogger.ClearChannel(OutputLogger.SourceBuild);
+            var buildResult = await _buildSystem.BuildProjectAsync(startupProject.Id);
+            _buildErrorListAdapter?.SetDiagnostics(buildResult.Errors.Concat(buildResult.Warnings));
+            if (!buildResult.IsSuccess)
+            {
+                MessageBox.Show(
+                    "Build failed. Fix the errors before debugging.",
+                    "Start Debugging", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
         // Derive output exe path using the active build configuration.
         var projDir   = Path.GetDirectoryName(startupProject.ProjectFilePath) ?? ".";
         var projName  = Path.GetFileNameWithoutExtension(startupProject.ProjectFilePath);
         var cfgName   = _configManager?.ActiveConfiguration.Name ?? "Debug";
-        var programPath = Path.Combine(projDir, "bin", cfgName, "net8.0-windows", projName + ".exe");
 
-        // Fall back to DLL for non-WinExe projects (dotnet run style).
+        // Scan bin/{cfg}/ for the actual TFM directory (avoids hardcoding net8.0-windows).
+        string? programPath = null;
+        var binCfgDir = Path.Combine(projDir, "bin", cfgName);
+        if (Directory.Exists(binCfgDir))
+        {
+            foreach (var tfmDir in Directory.GetDirectories(binCfgDir))
+            {
+                var candidate = Path.Combine(tfmDir, projName + ".exe");
+                if (File.Exists(candidate)) { programPath = candidate; break; }
+                candidate = Path.Combine(tfmDir, projName + ".dll");
+                if (File.Exists(candidate)) { programPath = candidate; break; }
+            }
+        }
+        // Fallback to the conventional path if scan found nothing.
+        programPath ??= Path.Combine(projDir, "bin", cfgName, "net8.0-windows", projName + ".exe");
+
         if (!File.Exists(programPath))
-            programPath = Path.Combine(projDir, "bin", cfgName, "net8.0-windows", projName + ".dll");
+        {
+            MessageBox.Show(
+                $"Cannot find the program to debug:\n{programPath}\n\n" +
+                "The project was built but the output executable was not found.",
+                "Start Debugging", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         var launchConfig = new DebugLaunchConfig
         {
@@ -318,33 +380,49 @@ public partial class MainWindow
         }
     }
 
-    // ── Menu click handlers (thin wrappers — real logic in existing methods) ──
+    // ── Toolbar button click handlers (DebugToolBar in MainWindow.xaml) ────────
+    // Debug menu is now fully dynamic (DebugMenuOrganizer) — these remain for the toolbar buttons.
 
-    private void OnDebugStart(object sender, RoutedEventArgs e)        => OnDebugStartOrContinue();
+    private void OnDebugContinue(object sender, RoutedEventArgs e)     => _ = _debuggerService?.ContinueAsync();
+    private void OnDebugPause(object sender, RoutedEventArgs e)        => _ = _debuggerService?.PauseAsync();
     private void OnDebugStop(object sender, RoutedEventArgs e)         => _ = _debuggerService?.StopSessionAsync();
-    private void OnDebugRestart(object sender, RoutedEventArgs e)      => OnDebugRestart();
     private void OnDebugStepOver(object sender, RoutedEventArgs e)     => _ = _debuggerService?.StepOverAsync();
     private void OnDebugStepInto(object sender, RoutedEventArgs e)     => _ = _debuggerService?.StepIntoAsync();
     private void OnDebugStepOut(object sender, RoutedEventArgs e)      => _ = _debuggerService?.StepOutAsync();
-    private void OnDebugToggleBp(object sender, RoutedEventArgs e)     => OnToggleBreakpoint();
-    private void OnDebugDeleteAllBps(object sender, RoutedEventArgs e) => _ = _debuggerService?.ClearAllBreakpointsAsync();
-    private void OnDebugContinue(object sender, RoutedEventArgs e)     => _ = _debuggerService?.ContinueAsync();
-    private void OnDebugPause(object sender, RoutedEventArgs e)        { /* DAP Pause not yet in IDebuggerService — no-op */ }
 
-    private void OnShowDebugBreakpoints(object sender, RoutedEventArgs e)  => ShowOrCreatePanel("Breakpoints",  "panel-dbg-breakpoints", DockDirection.Bottom);
-    private void OnShowDebugCallStack(object sender, RoutedEventArgs e)    => ShowOrCreatePanel("Call Stack",   "panel-dbg-callstack",   DockDirection.Bottom);
-    private void OnShowDebugLocals(object sender, RoutedEventArgs e)       => ShowOrCreatePanel("Locals",       "panel-dbg-locals",      DockDirection.Bottom);
-    private void OnShowDebugWatch(object sender, RoutedEventArgs e)        => ShowOrCreatePanel("Watch",        "panel-dbg-watch",       DockDirection.Bottom);
+    // ── Solution → breakpoint lifecycle ─────────────────────────────────────
+
+    private void OnSolutionChangedForBreakpoints(object? sender, SolutionChangedEventArgs e)
+    {
+        if (_debuggerService is not DebuggerServiceImpl impl) return;
+
+        var solutionPath = e.Kind switch
+        {
+            SolutionChangeKind.Opened => e.Solution?.FilePath,
+            SolutionChangeKind.Closed => null,
+            _ => null, // Modified — no breakpoint action needed
+        };
+
+        // Only react to open/close transitions.
+        if (e.Kind is SolutionChangeKind.Opened or SolutionChangeKind.Closed)
+            impl.OnSolutionChanged(solutionPath);
+    }
 
     // ── Shutdown ──────────────────────────────────────────────────────────────
 
     /// <summary>Unsubscribes debug event subscriptions. Called from ShutdownPluginSystemAsync.</summary>
     private void ShutdownDebugIntegration()
     {
+        _solutionManager.SolutionChanged -= OnSolutionChangedForBreakpoints;
+
         if (_debugSubs is not null)
             foreach (var s in _debugSubs) s.Dispose();
-        _debugSubs       = null;
-        _bpSourceAdapter = null;
+        _debugSubs = null;
+
+        if (_bpChangedHandler is not null && _debuggerService is not null)
+            _debuggerService.BreakpointsChanged -= _bpChangedHandler;
+        _bpChangedHandler = null;
+        _bpSourceAdapter  = null;
     }
 
     // ── BreakpointSourceAdapter ───────────────────────────────────────────────
@@ -396,5 +474,11 @@ public partial class MainWindow
 
         public void Delete(string filePath, int line) =>
             _ = _svc.DeleteBreakpointAsync(filePath, line);
+
+        public IReadOnlyList<int> GetBreakpointLines(string filePath) =>
+            _svc.Breakpoints
+                .Where(b => string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
+                .Select(b => b.Line)
+                .ToList();
     }
 }

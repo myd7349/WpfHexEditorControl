@@ -94,6 +94,16 @@ public class DockTabControl : TabControl
     private Popup?                   _reorderGhost;
     private ReorderInsertionAdorner? _reorderAdorner;
 
+    /// <summary>
+    /// Re-binds the current node, refreshing all tab items in the current template's items host.
+    /// Used after a template/style change to guarantee items are hosted in the new panel.
+    /// </summary>
+    protected void Rebind()
+    {
+        if (Node is not null)
+            Bind(Node, _contentFactory);
+    }
+
     public void Bind(DockGroupNode node, Func<DockItem, object>? contentFactory = null)
     {
         Node = node;

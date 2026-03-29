@@ -49,6 +49,30 @@ namespace WpfHexEditor.HexEditor
         }
 
         /// <summary>
+        /// Human-readable description of the next undo step (e.g. "Paste 50 bytes").
+        /// Returns "Undo" when nothing is available.
+        /// </summary>
+        public string UndoDescription => _viewModel?.UndoDescription is { Length: > 0 } d ? d : "Undo";
+
+        /// <summary>
+        /// Human-readable description of the next redo step.
+        /// Returns "Redo" when nothing is available.
+        /// </summary>
+        public string RedoDescription => _viewModel?.RedoDescription is { Length: > 0 } d ? d : "Redo";
+
+        /// <summary>
+        /// Ordered list of undo step descriptions (newest first), for history dropdowns.
+        /// </summary>
+        public System.Collections.Generic.IReadOnlyList<string> GetUndoDescriptions(int maxCount = 20)
+            => _viewModel?.UndoHistory ?? System.Array.Empty<string>();
+
+        /// <summary>
+        /// Ordered list of redo step descriptions (most recent first), for history dropdowns.
+        /// </summary>
+        public System.Collections.Generic.IReadOnlyList<string> GetRedoDescriptions(int maxCount = 20)
+            => _viewModel?.RedoHistory ?? System.Array.Empty<string>();
+
+        /// <summary>
         /// Select all bytes
         /// </summary>
         public void SelectAll()

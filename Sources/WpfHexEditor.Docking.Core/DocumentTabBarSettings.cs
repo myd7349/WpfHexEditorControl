@@ -17,7 +17,8 @@ public enum DocumentTabPlacement
 {
     Top,
     Left,
-    Right
+    Right,
+    Bottom
 }
 
 /// <summary>

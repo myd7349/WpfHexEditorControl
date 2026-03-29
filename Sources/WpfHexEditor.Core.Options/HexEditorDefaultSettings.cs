@@ -131,4 +131,24 @@ public sealed class HexEditorDefaultSettings
 
     /// <summary>Controls where byte tooltips are shown (None / OnCustomBackgroundBlocks / Everywhere).</summary>
     public ByteToolTipDisplayMode ByteToolTipDisplayMode { get; set; } = ByteToolTipDisplayMode.OnCustomBackgroundBlocks;
+
+    // -- Breadcrumb Bar ---------------------------------------------------
+
+    /// <summary>Show the breadcrumb bar above the hex viewport.</summary>
+    public bool ShowBreadcrumbBar { get; set; } = true;
+
+    /// <summary>Offset display format: 0=Hex, 1=Decimal, 2=Both. Default: Both.</summary>
+    public int BreadcrumbOffsetFormat { get; set; } = 2;
+
+    /// <summary>Show detected format name and confidence in breadcrumb.</summary>
+    public bool BreadcrumbShowFormatInfo { get; set; } = true;
+
+    /// <summary>Show active parsed field path in breadcrumb.</summary>
+    public bool BreadcrumbShowFieldPath { get; set; } = true;
+
+    /// <summary>Show selection length in breadcrumb when multiple bytes selected.</summary>
+    public bool BreadcrumbShowSelectionLength { get; set; } = true;
+
+    /// <summary>Font size for breadcrumb text. Default: 11.5.</summary>
+    public double BreadcrumbFontSize { get; set; } = 11.5;
 }

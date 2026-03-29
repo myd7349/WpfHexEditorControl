@@ -14,6 +14,14 @@ namespace WpfHexEditor.Core.Options;
 /// </summary>
 public sealed class AppSettings
 {
+    // -- Settings Version ------------------------------------------------
+
+    /// <summary>
+    /// Schema version for migration. Increment when adding/renaming/removing fields.
+    /// AppSettingsService checks this on load and applies migration transforms.
+    /// </summary>
+    public int SettingsVersion { get; set; } = 1;
+
     // -- Environment > General -------------------------------------------
 
     /// <summary>
@@ -139,6 +147,16 @@ public sealed class AppSettings
 
     /// <summary>Docking tab thumbnail hover-preview options.</summary>
     public TabPreviewAppSettings TabPreview { get; set; } = new();
+
+    // -- View Menu Organization ---------------------------------------------------
+
+    /// <summary>Dynamic View menu organization preferences.</summary>
+    public ViewMenuSettings ViewMenu { get; set; } = new();
+
+    // -- Layout Customization -----------------------------------------------------
+
+    /// <summary>Layout visibility, positions, and mode preferences (Customize Layout popup).</summary>
+    public LayoutSettings Layout { get; set; } = new();
 
     // -- Docking — Auto-Hide Timing -----------------------------------------------
 
@@ -510,10 +528,33 @@ public sealed class CodeEditorDefaultSettings
     public bool EndOfBlockHintEnabled { get; set; } = true;
 
     /// <summary>
+    /// When true, breakpoint lines are highlighted with a semi-transparent background
+    /// tint (red=active, orange=conditional, gray=disabled).
+    /// </summary>
+    public bool BreakpointLineHighlightEnabled { get; set; } = true;
+
+    /// <summary>
     /// Milliseconds the cursor must dwell over a closing token before the
     /// end-of-block hint popup appears. Range: 100–2000. Default: 400.
     /// </summary>
     public int EndOfBlockHintDelayMs { get; set; } = 600;
+
+    // -- Minimap --------------------------------------------------------------
+
+    /// <summary>Show a VS Code-style code overview minimap on the right side of the editor.</summary>
+    public bool ShowMinimap { get; set; } = true;
+
+    /// <summary>Render individual syntax tokens as colored blocks (true) or single rect per line (false).</summary>
+    public bool MinimapRenderCharacters { get; set; } = true;
+
+    /// <summary>Vertical sizing mode: 0=Proportional, 1=Fill, 2=Fit.</summary>
+    public int MinimapVerticalSize { get; set; }
+
+    /// <summary>Viewport slider visibility: 0=Always, 1=MouseOver.</summary>
+    public int MinimapSliderMode { get; set; }
+
+    /// <summary>Minimap placement: 0=Left, 1=Right.</summary>
+    public int MinimapSide { get; set; } = 1;
 
     // -- InlineHints ---------------------------------------------------------
 
@@ -937,4 +978,67 @@ public sealed class WorkspaceSettings
     /// Populated automatically; not shown in the options UI.
     /// </summary>
     public string RecentWorkspacePath { get; set; } = string.Empty;
+}
+
+// ----------------------------------------------------------------------------
+// Layout Customization Settings (Customize Layout popup)
+// ----------------------------------------------------------------------------
+
+/// <summary>
+/// User preferences for IDE layout visibility, element positions, and layout modes.
+/// Persisted to JSON and restored on app startup.
+/// </summary>
+public sealed class LayoutSettings
+{
+    // -- Visibility --------------------------------------------------------
+
+    /// <summary>Show the main menu bar. Default: true.</summary>
+    public bool ShowMenuBar { get; set; } = true;
+
+    /// <summary>Show the main toolbar row. Default: true.</summary>
+    public bool ShowToolbar { get; set; } = true;
+
+    /// <summary>Show the status bar. Default: true.</summary>
+    public bool ShowStatusBar { get; set; } = true;
+
+    // -- Positions ---------------------------------------------------------
+
+    /// <summary>Toolbar position: "Top" or "Bottom". Default: "Top".</summary>
+    public string ToolbarPosition { get; set; } = "Top";
+
+    /// <summary>Default dock side for new panels: "Left", "Right", or "Bottom". Default: "Right".</summary>
+    public string DefaultPanelDockSide { get; set; } = "Right";
+
+    /// <summary>Tab bar position: "Top" or "Bottom". Default: "Top".</summary>
+    public string TabBarPosition { get; set; } = "Top";
+
+    // -- Layout Modes ------------------------------------------------------
+
+    /// <summary>Whether Zen Mode is active. Default: false.</summary>
+    public bool IsZenMode { get; set; }
+
+    /// <summary>Whether Focused Mode is active. Default: false.</summary>
+    public bool IsFocusedMode { get; set; }
+
+    /// <summary>Whether Presentation Mode is active. Default: false.</summary>
+    public bool IsPresentationMode { get; set; }
+
+    // -- Presentation Mode -------------------------------------------------
+
+    /// <summary>Font scale multiplier for Presentation Mode (1.0–3.0). Default: 1.5.</summary>
+    public double PresentationFontScale { get; set; } = 1.5;
+
+    // -- Zen Mode Configuration -------------------------------------------
+
+    /// <summary>Hide menu bar when entering Zen Mode. Default: true.</summary>
+    public bool ZenHideMenuBar { get; set; } = true;
+
+    /// <summary>Hide toolbar when entering Zen Mode. Default: true.</summary>
+    public bool ZenHideToolbar { get; set; } = true;
+
+    /// <summary>Hide status bar when entering Zen Mode. Default: true.</summary>
+    public bool ZenHideStatusBar { get; set; } = true;
+
+    /// <summary>Hide all dock panels when entering Zen Mode. Default: true.</summary>
+    public bool ZenHidePanels { get; set; } = true;
 }

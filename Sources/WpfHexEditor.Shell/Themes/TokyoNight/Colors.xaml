@@ -684,6 +684,9 @@
     <SolidColorBrush x:Key="DB_BreakpointConditionalBrush"   Color="#FF9E64" />
     <SolidColorBrush x:Key="DB_ExecutionLineBrush"           Color="#E0AF68" />
     <SolidColorBrush x:Key="DB_ExecutionLineBackgroundBrush" Color="#30E0AF68" />
+    <SolidColorBrush x:Key="DB_BreakpointLineBackgroundBrush"            Color="#339C1B1B" />
+    <SolidColorBrush x:Key="DB_BreakpointLineDisabledBackgroundBrush"    Color="#20808080" />
+    <SolidColorBrush x:Key="DB_BreakpointLineConditionalBackgroundBrush" Color="#33B87333" />
     <SolidColorBrush x:Key="DB_ExceptionLineBrush"           Color="#F7768E" />
     <SolidColorBrush x:Key="DB_CallStackActiveBrush"         Color="#9ECE6A" />
     <SolidColorBrush x:Key="DB_WatchErrorBrush"              Color="#F7768E" />
@@ -753,4 +756,15 @@
     <SolidColorBrush x:Key="WF_InspectorGroupHeaderBrush" Color="#2F3549" />
     <SolidColorBrush x:Key="WF_NavigatorBookmarkBrush"    Color="#7AA2F7" />
     <SolidColorBrush x:Key="WF_ConfidenceBadgeBrush"      Color="#9ECE6A" />
+
+    <!-- Customize Layout tokens (CL_*) â€” inserted by Add-CustomizeLayoutTokens.ps1 -->
+    <SolidColorBrush x:Key="CL_BackgroundBrush"      Color="#1A1B26" />
+    <SolidColorBrush x:Key="CL_SectionHeaderBrush"    Color="#414868" />
+    <SolidColorBrush x:Key="CL_ToggleActiveBrush"     Color="#7AA2F7" />
+    <SolidColorBrush x:Key="CL_ToggleInactiveBrush"   Color="#3B4261" />
+    <SolidColorBrush x:Key="CL_RadioSelectedBrush"    Color="#7AA2F7" />
+    <SolidColorBrush x:Key="CL_RadioSelectedForegroundBrush" Color="#000000" />
+    <SolidColorBrush x:Key="CL_RadioUnselectedBrush"  Color="#24283B" />
+    <SolidColorBrush x:Key="CL_HoverBrush"            Color="#292E42" />
+    <SolidColorBrush x:Key="CL_ModeBadgeBrush"        Color="#9ECE6A" />
 </ResourceDictionary>

@@ -43,4 +43,15 @@ public sealed class DebuggerSettings
 
     /// <summary>Breakpoints saved between IDE sessions.</summary>
     public List<PersistedBreakpoint> Breakpoints { get; set; } = [];
+
+    // ── VS Breakpoint Interop ──────────────────────────────────────────────
+
+    /// <summary>Auto-import VS breakpoints on first solution open (when .whide/breakpoints.json is empty).</summary>
+    public bool AutoImportVsBreakpoints { get; set; } = false;
+
+    /// <summary>Auto-export breakpoints to VS XML alongside .whide on save.</summary>
+    public bool AutoExportVsXml { get; set; } = false;
+
+    /// <summary>Export path relative to solution dir (default: .whide/breakpoints-vs.xml).</summary>
+    public string VsExportRelativePath { get; set; } = ".whide/breakpoints-vs.xml";
 }

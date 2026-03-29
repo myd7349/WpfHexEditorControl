@@ -503,8 +503,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double baseX     = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
             double pixelsPerDip = _renderPixelsPerDip; // cached once per OnRender (OPT-PERF-03)
 
+            int lineCount = _document.Lines.Count;
             for (int i = _firstVisibleLine; i <= _lastVisibleLine; i++)
             {
+                if (i >= lineCount) break; // guard against stale _lastVisibleLine
                 if (_foldingEngine?.IsLineHidden(i) == true) continue;
 
                 if (IsHintEntryVisible(i) && _hintsData.TryGetValue(i, out var entry) && entry.Count > 0)
@@ -744,20 +746,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // 3. Current line highlight (spans visible text area, no H offset)
             RenderCurrentLineHighlight(dc, contentW, contentH);
 
-            // 3a. Execution line highlight — yellow tint across the full text area when debugger is paused.
-            if (_executionLineOneBased.HasValue)
-            {
-                int execLine0 = _executionLineOneBased.Value - 1;
-                if (_lineYLookup.TryGetValue(execLine0, out double execY))
-                {
-                    var execBrush = TryFindResource("DB_ExecutionLineBackgroundBrush") as System.Windows.Media.Brush
-                                    ?? new System.Windows.Media.SolidColorBrush(
-                                           System.Windows.Media.Color.FromArgb(0x40, 0xFF, 0xDD, 0x00));
-                    dc.DrawRectangle(execBrush, null,
-                        new Rect(textLeft, execY, Math.Max(0, contentW - textLeft), _lineHeight));
-                }
-            }
-
             // -- Text area clip + horizontal translate -------------------
             dc.PushClip(new RectangleGeometry(new Rect(textLeft, 0, Math.Max(0, contentW - textLeft), contentH)));
 
@@ -766,6 +754,127 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             RenderInlineHints(dc);
 
             dc.PushTransform(new System.Windows.Media.TranslateTransform(-_horizontalScrollOffset, 0));
+
+            // 3a. Execution line highlight — code-width rounded rect, scrolls with text.
+            //     Extends to multi-line statement extent via continuation patterns.
+            if (_executionLineOneBased.HasValue)
+            {
+                int execLine0 = _executionLineOneBased.Value - 1;
+                var execBrush = TryFindResource("DB_ExecutionLineBackgroundBrush") as System.Windows.Media.Brush
+                                ?? new System.Windows.Media.SolidColorBrush(
+                                       System.Windows.Media.Color.FromArgb(0x40, 0xFF, 0xDD, 0x00));
+                var (execStart0, execEnd0) = ResolveStatementSpan(execLine0);
+                double bpLeft = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+
+                if (execStart0 == execEnd0)
+                {
+                    // Single-line — simple rounded rect.
+                    if (_lineYLookup.TryGetValue(execStart0, out double ey) && _document != null)
+                    {
+                        double w = Math.Max(_document.Lines[execStart0].Length * _charWidth, _charWidth);
+                        dc.DrawRoundedRectangle(execBrush, null,
+                            new Rect(bpLeft, ey, w, _lineHeight),
+                            SelectionCornerRadius, SelectionCornerRadius);
+                    }
+                }
+                else
+                {
+                    // Multi-line — union rounded segments (same pattern as selection).
+                    var segs = new List<Geometry>();
+                    for (int j = execStart0; j <= execEnd0; j++)
+                    {
+                        if (!_lineYLookup.TryGetValue(j, out double ly) || _document == null) continue;
+                        double w    = Math.Max(_document.Lines[j].Length * _charWidth, _charWidth);
+                        double yAdj = j == execStart0 ? ly : ly - SelectionCornerRadius;
+                        double hAdj = j == execStart0 ? _lineHeight + SelectionCornerRadius
+                                    : j == execEnd0   ? _lineHeight + SelectionCornerRadius
+                                    : _lineHeight + SelectionCornerRadius * 2;
+                        segs.Add(new RectangleGeometry(new Rect(bpLeft, yAdj, w, hAdj),
+                            SelectionCornerRadius, SelectionCornerRadius));
+                    }
+                    if (segs.Count > 0)
+                    {
+                        Geometry combined = segs[0];
+                        for (int s = 1; s < segs.Count; s++)
+                            combined = Geometry.Combine(combined, segs[s], GeometryCombineMode.Union, null);
+                        combined.Freeze();
+                        dc.DrawGeometry(execBrush, null, combined);
+                    }
+                }
+            }
+
+            // 3c. Breakpoint line highlights — code-width rounded rect, scrolls with text.
+            //     Extends to multi-line statement extent via continuation patterns.
+            if (ShowBreakpointLineHighlight && _bpSource is not null && !string.IsNullOrEmpty(_currentFilePath))
+            {
+                var bpBrush     = TryFindResource("DB_BreakpointLineBackgroundBrush") as System.Windows.Media.Brush;
+                var bpCondBrush = TryFindResource("DB_BreakpointLineConditionalBackgroundBrush") as System.Windows.Media.Brush;
+                var bpOffBrush  = TryFindResource("DB_BreakpointLineDisabledBackgroundBrush") as System.Windows.Media.Brush;
+                double bpLeft   = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+
+                var highlightedLines = new HashSet<int>();
+
+                for (int i = _firstVisibleLine; i <= _lastVisibleLine; i++)
+                {
+                    if (highlightedLines.Contains(i)) continue;
+
+                    int line1 = i + 1;
+                    if (_executionLineOneBased == line1) continue;
+
+                    var info = _bpSource.GetBreakpoint(_currentFilePath, line1);
+                    if (info is null) continue;
+
+                    var brush = !info.IsEnabled ? bpOffBrush
+                              : !string.IsNullOrEmpty(info.Condition) ? bpCondBrush
+                              : bpBrush;
+                    if (brush is null) continue;
+
+                    var (startLine0, endLine0) = ResolveStatementSpan(i);
+
+                    if (startLine0 == endLine0)
+                    {
+                        // Single-line — simple rounded rect.
+                        if (_lineYLookup.TryGetValue(startLine0, out double ly) && _document != null
+                            && startLine0 < _document.Lines.Count)
+                        {
+                            double w = Math.Max(_document.Lines[startLine0].Length * _charWidth, _charWidth);
+                            dc.DrawRoundedRectangle(brush, null,
+                                new Rect(bpLeft, ly, w, _lineHeight),
+                                SelectionCornerRadius, SelectionCornerRadius);
+                            highlightedLines.Add(startLine0);
+                        }
+                    }
+                    else
+                    {
+                        // Multi-line — union rounded segments.
+                        var segs = new List<Geometry>();
+                        for (int j = startLine0; j <= endLine0; j++)
+                        {
+                            if (highlightedLines.Contains(j)) continue;
+                            if (_executionLineOneBased == j + 1) continue;
+                            if (!_lineYLookup.TryGetValue(j, out double ly) || _document == null
+                                || j >= _document.Lines.Count) continue;
+
+                            double w    = Math.Max(_document.Lines[j].Length * _charWidth, _charWidth);
+                            double yAdj = j == startLine0 ? ly : ly - SelectionCornerRadius;
+                            double hAdj = j == startLine0 ? _lineHeight + SelectionCornerRadius
+                                        : j == endLine0   ? _lineHeight + SelectionCornerRadius
+                                        : _lineHeight + SelectionCornerRadius * 2;
+                            segs.Add(new RectangleGeometry(new Rect(bpLeft, yAdj, w, hAdj),
+                                SelectionCornerRadius, SelectionCornerRadius));
+                            highlightedLines.Add(j);
+                        }
+                        if (segs.Count > 0)
+                        {
+                            Geometry combined = segs[0];
+                            for (int s = 1; s < segs.Count; s++)
+                                combined = Geometry.Combine(combined, segs[s], GeometryCombineMode.Union, null);
+                            combined.Freeze();
+                            dc.DrawGeometry(brush, null, combined);
+                        }
+                    }
+                }
+            }
 
             // 4. Find result highlights
             RenderFindResults(dc);
@@ -1320,6 +1429,104 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 dc.DrawLine(s_glyphInnerPen, new Point(centerX, glyphY + glyphSize * 0.2), new Point(centerX, glyphY + glyphSize * 0.6));
                 dc.DrawEllipse(Brushes.White, null, new Point(centerX, glyphY + glyphSize * 0.8), 1, 1);
             }
+        }
+
+        /// <summary>
+        /// Given a 0-based line, resolves the 0-based end line of the containing
+        /// statement by scanning forward while lines match any continuation pattern,
+        /// then optionally extends to the enclosing block scope via folding regions.
+        /// Returns <paramref name="line0"/> when no multi-line expansion is needed.
+        /// </summary>
+        private int ResolveStatementEndLine(int line0)
+        {
+            // Phase 1: Continuation-based resolution (regex scan forward).
+            int continuationEnd = line0;
+            if (_bpContinuationRegexes.Count > 0)
+            {
+                int lineCount = _document?.Lines.Count ?? 0;
+                int maxEnd    = Math.Min(line0 + _bpMaxScanLines, lineCount - 1);
+                int current   = line0;
+
+                while (current < maxEnd)
+                {
+                    string text = (_document!.Lines[current].Text ?? string.Empty).TrimEnd();
+                    bool continues = false;
+                    foreach (var r in _bpContinuationRegexes)
+                    {
+                        if (r.IsMatch(text)) { continues = true; break; }
+                    }
+                    if (!continues) break;
+                    current++;
+                }
+                continuationEnd = current;
+            }
+
+            // Phase 2: Block-scope extension via folding regions.
+            // Finds a Brace region whose StartLine falls within [line0, continuationEnd + 1]
+            // (+1 handles K&R style where '{' sits on the line right after continuation range;
+            //  for Allman style, BraceFoldingStrategy already adjusts StartLine to header line).
+            if (!_bpBlockScopeHighlight || _foldingEngine is null)
+                return continuationEnd;
+
+            FoldingRegion? best      = null;
+            int            searchLim = continuationEnd + 1;
+
+            foreach (var r in _foldingEngine.Regions)
+            {
+                if (r.Kind != FoldingRegionKind.Brace) continue;
+                if (r.IsCollapsed) continue;
+                if (r.StartLine < line0 || r.StartLine > searchLim) continue;
+
+                // Pick innermost (smallest span) to avoid class/method-level extension.
+                if (best is null || (r.EndLine - r.StartLine) < (best.EndLine - best.StartLine))
+                    best = r;
+            }
+
+            return best is not null
+                ? Math.Max(continuationEnd, best.EndLine)
+                : continuationEnd;
+        }
+
+        /// <summary>
+        /// Given a 0-based line, scans BACKWARD to find the first line of the
+        /// containing statement. A line N is a continuation of line N-1 when
+        /// line N-1 matches any continuation pattern (i.e. it does not end with
+        /// a statement terminator like <c>;</c>, <c>{</c>, or <c>}</c>).
+        /// Returns <paramref name="line0"/> when no backward expansion is needed.
+        /// </summary>
+        private int ResolveStatementStartLine(int line0)
+        {
+            if (_bpContinuationRegexes.Count == 0 || _document is null)
+                return line0;
+
+            int minLine = Math.Max(0, line0 - _bpMaxScanLines);
+            int current = line0;
+
+            while (current > minLine)
+            {
+                if (current - 1 >= _document.Lines.Count) break; // stale visible-line index: exit scan
+                string prevText = (_document.Lines[current - 1].Text ?? string.Empty).TrimEnd();
+                bool continues = false;
+                foreach (var r in _bpContinuationRegexes)
+                {
+                    if (r.IsMatch(prevText)) { continues = true; break; }
+                }
+                if (!continues) break;
+                current--;
+            }
+
+            return current;
+        }
+
+        /// <summary>
+        /// Returns the full 0-based [start, end] span for the statement
+        /// containing the given 0-based line.
+        /// </summary>
+        internal (int start0, int end0) ResolveStatementSpan(int line0)
+        {
+            int start = ResolveStatementStartLine(line0);
+            int end   = ResolveStatementEndLine(start);
+            return (start, end);
         }
 
         /// <summary>

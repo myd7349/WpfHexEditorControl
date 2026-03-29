@@ -300,6 +300,8 @@ namespace WpfHexEditor.HexEditor
 
                                     RefreshParsedFields();
                                     UpdateEnrichedFormatPanel(result.Format);
+                                    ResetBreadcrumbCache();
+                                    UpdateBreadcrumb();
 
                                     FormatDetected?.Invoke(this, new FormatDetectedEventArgs
                                     {

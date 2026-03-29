@@ -1,7 +1,7 @@
 <!--
     GNU Affero General Public License v3.0  2026
     Author : Derek Tremblay (derektremblay666@gmail.com)
-    Contributors: Claude Sonnet 4.6
+    Contributors: Claude Sonnet 4.6, Claude Opus 4.6
 -->
 
 <UserControl x:Class="WpfHexEditor.Editor.TileEditor.Controls.TileEditor"
@@ -9,9 +9,42 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource TE_Background}">
     <Grid>
-        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <WrapPanel Grid.Row="0" Margin="4,2">
+            <TextBlock Text="Tile Size:" VerticalAlignment="Center" Margin="0,0,4,0"
+                       Foreground="{DynamicResource TE_LineNumberForeground}" FontSize="11"/>
+            <ComboBox x:Name="TileSizeCombo" Width="60" SelectedIndex="0" SelectionChanged="OnTileSizeChanged">
+                <ComboBoxItem Content="8x8"/>
+                <ComboBoxItem Content="16x16"/>
+            </ComboBox>
+            <Separator Margin="8,0"/>
+            <TextBlock Text="BPP:" VerticalAlignment="Center" Margin="0,0,4,0"
+                       Foreground="{DynamicResource TE_LineNumberForeground}" FontSize="11"/>
+            <ComboBox x:Name="BppCombo" Width="40" SelectedIndex="0" SelectionChanged="OnBppChanged">
+                <ComboBoxItem Content="2"/>
+                <ComboBoxItem Content="4"/>
+                <ComboBoxItem Content="8"/>
+            </ComboBox>
+            <Separator Margin="8,0"/>
+            <TextBlock x:Name="TileCount" VerticalAlignment="Center" FontSize="11"
+                       Foreground="{DynamicResource TE_LineNumberForeground}"/>
+        </WrapPanel>
+
+        <!-- Tile grid canvas -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Canvas x:Name="TileCanvas" ClipToBounds="True"/>
+        </ScrollViewer>
+
+        <!-- Status -->
+        <TextBlock x:Name="StatusText" Grid.Row="2"
+                   Margin="4,2" FontSize="11"
                    Foreground="{DynamicResource TE_LineNumberForeground}"
-                   FontSize="14"
-                   Text="Tile Editor — Planned for a future sprint (NES/GBA/GB tile graphics)"/>
+                   Text="Open a .chr/.til/.gfx file to view tile graphics"/>
     </Grid>
 </UserControl>

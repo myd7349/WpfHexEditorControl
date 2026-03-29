@@ -20,7 +20,8 @@ public sealed record DebugBreakpointInfo(
     int     Line,
     string? Condition,
     bool    IsEnabled,
-    bool    IsVerified
+    bool    IsVerified,
+    int     HitCount = 0
 );
 
 /// <summary>
@@ -76,6 +77,9 @@ public interface IDebuggerService
     /// <summary>Raised whenever session state changes.</summary>
     event EventHandler? SessionChanged;
 
+    /// <summary>Stop the active debug session. No-op when idle.</summary>
+    Task StopSessionAsync();
+
     // ── Breakpoints ────────────────────────────────────────────────────────
 
     /// <summary>All currently registered breakpoints.</summary>
@@ -101,6 +105,13 @@ public interface IDebuggerService
     /// <summary>Remove all breakpoints.</summary>
     Task ClearAllBreakpointsAsync();
 
+    /// <summary>Get the hit count for a breakpoint in the current session (0 if not hit or no session).</summary>
+    int GetHitCount(string filePath, int line) => 0;
+
+    /// <summary>Get all breakpoints for a specific file.</summary>
+    IReadOnlyList<DebugBreakpointInfo> GetBreakpointsForFile(string filePath) =>
+        Breakpoints.Where(b => string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase)).ToList();
+
     // ── Execution ──────────────────────────────────────────────────────────
 
     /// <summary>Continue execution (resume after pause).</summary>
@@ -114,6 +125,9 @@ public interface IDebuggerService
 
     /// <summary>Step out of the current method.</summary>
     Task StepOutAsync();
+
+    /// <summary>Pause execution (break all). No-op when already paused or idle.</summary>
+    Task PauseAsync();
 
     // ── Inspection ─────────────────────────────────────────────────────────
 
