@@ -199,12 +199,15 @@ public class TabOverflowButton : Button
             };
 
             // --- Header panel ---
+            var titleText = tabItem.Header is DockTabHeader dth ? ExtractTitle(dth) : tabItem.Header?.ToString() ?? "Tab";
             var title = new TextBlock
             {
-                Text              = tabItem.Header is DockTabHeader dth ? ExtractTitle(dth) : tabItem.Header?.ToString() ?? "Tab",
+                Text              = titleText,
                 VerticalAlignment = VerticalAlignment.Center,
                 TextTrimming      = TextTrimming.CharacterEllipsis,
-                Margin            = new Thickness(0, 0, 6, 0)
+                MaxWidth          = 300,
+                Margin            = new Thickness(0, 0, 6, 0),
+                ToolTip           = titleText
             };
 
             // --- Editor name badge (italic, dimmed, right-aligned) ---
@@ -228,7 +231,7 @@ public class TabOverflowButton : Button
 
             DockPanel.SetDock(closeBox, Dock.Right);
             if (editorBadge is not null) DockPanel.SetDock(editorBadge, Dock.Right);
-            var headerPanel = new DockPanel { LastChildFill = true, MinWidth = 200 };
+            var headerPanel = new DockPanel { LastChildFill = true, MinWidth = 200, MaxWidth = 480 };
             headerPanel.Children.Add(closeBox);
             if (editorBadge is not null) headerPanel.Children.Add(editorBadge);
             headerPanel.Children.Add(title);

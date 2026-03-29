@@ -325,6 +325,28 @@ namespace WpfHexEditor.HexEditor.ViewModels
         /// </summary>
         public bool CanRedo => _provider?.CanRedo ?? false;
 
+        /// <summary>
+        /// Human-readable description of the next undo step (e.g. "Paste 50 bytes").
+        /// Empty string when nothing to undo.
+        /// </summary>
+        public string UndoDescription => _provider?.PeekUndoDescription() ?? string.Empty;
+
+        /// <summary>
+        /// Human-readable description of the next redo step.
+        /// Empty string when nothing to redo.
+        /// </summary>
+        public string RedoDescription => _provider?.PeekRedoDescription() ?? string.Empty;
+
+        /// <summary>
+        /// Ordered list of undo step descriptions (newest first), for the history dropdown.
+        /// </summary>
+        public IReadOnlyList<string> UndoHistory => _provider?.GetUndoDescriptions(20) ?? Array.Empty<string>();
+
+        /// <summary>
+        /// Ordered list of redo step descriptions (most recent first), for the history dropdown.
+        /// </summary>
+        public IReadOnlyList<string> RedoHistory => _provider?.GetRedoDescriptions(20) ?? Array.Empty<string>();
+
         #endregion
 
         #region Constructor
@@ -630,7 +652,7 @@ namespace WpfHexEditor.HexEditor.ViewModels
         }
 
         /// <summary>
-        /// Delete selection (optimized to batch deletions)
+        /// Delete selection (optimized to batch deletions, single undo step)
         /// </summary>
         public void DeleteSelection()
         {
@@ -639,14 +661,21 @@ namespace WpfHexEditor.HexEditor.ViewModels
             var start = Math.Min(_selectionStart.Value, _selectionStop.Value);
             var length = SelectionLength;
 
-            // Batch deletions for performance
+            // Wrap in a named undo transaction so the entire deletion is one Ctrl+Z step.
+            _provider.BeginUndoTransaction($"Delete {length} byte{(length == 1 ? "" : "s")}");
+
             BeginUpdate();
             try
             {
                 for (long i = 0; i < length; i++)
-                {
                     DeleteByte(new VirtualPosition(start));
-                }
+
+                _provider.CommitUndoTransaction();
+            }
+            catch
+            {
+                _provider.RollbackUndoTransaction();
+                throw;
             }
             finally
             {
@@ -723,21 +752,31 @@ namespace WpfHexEditor.HexEditor.ViewModels
         }
 
         /// <summary>
-        /// Cut selected bytes to clipboard (copy + delete)
+        /// Cut selected bytes to clipboard (copy + delete, single undo step)
         /// </summary>
         public bool Cut(bool copyAsAscii = false)
         {
             if (!HasSelection || ReadOnlyMode) return false;
 
-            // Copy first (as hex or ASCII depending on mode)
+            var length = SelectionLength;
+
+            // Copy first (clipboard op — not undoable, no transaction needed)
             if (!CopyToClipboard(copyAsAscii)) return false;
 
-            // Then delete
-            DeleteSelection();
+            // Wrap the delete in a named transaction so Ctrl+Z restores the full cut.
+            _provider.BeginUndoTransaction($"Cut {length} byte{(length == 1 ? "" : "s")}");
+            try
+            {
+                DeleteSelection();
+                _provider.CommitUndoTransaction();
+            }
+            catch
+            {
+                _provider.RollbackUndoTransaction();
+                throw;
+            }
 
-            // Clear selection after cut
             ClearSelection();
-
             return true;
         }
 
@@ -804,25 +843,44 @@ namespace WpfHexEditor.HexEditor.ViewModels
             if (bytesToPaste == null || bytesToPaste.Length == 0) return false;
 
             // Handle paste based on EditMode
+            string pasteDesc = $"Paste {bytesToPaste.Length} byte{(bytesToPaste.Length == 1 ? "" : "s")}";
+
             if (EditMode == EditMode.Insert)
             {
-                // INSERT MODE: Create ByteAdded entries (green borders)
-                // Use optimized batch insert (MUCH faster than individual InsertByte() calls)
-                var startVirtualPos = new VirtualPosition(pastePosition);
-                InsertBytes(startVirtualPos, bytesToPaste);
+                // INSERT MODE: InsertBytes records a single undo op — wrap for description.
+                _provider.BeginUndoTransaction(pasteDesc);
+                try
+                {
+                    InsertBytes(new VirtualPosition(pastePosition), bytesToPaste);
+                    _provider.CommitUndoTransaction();
+                }
+                catch
+                {
+                    _provider.RollbackUndoTransaction();
+                    throw;
+                }
             }
             else
             {
-                // OVERWRITE MODE: Create ByteModified entries (orange borders)
-                // Overwrite existing bytes directly (ByteProvider V2 works with virtual positions)
-                for (int i = 0; i < bytesToPaste.Length; i++)
+                // OVERWRITE MODE: loop creates N individual ops — group into one transaction.
+                _provider.BeginUndoTransaction(pasteDesc);
+                BeginUpdate();
+                try
                 {
-                    ModifyByte(new VirtualPosition(pastePosition + i), bytesToPaste[i]);
-                }
+                    for (int i = 0; i < bytesToPaste.Length; i++)
+                        ModifyByte(new VirtualPosition(pastePosition + i), bytesToPaste[i]);
 
-                // Refresh for overwrite mode (Insert mode already refreshes in InsertBytes)
-                ClearLineCache();
-                RefreshVisibleLines();
+                    _provider.CommitUndoTransaction();
+                }
+                catch
+                {
+                    _provider.RollbackUndoTransaction();
+                    throw;
+                }
+                finally
+                {
+                    EndUpdate();
+                }
             }
 
             return true;
@@ -952,6 +1010,10 @@ namespace WpfHexEditor.HexEditor.ViewModels
             // Notify properties changed
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
+            OnPropertyChanged(nameof(UndoDescription));
+            OnPropertyChanged(nameof(RedoDescription));
+            OnPropertyChanged(nameof(UndoHistory));
+            OnPropertyChanged(nameof(RedoHistory));
             OnPropertyChanged(nameof(VirtualLength));
             OnPropertyChanged(nameof(FileLength));
         }
@@ -974,6 +1036,10 @@ namespace WpfHexEditor.HexEditor.ViewModels
             // Notify properties changed
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
+            OnPropertyChanged(nameof(UndoDescription));
+            OnPropertyChanged(nameof(RedoDescription));
+            OnPropertyChanged(nameof(UndoHistory));
+            OnPropertyChanged(nameof(RedoHistory));
             OnPropertyChanged(nameof(VirtualLength));
             OnPropertyChanged(nameof(FileLength));
         }

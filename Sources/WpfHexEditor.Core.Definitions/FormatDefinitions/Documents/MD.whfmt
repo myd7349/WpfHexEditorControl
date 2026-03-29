@@ -7,7 +7,7 @@
    Updated:   2026-03-22
    ============================================================ */
 {
-  "diffMode": "binary",
+  "diffMode": "semantic",
   "formatName": "Markdown Document",
   "version": "1.0",
   "extensions": [

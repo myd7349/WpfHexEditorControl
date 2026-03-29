@@ -11,8 +11,11 @@
 //
 // Architecture Notes:
 //     Pure domain model — no WPF dependencies. Consumed by ByteProvider and
-//     UndoRedoService. UndoOperationType enum defined in this file for locality.
-//     Stack-based design limits memory use for large edit sessions.
+//     UndoRedoService. Stack entries are either a single UndoOperation or an
+//     UndoGroup (composite of multiple operations with a description). The
+//     UndoGroup concept enables paste/cut/fill to undo as a single step.
+//     Coalescence merges consecutive adjacent single-byte Modify ops within
+//     500 ms to keep the history clean during hex digit typing.
 //
 // ==========================================================
 
@@ -29,19 +32,11 @@ namespace WpfHexEditor.Core.Bytes
     /// </summary>
     public enum UndoOperationType
     {
-        /// <summary>
-        /// Modify existing byte(s).
-        /// </summary>
+        /// <summary>Modify existing byte(s).</summary>
         Modify,
-
-        /// <summary>
-        /// Insert new byte(s).
-        /// </summary>
+        /// <summary>Insert new byte(s).</summary>
         Insert,
-
-        /// <summary>
-        /// Delete byte(s).
-        /// </summary>
+        /// <summary>Delete byte(s).</summary>
         Delete
     }
 
@@ -51,306 +46,358 @@ namespace WpfHexEditor.Core.Bytes
     /// </summary>
     public struct UndoOperation
     {
-        /// <summary>
-        /// Type of operation (Modify, Insert, Delete).
-        /// </summary>
+        /// <summary>Type of operation (Modify, Insert, Delete).</summary>
         public UndoOperationType Type;
-
-        /// <summary>
-        /// Virtual position where the operation occurred.
-        /// </summary>
+        /// <summary>Virtual position where the operation occurred.</summary>
         public long VirtualPosition;
-
-        /// <summary>
-        /// For Modify: Original byte values before modification.
-        /// For Delete: Deleted byte values (to restore on undo).
-        /// For Insert: null (not needed).
-        /// </summary>
+        /// <summary>For Modify: original values. For Delete: deleted values. For Insert: null.</summary>
         public byte[]? OldValues;
-
-        /// <summary>
-        /// For Modify: New byte values after modification.
-        /// For Insert: Inserted byte values.
-        /// For Delete: null (not needed).
-        /// </summary>
+        /// <summary>For Modify: new values. For Insert: inserted values. For Delete: null.</summary>
         public byte[]? NewValues;
-
-        /// <summary>
-        /// Number of bytes affected by this operation.
-        /// </summary>
+        /// <summary>Number of bytes affected.</summary>
         public int Count;
+        /// <summary>UTC timestamp ticks — used for coalescence window.</summary>
+        internal long TimestampTicks;
 
-        public UndoOperation(UndoOperationType type, long virtualPosition, byte[]? oldValues, byte[]? newValues, int count)
+        public UndoOperation(UndoOperationType type, long virtualPosition,
+            byte[]? oldValues, byte[]? newValues, int count)
         {
             Type = type;
             VirtualPosition = virtualPosition;
             OldValues = oldValues;
             NewValues = newValues;
             Count = count;
+            TimestampTicks = DateTime.UtcNow.Ticks;
         }
 
-        public override string ToString()
-        {
-            return $"{Type} at pos {VirtualPosition}, count {Count}";
-        }
+        public override string ToString() => $"{Type} at pos {VirtualPosition}, count {Count}";
     }
 
     /// <summary>
-    /// UndoRedoManager - Manages undo/redo stacks for ByteProvider V2.
-    /// Records all operations and allows reverting them.
-    /// Thread-safe for read operations, external locking required for writes.
+    /// A composite undo entry grouping multiple <see cref="UndoOperation"/> into a single step.
+    /// Created by <see cref="UndoRedoManager.EndBatch"/> — enables paste/cut/fill to undo as one step.
+    /// </summary>
+    internal sealed class UndoGroup
+    {
+        public List<UndoOperation> Operations { get; }
+        public string Description { get; }
+
+        public UndoGroup(List<UndoOperation> operations, string description)
+        {
+            Operations = operations;
+            Description = description;
+        }
+
+        public override string ToString() => $"{Description} ({Operations.Count} ops)";
+    }
+
+    /// <summary>
+    /// UndoRedoManager — Manages undo/redo stacks for ByteProvider V2.
+    /// Stack entries are <c>UndoOperation</c> (single op) or <c>UndoGroup</c> (composite).
+    /// Thread-safe for reads; external locking required for writes.
     /// </summary>
     public sealed class UndoRedoManager
     {
-        private readonly Stack<UndoOperation> _undoStack = new();
-        private readonly Stack<UndoOperation> _redoStack = new();
+        // Stack entries are boxed UndoOperation structs or UndoGroup instances.
+        private readonly Stack<object> _undoStack = new();
+        private readonly Stack<object> _redoStack = new();
 
-        // Configuration
-        private int _maxUndoStackSize = 1000; // Limit to prevent memory issues
+        private int _maxUndoStackSize = 1000;
 
-        // Batching support to group multiple operations into one undo step
-        private bool _batchMode = false;
+        // Batch / transaction support
+        private bool _batchMode;
+        private string _batchDescription = string.Empty;
         private readonly List<UndoOperation> _batchOperations = new();
 
-        /// <summary>
-        /// Gets whether undo is available.
-        /// </summary>
+        // Coalescence: merge consecutive adjacent single-byte Modify ops within this window.
+        private static readonly long CoalesceWindowTicks = TimeSpan.FromMilliseconds(500).Ticks;
+
+        #region Properties
+
         public bool CanUndo => _undoStack.Count > 0;
-
-        /// <summary>
-        /// Gets whether redo is available.
-        /// </summary>
         public bool CanRedo => _redoStack.Count > 0;
-
-        /// <summary>
-        /// Gets the number of operations in the undo stack.
-        /// </summary>
         public int UndoStackCount => _undoStack.Count;
-
-        /// <summary>
-        /// Gets the number of operations in the redo stack.
-        /// </summary>
         public int RedoStackCount => _redoStack.Count;
+        public bool IsInBatchMode => _batchMode;
 
-        /// <summary>
-        /// Gets or sets the maximum undo stack size.
-        /// </summary>
         public int MaxUndoStackSize
         {
             get => _maxUndoStackSize;
             set => _maxUndoStackSize = Math.Max(1, value);
         }
 
+        #endregion
+
         #region Record Operations
 
-        /// <summary>
-        /// Record a modify operation.
-        /// </summary>
         public void RecordModify(long virtualPosition, byte[] oldValues, byte[] newValues)
         {
             if (oldValues == null || newValues == null)
-                throw new ArgumentNullException("oldValues and newValues cannot be null");
-
+                throw new ArgumentNullException(nameof(oldValues), "oldValues and newValues cannot be null");
             if (oldValues.Length != newValues.Length)
                 throw new ArgumentException("oldValues and newValues must have same length");
 
-            var operation = new UndoOperation(
-                UndoOperationType.Modify,
-                virtualPosition,
-                oldValues,
-                newValues,
-                oldValues.Length
-            );
-
-            AddOperation(operation);
+            AddOperation(new UndoOperation(UndoOperationType.Modify, virtualPosition,
+                oldValues, newValues, oldValues.Length));
         }
 
-        /// <summary>
-        /// Record an insert operation.
-        /// </summary>
         public void RecordInsert(long virtualPosition, byte[] insertedValues)
         {
             if (insertedValues == null || insertedValues.Length == 0)
-                throw new ArgumentException("insertedValues cannot be null or empty");
+                throw new ArgumentException("insertedValues cannot be null or empty", nameof(insertedValues));
 
-            var operation = new UndoOperation(
-                UndoOperationType.Insert,
-                virtualPosition,
-                null, // No old values for insert
-                insertedValues,
-                insertedValues.Length
-            );
-
-            AddOperation(operation);
+            AddOperation(new UndoOperation(UndoOperationType.Insert, virtualPosition,
+                null, insertedValues, insertedValues.Length));
         }
 
-        /// <summary>
-        /// Record a delete operation.
-        /// </summary>
         public void RecordDelete(long virtualPosition, byte[] deletedValues)
         {
             if (deletedValues == null || deletedValues.Length == 0)
-                throw new ArgumentException("deletedValues cannot be null or empty");
+                throw new ArgumentException("deletedValues cannot be null or empty", nameof(deletedValues));
 
-            var operation = new UndoOperation(
-                UndoOperationType.Delete,
-                virtualPosition,
-                deletedValues, // Store deleted values to restore on undo
-                null, // No new values for delete
-                deletedValues.Length
-            );
-
-            AddOperation(operation);
+            AddOperation(new UndoOperation(UndoOperationType.Delete, virtualPosition,
+                deletedValues, null, deletedValues.Length));
         }
 
-        /// <summary>
-        /// Add an operation to the undo stack.
-        /// </summary>
-        private void AddOperation(UndoOperation operation)
+        private void AddOperation(UndoOperation op)
         {
             if (_batchMode)
             {
-                // In batch mode, accumulate operations
-                _batchOperations.Add(operation);
+                _batchOperations.Add(op);
+                return;
             }
-            else
+
+            // New user action invalidates redo history.
+            _redoStack.Clear();
+
+            // Attempt coalescence only for single-byte Modify ops (hex digit typing).
+            if (op.Type == UndoOperationType.Modify && op.Count == 1 && TryCoalesce(op))
             {
-                // Push to undo stack
-                _undoStack.Push(operation);
-
-                // Clear redo stack (new operation invalidates redo)
-                _redoStack.Clear();
-
-                // Enforce max stack size
                 EnforceMaxStackSize();
+                return;
             }
+
+            _undoStack.Push(op);
+            EnforceMaxStackSize();
         }
 
         /// <summary>
-        /// Enforce maximum undo stack size by removing oldest operations.
+        /// Tries to merge <paramref name="op"/> into the top of the undo stack.
+        /// Conditions: top is a single Modify op, adjacent position, within 500 ms window.
+        /// Returns true when merged (caller must NOT push <paramref name="op"/> again).
         /// </summary>
+        private bool TryCoalesce(UndoOperation op)
+        {
+            if (_undoStack.Count == 0) return false;
+            if (_undoStack.Peek() is not UndoOperation topOp) return false;
+            if (topOp.Type != UndoOperationType.Modify || topOp.Count < 1) return false;
+
+            // Time window
+            if (DateTime.UtcNow.Ticks - topOp.TimestampTicks > CoalesceWindowTicks) return false;
+
+            // Must be strictly adjacent (next position)
+            if (op.VirtualPosition != topOp.VirtualPosition + topOp.Count) return false;
+
+            _undoStack.Pop();
+
+            var merged = new UndoOperation(UndoOperationType.Modify, topOp.VirtualPosition,
+                Concat(topOp.OldValues!, op.OldValues!),
+                Concat(topOp.NewValues!, op.NewValues!),
+                topOp.Count + op.Count)
+            {
+                TimestampTicks = topOp.TimestampTicks // preserve original window start
+            };
+
+            _undoStack.Push(merged);
+            return true;
+        }
+
+        private static byte[] Concat(byte[] a, byte[] b)
+        {
+            var result = new byte[a.Length + b.Length];
+            a.CopyTo(result, 0);
+            b.CopyTo(result, a.Length);
+            return result;
+        }
+
         private void EnforceMaxStackSize()
         {
-            if (_undoStack.Count > _maxUndoStackSize)
-            {
-                // Convert to list, remove oldest, convert back
-                var list = _undoStack.ToList();
-                list.Reverse(); // Oldest first
-                list.RemoveRange(0, list.Count - _maxUndoStackSize);
-                list.Reverse(); // Newest first again
+            if (_undoStack.Count <= _maxUndoStackSize) return;
 
-                _undoStack.Clear();
-                foreach (var op in list)
-                    _undoStack.Push(op);
-            }
+            var list = _undoStack.ToList(); // newest first (Stack enumerates top→bottom)
+            list.Reverse();                 // oldest first
+            list.RemoveRange(0, list.Count - _maxUndoStackSize);
+            list.Reverse();                 // newest first
+
+            _undoStack.Clear();
+            foreach (var entry in list)
+                _undoStack.Push(entry);
         }
 
         #endregion
 
-        #region Undo/Redo
+        #region Descriptions / Peek
 
-        /// <summary>
-        /// Get the next operation to undo (without popping it).
-        /// Returns null if no undo available.
-        /// </summary>
+        /// <summary>Human-readable description of the next undo step, or null if nothing to undo.</summary>
+        public string? PeekUndoDescription()
+            => _undoStack.Count > 0 ? DescribeEntry(_undoStack.Peek()) : null;
+
+        /// <summary>Human-readable description of the next redo step, or null if nothing to redo.</summary>
+        public string? PeekRedoDescription()
+            => _redoStack.Count > 0 ? DescribeEntry(_redoStack.Peek()) : null;
+
+        /// <summary>Descriptions of all undo steps (newest first), up to <paramref name="maxCount"/>.</summary>
+        public IReadOnlyList<string> GetUndoDescriptions(int maxCount = 20)
+        {
+            var result = new List<string>(Math.Min(maxCount, _undoStack.Count));
+            foreach (var entry in _undoStack)
+            {
+                if (result.Count >= maxCount) break;
+                result.Add(DescribeEntry(entry));
+            }
+            return result;
+        }
+
+        /// <summary>Descriptions of all redo steps (most recent first), up to <paramref name="maxCount"/>.</summary>
+        public IReadOnlyList<string> GetRedoDescriptions(int maxCount = 20)
+        {
+            var result = new List<string>(Math.Min(maxCount, _redoStack.Count));
+            foreach (var entry in _redoStack)
+            {
+                if (result.Count >= maxCount) break;
+                result.Add(DescribeEntry(entry));
+            }
+            return result;
+        }
+
+        private static string DescribeEntry(object entry)
+        {
+            if (entry is UndoGroup group) return group.Description;
+
+            if (entry is UndoOperation op)
+            {
+                return op.Type switch
+                {
+                    UndoOperationType.Modify => op.Count == 1 ? "Modify byte" : $"Modify {op.Count} bytes",
+                    UndoOperationType.Insert => op.Count == 1 ? "Insert byte" : $"Insert {op.Count} bytes",
+                    UndoOperationType.Delete => op.Count == 1 ? "Delete byte" : $"Delete {op.Count} bytes",
+                    _ => "Edit"
+                };
+            }
+
+            return "Edit";
+        }
+
+        // Backwards-compatible single-op peek (used by UndoRedoService)
         public UndoOperation? PeekUndo()
         {
-            if (_undoStack.Count == 0)
-                return null;
-
-            return _undoStack.Peek();
+            if (_undoStack.Count == 0) return null;
+            var top = _undoStack.Peek();
+            return top switch
+            {
+                UndoOperation op => op,
+                UndoGroup g when g.Operations.Count > 0 => g.Operations[^1],
+                _ => null
+            };
         }
 
-        /// <summary>
-        /// Get the next operation to redo (without popping it).
-        /// Returns null if no redo available.
-        /// </summary>
         public UndoOperation? PeekRedo()
         {
-            if (_redoStack.Count == 0)
-                return null;
-
-            return _redoStack.Peek();
+            if (_redoStack.Count == 0) return null;
+            var top = _redoStack.Peek();
+            return top switch
+            {
+                UndoOperation op => op,
+                UndoGroup g when g.Operations.Count > 0 => g.Operations[^1],
+                _ => null
+            };
         }
 
+        #endregion
+
+        #region Pop Undo / Redo
+
         /// <summary>
-        /// Pop an operation from the undo stack and push to redo stack.
-        /// Returns the operation to undo.
+        /// Pop the next undo entry (single <see cref="UndoOperation"/> or <see cref="UndoGroup"/>),
+        /// move it to the redo stack, and return it.
         /// </summary>
-        public UndoOperation PopUndo()
+        public object PopUndo()
         {
             if (_undoStack.Count == 0)
                 throw new InvalidOperationException("No operations to undo");
 
-            var operation = _undoStack.Pop();
-            _redoStack.Push(operation);
-
-            return operation;
+            var entry = _undoStack.Pop();
+            _redoStack.Push(entry);
+            return entry;
         }
 
         /// <summary>
-        /// Pop an operation from the redo stack and push to undo stack.
-        /// Returns the operation to redo.
+        /// Pop the next redo entry, move it to the undo stack, and return it.
         /// </summary>
-        public UndoOperation PopRedo()
+        public object PopRedo()
         {
             if (_redoStack.Count == 0)
                 throw new InvalidOperationException("No operations to redo");
 
-            var operation = _redoStack.Pop();
-            _undoStack.Push(operation);
-
-            return operation;
+            var entry = _redoStack.Pop();
+            _undoStack.Push(entry);
+            return entry;
         }
 
         #endregion
 
-        #region Batching
+        #region Batch / Transaction
 
         /// <summary>
-        /// Begin batch mode - multiple operations will be grouped into one undo step.
+        /// Begin collecting operations into a named transaction.
+        /// Call <see cref="EndBatch"/> to commit as a single undo step, or
+        /// <see cref="RollbackBatch"/> to discard.
         /// </summary>
-        public void BeginBatch()
+        public void BeginBatch(string description = "")
         {
             _batchMode = true;
+            _batchDescription = description;
             _batchOperations.Clear();
         }
 
         /// <summary>
-        /// End batch mode - commit all batched operations as a single undo step.
+        /// Commit the current batch as a single <see cref="UndoGroup"/> on the undo stack.
+        /// If zero operations were collected, nothing is pushed.
         /// </summary>
         public void EndBatch()
         {
             _batchMode = false;
 
-            if (_batchOperations.Count > 0)
-            {
-                // For simplicity, we'll store each operation individually
-                // but they'll be undone/redone together
-                // A more sophisticated approach would merge consecutive operations
+            if (_batchOperations.Count == 0)
+                return;
 
-                foreach (var op in _batchOperations)
-                {
-                    _undoStack.Push(op);
-                }
+            string desc = string.IsNullOrEmpty(_batchDescription)
+                ? $"Edit {_batchOperations.Sum(o => o.Count)} bytes"
+                : _batchDescription;
 
-                _batchOperations.Clear();
+            var group = new UndoGroup(new List<UndoOperation>(_batchOperations), desc);
+            _batchOperations.Clear();
+            _batchDescription = string.Empty;
 
-                // Clear redo stack
-                _redoStack.Clear();
+            _redoStack.Clear();
+            _undoStack.Push(group);
+            EnforceMaxStackSize();
+        }
 
-                // Enforce max stack size
-                EnforceMaxStackSize();
-            }
+        /// <summary>
+        /// Discard the collected batch operations without pushing to the undo stack.
+        /// </summary>
+        public void RollbackBatch()
+        {
+            _batchMode = false;
+            _batchOperations.Clear();
+            _batchDescription = string.Empty;
         }
 
         #endregion
 
         #region Clear
 
-        /// <summary>
-        /// Clear both undo and redo stacks.
-        /// </summary>
         public void ClearAll()
         {
             _undoStack.Clear();
@@ -359,48 +406,30 @@ namespace WpfHexEditor.Core.Bytes
             _batchMode = false;
         }
 
-        /// <summary>
-        /// Clear only the redo stack.
-        /// </summary>
-        public void ClearRedo()
-        {
-            _redoStack.Clear();
-        }
+        public void ClearRedo() => _redoStack.Clear();
 
         #endregion
 
         #region Statistics
 
-        /// <summary>
-        /// Get memory usage statistics.
-        /// </summary>
         public (int undoOps, int redoOps, long estimatedMemoryKB) GetStatistics()
         {
-            // Rough estimate: each operation stores position (8 bytes) + count (4 bytes) + byte arrays
-            long undoMemory = 0;
-            foreach (var op in _undoStack)
+            static long CalcStackMemory(Stack<object> stack)
             {
-                undoMemory += 12; // Basic fields
-                if (op.OldValues != null)
-                    undoMemory += op.OldValues.Length;
-                if (op.NewValues != null)
-                    undoMemory += op.NewValues.Length;
+                long mem = 0;
+                foreach (var entry in stack)
+                {
+                    if (entry is UndoOperation op)
+                        mem += 12 + (op.OldValues?.Length ?? 0) + (op.NewValues?.Length ?? 0);
+                    else if (entry is UndoGroup g)
+                        foreach (var gop in g.Operations)
+                            mem += 12 + (gop.OldValues?.Length ?? 0) + (gop.NewValues?.Length ?? 0);
+                }
+                return mem;
             }
 
-            long redoMemory = 0;
-            foreach (var op in _redoStack)
-            {
-                redoMemory += 12; // Basic fields
-                if (op.OldValues != null)
-                    redoMemory += op.OldValues.Length;
-                if (op.NewValues != null)
-                    redoMemory += op.NewValues.Length;
-            }
-
-            long totalBytes = undoMemory + redoMemory;
-            long totalKB = totalBytes / 1024;
-
-            return (_undoStack.Count, _redoStack.Count, totalKB);
+            long totalBytes = CalcStackMemory(_undoStack) + CalcStackMemory(_redoStack);
+            return (_undoStack.Count, _redoStack.Count, totalBytes / 1024);
         }
 
         #endregion

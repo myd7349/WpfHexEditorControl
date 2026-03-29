@@ -24,7 +24,7 @@ using WpfHexEditor.SDK.Contracts.Services;
 
 namespace WpfHexEditor.Plugins.Debugger.ViewModels;
 
-public enum GroupByMode { None, File, Type, EnabledState }
+public enum GroupByMode { None, File, Type, EnabledState, Project }
 
 public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
 {
@@ -32,7 +32,7 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
     private readonly IIDEHostContext? _context;
 
     private string     _searchFilter = string.Empty;
-    private GroupByMode _groupBy = GroupByMode.None;
+    private GroupByMode _groupBy = GroupByMode.File;
     private string     _summaryText = string.Empty;
     private BreakpointRowEx? _selectedBreakpoint;
 
@@ -107,15 +107,21 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
     private void Refresh()
     {
         var allBps = _debugger.Breakpoints;
+        var solution = _context?.SolutionManager?.CurrentSolution;
         var rows = allBps.Select(bp => new BreakpointRowEx
         {
-            FilePath   = bp.FilePath,
-            FileName   = Path.GetFileName(bp.FilePath),
-            Line       = bp.Line,
-            Condition  = bp.Condition,
-            IsEnabled  = bp.IsEnabled,
-            IsVerified = bp.IsVerified,
-            HitCount   = bp.HitCount,
+            FilePath    = bp.FilePath,
+            FileName    = Path.GetFileName(bp.FilePath),
+            Line        = bp.Line,
+            Condition   = bp.Condition,
+            IsEnabled   = bp.IsEnabled,
+            IsVerified  = bp.IsVerified,
+            HitCount    = bp.HitCount,
+            ProjectName = solution?.Projects
+                              .FirstOrDefault(p => p.FindItemByPath(bp.FilePath) is not null)
+                              ?.Name
+                          ?? Path.GetFileName(Path.GetDirectoryName(bp.FilePath))
+                          ?? "Unknown",
         }).ToList();
 
         // Apply search filter.
@@ -142,6 +148,7 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
                 GroupByMode.File         => rows.GroupBy(r => r.FileName),
                 GroupByMode.Type         => rows.GroupBy(r => r.TypeLabel),
                 GroupByMode.EnabledState => rows.GroupBy(r => r.IsEnabled ? "Enabled" : "Disabled"),
+                GroupByMode.Project      => rows.GroupBy(r => r.ProjectName),
                 _                        => rows.GroupBy(r => r.FileName),
             };
 

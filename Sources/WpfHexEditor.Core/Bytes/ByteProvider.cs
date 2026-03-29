@@ -1457,154 +1457,176 @@ namespace WpfHexEditor.Core.Bytes
         #region Undo/Redo Operations
 
         /// <summary>
-        /// Undo the last operation.
+        /// Undo the last operation (single <see cref="UndoOperation"/> or composite <see cref="UndoGroup"/>).
         /// </summary>
         public void Undo()
         {
-            if (!CanUndo)
-                return;
+            if (!CanUndo) return;
 
-            // Pop operation from undo stack
-            var operation = _undoRedoManager.PopUndo();
-
-            // Disable undo recording while we reverse the operation
+            var entry = _undoRedoManager.PopUndo();
             _recordUndo = false;
-
             try
             {
-                switch (operation.Type)
+                if (entry is UndoGroup group)
                 {
-                    case UndoOperationType.Modify:
-                        // Restore old values
-                        if (operation.OldValues != null)
-                        {
-                            // CRITICAL FIX: Check if restored values match original file
-                            // If they do, REMOVE modification instead of re-adding it
-                            for (int i = 0; i < operation.OldValues.Length; i++)
-                            {
-                                long virtualPos = operation.VirtualPosition + i;
-                                byte restoredValue = operation.OldValues[i];
-
-                                // Get physical position and check if it's from original file
-                                var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPos, _fileProvider.Length);
-
-                                if (!isInserted && physicalPos.HasValue)
-                                {
-                                    // Read original file value
-                                    var (originalValue, success) = _fileProvider.ReadByte(physicalPos.Value);
-
-                                    if (success && restoredValue == originalValue)
-                                    {
-                                        // Restored value matches original file - REMOVE modification
-                                        _editsManager.RemoveModification(physicalPos.Value);
-                                    }
-                                    else
-                                    {
-                                        // Restored value is different - keep as modified
-                                        _editsManager.ModifyByte(physicalPos.Value, restoredValue);
-                                    }
-                                }
-                                else
-                                {
-                                    // For inserted bytes, use ModifyBytes
-                                    ModifyByte(virtualPos, restoredValue);
-                                }
-                            }
-
-                            InvalidateCaches();
-                        }
-                        break;
-
-                    case UndoOperationType.Insert:
-                        // Delete the inserted bytes
-                        DeleteBytes(operation.VirtualPosition, operation.Count);
-                        break;
-
-                    case UndoOperationType.Delete:
-                        // Undelete the bytes (remove deletion marks)
-                        // CRITICAL FIX: Don't insert new bytes - just undelete the original bytes
-                        if (operation.OldValues != null)
-                        {
-                            for (int i = 0; i < operation.OldValues.Length; i++)
-                            {
-                                long virtualPos = operation.VirtualPosition + i;
-
-                                // Get physical position
-                                var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPos, _fileProvider.Length);
-
-                                if (!isInserted && physicalPos.HasValue)
-                                {
-                                    // Undelete the byte (remove from deleted set)
-                                    _editsManager.UndeleteByte(physicalPos.Value);
-                                }
-                            }
-
-                            InvalidateCaches();
-                        }
-                        break;
+                    // Composite: reverse order (last recorded = first to undo)
+                    for (int i = group.Operations.Count - 1; i >= 0; i--)
+                        ApplyUndoOperation(group.Operations[i]);
+                }
+                else if (entry is UndoOperation op)
+                {
+                    ApplyUndoOperation(op);
                 }
             }
             finally
             {
-                // Re-enable undo recording
                 _recordUndo = true;
             }
         }
 
+        private void ApplyUndoOperation(UndoOperation operation)
+        {
+            switch (operation.Type)
+            {
+                case UndoOperationType.Modify:
+                    if (operation.OldValues == null) break;
+                    for (int i = 0; i < operation.OldValues.Length; i++)
+                    {
+                        long virtualPos = operation.VirtualPosition + i;
+                        byte restoredValue = operation.OldValues[i];
+                        var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPos, _fileProvider.Length);
+
+                        if (!isInserted && physicalPos.HasValue)
+                        {
+                            var (originalValue, success) = _fileProvider.ReadByte(physicalPos.Value);
+                            if (success && restoredValue == originalValue)
+                                _editsManager.RemoveModification(physicalPos.Value);
+                            else
+                                _editsManager.ModifyByte(physicalPos.Value, restoredValue);
+                        }
+                        else
+                        {
+                            ModifyByte(virtualPos, restoredValue);
+                        }
+                    }
+                    InvalidateCaches();
+                    break;
+
+                case UndoOperationType.Insert:
+                    DeleteBytes(operation.VirtualPosition, operation.Count);
+                    break;
+
+                case UndoOperationType.Delete:
+                    if (operation.OldValues == null) break;
+                    for (int i = 0; i < operation.OldValues.Length; i++)
+                    {
+                        long virtualPos = operation.VirtualPosition + i;
+                        var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPos, _fileProvider.Length);
+                        if (!isInserted && physicalPos.HasValue)
+                            _editsManager.UndeleteByte(physicalPos.Value);
+                    }
+                    InvalidateCaches();
+                    break;
+            }
+        }
+
         /// <summary>
-        /// Redo the last undone operation.
+        /// Redo the last undone operation (single or composite).
         /// </summary>
         public void Redo()
         {
-            if (!CanRedo)
-                return;
+            if (!CanRedo) return;
 
-            // Pop operation from redo stack
-            var operation = _undoRedoManager.PopRedo();
-
-            // Disable undo recording while we re-apply the operation
+            var entry = _undoRedoManager.PopRedo();
             _recordUndo = false;
-
             try
             {
-                switch (operation.Type)
+                if (entry is UndoGroup group)
                 {
-                    case UndoOperationType.Modify:
-                        // Reapply new values
-                        if (operation.NewValues != null)
-                        {
-                            ModifyBytes(operation.VirtualPosition, operation.NewValues);
-                        }
-                        break;
-
-                    case UndoOperationType.Insert:
-                        // Re-insert the bytes
-                        if (operation.NewValues != null)
-                        {
-                            InsertBytes(operation.VirtualPosition, operation.NewValues);
-                        }
-                        break;
-
-                    case UndoOperationType.Delete:
-                        // Re-delete the bytes
-                        DeleteBytes(operation.VirtualPosition, operation.Count);
-                        break;
+                    // Composite: forward order (first recorded = first to redo)
+                    foreach (var op in group.Operations)
+                        ApplyRedoOperation(op);
+                }
+                else if (entry is UndoOperation op)
+                {
+                    ApplyRedoOperation(op);
                 }
             }
             finally
             {
-                // Re-enable undo recording
                 _recordUndo = true;
+            }
+        }
+
+        private void ApplyRedoOperation(UndoOperation operation)
+        {
+            switch (operation.Type)
+            {
+                case UndoOperationType.Modify:
+                    if (operation.NewValues != null)
+                        ModifyBytes(operation.VirtualPosition, operation.NewValues);
+                    break;
+                case UndoOperationType.Insert:
+                    if (operation.NewValues != null)
+                        InsertBytes(operation.VirtualPosition, operation.NewValues);
+                    break;
+                case UndoOperationType.Delete:
+                    DeleteBytes(operation.VirtualPosition, operation.Count);
+                    break;
             }
         }
 
         /// <summary>
         /// Clear all undo/redo history.
         /// </summary>
-        public void ClearUndoRedoHistory()
-        {
-            _undoRedoManager.ClearAll();
-        }
+        public void ClearUndoRedoHistory() => _undoRedoManager.ClearAll();
+
+        #endregion
+
+        #region Undo Transaction API
+
+        /// <summary>
+        /// Begin a named undo transaction. All operations until
+        /// <see cref="CommitUndoTransaction"/> are grouped into a single undo step.
+        /// </summary>
+        public void BeginUndoTransaction(string description)
+            => _undoRedoManager.BeginBatch(description);
+
+        /// <summary>
+        /// Commit the current undo transaction as one entry in the undo history.
+        /// </summary>
+        public void CommitUndoTransaction()
+            => _undoRedoManager.EndBatch();
+
+        /// <summary>
+        /// Discard the current undo transaction (operations already applied physically
+        /// must be reversed separately by the caller if needed).
+        /// </summary>
+        public void RollbackUndoTransaction()
+            => _undoRedoManager.RollbackBatch();
+
+        /// <summary>
+        /// Human-readable description of the next undo step, or null if nothing to undo.
+        /// Used for dynamic toolbar tooltip / history dropdown.
+        /// </summary>
+        public string? PeekUndoDescription() => _undoRedoManager.PeekUndoDescription();
+
+        /// <summary>
+        /// Human-readable description of the next redo step, or null if nothing to redo.
+        /// </summary>
+        public string? PeekRedoDescription() => _undoRedoManager.PeekRedoDescription();
+
+        /// <summary>
+        /// Ordered list of undo step descriptions (newest first), up to <paramref name="maxCount"/>.
+        /// </summary>
+        public IReadOnlyList<string> GetUndoDescriptions(int maxCount = 20)
+            => _undoRedoManager.GetUndoDescriptions(maxCount);
+
+        /// <summary>
+        /// Ordered list of redo step descriptions (most recent undo first), up to <paramref name="maxCount"/>.
+        /// </summary>
+        public IReadOnlyList<string> GetRedoDescriptions(int maxCount = 20)
+            => _undoRedoManager.GetRedoDescriptions(maxCount);
 
         #endregion
 

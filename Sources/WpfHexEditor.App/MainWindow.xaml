@@ -321,7 +321,7 @@
                     <!-- ═══════════ Edit ═══════════ -->
                     <MenuItem Header="_Edit"
                               IsEnabled="{Binding IsMenuEnabled, ElementName=ThisWindow}">
-                        <MenuItem Header="_Undo"
+                        <MenuItem Header="{Binding ActiveDocumentEditor.UndoDescription, ElementName=ThisWindow, FallbackValue='_Undo'}"
                                   Command="{Binding ActiveDocumentEditor.UndoCommand, ElementName=ThisWindow}"
                                   InputGestureText="Ctrl+Z">
                             <MenuItem.Icon>
@@ -330,7 +330,7 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="_Redo"
+                        <MenuItem Header="{Binding ActiveDocumentEditor.RedoDescription, ElementName=ThisWindow, FallbackValue='_Redo'}"
                                   Command="{Binding ActiveDocumentEditor.RedoCommand, ElementName=ThisWindow}"
                                   InputGestureText="Ctrl+Y">
                             <MenuItem.Icon>
@@ -1064,15 +1064,15 @@
             <Border Style="{DynamicResource DockToolBarPodStyle}">
                 <StackPanel Orientation="Horizontal">
 
-                    <!-- Undo / Redo — Command bindings -->
+                    <!-- Undo / Redo — Command bindings with dynamic description tooltips -->
                     <Button Command="{Binding ActiveDocumentEditor.UndoCommand, ElementName=ThisWindow}"
-                            ToolTip="Undo (Ctrl+Z)"
+                            ToolTip="{Binding ActiveDocumentEditor.UndoDescription, ElementName=ThisWindow, FallbackValue='Undo (Ctrl+Z)'}"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
                         <TextBlock Text="&#xE7A7;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    VerticalAlignment="Center"/>
                     </Button>
                     <Button Command="{Binding ActiveDocumentEditor.RedoCommand, ElementName=ThisWindow}"
-                            ToolTip="Redo (Ctrl+Y)"
+                            ToolTip="{Binding ActiveDocumentEditor.RedoDescription, ElementName=ThisWindow, FallbackValue='Redo (Ctrl+Y)'}"
                             Style="{DynamicResource DockDarkToolBarButtonStyle}">
                         <TextBlock Text="&#xE7A6;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                    VerticalAlignment="Center"/>
