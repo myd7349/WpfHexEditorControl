@@ -714,4 +714,13 @@
     <SolidColorBrush x:Key="CE_StickyScrollBackground" Color="#2A2F2A" />
     <SolidColorBrush x:Key="CE_StickyScrollForeground" Color="#C8D8C8" />
     <SolidColorBrush x:Key="CE_StickyScrollBorder"     Color="#3A4A3A" />
+
+    <!-- Archive Explorer tokens (AR_*) -->
+    <SolidColorBrush x:Key="AR_FolderBrush"                  Color="#D4A843" />
+    <SolidColorBrush x:Key="AR_FileBrush"                    Color="#D4C9B0" />
+    <SolidColorBrush x:Key="AR_RatioBadgeBackgroundBrush"    Color="#3B6E4F" />
+    <SolidColorBrush x:Key="AR_RatioBadgeForegroundBrush"    Color="#F0EDE0" />
+    <SolidColorBrush x:Key="AR_FormatBadgeBackgroundBrush"   Color="#2E5A3B" />
+    <SolidColorBrush x:Key="AR_FormatBadgeForegroundBrush"   Color="#C8E6C9" />
+    <SolidColorBrush x:Key="AR_NestIndicatorBrush"           Color="#6B7B5E" />
 </ResourceDictionary>

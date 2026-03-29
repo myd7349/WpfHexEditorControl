@@ -159,7 +159,7 @@ public sealed class EditorSettingsService
         Apply(SyntaxTokenKind.Bracket,    ce.BracketColor);
         Apply(SyntaxTokenKind.Attribute,  ce.AttributeColor);
 
-        void Apply(WpfHexEditor.Editor.Core.SyntaxTokenKind k, string? hex)
+        void Apply(WpfHexEditor.Core.ProjectSystem.Languages.SyntaxTokenKind k, string? hex)
             => editor.SetSyntaxColorOverride(k, TryParseColor(hex, out var c) ? c : null);
     }
 

@@ -30,7 +30,8 @@ public sealed class ZipArchiveReader : IArchiveReader
     public ZipArchiveReader(string archivePath)
     {
         ArchivePath = archivePath;
-        _zip        = ZipFile.OpenRead(archivePath);
+        var stream  = new FileStream(archivePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        _zip        = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
         _entries    = [.. _zip.Entries.Select(MapEntry)];
     }
 
