@@ -20,83 +20,108 @@
             <RowDefinition Height="24" />
         </Grid.RowDefinitions>
 
-        <!-- ═══ Row 0: Toolbar (PanelToolbarStyle from PanelCommon.xaml) ═══ -->
-        <Border Grid.Row="0" Style="{DynamicResource PanelToolbarStyle}">
-            <DockPanel LastChildFill="False">
+        <!-- ═══ Row 0: Toolbar (ToolbarOverflowManager pattern) ═══ -->
+        <!-- Collapse order: TbgGroupBy(0) → TbgImportExport(1) → TbgActions(2) -->
+        <Border Grid.Row="0" x:Name="ToolbarBorder"
+                Style="{DynamicResource PanelToolbarStyle}"
+                SizeChanged="OnToolbarSizeChanged">
+            <DockPanel LastChildFill="False" Margin="4,0">
 
-                <!-- ── Left: Search box ── -->
-                <TextBox x:Name="SearchBox" DockPanel.Dock="Left"
-                         Width="160" Height="22"
-                         Background="{DynamicResource ERR_SearchBoxBrush}"
-                         Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
-                         BorderBrush="{DynamicResource ERR_GridLinesBrush}"
-                         BorderThickness="1"
-                         VerticalContentAlignment="Center" FontSize="11"
-                         Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
+                <!-- ── Fixed LEFT: Search box (always visible) ── -->
+                <StackPanel x:Name="ToolbarLeftPanel" DockPanel.Dock="Left"
+                            Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBox x:Name="SearchBox"
+                             Width="140" Height="20"
+                             Background="{DynamicResource ERR_SearchBoxBrush}"
+                             Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                             BorderBrush="{DynamicResource ERR_GridLinesBrush}"
+                             BorderThickness="1"
+                             VerticalContentAlignment="Center" FontSize="11" Padding="3,0"
+                             Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
+                </StackPanel>
 
-                <Rectangle DockPanel.Dock="Left" Width="1" Height="16" Margin="6,0"
-                           Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
+                <!-- ── Fixed RIGHT: empty placeholder (always visible) ── -->
+                <StackPanel x:Name="ToolbarRightPanel" DockPanel.Dock="Right"
+                            Orientation="Horizontal" VerticalAlignment="Center" />
 
-                <!-- ── Left: Actions ── -->
-                <Button DockPanel.Dock="Left" Command="{Binding EnableAllCommand}" ToolTip="Enable All"
-                        Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE73E;" />
-                <Button DockPanel.Dock="Left" Command="{Binding DisableAllCommand}" ToolTip="Disable All"
-                        Style="{DynamicResource PanelIconButtonStyle}" Content="&#xECC9;" />
-                <Button DockPanel.Dock="Left" Command="{Binding DeleteAllCommand}" ToolTip="Delete All Breakpoints"
-                        Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE74D;" />
-
-                <Rectangle DockPanel.Dock="Left" Width="1" Height="16" Margin="6,0"
-                           Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
-
-                <!-- ── Left: Import / Export ── -->
-                <Button DockPanel.Dock="Left" Command="{Binding ImportCommand}" ToolTip="Import Breakpoints (VS XML)"
-                        Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE8B5;" />
-                <Button DockPanel.Dock="Left" Command="{Binding ExportCommand}" ToolTip="Export Breakpoints (VS XML)"
-                        Style="{DynamicResource PanelIconButtonStyle}" Content="&#xEDE1;" />
-
-                <Rectangle DockPanel.Dock="Left" Width="1" Height="16" Margin="6,0"
-                           Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
-
-                <!-- ── Left: Group By ── -->
-                <TextBlock DockPanel.Dock="Left" Text="Group:" VerticalAlignment="Center" FontSize="11"
-                           Foreground="{DynamicResource Panel_ToolbarForegroundBrush}" Margin="2,0,4,0" />
-                <ComboBox x:Name="GroupByCombo" DockPanel.Dock="Left" Width="90" Height="22" FontSize="11"
-                          VerticalContentAlignment="Center"
-                          SelectedIndex="0" SelectionChanged="OnGroupByChanged">
-                    <ComboBoxItem Content="None" />
-                    <ComboBoxItem Content="File" />
-                    <ComboBoxItem Content="Type" />
-                    <ComboBoxItem Content="Enabled" />
-                </ComboBox>
-
-                <!-- ── Right: Overflow button ── -->
+                <!-- ── Overflow button (right, Visibility=Collapsed by default) ── -->
                 <Button x:Name="OverflowButton" DockPanel.Dock="Right"
                         Style="{DynamicResource PanelIconButtonStyle}"
-                        ToolTip="More options"
+                        ToolTip="More options" Visibility="Collapsed"
                         Click="OnOverflowButtonClick">
                     <TextBlock Text="&#xE712;" FontFamily="Segoe MDL2 Assets" FontSize="12"
                                VerticalAlignment="Center" HorizontalAlignment="Center" />
                     <Button.ContextMenu>
-                        <ContextMenu x:Name="OverflowMenu">
-                            <MenuItem Header="Enable All"           Click="OnOvfEnableAll">
+                        <ContextMenu x:Name="OverflowMenu" Opened="OnOverflowMenuOpened">
+                            <!-- TbgActions items -->
+                            <MenuItem Header="Enable All"  Click="OnOvfEnableAll"  Tag="TbgActions">
                                 <MenuItem.Icon><TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Disable All"          Click="OnOvfDisableAll">
+                            <MenuItem Header="Disable All" Click="OnOvfDisableAll" Tag="TbgActions">
                                 <MenuItem.Icon><TextBlock Text="&#xECC9;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Delete All"           Click="OnOvfDeleteAll">
+                            <MenuItem Header="Delete All"  Click="OnOvfDeleteAll"  Tag="TbgActions">
                                 <MenuItem.Icon><TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                             </MenuItem>
-                            <Separator />
-                            <MenuItem Header="Import from VS XML…"  Click="OnImportBreakpoints">
-                                <MenuItem.Icon><TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                            <Separator Tag="TbgActions" />
+                            <!-- TbgImportExport items -->
+                            <MenuItem Header="Import from VS XML…"   Click="OnImportBreakpoints" Tag="TbgImportExport">
+                                <MenuItem.Icon><TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem Header="Export All to VS XML…" Click="OnExportBreakpoints">
-                                <MenuItem.Icon><TextBlock Text="&#xEDE1;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                            <MenuItem Header="Export All to VS XML…" Click="OnExportBreakpoints" Tag="TbgImportExport">
+                                <MenuItem.Icon><TextBlock Text="&#xE898;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                             </MenuItem>
+                            <Separator Tag="TbgImportExport" />
+                            <!-- TbgGroupBy items -->
+                            <MenuItem Header="Group by None"    Click="OnOvfGroupNone"    Tag="TbgGroupBy" />
+                            <MenuItem Header="Group by File"    Click="OnOvfGroupFile"    Tag="TbgGroupBy" />
+                            <MenuItem Header="Group by Type"    Click="OnOvfGroupType"    Tag="TbgGroupBy" />
+                            <MenuItem Header="Group by Enabled" Click="OnOvfGroupEnabled" Tag="TbgGroupBy" />
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
+
+                <!-- ── Group: TbgActions — Enable/Disable/Delete (collapse last) ── -->
+                <StackPanel x:Name="TbgActions" DockPanel.Dock="Left"
+                            Orientation="Horizontal" VerticalAlignment="Center">
+                    <Rectangle Width="1" Height="16" Margin="6,0"
+                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
+                    <Button Command="{Binding EnableAllCommand}" ToolTip="Enable All"
+                            Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE73E;" />
+                    <Button Command="{Binding DisableAllCommand}" ToolTip="Disable All"
+                            Style="{DynamicResource PanelIconButtonStyle}" Content="&#xECC9;" />
+                    <Button Command="{Binding DeleteAllCommand}" ToolTip="Delete All Breakpoints"
+                            Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE74D;" />
+                </StackPanel>
+
+                <!-- ── Group: TbgImportExport — Import(↓)/Export(↑) ── -->
+                <StackPanel x:Name="TbgImportExport" DockPanel.Dock="Left"
+                            Orientation="Horizontal" VerticalAlignment="Center">
+                    <Rectangle Width="1" Height="16" Margin="6,0"
+                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
+                    <Button Command="{Binding ImportCommand}" ToolTip="Import Breakpoints (VS XML)"
+                            Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE896;" />
+                    <Button Command="{Binding ExportCommand}" ToolTip="Export Breakpoints (VS XML)"
+                            Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE898;" />
+                </StackPanel>
+
+                <!-- ── Group: TbgGroupBy — Group ComboBox (collapse first) ── -->
+                <StackPanel x:Name="TbgGroupBy" DockPanel.Dock="Left"
+                            Orientation="Horizontal" VerticalAlignment="Center">
+                    <Rectangle Width="1" Height="16" Margin="6,0"
+                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
+                    <TextBlock Text="Group:" VerticalAlignment="Center" FontSize="11"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}" Margin="2,0,4,0" />
+                    <ComboBox x:Name="GroupByCombo" Width="90" Height="20" FontSize="11"
+                              VerticalContentAlignment="Center"
+                              SelectedIndex="0" SelectionChanged="OnGroupByChanged">
+                        <ComboBoxItem Content="None" />
+                        <ComboBoxItem Content="File" />
+                        <ComboBoxItem Content="Type" />
+                        <ComboBoxItem Content="Enabled" />
+                    </ComboBox>
+                </StackPanel>
+
             </DockPanel>
         </Border>
 
@@ -112,7 +137,6 @@
                   x:Name="FlatList">
             <ListView.View>
                 <GridView>
-                    <!-- Icon -->
                     <GridViewColumn Width="26">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -122,8 +146,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
-                    <!-- Enabled checkbox -->
                     <GridViewColumn Width="26">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -132,16 +154,10 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
-                    <!-- Location -->
                     <GridViewColumn Header="Location" Width="220"
                                     DisplayMemberBinding="{Binding DisplayLocation}" />
-
-                    <!-- Condition -->
                     <GridViewColumn Header="Condition" Width="150"
                                     DisplayMemberBinding="{Binding Condition}" />
-
-                    <!-- Hit Count -->
                     <GridViewColumn Header="Hits" Width="50">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -152,8 +168,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
-                    <!-- Verified -->
                     <GridViewColumn Header="&#x2713;" Width="26">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -162,8 +176,6 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-
-                    <!-- Delete button -->
                     <GridViewColumn Width="28">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -180,39 +192,26 @@
 
             <ListView.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Go To Source" Click="OnGoToSource"
-                              InputGestureText="Enter">
-                        <MenuItem.Icon>
-                            <TextBlock Text="&#xE71B;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                        </MenuItem.Icon>
+                    <MenuItem Header="Go To Source" Click="OnGoToSource" InputGestureText="Enter">
+                        <MenuItem.Icon><TextBlock Text="&#xE71B;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Enable/Disable" Click="OnToggleEnabled">
-                        <MenuItem.Icon>
-                            <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                        </MenuItem.Icon>
+                        <MenuItem.Icon><TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Copy Location" Click="OnCopyLocation">
-                        <MenuItem.Icon>
-                            <TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                        </MenuItem.Icon>
+                        <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Delete" Click="OnDeleteSelected">
-                        <MenuItem.Icon>
-                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                        </MenuItem.Icon>
+                        <MenuItem.Icon><TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Import from VS XML…" Click="OnImportBreakpoints">
-                        <MenuItem.Icon>
-                            <TextBlock Text="&#xE8B5;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                        </MenuItem.Icon>
+                        <MenuItem.Icon><TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Export All to VS XML…" Click="OnExportBreakpoints">
-                        <MenuItem.Icon>
-                            <TextBlock Text="&#xEDE1;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                        </MenuItem.Icon>
+                        <MenuItem.Icon><TextBlock Text="&#xE898;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
                     </MenuItem>
                 </ContextMenu>
             </ListView.ContextMenu>
@@ -237,8 +236,6 @@
                             </TextBlock.Text>
                         </TextBlock>
                     </StackPanel>
-
-                    <!-- Child breakpoint rows -->
                     <HierarchicalDataTemplate.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:BreakpointRowEx}">
                             <StackPanel Orientation="Horizontal" Margin="0,1" MouseLeftButtonDown="OnTreeItemDoubleClick">
@@ -259,7 +256,6 @@
                     </HierarchicalDataTemplate.ItemTemplate>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
-
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem">
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
