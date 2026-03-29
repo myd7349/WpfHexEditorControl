@@ -17,7 +17,9 @@
         </ToolBar>
 
         <!-- Breakpoint list -->
-        <ListView Grid.Row="1" ItemsSource="{Binding Rows}"
+        <ListView x:Name="BpListView" Grid.Row="1" ItemsSource="{Binding Rows}"
+                  MouseMove="OnListViewMouseMove"
+                  MouseLeave="OnListViewMouseLeave"
                   Background="{DynamicResource PanelBackground}"
                   Foreground="{DynamicResource PanelForeground}"
                   VirtualizingPanel.IsVirtualizing="True"

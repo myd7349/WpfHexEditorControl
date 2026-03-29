@@ -20,7 +20,7 @@ using System.Windows;
 using System.Windows.Controls;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.Services;
-using WpfHexEditor.Panels.FileOps;
+using WpfHexEditor.Plugins.FileComparison.Dialogs;
 
 namespace WpfHexEditor.Plugins.FileComparison.Views;
 
