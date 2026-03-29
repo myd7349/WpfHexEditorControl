@@ -121,9 +121,9 @@ internal sealed class UndoHistoryPopup
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
             MaxHeight = 280,
-            ScrollViewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            ScrollViewer.VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
+        ScrollViewer.SetHorizontalScrollBarVisibility(list, ScrollBarVisibility.Disabled);
+        ScrollViewer.SetVerticalScrollBarVisibility(list, ScrollBarVisibility.Auto);
 
         list.MouseMove += OnMouseMove;
         list.MouseLeave += OnMouseLeave;
