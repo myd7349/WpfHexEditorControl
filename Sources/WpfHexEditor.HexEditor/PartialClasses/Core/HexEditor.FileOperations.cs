@@ -238,7 +238,7 @@ namespace WpfHexEditor.HexEditor
                 _viewModel.PropertyChanged += ViewModel_PropertyChanged;
 
                 // Calculate initial visible lines AFTER the control is fully loaded AND layout is complete
-                // Use ApplicationIdle priority to ensure BaseGrid.RowDefinitions[1].ActualHeight is set
+                // Use ApplicationIdle priority to ensure BaseGrid.RowDefinitions[2].ActualHeight is set
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     UpdateVisibleLines();

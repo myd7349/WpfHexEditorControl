@@ -804,7 +804,7 @@ namespace WpfHexEditor.HexEditor
             if (!e.HeightChanged || _viewModel == null)
                 return;
 
-            // Delay UpdateVisibleLines to ensure BaseGrid.RowDefinitions[1].ActualHeight is updated
+            // Delay UpdateVisibleLines to ensure BaseGrid.RowDefinitions[2].ActualHeight is updated
             // Use Render priority for better responsiveness while still ensuring layout is complete
             Dispatcher.BeginInvoke(new Action(() => UpdateVisibleLines()), System.Windows.Threading.DispatcherPriority.Render);
         }
@@ -864,9 +864,8 @@ namespace WpfHexEditor.HexEditor
         }
 
         /// <summary>
-        /// Update visible lines based on BaseGrid Row 1 height (exact V1 approach)
-        /// V1 uses: (int)(BaseGrid.RowDefinitions[1].ActualHeight / (LineHeight * ZoomScale)) + 1
-        /// V2 uses: (int)(BaseGrid.RowDefinitions[1].ActualHeight / LineHeight) + 1 (no ZoomScale)
+        /// Update visible lines based on BaseGrid Row 2 height (content area).
+        /// Row 0 = BreadcrumbBar, Row 1 = Column headers, Row 2 = Content (*), Row 3 = StatusBar.
         /// </summary>
         private void UpdateVisibleLines()
         {
@@ -878,9 +877,9 @@ namespace WpfHexEditor.HexEditor
             if (lineHeight <= 0)
                 return; // Not initialized yet
 
-            // Use BaseGrid.RowDefinitions[1].ActualHeight (EXACTLY like V1 does)
-            // Row 0 = Header, Row 1 = Content area, Row 2 = Status bar
-            double actualHeight = BaseGrid.RowDefinitions[1].ActualHeight;
+            // Row 2 is the content area (Height="*") — BreadcrumbBar was added as Row 0,
+            // shifting the old Row 1 (content) to Row 2.
+            double actualHeight = BaseGrid.RowDefinitions[2].ActualHeight;
             if (actualHeight <= 0)
                 return; // Not initialized yet
 
