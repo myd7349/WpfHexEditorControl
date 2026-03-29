@@ -1525,15 +1525,13 @@ namespace WpfHexEditor.Core.Bytes
                     break;
 
                 case UndoOperationType.Delete:
+                    // Undo of a delete = re-insert the deleted bytes at the original virtual position.
+                    // Using InsertBytes avoids the post-deletion virtual-position shift problem:
+                    // after deletion, VirtualToPhysical(originalPos) maps to wrong physical positions,
+                    // so UndeleteByte would restore the wrong bytes. InsertBytes does not need to
+                    // resolve a pre-existing physical slot — it just inserts at the correct virtual position.
                     if (operation.OldValues == null) break;
-                    for (int i = 0; i < operation.OldValues.Length; i++)
-                    {
-                        long virtualPos = operation.VirtualPosition + i;
-                        var (physicalPos, isInserted) = _positionMapper.VirtualToPhysical(virtualPos, _fileProvider.Length);
-                        if (!isInserted && physicalPos.HasValue)
-                            _editsManager.UndeleteByte(physicalPos.Value);
-                    }
-                    InvalidateCaches();
+                    InsertBytes(operation.VirtualPosition, operation.OldValues);
                     break;
             }
         }
