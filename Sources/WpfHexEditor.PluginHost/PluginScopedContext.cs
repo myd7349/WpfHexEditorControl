@@ -89,6 +89,24 @@ internal sealed class PluginScopedContext : IIDEHostContext
     /// <inheritdoc />
     public IDocumentHostService DocumentHost => _inner.DocumentHost;
 
+    // ── Optional services — must be explicitly delegated; default interface
+    //    members return null and would shadow the real implementation. ──────────
+
+    /// <inheritdoc />
+    public WpfHexEditor.SDK.Contracts.Services.IDebuggerService? Debugger => _inner.Debugger;
+
+    /// <inheritdoc />
+    public WpfHexEditor.SDK.Contracts.Services.IScriptingService? Scripting => _inner.Scripting;
+
+    /// <inheritdoc />
+    public WpfHexEditor.Editor.Core.IBuildSystem? BuildSystem => _inner.BuildSystem;
+
+    /// <inheritdoc />
+    public WpfHexEditor.SDK.Contracts.Services.IWorkspaceService? Workspace => _inner.Workspace;
+
+    /// <inheritdoc />
+    public WpfHexEditor.SDK.Commands.ICommandRegistry? CommandRegistry => _inner.CommandRegistry;
+
     public PluginScopedContext(IIDEHostContext inner, TimedHexEditorService timedHexEditor)
     {
         _inner    = inner          ?? throw new ArgumentNullException(nameof(inner));
