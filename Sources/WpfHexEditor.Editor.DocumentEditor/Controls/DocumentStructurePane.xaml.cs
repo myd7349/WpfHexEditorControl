@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
 using WpfHexEditor.Editor.DocumentEditor.Core.Forensic;
@@ -248,4 +249,19 @@ public sealed class DocumentBlockNode : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
+
+/// <summary>Resolves a resource-key string to the matching Brush in Application.Current.Resources.</summary>
+[ValueConversion(typeof(string), typeof(Brush))]
+internal sealed class ResourceKeyToBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is string key && Application.Current.Resources.Contains(key))
+            return Application.Current.Resources[key];
+        return Brushes.Gray;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }

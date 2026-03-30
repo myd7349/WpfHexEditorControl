@@ -234,6 +234,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     protected override void OnRender(DrawingContext dc)
     {
         EnsureBrushCache();
+        EnsureTypefaces();
 
         var vw = _viewport.Width;
         var vh = _viewport.Height;
@@ -688,6 +689,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
 
     private void EnsureTypefaces()
     {
+        if (_uiFace is not null) return;
         _bodyFace          = new Typeface(BodyFontFamily);
         _bodyBoldFace      = new Typeface(new FontFamily(BodyFontFamily), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
         _bodyItalicFace    = new Typeface(new FontFamily(BodyFontFamily), FontStyles.Italic, FontWeights.Normal, FontStretches.Normal);

@@ -6,6 +6,7 @@
              Foreground="{DynamicResource DockMenuForegroundBrush}">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:ResourceKeyToBrushConverter x:Key="ResourceKeyToBrushConverter"/>
 
         <!-- Small icon button style -->
         <Style x:Key="StructToolBtnStyle" TargetType="Button">
