@@ -761,15 +761,18 @@
                 </ItemsControl>
 
                 <!-- D3 — Forensic Alerts: failed assertions from whfmt assertions[] -->
+                <!-- Left-accent border pattern: WF_ForensicAlertBrush = accent color, not background -->
                 <Border Margin="0,6,0,0"
-                        CornerRadius="4"
-                        Background="{DynamicResource WF_ForensicAlertBrush}"
+                        BorderThickness="3,0,0,0"
+                        BorderBrush="{DynamicResource WF_ForensicAlertBrush}"
+                        Background="{DynamicResource DockBackgroundBrush}"
+                        CornerRadius="0,3,3,0"
                         Padding="8,6"
                         Visibility="{Binding FormatInfo.HasForensicAlerts, Converter={StaticResource BoolToVisibilityConverter}}">
                     <StackPanel>
                         <TextBlock Text="&#xE7BA;  Forensic Alerts"
                                    FontSize="10" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource WF_AssertionErrorBrush}"
+                                   Foreground="{DynamicResource WF_ForensicAlertBrush}"
                                    Margin="0,0,0,4"/>
                         <ItemsControl ItemsSource="{Binding FormatInfo.ForensicAlerts}">
                             <ItemsControl.ItemTemplate>
@@ -781,7 +784,7 @@
                                                    Text="{Binding Severity}"
                                                    Foreground="{DynamicResource WF_AssertionErrorBrush}"/>
                                         <TextBlock FontSize="10" TextWrapping="Wrap"
-                                                   Foreground="{DynamicResource PFP_SubTextBrush}"
+                                                   Foreground="{DynamicResource DockMenuForegroundBrush}"
                                                    Text="{Binding Message}"/>
                                     </DockPanel>
                                 </DataTemplate>
