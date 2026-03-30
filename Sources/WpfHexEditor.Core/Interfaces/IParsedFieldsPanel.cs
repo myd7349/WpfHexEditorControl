@@ -46,6 +46,16 @@ namespace WpfHexEditor.Core.Interfaces
         void RefreshView();
         void Clear();
         void SetEnrichedFormat(WpfHexEditor.Core.FormatDetection.FormatDefinition? format);
+
+        /// <summary>
+        /// Suppresses <see cref="ParsedFields"/> CollectionChanged → ApplyFilter() during
+        /// bulk field population. Call <see cref="EndBulkUpdate"/> when done; it fires
+        /// ApplyFilter exactly once.
+        /// </summary>
+        void BeginBulkUpdate();
+
+        /// <summary>Ends a bulk update and triggers a single ApplyFilter() pass.</summary>
+        void EndBulkUpdate();
     }
 
     /// <summary>
@@ -127,6 +137,11 @@ namespace WpfHexEditor.Core.Interfaces
                 _references = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(HasReferences));
+                OnPropertyChanged(nameof(HasSpecifications));
+                OnPropertyChanged(nameof(HasWebLinks));
+                OnPropertyChanged(nameof(HasBothReferences));
+                OnPropertyChanged(nameof(Specifications));
+                OnPropertyChanged(nameof(WebLinks));
             }
         }
 

@@ -111,7 +111,7 @@ namespace WpfHexEditor.HexEditor
             _autoScrollTimer.Tick += AutoScrollTimer_Tick;
 
             // Auto-adjust visible lines when BaseGrid is resized (V1-style approach)
-            // Use BaseGrid.RowDefinitions[1].ActualHeight like V1 does
+            // Use BaseGrid.RowDefinitions[2].ActualHeight — Row 2 is content (BreadcrumbBar added as Row 0)
             BaseGrid.SizeChanged += BaseGrid_SizeChanged;
 
             // Handle mouse wheel scrolling (use PreviewMouseWheel on ScrollViewer to intercept before it scrolls)
@@ -119,6 +119,10 @@ namespace WpfHexEditor.HexEditor
 
             // Sync header horizontal position with content horizontal scroll
             ContentScroller.ScrollChanged += ContentScroller_ScrollChanged;
+
+            // Initialize breadcrumb bar and column highlight overlay
+            InitializeBreadcrumbBar();
+            InitializeColumnHighlight();
 
             // Find XAML elements for display options
             _headerBorder = this.FindName("HeaderBorder") as Border;

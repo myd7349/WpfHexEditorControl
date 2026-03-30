@@ -1,4 +1,4 @@
-﻿<!-- ==========================================================
+<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: CatppuccinLatte/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -762,4 +762,12 @@
     <SolidColorBrush x:Key="CL_RadioUnselectedBrush"  Color="#CCD0DA" />
     <SolidColorBrush x:Key="CL_HoverBrush"            Color="#DCE0E8" />
     <SolidColorBrush x:Key="CL_ModeBadgeBrush"        Color="#40A02B" />
+    <!-- Archive Explorer tokens (AR_*) -->
+    <SolidColorBrush x:Key="AR_FolderBrush"                  Color="#FE640B" />
+    <SolidColorBrush x:Key="AR_FileBrush"                    Color="#4C4F69" />
+    <SolidColorBrush x:Key="AR_RatioBadgeBackgroundBrush"    Color="#1E66F5" />
+    <SolidColorBrush x:Key="AR_RatioBadgeForegroundBrush"    Color="#EFF1F5" />
+    <SolidColorBrush x:Key="AR_FormatBadgeBackgroundBrush"   Color="#40A02B" />
+    <SolidColorBrush x:Key="AR_FormatBadgeForegroundBrush"   Color="#EFF1F5" />
+    <SolidColorBrush x:Key="AR_NestIndicatorBrush"           Color="#9CA0B0" />
 </ResourceDictionary>

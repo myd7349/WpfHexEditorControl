@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>WpfHexEditor.Plugins.ArchiveExplorer</RootNamespace>
+    <AssemblyName>WpfHexEditor.Plugins.ArchiveExplorer</AssemblyName>
+    <!-- Plugin metadata required by WpfHexEditor.SDK.targets to generate manifest.json -->
+    <PluginId>WpfHexEditor.Plugins.ArchiveExplorer</PluginId>
+    <PluginName>Archive Explorer</PluginName>
+    <PluginVersion>1.0.0</PluginVersion>
+    <PluginEntryPoint>WpfHexEditor.Plugins.ArchiveExplorer.ArchiveExplorerPlugin</PluginEntryPoint>
+    <PluginAuthor>Derek Tremblay</PluginAuthor>
+    <PluginPublisher>WpfHexEditor</PluginPublisher>
+    <PluginTrustedPublisher>true</PluginTrustedPublisher>
+    <PluginDescription>Browse, extract, and preview archive contents (ZIP, 7z, RAR, TAR, GZ, BZ2, XZ) with format detection and nested archive navigation.</PluginDescription>
+    <PluginIsolationMode>Auto</PluginIsolationMode>
+    <PluginLoadPriority>30</PluginLoadPriority>
+    <PluginSdkVersion>1.2.0</PluginSdkVersion>
+    <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+    <PluginPermAccessHexEditor>true</PluginPermAccessHexEditor>
+    <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
+    <PluginPermAccessNetwork>false</PluginPermAccessNetwork>
+    <PluginPermRegisterMenus>true</PluginPermRegisterMenus>
+    <PluginPermWriteOutput>true</PluginPermWriteOutput>
+    <!-- CopyLocalLockFileAssemblies ensures SharpCompress.dll ends up in $(OutputPath) -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- SharpCompress: pure-managed archive library supporting 7z, RAR, TAR, GZ, BZ2, XZ.
+         ZIP is handled via System.IO.Compression (BCL, zero dep).
+         SharpCompress is MIT-licensed and ships as a single managed DLL — no native code. -->
+    <PackageReference Include="SharpCompress" Version="0.38.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
+    <!-- Editor.Core: compile-only reference for ThemedDialog in ArchivePropertiesDialog.
+         DLL resolved at runtime via the host AssemblyLoadContext fallback. -->
+    <ProjectReference Include="..\..\WpfHexEditor.Editor.Core\WpfHexEditor.Editor.Core.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\WpfHexEditor.SDK\Build\WpfHexEditor.SDK.targets" />
+
+  <!-- Copy compiled plugin + SharpCompress to App Plugins directory after build -->
+  <Target Name="CopyToPluginsDir" AfterTargets="GeneratePluginManifest">
+    <PropertyGroup>
+      <PluginDestDir>$(MSBuildThisFileDirectory)..\..\WpfHexEditor.App\bin\$(Configuration)\net8.0-windows\Plugins\$(AssemblyName)\</PluginDestDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(PluginDestDir)" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)$(AssemblyName).deps.json;$(OutputPath)manifest.json;$(OutputPath)SharpCompress.dll"
+          DestinationFolder="$(PluginDestDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

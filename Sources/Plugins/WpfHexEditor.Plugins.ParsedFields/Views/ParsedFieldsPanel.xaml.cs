@@ -43,6 +43,7 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         private long _totalFileSize;
         private ToolbarOverflowManager _overflowManager = null!;
         private readonly EnrichedFormatViewModel _enrichedVm = new();
+        private bool _suppressFilter; // set by BeginBulkUpdate/EndBulkUpdate
 
         public ParsedFieldsPanel()
         {
@@ -59,8 +60,9 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
             var view = CollectionViewSource.GetDefaultView(FilteredFields);
             view?.GroupDescriptions.Add(new PropertyGroupDescription("GroupName"));
 
-            // Subscribe to collection changes to automatically update filtered view
-            ParsedFields.CollectionChanged += (s, e) => ApplyFilter();
+            // Subscribe to collection changes to automatically update filtered view.
+            // Guard: skip during bulk field population (BeginBulkUpdate/EndBulkUpdate).
+            ParsedFields.CollectionChanged += (s, e) => { if (!_suppressFilter) ApplyFilter(); };
 
             FormatInfo = new FormatInfo();
 
@@ -1091,6 +1093,19 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         }
 
         /// <summary>
+        /// Suppresses CollectionChanged → ApplyFilter during bulk field population.
+        /// Call EndBulkUpdate() when done; it fires ApplyFilter exactly once.
+        /// </summary>
+        public void BeginBulkUpdate() => _suppressFilter = true;
+
+        /// <summary>Ends a bulk update and triggers a single ApplyFilter() pass.</summary>
+        public void EndBulkUpdate()
+        {
+            _suppressFilter = false;
+            ApplyFilter();
+        }
+
+        /// <summary>
         /// Clear all fields (including injected enriched fields).
         /// </summary>
         public void Clear()
@@ -2061,6 +2076,27 @@ namespace WpfHexEditor.Plugins.ParsedFields.Views
         private void OnOverflowMenuOpened(object sender, RoutedEventArgs e)
         {
             _overflowManager?.SyncMenuVisibility();
+        }
+
+        // ── References popup ──────────────────────────────────────────────────
+
+        /// <summary>Toggle the References info popup on info button click.</summary>
+        private void ReferencesInfoButton_Click(object sender, RoutedEventArgs e)
+        {
+            ReferencesPopup.IsOpen = !ReferencesPopup.IsOpen;
+        }
+
+        /// <summary>Open a web link from the References popup in the default browser.</summary>
+        private void ReferenceLink_Click(object sender, RoutedEventArgs e)
+        {
+            var url = sender is System.Windows.Controls.Button btn ? btn.Tag as string : null;
+            if (!string.IsNullOrEmpty(url) && url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url)
+                {
+                    UseShellExecute = true
+                });
+            }
         }
     }
 

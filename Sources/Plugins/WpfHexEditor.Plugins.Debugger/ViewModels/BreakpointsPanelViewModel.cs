@@ -46,6 +46,8 @@ public sealed class BreakpointsPanelViewModel : INotifyPropertyChanged
     public ICommand EnableAllCommand   { get; }
     public ICommand DisableAllCommand  { get; }
 
+    internal IDebuggerService Debugger => _debugger;
+
     public BreakpointsPanelViewModel(IDebuggerService debugger)
     {
         _debugger = debugger;

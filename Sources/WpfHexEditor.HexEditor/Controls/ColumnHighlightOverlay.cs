@@ -1,78 +1,86 @@
-//////////////////////////////////////////////
+// ==========================================================
 // Project: WpfHexEditor.HexEditor
 // File: Controls/ColumnHighlightOverlay.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+// Created: 2026-03-29
 // Description:
-//     Semi-transparent overlay that highlights the active byte's column
-//     (vertical stripe) in the hex viewport. Helps users track which
-//     byte position they're editing within a line.
-// Architecture:
-//     Lightweight FrameworkElement rendered via DrawingContext.
-//     Positioned over the HexViewport. Updated on cursor/selection change.
-//////////////////////////////////////////////
+//     Lightweight semi-transparent vertical stripe that highlights the
+//     active byte column in the hex viewport.  IsHitTestVisible=false
+//     so all mouse events pass through to the viewport below.
+//
+// Architecture Notes:
+//     DrawingContext-based rendering (no child UIElements).
+//     Positioned as a direct child of the HexEditor content Grid.
+//     Updated by HexEditor.ColumnHighlight.cs partial when cursor moves.
+//     Uses HexEditor_SelectionFirstColor (semi-transparent) as highlight brush.
+// ==========================================================
 
-using System;
 using System.Windows;
 using System.Windows.Media;
 
 namespace WpfHexEditor.HexEditor.Controls;
 
 /// <summary>
-/// Draws a semi-transparent vertical stripe over the active byte column.
+/// Semi-transparent column highlight overlay for the hex viewport.
 /// </summary>
 public sealed class ColumnHighlightOverlay : FrameworkElement
 {
-    private int _activeColumn = -1;
-    private double _charWidth;
-    private double _hexAreaLeft;
-    private int _bytesPerLine = 16;
+    // ── State ─────────────────────────────────────────────────────────────────
+    private bool   _visible;
+    private double _x;
+    private double _width;
 
-    private static readonly Brush HighlightBrush = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+    private static readonly Brush _fillBrush;
 
     static ColumnHighlightOverlay()
     {
-        HighlightBrush.Freeze();
+        _fillBrush = new SolidColorBrush(Color.FromArgb(0x22, 0x00, 0x78, 0xD4)); // ~13% blue
+        _fillBrush.Freeze();
     }
 
     public ColumnHighlightOverlay()
     {
-        IsHitTestVisible = false; // clicks pass through
+        IsHitTestVisible = false;
     }
 
-    /// <summary>
-    /// Updates the highlight position. Call on cursor/selection change.
-    /// </summary>
-    /// <param name="activeColumn">0-based column index within the line (0 to bytesPerLine-1). -1 to hide.</param>
-    /// <param name="charWidth">Width of one hex byte cell (e.g. 2 chars + spacing).</param>
-    /// <param name="hexAreaLeft">X offset where the hex area starts.</param>
-    /// <param name="bytesPerLine">Number of bytes per line.</param>
-    public void SetColumn(int activeColumn, double charWidth, double hexAreaLeft, int bytesPerLine)
-    {
-        if (_activeColumn == activeColumn && Math.Abs(_charWidth - charWidth) < 0.1)
-            return;
+    // ── Public API ────────────────────────────────────────────────────────────
 
-        _activeColumn = activeColumn;
-        _charWidth    = charWidth;
-        _hexAreaLeft  = hexAreaLeft;
-        _bytesPerLine = bytesPerLine;
+    /// <summary>
+    /// Recomputes and shows the column stripe.
+    /// </summary>
+    /// <param name="columnIndex">0-based byte column within the visible row.</param>
+    /// <param name="hexPanelStartX">X offset where the hex panel starts (offset column width).</param>
+    /// <param name="cellWidth">Width of one hex cell (includes spacing).</param>
+    public void SetColumn(int columnIndex, double hexPanelStartX, double cellWidth, double spacerOffset = 0)
+    {
+        if (columnIndex < 0 || cellWidth <= 0)
+        {
+            Hide();
+            return;
+        }
+
+        _x       = hexPanelStartX + columnIndex * cellWidth + spacerOffset;
+        _width   = cellWidth;
+        _visible = true;
         InvalidateVisual();
     }
 
     /// <summary>Hides the column highlight.</summary>
     public void Hide()
     {
-        if (_activeColumn < 0) return;
-        _activeColumn = -1;
+        if (!_visible) return;
+        _visible = false;
         InvalidateVisual();
     }
 
+    // ── Rendering ─────────────────────────────────────────────────────────────
+
     protected override void OnRender(DrawingContext dc)
     {
-        if (_activeColumn < 0 || _activeColumn >= _bytesPerLine || _charWidth < 1)
-            return;
+        if (!_visible || _width <= 0) return;
 
-        double x = _hexAreaLeft + _activeColumn * _charWidth;
-        double h = ActualHeight;
-
-        dc.DrawRectangle(HighlightBrush, null, new Rect(x, 0, _charWidth, h));
+        var rect = new Rect(_x, 0, _width, ActualHeight);
+        dc.DrawRectangle(_fillBrush, null, rect);
     }
 }

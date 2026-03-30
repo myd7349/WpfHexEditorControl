@@ -54,4 +54,8 @@ public sealed class DebuggerSettings
 
     /// <summary>Export path relative to solution dir (default: .whide/breakpoints-vs.xml).</summary>
     public string VsExportRelativePath { get; set; } = ".whide/breakpoints-vs.xml";
+    // ── Gutter highlights ─────────────────────────────────────────────────────
+
+    /// <summary>When true, the entire source line is highlighted when a breakpoint is hit.</summary>
+    public bool BreakpointLineHighlightEnabled { get; set; } = true;
 }

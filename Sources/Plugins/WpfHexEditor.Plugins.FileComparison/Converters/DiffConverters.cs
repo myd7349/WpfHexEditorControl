@@ -1,11 +1,13 @@
 // Project      : WpfHexEditorControl
 // File         : Converters/DiffConverters.cs
-// Description  : Value converters used by DiffHubPanel and DiffViewerDocument:
-//                IntToStarConverter        — int 0-100 → proportional GridLength n*
-//                IntToAntiStarConverter    — int 0-100 → complementary GridLength (100-n)*
-//                BoolToVisibilityConverter — bool → Visibility (Visible / Collapsed)
-//                KindToBrushConverter      — DiffLineRow.Kind → background SolidColorBrush
-//                KindToGlyphConverter      — DiffLineRow.Kind → Segoe MDL2 Assets glyph char
+// Description  : Value converters used by DiffHubPanel, DiffViewerDocument, and FormatSelectionDialog:
+//                IntToStarConverter             — int 0-100 → proportional GridLength n*
+//                IntToAntiStarConverter         — int 0-100 → complementary GridLength (100-n)*
+//                BoolToVisibilityConverter      — bool → Visibility (Visible / Collapsed)
+//                KindToBrushConverter           — DiffLineRow.Kind → background SolidColorBrush
+//                KindToGlyphConverter           — DiffLineRow.Kind → Segoe MDL2 Assets glyph char
+//                ConfidenceToPercentageConverter — double 0.0-1.0 → double 0-100 (for ProgressBar)
+//                NullToBooleanConverter         — object? → bool (null → false)
 
 using System.Globalization;
 using System.Windows;
@@ -81,6 +83,34 @@ public sealed class KindToBrushConverter : IValueConverter
         if (key is null) return Brushes.Transparent;
         return Application.Current?.TryFindResource(key) as Brush ?? Brushes.Transparent;
     }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => DependencyProperty.UnsetValue;
+}
+
+/// <summary>
+/// Converts a confidence score (0.0–1.0) to a percentage value (0–100) for ProgressBar binding.
+/// Used by FormatSelectionDialog.
+/// </summary>
+[ValueConversion(typeof(double), typeof(double))]
+public sealed class ConfidenceToPercentageConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is double confidence ? confidence * 100.0 : 0.0;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => DependencyProperty.UnsetValue;
+}
+
+/// <summary>
+/// Returns true when the bound value is non-null; false otherwise.
+/// Used to enable/disable the Select button in FormatSelectionDialog.
+/// </summary>
+[ValueConversion(typeof(object), typeof(bool))]
+public sealed class NullToBooleanConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is not null;
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => DependencyProperty.UnsetValue;

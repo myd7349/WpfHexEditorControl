@@ -33,6 +33,10 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>SDK 2.0.0 — SemVer frozen. See CHANGELOG.md and SDK_MIGRATION.md for details.</PackageReleaseNotes>
     <PackageTags>wpf;hex;editor;binary;plugin;sdk</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,6 +45,10 @@
     <None Include="SDK_MIGRATION.md" Pack="true" PackagePath="\" />
     <None Include="WHFMT_AUTHORING.md" Pack="true" PackagePath="\" />
     <None Include="PLUGIN_GUIDE.md" Pack="true" PackagePath="\" />
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
   </ItemGroup>
 
   <!-- Transitive re-exports: plugins reference only the SDK and get all required types. -->
@@ -53,9 +61,6 @@
       <PrivateAssets>none</PrivateAssets>
     </ProjectReference>
     <ProjectReference Include="..\WpfHexEditor.HexEditor\WpfHexEditor.HexEditor.csproj">
-      <PrivateAssets>none</PrivateAssets>
-    </ProjectReference>
-    <ProjectReference Include="..\WpfHexEditor.Panels.FileOps\WpfHexEditor.Panels.FileOps.csproj">
       <PrivateAssets>none</PrivateAssets>
     </ProjectReference>
   </ItemGroup>

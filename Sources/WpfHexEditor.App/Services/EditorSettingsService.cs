@@ -1,49 +1,56 @@
-//////////////////////////////////////////////
+// ==========================================================
 // Project: WpfHexEditor.App
 // File: Services/EditorSettingsService.cs
+// Author: Derek Tremblay (derektremblay666@gmail.com)
+// Contributors: Claude Sonnet 4.6
+// Created: 2026-03-29
 // Description:
-//     Applies per-editor-type user settings to newly created editor instances.
-//     Extracted from MainWindow.ApplyEditorSettings to reduce code-behind.
-// Architecture:
-//     Static utility — reads from AppSettingsService, applies to IDocumentEditor.
-//////////////////////////////////////////////
+//     Applies user preferences from AppSettings to newly created editor controls.
+//     Extracted from MainWindow.ApplyEditorSettings + ApplyHexEditorDefaults static
+//     methods to keep MainWindow lean and allow future DI-based invocation.
+//
+// Architecture Notes:
+//     Single public method: Apply(IDocumentEditor).
+//     Type-dispatches to per-editor helpers (CodeEditor, TextEditor, HexEditor).
+//     Reads AppSettingsService.Instance.Current — no constructor args required.
+//     Registered as singleton in AppServiceCollection.
+// ==========================================================
 
+using System.Windows.Media;
 using WpfHexEditor.Core.Options;
-using WpfHexEditor.Core.ProjectSystem.Languages;
+using AppSettings = WpfHexEditor.Core.Options.AppSettings;
 using WpfHexEditor.Editor.Core;
+using WpfHexEditor.Core.ProjectSystem.Languages;
+using HexEditorControl = WpfHexEditor.HexEditor.HexEditor;
 
 namespace WpfHexEditor.App.Services;
 
 /// <summary>
-/// Applies user settings (scroll speed, zoom, syntax colors, etc.) to editor instances.
+/// Applies per-editor-type settings from <see cref="AppSettingsService"/> to
+/// freshly-created <see cref="IDocumentEditor"/> instances.
 /// </summary>
-internal static class EditorSettingsService
+public sealed class EditorSettingsService
 {
     /// <summary>
-    /// Applies per-editor-type user settings to a newly created editor.
-    /// Called once per editor instance from CreateSmartFileEditorContent.
+    /// Applies settings to <paramref name="editor"/> based on its concrete type.
+    /// Safe to call with any <see cref="IDocumentEditor"/> — unknown types are ignored.
     /// </summary>
-    public static void Apply(IDocumentEditor editor)
+    public void Apply(IDocumentEditor editor)
     {
         var settings = AppSettingsService.Instance.Current;
 
         switch (editor)
         {
             case WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor ce:
-                ApplyCodeEditor(ce, settings.CodeEditorDefaults);
+                ApplyCodeEditor(ce, settings);
                 break;
             case WpfHexEditor.Editor.TextEditor.Controls.TextEditor te:
-                te.MouseWheelSpeed   = settings.TextEditorDefaults.MouseWheelSpeed;
-                te.ZoomLevel         = settings.TextEditorDefaults.DefaultZoom;
-                te.IsWordWrapEnabled = settings.TextEditorDefaults.WordWrap;
-                if (te.RefreshTimeStatusBarItem is { } teRt)
-                    teRt.IsVisible = settings.TextEditorDefaults.ShowRefreshRateInStatusBar;
+                ApplyTextEditor(te, settings);
                 break;
-            case WpfHexEditor.HexEditor.HexEditor hexEd:
-                hexEd.ShowRefreshTimeInStatusBar = settings.HexEditorDefaults.ShowRefreshRateInStatusBar;
+            case HexEditorControl hex:
+                ApplyHexEditor(hex, settings);
                 break;
         }
-
         // CodeEditorSplitHost wraps two CodeEditor instances
         if (editor is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost splitHost)
         {
@@ -57,45 +64,86 @@ internal static class EditorSettingsService
         }
     }
 
-    /// <summary>
-    /// Applies all HexEditor-specific default settings.
-    /// </summary>
-    public static void ApplyHexDefaults(WpfHexEditor.HexEditor.HexEditor hex)
+    // ── Per-editor helpers ─────────────────────────────────────────────────────
+
+    private static void ApplyCodeEditor(
+        WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor ce,
+        AppSettings settings)
     {
-        var d = AppSettingsService.Instance.Current.HexEditorDefaults;
+        var d = settings.CodeEditorDefaults;
+        ce.MouseWheelSpeed          = d.MouseWheelSpeed;
+        ce.ZoomLevel                = d.DefaultZoom;
+        ce.FoldToggleOnDoubleClick  = d.FoldToggleOnDoubleClick;
+        ce.IsWordWrapEnabled        = d.WordWrap;
+        ce.ShowInlineHints          = d.ShowInlineHints;
+        ce.InlineHintsVisibleKinds  = d.InlineHintsVisibleKinds == 0
+            ? WpfHexEditor.Editor.Core.InlineHintsSymbolKinds.All
+            : (WpfHexEditor.Editor.Core.InlineHintsSymbolKinds)d.InlineHintsVisibleKinds;
+        ce.ShowEndOfBlockHint       = d.EndOfBlockHintEnabled;
+        ce.EndOfBlockHintDelayMs    = d.EndOfBlockHintDelayMs;
+        ce.EnableAutoClosingBrackets = d.AutoClosingBrackets;
+        ce.EnableAutoClosingQuotes   = d.AutoClosingQuotes;
+        ce.SkipOverClosingChar       = d.SkipOverClosingChar;
+        ce.WrapSelectionInPairs      = d.WrapSelectionInPairs;
 
-        hex.BytePerLine           = d.BytePerLine;
-        hex.ShowOffset            = d.ShowOffset;
-        hex.ShowAscii             = d.ShowAscii;
-        hex.DataStringVisual      = d.DataStringVisual;
-        hex.OffSetStringVisual    = d.OffSetStringVisual;
-        hex.ByteGrouping          = d.ByteGrouping;
-        hex.ByteSpacerPositioning = d.ByteSpacerPositioning;
+        var ss = d.StickyScroll;
+        ce.ApplyStickyScrollSettings(
+            ss.Enabled, ss.MaxLines, ss.SyntaxHighlight,
+            ss.ClickToNavigate, ss.Opacity, ss.MinScopeLines);
 
-        hex.EditMode              = d.DefaultEditMode;
-        hex.AllowZoom             = d.AllowZoom;
-        hex.MouseWheelSpeed       = d.MouseWheelSpeed;
-        hex.AllowFileDrop         = d.AllowFileDrop;
+        ApplySyntaxColorOverrides(ce, d);
+    }
 
+    private static void ApplyTextEditor(
+        WpfHexEditor.Editor.TextEditor.Controls.TextEditor te,
+        AppSettings settings)
+    {
+        te.MouseWheelSpeed   = settings.TextEditorDefaults.MouseWheelSpeed;
+        te.ZoomLevel         = settings.TextEditorDefaults.DefaultZoom;
+        te.IsWordWrapEnabled = settings.TextEditorDefaults.WordWrap;
+    }
+
+    private static void ApplyHexEditor(HexEditorControl hex, AppSettings settings)
+    {
+        var d = settings.HexEditorDefaults;
+
+        // Display
+        hex.BytePerLine            = d.BytePerLine;
+        hex.ShowOffset             = d.ShowOffset;
+        hex.ShowAscii              = d.ShowAscii;
+        hex.DataStringVisual       = d.DataStringVisual;
+        hex.OffSetStringVisual     = d.OffSetStringVisual;
+        hex.ByteGrouping           = d.ByteGrouping;
+        hex.ByteSpacerPositioning  = d.ByteSpacerPositioning;
+
+        // Editing
+        hex.EditMode               = d.DefaultEditMode;
+        hex.AllowZoom              = d.AllowZoom;
+        hex.MouseWheelSpeed        = d.MouseWheelSpeed;
+        hex.AllowFileDrop          = d.AllowFileDrop;
+
+        // Data interpretation
         hex.ByteSize                    = d.ByteSize;
         hex.ByteOrder                   = d.ByteOrder;
         hex.DefaultCopyToClipboardMode  = d.DefaultCopyToClipboardMode;
         hex.ByteSpacerVisualStyle       = d.ByteSpacerVisualStyle;
 
-        hex.ShowBookmarkMarkers     = d.ShowBookmarkMarkers;
-        hex.ShowModifiedMarkers     = d.ShowModifiedMarkers;
-        hex.ShowInsertedMarkers     = d.ShowInsertedMarkers;
-        hex.ShowDeletedMarkers      = d.ShowDeletedMarkers;
-        hex.ShowSearchResultMarkers = d.ShowSearchResultMarkers;
+        // Scroll markers
+        hex.ShowBookmarkMarkers         = d.ShowBookmarkMarkers;
+        hex.ShowModifiedMarkers         = d.ShowModifiedMarkers;
+        hex.ShowInsertedMarkers         = d.ShowInsertedMarkers;
+        hex.ShowDeletedMarkers          = d.ShowDeletedMarkers;
+        hex.ShowSearchResultMarkers     = d.ShowSearchResultMarkers;
 
-        hex.ShowRefreshTimeInStatusBar = d.ShowRefreshRateInStatusBar;
-        hex.ShowStatusMessage          = d.ShowStatusMessage;
-        hex.ShowFileSizeInStatusBar    = d.ShowFileSizeInStatusBar;
-        hex.ShowSelectionInStatusBar   = d.ShowSelectionInStatusBar;
-        hex.ShowPositionInStatusBar    = d.ShowPositionInStatusBar;
-        hex.ShowEditModeInStatusBar    = d.ShowEditModeInStatusBar;
+        // Status bar visibility
+        hex.ShowStatusMessage           = d.ShowStatusMessage;
+        hex.ShowFileSizeInStatusBar     = d.ShowFileSizeInStatusBar;
+        hex.ShowSelectionInStatusBar    = d.ShowSelectionInStatusBar;
+        hex.ShowPositionInStatusBar     = d.ShowPositionInStatusBar;
+        hex.ShowEditModeInStatusBar     = d.ShowEditModeInStatusBar;
         hex.ShowBytesPerLineInStatusBar = d.ShowBytesPerLineInStatusBar;
 
+        // Advanced behaviour
         hex.AllowAutoHighLightSelectionByte      = d.AllowAutoHighLightSelectionByte;
         hex.AllowAutoSelectSameByteAtDoubleClick = d.AllowAutoSelectSameByteAtDoubleClick;
         hex.AllowContextMenu                     = d.AllowContextMenu;
@@ -115,39 +163,6 @@ internal static class EditorSettingsService
         hex.BreadcrumbFontSize            = d.BreadcrumbFontSize;
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────────
-
-    private static void ApplyCodeEditor(
-        WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor ce,
-        CodeEditorDefaultSettings s)
-    {
-        ce.MouseWheelSpeed         = s.MouseWheelSpeed;
-        ce.ZoomLevel               = s.DefaultZoom;
-        ce.FoldToggleOnDoubleClick = s.FoldToggleOnDoubleClick;
-        ce.IsWordWrapEnabled       = s.WordWrap;
-        ce.ShowInlineHints         = s.ShowInlineHints;
-        ce.InlineHintsVisibleKinds = s.InlineHintsVisibleKinds == 0
-            ? WpfHexEditor.Editor.Core.InlineHintsSymbolKinds.All
-            : (WpfHexEditor.Editor.Core.InlineHintsSymbolKinds)s.InlineHintsVisibleKinds;
-        ce.ShowEndOfBlockHint          = s.EndOfBlockHintEnabled;
-        ce.ShowBreakpointLineHighlight = s.BreakpointLineHighlightEnabled;
-        ce.EndOfBlockHintDelayMs       = s.EndOfBlockHintDelayMs;
-        ce.EnableAutoClosingBrackets = s.AutoClosingBrackets;
-        ce.EnableAutoClosingQuotes   = s.AutoClosingQuotes;
-        ce.SkipOverClosingChar       = s.SkipOverClosingChar;
-        ce.WrapSelectionInPairs      = s.WrapSelectionInPairs;
-
-        var ss = s.StickyScroll;
-        ce.ApplyStickyScrollSettings(
-            ss.Enabled, ss.MaxLines, ss.SyntaxHighlight,
-            ss.ClickToNavigate, ss.Opacity, ss.MinScopeLines);
-
-        ApplySyntaxColorOverrides(ce, s);
-
-        if (ce.RefreshTimeStatusBarItem is { } rt)
-            rt.IsVisible = s.ShowRefreshRateInStatusBar;
-    }
-
     private static void ApplySyntaxColorOverrides(
         WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor editor,
         CodeEditorDefaultSettings ce)
@@ -162,17 +177,17 @@ internal static class EditorSettingsService
         Apply(SyntaxTokenKind.Bracket,    ce.BracketColor);
         Apply(SyntaxTokenKind.Attribute,  ce.AttributeColor);
 
-        void Apply(SyntaxTokenKind k, string? hex)
-            => editor.SetSyntaxColorOverride(k, TryParseHexColor(hex, out var c) ? c : null);
+        void Apply(WpfHexEditor.Core.ProjectSystem.Languages.SyntaxTokenKind k, string? hex)
+            => editor.SetSyntaxColorOverride(k, TryParseColor(hex, out var c) ? c : null);
     }
 
-    private static bool TryParseHexColor(string? hex, out System.Windows.Media.Color color)
+    private static bool TryParseColor(string? hex, out Color color)
     {
         color = default;
         if (string.IsNullOrWhiteSpace(hex)) return false;
         try
         {
-            color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex.Trim());
+            color = (Color)ColorConverter.ConvertFromString(hex.Trim());
             return true;
         }
         catch { return false; }
