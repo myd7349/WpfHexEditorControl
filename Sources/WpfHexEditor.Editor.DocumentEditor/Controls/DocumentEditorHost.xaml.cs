@@ -8,6 +8,7 @@
 //     BinaryMapSyncService for bidirectional selection sync.
 // ==========================================================
 
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -127,8 +128,8 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     public event EventHandler<DocumentOperationEventArgs>?          OperationProgress;
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 
-    public void Undo()      => _vm?.Model.UndoEngine.Undo();
-    public void Redo()      => _vm?.Model.UndoEngine.Redo();
+    public void Undo()      => _vm?.Model.UndoEngine.TryUndo();
+    public void Redo()      => _vm?.Model.UndoEngine.TryRedo();
     public void Save()      => _ = SaveAsync();
     public void Copy()      { }
     public void Cut()       { }
@@ -159,7 +160,7 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         var linked = _loadCts.Token;
 
         IsBusy = true;
-        OperationStarted?.Invoke(this, new DocumentOperationEventArgs("Loading document…", 0));
+        OperationStarted?.Invoke(this, new DocumentOperationEventArgs { Title = "Loading document…" });
 
         try
         {
@@ -188,8 +189,10 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         finally
         {
             IsBusy = false;
-            OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs(
-                success: !linked.IsCancellationRequested));
+            OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs
+            {
+                Success = !linked.IsCancellationRequested,
+            });
         }
     }
 

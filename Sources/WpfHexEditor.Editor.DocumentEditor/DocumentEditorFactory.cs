@@ -13,6 +13,7 @@
 //     during plugin initialization, which runs AFTER factory registration.
 // ==========================================================
 
+using System.IO;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.DocumentEditor.Controls;
 using WpfHexEditor.SDK.Contracts;

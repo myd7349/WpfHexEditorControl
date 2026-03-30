@@ -9,6 +9,7 @@
 // ==========================================================
 
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.DocumentEditor.Core.Forensic;
@@ -34,12 +35,12 @@ public partial class DocumentEditorHost : IStatusBarContributor, IEditorToolbarC
 
     private ObservableCollection<StatusBarItem> BuildStatusBarItems()
     {
-        _sbFormat     = new StatusBarItem { Key = "DE_Format",     Value = "—",       IsVisible = true };
-        _sbVersion    = new StatusBarItem { Key = "DE_Version",    Value = string.Empty, IsVisible = false };
-        _sbBlockCount = new StatusBarItem { Key = "DE_BlockCount", Value = "0 blocks", IsVisible = true };
-        _sbSelection  = new StatusBarItem { Key = "DE_Selection",  Value = string.Empty, IsVisible = false };
-        _sbAlerts     = new StatusBarItem { Key = "DE_Alerts",     Value = string.Empty, IsVisible = false };
-        _sbViewMode   = new StatusBarItem { Key = "DE_ViewMode",   Value = "Split",    IsVisible = true };
+        _sbFormat     = new StatusBarItem { Label = "Format",      Value = "—",       IsVisible = true };
+        _sbVersion    = new StatusBarItem { Label = "Version",     Value = string.Empty, IsVisible = false };
+        _sbBlockCount = new StatusBarItem { Label = "Blocks",      Value = "0 blocks", IsVisible = true };
+        _sbSelection  = new StatusBarItem { Label = "Selection",   Value = string.Empty, IsVisible = false };
+        _sbAlerts     = new StatusBarItem { Label = "Alerts",      Value = string.Empty, IsVisible = false };
+        _sbViewMode   = new StatusBarItem { Label = "View",        Value = "Split",    IsVisible = true };
 
         return [_sbFormat, _sbVersion, _sbBlockCount, _sbSelection, _sbAlerts, _sbViewMode];
     }

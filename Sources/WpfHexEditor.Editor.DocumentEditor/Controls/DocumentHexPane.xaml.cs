@@ -8,6 +8,7 @@
 //     BinaryMapSyncService to highlight the matching text block.
 // ==========================================================
 
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -115,10 +116,7 @@ public partial class DocumentHexPane : UserControl
                 entry.Offset,
                 entry.Length,
                 brush,
-                $"{entry.Block.Kind}: {(entry.Block.Text.Length > 30 ? entry.Block.Text[..30] + "…" : entry.Block.Text)}")
-            {
-                Tag = BinaryMapTag
-            };
+                BinaryMapTag);
 
             PART_HexEditor.AddCustomBackgroundBlock(cbBlock);
         }

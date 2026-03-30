@@ -261,9 +261,10 @@ public partial class DocumentTextPane : UserControl
         var alertByOffset = new Dictionary<long, ForensicSeverity>();
         foreach (var alert in alerts)
         {
-            if (!alertByOffset.TryGetValue(alert.Offset, out var existing) ||
+            if (!alert.Offset.HasValue) continue;
+            if (!alertByOffset.TryGetValue(alert.Offset.Value, out var existing) ||
                 alert.Severity > existing)
-                alertByOffset[alert.Offset] = alert.Severity;
+                alertByOffset[alert.Offset.Value] = alert.Severity;
         }
 
         // Draw badges in gutter (simplified: one badge per alert, positioned by row index)
@@ -285,7 +286,7 @@ public partial class DocumentTextPane : UserControl
                 Width  = 10,
                 Height = 10,
                 Fill   = brush,
-                ToolTip = alert.Message
+                ToolTip = alert.Description
             };
             Canvas.SetLeft(badge, 3);
             Canvas.SetTop(badge, row * 16 + 3);

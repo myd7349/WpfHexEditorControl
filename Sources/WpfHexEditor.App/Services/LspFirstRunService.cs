@@ -11,6 +11,7 @@
 //     No PowerShell execution required.
 // ==========================================================
 
+using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
 using WpfHexEditor.Editor.Core.Notifications;

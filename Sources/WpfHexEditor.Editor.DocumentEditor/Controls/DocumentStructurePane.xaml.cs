@@ -84,7 +84,7 @@ public partial class DocumentStructurePane : UserControl
 
         foreach (var alert in _model.ForensicAlerts)
         {
-            var block = _model.BinaryMap.BlockAt(alert.Offset);
+            var block = alert.Offset.HasValue ? _model.BinaryMap.BlockAt(alert.Offset.Value) : null;
             if (block is not null && !map.ContainsKey(block))
                 map[block] = alert;
         }
@@ -134,7 +134,7 @@ public sealed class DocumentBlockNode : INotifyPropertyChanged
     public string Preview     => Block.Text.Length > 40 ? Block.Text[..40] + "…" : Block.Text;
     public string OffsetText  => $"0x{Block.RawOffset:X}";
     public bool   HasAlert    => _alert is not null;
-    public string AlertMessage => _alert?.Message ?? string.Empty;
+    public string AlertMessage => _alert?.Description ?? string.Empty;
 
     public string AlertBrushKey => _alert?.Severity switch
     {
