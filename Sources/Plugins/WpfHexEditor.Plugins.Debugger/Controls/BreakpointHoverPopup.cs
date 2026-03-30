@@ -286,7 +286,7 @@ internal sealed class BreakpointHoverPopup : Popup
     // ── Public API ────────────────────────────────────────────────────────────
 
     /// <summary>Opens the popup anchored at the current mouse position for the given row.</summary>
-    internal void Show(BreakpointRow row, IDebuggerService svc)
+    internal void Show(BreakpointRowEx row, IDebuggerService svc)
     {
         _svc      = svc;
         _filePath = row.FilePath;
