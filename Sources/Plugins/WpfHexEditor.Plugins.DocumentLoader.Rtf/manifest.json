@@ -1,0 +1,19 @@
+{
+  "id": "WpfHexEditor.Plugins.DocumentLoader.Rtf",
+  "name": "RTF Document Loader",
+  "version": "1.0.0",
+  "sdkVersion": "2.0.0",
+  "entryPoint": "WpfHexEditor.Plugins.DocumentLoader.Rtf.RtfDocumentLoaderPlugin",
+  "assembly": {
+    "file": "WpfHexEditor.Plugins.DocumentLoader.Rtf.dll"
+  },
+  "isolationMode": "InProcess",
+  "loadPriority": 20,
+  "permissions": {
+    "accessFileSystem": true
+  },
+  "activation": {
+    "fileExtensions": [".rtf"],
+    "onStartup": true
+  }
+}

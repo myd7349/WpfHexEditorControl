@@ -776,4 +776,18 @@
     <SolidColorBrush x:Key="AR_FormatBadgeBackgroundBrush"   Color="#9ECE6A" />
     <SolidColorBrush x:Key="AR_FormatBadgeForegroundBrush"   Color="#1A1B26" />
     <SolidColorBrush x:Key="AR_NestIndicatorBrush"           Color="#444B6A" />
+
+    <!-- DE_* Document Editor tokens -->
+    <SolidColorBrush x:Key="DE_TextPaneBackground"    Color="#1E1E1E"/>
+    <SolidColorBrush x:Key="DE_TextPaneForeground"    Color="#D4D4D4"/>
+    <SolidColorBrush x:Key="DE_BlockHoverBrush"       Color="#20569CD6"/>
+    <SolidColorBrush x:Key="DE_SelectedBlockBrush"    Color="#504EC9B0"/>
+    <SolidColorBrush x:Key="DE_ForensicOkBrush"       Color="#2244BB44"/>
+    <SolidColorBrush x:Key="DE_ForensicWarnBrush"     Color="#44FFCC00"/>
+    <SolidColorBrush x:Key="DE_ForensicErrorBrush"    Color="#44FF4444"/>
+    <SolidColorBrush x:Key="DE_ForensicAlertBadgeFg"  Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DE_StructureNodeFg"       Color="#9CDCFE"/>
+    <SolidColorBrush x:Key="DE_StructureKindFg"       Color="#4EC9B0"/>
+    <SolidColorBrush x:Key="DE_MiniMapBg"             Color="#141414"/>
+    <SolidColorBrush x:Key="DE_MiniMapScrollBrush"    Color="#404040"/>
 </ResourceDictionary>

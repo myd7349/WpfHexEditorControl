@@ -16,12 +16,10 @@ namespace WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
 /// </summary>
 public sealed class BinaryMapBuilder
 {
-    private readonly BinaryMap _map;
+    private readonly BinaryMap _map = new();
 
     // ZIP support: maps entry name → absolute offset of its data start in the ZIP file.
     private readonly Dictionary<string, long> _zipEntryDataOffsets = [];
-
-    public BinaryMapBuilder(BinaryMap map) => _map = map;
 
     // ──────────────────────────────── Plain files (RTF) ───────────────────────
 
@@ -56,7 +54,7 @@ public sealed class BinaryMapBuilder
     /// Adds a block whose offset is relative to the start of a ZIP entry's data.
     /// Flattens to an absolute offset using the registered entry offset.
     /// </summary>
-    public BinaryMapBuilder AddZipRelative(DocumentBlock block, string entryName,
+    public BinaryMapBuilder AddZipRelative(string entryName, DocumentBlock block,
                                            long relativeOffset, int length)
     {
         if (!_zipEntryDataOffsets.TryGetValue(entryName, out var baseOffset))
@@ -66,6 +64,10 @@ public sealed class BinaryMapBuilder
         return this;
     }
 
-    /// <summary>Seals the underlying <see cref="BinaryMap"/> (sorts by offset).</summary>
-    public void Seal() => _map.Seal();
+    /// <summary>Seals the map and returns it for merging into DocumentModel.</summary>
+    public BinaryMap Build()
+    {
+        _map.Seal();
+        return _map;
+    }
 }

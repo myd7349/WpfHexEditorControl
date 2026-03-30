@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
+using WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
 using WpfHexEditor.Editor.DocumentEditor.Core.Contracts;
 using WpfHexEditor.Editor.DocumentEditor.Core.Forensic;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
@@ -25,7 +26,7 @@ namespace WpfHexEditor.Editor.DocumentEditor.Controls;
 /// Host control for the multi-format document editor.
 /// Implements <see cref="IDocumentEditor"/> and <see cref="IOpenableDocument"/>.
 /// </summary>
-public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenableDocument
+public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenableDocument, IDocumentBinaryMapSource
 {
     // ── Dependency Properties ───────────────────────────────────────────────
 
@@ -83,6 +84,13 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
     // ── IDocumentEditor ─────────────────────────────────────────────────────
 
+    // ── IDocumentBinaryMapSource ─────────────────────────────────────────────
+
+    public BinaryMap? BinaryMap => _vm?.Model.BinaryMap;
+    public event EventHandler? BinaryMapRebuilt;
+
+    // ── IDocumentEditor ─────────────────────────────────────────────────────
+
     public bool IsDirty    => _vm?.Model.IsDirty ?? false;
     public bool CanUndo    => _vm?.Model.UndoEngine.CanUndo ?? false;
     public bool CanRedo    => _vm?.Model.UndoEngine.CanRedo ?? false;
@@ -95,8 +103,8 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
     public int    UndoCount       => _vm?.Model.UndoEngine.UndoCount ?? 0;
     public int    RedoCount       => _vm?.Model.UndoEngine.RedoCount ?? 0;
-    public string UndoDescription => _vm?.Model.UndoEngine.UndoDescription ?? "Undo";
-    public string RedoDescription => _vm?.Model.UndoEngine.RedoDescription ?? "Redo";
+    public string UndoDescription => _vm?.Model.UndoEngine.PeekUndoDescription ?? "Undo";
+    public string RedoDescription => _vm?.Model.UndoEngine.PeekRedoDescription ?? "Redo";
 
     public ICommand? UndoCommand      => null;
     public ICommand? RedoCommand      => null;
@@ -266,6 +274,8 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         ApplyViewMode(ViewMode);
 
         // Hook model events
+        model.BinaryMap.MapRebuilt += (_, _) => BinaryMapRebuilt?.Invoke(this, EventArgs.Empty);
+
         model.UndoEngine.StateChanged += (_, _) =>
         {
             CanUndoChanged?.Invoke(this, EventArgs.Empty);
