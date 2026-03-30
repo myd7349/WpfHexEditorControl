@@ -17,6 +17,8 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
+using WpfHexEditor.Core.Debugger.Models;
+using WpfHexEditor.Plugins.Debugger.Dialogs;
 using WpfHexEditor.Plugins.Debugger.Services;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
@@ -75,15 +77,16 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
 
     // ── Commands ─────────────────────────────────────────────────────────────
 
-    public ICommand EnableAllCommand   { get; }
-    public ICommand DisableAllCommand  { get; }
-    public ICommand DeleteAllCommand   { get; }
-    public ICommand DeleteCommand      { get; }
+    public ICommand EnableAllCommand     { get; }
+    public ICommand DisableAllCommand    { get; }
+    public ICommand DeleteAllCommand     { get; }
+    public ICommand DeleteCommand        { get; }
     public ICommand ToggleEnabledCommand { get; }
-    public ICommand GoToSourceCommand  { get; }
-    public ICommand CopyLocationCommand { get; }
-    public ICommand ImportCommand       { get; }
-    public ICommand ExportCommand       { get; }
+    public ICommand GoToSourceCommand    { get; }
+    public ICommand CopyLocationCommand  { get; }
+    public ICommand ImportCommand        { get; }
+    public ICommand ExportCommand        { get; }
+    public ICommand EditConditionCommand { get; }
 
     // ── Constructor ──────────────────────────────────────────────────────────
 
@@ -102,6 +105,8 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
         CopyLocationCommand  = new RelayCommand(p => { if (p is BreakpointRowEx r) Clipboard.SetText(r.DisplayLocation); });
         ImportCommand        = new RelayCommand(_ => ImportFromVsXml());
         ExportCommand        = new RelayCommand(_ => ExportToVsXml(), _ => _debugger.Breakpoints.Count > 0);
+        EditConditionCommand = new RelayCommand(p => EditCondition(p as BreakpointRowEx),
+                                                p => p is BreakpointRowEx);
 
         Refresh();
     }
@@ -114,18 +119,29 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
         var solution = _context?.SolutionManager?.CurrentSolution;
         var rows = allBps.Select(bp => new BreakpointRowEx
         {
-            FilePath    = bp.FilePath,
-            FileName    = Path.GetFileName(bp.FilePath),
-            Line        = bp.Line,
-            Condition   = bp.Condition,
-            IsEnabled   = bp.IsEnabled,
-            IsVerified  = bp.IsVerified,
-            HitCount    = bp.HitCount,
-            ProjectName = solution?.Projects
-                              .FirstOrDefault(p => p.FindItemByPath(bp.FilePath) is not null)
-                              ?.Name
-                          ?? Path.GetFileName(Path.GetDirectoryName(bp.FilePath))
-                          ?? "Unknown",
+            FilePath       = bp.FilePath,
+            FileName       = Path.GetFileName(bp.FilePath),
+            Line           = bp.Line,
+            Condition      = bp.Condition,
+            IsEnabled      = bp.IsEnabled,
+            IsVerified     = bp.IsVerified,
+            HitCount       = bp.HitCount,
+            ProjectName    = solution?.Projects
+                                 .FirstOrDefault(p => p.FindItemByPath(bp.FilePath) is not null)
+                                 ?.Name
+                             ?? Path.GetFileName(Path.GetDirectoryName(bp.FilePath))
+                             ?? "Unknown",
+            // Extended settings (round-trip from BreakpointLocation via DebugBreakpointInfo)
+            ConditionKind     = bp.ConditionKind,
+            ConditionMode     = bp.ConditionMode,
+            HitCountOp        = bp.HitCountOp,
+            HitCountTarget    = bp.HitCountTarget,
+            FilterExpr        = bp.FilterExpr,
+            HasAction         = bp.HasAction,
+            LogMessage        = bp.LogMessage,
+            ContinueExecution = bp.ContinueExecution,
+            DisableOnceHit    = bp.DisableOnceHit,
+            DependsOnBpKey    = bp.DependsOnBpKey,
         }).ToList();
 
         // Apply search filter.
@@ -188,6 +204,49 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
     {
         if (row is null || _context is null) return;
         _context.DocumentHost.ActivateAndNavigateTo(row.FilePath, row.Line, 0);
+    }
+
+    // ── Edit condition dialog ─────────────────────────────────────────────────
+
+    internal void EditCondition(BreakpointRowEx? row)
+    {
+        if (row is null) return;
+
+        var owner = Application.Current?.MainWindow;
+        if (owner is null) return;
+
+        // Build BreakpointLocation from the row for dialog population.
+        var loc = new BreakpointLocation
+        {
+            FilePath          = row.FilePath,
+            Line              = row.Line,
+            Condition         = row.Condition ?? string.Empty,
+            IsEnabled         = row.IsEnabled,
+            ConditionKind     = row.ConditionKind,
+            ConditionMode     = row.ConditionMode,
+            HitCountOp        = row.HitCountOp,
+            HitCountTarget    = row.HitCountTarget,
+            FilterExpr        = row.FilterExpr,
+            HasAction         = row.HasAction,
+            LogMessage        = row.LogMessage,
+            ContinueExecution = row.ContinueExecution,
+            DisableOnceHit    = row.DisableOnceHit,
+            DependsOnBpKey    = row.DependsOnBpKey,
+        };
+
+        // All other breakpoints for the depends-on dropdown.
+        var allLocs = _debugger.Breakpoints.Select(b => new BreakpointLocation
+        {
+            FilePath  = b.FilePath,
+            Line      = b.Line,
+            Condition = b.Condition ?? string.Empty,
+            IsEnabled = b.IsEnabled,
+        }).ToList();
+
+        var result = BreakpointConditionDialog.Show(owner, loc, allLocs);
+        if (result is null) return;
+
+        _ = _debugger.UpdateBreakpointSettingsAsync(row.FilePath, row.Line, result);
     }
 
     // ── VS XML Import / Export ──────────────────────────────────────────

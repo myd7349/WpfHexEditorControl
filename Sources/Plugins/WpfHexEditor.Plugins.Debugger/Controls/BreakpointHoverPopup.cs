@@ -20,6 +20,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
+using WpfHexEditor.Core.Debugger.Models;
+using WpfHexEditor.Plugins.Debugger.Dialogs;
 using WpfHexEditor.Plugins.Debugger.ViewModels;
 using WpfHexEditor.SDK.Contracts.Services;
 
@@ -314,6 +316,47 @@ internal sealed class BreakpointHoverPopup : Popup
     private void OnMenuEditCondition(object sender, RoutedEventArgs e)
     {
         IsOpen = false;
+
+        // Open BreakpointConditionDialog directly (same plugin assembly — no event relay needed).
+        var owner = Application.Current?.MainWindow;
+        if (owner is null || _svc is null) return;
+
+        var bp = _svc.Breakpoints.FirstOrDefault(
+            b => string.Equals(b.FilePath, _filePath, StringComparison.OrdinalIgnoreCase)
+                 && b.Line == _line);
+        if (bp is null) return;
+
+        var loc = new BreakpointLocation
+        {
+            FilePath          = bp.FilePath,
+            Line              = bp.Line,
+            Condition         = bp.Condition ?? string.Empty,
+            IsEnabled         = bp.IsEnabled,
+            ConditionKind     = bp.ConditionKind,
+            ConditionMode     = bp.ConditionMode,
+            HitCountOp        = bp.HitCountOp,
+            HitCountTarget    = bp.HitCountTarget,
+            FilterExpr        = bp.FilterExpr,
+            HasAction         = bp.HasAction,
+            LogMessage        = bp.LogMessage,
+            ContinueExecution = bp.ContinueExecution,
+            DisableOnceHit    = bp.DisableOnceHit,
+            DependsOnBpKey    = bp.DependsOnBpKey,
+        };
+
+        var allLocs = _svc.Breakpoints.Select(b => new BreakpointLocation
+        {
+            FilePath  = b.FilePath,
+            Line      = b.Line,
+            Condition = b.Condition ?? string.Empty,
+            IsEnabled = b.IsEnabled,
+        }).ToList();
+
+        var result = BreakpointConditionDialog.Show(owner, loc, allLocs);
+        if (result is not null)
+            _ = _svc.UpdateBreakpointSettingsAsync(_filePath, _line, result);
+
+        // Keep the legacy event in case external consumers still rely on it.
         EditConditionRequested?.Invoke(_filePath, _line);
     }
 

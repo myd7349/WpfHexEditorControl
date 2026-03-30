@@ -46,7 +46,7 @@ public partial class BreakpointExplorerPanel : UserControl
         BpHoverPopup.EditConditionRequested += (filePath, line) =>
         {
             var row = Vm?.FlatBreakpoints.FirstOrDefault(r => r.FilePath == filePath && r.Line == line);
-            if (row is not null) Vm?.GoToSourceCommand.Execute(row);
+            if (row is not null) Vm?.EditConditionCommand.Execute(row);
         };
 
         _overflowManager = new ToolbarOverflowManager(
@@ -104,23 +104,31 @@ public partial class BreakpointExplorerPanel : UserControl
         Vm.GroupBy = (GroupByMode)GroupByCombo.SelectedIndex;
     }
 
-    // ── Flat list double-click → navigate ─────────────────────────────────
+    // ── Flat list double-click → edit condition ───────────────────────────
 
     private void OnRowDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (Vm?.SelectedBreakpoint is not null)
-            Vm.GoToSourceCommand.Execute(Vm.SelectedBreakpoint);
+            Vm.EditConditionCommand.Execute(Vm.SelectedBreakpoint);
     }
 
-    // ── Tree item double-click → navigate ─────────────────────────────────
+    // ── Tree item double-click → edit condition ───────────────────────────
 
     private void OnTreeItemDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (e.ClickCount == 2 && sender is FrameworkElement fe && fe.DataContext is BreakpointRowEx row)
         {
-            Vm?.GoToSourceCommand.Execute(row);
+            Vm?.EditConditionCommand.Execute(row);
             e.Handled = true;
         }
+    }
+
+    // ── Edit condition ────────────────────────────────────────────────────
+
+    private void OnEditCondition(object sender, RoutedEventArgs e)
+    {
+        var row = GetSelectedRow();
+        if (row is not null) Vm?.EditConditionCommand.Execute(row);
     }
 
     // ── CheckBox enable/disable ───────────────────────────────────────────

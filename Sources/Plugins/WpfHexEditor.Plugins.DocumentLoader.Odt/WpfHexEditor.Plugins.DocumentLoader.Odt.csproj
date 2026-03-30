@@ -1,0 +1,60 @@
+<!--
+    WpfHexEditor.Plugins.DocumentLoader.Odt
+    ==========================================
+    Plugin: loads ODT/OTT files into DocumentModel via ZIP+XML parsing.
+    Registers OdtDocumentLoader as IDocumentLoader extension point.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>false</UseWPF>
+    <RootNamespace>WpfHexEditor.Plugins.DocumentLoader.Odt</RootNamespace>
+    <AssemblyName>WpfHexEditor.Plugins.DocumentLoader.Odt</AssemblyName>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Description>WpfHexEditor plugin — ODT/OTT document loader with ZIP+XML parsing and BinaryMap.</Description>
+    <Version>1.0.0</Version>
+
+    <!-- Plugin metadata -->
+    <PluginId>WpfHexEditor.Plugins.DocumentLoader.Odt</PluginId>
+    <PluginName>ODT Document Loader</PluginName>
+    <PluginVersion>1.0.0</PluginVersion>
+    <PluginEntryPoint>WpfHexEditor.Plugins.DocumentLoader.Odt.OdtDocumentLoaderPlugin</PluginEntryPoint>
+    <PluginAuthor>WpfHexEditor Contributors</PluginAuthor>
+    <PluginPublisher>WpfHexEditor</PluginPublisher>
+    <PluginTrustedPublisher>true</PluginTrustedPublisher>
+    <PluginDescription>Loads ODT/OTT documents into the Document Editor with ZIP-aware binary-map synchronisation.</PluginDescription>
+    <PluginIsolationMode>InProcess</PluginIsolationMode>
+    <PluginLoadPriority>20</PluginLoadPriority>
+    <PluginSdkVersion>2.0.0</PluginSdkVersion>
+    <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+
+    <!-- Permissions -->
+    <PluginPermAccessHexEditor>false</PluginPermAccessHexEditor>
+    <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
+    <PluginPermAccessNetwork>false</PluginPermAccessNetwork>
+    <PluginPermRegisterMenus>false</PluginPermRegisterMenus>
+    <PluginPermWriteOutput>true</PluginPermWriteOutput>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\WpfHexEditor.Editor.Core\WpfHexEditor.Editor.Core.csproj" />
+    <ProjectReference Include="..\..\WpfHexEditor.Editor.DocumentEditor.Core\WpfHexEditor.Editor.DocumentEditor.Core.csproj" />
+    <ProjectReference Include="..\..\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\WpfHexEditor.SDK\Build\WpfHexEditor.SDK.targets" />
+
+  <Target Name="CopyToPluginsDir" AfterTargets="GeneratePluginManifest">
+    <PropertyGroup>
+      <PluginDestDir>$(MSBuildThisFileDirectory)..\..\WpfHexEditor.App\bin\$(Configuration)\net8.0-windows\Plugins\$(AssemblyName)\</PluginDestDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(PluginDestDir)" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll;$(OutputPath)manifest.json"
+          DestinationFolder="$(PluginDestDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

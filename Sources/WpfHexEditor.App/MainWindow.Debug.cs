@@ -122,6 +122,7 @@ public partial class MainWindow
         foreach (var ce in GetAllCodeEditors())
         {
             ce.SetBreakpointSource(_bpSourceAdapter);
+            WireBreakpointSettingsHandler(ce);
             ce.InvalidateVisual();
         }
     }
@@ -134,7 +135,66 @@ public partial class MainWindow
     {
         if (_bpSourceAdapter is null) return;
         var ce = GetCodeEditorControl(editor);
-        ce?.SetBreakpointSource(_bpSourceAdapter);
+        if (ce is null) return;
+        ce.SetBreakpointSource(_bpSourceAdapter);
+        WireBreakpointSettingsHandler(ce);
+    }
+
+    /// <summary>
+    /// Subscribe to <see cref="CodeEditor.BreakpointSettingsRequested"/> so the
+    /// Debugger plugin can open <c>BreakpointConditionDialog</c> from the gutter popup.
+    /// Uses a named field delegate to avoid duplicate subscriptions.
+    /// </summary>
+    private void WireBreakpointSettingsHandler(CodeEditor ce)
+    {
+        if (_debuggerService is null) return;
+        // Unsubscribe first to prevent duplicate wiring if called multiple times.
+        ce.BreakpointSettingsRequested -= OnCodeEditorBreakpointSettings;
+        ce.BreakpointSettingsRequested += OnCodeEditorBreakpointSettings;
+    }
+
+    private void OnCodeEditorBreakpointSettings(string filePath, int line)
+    {
+        if (_debuggerService is null) return;
+
+        var bp = _debuggerService.Breakpoints.FirstOrDefault(
+            b => string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
+                 && b.Line == line);
+        if (bp is null) return;
+
+        var loc = new BreakpointLocation
+        {
+            FilePath          = bp.FilePath,
+            Line              = bp.Line,
+            Condition         = bp.Condition ?? string.Empty,
+            IsEnabled         = bp.IsEnabled,
+            ConditionKind     = bp.ConditionKind,
+            ConditionMode     = bp.ConditionMode,
+            HitCountOp        = bp.HitCountOp,
+            HitCountTarget    = bp.HitCountTarget,
+            FilterExpr        = bp.FilterExpr,
+            HasAction         = bp.HasAction,
+            LogMessage        = bp.LogMessage,
+            ContinueExecution = bp.ContinueExecution,
+            DisableOnceHit    = bp.DisableOnceHit,
+            DependsOnBpKey    = bp.DependsOnBpKey,
+        };
+
+        var allLocs = _debuggerService.Breakpoints.Select(b => new BreakpointLocation
+        {
+            FilePath  = b.FilePath,
+            Line      = b.Line,
+            Condition = b.Condition ?? string.Empty,
+            IsEnabled = b.IsEnabled,
+        }).ToList();
+
+        // BreakpointConditionDialog is in the Debugger plugin assembly. The App layer
+        // references it via the plugin's public dialog type.
+        var result = WpfHexEditor.Plugins.Debugger.Dialogs.BreakpointConditionDialog.Show(
+            this, loc, allLocs);
+
+        if (result is not null)
+            _ = _debuggerService.UpdateBreakpointSettingsAsync(filePath, line, result);
     }
 
     private void OnDebugSessionPaused(DebugSessionPausedEvent e)
