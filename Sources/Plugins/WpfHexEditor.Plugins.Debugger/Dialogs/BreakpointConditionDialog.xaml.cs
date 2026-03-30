@@ -93,7 +93,7 @@ public partial class BreakpointConditionDialog : ThemedDialog
                 ? bp.ConditionKind
                 : BpConditionKind.ConditionalExpression;
             row.Load(kind, bp.ConditionMode, bp.HitCountOp,
-                bp.Condition.Length > 0 ? bp.Condition : bp.ConditionExpr,
+                bp.Condition.Length > 0 ? bp.Condition : null,
                 bp.HitCountTarget, bp.FilterExpr);
         }
 

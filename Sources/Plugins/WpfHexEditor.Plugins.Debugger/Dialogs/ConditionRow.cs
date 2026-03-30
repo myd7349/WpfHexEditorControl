@@ -111,7 +111,7 @@ internal sealed class ConditionRow : Border
             Margin            = new Thickness(8, 0, 0, 0),
             Visibility        = showCancelButton ? Visibility.Visible : Visibility.Collapsed,
         };
-        _cancelLink.SetResourceReference(ForegroundProperty, "ET_AccentBrush");
+        _cancelLink.SetResourceReference(TextBlock.ForegroundProperty, "ET_AccentBrush");
         _cancelLink.MouseLeftButtonUp += (_, _) => RemoveRequested?.Invoke();
 
         // ── Secondary panel (mode/op + expression) ──────────────────────────
@@ -194,9 +194,9 @@ internal sealed class ConditionRow : Border
             VerticalContentAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 6, 0),
         };
-        cb.SetResourceReference(ForegroundProperty,   "DockMenuForegroundBrush");
-        cb.SetResourceReference(BackgroundProperty,   "DockMenuBackgroundBrush");
-        cb.SetResourceReference(BorderBrushProperty,  "DockBorderBrush");
+        cb.SetResourceReference(Control.ForegroundProperty,   "DockMenuForegroundBrush");
+        cb.SetResourceReference(Control.BackgroundProperty,   "DockMenuBackgroundBrush");
+        cb.SetResourceReference(Control.BorderBrushProperty,  "DockBorderBrush");
         foreach (var item in items)
             cb.Items.Add(new ComboBoxItem { Content = item, FontSize = 11 });
         return cb;
@@ -215,12 +215,12 @@ internal sealed class ConditionRow : Border
             VerticalContentAlignment = VerticalAlignment.Center,
             Margin           = new Thickness(0, 0, 6, 0),
         };
-        tb.SetResourceReference(ForegroundProperty,  "DockMenuForegroundBrush");
-        tb.SetResourceReference(BackgroundProperty,  "DockMenuBackgroundBrush");
-        tb.SetResourceReference(BorderBrushProperty, "DockBorderBrush");
+        tb.SetResourceReference(Control.ForegroundProperty,  "DockMenuForegroundBrush");
+        tb.SetResourceReference(Control.BackgroundProperty,  "DockMenuBackgroundBrush");
+        tb.SetResourceReference(Control.BorderBrushProperty, "DockBorderBrush");
 
         // Placeholder text via GotFocus/LostFocus (lightweight pattern)
-        tb.GotFocus  += (_, _) => { if (tb.Text == placeholder) { tb.Text = string.Empty; tb.SetResourceReference(ForegroundProperty, "DockMenuForegroundBrush"); } };
+        tb.GotFocus  += (_, _) => { if (tb.Text == placeholder) { tb.Text = string.Empty; tb.SetResourceReference(Control.ForegroundProperty, "DockMenuForegroundBrush"); } };
         tb.LostFocus += (_, _) =>
         {
             if (string.IsNullOrEmpty(tb.Text))

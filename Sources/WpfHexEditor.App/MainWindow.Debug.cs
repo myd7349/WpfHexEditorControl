@@ -24,6 +24,7 @@ using WpfHexEditor.Core.Events.IDEEvents;
 using WpfHexEditor.Core.Options;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.App.Services;
+using WpfHexEditor.Core.Debugger.Models;
 using WpfHexEditor.Editor.Core;
 
 namespace WpfHexEditor.App;
