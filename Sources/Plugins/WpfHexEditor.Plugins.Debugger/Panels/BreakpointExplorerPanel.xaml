@@ -28,17 +28,7 @@
                 SizeChanged="OnToolbarSizeChanged">
             <DockPanel LastChildFill="False" Margin="4,0">
 
-                <!-- ── Fixed LEFT: Search box (always visible) ── -->
-                <StackPanel x:Name="ToolbarLeftPanel" DockPanel.Dock="Left"
-                            Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBox x:Name="SearchBox"
-                             Width="140"
-                             Style="{DynamicResource PanelSearchBoxStyle}"
-                             Tag="Search breakpoints..."
-                             Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
-                </StackPanel>
-
-                <!-- ── Fixed RIGHT: empty placeholder (always visible) ── -->
+                <!-- ── Fixed RIGHT: always visible ── -->
                 <StackPanel x:Name="ToolbarRightPanel" DockPanel.Dock="Right"
                             Orientation="Horizontal" VerticalAlignment="Center" />
 
@@ -83,32 +73,42 @@
                 <!-- ── Group: TbgActions — Enable/Disable/Delete (collapse last) ── -->
                 <StackPanel x:Name="TbgActions" DockPanel.Dock="Left"
                             Orientation="Horizontal" VerticalAlignment="Center">
-                    <Rectangle Width="1" Height="16" Margin="6,0"
-                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
                     <Button Command="{Binding EnableAllCommand}" ToolTip="Enable All"
                             Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE73E;" />
                     <Button Command="{Binding DisableAllCommand}" ToolTip="Disable All"
                             Style="{DynamicResource PanelIconButtonStyle}" Content="&#xECC9;" />
                     <Button Command="{Binding DeleteAllCommand}" ToolTip="Delete All Breakpoints"
                             Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE74D;" />
+                    <Rectangle Width="1" Height="16" Margin="6,0"
+                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
                 </StackPanel>
 
                 <!-- ── Group: TbgImportExport — Import(↓)/Export(↑) ── -->
                 <StackPanel x:Name="TbgImportExport" DockPanel.Dock="Left"
                             Orientation="Horizontal" VerticalAlignment="Center">
-                    <Rectangle Width="1" Height="16" Margin="6,0"
-                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
                     <Button Command="{Binding ImportCommand}" ToolTip="Import Breakpoints (VS XML)"
                             Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE896;" />
                     <Button Command="{Binding ExportCommand}" ToolTip="Export Breakpoints (VS XML)"
                             Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE898;" />
+                    <Rectangle Width="1" Height="16" Margin="6,0"
+                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
+                </StackPanel>
+
+                <!-- ── Search box (always visible, after action groups) ── -->
+                <StackPanel x:Name="ToolbarLeftPanel" DockPanel.Dock="Left"
+                            Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBox x:Name="SearchBox"
+                             Width="140"
+                             Style="{DynamicResource PanelSearchBoxStyle}"
+                             Tag="Search breakpoints..."
+                             Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
+                    <Rectangle Width="1" Height="16" Margin="6,0"
+                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
                 </StackPanel>
 
                 <!-- ── Group: TbgGroupBy — Group ComboBox (collapse first) ── -->
                 <StackPanel x:Name="TbgGroupBy" DockPanel.Dock="Left"
                             Orientation="Horizontal" VerticalAlignment="Center">
-                    <Rectangle Width="1" Height="16" Margin="6,0"
-                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
                     <TextBlock Text="Group:" VerticalAlignment="Center" FontSize="11"
                                Foreground="{DynamicResource Panel_ToolbarForegroundBrush}" Margin="2,0,4,0" />
                     <ComboBox x:Name="GroupByCombo" Width="90" Height="20" FontSize="11"
