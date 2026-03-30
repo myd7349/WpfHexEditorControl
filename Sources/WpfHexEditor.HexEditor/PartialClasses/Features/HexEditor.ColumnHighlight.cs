@@ -87,7 +87,7 @@ namespace WpfHexEditor.HexEditor
             int    colIdx    = (int)(offset % bytesPerLine);
             // ZoomScale multiplies all logical distances to match the LayoutTransform applied to HexViewport
             double zoom      = ZoomScale;
-            double cellWidth = (HexViewport.CalculateCellWidthForByteCount(1) + 2) * zoom; // +2 for HexByteSpacing
+            double cellWidth = HexViewport.CalculateCellWidthForByteCount(1) * zoom;
             double hexStart  = HexViewport.HexPanelStartX * zoom;
 
             // Account for byte-group spacers inserted by the renderer at every group boundary.
