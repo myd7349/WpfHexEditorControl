@@ -270,6 +270,8 @@
 
     <!-- Standardized item selection / hover tokens (used by PanelCommon + ContentControls) -->
     <SolidColorBrush x:Key="Panel_ItemHoverBrush"              Color="#3E3E40"/>
+    <SolidColorBrush x:Key="BP_ExplorerRowHoverBrush"    Color="#3E3E40"/>
+    <SolidColorBrush x:Key="BP_ExplorerRowSelectedBrush" Color="#1A3A5C"/>
     <SolidColorBrush x:Key="Panel_ItemSelectedBrush"           Color="#1A3A5C"/>
     <SolidColorBrush x:Key="Panel_ItemSelectedForegroundBrush" Color="#9ECDF4"/>
     <SolidColorBrush x:Key="Panel_ItemInactiveSelectedBrush"   Color="#152D47"/>

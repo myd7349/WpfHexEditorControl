@@ -81,6 +81,13 @@ public partial class DocumentHexPane : UserControl
 
     // ── Raw byte loading ─────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Loads raw bytes from <paramref name="filePath"/> into the hex view.
+    /// Can be called even when full document model loading failed, providing a
+    /// raw-bytes fallback so the user can inspect the file content.
+    /// </summary>
+    public void LoadFile(string filePath) => LoadRawBytes(filePath);
+
     private void LoadRawBytes(string filePath)
     {
         if (!File.Exists(filePath)) return;

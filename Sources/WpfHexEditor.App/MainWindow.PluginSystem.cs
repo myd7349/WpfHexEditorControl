@@ -270,6 +270,11 @@ public partial class MainWindow
             // 3. Create orchestrator
             _ideHostContext = hostContext;
 
+            // Notify any DocumentEditorHost instances that were created before this point
+            // (e.g. session-restored tabs activated before plugin init completed) so they
+            // can retry their deferred OpenAsync call now that loaders are registered.
+            await Dispatcher.InvokeAsync(() => _documentEditorFactory?.NotifyContextReady(_ideHostContext));
+
             // Wire the terminal panel DataContext NOW — before plugin loading begins.
             // This MUST NOT be deferred to the end of InitializePluginSystemAsync because
             // any plugin exception would skip the deferred block and leave the panel with

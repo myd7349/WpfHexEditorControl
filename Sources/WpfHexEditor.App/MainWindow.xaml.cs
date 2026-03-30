@@ -221,6 +221,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Editor registry for doc-proj-* dispatcher
     private readonly IEditorRegistry _editorRegistry = new EditorRegistry();
 
+    // Stored reference to the document editor factory so MainWindow.PluginSystem.cs
+    // can call NotifyContextReady after _ideHostContext is assigned.
+    private WpfHexEditor.Editor.DocumentEditor.DocumentEditorFactory? _documentEditorFactory;
+
     // Auto-serialize timer (Tracked mode)
     private DispatcherTimer? _autoSerializeTimer;
 
@@ -540,7 +544,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _editorRegistry.Register(new WpfHexEditor.Editor.JsonEditor.JsonEditorFactory());
         _editorRegistry.Register(new TblEditorFactory());
         _editorRegistry.Register(new CodeEditorFactory());
-        _editorRegistry.Register(new WpfHexEditor.Editor.DocumentEditor.DocumentEditorFactory(() => _ideHostContext)); // before TextEditor
+        _documentEditorFactory = new WpfHexEditor.Editor.DocumentEditor.DocumentEditorFactory(() => _ideHostContext);
+        _editorRegistry.Register(_documentEditorFactory); // before TextEditor
         _editorRegistry.Register(new MarkdownEditorFactory()); // must be before TextEditorFactory
         _editorRegistry.Register(new TextEditorFactory());
         _editorRegistry.Register(new ImageViewerFactory());

@@ -49,10 +49,14 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
     // ── Fields ──────────────────────────────────────────────────────────────
 
-    private readonly IIDEHostContext? _ideContext;
+    private IIDEHostContext?         _ideContext;
     private DocumentEditorViewModel? _vm;
     private BinaryMapSyncService?    _syncService;
     private CancellationTokenSource  _loadCts = new();
+
+    // When the host is created before _ideHostContext is assigned (startup race),
+    // the file path is stored here so SetContext() can retry the open.
+    private string? _pendingFilePath;
 
     // ── Constructor ─────────────────────────────────────────────────────────
 
@@ -62,6 +66,31 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         InitializeComponent();
         Loaded   += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    // ── Context injection (deferred) ────────────────────────────────────────
+
+    /// <summary>
+    /// Called by <see cref="DocumentEditorFactory.NotifyContextReady"/> after
+    /// <c>_ideHostContext</c> is assigned in <c>MainWindow.PluginSystem.cs</c>.
+    /// If there is a pending file open (deferred because context was null at
+    /// <see cref="OpenAsync"/> time), the open is retried immediately.
+    /// </summary>
+    public void SetContext(IIDEHostContext context)
+    {
+        if (_ideContext is not null) return;
+        _ideContext = context;
+        if (_pendingFilePath is not null)
+        {
+            var path = _pendingFilePath;
+            _pendingFilePath = null;
+            OutputMessage?.Invoke(this, $"[DocEditor] SetContext — retrying deferred open for '{System.IO.Path.GetFileName(path)}'");
+            _ = OpenAsync(path);
+        }
+        else
+        {
+            OutputMessage?.Invoke(this, "[DocEditor] SetContext — no pending file to retry");
+        }
     }
 
     // ── Properties ──────────────────────────────────────────────────────────
@@ -159,8 +188,16 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         _loadCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var linked = _loadCts.Token;
 
+        // Immediately show filename in tab title + loading placeholder in text pane.
+        TitleChanged?.Invoke(this, System.IO.Path.GetFileName(filePath) + " …");
+        await Dispatcher.InvokeAsync(() => PART_TextPane.ShowLoading());
+
         IsBusy = true;
         OperationStarted?.Invoke(this, new DocumentOperationEventArgs { Title = "Loading document…" });
+
+        var fileName = System.IO.Path.GetFileName(filePath);
+        var ctxState = _ideContext is null ? "NULL" : "OK";
+        OutputMessage?.Invoke(this, $"[DocEditor] OpenAsync START — file='{fileName}' ideContext={ctxState}");
 
         bool loadSucceeded = false;
         try
@@ -169,34 +206,61 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
             var loaders = _ideContext?.ExtensionRegistry
                               .GetExtensions<IDocumentLoader>()
                           ?? [];
+
+            OutputMessage?.Invoke(this, $"[DocEditor] loaders found={loaders.Count}  ideContext={ctxState}");
+
+            if (loaders.Count == 0 && _ideContext is null)
+            {
+                // Context not yet available — defer this open until SetContext() is called.
+                _pendingFilePath = filePath;
+                OutputMessage?.Invoke(this, $"[DocEditor] DEFERRED — waiting for IDE context. file='{fileName}'");
+                await Dispatcher.InvokeAsync(() =>
+                    PART_TextPane.ShowLoading("Waiting for IDE to initialize…"));
+                return;
+            }
+
             var loader = loaders.FirstOrDefault(l => l.CanLoad(filePath))
                          ?? throw new NotSupportedException(
-                             $"No document loader registered for '{Path.GetExtension(filePath)}'.");
+                             $"No document loader registered for '{System.IO.Path.GetExtension(filePath)}'.");
+
+            OutputMessage?.Invoke(this, $"[DocEditor] using loader='{loader.GetType().Name}'");
 
             var model = new DocumentModel { FilePath = filePath };
 
             await using var stream = File.OpenRead(filePath);
             await loader.LoadAsync(filePath, stream, model, linked);
 
+            OutputMessage?.Invoke(this, $"[DocEditor] LoadAsync done — blocks={model.Blocks.Count}  metadata='{model.Metadata.Title}'");
+
             // Run UI work on dispatcher
             await Dispatcher.InvokeAsync(() => BindModel(model));
             loadSucceeded = true;
+            OutputMessage?.Invoke(this, $"[DocEditor] BindModel done — SUCCESS");
         }
-        catch (OperationCanceledException) { /* ignore cancel */ }
+        catch (OperationCanceledException) { OutputMessage?.Invoke(this, $"[DocEditor] CANCELLED — '{fileName}'"); }
         catch (Exception ex)
         {
+            OutputMessage?.Invoke(this, $"[DocEditor] ERROR — {ex.GetType().Name}: {ex.Message}");
             StatusMessage?.Invoke(this, $"Failed to open document: {ex.Message}");
             OutputMessage?.Invoke(this, $"[DocumentEditor] {ex}");
-            _ideContext?.Output.Error($"[DocumentEditor] Failed to open '{System.IO.Path.GetFileName(filePath)}': {ex}");
-            await Dispatcher.InvokeAsync(() => PART_TextPane.ShowError(ex.Message));
+            _ideContext?.Output.Error($"[DocumentEditor] Failed to open '{fileName}': {ex}");
+            await Dispatcher.InvokeAsync(() =>
+            {
+                PART_TextPane.ShowError(ex.Message);
+                PART_HexPane.LoadFile(filePath);  // show raw bytes even on parse failure
+            });
+            TitleChanged?.Invoke(this, fileName + " ⚠");
         }
         finally
         {
             IsBusy = false;
-            OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs
+            if (!(_pendingFilePath is not null))  // don't fire Completed if we're just deferring
             {
-                Success = loadSucceeded,
-            });
+                OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs
+                {
+                    Success = loadSucceeded,
+                });
+            }
         }
     }
 

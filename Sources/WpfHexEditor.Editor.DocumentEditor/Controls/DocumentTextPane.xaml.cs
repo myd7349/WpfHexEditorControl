@@ -77,20 +77,49 @@ public partial class DocumentTextPane : UserControl
 
     // ── FlowDocument building ────────────────────────────────────────────────
 
+    /// <summary>Shows a gray italic loading placeholder.</summary>
+    public void ShowLoading(string message = "Loading…")
+    {
+        _isInternalUpdate = true;
+        try
+        {
+            var brush = new SolidColorBrush(Color.FromRgb(128, 128, 128));
+            var doc   = new FlowDocument { Foreground = brush };
+            var para  = new Paragraph(new Run(message) { Foreground = brush })
+            {
+                FontStyle  = FontStyles.Italic,
+                FontFamily = new FontFamily("Segoe UI"),
+                FontSize   = 13
+            };
+            doc.Blocks.Add(para);
+            PART_RichTextBox.Document   = doc;
+            PART_RichTextBox.Foreground = brush;  // override DynamicResource binding
+            _pointerMap = null;
+        }
+        finally
+        {
+            _isInternalUpdate = false;
+        }
+    }
+
     /// <summary>Shows an inline error message when loading fails.</summary>
     public void ShowError(string message)
     {
         _isInternalUpdate = true;
         try
         {
-            var doc  = new FlowDocument { Foreground = new SolidColorBrush(Color.FromRgb(220, 80, 80)) };
-            var para = new Paragraph(new Run($"Failed to load document:\n{message}"))
+            var errorBrush = new SolidColorBrush(Color.FromRgb(220, 80, 80));
+            var doc        = new FlowDocument { Foreground = errorBrush };
+            var para       = new Paragraph(
+                                 new Run($"⚠ Failed to load document:\n{message}")
+                                 { Foreground = errorBrush })
             {
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize   = 13
             };
             doc.Blocks.Add(para);
-            PART_RichTextBox.Document = doc;
+            PART_RichTextBox.Document   = doc;
+            PART_RichTextBox.Foreground = errorBrush;  // override DynamicResource binding
             _pointerMap = null;
         }
         finally
@@ -102,6 +131,8 @@ public partial class DocumentTextPane : UserControl
     private void RebuildFlowDocument()
     {
         if (_model is null) return;
+
+        System.Diagnostics.Debug.WriteLine($"[DocEditor/TextPane] RebuildFlowDocument blocks={_model.Blocks.Count}");
 
         _isInternalUpdate = true;
         try
@@ -116,7 +147,8 @@ public partial class DocumentTextPane : UserControl
             foreach (var block in docBlocks)
                 AppendBlock(doc, block, ptrMap);
 
-            PART_RichTextBox.Document = doc;
+            PART_RichTextBox.Document   = doc;
+            PART_RichTextBox.Foreground = fgBrush;  // override DynamicResource so text is visible
             _pointerMap = ptrMap;
         }
         finally

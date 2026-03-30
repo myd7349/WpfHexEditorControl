@@ -37,8 +37,53 @@ public partial class BreakpointExplorerPanel : UserControl
 
         Dispatcher.InvokeAsync(_overflowManager.CaptureNaturalWidths, DispatcherPriority.Loaded);
 
-        DataContextChanged += (_, _) => ApplyLayout();
-        Loaded += (_, _) => ApplyLayout();
+        DataContextChanged += OnDataContextChanged;
+        Loaded += (_, _) => { ApplyLayout(); ApplyDetailVisibility(); };
+    }
+
+    // ── DataContext wiring ────────────────────────────────────────────────────
+
+    private BreakpointExplorerViewModel? _subscribedVm;
+
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (_subscribedVm is not null)
+            _subscribedVm.PropertyChanged -= OnVmPropertyChanged;
+
+        _subscribedVm = Vm;
+
+        if (_subscribedVm is not null)
+            _subscribedVm.PropertyChanged += OnVmPropertyChanged;
+
+        ApplyLayout();
+        ApplyDetailVisibility();
+        if (LayoutCombo is not null)
+            LayoutCombo.SelectedIndex = (int)(Vm?.DetailLayout ?? DetailPanelLayout.Right);
+    }
+
+    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(BreakpointExplorerViewModel.SelectedBreakpoint))
+            ApplyDetailVisibility();
+    }
+
+    /// <summary>Shows or hides the splitter + detail columns based on selection state.</summary>
+    private void ApplyDetailVisibility()
+    {
+        var hasSelection = Vm?.SelectedBreakpoint is not null;
+        var layout = Vm?.DetailLayout ?? DetailPanelLayout.Right;
+
+        if (layout == DetailPanelLayout.Hidden || !hasSelection)
+        {
+            SplitterCol.Width  = new GridLength(0);
+            DetailCol.Width    = new GridLength(0);
+            SplitterRow.Height = new GridLength(0);
+            DetailRow.Height   = new GridLength(0);
+        }
+        else
+        {
+            ApplyLayout(); // restore widths for current layout
+        }
     }
 
     // ── Layout management ──────────────────────────────────────────────────────
@@ -58,7 +103,7 @@ public partial class BreakpointExplorerPanel : UserControl
                 // Columns: list | 5px splitter | 220 detail
                 MainCol.Width     = new GridLength(1, GridUnitType.Star);
                 SplitterCol.Width = new GridLength(5);
-                DetailCol.Width   = new GridLength(220);
+                DetailCol.Width   = new GridLength(280);
                 // Rows: single row for everything
                 MainRow.Height     = new GridLength(1, GridUnitType.Star);
                 SplitterRow.Height = new GridLength(0);
@@ -159,21 +204,29 @@ public partial class BreakpointExplorerPanel : UserControl
     private void OnOvfGroupEnabled(object sender, RoutedEventArgs e) { GroupByCombo.SelectedIndex = 3; }
     private void OnOvfGroupProject(object sender, RoutedEventArgs e) { GroupByCombo.SelectedIndex = 4; }
 
-    // ── Layout button handlers ────────────────────────────────────────────
+    // ── Layout ComboBox ───────────────────────────────────────────────────
 
-    private void OnLayoutRight(object sender, RoutedEventArgs e)  => SetLayout(DetailPanelLayout.Right);
-    private void OnLayoutBottom(object sender, RoutedEventArgs e) => SetLayout(DetailPanelLayout.Bottom);
-    private void OnLayoutHidden(object sender, RoutedEventArgs e) => SetLayout(DetailPanelLayout.Hidden);
+    private void OnLayoutComboChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (Vm is null || LayoutCombo.SelectedIndex < 0) return;
+        SetLayout((DetailPanelLayout)LayoutCombo.SelectedIndex);
+    }
 
-    private void OnOvfLayoutRight(object sender, RoutedEventArgs e)  => SetLayout(DetailPanelLayout.Right);
-    private void OnOvfLayoutBottom(object sender, RoutedEventArgs e) => SetLayout(DetailPanelLayout.Bottom);
-    private void OnOvfLayoutHidden(object sender, RoutedEventArgs e) => SetLayout(DetailPanelLayout.Hidden);
+    private void OnOvfLayoutRight(object sender, RoutedEventArgs e)  => SetLayoutCombo(DetailPanelLayout.Right);
+    private void OnOvfLayoutBottom(object sender, RoutedEventArgs e) => SetLayoutCombo(DetailPanelLayout.Bottom);
+    private void OnOvfLayoutHidden(object sender, RoutedEventArgs e) => SetLayoutCombo(DetailPanelLayout.Hidden);
+
+    private void SetLayoutCombo(DetailPanelLayout layout)
+    {
+        LayoutCombo.SelectedIndex = (int)layout; // triggers OnLayoutComboChanged
+    }
 
     private void SetLayout(DetailPanelLayout layout)
     {
         if (Vm is null) return;
         Vm.DetailLayout = layout;
         ApplyLayout();
+        ApplyDetailVisibility();
     }
 
     // ── Group-by ComboBox ─────────────────────────────────────────────────

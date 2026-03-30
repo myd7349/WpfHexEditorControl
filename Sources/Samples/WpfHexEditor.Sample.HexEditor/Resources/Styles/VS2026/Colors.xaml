@@ -11,6 +11,8 @@
     <SolidColorBrush x:Key="Panel_ItemSelectedBrush"           Color="#252842"/>
     <SolidColorBrush x:Key="Panel_ItemInactiveSelectedBrush"   Color="#1A1D35"/>
     <SolidColorBrush x:Key="Panel_ItemHoverBrush"              Color="#40FFFFFF"/>
+    <SolidColorBrush x:Key="BP_ExplorerRowHoverBrush"    Color="#40FFFFFF"/>
+    <SolidColorBrush x:Key="BP_ExplorerRowSelectedBrush" Color="#252842"/>
     <SolidColorBrush x:Key="Panel_ItemSelectedForegroundBrush" Color="#FFFFFF"/>
 
     <!-- VS 2026 Preview - Dark Theme (Default) -->

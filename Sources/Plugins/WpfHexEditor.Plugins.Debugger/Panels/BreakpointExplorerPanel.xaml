@@ -6,13 +6,49 @@
 >
 
     <UserControl.Resources>
-        <conv:BoolToOpacityConverter          x:Key="BoolToOpacity" />
-        <conv:BoolToVerifiedConverter         x:Key="BoolToVerified" />
-        <conv:BreakpointTypeToBrushConverter  x:Key="TypeToBrush" />
-        <conv:HitCountToVisibilityConverter   x:Key="HitCountToVis" />
-        <conv:NullToVisibilityConverter       x:Key="NullToVis" />
-        <BooleanToVisibilityConverter         x:Key="BoolToVis" />
-        <conv:InvertBoolToVisibilityConverter x:Key="InvertBoolToVis" />
+        <conv:BoolToOpacityConverter             x:Key="BoolToOpacity" />
+        <conv:BoolToVerifiedConverter            x:Key="BoolToVerified" />
+        <conv:BreakpointTypeToBrushConverter     x:Key="TypeToBrush" />
+        <conv:HitCountToVisibilityConverter      x:Key="HitCountToVis" />
+        <conv:NullToVisibilityConverter          x:Key="NullToVis" />
+        <conv:NullOrEmptyToVisibilityConverter   x:Key="NullOrEmptyToVis" />
+        <BooleanToVisibilityConverter            x:Key="BoolToVis" />
+        <conv:InvertBoolToVisibilityConverter    x:Key="InvertBoolToVis" />
+
+        <!-- Detail panel action button — full-width text button matching panel theme -->
+        <Style x:Key="BP_DetailActionButtonStyle" TargetType="Button">
+            <Setter Property="Height"          Value="24"/>
+            <Setter Property="Padding"         Value="8,0"/>
+            <Setter Property="Margin"          Value="0,0,0,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="Foreground"      Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="2" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource BP_ExplorerRowHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource BP_ExplorerRowSelectedBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -126,24 +162,21 @@
                                Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
                 </StackPanel>
 
-                <!-- TbgLayout — detail panel position -->
+                <!-- TbgLayout — detail panel position dropdown -->
                 <StackPanel x:Name="TbgLayout" DockPanel.Dock="Left"
                             Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="BtnLayoutRight"  ToolTip="Detail panel: Right (default)"
-                            Style="{DynamicResource PanelIconButtonStyle}"
-                            Click="OnLayoutRight">
-                        <TextBlock Text="&#xE8A9;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                    </Button>
-                    <Button x:Name="BtnLayoutBottom" ToolTip="Detail panel: Bottom"
-                            Style="{DynamicResource PanelIconButtonStyle}"
-                            Click="OnLayoutBottom">
-                        <TextBlock Text="&#xE8F0;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                    </Button>
-                    <Button x:Name="BtnLayoutHidden" ToolTip="Hide detail panel"
-                            Style="{DynamicResource PanelIconButtonStyle}"
-                            Click="OnLayoutHidden">
-                        <TextBlock Text="&#xE894;" FontFamily="Segoe MDL2 Assets" FontSize="12" />
-                    </Button>
+                    <TextBlock Text="&#xE8A9;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                               VerticalAlignment="Center" Margin="4,0,4,0"
+                               Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                               ToolTip="Detail panel layout" />
+                    <ComboBox x:Name="LayoutCombo" Width="80" Height="20" FontSize="11"
+                              VerticalContentAlignment="Center"
+                              SelectedIndex="0"
+                              SelectionChanged="OnLayoutComboChanged">
+                        <ComboBoxItem Content="Right" />
+                        <ComboBoxItem Content="Bottom" />
+                        <ComboBoxItem Content="Hidden" />
+                    </ComboBox>
                 </StackPanel>
 
             </DockPanel>
@@ -159,7 +192,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="MainCol"     Width="*" MinWidth="120" />
                 <ColumnDefinition x:Name="SplitterCol" Width="5" />
-                <ColumnDefinition x:Name="DetailCol"   Width="220" MinWidth="0" />
+                <ColumnDefinition x:Name="DetailCol"   Width="280" MinWidth="0" />
             </Grid.ColumnDefinitions>
 
             <!-- ── List area (always at row=0, col=0) ── -->
@@ -346,20 +379,19 @@
                           Width="5" Height="Auto"
                           Background="{DynamicResource DockBorderBrush}"
                           HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                          Visibility="{Binding SelectedBreakpoint, Converter={StaticResource NullToVis}}" />
+                          />
 
             <!-- ── Detail panel — initial position: Right layout (col=2). ApplyLayout() adjusts for Bottom/Hidden. ── -->
             <Border x:Name="DetailBorder"
                     Grid.Row="0" Grid.Column="2"
                     Background="{DynamicResource DockBackgroundBrush}"
                     BorderBrush="{DynamicResource DockBorderBrush}"
-                    BorderThickness="1,0,0,0"
-                    Visibility="{Binding SelectedBreakpoint, Converter={StaticResource NullToVis}}">
+                    BorderThickness="1,0,0,0">
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="8,6" DataContext="{Binding SelectedBreakpoint}">
+                    <StackPanel Margin="0,0,0,6" DataContext="{Binding SelectedBreakpoint}">
 
                         <!-- Header: dot + location -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal" Margin="8,6,8,4">
                             <Ellipse Width="10" Height="10" VerticalAlignment="Center" Margin="0,0,6,0"
                                      Fill="{Binding TypeLabel, Converter={StaticResource TypeToBrush}}"
                                      Opacity="{Binding IsEnabled, Converter={StaticResource BoolToOpacity}}" />
@@ -368,10 +400,36 @@
                                        Foreground="{DynamicResource DockMenuForegroundBrush}" />
                         </StackPanel>
 
-                        <Rectangle Height="1" Margin="0,0,0,8" Fill="{DynamicResource DockBorderBrush}" />
+                        <!-- Action buttons — inline under header -->
+                        <Border BorderBrush="{DynamicResource DockBorderBrush}" BorderThickness="0,1,0,1"
+                                Padding="4,2" Margin="0,0,0,6">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Style="{StaticResource BP_DetailActionButtonStyle}"
+                                        Margin="0,0,2,0" Padding="6,0" Click="OnDetailGoToSource">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE71B;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Go To Source" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource BP_DetailActionButtonStyle}"
+                                        Margin="0,0,2,0" Padding="6,0" Click="OnDetailEditCondition">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Edit…" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource BP_DetailActionButtonStyle}"
+                                        Padding="6,0" Click="OnDetailDelete">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Delete" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
 
                         <!-- State grid -->
-                        <Grid Margin="0,0,0,6">
+                        <Grid Margin="8,0,8,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -402,14 +460,14 @@
                         </Grid>
 
                         <!-- Condition -->
-                        <TextBlock Text="Condition" FontSize="11" Opacity="0.6" Margin="0,0,0,3"
+                        <TextBlock Text="Condition" FontSize="11" Opacity="0.6" Margin="8,0,8,3"
                                    Foreground="{DynamicResource DockMenuForegroundBrush}" />
                         <TextBlock Text="{Binding Condition}" FontSize="11" TextWrapping="Wrap"
                                    Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                   FontStyle="Italic" Margin="0,0,0,8" Opacity="0.85" />
+                                   FontStyle="Italic" Margin="8,0,8,8" Opacity="0.85" />
 
                         <!-- Hit count -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
+                        <StackPanel Orientation="Horizontal" Margin="8,0,8,8"
                                     Visibility="{Binding HitCount, Converter={StaticResource HitCountToVis}}">
                             <TextBlock Text="Hits: " FontSize="11" Opacity="0.6"
                                        Foreground="{DynamicResource DockMenuForegroundBrush}" />
@@ -417,21 +475,20 @@
                                        Foreground="{DynamicResource DB_BreakpointConditionalBrush}" />
                         </StackPanel>
 
-                        <Rectangle Height="1" Margin="0,0,0,8" Fill="{DynamicResource DockBorderBrush}" />
-
-                        <!-- Action buttons -->
-                        <Button Content="Go To Source"    FontSize="11" Margin="0,0,0,4"
-                                HorizontalAlignment="Stretch"
-                                Style="{DynamicResource PanelIconButtonStyle}"
-                                Click="OnDetailGoToSource" />
-                        <Button Content="Edit Condition…" FontSize="11" Margin="0,0,0,4"
-                                HorizontalAlignment="Stretch"
-                                Style="{DynamicResource PanelIconButtonStyle}"
-                                Click="OnDetailEditCondition" />
-                        <Button Content="Delete"          FontSize="11"
-                                HorizontalAlignment="Stretch"
-                                Style="{DynamicResource PanelIconButtonStyle}"
-                                Click="OnDetailDelete" />
+                        <!-- Source code preview -->
+                        <Border Visibility="{Binding SourcePreview, Converter={StaticResource NullOrEmptyToVis}}"
+                                Background="{DynamicResource HexEditor_OffsetBackgroundBrush}"
+                                BorderBrush="{DynamicResource DockBorderBrush}" BorderThickness="0,1,0,0"
+                                Margin="0,0,0,0">
+                            <TextBox Text="{Binding SourcePreview, Mode=OneWay}"
+                                     FontFamily="Consolas" FontSize="10"
+                                     Background="Transparent" BorderThickness="0"
+                                     IsReadOnly="True" Padding="8,6"
+                                     Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                     TextWrapping="NoWrap"
+                                     HorizontalScrollBarVisibility="Auto"
+                                     VerticalScrollBarVisibility="Disabled" />
+                        </Border>
 
                     </StackPanel>
                 </ScrollViewer>

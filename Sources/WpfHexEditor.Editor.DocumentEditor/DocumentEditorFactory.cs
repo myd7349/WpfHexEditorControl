@@ -50,8 +50,33 @@ public sealed class DocumentEditorFactory : IEditorFactory
         return _descriptor.SupportedExtensions.Contains(ext ?? string.Empty);
     }
 
+    // ── Pending-host registry ────────────────────────────────────────────────
+    // Hosts created before _ideHostContext is assigned are kept here (weak refs).
+    // NotifyContextReady propagates the context to all live pending hosts so they
+    // can retry their deferred OpenAsync call.
+
+    private readonly List<WeakReference<DocumentEditorHost>> _pendingHosts = [];
+
     /// <inheritdoc/>
-    public IDocumentEditor Create() => new DocumentEditorHost(_contextResolver());
+    public IDocumentEditor Create()
+    {
+        var host = new DocumentEditorHost(_contextResolver());
+        _pendingHosts.Add(new WeakReference<DocumentEditorHost>(host));
+        return host;
+    }
+
+    /// <summary>
+    /// Called by MainWindow after <c>_ideHostContext</c> is assigned.
+    /// Propagates the context to all DocumentEditorHost instances that were
+    /// created before the IDE finished initializing its plugin system.
+    /// </summary>
+    public void NotifyContextReady(IIDEHostContext context)
+    {
+        foreach (var wr in _pendingHosts)
+            if (wr.TryGetTarget(out var host))
+                host.SetContext(context);
+        _pendingHosts.Clear();
+    }
 }
 
 // ── Private descriptor ───────────────────────────────────────────────────────

@@ -7,6 +7,7 @@
 // ==========================================================
 
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using WpfHexEditor.Core.Debugger.Models;
 
@@ -81,6 +82,22 @@ public sealed class BreakpointRowEx : INotifyPropertyChanged
     }
 
     public string DisplayLocation => $"{FileName}:{Line}";
+
+    /// <summary>Up to 5 source lines centred on the breakpoint line. Empty if file not found.</summary>
+    public string SourcePreview => BuildSourcePreview(FilePath, Line, contextLines: 2);
+
+    private static string BuildSourcePreview(string filePath, int line1, int contextLines)
+    {
+        try
+        {
+            if (!File.Exists(filePath)) return string.Empty;
+            var lines = File.ReadAllLines(filePath);
+            int start = Math.Max(0, line1 - 1 - contextLines);
+            int end   = Math.Min(lines.Length - 1, line1 - 1 + contextLines);
+            return string.Join("\n", lines[start..(end + 1)]);
+        }
+        catch { return string.Empty; }
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? p = null) =>
