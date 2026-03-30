@@ -1857,6 +1857,38 @@
                                    Margin="0,0,12,0"/>
                     </StackPanel>
 
+                    <!-- Notification bell -->
+                    <Border x:Name="NotificationBellButton"
+                            Padding="5,1" Margin="0,0,4,0"
+                            Cursor="Hand" VerticalAlignment="Center"
+                            ToolTip="Notifications"
+                            MouseLeftButtonDown="OnNotificationBellClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#33FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <TextBlock Text="&#xE7E7;"
+                                       FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                       Foreground="{DynamicResource DockTabActiveTextBrush}"
+                                       VerticalAlignment="Center"/>
+                            <Border x:Name="NotificationBadge"
+                                    Background="#E81123" CornerRadius="6"
+                                    Padding="3,0" Margin="6,-4,-4,0"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Visibility="Collapsed">
+                                <TextBlock x:Name="NotificationBadgeText"
+                                           Text="0" FontSize="9" Foreground="White"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
                     <!-- Plugin warning badge (visible only when a plugin faults) -->
                     <Border x:Name="PluginWarningBadge" Background="{DynamicResource PM_BadgeFaultedBrush}" CornerRadius="8"
                             Padding="4,1" Margin="0,0,8,0" VerticalAlignment="Center"

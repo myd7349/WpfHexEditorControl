@@ -23,7 +23,7 @@ public interface IDocumentBinaryMapSource
     /// The current document's binary map, or <see langword="null"/>
     /// when no document is loaded.
     /// </summary>
-    BinaryMap? BinaryMap { get; }
+    BinaryMap.BinaryMap? BinaryMap { get; }
 
     /// <summary>
     /// Raised when the binary map is rebuilt (after a document reload or undo/redo).

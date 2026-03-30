@@ -106,17 +106,18 @@ internal sealed class NotificationCenterPopup : Popup
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    public void Rebuild() => _list.Children.Clear().Then(() =>
+    public void Rebuild()
     {
+        _list.Children.Clear();
         var items = _service.ActiveNotifications;
         if (items.Count == 0)
         {
             var empty = new TextBlock
             {
-                Text       = "No notifications",
-                FontSize   = 11,
-                Margin     = new Thickness(12, 8, 12, 8),
-                Opacity    = 0.6,
+                Text     = "No notifications",
+                FontSize = 11,
+                Margin   = new Thickness(12, 8, 12, 8),
+                Opacity  = 0.6,
             };
             empty.SetResourceReference(TextBlock.ForegroundProperty, "DockMenuForegroundBrush");
             _list.Children.Add(empty);
@@ -125,7 +126,7 @@ internal sealed class NotificationCenterPopup : Popup
 
         foreach (var item in items)
             _list.Children.Add(BuildCard(item));
-    });
+    }
 
     // ── Card builder ──────────────────────────────────────────────────────────
 
@@ -263,10 +264,3 @@ internal sealed class NotificationCenterPopup : Popup
     }
 }
 
-// ── Extension helper ──────────────────────────────────────────────────────────
-
-file static class PanelExt
-{
-    // Allows _list.Children.Clear().Then(...) in one expression
-    internal static T Then<T>(this T _, Action action) { action(); return _; }
-}

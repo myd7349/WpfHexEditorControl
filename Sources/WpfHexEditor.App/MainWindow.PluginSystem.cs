@@ -57,9 +57,12 @@ public partial class MainWindow
     private EditorSettingsService?  _editorSettingsService;
     private StatusBarManager?       _statusBarManager;
     private DocumentTabManager     _documentTabManager = new();
-    private WpfHexEditor.App.Services.LspDocumentBridgeService? _lspBridgeService;
-    private WpfHexEditor.App.Services.LspStatusBarAdapter?      _lspStatusBarAdapter;
-    private WpfHexEditor.App.Services.LspDiagnosticsAdapter?    _lspDiagnosticsAdapter;
+    private WpfHexEditor.App.Services.LspDocumentBridgeService?    _lspBridgeService;
+    private WpfHexEditor.App.Services.LspStatusBarAdapter?         _lspStatusBarAdapter;
+    private WpfHexEditor.App.Services.LspDiagnosticsAdapter?       _lspDiagnosticsAdapter;
+    private WpfHexEditor.App.Services.NotificationServiceImpl?     _notificationService;
+    private WpfHexEditor.App.StatusBar.NotificationBellAdapter?    _notificationBellAdapter;
+    private WpfHexEditor.App.Services.LspFirstRunService?          _lspFirstRunService;
     private WpfHexEditor.App.Services.DebuggerServiceImpl?      _debuggerService;
     private WpfHexEditor.App.Services.ScriptingServiceImpl?     _scriptingService;
     private readonly FocusContextService _focusContextService = new();
@@ -154,6 +157,14 @@ public partial class MainWindow
             var capabilityAdapter = new PluginCapabilityRegistryAdapter();
             var extensionRegistry = new ExtensionRegistry();
 
+            // Notification Center — created early so any service can post notifications.
+            _notificationService = new WpfHexEditor.App.Services.NotificationServiceImpl(Dispatcher);
+            _notificationBellAdapter = new WpfHexEditor.App.StatusBar.NotificationBellAdapter(
+                _notificationService,
+                NotificationBadge,
+                NotificationBadgeText,
+                NotificationBellButton);
+
             // LSP server registry — best-effort: failures must not block IDE startup.
             WpfHexEditor.Editor.Core.LSP.ILspServerRegistry? lspRegistry = null;
             try { lspRegistry = new WpfHexEditor.Core.LSP.Client.Services.LspServerRegistry(Dispatcher); }
@@ -183,6 +194,9 @@ public partial class MainWindow
                 // LSP-02-E: Bridge LSP diagnostics → ErrorPanel (IDiagnosticSource adapter).
                 _lspDiagnosticsAdapter = new WpfHexEditor.App.Services.LspDiagnosticsAdapter(_lspBridgeService);
                 EnsureErrorPanelInstance().AddSource(_lspDiagnosticsAdapter);
+
+                // LSP-02-F: First-run notification if bundled servers are absent.
+                _lspFirstRunService = new WpfHexEditor.App.Services.LspFirstRunService(_notificationService);
             }
 
             // Debugger service — created here so it can be exposed via IDEHostContext.Debugger.
@@ -249,7 +263,8 @@ public partial class MainWindow
                 formatParsingService: formatParsingService,
                 formatCatalogService: formatCatalog)
             {
-                LspServers = lspRegistry
+                LspServers    = lspRegistry,
+                Notifications = _notificationService,
             };
 
             // 3. Create orchestrator
@@ -447,6 +462,9 @@ public partial class MainWindow
                         .Any(l => l.SupportedExtensions
                                    .Contains("whfolder", StringComparer.OrdinalIgnoreCase));
                 }
+
+                // LSP first-run notification (checks tools/lsp/, posts download prompt if absent).
+                _lspFirstRunService?.CheckAndNotify();
 
                 // Restore a VS solution that was deferred in TryRestoreSession() because the
                 // plugin loaders (ISolutionLoader extensions) were not yet registered at that point.
@@ -926,6 +944,10 @@ public partial class MainWindow
         _lspStatusBarAdapter?.Dispose();
         _lspStatusBarAdapter = null;
         ShutdownDebugIntegration();
+        _lspFirstRunService?.Dispose();
+        _lspFirstRunService = null;
+        _notificationBellAdapter?.Dispose();
+        _notificationBellAdapter = null;
         _lspDiagnosticsAdapter?.Dispose();
         _lspDiagnosticsAdapter = null;
         _lspBridgeService?.Dispose();

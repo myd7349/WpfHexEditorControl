@@ -24,7 +24,7 @@
 using WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
 
-namespace WpfHexEditor.Editor.Core;
+namespace WpfHexEditor.Editor.DocumentEditor.Core;
 
 /// <summary>
 /// Extension point: loads a raw stream into a <see cref="DocumentModel"/>.
