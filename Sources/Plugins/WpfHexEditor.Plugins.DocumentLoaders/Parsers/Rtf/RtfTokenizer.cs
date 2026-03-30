@@ -1,40 +1,35 @@
 // ==========================================================
-// Project: WpfHexEditor.Plugins.DocumentLoader.Rtf
-// File: Parsers/RtfTokenizer.cs
+// Project: WpfHexEditor.Plugins.DocumentLoaders
+// File: Parsers/Rtf/RtfTokenizer.cs
 // Description:
 //     Streaming RTF lexer. Reads the stream byte-by-byte and emits
 //     RtfToken values with their absolute stream offsets.
-//     RTF grammar: groups { }, control words \word, control symbols \X,
-//     text runs, and binary data \binN.
 // ==========================================================
 
-namespace WpfHexEditor.Plugins.DocumentLoader.Rtf.Parsers;
+namespace WpfHexEditor.Plugins.DocumentLoaders.Parsers.Rtf;
 
 internal enum RtfTokenKind
 {
-    GroupOpen,          // {
-    GroupClose,         // }
-    ControlWord,        // \word   or \wordN
-    ControlSymbol,      // \X  (single non-alpha char)
-    Text,               // plain text run
-    BinaryData,         // \binN followed by N raw bytes
+    GroupOpen,
+    GroupClose,
+    ControlWord,
+    ControlSymbol,
+    Text,
+    BinaryData,
     EndOfStream
 }
 
 internal readonly struct RtfToken
 {
     public RtfTokenKind Kind      { get; init; }
-    public string?      Word      { get; init; }   // control word name (lowercase)
-    public int          Parameter { get; init; }   // numeric param (int.MinValue = absent)
-    public string?      Text      { get; init; }   // text content
-    public byte[]?      Binary    { get; init; }   // binary payload
-    public long         Offset    { get; init; }   // absolute stream offset of token start
-    public int          Length    { get; init; }   // byte length of token in stream
+    public string?      Word      { get; init; }
+    public int          Parameter { get; init; }
+    public string?      Text      { get; init; }
+    public byte[]?      Binary    { get; init; }
+    public long         Offset    { get; init; }
+    public int          Length    { get; init; }
 }
 
-/// <summary>
-/// Character-by-character RTF tokenizer with offset tracking.
-/// </summary>
 internal sealed class RtfTokenizer
 {
     private readonly Stream   _stream;
@@ -49,11 +44,6 @@ internal sealed class RtfTokenizer
         _pos    = stream.Position;
     }
 
-    // ──────────────────────────────── Public API ──────────────────────────────
-
-    /// <summary>
-    /// Reads the next token. Returns <see cref="RtfTokenKind.EndOfStream"/> when done.
-    /// </summary>
     public RtfToken NextToken(CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -77,15 +67,12 @@ internal sealed class RtfTokenizer
 
             case '\r':
             case '\n':
-                // Newlines in RTF are ignored control characters — re-use as a tiny text token.
                 return new RtfToken { Kind = RtfTokenKind.Text, Text = "", Offset = start, Length = 1 };
 
             default:
                 return ReadText(start, (char)ch);
         }
     }
-
-    // ──────────────────────────────── Internals ───────────────────────────────
 
     private RtfToken ReadControlOrSymbol(long start)
     {
@@ -95,7 +82,6 @@ internal sealed class RtfTokenizer
 
         if (!char.IsLetter((char)ch))
         {
-            // Control symbol: \X
             ReadByte();
             return new RtfToken
             {
@@ -106,16 +92,12 @@ internal sealed class RtfTokenizer
             };
         }
 
-        // Control word: \word  or  \wordN
         var word  = new System.Text.StringBuilder();
         int param = int.MinValue;
 
         while (PeekByte() is int c && c >= 0 && char.IsLetter((char)c))
-        {
             word.Append((char)ReadByte());
-        }
 
-        // Optional numeric parameter (may be negative)
         bool negative = false;
         if (PeekByte() == '-') { ReadByte(); negative = true; }
 
@@ -127,12 +109,10 @@ internal sealed class RtfTokenizer
             param = negative ? -n : n;
         }
 
-        // Consume trailing space delimiter (not part of value)
         if (PeekByte() == ' ') ReadByte();
 
         string wordStr = word.ToString().ToLowerInvariant();
 
-        // Special case: \bin — read raw binary payload
         if (wordStr == "bin" && param > 0)
         {
             var data = new byte[param];
@@ -140,12 +120,12 @@ internal sealed class RtfTokenizer
             _pos += param;
             return new RtfToken
             {
-                Kind   = RtfTokenKind.BinaryData,
-                Word   = wordStr,
+                Kind      = RtfTokenKind.BinaryData,
+                Word      = wordStr,
                 Parameter = param,
-                Binary = data,
-                Offset = start,
-                Length = (int)(_pos - start)
+                Binary    = data,
+                Offset    = start,
+                Length    = (int)(_pos - start)
             };
         }
 
@@ -191,7 +171,7 @@ internal sealed class RtfTokenizer
     private int PeekByte()
     {
         if (_hasPeeked) return _peeked;
-        _peeked   = _stream.ReadByte();
+        _peeked    = _stream.ReadByte();
         _hasPeeked = true;
         return _peeked;
     }

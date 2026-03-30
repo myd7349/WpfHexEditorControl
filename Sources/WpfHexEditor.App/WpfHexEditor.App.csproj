@@ -133,11 +133,7 @@
                       ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     <ProjectReference Include="..\Plugins\WpfHexEditor.Plugins.ScriptRunner\WpfHexEditor.Plugins.ScriptRunner.csproj"
                       ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
-    <ProjectReference Include="..\Plugins\WpfHexEditor.Plugins.DocumentLoader.Rtf\WpfHexEditor.Plugins.DocumentLoader.Rtf.csproj"
-                      ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
-    <ProjectReference Include="..\Plugins\WpfHexEditor.Plugins.DocumentLoader.Docx\WpfHexEditor.Plugins.DocumentLoader.Docx.csproj"
-                      ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
-    <ProjectReference Include="..\Plugins\WpfHexEditor.Plugins.DocumentLoader.Odt\WpfHexEditor.Plugins.DocumentLoader.Odt.csproj"
+    <ProjectReference Include="..\Plugins\WpfHexEditor.Plugins.DocumentLoaders\WpfHexEditor.Plugins.DocumentLoaders.csproj"
                       ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     <ProjectReference Include="..\WpfHexEditor.Core.Commands\WpfHexEditor.Core.Commands.csproj" />
   </ItemGroup>

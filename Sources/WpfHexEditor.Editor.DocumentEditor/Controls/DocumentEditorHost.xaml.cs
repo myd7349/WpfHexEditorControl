@@ -185,6 +185,7 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         {
             StatusMessage?.Invoke(this, $"Failed to open document: {ex.Message}");
             OutputMessage?.Invoke(this, ex.ToString());
+            _ideContext?.Output.Error($"[DocumentEditor] Failed to open '{System.IO.Path.GetFileName(filePath)}': {ex}");
         }
         finally
         {

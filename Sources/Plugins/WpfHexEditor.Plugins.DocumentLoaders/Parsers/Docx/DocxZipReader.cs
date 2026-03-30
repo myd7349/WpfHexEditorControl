@@ -1,37 +1,31 @@
 // ==========================================================
-// Project: WpfHexEditor.Plugins.DocumentLoader.Odt
-// File: Parsers/OdtZipReader.cs
+// Project: WpfHexEditor.Plugins.DocumentLoaders
+// File: Parsers/Docx/DocxZipReader.cs
 // Description:
-//     Opens an ODT/OTT (ZIP/ODF) archive and exposes the core XML
-//     entries together with the absolute byte offsets of each entry's
-//     data block within the ZIP container.
+//     Opens a DOCX ZIP archive and resolves absolute byte offsets.
 // ==========================================================
 
 using System.IO.Compression;
 
-namespace WpfHexEditor.Plugins.DocumentLoader.Odt.Parsers;
+namespace WpfHexEditor.Plugins.DocumentLoaders.Parsers.Docx;
 
-/// <summary>
-/// Thin wrapper around <see cref="ZipArchive"/> that resolves
-/// absolute byte offsets for ODT/ODF ZIP entry data segments.
-/// </summary>
-internal sealed class OdtZipReader : IDisposable
+internal sealed class DocxZipReader : IDisposable
 {
     private readonly ZipArchive _zip;
     private readonly Dictionary<string, long> _entryDataOffsets =
         new(StringComparer.OrdinalIgnoreCase);
 
-    public OdtZipReader(Stream zipStream)
+    public DocxZipReader(Stream zipStream)
     {
         _zip = new ZipArchive(zipStream, ZipArchiveMode.Read, leaveOpen: true);
         BuildOffsetTable(zipStream);
     }
 
-    // ── Public API ──────────────────────────────────────────────────────────
-
     public string? ReadEntryText(string entryName)
     {
-        var entry = _zip.GetEntry(entryName);
+        var entry = _zip.GetEntry(entryName)
+                    ?? _zip.Entries.FirstOrDefault(e =>
+                        string.Equals(e.FullName, entryName, StringComparison.OrdinalIgnoreCase));
         if (entry is null) return null;
         using var sr = new StreamReader(entry.Open());
         return sr.ReadToEnd();
@@ -41,8 +35,6 @@ internal sealed class OdtZipReader : IDisposable
         _entryDataOffsets.TryGetValue(entryName, out long off) ? off : -1L;
 
     public void Dispose() => _zip.Dispose();
-
-    // ── ZIP offset resolution (same algorithm as DocxZipReader) ─────────────
 
     private const uint LocalFileHeaderSig = 0x04034b50;
 
@@ -70,11 +62,13 @@ internal sealed class OdtZipReader : IDisposable
                 br.ReadBytes(extraLen);
 
                 string entryName = System.Text.Encoding.UTF8.GetString(nameBytes);
-                _entryDataOffsets[entryName] = zipStream.Position;
+                long   dataStart  = zipStream.Position;
+
+                _entryDataOffsets[entryName] = dataStart;
 
                 var entry = _zip.GetEntry(entryName);
                 if (entry is null) break;
-                zipStream.Position += entry.CompressedLength;
+                zipStream.Position = dataStart + entry.CompressedLength;
             }
 
             zipStream.Position = savedPos;

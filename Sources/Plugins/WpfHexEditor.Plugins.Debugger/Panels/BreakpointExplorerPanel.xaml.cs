@@ -5,15 +5,13 @@
 //     Code-behind for the VS-style Breakpoint Explorer panel.
 //     Delegates all logic to BreakpointExplorerViewModel.
 //     Uses ToolbarOverflowManager for dynamic toolbar overflow.
+//     Detail panel (right column) is shown on selection — no hover popup.
 // ==========================================================
 
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Threading;
-using WpfHexEditor.Plugins.Debugger.Controls;
 using WpfHexEditor.Plugins.Debugger.ViewModels;
 using WpfHexEditor.SDK.UI;
 
@@ -24,30 +22,9 @@ public partial class BreakpointExplorerPanel : UserControl
     private BreakpointExplorerViewModel? Vm => DataContext as BreakpointExplorerViewModel;
     private ToolbarOverflowManager? _overflowManager;
 
-    // ── Hover popup ───────────────────────────────────────────────────────────
-    private readonly DispatcherTimer _hoverTimer;
-    private BreakpointRowEx? _pendingHoverRow;
-    private readonly BreakpointHoverPopup BpHoverPopup;
-
     public BreakpointExplorerPanel()
     {
         InitializeComponent();
-
-        // Popup types cannot have x:Name in XAML (MC3054) — create in code-behind.
-        BpHoverPopup = new BreakpointHoverPopup();
-        AddLogicalChild(BpHoverPopup);
-
-        BpHoverPopup.GoToSourceRequested += (filePath, line) =>
-        {
-            var row = Vm?.FlatBreakpoints.FirstOrDefault(r => r.FilePath == filePath && r.Line == line);
-            if (row is not null) Vm?.GoToSourceCommand.Execute(row);
-        };
-
-        BpHoverPopup.EditConditionRequested += (filePath, line) =>
-        {
-            var row = Vm?.FlatBreakpoints.FirstOrDefault(r => r.FilePath == filePath && r.Line == line);
-            if (row is not null) Vm?.EditConditionCommand.Execute(row);
-        };
 
         _overflowManager = new ToolbarOverflowManager(
             toolbarContainer:      ToolbarBorder,
@@ -58,11 +35,6 @@ public partial class BreakpointExplorerPanel : UserControl
             leftFixedElements:     [ToolbarLeftPanel]);
 
         Dispatcher.InvokeAsync(_overflowManager.CaptureNaturalWidths, DispatcherPriority.Loaded);
-
-        _hoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
-        _hoverTimer.Tick += OnHoverTimerTick;
-
-        Unloaded += (_, _) => BpHoverPopup.Dispose();
     }
 
     // ── Toolbar overflow ──────────────────────────────────────────────────
@@ -170,60 +142,34 @@ public partial class BreakpointExplorerPanel : UserControl
     private void OnImportBreakpoints(object sender, RoutedEventArgs e) => Vm?.ImportCommand.Execute(null);
     private void OnExportBreakpoints(object sender, RoutedEventArgs e) => Vm?.ExportCommand.Execute(null);
 
+    // ── Detail panel action buttons ───────────────────────────────────────
+
+    private void OnDetailGoToSource(object sender, RoutedEventArgs e)
+    {
+        var row = Vm?.SelectedBreakpoint;
+        if (row is not null) Vm?.GoToSourceCommand.Execute(row);
+    }
+
+    private void OnDetailEditCondition(object sender, RoutedEventArgs e)
+    {
+        var row = Vm?.SelectedBreakpoint;
+        if (row is not null) Vm?.EditConditionCommand.Execute(row);
+    }
+
+    private void OnDetailDelete(object sender, RoutedEventArgs e)
+    {
+        var row = Vm?.SelectedBreakpoint;
+        if (row is not null) Vm?.DeleteCommand.Execute(row);
+    }
+
+    private void OnDetailToggleEnabled(object sender, RoutedEventArgs e)
+    {
+        var row = Vm?.SelectedBreakpoint;
+        if (row is not null) Vm?.ToggleEnabledCommand.Execute(row);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+
     private BreakpointRowEx? GetSelectedRow() =>
         Vm?.SelectedBreakpoint ?? FlatList.SelectedItem as BreakpointRowEx;
-
-    // ── Hover popup ───────────────────────────────────────────────────────────
-
-    private void OnListMouseMove(object sender, MouseEventArgs e)
-    {
-        var row = GetRowUnderMouse<ListViewItem>(FlatList, e.GetPosition(FlatList));
-        UpdateHover(row);
-    }
-
-    private void OnTreeMouseMove(object sender, MouseEventArgs e)
-    {
-        var row = GetRowUnderMouse<TreeViewItem>(GroupedTree, e.GetPosition(GroupedTree));
-        UpdateHover(row);
-    }
-
-    private void OnListMouseLeave(object sender, MouseEventArgs e)
-    {
-        _hoverTimer.Stop();
-        _pendingHoverRow = null;
-        BpHoverPopup.OnHostMouseLeft();
-    }
-
-    private void UpdateHover(BreakpointRowEx? row)
-    {
-        if (row == _pendingHoverRow) return;
-        _hoverTimer.Stop();
-        _pendingHoverRow = row;
-        if (row is not null) _hoverTimer.Start();
-        else BpHoverPopup.OnHostMouseLeft();
-    }
-
-    private void OnHoverTimerTick(object? sender, EventArgs e)
-    {
-        _hoverTimer.Stop();
-        if (_pendingHoverRow is null || Vm is null) return;
-        BpHoverPopup.Show(_pendingHoverRow, Vm.DebuggerService);
-    }
-
-    // Generic hit-test: walks up from the hit visual looking for TContainer with BreakpointRowEx DataContext.
-    private static BreakpointRowEx? GetRowUnderMouse<TContainer>(UIElement root, Point pos)
-        where TContainer : FrameworkElement
-    {
-        var hit = VisualTreeHelper.HitTest(root, pos);
-        if (hit?.VisualHit is null) return null;
-
-        DependencyObject? current = hit.VisualHit;
-        while (current is not null)
-        {
-            if (current is TContainer { DataContext: BreakpointRowEx row })
-                return row;
-            current = VisualTreeHelper.GetParent(current);
-        }
-        return null;
-    }
 }

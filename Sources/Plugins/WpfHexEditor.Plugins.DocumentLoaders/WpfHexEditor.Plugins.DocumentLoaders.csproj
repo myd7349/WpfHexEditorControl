@@ -1,31 +1,32 @@
 <!--
-    WpfHexEditor.Plugins.DocumentLoader.Docx
-    ==========================================
-    Plugin: loads DOCX/DOTX files into DocumentModel via ZIP+XML parsing.
-    Registers DocxDocumentLoader as IDocumentLoader extension point.
+    WpfHexEditor.Plugins.DocumentLoaders
+    =====================================
+    Plugin: loads RTF, DOCX, and ODT files into DocumentModel.
+    Registers RtfDocumentLoader, DocxDocumentLoader, and OdtDocumentLoader
+    as IDocumentLoader extension points via IExtensionRegistry.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>false</UseWPF>
-    <RootNamespace>WpfHexEditor.Plugins.DocumentLoader.Docx</RootNamespace>
-    <AssemblyName>WpfHexEditor.Plugins.DocumentLoader.Docx</AssemblyName>
+    <RootNamespace>WpfHexEditor.Plugins.DocumentLoaders</RootNamespace>
+    <AssemblyName>WpfHexEditor.Plugins.DocumentLoaders</AssemblyName>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Description>WpfHexEditor plugin — DOCX document loader with ZIP+XML parsing and BinaryMap.</Description>
+    <Description>WpfHexEditor plugin — RTF, DOCX and ODT document loaders with offset-accurate BinaryMap.</Description>
     <Version>1.0.0</Version>
 
     <!-- Plugin metadata -->
-    <PluginId>WpfHexEditor.Plugins.DocumentLoader.Docx</PluginId>
-    <PluginName>DOCX Document Loader</PluginName>
+    <PluginId>WpfHexEditor.Plugins.DocumentLoaders</PluginId>
+    <PluginName>Document Loaders (RTF / DOCX / ODT)</PluginName>
     <PluginVersion>1.0.0</PluginVersion>
-    <PluginEntryPoint>WpfHexEditor.Plugins.DocumentLoader.Docx.DocxDocumentLoaderPlugin</PluginEntryPoint>
+    <PluginEntryPoint>WpfHexEditor.Plugins.DocumentLoaders.DocumentLoadersPlugin</PluginEntryPoint>
     <PluginAuthor>WpfHexEditor Contributors</PluginAuthor>
     <PluginPublisher>WpfHexEditor</PluginPublisher>
     <PluginTrustedPublisher>true</PluginTrustedPublisher>
-    <PluginDescription>Loads DOCX/DOTX documents into the Document Editor with ZIP-aware binary-map synchronisation.</PluginDescription>
+    <PluginDescription>Loads RTF, DOCX and ODT documents into the Document Editor with binary-map synchronisation.</PluginDescription>
     <PluginIsolationMode>InProcess</PluginIsolationMode>
     <PluginLoadPriority>20</PluginLoadPriority>
     <PluginSdkVersion>2.0.0</PluginSdkVersion>
