@@ -17,7 +17,6 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WpfHexEditor.Core.Debugger.Models;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Editor.CodeEditor.Controls;
 using WpfHexEditor.Editor.CodeEditor;
@@ -155,46 +154,14 @@ public partial class MainWindow
 
     private void OnCodeEditorBreakpointSettings(string filePath, int line)
     {
-        if (_debuggerService is null) return;
-
-        var bp = _debuggerService.Breakpoints.FirstOrDefault(
-            b => string.Equals(b.FilePath, filePath, StringComparison.OrdinalIgnoreCase)
-                 && b.Line == line);
-        if (bp is null) return;
-
-        var loc = new BreakpointLocation
+        // BreakpointConditionDialog lives in the Debugger plugin assembly — App has no
+        // project reference to it.  Publish an IDE event; the plugin subscribes and
+        // opens the dialog on the UI thread, then calls UpdateBreakpointSettingsAsync.
+        _ideEventBus?.Publish(new OpenBreakpointSettingsRequestedEvent
         {
-            FilePath          = bp.FilePath,
-            Line              = bp.Line,
-            Condition         = bp.Condition ?? string.Empty,
-            IsEnabled         = bp.IsEnabled,
-            ConditionKind     = bp.ConditionKind,
-            ConditionMode     = bp.ConditionMode,
-            HitCountOp        = bp.HitCountOp,
-            HitCountTarget    = bp.HitCountTarget,
-            FilterExpr        = bp.FilterExpr,
-            HasAction         = bp.HasAction,
-            LogMessage        = bp.LogMessage,
-            ContinueExecution = bp.ContinueExecution,
-            DisableOnceHit    = bp.DisableOnceHit,
-            DependsOnBpKey    = bp.DependsOnBpKey,
-        };
-
-        var allLocs = _debuggerService.Breakpoints.Select(b => new BreakpointLocation
-        {
-            FilePath  = b.FilePath,
-            Line      = b.Line,
-            Condition = b.Condition ?? string.Empty,
-            IsEnabled = b.IsEnabled,
-        }).ToList();
-
-        // BreakpointConditionDialog is in the Debugger plugin assembly. The App layer
-        // references it via the plugin's public dialog type.
-        var result = WpfHexEditor.Plugins.Debugger.Dialogs.BreakpointConditionDialog.Show(
-            this, loc, allLocs);
-
-        if (result is not null)
-            _ = _debuggerService.UpdateBreakpointSettingsAsync(filePath, line, result);
+            FilePath = filePath,
+            Line     = line,
+        });
     }
 
     private void OnDebugSessionPaused(DebugSessionPausedEvent e)
