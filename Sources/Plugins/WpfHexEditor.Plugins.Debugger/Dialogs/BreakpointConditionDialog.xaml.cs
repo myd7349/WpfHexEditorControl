@@ -32,6 +32,11 @@ public partial class BreakpointConditionDialog : ThemedDialog
     private readonly List<ConditionRow> _condRows = [];
     private const int MaxConditionRows = 2;
 
+    // ── Original state for Reset ──────────────────────────────────────────────
+
+    private BreakpointLocation?                _originalBp;
+    private IReadOnlyList<BreakpointLocation>? _allBps;
+
     // ── Log message placeholder ───────────────────────────────────────────────
 
     private const string LogPlaceholder = "Example: $FUNCTION : value of x = {x}";
@@ -78,6 +83,8 @@ public partial class BreakpointConditionDialog : ThemedDialog
 
     private void Populate(BreakpointLocation bp, IReadOnlyList<BreakpointLocation> allBps)
     {
+        _originalBp = bp;
+        _allBps     = allBps;
         LocationText.Text = $"{Path.GetFileName(bp.FilePath)} : line {bp.Line}, char {bp.Column}";
 
         // ── Conditions ───────────────────────────────────────────────────────
@@ -199,6 +206,17 @@ public partial class BreakpointConditionDialog : ThemedDialog
 
     private void OnDependsOnCheckedChanged(object sender, RoutedEventArgs e)
         => DependsOnCombo.IsEnabled = DependsOnCheck.IsChecked == true;
+
+    private void OnResetClicked(object sender, RoutedEventArgs e)
+    {
+        if (_originalBp is null || _allBps is null) return;
+        _condRows.Clear();
+        ConditionRowsPanel.Children.Clear();
+        DependsOnCombo.Items.Clear();
+        _logBoxHasRealText = false;
+        InitLogPlaceholder();
+        Populate(_originalBp, _allBps);
+    }
 
     private void OnCloseClicked(object sender, RoutedEventArgs e)
     {

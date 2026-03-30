@@ -182,9 +182,19 @@
             <Border.BorderBrush>
                 <DynamicResource ResourceKey="DockBorderBrush" />
             </Border.BorderBrush>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <DockPanel>
+                <Button x:Name="ResetBtn"
+                        Content="Reset"
+                        DockPanel.Dock="Left"
+                        Width="80" Height="26"
+                        FontSize="11"
+                        Background="{DynamicResource DockMenuBackgroundBrush}"
+                        Foreground="{DynamicResource DockMenuForegroundBrush}"
+                        BorderBrush="{DynamicResource DockBorderBrush}"
+                        Click="OnResetClicked" />
                 <Button x:Name="CloseBtn"
                         Content="Close"
+                        HorizontalAlignment="Right"
                         Width="80" Height="26"
                         FontSize="11"
                         IsDefault="True"
@@ -192,7 +202,7 @@
                         Foreground="{DynamicResource DockMenuForegroundBrush}"
                         BorderBrush="{DynamicResource DockBorderBrush}"
                         Click="OnCloseClicked" />
-            </StackPanel>
+            </DockPanel>
         </Border>
     </Grid>
 </ec:ThemedDialog>

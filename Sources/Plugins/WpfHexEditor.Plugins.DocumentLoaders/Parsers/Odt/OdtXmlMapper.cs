@@ -23,6 +23,9 @@ internal sealed class OdtXmlMapper
     private static readonly XNamespace StyleNs  = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
     private static readonly XNamespace TableNs  = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
 
+    /// <summary>Diagnostic string from the last Map() call — routed to Output panel.</summary>
+    public string LastDiagnostic { get; private set; } = string.Empty;
+
     public List<DocumentBlock> Map(
         string            contentXml,
         long              entryBaseOffset,
@@ -34,12 +37,21 @@ internal sealed class OdtXmlMapper
         var root   = XDocument.Parse(contentXml, LoadOptions.SetLineInfo);
         // ODF body is <office:body><office:text> — namespace is office:, not text:
         var body   = root.Descendants(OfficeNs + "text").FirstOrDefault();
+
         var blocks = new List<DocumentBlock>();
 
-        if (body is null) return blocks;
+        if (body is null)
+        {
+            LastDiagnostic = $"body=NULL xmlLen={contentXml.Length}";
+            return blocks;
+        }
+
+        int childCount = body.Elements().Count();
+        string firstKinds = string.Join(",", body.Elements().Take(5).Select(e => e.Name.LocalName));
 
         CollectBlocks(body, entryBaseOffset, mapBuilder, blocks, ct);
 
+        LastDiagnostic = $"body=OK children={childCount} first5=[{firstKinds}] blocks={blocks.Count}";
         return blocks;
     }
 

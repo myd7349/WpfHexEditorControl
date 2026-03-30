@@ -137,6 +137,10 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
 
     private void Refresh()
     {
+        // Preserve selection identity before rebuilding row instances.
+        var prevFile = _selectedBreakpoint?.FilePath;
+        var prevLine = _selectedBreakpoint?.Line;
+
         var allBps = _debugger.Breakpoints;
         var solution = _context?.SolutionManager?.CurrentSolution;
         var rows = allBps.Select(bp => new BreakpointRowEx
@@ -206,6 +210,12 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
             }
         }
 
+        // Restore selection to the same breakpoint after rows are rebuilt.
+        if (prevFile is not null && prevLine is not null)
+            SelectedBreakpoint = FlatBreakpoints.FirstOrDefault(r =>
+                string.Equals(r.FilePath, prevFile, StringComparison.OrdinalIgnoreCase) &&
+                r.Line == prevLine);
+
         // Summary.
         int total    = allBps.Count;
         int enabled  = allBps.Count(b => b.IsEnabled);
@@ -227,6 +237,7 @@ public sealed class BreakpointExplorerViewModel : INotifyPropertyChanged
         if (row is null || _context is null) return;
         _context.DocumentHost.ActivateAndNavigateTo(row.FilePath, row.Line, 0);
     }
+
 
     // ── Edit condition dialog ─────────────────────────────────────────────────
 

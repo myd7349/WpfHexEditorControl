@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:WpfHexEditor.Plugins.Debugger.ViewModels"
              xmlns:conv="clr-namespace:WpfHexEditor.Plugins.Debugger.Converters"
+             xmlns:ctrl="clr-namespace:WpfHexEditor.Plugins.Debugger.Controls"
 >
 
     <UserControl.Resources>
@@ -14,6 +15,32 @@
         <conv:NullOrEmptyToVisibilityConverter   x:Key="NullOrEmptyToVis" />
         <BooleanToVisibilityConverter            x:Key="BoolToVis" />
         <conv:InvertBoolToVisibilityConverter    x:Key="InvertBoolToVis" />
+
+        <!-- TreeView expander toggle (triangle arrow) -->
+        <Style x:Key="BP_ExpanderToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Focusable"  Value="False"/>
+            <Setter Property="Width"      Value="16"/>
+            <Setter Property="Height"     Value="16"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="Transparent">
+                            <Path x:Name="Arrow"
+                                  Data="M 5 4 L 11 8 L 5 12 Z"
+                                  Fill="{DynamicResource DockMenuForegroundBrush}"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Opacity="0.6"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Arrow" Property="Data" Value="M 4 6 L 12 6 L 8 12 Z"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <!-- Detail panel action button — full-width text button matching panel theme -->
         <Style x:Key="BP_DetailActionButtonStyle" TargetType="Button">
@@ -214,13 +241,26 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListViewItem">
-                                    <Border x:Name="Bd" Background="Transparent" BorderThickness="0" Padding="0,1" SnapsToDevicePixels="True">
-                                        <GridViewRowPresenter VerticalAlignment="Center"
+                                    <Grid SnapsToDevicePixels="True">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="4"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Row background (full width) -->
+                                        <Border x:Name="Bd" Grid.Column="0" Grid.ColumnSpan="2"
+                                                Background="Transparent" BorderThickness="0" Padding="0,1"/>
+                                        <!-- Content in col1 only — starts at x=4 -->
+                                        <GridViewRowPresenter Grid.Column="1" VerticalAlignment="Center"
                                                               Columns="{Binding Path=View.Columns, RelativeSource={RelativeSource AncestorType=ListView}}" />
-                                    </Border>
+                                        <!-- 4px accent — declared last → renders on top -->
+                                        <Border x:Name="Accent" Grid.Column="0"
+                                                Background="{DynamicResource SE_SelectionBorderBrush}"
+                                                Visibility="Collapsed"/>
+                                    </Grid>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BP_ExplorerRowSelectedBrush}" />
+                                            <Setter TargetName="Bd"     Property="Background" Value="{DynamicResource BP_ExplorerRowSelectedBrush}" />
+                                            <Setter TargetName="Accent" Property="Visibility" Value="Visible" />
                                         </Trigger>
                                         <MultiTrigger>
                                             <MultiTrigger.Conditions>
@@ -359,16 +399,64 @@
                     <Style TargetType="TreeViewItem">
                         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                         <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}" />
-                        <Setter Property="Background" Value="Transparent" />
-                        <Setter Property="Padding"    Value="2,1" />
-                        <Style.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource BP_ExplorerRowSelectedBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource BP_ExplorerRowHoverBrush}" />
-                            </Trigger>
-                        </Style.Triggers>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TreeViewItem">
+                                    <StackPanel>
+                                        <!-- 3-col row: [4px accent | Auto expander | * content] -->
+                                        <Grid x:Name="RowGrid" MinHeight="22" SnapsToDevicePixels="True">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="4"/>    <!-- accent bar -->
+                                                <ColumnDefinition Width="Auto"/> <!-- expander (shrinks to 0 when Collapsed) -->
+                                                <ColumnDefinition Width="*"/>    <!-- content -->
+                                            </Grid.ColumnDefinitions>
+                                            <!-- Full-row background -->
+                                            <Border x:Name="Bd" Grid.Column="0" Grid.ColumnSpan="3"
+                                                    Background="Transparent"/>
+                                            <!-- Expander in its own Auto column -->
+                                            <ToggleButton x:Name="Expander" Grid.Column="1"
+                                                          Width="16" VerticalAlignment="Center"
+                                                          IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                                          Style="{StaticResource BP_ExpanderToggleStyle}"/>
+                                            <!-- Content in col2 — starts at x=4 when expander collapsed -->
+                                            <ContentPresenter x:Name="PART_Header" Grid.Column="2"
+                                                              ContentSource="Header"
+                                                              HorizontalAlignment="Stretch"
+                                                              VerticalAlignment="Center"
+                                                              Margin="0,1"/>
+                                            <!-- 4px accent — declared last so it renders on top -->
+                                            <Border x:Name="Accent" Grid.Column="0"
+                                                    Background="{DynamicResource SE_SelectionBorderBrush}"
+                                                    Visibility="Collapsed"/>
+                                        </Grid>
+                                        <!-- Children indented 16px -->
+                                        <ItemsPresenter x:Name="ItemsHost" Margin="16,0,0,0"/>
+                                    </StackPanel>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsExpanded" Value="False">
+                                            <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                        <Trigger Property="HasItems" Value="False">
+                                            <Setter TargetName="Expander" Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd"     Property="Background" Value="{DynamicResource BP_ExplorerRowSelectedBrush}"/>
+                                            <Setter TargetName="Accent" Property="Visibility" Value="Visible"/>
+                                        </Trigger>
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsMouseOver" Value="True"/>
+                                                <Condition Property="IsSelected"  Value="False"/>
+                                            </MultiTrigger.Conditions>
+                                            <MultiTrigger.Setters>
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BP_ExplorerRowHoverBrush}"/>
+                                            </MultiTrigger.Setters>
+                                        </MultiTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                 </TreeView.ItemContainerStyle>
             </TreeView>
@@ -475,19 +563,17 @@
                                        Foreground="{DynamicResource DB_BreakpointConditionalBrush}" />
                         </StackPanel>
 
-                        <!-- Source code preview -->
+                        <!-- Source code preview — GlyphRun syntax-highlighted -->
                         <Border Visibility="{Binding SourcePreview, Converter={StaticResource NullOrEmptyToVis}}"
                                 Background="{DynamicResource HexEditor_OffsetBackgroundBrush}"
-                                BorderBrush="{DynamicResource DockBorderBrush}" BorderThickness="0,1,0,0"
-                                Margin="0,0,0,0">
-                            <TextBox Text="{Binding SourcePreview, Mode=OneWay}"
-                                     FontFamily="Consolas" FontSize="10"
-                                     Background="Transparent" BorderThickness="0"
-                                     IsReadOnly="True" Padding="8,6"
-                                     Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                     TextWrapping="NoWrap"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     VerticalScrollBarVisibility="Disabled" />
+                                BorderBrush="{DynamicResource DockBorderBrush}" BorderThickness="0,1,0,0">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          Padding="8,6">
+                                <ctrl:BreakpointCodePreview
+                                    SourceText="{Binding SourcePreview, Mode=OneWay}"
+                                    FilePath="{Binding FilePath, Mode=OneWay}" />
+                            </ScrollViewer>
                         </Border>
 
                     </StackPanel>

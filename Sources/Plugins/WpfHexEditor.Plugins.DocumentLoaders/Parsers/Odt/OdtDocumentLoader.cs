@@ -34,6 +34,7 @@ public sealed class OdtDocumentLoader : IDocumentLoader
         DocumentModel     target,
         CancellationToken ct = default)
     {
+        target.Metadata = new DocumentMetadata { Title = "DIAG_ENTER" };
         byte[] rawBytes = await BufferStreamAsync(stream, ct);
         using var ms = new MemoryStream(rawBytes, writable: false);
 
@@ -55,13 +56,15 @@ public sealed class OdtDocumentLoader : IDocumentLoader
         if (contentEntryOffset >= 0)
             mapBuilder.RegisterZipEntry("content.xml", contentEntryOffset);
 
+        var mapper = new OdtXmlMapper();
         var blocks = await Task.Run(
-            () => new OdtXmlMapper().Map(contentXml, contentEntryOffset, mapBuilder, ct), ct);
+            () => mapper.Map(contentXml, contentEntryOffset, mapBuilder, ct), ct);
 
         var metadata = ReadMetaXml(zipReader);
         metadata = metadata with
         {
-            MimeType = "application/vnd.oasis.opendocument.text"
+            MimeType = "application/vnd.oasis.opendocument.text",
+            Title    = $"[ODT_DIAG: {mapper.LastDiagnostic}]"
         };
 
         target.FilePath = filePath;
