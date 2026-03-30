@@ -56,7 +56,10 @@ public sealed class DocxDocumentLoader : IDocumentLoader
         metadata = metadata with
         {
             MimeType  = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            HasMacros = zipReader.ReadEntryText("word/vbaProject.bin") is not null
+            HasMacros = zipReader.ReadEntryText("word/vbaProject.bin") is not null,
+            Title     = !string.IsNullOrEmpty(metadata.Title)
+                            ? metadata.Title
+                            : Path.GetFileNameWithoutExtension(filePath)
         };
 
         target.FilePath = filePath;

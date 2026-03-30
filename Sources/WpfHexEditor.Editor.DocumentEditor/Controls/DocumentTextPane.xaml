@@ -1,7 +1,8 @@
 <UserControl x:Class="WpfHexEditor.Editor.DocumentEditor.Controls.DocumentTextPane"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="{DynamicResource DE_TextPaneBackground}"
+             xmlns:local="clr-namespace:WpfHexEditor.Editor.DocumentEditor.Controls"
+             Background="{DynamicResource DE_PageCanvasBackground}"
              Foreground="{DynamicResource DE_TextPaneForeground}">
     <Grid>
         <Grid.ColumnDefinitions>
@@ -17,28 +18,22 @@
                 ClipToBounds="True"
                 Visibility="Collapsed"/>
 
-        <!-- FlowDocument scroll viewer -->
+        <!-- ── Canvas renderer inside a ScrollViewer (IScrollInfo) ─── -->
         <ScrollViewer Grid.Column="1"
                       x:Name="PART_ScrollViewer"
+                      Background="{DynamicResource DE_PageCanvasBackground}"
                       VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
-            <RichTextBox x:Name="PART_RichTextBox"
-                         Background="Transparent"
-                         Foreground="{DynamicResource DE_TextPaneForeground}"
-                         BorderThickness="0"
-                         IsReadOnly="False"
-                         AcceptsReturn="True"
-                         FontFamily="Segoe UI"
-                         FontSize="14"
-                         SelectionChanged="OnRichTextBoxSelectionChanged"
-                         TextChanged="OnRichTextBoxTextChanged">
-                <RichTextBox.Resources>
-                    <!-- Remove the default 5px paragraph margin -->
-                    <Style TargetType="Paragraph">
-                        <Setter Property="Margin" Value="0,2,0,2"/>
-                    </Style>
-                </RichTextBox.Resources>
-            </RichTextBox>
+                      HorizontalScrollBarVisibility="Auto"
+                      CanContentScroll="True">
+            <ScrollViewer.LayoutTransform>
+                <ScaleTransform x:Name="PART_ZoomTransform" ScaleX="1" ScaleY="1"/>
+            </ScrollViewer.LayoutTransform>
+
+            <!-- DocumentCanvasRenderer is the IScrollInfo provider -->
+            <local:DocumentCanvasRenderer
+                x:Name="PART_Renderer"
+                SelectedBlockChanged="OnRendererSelectedBlockChanged"
+                PopToolbarRequested="OnRendererPopToolbarRequested"/>
         </ScrollViewer>
     </Grid>
 </UserControl>

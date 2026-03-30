@@ -789,4 +789,30 @@
     <SolidColorBrush x:Key="DE_StructureKindFg"       Color="#007F6A"/>
     <SolidColorBrush x:Key="DE_MiniMapBg"             Color="#F0F0F0"/>
     <SolidColorBrush x:Key="DE_MiniMapScrollBrush"    Color="#CCCCCC"/>
-</ResourceDictionary>
+
+    <!-- DE_* v2 â€” Toolbar / BreadcrumbBar / PopToolbar / StatusBar / Zoom -->
+    <SolidColorBrush x:Key="DE_ToolbarBackground"        Color="#000000"/>
+    <SolidColorBrush x:Key="DE_ToolbarBorderBrush"       Color="#FFFF00"/>
+    <SolidColorBrush x:Key="DE_ToolbarButtonHoverBrush"  Color="#1F1F1F"/>
+    <SolidColorBrush x:Key="DE_ToolbarButtonActiveBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DE_PopToolbarBackground"     Color="#000000"/>
+    <SolidColorBrush x:Key="DE_PopToolbarBorderBrush"    Color="#FFFF00"/>
+    <SolidColorBrush x:Key="DE_BreadcrumbBackground"     Color="#000000"/>
+    <SolidColorBrush x:Key="DE_BreadcrumbForeground"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DE_BreadcrumbSeparatorBrush" Color="#FFFF00"/>
+    <SolidColorBrush x:Key="DE_BreadcrumbHoverBrush"     Color="#1F1F1F"/>
+    <SolidColorBrush x:Key="DE_StatusBarBackground"      Color="#000000"/>
+    <SolidColorBrush x:Key="DE_StatusBarForeground"      Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="DE_StatusBarBorderBrush"     Color="#FFFF00"/>
+    <SolidColorBrush x:Key="DE_FormatChipBackground"     Color="#FFFF00"/>
+    <SolidColorBrush x:Key="DE_FormatChipForeground"     Color="#000000"/>
+    <SolidColorBrush x:Key="DE_ZoomSliderThumbBrush"     Color="#FFFF00"/>
+    <SolidColorBrush x:Key="DE_ForensicBadgeErrorBg"     Color="#FF0000"/>
+    <SolidColorBrush x:Key="DE_ForensicBadgeWarnBg"      Color="#FFFF00"/>
+    <SolidColorBrush x:Key="DE_PageShadowBrush"          Color="#40FFFFFF"/>
+    <SolidColorBrush x:Key="DE_BlockBorderHoverBrush"    Color="#FFFF00"/>
+    <SolidColorBrush x:Key="DE_MetaPanelBackground"      Color="#0A0A0A"/>
+    <SolidColorBrush x:Key="DE_MetaPanelForeground"      Color="#FFFFFF"/>
+    <!-- DE_* page canvas (document-in-canvas visual metaphor) -->
+    <SolidColorBrush x:Key="DE_PageCanvasBackground" Color="#000000"/>
+    <SolidColorBrush x:Key="DE_PageBackground"       Color="#0A0A0A"/></ResourceDictionary>

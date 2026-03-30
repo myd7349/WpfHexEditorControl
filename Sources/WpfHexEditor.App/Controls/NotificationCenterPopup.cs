@@ -38,7 +38,7 @@ internal sealed class NotificationCenterPopup : Popup
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
 
-        StaysOpen        = false;
+        StaysOpen        = true;   // closed manually via Mouse.AddPreviewMouseDownOutsidePopupHandler
         AllowsTransparency = true;
         PopupAnimation   = PopupAnimation.Fade;
         Width            = 360;

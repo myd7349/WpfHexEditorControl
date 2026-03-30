@@ -3,8 +3,8 @@
 // File: Controls/DocumentStructurePane.xaml.cs
 // Description:
 //     TreeView pane showing the hierarchical DocumentBlock structure.
-//     Each node shows kind, offset, and a forensic alert badge.
-//     Double-click navigates the text and hex panes to the block.
+//     v2: search/filter, Expand/Collapse all, context menu (navigate,
+//         jump-to-hex, copy text/offset), block count in header.
 // ==========================================================
 
 using System.Collections.ObjectModel;
@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using WpfHexEditor.Editor.DocumentEditor.Core.Forensic;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
@@ -19,14 +20,26 @@ using WpfHexEditor.Editor.DocumentEditor.Core.Model;
 namespace WpfHexEditor.Editor.DocumentEditor.Controls;
 
 /// <summary>
-/// Displays the document block hierarchy with forensic badges.
+/// Displays the document block hierarchy with forensic badges, search,
+/// and context-menu navigation actions.
 /// </summary>
 public partial class DocumentStructurePane : UserControl
 {
-    private DocumentModel? _model;
+    // ── Fields ────────────────────────────────────────────────────────────────
 
-    /// <summary>Raised when the user double-clicks a node.</summary>
+    private DocumentModel? _model;
+    private ObservableCollection<DocumentBlockNode> _allNodes = [];
+    private string _filterText = string.Empty;
+
+    // ── Events ────────────────────────────────────────────────────────────────
+
+    /// <summary>Raised when the user selects or double-clicks a node.</summary>
     public event EventHandler<DocumentBlock>? BlockNavigated;
+
+    /// <summary>Raised when the user clicks "Jump to hex offset" in context menu.</summary>
+    public event EventHandler<DocumentBlock>? JumpHexRequested;
+
+    // ── Constructor ──────────────────────────────────────────────────────────
 
     public DocumentStructurePane()
     {
@@ -57,16 +70,46 @@ public partial class DocumentStructurePane : UserControl
         if (_model is null) return;
 
         var alertMap = BuildAlertMap();
-        var nodes = _model.Blocks
-            .Select(b => BuildNode(b, alertMap))
-            .ToList();
+        _allNodes = new ObservableCollection<DocumentBlockNode>(
+            _model.Blocks.Select(b => BuildNode(b, alertMap)));
 
-        PART_Tree.ItemsSource = nodes;
+        ApplyFilter();
+        UpdateCountLabel();
     }
 
+    private void ApplyFilter()
+    {
+        if (string.IsNullOrWhiteSpace(_filterText))
+        {
+            PART_Tree.ItemsSource = _allNodes;
+            return;
+        }
+
+        var lower = _filterText.ToLowerInvariant();
+        var filtered = _allNodes
+            .Where(n => MatchesFilter(n, lower))
+            .ToList();
+
+        PART_Tree.ItemsSource = filtered;
+    }
+
+    private static bool MatchesFilter(DocumentBlockNode node, string filter) =>
+        node.KindLabel.ToLowerInvariant().Contains(filter) ||
+        node.Preview.ToLowerInvariant().Contains(filter)   ||
+        node.OffsetText.ToLowerInvariant().Contains(filter)||
+        node.Children.Any(c => MatchesFilter(c, filter));
+
+    private void UpdateCountLabel()
+    {
+        int total = CountNodes(_allNodes);
+        PART_CountLabel.Text = $"({total})";
+    }
+
+    private static int CountNodes(IEnumerable<DocumentBlockNode> nodes) =>
+        nodes.Sum(n => 1 + CountNodes(n.Children));
+
     private static DocumentBlockNode BuildNode(
-        DocumentBlock                            block,
-        Dictionary<DocumentBlock, ForensicAlert> alertMap)
+        DocumentBlock block, Dictionary<DocumentBlock, ForensicAlert> alertMap)
     {
         var node = new DocumentBlockNode(block)
         {
@@ -91,7 +134,7 @@ public partial class DocumentStructurePane : UserControl
         return map;
     }
 
-    // ── Events ────────────────────────────────────────────────────────────────
+    // ── Tree events ──────────────────────────────────────────────────────────
 
     private void OnTreeSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
@@ -99,33 +142,92 @@ public partial class DocumentStructurePane : UserControl
             BlockNavigated?.Invoke(this, node.Block);
     }
 
-    private void OnBlocksChanged(object? sender, EventArgs e) =>
-        Dispatcher.InvokeAsync(RebuildTree);
+    // ── Search ───────────────────────────────────────────────────────────────
 
-    private void OnAlertsChanged(object? sender, EventArgs e) =>
-        Dispatcher.InvokeAsync(RebuildTree);
+    private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
+    {
+        _filterText = PART_SearchBox.Text;
+        ApplyFilter();
+    }
+
+    private void OnClearSearchClicked(object sender, RoutedEventArgs e)
+    {
+        PART_SearchBox.Clear();
+    }
+
+    // ── Expand / Collapse all ─────────────────────────────────────────────────
+
+    private void OnExpandAllClicked(object sender, RoutedEventArgs e)  => SetExpanded(PART_Tree, true);
+    private void OnCollapseAllClicked(object sender, RoutedEventArgs e) => SetExpanded(PART_Tree, false);
+
+    private static void SetExpanded(ItemsControl parent, bool expand)
+    {
+        foreach (var item in parent.Items)
+        {
+            var container = parent.ItemContainerGenerator.ContainerFromItem(item) as TreeViewItem;
+            if (container is null) continue;
+            container.IsExpanded = expand;
+            SetExpanded(container, expand);
+        }
+    }
+
+    // ── Context menu ─────────────────────────────────────────────────────────
+
+    private DocumentBlockNode? GetSelectedNode() =>
+        PART_Tree.SelectedItem as DocumentBlockNode;
+
+    private void OnMenuNavigateClicked(object sender, RoutedEventArgs e)
+    {
+        if (GetSelectedNode() is { } node)
+            BlockNavigated?.Invoke(this, node.Block);
+    }
+
+    private void OnMenuJumpHexClicked(object sender, RoutedEventArgs e)
+    {
+        if (GetSelectedNode() is { } node)
+            JumpHexRequested?.Invoke(this, node.Block);
+    }
+
+    private void OnMenuCopyTextClicked(object sender, RoutedEventArgs e)
+    {
+        if (GetSelectedNode() is { } node && !string.IsNullOrEmpty(node.Block.Text))
+            System.Windows.Clipboard.SetText(node.Block.Text);
+    }
+
+    private void OnMenuCopyOffsetClicked(object sender, RoutedEventArgs e)
+    {
+        if (GetSelectedNode() is { } node)
+            System.Windows.Clipboard.SetText($"0x{node.Block.RawOffset:X8}");
+    }
+
+    // ── Model events ─────────────────────────────────────────────────────────
+
+    private void OnBlocksChanged(object? sender, EventArgs e)  => Dispatcher.InvokeAsync(RebuildTree);
+    private void OnAlertsChanged(object? sender, EventArgs e)  => Dispatcher.InvokeAsync(RebuildTree);
 }
 
 // ── Node view model ───────────────────────────────────────────────────────────
 
-/// <summary>
-/// TreeView node wrapping a <see cref="DocumentBlock"/> with forensic overlay.
-/// </summary>
+/// <summary>TreeView node wrapping a <see cref="DocumentBlock"/> with forensic overlay.</summary>
 public sealed class DocumentBlockNode : INotifyPropertyChanged
 {
     private ForensicAlert? _alert;
 
-    public DocumentBlockNode(DocumentBlock block)
-    {
-        Block = block;
-    }
+    public DocumentBlockNode(DocumentBlock block) => Block = block;
 
     public DocumentBlock Block { get; }
 
     public ForensicAlert? Alert
     {
         get => _alert;
-        set { _alert = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasAlert)); OnPropertyChanged(nameof(AlertMessage)); OnPropertyChanged(nameof(AlertBrushKey)); }
+        set
+        {
+            _alert = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasAlert));
+            OnPropertyChanged(nameof(AlertMessage));
+            OnPropertyChanged(nameof(AlertBrushKey));
+        }
     }
 
     public ObservableCollection<DocumentBlockNode> Children { get; } = [];

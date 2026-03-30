@@ -12,6 +12,7 @@
 
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using WpfHexEditor.App.Controls;
 using WpfHexEditor.Editor.Core.Notifications;
 
@@ -19,7 +20,7 @@ namespace WpfHexEditor.App.StatusBar;
 
 /// <summary>
 /// Wires <see cref="INotificationService.NotificationsChanged"/> to the
-/// bell badge controls in the MainWindow status bar.
+/// bell badge controls in the MainWindow title bar.
 /// </summary>
 internal sealed class NotificationBellAdapter : IDisposable
 {
@@ -27,6 +28,7 @@ internal sealed class NotificationBellAdapter : IDisposable
     private readonly Border                   _badge;
     private readonly TextBlock                _badgeText;
     private readonly NotificationCenterPopup  _popup;
+    private readonly UIElement                _bellAnchor;
 
     internal NotificationBellAdapter(
         INotificationService service,
@@ -34,16 +36,21 @@ internal sealed class NotificationBellAdapter : IDisposable
         TextBlock            badgeText,
         UIElement            bellAnchor)
     {
-        _service   = service   ?? throw new ArgumentNullException(nameof(service));
-        _badge     = badgeBorder;
-        _badgeText = badgeText;
-        _popup     = new NotificationCenterPopup(service)
+        _service    = service    ?? throw new ArgumentNullException(nameof(service));
+        _badge      = badgeBorder;
+        _badgeText  = badgeText;
+        _bellAnchor = bellAnchor;
+        _popup      = new NotificationCenterPopup(service)
         {
-            PlacementTarget = bellAnchor,
-            Placement       = System.Windows.Controls.Primitives.PlacementMode.Top,
+            PlacementTarget  = bellAnchor,
+            Placement        = System.Windows.Controls.Primitives.PlacementMode.Bottom,
             HorizontalOffset = -320,
-            VerticalOffset   = -4,
+            VerticalOffset   = 4,
         };
+
+        // StaysOpen=true — close manually when clicking outside both popup and bell
+        _popup.Opened += OnPopupOpened;
+        _popup.Closed += OnPopupClosed;
 
         _service.NotificationsChanged += OnChanged;
         Refresh();
@@ -55,9 +62,7 @@ internal sealed class NotificationBellAdapter : IDisposable
     public void TogglePopup()
     {
         if (_popup.IsOpen)
-        {
             _popup.IsOpen = false;
-        }
         else
         {
             _popup.Rebuild();
@@ -66,6 +71,27 @@ internal sealed class NotificationBellAdapter : IDisposable
     }
 
     // ── Private ───────────────────────────────────────────────────────────────
+
+    private void OnPopupOpened(object? sender, EventArgs e)
+    {
+        if (Window.GetWindow(_bellAnchor) is Window w)
+            w.PreviewMouseDown += OnWindowPreviewMouseDown;
+    }
+
+    private void OnPopupClosed(object? sender, EventArgs e)
+    {
+        if (Window.GetWindow(_bellAnchor) is Window w)
+            w.PreviewMouseDown -= OnWindowPreviewMouseDown;
+    }
+
+    private void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        // If the click is on the bell button or inside the popup, do not close.
+        if (e.Source is DependencyObject src &&
+            (_bellAnchor.IsAncestorOf(src) || _popup.IsAncestorOf(src)))
+            return;
+        _popup.IsOpen = false;
+    }
 
     private void OnChanged(object? sender, EventArgs e) => Refresh();
 
@@ -76,5 +102,10 @@ internal sealed class NotificationBellAdapter : IDisposable
         _badgeText.Text    = count > 9 ? "9+" : count.ToString();
     }
 
-    public void Dispose() => _service.NotificationsChanged -= OnChanged;
+    public void Dispose()
+    {
+        _service.NotificationsChanged -= OnChanged;
+        _popup.Opened -= OnPopupOpened;
+        _popup.Closed -= OnPopupClosed;
+    }
 }

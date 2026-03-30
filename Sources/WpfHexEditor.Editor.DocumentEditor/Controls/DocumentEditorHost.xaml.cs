@@ -3,14 +3,16 @@
 // File: Controls/DocumentEditorHost.xaml.cs
 // Description:
 //     Main host control that implements IDocumentEditor + IOpenableDocument.
-//     Manages the 3-column layout (TextPane / StructurePane / HexPane),
+//     Manages the 5-row layout (Toolbar / Breadcrumb / Content / MiniMap / StatusBar),
 //     orchestrates DocumentViewMode transitions, and wires the
 //     BinaryMapSyncService for bidirectional selection sync.
+//     v2: ZoomLevel DP, breadcrumb path, pop-toolbar, status bar wiring.
 // ==========================================================
 
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
@@ -47,16 +49,19 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
             nameof(IsTextPaneVisible), typeof(bool), typeof(DocumentEditorHost),
             new PropertyMetadata(true));
 
+    public static readonly DependencyProperty ZoomLevelProperty =
+        DependencyProperty.Register(
+            nameof(ZoomLevel), typeof(double), typeof(DocumentEditorHost),
+            new PropertyMetadata(1.0, OnZoomLevelChanged));
+
     // ── Fields ──────────────────────────────────────────────────────────────
 
     private IIDEHostContext?         _ideContext;
     private DocumentEditorViewModel? _vm;
     private BinaryMapSyncService?    _syncService;
     private CancellationTokenSource  _loadCts = new();
-
-    // When the host is created before _ideHostContext is assigned (startup race),
-    // the file path is stored here so SetContext() can retry the open.
-    private string? _pendingFilePath;
+    private string?                  _pendingFilePath;
+    private string                   _currentFileExtension = string.Empty;
 
     // ── Constructor ─────────────────────────────────────────────────────────
 
@@ -70,12 +75,6 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
     // ── Context injection (deferred) ────────────────────────────────────────
 
-    /// <summary>
-    /// Called by <see cref="DocumentEditorFactory.NotifyContextReady"/> after
-    /// <c>_ideHostContext</c> is assigned in <c>MainWindow.PluginSystem.cs</c>.
-    /// If there is a pending file open (deferred because context was null at
-    /// <see cref="OpenAsync"/> time), the open is retried immediately.
-    /// </summary>
     public void SetContext(IIDEHostContext context)
     {
         if (_ideContext is not null) return;
@@ -113,7 +112,11 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         set => SetValue(IsTextPaneVisibleProperty, value);
     }
 
-    // ── IDocumentEditor ─────────────────────────────────────────────────────
+    public double ZoomLevel
+    {
+        get => (double)GetValue(ZoomLevelProperty);
+        set => SetValue(ZoomLevelProperty, value);
+    }
 
     // ── IDocumentBinaryMapSource ─────────────────────────────────────────────
 
@@ -171,7 +174,6 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     public async Task SaveAsync(CancellationToken ct = default)
     {
         if (_vm is null) return;
-        // TODO: implement save via IDocumentLoader (reverse path)
         await Task.CompletedTask;
     }
 
@@ -188,7 +190,7 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         _loadCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var linked = _loadCts.Token;
 
-        // Immediately show filename in tab title + loading placeholder in text pane.
+        _currentFileExtension = System.IO.Path.GetExtension(filePath);
         TitleChanged?.Invoke(this, System.IO.Path.GetFileName(filePath) + " …");
         await Dispatcher.InvokeAsync(() => PART_TextPane.ShowLoading());
 
@@ -202,7 +204,6 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         bool loadSucceeded = false;
         try
         {
-            // Resolve loader via IExtensionRegistry
             var loaders = _ideContext?.ExtensionRegistry
                               .GetExtensions<IDocumentLoader>()
                           ?? [];
@@ -211,7 +212,6 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
             if (loaders.Count == 0 && _ideContext is null)
             {
-                // Context not yet available — defer this open until SetContext() is called.
                 _pendingFilePath = filePath;
                 OutputMessage?.Invoke(this, $"[DocEditor] DEFERRED — waiting for IDE context. file='{fileName}'");
                 await Dispatcher.InvokeAsync(() =>
@@ -232,7 +232,6 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
             OutputMessage?.Invoke(this, $"[DocEditor] LoadAsync done — blocks={model.Blocks.Count}  metadata='{model.Metadata.Title}'");
 
-            // Run UI work on dispatcher
             await Dispatcher.InvokeAsync(() => BindModel(model));
             loadSucceeded = true;
             OutputMessage?.Invoke(this, $"[DocEditor] BindModel done — SUCCESS");
@@ -242,19 +241,18 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         {
             OutputMessage?.Invoke(this, $"[DocEditor] ERROR — {ex.GetType().Name}: {ex.Message}");
             StatusMessage?.Invoke(this, $"Failed to open document: {ex.Message}");
-            OutputMessage?.Invoke(this, $"[DocumentEditor] {ex}");
             _ideContext?.Output.Error($"[DocumentEditor] Failed to open '{fileName}': {ex}");
             await Dispatcher.InvokeAsync(() =>
             {
                 PART_TextPane.ShowError(ex.Message);
-                PART_HexPane.LoadFile(filePath);  // show raw bytes even on parse failure
+                PART_HexPane.LoadFile(filePath);
             });
             TitleChanged?.Invoke(this, fileName + " ⚠");
         }
         finally
         {
             IsBusy = false;
-            if (!(_pendingFilePath is not null))  // don't fire Completed if we're just deferring
+            if (_pendingFilePath is null)
             {
                 OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs
                 {
@@ -274,17 +272,24 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
     private void ApplyViewMode(DocumentViewMode mode)
     {
-        // Reset all pane visibilities, then show required ones
         SetPaneVisibility(
             text:      mode is DocumentViewMode.TextOnly or DocumentViewMode.Split or DocumentViewMode.Structure,
             structure: mode == DocumentViewMode.Structure,
             hex:       mode is DocumentViewMode.Split or DocumentViewMode.HexOnly);
 
-        // Update toggle button checked states
         if (PART_TextModeBtn   is not null) PART_TextModeBtn.IsChecked   = mode == DocumentViewMode.TextOnly;
         if (PART_SplitModeBtn  is not null) PART_SplitModeBtn.IsChecked  = mode == DocumentViewMode.Split;
         if (PART_HexModeBtn    is not null) PART_HexModeBtn.IsChecked    = mode == DocumentViewMode.HexOnly;
         if (PART_StructModeBtn is not null) PART_StructModeBtn.IsChecked = mode == DocumentViewMode.Structure;
+
+        PART_StatusBar.ViewModeText = mode switch
+        {
+            DocumentViewMode.TextOnly  => "Text",
+            DocumentViewMode.Split     => "Split",
+            DocumentViewMode.HexOnly   => "Hex",
+            DocumentViewMode.Structure => "Structure",
+            _ => "Split"
+        };
     }
 
     private void SetPaneVisibility(bool text, bool structure, bool hex)
@@ -297,19 +302,15 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
         if (text && hex && !structure)
         {
-            // Split mode (Text + Hex, no Structure):
-            // Move HexPane to StructCol (col 2) so Splitter1 correctly resizes Text ↔ Hex.
-            // Without this, Splitter1 resizes Text ↔ StructCol(0-width), leaving Hex unaffected.
             Grid.SetColumn(PART_HexPane, 2);
             PART_TextCol.Width      = new GridLength(2, GridUnitType.Star);
             PART_Splitter1Col.Width = new GridLength(4);
-            PART_StructCol.Width    = new GridLength(1, GridUnitType.Star); // acts as Hex column
+            PART_StructCol.Width    = new GridLength(1, GridUnitType.Star);
             PART_Splitter2Col.Width = new GridLength(0);
             PART_HexCol.Width       = new GridLength(0);
         }
         else
         {
-            // All other modes: restore HexPane to its designated column (col 4)
             Grid.SetColumn(PART_HexPane, 4);
             PART_TextCol.Width      = text      ? new GridLength(2, GridUnitType.Star) : new GridLength(0);
             PART_StructCol.Width    = structure ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
@@ -330,6 +331,23 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         if (_vm?.Model is null) return;
         _vm.Model.ForensicMode = enabled ? ForensicMode.Forensic : ForensicMode.Normal;
         PART_TextPane.SetForensicMode(enabled);
+        PART_ForensicBtn.IsChecked = enabled;
+    }
+
+    // ── Zoom ─────────────────────────────────────────────────────────────────
+
+    private static void OnZoomLevelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is DocumentEditorHost host)
+            host.ApplyZoom((double)e.NewValue);
+    }
+
+    private void ApplyZoom(double level)
+    {
+        level = Math.Clamp(level, 0.5, 2.0);
+        PART_TextPane.SetZoom(level);
+        PART_ZoomLabel.Text    = $"{level * 100:0}%";
+        PART_StatusBar.ZoomPercent = level * 100;
     }
 
     // ── Toolbar handlers ─────────────────────────────────────────────────────
@@ -340,6 +358,93 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     private void OnStructureModeClicked(object sender, RoutedEventArgs e) => ViewMode = DocumentViewMode.Structure;
     private void OnForensicModeClicked(object sender, RoutedEventArgs e)  => IsForensicMode = PART_ForensicBtn.IsChecked == true;
     private void OnSaveClicked(object sender, RoutedEventArgs e)          => Save();
+    private void OnExportClicked(object sender, RoutedEventArgs e)        { /* TODO: export dialog */ }
+    private void OnMetadataClicked(object sender, RoutedEventArgs e)      { /* TODO: metadata flyout */ }
+
+    private void OnZoomInClicked(object sender, RoutedEventArgs e)
+    {
+        ZoomLevel = Math.Min(2.0, Math.Round(ZoomLevel + 0.1, 1));
+    }
+
+    private void OnZoomOutClicked(object sender, RoutedEventArgs e)
+    {
+        ZoomLevel = Math.Max(0.5, Math.Round(ZoomLevel - 0.1, 1));
+    }
+
+    // ── Breadcrumb ────────────────────────────────────────────────────────────
+
+    private void OnTextPaneSelectedBlockChanged(object? sender, DocumentBlock? block)
+    {
+        PART_Breadcrumb.SetPath(block, _vm?.Model);
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnBreadcrumbBlockSelected(object? sender, DocumentBlock block)
+    {
+        PART_TextPane.ScrollToBlock(block);
+    }
+
+    private void OnStructureBlockNavigated(object? sender, DocumentBlock block)
+    {
+        PART_TextPane.ScrollToBlock(block);
+        PART_Breadcrumb.SetPath(block, _vm?.Model);
+    }
+
+    // ── Pop-toolbar ───────────────────────────────────────────────────────────
+
+    private void OnPopToolbarRequested(object? sender, PopToolbarRequestedArgs args)
+    {
+        PART_PopToolbarContent.SetContext(args.Block);
+        PART_PopToolbar.HorizontalOffset = args.SelectionRect.Left;
+        PART_PopToolbar.VerticalOffset   = args.SelectionRect.Top - 36;
+        PART_PopToolbar.IsOpen = true;
+    }
+
+    private void OnPopToolbarFormat(object? sender, string format)
+    {
+        PART_TextPane.ApplyFormat(format);
+    }
+
+    private void OnPopToolbarCopyText(object? sender, DocumentBlock? block)
+    {
+        if (block is not null)
+            System.Windows.Clipboard.SetText(block.Text);
+        PART_PopToolbar.IsOpen = false;
+    }
+
+    private void OnPopToolbarCopyHex(object? sender, DocumentBlock? block)
+    {
+        if (block is not null)
+            System.Windows.Clipboard.SetText(
+                $"0x{block.RawOffset:X8} +0x{block.RawLength:X4}");
+        PART_PopToolbar.IsOpen = false;
+    }
+
+    private void OnPopToolbarInspect(object? sender, DocumentBlock? block)
+    {
+        if (block is not null && ViewMode != DocumentViewMode.Structure)
+            ViewMode = DocumentViewMode.Structure;
+        PART_PopToolbar.IsOpen = false;
+    }
+
+    private void OnPopToolbarJumpHex(object? sender, DocumentBlock? block)
+    {
+        if (block is not null)
+            PART_HexPane.ScrollToBlock(block);
+        PART_PopToolbar.IsOpen = false;
+    }
+
+    // ── Status bar ───────────────────────────────────────────────────────────
+
+    private void OnStatusBarForensicClicked(object? sender, EventArgs e)
+    {
+        IsForensicMode = !IsForensicMode;
+    }
+
+    private void OnStatusBarZoomChanged(object? sender, double zoomPercent)
+    {
+        ZoomLevel = zoomPercent / 100.0;
+    }
 
     // ── Model binding ─────────────────────────────────────────────────────────
 
@@ -354,14 +459,16 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         PART_StructurePane.BindModel(model);
         PART_HexPane.BindModel(model);
         PART_MiniMap.BindModel(model);
+        PART_StatusBar.BindModel(model, _currentFileExtension);
+
+        // Apply initial zoom
+        PART_TextPane.SetZoom(ZoomLevel);
 
         _syncService = new BinaryMapSyncService(model);
         _syncService.Wire(PART_TextPane, PART_HexPane);
 
-        // Apply default view mode from options (loaded from AppSettings)
         ApplyViewMode(ViewMode);
 
-        // Hook model events
         model.BinaryMap.MapRebuilt += (_, _) => BinaryMapRebuilt?.Invoke(this, EventArgs.Empty);
 
         model.UndoEngine.StateChanged += (_, _) =>
@@ -379,6 +486,9 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
             }
         };
 
+        model.ForensicAlertsChanged += (_, _) =>
+            Dispatcher.InvokeAsync(() => PART_StatusBar.UpdateForensicCount(model));
+
         TitleChanged?.Invoke(this, Title);
     }
 
@@ -391,8 +501,6 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        // Do NOT cancel _loadCts here — the docking system unloads/reloads controls
-        // during layout restore and tab switches, which would kill active loads.
-        // Cancellation is handled explicitly by Close() and CancelOperation().
+        // Do NOT cancel _loadCts here — docking system unloads/reloads during tab switches.
     }
 }
