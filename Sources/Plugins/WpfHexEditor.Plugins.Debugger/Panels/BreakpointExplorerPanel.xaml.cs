@@ -37,6 +37,18 @@ public partial class BreakpointExplorerPanel : UserControl
         BpHoverPopup = new BreakpointHoverPopup();
         AddLogicalChild(BpHoverPopup);
 
+        BpHoverPopup.GoToSourceRequested += (filePath, line) =>
+        {
+            var row = Vm?.FlatBreakpoints.FirstOrDefault(r => r.FilePath == filePath && r.Line == line);
+            if (row is not null) Vm?.GoToSourceCommand.Execute(row);
+        };
+
+        BpHoverPopup.EditConditionRequested += (filePath, line) =>
+        {
+            var row = Vm?.FlatBreakpoints.FirstOrDefault(r => r.FilePath == filePath && r.Line == line);
+            if (row is not null) Vm?.GoToSourceCommand.Execute(row);
+        };
+
         _overflowManager = new ToolbarOverflowManager(
             toolbarContainer:      ToolbarBorder,
             alwaysVisiblePanel:    ToolbarRightPanel,

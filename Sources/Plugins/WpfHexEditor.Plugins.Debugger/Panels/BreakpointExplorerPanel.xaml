@@ -28,21 +28,7 @@
                 SizeChanged="OnToolbarSizeChanged">
             <DockPanel LastChildFill="False" Margin="4,0">
 
-                <!-- ── Fixed RIGHT: always visible ── -->
-                <StackPanel x:Name="ToolbarRightPanel" DockPanel.Dock="Right"
-                            Orientation="Horizontal" VerticalAlignment="Center" />
-
-                <!-- ── Search box (right-anchored, always visible, before overflow) ── -->
-                <StackPanel x:Name="ToolbarLeftPanel" DockPanel.Dock="Right"
-                            Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
-                    <TextBox x:Name="SearchBox"
-                             Width="140"
-                             Style="{DynamicResource PanelSearchBoxStyle}"
-                             Tag="Search breakpoints..."
-                             Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
-                </StackPanel>
-
-                <!-- ── Overflow button (right, Visibility=Collapsed by default) ── -->
+                <!-- ── Overflow button (rightmost, Visibility=Collapsed by default) ── -->
                 <Button x:Name="OverflowButton" DockPanel.Dock="Right"
                         Style="{DynamicResource PanelIconButtonStyle}"
                         ToolTip="More options" Visibility="Collapsed"
@@ -79,6 +65,20 @@
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
+
+                <!-- ── Search box (right-anchored, always visible) ── -->
+                <StackPanel x:Name="ToolbarLeftPanel" DockPanel.Dock="Right"
+                            Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
+                    <TextBox x:Name="SearchBox"
+                             Width="140"
+                             Style="{DynamicResource PanelSearchBoxStyle}"
+                             Tag="Search breakpoints..."
+                             Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
+                </StackPanel>
+
+                <!-- ── Fixed RIGHT: always visible ── -->
+                <StackPanel x:Name="ToolbarRightPanel" DockPanel.Dock="Right"
+                            Orientation="Horizontal" VerticalAlignment="Center" />
 
                 <!-- ── Group: TbgActions — Enable/Disable/Delete (collapse last) ── -->
                 <StackPanel x:Name="TbgActions" DockPanel.Dock="Left"
