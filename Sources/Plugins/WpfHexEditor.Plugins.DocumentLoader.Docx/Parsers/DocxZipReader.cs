@@ -36,7 +36,9 @@ internal sealed class DocxZipReader : IDisposable
     /// </summary>
     public string? ReadEntryText(string entryName)
     {
-        var entry = _zip.GetEntry(entryName);
+        var entry = _zip.GetEntry(entryName)
+                    ?? _zip.Entries.FirstOrDefault(e =>
+                        string.Equals(e.FullName, entryName, StringComparison.OrdinalIgnoreCase));
         if (entry is null) return null;
         using var sr = new StreamReader(entry.Open());
         return sr.ReadToEnd();
