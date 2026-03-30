@@ -25,7 +25,6 @@ public partial class BreakpointExplorerPanel : UserControl
     private ToolbarOverflowManager? _overflowManager;
 
     // ── Hover popup ───────────────────────────────────────────────────────────
-    private BreakpointHoverPopup? _hoverPopup;
     private readonly DispatcherTimer _hoverTimer;
     private BreakpointRowEx? _pendingHoverRow;
 
@@ -46,12 +45,7 @@ public partial class BreakpointExplorerPanel : UserControl
         _hoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
         _hoverTimer.Tick += OnHoverTimerTick;
 
-        Loaded += (_, _) =>
-        {
-            FlatList.MouseMove  += OnListMouseMove;
-            FlatList.MouseLeave += OnListMouseLeave;
-        };
-        Unloaded += (_, _) => _hoverPopup?.Dispose();
+        Unloaded += (_, _) => BpHoverPopup.Dispose();
     }
 
     // ── Toolbar overflow ──────────────────────────────────────────────────
@@ -158,43 +152,50 @@ public partial class BreakpointExplorerPanel : UserControl
 
     private void OnListMouseMove(object sender, MouseEventArgs e)
     {
-        var row = GetRowUnderMouse(e.GetPosition(FlatList));
-        if (row == _pendingHoverRow) return;
+        var row = GetRowUnderMouse<ListViewItem>(FlatList, e.GetPosition(FlatList));
+        UpdateHover(row);
+    }
 
-        _hoverTimer.Stop();
-        _pendingHoverRow = row;
-
-        if (row is not null)
-            _hoverTimer.Start();
-        else
-            _hoverPopup?.OnHostMouseLeft();
+    private void OnTreeMouseMove(object sender, MouseEventArgs e)
+    {
+        var row = GetRowUnderMouse<TreeViewItem>(GroupedTree, e.GetPosition(GroupedTree));
+        UpdateHover(row);
     }
 
     private void OnListMouseLeave(object sender, MouseEventArgs e)
     {
         _hoverTimer.Stop();
         _pendingHoverRow = null;
-        _hoverPopup?.OnHostMouseLeft();
+        BpHoverPopup.OnHostMouseLeft();
+    }
+
+    private void UpdateHover(BreakpointRowEx? row)
+    {
+        if (row == _pendingHoverRow) return;
+        _hoverTimer.Stop();
+        _pendingHoverRow = row;
+        if (row is not null) _hoverTimer.Start();
+        else BpHoverPopup.OnHostMouseLeft();
     }
 
     private void OnHoverTimerTick(object? sender, EventArgs e)
     {
         _hoverTimer.Stop();
         if (_pendingHoverRow is null || Vm is null) return;
-
-        _hoverPopup ??= new BreakpointHoverPopup { PlacementTarget = FlatList };
-        _hoverPopup.Show(_pendingHoverRow, Vm.DebuggerService);
+        BpHoverPopup.Show(_pendingHoverRow, Vm.DebuggerService);
     }
 
-    private BreakpointRowEx? GetRowUnderMouse(Point pos)
+    // Generic hit-test: walks up from the hit visual looking for TContainer with BreakpointRowEx DataContext.
+    private static BreakpointRowEx? GetRowUnderMouse<TContainer>(UIElement root, Point pos)
+        where TContainer : FrameworkElement
     {
-        var hit = VisualTreeHelper.HitTest(FlatList, pos);
+        var hit = VisualTreeHelper.HitTest(root, pos);
         if (hit?.VisualHit is null) return null;
 
         DependencyObject? current = hit.VisualHit;
         while (current is not null)
         {
-            if (current is ListViewItem { DataContext: BreakpointRowEx row })
+            if (current is TContainer { DataContext: BreakpointRowEx row })
                 return row;
             current = VisualTreeHelper.GetParent(current);
         }
