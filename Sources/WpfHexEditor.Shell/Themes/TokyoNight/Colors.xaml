@@ -755,6 +755,8 @@
     <SolidColorBrush x:Key="WF_PointerArrowBrush"         Color="#73DACA" />
     <SolidColorBrush x:Key="WF_BitfieldSubrowBrush"       Color="#24283B" />
     <SolidColorBrush x:Key="WF_InspectorGroupHeaderBrush" Color="#2F3549" />
+    <SolidColorBrush x:Key="WF_AiHintAccentBrush"         Color="#E0AF68" />
+    <SolidColorBrush x:Key="WF_AiHintSectionHeaderBrush"  Color="#252018" />
     <SolidColorBrush x:Key="WF_NavigatorBookmarkBrush"    Color="#7AA2F7" />
     <SolidColorBrush x:Key="WF_ConfidenceBadgeBrush"      Color="#9ECE6A" />
 
