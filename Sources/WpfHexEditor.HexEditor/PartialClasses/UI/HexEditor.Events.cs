@@ -952,6 +952,8 @@ namespace WpfHexEditor.HexEditor
                     UpdateScrollMarkersSelection();
                     // Refresh column headers to highlight the SelectionStart column
                     RefreshColumnHeader();
+                    // Fire public event so column highlight overlay also updates (keyboard navigation path)
+                    OnSelectionStartChanged(EventArgs.Empty);
                     break;
 
                 case nameof(HexEditorViewModel.SelectionStop):

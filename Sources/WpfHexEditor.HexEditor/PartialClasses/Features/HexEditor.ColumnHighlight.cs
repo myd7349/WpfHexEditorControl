@@ -62,6 +62,7 @@ namespace WpfHexEditor.HexEditor
             if (_columnHighlight is null) return;
 
             SelectionStartChanged += OnColumnHighlightSelectionChanged;
+            ZoomScaleChanged     += OnColumnHighlightSelectionChanged;
         }
 
         // ── Event Handlers ────────────────────────────────────────────────────
@@ -84,8 +85,10 @@ namespace WpfHexEditor.HexEditor
 
             long   offset    = _viewModel.SelectionStart.Value;
             int    colIdx    = (int)(offset % bytesPerLine);
-            double cellWidth = HexViewport.CalculateCellWidthForByteCount(1) + 2; // +2 for HexByteSpacing
-            double hexStart  = HexViewport.HexPanelStartX;
+            // ZoomScale multiplies all logical distances to match the LayoutTransform applied to HexViewport
+            double zoom      = ZoomScale;
+            double cellWidth = (HexViewport.CalculateCellWidthForByteCount(1) + 2) * zoom; // +2 for HexByteSpacing
+            double hexStart  = HexViewport.HexPanelStartX * zoom;
 
             // Account for byte-group spacers inserted by the renderer at every group boundary.
             // e.g. with ByteGrouping=4 and colIdx=6: 1 spacer before col 4 → +spacerWidth
@@ -96,7 +99,7 @@ namespace WpfHexEditor.HexEditor
                  HexViewport.ByteSpacerPositioning == ByteSpacerPosition.HexBytePanel))
             {
                 int spacerCount = colIdx / groupSize;
-                spacerOffset = spacerCount * (int)HexViewport.ByteSpacerWidthTickness;
+                spacerOffset = spacerCount * (int)HexViewport.ByteSpacerWidthTickness * zoom;
             }
 
             _columnHighlight.SetColumn(colIdx, hexStart, cellWidth, spacerOffset);
