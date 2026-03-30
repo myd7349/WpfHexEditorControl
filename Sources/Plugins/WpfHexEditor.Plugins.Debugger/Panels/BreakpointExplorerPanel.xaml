@@ -32,6 +32,16 @@
                 <StackPanel x:Name="ToolbarRightPanel" DockPanel.Dock="Right"
                             Orientation="Horizontal" VerticalAlignment="Center" />
 
+                <!-- ── Search box (right-anchored, always visible, before overflow) ── -->
+                <StackPanel x:Name="ToolbarLeftPanel" DockPanel.Dock="Right"
+                            Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
+                    <TextBox x:Name="SearchBox"
+                             Width="140"
+                             Style="{DynamicResource PanelSearchBoxStyle}"
+                             Tag="Search breakpoints..."
+                             Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
+                </StackPanel>
+
                 <!-- ── Overflow button (right, Visibility=Collapsed by default) ── -->
                 <Button x:Name="OverflowButton" DockPanel.Dock="Right"
                         Style="{DynamicResource PanelIconButtonStyle}"
@@ -90,18 +100,6 @@
                             Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE896;" />
                     <Button Command="{Binding ExportCommand}" ToolTip="Export Breakpoints (VS XML)"
                             Style="{DynamicResource PanelIconButtonStyle}" Content="&#xE898;" />
-                    <Rectangle Width="1" Height="16" Margin="6,0"
-                               Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
-                </StackPanel>
-
-                <!-- ── Search box (always visible, after action groups) ── -->
-                <StackPanel x:Name="ToolbarLeftPanel" DockPanel.Dock="Left"
-                            Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBox x:Name="SearchBox"
-                             Width="140"
-                             Style="{DynamicResource PanelSearchBoxStyle}"
-                             Tag="Search breakpoints..."
-                             Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
                     <Rectangle Width="1" Height="16" Margin="6,0"
                                Fill="{DynamicResource Panel_ToolbarBorderBrush}" />
                 </StackPanel>
