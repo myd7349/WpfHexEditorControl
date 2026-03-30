@@ -149,4 +149,13 @@
           LinkBase="tools\netcoredbg" />
   </ItemGroup>
 
+  <!-- Bundled LSP servers (OmniSharp, clangd) — copied to output/tools/lsp/     -->
+  <!-- Run Scripts/Download-LspServers.ps1 once after clone to populate the dir. -->
+  <ItemGroup>
+    <None Include="..\..\tools\lsp\**"
+          Condition="Exists('..\..\tools\lsp')"
+          CopyToOutputDirectory="PreserveNewest"
+          LinkBase="tools\lsp" />
+  </ItemGroup>
+
 </Project>
