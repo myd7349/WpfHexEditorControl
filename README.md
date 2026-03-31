@@ -43,7 +43,7 @@
 | **🏗️ Project System** | `.whsln` / `.whproj` + VS `.sln`/`.csproj`/`.vbproj` · MSBuild build/rebuild/clean · virtual & physical folders · per-file state persistence · format auto-migration |
 | **🪟 Docking** *(100% in-house)* | Float · dock · auto-hide · colored tabs · **19 built-in themes** (Dark, Light, VS2022Dark, DarkGlass, Dracula, Nord, Tokyo Night, Catppuccin Mocha/Latte, Gruvbox Dark, Forest, Matrix, Synthwave 84, Cyberpunk, High Contrast…) · tab placement L/R/Bottom |
 | **📋 IDE Infrastructure** | `IDocumentEditor` plugin contract · shared `UndoEngine` (coalescence 500 ms, transactions, HexEditor block-undo, VS-style history dropdown) · `Ctrl+Z/Y` across all editors · rect selection (Alt+Click) · VS2022 status bar · Options (9 pages) · Workspace system `.whidews` · Dynamic View Menu (Flat/Categorized/ByDockSide) · Middle-click pan mode · NuGet Solution Manager · DI via `Microsoft.Extensions.DependencyInjection` |
-| **⌨️ Command & Terminal** | Command Palette (`Ctrl+Shift+P`, 9 modes) · `CommandRegistry` (~50 commands) · `KeyBindingService` · Integrated Terminal (`Ctrl+\``, 31+ commands incl. `reload-plugin`) · `ITerminalService` plugin API |
+| **⌨️ Command & Terminal** | Command Palette (`Ctrl+Shift+P`, 9 modes) · `CommandRegistry` (~50 commands) · `KeyBindingService` · Integrated Terminal (`Ctrl+\``, 35+ commands incl. `plugin-reload`) · `ITerminalService` plugin API |
 | **🔌 Plugin System** | SDK 2.0.0 (frozen) · `.whxplugin` packages · Plugin Manager · EventBus (39+ events) · Capability Registry · Extension Points · Dependency Graph · plugin signing · out-of-process sandbox |
 | **🔍 Binary Intelligence** | 400+ format detection · `.whfmt` v2.0 (`repeating`/`union`/`versionedBlocks`/`pointer`/`checksums`/`assertions`/`forensic`/`aiHints`) · 20 critical formats upgraded (PE/ELF/ZIP/PNG/MP4/SQLITE/PDF/JPEG/WASM…) · Parsed Fields (reactive, forensic alerts, FormatNavigator) · Format Field Overlay · Data Inspector (40+ types) · Assembly Explorer (.NET PE + ILSpy decompilation) |
 
@@ -56,7 +56,7 @@ Every editor is a standalone `IDocumentEditor` plugin — reusable outside the I
 | Editor | Progress | Description |
 |--------|----------|-------------|
 | **[Hex Editor](Sources/WpfHexEditor.HexEditor/README.md)** | ~75% | Binary editing — insert/overwrite, 400+ format detection, search, bookmarks, TBL, block undo |
-| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ~87% | 55+ languages (F# + VB.NET), LSP (13 providers), sticky scroll, Find All References, multi-caret, bracket-depth colorizer, color swatch preview, call/type hierarchy, split view |
+| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ~93% | 55+ languages (F# + VB.NET), LSP (13 providers + call/type hierarchy + linked editing + pull diagnostics), sticky scroll, Find All References, multi-caret, bracket-depth colorizer (4-level), color swatch preview, column rulers, code formatting, split view |
 | **[XAML Designer](Sources/WpfHexEditor.Editor.XamlDesigner/README.md)** | ~70% | Live WPF canvas with bidirectional sync, move/resize/rotate, property inspector (F4), 4 split layouts, undo/redo |
 | **[Document Editor](Sources/WpfHexEditor.Editor.DocumentEditor/README.md)** | ~60% | WYSIWYG RTF / DOCX / ODT — DrawingContext renderer, cursor/formatting/tables, styles panel, find/replace, page settings, save, split hex pane |
 | **[TBL Editor](Sources/WpfHexEditor.Editor.TblEditor/README.md)** | ~80% | Character table editor for custom encodings and ROM hacking |
@@ -66,7 +66,7 @@ Every editor is a standalone `IDocumentEditor` plugin — reusable outside the I
 | **[Image Viewer](Sources/WpfHexEditor.Editor.ImageViewer/README.md)** | ~50% | Zoom/pan, rotate/flip/crop/resize, concurrent open |
 | **[Structure Editor](Sources/WpfHexEditor.Editor.StructureEditor/README.md)** | ~40% | `.whfmt` binary template editor — block DataGrid, live save |
 | **[Disassembly Viewer](Sources/WpfHexEditor.Editor.DisassemblyViewer/README.md)** | ~30% | x86/x64/ARM binary disassembler |
-| **[Script Editor](Sources/WpfHexEditor.Editor.ScriptEditor/README.md)** | ~10% | `.hxscript` with syntax highlighting + `HxScriptEngine` |
+| **[Script Editor](Sources/WpfHexEditor.Editor.ScriptEditor/README.md)** | ~55% | `CodeEditorSplitHost` with C#Script language + LSP SmartComplete, `ScriptGlobalsCompletionProvider`, `HxScriptEngine` |
 | **[Audio Viewer](Sources/WpfHexEditor.Editor.AudioViewer/README.md)** | ~5% | Waveform display stub (#174) |
 | **[Tile Editor](Sources/WpfHexEditor.Editor.TileEditor/README.md)** | ~5% | Tile/palette editor for ROM assets stub (#175) |
 | **Decompiled Source Viewer** | ~0% | C# / IL view via ILSpy — planned (#106) |
@@ -139,7 +139,7 @@ All controls are **independently reusable** — no IDE required.
 | **[Properties Panel](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~60% | Context-aware properties (F4) — 400 ms debounce, categorized groups |
 | **[Plugin Manager](Sources/WpfHexEditor.PluginHost/README.md)** | ~65% | Browse, enable/disable, uninstall plugins |
 | **[Plugin Monitoring](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~60% | Real-time CPU% + memory charts per plugin (pure WPF Canvas/Polyline) |
-| **[Options](Sources/WpfHexEditor.Options/README.md)** | ~75% | VS2026-style settings — 9 pages: theme, display, editing, behavior, plugins, auto-save |
+| **[Options](Sources/WpfHexEditor.Options/README.md)** | ~80% | VS2026-style settings — 20+ pages across Environment, Hex Editor, Code Editor (Appearance & Colors / Inline Hints / Navigation / Features / Language Servers), Text Editor, Plugin System, Build & Run, Debugger, Tools |
 | **Quick Search** | ~55% | Inline `Ctrl+F` overlay — find next/prev, regex toggle |
 | **Advanced Search** | ~45% | 5 modes: Hex, Text, Regex, TBL, Wildcard |
 
@@ -203,18 +203,18 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, pre
 
 | Feature | Status | # |
 |---------|--------|---|
-| **Code Editor Phase 2** — peek definition, minimap, smart indent, column rulers, gutter change markers | 🔧 ~87% | #158–168 |
+| **Code Editor Phase 2** — gutter change markers, peek definition, remaining LSP providers | 🔧 ~93% | #158–168 |
 | **Assembly Explorer** — ILSpy backend, Ctrl+Click cross-assembly nav | 🔧 ~75% | #104–106 |
 | **Document Model Phase 2** — multi-editor collaboration, buffer unification | 🔧 ~40% | #107 |
 | **Integrated Terminal** — full multi-shell + macro recording | 🔧 ~70% | #92 |
-| **Editors Phase 2** — TextEditor LSP, DiffViewer 3-way merge, AudioViewer, TileEditor, ScriptEditor REPL | 🔜 Planned | #169–178 |
-| **LSP Phase 3 + Roslyn** — LSP 3.18 pull-diagnostics, Roslyn C#/VB.NET/F# parser | 🔜 Planned | #190–191 |
-| **Code Intelligence** — SmartComplete, snippets, AI suggestions | 🔜 Planned | #86–89 |
+| **Editors Phase 2** — TextEditor LSP, DiffViewer 3-way merge, AudioViewer, TileEditor | 🔜 Planned | #169–178 |
+| **LSP Phase 3 + Roslyn** — Roslyn C#/VB.NET/F# parser (pull-diagnostics + linked editing ✅ done) | 🔧 ~40% | #190–191 |
+| **Code Intelligence** — AI suggestions (SmartComplete ✅ done · Snippets ✅ done · AI pending) | 🔧 ~65% | #86–89 |
 | **Git Integration** | 🔜 Planned | #91 |
 | **Plugin Marketplace & Auto-Update** | 🔜 Planned | #41–43 |
 | **IDE Localization Engine** | 🔜 Planned | #100 |
 | **Installable Package** — MSI / MSIX / WinGet | 🔜 Planned | #109 |
-| **In-IDE Plugin Development** — write/build/hot-reload plugins in the IDE | 🔜 Planned | #138 |
+| **In-IDE Plugin Development** — write/debug/deploy plugins in the IDE (hot-reload ✅ done) | 🔧 ~40% | #138 |
 
 <details>
 <summary>✅ Completed features</summary>
@@ -227,7 +227,11 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, pre
 | **Breakpoint System Overkill** — hover popup, gutter ghost, solution-scoped persistence, hit counts, Breakpoint Explorer panel | v0.6.4.1 |
 | **LSP Tools Plugin** — Call Hierarchy (`Shift+Alt+H`), Type Hierarchy (`Ctrl+Alt+F12`), Linked Editing Range | v0.6.4.1 |
 | **Archive Explorer Plugin** — ZIP/7z/TAR tree, extract, in-place hex preview, `AR_*` tokens | v0.6.4.1 |
-| **Code Editor** — bracket-depth colorizer, color swatch preview, `BasicIndentFormatter` | v0.6.4.1 |
+| **Code Editor Phase 2** — column rulers (`CE_RulerBrush`), bracket-depth colorizer (4-level `CE_Bracket_1/2/3/4`), color swatch preview, `BasicIndentFormatter`, format-on-save, `BracketDepthColorizer` direct-scan engine | v0.6.4.1 |
+| **LSP C1/C2** — pull-diagnostics (LSP 3.18), linked editing ranges (`textDocument/linkedEditingRange`) | v0.6.4.1 |
+| **CollectibleALC Hot-Reload** — `IWpfHexEditorPluginV2.ReloadAsync`, `PluginDevLoader` FileSystemWatcher, `plugin-reload` terminal command, cascade reload | v0.6.4.1 |
+| **Script Editor Overkill** — `CodeEditorSplitHost` + C#Script language definition, `ScriptGlobalsCompletionProvider`, SmartComplete for script globals | v0.6.4.1 |
+| **Options Tree Reorganization** — Code Editor: Appearance & Colors / Inline Hints / Navigation / Features / Language Servers | v0.6.4.1 |
 | **Dynamic View Menu** — Flat/Categorized/ByDockSide modes, pin system | v0.6.4.1 |
 | **Middle-click Pan Mode** — `PanModeController` across all editors/viewports | v0.6.4.1 |
 | **Debugger Full Audit** — 11-bug fix, BP line highlight, `DB_*` tokens | v0.6.4.1 |
