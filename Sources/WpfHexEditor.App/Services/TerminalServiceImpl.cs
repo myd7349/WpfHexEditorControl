@@ -10,17 +10,18 @@
 //     When no terminal panel is open, all write calls are silent no-ops.
 //
 // Architecture Notes:
-//     - Pattern: Adapter + Null-Object (no-op when _output is null)
-//     - SetOutput() is called by MainWindow whenever a TerminalPanelViewModel
-//       is created (on open) or disposed (on close, set to null).
-//     - SetSessionManager() wires the IShellSessionManager so that OpenSession /
-//       CloseActiveSession route to the multi-tab session orchestrator (Feature #92).
-//     - Thread-safe: volatile fields, no locks needed for write-only sink.
+//     - Pattern: Adapter + Null-Object (no-op when sink is null)
+//     - SetOutput()       — called by MainWindow when a TerminalPanelViewModel is created or closed.
+//     - SetSessionManager() — wires IShellSessionManager for OpenSession / CloseActiveSession (Feature #92).
+//     - SetRegistry()     — wires TerminalCommandRegistry for RegisterCommand / UnregisterCommand.
+//       All three follow the same null-object pattern: silently no-op when null.
+//     - Thread-safe: volatile fields, no locks needed.
 // ==========================================================
 
 using WpfHexEditor.Core.Terminal;
 using WpfHexEditor.Core.Terminal.ShellSession;
 using WpfHexEditor.SDK.Contracts.Services;
+using WpfHexEditor.SDK.Contracts.Terminal;
 
 namespace WpfHexEditor.App.Services;
 
@@ -31,8 +32,9 @@ namespace WpfHexEditor.App.Services;
 /// </summary>
 public sealed class TerminalServiceImpl : ITerminalService
 {
-    private volatile ITerminalOutput? _output;
-    private volatile IShellSessionManager? _sessionManager;
+    private volatile ITerminalOutput?        _output;
+    private volatile IShellSessionManager?   _sessionManager;
+    private volatile TerminalCommandRegistry? _registry;
 
     /// <summary>
     /// Registers (or clears) the active Terminal output sink.
@@ -46,6 +48,12 @@ public sealed class TerminalServiceImpl : ITerminalService
     /// </summary>
     public void SetSessionManager(IShellSessionManager? sessionManager)
         => _sessionManager = sessionManager;
+
+    /// <summary>
+    /// Registers (or clears) the command registry used by RegisterCommand / UnregisterCommand.
+    /// Called by MainWindow.PluginSystem.cs after the TerminalPanelViewModel is created or closed.
+    /// </summary>
+    public void SetRegistry(TerminalCommandRegistry? registry) => _registry = registry;
 
     /// <inheritdoc />
     public void WriteLine(string text) => _output?.WriteLine(text);
@@ -86,4 +94,12 @@ public sealed class TerminalServiceImpl : ITerminalService
         if (manager?.ActiveSession is { } active)
             manager.CloseSession(active.Id);
     }
+
+    /// <inheritdoc />
+    public void RegisterCommand(ITerminalCommandProvider command)
+        => _registry?.Register(command);
+
+    /// <inheritdoc />
+    public void UnregisterCommand(string commandName)
+        => _registry?.Unregister(commandName);
 }

@@ -101,6 +101,31 @@ public sealed class LanguageDefinition
     /// Null = no restrictions (all lines are valid breakpoint targets).
     /// </summary>
     public BreakpointRules? BreakpointRules { get; init; }
+
+    /// <summary>
+    /// Column ruler positions (e.g. [80, 120]) from whfmt "columnRulers".
+    /// Null = inherit from AppSettings.DefaultColumnRulers.
+    /// </summary>
+    public IReadOnlyList<int>? ColumnRulers { get; init; }
+
+    /// <summary>
+    /// Bracket pair definitions from whfmt "bracketPairs".
+    /// When non-null, enables multi-level bracket colorization with CE_Bracket_1/2/3/4.
+    /// Null = single-color fallback via CE_Bracket (no depth tracking).
+    /// </summary>
+    public IReadOnlyList<(char Open, char Close)>? BracketPairs { get; init; }
+
+    /// <summary>
+    /// Language-specific formatting rules from whfmt "formattingRules".
+    /// Null = inherit AppSettings defaults (indentSize=4, useTabs=false).
+    /// </summary>
+    public FormattingRules? FormattingRules { get; init; }
+
+    /// <summary>
+    /// Pre-compiled color literal detection patterns from whfmt "colorLiteralPatterns".
+    /// Null = no color swatch preview for this language.
+    /// </summary>
+    public IReadOnlyList<System.Text.RegularExpressions.Regex>? ColorLiteralPatterns { get; init; }
 }
 
 /// <summary>Maps a regex pattern to a token kind for syntax highlighting.</summary>
@@ -258,3 +283,27 @@ public sealed record EndOfBlockHintSettings(
     int  MaxContextLines  = 3,
     bool TriggerBrace     = true,
     bool TriggerDirective = true);
+
+// ==========================================================
+// File: FormattingRules.cs (embedded in LanguageDefinition.cs)
+// Description: Per-language code formatting configuration from whfmt.
+// ==========================================================
+
+/// <summary>
+/// Language-specific formatting preferences read from whfmt "formattingRules".
+/// Used by CodeFormattingService as fallback when no LSP formatter is available.
+/// </summary>
+public sealed record FormattingRules
+{
+    /// <summary>Number of spaces per indent level. Default = 4.</summary>
+    public int IndentSize { get; init; } = 4;
+
+    /// <summary>When true, indent uses tab characters instead of spaces.</summary>
+    public bool UseTabs { get; init; }
+
+    /// <summary>Remove trailing whitespace on save. Default = true.</summary>
+    public bool TrimTrailingWhitespace { get; init; } = true;
+
+    /// <summary>Ensure file ends with a newline. Default = true.</summary>
+    public bool InsertFinalNewline { get; init; } = true;
+}

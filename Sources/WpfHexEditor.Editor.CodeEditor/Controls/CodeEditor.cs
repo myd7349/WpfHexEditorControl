@@ -218,6 +218,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private List<ReferenceGroup> _lastReferenceGroups = new();
         private string               _lastReferenceSymbol = string.Empty;
 
+        // ── Bracket Pair Colorization (#162) ────────────────────────────────────
+        private readonly Services.BracketDepthColorizer _bracketColorizer      = new();
+        private          int                            _bracketDepthFirstLine = -1;
+
         // ── InlineHints ──────────────────────────────────────────────────────────
         private readonly Services.InlineHintsService                                                                                              _inlineHintsService  = new();
         private          IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, System.Windows.Media.Brush IconBrush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds Kind)> _hintsData = new Dictionary<int, (int, string, string, System.Windows.Media.Brush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds)>();
@@ -476,6 +480,18 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         // True between the first Ctrl+M press and the second chord key (outlining commands).
         private bool _outlineChordPending;
+
+        // True between the first Ctrl+K press and the second chord key (formatting commands).
+        private bool _formatChordPending;
+
+        // When true, document is formatted automatically on every save.
+        private bool _formatOnSave;
+
+        // Formatting service — LSP-first, fallback BasicIndentFormatter.
+        private readonly Services.CodeFormattingService _codeFormattingService = new();
+
+        // Color swatch preview (#168) — renders + tracks hit areas.
+        private readonly Services.ColorSwatchRenderer _colorSwatchRenderer = new();
 
         // 500ms folding debounce timer (P1-CE-01) — prevents O(n) scan on every keystroke
         private System.Windows.Threading.DispatcherTimer? _foldingDebounceTimer;
@@ -893,6 +909,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (d is not CodeEditor editor) return;
             var newLang = e.NewValue as LanguageDefinition;
 
+            // Update column rulers from the language definition; null clears rulers.
+            editor.ColumnRulers = newLang?.ColumnRulers;
+
+            // Update bracket pair colorizer — drives CE_Bracket_1/2/3/4 depth colors.
+            editor._bracketColorizer.SetPairs(newLang?.BracketPairs);
+            editor._bracketDepthFirstLine = -1; // force depth rescan on next render
+
             // Re-evaluate InlineHints service attachment: only attach when the language declares support.
             if (newLang?.EnableInlineHints == true)
                 editor._inlineHintsService.Attach(editor._document, editor._currentFilePath);
@@ -986,6 +1009,40 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     _bpSource!.Delete(_currentFilePath!, existingInSpan.Value);
                     return firstLine1;
                 };
+        }
+
+        // ── Column Rulers DP (#165) ───────────────────────────────────────────
+
+        public static readonly DependencyProperty ColumnRulersProperty =
+            DependencyProperty.Register(nameof(ColumnRulers), typeof(IReadOnlyList<int>), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>
+        /// Column ruler positions driven by whfmt <c>"columnRulers"</c> (e.g. [80, 120]).
+        /// Set automatically from <see cref="Language"/> when the active language changes.
+        /// Null = no rulers.
+        /// </summary>
+        [Category("Features")]
+        [DisplayName("Column Rulers")]
+        [Description("Character columns at which vertical guide lines are drawn. Driven by whfmt 'columnRulers'.")]
+        public IReadOnlyList<int>? ColumnRulers
+        {
+            get => (IReadOnlyList<int>?)GetValue(ColumnRulersProperty);
+            set => SetValue(ColumnRulersProperty, value);
+        }
+
+        public static readonly DependencyProperty ShowColumnRulersProperty =
+            DependencyProperty.Register(nameof(ShowColumnRulers), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>
+        /// Show or hide the vertical column ruler lines defined by the active language's whfmt.
+        /// Toggled via the CodeEditor context menu.
+        /// </summary>
+        public bool ShowColumnRulers
+        {
+            get => (bool)GetValue(ShowColumnRulersProperty);
+            set => SetValue(ShowColumnRulersProperty, value);
         }
 
         public static readonly DependencyProperty EnableValidationProperty =
@@ -1434,6 +1491,47 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         // ===== BEHAVIOR - ADVANCED FEATURES =====
+
+        public static readonly DependencyProperty BracketPairColorizationEnabledProperty =
+            DependencyProperty.Register(nameof(BracketPairColorizationEnabled), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>
+        /// When true and the active language defines <c>bracketPairs</c> in its whfmt,
+        /// brackets are colored with CE_Bracket_1/2/3/4 based on nesting depth.
+        /// False = all brackets use the single <c>CE_Bracket</c> token.
+        /// </summary>
+        [Category("Behavior.Advanced")]
+        [DisplayName("Bracket Pair Colorization")]
+        [Description("Color brackets with CE_Bracket_1/2/3/4 based on nesting depth (requires bracketPairs in whfmt).")]
+        public bool BracketPairColorizationEnabled
+        {
+            get => (bool)GetValue(BracketPairColorizationEnabledProperty);
+            set => SetValue(BracketPairColorizationEnabledProperty, value);
+        }
+
+        // -- Color Swatch Preview (#168) -----------------------------------------
+
+        public static readonly DependencyProperty ColorSwatchPreviewEnabledProperty =
+            DependencyProperty.Register(nameof(ColorSwatchPreviewEnabled), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>
+        /// When true and the active language has <c>colorLiteralPatterns</c> in its whfmt definition,
+        /// a 12×12 colour preview swatch is rendered to the left of each colour literal.
+        /// Click a swatch to raise <see cref="ColorSwatchClicked"/>.
+        /// </summary>
+        public bool ColorSwatchPreviewEnabled
+        {
+            get => (bool)GetValue(ColorSwatchPreviewEnabledProperty);
+            set => SetValue(ColorSwatchPreviewEnabledProperty, value);
+        }
+
+        /// <summary>
+        /// Raised when the user clicks a color swatch.
+        /// The host can open a color picker and apply the edited color back into the document.
+        /// </summary>
+        public event EventHandler<ColorSwatchClickedEventArgs>? ColorSwatchClicked;
 
         public static readonly DependencyProperty EnableBracketMatchingProperty =
             DependencyProperty.Register(nameof(EnableBracketMatching), typeof(bool), typeof(CodeEditor),
@@ -2276,6 +2374,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             SkipOverClosingChar       = options.SkipOverClosingChar;
             WrapSelectionInPairs      = options.WrapSelectionInPairs;
 
+            // Color swatch preview (#168)
+            ColorSwatchPreviewEnabled = options.ColorSwatchPreview;
+
+            // Code formatting (#159)
+            _formatOnSave = options.FormatOnSave;
+
             // Sticky scroll (#160)
             _stickyScrollEnabled         = options.StickyScrollEnabled;
             _stickyScrollMaxLines        = options.StickyScrollMaxLines;
@@ -2824,15 +2928,37 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             peekDefMenuItem.Click += (_, _) => _ = ShowPeekDefinitionAsync();
             contextMenu.Items.Add(peekDefMenuItem);
 
+            // Show Call Hierarchy (Shift+Alt+H)
+            var callHierarchyMenuItem = new MenuItem
+            {
+                Header           = "Show _Call Hierarchy",
+                InputGestureText = "Shift+Alt+H",
+                Icon             = MakeMenuIcon("\uE81E"),
+            };
+            callHierarchyMenuItem.Click += (_, _) => _ = PrepareCallHierarchyAtCaretAsync();
+            contextMenu.Items.Add(callHierarchyMenuItem);
+
+            // Show Type Hierarchy (Ctrl+Alt+F12)
+            var typeHierarchyMenuItem = new MenuItem
+            {
+                Header           = "Show _Type Hierarchy",
+                InputGestureText = "Ctrl+Alt+F12",
+                Icon             = MakeMenuIcon("\uE8A9"),
+            };
+            typeHierarchyMenuItem.Click += (_, _) => _ = PrepareTypeHierarchyAtCaretAsync();
+            contextMenu.Items.Add(typeHierarchyMenuItem);
+
             // Enable/disable LSP items based on whether a client is active.
             contextMenu.Opened += (_, _) =>
             {
                 var lspActive = _lspClient is not null;
-                quickFixMenuItem.IsEnabled  = lspActive;
-                renameMenuItem.IsEnabled    = lspActive;
-                goToDefMenuItem.IsEnabled   = lspActive;
-                goToImplMenuItem.IsEnabled  = lspActive;
-                peekDefMenuItem.IsEnabled   = lspActive;
+                quickFixMenuItem.IsEnabled       = lspActive;
+                renameMenuItem.IsEnabled         = lspActive;
+                goToDefMenuItem.IsEnabled        = lspActive;
+                goToImplMenuItem.IsEnabled       = lspActive;
+                peekDefMenuItem.IsEnabled        = lspActive;
+                callHierarchyMenuItem.IsEnabled  = lspActive;
+                typeHierarchyMenuItem.IsEnabled  = lspActive;
             };
 
             // Separator
@@ -2930,6 +3056,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             miWordWrap.SetBinding(MenuItem.IsCheckedProperty,
                 new System.Windows.Data.Binding(nameof(IsWordWrapEnabled)) { Source = this, Mode = System.Windows.Data.BindingMode.TwoWay });
             contextMenu.Items.Add(miWordWrap);
+
+            // Column Rulers toggle
+            var miColumnRulers = new MenuItem
+            {
+                Header      = "_Column Rulers",
+                IsCheckable = true,
+                Icon        = MakeMenuIcon("\uE745")
+            };
+            miColumnRulers.SetBinding(MenuItem.IsCheckedProperty,
+                new System.Windows.Data.Binding(nameof(ShowColumnRulers)) { Source = this, Mode = System.Windows.Data.BindingMode.TwoWay });
+            contextMenu.Items.Add(miColumnRulers);
 
             // Set context menu
             ContextMenu = contextMenu;
@@ -3506,6 +3643,97 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         #endregion
 
+        // ── Code Formatting public API (#159) ─────────────────────────────────────
+
+        /// <summary>
+        /// Formats the full document (Ctrl+K, Ctrl+D).
+        /// LSP textDocument/formatting is tried first; falls back to BasicIndentFormatter.
+        /// The change is applied as a single undoable transaction.
+        /// </summary>
+        public async System.Threading.Tasks.Task FormatDocumentAsync(
+            System.Threading.CancellationToken ct = default)
+        {
+            if (IsReadOnly || _document is null) return;
+
+            string original = GetText();
+            bool   insertSpaces = Language?.FormattingRules?.UseTabs != true;
+            int    tabSize      = IndentSize;
+
+            string formatted = await _codeFormattingService
+                .FormatDocumentAsync(
+                    _currentFilePath ?? string.Empty,
+                    original,
+                    Language,
+                    _lspClient,
+                    tabSize,
+                    insertSpaces,
+                    ct)
+                .ConfigureAwait(true); // resume on UI thread
+
+            if (formatted == original) return;
+
+            using (_undoEngine.BeginTransaction("Format Document"))
+            {
+                SelectAll();
+                DeleteSelection();
+                _document.InsertText(new Models.TextPosition(0, 0), formatted);
+            }
+
+            _selection.Clear();
+            _cursorLine   = 0;
+            _cursorColumn = 0;
+            EnsureCursorVisible();
+            InvalidateVisual();
+        }
+
+        /// <summary>
+        /// Formats only the current selection (Ctrl+K, Ctrl+F).
+        /// Falls back to FormatDocumentAsync when there is no active selection.
+        /// </summary>
+        public async System.Threading.Tasks.Task FormatSelectionAsync(
+            System.Threading.CancellationToken ct = default)
+        {
+            if (IsReadOnly || _document is null) return;
+
+            if (_selection.IsEmpty)
+            {
+                await FormatDocumentAsync(ct).ConfigureAwait(true);
+                return;
+            }
+
+            string original    = GetText();
+            bool   insertSpaces = Language?.FormattingRules?.UseTabs != true;
+            int    tabSize     = IndentSize;
+            var    start       = _selection.NormalizedStart;
+            var    end         = _selection.NormalizedEnd;
+
+            string formatted = await _codeFormattingService
+                .FormatSelectionAsync(
+                    _currentFilePath ?? string.Empty,
+                    original,
+                    start.Line, start.Column,
+                    end.Line,   end.Column,
+                    Language,
+                    _lspClient,
+                    tabSize,
+                    insertSpaces,
+                    ct)
+                .ConfigureAwait(true); // resume on UI thread
+
+            if (formatted == original) return;
+
+            using (_undoEngine.BeginTransaction("Format Selection"))
+            {
+                // Replace full text; the service has already scoped the change.
+                SelectAll();
+                DeleteSelection();
+                _document.InsertText(new Models.TextPosition(0, 0), formatted);
+            }
+
+            _selection.Clear();
+            InvalidateVisual();
+        }
+
         // ── Sticky Scroll public API ───────────────────────────────────────────
 
         /// <summary>
@@ -3533,5 +3761,23 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private void OnStickyScrollScopeClicked(object? sender, int startLine)
             => NavigateToLine(startLine);
 
+    }
+
+    /// <summary>
+    /// Event arguments raised when the user clicks a colour swatch in the editor.
+    /// </summary>
+    public sealed class ColorSwatchClickedEventArgs : EventArgs
+    {
+        /// <summary>The colour value shown by the swatch that was clicked.</summary>
+        public System.Windows.Media.Color Color { get; }
+
+        /// <summary>0-based document line index of the colour literal.</summary>
+        public int Line { get; }
+
+        internal ColorSwatchClickedEventArgs(System.Windows.Media.Color color, int line)
+        {
+            Color = color;
+            Line  = line;
+        }
     }
 }

@@ -169,6 +169,71 @@ public sealed class LspSemanticToken
     public required IReadOnlyList<string> Modifiers { get; init; }
 }
 
+/// <summary>
+/// A single item in a call hierarchy (e.g. a method, function, or constructor).
+/// Returned by textDocument/prepareCallHierarchy and used as the key for
+/// callHierarchy/incomingCalls and callHierarchy/outgoingCalls.
+/// </summary>
+public sealed class LspCallHierarchyItem
+{
+    public required string Name       { get; init; }
+    /// <summary>LSP SymbolKind as string e.g. "method", "function", "class".</summary>
+    public required string Kind       { get; init; }
+    public required string Uri        { get; init; }   // file:/// URI → convert via LspDocumentSync.FromUri
+    public required int    StartLine  { get; init; }   // 0-based
+    public required int    StartColumn{ get; init; }
+    public          string? ContainerName { get; init; }
+}
+
+/// <summary>
+/// One incoming call — the location that calls into a <see cref="LspCallHierarchyItem"/>.
+/// Returned by callHierarchy/incomingCalls.
+/// </summary>
+public sealed class LspIncomingCall
+{
+    public required LspCallHierarchyItem From       { get; init; }
+    /// <summary>Call-site ranges within <see cref="From"/>; may be empty.</summary>
+    public required IReadOnlyList<(int StartLine, int StartColumn, int EndLine, int EndColumn)> FromRanges { get; init; }
+}
+
+/// <summary>
+/// One outgoing call — a callee invoked from inside a <see cref="LspCallHierarchyItem"/>.
+/// Returned by callHierarchy/outgoingCalls.
+/// </summary>
+public sealed class LspOutgoingCall
+{
+    public required LspCallHierarchyItem To         { get; init; }
+    public required IReadOnlyList<(int StartLine, int StartColumn, int EndLine, int EndColumn)> FromRanges { get; init; }
+}
+
+/// <summary>
+/// A single item in a type hierarchy (class, interface, struct).
+/// Returned by textDocument/prepareTypeHierarchy and used as the key for
+/// typeHierarchy/supertypes and typeHierarchy/subtypes.
+/// </summary>
+public sealed class LspTypeHierarchyItem
+{
+    public required string Name       { get; init; }
+    public required string Kind       { get; init; }
+    public required string Uri        { get; init; }
+    public required int    StartLine  { get; init; }
+    public required int    StartColumn{ get; init; }
+    public          string? ContainerName { get; init; }
+}
+
+/// <summary>
+/// A range within a document that participates in a linked editing session.
+/// All ranges in the list contain the same text; editing one synchronises the others.
+/// Coordinates are 0-based (LSP convention).
+/// </summary>
+public sealed class LspLinkedRange
+{
+    public required int StartLine   { get; init; }
+    public required int StartColumn { get; init; }
+    public required int EndLine     { get; init; }
+    public required int EndColumn   { get; init; }
+}
+
 // ── ILspClient interface ───────────────────────────────────────────────────────
 
 /// <summary>
@@ -318,6 +383,87 @@ public interface ILspClient : IAsyncDisposable
     /// </summary>
     Task<LspSemanticTokensResult?> SemanticTokensAsync(
         string filePath, CancellationToken ct = default);
+
+    // ── Formatting ────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Requests textDocument/formatting for the whole document.
+    /// Returns an empty list when the server does not support formatting or
+    /// no changes are needed.  Apply edits bottom-up to avoid offset drift.
+    /// </summary>
+    Task<IReadOnlyList<LspTextEdit>> FormattingAsync(
+        string filePath, int tabSize, bool insertSpaces,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Requests textDocument/rangeFormatting for a line range (0-based, inclusive).
+    /// Returns an empty list when range formatting is unsupported or no changes are needed.
+    /// </summary>
+    Task<IReadOnlyList<LspTextEdit>> RangeFormattingAsync(
+        string filePath,
+        int startLine, int startColumn,
+        int endLine,   int endColumn,
+        int tabSize,   bool insertSpaces,
+        CancellationToken ct = default);
+
+    // ── Call Hierarchy (LSP 3.16) ────────────────────────────────────────────
+
+    /// <summary>
+    /// Requests textDocument/prepareCallHierarchy at the given caret position.
+    /// Returns the call hierarchy items for the symbol under the cursor.
+    /// Returns an empty list when the server does not support call hierarchy
+    /// or the caret is not on a valid symbol.
+    /// </summary>
+    Task<IReadOnlyList<LspCallHierarchyItem>> PrepareCallHierarchyAsync(
+        string filePath, int line, int column, CancellationToken ct = default);
+
+    /// <summary>
+    /// Requests callHierarchy/incomingCalls for the given item.
+    /// Returns all callers of the item. Returns an empty list when unsupported.
+    /// </summary>
+    Task<IReadOnlyList<LspIncomingCall>> GetIncomingCallsAsync(
+        LspCallHierarchyItem item, CancellationToken ct = default);
+
+    /// <summary>
+    /// Requests callHierarchy/outgoingCalls for the given item.
+    /// Returns all callees invoked by the item. Returns an empty list when unsupported.
+    /// </summary>
+    Task<IReadOnlyList<LspOutgoingCall>> GetOutgoingCallsAsync(
+        LspCallHierarchyItem item, CancellationToken ct = default);
+
+    // ── Type Hierarchy (LSP 3.17) ────────────────────────────────────────────
+
+    /// <summary>
+    /// Requests textDocument/prepareTypeHierarchy at the given caret position.
+    /// Returns an empty list when the server does not support it.
+    /// </summary>
+    Task<IReadOnlyList<LspTypeHierarchyItem>> PrepareTypeHierarchyAsync(
+        string filePath, int line, int column, CancellationToken ct = default);
+
+    /// <summary>
+    /// Requests typeHierarchy/supertypes for the given item.
+    /// Returns base classes / implemented interfaces.
+    /// </summary>
+    Task<IReadOnlyList<LspTypeHierarchyItem>> GetSupertypesAsync(
+        LspTypeHierarchyItem item, CancellationToken ct = default);
+
+    /// <summary>
+    /// Requests typeHierarchy/subtypes for the given item.
+    /// Returns derived classes / implementing types.
+    /// </summary>
+    Task<IReadOnlyList<LspTypeHierarchyItem>> GetSubtypesAsync(
+        LspTypeHierarchyItem item, CancellationToken ct = default);
+
+    // ── Linked Editing Ranges (LSP 3.16) ─────────────────────────────────────
+
+    /// <summary>
+    /// Requests textDocument/linkedEditingRange at the given caret position.
+    /// Returns all ranges that must stay in sync (e.g. HTML open/close tag pairs).
+    /// Returns an empty list when the server does not support this capability or
+    /// the caret is not inside a linked region.
+    /// </summary>
+    Task<IReadOnlyList<LspLinkedRange>> LinkedEditingRangesAsync(
+        string filePath, int line, int column, CancellationToken ct = default);
 
     // ── Push Notifications ────────────────────────────────────────────────────
 

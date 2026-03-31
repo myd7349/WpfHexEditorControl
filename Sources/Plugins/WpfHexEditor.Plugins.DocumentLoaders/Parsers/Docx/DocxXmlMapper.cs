@@ -3,8 +3,11 @@
 // File: Parsers/Docx/DocxXmlMapper.cs
 // Description:
 //     Parses word/document.xml (OOXML) into DocumentBlock trees.
+//     Handles paragraphs, runs, tables, structured tags, and inline
+//     images (w:drawing → a:blip → relationship → zip entry).
 // ==========================================================
 
+using System.Globalization;
 using System.Xml.Linq;
 using WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
@@ -13,8 +16,22 @@ namespace WpfHexEditor.Plugins.DocumentLoaders.Parsers.Docx;
 
 internal sealed class DocxXmlMapper
 {
-    private static readonly XNamespace W   = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-    private static readonly XNamespace W14 = "http://schemas.microsoft.com/office/word/2010/wordml";
+    // ── XML namespaces ────────────────────────────────────────────────────────
+
+    private static readonly XNamespace W      = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    private static readonly XNamespace W14    = "http://schemas.microsoft.com/office/word/2010/wordml";
+    private static readonly XNamespace ADrawNs = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing";
+    private static readonly XNamespace ANs    = "http://schemas.openxmlformats.org/drawingml/2006/main";
+    private static readonly XNamespace RelNs  = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+
+    // ── Relationship map (rId → zip entry path) ───────────────────────────────
+
+    private readonly IReadOnlyDictionary<string, string> _relsMap;
+
+    public DocxXmlMapper(IReadOnlyDictionary<string, string>? relsMap = null)
+        => _relsMap = relsMap ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    // ── Entry point ───────────────────────────────────────────────────────────
 
     public List<DocumentBlock> Map(
         string            documentXml,
@@ -40,7 +57,9 @@ internal sealed class DocxXmlMapper
         return blocks;
     }
 
-    private static DocumentBlock? MapElement(XElement elem, long baseOffset, BinaryMapBuilder mapBuilder)
+    // ── Element dispatch ──────────────────────────────────────────────────────
+
+    private DocumentBlock? MapElement(XElement elem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         return elem.Name.LocalName switch
         {
@@ -53,7 +72,9 @@ internal sealed class DocxXmlMapper
         };
     }
 
-    private static DocumentBlock MapParagraph(XElement pElem, long baseOffset, BinaryMapBuilder mapBuilder)
+    // ── Paragraph ─────────────────────────────────────────────────────────────
+
+    private DocumentBlock MapParagraph(XElement pElem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         long off = ResolveOffset(pElem, baseOffset);
         int  len = EstimateLength(pElem);
@@ -63,6 +84,7 @@ internal sealed class DocxXmlMapper
         var pPr = pElem.Element(W + "pPr");
         if (pPr is not null) ExtractParagraphProps(pPr, para);
 
+        // Runs
         foreach (var rElem in pElem.Elements(W + "r"))
         {
             var run = MapRun(rElem, baseOffset, mapBuilder);
@@ -70,11 +92,34 @@ internal sealed class DocxXmlMapper
             para.Text += run.Text;
         }
 
+        // Inline images (w:drawing at paragraph level or nested inside w:r)
+        foreach (var drawing in pElem.Descendants(W + "drawing"))
+        {
+            var blip  = drawing.Descendants(ANs + "blip").FirstOrDefault();
+            var embed = blip?.Attribute(RelNs + "embed")?.Value;
+            if (embed is null || !_relsMap.TryGetValue(embed, out var entryName)) continue;
+
+            var ext = drawing.Descendants(ADrawNs + "extent").FirstOrDefault();
+            double? cx = ParseEmu(ext?.Attribute("cx")?.Value);
+            double? cy = ParseEmu(ext?.Attribute("cy")?.Value);
+
+            var imgBlock = new DocumentBlock
+                { Kind = "image", RawOffset = -1, RawLength = 0, Text = "[image]" };
+            imgBlock.Attributes["zipEntryName"] = entryName;
+            if (cx.HasValue)
+                imgBlock.Attributes["naturalWidth"]  = cx.Value.ToString(CultureInfo.InvariantCulture);
+            if (cy.HasValue)
+                imgBlock.Attributes["naturalHeight"] = cy.Value.ToString(CultureInfo.InvariantCulture);
+            para.Children.Add(imgBlock);
+        }
+
         mapBuilder.AddZipRelative("word/document.xml", para, off, len);
         return para;
     }
 
-    private static DocumentBlock MapRun(XElement rElem, long baseOffset, BinaryMapBuilder mapBuilder)
+    // ── Run ───────────────────────────────────────────────────────────────────
+
+    private DocumentBlock MapRun(XElement rElem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         long off = ResolveOffset(rElem, baseOffset);
         int  len = EstimateLength(rElem);
@@ -94,7 +139,9 @@ internal sealed class DocxXmlMapper
         return run;
     }
 
-    private static DocumentBlock MapTable(XElement tblElem, long baseOffset, BinaryMapBuilder mapBuilder)
+    // ── Table ─────────────────────────────────────────────────────────────────
+
+    private DocumentBlock MapTable(XElement tblElem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         long off = ResolveOffset(tblElem, baseOffset);
         int  len = EstimateLength(tblElem);
@@ -120,7 +167,9 @@ internal sealed class DocxXmlMapper
         return table;
     }
 
-    private static DocumentBlock MapStructuredTag(XElement elem, long baseOffset, BinaryMapBuilder mapBuilder)
+    // ── Structured content tag ────────────────────────────────────────────────
+
+    private DocumentBlock MapStructuredTag(XElement elem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         var content = elem.Element(W + "sdtContent");
         if (content is null) return MapGenericElement(elem, "sdt", baseOffset, mapBuilder);
@@ -141,7 +190,7 @@ internal sealed class DocxXmlMapper
         return block;
     }
 
-    private static DocumentBlock MapGenericElement(XElement elem, string kind, long baseOffset, BinaryMapBuilder mapBuilder)
+    private DocumentBlock MapGenericElement(XElement elem, string kind, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         long off = ResolveOffset(elem, baseOffset);
         int  len = EstimateLength(elem);
@@ -155,6 +204,8 @@ internal sealed class DocxXmlMapper
         mapBuilder.AddZipRelative("word/document.xml", b, off, len);
         return b;
     }
+
+    // ── Property extractors ───────────────────────────────────────────────────
 
     private static void ExtractParagraphProps(XElement pPr, DocumentBlock para)
     {
@@ -175,9 +226,24 @@ internal sealed class DocxXmlMapper
         if (szCs is not null && int.TryParse(szCs, out int hpt))
             run.Attributes["fontSize"] = hpt / 2;
 
+        // Font family from w:rFonts (ascii/hAnsi preferred; theme fonts fallback)
+        var fonts = rPr.Element(W + "rFonts");
+        if (fonts is not null)
+        {
+            var ff = fonts.Attribute(W + "ascii")?.Value
+                  ?? fonts.Attribute(W + "hAnsi")?.Value;
+            if (ff is not null) run.Attributes["fontFamily"] = ff;
+        }
+
         var rStyle = rPr.Element(W + "rStyle")?.Attribute(W + "val")?.Value;
         if (rStyle is not null) run.Attributes["style"] = rStyle;
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>EMU (English Metric Units) → pixels at 96 dpi.</summary>
+    private static double? ParseEmu(string? s) =>
+        s is not null && long.TryParse(s, out var v) ? v / 914400.0 * 96.0 : null;
 
     private static long ResolveOffset(XElement elem, long baseOffset)
     {

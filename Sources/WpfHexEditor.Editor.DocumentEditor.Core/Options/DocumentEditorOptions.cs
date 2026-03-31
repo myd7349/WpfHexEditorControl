@@ -75,5 +75,22 @@ public enum DocumentViewMode
     /// <summary>Hex pane only (raw binary view).</summary>
     HexOnly,
     /// <summary>Rich-text + Structure tree panes.</summary>
-    Structure
+    Structure,
+    /// <summary>All three panes: text + structure + hex (3-column).</summary>
+    Full,
+    /// <summary>Zen/focus mode: chrome hidden, text centred with generous margins.</summary>
+    Focus
+}
+
+/// <summary>
+/// Document render modes — how the text canvas presents content.
+/// </summary>
+public enum DocumentRenderMode
+{
+    /// <summary>Paginated view: A4/Letter page card with shadow (default).</summary>
+    Page,
+    /// <summary>Continuous scroll: no page breaks, compact margins.</summary>
+    Draft,
+    /// <summary>Outline mode: structure tree centred, text minimised.</summary>
+    Outline
 }

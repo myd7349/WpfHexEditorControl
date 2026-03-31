@@ -130,6 +130,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
+            // Shift+Alt+H — Show Call Hierarchy
+            if (e.Key == Key.H && shiftPressed && altPressed && !ctrlPressed)
+            {
+                e.Handled = true;
+                _ = PrepareCallHierarchyAtCaretAsync();
+                return;
+            }
+
+            // Ctrl+Alt+F12 — Show Type Hierarchy
+            if (e.Key == Key.F12 && ctrlPressed && altPressed && !shiftPressed)
+            {
+                e.Handled = true;
+                _ = PrepareTypeHierarchyAtCaretAsync();
+                return;
+            }
+
             // Alt+Left — Navigate Back
             if (e.Key == Key.Left && altPressed && !ctrlPressed && !shiftPressed)
             {
@@ -146,8 +162,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
-            // Cancel any pending outline chord on any key press without Ctrl held.
-            if (!ctrlPressed) _outlineChordPending = false;
+            // Cancel any pending chords when Ctrl is released.
+            if (!ctrlPressed) { _outlineChordPending = false; _formatChordPending = false; }
 
             switch (e.Key)
             {
@@ -329,6 +345,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         e.Handled = true;
                     }
                     break;
+                // ── Formatting chord: Ctrl+K arms the chord; second key executes action ──
+                // Ctrl+K, Ctrl+D → Format Document   Ctrl+K, Ctrl+F → Format Selection
+                case Key.K:
+                    if (ctrlPressed)
+                    {
+                        _formatChordPending = true;
+                        e.Handled = true;
+                    }
+                    break;
+
+                case Key.D:
+                    if (ctrlPressed && _formatChordPending)
+                    {
+                        _formatChordPending = false;
+                        _ = FormatDocumentAsync(); // Ctrl+K, Ctrl+D
+                        e.Handled = true;
+                    }
+                    break;
+
+                case Key.F:
+                    if (ctrlPressed && _formatChordPending)
+                    {
+                        _formatChordPending = false;
+                        _ = FormatSelectionAsync(); // Ctrl+K, Ctrl+F
+                        e.Handled = true;
+                    }
+                    break;
+
                 // ────────────────────────────────────────────────────────────────────────
                 // Ctrl+Shift+[ → collapse all folds
                 case Key.OemOpenBrackets:
@@ -1129,6 +1173,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         // Do NOT move the caret — pass line/symbol directly so the
                         // user's cursor position is preserved.
                         _ = FindAllReferencesAsync(lineOverride: lineIdx, symbolOverride: symbol);
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
+
+            // Left-click on a color swatch → raise ColorSwatchClicked event.
+            if (ColorSwatchPreviewEnabled && e.LeftButton == MouseButtonState.Pressed
+                && _colorSwatchRenderer.LastHitAreas.Count > 0)
+            {
+                var swatchClickPos = e.GetPosition(this);
+                foreach (var area in _colorSwatchRenderer.LastHitAreas)
+                {
+                    if (area.Bounds.Contains(swatchClickPos))
+                    {
+                        ColorSwatchClicked?.Invoke(this, new ColorSwatchClickedEventArgs(area.Color, area.Line));
                         e.Handled = true;
                         return;
                     }

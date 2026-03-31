@@ -15,14 +15,16 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using WpfHexEditor.Editor.Core;
+using WpfHexEditor.Editor.DocumentEditor.Core;
 using WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
 using WpfHexEditor.Editor.DocumentEditor.Core.Contracts;
+using WpfHexEditor.Editor.DocumentEditor.Core.Editing;
+using IDocumentSaver = WpfHexEditor.Editor.DocumentEditor.Core.IDocumentSaver;
 using WpfHexEditor.Editor.DocumentEditor.Core.Forensic;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
 using WpfHexEditor.Editor.DocumentEditor.Core.Options;
 using WpfHexEditor.Editor.DocumentEditor.ViewModels;
 using WpfHexEditor.SDK.Contracts;
-using WpfHexEditor.Editor.DocumentEditor.Core;
 
 namespace WpfHexEditor.Editor.DocumentEditor.Controls;
 
@@ -54,14 +56,28 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
             nameof(ZoomLevel), typeof(double), typeof(DocumentEditorHost),
             new PropertyMetadata(1.0, OnZoomLevelChanged));
 
+    public static readonly DependencyProperty IsReadOnlyProperty =
+        DependencyProperty.Register(
+            nameof(IsReadOnly), typeof(bool), typeof(DocumentEditorHost),
+            new PropertyMetadata(false, OnIsReadOnlyChanged));
+
+    public static readonly DependencyProperty RenderModeProperty =
+        DependencyProperty.Register(
+            nameof(RenderMode), typeof(DocumentRenderMode), typeof(DocumentEditorHost),
+            new PropertyMetadata(DocumentRenderMode.Page, OnRenderModeChanged));
+
     // ── Fields ──────────────────────────────────────────────────────────────
 
     private IIDEHostContext?         _ideContext;
     private DocumentEditorViewModel? _vm;
     private BinaryMapSyncService?    _syncService;
+    private DocumentMutator?         _mutator;
+    private DocumentHexHighlightManager? _hexHighlightMgr;
+    private DocumentFindReplaceDialog?   _findDialog;
     private CancellationTokenSource  _loadCts = new();
     private string?                  _pendingFilePath;
     private string                   _currentFileExtension = string.Empty;
+    private bool                     _isFocusMode          = false;
 
     // ── Constructor ─────────────────────────────────────────────────────────
 
@@ -69,8 +85,9 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     {
         _ideContext = ideContext;
         InitializeComponent();
-        Loaded   += OnLoaded;
-        Unloaded += OnUnloaded;
+        Loaded      += OnLoaded;
+        Unloaded    += OnUnloaded;
+        PreviewKeyDown += OnHostPreviewKeyDown;
     }
 
     // ── Context injection (deferred) ────────────────────────────────────────
@@ -118,6 +135,18 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         set => SetValue(ZoomLevelProperty, value);
     }
 
+    public bool IsReadOnly
+    {
+        get => (bool)GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    public DocumentRenderMode RenderMode
+    {
+        get => (DocumentRenderMode)GetValue(RenderModeProperty);
+        set => SetValue(RenderModeProperty, value);
+    }
+
     // ── IDocumentBinaryMapSource ─────────────────────────────────────────────
 
     public BinaryMap? BinaryMap => _vm?.Model.BinaryMap;
@@ -128,7 +157,6 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     public bool IsDirty    => _vm?.Model.IsDirty ?? false;
     public bool CanUndo    => _vm?.Model.UndoEngine.CanUndo ?? false;
     public bool CanRedo    => _vm?.Model.UndoEngine.CanRedo ?? false;
-    public bool IsReadOnly { get; set; }
     public bool IsBusy     { get; private set; }
 
     public string Title => _vm is null
@@ -160,26 +188,66 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     public event EventHandler<DocumentOperationEventArgs>?          OperationProgress;
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 
-    public void Undo()      => _vm?.Model.UndoEngine.TryUndo();
-    public void Redo()      => _vm?.Model.UndoEngine.TryRedo();
+    public void Undo()      => _mutator?.TryUndo();
+    public void Redo()      => _mutator?.TryRedo();
     public void Save()      => _ = SaveAsync();
-    public void Copy()      { }
-    public void Cut()       { }
-    public void Paste()     { }
-    public void Delete()    { }
-    public void SelectAll() { }
+    public void Copy()      => PART_TextPane.PART_Renderer.CopySelection();
+    public void Cut()       { if (!IsReadOnly) PART_TextPane.PART_Renderer.CutSelection(); }
+    public void Paste()     { if (!IsReadOnly) PART_TextPane.PART_Renderer.PasteAtCaret(); }
+    public void Delete()    { if (!IsReadOnly) PART_TextPane.PART_Renderer.DeleteAtCaret(forward: true); }
+    public void SelectAll() => PART_TextPane.PART_Renderer.SelectAll();
     public void Close()     { _loadCts.Cancel(); _syncService?.Dispose(); }
     public void CancelOperation() { _loadCts.Cancel(); }
 
     public async Task SaveAsync(CancellationToken ct = default)
     {
-        if (_vm is null) return;
-        await Task.CompletedTask;
+        if (_vm?.Model is null) return;
+
+        var savers = _ideContext?.ExtensionRegistry
+                         .GetExtensions<IDocumentSaver>()
+                     ?? [];
+
+        var saver = savers.FirstOrDefault(s => s.CanSave(_vm.Model.FilePath));
+        if (saver is null)
+        {
+            StatusMessage?.Invoke(this, "No saver registered for this file type.");
+            return;
+        }
+
+        var tmp    = _vm.Model.FilePath + ".tmp";
+        var backup = _vm.Model.FilePath + ".bak";
+        try
+        {
+            IsBusy = true;
+            await using (var fs = File.Create(tmp))
+                await saver.SaveAsync(_vm.Model, fs, ct);
+
+            File.Replace(tmp, _vm.Model.FilePath, backup);
+            _vm.Model.UndoEngine.MarkSaved();
+            _hexHighlightMgr?.Clear();
+
+            var fileName = System.IO.Path.GetFileName(_vm.Model.FilePath);
+            StatusMessage?.Invoke(this, $"Saved — {fileName}");
+            TitleChanged?.Invoke(this, Title);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage?.Invoke(this, $"Save failed: {ex.Message}");
+            if (File.Exists(tmp)) File.Delete(tmp);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     public async Task SaveAsAsync(string filePath, CancellationToken ct = default)
     {
-        await Task.CompletedTask;
+        if (_vm?.Model is null) return;
+        var origPath = _vm.Model.FilePath;
+        _vm.Model.FilePath = filePath;
+        await SaveAsync(ct);
+        if (!File.Exists(filePath)) _vm.Model.FilePath = origPath; // revert on failure
     }
 
     // ── IOpenableDocument ────────────────────────────────────────────────────
@@ -272,24 +340,207 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
 
     private void ApplyViewMode(DocumentViewMode mode)
     {
-        SetPaneVisibility(
-            text:      mode is DocumentViewMode.TextOnly or DocumentViewMode.Split or DocumentViewMode.Structure,
-            structure: mode == DocumentViewMode.Structure,
-            hex:       mode is DocumentViewMode.Split or DocumentViewMode.HexOnly);
+        // Exit focus mode first if switching away
+        if (_isFocusMode && mode != DocumentViewMode.Focus)
+            ExitFocusMode();
+
+        switch (mode)
+        {
+            case DocumentViewMode.Full:
+                SetPaneVisibility(text: true, structure: true, hex: true);
+                break;
+            case DocumentViewMode.Focus:
+                EnterFocusMode();
+                break;
+            default:
+                SetPaneVisibility(
+                    text:      mode is DocumentViewMode.TextOnly or DocumentViewMode.Split or DocumentViewMode.Structure,
+                    structure: mode == DocumentViewMode.Structure,
+                    hex:       mode is DocumentViewMode.Split or DocumentViewMode.HexOnly);
+                break;
+        }
 
         if (PART_TextModeBtn   is not null) PART_TextModeBtn.IsChecked   = mode == DocumentViewMode.TextOnly;
         if (PART_SplitModeBtn  is not null) PART_SplitModeBtn.IsChecked  = mode == DocumentViewMode.Split;
         if (PART_HexModeBtn    is not null) PART_HexModeBtn.IsChecked    = mode == DocumentViewMode.HexOnly;
         if (PART_StructModeBtn is not null) PART_StructModeBtn.IsChecked = mode == DocumentViewMode.Structure;
+        if (PART_FullModeBtn   is not null) PART_FullModeBtn.IsChecked   = mode == DocumentViewMode.Full;
+        if (PART_FocusModeBtn  is not null) PART_FocusModeBtn.IsChecked  = mode == DocumentViewMode.Focus;
 
+        var readOnlySuffix = IsReadOnly ? " | Read Only" : string.Empty;
         PART_StatusBar.ViewModeText = mode switch
         {
-            DocumentViewMode.TextOnly  => "Text",
-            DocumentViewMode.Split     => "Split",
-            DocumentViewMode.HexOnly   => "Hex",
-            DocumentViewMode.Structure => "Structure",
-            _ => "Split"
+            DocumentViewMode.TextOnly  => "Text" + readOnlySuffix,
+            DocumentViewMode.Split     => "Split" + readOnlySuffix,
+            DocumentViewMode.HexOnly   => "Hex" + readOnlySuffix,
+            DocumentViewMode.Structure => "Structure" + readOnlySuffix,
+            DocumentViewMode.Full      => "Full" + readOnlySuffix,
+            DocumentViewMode.Focus     => "Focus" + readOnlySuffix,
+            _                          => "Split" + readOnlySuffix
         };
+    }
+
+    private void EnterFocusMode()
+    {
+        _isFocusMode = true;
+        SetPaneVisibility(text: true, structure: false, hex: false);
+        // Hide chrome rows: toolbar (row 0), breadcrumb (row 1), minimap (row 3), statusbar (row 4)
+        // These are accessed via RowDefinitions on the root Grid
+        if (FindName("PART_ToolbarRow") is RowDefinition toolbar)
+            toolbar.Height = new GridLength(0);
+        if (FindName("PART_BreadcrumbRow") is RowDefinition breadcrumb)
+            breadcrumb.Height = new GridLength(0);
+        if (FindName("PART_MiniMapRow") is RowDefinition minimap)
+            minimap.Height = new GridLength(0);
+        if (FindName("PART_StatusBarRow") is RowDefinition statusbar)
+            statusbar.Height = new GridLength(0);
+        PART_TextPane.Margin = new Thickness(80, 40, 80, 40);
+    }
+
+    private void ExitFocusMode()
+    {
+        _isFocusMode = false;
+        PART_TextPane.Margin = new Thickness(0);
+        if (FindName("PART_ToolbarRow") is RowDefinition toolbar)
+            toolbar.Height = GridLength.Auto;
+        if (FindName("PART_BreadcrumbRow") is RowDefinition breadcrumb)
+            breadcrumb.Height = GridLength.Auto;
+        if (FindName("PART_MiniMapRow") is RowDefinition minimap)
+            minimap.Height = GridLength.Auto;
+        if (FindName("PART_StatusBarRow") is RowDefinition statusbar)
+            statusbar.Height = GridLength.Auto;
+    }
+
+    private static void OnIsReadOnlyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is DocumentEditorHost host)
+            host.UpdateReadOnlyVisuals((bool)e.NewValue);
+    }
+
+    private void UpdateReadOnlyVisuals(bool readOnly)
+    {
+        PART_TextPane.PART_Renderer.IsReadOnly = readOnly;
+        if (PART_LockIcon is not null)
+            PART_LockIcon.Visibility = readOnly ? Visibility.Visible : Visibility.Collapsed;
+        // Re-apply current view mode to refresh status bar suffix
+        ApplyViewMode(ViewMode);
+    }
+
+    private static void OnRenderModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is DocumentEditorHost host)
+            host.ApplyRenderMode((DocumentRenderMode)e.NewValue);
+    }
+
+    private void ApplyRenderMode(DocumentRenderMode mode)
+    {
+        var renderer = PART_TextPane.PART_Renderer;
+        switch (mode)
+        {
+            case DocumentRenderMode.Page:
+                renderer.ShowPageShadows = true;
+                renderer.PageMargin      = new Thickness(40);
+                break;
+            case DocumentRenderMode.Draft:
+                renderer.ShowPageShadows = false;
+                renderer.PageMargin      = new Thickness(8, 4, 8, 4);
+                break;
+            case DocumentRenderMode.Outline:
+                SetPaneVisibility(text: false, structure: true, hex: false);
+                break;
+        }
+
+        if (PART_PageModeBtn   is not null) PART_PageModeBtn.IsChecked   = mode == DocumentRenderMode.Page;
+        if (PART_DraftModeBtn  is not null) PART_DraftModeBtn.IsChecked  = mode == DocumentRenderMode.Draft;
+        if (PART_OutlineModeBtn is not null) PART_OutlineModeBtn.IsChecked = mode == DocumentRenderMode.Outline;
+    }
+
+    // ── Phase 14/15: Text + paragraph formatting toolbar handlers ─────────────
+
+    private void OnBoldClicked(object sender, RoutedEventArgs e)          => ApplyFormat("bold");
+    private void OnItalicClicked(object sender, RoutedEventArgs e)        => ApplyFormat("italic");
+    private void OnUnderlineClicked(object sender, RoutedEventArgs e)     => ApplyFormat("underline");
+    private void OnStrikethroughClicked(object sender, RoutedEventArgs e) => ApplyFormat("strikethrough");
+
+    private void OnAlignLeftClicked(object sender, RoutedEventArgs e)     => ApplyBlockAttribute("align", "left");
+    private void OnAlignCenterClicked(object sender, RoutedEventArgs e)   => ApplyBlockAttribute("align", "center");
+    private void OnAlignRightClicked(object sender, RoutedEventArgs e)    => ApplyBlockAttribute("align", "right");
+
+    private void OnStyleDropdownChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (PART_StyleDropdown?.SelectedItem is not ComboBoxItem item) return;
+        var style = item.Content?.ToString() ?? "Normal";
+        if (style == "Normal")       ApplyBlockAttribute("style", null);
+        else if (style.StartsWith("H") && int.TryParse(style[1..], out int lvl))
+        {
+            ApplyBlockAttribute("style", "heading");
+            ApplyBlockAttribute("level", lvl.ToString());
+        }
+        else                         ApplyBlockAttribute("style", style.ToLowerInvariant());
+    }
+
+    private void ApplyBlockAttribute(string attribute, object? value)
+    {
+        if (IsReadOnly || _mutator is null) return;
+        PART_TextPane.PART_Renderer.SetBlockAttribute(attribute, value);
+    }
+
+    public void ApplyFormat(string format)
+    {
+        if (IsReadOnly || _mutator is null) return;
+        PART_TextPane.PART_Renderer.ApplyFormatToSelection(format, true);
+    }
+
+    // ── View mode toolbar handlers ────────────────────────────────────────────
+
+    private void OnFullModeClicked(object sender, RoutedEventArgs e)    => ViewMode = DocumentViewMode.Full;
+    private void OnFocusModeClicked(object sender, RoutedEventArgs e)   => ViewMode = DocumentViewMode.Focus;
+    private void OnPageModeClicked(object sender, RoutedEventArgs e)    => RenderMode = DocumentRenderMode.Page;
+    private void OnDraftModeClicked(object sender, RoutedEventArgs e)   => RenderMode = DocumentRenderMode.Draft;
+    private void OnOutlineModeClicked(object sender, RoutedEventArgs e) => RenderMode = DocumentRenderMode.Outline;
+
+    // ── Phase 18: Styles panel ────────────────────────────────────────────────
+
+    private void OnStylesPanelStyleSelected(object? sender, string styleKey)
+    {
+        if (IsReadOnly || _mutator is null) return;
+        PART_TextPane.PART_Renderer.SetBlockAttribute("style", styleKey);
+        if (FindName("PART_StylesPopup") is System.Windows.Controls.Primitives.Popup popup)
+            popup.IsOpen = false;
+    }
+
+    private void OnStylesBtnClicked(object sender, RoutedEventArgs e)
+    {
+        if (FindName("PART_StylesPopup") is System.Windows.Controls.Primitives.Popup popup)
+            popup.IsOpen = !popup.IsOpen;
+    }
+
+    // ── Phase 19: Find & Replace (Ctrl+F / Ctrl+H) ───────────────────────────
+
+    private void OnHostPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
+
+        if (e.Key == Key.F)  { OpenFindDialog(showReplace: false); e.Handled = true; }
+        if (e.Key == Key.H)  { OpenFindDialog(showReplace: true);  e.Handled = true; }
+        if (e.Key == Key.S)  { Save(); e.Handled = true; }
+    }
+
+    private void OpenFindDialog(bool showReplace)
+    {
+        if (_vm?.Model is null) return;
+
+        if (_findDialog is null)
+        {
+            var vm     = new ViewModels.DocumentSearchViewModel(_vm.Model, PART_TextPane.PART_Renderer);
+            _findDialog = new DocumentFindReplaceDialog(vm)
+            {
+                Owner = Window.GetWindow(this),
+            };
+        }
+
+        _findDialog.ShowReplacePanel = showReplace;
+        _findDialog.Show();
     }
 
     private void SetPaneVisibility(bool text, bool structure, bool hex)
@@ -300,24 +551,12 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         PART_HexPane.Visibility       = hex       ? Visibility.Visible   : Visibility.Collapsed;
         PART_Splitter2.Visibility     = hex && structure ? Visibility.Visible : Visibility.Collapsed;
 
-        if (text && hex && !structure)
-        {
-            Grid.SetColumn(PART_HexPane, 2);
-            PART_TextCol.Width      = new GridLength(2, GridUnitType.Star);
-            PART_Splitter1Col.Width = new GridLength(4);
-            PART_StructCol.Width    = new GridLength(1, GridUnitType.Star);
-            PART_Splitter2Col.Width = new GridLength(0);
-            PART_HexCol.Width       = new GridLength(0);
-        }
-        else
-        {
-            Grid.SetColumn(PART_HexPane, 4);
-            PART_TextCol.Width      = text      ? new GridLength(2, GridUnitType.Star) : new GridLength(0);
-            PART_StructCol.Width    = structure ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-            PART_HexCol.Width       = hex       ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-            PART_Splitter1Col.Width = (text && (structure || hex)) ? new GridLength(4) : new GridLength(0);
-            PART_Splitter2Col.Width = (structure && hex)           ? new GridLength(4) : new GridLength(0);
-        }
+        Grid.SetColumn(PART_HexPane, 4);
+        PART_TextCol.Width      = text      ? new GridLength(2, GridUnitType.Star) : new GridLength(0);
+        PART_StructCol.Width    = structure ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        PART_HexCol.Width       = hex       ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        PART_Splitter1Col.Width = (text && (structure || hex)) ? new GridLength(4) : new GridLength(0);
+        PART_Splitter2Col.Width = (structure && hex)           ? new GridLength(4) : new GridLength(0);
     }
 
     private static void OnIsForensicModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -360,6 +599,23 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     private void OnSaveClicked(object sender, RoutedEventArgs e)          => Save();
     private void OnExportClicked(object sender, RoutedEventArgs e)        { /* TODO: export dialog */ }
     private void OnMetadataClicked(object sender, RoutedEventArgs e)      { /* TODO: metadata flyout */ }
+
+    // ── Page Setup flyout ────────────────────────────────────────────────────
+
+    private void OnPageSetupBtnClick(object sender, RoutedEventArgs e)
+    {
+        PART_PageSettingsPanel.LoadSettings(PART_TextPane.PageSettings);
+        PART_PageSetupPopup.IsOpen = true;
+    }
+
+    private void OnPageSettingsApplied(object sender, DocumentPageSettings settings)
+    {
+        PART_TextPane.PageSettings = settings;
+        PART_PageSetupPopup.IsOpen = false;
+    }
+
+    private void OnPageSettingsCancelled(object sender, EventArgs e)
+        => PART_PageSetupPopup.IsOpen = false;
 
     private void OnZoomInClicked(object sender, RoutedEventArgs e)
     {
@@ -452,7 +708,8 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
     {
         _syncService?.Dispose();
 
-        _vm = new DocumentEditorViewModel(model);
+        _vm      = new DocumentEditorViewModel(model);
+        _mutator = new DocumentMutator(model);
         DataContext = _vm;
 
         PART_TextPane.BindModel(model);
@@ -461,13 +718,30 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
         PART_MiniMap.BindModel(model);
         PART_StatusBar.BindModel(model, _currentFileExtension);
 
-        // Apply initial zoom
+        // Pass mutator to renderer (Phase 12+)
+        PART_TextPane.PART_Renderer.SetMutator(_mutator);
+
+        // Apply page settings declared by the document (overrides A4 default)
+        if (model.PageSettings is { } ps)
+            PART_TextPane.PageSettings = ps;
+
+        // Apply initial zoom and read-only state
         PART_TextPane.SetZoom(ZoomLevel);
+        PART_TextPane.PART_Renderer.IsReadOnly = IsReadOnly;
+
+        // Wire hex highlight manager
+        _hexHighlightMgr = new DocumentHexHighlightManager(PART_HexPane);
+        _mutator.BlockMutated += OnBlockMutated;
 
         _syncService = new BinaryMapSyncService(model);
         _syncService.Wire(PART_TextPane, PART_HexPane);
 
         ApplyViewMode(ViewMode);
+        ApplyRenderMode(RenderMode);
+
+        // Auto-detect read-only from disk
+        if (File.Exists(model.FilePath))
+            IsReadOnly = new FileInfo(model.FilePath).IsReadOnly;
 
         model.BinaryMap.MapRebuilt += (_, _) => BinaryMapRebuilt?.Invoke(this, EventArgs.Empty);
 
@@ -490,6 +764,11 @@ public partial class DocumentEditorHost : UserControl, IDocumentEditor, IOpenabl
             Dispatcher.InvokeAsync(() => PART_StatusBar.UpdateForensicCount(model));
 
         TitleChanged?.Invoke(this, Title);
+    }
+
+    private void OnBlockMutated(object? sender, BlockMutatedArgs e)
+    {
+        _hexHighlightMgr?.Apply(e.Block, e.Kind);
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────

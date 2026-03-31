@@ -24,6 +24,7 @@ using WpfHexEditor.Core.Events;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Focus;
 using WpfHexEditor.SDK.Contracts.Services;
+using WpfHexEditor.SDK.Contracts.Terminal;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
 
@@ -291,6 +292,8 @@ file sealed class NullTerminalService : ITerminalService
     public void Clear()                         { }
     public void OpenSession(string shellType)   { }
     public void CloseActiveSession()            { }
+    public void RegisterCommand(ITerminalCommandProvider command) { }
+    public void UnregisterCommand(string commandName)             { }
 }
 
 file sealed class NullIDEEventBus : IIDEEventBus

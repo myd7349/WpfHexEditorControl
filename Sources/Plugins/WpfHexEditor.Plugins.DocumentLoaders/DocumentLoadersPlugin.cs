@@ -13,6 +13,7 @@ using WpfHexEditor.Plugins.DocumentLoaders.Parsers.Odt;
 using WpfHexEditor.Plugins.DocumentLoaders.Parsers.Rtf;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Models;
+using IDocumentSaver = WpfHexEditor.Editor.DocumentEditor.Core.IDocumentSaver;
 
 namespace WpfHexEditor.Plugins.DocumentLoaders;
 
@@ -39,6 +40,11 @@ public sealed class DocumentLoadersPlugin : IWpfHexEditorPlugin
         context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Rtf",  new RtfDocumentLoader());
         context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Docx", new DocxDocumentLoader());
         context.ExtensionRegistry.Register<IDocumentLoader>(Id + ".Odt",  new OdtDocumentLoader());
+
+        context.ExtensionRegistry.Register<IDocumentSaver>(Id + ".Saver.Rtf",  new RtfDocumentSaver());
+        context.ExtensionRegistry.Register<IDocumentSaver>(Id + ".Saver.Docx", new DocxDocumentSaver());
+        context.ExtensionRegistry.Register<IDocumentSaver>(Id + ".Saver.Odt",  new OdtDocumentSaver());
+
         return Task.CompletedTask;
     }
 

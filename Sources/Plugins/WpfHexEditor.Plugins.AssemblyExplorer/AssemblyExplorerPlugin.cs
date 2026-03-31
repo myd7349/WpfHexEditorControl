@@ -30,6 +30,7 @@ using WpfHexEditor.Core.AssemblyAnalysis.Languages;
 using WpfHexEditor.Core.AssemblyAnalysis.Services;
 using WpfHexEditor.Core.Events.IDEEvents;
 using IAssemblyAnalysisEngine = WpfHexEditor.Core.AssemblyAnalysis.Services.IAssemblyAnalysisEngine;
+using WpfHexEditor.Plugins.AssemblyExplorer.Commands;
 using WpfHexEditor.Plugins.AssemblyExplorer.Languages;
 using WpfHexEditor.Plugins.AssemblyExplorer.Options;
 using WpfHexEditor.Plugins.AssemblyExplorer.Services;
@@ -57,11 +58,12 @@ public sealed class AssemblyExplorerPlugin : IWpfHexEditorPlugin, IPluginWithOpt
 
     public PluginCapabilities Capabilities => new()
     {
-        AccessHexEditor  = true,
-        AccessFileSystem = true,
-        RegisterMenus    = true,
-        WriteOutput      = true,
-        AccessSettings   = true
+        AccessHexEditor          = true,
+        AccessFileSystem         = true,
+        RegisterMenus            = true,
+        WriteOutput              = true,
+        AccessSettings           = true,
+        RegisterTerminalCommands = true
     };
 
     // ── UI ID constants ───────────────────────────────────────────────────────
@@ -168,6 +170,12 @@ public sealed class AssemblyExplorerPlugin : IWpfHexEditorPlugin, IPluginWithOpt
         // Register menu items.
         RegisterMenuItems(context);
 
+        // Register terminal commands.
+        context.Terminal.RegisterCommand(new AsmLoadCommand(_panel));
+        context.Terminal.RegisterCommand(new AsmListCommand(_panel));
+        context.Terminal.RegisterCommand(new AsmSearchCommand());
+        context.Terminal.RegisterCommand(new AsmCloseCommand(_panel));
+
         // Wire ViewModel events.
         _panel.ViewModel.AssemblyLoaded        += OnAssemblyLoaded;
         _panel.ViewModel.AssemblyUnloaded      += OnAssemblyUnloaded;
@@ -218,6 +226,14 @@ public sealed class AssemblyExplorerPlugin : IWpfHexEditorPlugin, IPluginWithOpt
 
         _subProjectItemAdded?.Dispose();
         _subProjectItemAdded = null;
+
+        if (_context is not null)
+        {
+            _context.Terminal.UnregisterCommand("asm-load");
+            _context.Terminal.UnregisterCommand("asm-list");
+            _context.Terminal.UnregisterCommand("asm-search");
+            _context.Terminal.UnregisterCommand("asm-close");
+        }
 
         _hexSyncService?.Dispose();
         _hexSyncService = null;

@@ -28,6 +28,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using WpfHexEditor.Core.Terminal;
+using WpfHexEditor.SDK.Contracts.Terminal;
 using WpfHexEditor.Core.Terminal.Macros;
 using WpfHexEditor.Core.Terminal.ShellSession;
 using WpfHexEditor.Core.Events.IDEEvents;

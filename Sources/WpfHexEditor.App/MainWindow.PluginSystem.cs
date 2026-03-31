@@ -287,6 +287,7 @@ public partial class MainWindow
                         var termVm = new TerminalPanelViewModel(_ideHostContext);
                         _terminalService?.SetOutput(termVm.GetActiveOutput());
                         _terminalService?.SetSessionManager(termVm.SessionManager);
+                        _terminalService?.SetRegistry(termVm.CommandRegistry);
                         // Keep terminal service in sync whenever the active tab changes.
                         termVm.PropertyChanged += (_, e) =>
                         {
@@ -887,6 +888,7 @@ public partial class MainWindow
             var vm = new TerminalPanelViewModel(_ideHostContext);
             _terminalService?.SetOutput(vm.GetActiveOutput());
             _terminalService?.SetSessionManager(vm.SessionManager);
+            _terminalService?.SetRegistry(vm.CommandRegistry);
             panel.DataContext = vm;
         }
         else
@@ -928,6 +930,7 @@ public partial class MainWindow
         var vm      = new TerminalPanelViewModel(_ideHostContext);
         _terminalService?.SetOutput(vm.GetActiveOutput());
         _terminalService?.SetSessionManager(vm.SessionManager);
+        _terminalService?.SetRegistry(vm.CommandRegistry);
         var control = new TerminalPanel { DataContext = vm };
         var item    = new DockItem { ContentId = TerminalPanelContentId, Title = "Terminal", CanClose = true };
 

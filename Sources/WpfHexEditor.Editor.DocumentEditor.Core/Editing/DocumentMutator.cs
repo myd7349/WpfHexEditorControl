@@ -1,0 +1,386 @@
+// ==========================================================
+// Project: WpfHexEditor.Editor.DocumentEditor.Core
+// File: Editing/DocumentMutator.cs
+// Description:
+//     Single point of truth for all DocumentModel mutations.
+//     Every mutation pushes to model.UndoEngine — no separate stack.
+//     Fires BlockMutated event after each mutation so the HexPane
+//     can update its change-highlight overlays.
+// ==========================================================
+
+using WpfHexEditor.Editor.Core.Undo;
+using WpfHexEditor.Editor.DocumentEditor.Core.Model;
+using WpfHexEditor.Editor.DocumentEditor.Core.Undo;
+
+namespace WpfHexEditor.Editor.DocumentEditor.Core.Editing;
+
+/// <summary>
+/// The kind of block mutation that occurred.
+/// </summary>
+public enum BlockMutationKind
+{
+    TextEdited,
+    Deleted,
+    Inserted,
+    AttributeChanged
+}
+
+/// <summary>
+/// Arguments for the <see cref="DocumentMutator.BlockMutated"/> event.
+/// </summary>
+public sealed class BlockMutatedArgs(DocumentBlock block, BlockMutationKind kind) : EventArgs
+{
+    public DocumentBlock     Block { get; } = block;
+    public BlockMutationKind Kind  { get; } = kind;
+}
+
+/// <summary>
+/// Performs all mutations on a <see cref="DocumentModel"/>, pushing undo entries
+/// to the model's <see cref="WpfHexEditor.Editor.Core.Undo.UndoEngine"/>.
+/// </summary>
+public sealed class DocumentMutator(DocumentModel model)
+{
+    // ── Events ────────────────────────────────────────────────────────────────
+
+    /// <summary>Raised after every mutation. Used by the HexPane highlight manager.</summary>
+    public event EventHandler<BlockMutatedArgs>? BlockMutated;
+
+    // ── Text editing ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Inserts <paramref name="text"/> at <paramref name="charOffset"/> in the block.
+    /// Pushes a <see cref="TextEditUndoEntry"/> (auto-coalesces within 1 s).
+    /// </summary>
+    public void InsertText(DocumentBlock block, int charOffset, string text)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+        charOffset = Math.Clamp(charOffset, 0, block.Text.Length);
+
+        var oldText = block.Text;
+        var newText = block.Text.Insert(charOffset, text);
+        block.Text = newText;
+
+        model.UndoEngine.Push(new TextEditUndoEntry { Block = block, OldText = oldText, NewText = newText });
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(block, BlockMutationKind.TextEdited));
+        model.NotifyBlocksChanged();
+    }
+
+    /// <summary>
+    /// Deletes <paramref name="length"/> characters starting at <paramref name="charOffset"/>.
+    /// Pushes a <see cref="TextEditUndoEntry"/>.
+    /// </summary>
+    public void DeleteText(DocumentBlock block, int charOffset, int length)
+    {
+        if (length <= 0 || charOffset < 0) return;
+        length = Math.Min(length, block.Text.Length - charOffset);
+        if (length <= 0) return;
+
+        var oldText = block.Text;
+        var newText = block.Text.Remove(charOffset, length);
+        block.Text = newText;
+
+        model.UndoEngine.Push(new TextEditUndoEntry { Block = block, OldText = oldText, NewText = newText });
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(block, BlockMutationKind.TextEdited));
+        model.NotifyBlocksChanged();
+    }
+
+    /// <summary>
+    /// Replaces the entire text of a block (used by table cell commit).
+    /// </summary>
+    public void SetText(DocumentBlock block, string text)
+    {
+        if (block.Text == text) return;
+        var oldText = block.Text;
+        block.Text = text;
+
+        model.UndoEngine.Push(new TextEditUndoEntry { Block = block, OldText = oldText, NewText = text });
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(block, BlockMutationKind.TextEdited));
+        model.NotifyBlocksChanged();
+    }
+
+    // ── Block structure ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Inserts a new empty paragraph after the block at <paramref name="blockIndex"/>.
+    /// </summary>
+    public DocumentBlock InsertParagraphAfter(int blockIndex)
+    {
+        var newBlock = DocumentBlockFactory.NewParagraph();
+        var insertAt = Math.Min(blockIndex + 1, model.Blocks.Count);
+        model.Blocks.Insert(insertAt, newBlock);
+
+        model.UndoEngine.Push(new BlockInsertUndoEntry
+        {
+            Model      = model,
+            Block      = newBlock,
+            BlockIndex = insertAt
+        });
+
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(newBlock, BlockMutationKind.Inserted));
+        model.NotifyBlocksChanged();
+        return newBlock;
+    }
+
+    /// <summary>Deletes the block at the specified index.</summary>
+    public void DeleteBlock(int blockIndex)
+    {
+        if (blockIndex < 0 || blockIndex >= model.Blocks.Count) return;
+        var block = model.Blocks[blockIndex];
+        model.Blocks.RemoveAt(blockIndex);
+
+        model.UndoEngine.Push(new BlockDeleteUndoEntry
+        {
+            Model      = model,
+            Block      = block,
+            BlockIndex = blockIndex
+        });
+
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(block, BlockMutationKind.Deleted));
+        model.NotifyBlocksChanged();
+    }
+
+    /// <summary>
+    /// Splits the block at <paramref name="blockIndex"/> at <paramref name="charOffset"/>,
+    /// producing two blocks. Returns the (first, second) pair.
+    /// </summary>
+    public (DocumentBlock First, DocumentBlock Second) SplitBlock(int blockIndex, int charOffset)
+    {
+        var block  = model.Blocks[blockIndex];
+        charOffset = Math.Clamp(charOffset, 0, block.Text.Length);
+
+        var firstText  = block.Text[..charOffset];
+        var secondText = block.Text[charOffset..];
+
+        block.Text = firstText;
+        var second = DocumentBlockFactory.CloneWithText(block, secondText);
+        model.Blocks.Insert(blockIndex + 1, second);
+
+        model.UndoEngine.Push(new BlockSplitUndoEntry
+        {
+            Model      = model,
+            First      = block,
+            Second     = second,
+            BlockIndex = blockIndex,
+            FirstText  = firstText,
+            SecondText = secondText
+        });
+
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(block, BlockMutationKind.TextEdited));
+        model.NotifyBlocksChanged();
+        return (block, second);
+    }
+
+    /// <summary>
+    /// Merges the block at <paramref name="blockIndex"/> with the next block.
+    /// Returns the surviving (first) block.
+    /// </summary>
+    public DocumentBlock MergeWithNext(int blockIndex)
+    {
+        if (blockIndex < 0 || blockIndex + 1 >= model.Blocks.Count)
+            return model.Blocks[blockIndex];
+
+        var first      = model.Blocks[blockIndex];
+        var second     = model.Blocks[blockIndex + 1];
+        var firstText  = first.Text;
+        var secondText = second.Text;
+
+        first.Text = firstText + secondText;
+        model.Blocks.RemoveAt(blockIndex + 1);
+
+        model.UndoEngine.Push(new BlockMergeUndoEntry
+        {
+            Model      = model,
+            First      = first,
+            Second     = second,
+            BlockIndex = blockIndex,
+            FirstText  = firstText,
+            SecondText = secondText
+        });
+
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(first, BlockMutationKind.TextEdited));
+        model.NotifyBlocksChanged();
+        return first;
+    }
+
+    // ── Run-level formatting ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Applies a formatting attribute to the run children of <paramref name="para"/>
+    /// that overlap [<paramref name="fromChar"/>, <paramref name="toChar"/>).
+    /// For non-run blocks, applies directly to the block itself.
+    /// </summary>
+    public void ApplyRunAttribute(
+        DocumentBlock para, int fromChar, int toChar,
+        string attribute, object value)
+    {
+        var beforeSnapshots = SnapshotChildren(para);
+        ApplyAttributeToRange(para, fromChar, toChar, attribute, value);
+        var afterSnapshots  = SnapshotChildren(para);
+
+        model.UndoEngine.Push(new RunAttributeUndoEntry
+        {
+            AttributeName    = attribute,
+            BeforeSnapshots  = beforeSnapshots,
+            AfterSnapshots   = afterSnapshots
+        });
+
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(para, BlockMutationKind.AttributeChanged));
+        model.NotifyBlocksChanged();
+    }
+
+    /// <summary>Removes a formatting attribute from runs in the specified char range.</summary>
+    public void RemoveRunAttribute(
+        DocumentBlock para, int fromChar, int toChar, string attribute)
+    {
+        var beforeSnapshots = SnapshotChildren(para);
+        RemoveAttributeFromRange(para, fromChar, toChar, attribute);
+        var afterSnapshots  = SnapshotChildren(para);
+
+        model.UndoEngine.Push(new RunAttributeUndoEntry
+        {
+            AttributeName    = attribute,
+            BeforeSnapshots  = beforeSnapshots,
+            AfterSnapshots   = afterSnapshots
+        });
+
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(para, BlockMutationKind.AttributeChanged));
+        model.NotifyBlocksChanged();
+    }
+
+    // ── Block-level attributes ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Sets a block-level attribute (style, align, listStyle, indent, etc.).
+    /// </summary>
+    public void SetBlockAttribute(DocumentBlock block, string attribute, object? value)
+    {
+        var before = TakeAttributeSnapshot(block);
+        if (value is null)
+            block.Attributes.Remove(attribute);
+        else
+            block.Attributes[attribute] = value;
+        var after = TakeAttributeSnapshot(block);
+
+        model.UndoEngine.Push(new RunAttributeUndoEntry
+        {
+            AttributeName    = attribute,
+            BeforeSnapshots  = [before],
+            AfterSnapshots   = [after]
+        });
+
+        BlockMutated?.Invoke(this, new BlockMutatedArgs(block, BlockMutationKind.AttributeChanged));
+        model.NotifyBlocksChanged();
+    }
+
+    // ── Undo / Redo application ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Undoes the last pushed entry. Returns true when an entry was applied.
+    /// </summary>
+    public bool TryUndo()
+    {
+        var entry = model.UndoEngine.TryUndo();
+        if (entry is null) return false;
+        ApplyEntry(entry, isUndo: true);
+        model.NotifyBlocksChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// Redoes the next entry in the redo stack. Returns true when applied.
+    /// </summary>
+    public bool TryRedo()
+    {
+        var entry = model.UndoEngine.TryRedo();
+        if (entry is null) return false;
+        ApplyEntry(entry, isUndo: false);
+        model.NotifyBlocksChanged();
+        return true;
+    }
+
+    private static void ApplyEntry(IUndoEntry entry, bool isUndo)
+    {
+        switch (entry)
+        {
+            case TextEditUndoEntry     te: if (isUndo) te.Undo(); else te.Redo(); break;
+            case BlockInsertUndoEntry  bi: if (isUndo) bi.Undo(); else bi.Redo(); break;
+            case BlockDeleteUndoEntry  bd: if (isUndo) bd.Undo(); else bd.Redo(); break;
+            case BlockSplitUndoEntry   bs: if (isUndo) bs.Undo(); else bs.Redo(); break;
+            case BlockMergeUndoEntry   bm: if (isUndo) bm.Undo(); else bm.Redo(); break;
+            case RunAttributeUndoEntry ra: if (isUndo) ra.Undo(); else ra.Redo(); break;
+            case WpfHexEditor.Editor.Core.Undo.CompositeUndoEntry comp:
+                ApplyComposite(comp, isUndo); break;
+        }
+    }
+
+    private static void ApplyComposite(
+        WpfHexEditor.Editor.Core.Undo.CompositeUndoEntry comp, bool isUndo)
+    {
+        var children = comp.Children;
+        if (isUndo)
+        {
+            for (var i = children.Count - 1; i >= 0; i--)
+                ApplyEntry(children[i], isUndo: true);
+        }
+        else
+        {
+            foreach (var e in children) ApplyEntry(e, isUndo: false);
+        }
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    private static void ApplyAttributeToRange(
+        DocumentBlock para, int fromChar, int toChar,
+        string attribute, object value)
+    {
+        if (para.Children.Count == 0)
+        {
+            // No run children — apply directly to the block
+            para.Attributes[attribute] = value;
+            return;
+        }
+
+        var cursor = 0;
+        foreach (var run in para.Children)
+        {
+            var runLen = run.Text.Length;
+            var runEnd = cursor + runLen;
+
+            if (runEnd > fromChar && cursor < toChar)
+                run.Attributes[attribute] = value;
+
+            cursor = runEnd;
+        }
+    }
+
+    private static void RemoveAttributeFromRange(
+        DocumentBlock para, int fromChar, int toChar, string attribute)
+    {
+        if (para.Children.Count == 0)
+        {
+            para.Attributes.Remove(attribute);
+            return;
+        }
+
+        var cursor = 0;
+        foreach (var run in para.Children)
+        {
+            var runLen = run.Text.Length;
+            var runEnd = cursor + runLen;
+            if (runEnd > fromChar && cursor < toChar)
+                run.Attributes.Remove(attribute);
+            cursor = runEnd;
+        }
+    }
+
+    private static IReadOnlyList<AttributeSnapshot> SnapshotChildren(DocumentBlock para)
+    {
+        if (para.Children.Count == 0)
+            return [TakeAttributeSnapshot(para)];
+        return para.Children.Select(TakeAttributeSnapshot).ToList();
+    }
+
+    private static AttributeSnapshot TakeAttributeSnapshot(DocumentBlock block) =>
+        new(block, new Dictionary<string, object>(block.Attributes));
+}

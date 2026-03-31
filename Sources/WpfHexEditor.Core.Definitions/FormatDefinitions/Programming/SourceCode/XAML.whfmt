@@ -131,7 +131,9 @@
         "triggerBrace": true,
         "triggerDirective": false
       }
-    }
+    },,
+        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
+        "colorLiteralPatterns": ["#[0-9A-Fa-f]{8}","#[0-9A-Fa-f]{6}","#[0-9A-Fa-f]{3}","Colors\\.[A-Za-z]+"]
   },
   "forensic": {
     "category": "other",

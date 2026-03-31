@@ -14,6 +14,7 @@
 //     ensures monotonically increasing version numbers per document.
 // ==========================================================
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +29,12 @@ internal sealed class LspDocumentSync
 {
     private readonly LspJsonRpcChannel               _channel;
     private readonly Dictionary<string, int>          _versions = new();     // uri → version
+
+    /// <summary>
+    /// Optional callback invoked (with the document URI) after each textDocument/didChange.
+    /// Used by <see cref="LspClientImpl"/> in pull-diagnostics mode to restart the pull timer.
+    /// </summary>
+    internal Action<string>? OnDocumentChanged;
 
     internal LspDocumentSync(LspJsonRpcChannel channel)
     {
@@ -70,6 +77,9 @@ internal sealed class LspDocumentSync
             contentChanges = new[] { new { text = newText } },   // full sync
         };
         await _channel.NotifyAsync("textDocument/didChange", p, ct).ConfigureAwait(false);
+
+        // Notify pull-diagnostics coordinator that the document changed.
+        OnDocumentChanged?.Invoke(uri);
     }
 
     internal async Task DidCloseAsync(string filePath, CancellationToken ct)

@@ -24,6 +24,7 @@ using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
+using WpfHexEditor.Plugins.PatternAnalysis.Commands;
 using WpfHexEditor.Plugins.PatternAnalysis.Views;
 
 namespace WpfHexEditor.Plugins.PatternAnalysis;
@@ -46,10 +47,11 @@ public sealed class PatternAnalysisPlugin : IWpfHexEditorPlugin
 
     public PluginCapabilities Capabilities => new()
     {
-        AccessHexEditor  = true,
-        AccessFileSystem = false,
-        RegisterMenus    = true,
-        WriteOutput      = true
+        AccessHexEditor          = true,
+        AccessFileSystem         = false,
+        RegisterMenus            = true,
+        WriteOutput              = true,
+        RegisterTerminalCommands = true
     };
 
     public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
@@ -87,13 +89,18 @@ public sealed class PatternAnalysisPlugin : IWpfHexEditorPlugin
         // Do NOT subscribe to ActiveEditorChanged — that causes a second redundant analysis pass.
         context.HexEditor.FileOpened += OnFileOpened;
 
+        context.Terminal.RegisterCommand(new PatternShowCommand());
+
         return Task.CompletedTask;
     }
 
     public Task ShutdownAsync(CancellationToken ct = default)
     {
         if (_context is not null)
+        {
             _context.HexEditor.FileOpened -= OnFileOpened;
+            _context.Terminal.UnregisterCommand("pattern-show");
+        }
 
         _cts?.Cancel();
         _cts?.Dispose();

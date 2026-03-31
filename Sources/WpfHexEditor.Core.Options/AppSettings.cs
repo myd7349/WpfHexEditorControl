@@ -640,6 +640,14 @@ public sealed class CodeEditorDefaultSettings
     /// </summary>
     public bool WrapSelectionInPairs { get; set; } = true;
 
+    // -- Column Rulers (#165) ---------------------------------------------------
+
+    /// <summary>
+    /// Fallback column ruler positions used when a language has no explicit
+    /// <c>columnRulers</c> in its whfmt. Empty = no rulers by default.
+    /// </summary>
+    public int[] DefaultColumnRulers { get; set; } = [];
+
     // -- Find All References (#157) ----------------------------------------------
 
     /// <summary>Settings for the Find All References (Shift+F12) feature.</summary>

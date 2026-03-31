@@ -139,6 +139,35 @@ public partial class DocumentHexPane : UserControl
         _           => fallback % BlockPalette.Length
     };
 
+    // ── Mutation overlays (called by DocumentHexHighlightManager) ────────────
+
+    private static readonly SolidColorBrush EditedOverlayBrush =
+        Freeze(new SolidColorBrush(Color.FromArgb(0x50, 0xE8, 0xA0, 0x20)));
+
+    private static readonly SolidColorBrush DeletedOverlayBrush =
+        Freeze(new SolidColorBrush(Color.FromArgb(0x50, 0xE0, 0x20, 0x20)));
+
+    private static T Freeze<T>(T b) where T : Freezable { b.Freeze(); return b; }
+
+    private const string EditedTag  = "DE_MutEdit";
+    private const string DeletedTag = "DE_MutDel";
+
+    /// <summary>Adds an edit or delete mutation overlay on the given raw byte range.</summary>
+    public void AddMutationOverlay(long offset, long length, bool isDelete)
+    {
+        var brush = isDelete ? DeletedOverlayBrush : EditedOverlayBrush;
+        var tag   = isDelete ? DeletedTag           : EditedTag;
+        var block = new CustomBackgroundBlock(offset, length, brush, tag);
+        PART_HexEditor.AddCustomBackgroundBlock(block);
+    }
+
+    /// <summary>Removes all mutation overlays (edit + delete).</summary>
+    public void ClearMutationOverlays()
+    {
+        PART_HexEditor.ClearCustomBackgroundBlockByTag(EditedTag);
+        PART_HexEditor.ClearCustomBackgroundBlockByTag(DeletedTag);
+    }
+
     // ── Hex selection ─────────────────────────────────────────────────────────
 
     private void OnHexSelectionChanged(object? sender, EventArgs e)

@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using WpfHexEditor.Editor.Core.Undo;
 using WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
 using WpfHexEditor.Editor.DocumentEditor.Core.Forensic;
+using WpfHexEditor.Editor.DocumentEditor.Core.Options;
 
 namespace WpfHexEditor.Editor.DocumentEditor.Core.Model;
 
@@ -100,6 +101,14 @@ public sealed class DocumentModel : INotifyPropertyChanged
             }
         }
     }
+
+    // ──────────────────────────────── Page layout ────────────────────────────
+
+    /// <summary>
+    /// Page layout declared by the document (set by loaders).
+    /// Null means the loader found no explicit declaration → renderer uses DocumentPageSettings.Default.
+    /// </summary>
+    public DocumentPageSettings? PageSettings { get; set; }
 
     // ──────────────────────────────── Dirty tracking ─────────────────────────
 

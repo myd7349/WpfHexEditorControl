@@ -54,6 +54,8 @@ public sealed class RtfDocumentLoader : IDocumentLoader
 
         target.BinaryMap.MergeFrom(builder.Build());
 
+        target.PageSettings = structureBuilder.ExtractedPageSettings;
+
         var alerts = new ForensicAnalyzer().Analyze(target, rawBytes);
         target.SetForensicAlerts(alerts);
     }

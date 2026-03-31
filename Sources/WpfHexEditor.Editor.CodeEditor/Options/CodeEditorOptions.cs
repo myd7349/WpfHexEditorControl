@@ -240,6 +240,36 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
         set { _enableWordHighlight = value; Notify(); }
     }
 
+    // -- Color Swatch Preview (#168) ------------------------------------------
+
+    private bool _colorSwatchPreview = true;
+
+    /// <summary>
+    /// When true, a 12×12 colour preview swatch is rendered to the left of each
+    /// colour literal in languages that have <c>colorLiteralPatterns</c> in their whfmt.
+    /// Clicking a swatch raises <c>CodeEditor.ColorSwatchClicked</c>.
+    /// </summary>
+    public bool ColorSwatchPreview
+    {
+        get => _colorSwatchPreview;
+        set { _colorSwatchPreview = value; Notify(); }
+    }
+
+    // -- Code Formatting (#159) -----------------------------------------------
+
+    private bool _formatOnSave = false;
+
+    /// <summary>
+    /// When true, the document is automatically formatted (Ctrl+K, Ctrl+D)
+    /// each time it is saved.  Requires either an LSP server with a formatting
+    /// provider or a whfmt <c>formattingRules</c> block.
+    /// </summary>
+    public bool FormatOnSave
+    {
+        get => _formatOnSave;
+        set { _formatOnSave = value; Notify(); }
+    }
+
     // -- Sticky Scroll (#160) -------------------------------------------------
 
     private bool   _stickyScrollEnabled          = true;

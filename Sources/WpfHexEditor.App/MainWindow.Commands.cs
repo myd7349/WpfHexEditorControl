@@ -268,12 +268,16 @@ public partial class MainWindow
             () => OnPluginHotReload(this, null!));
 
         // ── Editor ───────────────────────────────────────────────────────────
-        Reg(CommandIds.Editor.FindAllReferences,  "Find All References",   "Editor", "Shift+F12", "\uE721",
+        Reg(CommandIds.Editor.FindAllReferences,  "Find All References",   "Editor", "Shift+F12",  "\uE721",
             () => ExecuteFindAllReferencesOnActiveEditor());
-        Reg(CommandIds.Editor.GoToDefinition,     "Go to Definition",      "Editor", "F12",       "\uE8AD",
+        Reg(CommandIds.Editor.GoToDefinition,     "Go to Definition",      "Editor", "F12",        "\uE8AD",
             () => ExecuteGoToDefinitionOnActiveEditor());
-        Reg(CommandIds.Editor.GoToImplementation, "Go to Implementation",  "Editor", "Ctrl+F12",  "\uE8AD",
+        Reg(CommandIds.Editor.GoToImplementation, "Go to Implementation",  "Editor", "Ctrl+F12",   "\uE8AD",
             () => ExecuteGoToImplementationOnActiveEditor());
+        Reg(CommandIds.Editor.ShowCallHierarchy,  "Show Call Hierarchy",   "Editor", "Shift+Alt+H","\uE81E",
+            () => ExecuteCallHierarchyOnActiveEditor());
+        Reg(CommandIds.Editor.ShowTypeHierarchy,  "Show Type Hierarchy",   "Editor", "Ctrl+Alt+F12","\uE81E",
+            () => ExecuteTypeHierarchyOnActiveEditor());
 
         // ── Debug ────────────────────────────────────────────────────────────
         Reg(CommandIds.Debug.StartDebugging,           "Start Debugging",            "Debug", "F5",            "\uE768",
@@ -333,6 +337,20 @@ public partial class MainWindow
         if (_documentManager?.ActiveDocument?.AssociatedEditor
                 is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
             _ = host.PrimaryEditor.GoToImplementationAsync();
+    }
+
+    private void ExecuteCallHierarchyOnActiveEditor()
+    {
+        if (_documentManager?.ActiveDocument?.AssociatedEditor
+                is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
+            _ = host.PrimaryEditor.PrepareCallHierarchyAtCaretAsync();
+    }
+
+    private void ExecuteTypeHierarchyOnActiveEditor()
+    {
+        if (_documentManager?.ActiveDocument?.AssociatedEditor
+                is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
+            _ = host.PrimaryEditor.PrepareTypeHierarchyAtCaretAsync();
     }
 
     // -----------------------------------------------------------------------

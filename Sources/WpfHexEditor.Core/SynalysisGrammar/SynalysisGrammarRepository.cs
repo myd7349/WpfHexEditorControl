@@ -118,6 +118,12 @@ public sealed class SynalysisGrammarRepository
     public IReadOnlyList<string> GetAllKeys()
         => _registrations.Select(r => r.Key).ToList();
 
+    /// <summary>Returns all registered grammars as (Key, Name) entries.</summary>
+    public IReadOnlyList<GrammarEntry> GetAll()
+        => _registrations
+            .Select(r => new GrammarEntry(r.Key, Path.GetFileNameWithoutExtension(r.Key)))
+            .ToList();
+
     /// <summary>
     /// Returns the already-cached <see cref="UfwbRoot"/> for <paramref name="key"/>
     /// without triggering a lazy load. Returns null when the key is unknown or the
@@ -191,3 +197,6 @@ public sealed class SynalysisGrammarRepository
 
     private sealed record GrammarRegistration(string Key, Func<UfwbRoot?> Loader);
 }
+
+/// <summary>Lightweight descriptor returned by <see cref="SynalysisGrammarRepository.GetAll"/>.</summary>
+public sealed record GrammarEntry(string Key, string Name);
