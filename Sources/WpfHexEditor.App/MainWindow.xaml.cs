@@ -538,6 +538,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Register decompiler backends
         WpfHexEditor.Core.Decompiler.DecompilerRegistry.Register(new WpfHexEditor.Core.Decompiler.DotNetReflectionDecompiler());
+        WpfHexEditor.Core.Decompiler.DecompilerRegistry.Register(WpfHexEditor.Core.Decompiler.IcedDisassembler.Instance);
 
         // Register editor factories (doc-proj-* dispatcher)
         // JsonEditor before CodeEditor so .json/.jsonc files get dedicated JSON toolbar

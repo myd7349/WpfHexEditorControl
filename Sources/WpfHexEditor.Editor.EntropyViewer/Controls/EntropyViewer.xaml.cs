@@ -1,14 +1,20 @@
 //////////////////////////////////////////////
-// GNU Affero General Public License v3.0 - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
+// Project: WpfHexEditor.Editor.EntropyViewer
+// File: Controls/EntropyViewer.xaml.cs
+// Description:
+//     Read-only entropy and byte-distribution analyser.
+//     Implements IDocumentEditor + IOpenableDocument.
+//     Fires NavigateToOffsetRequested when the user clicks a block so the
+//     host IDE can sync the HexEditor to that offset.
+// Architecture:
+//     Thin controller — all heavy lifting is in EntropyDrawingCanvas.cs
+//     (EntropyBarCanvas / ByteFreqCanvas).  Analysis runs on Task.Run.
 //////////////////////////////////////////////
 
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using WpfHexEditor.Core.BinaryAnalysis.Services;
 using WpfHexEditor.Editor.Core;
 
@@ -20,27 +26,18 @@ namespace WpfHexEditor.Editor.EntropyViewer.Controls;
 /// </summary>
 public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpenableDocument
 {
-    // -----------------------------------------------------------------------
-    // Fields
-    // -----------------------------------------------------------------------
+    // ── Fields ────────────────────────────────────────────────────────────────
 
-    private string  _filePath    = string.Empty;
+    private string  _filePath   = string.Empty;
     private byte[]? _data;
-    private int     _windowSize  = 1024;
-
-    private readonly DataStatisticsService _statsService = new();
+    private int     _windowSize = 1024;
 
     // Cached analysis results
-    private double[]? _blockEntropy;     // per-window entropy values
-    private long[]?   _byteFrequency;    // 256 values
+    private double[]? _blockEntropy;
+    private long[]?   _byteFrequency;
 
-    // -----------------------------------------------------------------------
-    // Constructor
-    // -----------------------------------------------------------------------
+    // ── Constructor ───────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Creates a new <see cref="EntropyViewer"/>.
-    /// </summary>
     public EntropyViewer()
     {
         InitializeComponent();
@@ -54,123 +51,81 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
         DeleteCommand    = new RelayCommand(() => { }, () => false);
         SelectAllCommand = new RelayCommand(() => { }, () => false);
 
-        SizeChanged += (_, _) => RenderCharts();
+        SizeChanged += (_, _) => PushDataToCanvas();
     }
 
-    // -----------------------------------------------------------------------
-    // IDocumentEditor — State
-    // -----------------------------------------------------------------------
+    // ── IDocumentEditor — State ───────────────────────────────────────────────
 
-    /// <inheritdoc/>
-    public bool IsDirty    => false;
+    public bool   IsDirty    => false;
+    public bool   CanUndo    => false;
+    public bool   CanRedo    => false;
+    public bool   IsReadOnly { get => true; set { } }
+    public string Title      { get; private set; } = "Entropy";
+    public bool   IsBusy     { get; private set; }
 
-    /// <inheritdoc/>
-    public bool CanUndo    => false;
+    // ── IDocumentEditor — Commands ────────────────────────────────────────────
 
-    /// <inheritdoc/>
-    public bool CanRedo    => false;
-
-    /// <inheritdoc/>
-    public bool IsReadOnly
-    {
-        get => true;
-        set { /* always read-only */ }
-    }
-
-    /// <inheritdoc/>
-    public string Title { get; private set; } = "Entropy";
-
-    /// <inheritdoc/>
-    public bool IsBusy { get; private set; }
-
-    // -----------------------------------------------------------------------
-    // IDocumentEditor — Commands
-    // -----------------------------------------------------------------------
-
-    /// <inheritdoc/>
     public ICommand UndoCommand      { get; }
-    /// <inheritdoc/>
     public ICommand RedoCommand      { get; }
-    /// <inheritdoc/>
     public ICommand SaveCommand      { get; }
-    /// <inheritdoc/>
     public ICommand CopyCommand      { get; }
-    /// <inheritdoc/>
     public ICommand CutCommand       { get; }
-    /// <inheritdoc/>
     public ICommand PasteCommand     { get; }
-    /// <inheritdoc/>
     public ICommand DeleteCommand    { get; }
-    /// <inheritdoc/>
     public ICommand SelectAllCommand { get; }
 
-    // -----------------------------------------------------------------------
-    // IDocumentEditor — Events
-    // -----------------------------------------------------------------------
+    // ── IDocumentEditor — Events ──────────────────────────────────────────────
 
 #pragma warning disable CS0067
-    /// <inheritdoc/>
     public event EventHandler?         ModifiedChanged;
-    /// <inheritdoc/>
     public event EventHandler?         CanUndoChanged;
-    /// <inheritdoc/>
     public event EventHandler?         CanRedoChanged;
-    /// <inheritdoc/>
     public event EventHandler<string>? TitleChanged;
-    /// <inheritdoc/>
     public event EventHandler<string>? StatusMessage;
-    /// <inheritdoc/>
     public event EventHandler<string>? OutputMessage;
-    /// <inheritdoc/>
     public event EventHandler?         SelectionChanged;
-    /// <inheritdoc/>
     public event EventHandler<DocumentOperationEventArgs>?          OperationStarted;
-    /// <inheritdoc/>
     public event EventHandler<DocumentOperationEventArgs>?          OperationProgress;
-    /// <inheritdoc/>
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 #pragma warning restore CS0067
 
-    // -----------------------------------------------------------------------
-    // IDocumentEditor — Methods
-    // -----------------------------------------------------------------------
+    /// <summary>
+    /// Raised when the user clicks an entropy block.
+    /// The argument is the file offset of the start of that block.
+    /// The host IDE should sync the HexEditor to this offset.
+    /// </summary>
+    public event EventHandler<long>? NavigateToOffsetRequested;
 
-    /// <inheritdoc/>
-    public void Undo() { }
-    /// <inheritdoc/>
-    public void Redo() { }
-    /// <inheritdoc/>
-    public void Save() { }
-    /// <inheritdoc/>
-    public Task SaveAsync(CancellationToken ct = default) => Task.CompletedTask;
-    /// <inheritdoc/>
+    // ── IDocumentEditor — Methods ─────────────────────────────────────────────
+
+    public void Undo()  { }
+    public void Redo()  { }
+    public void Save()  { }
+    public Task SaveAsync  (CancellationToken ct = default) => Task.CompletedTask;
     public Task SaveAsAsync(string filePath, CancellationToken ct = default) => Task.CompletedTask;
-    /// <inheritdoc/>
     public void Copy()      { }
-    /// <inheritdoc/>
     public void Cut()       { }
-    /// <inheritdoc/>
     public void Paste()     { }
-    /// <inheritdoc/>
     public void Delete()    { }
-    /// <inheritdoc/>
     public void SelectAll() { }
-    /// <inheritdoc/>
-    public void Close()     { _data = null; _blockEntropy = null; _byteFrequency = null; }
-    /// <inheritdoc/>
     public void CancelOperation() { }
 
-    // -----------------------------------------------------------------------
-    // IOpenableDocument
-    // -----------------------------------------------------------------------
+    public void Close()
+    {
+        _data          = null;
+        _blockEntropy  = null;
+        _byteFrequency = null;
+        EntropyCanvas.SetData(null, _windowSize);
+        FreqCanvas.SetData(null);
+    }
 
-    /// <summary>
-    /// Loads a binary file and computes entropy + byte distribution.
-    /// </summary>
+    // ── IOpenableDocument ─────────────────────────────────────────────────────
+
     public async Task OpenAsync(string filePath, CancellationToken ct = default)
     {
         IsBusy = true;
-        OperationStarted?.Invoke(this, new DocumentOperationEventArgs { Title = "Analysing…", IsIndeterminate = true });
+        OperationStarted?.Invoke(this, new DocumentOperationEventArgs
+            { Title = "Analysing…", IsIndeterminate = true });
 
         try
         {
@@ -186,12 +141,14 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
         }
         catch (OperationCanceledException)
         {
-            OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { WasCancelled = true, ErrorMessage = "Cancelled" });
+            OperationCompleted?.Invoke(this,
+                new DocumentOperationCompletedEventArgs { WasCancelled = true, ErrorMessage = "Cancelled" });
         }
         catch (Exception ex)
         {
             StatusMessage?.Invoke(this, $"Error: {ex.Message}");
-            OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { Success = false, ErrorMessage = ex.Message });
+            OperationCompleted?.Invoke(this,
+                new DocumentOperationCompletedEventArgs { Success = false, ErrorMessage = ex.Message });
         }
         finally
         {
@@ -199,9 +156,7 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Analysis
-    // -----------------------------------------------------------------------
+    // ── Analysis ──────────────────────────────────────────────────────────────
 
     private async Task AnalyseAsync(CancellationToken ct)
     {
@@ -216,8 +171,8 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
             var blocks = new List<double>();
             for (int offset = 0; offset < data.Length; offset += windowSize)
             {
-                var len  = Math.Min(windowSize, data.Length - offset);
-                var freq = new long[256];
+                int   len  = Math.Min(windowSize, data.Length - offset);
+                var   freq = new long[256];
                 for (int i = offset; i < offset + len; i++) freq[data[i]]++;
                 blocks.Add(Shannon(freq, len));
             }
@@ -235,13 +190,13 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
         _blockEntropy  = blockEnt;
         _byteFrequency = byteFreq;
 
-        // Update UI on dispatcher thread
         Dispatcher.Invoke(() =>
         {
-            EntropyText.Text = $"Overall entropy: {stats.Entropy:F3}  |  Type: {stats.EstimatedDataType}  |  Size: {FormatSize(data.Length)}";
-            StatusText.Text  = $"{data.Length:N0} bytes  |  {blockEnt.Length} blocks of {windowSize} B  |  Entropy: {stats.Entropy:F3} / 8.0";
+            EntropyText.Text =
+                $"Overall entropy: {stats.Entropy:F3}  |  Type: {stats.EstimatedDataType}  |  Size: {FormatSize(data.Length)}";
+            StatusText.Text =
+                $"{data.Length:N0} bytes  |  {blockEnt.Length} blocks of {windowSize} B  |  Entropy: {stats.Entropy:F3} / 8.0";
 
-            // Stats text
             StatsText.Text =
                 $"File size      : {data.Length:N0} bytes ({FormatSize(data.Length)})\n" +
                 $"Entropy        : {stats.Entropy:F4}  (0=uniform, 8=random)\n" +
@@ -251,83 +206,18 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
                 $"Printable ASCII: {stats.PrintableAsciiPercentage:F2}%\n" +
                 $"Most common    : 0x{stats.MostCommonByte:X2}  ({stats.MostCommonByteCount:N0} × {stats.GetBytePercentage(stats.MostCommonByte):F2}%)";
 
-            RenderCharts();
+            PushDataToCanvas();
         });
     }
 
-    // -----------------------------------------------------------------------
-    // Rendering
-    // -----------------------------------------------------------------------
-
-    private void RenderCharts()
+    /// <summary>Pushes cached data to both DrawingContext canvases.</summary>
+    private void PushDataToCanvas()
     {
-        if (_blockEntropy  is not null) RenderEntropyChart();
-        if (_byteFrequency is not null) RenderFreqChart();
+        EntropyCanvas.SetData(_blockEntropy, _windowSize);
+        FreqCanvas.SetData(_byteFrequency);
     }
 
-    private void RenderEntropyChart()
-    {
-        EntropyCanvas.Children.Clear();
-        if (_blockEntropy is null || _blockEntropy.Length == 0) return;
-
-        double w = Math.Max(1, EntropyCanvas.ActualWidth);
-        double h = EntropyCanvas.ActualHeight;
-        if (w <= 1 || h <= 1) return;
-
-        double barW = w / _blockEntropy.Length;
-
-        for (int i = 0; i < _blockEntropy.Length; i++)
-        {
-            double ent   = _blockEntropy[i];
-            double barH  = (ent / 8.0) * (h - 4);
-            var    rect  = new System.Windows.Shapes.Rectangle
-            {
-                Width           = Math.Max(1, barW - 1),
-                Height          = Math.Max(1, barH),
-                Fill            = EntropyColor(ent),
-                VerticalAlignment   = VerticalAlignment.Bottom,
-                HorizontalAlignment = HorizontalAlignment.Left,
-            };
-            System.Windows.Controls.Canvas.SetLeft(rect, i * barW);
-            System.Windows.Controls.Canvas.SetTop (rect, h - barH - 2);
-            EntropyCanvas.Children.Add(rect);
-        }
-    }
-
-    private void RenderFreqChart()
-    {
-        FreqCanvas.Children.Clear();
-        if (_byteFrequency is null) return;
-
-        double w    = Math.Max(1, FreqCanvas.ActualWidth);
-        double h    = FreqCanvas.ActualHeight;
-        if (w <= 1 || h <= 1) return;
-
-        double barW = w / 256.0;
-        long   max  = _byteFrequency.Max();
-        if (max == 0) return;
-
-        var fill = TryGetBrush("AccentColor") ?? Brushes.DodgerBlue;
-
-        for (int i = 0; i < 256; i++)
-        {
-            if (_byteFrequency[i] == 0) continue;
-            double barH = (_byteFrequency[i] / (double)max) * (h - 4);
-            var    rect = new System.Windows.Shapes.Rectangle
-            {
-                Width  = Math.Max(1, barW),
-                Height = Math.Max(1, barH),
-                Fill   = fill,
-            };
-            System.Windows.Controls.Canvas.SetLeft(rect, i * barW);
-            System.Windows.Controls.Canvas.SetTop (rect, h - barH - 2);
-            FreqCanvas.Children.Add(rect);
-        }
-    }
-
-    // -----------------------------------------------------------------------
-    // Event handlers
-    // -----------------------------------------------------------------------
+    // ── Event handlers ────────────────────────────────────────────────────────
 
     private void OnWindowSizeChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -340,21 +230,31 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
         }
     }
 
-    private void EntropyCanvas_MouseMove(object sender, MouseEventArgs e)
+    private void OnShowRegionsChanged(object sender, RoutedEventArgs e)
+        => EntropyCanvas.ShowRegions = ShowRegionsCheck.IsChecked == true;
+
+    private void OnShowThresholdChanged(object sender, RoutedEventArgs e)
+        => EntropyCanvas.ShowThresholdLine = ShowThresholdCheck.IsChecked == true;
+
+    private void OnEntropyHoverChanged(object? sender, EntropyHoverEventArgs e)
     {
-        if (_blockEntropy is null || _data is null) return;
-        var pos   = e.GetPosition(EntropyCanvas);
-        int idx   = (int)(pos.X / Math.Max(1, EntropyCanvas.ActualWidth) * _blockEntropy.Length);
-        if (idx >= 0 && idx < _blockEntropy.Length)
+        if (e.BlockIndex < 0)
         {
-            long offset = (long)idx * _windowSize;
-            StatusText.Text = $"Block {idx}  offset 0x{offset:X}  entropy {_blockEntropy[idx]:F3}";
+            // Restore default status when mouse leaves
+            if (_data is not null && _blockEntropy is not null)
+                StatusText.Text =
+                    $"{_data.Length:N0} bytes  |  {_blockEntropy.Length} blocks of {_windowSize} B";
+            return;
         }
+        StatusText.Text =
+            $"Block {e.BlockIndex}  |  Offset 0x{e.Offset:X8}  |  Entropy {e.Entropy:F4}  " +
+            $"[click to navigate]";
     }
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
+    private void OnEntropyOffsetRequested(object? sender, long offset)
+        => NavigateToOffsetRequested?.Invoke(this, offset);
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static double Shannon(long[] freq, long total)
     {
@@ -369,21 +269,6 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
         return h;
     }
 
-    private static Brush EntropyColor(double ent)
-    {
-        // 0 → green (structured/compressible), 8 → red (compressed/encrypted)
-        double t = ent / 8.0;
-        byte r = (byte)(t * 220);
-        byte g = (byte)((1 - t) * 180);
-        return new SolidColorBrush(Color.FromRgb(r, g, 60)) { Opacity = 0.9 };
-    }
-
-    private Brush? TryGetBrush(string key)
-    {
-        try { return TryFindResource(key) as Brush; }
-        catch { return null; }
-    }
-
     private static string FormatSize(long bytes)
     {
         string[] units = ["B", "KB", "MB", "GB"];
@@ -394,9 +279,7 @@ public sealed partial class EntropyViewer : UserControl, IDocumentEditor, IOpena
     }
 }
 
-// ---------------------------------------------------------------------------
-// Minimal RelayCommand (no external dep)
-// ---------------------------------------------------------------------------
+// ── Minimal RelayCommand (no external dep) ───────────────────────────────────
 
 internal sealed class RelayCommand(Action execute, Func<bool>? canExecute = null) : ICommand
 {
