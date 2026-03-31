@@ -24,6 +24,7 @@ using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
+using WpfHexEditor.Plugins.FileComparison.Commands;
 using WpfHexEditor.Plugins.FileComparison.Views;
 using WpfHexEditor.Plugins.FileComparison.Services;
 using WpfHexEditor.Plugins.FileComparison.ViewModels;
@@ -52,10 +53,11 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
 
     public PluginCapabilities Capabilities => new()
     {
-        AccessHexEditor  = true,
-        AccessFileSystem = true,
-        RegisterMenus    = true,
-        WriteOutput      = true
+        AccessHexEditor          = true,
+        AccessFileSystem         = true,
+        RegisterMenus            = true,
+        WriteOutput              = true,
+        RegisterTerminalCommands = true
     };
 
     public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
@@ -100,6 +102,8 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
                 IconGlyph  = "\uE93D",
                 Command    = new RelayCommand(_ => ShowDiffHubDocument())
             });
+
+        context.Terminal.RegisterCommand(new DiffHubCommand(ShowDiffHubDocument));
 
         context.UIRegistry.RegisterContextMenuContributor(Id,
             new SolutionExplorerCompareContributor(
@@ -163,6 +167,7 @@ public sealed class FileComparisonPlugin : IWpfHexEditorPlugin
 
         _openViewers.Clear();
         _diffHubDocumentOpen = false;
+        _context?.Terminal.UnregisterCommand("diff-hub");
         _panel   = null;
         _context = null;
         return Task.CompletedTask;

@@ -640,6 +640,25 @@ public sealed class CodeEditorDefaultSettings
     /// </summary>
     public bool WrapSelectionInPairs { get; set; } = true;
 
+    // -- Coloring (#162/#168/#159) -----------------------------------------------
+
+    /// <summary>Color bracket pairs with CE_Bracket_1/2/3/4 based on nesting depth.</summary>
+    public bool BracketPairColorization { get; set; } = true;
+
+    /// <summary>Show a 12×12 color swatch next to color literals (e.g. #FF5733) in CSS/XAML/C# files.</summary>
+    public bool ColorSwatchPreview { get; set; } = true;
+
+    /// <summary>Automatically format the document on Ctrl+S save.</summary>
+    public bool FormatOnSave { get; set; } = false;
+
+    // -- Column Rulers (#165) ---------------------------------------------------
+
+    /// <summary>
+    /// Fallback column ruler positions used when a language has no explicit
+    /// <c>columnRulers</c> in its whfmt. Empty = no rulers by default.
+    /// </summary>
+    public int[] DefaultColumnRulers { get; set; } = [];
+
     // -- Find All References (#157) ----------------------------------------------
 
     /// <summary>Settings for the Find All References (Shift+F12) feature.</summary>

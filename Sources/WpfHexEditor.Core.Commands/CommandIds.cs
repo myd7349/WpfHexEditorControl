@@ -144,6 +144,10 @@ public static class CommandIds
         public const string FindAllReferences  = "Editor.FindAllReferences";
         public const string GoToDefinition     = "Editor.GoToDefinition";
         public const string GoToImplementation = "Editor.GoToImplementation";
+        public const string FormatDocument     = "Editor.FormatDocument";
+        public const string FormatSelection    = "Editor.FormatSelection";
+        public const string ShowCallHierarchy  = "Editor.ShowCallHierarchy";
+        public const string ShowTypeHierarchy  = "Editor.ShowTypeHierarchy";
     }
 
     public static class Plugins

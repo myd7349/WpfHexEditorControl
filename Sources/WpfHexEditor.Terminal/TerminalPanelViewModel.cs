@@ -36,6 +36,7 @@ using WpfHexEditor.Core.Terminal.Macros;
 using WpfHexEditor.Core.Terminal.Scripting;
 using WpfHexEditor.Core.Terminal.ShellSession;
 using WpfHexEditor.SDK.Contracts;
+using WpfHexEditor.SDK.Contracts.Terminal;
 
 namespace WpfHexEditor.Terminal;
 
@@ -288,6 +289,13 @@ public sealed class TerminalPanelViewModel : INotifyPropertyChanged, IDisposable
     /// <summary>Exposes the session manager so TerminalServiceImpl can route OpenSession calls.</summary>
     public IShellSessionManager SessionManager => _sessionManager;
 
+    /// <summary>
+    /// Exposes the shared command registry so MainWindow can wire it to
+    /// <see cref="WpfHexEditor.App.Services.TerminalServiceImpl.SetRegistry"/>,
+    /// enabling plugins to register custom HxTerminal commands.
+    /// </summary>
+    public TerminalCommandRegistry CommandRegistry => _registry;
+
     /// <summary>Opens a new session of the specified shell type (called by TerminalServiceImpl).</summary>
     public void OpenSession(TerminalShellType shellType) => CreateSession(shellType);
 
@@ -430,6 +438,7 @@ public sealed class TerminalPanelViewModel : INotifyPropertyChanged, IDisposable
         _registry.Register(new VersionCommand());
         _registry.Register(new ExitCommand());
         _registry.Register(new PluginListCommand());
+        _registry.Register(new PluginReloadCommand());
         _registry.Register(new StatusCommand());
         _registry.Register(new SendOutputCommand());
         _registry.Register(new SendErrorCommand());

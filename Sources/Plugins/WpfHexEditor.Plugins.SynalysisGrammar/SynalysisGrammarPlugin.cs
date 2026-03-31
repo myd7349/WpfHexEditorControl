@@ -27,6 +27,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using WpfHexEditor.Core.SynalysisGrammar;
+using WpfHexEditor.Plugins.SynalysisGrammar.Commands;
 using WpfHexEditor.Plugins.SynalysisGrammar.Options;
 using WpfHexEditor.Plugins.SynalysisGrammar.Services;
 using WpfHexEditor.Plugins.SynalysisGrammar.ViewModels;
@@ -49,11 +50,12 @@ public sealed class SynalysisGrammarPlugin : IWpfHexEditorPlugin, IPluginWithOpt
 
     public PluginCapabilities Capabilities => new()
     {
-        AccessHexEditor  = true,
-        AccessFileSystem = true,
-        RegisterMenus    = true,
-        WriteOutput      = true,
-        AccessSettings   = true,
+        AccessHexEditor          = true,
+        AccessFileSystem         = true,
+        RegisterMenus            = true,
+        WriteOutput              = true,
+        AccessSettings           = true,
+        RegisterTerminalCommands = true,
     };
 
     // -- Private state -----------------------------------------------------
@@ -138,6 +140,12 @@ public sealed class SynalysisGrammarPlugin : IWpfHexEditorPlugin, IPluginWithOpt
         context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
         context.HexEditor.FileOpened          += OnFileOpened;
 
+        // 8. Register terminal commands.
+        context.Terminal.RegisterCommand(new GrammarApplyCommand(_service, _repository));
+        context.Terminal.RegisterCommand(new GrammarListCommand(_repository));
+        context.Terminal.RegisterCommand(new GrammarAutoCommand(_viewModel));
+        context.Terminal.RegisterCommand(new GrammarClearCommand());
+
         return Task.CompletedTask;
     }
 
@@ -153,6 +161,14 @@ public sealed class SynalysisGrammarPlugin : IWpfHexEditorPlugin, IPluginWithOpt
 
         if (_panel is not null)
             _panel.DroppedGrammarFiles -= OnGrammarFileDropped;
+
+        if (_context is not null)
+        {
+            _context.Terminal.UnregisterCommand("grammar-apply");
+            _context.Terminal.UnregisterCommand("grammar-list");
+            _context.Terminal.UnregisterCommand("grammar-auto");
+            _context.Terminal.UnregisterCommand("grammar-clear");
+        }
 
         _panel       = null;
         _viewModel   = null;

@@ -1,20 +1,10 @@
-//////////////////////////////////////////////
-// GNU Affero General Public License v3.0 - 2026
-// Author : Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-//////////////////////////////////////////////
+// ==========================================================
+// Project: WpfHexEditor.Core.Terminal
+// File: ITerminalOutput.cs
+// Description:
+//     Moved to WpfHexEditor.SDK.Contracts.Terminal.
+//     Re-exported here via global using alias for source compatibility —
+//     all built-in commands in this project compile without changes.
+// ==========================================================
 
-namespace WpfHexEditor.Core.Terminal;
-
-/// <summary>
-/// Output sink for terminal command results.
-/// </summary>
-public interface ITerminalOutput
-{
-    void Write(string text);
-    void WriteLine(string text = "");
-    void WriteError(string text);
-    void WriteWarning(string text);
-    void WriteInfo(string text);
-    void Clear();
-}
+global using ITerminalOutput = WpfHexEditor.SDK.Contracts.Terminal.ITerminalOutput;

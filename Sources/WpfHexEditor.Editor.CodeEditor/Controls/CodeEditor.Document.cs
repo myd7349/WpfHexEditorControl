@@ -276,6 +276,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _lspChangeTimer?.Start();
             }
 
+            // Debounce linked editing sync — 150 ms (C2).
+            if (!_applyingLinkedEdit && _lspClient is not null && _currentFilePath is not null)
+                ScheduleLinkedEditQuery();
+
             // Incremental max-width update (P1-CE-02) — O(1) on growth, O(n) only on shrink
             int changedLine    = e.Position.Line;
             int prevMaxLength  = _cachedMaxLineLength;
@@ -421,7 +425,30 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 }
 
                 _document.ClearDirtyLines();
-                _validationErrors = _validator.Validate(textToValidate);
+
+                // FormatSchemaValidator validates JSON-based .whfmt format definitions.
+                // Skip it for named languages (C#, Python, etc.) — LSP handles those.
+                var langId = Language?.Id;
+                if (langId is null || langId == "json" || langId == "whfmt")
+                {
+                    _validationErrors = _validator.Validate(textToValidate);
+
+                    // Apply language-specific prefix to raw error codes (e.g. "JSON_SYNTAX" → "JSON_SYNTAX").
+                    // For named languages the prefix comes from the LanguageDefinition.DiagnosticPrefix.
+                    var prefix = Language?.DiagnosticPrefix;
+                    if (!string.IsNullOrEmpty(prefix))
+                    {
+                        foreach (var err in _validationErrors)
+                            if (!string.IsNullOrEmpty(err.ErrorCode) && !err.ErrorCode.StartsWith(prefix, StringComparison.Ordinal))
+                                err.ErrorCode = $"{prefix}_{err.ErrorCode}";
+                    }
+                }
+                else
+                {
+                    // Non-JSON language: clear schema errors, keep LSP-layer errors.
+                    _validationErrors.RemoveAll(v => v.Layer != WpfHexEditor.Editor.CodeEditor.Models.ValidationLayer.Lsp);
+                }
+
                 RebuildValidationIndex();
                 InvalidateVisual();
                 DiagnosticsChanged?.Invoke(this, EventArgs.Empty);
@@ -644,7 +671,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         public async System.Threading.Tasks.Task SaveAsync(System.Threading.CancellationToken ct = default)
         {
             if (!string.IsNullOrEmpty(_currentFilePath))
+            {
+                if (_formatOnSave)
+                    await FormatDocumentAsync(ct).ConfigureAwait(true);
                 await SaveAsAsync(_currentFilePath, ct);
+            }
         }
 
         public async System.Threading.Tasks.Task SaveAsAsync(string filePath, System.Threading.CancellationToken ct = default)
@@ -782,6 +813,74 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private void ApplyEditorConfig(Services.EditorConfigSettings cfg)
         {
             if (cfg.IndentSize is int indent) IndentSize = indent;
+        }
+
+        #endregion
+
+        #region Linked Editing (C2)
+
+        // Guard prevents recursive DidChange→ApplyLinkedEdits→DidChange cycle.
+        private bool _applyingLinkedEdit;
+
+        /// <summary>
+        /// Replaces the text in each of the supplied <paramref name="otherRanges"/> with
+        /// <paramref name="newText"/>, grouping all replacements into a single undoable
+        /// transaction.  Ranges that are already beyond the document end are skipped.
+        /// The <see cref="_applyingLinkedEdit"/> guard prevents recursion when the
+        /// replacements themselves fire <c>TextChanged</c>.
+        /// </summary>
+        internal void ApplyLinkedEdits(
+            IReadOnlyList<WpfHexEditor.Editor.Core.LSP.LspLinkedRange> otherRanges,
+            string newText)
+        {
+            if (_applyingLinkedEdit || otherRanges.Count == 0) return;
+            _applyingLinkedEdit = true;
+            try
+            {
+                // Bottom-up application avoids line/column drift.
+                var sorted = otherRanges
+                    .OrderByDescending(r => r.StartLine)
+                    .ThenByDescending(r => r.StartColumn)
+                    .ToList();
+
+                using var tx = _undoEngine.BeginTransaction("Linked Edit");
+                foreach (var r in sorted)
+                {
+                    if (r.StartLine >= _document.Lines.Count) continue;
+                    int safeEndLine = Math.Min(r.EndLine, _document.Lines.Count - 1);
+                    int safeEndCol  = r.EndLine < _document.Lines.Count
+                        ? Math.Min(r.EndColumn, _document.Lines[r.EndLine].Text.Length)
+                        : 0;
+
+                    _document.DeleteRange(
+                        new Models.TextPosition(r.StartLine, r.StartColumn),
+                        new Models.TextPosition(safeEndLine, safeEndCol));
+
+                    if (newText.Length > 0)
+                        _document.InsertText(new Models.TextPosition(r.StartLine, r.StartColumn), newText);
+                }
+                InvalidateVisual();
+            }
+            finally
+            {
+                _applyingLinkedEdit = false;
+            }
+        }
+
+        /// <summary>
+        /// Extracts the current text covered by <paramref name="range"/> from the document.
+        /// Only single-line ranges are supported (linked editing rarely spans lines).
+        /// Returns an empty string for multi-line or out-of-bounds ranges.
+        /// </summary>
+        internal string GetRangeText(WpfHexEditor.Editor.Core.LSP.LspLinkedRange range)
+        {
+            if (range.StartLine >= _document.Lines.Count) return string.Empty;
+            if (range.StartLine != range.EndLine)         return string.Empty;  // multi-line: skip
+
+            var text  = _document.Lines[range.StartLine].Text;
+            var start = Math.Min(range.StartColumn, text.Length);
+            var end   = Math.Min(range.EndColumn,   text.Length);
+            return start < end ? text[start..end] : string.Empty;
         }
 
         #endregion

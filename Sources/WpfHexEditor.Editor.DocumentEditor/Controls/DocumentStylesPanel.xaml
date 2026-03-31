@@ -1,0 +1,15 @@
+<UserControl x:Class="WpfHexEditor.Editor.DocumentEditor.Controls.DocumentStylesPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:WpfHexEditor.Editor.DocumentEditor.Controls"
+             Background="{DynamicResource DE_ToolbarBackground}"
+             Width="160">
+    <Border BorderBrush="{DynamicResource DE_ToolbarBorderBrush}" BorderThickness="1" CornerRadius="4">
+        <ListBox x:Name="PART_StyleList"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 SelectionChanged="OnStyleSelected">
+            <!-- Items added in code-behind -->
+        </ListBox>
+    </Border>
+</UserControl>

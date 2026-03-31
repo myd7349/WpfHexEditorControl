@@ -38,6 +38,8 @@ using WpfHexEditor.Editor.Core.LSP;
 using WpfHexEditor.Editor.Core.Views;
 using EditorStatusBarItem = WpfHexEditor.Editor.Core.StatusBarItem;
 using WpfHexEditor.Core.ProjectSystem.Languages;
+using WpfHexEditor.Editor.CodeEditor.Providers;
+using WpfHexEditor.Editor.CodeEditor.Services;
 
 namespace WpfHexEditor.Editor.CodeEditor.Controls;
 
@@ -167,9 +169,13 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
         _primaryEditor.ReferenceNavigationRequested       += (s, e) => ReferenceNavigationRequested?.Invoke(this, e);
         _primaryEditor.FindAllReferencesDockRequested     += (s, e) => FindAllReferencesDockRequested?.Invoke(this, e);
         _primaryEditor.GoToExternalDefinitionRequested    += (s, e) => GoToExternalDefinitionRequested?.Invoke(this, e);
+        _primaryEditor.CallHierarchyDockRequested         += (s, e) => CallHierarchyDockRequested?.Invoke(this, e);
+        _primaryEditor.TypeHierarchyDockRequested         += (s, e) => TypeHierarchyDockRequested?.Invoke(this, e);
         _secondaryEditor.ReferenceNavigationRequested     += (s, e) => ReferenceNavigationRequested?.Invoke(this, e);
         _secondaryEditor.FindAllReferencesDockRequested   += (s, e) => FindAllReferencesDockRequested?.Invoke(this, e);
         _secondaryEditor.GoToExternalDefinitionRequested  += (s, e) => GoToExternalDefinitionRequested?.Invoke(this, e);
+        _secondaryEditor.CallHierarchyDockRequested       += (s, e) => CallHierarchyDockRequested?.Invoke(this, e);
+        _secondaryEditor.TypeHierarchyDockRequested       += (s, e) => TypeHierarchyDockRequested?.Invoke(this, e);
 
         // Attach breadcrumb bar to primary editor so it tracks caret position.
         _breadcrumbBar.Attach(_primaryEditor, filePath: null);
@@ -254,6 +260,13 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
                 _minimap.Refresh();
             }
         }
+    }
+
+    /// <summary>Shows or hides line numbers in both editors.</summary>
+    public bool ShowLineNumbers
+    {
+        get => _primaryEditor.ShowLineNumbers;
+        set { _primaryEditor.ShowLineNumbers = value; _secondaryEditor.ShowLineNumbers = value; }
     }
 
     /// <summary>Render per-token colored blocks (true) or single rect per line (false).</summary>
@@ -386,6 +399,10 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
     /// Pass <see langword="null"/> to clear syntax highlighting (Plain Text mode).
     /// </summary>
     /// <param name="lang">The language to activate, or <see langword="null"/> for none.</param>
+    // Holds the per-instance EditorPluginIntegration for script-global completions.
+    // Created lazily the first time a language with ScriptGlobals is set.
+    private EditorPluginIntegration? _scriptGlobalsRegistry;
+
     public void SetLanguage(LanguageDefinition? lang)
     {
         var highlighter = lang is not null ? CodeEditorFactory.BuildHighlighter(lang) : null;
@@ -393,6 +410,25 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
         _secondaryEditor.ExternalHighlighter = highlighter;
         _primaryEditor.Language   = lang;
         _secondaryEditor.Language = lang;
+
+        // Auto-wire script globals completion when the language declares scriptGlobals.
+        if (lang is not null && lang.ScriptGlobals.Count > 0)
+        {
+            if (_scriptGlobalsRegistry is null)
+            {
+                _scriptGlobalsRegistry = new EditorPluginIntegration();
+                _scriptGlobalsRegistry.RegisterCompletionProvider(
+                    lang.Id, new ScriptGlobalsCompletionProvider());
+            }
+            _primaryEditor.SetLocalCompletionRegistry(_scriptGlobalsRegistry);
+            _secondaryEditor.SetLocalCompletionRegistry(_scriptGlobalsRegistry);
+        }
+        else
+        {
+            // Clear any previously set registry when switching away from a script language.
+            _primaryEditor.SetLocalCompletionRegistry(null);
+            _secondaryEditor.SetLocalCompletionRegistry(null);
+        }
     }
 
     #endregion
@@ -416,6 +452,9 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
     #endregion
 
     #region ILspAwareEditor
+
+    /// <summary>The LSP client currently attached to this split host (from the primary editor).</summary>
+    public ILspClient? LspClient => _primaryEditor.LspClient;
 
     /// <inheritdoc/>
     public void SetLspClient(ILspClient? client)
@@ -646,6 +685,18 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
     /// Forwarded from whichever editor pane fires it.
     /// </summary>
     public event EventHandler<FindAllReferencesDockEventArgs>? FindAllReferencesDockRequested;
+
+    /// <summary>
+    /// Raised when the user triggers call hierarchy (Shift+Alt+H) and results are ready.
+    /// Forwarded from whichever editor pane fires it.
+    /// </summary>
+    public event EventHandler<CallHierarchyDockRequestedEventArgs>? CallHierarchyDockRequested;
+
+    /// <summary>
+    /// Raised when the user triggers type hierarchy (Ctrl+Alt+F12) and results are ready.
+    /// Forwarded from whichever editor pane fires it.
+    /// </summary>
+    public event EventHandler<TypeHierarchyDockRequestedEventArgs>? TypeHierarchyDockRequested;
 
     /// <summary>
     /// Raised when Ctrl+Click targets an external symbol (BCL / NuGet assembly).

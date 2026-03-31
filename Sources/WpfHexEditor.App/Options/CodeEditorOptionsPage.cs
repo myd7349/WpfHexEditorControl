@@ -36,6 +36,9 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
     private readonly CheckBox _showEndBlockHintCheck;
     private readonly CheckBox _stickyScrollCheck;
     private readonly CheckBox _showRefreshRateCheck;
+    private readonly CheckBox _bracketPairColorizationCheck;
+    private readonly CheckBox _colorSwatchPreviewCheck;
+    private readonly CheckBox _formatOnSaveCheck;
 
     public CodeEditorOptionsPage()
     {
@@ -114,6 +117,20 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
         vsPanel.Children.Add(_minimapVerticalSizeCombo);
         root.Children.Add(vsPanel);
 
+        root.Children.Add(new Separator { Margin = new Thickness(0, 8, 0, 8) });
+
+        // ── Coloring ─────────────────────────────────────────────────────────
+        root.Children.Add(MakeHeader("Coloring"));
+
+        _bracketPairColorizationCheck = MakeCheck("Bracket pair colorization (CE_Bracket_1/2/3/4 by depth)");
+        root.Children.Add(_bracketPairColorizationCheck);
+
+        _colorSwatchPreviewCheck = MakeCheck("Color swatch preview (e.g. #FF5733 in CSS/XAML/C#)");
+        root.Children.Add(_colorSwatchPreviewCheck);
+
+        _formatOnSaveCheck = MakeCheck("Format on Save (Ctrl+S)");
+        root.Children.Add(_formatOnSaveCheck);
+
         Content = new ScrollViewer
         {
             Content = root,
@@ -143,6 +160,9 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
             _minimapRenderCharsCheck.IsChecked = s.MinimapRenderCharacters;
             _minimapSideCombo.SelectedIndex   = s.MinimapSide;
             _minimapVerticalSizeCombo.SelectedIndex = s.MinimapVerticalSize;
+            _bracketPairColorizationCheck.IsChecked = s.BracketPairColorization;
+            _colorSwatchPreviewCheck.IsChecked      = s.ColorSwatchPreview;
+            _formatOnSaveCheck.IsChecked            = s.FormatOnSave;
         }
         finally { _loading = false; }
     }
@@ -164,6 +184,9 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
         s.MinimapRenderCharacters     = _minimapRenderCharsCheck.IsChecked == true;
         s.MinimapSide                 = _minimapSideCombo.SelectedIndex;
         s.MinimapVerticalSize         = _minimapVerticalSizeCombo.SelectedIndex;
+        s.BracketPairColorization     = _bracketPairColorizationCheck.IsChecked == true;
+        s.ColorSwatchPreview          = _colorSwatchPreviewCheck.IsChecked == true;
+        s.FormatOnSave                = _formatOnSaveCheck.IsChecked == true;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

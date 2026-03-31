@@ -44,6 +44,7 @@
     ".NET applications"
   ],
   "syntaxDefinition": {
+    "diagnosticPrefix": "CS",
     "id": "csharp",
     "name": "C#",
     "extensions": [
@@ -160,7 +161,27 @@
       "statementContinuationPatterns": [
         "[^;{}]\\s*$"
       ]
-    }
+    },
+    "bracketPairs": [
+      { "open": "(", "close": ")" },
+      { "open": "[", "close": "]" },
+      { "open": "{", "close": "}" }
+    ],
+    "columnRulers": [120],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true
+    },
+    "colorLiteralPatterns": [
+      "#[0-9A-Fa-f]{8}",
+      "#[0-9A-Fa-f]{6}",
+      "#[0-9A-Fa-f]{3}",
+      "Color\\.FromArgb\\s*\\(",
+      "Color\\.FromRgb\\s*\\(",
+      "Colors\\.[A-Za-z]+"
+    ]
   },
   "forensic": {
     "category": "other",

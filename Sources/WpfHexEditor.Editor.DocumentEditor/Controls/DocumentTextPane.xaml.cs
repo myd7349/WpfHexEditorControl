@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
+using WpfHexEditor.Editor.DocumentEditor.Core.Options;
 
 namespace WpfHexEditor.Editor.DocumentEditor.Controls;
 
@@ -50,7 +51,16 @@ public partial class DocumentTextPane : UserControl
 
     // ── Public Properties ────────────────────────────────────────────────────
 
-    public DocumentBlock? SelectedBlock => PART_Renderer.SelectedBlock;
+    public DocumentBlock?          SelectedBlock  => PART_Renderer.SelectedBlock;
+
+    /// <summary>Direct access to the renderer for PageSettings wiring.</summary>
+    public DocumentCanvasRenderer  Renderer       => PART_Renderer;
+
+    public DocumentPageSettings PageSettings
+    {
+        get => PART_Renderer.PageSettings;
+        set => PART_Renderer.PageSettings = value;
+    }
 
     // ── Public API ───────────────────────────────────────────────────────────
 

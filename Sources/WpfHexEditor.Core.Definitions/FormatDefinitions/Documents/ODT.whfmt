@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    OpenDocument Text
    Category:  Documents
    Ext:       .odt
@@ -320,5 +320,41 @@
       "Check for embedded macros, scripts, or active content",
       "Inspect document metadata: author, timestamps, revisions"
     ]
+  },
+  "documentSchema": {
+    "engine": "odf",
+    "contentEntry": "content.xml",
+    "namespaces": {
+      "text":  "urn:oasis:names:tc:opendocument:xmlns:text:1.0",
+      "table": "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
+      "draw":  "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0",
+      "fo":    "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+    },
+    "blockMappings": [
+      { "xmlElement": "text:p",          "blockKind": "paragraph", "textSource": "." },
+      { "xmlElement": "text:h",          "blockKind": "heading",
+        "attributeMappings": [ { "xmlAttr": "text:outline-level", "attribute": "level" } ] },
+      { "xmlElement": "text:span",       "blockKind": "run",       "textSource": ".",
+        "attributeMappings": [ { "xmlPath": "@text:style-name", "attribute": "odfStyle", "styleResolution": true } ] },
+      { "xmlElement": "table:table",     "blockKind": "table" },
+      { "xmlElement": "table:table-row", "blockKind": "table-row" },
+      { "xmlElement": "table:table-cell","blockKind": "table-cell" },
+      { "xmlElement": "draw:frame",      "blockKind": "image" }
+    ],
+    "serializationRules": {
+      "paragraph":  { "xmlElement": "text:p" },
+      "heading":    { "xmlElement": "text:h", "attr": "text:outline-level", "attrSource": "level" },
+      "run":        { "xmlElement": "text:span" },
+      "table":      { "xmlElement": "table:table" },
+      "table-row":  { "xmlElement": "table:table-row" },
+      "table-cell": { "xmlElement": "table:table-cell" }
+    },
+    "attributeSerializationRules": {
+      "bold":      { "styleProperty": "fo:font-weight",    "value": "bold" },
+      "italic":    { "styleProperty": "fo:font-style",     "value": "italic" },
+      "underline": { "styleProperty": "fo:text-decoration","value": "underline" },
+      "fontSize":  { "styleProperty": "fo:font-size",      "unit": "pt" },
+      "align":     { "styleProperty": "fo:text-align" }
+    }
   }
 }

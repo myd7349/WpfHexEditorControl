@@ -7,15 +7,19 @@
 // Description:
 //     Locates matching bracket pairs in a text document for the given
 //     caret position. Used by CodeEditor to highlight () [] {} pairs.
+//     Bracket pairs are data-driven from LanguageDefinition.BracketPairs
+//     (whfmt "bracketPairs" section). Falls back to common ()[]{}
+//     when the language does not define explicit pairs.
 //
 // Architecture Notes:
-//     Pattern: Service (stateless)
+//     Pattern: Service (stateful — language-aware)
+//     - Call SetLanguage() when the active language changes.
 //     - Input: flat text + caret offset.
 //     - Returns the two match offsets or null when no match is found.
-//     - Ignores brackets inside string literals and line comments
-//       (simple heuristic: scans for unmatched quote before the offset).
 //     - Pure C#, no WPF dependency — testable in isolation.
 // ==========================================================
+
+using WpfHexEditor.Core.ProjectSystem.Languages;
 
 namespace WpfHexEditor.Editor.CodeEditor.Services;
 
@@ -27,22 +31,33 @@ public sealed record BracketMatch(int OpenOffset, int CloseOffset, char OpenChar
 
 /// <summary>
 /// Locates the matching bracket at or adjacent to a given caret position.
+/// Bracket pairs are driven by whfmt "bracketPairs"; falls back to ()[]{}
+/// when the active language does not define explicit pairs.
 /// </summary>
 public sealed class BracketMatchingService
 {
-    // Bracket pair definitions.
-    private static readonly Dictionary<char, char> _openToClose = new()
+    // Fallback pairs used when LanguageDefinition.BracketPairs is null.
+    private static readonly IReadOnlyList<(char Open, char Close)> s_defaultPairs =
+    [
+        ('(', ')'),
+        ('[', ']'),
+        ('{', '}'),
+    ];
+
+    private Dictionary<char, char> _openToClose = BuildOpenToClose(null);
+    private Dictionary<char, char> _closeToOpen = BuildCloseToOpen(null);
+
+    /// <summary>
+    /// Updates the active bracket pairs from the language definition.
+    /// Call when the editor's active language changes.
+    /// Pass <c>null</c> to revert to the default ()[]{}  fallback.
+    /// </summary>
+    public void SetLanguage(LanguageDefinition? language)
     {
-        { '(', ')' },
-        { '[', ']' },
-        { '{', '}' },
-    };
-    private static readonly Dictionary<char, char> _closeToOpen = new()
-    {
-        { ')', '(' },
-        { ']', '[' },
-        { '}', '{' },
-    };
+        var pairs = language?.BracketPairs;
+        _openToClose = BuildOpenToClose(pairs);
+        _closeToOpen = BuildCloseToOpen(pairs);
+    }
 
     // -- Public API -------------------------------------------------------
 
@@ -73,6 +88,22 @@ public sealed class BracketMatchingService
     }
 
     // -- Private ----------------------------------------------------------
+
+    private static Dictionary<char, char> BuildOpenToClose(IReadOnlyList<(char Open, char Close)>? pairs)
+    {
+        var source = pairs ?? s_defaultPairs;
+        var dict = new Dictionary<char, char>(source.Count);
+        foreach (var (o, c) in source) dict[o] = c;
+        return dict;
+    }
+
+    private static Dictionary<char, char> BuildCloseToOpen(IReadOnlyList<(char Open, char Close)>? pairs)
+    {
+        var source = pairs ?? s_defaultPairs;
+        var dict = new Dictionary<char, char>(source.Count);
+        foreach (var (o, c) in source) dict[c] = o;
+        return dict;
+    }
 
     private static IEnumerable<int> CandidateOffsets(int caretOffset, int textLength)
     {

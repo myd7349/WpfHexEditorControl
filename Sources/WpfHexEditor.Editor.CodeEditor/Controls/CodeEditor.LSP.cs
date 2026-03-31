@@ -188,6 +188,22 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         // ─────────────────────────────────────────────────────────────────────────
 
+        /// <summary>The LSP client currently attached to this editor. May be null.</summary>
+        public WpfHexEditor.Editor.Core.LSP.ILspClient? LspClient => _lspClient;
+
+        /// <summary>
+        /// Injects (or clears) the local completion provider registry for this editor.
+        /// When set, <see cref="Controls.SmartCompletePopup"/> merges local completions
+        /// (e.g. script globals) alongside LSP and built-in suggestions.
+        /// Called by <see cref="Controls.CodeEditorSplitHost.SetLanguage"/> when
+        /// the language declares <c>scriptGlobals</c>.
+        /// </summary>
+        public void SetLocalCompletionRegistry(WpfHexEditor.Editor.CodeEditor.Services.EditorPluginIntegration? registry)
+        {
+            if (_smartCompletePopup is not null)
+                _smartCompletePopup.SetLocalCompletionRegistry(registry);
+        }
+
         public void SetLspClient(WpfHexEditor.Editor.Core.LSP.ILspClient? client)
         {
             if (_lspClient is not null)
@@ -1902,6 +1918,204 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             public void Execute(object? p)     => execute(p);
             public event EventHandler? CanExecuteChanged;
         }
+
+        // ── Linked Editing Ranges (C2) ────────────────────────────────────────────
+
+        private System.Windows.Threading.DispatcherTimer? _linkedEditTimer;
+        private System.Threading.CancellationTokenSource? _linkedEditCts;
+
+        /// <summary>
+        /// Schedules a debounced <c>textDocument/linkedEditingRange</c> query (150 ms).
+        /// Called from <c>Document_TextChanged</c> whenever the document changes and the
+        /// <see cref="_applyingLinkedEdit"/> guard is not active.
+        /// </summary>
+        private void ScheduleLinkedEditQuery()
+        {
+            _linkedEditCts?.Cancel();
+            _linkedEditCts = new System.Threading.CancellationTokenSource();
+
+            if (_linkedEditTimer is null)
+            {
+                _linkedEditTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(150),
+                };
+            }
+            _linkedEditTimer.Stop();
+            _linkedEditTimer.Tick -= OnLinkedEditTimerTick;
+            _linkedEditTimer.Tick += OnLinkedEditTimerTick;
+            _linkedEditTimer.Start();
+        }
+
+        private void OnLinkedEditTimerTick(object? sender, EventArgs e)
+        {
+            _linkedEditTimer?.Stop();
+            if (_lspClient is null || _currentFilePath is null) return;
+
+            var ct = _linkedEditCts?.Token ?? System.Threading.CancellationToken.None;
+            _ = FetchAndApplyLinkedEditsAsync(_currentFilePath, _cursorLine, _cursorColumn, ct);
+        }
+
+        /// <summary>
+        /// Queries the server for linked editing ranges at the given position, finds the range
+        /// that contains the caret (the "active" range), reads its current text, and replicates
+        /// that text into all other linked ranges via <see cref="ApplyLinkedEdits"/>.
+        /// </summary>
+        private async Task FetchAndApplyLinkedEditsAsync(
+            string filePath, int line, int col, System.Threading.CancellationToken ct)
+        {
+            if (_applyingLinkedEdit) return;
+            try
+            {
+                var ranges = await _lspClient!
+                    .LinkedEditingRangesAsync(filePath, line, col, ct)
+                    .ConfigureAwait(true);  // resume on UI thread — reads _document below
+
+                if (ct.IsCancellationRequested || ranges.Count <= 1) return;
+
+                // Find the range that currently contains the caret.
+                WpfHexEditor.Editor.Core.LSP.LspLinkedRange? activeRange = null;
+                foreach (var r in ranges)
+                {
+                    bool afterStart = r.StartLine < line
+                                   || (r.StartLine == line && r.StartColumn <= col);
+                    bool beforeEnd  = r.EndLine   > line
+                                   || (r.EndLine   == line && r.EndColumn   >= col);
+                    if (afterStart && beforeEnd) { activeRange = r; break; }
+                }
+                if (activeRange is null) return;
+
+                // Read what the user typed into the active range.
+                var activeText = GetRangeText(activeRange);
+                if (activeText.Length == 0) return;
+
+                // Mirror the same text into all other ranges.
+                var otherRanges = new System.Collections.Generic.List<
+                    WpfHexEditor.Editor.Core.LSP.LspLinkedRange>(ranges.Count - 1);
+                foreach (var r in ranges)
+                    if (r != activeRange) otherRanges.Add(r);
+
+                if (otherRanges.Count > 0)
+                    ApplyLinkedEdits(otherRanges, activeText);
+            }
+            catch (System.OperationCanceledException) { /* debounced away */ }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LSP] LinkedEdit: {ex.Message}");
+            }
+        }
+
+        // ── Type Hierarchy (D2) ───────────────────────────────────────────────
+
+        /// <summary>
+        /// Raised when type hierarchy items are ready to be displayed in TypeHierarchyPanel.
+        /// Bound to Ctrl+F12.
+        /// </summary>
+        public event EventHandler<TypeHierarchyDockRequestedEventArgs>? TypeHierarchyDockRequested;
+
+        /// <summary>
+        /// Invokes textDocument/prepareTypeHierarchy at the current caret position
+        /// and fires <see cref="TypeHierarchyDockRequested"/> when results are ready.
+        /// Bound to Ctrl+F12.
+        /// </summary>
+        public async Task PrepareTypeHierarchyAtCaretAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null)
+            {
+                StatusMessage?.Invoke(this, "No language server available for type hierarchy.");
+                return;
+            }
+
+            var symbol = GetWordAtCursor();
+            if (string.IsNullOrEmpty(symbol))
+            {
+                StatusMessage?.Invoke(this, "Place the caret on a type symbol to show type hierarchy.");
+                return;
+            }
+
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
+            IReadOnlyList<WpfHexEditor.Editor.Core.LSP.LspTypeHierarchyItem> items;
+            try
+            {
+                items = await _lspClient.PrepareTypeHierarchyAsync(
+                    _currentFilePath, _cursorLine, _cursorColumn, cts.Token)
+                    .ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                StatusMessage?.Invoke(this, "Type hierarchy timed out.");
+                return;
+            }
+
+            if (items.Count == 0)
+            {
+                StatusMessage?.Invoke(this, $"No type hierarchy found for '{symbol}'.");
+                return;
+            }
+
+            TypeHierarchyDockRequested?.Invoke(this, new TypeHierarchyDockRequestedEventArgs
+            {
+                Items      = items,
+                SymbolName = symbol,
+            });
+        }
+
+        // ── Call Hierarchy (D1) ───────────────────────────────────────────────
+
+        /// <summary>
+        /// Raised when a call hierarchy has been prepared and should be shown
+        /// in the docked CallHierarchyPanel. The host should open or activate
+        /// the panel and call <c>Refresh</c> with the supplied items.
+        /// </summary>
+        public event EventHandler<CallHierarchyDockRequestedEventArgs>? CallHierarchyDockRequested;
+
+        /// <summary>
+        /// Invokes textDocument/prepareCallHierarchy at the current caret position
+        /// and fires <see cref="CallHierarchyDockRequested"/> when results are ready.
+        /// Bound to Shift+Alt+H.
+        /// </summary>
+        public async Task PrepareCallHierarchyAtCaretAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null)
+            {
+                StatusMessage?.Invoke(this, "No language server available for call hierarchy.");
+                return;
+            }
+
+            var symbol = GetWordAtCursor();
+            if (string.IsNullOrEmpty(symbol))
+            {
+                StatusMessage?.Invoke(this, "Place the caret on a symbol to show call hierarchy.");
+                return;
+            }
+
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
+            IReadOnlyList<WpfHexEditor.Editor.Core.LSP.LspCallHierarchyItem> items;
+            try
+            {
+                items = await _lspClient.PrepareCallHierarchyAsync(
+                    _currentFilePath, _cursorLine, _cursorColumn, cts.Token)
+                    .ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                StatusMessage?.Invoke(this, "Call hierarchy timed out.");
+                return;
+            }
+
+            if (items.Count == 0)
+            {
+                StatusMessage?.Invoke(this, $"No call hierarchy found for '{symbol}'.");
+                return;
+            }
+
+            CallHierarchyDockRequested?.Invoke(this, new CallHierarchyDockRequestedEventArgs
+            {
+                Items      = items,
+                SymbolName = symbol,
+            });
+        }
+
     }
 
     // -- GoToExternalDefinition event args ─────────────────────────────────────
@@ -1952,6 +2166,26 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             TargetLine     = targetLine;
             TargetColumn   = targetColumn;
         }
+    }
+
+    /// <summary>
+    /// Event args for <see cref="CodeEditor.CallHierarchyDockRequested"/>.
+    /// Carries the prepared call hierarchy items and the symbol name.
+    /// </summary>
+    public sealed class CallHierarchyDockRequestedEventArgs : EventArgs
+    {
+        public required IReadOnlyList<WpfHexEditor.Editor.Core.LSP.LspCallHierarchyItem> Items { get; init; }
+        public required string SymbolName { get; init; }
+    }
+
+    /// <summary>
+    /// Event args for <see cref="CodeEditor.TypeHierarchyDockRequested"/>.
+    /// Carries the prepared type hierarchy items and the symbol name.
+    /// </summary>
+    public sealed class TypeHierarchyDockRequestedEventArgs : EventArgs
+    {
+        public required IReadOnlyList<WpfHexEditor.Editor.Core.LSP.LspTypeHierarchyItem> Items { get; init; }
+        public required string SymbolName { get; init; }
     }
 
 }

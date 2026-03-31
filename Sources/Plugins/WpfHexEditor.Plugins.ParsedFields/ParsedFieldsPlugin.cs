@@ -22,6 +22,7 @@
 
 using System.IO;
 using System.Linq;
+using WpfHexEditor.Plugins.ParsedFields.Commands;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.Core.FormatDetection;
 using WpfHexEditor.Core.Interfaces;
@@ -50,10 +51,11 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
 
     public PluginCapabilities Capabilities => new()
     {
-        AccessHexEditor  = true,
-        AccessFileSystem = false,
-        RegisterMenus    = true,
-        WriteOutput      = false
+        AccessHexEditor          = true,
+        AccessFileSystem         = false,
+        RegisterMenus            = true,
+        WriteOutput              = false,
+        RegisterTerminalCommands = true
     };
 
     private const string PanelUiId = "WpfHexEditor.Plugins.ParsedFields.Panel.ParsedFieldsPanel";
@@ -136,6 +138,10 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
         // ── Binary Diff side focus → preview for the focused file ─────
         _diffSideSub = context.EventBus.Subscribe<DiffSideFocusChangedEvent>(OnDiffSideFocusChanged);
 
+        // ── Terminal commands ─────────────────────────────────────────────
+        context.Terminal.RegisterCommand(new ParsedListCommand());
+        context.Terminal.RegisterCommand(new ParsedExportCommand());
+
         // ── Deferred startup reconnect ────────────────────────────────
         // After workspace restore the HexEditor may have already emitted its
         // FormatDetected event before we subscribed, leaving the panel blank.
@@ -181,6 +187,12 @@ public sealed class ParsedFieldsPlugin : IWpfHexEditorPlugin
 
         if (_panel != null)
             _panel.NavigateToOffsetRequested -= OnNavigateToOffsetRequested;
+
+        if (_context != null)
+        {
+            _context.Terminal.UnregisterCommand("parsed-list");
+            _context.Terminal.UnregisterCommand("parsed-export");
+        }
 
         _panel   = null;
         _context = null;

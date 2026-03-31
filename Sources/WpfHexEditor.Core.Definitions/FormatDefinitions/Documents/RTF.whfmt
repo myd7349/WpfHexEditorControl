@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Rich Text Format
    Category:  Documents
    Ext:       .rtf
@@ -127,5 +127,27 @@
       "Check for embedded macros, scripts, or active content",
       "Inspect document metadata: author, timestamps, revisions"
     ]
+  },
+  "documentSchema": {
+    "engine": "rtf",
+    "blockMappings": [
+      { "rtfGroup": "\pard",  "blockKind": "paragraph" },
+      { "rtfGroup": "\trowd", "blockKind": "table-row" },
+      { "rtfGroup": "\pict",  "blockKind": "image" }
+    ],
+    "serializationRules": {
+      "paragraph":  { "prefix": "\pard\plain ",     "suffix": "\par\n" },
+      "heading":    { "prefix": "\pard\sb240\sa60\b ", "suffix": "\b0\par\n" },
+      "table-row":  { "prefix": "\trowd",             "suffix": "\row\n" },
+      "table-cell": { "prefix": "\pard\intbl ",      "suffix": "\cell\n" }
+    },
+    "attributeSerializationRules": {
+      "bold":          { "wrap": "\b {text}\b0 " },
+      "italic":        { "wrap": "\i {text}\i0 " },
+      "underline":     { "wrap": "\ul {text}\ulnone " },
+      "strikethrough": { "wrap": "\strike {text}\strike0 " },
+      "fontSize":      { "prefix": "\fs{halfPoints} ", "transform": "pointsToHalfPoints" },
+      "align":         { "left": "\ql", "center": "\qc", "right": "\qr", "justify": "\qj" }
+    }
   }
 }

@@ -155,6 +155,24 @@
                       Foreground="{DynamicResource DockMenuForegroundBrush}"
                       ToolTip="Highlights all occurrences of the word under the cursor and shows tick marks on the scroll bar" />
 
+            <CheckBox Content="Bracket pair colorization"
+                      IsChecked="{Binding BracketPairColorization}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Colors brackets with CE_Bracket_1/2/3/4 based on nesting depth (requires bracketPairs in the language's whfmt)" />
+
+            <CheckBox Content="Color swatch preview"
+                      IsChecked="{Binding ColorSwatchPreview}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Shows a 12×12 color swatch next to color literals (e.g. #FF5733) in CSS, XAML, C# files" />
+
+            <CheckBox Content="Format on Save (Ctrl+S)"
+                      IsChecked="{Binding FormatOnSave}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Automatically formats the document when saving. Uses LSP formatting if available, otherwise applies whfmt indentation rules." />
+
             <Separator Margin="0,8,0,10" Background="{DynamicResource DockBorderBrush}" />
 
             <!-- ── Syntax Colors ─────────────────────────────────────── -->

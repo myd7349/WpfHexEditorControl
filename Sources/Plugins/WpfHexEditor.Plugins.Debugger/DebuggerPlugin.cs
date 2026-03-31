@@ -16,6 +16,7 @@ using System.Windows;
 using WpfHexEditor.Core.Debugger.Models;
 using WpfHexEditor.Core.Events;
 using WpfHexEditor.Core.Events.IDEEvents;
+using WpfHexEditor.Plugins.Debugger.Commands;
 using WpfHexEditor.Plugins.Debugger.Dialogs;
 using WpfHexEditor.Plugins.Debugger.Panels;
 using WpfHexEditor.Plugins.Debugger.ViewModels;
@@ -33,7 +34,7 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
     public string             Id           => "WpfHexEditor.Plugins.Debugger";
     public string             Name         => "Integrated Debugger";
     public Version            Version      => new(1, 0, 0);
-    public PluginCapabilities Capabilities => new() { RegisterMenus = true, WriteOutput = true };
+    public PluginCapabilities Capabilities => new() { RegisterMenus = true, WriteOutput = true, RegisterTerminalCommands = true };
 
     // -- IWpfHexEditorPluginV2 -------------------------------------------------
     public bool SupportsHotReload => false;
@@ -104,6 +105,13 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
         ui.RegisterMenuItem($"{Id}.Menu.ShowCs",     Id, new MenuItemDescriptor { Header = "Show _Call Stack",       ParentPath = "Debug", Group = "Panels", IconGlyph = "\uE81E", Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-callstack")) });
         ui.RegisterMenuItem($"{Id}.Menu.ShowLocals", Id, new MenuItemDescriptor { Header = "Show _Locals",           ParentPath = "Debug", Group = "Panels", IconGlyph = "\uE943", Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-locals")) });
         ui.RegisterMenuItem($"{Id}.Menu.ShowWatch",  Id, new MenuItemDescriptor { Header = "Show _Watch",            ParentPath = "Debug", Group = "Panels", IconGlyph = "\uE7B3", Command = new RelayCommand(_ => ui.ShowPanel("panel-dbg-watch")) });
+
+        // Register terminal commands.
+        context.Terminal.RegisterCommand(new DebugBpListCommand(_debugger));
+        context.Terminal.RegisterCommand(new DebugBpSetCommand(_debugger));
+        context.Terminal.RegisterCommand(new DebugBpClearCommand(_debugger));
+        context.Terminal.RegisterCommand(new DebugLocalsCommand(_debugger));
+        context.Terminal.RegisterCommand(new DebugWatchCommand());
 
         return Task.CompletedTask;
     }
@@ -185,6 +193,13 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
     {
         foreach (var sub in _subs) sub.Dispose();
         _subs.Clear();
+
+        _context?.Terminal.UnregisterCommand("debug-bp-list");
+        _context?.Terminal.UnregisterCommand("debug-bp-set");
+        _context?.Terminal.UnregisterCommand("debug-bp-clear");
+        _context?.Terminal.UnregisterCommand("debug-locals");
+        _context?.Terminal.UnregisterCommand("debug-watch");
+
         return Task.CompletedTask;
     }
 }

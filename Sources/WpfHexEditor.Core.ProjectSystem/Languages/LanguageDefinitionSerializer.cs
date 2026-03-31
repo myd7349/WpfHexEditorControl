@@ -18,6 +18,7 @@
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace WpfHexEditor.Core.ProjectSystem.Languages;
 
@@ -177,6 +178,7 @@ public static class LanguageDefinitionSerializer
             EnableInlineHints        = dto.EnableInlineHints,
             EnableCtrlClickNavigation = dto.EnableCtrlClickNavigation,
             IsDefault                = dto.IsDefault,
+            DiagnosticPrefix         = dto.DiagnosticPrefix,
         };
     }
 
@@ -234,6 +236,12 @@ public static class LanguageDefinitionSerializer
             EditorHint                = preferredEditor,
             FoldingRules              = MapFoldingRules(dto.FoldingRules),
             BreakpointRules           = MapBreakpointRules(dto.BreakpointRules),
+            ColumnRulers              = dto.ColumnRulers,
+            BracketPairs              = MapBracketPairs(dto.BracketPairs),
+            FormattingRules           = MapFormattingRules(dto.FormattingRules),
+            ColorLiteralPatterns      = MapColorLiteralPatterns(dto.ColorLiteralPatterns),
+            DiagnosticPrefix          = dto.DiagnosticPrefix,
+            ScriptGlobals             = MapScriptGlobals(dto.ScriptGlobals),
         };
     }
 
@@ -329,6 +337,9 @@ public static class LanguageDefinitionSerializer
         /// extensions declared in the file, making this the preferred language.
         /// </summary>
         public bool IsDefault { get; set; }
+
+        [JsonPropertyName("diagnosticPrefix")]
+        public string? DiagnosticPrefix { get; set; }
     }
 
     private sealed class SyntaxRuleDto
@@ -373,6 +384,40 @@ public static class LanguageDefinitionSerializer
 
         [JsonPropertyName("breakpointRules")]
         public BreakpointRulesDto?   BreakpointRules          { get; set; }
+
+        [JsonPropertyName("columnRulers")]
+        public int[]?                ColumnRulers             { get; set; }
+
+        [JsonPropertyName("bracketPairs")]
+        public BracketPairDto[]?     BracketPairs             { get; set; }
+
+        [JsonPropertyName("formattingRules")]
+        public FormattingRulesDto?   FormattingRules          { get; set; }
+
+        [JsonPropertyName("colorLiteralPatterns")]
+        public string[]?             ColorLiteralPatterns     { get; set; }
+
+        [JsonPropertyName("diagnosticPrefix")]
+        public string?               DiagnosticPrefix         { get; set; }
+
+        [JsonPropertyName("scriptGlobals")]
+        public ScriptGlobalDto[]?    ScriptGlobals            { get; set; }
+    }
+
+    private sealed class ScriptGlobalDto
+    {
+        [JsonPropertyName("name")]          public string?              Name          { get; set; }
+        [JsonPropertyName("type")]          public string?              Type          { get; set; }
+        [JsonPropertyName("documentation")] public string?              Documentation { get; set; }
+        [JsonPropertyName("members")]       public ScriptMemberDto[]?   Members       { get; set; }
+    }
+
+    private sealed class ScriptMemberDto
+    {
+        [JsonPropertyName("name")]          public string? Name          { get; set; }
+        [JsonPropertyName("type")]          public string? Type          { get; set; }
+        [JsonPropertyName("kind")]          public string? Kind          { get; set; }
+        [JsonPropertyName("documentation")] public string? Documentation { get; set; }
     }
 
     private sealed class FoldingRulesDto
@@ -415,5 +460,78 @@ public static class LanguageDefinitionSerializer
         [JsonPropertyName("maxContextLines")]  public int  MaxContextLines  { get; set; } = 3;
         [JsonPropertyName("triggerBrace")]     public bool TriggerBrace     { get; set; } = true;
         [JsonPropertyName("triggerDirective")] public bool TriggerDirective { get; set; } = true;
+    }
+
+    private sealed class BracketPairDto
+    {
+        [JsonPropertyName("open")]  public string? Open  { get; set; }
+        [JsonPropertyName("close")] public string? Close { get; set; }
+    }
+
+    private sealed class FormattingRulesDto
+    {
+        [JsonPropertyName("indentSize")]              public int  IndentSize              { get; set; } = 4;
+        [JsonPropertyName("useTabs")]                 public bool UseTabs                 { get; set; }
+        [JsonPropertyName("trimTrailingWhitespace")]  public bool TrimTrailingWhitespace  { get; set; } = true;
+        [JsonPropertyName("insertFinalNewline")]       public bool InsertFinalNewline       { get; set; } = true;
+    }
+
+    // -- New mapping helpers ------------------------------------------------
+
+    private static IReadOnlyList<(char Open, char Close)>? MapBracketPairs(BracketPairDto[]? dtos)
+    {
+        if (dtos is null or { Length: 0 }) return null;
+
+        var pairs = new List<(char, char)>(dtos.Length);
+        foreach (var dto in dtos)
+        {
+            if (dto.Open is { Length: 1 } && dto.Close is { Length: 1 })
+                pairs.Add((dto.Open[0], dto.Close[0]));
+        }
+        return pairs.Count > 0 ? pairs : null;
+    }
+
+    private static FormattingRules? MapFormattingRules(FormattingRulesDto? dto)
+    {
+        if (dto is null) return null;
+        return new FormattingRules
+        {
+            IndentSize             = dto.IndentSize,
+            UseTabs                = dto.UseTabs,
+            TrimTrailingWhitespace = dto.TrimTrailingWhitespace,
+            InsertFinalNewline     = dto.InsertFinalNewline,
+        };
+    }
+
+    private static IReadOnlyList<ScriptGlobalEntry> MapScriptGlobals(ScriptGlobalDto[]? dtos)
+    {
+        if (dtos is null or { Length: 0 }) return [];
+
+        return dtos.Select(g => new ScriptGlobalEntry(
+            Name:          g.Name          ?? string.Empty,
+            Type:          g.Type          ?? string.Empty,
+            Documentation: g.Documentation ?? string.Empty,
+            Members:       (g.Members ?? [])
+                           .Select(m => new ScriptMemberEntry(
+                               Name:          m.Name          ?? string.Empty,
+                               Type:          m.Type          ?? string.Empty,
+                               Kind:          m.Kind          ?? "property",
+                               Documentation: m.Documentation ?? string.Empty))
+                           .ToList()))
+            .ToList();
+    }
+
+    private static IReadOnlyList<Regex>? MapColorLiteralPatterns(string[]? patterns)
+    {
+        if (patterns is null or { Length: 0 }) return null;
+
+        var regexes = new List<Regex>(patterns.Length);
+        foreach (var p in patterns)
+        {
+            if (string.IsNullOrWhiteSpace(p)) continue;
+            try { regexes.Add(new Regex(p, RegexOptions.Compiled | RegexOptions.IgnoreCase)); }
+            catch { /* skip malformed patterns */ }
+        }
+        return regexes.Count > 0 ? regexes : null;
     }
 }

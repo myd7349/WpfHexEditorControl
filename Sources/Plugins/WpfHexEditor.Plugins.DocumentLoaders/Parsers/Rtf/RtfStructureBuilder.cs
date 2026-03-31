@@ -7,11 +7,21 @@
 
 using WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
+using WpfHexEditor.Editor.DocumentEditor.Core.Options;
 
 namespace WpfHexEditor.Plugins.DocumentLoaders.Parsers.Rtf;
 
 internal sealed class RtfStructureBuilder
 {
+    // Page dimensions extracted from \paperw, \paperh, \margl, etc.
+    private int _pageW, _pageH, _margl, _margr, _margt, _margb;
+
+    public DocumentPageSettings? ExtractedPageSettings =>
+        _pageW > 0 && _pageH > 0
+            ? DocumentPageSettings.FromDocx(_pageW, _pageH, null,
+                _margt, _margb, _margl, _margr, 0)
+            : null;
+
     public (List<DocumentBlock> Roots, DocumentMetadata Metadata) Build(
         RtfTokenizer     tokenizer,
         BinaryMapBuilder mapBuilder,
@@ -29,7 +39,7 @@ internal sealed class RtfStructureBuilder
         return (roots, metadata);
     }
 
-    private static void WalkGroup(
+    private void WalkGroup(
         RtfTokenizer     tokenizer,
         GroupContext     ctx,
         BinaryMapBuilder mapBuilder,
@@ -132,7 +142,7 @@ internal sealed class RtfStructureBuilder
         }
     }
 
-    private static void HandleControlWord(
+    private void HandleControlWord(
         RtfToken         tok,
         GroupContext     ctx,
         ref DocumentBlock? currentParagraph,
@@ -145,6 +155,13 @@ internal sealed class RtfStructureBuilder
     {
         switch (tok.Word)
         {
+            case "paperw": _pageW = tok.Parameter; break;
+            case "paperh": _pageH = tok.Parameter; break;
+            case "margl":  _margl = tok.Parameter; break;
+            case "margr":  _margr = tok.Parameter; break;
+            case "margt":  _margt = tok.Parameter; break;
+            case "margb":  _margb = tok.Parameter; break;
+
             case "par":
             case "pard":
                 flushParagraph();

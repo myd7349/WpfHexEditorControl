@@ -47,21 +47,28 @@ public sealed class PluginCapabilities
     public bool IsTerminalOnly { get; set; }
 
     /// <summary>
+    /// Plugin registers and unregisters custom commands in the HxTerminal command registry
+    /// via <c>ITerminalService.RegisterCommand</c> / <c>UnregisterCommand</c>.
+    /// </summary>
+    public bool RegisterTerminalCommands { get; set; }
+
+    /// <summary>
     /// Converts this capability declaration to the corresponding <see cref="PluginPermission"/> flags.
     /// </summary>
     public PluginPermission ToPermissionFlags()
     {
         var flags = PluginPermission.None;
-        if (AccessFileSystem) flags |= PluginPermission.AccessFileSystem;
-        if (AccessNetwork) flags |= PluginPermission.AccessNetwork;
-        if (AccessHexEditor) flags |= PluginPermission.AccessHexEditor;
-        if (AccessCodeEditor) flags |= PluginPermission.AccessCodeEditor;
-        if (RegisterMenus) flags |= PluginPermission.RegisterMenus;
-        if (WriteOutput) flags |= PluginPermission.WriteOutput;
-        if (WriteErrorPanel) flags |= PluginPermission.WriteErrorPanel;
-        if (AccessSettings) flags |= PluginPermission.AccessSettings;
-        if (WriteTerminal) flags |= PluginPermission.WriteTerminal;
-        if (IsTerminalOnly) flags |= PluginPermission.TerminalOnly;
+        if (AccessFileSystem)          flags |= PluginPermission.AccessFileSystem;
+        if (AccessNetwork)             flags |= PluginPermission.AccessNetwork;
+        if (AccessHexEditor)           flags |= PluginPermission.AccessHexEditor;
+        if (AccessCodeEditor)          flags |= PluginPermission.AccessCodeEditor;
+        if (RegisterMenus)             flags |= PluginPermission.RegisterMenus;
+        if (WriteOutput)               flags |= PluginPermission.WriteOutput;
+        if (WriteErrorPanel)           flags |= PluginPermission.WriteErrorPanel;
+        if (AccessSettings)            flags |= PluginPermission.AccessSettings;
+        if (WriteTerminal)             flags |= PluginPermission.WriteTerminal;
+        if (IsTerminalOnly)            flags |= PluginPermission.TerminalOnly;
+        if (RegisterTerminalCommands)  flags |= PluginPermission.RegisterTerminalCommands;
         return flags;
     }
 }

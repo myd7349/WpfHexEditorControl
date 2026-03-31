@@ -83,11 +83,11 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- Row 0: Toolbar -->
-            <RowDefinition Height="Auto"/>  <!-- Row 1: Breadcrumb bar -->
-            <RowDefinition Height="*"/>     <!-- Row 2: Content panes -->
-            <RowDefinition Height="Auto"/>  <!-- Row 3: MiniMap strip -->
-            <RowDefinition Height="Auto"/>  <!-- Row 4: Status bar -->
+            <RowDefinition x:Name="PART_ToolbarRow"    Height="Auto"/>  <!-- Row 0: Toolbar -->
+            <RowDefinition x:Name="PART_BreadcrumbRow" Height="Auto"/>  <!-- Row 1: Breadcrumb bar -->
+            <RowDefinition                              Height="*"/>     <!-- Row 2: Content panes -->
+            <RowDefinition x:Name="PART_MiniMapRow"    Height="Auto"/>  <!-- Row 3: MiniMap strip -->
+            <RowDefinition x:Name="PART_StatusBarRow"  Height="Auto"/>  <!-- Row 4: Status bar -->
         </Grid.RowDefinitions>
 
         <!-- ══ Row 0: Toolbar ═════════════════════════════════════════════════ -->
@@ -145,6 +145,60 @@
                     </StackPanel>
                 </ToggleButton>
 
+                <ToggleButton x:Name="PART_FullModeBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Full view (text + structure + hex)"
+                              Click="OnFullModeClicked">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE9D9;" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock Text=" Full" FontSize="12" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                    </StackPanel>
+                </ToggleButton>
+
+                <ToggleButton x:Name="PART_FocusModeBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Focus mode — zen writing (Ctrl+Shift+F)"
+                              Click="OnFocusModeClicked">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8D4;" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock Text=" Focus" FontSize="12" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                    </StackPanel>
+                </ToggleButton>
+
+                <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
+
+                <!-- Group 1b — Render mode (Page / Draft / Outline) -->
+                <ToggleButton x:Name="PART_PageModeBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Page view — paginated A4/Letter cards"
+                              Click="OnPageModeClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8A8;" FontSize="13" VerticalAlignment="Center"/>
+                </ToggleButton>
+
+                <ToggleButton x:Name="PART_DraftModeBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Draft view — continuous scroll, compact margins"
+                              Click="OnDraftModeClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8E9;" FontSize="13" VerticalAlignment="Center"/>
+                </ToggleButton>
+
+                <ToggleButton x:Name="PART_OutlineModeBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Outline view — structure tree centred"
+                              Click="OnOutlineModeClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8F1;" FontSize="13" VerticalAlignment="Center"/>
+                </ToggleButton>
+
                 <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
 
                 <!-- Group 2 — Forensic mode -->
@@ -158,6 +212,144 @@
                         <TextBlock Text=" Forensic" FontSize="12" VerticalAlignment="Center" Margin="3,0,0,0"/>
                     </StackPanel>
                 </ToggleButton>
+
+                <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
+
+                <!-- Group 5 — Text formatting (Phase 14) -->
+                <ToggleButton x:Name="PART_BoldBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Bold (Ctrl+B)"
+                              Click="OnBoldClicked">
+                    <TextBlock FontFamily="Segoe UI" Text="B" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                </ToggleButton>
+
+                <ToggleButton x:Name="PART_ItalicBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Italic (Ctrl+I)"
+                              Click="OnItalicClicked">
+                    <TextBlock FontFamily="Segoe UI" Text="I" FontSize="13" FontStyle="Italic" VerticalAlignment="Center"/>
+                </ToggleButton>
+
+                <ToggleButton x:Name="PART_UnderlineBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Underline (Ctrl+U)"
+                              Click="OnUnderlineClicked">
+                    <TextBlock FontFamily="Segoe UI" Text="U" FontSize="13"
+                               TextDecorations="Underline" VerticalAlignment="Center"/>
+                </ToggleButton>
+
+                <ToggleButton x:Name="PART_StrikethroughBtn"
+                              Style="{StaticResource DocViewToggleStyle}"
+                              DockPanel.Dock="Left"
+                              Margin="2,0,0,0"
+                              ToolTip="Strikethrough"
+                              Click="OnStrikethroughClicked">
+                    <TextBlock FontFamily="Segoe UI" Text="S" FontSize="13"
+                               TextDecorations="Strikethrough" VerticalAlignment="Center"/>
+                </ToggleButton>
+
+                <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
+
+                <!-- Group 6 — Paragraph formatting (Phase 15) -->
+                <ComboBox x:Name="PART_StyleDropdown"
+                          DockPanel.Dock="Left"
+                          Width="80"
+                          Height="22"
+                          FontSize="11"
+                          Margin="2,0"
+                          SelectionChanged="OnStyleDropdownChanged"
+                          ToolTip="Paragraph style">
+                    <ComboBoxItem Content="Normal"  IsSelected="True"/>
+                    <ComboBoxItem Content="H1"/>
+                    <ComboBoxItem Content="H2"/>
+                    <ComboBoxItem Content="H3"/>
+                    <ComboBoxItem Content="H4"/>
+                    <ComboBoxItem Content="H5"/>
+                    <ComboBoxItem Content="H6"/>
+                    <ComboBoxItem Content="Quote"/>
+                    <ComboBoxItem Content="Code"/>
+                </ComboBox>
+
+                <Button x:Name="PART_AlignLeftBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        ToolTip="Align left"
+                        Click="OnAlignLeftClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8E4;" FontSize="13"/>
+                </Button>
+
+                <Button x:Name="PART_AlignCenterBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        ToolTip="Align center"
+                        Click="OnAlignCenterClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8E3;" FontSize="13"/>
+                </Button>
+
+                <Button x:Name="PART_AlignRightBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        ToolTip="Align right"
+                        Click="OnAlignRightClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8E2;" FontSize="13"/>
+                </Button>
+
+                <!-- Group 7 — Styles panel (Phase 18) -->
+                <Button x:Name="PART_StylesBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        ToolTip="Paragraph styles (Ctrl+Alt+S)"
+                        Click="OnStylesBtnClicked">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8EC;" FontSize="13"/>
+                </Button>
+
+                <Popup x:Name="PART_StylesPopup"
+                       PlacementTarget="{Binding ElementName=PART_StylesBtn}"
+                       Placement="Bottom"
+                       StaysOpen="False"
+                       AllowsTransparency="True">
+                    <Border Background="{DynamicResource DockBackgroundBrush}"
+                            BorderBrush="{DynamicResource DockBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="2"
+                            Padding="4">
+                        <local:DocumentStylesPanel x:Name="PART_StylesPanel"
+                                                   StyleSelected="OnStylesPanelStyleSelected"/>
+                    </Border>
+                </Popup>
+
+                <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
+
+                <!-- Group 3b — Page Setup -->
+                <Button x:Name="PART_PageSetupBtn"
+                        Style="{StaticResource DocActionButtonStyle}"
+                        DockPanel.Dock="Left"
+                        Margin="2,0,0,0"
+                        ToolTip="Page setup (paper size, margins, columns…)"
+                        Click="OnPageSetupBtnClick">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE713;" FontSize="13"/>
+                </Button>
+
+                <Popup x:Name="PART_PageSetupPopup"
+                       PlacementTarget="{Binding ElementName=PART_PageSetupBtn}"
+                       Placement="Bottom"
+                       StaysOpen="False"
+                       AllowsTransparency="True">
+                    <local:DocumentPageSettingsPanel
+                        x:Name="PART_PageSettingsPanel"
+                        SettingsApplied="OnPageSettingsApplied"
+                        Cancelled="OnPageSettingsCancelled"/>
+                </Popup>
 
                 <Separator Style="{StaticResource DocToolbarSeparatorStyle}" DockPanel.Dock="Left"/>
 
@@ -191,6 +383,18 @@
                 </Button>
 
                 <!-- Group 4 — Right-aligned actions -->
+                <!-- Lock icon — visible only in read-only mode -->
+                <TextBlock x:Name="PART_LockIcon"
+                           DockPanel.Dock="Right"
+                           FontFamily="Segoe MDL2 Assets"
+                           Text="&#xE72E;"
+                           FontSize="13"
+                           VerticalAlignment="Center"
+                           Margin="0,0,6,0"
+                           Foreground="{DynamicResource DE_ForensicBadgeWarnBg}"
+                           ToolTip="Read Only"
+                           Visibility="Collapsed"/>
+
                 <Button x:Name="PART_MetadataBtn"
                         Style="{StaticResource DocActionButtonStyle}"
                         DockPanel.Dock="Right"

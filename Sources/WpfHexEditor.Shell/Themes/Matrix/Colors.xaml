@@ -320,6 +320,11 @@
     <SolidColorBrush x:Key="CE_SelectionInactive" Color="#001800"/>
     <SolidColorBrush x:Key="CE_GutterError"       Color="#F44747"/>
     <SolidColorBrush x:Key="CE_GutterWarning"     Color="#FF8C00"/>
+    <SolidColorBrush x:Key="CE_RulerBrush"    Color="#3C808080"/>
+    <SolidColorBrush x:Key="CE_Bracket_1"    Color="#39FF14"/>
+    <SolidColorBrush x:Key="CE_Bracket_2"    Color="#7AFF7A"/>
+    <SolidColorBrush x:Key="CE_Bracket_3"    Color="#AFFFAF"/>
+    <SolidColorBrush x:Key="CE_Bracket_4"    Color="#CFFFCF"/>
 
     <SolidColorBrush x:Key="DT_PanelBackground"     Color="{StaticResource DockBackgroundColor}" />
     <SolidColorBrush x:Key="DT_PanelForeground"     Color="{StaticResource DockMenuForegroundColor}" />
@@ -814,4 +819,18 @@
     <SolidColorBrush x:Key="DE_MetaPanelForeground"      Color="#C8C8C8"/>
     <!-- DE_* page canvas (document-in-canvas visual metaphor) -->
     <SolidColorBrush x:Key="DE_PageCanvasBackground" Color="#030D03"/>
-    <SolidColorBrush x:Key="DE_PageBackground"       Color="#071007"/></ResourceDictionary>
+    <SolidColorBrush x:Key="DE_PageBackground"       Color="#071007"/>
+    <!-- Document Editor mutation + selection highlight tokens (Phases 11/12/19) -->
+    <SolidColorBrush x:Key="DE_HexEditedBrush"      Color="#50E8A020"/>
+    <SolidColorBrush x:Key="DE_HexDeletedBrush"     Color="#50E02020"/>
+    <SolidColorBrush x:Key="DE_TextSelectionBrush"  Color="#504EC9B0"/>
+    <SolidColorBrush x:Key="DE_CaretBrush"          Color="#FFD4D4D4"/>
+    <SolidColorBrush x:Key="DE_FindHighlightBrush"  Color="#60D7BA2C"/>
+
+    <!-- Call Hierarchy panel tokens (CH_*) -->
+    <SolidColorBrush x:Key="CH_BackgroundBrush"  Color="#000000"/>
+    <SolidColorBrush x:Key="CH_ForegroundBrush"  Color="#00FF00"/>
+    <SolidColorBrush x:Key="CH_ToolbarBrush"     Color="#001100"/>
+    <SolidColorBrush x:Key="CH_HoverBrush"       Color="#002200"/>
+    <SolidColorBrush x:Key="CH_ItemBorderBrush"  Color="#005500"/>
+</ResourceDictionary>

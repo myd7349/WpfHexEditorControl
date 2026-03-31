@@ -20,6 +20,7 @@ using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
+using WpfHexEditor.Plugins.FileStatistics.Commands;
 using WpfHexEditor.Plugins.FileStatistics.Views;
 
 namespace WpfHexEditor.Plugins.FileStatistics;
@@ -33,6 +34,7 @@ public sealed class FileStatisticsPlugin : IWpfHexEditorPlugin
 {
     private IIDEHostContext?    _context;
     private FileStatisticsPanel? _panel;
+    private FileStats?           _lastStats;
 
     public string  Id      => "WpfHexEditor.Plugins.FileStatistics";
     public string  Name    => "File Statistics";
@@ -40,10 +42,11 @@ public sealed class FileStatisticsPlugin : IWpfHexEditorPlugin
 
     public PluginCapabilities Capabilities => new()
     {
-        AccessHexEditor  = true,
-        AccessFileSystem = false,
-        RegisterMenus    = true,
-        WriteOutput      = true
+        AccessHexEditor          = true,
+        AccessFileSystem         = false,
+        RegisterMenus            = true,
+        WriteOutput              = true,
+        RegisterTerminalCommands = true
     };
 
     public Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
@@ -83,6 +86,9 @@ public sealed class FileStatisticsPlugin : IWpfHexEditorPlugin
         context.HexEditor.FileOpened          += OnFileOpened;
         context.HexEditor.ActiveEditorChanged += OnActiveEditorChanged;
 
+        context.Terminal.RegisterCommand(new StatsShowCommand(() => _lastStats));
+        context.Terminal.RegisterCommand(new StatsEntropyCommand(() => _lastStats));
+
         return Task.CompletedTask;
     }
 
@@ -92,6 +98,8 @@ public sealed class FileStatisticsPlugin : IWpfHexEditorPlugin
         {
             _context.HexEditor.FileOpened          -= OnFileOpened;
             _context.HexEditor.ActiveEditorChanged -= OnActiveEditorChanged;
+            _context.Terminal.UnregisterCommand("stats-show");
+            _context.Terminal.UnregisterCommand("stats-entropy");
         }
         return Task.CompletedTask;
     }
@@ -117,6 +125,7 @@ public sealed class FileStatisticsPlugin : IWpfHexEditorPlugin
         var stats = await Task.Run(() => ComputeStats(filePath, fileSize, data));
 
         // async/await resumes on the UI SynchronizationContext — no Dispatcher.BeginInvoke needed.
+        _lastStats = stats;
         _panel.UpdateStatistics(stats);
     }
 

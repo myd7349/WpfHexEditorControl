@@ -175,7 +175,7 @@ public partial class MainWindow
             {
                 var capturedLsp = lspRegistry;
                 OptionsPageRegistry.RegisterDynamic(
-                    "Editor",
+                    "Code Editor",
                     "Language Servers",
                     () => new WpfHexEditor.App.Options.LspServersOptionsPage(capturedLsp),
                     categoryIcon: "🔌");
@@ -189,7 +189,7 @@ public partial class MainWindow
                 // LSP-02-D: Status bar indicator for LSP server state.
                 _lspStatusBarAdapter = new WpfHexEditor.App.Services.LspStatusBarAdapter(
                     _lspBridgeService,
-                    onErrorClick: () => OpenSettingsAt("Editor", "Language Servers"));
+                    onErrorClick: () => OpenSettingsAt("Code Editor", "Language Servers"));
 
                 // LSP-02-E: Bridge LSP diagnostics → ErrorPanel (IDiagnosticSource adapter).
                 _lspDiagnosticsAdapter = new WpfHexEditor.App.Services.LspDiagnosticsAdapter(_lspBridgeService);
@@ -211,7 +211,8 @@ public partial class MainWindow
                 _scriptingService = new WpfHexEditor.App.Services.ScriptingServiceImpl(
                     _hexEditorService,
                     _documentHostService,
-                    _outputService);
+                    _outputService,
+                    _terminalService);
             }
             catch (Exception ex)
             {
@@ -287,6 +288,7 @@ public partial class MainWindow
                         var termVm = new TerminalPanelViewModel(_ideHostContext);
                         _terminalService?.SetOutput(termVm.GetActiveOutput());
                         _terminalService?.SetSessionManager(termVm.SessionManager);
+                        _terminalService?.SetRegistry(termVm.CommandRegistry);
                         // Keep terminal service in sync whenever the active tab changes.
                         termVm.PropertyChanged += (_, e) =>
                         {
@@ -887,6 +889,7 @@ public partial class MainWindow
             var vm = new TerminalPanelViewModel(_ideHostContext);
             _terminalService?.SetOutput(vm.GetActiveOutput());
             _terminalService?.SetSessionManager(vm.SessionManager);
+            _terminalService?.SetRegistry(vm.CommandRegistry);
             panel.DataContext = vm;
         }
         else
@@ -928,6 +931,7 @@ public partial class MainWindow
         var vm      = new TerminalPanelViewModel(_ideHostContext);
         _terminalService?.SetOutput(vm.GetActiveOutput());
         _terminalService?.SetSessionManager(vm.SessionManager);
+        _terminalService?.SetRegistry(vm.CommandRegistry);
         var control = new TerminalPanel { DataContext = vm };
         var item    = new DockItem { ContentId = TerminalPanelContentId, Title = "Terminal", CanClose = true };
 

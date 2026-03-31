@@ -88,7 +88,10 @@ public sealed class EditorSettingsService
         ce.EnableAutoClosingBrackets = d.AutoClosingBrackets;
         ce.EnableAutoClosingQuotes   = d.AutoClosingQuotes;
         ce.SkipOverClosingChar       = d.SkipOverClosingChar;
-        ce.WrapSelectionInPairs      = d.WrapSelectionInPairs;
+        ce.WrapSelectionInPairs          = d.WrapSelectionInPairs;
+        ce.BracketPairColorizationEnabled = d.BracketPairColorization;
+        ce.ColorSwatchPreviewEnabled      = d.ColorSwatchPreview;
+        ce.FormatOnSave                   = d.FormatOnSave;
 
         var ss = d.StickyScroll;
         ce.ApplyStickyScrollSettings(

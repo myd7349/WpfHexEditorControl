@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Format:    Word Document
    Category:  Documents
    Ext:       .docx
@@ -330,5 +330,63 @@
     "Endianness": "little-endian",
     "HeaderSize": 30,
     "VariableLengthFields": "filename and extra field follow the fixed 30-byte header"
+  },
+  "documentSchema": {
+    "engine": "ooxml",
+    "contentEntry": "word/document.xml",
+    "namespace": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+    "namespacePrefix": "w",
+    "blockMappings": [
+      {
+        "xmlElement": "w:p", "blockKind": "paragraph", "textSource": "w:r/w:t",
+        "childMappings": [
+          { "xmlElement": "w:r",         "blockKind": "run",       "textSource": "w:t" },
+          { "xmlElement": "w:hyperlink", "blockKind": "hyperlink", "textSource": "w:r/w:t" }
+        ],
+        "attributeMappings": [
+          { "xmlPath": "w:pPr/w:pStyle/@w:val", "attribute": "style" },
+          { "xmlPath": "w:pPr/w:jc/@w:val",     "attribute": "align" },
+          { "xmlPath": "w:pPr/w:ind/@w:left",    "attribute": "indent" }
+        ]
+      },
+      {
+        "xmlElement": "w:r", "blockKind": "run", "textSource": "w:t",
+        "attributeMappings": [
+          { "xmlPath": "w:rPr/w:b",            "attribute": "bold",          "presence": true },
+          { "xmlPath": "w:rPr/w:i",            "attribute": "italic",        "presence": true },
+          { "xmlPath": "w:rPr/w:u",            "attribute": "underline",     "presence": true },
+          { "xmlPath": "w:rPr/w:strike",       "attribute": "strikethrough", "presence": true },
+          { "xmlPath": "w:rPr/w:sz/@w:val",    "attribute": "fontSize",      "transform": "halfPointsToPoints" },
+          { "xmlPath": "w:rPr/w:color/@w:val", "attribute": "color" }
+        ]
+      },
+      {
+        "xmlElement": "w:tbl", "blockKind": "table",
+        "childMappings": [
+          { "xmlElement": "w:tr", "blockKind": "table-row",
+            "childMappings": [ { "xmlElement": "w:tc", "blockKind": "table-cell" } ] }
+        ]
+      },
+      { "xmlElement": "w:sectPr",  "blockKind": "section" },
+      { "xmlElement": "w:drawing", "blockKind": "image", "imageEntryPath": "word/media/{r:embed}" }
+    ],
+    "serializationRules": {
+      "paragraph":  { "xmlElement": "w:p", "wrapChildren": true },
+      "run":        { "xmlElement": "w:r", "textElement": "w:t" },
+      "heading":    { "xmlElement": "w:p", "pStyle": "Heading{level}", "wrapChildren": true },
+      "table":      { "xmlElement": "w:tbl" },
+      "table-row":  { "xmlElement": "w:tr" },
+      "table-cell": { "xmlElement": "w:tc", "textElement": "w:p/w:r/w:t" },
+      "section":    { "xmlElement": "w:sectPr" }
+    },
+    "attributeSerializationRules": {
+      "bold":          { "parent": "w:rPr", "xmlElement": "w:b" },
+      "italic":        { "parent": "w:rPr", "xmlElement": "w:i" },
+      "underline":     { "parent": "w:rPr", "xmlElement": "w:u", "attrs": { "w:val": "single" } },
+      "strikethrough": { "parent": "w:rPr", "xmlElement": "w:strike" },
+      "fontSize":      { "parent": "w:rPr", "xmlElement": "w:sz", "attr": "w:val", "transform": "pointsToHalfPoints" },
+      "align":         { "parent": "w:pPr", "xmlElement": "w:jc",  "attr": "w:val" },
+      "indent":        { "parent": "w:pPr", "xmlElement": "w:ind", "attr": "w:left" }
+    }
   }
 }

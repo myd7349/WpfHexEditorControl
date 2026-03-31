@@ -44,4 +44,7 @@ public enum PluginPermission : long
 
     /// <summary>Plugin is exclusively a Terminal extension (no UI theme required).</summary>
     TerminalOnly = 1L << 8,
+
+    /// <summary>Plugin may register and unregister custom commands in the HxTerminal command registry.</summary>
+    RegisterTerminalCommands = 1L << 10,
 }

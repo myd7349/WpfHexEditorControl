@@ -215,7 +215,10 @@ public sealed class MinimapControl : FrameworkElement
         if (doc is null || doc.Lines.Count == 0) return;
 
         int totalLines = doc.Lines.Count;
-        double scale = ComputeScale(totalLines, h);
+        var folding = _editor.FoldingEngine;
+        int hiddenLineCount = folding?.TotalHiddenLineCount ?? 0;
+        int visibleLineCount = Math.Max(1, totalLines - hiddenLineCount);
+        double scale = ComputeScale(visibleLineCount, h);
 
         // Read pixel-exact values from VE — no RenderBuffer inflation.
         // scrollRatio matches the scrollbar exactly.
@@ -232,7 +235,7 @@ public sealed class MinimapControl : FrameworkElement
             actualVisibleLines = (int)Math.Ceiling(ve.ViewportHeight / veLineHeight);
         }
 
-        double totalMinimapHeight = totalLines * scale;
+        double totalMinimapHeight = visibleLineCount * scale;
         if (totalMinimapHeight > h)
         {
             double minimapMaxScrollLines = (totalMinimapHeight - h) / scale;
@@ -241,8 +244,8 @@ public sealed class MinimapControl : FrameworkElement
 
         _lastMinimapScrollOffset = minimapScrollOffset;
 
-        int firstLine = (int)minimapScrollOffset;
-        int maxLine = Math.Min(totalLines, firstLine + (int)(h / scale) + 2);
+        int firstVisibleIdx = (int)minimapScrollOffset;
+        int maxVisibleIdx = firstVisibleIdx + (int)(h / scale) + 2;
 
         // Effective row drawing height (with gap)
         double drawH = Math.Max(scale * RowFillRatio, 0.5);
@@ -250,13 +253,21 @@ public sealed class MinimapControl : FrameworkElement
         // Active highlighter for on-demand fallback (whfmt-driven, not hardcoded)
         var highlighter = _editor.ActiveHighlighter;
 
-        // Draw lines
-        for (int i = firstLine; i < maxLine; i++)
+        // Draw lines — iterate all absolute lines, skip hidden, use visibleIdx for Y.
+        // O(totalLines) is acceptable for a minimap (DrawingContext, no allocations per line).
+        int visibleIdx = 0;
+        for (int i = 0; i < totalLines; i++)
         {
+            if (folding?.IsLineHidden(i) == true) continue;
+
+            int vIdx = visibleIdx++;
+            if (vIdx < firstVisibleIdx) continue;
+            if (vIdx >= maxVisibleIdx) break;
+
             var line = doc.Lines[i];
             if (line.Text is null || line.Text.Length == 0) continue;
 
-            double y = (i - minimapScrollOffset) * scale;
+            double y = (vIdx - minimapScrollOffset) * scale;
             if (y + scale < 0) continue;
             if (y > h) break;
 
@@ -305,7 +316,7 @@ public sealed class MinimapControl : FrameworkElement
         // Hover highlight band — uses actualVisibleLines (no buffer)
         if (_isMouseOver && !_isDragging && _hoverY >= 0 && actualVisibleLines > 0)
         {
-            double bandH      = Math.Max((actualVisibleLines / (double)totalLines) * contentHeight, 10);
+            double bandH      = Math.Max((actualVisibleLines / (double)visibleLineCount) * contentHeight, 10);
             double maxBandTop = Math.Max(contentHeight - bandH, 0);  // guard: bandH can exceed contentHeight on tiny documents
             double bandTop    = Math.Clamp(_hoverY - bandH / 2, 0, maxBandTop);
             dc.DrawRectangle(HoverBandBrush, null, new Rect(0, bandTop, w, bandH));
@@ -315,7 +326,7 @@ public sealed class MinimapControl : FrameworkElement
         bool showSlider = _sliderMode == MinimapSliderMode.Always || _isMouseOver;
         if (showSlider && actualVisibleLines > 0)
         {
-            double vpHeight = Math.Max((actualVisibleLines / (double)totalLines) * contentHeight, 10);
+            double vpHeight = Math.Max((actualVisibleLines / (double)visibleLineCount) * contentHeight, 10);
             double sliderRange = Math.Max(contentHeight - vpHeight, 1);
             double vpTop = scrollRatio * sliderRange;
 
@@ -464,15 +475,17 @@ public sealed class MinimapControl : FrameworkElement
     {
         if (_editor?.Document is null || _editor.VirtualizationEngine is not { } ve) return;
         int totalLines = _editor.Document.Lines.Count;
+        int hiddenLines = _editor.FoldingEngine?.TotalHiddenLineCount ?? 0;
+        int visibleLineCount = Math.Max(1, totalLines - hiddenLines);
         double h = ActualHeight;
-        double scale = ComputeScale(totalLines, h);
+        double scale = ComputeScale(visibleLineCount, h);
         double veLineHeight = ve.LineHeight > 0 ? ve.LineHeight : 20;
         int actualVisibleLines = (int)Math.Ceiling(ve.ViewportHeight / veLineHeight);
-        if (totalLines <= 0 || actualVisibleLines <= 0) return;
+        if (visibleLineCount <= 0 || actualVisibleLines <= 0) return;
 
         // Same formula as slider rendering — exact inverse.
-        double contentHeight = Math.Min(totalLines * scale, h);
-        double vpHeight = Math.Max((actualVisibleLines / (double)totalLines) * contentHeight, 10);
+        double contentHeight = Math.Min(visibleLineCount * scale, h);
+        double vpHeight = Math.Max((actualVisibleLines / (double)visibleLineCount) * contentHeight, 10);
         double sliderRange = Math.Max(contentHeight - vpHeight, 1);
 
         // Center the slider on the click position

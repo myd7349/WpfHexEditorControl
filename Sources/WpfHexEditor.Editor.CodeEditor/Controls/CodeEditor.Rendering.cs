@@ -149,6 +149,39 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         #endregion
 
+        #region Column Ruler Guides (#165)
+
+        /// <summary>
+        /// Draws vertical guide lines at each position in <see cref="ColumnRulers"/>.
+        /// Lines are drawn in document space (they scroll horizontally with the text) using
+        /// the <c>CE_RulerBrush</c> theme resource. Falls back to no-op when the resource is absent
+        /// or the ruler list is empty.
+        /// </summary>
+        private void DrawColumnRulers(DrawingContext dc)
+        {
+            var rulers = ColumnRulers;
+            if (!ShowColumnRulers || rulers is null || rulers.Count == 0 || _charWidth <= 0) return;
+
+            var brush = TryFindResource("CE_RulerBrush") as Brush;
+            if (brush is null) return;
+
+            // Freeze a new Pen from the theme brush. Pen is lightweight (thin wrapper over the
+            // already-allocated brush) — creation cost is negligible at 1-2 rulers per frame.
+            var pen = new Pen(brush, 1.0);
+            pen.Freeze();
+
+            double textX  = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+            double height = ActualHeight;
+
+            foreach (int col in rulers)
+            {
+                double x = textX + col * _charWidth;
+                dc.DrawLine(pen, new Point(x, 0), new Point(x, height));
+            }
+        }
+
+        #endregion
+
         #region Sticky Scroll (#160)
 
         /// <summary>
@@ -895,11 +928,30 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // 5b. Drag-and-drop insertion caret — Feature B
             RenderDragDropCaret(dc);
 
-            // 6a. Scope guides (drawn behind text so they don't obscure characters)
+            // 6a. Column ruler guides (drawn behind scope guides and text)
+            DrawColumnRulers(dc);
+
+            // 6b. Scope guides (drawn behind text so they don't obscure characters)
             RenderScopeGuides(dc);
 
             // 6. Text content
             RenderTextContent(dc);
+
+            // 6c. Color swatches (#168) — rendered after text so they overlay correctly
+            if (ColorSwatchPreviewEnabled && Language?.ColorLiteralPatterns is { Count: > 0 } patterns)
+            {
+                double swatchTextX = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+                _colorSwatchRenderer.Render(
+                    dc,
+                    _document.Lines,
+                    _firstVisibleLine,
+                    _lastVisibleLine,
+                    _charWidth,
+                    _lineHeight,
+                    swatchTextX,
+                    _horizontalScrollOffset,
+                    patterns);
+            }
 
             // 7. Validation errors (Phase 5)
             if (EnableValidation)
@@ -2159,6 +2211,27 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
             }
 
+            // ── Bracket pair depth colorization (#162) pre-scan ────────────────
+            // When the visible range changes, invalidate GlyphRun caches for all
+            // currently visible lines and rescan from line 0 to seed initial depths.
+            // O(lines_before_viewport) per scroll event — negligible CPU cost.
+            if (BracketPairColorizationEnabled
+                && Language?.BracketPairs is not null
+                && _firstVisibleLine != _bracketDepthFirstLine)
+            {
+                for (int j = _firstVisibleLine; j <= _lastVisibleLine && j < _document.Lines.Count; j++)
+                    _document.Lines[j].IsGlyphCacheDirty = true;
+
+                _bracketColorizer.Reset();
+                for (int j = 0; j < _firstVisibleLine && j < _document.Lines.Count; j++)
+                    _bracketColorizer.AdvanceLine(
+                        _document.Lines[j].Text ?? string.Empty,
+                        _document.Lines[j].TokensCache);
+
+                _bracketDepthFirstLine = _firstVisibleLine;
+            }
+            // ── end bracket pre-scan ────────────────────────────────────────────
+
             int visIdx = 0;
             for (int i = _firstVisibleLine; i <= _lastVisibleLine && i < _document.Lines.Count; i++)
             {
@@ -2293,7 +2366,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     // URLs are detected regardless of which highlighter is active and always
                     // rendered with SyntaxUrlColor + underline so they are visually distinct.
                     // Materialise to list so we can both render and cache in one pass.
-                    var renderTokens = OverlayUrlTokens(line.Text, i, rawTokens).ToList();
+                    var urlOverlaid = OverlayUrlTokens(line.Text, i, rawTokens);
+
+                    // Bracket depth colorization post-pass (#162): replace CE_Bracket foreground
+                    // with CE_Bracket_1/2/3/4 based on nesting depth from whfmt bracketPairs.
+                    // No-op when BracketPairColorizationEnabled=false or no pairs defined.
+                    var renderTokens = (BracketPairColorizationEnabled && Language?.BracketPairs is not null)
+                        ? _bracketColorizer.ColorizeLine(line.Text, urlOverlaid, key => TryFindResource(key) as Brush).ToList()
+                        : urlOverlaid.ToList();
 
                     // Pre-compute baseline Y once per line (GlyphRun requires it).
                     double baselineY = _glyphRenderer != null

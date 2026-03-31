@@ -12,6 +12,8 @@
 //     Unknown names are logged as warnings — future IDE versions may add new points.
 // ==========================================================
 
+using WpfHexEditor.SDK.Contracts.Terminal;
+
 namespace WpfHexEditor.SDK.ExtensionPoints;
 
 /// <summary>
@@ -32,7 +34,8 @@ public static class ExtensionPointCatalog
             ["BinaryParser"]    = typeof(IBinaryParserExtension),
             ["Decompiler"]      = typeof(IDecompilerExtension),
             ["QuickInfo"]       = typeof(IQuickInfoProvider),
-            ["Minimap"]         = typeof(IMinimapExtension),
+            ["Minimap"]           = typeof(IMinimapExtension),
+            ["TerminalCommand"]   = typeof(ITerminalCommandProvider),
         };
 
     /// <summary>

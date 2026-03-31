@@ -9,6 +9,7 @@
 //     Body element is <office:text> (OfficeNs), NOT <text:text>.
 // ==========================================================
 
+using System.Globalization;
 using System.Xml.Linq;
 using WpfHexEditor.Editor.DocumentEditor.Core.BinaryMap;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
@@ -17,11 +18,22 @@ namespace WpfHexEditor.Plugins.DocumentLoaders.Parsers.Odt;
 
 internal sealed class OdtXmlMapper
 {
+    // Resolved style properties: styleName → {bold, italic, underline, fontSize, fontFamily}
+    private readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, object>> _styleProps;
+
+    public OdtXmlMapper(
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, object>>? styleProps = null)
+    {
+        _styleProps = styleProps ?? new Dictionary<string, IReadOnlyDictionary<string, object>>();
+    }
+
     private static readonly XNamespace OfficeNs = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
     private static readonly XNamespace TextNs   = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
     private static readonly XNamespace DrawNs   = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
     private static readonly XNamespace StyleNs  = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
     private static readonly XNamespace TableNs  = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
+    private static readonly XNamespace XlinkNs  = "http://www.w3.org/1999/xlink";
+    private static readonly XNamespace SvgNs    = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
 
     /// <summary>Diagnostic string from the last Map() call — routed to Output panel.</summary>
     public string LastDiagnostic { get; private set; } = string.Empty;
@@ -57,7 +69,7 @@ internal sealed class OdtXmlMapper
 
     // Recursively collect blocks, transparently descending into ODF container elements
     // (text:section, text:text) that are not themselves content blocks.
-    private static void CollectBlocks(
+    private void CollectBlocks(
         XElement          parent,
         long              baseOffset,
         BinaryMapBuilder  mapBuilder,
@@ -81,7 +93,7 @@ internal sealed class OdtXmlMapper
         }
     }
 
-    private static DocumentBlock? MapElement(XElement elem, long baseOffset, BinaryMapBuilder mapBuilder)
+    private DocumentBlock? MapElement(XElement elem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         string local = elem.Name.LocalName;
         XNamespace ns = elem.Name.Namespace;
@@ -104,7 +116,7 @@ internal sealed class OdtXmlMapper
         return null;
     }
 
-    private static DocumentBlock MapParagraph(
+    private DocumentBlock MapParagraph(
         XElement elem, long baseOffset, BinaryMapBuilder mapBuilder, string kind)
     {
         long off = ResolveOffset(elem, baseOffset);
@@ -153,21 +165,27 @@ internal sealed class OdtXmlMapper
         return para;
     }
 
-    private static DocumentBlock MapRun(XElement rElem, long baseOffset, BinaryMapBuilder mapBuilder)
+    private DocumentBlock MapRun(XElement rElem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         long off = ResolveOffset(rElem, baseOffset);
         int  len = EstimateLength(rElem);
 
         var run = new DocumentBlock { Kind = "run", RawOffset = off, RawLength = len, Text = rElem.Value };
 
-        var style = rElem.Attribute(TextNs + "style-name");
-        if (style is not null) run.Attributes["style"] = style.Value;
+        var styleName = rElem.Attribute(TextNs + "style-name")?.Value;
+        if (styleName is not null)
+        {
+            run.Attributes["style"] = styleName;
+            // Resolve formatting properties from style map (bold, italic, underline, fontSize, fontFamily)
+            if (_styleProps.TryGetValue(styleName, out var props))
+                foreach (var kv in props) run.Attributes[kv.Key] = kv.Value;
+        }
 
         mapBuilder.AddZipRelative("content.xml", run, off, len);
         return run;
     }
 
-    private static DocumentBlock MapList(XElement listElem, long baseOffset, BinaryMapBuilder mapBuilder)
+    private DocumentBlock MapList(XElement listElem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         long off = ResolveOffset(listElem, baseOffset);
         int  len = EstimateLength(listElem);
@@ -187,7 +205,7 @@ internal sealed class OdtXmlMapper
         return list;
     }
 
-    private static DocumentBlock MapTable(XElement tblElem, long baseOffset, BinaryMapBuilder mapBuilder)
+    private DocumentBlock MapTable(XElement tblElem, long baseOffset, BinaryMapBuilder mapBuilder)
     {
         long off = ResolveOffset(tblElem, baseOffset);
         int  len = EstimateLength(tblElem);
@@ -221,7 +239,45 @@ internal sealed class OdtXmlMapper
 
         var img = new DocumentBlock { Kind = "image", RawOffset = off, RawLength = len, Text = "[image]" };
         mapBuilder.AddZipRelative("content.xml", img, off, len);
+
+        // Extract zip entry path from draw:image@xlink:href (e.g. "Pictures/image1.png")
+        var href = elem.Element(DrawNs + "image")?.Attribute(XlinkNs + "href")?.Value
+                ?? elem.Attribute(XlinkNs + "href")?.Value;
+        if (href is not null) img.Attributes["zipEntryName"] = href;
+
+        // Natural display dimensions from svg:width / svg:height (e.g. "6.5cm", "2.3in")
+        var w = elem.Attribute(SvgNs + "width")?.Value;
+        var h = elem.Attribute(SvgNs + "height")?.Value;
+        if (w is not null)
+        {
+            double px = ParseOdtLength(w);
+            if (px > 0) img.Attributes["naturalWidth"] = px.ToString(CultureInfo.InvariantCulture);
+        }
+        if (h is not null)
+        {
+            double px = ParseOdtLength(h);
+            if (px > 0) img.Attributes["naturalHeight"] = px.ToString(CultureInfo.InvariantCulture);
+        }
+
         return img;
+    }
+
+    /// <summary>Converts an ODT length string (e.g. "6.5cm", "2.3in", "72pt") to pixels at 96 dpi.</summary>
+    private static double ParseOdtLength(string val)
+    {
+        if (val.EndsWith("cm",  StringComparison.Ordinal) &&
+            double.TryParse(val[..^2], NumberStyles.Any, CultureInfo.InvariantCulture, out double cm))
+            return cm * 37.795;
+        if (val.EndsWith("in",  StringComparison.Ordinal) &&
+            double.TryParse(val[..^2], NumberStyles.Any, CultureInfo.InvariantCulture, out double inch))
+            return inch * 96.0;
+        if (val.EndsWith("pt",  StringComparison.Ordinal) &&
+            double.TryParse(val[..^2], NumberStyles.Any, CultureInfo.InvariantCulture, out double pt))
+            return pt * 1.333;
+        if (val.EndsWith("mm",  StringComparison.Ordinal) &&
+            double.TryParse(val[..^2], NumberStyles.Any, CultureInfo.InvariantCulture, out double mm))
+            return mm * 3.7795;
+        return 0;
     }
 
     private static long ResolveOffset(XElement elem, long baseOffset)

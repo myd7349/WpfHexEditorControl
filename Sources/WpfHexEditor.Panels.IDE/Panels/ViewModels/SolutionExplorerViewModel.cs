@@ -1038,16 +1038,20 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
     {
         if (_currentSort == SortMode.None) return;
 
+        // References and Properties are always pinned at the top — only the rest is sorted.
+        var pinned   = children.Where(IsPinnedNode).ToList();
+        var sortable = children.Where(n => !IsPinnedNode(n)).ToList();
+
         var sorted = _currentSort switch
         {
-            SortMode.Name         => children.OrderBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase).ToList(),
-            SortMode.Type         => children.OrderBy(n => n is FileNodeVm fn ? fn.Source.ItemType.ToString() : "")
+            SortMode.Name         => sortable.OrderBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase).ToList(),
+            SortMode.Type         => sortable.OrderBy(n => n is FileNodeVm fn ? fn.Source.ItemType.ToString() : "")
                                              .ThenBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase).ToList(),
-            SortMode.DateModified => children.OrderByDescending(n =>
+            SortMode.DateModified => sortable.OrderByDescending(n =>
                                         n is FileNodeVm fn && File.Exists(fn.Source.AbsolutePath)
                                             ? File.GetLastWriteTime(fn.Source.AbsolutePath)
                                             : DateTime.MinValue).ToList(),
-            SortMode.Size         => children.OrderByDescending(n =>
+            SortMode.Size         => sortable.OrderByDescending(n =>
                                         n is FileNodeVm fn && File.Exists(fn.Source.AbsolutePath)
                                             ? new FileInfo(fn.Source.AbsolutePath).Length
                                             : 0L).ToList(),
@@ -1056,9 +1060,10 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
 
         if (sorted is null) return;
 
-        for (int i = 0; i < sorted.Count; i++)
+        var final = pinned.Concat(sorted).ToList();
+        for (int i = 0; i < final.Count; i++)
         {
-            var current = children.IndexOf(sorted[i]);
+            var current = children.IndexOf(final[i]);
             if (current != i) children.Move(current, i);
         }
 
@@ -1066,6 +1071,11 @@ public sealed class SolutionExplorerViewModel : INotifyPropertyChanged
         foreach (var child in children)
             ApplySort(child.Children);
     }
+
+    private static bool IsPinnedNode(SolutionExplorerNodeVm node) =>
+        node is ReferencesContainerNodeVm ||
+        (node is FolderNodeVm or PhysicalFolderNodeVm &&
+         string.Equals(node.DisplayName, "Properties", StringComparison.OrdinalIgnoreCase));
 
     // -- Filter helpers (D2) --------------------------------------------------
 

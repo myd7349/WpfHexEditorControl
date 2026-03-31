@@ -190,7 +190,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private ErrorPanel? _errorPanel;
     private WpfHexEditor.Panels.IDE.Panels.BookmarksPanel? _bookmarksPanel;
     private const string ErrorPanelContentId         = "panel-errors";
-    private const string FindReferencesPanelContentId = "panel-find-references";
+    private const string FindReferencesPanelContentId  = "panel-find-references";
     private WpfHexEditor.Editor.CodeEditor.Controls.FindReferencesPanel? _findReferencesPanel;
     private const string OptionsContentId       = "panel-options";
     private const string MarkdownOutlinePanelContentId   = "panel-md-outline";
@@ -638,9 +638,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             () => new WpfHexEditor.App.Options.DockingOptionsPage(),
             "\uE8A0");
 
-        // Register Code Editor options page (General, Brackets, Hints, Minimap)
+        // Register Code Editor options page (General, Auto-close, Hints, Minimap, Coloring)
         WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
-            "Editor", "Code Editor",
+            "Code Editor", "Features",
             () => new WpfHexEditor.App.Options.CodeEditorOptionsPage(),
             "\uE943");
 
@@ -1428,6 +1428,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             "panel-properties"         => CreatePropertiesContent(),
             ErrorPanelContentId          => CreateErrorPanelContent(),
             FindReferencesPanelContentId => CreateFindReferencesPanelContent(),
+
             OptionsContentId               => CreateOptionsContent(),
             BookmarksPanelContentId        => CreateBookmarksPanelContent(),
             "doc-welcome"                  => CreateWelcomeContent(),
@@ -2053,6 +2054,46 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private UIElement CreateFindReferencesPanelContent()
         => EnsureFindReferencesPanelInstance();
 
+    // ── Call Hierarchy panel ───────────────────────────────────────────────────
+
+    private void OnCallHierarchyDockRequested(
+        object? sender,
+        WpfHexEditor.Editor.CodeEditor.Controls.CallHierarchyDockRequestedEventArgs e)
+    {
+        // Extract the LSP client from the sending editor.
+        WpfHexEditor.Editor.Core.LSP.ILspClient? lspClient = null;
+        if (sender is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
+            lspClient = host.PrimaryEditor.LspClient;
+        else if (sender is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor ce)
+            lspClient = ce.LspClient;
+
+        // Delegate to the LspTools plugin via the event bus.
+        _ideHostContext?.EventBus?.Publish(new WpfHexEditor.SDK.Events.CallHierarchyReadyEvent
+        {
+            Items      = e.Items,
+            SymbolName = e.SymbolName,
+            LspClient  = lspClient,
+        });
+    }
+
+    private void OnTypeHierarchyDockRequested(
+        object? sender,
+        WpfHexEditor.Editor.CodeEditor.Controls.TypeHierarchyDockRequestedEventArgs e)
+    {
+        WpfHexEditor.Editor.Core.LSP.ILspClient? lspClient = null;
+        if (sender is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
+            lspClient = host.PrimaryEditor.LspClient;
+        else if (sender is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditor ce)
+            lspClient = ce.LspClient;
+
+        _ideHostContext?.EventBus?.Publish(new WpfHexEditor.SDK.Events.TypeHierarchyReadyEvent
+        {
+            Items      = e.Items,
+            SymbolName = e.SymbolName,
+            LspClient  = lspClient,
+        });
+    }
+
     private UIElement CreateHexEditorContent(
         string?   filePath,
         string?   displayName = null,
@@ -2218,12 +2259,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     plainCe.ReferenceNavigationRequested    += OnCodeEditorReferenceNavigation;
                     plainCe.FindAllReferencesDockRequested  += OnFindAllReferencesDockRequested;
                     plainCe.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
+                    plainCe.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
+                    plainCe.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
                 }
                 if (editor is CodeEditorSplitHost splitHostProj)
                 {
                     splitHostProj.ReferenceNavigationRequested    += OnCodeEditorReferenceNavigation;
                     splitHostProj.FindAllReferencesDockRequested  += OnFindAllReferencesDockRequested;
                     splitHostProj.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
+                    splitHostProj.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
+                    splitHostProj.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
                 }
 
                 // Register as diagnostic source (e.g. TblEditor with IDiagnosticSource)
@@ -2402,6 +2447,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 json.ReferenceNavigationRequested    += OnCodeEditorReferenceNavigation;
                 json.FindAllReferencesDockRequested  += OnFindAllReferencesDockRequested;
                 json.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
+                json.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
+                json.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
                 // No Background + default IsHitTestVisible=True → empty areas let clicks
                 // through to the editor; the QuickSearchBar captures clicks in its own area.
                 var canvas = new Canvas();
@@ -2426,9 +2473,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             // that the inner CodeEditor raises but the split-host now forwards.
             if (editor is CodeEditorSplitHost splitHost)
             {
-                splitHost.ReferenceNavigationRequested   += OnCodeEditorReferenceNavigation;
-                splitHost.FindAllReferencesDockRequested += OnFindAllReferencesDockRequested;
+                splitHost.ReferenceNavigationRequested    += OnCodeEditorReferenceNavigation;
+                splitHost.FindAllReferencesDockRequested  += OnFindAllReferencesDockRequested;
                 splitHost.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
+                splitHost.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
+                splitHost.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
             }
 
             // Wire breakpoint gutter adapter so the gutter can render breakpoints immediately.

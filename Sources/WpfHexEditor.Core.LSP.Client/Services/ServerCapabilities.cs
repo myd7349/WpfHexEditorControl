@@ -30,6 +30,13 @@ internal sealed class ServerCapabilities
     internal bool HasRenameProvider           { get; init; }
     internal bool HasImplementationProvider   { get; init; }
     internal bool HasTypeDefinitionProvider   { get; init; }
+    internal bool HasFormattingProvider            { get; init; }
+    internal bool HasRangeFormattingProvider       { get; init; }
+    internal bool HasDiagnosticProvider            { get; init; }
+    internal bool DiagnosticInterFileDependencies  { get; init; }
+    internal bool HasLinkedEditingRangeProvider    { get; init; }
+    internal bool HasCallHierarchyProvider         { get; init; }
+    internal bool HasTypeHierarchyProvider         { get; init; }
 
     /// <summary>
     /// Parses the capabilities from the raw <c>initialize</c> response node.
@@ -53,6 +60,14 @@ internal sealed class ServerCapabilities
             HasRenameProvider         = IsEnabled(caps["renameProvider"]),
             HasImplementationProvider = IsEnabled(caps["implementationProvider"]),
             HasTypeDefinitionProvider = IsEnabled(caps["typeDefinitionProvider"]),
+            HasFormattingProvider           = IsEnabled(caps["documentFormattingProvider"]),
+            HasRangeFormattingProvider      = IsEnabled(caps["documentRangeFormattingProvider"]),
+            HasDiagnosticProvider           = IsEnabled(caps["diagnosticProvider"]),
+            DiagnosticInterFileDependencies = caps["diagnosticProvider"]?["interFileDependencies"]
+                                              ?.GetValue<bool>() ?? false,
+            HasLinkedEditingRangeProvider   = IsEnabled(caps["linkedEditingRangeProvider"]),
+            HasCallHierarchyProvider        = IsEnabled(caps["callHierarchyProvider"]),
+            HasTypeHierarchyProvider        = IsEnabled(caps["typeHierarchyProvider"]),
         };
     }
 
@@ -77,5 +92,12 @@ internal sealed class ServerCapabilities
         HasRenameProvider         = true,
         HasImplementationProvider = true,
         HasTypeDefinitionProvider = true,
+        HasFormattingProvider            = true,
+        HasRangeFormattingProvider       = true,
+        HasDiagnosticProvider            = false, // AllEnabled = push mode (safe default)
+        DiagnosticInterFileDependencies  = false,
+        HasLinkedEditingRangeProvider    = false, // safe default — opt-in only
+        HasCallHierarchyProvider         = false,
+        HasTypeHierarchyProvider         = false,
     };
 }

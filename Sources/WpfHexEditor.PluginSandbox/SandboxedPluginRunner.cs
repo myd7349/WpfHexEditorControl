@@ -760,6 +760,8 @@ file sealed class NullTerminalService : ITerminalService
     public void Clear() { }
     public void OpenSession(string shellType) { }
     public void CloseActiveSession() { }
+    public void RegisterCommand(WpfHexEditor.SDK.Contracts.Terminal.ITerminalCommandProvider command) { }
+    public void UnregisterCommand(string commandName) { }
 }
 
 file sealed class NullSolutionExplorerService : ISolutionExplorerService
