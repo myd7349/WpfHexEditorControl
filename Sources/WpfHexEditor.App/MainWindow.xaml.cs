@@ -638,9 +638,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             () => new WpfHexEditor.App.Options.DockingOptionsPage(),
             "\uE8A0");
 
-        // Register Code Editor options page (General, Brackets, Hints, Minimap)
+        // Register Code Editor options page (General, Auto-close, Hints, Minimap, Coloring)
         WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
-            "Editor", "Code Editor",
+            "Code Editor", "Coloring",
             () => new WpfHexEditor.App.Options.CodeEditorOptionsPage(),
             "\uE943");
 

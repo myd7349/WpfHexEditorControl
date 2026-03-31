@@ -493,6 +493,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // When true, document is formatted automatically on every save.
         private bool _formatOnSave;
 
+        /// <summary>When true, the document is formatted on every Ctrl+S save.</summary>
+        public bool FormatOnSave
+        {
+            get => _formatOnSave;
+            set => _formatOnSave = value;
+        }
+
         // Formatting service — LSP-first, fallback BasicIndentFormatter.
         private readonly Services.CodeFormattingService _codeFormattingService = new();
 
@@ -2383,6 +2390,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             EnableAutoClosingQuotes   = options.AutoClosingQuotes;
             SkipOverClosingChar       = options.SkipOverClosingChar;
             WrapSelectionInPairs      = options.WrapSelectionInPairs;
+
+            // Bracket pair depth colorization (#162)
+            BracketPairColorizationEnabled = options.BracketPairColorization;
 
             // Color swatch preview (#168)
             ColorSwatchPreviewEnabled = options.ColorSwatchPreview;

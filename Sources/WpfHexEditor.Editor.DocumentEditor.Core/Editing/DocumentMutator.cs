@@ -11,6 +11,7 @@
 using WpfHexEditor.Editor.Core.Undo;
 using WpfHexEditor.Editor.DocumentEditor.Core.Model;
 using WpfHexEditor.Editor.DocumentEditor.Core.Undo;
+using System.Linq;
 
 namespace WpfHexEditor.Editor.DocumentEditor.Core.Editing;
 
@@ -206,22 +207,87 @@ public sealed class DocumentMutator(DocumentModel model)
     /// </summary>
     public (DocumentBlock First, DocumentBlock Second) SplitBlock(int blockIndex, int charOffset)
     {
-        var block  = model.Blocks[blockIndex];
-        EnsureFlatText(block);
-        charOffset = Math.Clamp(charOffset, 0, block.Text.Length);
+        var block = model.Blocks[blockIndex];
 
+        // Run-aware split: preserve per-run formatting when block has children.
+        if (block.Children.Count > 0)
+        {
+            int flatLen = block.Children.Sum(c => c.Text.Length);
+            charOffset  = Math.Clamp(charOffset, 0, flatLen);
+
+            // Snapshot original children for undo.
+            var originalChildren = block.Children.ToList();
+
+            // Distribute children: runs before split → firstChildren, runs after → secondChildren.
+            var firstChildren  = new List<DocumentBlock>();
+            var secondChildren = new List<DocumentBlock>();
+            int pos = 0;
+            bool splitDone = false;
+            foreach (var run in originalChildren)
+            {
+                int end = pos + run.Text.Length;
+                if (splitDone)
+                {
+                    secondChildren.Add(run);
+                }
+                else if (charOffset >= end)
+                {
+                    firstChildren.Add(run);
+                }
+                else
+                {
+                    // Split falls inside this run.
+                    int localOff = charOffset - pos;
+                    if (localOff > 0)
+                        firstChildren.Add(DocumentBlockFactory.CloneWithText(run, run.Text[..localOff]));
+                    if (localOff < run.Text.Length)
+                        secondChildren.Add(DocumentBlockFactory.CloneWithText(run, run.Text[localOff..]));
+                    splitDone = true;
+                }
+                pos = end;
+            }
+
+            // Apply first children to existing block.
+            block.Children.Clear();
+            foreach (var c in firstChildren) block.Children.Add(c);
+            block.Text = string.Concat(firstChildren.Select(c => c.Text));
+
+            // Build second block with second children.
+            var second = DocumentBlockFactory.CloneWithText(block, string.Concat(secondChildren.Select(c => c.Text)));
+            foreach (var c in secondChildren) second.Children.Add(c);
+            model.Blocks.Insert(blockIndex + 1, second);
+
+            model.UndoEngine.Push(new BlockSplitUndoEntry
+            {
+                Model          = model,
+                First          = block,
+                Second         = second,
+                BlockIndex     = blockIndex,
+                FirstText      = block.Text,
+                SecondText     = second.Text,
+                FirstChildren  = firstChildren,
+                SecondChildren = secondChildren
+            });
+
+            BlockMutated?.Invoke(this, new BlockMutatedArgs(block, BlockMutationKind.TextEdited));
+            model.NotifyBlocksChanged();
+            return (block, second);
+        }
+
+        // Plain-text split path (no children).
+        charOffset = Math.Clamp(charOffset, 0, block.Text.Length);
         var firstText  = block.Text[..charOffset];
         var secondText = block.Text[charOffset..];
 
         block.Text = firstText;
-        var second = DocumentBlockFactory.CloneWithText(block, secondText);
-        model.Blocks.Insert(blockIndex + 1, second);
+        var secondPlain = DocumentBlockFactory.CloneWithText(block, secondText);
+        model.Blocks.Insert(blockIndex + 1, secondPlain);
 
         model.UndoEngine.Push(new BlockSplitUndoEntry
         {
             Model      = model,
             First      = block,
-            Second     = second,
+            Second     = secondPlain,
             BlockIndex = blockIndex,
             FirstText  = firstText,
             SecondText = secondText
@@ -229,7 +295,7 @@ public sealed class DocumentMutator(DocumentModel model)
 
         BlockMutated?.Invoke(this, new BlockMutatedArgs(block, BlockMutationKind.TextEdited));
         model.NotifyBlocksChanged();
-        return (block, second);
+        return (block, secondPlain);
     }
 
     /// <summary>

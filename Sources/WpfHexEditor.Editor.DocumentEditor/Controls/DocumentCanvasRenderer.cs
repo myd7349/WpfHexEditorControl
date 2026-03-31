@@ -69,6 +69,9 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
     private bool                     _isLoading  = true;
     private bool                     _isError    = false;
 
+    // Caret staleness flag: set when blocks change, cleared after RebuildLayout
+    private bool _caretFtDirty;
+
     // Interaction
     private int    _hoverIndex    = -1;
     private int    _selectedIndex = -1;
@@ -806,6 +809,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         _blocks           = result;
         _totalHeight      = yCanvas;
         _visualLineCache.Clear();
+        _caretFtDirty     = false;
 
         UpdateScrollExtent();
         InvalidateVisual();
@@ -1548,7 +1552,10 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
         var text = GetFlatText(_caret.BlockIndex);
         if (!string.IsNullOrEmpty(text))
         {
-            var ft = rb.FormattedLines is { Count: > 0 }
+            // Use cached FT only when it is definitely fresh (RebuildLayout ran after last mutation).
+            // _caretFtDirty is set immediately on BlocksChanged and cleared only at end of RebuildLayout,
+            // so between a mutation and the async rebuild the blink timer always builds a fresh FT.
+            var ft = (!_caretFtDirty && rb.FormattedLines is { Count: > 0 })
                 ? rb.FormattedLines[0]
                 : MakeFormattedText(text, GetBlockTypeface(rb.Block), GetBlockFontSize(rb.Block),
                                     _fgBrush ?? Brushes.Gray, contentW);
@@ -1560,16 +1567,6 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
                 _caret.CharOffset > 0 ? _caret.CharOffset - 1 : 0,
                 0, text.Length - 1);
             var geo = ft.BuildHighlightGeometry(new Point(0, 0), probeChar, 1);
-
-            // Stale cache: FormattedLines[0] was built before the last mutation (async
-            // RebuildLayout not yet executed). Fall back to a fresh FT so the blink timer
-            // doesn't snap the caret to the left edge while the layout is catching up.
-            if ((geo is null || geo.Bounds.IsEmpty) && rb.FormattedLines is { Count: > 0 })
-            {
-                ft  = MakeFormattedText(text, GetBlockTypeface(rb.Block), GetBlockFontSize(rb.Block),
-                                        _fgBrush ?? Brushes.Gray, contentW);
-                geo = ft.BuildHighlightGeometry(new Point(0, 0), probeChar, 1);
-            }
 
             if (geo is not null && !geo.Bounds.IsEmpty)
             {
@@ -1837,6 +1834,7 @@ public sealed class DocumentCanvasRenderer : FrameworkElement, IScrollInfo
 
     private void OnBlocksChanged(object? sender, EventArgs e)
     {
+        _caretFtDirty = true;
         InvalidateBrushCache();
         Dispatcher.InvokeAsync(RebuildLayout);
     }

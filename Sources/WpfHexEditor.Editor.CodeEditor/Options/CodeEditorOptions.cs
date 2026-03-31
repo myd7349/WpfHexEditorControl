@@ -240,6 +240,21 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
         set { _enableWordHighlight = value; Notify(); }
     }
 
+    // -- Bracket Pair Colorization (#162) --------------------------------------
+
+    private bool _bracketPairColorization = true;
+
+    /// <summary>
+    /// When true, bracket pairs are colored with CE_Bracket_1/2/3/4 based on
+    /// nesting depth (VS-style multi-level bracket colorization).
+    /// Requires <c>bracketPairs</c> in the active language's whfmt definition.
+    /// </summary>
+    public bool BracketPairColorization
+    {
+        get => _bracketPairColorization;
+        set { _bracketPairColorization = value; Notify(); }
+    }
+
     // -- Color Swatch Preview (#168) ------------------------------------------
 
     private bool _colorSwatchPreview = true;
