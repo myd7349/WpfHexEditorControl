@@ -6,7 +6,7 @@
 // Created: 2026-03-31
 // License: GNU Affero General Public License v3.0 (AGPL-3.0)
 // Description:
-//     Panel code-behind. Tab click, close tab, new tab handlers.
+//     Panel code-behind. All handlers wrapped in SafeGuard.Run().
 // ==========================================================
 using System.Windows;
 using System.Windows.Controls;
@@ -25,20 +25,22 @@ public partial class ClaudeAssistantPanel : UserControl
     private ClaudeAssistantPanelViewModel? Vm => DataContext as ClaudeAssistantPanelViewModel;
 
     private void OnNewTabClick(object sender, MouseButtonEventArgs e)
-        => Vm?.CreateNewTabCommand.Execute(null);
+        => SafeGuard.Run(() => Vm?.CreateNewTabCommand.Execute(null));
 
     private void OnTabClick(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: ConversationTabViewModel tab } && Vm is not null)
-            Vm.ActiveTab = tab;
-    }
+        => SafeGuard.Run(() =>
+        {
+            if (sender is FrameworkElement { DataContext: ConversationTabViewModel tab } && Vm is not null)
+                Vm.ActiveTab = tab;
+        });
 
     private void OnCloseTabClick(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is FrameworkElement { DataContext: ConversationTabViewModel tab })
+        => SafeGuard.Run(() =>
         {
-            Vm?.CloseTabCommand.Execute(tab);
-            e.Handled = true;
-        }
-    }
+            if (sender is FrameworkElement { DataContext: ConversationTabViewModel tab })
+            {
+                Vm?.CloseTabCommand.Execute(tab);
+                e.Handled = true;
+            }
+        });
 }

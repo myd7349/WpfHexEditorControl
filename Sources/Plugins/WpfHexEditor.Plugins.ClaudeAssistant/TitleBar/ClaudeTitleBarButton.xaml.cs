@@ -6,7 +6,7 @@
 // Created: 2026-03-31
 // License: GNU Affero General Public License v3.0 (AGPL-3.0)
 // Description:
-//     Claude icon button for the IDE title bar with animated status badge.
+//     Claude icon button for the IDE title bar. All handlers wrapped in SafeGuard.
 // ==========================================================
 using System.Windows;
 using System.Windows.Controls;
@@ -30,42 +30,42 @@ public partial class ClaudeTitleBarButton : UserControl
     public ClaudeTitleBarButton()
     {
         InitializeComponent();
-        BuildPulseAnimation();
+        SafeGuard.Run(BuildPulseAnimation);
     }
 
     public void UpdateStatus(ClaudeConnectionStatus status)
-    {
-        _pulseStoryboard?.Stop();
-
-        var brushKey = status switch
+        => SafeGuard.Run(() =>
         {
-            ClaudeConnectionStatus.NotConfigured => "DockBorderBrush",
-            ClaudeConnectionStatus.Connecting => "CA_TitleBarBadgeStreamingBrush",
-            ClaudeConnectionStatus.Connected => "CA_TitleBarBadgeIdleBrush",
-            ClaudeConnectionStatus.RateLimited => "CA_TitleBarBadgeStreamingBrush",
-            ClaudeConnectionStatus.Error => "CA_TitleBarBadgeErrorBrush",
-            ClaudeConnectionStatus.Offline => "DockBorderBrush",
-            _ => "DockBorderBrush"
-        };
+            _pulseStoryboard?.Stop();
 
-        if (TryFindResource(brushKey) is Brush brush)
-            StatusBadge.Fill = brush;
+            var brushKey = status switch
+            {
+                ClaudeConnectionStatus.NotConfigured => "DockBorderBrush",
+                ClaudeConnectionStatus.Connecting => "DockTabActiveBrush",
+                ClaudeConnectionStatus.Connected => "DockTabActiveBrush",
+                ClaudeConnectionStatus.RateLimited => "DockBorderBrush",
+                ClaudeConnectionStatus.Error => "DockBorderBrush",
+                ClaudeConnectionStatus.Offline => "DockBorderBrush",
+                _ => "DockBorderBrush"
+            };
 
-        if (status is ClaudeConnectionStatus.Connecting or ClaudeConnectionStatus.RateLimited)
-            _pulseStoryboard?.Begin();
+            if (TryFindResource(brushKey) is Brush brush)
+                StatusBadge.Fill = brush;
 
-        var tooltip = status switch
-        {
-            ClaudeConnectionStatus.NotConfigured => "Claude AI — No API key configured",
-            ClaudeConnectionStatus.Connecting => "Claude AI — Connecting...",
-            ClaudeConnectionStatus.Connected => "Claude AI Assistant (Ctrl+Shift+A)",
-            ClaudeConnectionStatus.RateLimited => "Claude AI — Rate limited, waiting...",
-            ClaudeConnectionStatus.Error => "Claude AI — Connection error",
-            ClaudeConnectionStatus.Offline => "Claude AI — Offline",
-            _ => "Claude AI Assistant"
-        };
-        ToolTip = tooltip;
-    }
+            if (status is ClaudeConnectionStatus.Connecting or ClaudeConnectionStatus.RateLimited)
+                _pulseStoryboard?.Begin();
+
+            ToolTip = status switch
+            {
+                ClaudeConnectionStatus.NotConfigured => "Claude AI — No API key configured",
+                ClaudeConnectionStatus.Connecting => "Claude AI — Connecting...",
+                ClaudeConnectionStatus.Connected => "Claude AI Assistant (Ctrl+Shift+A)",
+                ClaudeConnectionStatus.RateLimited => "Claude AI — Rate limited",
+                ClaudeConnectionStatus.Error => "Claude AI — Connection error",
+                ClaudeConnectionStatus.Offline => "Claude AI — Offline",
+                _ => "Claude AI Assistant"
+            };
+        });
 
     private void BuildPulseAnimation()
     {
@@ -82,21 +82,22 @@ public partial class ClaudeTitleBarButton : UserControl
     }
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
-    {
-        if (TryFindResource("CA_TitleBarButtonHoverBrush") is Brush brush)
-            ButtonBorder.Background = brush;
-    }
+        => SafeGuard.Run(() =>
+        {
+            if (TryFindResource("DockTabHoverBrush") is Brush brush)
+                ButtonBorder.Background = brush;
+        });
 
     private void OnMouseLeave(object sender, MouseEventArgs e)
-    {
-        if (TryFindResource("CA_TitleBarButtonBackgroundBrush") is Brush brush)
-            ButtonBorder.Background = brush;
-    }
+        => SafeGuard.Run(() =>
+        {
+            ButtonBorder.Background = Brushes.Transparent;
+        });
 
-    private void OnLeftClick(object sender, MouseButtonEventArgs e) => TogglePanelRequested?.Invoke();
-    private void OnRightClick(object sender, MouseButtonEventArgs e) => ContextMenu!.IsOpen = true;
-    private void OnNewTabClick(object sender, RoutedEventArgs e) => NewTabRequested?.Invoke();
-    private void OnAskSelectionClick(object sender, RoutedEventArgs e) => AskSelectionRequested?.Invoke();
-    private void OnFixErrorsClick(object sender, RoutedEventArgs e) => FixErrorsRequested?.Invoke();
-    private void OnOptionsClick(object sender, RoutedEventArgs e) => OpenOptionsRequested?.Invoke();
+    private void OnLeftClick(object sender, MouseButtonEventArgs e) => SafeGuard.Run(() => TogglePanelRequested?.Invoke());
+    private void OnRightClick(object sender, MouseButtonEventArgs e) => SafeGuard.Run(() => ContextMenu!.IsOpen = true);
+    private void OnNewTabClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => NewTabRequested?.Invoke());
+    private void OnAskSelectionClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => AskSelectionRequested?.Invoke());
+    private void OnFixErrorsClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => FixErrorsRequested?.Invoke());
+    private void OnOptionsClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => OpenOptionsRequested?.Invoke());
 }

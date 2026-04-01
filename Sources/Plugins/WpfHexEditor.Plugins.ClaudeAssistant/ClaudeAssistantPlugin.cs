@@ -56,6 +56,9 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
     {
         _context = context;
 
+        // ── 0. SafeGuard logger ─────────────────────────────────────────────
+        SafeGuard.SetLogger(msg => context.Output?.Error(msg));
+
         // ── 1. Options ──────────────────────────────────────────────────────
         ClaudeAssistantOptions.Instance.Load();
 
@@ -150,7 +153,7 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             Category: "AI & Assistants",
             DefaultGesture: "Ctrl+Shift+A",
             IconGlyph: "\uE734",
-            Command: new RelayCommand(() => ShowCommandPalette())));
+            Command: new RelayCommand(() => SafeGuard.Run(ShowCommandPalette))));
 
         context.CommandRegistry?.Register(new SDK.Commands.SdkCommandDefinition(
             Id: "ClaudeAssistant.NewTab",
@@ -158,7 +161,7 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             Category: "AI & Assistants",
             DefaultGesture: "Ctrl+Shift+Alt+A",
             IconGlyph: "\uE710",
-            Command: new RelayCommand(() => _vm?.CreateNewTabCommand.Execute(null))));
+            Command: new RelayCommand(() => SafeGuard.Run(() => _vm?.CreateNewTabCommand.Execute(null)))));
 
         // ── Done ────────────────────────────────────────────────────────────
         context.Output?.Info($"[ClaudeAssistant] Plugin initialized (v{Version}) — 4 providers, {_mcpManager.GetAllTools().Count} MCP tools");
