@@ -213,4 +213,14 @@ public interface IIDEHostContext
     /// and first-run prompts. Never null after IDE v0.8.
     /// </summary>
     INotificationService? Notifications => null;
+
+    // -- Version Control ------------------------------------------------------
+
+    /// <summary>
+    /// Generic version control facade (blame, status, stage/unstage).
+    /// Registered by WpfHexEditor.Plugins.Git on startup via ExtensionRegistry.
+    /// Null when no VCS plugin is loaded — no breaking change for existing plugins.
+    /// </summary>
+    IVersionControlService? VersionControl
+        => ExtensionRegistry?.GetExtensions<IVersionControlService>().FirstOrDefault();
 }

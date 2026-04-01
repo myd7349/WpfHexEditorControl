@@ -59,7 +59,7 @@ public partial class WelcomePanel : UserControl
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(8) };
 
     private const string ChangelogUrl =
-        "https://raw.githubusercontent.com/abbaye/WpfHexEditorControl/master/CHANGELOG.md";
+        "https://raw.githubusercontent.com/abbaye/WpfHexEditorControl/master/docs/CHANGELOG.md";
 
     // -- Max versions shown in changelog -------------------------------
 

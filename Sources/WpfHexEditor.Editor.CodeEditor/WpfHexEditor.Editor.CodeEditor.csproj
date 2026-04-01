@@ -11,6 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>WpfHexEditor.Editor.CodeEditor.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- WpfHexEditor.Core.Events: IIDEEventBus + CodeEditor IDE event records for EditorEventAdapter. -->
     <ProjectReference Include="..\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
     <ProjectReference Include="..\WpfHexEditor.Core.Events\WpfHexEditor.Core.Events.csproj" />

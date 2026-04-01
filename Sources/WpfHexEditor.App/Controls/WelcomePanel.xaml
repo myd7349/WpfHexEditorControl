@@ -355,7 +355,7 @@
                                    Margin="28,0,0,0">
                             <Hyperlink Style="{StaticResource WelcomeHyperlinkStyle}"
                                        RequestNavigate="OnHyperlinkNavigate"
-                                       NavigateUri="https://github.com/abbaye/WpfHexEditorControl/blob/master/CHANGELOG.md">
+                                       NavigateUri="https://github.com/abbaye/WpfHexEditorControl/blob/master/docs/CHANGELOG.md">
                                 Full Changelog
                             </Hyperlink>
                         </TextBlock>

@@ -31,7 +31,7 @@ public partial class OutputPanel : UserControl
         OutputLogger.Register(this);
 
         // Pre-create one document per source channel.
-        foreach (var src in new[] { "General", "Plugin System", "Build", "Debug", "Unit Testing" })
+        foreach (var src in new[] { "General", "Plugin System", "Build", "Debug", "Unit Testing", "Language Server" })
             _sourceDocs[src] = CreateDocument();
 
         OutputTextBox.Document = _sourceDocs[_activeSource];

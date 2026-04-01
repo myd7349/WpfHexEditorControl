@@ -30,6 +30,7 @@ using WpfHexEditor.Core.Terminal;
 using WpfHexEditor.Core.Terminal.ShellSession;
 using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Docking.Core.Nodes;
+using WpfHexEditor.Shell;
 using WpfHexEditor.Core.Events;
 using WpfHexEditor.Core.Events.IDEEvents;
 using WpfHexEditor.PluginHost;
@@ -86,7 +87,7 @@ public partial class MainWindow
     // Panels restored from a saved layout before the plugin system was ready.
     // Their DataContext is wired up at the end of InitializePluginSystemAsync.
     private TerminalPanel? _pendingTerminalPanel;
-    private WpfHexEditor.Panels.IDE.Panels.PluginMonitoringPanel? _pendingPluginMonitorPanel;
+    private WpfHexEditor.PluginHost.UI.PluginMonitoringPanel? _pendingPluginMonitorPanel;
     private WpfHexEditor.PluginHost.UI.PluginManagerControl? _pendingPluginManagerControl;
 
     // VS solution path deferred from TryRestoreSession() because plugin loaders are not yet
@@ -198,6 +199,9 @@ public partial class MainWindow
                 _lspStatusBarAdapter = new WpfHexEditor.App.Services.LspStatusBarAdapter(
                     _lspBridgeService,
                     onErrorClick: () => OpenSettingsAt("Code Editor", "Language Servers"));
+
+                // Wire LSP state → status bar XAML item
+                _lspBridgeService.ServerStateChanged += OnLspServerStateChanged;
 
                 // LSP-02-E: Bridge LSP diagnostics → ErrorPanel (IDiagnosticSource adapter).
                 _lspDiagnosticsAdapter = new WpfHexEditor.App.Services.LspDiagnosticsAdapter(_lspBridgeService);
@@ -324,6 +328,9 @@ public partial class MainWindow
             // 3b-2. Initialize build system (needs _ideEventBus + _outputService + _solutionManager).
             InitializeBuildSystem();
 
+            // 3b-3b. Initialize Git integration (subscribes to GitStatusChangedEvent / GitBlameLoadedEvent).
+            InitializeGitIntegration();
+
             // 3b-3. Register Plugin Development options page.
             WpfHexEditor.PluginDev.Options.PluginDevRegistrar.Register();
 
@@ -431,7 +438,7 @@ public partial class MainWindow
             {
                 if (_pendingPluginMonitorPanel is not null && _pluginHost is not null)
                 {
-                    var vm = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
+                    var vm = new WpfHexEditor.PluginHost.UI.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
                     _pendingPluginMonitorPanel.DataContext = vm;
                     _pendingPluginMonitorPanel = null;
                 }
@@ -780,8 +787,8 @@ public partial class MainWindow
         if (_pluginHost is null) return;
         if (ActivateExistingDockPanel(PluginMonitorContentId)) return;
 
-        var vm      = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
-        var control = new WpfHexEditor.Panels.IDE.Panels.PluginMonitoringPanel { DataContext = vm };
+        var vm      = new WpfHexEditor.PluginHost.UI.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
+        var control = new WpfHexEditor.PluginHost.UI.PluginMonitoringPanel { DataContext = vm };
         var item    = new DockItem { ContentId = PluginMonitorContentId, Title = "Plugin Monitor", CanClose = true };
 
         DockPanelToBottom(PluginMonitorContentId, item, control);
@@ -793,8 +800,8 @@ public partial class MainWindow
     {
         if (ActivateExistingDockPanel(MarketplaceContentId)) return;
 
-        var svc   = new MarketplaceServiceImpl();
-        var vm    = new MarketplacePanelViewModel(_pluginHost!, svc, msg => OutputLogger.PluginInfo(msg));
+        var svc   = new MarketplaceServiceImpl(logger: msg => OutputLogger.PluginInfo(msg));
+        var vm    = new MarketplacePanelViewModel(svc, _pluginHost!, msg => OutputLogger.PluginInfo(msg));
         var panel = new MarketplacePanel();
         panel.Initialize(vm);
         var item  = new DockItem { ContentId = MarketplaceContentId, Title = "Plugin Marketplace", CanClose = true };
@@ -861,6 +868,68 @@ public partial class MainWindow
             "Ensure the Plugin Dev Watch is active and AutoRebuildOnSave is enabled in Options.");
     }
 
+    // --- LSP state indicator -------------------------------------------
+
+    /// <summary>
+    /// Updates the status bar LSP item and all document tab headers when
+    /// the LSP server state changes for a given language.
+    /// </summary>
+    private void OnLspServerStateChanged(object? sender, LspServerStateChangedEventArgs e)
+    {
+        // Status bar
+        switch (e.State)
+        {
+            case LspServerState.Idle:
+                LspStatusItem.Visibility = Visibility.Collapsed;
+                break;
+            case LspServerState.Connecting:
+                LspStatusDot.Text        = "◌";
+                LspStatusDot.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "LSP_ConnectingDot");
+                LspStatusText.Text       = $"Connecting… ({e.ServerName ?? e.LanguageId})";
+                LspStatusItem.ToolTip    = $"LSP: {e.LanguageId} server is starting";
+                LspStatusItem.Visibility = Visibility.Visible;
+                break;
+            case LspServerState.Ready:
+                LspStatusDot.Text        = "●";
+                LspStatusDot.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "LSP_ReadyDot");
+                LspStatusText.Text       = e.ServerName ?? e.LanguageId;
+                LspStatusItem.ToolTip    = $"LSP: {e.ServerName} ready for {e.LanguageId}";
+                LspStatusItem.Visibility = Visibility.Visible;
+                break;
+            case LspServerState.Error:
+                LspStatusDot.Text        = "✕";
+                LspStatusDot.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "LSP_ErrorDot");
+                LspStatusText.Text       = "LSP Error";
+                LspStatusItem.ToolTip    = e.ErrorMessage ?? "Language server failed to start.";
+                LspStatusItem.Visibility = Visibility.Visible;
+                break;
+        }
+
+        // Document tab headers — update dot on all open documents matching this language
+        var dotState = e.State switch
+        {
+            LspServerState.Connecting => DockTabLspState.Connecting,
+            LspServerState.Ready      => DockTabLspState.Ready,
+            LspServerState.Error      => DockTabLspState.Error,
+            _                         => DockTabLspState.None,
+        };
+
+        foreach (var doc in _documentManager?.OpenDocuments ?? [])
+        {
+            if (doc.Buffer?.LanguageId is not { } langId) continue;
+            if (!langId.Equals(e.LanguageId, StringComparison.OrdinalIgnoreCase)) continue;
+
+            foreach (var header in FindVisualChildren<DockTabHeader>(DockHost))
+            {
+                if (header.Item.ContentId == doc.ContentId)
+                {
+                    header.SetLspState(dotState);
+                    break;
+                }
+            }
+        }
+    }
+
     // --- Content factories for panels that may be restored from layout --
 
     /// <summary>
@@ -914,11 +983,11 @@ public partial class MainWindow
     /// </summary>
     private UIElement CreatePluginMonitorPanelContent()
     {
-        var panel = new WpfHexEditor.Panels.IDE.Panels.PluginMonitoringPanel();
+        var panel = new WpfHexEditor.PluginHost.UI.PluginMonitoringPanel();
 
         if (_pluginHost is not null)
         {
-            var vm = new WpfHexEditor.Panels.IDE.Panels.ViewModels.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
+            var vm = new WpfHexEditor.PluginHost.UI.PluginMonitoringViewModel(_pluginHost, Dispatcher, _outputService);
             panel.DataContext = vm;
         }
         else
@@ -1069,6 +1138,10 @@ public partial class MainWindow
         reg.Register(typeof(ProjectItemAddedEvent),   "Project Item Added",   "SolutionManager");
         reg.Register(typeof(ProjectItemRemovedEvent), "Project Item Removed", "SolutionManager");
         reg.Register(typeof(ProjectItemRenamedEvent), "Project Item Renamed", "SolutionManager");
+
+        // --- Git / VCS ---
+        reg.Register(typeof(GitStatusChangedEvent),      "Git Status Changed",      "GitPlugin");
+        reg.Register(typeof(GitBlameLoadedEvent),        "Git Blame Loaded",        "GitPlugin");
 
         // --- Debugger ---
         reg.Register(typeof(DebugSessionStartedEvent),   "Debug Session Started",   "Debugger");

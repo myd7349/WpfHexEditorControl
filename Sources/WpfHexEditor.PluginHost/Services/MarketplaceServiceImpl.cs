@@ -1,188 +1,258 @@
 // ==========================================================
 // Project: WpfHexEditor.PluginHost
 // File: Services/MarketplaceServiceImpl.cs
-// Author: Derek Tremblay (derektremblay666@gmail.com)
-// Contributors: Claude Sonnet 4.6
-// Created: 2026-03-15
 // Description:
-//     Implements IMarketplaceService.
-//     Phase 7: Local-first marketplace — scans a configurable feed JSON file
-//     (local path or http URL). Downloads .whxplugin packages to a temp dir
-//     and delegates installation to WpfPluginHost.InstallFromFileAsync.
-//
+//     IMarketplaceService v2 — GitHub Releases API + local JSON feed fallback.
+//     Install pipeline: download → SHA256 verify → extract to PluginsDir.
+//     Rate-limit protection: 1h GitHub cache + optional PAT from AppSettings.
 // Architecture Notes:
-//     - Pattern: Service + Repository (listings from JSON feed)
-//     - Feed format: array of MarketplaceListing JSON objects
-//     - Local feed path: %AppData%/WpfHexEditor/marketplace-feed.json
-//     - Remote feed: configurable via FeedUrl property (null = local-only)
-//     - Download: HttpClient with progress, written to temp file
+//     Pattern: Service + Repository + Strategy (GitHub vs local feed).
+//     Thread-safe: all mutable state behind _lock.
 // ==========================================================
 
 using System.IO;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Models;
 
 namespace WpfHexEditor.PluginHost.Services;
 
 /// <summary>
-/// Local-first marketplace service. Reads a JSON feed of <see cref="MarketplaceListing"/>
-/// and downloads .whxplugin packages for installation.
+/// v2 marketplace service backed by GitHub Releases API with SHA-256 integrity verification.
+/// Falls back to a local JSON feed cache when GitHub is rate-limited or unavailable.
 /// </summary>
 public sealed class MarketplaceServiceImpl : IMarketplaceService, IDisposable
 {
-    private static readonly string LocalFeedPath = Path.Combine(
+    // ── Paths ─────────────────────────────────────────────────────────────────
+
+    private static string LocalFeedPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "WpfHexEditor", "marketplace-feed.json");
 
-    private static readonly string DownloadCacheDir = Path.Combine(
+    private static string DownloadCacheDir => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "WpfHexEditor", "PluginDownloadCache");
 
-    private readonly HttpClient _httpClient;
-    private readonly Action<string> _log;
+    private static string PluginsDir => Path.Combine(
+        AppContext.BaseDirectory, "Plugins");
 
-    // Optional remote feed URL (null = local-only)
-    public string? FeedUrl { get; set; }
+    // ── Infrastructure ────────────────────────────────────────────────────────
 
-    // ── Progress events ───────────────────────────────────────────────────────
-    public event EventHandler<DownloadProgressArgs>? DownloadProgressChanged;
+    private readonly HttpClient              _http;
+    private readonly GitHubReleasesClient    _ghClient;
+    private readonly Action<string>          _log;
+    private readonly Dictionary<string, MarketplaceListing> _installed  = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object                  _lock = new();
 
-    // ─────────────────────────────────────────────────────────────────────────
-    public MarketplaceServiceImpl(Action<string>? logger = null)
+    // ── Official registry: GitHub repos → listingId prefix ───────────────────
+
+    private static readonly (string Owner, string Repo)[] OfficialRepos =
+    [
+        ("abbaye", "WpfHexEditorControl")
+    ];
+
+    // ── Constructor ───────────────────────────────────────────────────────────
+
+    public MarketplaceServiceImpl(string? gitHubToken = null, Action<string>? logger = null)
     {
-        _log = logger ?? (_ => { });
-        _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "WpfHexEditor/1.0");
+        _log      = logger ?? (_ => { });
+        _http     = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        _ghClient = new GitHubReleasesClient(gitHubToken);
 
         Directory.CreateDirectory(DownloadCacheDir);
+        Directory.CreateDirectory(PluginsDir);
+        ScanInstalledPlugins();
     }
 
     // ── IMarketplaceService ───────────────────────────────────────────────────
 
-    /// <summary>
-    /// Loads the marketplace feed (local or remote) and returns listings
-    /// matching <paramref name="query"/> in name, description, tags, or publisher.
-    /// An empty query returns all listings.
-    /// </summary>
-    public async Task<IReadOnlyList<MarketplaceListing>> SearchAsync(
-        string query, CancellationToken ct = default)
-    {
-        var listings = await LoadFeedAsync(ct).ConfigureAwait(false);
-        if (string.IsNullOrWhiteSpace(query)) return listings;
+    public event EventHandler<InstallProgressEventArgs>? InstallProgressChanged;
 
-        var q = query.Trim().ToUpperInvariant();
-        return listings.Where(l =>
-            l.Name.ToUpperInvariant().Contains(q)
-            || l.Description.ToUpperInvariant().Contains(q)
-            || l.Publisher.ToUpperInvariant().Contains(q)
-            || l.Tags.Any(t => t.ToUpperInvariant().Contains(q))
-            || l.Category.ToUpperInvariant().Contains(q))
-            .ToList();
+    public async Task<IReadOnlyList<MarketplaceListing>> SearchAsync(
+        string query,
+        MarketplaceFilter? filter = null,
+        CancellationToken ct = default)
+    {
+        var all = await LoadAllListingsAsync(ct);
+        ApplyInstallState(all);
+
+        IEnumerable<MarketplaceListing> results = all;
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var q = query.Trim().ToUpperInvariant();
+            results = results.Where(l =>
+                l.Name.ToUpperInvariant().Contains(q)
+                || l.Description.ToUpperInvariant().Contains(q)
+                || l.Publisher.ToUpperInvariant().Contains(q)
+                || l.Tags.Any(t => t.ToUpperInvariant().Contains(q)));
+        }
+
+        if (filter is not null)
+        {
+            if (!string.IsNullOrEmpty(filter.Category))
+                results = results.Where(l => l.Category.Equals(filter.Category, StringComparison.OrdinalIgnoreCase));
+            if (filter.VerifiedOnly)
+                results = results.Where(l => l.Verified);
+            if (!string.IsNullOrEmpty(filter.MinVersion)
+                && System.Version.TryParse(filter.MinVersion, out var minV))
+                results = results.Where(l => System.Version.TryParse(l.Version, out var lv) && lv >= minV);
+        }
+
+        return results.ToList();
     }
 
-    /// <summary>
-    /// Downloads the .whxplugin package for <paramref name="listingId"/>.
-    /// Returns the local file path of the cached package.
-    /// </summary>
-    public async Task<string> DownloadAsync(string listingId, CancellationToken ct = default)
+    public async Task<MarketplaceListing?> GetByIdAsync(string listingId, CancellationToken ct = default)
     {
-        var listings = await LoadFeedAsync(ct).ConfigureAwait(false);
-        var listing = listings.FirstOrDefault(l => l.ListingId == listingId)
-            ?? throw new KeyNotFoundException($"Marketplace listing '{listingId}' not found.");
+        var all = await LoadAllListingsAsync(ct);
+        var found = all.FirstOrDefault(l => l.ListingId.Equals(listingId, StringComparison.OrdinalIgnoreCase));
+        if (found is not null) ApplyInstallState([found]);
+        return found;
+    }
+
+    public async Task<InstallResult> InstallAsync(
+        string listingId,
+        IProgress<InstallProgress>? progress = null,
+        CancellationToken ct = default)
+    {
+        var listing = await GetByIdAsync(listingId, ct);
+        if (listing is null)
+            return new InstallResult(false, $"Listing '{listingId}' not found.", null);
 
         if (string.IsNullOrEmpty(listing.DownloadUrl))
-            throw new InvalidOperationException($"Listing '{listingId}' has no download URL.");
+            return new InstallResult(false, $"Listing '{listingId}' has no download URL.", null);
 
-        var fileName = $"{listingId}_{listing.Version}.whxplugin";
-        var targetPath = Path.Combine(DownloadCacheDir, fileName);
-
-        // Reuse cached download if already present
-        if (File.Exists(targetPath))
-        {
-            _log($"[Marketplace] Using cached package: {targetPath}");
-            return targetPath;
-        }
-
-        _log($"[Marketplace] Downloading '{listing.Name}' from {listing.DownloadUrl}");
-
-        using var response = await _httpClient
-            .GetAsync(listing.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct)
-            .ConfigureAwait(false);
-
-        response.EnsureSuccessStatusCode();
-
-        var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-        var tmpPath = targetPath + ".tmp";
-
-        await using (var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
-        await using (var file = File.Create(tmpPath))
-        {
-            var buffer = new byte[81920];
-            long received = 0;
-            int bytesRead;
-
-            while ((bytesRead = await stream.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
-            {
-                await file.WriteAsync(buffer.AsMemory(0, bytesRead), ct).ConfigureAwait(false);
-                received += bytesRead;
-
-                if (totalBytes > 0)
-                    DownloadProgressChanged?.Invoke(this, new DownloadProgressArgs(
-                        listingId, listing.Name, received, totalBytes));
-            }
-        }
-
-        File.Move(tmpPath, targetPath, overwrite: true);
-        _log($"[Marketplace] Downloaded to: {targetPath}");
-        return targetPath;
-    }
-
-    // ── Feed loading ──────────────────────────────────────────────────────────
-
-    private async Task<IReadOnlyList<MarketplaceListing>> LoadFeedAsync(CancellationToken ct)
-    {
-        // Try remote feed first if configured
-        if (!string.IsNullOrEmpty(FeedUrl))
-        {
-            try
-            {
-                var remote = await _httpClient
-                    .GetFromJsonAsync<List<MarketplaceListing>>(FeedUrl, ct)
-                    .ConfigureAwait(false);
-
-                if (remote is { Count: > 0 })
-                {
-                    // Cache locally for offline use
-                    await SaveLocalFeedAsync(remote, ct).ConfigureAwait(false);
-                    return remote;
-                }
-            }
-            catch (Exception ex)
-            {
-                _log($"[Marketplace] Remote feed unavailable ({ex.Message}), falling back to local.");
-            }
-        }
-
-        // Local feed
-        if (!File.Exists(LocalFeedPath))
-        {
-            _log("[Marketplace] No local feed found. Returning empty listing.");
-            return [];
-        }
+        var fileName = $"{listingId}.whxplugin";
+        var tmpPath  = Path.Combine(DownloadCacheDir, fileName + ".tmp");
+        var cachePath= Path.Combine(DownloadCacheDir, fileName);
 
         try
         {
-            var json = await File.ReadAllTextAsync(LocalFeedPath, ct).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<List<MarketplaceListing>>(json) ?? [];
+            // Download with progress
+            ReportProgress(progress, listingId, 0, "Downloading…");
+            await DownloadWithProgressAsync(listing.DownloadUrl, tmpPath, listingId, listing.Name, progress, ct);
+            File.Move(tmpPath, cachePath, overwrite: true);
+
+            // SHA256 verify
+            ReportProgress(progress, listingId, 85, "Verifying integrity…");
+            if (!string.IsNullOrEmpty(listing.Sha256))
+            {
+                var ok = await PluginIntegrityService.VerifyAsync(cachePath, listing.Sha256, ct);
+                if (!ok)
+                {
+                    File.Delete(cachePath);
+                    return new InstallResult(false,
+                        $"SHA-256 mismatch for '{listing.Name}'. Package rejected.", null);
+                }
+            }
+
+            // Extract to PluginsDir/<ListingId>/
+            ReportProgress(progress, listingId, 90, "Installing…");
+            var destDir = Path.Combine(PluginsDir, listingId);
+            Directory.CreateDirectory(destDir);
+            System.IO.Compression.ZipFile.ExtractToDirectory(cachePath, destDir, overwriteFiles: true);
+
+            lock (_lock)
+            {
+                listing.InstalledVersion = listing.Version;
+                listing.IsVerified = true;
+                _installed[listingId] = listing;
+            }
+
+            ReportProgress(progress, listingId, 100, "Installed.");
+            _log($"[Marketplace] Installed '{listing.Name}' v{listing.Version} → {destDir}");
+            return new InstallResult(true, null, destDir);
         }
         catch (Exception ex)
         {
-            _log($"[Marketplace] Failed to read local feed: {ex.Message}");
-            return [];
+            if (File.Exists(tmpPath)) try { File.Delete(tmpPath); } catch { }
+            _log($"[Marketplace] Install failed for '{listingId}': {ex.Message}");
+            return new InstallResult(false, ex.Message, null);
         }
+    }
+
+    public Task<bool> UninstallAsync(string listingId, CancellationToken ct = default)
+    {
+        var destDir = Path.Combine(PluginsDir, listingId);
+        try
+        {
+            if (Directory.Exists(destDir)) Directory.Delete(destDir, recursive: true);
+            lock (_lock) _installed.Remove(listingId);
+            _log($"[Marketplace] Uninstalled '{listingId}'.");
+            return Task.FromResult(true);
+        }
+        catch (Exception ex)
+        {
+            _log($"[Marketplace] Uninstall failed for '{listingId}': {ex.Message}");
+            return Task.FromResult(false);
+        }
+    }
+
+    public Task<IReadOnlyList<MarketplaceListing>> GetInstalledAsync(CancellationToken ct = default)
+    {
+        lock (_lock) { return Task.FromResult<IReadOnlyList<MarketplaceListing>>(_installed.Values.ToList()); }
+    }
+
+    public async Task<IReadOnlyList<MarketplaceListing>> GetUpdatesAsync(CancellationToken ct = default)
+    {
+        var all = await LoadAllListingsAsync(ct);
+        ApplyInstallState(all);
+        return all.Where(l => l.HasUpdate).ToList();
+    }
+
+    public bool IsInstalled(string listingId)
+    {
+        lock (_lock) { return _installed.ContainsKey(listingId); }
+    }
+
+    public async Task<bool> VerifyIntegrityAsync(string listingId, CancellationToken ct = default)
+    {
+        var listing = await GetByIdAsync(listingId, ct);
+        if (listing is null || string.IsNullOrEmpty(listing.Sha256)) return false;
+
+        var dllPath = Path.Combine(PluginsDir, listingId, $"{listingId}.dll");
+        if (!File.Exists(dllPath)) return false;
+
+        return await PluginIntegrityService.VerifyAsync(dllPath, listing.Sha256, ct);
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    private async Task<IReadOnlyList<MarketplaceListing>> LoadAllListingsAsync(CancellationToken ct)
+    {
+        var result = new List<MarketplaceListing>();
+
+        // Fetch from GitHub official repos
+        foreach (var (owner, repo) in OfficialRepos)
+        {
+            try
+            {
+                var ghListings = await _ghClient.GetReleasesAsync(owner, repo, ct);
+                result.AddRange(ghListings);
+            }
+            catch { /* fallthrough to local cache */ }
+        }
+
+        if (result.Count > 0)
+        {
+            // Persist as local cache for offline use
+            _ = SaveLocalFeedAsync(result, ct);
+            return result;
+        }
+
+        // Fallback: local JSON cache
+        return await LoadLocalFeedAsync(ct);
+    }
+
+    private async Task<IReadOnlyList<MarketplaceListing>> LoadLocalFeedAsync(CancellationToken ct)
+    {
+        if (!File.Exists(LocalFeedPath)) return [];
+        try
+        {
+            var json = await File.ReadAllTextAsync(LocalFeedPath, ct);
+            return System.Text.Json.JsonSerializer.Deserialize<List<MarketplaceListing>>(json) ?? [];
+        }
+        catch { return []; }
     }
 
     private async Task SaveLocalFeedAsync(IReadOnlyList<MarketplaceListing> listings, CancellationToken ct)
@@ -190,29 +260,91 @@ public sealed class MarketplaceServiceImpl : IMarketplaceService, IDisposable
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(LocalFeedPath)!);
-            var json = JsonSerializer.Serialize(listings, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(LocalFeedPath, json, ct).ConfigureAwait(false);
+            var json = System.Text.Json.JsonSerializer.Serialize(
+                listings, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(LocalFeedPath, json, ct);
         }
-        catch { /* best-effort cache */ }
+        catch { /* best-effort */ }
     }
 
-    public void Dispose() => _httpClient.Dispose();
-}
-
-/// <summary>Progress args for marketplace package downloads.</summary>
-public sealed class DownloadProgressArgs : EventArgs
-{
-    public string ListingId { get; }
-    public string Name { get; }
-    public long BytesReceived { get; }
-    public long TotalBytes { get; }
-    public double Percent => TotalBytes > 0 ? BytesReceived * 100.0 / TotalBytes : 0;
-
-    public DownloadProgressArgs(string listingId, string name, long received, long total)
+    private void ApplyInstallState(IReadOnlyList<MarketplaceListing> listings)
     {
-        ListingId     = listingId;
-        Name          = name;
-        BytesReceived = received;
-        TotalBytes    = total;
+        lock (_lock)
+        {
+            foreach (var l in listings)
+            {
+                if (_installed.TryGetValue(l.ListingId, out var inst))
+                {
+                    l.InstalledVersion = inst.InstalledVersion;
+                    l.IsVerified       = inst.IsVerified;
+                }
+            }
+        }
+    }
+
+    private void ScanInstalledPlugins()
+    {
+        if (!Directory.Exists(PluginsDir)) return;
+        foreach (var dir in Directory.EnumerateDirectories(PluginsDir))
+        {
+            var name = Path.GetFileName(dir);
+            if (string.IsNullOrEmpty(name)) continue;
+            lock (_lock)
+            {
+                _installed[name] = new MarketplaceListing
+                {
+                    ListingId        = name,
+                    Name             = name,
+                    InstalledVersion = "0.0.0"  // version read at runtime
+                };
+            }
+        }
+    }
+
+    private async Task DownloadWithProgressAsync(
+        string url,
+        string destPath,
+        string listingId,
+        string listingName,
+        IProgress<InstallProgress>? progress,
+        CancellationToken ct)
+    {
+        using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+        response.EnsureSuccessStatusCode();
+
+        var total  = response.Content.Headers.ContentLength ?? -1L;
+        var buffer = new byte[81920];
+        long received = 0;
+
+        await using var src  = await response.Content.ReadAsStreamAsync(ct);
+        await using var dest = File.Create(destPath);
+
+        int read;
+        while ((read = await src.ReadAsync(buffer, ct)) > 0)
+        {
+            await dest.WriteAsync(buffer.AsMemory(0, read), ct);
+            received += read;
+
+            if (total > 0)
+            {
+                var pct = (int)(received * 80L / total); // 0-80% for download phase
+                ReportProgress(progress, listingId, pct, $"Downloading… {pct}%");
+            }
+        }
+    }
+
+    private void ReportProgress(
+        IProgress<InstallProgress>? progress,
+        string listingId, int pct, string msg)
+    {
+        var p = new InstallProgress(listingId, pct, msg);
+        progress?.Report(p);
+        InstallProgressChanged?.Invoke(this, new InstallProgressEventArgs(p));
+    }
+
+    public void Dispose()
+    {
+        _http.Dispose();
+        _ghClient.Dispose();
     }
 }

@@ -6,122 +6,92 @@
 <!--
     Project: WpfHexEditor.PluginHost
     File: UI/MarketplacePanel.xaml
-    Created: 2026-03-15
     Description:
-        Plugin Marketplace dockable panel — VS-like layout.
-        Left: search bar + category filter + listing grid.
-        Right: detail pane (name, publisher, description, permissions, install button).
-        Toolbar: Refresh feed, toggle Verified-only, progress bar during download.
-    Theme: DynamicResource only — uses PM_* keys from PanelCommon.xaml + Colors.xaml.
+        Plugin Marketplace dockable panel — v2, 3-tab layout.
+        Tab 0 Browse:    search + category filter + listing grid + detail pane.
+        Tab 1 Installed: list of installed plugins with Uninstall action.
+        Tab 2 Updates:   plugins with available updates + Update All.
+        Common: progress bar + status bar at bottom.
+    Theme: DynamicResource only — DockXxx + MP_* keys.
     ContentId: "plugin-marketplace"
-    ResourceDictionaries: PanelCommon.xaml, Colors.xaml (via theme system)
 -->
 <UserControl x:Class="WpfHexEditor.PluginHost.UI.MarketplacePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:local="clr-namespace:WpfHexEditor.PluginHost.UI"
              mc:Ignorable="d"
              d:DesignWidth="900" d:DesignHeight="600"
-             Background="{DynamicResource DockPanelBackgroundBrush}">
+             Background="{DynamicResource DockPanelBackgroundBrush}"
+             AllowDrop="True">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         Root layout: Toolbar / Content
-         ═══════════════════════════════════════════════════════════════════════ -->
     <DockPanel>
 
         <!-- ── Toolbar ─────────────────────────────────────────────────────── -->
-        <ToolBar x:Name="MarketplaceToolbar"
-                 DockPanel.Dock="Top"
+        <ToolBar DockPanel.Dock="Top"
                  Background="{DynamicResource DockToolbarBackgroundBrush}"
                  BorderBrush="{DynamicResource DockBorderBrush}"
                  BorderThickness="0,0,0,1">
-
-            <!-- Always-visible right section (placeholder) -->
             <ToolBar.Resources>
                 <Style TargetType="Separator">
-                    <Setter Property="Background" Value="{DynamicResource DockBorderBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource DockBorderBrush}"/>
                 </Style>
             </ToolBar.Resources>
 
-            <DockPanel LastChildFill="True" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ToolBar}}">
-
-                <!-- Right-pinned: overflow button placeholder -->
-                <StackPanel x:Name="ToolbarRightPanel" DockPanel.Dock="Right" Orientation="Horizontal"/>
-
-                <!-- Left toolbar items -->
+            <Button ToolTip="Refresh"
+                    Style="{DynamicResource ToolbarButtonStyle}"
+                    Command="{Binding RefreshCommand}"
+                    Padding="6,3">
                 <StackPanel Orientation="Horizontal">
-
-                    <!-- Refresh feed -->
-                    <Button x:Name="BtnRefreshFeed"
-                            ToolTip="Refresh marketplace feed"
-                            Style="{DynamicResource ToolbarButtonStyle}"
-                            Command="{Binding RefreshFeedCommand}"
-                            Padding="6,3">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text=" Refresh" Margin="3,0,0,0"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-
-                    <Separator/>
-
-                    <!-- Verified-only toggle -->
-                    <ToggleButton x:Name="BtnVerifiedOnly"
-                                  ToolTip="Show verified plugins only"
-                                  Style="{DynamicResource ToolbarToggleButtonStyle}"
-                                  IsChecked="{Binding ShowVerifiedOnly}"
-                                  Padding="6,3">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text=" Verified" Margin="3,0,0,0"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </ToggleButton>
-
-                    <Separator/>
-
-                    <!-- Install from file -->
-                    <Button ToolTip="Install plugin from local .whxplugin file"
-                            Style="{DynamicResource ToolbarButtonStyle}"
-                            Command="{Binding InstallFromFileCommand}"
-                            Padding="6,3">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE8F4;" FontFamily="Segoe MDL2 Assets" FontSize="13"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       VerticalAlignment="Center"/>
-                            <TextBlock Text=" Install File..." Margin="3,0,0,0"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-
+                    <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text=" Refresh" Margin="3,0,0,0"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}" VerticalAlignment="Center"/>
                 </StackPanel>
-            </DockPanel>
+            </Button>
+
+            <Separator/>
+
+            <ToggleButton ToolTip="Show verified only"
+                          Style="{DynamicResource ToolbarToggleButtonStyle}"
+                          IsChecked="{Binding ShowVerifiedOnly}"
+                          Padding="6,3">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text=" Verified" Margin="3,0,0,0"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </ToggleButton>
+
+            <Separator/>
+
+            <Button ToolTip="Install plugin from local .whxplugin file"
+                    Style="{DynamicResource ToolbarButtonStyle}"
+                    Command="{Binding InstallFromFileCommand}"
+                    Padding="6,3">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE8F4;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text=" Install File…" Margin="3,0,0,0"
+                               Foreground="{DynamicResource DockMenuForegroundBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
         </ToolBar>
 
-        <!-- ── Download progress bar (visible only during download) ────────── -->
-        <ProgressBar x:Name="DownloadProgressBar"
-                     DockPanel.Dock="Bottom"
+        <!-- ── Install progress bar ─────────────────────────────────────────── -->
+        <ProgressBar DockPanel.Dock="Bottom"
                      Height="3"
                      Minimum="0" Maximum="100"
-                     Value="{Binding DownloadPercent, Mode=OneWay}"
+                     Value="{Binding InstallPercent, Mode=OneWay}"
                      Foreground="{DynamicResource DockAccentBrush}"
                      Background="Transparent"
                      BorderThickness="0"
-                     Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                     Visibility="{Binding IsInstalling, Converter={StaticResource BoolToVis}}"/>
 
         <!-- ── Status bar ────────────────────────────────────────────────────── -->
         <Border DockPanel.Dock="Bottom"
@@ -131,177 +101,392 @@
                 Height="22" Padding="8,0">
             <TextBlock Text="{Binding StatusText}"
                        Foreground="{DynamicResource DockMenuForegroundBrush}"
-                       FontSize="11"
-                       VerticalAlignment="Center"/>
+                       FontSize="11" VerticalAlignment="Center"/>
         </Border>
 
-        <!-- ── Main content: listings / detail split ────────────────────────── -->
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="320" MinWidth="180"/>
-                <ColumnDefinition Width="4"/>   <!-- splitter -->
-                <ColumnDefinition Width="*" MinWidth="260"/>
-            </Grid.ColumnDefinitions>
+        <!-- ── Tab control ───────────────────────────────────────────────────── -->
+        <TabControl SelectedIndex="{Binding ActiveTab}"
+                    Background="{DynamicResource DockPanelBackgroundBrush}"
+                    BorderThickness="0,1,0,0"
+                    BorderBrush="{DynamicResource DockBorderBrush}">
 
-            <!-- ── Left: Search + listing grid ─────────────────────────────── -->
-            <DockPanel Grid.Column="0" Background="{DynamicResource DockPanelBackgroundBrush}">
+            <!-- ════════════════════════════════════════════════════════════════
+                 Tab 0 — Browse
+                 ════════════════════════════════════════════════════════════════ -->
+            <TabItem Header="Browse">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="320" MinWidth="180"/>
+                        <ColumnDefinition Width="4"/>
+                        <ColumnDefinition Width="*" MinWidth="240"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Search bar -->
-                <Grid DockPanel.Dock="Top" Margin="6,6,6,4">
-                    <TextBox x:Name="SearchBox"
-                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{DynamicResource SearchTextBoxStyle}"
-                             Height="26">
-                        <TextBox.Resources>
-                            <Style TargetType="TextBox" BasedOn="{StaticResource SearchTextBoxStyle}">
-                                <Setter Property="Background" Value="{DynamicResource DockMenuBackgroundBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource DockBorderBrush}"/>
-                                <Setter Property="CaretBrush" Value="{DynamicResource DockMenuForegroundBrush}"/>
-                            </Style>
-                        </TextBox.Resources>
-                    </TextBox>
-                    <TextBlock Text="&#xE721;  Search marketplace..."
-                               FontFamily="Segoe MDL2 Assets"
-                               Foreground="{DynamicResource DockMenuForegroundBrush}"
-                               Opacity="0.45"
-                               Margin="8,0,0,0"
-                               VerticalAlignment="Center"
-                               IsHitTestVisible="False">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                    <!-- Left: search + category + list -->
+                    <DockPanel Grid.Column="0" Background="{DynamicResource DockPanelBackgroundBrush}">
+
+                        <!-- Search -->
+                        <Grid DockPanel.Dock="Top" Margin="6,6,6,4">
+                            <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="26"
+                                     Background="{DynamicResource DockMenuBackgroundBrush}"
+                                     Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                     BorderBrush="{DynamicResource DockBorderBrush}"
+                                     CaretBrush="{DynamicResource DockMenuForegroundBrush}"
+                                     Padding="4,0"/>
+                            <TextBlock Text="&#xE721;  Search marketplace…"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                       Opacity="0.45" Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <!-- Category filter -->
+                        <ComboBox DockPanel.Dock="Top"
+                                  Margin="6,0,6,4"
+                                  ItemsSource="{Binding Categories}"
+                                  SelectedItem="{Binding SelectedCategory}"
+                                  Background="{DynamicResource DockMenuBackgroundBrush}"
+                                  Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                  BorderBrush="{DynamicResource DockBorderBrush}"
+                                  Height="24"/>
+
+                        <!-- Listing -->
+                        <ListBox ItemsSource="{Binding FilteredListings}"
+                                 SelectedItem="{Binding SelectedBrowseListing}"
+                                 Background="{DynamicResource DockPanelBackgroundBrush}"
+                                 BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="6,4"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource DockHoverBrush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource DockAccentBrush}"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="&#xE74C;"
+                                                   FontFamily="Segoe MDL2 Assets" FontSize="18"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        <StackPanel Grid.Column="1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Publisher}" FontSize="10" Opacity="0.65"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="&#xE73E;"
+                                                   FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                   Foreground="{DynamicResource DockAccentBrush}"
+                                                   VerticalAlignment="Center" Margin="4,0,0,0"
+                                                   ToolTip="Verified publisher">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Verified}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+
+                    <!-- Splitter -->
+                    <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"
+                                  Background="{DynamicResource DockBorderBrush}" ResizeBehavior="PreviousAndNext"/>
+
+                    <!-- Right: Detail pane -->
+                    <ScrollViewer Grid.Column="2"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Background="{DynamicResource DockPanelBackgroundBrush}">
+                        <StackPanel Margin="16,14,16,16"
+                                    DataContext="{Binding SelectedBrowseListing}">
+
+                            <!-- Empty state -->
+                            <TextBlock Text="Select a plugin to see details."
+                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                       Opacity="0.5" HorizontalAlignment="Center" Margin="0,40,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!-- Detail content -->
+                            <StackPanel>
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
                                         <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding SearchQuery}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </Grid>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
 
-                <!-- Category filter -->
-                <ComboBox DockPanel.Dock="Top"
-                          Margin="6,0,6,4"
-                          ItemsSource="{Binding Categories}"
-                          SelectedItem="{Binding SelectedCategory}"
-                          Background="{DynamicResource DockMenuBackgroundBrush}"
-                          Foreground="{DynamicResource DockMenuForegroundBrush}"
-                          BorderBrush="{DynamicResource DockBorderBrush}"
-                          Height="24"/>
-
-                <!-- Listings -->
-                <ListBox x:Name="ListingsBox"
-                         ItemsSource="{Binding FilteredListings}"
-                         SelectedItem="{Binding SelectedListing}"
-                         Background="{DynamicResource DockPanelBackgroundBrush}"
-                         BorderThickness="0"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="6,4"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource DockHoverBrush}"/>
-                                </Trigger>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource DockAccentBrush}"/>
-                                    <Setter Property="Foreground" Value="White"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="32"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Icon -->
-                                <TextBlock Grid.Column="0"
-                                           Text="&#xE74C;"
-                                           FontFamily="Segoe MDL2 Assets"
-                                           FontSize="20"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"/>
-
-                                <!-- Name + publisher -->
-                                <StackPanel Grid.Column="1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                <!-- Name + version -->
+                                <DockPanel Margin="0,0,0,6">
+                                    <TextBlock DockPanel.Dock="Right"
+                                               Text="{Binding Version, StringFormat=v\{0\}}"
+                                               Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                               Opacity="0.6" FontSize="11" VerticalAlignment="Bottom" Margin="0,0,0,3"/>
                                     <TextBlock Text="{Binding Name}"
-                                               FontWeight="SemiBold"
-                                               FontSize="12"
-                                               TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding Publisher}"
-                                               FontSize="10"
-                                               Opacity="0.65"
-                                               TextTrimming="CharacterEllipsis"/>
+                                               Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                               FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                </DockPanel>
+
+                                <!-- Meta row -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding Publisher}" Foreground="{DynamicResource DockAccentBrush}" FontSize="12"/>
+                                    <TextBlock Text=" · " Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.5"/>
+                                    <TextBlock Text="{Binding Category}" Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.75" FontSize="12"/>
+                                    <TextBlock Text=" · " Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.5"/>
+                                    <TextBlock Text="{Binding License}" Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.75" FontSize="12"/>
                                 </StackPanel>
 
-                                <!-- Verified badge -->
-                                <TextBlock Grid.Column="2"
-                                           Text="&#xE73E;"
-                                           FontFamily="Segoe MDL2 Assets"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource DockAccentBrush}"
-                                           VerticalAlignment="Center"
-                                           Margin="4,0,0,0"
-                                           ToolTip="Verified publisher">
+                                <!-- Download count -->
+                                <TextBlock Margin="0,0,0,8" FontSize="11" Opacity="0.6"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}">
+                                    <Run Text="&#xE896;" FontFamily="Segoe MDL2 Assets"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding DownloadCount, StringFormat={}{0:N0} downloads}"/>
+                                </TextBlock>
+
+                                <!-- Description -->
+                                <TextBlock Text="{Binding Description}"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           Opacity="0.9" FontSize="12"
+                                           TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                                <!-- Tags -->
+                                <ItemsControl ItemsSource="{Binding Tags}" Margin="0,0,0,14">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource DockMenuBackgroundBrush}"
+                                                    BorderBrush="{DynamicResource DockBorderBrush}"
+                                                    BorderThickness="1" CornerRadius="3"
+                                                    Margin="0,0,4,4" Padding="6,2">
+                                                <TextBlock Text="{Binding}" FontSize="11"
+                                                           Foreground="{DynamicResource DockMenuForegroundBrush}"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Release notes -->
+                                <TextBlock Text="Release Notes" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}" Margin="0,0,0,4">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Setter Property="Visibility" Value="Visible"/>
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Verified}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                <DataTrigger Binding="{Binding ReleaseNotes}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                            </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                                <TextBlock Text="{Binding ReleaseNotes}"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           Opacity="0.75" FontSize="11"
+                                           TextWrapping="Wrap" Margin="0,0,0,14">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ReleaseNotes}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
 
-            </DockPanel>
+                                <!-- Install button -->
+                                <Button Content="Install"
+                                        Style="{DynamicResource PrimaryActionButtonStyle}"
+                                        Command="{Binding DataContext.InstallSelectedCommand,
+                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        IsEnabled="{Binding DataContext.CanInstallSelected,
+                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Width="120" Height="30"
+                                        HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
 
-            <!-- ── Splitter ──────────────────────────────────────────────────── -->
-            <GridSplitter Grid.Column="1"
-                          Width="4"
-                          HorizontalAlignment="Stretch"
-                          Background="{DynamicResource DockBorderBrush}"
-                          BorderThickness="0"
-                          ResizeBehavior="PreviousAndNext"/>
+            <!-- ════════════════════════════════════════════════════════════════
+                 Tab 1 — Installed
+                 ════════════════════════════════════════════════════════════════ -->
+            <TabItem Header="Installed">
+                <DockPanel Background="{DynamicResource DockPanelBackgroundBrush}">
 
-            <!-- ── Right: Detail pane ──────────────────────────────────────── -->
-            <ScrollViewer Grid.Column="2"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Background="{DynamicResource DockPanelBackgroundBrush}">
+                    <!-- Toolbar row -->
+                    <Border DockPanel.Dock="Top"
+                            Background="{DynamicResource DockToolbarBackgroundBrush}"
+                            BorderBrush="{DynamicResource DockBorderBrush}"
+                            BorderThickness="0,0,0,1" Height="30" Padding="6,0">
+                        <TextBlock Text="{Binding InstalledListings.Count, StringFormat={}{0} installed}"
+                                   Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                   FontSize="11" VerticalAlignment="Center"/>
+                    </Border>
 
-                <StackPanel Margin="16,14,16,16"
-                            DataContext="{Binding SelectedListing}">
+                    <ListBox ItemsSource="{Binding InstalledListings}"
+                             SelectedItem="{Binding SelectedInstalledListing}"
+                             Background="{DynamicResource DockPanelBackgroundBrush}"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="6,5"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource DockHoverBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource DockAccentBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock FontSize="10" Opacity="0.65">
+                                            <Run Text="{Binding Publisher}"/>
+                                            <Run Text=" v"/>
+                                            <Run Text="{Binding InstalledVersion}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <!-- Verified badge -->
+                                    <TextBlock Grid.Column="1" Text="&#xE73E;"
+                                               FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                               Foreground="{DynamicResource DockAccentBrush}"
+                                               VerticalAlignment="Center" Margin="6,0,4,0"
+                                               ToolTip="Integrity verified">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsVerified}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <!-- Uninstall button -->
+                                    <Button Grid.Column="2"
+                                            Content="Uninstall"
+                                            Style="{DynamicResource ToolbarButtonStyle}"
+                                            Command="{Binding DataContext.UninstallCommand,
+                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Padding="8,3" FontSize="11"
+                                            VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ════════════════════════════════════════════════════════════════
+                 Tab 2 — Updates
+                 ════════════════════════════════════════════════════════════════ -->
+            <TabItem Header="Updates">
+                <DockPanel Background="{DynamicResource DockPanelBackgroundBrush}">
+
+                    <!-- Toolbar: Update All -->
+                    <Border DockPanel.Dock="Top"
+                            Background="{DynamicResource DockToolbarBackgroundBrush}"
+                            BorderBrush="{DynamicResource DockBorderBrush}"
+                            BorderThickness="0,0,0,1" Height="32" Padding="6,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="Update All"
+                                    Style="{DynamicResource ToolbarButtonStyle}"
+                                    Command="{Binding UpdateAllCommand}"
+                                    Padding="10,3"/>
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" FontSize="11"
+                                       Opacity="0.65" Foreground="{DynamicResource DockMenuForegroundBrush}">
+                                <Run Text="{Binding UpdateListings.Count, Mode=OneWay}"/>
+                                <Run Text=" update(s) available"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Empty state -->
-                    <TextBlock Text="Select a plugin from the list to see details."
+                    <TextBlock Text="All plugins are up to date."
                                Foreground="{DynamicResource DockMenuForegroundBrush}"
-                               Opacity="0.5"
-                               HorizontalAlignment="Center"
-                               Margin="0,40,0,0">
+                               Opacity="0.5" HorizontalAlignment="Center"
+                               VerticalAlignment="Center" Margin="0,40,0,0">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                    <DataTrigger Binding="{Binding UpdateListings.Count}" Value="0">
                                         <Setter Property="Visibility" Value="Visible"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -309,97 +494,56 @@
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <!-- Detail content (visible when listing selected) -->
-                    <StackPanel>
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Visible"/>
+                    <ListBox ItemsSource="{Binding UpdateListings}"
+                             Background="{DynamicResource DockPanelBackgroundBrush}"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="6,5"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Foreground" Value="{DynamicResource DockMenuForegroundBrush}"/>
+                                <Setter Property="BorderThickness" Value="0"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding}" Value="{x:Null}">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource DockHoverBrush}"/>
+                                    </Trigger>
                                 </Style.Triggers>
                             </Style>
-                        </StackPanel.Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                        <!-- Plugin name + version -->
-                        <DockPanel Margin="0,0,0,6">
-                            <TextBlock DockPanel.Dock="Right"
-                                       Text="{Binding Version, StringFormat=v{0}}"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       Opacity="0.6"
-                                       FontSize="11"
-                                       VerticalAlignment="Bottom"
-                                       Margin="0,0,0,3"/>
-                            <TextBlock Text="{Binding Name}"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       FontSize="18"
-                                       FontWeight="SemiBold"
-                                       TextWrapping="Wrap"/>
-                        </DockPanel>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock FontSize="10" Opacity="0.65">
+                                            <Run Text="{Binding InstalledVersion}"/>
+                                            <Run Text=" → "/>
+                                            <Run Text="{Binding Version}"/>
+                                        </TextBlock>
+                                    </StackPanel>
 
-                        <!-- Publisher + category + license -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <TextBlock Text="{Binding Publisher}"
-                                       Foreground="{DynamicResource DockAccentBrush}"
-                                       FontSize="12"/>
-                            <TextBlock Text=" · " Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.5"/>
-                            <TextBlock Text="{Binding Category}"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       Opacity="0.75" FontSize="12"/>
-                            <TextBlock Text=" · " Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.5"/>
-                            <TextBlock Text="{Binding License}"
-                                       Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                       Opacity="0.75" FontSize="12"/>
-                        </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="Update"
+                                            Style="{DynamicResource PrimaryActionButtonStyle}"
+                                            Command="{Binding DataContext.UpdateSelectedCommand,
+                                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Padding="10,3" FontSize="11"
+                                            VerticalAlignment="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
 
-                        <!-- Description -->
-                        <TextBlock Text="{Binding Description}"
-                                   Foreground="{DynamicResource DockMenuForegroundBrush}"
-                                   Opacity="0.9"
-                                   FontSize="12"
-                                   TextWrapping="Wrap"
-                                   Margin="0,0,0,14"/>
-
-                        <!-- Tags -->
-                        <ItemsControl ItemsSource="{Binding Tags}" Margin="0,0,0,14">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="{DynamicResource DockMenuBackgroundBrush}"
-                                            BorderBrush="{DynamicResource DockBorderBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="3"
-                                            Margin="0,0,4,4"
-                                            Padding="6,2">
-                                        <TextBlock Text="{Binding}"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource DockMenuForegroundBrush}"/>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <!-- Install button -->
-                        <Button Content="Install"
-                                Style="{DynamicResource PrimaryActionButtonStyle}"
-                                Command="{Binding DataContext.InstallSelectedCommand,
-                                    RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                IsEnabled="{Binding DataContext.CanInstallSelected,
-                                    RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                Width="120"
-                                Height="30"
-                                HorizontalAlignment="Left"
-                                Margin="0,6,0,0"/>
-
-                    </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-
-        </Grid>
+        </TabControl>
     </DockPanel>
 </UserControl>

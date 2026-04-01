@@ -71,6 +71,8 @@ public partial class MainWindow
             () => OnOpenFile(this, null!));
         Reg(CommandIds.File.OpenSolution,  "Open Solution/Project…", "File",    "Ctrl+Shift+O",   "\uE8B5",
             () => OnOpenSolutionOrProject(this, null!));
+        Reg(CommandIds.File.OpenFolder,   "Open Folder…",           "File",    "Ctrl+Shift+K",   "\uED41",
+            () => OnOpenFolder(this, null!));
         Reg(CommandIds.File.Close,         "Close Tab",              "File",    "Ctrl+W",         "\uE711",
             () => OnCloseActiveDocument(this, null!));
         Reg(CommandIds.File.CloseAll,      "Close All Documents",    "File",    null,             null,
@@ -194,6 +196,10 @@ public partial class MainWindow
             () => _viewMenuOrganizer?.SetMode(WpfHexEditor.Core.Options.ViewMenuOrganizationMode.Categorized));
         Reg(CommandIds.View.ViewMenuModeByDockSide, "View Menu: By Dock Side",    "View / Organize", null, "\uE700",
             () => _viewMenuOrganizer?.SetMode(WpfHexEditor.Core.Options.ViewMenuOrganizationMode.ByDockSide));
+        RegP(CommandIds.View.PinViewItem,   "Pin Panel to View Menu",   "View / Organize", null, "\uE718",
+            p => _viewMenuOrganizer?.PinItem(p?.ToString() ?? string.Empty));
+        RegP(CommandIds.View.UnpinViewItem, "Unpin Panel from View Menu","View / Organize", null, "\uE77A",
+            p => _viewMenuOrganizer?.UnpinItem(p?.ToString() ?? string.Empty));
 
         // ── Project ─────────────────────────────────────────────────────────
         Reg(CommandIds.Project.AddNewItem,    "Add New Item…",       "Project", "Ctrl+Shift+A",   "\uE710",
@@ -274,10 +280,14 @@ public partial class MainWindow
             () => ExecuteGoToDefinitionOnActiveEditor());
         Reg(CommandIds.Editor.GoToImplementation, "Go to Implementation",  "Editor", "Ctrl+F12",   "\uE8AD",
             () => ExecuteGoToImplementationOnActiveEditor());
-        Reg(CommandIds.Editor.ShowCallHierarchy,  "Show Call Hierarchy",   "Editor", "Shift+Alt+H","\uE81E",
+        Reg(CommandIds.Editor.ShowCallHierarchy,  "Show Call Hierarchy",   "Editor", "Shift+Alt+H",  "\uE81E",
             () => ExecuteCallHierarchyOnActiveEditor());
-        Reg(CommandIds.Editor.ShowTypeHierarchy,  "Show Type Hierarchy",   "Editor", "Ctrl+Alt+F12","\uE81E",
+        Reg(CommandIds.Editor.ShowTypeHierarchy,  "Show Type Hierarchy",   "Editor", "Ctrl+Alt+F12", "\uE81E",
             () => ExecuteTypeHierarchyOnActiveEditor());
+        Reg(CommandIds.Editor.FormatDocument,     "Format Document",       "Editor", "Ctrl+K, Ctrl+D", "\uE70F",
+            () => ExecuteFormatDocumentOnActiveEditor());
+        Reg(CommandIds.Editor.FormatSelection,    "Format Selection",      "Editor", "Ctrl+K, Ctrl+F", "\uE70F",
+            () => ExecuteFormatSelectionOnActiveEditor());
 
         // ── Debug ────────────────────────────────────────────────────────────
         Reg(CommandIds.Debug.StartDebugging,           "Start Debugging",            "Debug", "F5",            "\uE768",
@@ -352,6 +362,26 @@ public partial class MainWindow
                 is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
             _ = host.PrimaryEditor.PrepareTypeHierarchyAtCaretAsync();
     }
+
+    private void ExecuteFormatDocumentOnActiveEditor()
+    {
+        if (_documentManager?.ActiveDocument?.AssociatedEditor
+                is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
+            _ = host.PrimaryEditor.FormatDocumentAsync();
+    }
+
+    private void ExecuteFormatSelectionOnActiveEditor()
+    {
+        if (_documentManager?.ActiveDocument?.AssociatedEditor
+                is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
+            _ = host.PrimaryEditor.FormatSelectionAsync();
+    }
+
+    private void OnFormatDocument(object sender, System.Windows.RoutedEventArgs e)
+        => ExecuteFormatDocumentOnActiveEditor();
+
+    private void OnFormatSelection(object sender, System.Windows.RoutedEventArgs e)
+        => ExecuteFormatSelectionOnActiveEditor();
 
     // -----------------------------------------------------------------------
     // Helper — registers a command with a plain Action delegate

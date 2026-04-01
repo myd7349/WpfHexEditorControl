@@ -588,12 +588,19 @@ public class DockTabControl : TabControl
 /// <summary>
 /// Tab header with title, close button, context menu, and drag support.
 /// </summary>
+/// <summary>LSP server state for the document tab indicator dot.</summary>
+public enum DockTabLspState { None, Connecting, Ready, Error }
+
 public class DockTabHeader : StackPanel
 {
     private readonly DockItem _item;
     private Button?    _closeButton;
     private Button?    _pinButton;
     private TextBlock? _titleBlock;
+    private TextBlock? _lspDot;
+
+    /// <summary>The DockItem this header represents (used for LSP state matching).</summary>
+    public DockItem Item => _item;
     private Point _dragStartPoint;
     private bool _isDragging;
     private bool _isReordering;
@@ -603,6 +610,42 @@ public class DockTabHeader : StackPanel
 
     public event Action? CloseClicked;
     public event Action? DragStarted;
+
+    /// <summary>
+    /// Updates the LSP state dot visible on document tabs.
+    /// Must be called on the UI thread.
+    /// </summary>
+    public void SetLspState(DockTabLspState state)
+    {
+        if (_lspDot is null) return;
+        switch (state)
+        {
+            case DockTabLspState.None:
+                _lspDot.Visibility = Visibility.Collapsed;
+                break;
+            case DockTabLspState.Connecting:
+                _lspDot.Text       = "◌";
+                _lspDot.Foreground = Application.Current?.TryFindResource("LSP_ConnectingDot") as System.Windows.Media.Brush
+                                     ?? System.Windows.Media.Brushes.Gray;
+                _lspDot.ToolTip    = "Language Server: connecting…";
+                _lspDot.Visibility = Visibility.Visible;
+                break;
+            case DockTabLspState.Ready:
+                _lspDot.Text       = "●";
+                _lspDot.Foreground = Application.Current?.TryFindResource("LSP_ReadyDot") as System.Windows.Media.Brush
+                                     ?? System.Windows.Media.Brushes.Green;
+                _lspDot.ToolTip    = "Language Server: ready";
+                _lspDot.Visibility = Visibility.Visible;
+                break;
+            case DockTabLspState.Error:
+                _lspDot.Text       = "✕";
+                _lspDot.Foreground = Application.Current?.TryFindResource("LSP_ErrorDot") as System.Windows.Media.Brush
+                                     ?? System.Windows.Media.Brushes.Red;
+                _lspDot.ToolTip    = "Language Server: error";
+                _lspDot.Visibility = Visibility.Visible;
+                break;
+        }
+    }
     public event Action? FloatRequested;
     public event Action<Point>? ReorderDragging;
     public event Action<Point>? ReorderDropped;
@@ -655,6 +698,21 @@ public class DockTabHeader : StackPanel
                 VerticalAlignment = VerticalAlignment.Center
             };
             Children.Add(iconHost);
+        }
+
+        // LSP state dot — document tabs only, hidden until SetLspState is called
+        if (item.Owner is DocumentHostNode)
+        {
+            _lspDot = new TextBlock
+            {
+                Text              = "●",
+                FontSize          = 8,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin            = new Thickness(0, 0, 4, 0),
+                Visibility        = Visibility.Collapsed,
+                ToolTip           = "Language Server",
+            };
+            Children.Add(_lspDot);
         }
 
         _titleBlock = new TextBlock

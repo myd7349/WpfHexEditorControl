@@ -49,9 +49,9 @@ using WpfHexEditor.Editor.MarkdownEditor;
 using WpfHexEditor.Editor.ClassDiagram;
 using WpfHexEditor.Editor.XamlDesigner;
 using WpfHexEditor.Editor.ResxEditor;
-using WpfHexEditor.Panels.IDE;
-using WpfHexEditor.Panels.IDE.Panels;
-using WpfHexEditor.Panels.IDE.Services;
+using WpfHexEditor.Shell.Panels;
+using WpfHexEditor.Shell.Panels.Panels;
+using WpfHexEditor.Shell.Panels.Services;
 using WpfHexEditor.Core.Definitions;
 using WpfHexEditor.Core.ProjectSystem;
 using WpfHexEditor.Core.ProjectSystem.Dialogs;
@@ -188,7 +188,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Error Panel (persistent singleton)
     private ErrorPanel? _errorPanel;
-    private WpfHexEditor.Panels.IDE.Panels.BookmarksPanel? _bookmarksPanel;
+    private WpfHexEditor.Shell.Panels.Panels.BookmarksPanel? _bookmarksPanel;
     private const string ErrorPanelContentId         = "panel-errors";
     private const string FindReferencesPanelContentId  = "panel-find-references";
     private WpfHexEditor.Editor.CodeEditor.Controls.FindReferencesPanel? _findReferencesPanel;
@@ -1557,14 +1557,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private UIElement CreateBookmarksPanelContent()
     {
         if (_bookmarksPanel is not null) return _bookmarksPanel;
-        _bookmarksPanel = new WpfHexEditor.Panels.IDE.Panels.BookmarksPanel
+        _bookmarksPanel = new WpfHexEditor.Shell.Panels.Panels.BookmarksPanel
         {
             GetBookmarks = () =>
             {
                 var hex = ActiveHexEditor;
                 if (hex is null) return [];
                 return hex.GetBookmarks()
-                    .Select(offset => new WpfHexEditor.Panels.IDE.Panels.BookmarkRow
+                    .Select(offset => new WpfHexEditor.Shell.Panels.Panels.BookmarkRow
                     {
                         Offset    = offset,
                         OffsetHex = $"0x{offset:X8}",
