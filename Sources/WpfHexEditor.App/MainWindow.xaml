@@ -1931,6 +1931,19 @@
                 </StackPanel>
             </StatusBarItem>
 
+            <!-- Roslyn workspace loading indicator -->
+            <StatusBarItem x:Name="RoslynStatusItem" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <pb:LinearProgressBar x:Name="RoslynProgressBar"
+                                          Width="100" BarHeight="4" Height="8"
+                                          IsIndeterminate="True"
+                                          VerticalAlignment="Center" Margin="4,0,6,0" />
+                    <TextBlock x:Name="RoslynStatusText"
+                               Foreground="{DynamicResource DockTabActiveTextBrush}"
+                               FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                </StackPanel>
+            </StatusBarItem>
+
             <!-- Right-aligned group: Refresh time + Plugin status -->
             <StatusBarItem HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">

@@ -40,6 +40,16 @@ public sealed class LspServerEntry
     /// <c>tools/lsp/</c> directory rather than from the system PATH or a user-supplied path.
     /// </summary>
     public bool IsBundled { get; init; }
+
+    /// <summary>
+    /// Optional factory for in-process language clients (e.g. Roslyn).
+    /// When set, <see cref="ILspServerRegistry.CreateClient"/> uses this factory
+    /// instead of spawning an external process. <see cref="ExecutablePath"/> is ignored.
+    /// </summary>
+    public Func<ILspClient>? InProcessClientFactory { get; init; }
+
+    /// <summary><c>true</c> when this entry uses an in-process client (no external server).</summary>
+    public bool IsInProcess => InProcessClientFactory is not null;
 }
 
 /// <summary>
@@ -67,7 +77,7 @@ public interface ILspServerRegistry
     /// Creates (but does not initialize) a new <see cref="ILspClient"/> for the
     /// specified <paramref name="entry"/>.
     /// <paramref name="workspacePath"/> is sent as <c>rootUri</c> in the LSP initialize
-    /// request so the server can index project files (required by OmniSharp).
+    /// request so the server can index project files (used by external LSP servers).
     /// Callers must call <see cref="ILspClient.InitializeAsync"/> before use.
     /// </summary>
     ILspClient CreateClient(LspServerEntry entry, string? workspacePath = null);

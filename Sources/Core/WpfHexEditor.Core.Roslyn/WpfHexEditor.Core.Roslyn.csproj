@@ -1,0 +1,40 @@
+<!--
+    GNU Affero General Public License v3.0  2026
+    Author : Derek Tremblay (derektremblay666@gmail.com)
+    Contributors: Claude Opus 4.6
+
+    WpfHexEditor.Core.Roslyn
+    ========================
+    In-process Roslyn-based language client for C# and VB.NET.
+    Implements ILspClient from WpfHexEditor.Editor.Core, replacing OmniSharp
+    with direct Microsoft.CodeAnalysis API calls — zero external process.
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>WpfHexEditor.Core.Roslyn</RootNamespace>
+    <AssemblyName>WpfHexEditor.Core.Roslyn</AssemblyName>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Description>In-process Roslyn language client — CompletionService, SemanticModel diagnostics, SymbolFinder navigation, Formatter, Renamer. Replaces OmniSharp for C# and VB.NET.</Description>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Features" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Features" Version="4.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.9.2" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.7.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Editors\WpfHexEditor.Editor.Core\WpfHexEditor.Editor.Core.csproj" />
+  </ItemGroup>
+
+</Project>

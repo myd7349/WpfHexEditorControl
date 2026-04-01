@@ -4,8 +4,9 @@
 #          Run once after cloning the repo, or with -Force to re-download.
 #
 # Servers:
-#   OmniSharp  v1.39.12  (C# / VB.NET)   -> tools/lsp/OmniSharp/
 #   clangd     v18.1.3   (C / C++ / Obj-C) -> tools/lsp/clangd/
+#
+# Note: C# and VB.NET use in-process Roslyn (no external server needed).
 #
 # Usage:
 #   .\Scripts\Download-LspServers.ps1
@@ -68,12 +69,6 @@ Write-Host ""
 Write-Host "LSP Server Downloader" -ForegroundColor White
 Write-Host "Output directory: $toolsLsp"
 Write-Host ""
-
-# ── OmniSharp v1.39.12 (C# / VB.NET) ─────────────────────────────────────────
-Download-Server `
-    -Name    'OmniSharp' `
-    -Url     'https://github.com/OmniSharp/omnisharp-roslyn/releases/download/v1.39.12/omnisharp-win-x64-net6.0.zip' `
-    -DestDir (Join-Path $toolsLsp 'OmniSharp')
 
 # ── clangd v18.1.3 (C / C++ / Objective-C) ───────────────────────────────────
 Download-Server `

@@ -79,7 +79,7 @@ public sealed class LspBreadcrumbBar : Border
         };
         _debounce.Tick += OnDebounce;
 
-        // Longer debounce after buffer change — gives OmniSharp time to re-index.
+        // Longer debounce after buffer change — gives the LSP server time to re-index.
         _bufferDebounce = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromMilliseconds(1500)
@@ -116,7 +116,7 @@ public sealed class LspBreadcrumbBar : Border
 
     private void OnBufferChanged(object? sender, WpfHexEditor.Editor.Core.Documents.DocumentBufferChangedEventArgs e)
     {
-        // Re-trigger with longer debounce to let OmniSharp re-index the new content.
+        // Re-trigger with longer debounce to let the language server re-index.
         _bufferDebounce.Stop();
         _bufferDebounce.Start();
     }

@@ -210,7 +210,7 @@ public partial class MainWindow
 
                 lspRegistry = registry;
 
-                // Wire solution events → Roslyn MSBuildWorkspace loading.
+                // Wire solution events → Roslyn MSBuildWorkspace loading with progress bar.
                 _solutionManager.SolutionChanged += async (_, e) =>
                 {
                     try
@@ -230,6 +230,10 @@ public partial class MainWindow
                                 return;
                             }
 
+                            // Show loading progress bar.
+                            var slnName = System.IO.Path.GetFileNameWithoutExtension(realSlnPath);
+                            ShowRoslynStatus(loading: true, text: $"Loading {slnName}…");
+
                             OutputLogger.PluginInfo($"[Roslyn] Loading: {realSlnPath}");
                             _roslynSolutionPath = realSlnPath;
                             if (_lspBridgeService is not null)
@@ -237,6 +241,13 @@ public partial class MainWindow
 
                             // Load solution into all active Roslyn clients.
                             await LoadRoslynSolutionIntoActiveClientsAsync(realSlnPath);
+
+                            // Show success then auto-hide after 3 seconds.
+                            var projectCount = GetRoslynProjectCount();
+                            ShowRoslynStatus(loading: false,
+                                text: $"✓ {projectCount} project{(projectCount != 1 ? "s" : "")} loaded",
+                                state: WpfHexEditor.ProgressBar.ProgressState.Success);
+                            _ = AutoHideRoslynStatusAsync();
                         }
                         else if (e.Kind == WpfHexEditor.Editor.Core.SolutionChangeKind.Closed)
                         {
@@ -245,9 +256,15 @@ public partial class MainWindow
                             if (_lspBridgeService is not null)
                                 _lspBridgeService._roslynSolutionPath = null;
                             UnloadRoslynSolutionFromActiveClients();
+                            HideRoslynStatus();
                         }
                     }
-                    catch (Exception ex) { OutputLogger.PluginError($"[Roslyn] Solution event: {ex.Message}"); }
+                    catch (Exception ex)
+                    {
+                        OutputLogger.PluginError($"[Roslyn] Solution event: {ex.Message}");
+                        ShowRoslynStatus(loading: false, text: $"✕ {ex.Message}",
+                            state: WpfHexEditor.ProgressBar.ProgressState.Error);
+                    }
                 };
             }
             catch (Exception ex) { OutputLogger.PluginError($"[LSP] Registry init failed: {ex.Message}"); }
@@ -1318,6 +1335,41 @@ public partial class MainWindow
             MenuAdapter:         menu,
             StatusBarAdapter:    statusBar,
             DocumentHostService: docHost);
+    }
+
+    // ── Roslyn status bar helpers ────────────────────────────────────────────
+
+    private void ShowRoslynStatus(bool loading, string text,
+        WpfHexEditor.ProgressBar.ProgressState state = WpfHexEditor.ProgressBar.ProgressState.Normal)
+    {
+        RoslynProgressBar.IsIndeterminate = loading;
+        RoslynProgressBar.Progress        = loading ? 0 : 1;
+        RoslynProgressBar.State           = state;
+        RoslynStatusText.Text             = text;
+        RoslynStatusItem.Visibility       = Visibility.Visible;
+    }
+
+    private void HideRoslynStatus()
+    {
+        RoslynStatusItem.Visibility = Visibility.Collapsed;
+    }
+
+    private async Task AutoHideRoslynStatusAsync()
+    {
+        await Task.Delay(3000);
+        await Dispatcher.InvokeAsync(() => HideRoslynStatus());
+    }
+
+    private int GetRoslynProjectCount()
+    {
+        if (_lspBridgeService is null) return 0;
+        foreach (var langId in new[] { "csharp", "vbnet" })
+        {
+            var client = _lspBridgeService.TryGetClient(langId);
+            if (client is WpfHexEditor.Core.Roslyn.RoslynLanguageClient roslyn && roslyn.LoadedProjectCount > 0)
+                return roslyn.LoadedProjectCount;
+        }
+        return 0;
     }
 
     // ── Roslyn solution wiring helpers ────────────────────────────────────────

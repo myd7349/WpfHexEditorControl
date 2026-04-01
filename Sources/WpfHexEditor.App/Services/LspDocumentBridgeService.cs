@@ -34,7 +34,7 @@ public sealed class LspServerStateChangedEventArgs : EventArgs
 {
     public required string        LanguageId { get; init; }
     public required LspServerState State      { get; init; }
-    /// <summary>Human-readable server name (e.g. "OmniSharp"). Null when Idle.</summary>
+    /// <summary>Human-readable server name (e.g. "Roslyn", "clangd"). Null when Idle.</summary>
     public          string?       ServerName { get; init; }
     /// <summary>Error message when State == Error.</summary>
     public          string?       ErrorMessage { get; init; }
@@ -50,6 +50,12 @@ internal sealed class LspDocumentBridgeService : IDisposable
     private readonly ILspServerRegistry            _registry;
     private readonly Action<string>                _log;
     private readonly Func<string?>                 _workspacePathProvider;
+
+    /// <summary>
+    /// Set by MainWindow when a .sln is found for the open solution.
+    /// Used for deferred Roslyn workspace loading when clients are created lazily.
+    /// </summary>
+    internal string? _roslynSolutionPath;
 
     // One initialized LSP client per language ID (created lazily, shared across documents).
     private readonly Dictionary<string, ILspClient>       _clients = new(StringComparer.OrdinalIgnoreCase);
@@ -131,6 +137,15 @@ internal sealed class LspDocumentBridgeService : IDisposable
                     impl.Logger = msg => OutputLogger.LspDebug(msg);
                 await client.InitializeAsync().ConfigureAwait(true);
                 _clients[entry.LanguageId] = client;
+
+                // Deferred solution loading: if a .sln is already open, load it into new Roslyn clients.
+                if (client is WpfHexEditor.Core.Roslyn.RoslynLanguageClient roslynClient
+                    && _roslynSolutionPath is not null)
+                {
+                    try { await roslynClient.LoadSolutionAsync(_roslynSolutionPath).ConfigureAwait(true); }
+                    catch (Exception slnEx) { OutputLogger.LspDebug($"[Roslyn] Deferred load: {slnEx.Message}"); }
+                }
+
                 OutputLogger.LspInfo($"Server ready: {entry.LanguageId}");
                 RaiseState(entry, LspServerState.Ready);
             }

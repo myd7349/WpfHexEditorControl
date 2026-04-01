@@ -250,8 +250,7 @@ internal sealed class CtrlClickNavigationService : IDisposable
     // ── URI helpers ───────────────────────────────────────────────────────────
 
     private static bool IsExternalUri(string uri) =>
-        uri.StartsWith("metadata:",          StringComparison.OrdinalIgnoreCase) ||
-        uri.StartsWith("omnisharp-metadata:", StringComparison.OrdinalIgnoreCase) ||
+        uri.StartsWith("metadata:", StringComparison.OrdinalIgnoreCase) ||
         (!uri.StartsWith("file:", StringComparison.OrdinalIgnoreCase));
 
     private static string UriToPath(string uri)

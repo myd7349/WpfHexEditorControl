@@ -54,7 +54,7 @@ internal sealed class PatternFoldingStrategy : IFoldingStrategy
             bool isStart = _starts.Any(r => r.IsMatch(effectiveText));
             bool isEnd   = _ends.Any(r => r.IsMatch(effectiveText));
 
-            if (isStart)
+            if (isStart && !isEnd)
             {
                 // Allman-style: when the entire trimmed line IS the start-pattern match
                 // (e.g. a lone '{'), attach the fold to the previous line (the declaration).

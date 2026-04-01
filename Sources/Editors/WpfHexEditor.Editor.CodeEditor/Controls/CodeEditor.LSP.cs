@@ -1942,7 +1942,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             var loc = locations[0];
             bool isMetadata = loc.Uri.StartsWith("metadata:",            StringComparison.OrdinalIgnoreCase)
-                           || loc.Uri.StartsWith("omnisharp-metadata:",  StringComparison.OrdinalIgnoreCase)
                            || loc.Uri.StartsWith("csharp-metadata:",     StringComparison.OrdinalIgnoreCase)
                            || loc.Uri.StartsWith("dotnet://metadata",    StringComparison.OrdinalIgnoreCase)
                            || loc.Uri.Contains("?assembly=",             StringComparison.OrdinalIgnoreCase);
@@ -2021,8 +2020,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 ? ly + _lineHeight - 2
                 : zone.Line * _lineHeight + _lineHeight - 2;
             double textLeft = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
-            double x1       = textLeft + zone.StartCol * _charWidth;
-            double x2       = textLeft + zone.EndCol   * _charWidth;
+            var ulLineText   = zone.Line < _document.Lines.Count ? _document.Lines[zone.Line].Text : string.Empty;
+            double x1       = textLeft + (_glyphRenderer?.ComputeVisualX(ulLineText, zone.StartCol) ?? zone.StartCol * _charWidth);
+            double x2       = textLeft + (_glyphRenderer?.ComputeVisualX(ulLineText, zone.EndCol) ?? zone.EndCol * _charWidth);
 
             // Add the symbol to the hit-zone list so OnMouseMove can detect it even
             // when the async resolution hasn't completed yet.
@@ -2284,7 +2284,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         /// <summary>
         /// Raw LSP URI that identified this symbol as external (e.g.
-        /// "omnisharp-metadata:?assembly=System.Console&amp;type=System.Console&amp;...").
+        /// "metadata:?assembly=System.Console&amp;type=System.Console&amp;...").
         /// The IDE host can parse <c>assembly=</c> and <c>type=</c> query parameters to
         /// locate and decompile the assembly. Null when the symbol was not resolved via LSP.
         /// </summary>

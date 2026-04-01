@@ -28,7 +28,7 @@ internal static class LspBundledLocator
     /// </summary>
     /// <param name="serverName">
     /// Case-sensitive folder name under <c>tools/lsp/</c>
-    /// (e.g. <c>"OmniSharp"</c>, <c>"clangd"</c>).
+    /// (e.g. <c>"clangd"</c>, <c>"lemminx"</c>).
     /// </param>
     public static string? TryGetBundledExecutable(string serverName)
     {

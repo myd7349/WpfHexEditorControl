@@ -83,7 +83,9 @@ public sealed class LspServerRegistry : ILspServerRegistry
     }
 
     public ILspClient CreateClient(LspServerEntry entry, string? workspacePath = null)
-        => new LspClientImpl(entry.ExecutablePath, entry.Arguments, workspacePath, _dispatcher);
+        => entry.InProcessClientFactory is not null
+            ? entry.InProcessClientFactory()
+            : new LspClientImpl(entry.ExecutablePath, entry.Arguments, workspacePath, _dispatcher);
 
     public void Register(LspServerEntry entry)
     {
@@ -162,15 +164,41 @@ public sealed class LspServerRegistry : ILspServerRegistry
 
     private void AddBuiltInEntriesIfMissing()
     {
-        // Bundled servers (OmniSharp, clangd) — installed by Scripts/Download-LspServers.ps1.
-        TryAddBuiltIn("csharp", new[] { ".cs", ".csx" },              "OmniSharp", "--languageserver");
+        // In-process Roslyn clients for C# and VB.NET are registered externally
+        // via RegisterInProcess() from the App project (see MainWindow.xaml.cs).
+        // This avoids a project dependency from Core.LSP.Client → Core.Roslyn.
+
+        // Bundled servers (clangd) — installed by Scripts/Download-LspServers.ps1.
         TryAddBuiltIn("cpp",    new[] { ".cpp", ".c", ".h", ".hpp" }, "clangd",    string.Empty);
 
         // PATH-discovered servers (optional, user must install separately).
         TryAddBuiltIn("json",   new[] { ".json", ".jsonc" },     "vscode-json-languageserver", "--stdio");
         TryAddBuiltIn("xml",    new[] { ".xml", ".xaml" },       "lemminx",                    string.Empty);
         TryAddBuiltIn("fsharp", new[] { ".fs", ".fsx", ".fsi" }, "fsautocomplete",             "--stdio");
-        TryAddBuiltIn("vbnet",  new[] { ".vb" },                 "OmniSharp",                  "--languageserver");
+    }
+
+    /// <summary>
+    /// Registers an in-process language client (e.g. Roslyn) for the given language ID.
+    /// Called from the App project to wire up <see cref="LspServerEntry.InProcessClientFactory"/>.
+    /// </summary>
+    public void RegisterInProcess(string languageId, string[] extensions, Func<ILspClient> factory)
+    {
+        lock (_lock)
+        {
+            // Remove any existing entry for this language (e.g. stale OmniSharp from disk).
+            _entries.RemoveAll(e =>
+                e.LanguageId.Equals(languageId, StringComparison.OrdinalIgnoreCase));
+
+            _entries.Add(new LspServerEntry
+            {
+                LanguageId             = languageId,
+                FileExtensions         = extensions,
+                ExecutablePath         = "(in-process)",
+                IsEnabled              = true,
+                IsBundled              = false,
+                InProcessClientFactory = factory,
+            });
+        }
     }
 
     private void TryAddBuiltIn(string langId, string[] exts, string execName, string? args)
