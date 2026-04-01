@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using WpfHexEditor.Core.ProjectSystem.Languages;
 using WpfHexEditor.Editor.CodeEditor.Models;
 
 namespace WpfHexEditor.Editor.CodeEditor.Helpers
@@ -451,9 +452,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Helpers
         /// <summary>
         /// Get SmartComplete suggestions for given context
         /// </summary>
-        public List<SmartCompleteSuggestion> GetSuggestions(SmartCompleteContext context)
+        public List<SmartCompleteSuggestion> GetSuggestions(SmartCompleteContext context, LanguageDefinition? language = null)
         {
             if (context == null)
+                return new List<SmartCompleteSuggestion>();
+
+            // Only provide whfmt/JSON format-definition snippets when in a whfmt or json file.
+            // For all other languages (C#, Python, JS…) return empty so the popup stays clean
+            // when LSP is unavailable rather than polluting it with format snippets.
+            if (language is not null &&
+                !string.Equals(language.Id, "json",  StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(language.Id, "whfmt", StringComparison.OrdinalIgnoreCase))
                 return new List<SmartCompleteSuggestion>();
 
             try

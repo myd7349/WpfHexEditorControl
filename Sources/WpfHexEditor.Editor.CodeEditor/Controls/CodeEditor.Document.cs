@@ -318,6 +318,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 InvalidateMeasure(); // scrollbar ranges may have changed
             else
                 InvalidateVisual();  // layout unaffected — redraw only
+
+            MinimapRefreshRequested?.Invoke(this, EventArgs.Empty);
         }
 
         #endregion
@@ -338,12 +340,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// <summary>
         /// Trigger SmartComplete with delay (auto-trigger)
         /// </summary>
-        private void TriggerSmartCompleteWithDelay()
+        private void TriggerSmartCompleteWithDelay(char? triggerChar = null)
         {
             if (!_enableSmartComplete || _smartCompletePopup == null)
                 return;
 
-            _smartCompletePopup.TriggerWithDelay(SmartCompleteDelay);
+            _smartCompletePopup.TriggerWithDelay(SmartCompleteDelay, triggerChar);
         }
 
         /// <summary>
@@ -377,8 +379,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         private bool ShouldAutoTriggerSmartComplete(char ch)
         {
-            // Trigger on: quote (start of key/value), colon (after key), comma (new item), opening brace/bracket
-            return ch == '"' || ch == ':' || ch == ',' || ch == '{' || ch == '[';
+            // Trigger on: dot (member access), quote (start of key/value), colon (after key), comma (new item), opening brace/bracket
+            return ch == '.' || ch == '"' || ch == ':' || ch == ',' || ch == '{' || ch == '[';
         }
 
         #endregion
@@ -696,6 +698,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _breakpointGutterControl?.SetFilePath(_currentFilePath);
             if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = filePath;
             _undoEngine.MarkSaved();  // Stamp save-point so Undo can detect "back to clean".
+            _lspClient?.SaveDocument(filePath);
             _isDirty = false;
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
             TitleChanged?.Invoke(this, BuildTitle());

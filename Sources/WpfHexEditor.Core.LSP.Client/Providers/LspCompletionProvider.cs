@@ -31,14 +31,18 @@ internal sealed class LspCompletionProvider
     }
 
     internal async Task<IReadOnlyList<LspCompletionItem>> GetAsync(
-        string filePath, int line, int column, CancellationToken ct)
+        string filePath, int line, int column, char? triggerChar, CancellationToken ct)
     {
         var uri     = LspDocumentSync.ToUri(filePath);
+        // triggerKind: 1 = Invoked (Ctrl+Space), 2 = TriggerCharacter (e.g. '.')
+        object context = triggerChar.HasValue
+            ? new { triggerKind = 2, triggerCharacter = triggerChar.Value.ToString() }
+            : new { triggerKind = 1 };
         var @params = new
         {
             textDocument = new { uri },
             position     = new { line, character = column },
-            context      = new { triggerKind = 1 },   // 1 = Invoked
+            context,
         };
 
         JsonNode? result;
@@ -67,14 +71,45 @@ internal sealed class LspCompletionProvider
 
             list.Add(new LspCompletionItem
             {
-                Label         = label,
-                Kind          = KindToString(item["kind"]?.GetValue<int?>()),
-                Detail        = item["detail"]?.GetValue<string>(),
-                InsertText    = item["insertText"]?.GetValue<string>(),
-                Documentation = ExtractDocumentation(item["documentation"]),
+                Label            = label,
+                Kind             = KindToString(item["kind"]?.GetValue<int?>()),
+                Detail           = item["detail"]?.GetValue<string>(),
+                InsertText       = item["insertText"]?.GetValue<string>(),
+                Documentation    = ExtractDocumentation(item["documentation"]),
+                RawJson          = item.ToJsonString(),
+                CommitCharacters = ParseCommitChars(item["commitCharacters"]),
             });
         }
         return list;
+    }
+
+    internal async Task<LspCompletionItem?> ResolveAsync(LspCompletionItem item, CancellationToken ct)
+    {
+        if (item.RawJson is null) return null;
+
+        JsonNode? rawItem;
+        try { rawItem = JsonNode.Parse(item.RawJson); }
+        catch { return null; }
+
+        JsonNode? result;
+        try
+        {
+            result = await _channel.CallAsync("completionItem/resolve", rawItem, ct)
+                                    .ConfigureAwait(false);
+        }
+        catch { return null; }
+
+        if (result is null) return null;
+
+        return new LspCompletionItem
+        {
+            Label         = result["label"]?.GetValue<string>() ?? item.Label,
+            Kind          = item.Kind,
+            Detail        = result["detail"]?.GetValue<string>() ?? item.Detail,
+            InsertText    = result["insertText"]?.GetValue<string>() ?? item.InsertText,
+            Documentation = ExtractDocumentation(result["documentation"]) ?? item.Documentation,
+            RawJson       = item.RawJson,
+        };
     }
 
     private static string? KindToString(int? kind) => kind switch
@@ -95,6 +130,15 @@ internal sealed class LspCompletionProvider
         18 => "Reference",
         _  => null,
     };
+
+    private static IReadOnlyList<string>? ParseCommitChars(JsonNode? node)
+    {
+        if (node is not JsonArray arr || arr.Count == 0) return null;
+        var list = new List<string>(arr.Count);
+        foreach (var c in arr)
+            if (c?.GetValue<string>() is { Length: > 0 } s) list.Add(s);
+        return list.Count > 0 ? list : null;
+    }
 
     private static string? ExtractDocumentation(JsonNode? doc)
     {

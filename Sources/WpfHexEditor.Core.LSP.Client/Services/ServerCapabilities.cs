@@ -10,6 +10,9 @@
 //     LSP spec: capabilities can be bool true/false OR an options object; both are handled.
 // ==========================================================
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
 
 namespace WpfHexEditor.Core.LSP.Client.Services;
@@ -37,6 +40,13 @@ internal sealed class ServerCapabilities
     internal bool HasLinkedEditingRangeProvider    { get; init; }
     internal bool HasCallHierarchyProvider         { get; init; }
     internal bool HasTypeHierarchyProvider         { get; init; }
+    internal bool HasInlayHintsProvider            { get; init; }
+    internal bool HasSemanticTokensProvider        { get; init; }
+    internal bool HasWorkspaceSymbolsProvider      { get; init; }
+    /// <summary>Token type names indexed by LSP integer (from semanticTokensProvider.legend.tokenTypes).</summary>
+    internal IReadOnlyList<string> SemanticTokenTypesLegend     { get; init; } = Array.Empty<string>();
+    /// <summary>Token modifier names indexed by LSP integer (from semanticTokensProvider.legend.tokenModifiers).</summary>
+    internal IReadOnlyList<string> SemanticTokenModifiersLegend { get; init; } = Array.Empty<string>();
 
     /// <summary>
     /// Parses the capabilities from the raw <c>initialize</c> response node.
@@ -68,7 +78,21 @@ internal sealed class ServerCapabilities
             HasLinkedEditingRangeProvider   = IsEnabled(caps["linkedEditingRangeProvider"]),
             HasCallHierarchyProvider        = IsEnabled(caps["callHierarchyProvider"]),
             HasTypeHierarchyProvider        = IsEnabled(caps["typeHierarchyProvider"]),
+            HasInlayHintsProvider           = IsEnabled(caps["inlayHintProvider"]),
+            HasSemanticTokensProvider       = IsEnabled(caps["semanticTokensProvider"]),
+            HasWorkspaceSymbolsProvider     = IsEnabled(caps["workspaceSymbolProvider"]),
+            SemanticTokenTypesLegend        = ParseLegendArray(caps["semanticTokensProvider"]?["legend"]?["tokenTypes"]),
+            SemanticTokenModifiersLegend    = ParseLegendArray(caps["semanticTokensProvider"]?["legend"]?["tokenModifiers"]),
         };
+    }
+
+    private static IReadOnlyList<string> ParseLegendArray(JsonNode? node)
+    {
+        if (node is not JsonArray arr) return Array.Empty<string>();
+        var result = new List<string>(arr.Count);
+        foreach (var item in arr)
+            result.Add(item?.GetValue<string>() ?? string.Empty);
+        return result;
     }
 
     // LSP spec: a capability value is either absent (false), bool true/false,
@@ -99,5 +123,8 @@ internal sealed class ServerCapabilities
         HasLinkedEditingRangeProvider    = false, // safe default — opt-in only
         HasCallHierarchyProvider         = false,
         HasTypeHierarchyProvider         = false,
+        HasInlayHintsProvider            = false,
+        HasSemanticTokensProvider        = false,
+        HasWorkspaceSymbolsProvider      = true,
     };
 }
