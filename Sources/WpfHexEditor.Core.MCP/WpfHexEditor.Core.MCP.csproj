@@ -4,12 +4,12 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>WpfHexEditor.MCP.IDEServers</RootNamespace>
-    <AssemblyName>WpfHexEditor.MCP.IDEServers</AssemblyName>
+    <RootNamespace>WpfHexEditor.Core.MCP</RootNamespace>
+    <AssemblyName>WpfHexEditor.Core.MCP</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
+    <ProjectReference Include="..\Plugins\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
   </ItemGroup>
 
 </Project>

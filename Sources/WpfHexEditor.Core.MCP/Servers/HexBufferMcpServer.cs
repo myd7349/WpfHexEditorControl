@@ -1,5 +1,5 @@
 // ==========================================================
-// Project: WpfHexEditor.MCP.IDEServers
+// Project: WpfHexEditor.Core.MCP
 // File: HexBufferMcpServer.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Opus 4.6
@@ -10,9 +10,9 @@
 //     Tools: read_bytes, get_selection, get_bookmarks, search_hex, navigate_to.
 // ==========================================================
 using System.Text.Json;
-using WpfHexEditor.MCP.IDEServers.Base;
+using WpfHexEditor.Core.MCP.Base;
 
-namespace WpfHexEditor.MCP.IDEServers.Servers;
+namespace WpfHexEditor.Core.MCP.Servers;
 
 public sealed class HexBufferMcpServer : IdeMcpServerBase
 {

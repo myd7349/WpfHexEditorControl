@@ -1,5 +1,5 @@
 // ==========================================================
-// Project: WpfHexEditor.MCP.IDEServers
+// Project: WpfHexEditor.Core.MCP
 // File: DebuggerMcpServer.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Opus 4.6
@@ -11,9 +11,9 @@
 //            get_breakpoints, delete_breakpoint, get_session_state.
 // ==========================================================
 using System.Text.Json;
-using WpfHexEditor.MCP.IDEServers.Base;
+using WpfHexEditor.Core.MCP.Base;
 
-namespace WpfHexEditor.MCP.IDEServers.Servers;
+namespace WpfHexEditor.Core.MCP.Servers;
 
 public sealed class DebuggerMcpServer : IdeMcpServerBase
 {

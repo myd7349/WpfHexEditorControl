@@ -1,5 +1,5 @@
 // ==========================================================
-// Project: WpfHexEditor.MCP.IDEServers
+// Project: WpfHexEditor.Core.MCP
 // File: IIDEMcpServer.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Opus 4.6
@@ -8,7 +8,7 @@
 // Description:
 //     Contract for in-process MCP servers that expose IDE state as tools.
 // ==========================================================
-namespace WpfHexEditor.MCP.IDEServers.Base;
+namespace WpfHexEditor.Core.MCP.Base;
 
 public interface IIDEMcpServer : IAsyncDisposable
 {

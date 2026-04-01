@@ -1,5 +1,5 @@
 // ==========================================================
-// Project: WpfHexEditor.MCP.IDEServers
+// Project: WpfHexEditor.Core.MCP
 // File: SolutionMcpServer.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Opus 4.6
@@ -10,9 +10,9 @@
 //     Tools: list_files, read_file, write_file, create_file, open_file, get_symbols, find_references.
 // ==========================================================
 using System.Text.Json;
-using WpfHexEditor.MCP.IDEServers.Base;
+using WpfHexEditor.Core.MCP.Base;
 
-namespace WpfHexEditor.MCP.IDEServers.Servers;
+namespace WpfHexEditor.Core.MCP.Servers;
 
 public sealed class SolutionMcpServer : IdeMcpServerBase
 {

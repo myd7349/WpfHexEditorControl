@@ -8,7 +8,7 @@
 // Description:
 //     Orchestrates all MCP servers. Aggregates tool lists, routes tool calls.
 // ==========================================================
-using WpfHexEditor.MCP.IDEServers.Base;
+using WpfHexEditor.Core.MCP.Base;
 using WpfHexEditor.Plugins.ClaudeAssistant.Api;
 using WpfHexEditor.Plugins.ClaudeAssistant.Options;
 

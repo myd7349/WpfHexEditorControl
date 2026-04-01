@@ -38,7 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
-    <ProjectReference Include="..\WpfHexEditor.MCP.IDEServers\WpfHexEditor.MCP.IDEServers.csproj" />
+    <ProjectReference Include="..\..\WpfHexEditor.Core.MCP\WpfHexEditor.Core.MCP.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -57,7 +57,7 @@
       <PluginFiles Include="$(OutputPath)$(AssemblyName).dll" />
       <PluginFiles Include="$(OutputPath)$(AssemblyName).pdb" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
       <PluginFiles Include="$(OutputPath)manifest.json" />
-      <PluginFiles Include="$(OutputPath)WpfHexEditor.MCP.IDEServers.dll" />
+      <PluginFiles Include="$(OutputPath)WpfHexEditor.Core.MCP.dll" />
       <PluginFiles Include="$(OutputPath)CommunityToolkit.Mvvm.dll" />
       <PluginFiles Include="$(OutputPath)Microsoft.Bcl.AsyncInterfaces.dll" Condition="Exists('$(OutputPath)Microsoft.Bcl.AsyncInterfaces.dll')" />
     </ItemGroup>

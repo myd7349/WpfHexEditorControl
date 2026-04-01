@@ -1,5 +1,5 @@
 // ==========================================================
-// Project: WpfHexEditor.MCP.IDEServers
+// Project: WpfHexEditor.Core.MCP
 // File: BuildMcpServer.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Opus 4.6
@@ -10,9 +10,9 @@
 //     Tools: get_errors, run_build, cancel_build, is_build_running, get_output.
 // ==========================================================
 using System.Text.Json;
-using WpfHexEditor.MCP.IDEServers.Base;
+using WpfHexEditor.Core.MCP.Base;
 
-namespace WpfHexEditor.MCP.IDEServers.Servers;
+namespace WpfHexEditor.Core.MCP.Servers;
 
 public sealed class BuildMcpServer : IdeMcpServerBase
 {

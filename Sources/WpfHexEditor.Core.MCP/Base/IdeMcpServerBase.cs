@@ -1,5 +1,5 @@
 // ==========================================================
-// Project: WpfHexEditor.MCP.IDEServers
+// Project: WpfHexEditor.Core.MCP
 // File: IdeMcpServerBase.cs
 // Author: Derek Tremblay (derektremblay666@gmail.com)
 // Contributors: Claude Opus 4.6
@@ -10,7 +10,7 @@
 // ==========================================================
 using System.Text.Json;
 
-namespace WpfHexEditor.MCP.IDEServers.Base;
+namespace WpfHexEditor.Core.MCP.Base;
 
 public abstract class IdeMcpServerBase : IIDEMcpServer
 {
