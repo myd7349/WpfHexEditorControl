@@ -8,6 +8,7 @@
 //     Detail panel (splitter + detail border) supports Right/Bottom/Hidden layouts.
 // ==========================================================
 
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -337,6 +338,54 @@ public partial class BreakpointExplorerPanel : UserControl
     {
         var row = Vm?.SelectedBreakpoint;
         if (row is not null) Vm?.ToggleEnabledCommand.Execute(row);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+
+    // ── Tree context menu ────────────────────────────────────────────────
+
+    private void OnTreeContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        var selected = GroupedTree.SelectedItem;
+        var isRow   = selected is BreakpointRowEx;
+        var isGroup = selected is BreakpointGroupNode;
+
+        // Row-specific items
+        TreeMenuGoToSource.Visibility     = isRow ? Visibility.Visible : Visibility.Collapsed;
+        TreeSep1.Visibility               = isRow ? Visibility.Visible : Visibility.Collapsed;
+        TreeMenuEditCondition.Visibility   = isRow ? Visibility.Visible : Visibility.Collapsed;
+        TreeSep2.Visibility               = isRow ? Visibility.Visible : Visibility.Collapsed;
+        TreeMenuToggleEnabled.Visibility   = isRow ? Visibility.Visible : Visibility.Collapsed;
+        TreeMenuCopyLocation.Visibility    = isRow ? Visibility.Visible : Visibility.Collapsed;
+        TreeSep3.Visibility               = isRow ? Visibility.Visible : Visibility.Collapsed;
+        TreeMenuDelete.Visibility          = isRow ? Visibility.Visible : Visibility.Collapsed;
+
+        // Group-specific items
+        TreeSepGroup.Visibility            = isGroup ? Visibility.Visible : Visibility.Collapsed;
+        TreeMenuGroupEnableAll.Visibility  = isGroup ? Visibility.Visible : Visibility.Collapsed;
+        TreeMenuGroupDisableAll.Visibility = isGroup ? Visibility.Visible : Visibility.Collapsed;
+        TreeMenuGroupDeleteAll.Visibility  = isGroup ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void OnGroupEnableAll(object sender, RoutedEventArgs e)
+    {
+        if (GroupedTree.SelectedItem is BreakpointGroupNode group)
+            foreach (var row in group.Children.ToList())
+                if (!row.IsEnabled) Vm?.ToggleEnabledCommand.Execute(row);
+    }
+
+    private void OnGroupDisableAll(object sender, RoutedEventArgs e)
+    {
+        if (GroupedTree.SelectedItem is BreakpointGroupNode group)
+            foreach (var row in group.Children.ToList())
+                if (row.IsEnabled) Vm?.ToggleEnabledCommand.Execute(row);
+    }
+
+    private void OnGroupDeleteAll(object sender, RoutedEventArgs e)
+    {
+        if (GroupedTree.SelectedItem is BreakpointGroupNode group)
+            foreach (var row in group.Children.ToList())
+                Vm?.DeleteCommand.Execute(row);
     }
 
     // ─────────────────────────────────────────────────────────────────────

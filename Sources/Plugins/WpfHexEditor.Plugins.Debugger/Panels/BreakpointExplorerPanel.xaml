@@ -366,6 +366,48 @@
                       Foreground="{DynamicResource DockMenuForegroundBrush}"
                       SelectedItemChanged="OnTreeSelectionChanged"
                       x:Name="GroupedTree">
+                <TreeView.ContextMenu>
+                    <ContextMenu x:Name="TreeContextMenu" Opened="OnTreeContextMenuOpened">
+                        <!-- ── Breakpoint row items ── -->
+                        <MenuItem x:Name="TreeMenuGoToSource" Header="Go To Source" Click="OnGoToSource" InputGestureText="Enter">
+                            <MenuItem.Icon><TextBlock Text="&#xE71B;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                        <Separator x:Name="TreeSep1" />
+                        <MenuItem x:Name="TreeMenuEditCondition" Header="Edit Condition…" Click="OnEditCondition">
+                            <MenuItem.Icon><TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                        <Separator x:Name="TreeSep2" />
+                        <MenuItem x:Name="TreeMenuToggleEnabled" Header="Enable/Disable" Click="OnToggleEnabled">
+                            <MenuItem.Icon><TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="TreeMenuCopyLocation" Header="Copy Location" Click="OnCopyLocation">
+                            <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                        <Separator x:Name="TreeSep3" />
+                        <MenuItem x:Name="TreeMenuDelete" Header="Delete" Click="OnDeleteSelected">
+                            <MenuItem.Icon><TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                        <!-- ── Group header items ── -->
+                        <Separator x:Name="TreeSepGroup" />
+                        <MenuItem x:Name="TreeMenuGroupEnableAll" Header="Enable All in Group" Click="OnGroupEnableAll">
+                            <MenuItem.Icon><TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="TreeMenuGroupDisableAll" Header="Disable All in Group" Click="OnGroupDisableAll">
+                            <MenuItem.Icon><TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="TreeMenuGroupDeleteAll" Header="Delete All in Group" Click="OnGroupDeleteAll">
+                            <MenuItem.Icon><TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="12" Foreground="#EF4444" /></MenuItem.Icon>
+                        </MenuItem>
+                        <!-- ── Shared items ── -->
+                        <Separator />
+                        <MenuItem Header="Import from VS XML…" Click="OnImportBreakpoints">
+                            <MenuItem.Icon><TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Export All to VS XML…" Click="OnExportBreakpoints">
+                            <MenuItem.Icon><TextBlock Text="&#xE898;" FontFamily="Segoe MDL2 Assets" FontSize="12" /></MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </TreeView.ContextMenu>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate DataType="{x:Type vm:BreakpointGroupNode}" ItemsSource="{Binding Children}">
                         <StackPanel Orientation="Horizontal">
