@@ -32,7 +32,7 @@
     <ProjectReference Include="..\..\Editors\WpfHexEditor.Editor.XamlDesigner\WpfHexEditor.Editor.XamlDesigner.csproj" />
   </ItemGroup>
 
-  <Import Project="..\..\WpfHexEditor.SDK\Build\WpfHexEditor.SDK.targets" />
+  <Import Project="..\WpfHexEditor.SDK\Build\WpfHexEditor.SDK.targets" />
 
   <!-- Copy compiled plugin to App Plugins directory after build -->
   <Target Name="CopyToPluginsDir" AfterTargets="GeneratePluginManifest">
