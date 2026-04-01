@@ -21,6 +21,7 @@ namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel.Tabs;
 
 public sealed partial class ConversationTabViewModel : ObservableObject
 {
+    public ModelRegistry Registry => _registry;
     private readonly ModelRegistry _registry;
     private IMcpServerManager? _mcpManager;
     private CancellationTokenSource? _streamCts;

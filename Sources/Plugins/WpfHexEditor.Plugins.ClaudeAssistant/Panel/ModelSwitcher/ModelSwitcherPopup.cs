@@ -24,13 +24,14 @@ public sealed class ModelSwitcherPopup : Window
     public string? SelectedProviderId { get; private set; }
     public string? SelectedModelId { get; private set; }
     public bool ThinkingEnabled { get; private set; }
+    private bool _closingStarted;
 
     public ModelSwitcherPopup(
         ModelRegistry registry,
         string currentProviderId,
         string currentModelId,
         bool thinkingEnabled,
-        Window owner)
+        UIElement? anchor = null)
     {
         SelectedProviderId = currentProviderId;
         SelectedModelId = currentModelId;
@@ -41,14 +42,17 @@ public sealed class ModelSwitcherPopup : Window
         Background = Brushes.Transparent;
         ResizeMode = ResizeMode.NoResize;
         ShowInTaskbar = false;
+        Topmost = true;
         Width = 320;
         SizeToContent = SizeToContent.Height;
         MaxHeight = 400;
+        WindowStartupLocation = WindowStartupLocation.Manual;
 
-        if (owner is not null)
+        if (anchor is not null)
         {
-            Owner = owner;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            var screenPt = anchor.PointToScreen(new Point(0, anchor.RenderSize.Height));
+            Left = screenPt.X;
+            Top = screenPt.Y + 2;
         }
 
         var rootBorder = new Border
@@ -102,7 +106,7 @@ public sealed class ModelSwitcherPopup : Window
                     var (pid, mid) = ((string, string))((Border)s!).Tag;
                     SelectedProviderId = pid;
                     SelectedModelId = mid;
-                    Close();
+                    SafeClose();
                 };
 
                 var rowStack = new StackPanel { Orientation = Orientation.Horizontal };
@@ -162,7 +166,18 @@ public sealed class ModelSwitcherPopup : Window
         rootBorder.Child = stack;
         Content = rootBorder;
 
-        PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
-        Deactivated += (_, _) => Close();
+        PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) SafeClose(); };
+        Deactivated += (_, _) =>
+        {
+            if (!_closingStarted)
+                Dispatcher.BeginInvoke(new Action(SafeClose));
+        };
+    }
+
+    private void SafeClose()
+    {
+        if (_closingStarted) return;
+        _closingStarted = true;
+        Close();
     }
 }

@@ -38,28 +38,24 @@ public sealed class ClaudeCommandPalette : Window
         Background = Brushes.Transparent;
         ResizeMode = ResizeMode.NoResize;
         ShowInTaskbar = false;
+        Topmost = true;
         Width = 480;
         SizeToContent = SizeToContent.Height;
         MaxHeight = 440;
+        WindowStartupLocation = WindowStartupLocation.Manual;
 
-        if (owner is not null)
+        if (anchor is not null)
         {
-            Owner = owner;
-
-            if (anchor is not null)
-            {
-                WindowStartupLocation = WindowStartupLocation.Manual;
-                var screenPt = anchor.PointToScreen(new Point(0, anchor.RenderSize.Height));
-                Left = screenPt.X - Width + anchor.RenderSize.Width;
-                Top = screenPt.Y + 2;
-            }
-            else
-            {
-                // Top-center of owner window (matches Customize Layout popup)
-                WindowStartupLocation = WindowStartupLocation.Manual;
-                Left = owner.Left + (owner.Width - Width) / 2;
-                Top = owner.Top + 48;
-            }
+            // Position below the anchor element (titlebar button)
+            var screenPt = anchor.PointToScreen(new Point(0, anchor.RenderSize.Height));
+            Left = screenPt.X - Width + anchor.RenderSize.Width;
+            Top = screenPt.Y + 2;
+        }
+        else if (owner is not null)
+        {
+            // Top-center of owner window (matches Customize Layout popup)
+            Left = owner.Left + (owner.Width - Width) / 2;
+            Top = owner.Top + 48;
         }
 
         // Drop shadow

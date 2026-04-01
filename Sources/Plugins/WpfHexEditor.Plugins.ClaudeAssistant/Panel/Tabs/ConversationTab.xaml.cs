@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.Messages;
+using WpfHexEditor.Plugins.ClaudeAssistant.Panel.ModelSwitcher;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel.Tabs;
 
@@ -167,8 +168,25 @@ public partial class ConversationTab : UserControl
     private void OnModelPillClick(object sender, MouseButtonEventArgs e)
         => SafeGuard.Run(() =>
         {
-            // Model switcher is handled by the parent panel which has access to the registry.
-            // Fire a routed event or let the pill click bubble up.
-            // For now, this is a no-op placeholder until Phase 5 wiring.
+            if (DataContext is not ConversationTabViewModel vm) return;
+
+            var anchor = sender as UIElement;
+            var popup = new ModelSwitcherPopup(
+                vm.Registry,
+                vm.SelectedProviderId,
+                vm.SelectedModelId,
+                vm.ThinkingEnabled,
+                anchor);
+
+            popup.Closed += (_, _) => SafeGuard.Run(() =>
+            {
+                if (popup.SelectedProviderId is not null)
+                    vm.SelectedProviderId = popup.SelectedProviderId;
+                if (popup.SelectedModelId is not null)
+                    vm.SelectedModelId = popup.SelectedModelId;
+                vm.ThinkingEnabled = popup.ThinkingEnabled;
+            });
+
+            popup.Show();
         });
 }
