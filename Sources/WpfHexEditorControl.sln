@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.4.11506.43
@@ -212,6 +212,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Plugins.AssemblyExplorer.Tests", "Tests\WpfHexEditor.Plugins.AssemblyExplorer.Tests\WpfHexEditor.Plugins.AssemblyExplorer.Tests.csproj", "{3A20F793-E761-4F5C-9C2D-78197273DB85}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Editor.CodeEditor.Tests", "Tests\WpfHexEditor.Editor.CodeEditor.Tests\WpfHexEditor.Editor.CodeEditor.Tests.csproj", "{ED089212-AF8F-4049-9447-24687D67B025}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{07D57EEB-2F50-60C4-C011-FE4FA775C9A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.Plugins.ClaudeAssistant", "Plugins\WpfHexEditor.Plugins.ClaudeAssistant\WpfHexEditor.Plugins.ClaudeAssistant.csproj", "{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHexEditor.MCP.IDEServers", "Plugins\WpfHexEditor.MCP.IDEServers\WpfHexEditor.MCP.IDEServers.csproj", "{12612C90-5ECC-4285-A1BB-D9444C18ECF5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1351,6 +1357,30 @@ Global
 		{ED089212-AF8F-4049-9447-24687D67B025}.Release|x64.Build.0 = Release|Any CPU
 		{ED089212-AF8F-4049-9447-24687D67B025}.Release|x86.ActiveCfg = Release|Any CPU
 		{ED089212-AF8F-4049-9447-24687D67B025}.Release|x86.Build.0 = Release|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Debug|x64.Build.0 = Debug|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Debug|x86.Build.0 = Debug|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Release|x64.ActiveCfg = Release|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Release|x64.Build.0 = Release|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Release|x86.ActiveCfg = Release|Any CPU
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B}.Release|x86.Build.0 = Release|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Debug|x64.Build.0 = Debug|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Debug|x86.Build.0 = Debug|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Release|x64.ActiveCfg = Release|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Release|x64.Build.0 = Release|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Release|x86.ActiveCfg = Release|Any CPU
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1452,6 +1482,8 @@ Global
 		{4BBBABF1-EC76-4BDF-BA2D-8B70437A306F} = {17DF3F5C-B057-775F-6415-08BE72BB68E2}
 		{3A20F793-E761-4F5C-9C2D-78197273DB85} = {17DF3F5C-B057-775F-6415-08BE72BB68E2}
 		{ED089212-AF8F-4049-9447-24687D67B025} = {17DF3F5C-B057-775F-6415-08BE72BB68E2}
+		{0FF0D0CB-4E58-4A3C-B7D2-214D884FA48B} = {07D57EEB-2F50-60C4-C011-FE4FA775C9A8}
+		{12612C90-5ECC-4285-A1BB-D9444C18ECF5} = {07D57EEB-2F50-60C4-C011-FE4FA775C9A8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5B382CAE-4846-466E-A3D3-0842043B4012}

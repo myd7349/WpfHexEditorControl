@@ -1,4 +1,4 @@
-﻿<!-- ==========================================================
+<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: TokyoNight/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -18,7 +18,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Tokyo Night Theme â€” Deep blue-night, electric blue/magenta accents -->
+    <!-- Tokyo Night Theme — Deep blue-night, electric blue/magenta accents -->
 
     <!-- Core UI -->
     <Color x:Key="DockBackgroundColor">#1A1B26</Color>
@@ -642,7 +642,7 @@
     <SolidColorBrush x:Key="GD_PeekTitleForeground"  Color="#D4D4D4" />
     <SolidColorBrush x:Key="GD_PeekNavLinkForeground" Color="#569CD6" />
 
-    <!-- RESX Editor tokens (RES_*) â€” inserted by Add-ResxTokens.ps1 -->
+    <!-- RESX Editor tokens (RES_*) — inserted by Add-ResxTokens.ps1 -->
     <SolidColorBrush x:Key="RES_BackgroundBrush"          Color="#1A1B26" />
     <SolidColorBrush x:Key="RES_ForegroundBrush"          Color="#C0CAF5" />
     <SolidColorBrush x:Key="RES_HeaderBackgroundBrush"    Color="#24283B" />
@@ -664,7 +664,7 @@
     <SolidColorBrush x:Key="RES_LocaleMissingBrush"       Color="#3A1B1B" />
     <SolidColorBrush x:Key="RES_ToolbarBackgroundBrush"   Color="#24283B" />
 
-    <!-- Unit Testing tokens (UT_*) â€” inserted by Add-UtTokens.ps1 -->
+    <!-- Unit Testing tokens (UT_*) — inserted by Add-UtTokens.ps1 -->
     <SolidColorBrush x:Key="UT_PassForegroundBrush"       Color="#9ECE6A" />
     <SolidColorBrush x:Key="UT_FailForegroundBrush"       Color="#F7768E" />
     <SolidColorBrush x:Key="UT_SkipForegroundBrush"       Color="#7AA2F7" />
@@ -694,7 +694,7 @@
     <SolidColorBrush x:Key="DF_PickerBackground"      Color="#24283B" />
     <SolidColorBrush x:Key="DF_PickerHighlightBrush"  Color="#3D59A1" />
 
-    <!-- Debugger tokens (DB_*) â€” inserted by Add-DbgTokens.ps1 -->
+    <!-- Debugger tokens (DB_*) — inserted by Add-DbgTokens.ps1 -->
     <SolidColorBrush x:Key="DB_BreakpointActiveBrush"        Color="#F7768E" />
     <SolidColorBrush x:Key="DB_BreakpointDisabledBrush"      Color="#414868" />
     <SolidColorBrush x:Key="DB_BreakpointConditionalBrush"   Color="#FF9E64" />
@@ -713,7 +713,7 @@
     <SolidColorBrush x:Key="DB_ToolbarBackgroundBrush"       Color="#24283B" />
     <SolidColorBrush x:Key="DB_StatusActiveBrush"            Color="#F7768E" />
 
-    <!-- Script Runner tokens (SR_*) Ã¢â‚¬â€ inserted by Add-ScriptTokens.ps1 -->
+    <!-- Script Runner tokens (SR_*) â€” inserted by Add-ScriptTokens.ps1 -->
     <SolidColorBrush x:Key="SR_ToolbarBackgroundBrush"   Color="#24283B" />
     <SolidColorBrush x:Key="SR_CodeBackgroundBrush"      Color="#1A1B26" />
     <SolidColorBrush x:Key="SR_CodeForegroundBrush"      Color="#A9B1D6" />
@@ -723,7 +723,7 @@
     <SolidColorBrush x:Key="SR_RunningForegroundBrush"   Color="#7AA2F7" />
     <SolidColorBrush x:Key="SR_ErrorForegroundBrush"     Color="#F7768E" />
 
-    <!-- DiffV2 tokens (DF_*) Ã¢â‚¬â€ inserted by Add-DiffV2Tokens.ps1 -->
+    <!-- DiffV2 tokens (DF_*) â€” inserted by Add-DiffV2Tokens.ps1 -->
     <SolidColorBrush x:Key="DF_GutterBackgroundBrush"        Color="#16161E" />
     <SolidColorBrush x:Key="DF_LineNumberForegroundBrush"    Color="#565F89" />
     <SolidColorBrush x:Key="DF_WordModifiedBrush"            Color="#25240A" />
@@ -733,7 +733,7 @@
     <SolidColorBrush x:Key="DF_OverviewAddedBrush"           Color="#9ECE6A" />
     <SolidColorBrush x:Key="DF_OverviewRemovedBrush"         Color="#F7768E" />
 
-    <!-- End-of-Block Hint tokens (ET_*) Ã¢â‚¬â€ inserted by Add-EndBlockTokens.ps1 -->
+    <!-- End-of-Block Hint tokens (ET_*) â€” inserted by Add-EndBlockTokens.ps1 -->
     <SolidColorBrush x:Key="ET_PopupBackground"    Color="#1A1B26" />
     <SolidColorBrush x:Key="ET_PopupBorderBrush"   Color="#3D4166" />
     <SolidColorBrush x:Key="ET_HeaderBackground"   Color="#13141F" />
@@ -747,7 +747,7 @@
     <SolidColorBrush x:Key="CE_StickyScrollForeground" Color="#C0CAF5" />
     <SolidColorBrush x:Key="CE_StickyScrollBorder"     Color="#3B4261" />
 
-    <!-- BDiff tokens (BDiff_*) Ã¢â‚¬â€ inserted by Add-BDiffTokens.ps1 -->
+    <!-- BDiff tokens (BDiff_*) â€” inserted by Add-BDiffTokens.ps1 -->
     <SolidColorBrush x:Key="BDiff_EqualByteBrush"            Color="#00000000" />
     <SolidColorBrush x:Key="BDiff_ModifiedByteBrush"         Color="#25240A" />
     <SolidColorBrush x:Key="BDiff_ModifiedByteStrongBrush"   Color="#363500" />
@@ -775,7 +775,7 @@
     <SolidColorBrush x:Key="WF_NavigatorBookmarkBrush"    Color="#7AA2F7" />
     <SolidColorBrush x:Key="WF_ConfidenceBadgeBrush"      Color="#9ECE6A" />
 
-    <!-- Customize Layout tokens (CL_*) Ã¢â‚¬â€ inserted by Add-CustomizeLayoutTokens.ps1 -->
+    <!-- Customize Layout tokens (CL_*) â€” inserted by Add-CustomizeLayoutTokens.ps1 -->
     <SolidColorBrush x:Key="CL_BackgroundBrush"      Color="#1A1B26" />
     <SolidColorBrush x:Key="CL_SectionHeaderBrush"    Color="#414868" />
     <SolidColorBrush x:Key="CL_ToggleActiveBrush"     Color="#7AA2F7" />
@@ -808,7 +808,7 @@
     <SolidColorBrush x:Key="DE_MiniMapBg"             Color="#141414"/>
     <SolidColorBrush x:Key="DE_MiniMapScrollBrush"    Color="#404040"/>
 
-    <!-- DE_* v2 â€” Toolbar / BreadcrumbBar / PopToolbar / StatusBar / Zoom -->
+    <!-- DE_* v2 — Toolbar / BreadcrumbBar / PopToolbar / StatusBar / Zoom -->
     <SolidColorBrush x:Key="DE_ToolbarBackground"        Color="#252525"/>
     <SolidColorBrush x:Key="DE_ToolbarBorderBrush"       Color="#3A3A3A"/>
     <SolidColorBrush x:Key="DE_ToolbarButtonHoverBrush"  Color="#3A3A3A"/>
@@ -874,4 +874,41 @@
     <SolidColorBrush x:Key="SC_IconFieldBrush"      Color="#9CDCFE"/>
     <SolidColorBrush x:Key="SC_IconKeywordBrush"    Color="#569CD6"/>
     <SolidColorBrush x:Key="SC_IconSnippetBrush"    Color="#C586C0"/>
+
+    <!-- Claude AI Assistant tokens (CA_*) -->
+    <Color x:Key="CA_AccentBrandingColor">#CC785C</Color>
+    <Color x:Key="CA_InputBackgroundColor">#2D2D30</Color>
+    <Color x:Key="CA_InputBorderColor">#5F5F7F</Color>
+    <Color x:Key="CA_InputForegroundColor">#D4D4D4</Color>
+    <Color x:Key="CA_MessageAssistantBackgroundColor">#252535</Color>
+    <Color x:Key="CA_MessageBorderColor">#3F3F5F</Color>
+    <Color x:Key="CA_MessageForegroundColor">#ECECF1</Color>
+    <Color x:Key="CA_MessageUserBackgroundColor">#2D2D3F</Color>
+    <Color x:Key="CA_PanelBackgroundColor">#1E1E2E</Color>
+    <Color x:Key="CA_TitleBarBadgeErrorColor">#E05252</Color>
+    <Color x:Key="CA_TitleBarBadgeIdleColor">#4EC94E</Color>
+    <Color x:Key="CA_TitleBarBadgeStreamingColor">#E8A832</Color>
+    <Color x:Key="CA_TitleBarButtonBackgroundColor">#2D2D30</Color>
+    <Color x:Key="CA_TitleBarButtonHoverColor">#3E3E42</Color>
+    <Color x:Key="CA_ToolCallBackgroundColor">#1A1A2E</Color>
+    <Color x:Key="CA_ToolCallBorderColor">#3F3F5F</Color>
+    <Color x:Key="CA_ToolCallForegroundColor">#A0A0C0</Color>
+
+    <SolidColorBrush x:Key="CA_AccentBrandingBrush" Color="{StaticResource CA_AccentBrandingColor}"/>
+    <SolidColorBrush x:Key="CA_InputBackgroundBrush" Color="{StaticResource CA_InputBackgroundColor}"/>
+    <SolidColorBrush x:Key="CA_InputBorderBrush" Color="{StaticResource CA_InputBorderColor}"/>
+    <SolidColorBrush x:Key="CA_InputForegroundBrush" Color="{StaticResource CA_InputForegroundColor}"/>
+    <SolidColorBrush x:Key="CA_MessageAssistantBackgroundBrush" Color="{StaticResource CA_MessageAssistantBackgroundColor}"/>
+    <SolidColorBrush x:Key="CA_MessageBorderBrush" Color="{StaticResource CA_MessageBorderColor}"/>
+    <SolidColorBrush x:Key="CA_MessageForegroundBrush" Color="{StaticResource CA_MessageForegroundColor}"/>
+    <SolidColorBrush x:Key="CA_MessageUserBackgroundBrush" Color="{StaticResource CA_MessageUserBackgroundColor}"/>
+    <SolidColorBrush x:Key="CA_PanelBackgroundBrush" Color="{StaticResource CA_PanelBackgroundColor}"/>
+    <SolidColorBrush x:Key="CA_TitleBarBadgeErrorBrush" Color="{StaticResource CA_TitleBarBadgeErrorColor}"/>
+    <SolidColorBrush x:Key="CA_TitleBarBadgeIdleBrush" Color="{StaticResource CA_TitleBarBadgeIdleColor}"/>
+    <SolidColorBrush x:Key="CA_TitleBarBadgeStreamingBrush" Color="{StaticResource CA_TitleBarBadgeStreamingColor}"/>
+    <SolidColorBrush x:Key="CA_TitleBarButtonBackgroundBrush" Color="{StaticResource CA_TitleBarButtonBackgroundColor}"/>
+    <SolidColorBrush x:Key="CA_TitleBarButtonHoverBrush" Color="{StaticResource CA_TitleBarButtonHoverColor}"/>
+    <SolidColorBrush x:Key="CA_ToolCallBackgroundBrush" Color="{StaticResource CA_ToolCallBackgroundColor}"/>
+    <SolidColorBrush x:Key="CA_ToolCallBorderBrush" Color="{StaticResource CA_ToolCallBorderColor}"/>
+    <SolidColorBrush x:Key="CA_ToolCallForegroundBrush" Color="{StaticResource CA_ToolCallForegroundColor}"/>
 </ResourceDictionary>
