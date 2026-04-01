@@ -143,6 +143,28 @@ public static class ConversationPersistence
         await File.WriteAllTextAsync(indexPath, indexJson);
     }
 
+    // ── Open tabs state ──────────────────────────────────────────────
+
+    public static async Task SaveOpenTabsAsync(OpenTabsState state)
+    {
+        Directory.CreateDirectory(Dir);
+        var path = Path.Combine(Dir, "open-tabs.json");
+        var json = JsonSerializer.Serialize(state, s_json);
+        await File.WriteAllTextAsync(path, json);
+    }
+
+    public static async Task<OpenTabsState?> LoadOpenTabsAsync()
+    {
+        var path = Path.Combine(Dir, "open-tabs.json");
+        if (!File.Exists(path)) return null;
+        try
+        {
+            var json = await File.ReadAllTextAsync(path);
+            return JsonSerializer.Deserialize<OpenTabsState>(json, s_json);
+        }
+        catch { return null; }
+    }
+
     // DTOs for JSON serialization
     private sealed class ConversationDto
     {

@@ -58,32 +58,45 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
     public async Task RestoreSessionsAsync()
     {
         var sessions = await ConversationPersistence.LoadAllAsync();
+        var openTabState = await ConversationPersistence.LoadOpenTabsAsync();
 
-        // Filter out empty sessions (no messages = never used) and clean them from disk
-        var nonEmpty = sessions.Where(s => s.Messages.Count > 0).ToList();
+        // Clean empty sessions from disk
         foreach (var empty in sessions.Where(s => s.Messages.Count == 0))
             _ = ConversationPersistence.DeleteAsync(empty.Id);
 
-        if (nonEmpty.Count > 0)
+        if (openTabState is { OpenSessionIds.Count: > 0 })
         {
-            // Remove the initial empty tab created by constructor
-            Tabs.Clear();
-            ActiveTab = null;
+            // Restore only the tabs that were open at last shutdown
+            var sessionMap = sessions.ToDictionary(s => s.Id);
+            var toRestore = openTabState.OpenSessionIds
+                .Where(id => sessionMap.ContainsKey(id) && sessionMap[id].Messages.Count > 0)
+                .Select(id => sessionMap[id])
+                .ToList();
 
-            foreach (var session in nonEmpty)
+            if (toRestore.Count > 0)
             {
-                var tab = CreateTabForSession(session);
-                foreach (var msg in session.Messages)
-                {
-                    tab.Messages.Add(new Messages.ChatMessageViewModel
-                    {
-                        Role = msg.Role,
-                        Text = msg.GetTextContent()
-                    });
-                }
-            }
+                Tabs.Clear();
+                ActiveTab = null;
 
-            ActiveTab = Tabs[0];
+                foreach (var session in toRestore)
+                {
+                    var tab = CreateTabForSession(session);
+                    foreach (var msg in session.Messages)
+                    {
+                        tab.Messages.Add(new Messages.ChatMessageViewModel
+                        {
+                            Role = msg.Role,
+                            Text = msg.GetTextContent()
+                        });
+                    }
+                }
+
+                // Restore active tab
+                var activeTab = openTabState.ActiveSessionId is not null
+                    ? Tabs.FirstOrDefault(t => t.Session.Id == openTabState.ActiveSessionId)
+                    : null;
+                ActiveTab = activeTab ?? Tabs[0];
+            }
         }
 
         await History.LoadAsync();
@@ -110,8 +123,10 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
     {
         if (tab is null) return;
 
-        // Auto-save before closing
-        _ = ConversationPersistence.SaveAsync(tab.Session);
+        // Save to history (conversation file stays on disk for history panel)
+        // but it won't reopen because open-tabs.json won't include it
+        if (tab.Session.Messages.Count > 0)
+            _ = ConversationPersistence.SaveAsync(tab.Session);
 
         var idx = Tabs.IndexOf(tab);
         Tabs.Remove(tab);
@@ -138,6 +153,17 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
             if (tab.Session.Messages.Count > 0)
                 await ConversationPersistence.SaveAsync(tab.Session);
         }
+
+        // Save which tabs are currently open (so we restore only these)
+        var openIds = Tabs
+            .Where(t => t.Session.Messages.Count > 0)
+            .Select(t => t.Session.Id)
+            .ToList();
+        await ConversationPersistence.SaveOpenTabsAsync(new OpenTabsState
+        {
+            OpenSessionIds = openIds,
+            ActiveSessionId = ActiveTab?.Session.Id
+        });
     }
 
     public void UpdateModelIds(string providerId)
