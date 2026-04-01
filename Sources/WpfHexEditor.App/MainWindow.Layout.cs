@@ -216,6 +216,8 @@ public partial class MainWindow
 
             case "toolbar":
                 MainToolBarPanel.Visibility = vis;
+                if (MainToolBarPanel.Parent is FrameworkElement toolbarBorder)
+                    toolbarBorder.Visibility = vis;
                 break;
 
             case "statusbar":

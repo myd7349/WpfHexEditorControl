@@ -667,7 +667,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 // For brace regions: label appears after the opening line text (e.g. after '{').
                 var codeLine = _document.Lines[lineIndex];
-                double textLen = (codeLine.Text?.TrimEnd().Length ?? 0) * _charWidth;
+                string codeText = codeLine.Text ?? string.Empty;
+                int trimmedLen = codeText.TrimEnd().Length;
+                double textLen = _glyphRenderer?.ComputeVisualX(codeText, trimmedLen)
+                                 ?? trimmedLen * _charWidth;
                 labelX    = textX + textLen + _charWidth * 0.5;
                 labelText = "{ \u2026 }";
             }
