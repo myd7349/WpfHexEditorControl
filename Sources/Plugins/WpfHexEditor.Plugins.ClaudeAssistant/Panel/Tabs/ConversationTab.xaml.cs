@@ -6,9 +6,10 @@
 // Created: 2026-03-31
 // License: GNU Affero General Public License v3.0 (AGPL-3.0)
 // Description:
-//     Conversation tab code-behind. Auto-scroll and input key handling.
+//     Conversation tab code-behind. Auto-scroll, input key handling, button events.
 // ==========================================================
 using System.Collections.Specialized;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -22,14 +23,14 @@ public partial class ConversationTab : UserControl
         Loaded += OnLoaded;
     }
 
-    private void OnLoaded(object sender, System.Windows.RoutedEventArgs e)
+    private ConversationTabViewModel? Vm => DataContext as ConversationTabViewModel;
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (DataContext is ConversationTabViewModel vm)
+        if (Vm is not null)
         {
-            ((INotifyCollectionChanged)vm.Messages).CollectionChanged += (_, _) =>
-            {
+            ((INotifyCollectionChanged)Vm.Messages).CollectionChanged += (_, _) =>
                 ChatScroller.ScrollToEnd();
-            };
         }
     }
 
@@ -37,16 +38,24 @@ public partial class ConversationTab : UserControl
     {
         if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None)
         {
-            if (DataContext is ConversationTabViewModel { SendCommand: { } cmd } && cmd.CanExecute(null))
+            if (Vm?.SendCommand is { } cmd && cmd.CanExecute(null))
             {
                 cmd.Execute(null);
                 e.Handled = true;
             }
         }
+        else if (e.Key == Key.Escape && Vm?.IsStreaming == true)
+        {
+            Vm.CancelCommand.Execute(null);
+            e.Handled = true;
+        }
     }
 
-    private void OnProviderChanged(object sender, SelectionChangedEventArgs e)
+    private void OnSendClick(object sender, MouseButtonEventArgs e)
     {
-        // Model list update handled by VM property change
+        if (Vm?.SendCommand is { } cmd && cmd.CanExecute(null))
+            cmd.Execute(null);
     }
+
+    private void OnCancelClick(object sender, MouseButtonEventArgs e) => Vm?.CancelCommand.Execute(null);
 }
