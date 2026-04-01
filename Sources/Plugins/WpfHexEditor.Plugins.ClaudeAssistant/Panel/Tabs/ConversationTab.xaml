@@ -131,9 +131,9 @@
                                 </TextBlock>
                             </Border>
 
-                            <!-- Message bubble -->
-                            <Border Grid.Column="1" Padding="10,8" CornerRadius="4"
-                                    Margin="4,0,0,0">
+                            <!-- Message bubble + hover action bar -->
+                            <Grid Grid.Column="1" Margin="4,0,0,0">
+                            <Border Padding="10,8" CornerRadius="4">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background" Value="{DynamicResource CA_MessageAssistantBackgroundBrush}"/>
@@ -178,9 +178,8 @@
                                                    Margin="0,4,0,0"/>
                                     </Expander>
 
-                                    <!-- Message text -->
-                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12.5"
-                                               Foreground="{DynamicResource CA_MessageForegroundBrush}"/>
+                                    <!-- Message text (rich markdown) -->
+                                    <msgs:ChatMessageContent/>
 
                                     <!-- Tool calls -->
                                     <ItemsControl ItemsSource="{Binding ToolCalls}" Margin="0,4,0,0">
@@ -253,6 +252,33 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
+
+                            <!-- Hover action bar -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Margin="0,-2,4,0" Opacity="0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Grid}}" Value="True">
+                                                <Setter Property="Opacity" Value="1"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+                                <Border CornerRadius="4" Padding="2"
+                                        Background="{DynamicResource CA_ToolCallBackgroundBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                Width="26" Height="22" Padding="0" Cursor="Hand"
+                                                BorderThickness="0" ToolTip="Copy message"
+                                                Background="{DynamicResource CA_ToolCallBackgroundBrush}"
+                                                Foreground="{DynamicResource CA_ToolCallForegroundBrush}"
+                                                Click="OnCopyMessageClick"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                            </Grid>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

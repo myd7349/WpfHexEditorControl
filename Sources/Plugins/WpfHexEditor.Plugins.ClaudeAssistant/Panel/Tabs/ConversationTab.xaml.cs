@@ -12,6 +12,7 @@ using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using WpfHexEditor.Plugins.ClaudeAssistant.Panel.Messages;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel.Tabs;
 
@@ -155,6 +156,13 @@ public partial class ConversationTab : UserControl
         }
         MentionPopup.IsOpen = false;
     }
+
+    private void OnCopyMessageClick(object sender, RoutedEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            if (sender is FrameworkElement { DataContext: ChatMessageViewModel msg } && !string.IsNullOrEmpty(msg.Text))
+                Clipboard.SetText(msg.Text);
+        });
 
     private void OnModelPillClick(object sender, MouseButtonEventArgs e)
         => SafeGuard.Run(() =>
