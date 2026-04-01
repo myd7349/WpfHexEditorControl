@@ -206,7 +206,8 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         var owner = (_panel != null ? Window.GetWindow(_panel) : null)
                  ?? (anchor != null ? Window.GetWindow(anchor) : null)
                  ?? Application.Current.MainWindow;
-        var palette = new ClaudeCommandPalette(entries, owner!, anchor);
+        var paletteAnchor = _context?.UIRegistry.GetCommandPaletteAnchor();
+        var palette = new ClaudeCommandPalette(entries, owner!, paletteAnchor);
         palette.Show();
     }
 

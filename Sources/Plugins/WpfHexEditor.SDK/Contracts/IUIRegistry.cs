@@ -147,6 +147,15 @@ public interface IUIRegistry
     /// <summary>Unregisters a title bar item by its UI ID.</summary>
     void UnregisterTitleBarItem(string uiId);
 
+    // -- Layout Anchors -------------------------------------------------------
+
+    /// <summary>
+    /// Returns the screen-coordinate anchor point for popup positioning
+    /// (centered below the title bar search area). Matches the standard
+    /// Command Palette (Ctrl+Shift+P) anchor. Returns null if not available.
+    /// </summary>
+    Point? GetCommandPaletteAnchor() => null;
+
     // -- Bulk Unregister ------------------------------------------------------
 
     /// <summary>

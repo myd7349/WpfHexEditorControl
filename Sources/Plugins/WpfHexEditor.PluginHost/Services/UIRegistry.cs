@@ -220,6 +220,16 @@ public sealed class UIRegistry : IUIRegistry
     /// <summary>Raised when title bar contributors change (add/remove).</summary>
     public event EventHandler? TitleBarChanged;
 
+    // -- Layout Anchors -------------------------------------------------------
+
+    /// <summary>
+    /// Delegate set by the host (MainWindow) to compute the command palette anchor point.
+    /// </summary>
+    public Func<Point?>? CommandPaletteAnchorProvider { get; set; }
+
+    /// <inheritdoc />
+    public Point? GetCommandPaletteAnchor() => CommandPaletteAnchorProvider?.Invoke();
+
     // -- Bulk Unregister (also removes contributor) ----------------------------
 
     /// <inheritdoc />

@@ -29,7 +29,7 @@ public sealed class ClaudeCommandPalette : Window
     public ClaudeCommandPalette(
         List<ClaudeCommandEntry> entries,
         Window owner,
-        UIElement? anchor = null)
+        Point? anchor = null)
     {
         _allEntries = entries;
 
@@ -47,9 +47,17 @@ public sealed class ClaudeCommandPalette : Window
             Owner = owner;
             WindowStartupLocation = WindowStartupLocation.Manual;
 
-            // Top-center of owner window (like Customize Layout popup)
-            Left = owner.Left + (owner.Width - Width) / 2;
-            Top = owner.Top + 48;
+            if (anchor.HasValue)
+            {
+                // Same positioning as standard Command Palette (Ctrl+Shift+P)
+                Left = anchor.Value.X - Width / 2;
+                Top = anchor.Value.Y;
+            }
+            else
+            {
+                Left = owner.Left + (owner.Width - Width) / 2;
+                Top = owner.Top + owner.Height * 0.18;
+            }
         }
 
         // Drop shadow
