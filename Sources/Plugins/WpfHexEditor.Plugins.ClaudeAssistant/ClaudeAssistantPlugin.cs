@@ -50,8 +50,9 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         _connectionService = new ClaudeConnectionService();
         _connectionService.Start();
 
-        // Create panel
+        // Create panel and restore saved sessions
         _vm = new ClaudeAssistantPanelViewModel();
+        await _vm.RestoreSessionsAsync();
         _panel = new ClaudeAssistantPanel { DataContext = _vm };
 
         // Register dockable panel
@@ -116,16 +117,15 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         };
 
         context.Output?.Info($"[ClaudeAssistant] Plugin initialized (v{Version})");
-
-        await Task.CompletedTask;
     }
 
-    public Task ShutdownAsync(CancellationToken ct = default)
+    public async Task ShutdownAsync(CancellationToken ct = default)
     {
         _connectionService?.Dispose();
+        if (_vm is not null)
+            await _vm.SaveAllSessionsAsync();
         ClaudeAssistantOptions.Instance.Save();
         _context?.Output?.Info("[ClaudeAssistant] Plugin shutdown.");
-        return Task.CompletedTask;
     }
 
     // IPluginWithOptions

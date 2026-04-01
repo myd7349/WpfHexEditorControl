@@ -1,10 +1,13 @@
 // Project: WpfHexEditor.Plugins.ClaudeAssistant
 // File: Panel/ClaudeAssistantPanelViewModel.cs
-// Description: Root ViewModel for the assistant panel. Manages active conversation tab.
+// Description: Root ViewModel — multi-tab conversations, history panel, provider registry.
 
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using WpfHexEditor.Plugins.ClaudeAssistant.Api;
 using WpfHexEditor.Plugins.ClaudeAssistant.Options;
+using WpfHexEditor.Plugins.ClaudeAssistant.Panel.History;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.Tabs;
 using WpfHexEditor.Plugins.ClaudeAssistant.Providers.Anthropic;
 using WpfHexEditor.Plugins.ClaudeAssistant.Providers.Google;
@@ -18,27 +21,55 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
 {
     private readonly ModelRegistry _registry = new();
 
-    [ObservableProperty] private string _statusText = "Ready";
+    public ObservableCollection<ConversationTabViewModel> Tabs { get; } = [];
     [ObservableProperty] private ConversationTabViewModel? _activeTab;
+    [ObservableProperty] private string _statusText = "Ready";
+    [ObservableProperty] private bool _isHistoryVisible;
 
+    public HistoryPanelViewModel History { get; } = new();
     public string[] ProviderIds { get; }
-    public string[] ModelIds { get; private set; } = [];
 
     public ClaudeAssistantPanelViewModel()
     {
-        // Register all built-in providers
         _registry.Register(new AnthropicModelProvider());
         _registry.Register(new OpenAIModelProvider());
         _registry.Register(new GeminiModelProvider());
         _registry.Register(new OllamaModelProvider());
-
         ProviderIds = _registry.Providers.Select(p => p.ProviderId).ToArray();
 
-        // Create initial conversation tab
+        History.OpenSessionRequested += OnOpenSessionFromHistory;
+        History.DeleteSessionRequested += OnDeleteSessionFromHistory;
+
         CreateNewTab();
     }
 
-    public void CreateNewTab()
+    public async Task RestoreSessionsAsync()
+    {
+        var sessions = await ConversationPersistence.LoadAllAsync();
+        foreach (var session in sessions)
+        {
+            var tab = CreateTabForSession(session);
+            // Restore messages into VM
+            foreach (var msg in session.Messages)
+            {
+                tab.Messages.Add(new Messages.ChatMessageViewModel
+                {
+                    Role = msg.Role,
+                    Text = msg.GetTextContent()
+                });
+            }
+        }
+
+        if (Tabs.Count == 0)
+            CreateNewTab();
+        else
+            ActiveTab = Tabs[0];
+
+        await History.LoadAsync();
+    }
+
+    [RelayCommand]
+    private void CreateNewTab()
     {
         var opts = ClaudeAssistantOptions.Instance;
         var session = new ConversationSession
@@ -49,15 +80,86 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
             ThinkingBudgetTokens = opts.ThinkingBudgetTokens
         };
 
-        var tabVm = new ConversationTabViewModel(session, _registry);
-        ActiveTab = tabVm;
-        UpdateModelIds(opts.DefaultProviderId);
+        var tab = CreateTabForSession(session);
+        ActiveTab = tab;
+    }
+
+    [RelayCommand]
+    private void CloseTab(ConversationTabViewModel? tab)
+    {
+        if (tab is null) return;
+
+        // Auto-save before closing
+        _ = ConversationPersistence.SaveAsync(tab.Session);
+
+        var idx = Tabs.IndexOf(tab);
+        Tabs.Remove(tab);
+
+        if (Tabs.Count == 0)
+            CreateNewTab();
+        else if (ActiveTab == tab)
+            ActiveTab = Tabs[Math.Min(idx, Tabs.Count - 1)];
+    }
+
+    [RelayCommand]
+    private void ToggleHistory()
+    {
+        IsHistoryVisible = !IsHistoryVisible;
+        if (IsHistoryVisible)
+            _ = History.LoadAsync();
+    }
+
+    public async Task SaveAllSessionsAsync()
+    {
+        foreach (var tab in Tabs)
+            await ConversationPersistence.SaveAsync(tab.Session);
     }
 
     public void UpdateModelIds(string providerId)
     {
-        var provider = _registry.GetProvider(providerId);
-        ModelIds = provider?.AvailableModels ?? [];
-        OnPropertyChanged(nameof(ModelIds));
+        // Notify active tab of model list change if needed
+    }
+
+    private ConversationTabViewModel CreateTabForSession(ConversationSession session)
+    {
+        var tab = new ConversationTabViewModel(session, _registry);
+        Tabs.Add(tab);
+        return tab;
+    }
+
+    private async void OnOpenSessionFromHistory(string sessionId)
+    {
+        // Check if already open
+        var existing = Tabs.FirstOrDefault(t => t.Session.Id == sessionId);
+        if (existing is not null)
+        {
+            ActiveTab = existing;
+            IsHistoryVisible = false;
+            return;
+        }
+
+        var sessions = await ConversationPersistence.LoadAllAsync();
+        var session = sessions.FirstOrDefault(s => s.Id == sessionId);
+        if (session is null) return;
+
+        var tab = CreateTabForSession(session);
+        foreach (var msg in session.Messages)
+        {
+            tab.Messages.Add(new Messages.ChatMessageViewModel
+            {
+                Role = msg.Role,
+                Text = msg.GetTextContent()
+            });
+        }
+
+        ActiveTab = tab;
+        IsHistoryVisible = false;
+    }
+
+    private void OnDeleteSessionFromHistory(string sessionId)
+    {
+        var tab = Tabs.FirstOrDefault(t => t.Session.Id == sessionId);
+        if (tab is not null)
+            Tabs.Remove(tab);
     }
 }
