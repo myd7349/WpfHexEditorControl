@@ -29,9 +29,53 @@ public partial class ConversationTab : UserControl
         => SafeGuard.Run(() =>
         {
             if (Vm is not null)
+            {
                 ((INotifyCollectionChanged)Vm.Messages).CollectionChanged += (_, _) =>
-                    SafeGuard.Run(() => ChatScroller.ScrollToEnd());
+                    SafeGuard.Run(() =>
+                    {
+                        ChatScroller.ScrollToEnd();
+                        UpdateEmptyState();
+                    });
+                UpdateEmptyState();
+
+                // Wire watermark visibility to InputText changes
+                Vm.PropertyChanged += (_, args) =>
+                {
+                    if (args.PropertyName == nameof(Vm.InputText))
+                    {
+                        UpdateWatermark();
+                        CheckMentionTrigger();
+                    }
+                };
+                UpdateWatermark();
+            }
+
+            // Wire @mention selection
+            MentionControl.MentionSelected += token =>
+            {
+                SafeGuard.Run(() =>
+                {
+                    if (Vm is null) return;
+                    // Replace the @... prefix with the selected token
+                    var text = Vm.InputText;
+                    var atIdx = text.LastIndexOf('@');
+                    if (atIdx >= 0)
+                        Vm.InputText = text[..atIdx] + token;
+                    else
+                        Vm.InputText += token;
+                    MentionPopup.IsOpen = false;
+                    InputBox.CaretIndex = Vm.InputText.Length;
+                    InputBox.Focus();
+                });
+            };
         });
+
+    private void UpdateWatermark()
+    {
+        InputWatermark.Visibility = string.IsNullOrEmpty(Vm?.InputText)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
 
     private void OnInputKeyDown(object sender, KeyEventArgs e)
         => SafeGuard.Run(() =>
@@ -60,4 +104,48 @@ public partial class ConversationTab : UserControl
 
     private void OnCancelClick(object sender, MouseButtonEventArgs e)
         => SafeGuard.Run(() => Vm?.CancelCommand.Execute(null));
+
+    private void UpdateEmptyState()
+    {
+        var hasMessages = Vm?.Messages.Count > 0;
+        WelcomePanel.Visibility = hasMessages ? Visibility.Collapsed : Visibility.Visible;
+        ChatScroller.Visibility = hasMessages ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void OnSuggestionClick(object sender, MouseButtonEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            if (sender is FrameworkElement { Tag: string prompt } && Vm is not null)
+            {
+                Vm.InputText = prompt;
+                if (Vm.SendCommand.CanExecute(null))
+                    Vm.SendCommand.Execute(null);
+            }
+        });
+
+    private void CheckMentionTrigger()
+    {
+        var text = Vm?.InputText ?? "";
+        var atIdx = text.LastIndexOf('@');
+        if (atIdx >= 0 && (atIdx == 0 || text[atIdx - 1] == ' '))
+        {
+            var query = text[(atIdx + 1)..];
+            // Don't show if the token is already complete (has a space after it)
+            if (!query.Contains(' '))
+            {
+                MentionControl.Filter(query);
+                MentionPopup.IsOpen = true;
+                return;
+            }
+        }
+        MentionPopup.IsOpen = false;
+    }
+
+    private void OnModelPillClick(object sender, MouseButtonEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            // Model switcher is handled by the parent panel which has access to the registry.
+            // Fire a routed event or let the pill click bubble up.
+            // For now, this is a no-op placeholder until Phase 5 wiring.
+        });
 }

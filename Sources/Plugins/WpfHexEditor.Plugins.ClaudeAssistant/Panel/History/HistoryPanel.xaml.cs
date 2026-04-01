@@ -43,4 +43,12 @@ public partial class HistoryPanel : UserControl
 
     private void OnClearAllClick(object sender, MouseButtonEventArgs e)
         => SafeGuard.Run(() => Vm?.ClearAllCommand.Execute(null));
+
+    private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            SearchWatermark.Visibility = string.IsNullOrEmpty(SearchBox.Text)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        });
 }

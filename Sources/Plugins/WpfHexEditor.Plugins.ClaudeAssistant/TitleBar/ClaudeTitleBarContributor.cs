@@ -42,9 +42,9 @@ public sealed class ClaudeTitleBarContributor : ITitleBarContributor
     public UIElement CreateButton()
     {
         _button = new ClaudeTitleBarButton();
-        _button.TogglePanelRequested += () => SafeGuard.Run(_showCommandPalette);
+        _button.TogglePanelRequested += () => SafeGuard.Run(_togglePanel);
         _button.NewTabRequested += () => SafeGuard.Run(_newTab);
-        _button.AskSelectionRequested += () => SafeGuard.Run(_togglePanel);
+        _button.AskSelectionRequested += () => SafeGuard.Run(_showCommandPalette);
         _button.UpdateStatus(_connectionService.Status);
         return _button;
     }

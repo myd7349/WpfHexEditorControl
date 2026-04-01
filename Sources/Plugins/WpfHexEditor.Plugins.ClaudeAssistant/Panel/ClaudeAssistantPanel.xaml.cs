@@ -27,6 +27,9 @@ public partial class ClaudeAssistantPanel : UserControl
     private void OnNewTabClick(object sender, MouseButtonEventArgs e)
         => SafeGuard.Run(() => Vm?.CreateNewTabCommand.Execute(null));
 
+    private void OnHistoryClick(object sender, MouseButtonEventArgs e)
+        => SafeGuard.Run(() => Vm?.ToggleHistoryCommand.Execute(null));
+
     private void OnTabClick(object sender, MouseButtonEventArgs e)
         => SafeGuard.Run(() =>
         {

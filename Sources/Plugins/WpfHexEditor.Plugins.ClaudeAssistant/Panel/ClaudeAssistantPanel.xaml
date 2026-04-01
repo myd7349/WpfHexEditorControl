@@ -15,31 +15,51 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Tab strip -->
-        <Border Grid.Row="0" Height="28" Padding="4,0"
-                Background="{DynamicResource DockTabInactiveBrush}"
-                BorderBrush="{DynamicResource DockBorderBrush}"
+        <!-- Tab strip toolbar -->
+        <Border Grid.Row="0" Height="28" Padding="2,0"
+                Background="{DynamicResource Panel_ToolbarBrush}"
+                BorderBrush="{DynamicResource Panel_ToolbarBorderBrush}"
                 BorderThickness="0,0,0,1">
             <DockPanel VerticalAlignment="Center">
-                <!-- New tab button (right side) -->
-                <Border DockPanel.Dock="Right" Width="24" Height="22"
-                        CornerRadius="2" Cursor="Hand" Margin="4,0,0,0"
-                        ToolTip="New conversation"
-                        MouseLeftButtonDown="OnNewTabClick">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource DockTabHoverBrush}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <TextBlock Text="+" FontSize="16" FontWeight="Bold"
-                               Foreground="{DynamicResource DockMenuForegroundBrush}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
+                <!-- Right-side buttons -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="2,0,4,0">
+                    <!-- History button -->
+                    <Border Width="22" Height="22" CornerRadius="2" Cursor="Hand"
+                            ToolTip="Conversation history"
+                            MouseLeftButtonDown="OnHistoryClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                   Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <!-- New tab button -->
+                    <Border Width="22" Height="22" CornerRadius="2" Cursor="Hand"
+                            ToolTip="New conversation (Ctrl+Shift+Alt+A)"
+                            MouseLeftButtonDown="OnNewTabClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                   Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
 
                 <!-- Tab list -->
                 <ItemsControl ItemsSource="{Binding Tabs}">
@@ -58,9 +78,16 @@
                                         <Setter Property="Background" Value="Transparent"/>
                                         <Setter Property="BorderBrush" Value="Transparent"/>
                                         <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource DockTabHoverBrush}"/>
-                                            </Trigger>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource CA_AccentBrandingBrush}"/>
+                                                <Setter Property="Background" Value="{DynamicResource DockBackgroundBrush}"/>
+                                            </DataTrigger>
+                                            <MultiTrigger>
+                                                <MultiTrigger.Conditions>
+                                                    <Condition Property="IsMouseOver" Value="True"/>
+                                                </MultiTrigger.Conditions>
+                                                <Setter Property="Background" Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>
+                                            </MultiTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
@@ -71,15 +98,16 @@
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Opacity" Value="0"/>
                                                 <Style.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource DockTabHoverBrush}"/>
-                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
+                                                        <Setter Property="Opacity" Value="1"/>
+                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
-                                        <TextBlock Text="x" FontSize="9"
-                                                   Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="8"
+                                                   Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <TextBlock Text="{Binding Title}" FontSize="11"

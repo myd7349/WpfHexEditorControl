@@ -928,4 +928,17 @@
     <SolidColorBrush x:Key="CA_ToolCallBackgroundBrush" Color="{StaticResource CA_ToolCallBackgroundColor}"/>
     <SolidColorBrush x:Key="CA_ToolCallBorderBrush" Color="{StaticResource CA_ToolCallBorderColor}"/>
     <SolidColorBrush x:Key="CA_ToolCallForegroundBrush" Color="{StaticResource CA_ToolCallForegroundColor}"/>
+
+    <!-- Claude AI Assistant tokens V2 (CA_* overkill upgrade) -->
+    <Color x:Key="CA_AvatarAssistantColor">#CC785C</Color>
+    <Color x:Key="CA_AvatarUserColor">#3B5998</Color>
+    <Color x:Key="CA_CodeBlockBackgroundColor">#F5F5F5</Color>
+    <Color x:Key="CA_ErrorColor">#D32F2F</Color>
+    <Color x:Key="CA_ThinkingForegroundColor">#6B7280</Color>
+
+    <SolidColorBrush x:Key="CA_AvatarAssistantBrush" Color="{StaticResource CA_AvatarAssistantColor}"/>
+    <SolidColorBrush x:Key="CA_AvatarUserBrush" Color="{StaticResource CA_AvatarUserColor}"/>
+    <SolidColorBrush x:Key="CA_CodeBlockBackgroundBrush" Color="{StaticResource CA_CodeBlockBackgroundColor}"/>
+    <SolidColorBrush x:Key="CA_ErrorBrush" Color="{StaticResource CA_ErrorColor}"/>
+    <SolidColorBrush x:Key="CA_ThinkingForegroundBrush" Color="{StaticResource CA_ThinkingForegroundColor}"/>
 </ResourceDictionary>

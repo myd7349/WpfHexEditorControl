@@ -29,6 +29,12 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
 
     public ObservableCollection<ConversationTabViewModel> Tabs { get; } = [];
     [ObservableProperty] private ConversationTabViewModel? _activeTab;
+
+    partial void OnActiveTabChanged(ConversationTabViewModel? value)
+    {
+        foreach (var tab in Tabs)
+            tab.IsActive = ReferenceEquals(tab, value);
+    }
     [ObservableProperty] private string _statusText = "Ready";
     [ObservableProperty] private bool _isHistoryVisible;
 

@@ -30,6 +30,7 @@ public sealed partial class ConversationTabViewModel : ObservableObject
 
     [ObservableProperty] private string _inputText = "";
     [ObservableProperty] private bool _isStreaming;
+    [ObservableProperty] private bool _isActive;
     [ObservableProperty] private string _selectedProviderId;
     [ObservableProperty] private string _selectedModelId;
     [ObservableProperty] private bool _thinkingEnabled;
