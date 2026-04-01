@@ -107,7 +107,9 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         // ── 8. Titlebar button ──────────────────────────────────────────────
         var titleBarContributor = new ClaudeTitleBarContributor(
             _connectionService,
-            () => context.UIRegistry.TogglePanel(_panelUiId!));
+            showCommandPalette: () => ShowCommandPalette(),
+            togglePanel: () => context.UIRegistry.TogglePanel(_panelUiId!),
+            newTab: () => _vm?.CreateNewTabCommand.Execute(null));
         var titleBarUiId = context.UIRegistry.GenerateUIId(Id, "TitleBar", "Button");
         context.UIRegistry.RegisterTitleBarItem(titleBarUiId, Id, titleBarContributor);
 
