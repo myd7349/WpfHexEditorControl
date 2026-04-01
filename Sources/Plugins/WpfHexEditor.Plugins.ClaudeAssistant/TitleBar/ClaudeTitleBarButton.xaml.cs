@@ -21,7 +21,7 @@ public partial class ClaudeTitleBarButton : UserControl
 {
     private Storyboard? _pulseStoryboard;
 
-    public event Action? TogglePanelRequested;
+    public event Action? ShowCommandPaletteRequested;
     public event Action? NewTabRequested;
     public event Action? AskSelectionRequested;
     public event Action? FixErrorsRequested;
@@ -94,7 +94,7 @@ public partial class ClaudeTitleBarButton : UserControl
             ButtonBorder.Background = Brushes.Transparent;
         });
 
-    private void OnLeftClick(object sender, MouseButtonEventArgs e) => SafeGuard.Run(() => TogglePanelRequested?.Invoke());
+    private void OnLeftClick(object sender, MouseButtonEventArgs e) => SafeGuard.Run(() => ShowCommandPaletteRequested?.Invoke());
     private void OnRightClick(object sender, MouseButtonEventArgs e) => SafeGuard.Run(() => ContextMenu!.IsOpen = true);
     private void OnNewTabClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => NewTabRequested?.Invoke());
     private void OnAskSelectionClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => AskSelectionRequested?.Invoke());

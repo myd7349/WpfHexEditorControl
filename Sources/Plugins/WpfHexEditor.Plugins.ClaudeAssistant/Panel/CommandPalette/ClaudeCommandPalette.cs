@@ -24,10 +24,12 @@ public sealed class ClaudeCommandPalette : Window
     private readonly List<ClaudeCommandEntry> _filteredEntries = [];
     private readonly ListBox _listBox;
     private readonly TextBox _searchBox;
+    private bool _closing;
 
     public ClaudeCommandPalette(
         List<ClaudeCommandEntry> entries,
-        Window owner)
+        Window owner,
+        UIElement? anchor = null)
     {
         _allEntries = entries;
 
@@ -43,7 +45,21 @@ public sealed class ClaudeCommandPalette : Window
         if (owner is not null)
         {
             Owner = owner;
-            WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            if (anchor is not null)
+            {
+                WindowStartupLocation = WindowStartupLocation.Manual;
+                var screenPt = anchor.PointToScreen(new Point(0, anchor.RenderSize.Height));
+                Left = screenPt.X - Width + anchor.RenderSize.Width;
+                Top = screenPt.Y + 2;
+            }
+            else
+            {
+                // Top-center of owner window (matches Customize Layout popup)
+                WindowStartupLocation = WindowStartupLocation.Manual;
+                Left = owner.Left + (owner.Width - Width) / 2;
+                Top = owner.Top + 48;
+            }
         }
 
         // Drop shadow
@@ -163,7 +179,11 @@ public sealed class ClaudeCommandPalette : Window
 
         // Keyboard
         PreviewKeyDown += OnPreviewKeyDown;
-        Deactivated += (_, _) => Close();
+        Deactivated += (_, _) =>
+        {
+            if (!_closing)
+                Dispatcher.BeginInvoke(new Action(SafeClose));
+        };
         Loaded += (_, _) => { _searchBox.Focus(); ApplyFilter(""); };
     }
 
@@ -192,7 +212,7 @@ public sealed class ClaudeCommandPalette : Window
         switch (e.Key)
         {
             case Key.Escape:
-                Close();
+                SafeClose();
                 e.Handled = true;
                 break;
             case Key.Enter:
@@ -216,11 +236,18 @@ public sealed class ClaudeCommandPalette : Window
 
     private void OnItemDoubleClick(object sender, MouseButtonEventArgs e) => ExecuteSelected();
 
+    private void SafeClose()
+    {
+        if (_closing) return;
+        _closing = true;
+        Close();
+    }
+
     private void ExecuteSelected()
     {
         if (_listBox.SelectedItem is ClaudeCommandEntry entry)
         {
-            Close();
+            SafeClose();
             entry.Execute();
         }
     }

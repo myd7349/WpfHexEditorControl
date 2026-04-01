@@ -11,6 +11,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.Tabs;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel;
@@ -86,28 +87,115 @@ public partial class ClaudeAssistantPanel : UserControl
             var tab = GetTabFromMenuItem(sender);
             if (tab is null) return;
 
-            // Show a simple rename dialog
+            // Themed rename dialog matching VS2022 style
             var dlg = new Window
             {
                 Title = "Rename Conversation",
-                Width = 360, Height = 130,
+                Width = 380, Height = 150,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = Window.GetWindow(this),
-                WindowStyle = WindowStyle.ToolWindow,
-                ResizeMode = ResizeMode.NoResize
+                WindowStyle = WindowStyle.None,
+                AllowsTransparency = true,
+                Background = Brushes.Transparent,
+                ResizeMode = ResizeMode.NoResize,
+                ShowInTaskbar = false
             };
-            var panel = new StackPanel { Margin = new Thickness(12) };
-            var tb = new TextBox { Text = tab.Title, FontSize = 13, Padding = new Thickness(4) };
+
+            // Outer border (themed)
+            var outerBorder = new Border
+            {
+                CornerRadius = new CornerRadius(4),
+                BorderThickness = new Thickness(1),
+            };
+            outerBorder.SetResourceReference(Border.BackgroundProperty, "DockBackgroundBrush");
+            outerBorder.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
+
+            var rootGrid = new Grid();
+            rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });  // title bar
+            rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // content
+
+            // Title bar
+            var titleBar = new Border { Height = 28, Cursor = Cursors.SizeAll };
+            titleBar.SetResourceReference(Border.BackgroundProperty, "DockMenuBackgroundBrush");
+            titleBar.MouseLeftButtonDown += (_, me) => { if (me.ClickCount == 1) dlg.DragMove(); };
+
+            var titleDock = new DockPanel();
+            var titleText = new TextBlock
+            {
+                Text = "Rename Conversation",
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(10, 0, 0, 0),
+                FontSize = 12
+            };
+            titleText.SetResourceReference(TextBlock.ForegroundProperty, "DockMenuForegroundBrush");
+
+            var closeBtn = new Button
+            {
+                Content = "\uE106", Width = 36, Height = 28,
+                FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 10,
+                BorderThickness = new Thickness(0), Cursor = Cursors.Hand
+            };
+            closeBtn.SetResourceReference(Button.BackgroundProperty, "DockMenuBackgroundBrush");
+            closeBtn.SetResourceReference(Button.ForegroundProperty, "DockMenuForegroundBrush");
+            closeBtn.Click += (_, _) => dlg.Close();
+            DockPanel.SetDock(closeBtn, Dock.Right);
+            titleDock.Children.Add(closeBtn);
+            titleDock.Children.Add(titleText);
+            titleBar.Child = titleDock;
+            Grid.SetRow(titleBar, 0);
+
+            // Content
+            var content = new StackPanel { Margin = new Thickness(16, 12, 16, 14) };
+            var tb = new TextBox
+            {
+                Text = tab.Title,
+                FontSize = 13,
+                Padding = new Thickness(6, 4, 6, 4),
+                BorderThickness = new Thickness(1)
+            };
+            tb.SetResourceReference(TextBox.BackgroundProperty, "DockBackgroundBrush");
+            tb.SetResourceReference(TextBox.ForegroundProperty, "DockMenuForegroundBrush");
+            tb.SetResourceReference(TextBox.BorderBrushProperty, "DockBorderBrush");
+            tb.SetResourceReference(TextBox.CaretBrushProperty, "DockMenuForegroundBrush");
             tb.SelectAll();
-            panel.Children.Add(tb);
-            var btnPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
-            var okBtn = new Button { Content = "OK", Width = 70, IsDefault = true, Margin = new Thickness(0, 0, 6, 0) };
-            var cancelBtn = new Button { Content = "Cancel", Width = 70, IsCancel = true };
+            content.Children.Add(tb);
+
+            var btnPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var okBtn = new Button
+            {
+                Content = "OK", Width = 80, Height = 26,
+                IsDefault = true, Margin = new Thickness(0, 0, 8, 0),
+                FontSize = 12
+            };
+            okBtn.SetResourceReference(Button.BackgroundProperty, "CA_AccentBrandingBrush");
+            okBtn.SetResourceReference(Button.ForegroundProperty, "DockMenuForegroundBrush");
             okBtn.Click += (_, _) => { dlg.DialogResult = true; dlg.Close(); };
+
+            var cancelBtn = new Button
+            {
+                Content = "Cancel", Width = 80, Height = 26,
+                IsCancel = true, FontSize = 12
+            };
+            cancelBtn.SetResourceReference(Button.BackgroundProperty, "DockMenuBackgroundBrush");
+            cancelBtn.SetResourceReference(Button.ForegroundProperty, "DockMenuForegroundBrush");
+
             btnPanel.Children.Add(okBtn);
             btnPanel.Children.Add(cancelBtn);
-            panel.Children.Add(btnPanel);
-            dlg.Content = panel;
+            content.Children.Add(btnPanel);
+            Grid.SetRow(content, 1);
+
+            rootGrid.Children.Add(titleBar);
+            rootGrid.Children.Add(content);
+            outerBorder.Child = rootGrid;
+            dlg.Content = outerBorder;
+
+            dlg.Loaded += (_, _) => { tb.Focus(); tb.SelectAll(); };
 
             if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(tb.Text))
             {

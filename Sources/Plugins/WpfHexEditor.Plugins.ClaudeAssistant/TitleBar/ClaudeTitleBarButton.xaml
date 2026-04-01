@@ -23,11 +23,27 @@
 
     <UserControl.ContextMenu>
         <ContextMenu>
-            <MenuItem Header="New Conversation" Click="OnNewTabClick"/>
-            <MenuItem Header="Ask About Selection" Click="OnAskSelectionClick"/>
-            <MenuItem Header="Fix Errors" Click="OnFixErrorsClick"/>
+            <MenuItem Header="New Conversation" Click="OnNewTabClick">
+                <MenuItem.Icon>
+                    <TextBlock Text="&#xE710;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Ask About Selection" Click="OnAskSelectionClick">
+                <MenuItem.Icon>
+                    <TextBlock Text="&#xE8BD;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Fix Errors" Click="OnFixErrorsClick">
+                <MenuItem.Icon>
+                    <TextBlock Text="&#xE90F;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
             <Separator/>
-            <MenuItem Header="Options..." Click="OnOptionsClick"/>
+            <MenuItem Header="Options..." Click="OnOptionsClick">
+                <MenuItem.Icon>
+                    <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
         </ContextMenu>
     </UserControl.ContextMenu>
 </UserControl>

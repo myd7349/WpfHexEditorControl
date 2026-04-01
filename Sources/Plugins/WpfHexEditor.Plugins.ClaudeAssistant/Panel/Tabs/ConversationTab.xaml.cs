@@ -17,10 +17,14 @@ namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel.Tabs;
 
 public partial class ConversationTab : UserControl
 {
+    private ConversationTabViewModel? _wiredVm;
+    private bool _mentionWired;
+
     public ConversationTab()
     {
         InitializeComponent();
         Loaded += OnLoaded;
+        DataContextChanged += (_, _) => SafeGuard.Run(WireCurrentVm);
     }
 
     private ConversationTabViewModel? Vm => DataContext as ConversationTabViewModel;
@@ -28,47 +32,58 @@ public partial class ConversationTab : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
         => SafeGuard.Run(() =>
         {
-            if (Vm is not null)
+            WireCurrentVm();
+
+            // Wire @mention selection (once only)
+            if (!_mentionWired)
             {
-                ((INotifyCollectionChanged)Vm.Messages).CollectionChanged += (_, _) =>
+                _mentionWired = true;
+                MentionControl.MentionSelected += token =>
+                {
                     SafeGuard.Run(() =>
                     {
-                        ChatScroller.ScrollToEnd();
-                        UpdateEmptyState();
+                        if (Vm is null) return;
+                        var text = Vm.InputText;
+                        var atIdx = text.LastIndexOf('@');
+                        if (atIdx >= 0)
+                            Vm.InputText = text[..atIdx] + token;
+                        else
+                            Vm.InputText += token;
+                        MentionPopup.IsOpen = false;
+                        InputBox.CaretIndex = Vm.InputText.Length;
+                        InputBox.Focus();
                     });
-                UpdateEmptyState();
-
-                // Wire watermark visibility to InputText changes
-                Vm.PropertyChanged += (_, args) =>
-                {
-                    if (args.PropertyName == nameof(Vm.InputText))
-                    {
-                        UpdateWatermark();
-                        CheckMentionTrigger();
-                    }
                 };
-                UpdateWatermark();
             }
-
-            // Wire @mention selection
-            MentionControl.MentionSelected += token =>
-            {
-                SafeGuard.Run(() =>
-                {
-                    if (Vm is null) return;
-                    // Replace the @... prefix with the selected token
-                    var text = Vm.InputText;
-                    var atIdx = text.LastIndexOf('@');
-                    if (atIdx >= 0)
-                        Vm.InputText = text[..atIdx] + token;
-                    else
-                        Vm.InputText += token;
-                    MentionPopup.IsOpen = false;
-                    InputBox.CaretIndex = Vm.InputText.Length;
-                    InputBox.Focus();
-                });
-            };
         });
+
+    private void WireCurrentVm()
+    {
+        var vm = Vm;
+        if (vm is null) { UpdateEmptyState(); return; }
+        if (ReferenceEquals(vm, _wiredVm)) { UpdateEmptyState(); return; }
+
+        _wiredVm = vm;
+
+        ((INotifyCollectionChanged)vm.Messages).CollectionChanged += (_, _) =>
+            SafeGuard.Run(() =>
+            {
+                ChatScroller.ScrollToEnd();
+                UpdateEmptyState();
+            });
+
+        vm.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(vm.InputText))
+            {
+                UpdateWatermark();
+                CheckMentionTrigger();
+            }
+        };
+
+        UpdateEmptyState();
+        UpdateWatermark();
+    }
 
     private void UpdateWatermark()
     {

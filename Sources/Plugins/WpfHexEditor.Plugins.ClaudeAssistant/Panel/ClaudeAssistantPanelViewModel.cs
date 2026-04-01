@@ -58,24 +58,33 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
     public async Task RestoreSessionsAsync()
     {
         var sessions = await ConversationPersistence.LoadAllAsync();
-        foreach (var session in sessions)
-        {
-            var tab = CreateTabForSession(session);
-            // Restore messages into VM
-            foreach (var msg in session.Messages)
-            {
-                tab.Messages.Add(new Messages.ChatMessageViewModel
-                {
-                    Role = msg.Role,
-                    Text = msg.GetTextContent()
-                });
-            }
-        }
 
-        if (Tabs.Count == 0)
-            CreateNewTab();
-        else
+        // Filter out empty sessions (no messages = never used) and clean them from disk
+        var nonEmpty = sessions.Where(s => s.Messages.Count > 0).ToList();
+        foreach (var empty in sessions.Where(s => s.Messages.Count == 0))
+            _ = ConversationPersistence.DeleteAsync(empty.Id);
+
+        if (nonEmpty.Count > 0)
+        {
+            // Remove the initial empty tab created by constructor
+            Tabs.Clear();
+            ActiveTab = null;
+
+            foreach (var session in nonEmpty)
+            {
+                var tab = CreateTabForSession(session);
+                foreach (var msg in session.Messages)
+                {
+                    tab.Messages.Add(new Messages.ChatMessageViewModel
+                    {
+                        Role = msg.Role,
+                        Text = msg.GetTextContent()
+                    });
+                }
+            }
+
             ActiveTab = Tabs[0];
+        }
 
         await History.LoadAsync();
     }
@@ -124,7 +133,11 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
     public async Task SaveAllSessionsAsync()
     {
         foreach (var tab in Tabs)
-            await ConversationPersistence.SaveAsync(tab.Session);
+        {
+            // Only persist sessions that have messages (skip empty "New conversation" tabs)
+            if (tab.Session.Messages.Count > 0)
+                await ConversationPersistence.SaveAsync(tab.Session);
+        }
     }
 
     public void UpdateModelIds(string providerId)

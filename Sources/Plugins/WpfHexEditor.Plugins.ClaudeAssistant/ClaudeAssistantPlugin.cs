@@ -107,9 +107,10 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         // ── 8. Titlebar button ──────────────────────────────────────────────
         var titleBarContributor = new ClaudeTitleBarContributor(
             _connectionService,
-            showCommandPalette: () => ShowCommandPalette(),
-            togglePanel: () => context.UIRegistry.TogglePanel(_panelUiId!),
-            newTab: () => _vm?.CreateNewTabCommand.Execute(null));
+            showCommandPalette: anchor => ShowCommandPalette(anchor),
+            newTab: () => _vm?.CreateNewTabCommand.Execute(null),
+            fixErrors: () => SendQuickAction("@selection @errors Fix the errors in this code."),
+            openOptions: () => context.CommandRegistry?.Find("View.Options")?.Command.Execute(null));
         var titleBarUiId = context.UIRegistry.GenerateUIId(Id, "TitleBar", "Button");
         context.UIRegistry.RegisterTitleBarItem(titleBarUiId, Id, titleBarContributor);
 
@@ -155,7 +156,7 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             Category: "AI & Assistants",
             DefaultGesture: "Ctrl+Shift+A",
             IconGlyph: "\uE734",
-            Command: new RelayCommand(() => SafeGuard.Run(ShowCommandPalette))));
+            Command: new RelayCommand(() => SafeGuard.Run(() => ShowCommandPalette()))));
 
         context.CommandRegistry?.Register(new SDK.Commands.SdkCommandDefinition(
             Id: "ClaudeAssistant.NewTab",
@@ -189,7 +190,7 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         _context?.Output?.Info("[ClaudeAssistant] Plugin shutdown.");
     }
 
-    private void ShowCommandPalette()
+    private void ShowCommandPalette(UIElement? anchor = null)
     {
         var entries = ClaudeCommandPalette.BuildDefaultCatalog(
             explainSelection: () => SendQuickAction("@selection Explain this code in detail."),
@@ -199,11 +200,11 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             addDocs: () => SendQuickAction("@selection Add complete XML documentation."),
             newTab: () => _vm?.CreateNewTabCommand.Execute(null),
             showHistory: () => _vm?.ToggleHistoryCommand.Execute(null),
-            openOptions: () => { /* TODO: open IDE options to AI & Assistants page */ },
+            openOptions: () => _context?.CommandRegistry?.Find("View.Options")?.Command.Execute(null),
             presets: PromptPresetsService.Instance.Presets);
 
         var owner = _panel != null ? Window.GetWindow(_panel) : null;
-        var palette = new ClaudeCommandPalette(entries, owner!);
+        var palette = new ClaudeCommandPalette(entries, owner!, anchor);
         palette.Show();
     }
 
