@@ -63,7 +63,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Plugins.ResxLo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfHexEditor.Plugins.XamlDesigner", "Plugins\WpfHexEditor.Plugins.XamlDesigner\WpfHexEditor.Plugins.XamlDesigner.csproj", "{A93ED383-693F-4D75-A035-60BAB7E17D72}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Controls, Panel and Wndows", "Controls, Panel and Wndows", "{8F0E84AF-4FC2-46AF-8264-C41FC85FD18E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Controls", "Controls", "{8F0E84AF-4FC2-46AF-8264-C41FC85FD18E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Editors", "Editors", "{77555033-FC44-4882-8FFD-DA2B27CEDD9E}"
 EndProject

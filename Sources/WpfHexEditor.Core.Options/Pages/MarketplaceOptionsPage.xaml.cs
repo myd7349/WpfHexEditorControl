@@ -39,7 +39,7 @@ public sealed partial class MarketplaceOptionsPage : UserControl, IOptionsPage
         finally { _loading = false; }
     }
 
-    public void Save(AppSettings s)
+    public void Flush(AppSettings s)
     {
         s.Marketplace.GitHubToken            = BoxGitHubToken.Password.Trim();
         s.Marketplace.AutoCheckUpdates       = CheckAutoUpdate.IsChecked == true;
