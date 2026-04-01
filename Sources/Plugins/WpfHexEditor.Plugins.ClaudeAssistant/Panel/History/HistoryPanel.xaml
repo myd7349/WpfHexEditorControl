@@ -7,6 +7,9 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:session="clr-namespace:WpfHexEditor.Plugins.ClaudeAssistant.Session">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
     <Grid Background="{DynamicResource DockBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -136,16 +139,5 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <!-- Empty state -->
-        <TextBlock Grid.Row="2" Text="No conversations yet" FontSize="12" Opacity="0.4"
-                   Foreground="{DynamicResource DockMenuForegroundBrush}"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Visibility="{Binding FilteredEntries.Count, Converter={StaticResource CountToVis}}"/>
     </Grid>
-
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <!-- Simple converter: count 0 = Visible, else Collapsed (for empty state) -->
-        <BooleanToVisibilityConverter x:Key="CountToVis"/>
-    </UserControl.Resources>
 </UserControl>
