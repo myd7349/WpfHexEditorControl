@@ -203,7 +203,7 @@
                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </MenuItem.Icon>
                             </MenuItem>
-                            <MenuItem x:Name="MenuOpenFolder" Header="_Folder..." Click="OnOpenFolder" InputGestureText="Ctrl+Shift+K" IsEnabled="False">
+                            <MenuItem x:Name="MenuOpenFolder" Header="_Folder..." Click="OnOpenFolder" InputGestureText="Ctrl+Shift+K">
                                 <MenuItem.Icon>
                                     <TextBlock Text="&#xED41;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                                Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -451,6 +451,21 @@
                         <MenuItem Header="_Go To Offset…" Click="OnGoToOffset" InputGestureText="Ctrl+G">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE8A7;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="Format _Document"  Click="OnFormatDocument"  InputGestureText="Ctrl+K, Ctrl+D">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="13"
+                                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="Format _Selection" Click="OnFormatSelection" InputGestureText="Ctrl+K, Ctrl+F">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE70F;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
@@ -1849,6 +1864,23 @@
                 </StackPanel>
             </StatusBarItem>
 
+            <!-- Git branch / dirty indicator (shown when a VCS repo is active) -->
+            <StatusBarItem x:Name="GitStatusItem" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE7C1;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                               Foreground="{DynamicResource DockTabActiveTextBrush}"
+                               VerticalAlignment="Center" Margin="4,0,4,0"
+                               ToolTip="Git branch"/>
+                    <TextBlock x:Name="GitBranchText"
+                               Foreground="{DynamicResource DockTabActiveTextBrush}"
+                               FontSize="11" VerticalAlignment="Center" Margin="0,0,2,0"/>
+                    <TextBlock x:Name="GitDirtyDot" Text="●" FontSize="9"
+                               Foreground="#E8A838" VerticalAlignment="Center"
+                               Margin="0,0,6,0" Visibility="Collapsed"
+                               ToolTip="Uncommitted changes"/>
+                </StackPanel>
+            </StatusBarItem>
+
             <!-- Debug session status indicator -->
             <StatusBarItem x:Name="DbgStatusItem" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -1877,6 +1909,18 @@
                                  Background="{DynamicResource DockBorderBrush}"
                                  BorderThickness="0"/>
                     <TextBlock x:Name="BuildStatusText"
+                               Foreground="{DynamicResource DockTabActiveTextBrush}"
+                               FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                </StackPanel>
+            </StatusBarItem>
+
+            <!-- LSP server state indicator -->
+            <StatusBarItem x:Name="LspStatusItem" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="LspStatusDot" Text="●" FontSize="10"
+                               Foreground="{DynamicResource LSP_ReadyDot}"
+                               VerticalAlignment="Center" Margin="4,0,4,0"/>
+                    <TextBlock x:Name="LspStatusText"
                                Foreground="{DynamicResource DockTabActiveTextBrush}"
                                FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 </StackPanel>

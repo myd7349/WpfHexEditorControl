@@ -5,7 +5,7 @@
 // Contributors: Claude Sonnet 4.6
 //////////////////////////////////////////////
 
-using WpfHexEditor.Panels.IDE.Panels;
+using WpfHexEditor.Shell.Panels.Panels;
 using WpfHexEditor.SDK.Contracts.Services;
 using CoreEntry = WpfHexEditor.Editor.Core.DiagnosticEntry;
 using CoreSeverity = WpfHexEditor.Editor.Core.DiagnosticSeverity;

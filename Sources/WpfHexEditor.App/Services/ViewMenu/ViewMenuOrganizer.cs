@@ -216,7 +216,7 @@ public sealed class ViewMenuOrganizer
 
     // ── Sorting ─────────────────────────────────────────────────────────────
 
-    private static IReadOnlyList<ViewMenuCategory> ApplySorting(
+    private IReadOnlyList<ViewMenuCategory> ApplySorting(
         IReadOnlyList<ViewMenuCategory> categories,
         ViewMenuSortOrder sortOrder)
     {
@@ -230,12 +230,20 @@ public sealed class ViewMenuOrganizer
             var sorted = sortOrder switch
             {
                 ViewMenuSortOrder.Alphabetical => cat.Items.OrderBy(e => StripAccessKey(e.Header), StringComparer.OrdinalIgnoreCase).ToList(),
-                ViewMenuSortOrder.ByFrequency  => cat.Items.ToList(), // TODO: integrate with CommandPalette execution history
+                ViewMenuSortOrder.ByFrequency  => ApplySortByFrequency(cat.Items),
                 _                              => cat.Items.ToList(),
             };
 
             return cat with { Items = sorted };
         }).ToList();
+    }
+
+    private List<ViewMenuEntry> ApplySortByFrequency(IReadOnlyList<ViewMenuEntry> items)
+    {
+        var history = _settingsService.Current.CommandPalette.CommandHistory;
+        return items
+            .OrderByDescending(e => history.TryGetValue(e.Header, out var rec) ? rec.Count : 0)
+            .ToList();
     }
 
     // ── Rendering ───────────────────────────────────────────────────────────

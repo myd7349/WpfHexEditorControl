@@ -756,8 +756,8 @@ long position = (line * BytesPerLine) + column;
 
 ### Documentation
 - **[Main README](../README.md)** - Vue d'ensemble du projet
-- **[GETTING_STARTED.md](../../GETTING_STARTED.md)** - Tutoriel complet
-- **[FEATURES.md](../../FEATURES.md)** - Comparaison complète V1 vs V2
+- **[GETTING_STARTED.md](../../../docs/GETTING_STARTED.md)** - Tutoriel complet
+- **[FEATURES.md](../../../docs/FEATURES.md)** - Comparaison complète V1 vs V2
 
 ---
 

@@ -82,6 +82,20 @@ internal sealed class LspDocumentSync
         OnDocumentChanged?.Invoke(uri);
     }
 
+    /// <summary>
+    /// Sends textDocument/didSave.
+    /// If <paramref name="text"/> is non-null the full text is included
+    /// (required when the server's saveOptions.includeText = true).
+    /// </summary>
+    internal async Task DidSaveAsync(string filePath, string? text, CancellationToken ct)
+    {
+        var uri = PathToUri(filePath);
+        object p = text is not null
+            ? new { textDocument = new { uri }, text }
+            : new { textDocument = new { uri } };
+        await _channel.NotifyAsync("textDocument/didSave", p, ct).ConfigureAwait(false);
+    }
+
     internal async Task DidCloseAsync(string filePath, CancellationToken ct)
     {
         var uri = PathToUri(filePath);

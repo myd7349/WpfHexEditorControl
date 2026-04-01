@@ -291,6 +291,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     }
                     break;
 
+                // Go to Symbol palette (Ctrl+T)
+                case Key.T:
+                    if (ctrlPressed)
+                    {
+                        ShowGoToSymbolPopup();
+                        e.Handled = true;
+                    }
+                    break;
+
                 // ── Folding keyboard shortcuts (P2-02) ─────────────────────
                 // Ctrl+M → toggle fold at caret line
                 // ── Outlining chord: Ctrl+M arms the chord; second key executes action ────
@@ -481,12 +490,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     // Auto-trigger SmartComplete on specific characters (Phase 4)
                     if (EnableSmartComplete && ShouldAutoTriggerSmartComplete(ch))
                     {
-                        TriggerSmartCompleteWithDelay();
+                        TriggerSmartCompleteWithDelay(ch);
                     }
 
                     // Trigger LSP Signature Help on '('
                     if (ch == '(' && _lspClient is not null)
                         _ = TriggerSignatureHelpAsync();
+
+                    // Update active parameter tracking while SignatureHelp is open
+                    UpdateSignatureHelpOnChar(ch);
                 }
                 // OPT-B: InvalidateVisual() removed — Document_TextChanged fires in the same
                 // call stack and already calls InvalidateVisual() or InvalidateMeasure() as
@@ -552,6 +564,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             // Phase 11.3: Ensure cursor stays visible when using virtual scrolling
             EnsureCursorVisible();
+
+            // Schedule lightbulb check whenever the cursor line changes
+            ScheduleLightbulbCheck();
         }
 
         protected override void OnKeyUp(KeyEventArgs e)
@@ -1159,6 +1174,23 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         e.Handled = true;
                         return;
                     }
+                }
+            }
+
+            // Left-click on lightbulb glyph → show code actions popup
+            if (e.LeftButton == MouseButtonState.Pressed && _lightbulbLine >= 0 && ShowLineNumbers)
+            {
+                var clickPos = e.GetPosition(this);
+                // Lightbulb is drawn just to the right of the separator at x=LineNumberWidth
+                double glyphSize = Math.Min(_lineHeight * 0.55, 11);
+                double glyphX    = LineNumberWidth + 4;
+                double glyphY    = GetFoldAwareLineY(_lightbulbLine - _firstVisibleLine);
+                var bulbRect     = new Rect(glyphX, glyphY, glyphSize + 6, _lineHeight);
+                if (bulbRect.Contains(clickPos))
+                {
+                    _ = ShowCodeActionsAsync();
+                    e.Handled = true;
+                    return;
                 }
             }
 

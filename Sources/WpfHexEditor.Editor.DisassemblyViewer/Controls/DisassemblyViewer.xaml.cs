@@ -13,6 +13,7 @@ using WpfHexEditor.Core.Decompiler;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.UI;
+using IReadOnlyLineList = System.Collections.Generic.IReadOnlyList<WpfHexEditor.Core.Decompiler.DisassemblyLine>;
 
 namespace WpfHexEditor.Editor.DisassemblyViewer.Controls;
 
@@ -26,6 +27,7 @@ public sealed partial class DisassemblyViewer : UserControl, IDocumentEditor, IO
     private IDecompiler? _decompiler;
     private CancellationTokenSource? _cts;
     private ToolbarOverflowManager _overflowManager = null!;
+    private IReadOnlyLineList? _structuredLines;
 
     public DisassemblyViewer()
     {
@@ -87,6 +89,13 @@ public sealed partial class DisassemblyViewer : UserControl, IDocumentEditor, IO
     public event EventHandler<DocumentOperationCompletedEventArgs>? OperationCompleted;
 #pragma warning restore CS0067
 
+    /// <summary>
+    /// Raised when the user clicks a disassembly line.
+    /// The argument is the file offset of the instruction.
+    /// Wire to HexEditor.SetPosition() in the host IDE.
+    /// </summary>
+    public event EventHandler<long>? NavigateToOffsetRequested;
+
     // -- IDocumentEditor — Methods ----------------------------------------
 
     public void Undo() { }
@@ -104,10 +113,19 @@ public sealed partial class DisassemblyViewer : UserControl, IDocumentEditor, IO
     public void Close()
     {
         _cts?.Cancel();
-        _filePath   = string.Empty;
-        _decompiler = null;
+        _filePath       = string.Empty;
+        _decompiler     = null;
+        _structuredLines = null;
+        LineCanvas.SetLines(null);
         ShowState(ViewerState.Empty);
     }
+
+    /// <summary>
+    /// Navigates the canvas to the instruction nearest to <paramref name="fileOffset"/>.
+    /// No-op if no structured data is loaded.
+    /// </summary>
+    public void NavigateToOffset(long fileOffset)
+        => LineCanvas.NavigateToOffset(fileOffset);
 
     // -- IOpenableDocument ------------------------------------------------
 
@@ -145,14 +163,31 @@ public sealed partial class DisassemblyViewer : UserControl, IDocumentEditor, IO
 
         try
         {
-            var output = await _decompiler.DecompileAsync(_filePath, ct);
-            ct.ThrowIfCancellationRequested();
+            if (_decompiler is IStructuredDisassembler structured)
+            {
+                // Structured path — GlyphRun canvas with syntax colouring
+                var lines = await structured.DisassembleAsync(_filePath, ct);
+                ct.ThrowIfCancellationRequested();
 
-            OutputBox.Text = output;
-            ArchLabel.Text = _decompiler.Architecture;
-            ShowState(ViewerState.Output);
-            StatusMessage?.Invoke(this, $"{_decompiler.DisplayName}  ·  {CountLines(output)} lines");
-            OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { Success = true });
+                _structuredLines = lines;
+                LineCanvas.SetLines(lines);
+                ArchLabel.Text = _decompiler.Architecture;
+                ShowState(ViewerState.Structured);
+                StatusMessage?.Invoke(this, $"{_decompiler.DisplayName}  ·  {lines.Count} instructions");
+                OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { Success = true });
+            }
+            else
+            {
+                // Plain text path — TextBox fallback
+                var output = await _decompiler.DecompileAsync(_filePath, ct);
+                ct.ThrowIfCancellationRequested();
+
+                OutputBox.Text = output;
+                ArchLabel.Text = _decompiler.Architecture;
+                ShowState(ViewerState.Output);
+                StatusMessage?.Invoke(this, $"{_decompiler.DisplayName}  ·  {CountLines(output)} lines");
+                OperationCompleted?.Invoke(this, new DocumentOperationCompletedEventArgs { Success = true });
+            }
         }
         catch (OperationCanceledException)
         {
@@ -172,9 +207,10 @@ public sealed partial class DisassemblyViewer : UserControl, IDocumentEditor, IO
         IsBusy = state == ViewerState.Busy;
         RefreshButton.IsEnabled = !IsBusy && !string.IsNullOrEmpty(_filePath);
 
-        OutputBox.Visibility          = state == ViewerState.Output      ? Visibility.Visible : Visibility.Collapsed;
-        BusyOverlay.Visibility        = state == ViewerState.Busy        ? Visibility.Visible : Visibility.Collapsed;
-        NoDecompilerOverlay.Visibility = state == ViewerState.NoDecompiler ? Visibility.Visible : Visibility.Collapsed;
+        CanvasScroller.Visibility      = state == ViewerState.Structured   ? Visibility.Visible : Visibility.Collapsed;
+        OutputBox.Visibility           = state == ViewerState.Output       ? Visibility.Visible : Visibility.Collapsed;
+        BusyOverlay.Visibility         = state == ViewerState.Busy         ? Visibility.Visible : Visibility.Collapsed;
+        NoDecompilerOverlay.Visibility  = state == ViewerState.NoDecompiler ? Visibility.Visible : Visibility.Collapsed;
 
         if (state == ViewerState.NoDecompiler)
         {
@@ -213,6 +249,9 @@ public sealed partial class DisassemblyViewer : UserControl, IDocumentEditor, IO
 
     private void OnCopyAllClick(object sender, RoutedEventArgs e) => CopyAll();
 
+    private void OnCanvasOffsetRequested(object? sender, long offset)
+        => NavigateToOffsetRequested?.Invoke(this, offset);
+
     // ── Toolbar overflow ─────────────────────────────────────────────────────
 
     private void OnToolbarSizeChanged(object sender, SizeChangedEventArgs e)
@@ -232,6 +271,6 @@ public sealed partial class DisassemblyViewer : UserControl, IDocumentEditor, IO
         _overflowManager?.SyncMenuVisibility();
     }
 
-    private enum ViewerState { Empty, Busy, Output, NoDecompiler }
+    private enum ViewerState { Empty, Busy, Output, Structured, NoDecompiler }
 }
 

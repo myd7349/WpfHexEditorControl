@@ -1,0 +1,82 @@
+<!--
+    Project: WpfHexEditor.Core.Options
+    File: Pages/MarketplaceOptionsPage.xaml
+    Description:
+        Options page for the Plugin Marketplace.
+        Category: Plugins / Marketplace
+        Sections: GitHub API, Auto-Update.
+    Theme: DynamicResource brushes (all themes via PanelCommon.xaml).
+-->
+<UserControl x:Class="WpfHexEditor.Core.Options.Pages.MarketplaceOptionsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,0,16">
+
+            <!-- ── GitHub API ─────────────────────────────────────────────── -->
+            <TextBlock Text="GitHub API"
+                       FontWeight="SemiBold" FontSize="13"
+                       Foreground="{DynamicResource DockMenuForegroundBrush}"
+                       Margin="0,0,0,10"/>
+
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,6"
+                       Foreground="{DynamicResource DockMenuForegroundBrush}" Opacity="0.8"
+                       Text="Personal Access Token (PAT) — raises the GitHub rate limit from 60 to 5 000 requests/hour. Leave empty for anonymous access."/>
+
+            <PasswordBox x:Name="BoxGitHubToken"
+                         Height="26"
+                         Background="{DynamicResource DockMenuBackgroundBrush}"
+                         Foreground="{DynamicResource DockMenuForegroundBrush}"
+                         BorderBrush="{DynamicResource DockBorderBrush}"
+                         Margin="0,0,0,4"
+                         PasswordChanged="OnChanged"/>
+
+            <TextBlock Text="Token is stored in plaintext in the settings file. Do not use a token with write permissions."
+                       Foreground="{DynamicResource DockMenuForegroundBrush}"
+                       Opacity="0.55" FontSize="11" TextWrapping="Wrap"
+                       Margin="0,0,0,16"/>
+
+            <!-- ── Auto-Update ────────────────────────────────────────────── -->
+            <TextBlock Text="Automatic Updates"
+                       FontWeight="SemiBold" FontSize="13"
+                       Foreground="{DynamicResource DockMenuForegroundBrush}"
+                       Margin="0,0,0,10"/>
+
+            <CheckBox x:Name="CheckAutoUpdate"
+                      Content="Check for plugin updates automatically at startup"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      Margin="0,0,0,10"
+                      Checked="OnChanged"
+                      Unchecked="OnChanged"/>
+
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Update check interval (hours):"
+                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                           Opacity="0.8" VerticalAlignment="Center"/>
+
+                <TextBox x:Name="BoxInterval"
+                         Grid.Column="1"
+                         Height="24"
+                         Background="{DynamicResource DockMenuBackgroundBrush}"
+                         Foreground="{DynamicResource DockMenuForegroundBrush}"
+                         BorderBrush="{DynamicResource DockBorderBrush}"
+                         TextAlignment="Center"
+                         TextChanged="OnChanged"/>
+            </Grid>
+
+            <TextBlock Text="Minimum interval: 1 hour."
+                       Foreground="{DynamicResource DockMenuForegroundBrush}"
+                       Opacity="0.55" FontSize="11"
+                       Margin="0,2,0,0"/>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -29,6 +29,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Models
         public string CurrentLine { get; set; }
 
         /// <summary>
+        /// Character that triggered this completion session (e.g. '.' for member access, null for Ctrl+Space).
+        /// Forwarded to the LSP server as triggerKind/triggerCharacter.
+        /// </summary>
+        public char? TriggerCharacter { get; set; }
+
+        /// <summary>
         /// Character before cursor (for trigger detection)
         /// </summary>
         public char? PreviousChar

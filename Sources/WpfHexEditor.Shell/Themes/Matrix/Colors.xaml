@@ -400,7 +400,15 @@
     <SolidColorBrush x:Key="PM_BadgeFaultedBrush"               Color="#FF4136"/>
     <SolidColorBrush x:Key="PM_BadgeSlowBrush"                  Color="#39FF14"/>
     <SolidColorBrush x:Key="PM_BadgeTrustedBrush"               Color="#00CC33"/>
-    <SolidColorBrush x:Key="DangerBrush"                        Color="#FF4136"/>
+    
+    <!-- Marketplace (MP_*) -->
+    <SolidColorBrush x:Key="MP_VerifiedBadgeBrush"         Color="#00FF41"/>
+    <SolidColorBrush x:Key="MP_UpdateAvailableBrush"        Color="#FFFF00"/>
+    <SolidColorBrush x:Key="MP_InstallButtonBrush"          Color="#00AA00"/>
+    <SolidColorBrush x:Key="MP_DownloadCountForeground"     Color="#008000"/>
+    <SolidColorBrush x:Key="MP_ProgressFillBrush"           Color="#00AA00"/>
+    <SolidColorBrush x:Key="MP_Sha256BadgeBrush"            Color="#00FF41"/>
+<SolidColorBrush x:Key="DangerBrush"                        Color="#FF4136"/>
     <SolidColorBrush x:Key="DangerHoverBrush"                   Color="#FF6050"/>
     <SolidColorBrush x:Key="WarningBannerBrush"                 Color="#3D39FF14"/>
     <SolidColorBrush x:Key="WarningBorderBrush"                 Color="#39FF14"/>
@@ -833,4 +841,31 @@
     <SolidColorBrush x:Key="CH_ToolbarBrush"     Color="#001100"/>
     <SolidColorBrush x:Key="CH_HoverBrush"       Color="#002200"/>
     <SolidColorBrush x:Key="CH_ItemBorderBrush"  Color="#005500"/>
+    <!-- SignatureHelp tokens -->
+    <SolidColorBrush x:Key="SH_ActiveParamForeground"    Color="#00FF41"/>
+    <SolidColorBrush x:Key="SH_OverloadCountForeground"  Color="#1A5C1A"/>
+    <SolidColorBrush x:Key="SH_ActiveParamBackground"    Color="#001A00"/>
+    <!-- Lightbulb gutter token -->
+    <SolidColorBrush x:Key="CE_LightbulbBrush"           Color="#FFCC00"/>
+    <!-- Hover Markdown tokens -->
+    <SolidColorBrush x:Key="CE_InlineCodeBackground"     Color="#2D2D2D"/>
+    <SolidColorBrush x:Key="CE_CodeBlockBackground"      Color="#252526"/>
+
+    <!-- SmartComplete popup tokens -->
+    <SolidColorBrush x:Key="SC_Background"          Color="#252526"/>
+    <SolidColorBrush x:Key="SC_BorderBrush"         Color="#454545"/>
+    <SolidColorBrush x:Key="SC_SelectionBackground" Color="#094771"/>
+    <SolidColorBrush x:Key="SC_SelectionForeground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SC_MatchHighlightBrush" Color="#18A3FF"/>
+    <SolidColorBrush x:Key="SC_TypeHintForeground"  Color="#858585"/>
+    <SolidColorBrush x:Key="SC_DocBackground"       Color="#2D2D30"/>
+    <SolidColorBrush x:Key="SC_DocBorder"           Color="#454545"/>
+    <SolidColorBrush x:Key="SC_DocHeaderForeground" Color="#D4D4D4"/>
+    <SolidColorBrush x:Key="SC_IconMethodBrush"     Color="#DCDCAA"/>
+    <SolidColorBrush x:Key="SC_IconClassBrush"      Color="#4EC9B0"/>
+    <SolidColorBrush x:Key="SC_IconInterfaceBrush"  Color="#B8D7A3"/>
+    <SolidColorBrush x:Key="SC_IconEnumBrush"       Color="#B8B8E0"/>
+    <SolidColorBrush x:Key="SC_IconFieldBrush"      Color="#9CDCFE"/>
+    <SolidColorBrush x:Key="SC_IconKeywordBrush"    Color="#569CD6"/>
+    <SolidColorBrush x:Key="SC_IconSnippetBrush"    Color="#C586C0"/>
 </ResourceDictionary>

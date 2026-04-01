@@ -24,7 +24,7 @@ using WpfHexEditor.Docking.Core;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.Core.Events.IDEEvents;
 using WpfHexEditor.Core.Options;
-using WpfHexEditor.Panels.IDE.Panels;
+using WpfHexEditor.Shell.Panels.Panels;
 using WpfHexEditor.SDK.Commands;
 
 namespace WpfHexEditor.App;

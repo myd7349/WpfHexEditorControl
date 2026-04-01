@@ -30,6 +30,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>WpfHexEditor.Plugins.AssemblyExplorer.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- ICSharpCode.Decompiler: hard dependency for full C# decompilation (real method bodies).
          The SkeletonDecompilerBackend remains as an always-available BCL-only fallback.
          CopyLocalLockFileAssemblies ensures the DLL is emitted to the bin output directory

@@ -53,6 +53,28 @@ namespace WpfHexEditor.Editor.CodeEditor.Models
         /// </summary>
         public SuggestionType Type { get; set; }
 
+        /// <summary>
+        /// Original LSP completion item, preserved for completionItem/resolve lazy-loading.
+        /// Null for non-LSP suggestions.
+        /// </summary>
+        public WpfHexEditor.Editor.Core.LSP.LspCompletionItem? RawLspItem { get; set; }
+
+        /// <summary>
+        /// Fuzzy match score computed by <see cref="Helpers.SmartCompleteFuzzyScorer"/> during
+        /// each filter pass.  Higher is better.  Reset to 0 when query is empty.
+        /// Not persisted — ephemeral per filter call.
+        /// </summary>
+        public int MatchScore { get; set; }
+
+        /// <summary>Character indices in DisplayText that matched the filter query (for bold highlight).</summary>
+        public System.Collections.Generic.IReadOnlyList<int>? MatchedIndices { get; set; }
+
+        /// <summary>Brush for the icon glyph (resolved from kind at mapping time).</summary>
+        public System.Windows.Media.Brush? IconBrush { get; set; }
+
+        /// <summary>LSP commit characters — typing one of these commits the selected item.</summary>
+        public System.Collections.Generic.IReadOnlyList<string>? CommitCharacters { get; set; }
+
         public SmartCompleteSuggestion()
         {
             Icon = "ðŸ“„"; // Default icon

@@ -214,6 +214,18 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // Monotonically increasing document version sent with every didChange notification.
         private int _lspDocVersion;
 
+        // Tracks nested call depth for SignatureHelp — incremented on '(', decremented on ')'.
+        // When it reaches 0 the SignatureHelp popup is dismissed.
+        private int _signatureParamDepth;
+
+        // Lightbulb gutter: -1 = no bulb; ≥0 = line index where code actions are available.
+        private int _lightbulbLine = -1;
+        // Debounce timer for CheckCodeActionsAtCursorAsync (600 ms after cursor movement).
+        private System.Windows.Threading.DispatcherTimer? _lightbulbTimer;
+
+        // Go-to-Symbol palette (Ctrl+T)
+        private GoToSymbolPopup? _goToSymbolPopup;
+
         // Debounce timer for textDocument/didChange — 300 ms after last keystroke.
         private System.Windows.Threading.DispatcherTimer? _lspChangeTimer;
 
@@ -461,6 +473,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         // Breakpoint gutter (ADR-DBG-01).
         private BreakpointGutterControl? _breakpointGutterControl;
+        private BlameGutterControl?      _blameGutterControl;
         // 1-based execution line (null when no debug session is paused).
         private int? _executionLineOneBased;
 
@@ -752,6 +765,37 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             get => (bool)GetValue(EnableFindAllReferencesProperty);
             set => SetValue(EnableFindAllReferencesProperty, value);
         }
+
+        // ── Blame Gutter ──────────────────────────────────────────────────────────
+
+        public static readonly DependencyProperty ShowBlameGutterProperty =
+            DependencyProperty.Register(nameof(ShowBlameGutter), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(false, OnShowBlameGutterChanged));
+
+        [Category("Features")]
+        [DisplayName("Show Blame Gutter")]
+        [Description("Shows a 6-pixel color bar encoding commit age for each line.")]
+        public bool ShowBlameGutter
+        {
+            get => (bool)GetValue(ShowBlameGutterProperty);
+            set => SetValue(ShowBlameGutterProperty, value);
+        }
+
+        private static void OnShowBlameGutterChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not CodeEditor ce || ce._blameGutterControl is null) return;
+            ce._blameGutterControl.Visibility = (bool)e.NewValue
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            ce.InvalidateMeasure();
+        }
+
+        /// <summary>
+        /// Injects blame data from the Git plugin into the blame gutter.
+        /// Called by the App layer after <c>GitBlameLoadedEvent</c> arrives.
+        /// </summary>
+        public void SetBlame(IReadOnlyList<WpfHexEditor.Editor.Core.LSP.BlameEntry>? entries)
+            => _blameGutterControl?.SetBlame(entries);
 
         public static readonly DependencyProperty ShowInlineHintsProperty =
             DependencyProperty.Register(nameof(ShowInlineHints), typeof(bool), typeof(CodeEditor),
@@ -1156,6 +1200,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         /// <summary>Raised when <see cref="ZoomLevel"/> changes. Arg is the new zoom value.</summary>
         public event EventHandler<double>? ZoomLevelChanged;
+
+        /// <summary>
+        /// Raised when the minimap should refresh: scroll position changed, text changed,
+        /// syntax highlights completed, or folding regions changed.
+        /// Subscribe to this instead of <see cref="FrameworkElement.LayoutUpdated"/> to
+        /// avoid a feedback loop where minimap InvalidateVisual re-triggers LayoutUpdated.
+        /// </summary>
+        public event EventHandler? MinimapRefreshRequested;
 
         public static readonly DependencyProperty LineNumberFontSizeProperty =
             DependencyProperty.Register(nameof(LineNumberFontSize), typeof(double), typeof(CodeEditor),
@@ -2125,6 +2177,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Initialize LSP Signature Help popup
             _signatureHelpPopup     = new SignatureHelpPopup(this);
 
+            // Initialize Go-to-Symbol palette (Ctrl+T)
+            _goToSymbolPopup = new GoToSymbolPopup();
+            _goToSymbolPopup.NavigationRequested += OnGoToSymbolNavigation;
+
             // Initialize LSP Code Action popup (Ctrl+.) and Rename popup (F2)
             _lspCodeActionPopup     = new LspCodeActionPopup(this);
             _lspRenamePopup         = new LspRenamePopup(this);
@@ -2155,6 +2211,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             {
                 if (!_smoothScrollTimer.IsEnabled)
                     InvalidateVisual();
+                MinimapRefreshRequested?.Invoke(this, EventArgs.Empty);
             };
 
             // Make focusable for keyboard input
@@ -2234,7 +2291,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _gutterControl.SetEngine(_foldingEngine);
             // Fold state change: re-arrange (→ UpdateScrollBars corrects the range) and re-render content.
             // Gutter re-renders internally via its own RegionsChanged handler.
-            _foldingEngine.RegionsChanged += (_, _) => { _linePositionsDirty = true; InvalidateMeasure(); InvalidateVisual(); };
+            _foldingEngine.RegionsChanged += (_, _) => { _linePositionsDirty = true; InvalidateMeasure(); InvalidateVisual(); MinimapRefreshRequested?.Invoke(this, EventArgs.Empty); };
             _scrollBarChildren.Add(_gutterControl);
 
             // Breakpoint gutter (ADR-DBG-01): positioned to the left of fold markers.
@@ -2242,6 +2299,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _breakpointGutterControl.RightClickRequested += OnBreakpointRightClick;
             _breakpointGutterControl.HoverBreakpointRequested += OnGutterBreakpointHover;
             _scrollBarChildren.Add(_breakpointGutterControl);
+
+            // Blame gutter (Phase 2C): 6px color bar left of the breakpoint gutter.
+            _blameGutterControl = new BlameGutterControl { Visibility = System.Windows.Visibility.Collapsed };
+            _scrollBarChildren.Add(_blameGutterControl);
 
             // Initialize word-highlight scroll marker overlay.
             _codeScrollMarkerPanel = new CodeScrollMarkerPanel();

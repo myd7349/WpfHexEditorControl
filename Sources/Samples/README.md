@@ -283,8 +283,8 @@ All functionality from V1 samples is now available in `WpfHexEditor.Sample.HexEd
 ## 📖 Additional Resources
 
 - [Main README](../../README.md) - Project overview and quick start
-- [FEATURES.md](../../FEATURES.md) - Complete feature list (163 features)
-- [GETTING_STARTED.md](../../GETTING_STARTED.md) - Beginner tutorial
+- [FEATURES.md](../../docs/FEATURES.md) - Complete feature list (163 features)
+- [GETTING_STARTED.md](../../docs/GETTING_STARTED.md) - Beginner tutorial
 - [API Reference](../../docs/api-reference/README.md) - Method documentation
 - [Services Documentation](../WPFHexaEditor/Services/README.md) - Service layer guide
 - [RIDER_GUIDE.md](../../docs/IDE/RIDER_GUIDE.md) - JetBrains Rider integration
@@ -357,7 +357,7 @@ Want to add a new sample? Please:
 5. Add entry to this index
 6. Submit a pull request
 
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for detailed guidelines.
+See [CONTRIBUTING.md](../../.github/CONTRIBUTING.md) for detailed guidelines.
 
 ---
 

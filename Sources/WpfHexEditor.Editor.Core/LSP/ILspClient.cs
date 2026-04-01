@@ -43,6 +43,15 @@ public sealed class LspCompletionItem
 
     /// <summary>Markdown documentation for the item.</summary>
     public string? Documentation { get; init; }
+
+    /// <summary>
+    /// Raw JSON string of the original LSP CompletionItem, preserved for completionItem/resolve.
+    /// Null when the item was produced by a local (non-LSP) provider.
+    /// </summary>
+    public string? RawJson { get; init; }
+
+    /// <summary>Characters that trigger commit when typed while this item is selected (e.g. ".", "(", ";").</summary>
+    public IReadOnlyList<string>? CommitCharacters { get; init; }
 }
 
 /// <summary>A diagnostic (error / warning / info / hint) reported by the language server.</summary>
@@ -159,6 +168,39 @@ public sealed class LspSemanticTokensResult
     public required IReadOnlyList<LspSemanticToken> Tokens { get; init; }
 }
 
+/// <summary>
+/// Full signature help response from textDocument/signatureHelp.
+/// Contains all overload signatures and the server's suggestion for which
+/// signature + parameter is currently active.
+/// </summary>
+public sealed class LspSignatureHelpResult
+{
+    public required IReadOnlyList<LspSignatureInfo> Signatures        { get; init; }
+    public required int                             ActiveSignatureIndex { get; init; }
+    public required int                             ActiveParameterIndex { get; init; }
+}
+
+/// <summary>One overload signature returned inside a signatureHelp response.</summary>
+public sealed class LspSignatureInfo
+{
+    public required string                           Label         { get; init; }
+    public          string?                          Documentation { get; init; }
+    /// <summary>Null when the server did not include parameter metadata.</summary>
+    public          IReadOnlyList<LspParameterInfo>? Parameters    { get; init; }
+}
+
+/// <summary>A single parameter inside a <see cref="LspSignatureInfo"/>.</summary>
+public sealed class LspParameterInfo
+{
+    /// <summary>
+    /// Either the verbatim parameter label string, or a two-element array [start, end]
+    /// (byte offsets into the parent signature label) — both formats are mapped to this
+    /// string by the provider.
+    /// </summary>
+    public required string Label { get; init; }
+    public          string? Documentation { get; init; }
+}
+
 /// <summary>A single decoded semantic token.</summary>
 public sealed class LspSemanticToken
 {
@@ -272,6 +314,12 @@ public interface ILspClient : IAsyncDisposable
     /// <summary>Sends textDocument/didClose.</summary>
     void CloseDocument(string filePath);
 
+    /// <summary>
+    /// Sends textDocument/didSave.
+    /// Pass <paramref name="text"/> when the server requests full-text on save.
+    /// </summary>
+    void SaveDocument(string filePath, string? text = null);
+
     // ── Completions ───────────────────────────────────────────────────────────
 
     /// <summary>
@@ -280,7 +328,16 @@ public interface ILspClient : IAsyncDisposable
     /// not support them.
     /// </summary>
     Task<IReadOnlyList<LspCompletionItem>> CompletionAsync(
-        string filePath, int line, int column, CancellationToken ct = default);
+        string filePath, int line, int column, char? triggerChar = null, CancellationToken ct = default);
+
+    /// <summary>
+    /// Sends completionItem/resolve to lazy-load <see cref="LspCompletionItem.Documentation"/>
+    /// for an item that was returned without it.
+    /// Returns <c>null</c> when the item has no <see cref="LspCompletionItem.RawJson"/> or
+    /// the server does not support resolve.
+    /// </summary>
+    Task<LspCompletionItem?> ResolveCompletionItemAsync(
+        LspCompletionItem item, CancellationToken ct = default);
 
     // ── Hover ─────────────────────────────────────────────────────────────────
 
@@ -322,10 +379,10 @@ public interface ILspClient : IAsyncDisposable
     // ── Signature Help ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Requests textDocument/signatureHelp (called after '(').
+    /// Requests textDocument/signatureHelp (called after '(' or ',' while a call is open).
     /// Returns null when the server does not support it or no signature matches.
     /// </summary>
-    Task<string?> SignatureHelpAsync(
+    Task<LspSignatureHelpResult?> SignatureHelpAsync(
         string filePath, int line, int column, CancellationToken ct = default);
 
     // ── Code Actions ──────────────────────────────────────────────────────────

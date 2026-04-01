@@ -870,7 +870,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         if (_lineYLookup.TryGetValue(startLine0, out double ly) && _document != null
                             && startLine0 < _document.Lines.Count)
                         {
-                            double w = Math.Max(_document.Lines[startLine0].Length * _charWidth, _charWidth);
+                            var bpLineText = _document.Lines[startLine0].Text;
+                            double w = Math.Max(
+                                _glyphRenderer?.ComputeVisualX(bpLineText, bpLineText.Length) ?? bpLineText.Length * _charWidth,
+                                _charWidth);
                             dc.DrawRoundedRectangle(brush, null,
                                 new Rect(bpLeft, ly, w, _lineHeight),
                                 SelectionCornerRadius, SelectionCornerRadius);
@@ -888,7 +891,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                             if (!_lineYLookup.TryGetValue(j, out double ly) || _document == null
                                 || j >= _document.Lines.Count) continue;
 
-                            double w    = Math.Max(_document.Lines[j].Length * _charWidth, _charWidth);
+                            var bpLineTextJ = _document.Lines[j].Text;
+                            double w = Math.Max(
+                                _glyphRenderer?.ComputeVisualX(bpLineTextJ, bpLineTextJ.Length) ?? bpLineTextJ.Length * _charWidth,
+                                _charWidth);
                             double yAdj = j == startLine0 ? ly : ly - SelectionCornerRadius;
                             double hAdj = j == startLine0 ? _lineHeight + SelectionCornerRadius
                                         : j == endLine0   ? _lineHeight + SelectionCornerRadius
@@ -1088,13 +1094,30 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Overlay scroll marker panel on top of the vertical scrollbar (click-through).
             _codeScrollMarkerPanel?.Arrange(vScrollRect);
 
-            // Breakpoint gutter: leftmost strip at x=0.
+            // Blame gutter: leftmost strip (6px) when ShowBlameGutter is true.
+            double blameW = 0.0;
+            if (_blameGutterControl != null)
+            {
+                bool showBlame = ShowBlameGutter && ShowLineNumbers;
+                _blameGutterControl.Visibility = showBlame ? Visibility.Visible : Visibility.Collapsed;
+                if (showBlame)
+                {
+                    blameW = BlameGutterControl.BlameGutterWidth;
+                    _blameGutterControl.Arrange(new Rect(0, 0, blameW, contentH));
+                }
+                else
+                {
+                    _blameGutterControl.Arrange(new Rect(0, 0, 0, 0));
+                }
+            }
+
+            // Breakpoint gutter: immediately right of blame gutter.
             if (_breakpointGutterControl != null)
             {
                 bool showBp = ShowLineNumbers;
                 _breakpointGutterControl.Visibility = showBp ? Visibility.Visible : Visibility.Collapsed;
                 _breakpointGutterControl.Arrange(showBp
-                    ? new Rect(0, 0, BreakpointGutterControl.GutterWidth, contentH)
+                    ? new Rect(blameW, 0, BreakpointGutterControl.GutterWidth, contentH)
                     : new Rect(0, 0, 0, 0));
             }
 
@@ -1104,7 +1127,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 bool showGutter = IsFoldingEnabled && ShowLineNumbers;
                 _gutterControl.Visibility = showGutter ? Visibility.Visible : Visibility.Collapsed;
                 _gutterControl.Arrange(showGutter
-                    ? new Rect(BreakpointGutterControl.GutterWidth, 0, _gutterControl.Width, contentH)
+                    ? new Rect(blameW + BreakpointGutterControl.GutterWidth, 0, _gutterControl.Width, contentH)
                     : new Rect(0, 0, 0, 0));
             }
 
@@ -1224,6 +1247,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _virtualizationEngine.CalculateVisibleRange();
             }
             InvalidateVisual();
+            MinimapRefreshRequested?.Invoke(this, EventArgs.Empty);
         }
 
         private void HScrollBar_ValueChanged(object sender, System.Windows.RoutedPropertyChangedEventArgs<double> e)
@@ -1354,6 +1378,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     ?? System.Windows.Media.Brushes.Transparent;
             _breakpointGutterControl?.Update(
                 _lineHeight, _firstVisibleLine, _lastVisibleLine, TopMargin, _lineYLookup, bpBg);
+
+            // Sync blame gutter with same visible range.
+            _blameGutterControl?.Update(
+                _lineHeight, _firstVisibleLine, _lastVisibleLine, TopMargin, _lineYLookup);
         }
 
         /// <summary>
@@ -1437,6 +1465,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
                 // Render validation glyphs (error/warning icons) in left margin
                 RenderValidationGlyph(dc, i, y);
+                // Render lightbulb glyph when code actions are available for this line
+                RenderLightbulbGlyph(dc, i, y);
             }
 
             // Draw separator line between line numbers and text (cached frozen pen — OPT-PERF-02)
@@ -1481,6 +1511,34 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 double centerX = glyphX + glyphSize / 2;
                 dc.DrawLine(s_glyphInnerPen, new Point(centerX, glyphY + glyphSize * 0.2), new Point(centerX, glyphY + glyphSize * 0.6));
                 dc.DrawEllipse(Brushes.White, null, new Point(centerX, glyphY + glyphSize * 0.8), 1, 1);
+            }
+        }
+
+        /// <summary>
+        /// Renders the lightbulb glyph (💡) in the gutter for the line where code actions
+        /// are available (<see cref="_lightbulbLine"/>).  The glyph is drawn using MDL2 Assets
+        /// so it participates in theme colours via <c>CE_LightbulbBrush</c>.
+        /// </summary>
+        private void RenderLightbulbGlyph(DrawingContext dc, int line, double y)
+        {
+            if (_lightbulbLine < 0 || line != _lightbulbLine || !ShowLineNumbers) return;
+
+            var lightbulbBrush = TryFindResource("CE_LightbulbBrush") as Brush ?? Brushes.Gold;
+            double size = Math.Min(_lineHeight * 0.55, 11);
+            double x    = LineNumberWidth + 4;   // just to the right of the separator line
+            double cy   = y + _lineHeight / 2;
+
+            // Draw a simple circle as the bulb body
+            dc.DrawEllipse(lightbulbBrush, null, new Point(x + size / 2, cy), size / 2, size / 2);
+
+            // Draw a small stem below the circle
+            if (size >= 8)
+            {
+                var stemPen = new Pen(lightbulbBrush, 1.5) { EndLineCap = PenLineCap.Round };
+                stemPen.Freeze();
+                dc.DrawLine(stemPen,
+                    new Point(x + size / 2, cy + size / 2),
+                    new Point(x + size / 2, cy + size / 2 + 3));
             }
         }
 
@@ -1922,8 +1980,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         ? TopMargin + _virtualizationEngine.GetLineYPosition(pos.Line)
                         : TopMargin + (pos.Line - _firstVisibleLine) * _lineHeight);
 
-                double x1 = leftEdge + pos.Column * _charWidth;
-                double x2 = x1 + _wordHighlightLen * _charWidth;
+                var whLineText = (_document != null && pos.Line < _document.Lines.Count)
+                    ? _document.Lines[pos.Line].Text : string.Empty;
+                double x1 = leftEdge + (_glyphRenderer?.ComputeVisualX(whLineText, pos.Column) ?? pos.Column * _charWidth);
+                double x2 = leftEdge + (_glyphRenderer?.ComputeVisualX(whLineText, pos.Column + _wordHighlightLen) ?? (pos.Column + _wordHighlightLen) * _charWidth);
 
                 dc.DrawRectangle(s_wordHighlightBg, s_wordHighlightPen,
                     new Rect(x1, y, x2 - x1, _lineHeight));
@@ -2606,12 +2666,21 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (!_validationByLine.TryGetValue(i, out var lineErrors)) continue;
                 foreach (var error in lineErrors)
                 {
-                    double y = TopMargin + (EnableVirtualScrolling && _virtualizationEngine != null
-                        ? _virtualizationEngine.GetLineYPosition(error.Line)
-                        : (error.Line - _firstVisibleLine) * _lineHeight) + _lineHeight - 3;
+                    // _lineYLookup[i] = actual Y of the code text for logical line i, already
+                    // accounting for InlineHint rows ("N references") that shift lines down.
+                    // The legacy formula (line - firstVisible) * lineHeight ignores hint rows.
+                    double lineTop = _lineYLookup.TryGetValue(i, out double ly) ? ly
+                        : TopMargin + (EnableVirtualScrolling && _virtualizationEngine != null
+                            ? _virtualizationEngine.GetLineYPosition(error.Line)
+                            : (error.Line - _firstVisibleLine) * _lineHeight);
+                    double y = lineTop + _lineHeight - 3;
                     string errLineText = _document?.Lines[i]?.Text ?? string.Empty;
                     double x1 = leftEdge + (_glyphRenderer?.ComputeVisualX(errLineText, error.Column) ?? error.Column * _charWidth);
                     double x2 = leftEdge + (_glyphRenderer?.ComputeVisualX(errLineText, error.Column + error.Length) ?? (error.Column + error.Length) * _charWidth);
+                    // When error.Column >= lineText.Length, ComputeVisualX clamps both x1 and x2
+                    // to the same end-of-line position.  Guarantee at least 1-char squiggle width
+                    // so diagnostics on trailing whitespace or EOL tokens remain visible.
+                    if (x2 <= x1) x2 = x1 + _charWidth;
 
                     Pen squigglyPen = error.Severity switch
                     {

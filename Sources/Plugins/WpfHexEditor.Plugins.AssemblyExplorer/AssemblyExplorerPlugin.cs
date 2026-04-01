@@ -385,7 +385,8 @@ public sealed class AssemblyExplorerPlugin : IWpfHexEditorPlugin, IPluginWithOpt
             {
                 Header     = "_Assembly Explorer",
                 ParentPath = "View",
-                Group      = "Panels",
+                Group      = "Core IDE",
+                Category   = "Core IDE",
                 IconGlyph  = "\uE8A5",
                 ToolTip    = "Show or hide the Assembly Explorer panel",
                 Command    = new RelayCommand(_ => context.UIRegistry.TogglePanel(PanelUiId))

@@ -11,7 +11,7 @@
 //     Self-contained in PluginHost.UI — no cross-project dependency.
 //
 // Architecture Notes:
-//     Mirror of SparklineControl in WpfHexEditor.Panels.IDE, but uses
+//     Mirror of SparklineControl in WpfHexEditor.PluginHost.UI, but uses
 //     IReadOnlyList<double> instead of IReadOnlyList<ChartPoint> so that
 //     WpfHexEditor.PluginHost (which cannot reference Panels.IDE) can
 //     use it directly in PluginManagerControl.

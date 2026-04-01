@@ -268,27 +268,8 @@ internal sealed class QuickInfoPopup : Popup
 
         var panel = new StackPanel { Orientation = Orientation.Vertical };
 
-        // Strip markdown code fences; render plain text paragraphs
-        string text = markdown
-            .Replace("```csharp", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Replace("```", string.Empty)
-            .Trim();
-
-        foreach (string para in text.Split('\n'))
-        {
-            string trimmed = para.TrimEnd('\r').Trim();
-            if (trimmed.Length == 0) continue;
-
-            var tb = new TextBlock
-            {
-                Text         = trimmed,
-                FontSize     = 12,
-                TextWrapping = TextWrapping.Wrap,
-                Margin       = new Thickness(0, 0, 0, 2)
-            };
-            tb.SetResourceReference(TextBlock.ForegroundProperty, "CE_QuickInfo_TypeText");
-            panel.Children.Add(tb);
-        }
+        foreach (var element in Helpers.MarkdownInlineRenderer.Render(markdown))
+            panel.Children.Add(element);
 
         scroll.Content = panel;
         _content.Children.Add(scroll);

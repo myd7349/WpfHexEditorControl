@@ -222,6 +222,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 _smartCompletePopup.CurrentFilePath = _currentFilePath;
             }
             _signatureHelpPopup!.IsOpen = false;
+            _signatureParamDepth = 0;
+            _goToSymbolPopup?.SetLspClient(client);
             _lspDocVersion = 0;
 
             if (_lspClient is null) return;
@@ -276,26 +278,86 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         /// <summary>
         /// Calls textDocument/signatureHelp and shows the result in <see cref="_signatureHelpPopup"/>.
-        /// Fire-and-forget: errors are swallowed to never break typing.
+        /// Also resets the nesting depth counter. Fire-and-forget: errors never break typing.
         /// </summary>
         private async Task TriggerSignatureHelpAsync()
         {
             if (_lspClient is null || _currentFilePath is null) return;
+            _signatureParamDepth = 1;   // we just typed '('
             try
             {
-                var sig = await _lspClient.SignatureHelpAsync(
+                var result = await _lspClient.SignatureHelpAsync(
                     _currentFilePath, _cursorLine, _cursorColumn, CancellationToken.None)
                     .ConfigureAwait(false);
-                if (sig is null) return;
+                if (result is null) return;
                 await Dispatcher.InvokeAsync(() =>
                 {
-                    _signatureHelpPopup?.Show(sig, ComputeCaretScreenPoint(belowCaret: false));
+                    if (_signatureHelpPopup is null) return;
+                    _signatureHelpPopup.PlacementTarget = this;
+                    _signatureHelpPopup.PlacementRectangle = GetCaretDisplayRect();
+                    _signatureHelpPopup.Show(result, this, GetCaretDisplayRect());
                 });
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[LSP] SignatureHelp: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Called from OnTextInput for every character typed while the SignatureHelp popup is open.
+        /// Tracks nesting depth, advances the active parameter on ',' and closes on unbalanced ')'.
+        /// </summary>
+        private void UpdateSignatureHelpOnChar(char ch)
+        {
+            if (_signatureHelpPopup is null || !_signatureHelpPopup.IsOpen) return;
+
+            switch (ch)
+            {
+                case '(':
+                    _signatureParamDepth++;
+                    break;
+
+                case ')':
+                    _signatureParamDepth--;
+                    if (_signatureParamDepth <= 0)
+                    {
+                        _signatureParamDepth = 0;
+                        _signatureHelpPopup.IsOpen = false;
+                    }
+                    break;
+
+                case ',':
+                    // Only advance at depth == 1 (not inside a nested call)
+                    if (_signatureParamDepth == 1)
+                    {
+                        _signatureHelpPopup.AdvanceParameter();
+                        // Re-query the server so the active-parameter index stays in sync
+                        _ = RefreshSignatureHelpAsync();
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Re-queries signatureHelp without resetting the depth counter.
+        /// Used after ',' to let the server confirm the new active parameter.
+        /// </summary>
+        private async Task RefreshSignatureHelpAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null) return;
+            try
+            {
+                var result = await _lspClient.SignatureHelpAsync(
+                    _currentFilePath, _cursorLine, _cursorColumn, CancellationToken.None)
+                    .ConfigureAwait(false);
+                if (result is null) return;
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    _signatureHelpPopup?.UpdateActiveParameter(result.ActiveParameterIndex);
+                });
+            }
+            catch { /* swallow */ }
         }
 
         // ── LSP Code Actions (Ctrl+.) ─────────────────────────────────────────────
@@ -329,6 +391,91 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[LSP] CodeAction: {ex.Message}");
+            }
+        }
+
+        // ── Lightbulb gutter check ───────────────────────────────────────────────
+
+        /// <summary>
+        /// Starts (or restarts) the 600ms debounce timer for <see cref="CheckCodeActionsAtCursorAsync"/>.
+        /// Called every time the cursor moves so the lightbulb updates without spamming the server.
+        /// </summary>
+        internal void ScheduleLightbulbCheck()
+        {
+            if (_lspClient is null || !_lspClient.IsInitialized)
+            {
+                if (_lightbulbLine != -1) { _lightbulbLine = -1; InvalidateVisual(); }
+                return;
+            }
+
+            if (_lightbulbTimer is null)
+            {
+                _lightbulbTimer = new System.Windows.Threading.DispatcherTimer
+                    { Interval = TimeSpan.FromMilliseconds(600) };
+                _lightbulbTimer.Tick += async (_, _) =>
+                {
+                    _lightbulbTimer.Stop();
+                    await CheckCodeActionsAtCursorAsync().ConfigureAwait(false);
+                };
+            }
+
+            _lightbulbTimer.Stop();
+            _lightbulbTimer.Start();
+        }
+
+        /// <summary>
+        /// Queries the server for code actions at the current cursor position.
+        /// Shows or hides the lightbulb glyph depending on whether any actions are returned.
+        /// </summary>
+        private async Task CheckCodeActionsAtCursorAsync()
+        {
+            if (_lspClient is null || _currentFilePath is null) return;
+            try
+            {
+                var actions = await _lspClient.CodeActionAsync(
+                    _currentFilePath,
+                    _cursorLine, _cursorColumn,
+                    _cursorLine, _cursorColumn,
+                    CancellationToken.None).ConfigureAwait(false);
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    int newLine = actions.Count > 0 ? _cursorLine : -1;
+                    if (_lightbulbLine != newLine)
+                    {
+                        _lightbulbLine = newLine;
+                        InvalidateVisual();
+                    }
+                });
+            }
+            catch { /* ignore — never crash for a gutter glyph */ }
+        }
+
+        // ── Go-to-Symbol palette (Ctrl+T) ────────────────────────────────────────
+
+        /// <summary>Opens the Go-to-Symbol popup centered on this editor.</summary>
+        internal void ShowGoToSymbolPopup()
+        {
+            if (_goToSymbolPopup is null) return;
+            _goToSymbolPopup.Show(this);
+        }
+
+        private void OnGoToSymbolNavigation(object? sender, GoToSymbolNavigationArgs e)
+        {
+            if (string.IsNullOrEmpty(e.FilePath)) return;
+
+            if (string.Equals(e.FilePath, _currentFilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                NavigateToLine(e.Line + 1);  // NavigateToLine is 1-based
+            }
+            else
+            {
+                ReferenceNavigationRequested?.Invoke(this,
+                    new ReferencesNavigationEventArgs
+                    {
+                        FilePath = e.FilePath,
+                        Line     = e.Line,
+                    });
             }
         }
 
@@ -572,6 +719,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     {
                         Line     = d.StartLine,
                         Column   = d.StartColumn,
+                        Length   = Math.Max(1, d.EndColumn - d.StartColumn),
                         Message  = d.Message,
                         Severity = d.Severity == "error"   ? Models.ValidationSeverity.Error
                                  : d.Severity == "warning" ? Models.ValidationSeverity.Warning
