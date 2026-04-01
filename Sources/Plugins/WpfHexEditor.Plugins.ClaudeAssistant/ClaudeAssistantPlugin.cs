@@ -203,7 +203,9 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             openOptions: () => _context?.CommandRegistry?.Find("View.Options")?.Command.Execute(null),
             presets: PromptPresetsService.Instance.Presets);
 
-        var owner = _panel != null ? Window.GetWindow(_panel) : null;
+        var owner = (_panel != null ? Window.GetWindow(_panel) : null)
+                 ?? (anchor != null ? Window.GetWindow(anchor) : null)
+                 ?? Application.Current.MainWindow;
         var palette = new ClaudeCommandPalette(entries, owner!, anchor);
         palette.Show();
     }
