@@ -111,6 +111,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         "ShowCommandPalette", typeof(MainWindow),
         new InputGestureCollection { new KeyGesture(Key.P, ModifierKeys.Control | ModifierKeys.Shift) });
 
+    /// <summary>Ctrl+Shift+L — opens the Customize Layout popup.</summary>
+    public static readonly RoutedCommand CustomizeLayoutCommand = new RoutedCommand(
+        "CustomizeLayout", typeof(MainWindow),
+        new InputGestureCollection { new KeyGesture(Key.L, ModifierKeys.Control | ModifierKeys.Shift) });
+
     // --- Constants -----------------------------------------------------
     private static readonly string LayoutFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

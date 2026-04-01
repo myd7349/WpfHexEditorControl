@@ -1970,6 +1970,7 @@
         <KeyBinding Gesture="Shift+F3"     Command="{x:Static local:MainWindow.FindPreviousCommand}" />
         <KeyBinding Gesture="Ctrl+G"       Command="{x:Static local:MainWindow.GoToOffsetCommand}" />
         <KeyBinding Gesture="Ctrl+Shift+P" Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}" />
+        <KeyBinding Gesture="Ctrl+Shift+L" Command="{x:Static local:MainWindow.CustomizeLayoutCommand}" />
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="{x:Static ApplicationCommands.New}"   Executed="OnNewFile" />
@@ -1984,5 +1985,6 @@
         <CommandBinding Command="{x:Static local:MainWindow.GoToOffsetCommand}"   Executed="OnGoToOffset" />
         <CommandBinding Command="{x:Static local:MainWindow.OpenPluginManagerCommand}"  Executed="OnOpenPluginManager" />
         <CommandBinding Command="{x:Static local:MainWindow.ShowCommandPaletteCommand}" Executed="OnShowCommandPalette" />
+        <CommandBinding Command="{x:Static local:MainWindow.CustomizeLayoutCommand}" Executed="OnCustomizeLayoutCommand" />
     </Window.CommandBindings>
 </Window>

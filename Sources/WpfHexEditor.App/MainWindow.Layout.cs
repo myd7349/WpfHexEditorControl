@@ -85,6 +85,10 @@ public partial class MainWindow
     private void OnCustomizeLayoutButtonClick(object sender, RoutedEventArgs e)
         => OnCustomizeLayout();
 
+    /// <summary>CommandBinding handler for Ctrl+Shift+L.</summary>
+    private void OnCustomizeLayoutCommand(object sender, ExecutedRoutedEventArgs e)
+        => OnCustomizeLayout();
+
     private void OnCustomizeLayout()
     {
         if (_customizeLayoutPopup is { IsVisible: true })
