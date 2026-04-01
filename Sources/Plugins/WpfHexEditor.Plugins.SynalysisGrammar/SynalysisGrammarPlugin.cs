@@ -123,15 +123,15 @@ public sealed class SynalysisGrammarPlugin : IWpfHexEditorPlugin, IPluginWithOpt
                 Command    = new RelayCommand(_ => context.UIRegistry.ShowPanel(PanelId)),
             });
 
-        // 6. Register Analyze → Apply Grammar… menu entry.
+        // 6. Register View → Apply Grammar… menu entry (alongside Grammar Explorer).
         context.UIRegistry.RegisterMenuItem(
             $"{Id}.Menu.Apply",
             Id,
             new MenuItemDescriptor
             {
                 Header     = "_Apply Grammar…",
-                ParentPath = "Analyze",
-                Group      = "Grammar",
+                ParentPath = "View",
+                Group      = "Analysis",
                 IconGlyph  = "\uE768",
                 Command    = new RelayCommand(_ => _panel?.ShowOpenDialog()),
             });

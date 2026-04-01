@@ -199,7 +199,11 @@ public class TabOverflowButton : Button
             };
 
             // --- Header panel ---
-            var titleText = tabItem.Header is DockTabHeader dth ? ExtractTitle(dth) : tabItem.Header?.ToString() ?? "Tab";
+            // Use DockItem.Title directly — ExtractTitle() would pick up the LSP-dot TextBlock
+            // (added before _titleBlock in DockTabHeader.Children) and return "●" instead of the filename.
+            var titleText = tabItem.Tag is DockItem diTitle
+                ? (diTitle.IsDirty ? diTitle.Title + " \u2022" : diTitle.Title)
+                : (tabItem.Header is DockTabHeader dth ? ExtractTitle(dth) : tabItem.Header?.ToString() ?? "Tab");
             var title = new TextBlock
             {
                 Text              = titleText,
