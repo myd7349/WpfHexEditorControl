@@ -178,6 +178,15 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
 
     private ConversationTabViewModel CreateTabForSession(ConversationSession session)
     {
+        // Auto-fallback to claude-code if the session's provider has no API key
+        if (session.ProviderId != "ollama" && session.ProviderId != "claude-code"
+            && string.IsNullOrEmpty(ClaudeAssistantOptions.Instance.GetApiKey(session.ProviderId))
+            && ClaudeCodeModelProvider.FindClaudeExecutable() is not null)
+        {
+            session.ProviderId = "claude-code";
+            session.ModelId = "sonnet";
+        }
+
         var tab = new ConversationTabViewModel(session, _registry);
         Tabs.Add(tab);
         return tab;

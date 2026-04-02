@@ -11,6 +11,7 @@
 using System.Diagnostics;
 using System.Net.Http;
 using WpfHexEditor.Plugins.ClaudeAssistant.Options;
+using WpfHexEditor.Plugins.ClaudeAssistant.Providers.ClaudeCode;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Connection;
 
@@ -103,9 +104,30 @@ public sealed class ClaudeConnectionService : IDisposable
     private async Task TestConnectionAsync(CancellationToken ct)
     {
         var opts = ClaudeAssistantOptions.Instance;
-        var key = opts.GetApiKey(opts.DefaultProviderId);
 
-        if (opts.DefaultProviderId != "ollama" && string.IsNullOrEmpty(key))
+        // Determine effective provider: auto-fallback to claude-code if no API key
+        var effectiveProvider = opts.DefaultProviderId;
+        if (effectiveProvider != "ollama" && effectiveProvider != "claude-code"
+            && string.IsNullOrEmpty(opts.GetApiKey(effectiveProvider))
+            && ClaudeCodeModelProvider.FindClaudeExecutable() is not null)
+        {
+            effectiveProvider = "claude-code";
+        }
+
+        // Claude Code CLI: just check if executable exists
+        if (effectiveProvider == "claude-code")
+        {
+            if (ClaudeCodeModelProvider.FindClaudeExecutable() is not null)
+            {
+                NotifySuccess(0);
+                return;
+            }
+            SetStatus(ClaudeConnectionStatus.NotConfigured);
+            return;
+        }
+
+        var key = opts.GetApiKey(effectiveProvider);
+        if (effectiveProvider != "ollama" && string.IsNullOrEmpty(key))
         {
             SetStatus(ClaudeConnectionStatus.NotConfigured);
             return;
@@ -119,13 +141,11 @@ public sealed class ClaudeConnectionService : IDisposable
 
         SetStatus(ClaudeConnectionStatus.Connecting);
 
-        // TODO Phase 1: call IModelProvider.TestConnectionAsync for real validation
-        // For now, simulate a lightweight ping
         var sw = Stopwatch.StartNew();
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            var testUrl = opts.DefaultProviderId switch
+            var testUrl = effectiveProvider switch
             {
                 "anthropic" => "https://api.anthropic.com/v1/messages",
                 "openai" => "https://api.openai.com/v1/models",
@@ -140,7 +160,6 @@ public sealed class ClaudeConnectionService : IDisposable
                 return;
             }
 
-            // HEAD request for connectivity check (no auth needed for reachability)
             using var req = new HttpRequestMessage(HttpMethod.Head, testUrl);
             await http.SendAsync(req, ct);
             sw.Stop();
