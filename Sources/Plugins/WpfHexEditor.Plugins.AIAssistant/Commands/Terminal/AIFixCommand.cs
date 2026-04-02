@@ -40,7 +40,7 @@ public sealed class AIFixCommand : ITerminalCommandProvider
         {
             vm.ActiveTab.InputText = "@selection @errors Fix the errors in this code. Show the corrected version.";
             vm.ActiveTab.SendCommand.Execute(null);
-            output.WriteInfo("[Claude] Fix request sent...");
+            output.WriteInfo("[AI] Fix request sent...");
         }
 
         return Task.FromResult(0);

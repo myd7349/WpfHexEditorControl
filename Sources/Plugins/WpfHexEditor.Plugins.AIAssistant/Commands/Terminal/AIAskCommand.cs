@@ -42,7 +42,7 @@ public sealed class AIAskCommand : ITerminalCommandProvider
         {
             vm.ActiveTab.InputText = question;
             vm.ActiveTab.SendCommand.Execute(null);
-            output.WriteInfo($"[Claude] Question sent: {question[..Math.Min(60, question.Length)]}...");
+            output.WriteInfo($"[AI] Question sent: {question[..Math.Min(60, question.Length)]}...");
         }
 
         return Task.FromResult(0);

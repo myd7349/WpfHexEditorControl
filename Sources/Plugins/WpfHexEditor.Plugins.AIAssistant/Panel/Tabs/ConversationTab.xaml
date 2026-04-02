@@ -210,7 +210,7 @@
                                                Foreground="{DynamicResource CA_AccentBrandingBrush}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="Claude"/>
+                                                <Setter Property="Text" Value="AI"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsUser}" Value="True">
                                                         <Setter Property="Text" Value="You"/>
@@ -360,7 +360,7 @@
                         <Grid>
                             <!-- Watermark -->
                             <TextBlock x:Name="InputWatermark"
-                                       Text="Ask Claude anything... (@ to mention, Alt+Enter to send)"
+                                       Text="Ask AI anything... (@ to mention, Alt+Enter to send)"
                                        FontSize="12" Opacity="0.4" IsHitTestVisible="False"
                                        Foreground="{DynamicResource CA_InputForegroundBrush}"
                                        VerticalAlignment="Center" Margin="10,0,0,0"/>

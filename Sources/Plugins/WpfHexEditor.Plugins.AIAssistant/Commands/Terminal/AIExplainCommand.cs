@@ -47,7 +47,7 @@ public sealed class AIExplainCommand : ITerminalCommandProvider
         {
             vm.ActiveTab.InputText = $"@selection Explain this code in detail.";
             vm.ActiveTab.SendCommand.Execute(null);
-            output.WriteInfo("[Claude] Explaining selection...");
+            output.WriteInfo("[AI] Explaining selection...");
         }
 
         return Task.FromResult(0);

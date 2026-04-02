@@ -27,7 +27,7 @@ public sealed class AINewTabCommand : ITerminalCommandProvider
     public Task<int> ExecuteAsync(string[] args, ITerminalOutput output, ITerminalContext context, CancellationToken ct = default)
     {
         _getVm().CreateNewTabCommand.Execute(null);
-        output.WriteInfo("[Claude] New conversation tab created.");
+        output.WriteInfo("[AI] New conversation tab created.");
         return Task.FromResult(0);
     }
 }
