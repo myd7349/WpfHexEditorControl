@@ -83,7 +83,13 @@ public sealed class ZipArchiveReader : IArchiveReader
         Crc               : $"{e.Crc32:X8}");
 
     private ZipArchiveEntry? FindZipEntry(ArchiveEntry entry)
-        => _zip.GetEntry(entry.FullPath) ?? _zip.GetEntry(entry.FullPath.TrimEnd('/'));
+    {
+        var path = entry.FullPath;
+        return _zip.GetEntry(path)
+            ?? _zip.GetEntry(path.TrimEnd('/'))
+            ?? _zip.GetEntry(path.Replace('/', '\\'))
+            ?? _zip.GetEntry(path.Replace('/', '\\').TrimEnd('\\'));
+    }
 
     public void Dispose()
     {

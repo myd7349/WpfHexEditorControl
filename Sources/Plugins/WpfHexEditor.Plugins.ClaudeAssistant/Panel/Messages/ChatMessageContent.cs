@@ -22,6 +22,7 @@ public sealed class ChatMessageContent : ContentControl
     private DispatcherTimer? _debounceTimer;
     private string _lastRendered = "";
     private bool _isStreaming;
+    private TextBlock? _streamingTextBlock;
 
     public ChatMessageContent()
     {
@@ -95,37 +96,45 @@ public sealed class ChatMessageContent : ContentControl
         if (text == _lastRendered) return;
         _lastRendered = text;
 
+        if (string.IsNullOrEmpty(text))
+        {
+            _streamingTextBlock = null;
+            _panel.Children.Clear();
+            return;
+        }
+
+        if (!useMarkdown)
+        {
+            // Streaming: reuse a single TextBlock — zero UIElement churn
+            if (_streamingTextBlock is null)
+            {
+                _panel.Children.Clear();
+                _streamingTextBlock = new TextBlock
+                {
+                    TextWrapping = TextWrapping.Wrap,
+                    FontSize = 12.5,
+                };
+                _streamingTextBlock.SetResourceReference(
+                    TextBlock.ForegroundProperty, "CA_MessageForegroundBrush");
+                _panel.Children.Add(_streamingTextBlock);
+            }
+            _streamingTextBlock.Text = text;
+            return;
+        }
+
+        // Full markdown render (stream ended)
+        _streamingTextBlock = null;
         _panel.Children.Clear();
 
-        if (string.IsNullOrEmpty(text)) return;
-
-        if (useMarkdown)
+        try
         {
-            try
-            {
-                var elements = ChatMarkdownRenderer.Render(text);
-                foreach (var el in elements)
-                    _panel.Children.Add(el);
-            }
-            catch
-            {
-                // Fallback to plain text if markdown parsing fails
-                AddPlainText(text);
-            }
+            var elements = ChatMarkdownRenderer.Render(text);
+            foreach (var el in elements)
+                _panel.Children.Add(el);
         }
-        else
+        catch
         {
-            // During streaming: render markdown anyway but with debounce
-            try
-            {
-                var elements = ChatMarkdownRenderer.Render(text);
-                foreach (var el in elements)
-                    _panel.Children.Add(el);
-            }
-            catch
-            {
-                AddPlainText(text);
-            }
+            AddPlainText(text);
         }
     }
 

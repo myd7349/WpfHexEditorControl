@@ -56,6 +56,7 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
     {
         _context  = context;
         _debugger = context.Debugger;
+        Controls.BreakpointCodePreview.SyntaxColoringService = context.SyntaxColoring;
 
         if (_debugger is null)
         {

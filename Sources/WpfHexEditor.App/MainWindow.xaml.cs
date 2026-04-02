@@ -4201,6 +4201,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Sync active document in DocumentManager so IsActive / ActiveDocument are accurate.
         SyncActiveDocument(item.ContentId);
+
+        // Sync LSP status bar indicator to the active document's language.
+        var activeDoc = _documentManager.ActiveDocument;
+        _lspStatusBarAdapter?.SyncToLanguage(activeDoc?.Buffer?.LanguageId);
     }
 
     // --- Split-pane focus tracking ------------------------------------
@@ -4232,6 +4236,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ActiveStatusBarContributor = contributor;
         contributor.RefreshStatusBarItems();
         SyncActiveDocument(contentId);
+
+        // Sync LSP status bar to the focused document's language.
+        var focusedDoc = _documentManager.ActiveDocument;
+        _lspStatusBarAdapter?.SyncToLanguage(focusedDoc?.Buffer?.LanguageId);
 
         var focusedHex = unwrapped as HexEditorControl;
         if (focusedHex != null)

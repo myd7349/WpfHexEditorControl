@@ -31,7 +31,8 @@ public sealed class ModelSwitcherPopup : Window
         string currentProviderId,
         string currentModelId,
         bool thinkingEnabled,
-        UIElement? anchor = null)
+        Window? owner = null,
+        Point? anchor = null)
     {
         SelectedProviderId = currentProviderId;
         SelectedModelId = currentModelId;
@@ -46,14 +47,22 @@ public sealed class ModelSwitcherPopup : Window
         SizeToContent = SizeToContent.Height;
         MaxHeight = 400;
 
-        if (anchor is not null)
+        owner ??= Application.Current.MainWindow;
+        if (owner is not null)
         {
-            var ownerWin = Window.GetWindow(anchor);
-            if (ownerWin is not null) Owner = ownerWin;
+            Owner = owner;
             WindowStartupLocation = WindowStartupLocation.Manual;
-            var screenPt = anchor.PointToScreen(new Point(0, anchor.RenderSize.Height));
-            Left = screenPt.X;
-            Top = screenPt.Y + 2;
+
+            if (anchor.HasValue)
+            {
+                Left = anchor.Value.X;
+                Top = anchor.Value.Y + 2;
+            }
+            else
+            {
+                Left = owner.Left + (owner.Width - Width) / 2;
+                Top = owner.Top + owner.Height * 0.18;
+            }
         }
 
         var rootBorder = new Border

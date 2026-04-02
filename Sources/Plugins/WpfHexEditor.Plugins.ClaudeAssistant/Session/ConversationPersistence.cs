@@ -56,7 +56,7 @@ public static class ConversationPersistence
         var sessions = new List<ConversationSession>();
         if (!Directory.Exists(Dir)) return sessions;
 
-        foreach (var file in Directory.GetFiles(Dir, "*.json").Where(f => !f.EndsWith("index.json")))
+        foreach (var file in Directory.GetFiles(Dir, "*.json").Where(f => !f.EndsWith("index.json") && !f.EndsWith("open-tabs.json")))
         {
             try
             {
@@ -90,6 +90,51 @@ public static class ConversationPersistence
         }
 
         return sessions.OrderByDescending(s => s.LastModifiedAt).ToList();
+    }
+
+    /// <summary>Loads only the specified sessions by ID (lazy loading for restore).</summary>
+    public static async Task<List<ConversationSession>> LoadByIdsAsync(IReadOnlyList<string> sessionIds)
+    {
+        var sessions = new List<ConversationSession>();
+        if (!Directory.Exists(Dir) || sessionIds.Count == 0) return sessions;
+
+        var idSet = new HashSet<string>(sessionIds);
+        foreach (var id in sessionIds)
+        {
+            var file = Path.Combine(Dir, $"{id}.json");
+            if (!File.Exists(file)) continue;
+            try
+            {
+                var json = await File.ReadAllTextAsync(file);
+                var dto = JsonSerializer.Deserialize<ConversationDto>(json, s_json);
+                if (dto is null) continue;
+
+                var session = new ConversationSession
+                {
+                    Id = dto.Id,
+                    Title = dto.Title,
+                    ProviderId = dto.ProviderId,
+                    ModelId = dto.ModelId,
+                    ThinkingEnabled = dto.ThinkingEnabled,
+                    CreatedAt = dto.CreatedAt,
+                    LastModifiedAt = dto.LastModifiedAt
+                };
+
+                foreach (var msg in dto.Messages)
+                {
+                    session.Messages.Add(new ChatMessage
+                    {
+                        Role = msg.Role,
+                        Content = [new TextBlock(msg.Text)]
+                    });
+                }
+
+                sessions.Add(session);
+            }
+            catch { /* skip corrupted */ }
+        }
+
+        return sessions;
     }
 
     public static async Task DeleteAsync(string sessionId)

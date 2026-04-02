@@ -13,31 +13,20 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
-using WpfHexEditor.Core.ProjectSystem.Languages;
-using WpfHexEditor.Editor.CodeEditor.Helpers;
+using WpfHexEditor.SDK.Contracts.Services;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel.Messages;
 
 /// <summary>
 /// FrameworkElement that renders syntax-highlighted code via DrawingContext/GlyphRun.
-/// Language highlighting is driven by whfmt definitions via <see cref="LanguageRegistry"/>.
+/// Language highlighting is driven by whfmt definitions via <see cref="ISyntaxColoringService"/>.
 /// </summary>
 internal sealed class ChatCodeBlockCanvas : FrameworkElement
 {
-    // ── Language alias map (fenced block label → LanguageRegistry ID) ─────
-    private static readonly Dictionary<string, string> s_aliases = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["c#"] = "csharp",
-        ["cs"] = "csharp",
-        ["js"] = "javascript",
-        ["ts"] = "typescript",
-        ["py"] = "python",
-        ["sh"] = "bash",
-        ["yml"] = "yaml",
-        ["md"] = "markdown",
-        ["rb"] = "ruby",
-        ["rs"] = "rust",
-    };
+    /// <summary>
+    /// Set once during plugin init. All instances share the same service reference.
+    /// </summary>
+    internal static ISyntaxColoringService? SyntaxColoringService { get; set; }
 
     // ── Rendering state ──────────────────────────────────────────────────
     private static readonly Typeface s_typeface = new("Cascadia Code,Consolas,Courier New");
@@ -55,7 +44,7 @@ internal sealed class ChatCodeBlockCanvas : FrameworkElement
     private string _code = "";
     private string? _language;
     private string[]? _lines;
-    private ISyntaxHighlighter? _highlighter;
+    private IReadOnlyList<IReadOnlyList<ColoredSpan>>? _cachedSpans;
     private Brush? _defaultFg;
 
     // ── Public properties ────────────────────────────────────────────────
@@ -69,6 +58,7 @@ internal sealed class ChatCodeBlockCanvas : FrameworkElement
             _lines = _code.Split('\n');
             for (int i = 0; i < _lines.Length; i++)
                 _lines[i] = _lines[i].TrimEnd('\r');
+            RebuildCachedSpans();
             InvalidateMeasure();
             InvalidateVisual();
         }
@@ -80,77 +70,24 @@ internal sealed class ChatCodeBlockCanvas : FrameworkElement
         set
         {
             _language = value;
-            _highlighter = ResolveHighlighter(value);
+            RebuildCachedSpans();
             InvalidateVisual();
         }
     }
 
-    // ── Highlighter resolution (whfmt-driven) ────────────────────────────
-
-    private static ISyntaxHighlighter? ResolveHighlighter(string? language)
+    private void RebuildCachedSpans()
     {
-        if (string.IsNullOrEmpty(language)) return null;
-
-        var id = s_aliases.TryGetValue(language, out var mapped) ? mapped : language.ToLowerInvariant();
+        _cachedSpans = null;
+        if (_lines is null || _lines.Length == 0 || string.IsNullOrEmpty(_language)) return;
 
         try
         {
-            var langDef = LanguageRegistry.Instance.FindById(id);
-            if (langDef is null || langDef.SyntaxRules.Count == 0) return null;
-
-            // Replicate CodeEditorFactory.BuildHighlighter logic
-            var rules = langDef.SyntaxRules.Select(rule => new RegexHighlightRule(
-                rule.Pattern,
-                TokenKindToBrush(rule.Kind),
-                isBold: rule.Kind is SyntaxTokenKind.Keyword,
-                isItalic: rule.Kind is SyntaxTokenKind.Comment,
-                kind: rule.Kind));
-
-            return new SyntaxRuleHighlighter(
-                rules,
-                langDef.Name,
-                langDef.BlockCommentStart,
-                langDef.BlockCommentEnd);
+            _cachedSpans = SyntaxColoringService?.ColorizeLines(_lines, _language!);
         }
         catch
         {
-            return null; // graceful fallback — no highlighting
+            // graceful fallback — no highlighting
         }
-    }
-
-    private static Brush TokenKindToBrush(SyntaxTokenKind kind)
-    {
-        var resourceKey = kind switch
-        {
-            SyntaxTokenKind.Keyword => "CE_Keyword",
-            SyntaxTokenKind.String => "CE_String",
-            SyntaxTokenKind.Number => "CE_Number",
-            SyntaxTokenKind.Comment => "CE_Comment",
-            SyntaxTokenKind.Type => "CE_Type",
-            SyntaxTokenKind.Identifier => "CE_Identifier",
-            SyntaxTokenKind.Operator => "CE_Operator",
-            SyntaxTokenKind.Bracket => "CE_Bracket",
-            SyntaxTokenKind.Attribute => "CE_Attribute",
-            SyntaxTokenKind.ControlFlow => "CE_ControlFlow",
-            _ => "CE_Foreground"
-        };
-
-        if (Application.Current?.TryFindResource(resourceKey) is Brush b)
-            return b;
-
-        // VS Dark fallbacks
-        return kind switch
-        {
-            SyntaxTokenKind.Keyword => Freeze(Color.FromRgb(86, 156, 214)),
-            SyntaxTokenKind.String => Freeze(Color.FromRgb(206, 145, 120)),
-            SyntaxTokenKind.Number => Freeze(Color.FromRgb(181, 206, 168)),
-            SyntaxTokenKind.Comment => Freeze(Color.FromRgb(106, 153, 85)),
-            SyntaxTokenKind.Type => Freeze(Color.FromRgb(78, 201, 176)),
-            SyntaxTokenKind.ControlFlow => Freeze(Color.FromRgb(197, 134, 192)),
-            _ => Freeze(Color.FromRgb(212, 212, 212))
-        };
-
-        static Brush Freeze(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }
     }
 
     // ── Measure / Arrange ────────────────────────────────────────────────
@@ -179,8 +116,6 @@ internal sealed class ChatCodeBlockCanvas : FrameworkElement
         _defaultFg = Application.Current?.TryFindResource("CA_MessageForegroundBrush") as Brush
                      ?? Brushes.WhiteSmoke;
 
-        _highlighter?.Reset();
-
         double y = TopPadding;
 
         for (int i = 0; i < _lines.Length; i++)
@@ -189,38 +124,32 @@ internal sealed class ChatCodeBlockCanvas : FrameworkElement
             double x = LeftPadding;
             double baselineY = y + _baseline;
 
-            if (_highlighter != null && !string.IsNullOrEmpty(line))
+            var spans = _cachedSpans is not null && i < _cachedSpans.Count ? _cachedSpans[i] : null;
+
+            if (spans is not null && spans.Count > 0 && !string.IsNullOrEmpty(line))
             {
-                var tokens = _highlighter.Highlight(line, i);
-                if (tokens.Count > 0)
+                int pos = 0;
+                foreach (var span in spans)
                 {
-                    int pos = 0;
-                    foreach (var token in tokens)
+                    // Gap before span
+                    if (span.Start > pos)
                     {
-                        // Gap before token
-                        if (token.StartColumn > pos)
-                        {
-                            var gap = line[pos..token.StartColumn];
-                            RenderSegment(dc, gap, x, baselineY, y, _defaultFg);
-                            x += MeasureWidth(gap);
-                        }
-
-                        // Token
-                        RenderSegment(dc, token.Text, x, baselineY, y, token.Foreground);
-                        x += MeasureWidth(token.Text);
-                        pos = token.StartColumn + token.Length;
+                        var gap = line[pos..span.Start];
+                        RenderSegment(dc, gap, x, baselineY, y, _defaultFg);
+                        x += MeasureWidth(gap);
                     }
 
-                    // Remainder
-                    if (pos < line.Length)
-                    {
-                        var rest = line[pos..];
-                        RenderSegment(dc, rest, x, baselineY, y, _defaultFg);
-                    }
+                    // Span
+                    RenderSegment(dc, span.Text, x, baselineY, y, span.Foreground);
+                    x += MeasureWidth(span.Text);
+                    pos = span.Start + span.Length;
                 }
-                else
+
+                // Remainder
+                if (pos < line.Length)
                 {
-                    RenderSegment(dc, line, x, baselineY, y, _defaultFg);
+                    var rest = line[pos..];
+                    RenderSegment(dc, rest, x, baselineY, y, _defaultFg);
                 }
             }
             else if (!string.IsNullOrEmpty(line))

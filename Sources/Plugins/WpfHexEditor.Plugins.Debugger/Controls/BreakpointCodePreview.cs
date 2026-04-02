@@ -12,21 +12,26 @@
 //     GlyphRun pattern mirrors DiffGlyphHelper in FileComparison plugin.
 // ==========================================================
 
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
-using WpfHexEditor.Core.ProjectSystem.Languages;
+using WpfHexEditor.SDK.Contracts.Services;
 
 namespace WpfHexEditor.Plugins.Debugger.Controls;
 
 internal sealed class BreakpointCodePreview : FrameworkElement
 {
+    /// <summary>
+    /// Set once during plugin init. All instances share the same service reference.
+    /// </summary>
+    internal static ISyntaxColoringService? SyntaxColoringService { get; set; }
+
     // ── Dependency Properties ──────────────────────────────────────────────
 
     public static readonly DependencyProperty SourceTextProperty =
         DependencyProperty.Register(nameof(SourceText), typeof(string), typeof(BreakpointCodePreview),
             new FrameworkPropertyMetadata(string.Empty,
-                FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender));
+                FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender,
+                (d, _) => ((BreakpointCodePreview)d).RebuildCachedSpans()));
 
     public static readonly DependencyProperty FilePathProperty =
         DependencyProperty.Register(nameof(FilePath), typeof(string), typeof(BreakpointCodePreview),
@@ -65,9 +70,10 @@ internal sealed class BreakpointCodePreview : FrameworkElement
     [ThreadStatic] private static List<ushort>? _glyphPool;
     [ThreadStatic] private static List<double>? _advancePool;
 
-    // ── Per-instance tokenizer ─────────────────────────────────────────────
+    // ── Per-instance coloring state ───────────────────────────────────────
 
-    private List<(Regex regex, Brush brush)>? _rules;
+    private string? _resolvedLanguageId;
+    private IReadOnlyList<ColoredSpan>[]? _cachedLineSpans;
     private float _pixelsPerDip = 1f;
 
     // ── Constructor ────────────────────────────────────────────────────────
@@ -118,89 +124,34 @@ internal sealed class BreakpointCodePreview : FrameworkElement
 
     private void OnFilePathChanged()
     {
-        _rules = null;
-        BuildRules();
+        var fp = FilePath;
+        _resolvedLanguageId = !string.IsNullOrEmpty(fp)
+            ? SyntaxColoringService?.ResolveLanguageId(System.IO.Path.GetExtension(fp))
+            : null;
+        RebuildCachedSpans();
         InvalidateVisual();
     }
 
-    // ── Tokenizer build ────────────────────────────────────────────────────
-
-    private void BuildRules()
+    private void RebuildCachedSpans()
     {
-        var fp = FilePath;
-        if (string.IsNullOrEmpty(fp)) return;
+        _cachedLineSpans = null;
+        var text = SourceText;
+        if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(_resolvedLanguageId)) return;
 
-        var lang = LanguageRegistry.Instance.GetLanguageForFile(fp);
-        if (lang is null) return;
-
-        _rules = [];
-        foreach (var rule in lang.SyntaxRules)
+        try
         {
-            if (string.IsNullOrEmpty(rule.Pattern)) continue;
-            try
+            var lines = text.Split('\n');
+            for (int i = 0; i < lines.Length; i++)
+                lines[i] = lines[i].TrimEnd('\r');
+            var spans = SyntaxColoringService?.ColorizeLines(lines, _resolvedLanguageId!);
+            if (spans is not null)
             {
-                var regex = new Regex(rule.Pattern,
-                    RegexOptions.Compiled | RegexOptions.ExplicitCapture,
-                    TimeSpan.FromMilliseconds(50));
-                var brush = ResolveBrush(rule.Kind);
-                _rules.Add((regex, brush));
+                _cachedLineSpans = new IReadOnlyList<ColoredSpan>[spans.Count];
+                for (int i = 0; i < spans.Count; i++)
+                    _cachedLineSpans[i] = spans[i];
             }
-            catch { /* invalid pattern — skip */ }
         }
-    }
-
-    private static Brush ResolveBrush(SyntaxTokenKind kind)
-    {
-        var key = kind switch
-        {
-            SyntaxTokenKind.Keyword     => "CE_Keyword",
-            SyntaxTokenKind.ControlFlow => "CE_ControlFlow",
-            SyntaxTokenKind.String      => "CE_String",
-            SyntaxTokenKind.Number      => "CE_Number",
-            SyntaxTokenKind.Comment     => "CE_Comment",
-            SyntaxTokenKind.Type        => "CE_Type",
-            SyntaxTokenKind.Identifier  => "CE_Identifier",
-            SyntaxTokenKind.Operator    => "CE_Operator",
-            SyntaxTokenKind.Bracket     => "CE_Bracket",
-            SyntaxTokenKind.Attribute   => "CE_Attribute",
-            _                           => null,
-        };
-        return key is not null && System.Windows.Application.Current?.TryFindResource(key) is Brush b
-            ? b
-            : SystemColors.ControlTextBrush;
-    }
-
-    // ── Per-line tokenisation ──────────────────────────────────────────────
-
-    private List<(int start, int length, Brush brush)> TokenizeLine(string line)
-    {
-        var result = new List<(int start, int length, Brush brush)>();
-        if (_rules is null || _rules.Count == 0 || line.Length == 0)
-            return result;
-
-        var covered = new bool[line.Length];
-        foreach (var (regex, brush) in _rules)
-        {
-            try
-            {
-                foreach (Match m in regex.Matches(line))
-                {
-                    if (!m.Success || m.Length == 0) continue;
-                    var g = m.Groups.Count > 1 && m.Groups[1].Success ? m.Groups[1] : m.Groups[0];
-                    int s = g.Index, e = s + g.Length;
-                    if (s >= line.Length || e > line.Length) continue;
-                    bool overlaps = false;
-                    for (int i = s; i < e; i++) if (covered[i]) { overlaps = true; break; }
-                    if (overlaps) continue;
-                    for (int i = s; i < e; i++) covered[i] = true;
-                    result.Add((s, g.Length, brush));
-                }
-            }
-            catch (RegexMatchTimeoutException) { /* pathological input — skip rule */ }
-        }
-
-        result.Sort(static (a, b) => a.start.CompareTo(b.start));
-        return result;
+        catch { /* graceful fallback */ }
     }
 
     // ── Layout ─────────────────────────────────────────────────────────────
@@ -229,7 +180,6 @@ internal sealed class BreakpointCodePreview : FrameworkElement
 
         EnsureMetrics();
         if (_rowHeight == 0) return;
-        if (_rules is null) BuildRules();
 
         var defaultFg =
             System.Windows.Application.Current?.TryFindResource("DockMenuForegroundBrush") as Brush
@@ -241,19 +191,27 @@ internal sealed class BreakpointCodePreview : FrameworkElement
             var line = lines[li].TrimEnd('\r');
             if (line.Length == 0) continue;
 
-            double topY  = li * _rowHeight;
-            var    tokens = TokenizeLine(line);
+            double topY = li * _rowHeight;
+            var spans = _cachedLineSpans is not null && li < _cachedLineSpans.Length
+                ? _cachedLineSpans[li] : null;
 
-            int pos = 0;
-            foreach (var (start, length, brush) in tokens)
+            if (spans is not null && spans.Count > 0)
             {
-                if (start > pos)
-                    DrawSegment(dc, line, pos, start - pos, topY, defaultFg);
-                DrawSegment(dc, line, start, length, topY, brush);
-                pos = start + length;
+                int pos = 0;
+                foreach (var span in spans)
+                {
+                    if (span.Start > pos)
+                        DrawSegment(dc, line, pos, span.Start - pos, topY, defaultFg);
+                    DrawSegment(dc, line, span.Start, span.Length, topY, span.Foreground);
+                    pos = span.Start + span.Length;
+                }
+                if (pos < line.Length)
+                    DrawSegment(dc, line, pos, line.Length - pos, topY, defaultFg);
             }
-            if (pos < line.Length)
-                DrawSegment(dc, line, pos, line.Length - pos, topY, defaultFg);
+            else
+            {
+                DrawSegment(dc, line, 0, line.Length, topY, defaultFg);
+            }
         }
     }
 

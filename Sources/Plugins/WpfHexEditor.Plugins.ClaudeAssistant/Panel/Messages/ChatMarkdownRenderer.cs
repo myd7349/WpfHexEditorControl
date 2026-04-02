@@ -385,24 +385,16 @@ internal static class ChatMarkdownRenderer
         };
         copyBtn.SetResourceReference(Button.BackgroundProperty, "CA_CodeBlockBackgroundBrush");
         copyBtn.SetResourceReference(Button.ForegroundProperty, "CA_MessageForegroundBrush");
-        copyBtn.Click += (sender, _) =>
+        copyBtn.Click += async (sender, _) =>
         {
             Clipboard.SetText(trimmedCode);
             if (sender is Button btn)
             {
                 btn.Content = "\uE73E"; // checkmark
                 btn.ToolTip = "Copied!";
-                var timer = new System.Windows.Threading.DispatcherTimer
-                {
-                    Interval = TimeSpan.FromSeconds(2)
-                };
-                timer.Tick += (_, _) =>
-                {
-                    btn.Content = "\uE8C8";
-                    btn.ToolTip = "Copy code";
-                    timer.Stop();
-                };
-                timer.Start();
+                await Task.Delay(2000);
+                btn.Content = "\uE8C8";
+                btn.ToolTip = "Copy code";
             }
         };
         DockPanel.SetDock(copyBtn, Dock.Right);

@@ -45,10 +45,11 @@ public sealed class OllamaModelProvider : IModelProvider
         }
     }
 
+    private static readonly HttpClient s_http = new() { Timeout = TimeSpan.FromMinutes(10) };
+
     public async Task DiscoverModelsAsync(CancellationToken ct = default)
     {
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-        var resp = await http.GetStringAsync($"{BaseUrl}/api/tags", ct);
+        var resp = await s_http.GetStringAsync($"{BaseUrl}/api/tags", ct);
         using var doc = JsonDocument.Parse(resp);
 
         if (doc.RootElement.TryGetProperty("models", out var models))
@@ -85,7 +86,6 @@ public sealed class OllamaModelProvider : IModelProvider
 
         var json = JsonSerializer.Serialize(body);
 
-        using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -95,7 +95,7 @@ public sealed class OllamaModelProvider : IModelProvider
         string? connectError = null;
         try
         {
-            resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+            resp = await s_http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
         }
         catch (Exception ex)
         {

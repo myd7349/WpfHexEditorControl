@@ -28,14 +28,15 @@ public sealed class GeminiModelProvider : IModelProvider
     public bool SupportsThinking => false;
     public int MaxContextTokens => 1_000_000;
 
+    private static readonly HttpClient s_http = new() { Timeout = TimeSpan.FromMinutes(5) };
+
     public async Task<bool> TestConnectionAsync(CancellationToken ct = default)
     {
         var key = ClaudeAssistantOptions.Instance.GetApiKey("gemini");
         if (string.IsNullOrEmpty(key)) return false;
 
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
         var url = $"https://generativelanguage.googleapis.com/v1beta/models?key={key}";
-        var resp = await http.GetAsync(url, ct);
+        using var resp = await s_http.GetAsync(url, ct);
         return resp.IsSuccessStatusCode;
     }
 
@@ -62,13 +63,12 @@ public sealed class GeminiModelProvider : IModelProvider
         var body = new { contents };
         var json = JsonSerializer.Serialize(body);
 
-        using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
 
-        using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+        using var resp = await s_http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
         if (!resp.IsSuccessStatusCode)
         {
             yield return new ChatStreamChunk(ChunkKind.Error,

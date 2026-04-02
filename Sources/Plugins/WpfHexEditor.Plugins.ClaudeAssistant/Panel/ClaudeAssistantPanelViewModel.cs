@@ -57,21 +57,13 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
 
     public async Task RestoreSessionsAsync()
     {
-        var sessions = await ConversationPersistence.LoadAllAsync();
         var openTabState = await ConversationPersistence.LoadOpenTabsAsync();
-
-        // Clean empty sessions from disk
-        foreach (var empty in sessions.Where(s => s.Messages.Count == 0))
-            _ = ConversationPersistence.DeleteAsync(empty.Id);
 
         if (openTabState is { OpenSessionIds.Count: > 0 })
         {
-            // Restore only the tabs that were open at last shutdown
-            var sessionMap = sessions.ToDictionary(s => s.Id);
-            var toRestore = openTabState.OpenSessionIds
-                .Where(id => sessionMap.ContainsKey(id) && sessionMap[id].Messages.Count > 0)
-                .Select(id => sessionMap[id])
-                .ToList();
+            // Load ONLY the sessions that were open — not all conversations on disk
+            var sessions = await ConversationPersistence.LoadByIdsAsync(openTabState.OpenSessionIds);
+            var toRestore = sessions.Where(s => s.Messages.Count > 0).ToList();
 
             if (toRestore.Count > 0)
             {
@@ -91,7 +83,6 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
                     }
                 }
 
-                // Restore active tab
                 var activeTab = openTabState.ActiveSessionId is not null
                     ? Tabs.FirstOrDefault(t => t.Session.Id == openTabState.ActiveSessionId)
                     : null;
@@ -189,8 +180,8 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
             return;
         }
 
-        var sessions = await ConversationPersistence.LoadAllAsync();
-        var session = sessions.FirstOrDefault(s => s.Id == sessionId);
+        var sessions = await ConversationPersistence.LoadByIdsAsync([sessionId]);
+        var session = sessions.FirstOrDefault();
         if (session is null) return;
 
         var tab = CreateTabForSession(session);

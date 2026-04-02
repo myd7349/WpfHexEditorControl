@@ -109,6 +109,9 @@ public sealed class IDEHostContext : IIDEHostContext
     public INotificationService? Notifications { get; init; }
 
     /// <inheritdoc />
+    public ISyntaxColoringService? SyntaxColoring { get; init; }
+
+    /// <inheritdoc />
     /// Resolved lazily from <see cref="ExtensionRegistry"/> — set by UnitTesting plugin on init.
     public ITestRunnerService? TestRunner
         => ExtensionRegistry.GetExtensions<ITestRunnerService>().FirstOrDefault();

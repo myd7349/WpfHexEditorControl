@@ -61,6 +61,7 @@ public partial class MainWindow
     private DocumentTabManager     _documentTabManager = new();
     private WpfHexEditor.App.Services.LspDocumentBridgeService?    _lspBridgeService;
     private string?                                                _roslynSolutionPath;
+    private CancellationTokenSource?                               _roslynLoadCts;
     private WpfHexEditor.App.Services.LspStatusBarAdapter?         _lspStatusBarAdapter;
     private WpfHexEditor.App.Services.LspDiagnosticsAdapter?       _lspDiagnosticsAdapter;
     private WpfHexEditor.App.Services.NotificationServiceImpl?     _notificationService;
@@ -239,19 +240,16 @@ public partial class MainWindow
                             if (_lspBridgeService is not null)
                                 _lspBridgeService._roslynSolutionPath = realSlnPath;
 
-                            // Load solution into all active Roslyn clients.
-                            await LoadRoslynSolutionIntoActiveClientsAsync(realSlnPath);
-
-                            // Show success then auto-hide after 3 seconds.
-                            var projectCount = GetRoslynProjectCount();
-                            ShowRoslynStatus(loading: false,
-                                text: $"✓ {projectCount} project{(projectCount != 1 ? "s" : "")} loaded",
-                                state: WpfHexEditor.ProgressBar.ProgressState.Success);
-                            _ = AutoHideRoslynStatusAsync();
+                            // Load solution in background — does NOT block the UI (like VS).
+                            // Cancel any previous in-flight load.
+                            _roslynLoadCts?.Cancel();
+                            _roslynLoadCts = new CancellationTokenSource();
+                            _ = LoadRoslynSolutionInBackgroundAsync(realSlnPath, _roslynLoadCts.Token);
                         }
                         else if (e.Kind == WpfHexEditor.Editor.Core.SolutionChangeKind.Closed)
                         {
                             OutputLogger.PluginInfo("[Roslyn] Solution closed.");
+                            _roslynLoadCts?.Cancel();
                             _roslynSolutionPath = null;
                             if (_lspBridgeService is not null)
                                 _lspBridgeService._roslynSolutionPath = null;
@@ -348,6 +346,8 @@ public partial class MainWindow
             // Format Parsing Service — universal, editor-agnostic format detection + field parsing
             var formatParsingService = new WpfHexEditor.Core.Services.FormatParsing.FormatParsingService();
 
+            var syntaxColoringService = new WpfHexEditor.App.Services.SyntaxColoringService();
+
             var hostContext = new IDEHostContext(
                 documentHost:        _documentHostService,
                 solutionExplorer:    solutionService,
@@ -376,6 +376,7 @@ public partial class MainWindow
             {
                 LspServers    = lspRegistry,
                 Notifications = _notificationService,
+                SyntaxColoring = syntaxColoringService,
             };
 
             // 3. Create orchestrator
@@ -1146,6 +1147,9 @@ public partial class MainWindow
         _notificationBellAdapter = null;
         _lspDiagnosticsAdapter?.Dispose();
         _lspDiagnosticsAdapter = null;
+        _roslynLoadCts?.Cancel();
+        _roslynLoadCts?.Dispose();
+        _roslynLoadCts = null;
         _lspBridgeService?.Dispose();
         _lspBridgeService = null;
         if (_debuggerService is not null)
@@ -1425,6 +1429,43 @@ public partial class MainWindow
                     OutputLogger.PluginError($"[Roslyn] {langId} workspace load failed: {ex.Message}");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Loads the solution into Roslyn workspaces on a background thread.
+    /// Does NOT block the UI — status bar shows progress. Cancellable.
+    /// </summary>
+    private async Task LoadRoslynSolutionInBackgroundAsync(string solutionPath, CancellationToken ct)
+    {
+        try
+        {
+            // Run the heavy MSBuild workspace load off the UI thread.
+            await Task.Run(async () =>
+            {
+                await LoadRoslynSolutionIntoActiveClientsAsync(solutionPath).ConfigureAwait(false);
+            }, ct).ConfigureAwait(true);
+
+            ct.ThrowIfCancellationRequested();
+
+            // Back on UI thread — show success.
+            OutputLogger.PluginInfo($"[Roslyn] Workspace loaded: {solutionPath}");
+            var projectCount = GetRoslynProjectCount();
+            ShowRoslynStatus(loading: false,
+                text: $"✓ {projectCount} project{(projectCount != 1 ? "s" : "")} loaded",
+                state: WpfHexEditor.ProgressBar.ProgressState.Success);
+            _ = AutoHideRoslynStatusAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            OutputLogger.PluginInfo("[Roslyn] Solution load cancelled.");
+            HideRoslynStatus();
+        }
+        catch (Exception ex)
+        {
+            OutputLogger.PluginError($"[Roslyn] Background load failed: {ex.Message}");
+            ShowRoslynStatus(loading: false, text: $"✕ Load failed",
+                state: WpfHexEditor.ProgressBar.ProgressState.Error);
         }
     }
 

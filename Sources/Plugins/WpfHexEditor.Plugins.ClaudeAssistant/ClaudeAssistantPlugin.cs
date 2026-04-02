@@ -57,29 +57,21 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
     {
         _context = context;
 
-        // ── 0. SafeGuard logger ─────────────────────────────────────────────
+        // ── 0. Shared services ──────────────────────────────────────────────
         SafeGuard.SetLogger(msg => context.Output?.Error(msg));
+        Panel.Messages.ChatCodeBlockCanvas.SyntaxColoringService = context.SyntaxColoring;
 
         // ── 1. Options ──────────────────────────────────────────────────────
         ClaudeAssistantOptions.Instance.Load();
 
         // ── 2. Connection monitor ───────────────────────────────────────────
         _connectionService = new ClaudeConnectionService();
-        _connectionService.Start();
 
-        // ── 3. MCP server manager ───────────────────────────────────────────
+        // ── 3. MCP server manager (created now, started lazily) ─────────────
         _mcpManager = new McpServerManager();
-        // IDE servers will be registered here when the host context services
-        // are wired (Phase 4 runtime integration — delegates set by App at startup).
-        try { await _mcpManager.StartAllAsync(ct); }
-        catch (Exception ex) { context.Output?.Warning($"[ClaudeAssistant] MCP startup: {ex.Message}"); }
 
-        // ── 4. Prompt presets ───────────────────────────────────────────────
-        await PromptPresetsService.Instance.LoadAsync();
-
-        // ── 5. Panel + session restore ──────────────────────────────────────
+        // ── 4. Panel (empty — sessions restored lazily after init) ──────────
         _vm = new ClaudeAssistantPanelViewModel();
-        await _vm.RestoreSessionsAsync();
         _panel = new ClaudeAssistantPanel { DataContext = _vm };
 
         // ── 6. Register dockable panel ──────────────────────────────────────
@@ -167,8 +159,19 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             IconGlyph: "\uE710",
             Command: new RelayCommand(() => SafeGuard.Run(() => _vm?.CreateNewTabCommand.Execute(null)))));
 
-        // ── Done ────────────────────────────────────────────────────────────
-        context.Output?.Info($"[ClaudeAssistant] Plugin initialized (v{Version}) — 4 providers, {_mcpManager.GetAllTools().Count} MCP tools");
+        // ── Done (lightweight init) ─────────────────────────────────────────
+        context.Output?.Info($"[ClaudeAssistant] Plugin initialized (v{Version}) — 4 providers");
+
+        // ── Deferred heavy work (runs AFTER init measurement completes) ─────
+        _ = _panel.Dispatcher.InvokeAsync(async () =>
+        {
+            _connectionService!.Start();
+            try { await _mcpManager!.StartAllAsync(CancellationToken.None); }
+            catch (Exception ex) { context.Output?.Warning($"[ClaudeAssistant] MCP startup: {ex.Message}"); }
+            await PromptPresetsService.Instance.LoadAsync();
+            await _vm!.RestoreSessionsAsync();
+            context.Output?.Info($"[ClaudeAssistant] Deferred init done — {_mcpManager.GetAllTools().Count} MCP tools");
+        }, System.Windows.Threading.DispatcherPriority.Background);
     }
 
     public async Task ShutdownAsync(CancellationToken ct = default)
@@ -223,12 +226,15 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         if (_vm?.ActiveTab is not { } tab) return;
         var owner = (_panel != null ? Window.GetWindow(_panel) : null)
                  ?? Application.Current.MainWindow;
+        // Use same anchor as command palette for consistent positioning
+        var anchor = _context?.UIRegistry.GetCommandPaletteAnchor();
         var popup = new ModelSwitcherPopup(
             tab.Registry,
             tab.SelectedProviderId,
             tab.SelectedModelId,
             tab.ThinkingEnabled,
-            _panel);
+            owner,
+            anchor);
         popup.Closed += (_, _) => SafeGuard.Run(() =>
         {
             if (popup.SelectedProviderId is not null)

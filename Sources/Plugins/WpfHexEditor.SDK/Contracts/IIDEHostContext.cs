@@ -214,6 +214,15 @@ public interface IIDEHostContext
     /// </summary>
     INotificationService? Notifications => null;
 
+    // -- Syntax Coloring ------------------------------------------------------
+
+    /// <summary>
+    /// Centralised syntax coloring service. Resolves languages from IDs, file paths,
+    /// or common aliases and returns themed <see cref="Services.ColoredSpan"/> tokens.
+    /// Replaces duplicated TokenKindToBrush / BuildHighlighter patterns across plugins.
+    /// </summary>
+    ISyntaxColoringService? SyntaxColoring => null;
+
     // -- Version Control ------------------------------------------------------
 
     /// <summary>

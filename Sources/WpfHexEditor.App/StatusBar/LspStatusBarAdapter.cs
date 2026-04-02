@@ -35,6 +35,10 @@ public sealed class LspStatusBarAdapter : IDisposable
     private readonly LspDocumentBridgeService _bridgeService;
     private readonly Action?                  _onErrorClick;
 
+    // Tracks per-language server states so we can switch display on document change.
+    private readonly Dictionary<string, LspServerStateChangedEventArgs> _languageStates = new(StringComparer.OrdinalIgnoreCase);
+    private string? _activeLanguageId;
+
     /// <summary>
     /// The status bar item whose Label/Value/IsVisible reflect LSP server state.
     /// Bind this in the MainWindow status-bar template.
@@ -60,11 +64,42 @@ public sealed class LspStatusBarAdapter : IDisposable
         _bridgeService.ServerStateChanged += OnServerStateChanged;
     }
 
+    /// <summary>
+    /// Updates the status bar to reflect the LSP state for the given language ID.
+    /// Called when the active document changes so the indicator shows the correct server.
+    /// Pass null to hide the LSP indicator (e.g. for non-code documents).
+    /// </summary>
+    public void SyncToLanguage(string? languageId)
+    {
+        _activeLanguageId = languageId;
+
+        if (languageId is null)
+        {
+            Item.IsVisible = false;
+            return;
+        }
+
+        if (_languageStates.TryGetValue(languageId, out var lastState))
+            ApplyState(lastState);
+        else
+            Item.IsVisible = false; // no server registered for this language
+    }
+
     // ── Event handler ─────────────────────────────────────────────────────────
 
     private void OnServerStateChanged(object? sender, LspServerStateChangedEventArgs e)
     {
-        // Ensure we're on the UI thread (bridge service already dispatches to it).
+        // Cache every language's latest state so SyncToLanguage can replay it.
+        _languageStates[e.LanguageId] = e;
+
+        // Only update the visible indicator if this event is for the active language
+        // (or if no active language is set yet — first connection).
+        if (_activeLanguageId is null || string.Equals(e.LanguageId, _activeLanguageId, StringComparison.OrdinalIgnoreCase))
+            ApplyState(e);
+    }
+
+    private void ApplyState(LspServerStateChangedEventArgs e)
+    {
         switch (e.State)
         {
             case LspServerState.Idle:
@@ -95,7 +130,6 @@ public sealed class LspStatusBarAdapter : IDisposable
                 Item.Tooltip   = e.ErrorMessage ?? "Language server failed to start. Click to open settings.";
                 ApplyDotColor("LSP_ErrorDot");
 
-                // Add a click-to-open-options choice if not already present.
                 if (Item.Choices.Count == 0 && _onErrorClick is not null)
                 {
                     Item.Choices.Add(new StatusBarChoice

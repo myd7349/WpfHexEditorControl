@@ -9,9 +9,11 @@
 //     Conversation tab code-behind. All handlers wrapped in SafeGuard.Run().
 // ==========================================================
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.Messages;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.ModelSwitcher;
 
@@ -21,6 +23,8 @@ public partial class ConversationTab : UserControl
 {
     private ConversationTabViewModel? _wiredVm;
     private bool _mentionWired;
+    private NotifyCollectionChangedEventHandler? _collectionHandler;
+    private PropertyChangedEventHandler? _propertyHandler;
 
     public ConversationTab()
     {
@@ -62,19 +66,27 @@ public partial class ConversationTab : UserControl
     private void WireCurrentVm()
     {
         var vm = Vm;
-        if (vm is null) { UpdateEmptyState(); return; }
+
+        // Unwire old handlers to prevent leaks
+        if (_wiredVm is not null)
+        {
+            ((INotifyCollectionChanged)_wiredVm.Messages).CollectionChanged -= _collectionHandler;
+            _wiredVm.PropertyChanged -= _propertyHandler;
+        }
+
+        if (vm is null) { _wiredVm = null; UpdateEmptyState(); return; }
         if (ReferenceEquals(vm, _wiredVm)) { UpdateEmptyState(); return; }
 
         _wiredVm = vm;
 
-        ((INotifyCollectionChanged)vm.Messages).CollectionChanged += (_, _) =>
+        _collectionHandler = (_, _) =>
             SafeGuard.Run(() =>
             {
-                ChatScroller.ScrollToEnd();
+                ScrollChatToEnd();
                 UpdateEmptyState();
             });
 
-        vm.PropertyChanged += (_, args) =>
+        _propertyHandler = (_, args) =>
         {
             if (args.PropertyName == nameof(vm.InputText))
             {
@@ -83,8 +95,21 @@ public partial class ConversationTab : UserControl
             }
         };
 
+        ((INotifyCollectionChanged)vm.Messages).CollectionChanged += _collectionHandler;
+        vm.PropertyChanged += _propertyHandler;
+
         UpdateEmptyState();
         UpdateWatermark();
+    }
+
+    private void ScrollChatToEnd()
+    {
+        if (VisualTreeHelper.GetChildrenCount(ChatList) > 0)
+        {
+            var border = VisualTreeHelper.GetChild(ChatList, 0) as Border;
+            var sv = border?.Child as ScrollViewer;
+            sv?.ScrollToEnd();
+        }
     }
 
     private void UpdateWatermark()
@@ -126,7 +151,7 @@ public partial class ConversationTab : UserControl
     {
         var hasMessages = Vm?.Messages.Count > 0;
         WelcomePanel.Visibility = hasMessages ? Visibility.Collapsed : Visibility.Visible;
-        ChatScroller.Visibility = hasMessages ? Visibility.Visible : Visibility.Collapsed;
+        ChatList.Visibility = hasMessages ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnSuggestionClick(object sender, MouseButtonEventArgs e)
@@ -168,15 +193,39 @@ public partial class ConversationTab : UserControl
     private void OnModelPillClick(object sender, MouseButtonEventArgs e)
         => SafeGuard.Run(() =>
         {
-            if (DataContext is not ConversationTabViewModel vm) return;
+            System.Diagnostics.Debug.WriteLine("[ClaudeAssistant] OnModelPillClick FIRED");
 
-            var anchor = sender as UIElement;
+            if (DataContext is not ConversationTabViewModel vm)
+            {
+                System.Diagnostics.Debug.WriteLine("[ClaudeAssistant] DataContext is NOT ConversationTabViewModel");
+                return;
+            }
+
+            // Pre-compute screen point and owner before constructing popup
+            Point? screenAnchor = null;
+            Window? ownerWin = null;
+            if (sender is FrameworkElement { IsLoaded: true } fe)
+            {
+                ownerWin = Window.GetWindow(fe);
+                System.Diagnostics.Debug.WriteLine($"[ClaudeAssistant] ownerWin={ownerWin?.GetType().Name}, IsLoaded={fe.IsLoaded}");
+                try { screenAnchor = fe.PointToScreen(new Point(0, fe.RenderSize.Height)); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[ClaudeAssistant] PointToScreen FAILED: {ex.Message}"); }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[ClaudeAssistant] sender type={sender?.GetType().Name}, not FrameworkElement or not loaded");
+            }
+            ownerWin ??= Application.Current.MainWindow;
+
+            System.Diagnostics.Debug.WriteLine($"[ClaudeAssistant] Opening ModelSwitcherPopup: owner={ownerWin?.GetType().Name}, anchor={screenAnchor}");
+
             var popup = new ModelSwitcherPopup(
                 vm.Registry,
                 vm.SelectedProviderId,
                 vm.SelectedModelId,
                 vm.ThinkingEnabled,
-                anchor);
+                ownerWin,
+                screenAnchor);
 
             popup.Closed += (_, _) => SafeGuard.Run(() =>
             {
@@ -188,5 +237,6 @@ public partial class ConversationTab : UserControl
             });
 
             popup.Show();
+            System.Diagnostics.Debug.WriteLine("[ClaudeAssistant] ModelSwitcherPopup.Show() called");
         });
 }

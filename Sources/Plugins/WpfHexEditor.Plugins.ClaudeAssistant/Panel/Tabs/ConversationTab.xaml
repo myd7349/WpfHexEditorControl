@@ -91,9 +91,34 @@
         </StackPanel>
 
         <!-- ═══════════ CHAT MESSAGES ═══════════ -->
-        <ScrollViewer x:Name="ChatScroller" Grid.Row="0" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding Messages}" Padding="10,8">
-                <ItemsControl.ItemTemplate>
+        <ListBox x:Name="ChatList" Grid.Row="0"
+                 ItemsSource="{Binding Messages}"
+                 VirtualizingStackPanel.IsVirtualizing="True"
+                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                 VirtualizingStackPanel.ScrollUnit="Pixel"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 BorderThickness="0" Padding="10,8"
+                 Background="Transparent"
+                 SelectionMode="Single"
+                 HorizontalContentAlignment="Stretch">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Margin" Value="0"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <ContentPresenter/>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type msgs:ChatMessageViewModel}">
                         <!-- Outer message row: avatar + bubble -->
                         <Grid Margin="0,4">
@@ -281,9 +306,8 @@
                             </Grid>
                         </Grid>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                </ListBox.ItemTemplate>
+        </ListBox>
 
         <!-- ═══════════ INPUT BAR ═══════════ -->
         <Border Grid.Row="1" Padding="8" BorderThickness="0,1,0,0"
@@ -354,11 +378,11 @@
 
                 <!-- Model pill -->
                 <Border Margin="0,4,0,0" Padding="6,2" CornerRadius="10"
-                        Background="{DynamicResource CA_ToolCallBackgroundBrush}"
                         HorizontalAlignment="Left" Cursor="Hand"
-                        MouseLeftButtonDown="OnModelPillClick">
+                        PreviewMouseLeftButtonDown="OnModelPillClick">
                     <Border.Style>
                         <Style TargetType="Border">
+                            <Setter Property="Background" Value="{DynamicResource CA_ToolCallBackgroundBrush}"/>
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Background" Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>

@@ -237,12 +237,16 @@ public sealed class PluginMetricsEngine : IDisposable
         var plugin = plugins.FirstOrDefault(p => p.Manifest.Id == sample.PluginId);
         if (plugin == null) return;
 
-        var memBytes = GC.GetTotalMemory(forceFullCollection: false);
+        var gcTotal = GC.GetTotalMemory(forceFullCollection: false);
 
         // Phase 6: prefer precise per-thread CPU% over the process-wide estimate
         var cpuPct = sample.HasThreadCpu ? sample.ThreadCpuPct : _lastSampledCpuPercent;
 
-        plugin.Diagnostics.Record(cpuPct, memBytes, sample.ExecutionTime);
+        // Use per-plugin estimated memory when available, fall back to process-wide GC total
+        var pluginMem = plugin.Diagnostics.EstimatedPluginMemoryBytes > 0
+            ? plugin.Diagnostics.EstimatedPluginMemoryBytes
+            : gcTotal;
+        plugin.Diagnostics.Record(cpuPct, pluginMem, sample.ExecutionTime);
 
         _log($"[MetricsEngine] Active sample: {sample.PluginId}, " +
              $"ExecTime={sample.ExecutionTime.TotalMilliseconds:F2}ms, " +
@@ -286,9 +290,12 @@ public sealed class PluginMetricsEngine : IDisposable
             bool isActive = _pluginLastActivity.TryGetValue(entry.Manifest.Id, out var lastActivity)
                 && (now - lastActivity).TotalSeconds < 2;
 
-            // For passive samples, use TimeSpan.Zero as execution time
-            // (we're not measuring a specific plugin call)
-            entry.Diagnostics.Record(cpuPct, memBytes, TimeSpan.Zero);
+            // For passive samples, use per-plugin estimated memory (init delta) instead of
+            // process-wide GC.GetTotalMemory which is shared and misleading for InProcess plugins.
+            var pluginMem = entry.Diagnostics.EstimatedPluginMemoryBytes > 0
+                ? entry.Diagnostics.EstimatedPluginMemoryBytes
+                : memBytes;
+            entry.Diagnostics.Record(cpuPct, pluginMem, TimeSpan.Zero);
         }
 
         // Raise event for UI updates

@@ -9,6 +9,7 @@
 //     ViewModel for a single chat message bubble with streaming support.
 // ==========================================================
 using System.Collections.ObjectModel;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel.Messages;
@@ -21,6 +22,9 @@ public sealed partial class ChatMessageViewModel : ObservableObject
     [ObservableProperty] private bool _isStreaming;
     [ObservableProperty] private bool _isError;
 
+    private readonly StringBuilder _textBuilder = new(4096);
+    private readonly StringBuilder _thinkingBuilder = new(2048);
+
     public ObservableCollection<ToolCallViewModel> ToolCalls { get; } = [];
     public bool HasToolCalls => ToolCalls.Count > 0;
 
@@ -30,14 +34,21 @@ public sealed partial class ChatMessageViewModel : ObservableObject
 
     public void AppendText(string delta)
     {
-        Text += delta;
-        OnPropertyChanged(nameof(Text));
+        _textBuilder.Append(delta);
+        Text = _textBuilder.ToString();
     }
 
     public void AppendThinking(string delta)
     {
-        ThinkingText += delta;
-        OnPropertyChanged(nameof(ThinkingText));
+        _thinkingBuilder.Append(delta);
+        ThinkingText = _thinkingBuilder.ToString();
         OnPropertyChanged(nameof(HasThinking));
+    }
+
+    /// <summary>Resets builders for reuse (e.g. new streaming message).</summary>
+    public void ResetBuilders()
+    {
+        _textBuilder.Clear();
+        _thinkingBuilder.Clear();
     }
 }

@@ -32,12 +32,15 @@ public sealed class AnthropicModelProvider : IModelProvider
     private const string ApiUrl = "https://api.anthropic.com/v1/messages";
     private const string ApiVersion = "2023-06-01";
 
+    private static HttpClient? s_http;
+    private static string? s_cachedKey;
+
     public async Task<bool> TestConnectionAsync(CancellationToken ct = default)
     {
         var key = ClaudeAssistantOptions.Instance.GetApiKey("anthropic");
         if (string.IsNullOrEmpty(key)) return false;
 
-        using var http = CreateClient(key);
+        var http = GetOrCreateClient(key);
         var body = JsonSerializer.Serialize(new
         {
             model = "claude-haiku-4-5",
@@ -49,7 +52,7 @@ public sealed class AnthropicModelProvider : IModelProvider
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
-        var resp = await http.SendAsync(req, ct);
+        using var resp = await http.SendAsync(req, ct);
         return resp.IsSuccessStatusCode;
     }
 
@@ -67,7 +70,7 @@ public sealed class AnthropicModelProvider : IModelProvider
             yield break;
         }
 
-        using var http = CreateClient(key);
+        var http = GetOrCreateClient(key);
 
         // Build request body
         var requestObj = BuildRequestBody(messages, modelId, tools, thinking);
@@ -239,12 +242,16 @@ public sealed class AnthropicModelProvider : IModelProvider
         return null;
     }
 
-    private static HttpClient CreateClient(string apiKey)
+    private static HttpClient GetOrCreateClient(string apiKey)
     {
+        if (s_http is not null && s_cachedKey == apiKey) return s_http;
+        s_http?.Dispose();
         var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         http.DefaultRequestHeaders.Add("x-api-key", apiKey);
         http.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        s_http = http;
+        s_cachedKey = apiKey;
         return http;
     }
 

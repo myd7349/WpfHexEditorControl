@@ -31,6 +31,9 @@ public sealed class OpenAIModelProvider : IModelProvider
 
     private string ApiUrl => "https://api.openai.com/v1/chat/completions";
 
+    private static HttpClient? s_http;
+    private static string? s_cachedKey;
+
     private string? GetApiKey() => ClaudeAssistantOptions.Instance.GetApiKey("openai");
 
     public async Task<bool> TestConnectionAsync(CancellationToken ct = default)
@@ -38,9 +41,9 @@ public sealed class OpenAIModelProvider : IModelProvider
         var key = GetApiKey();
         if (string.IsNullOrEmpty(key)) return false;
 
-        using var http = CreateClient(key);
+        var http = GetOrCreateClient(key);
         using var req = new HttpRequestMessage(HttpMethod.Get, "https://api.openai.com/v1/models");
-        var resp = await http.SendAsync(req, ct);
+        using var resp = await http.SendAsync(req, ct);
         return resp.IsSuccessStatusCode;
     }
 
@@ -58,7 +61,7 @@ public sealed class OpenAIModelProvider : IModelProvider
             yield break;
         }
 
-        using var http = CreateClient(key);
+        var http = GetOrCreateClient(key);
 
         var body = BuildRequestBody(messages, modelId, tools);
         var json = JsonSerializer.Serialize(body, s_jsonOptions);
@@ -162,11 +165,15 @@ public sealed class OpenAIModelProvider : IModelProvider
         catch { return null; }
     }
 
-    private static HttpClient CreateClient(string apiKey)
+    private static HttpClient GetOrCreateClient(string apiKey)
     {
+        if (s_http is not null && s_cachedKey == apiKey) return s_http;
+        s_http?.Dispose();
         var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        s_http = http;
+        s_cachedKey = apiKey;
         return http;
     }
 
