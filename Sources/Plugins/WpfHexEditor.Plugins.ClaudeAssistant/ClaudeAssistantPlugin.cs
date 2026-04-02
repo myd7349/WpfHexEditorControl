@@ -22,6 +22,7 @@ using WpfHexEditor.Plugins.ClaudeAssistant.Panel.ModelSwitcher;
 using WpfHexEditor.Plugins.ClaudeAssistant.Presets;
 using WpfHexEditor.Plugins.ClaudeAssistant.TitleBar;
 using WpfHexEditor.SDK.Contracts;
+using WpfHexEditor.Plugins.ClaudeAssistant.Panel.ConnectionManager;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
 
@@ -52,6 +53,7 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
     private ClaudeConnectionService? _connectionService;
     private McpServerManager? _mcpManager;
     private string? _panelUiId;
+    private bool _shownConnectionManagerOnce;
 
     public async Task InitializeAsync(IIDEHostContext context, CancellationToken ct = default)
     {
@@ -103,34 +105,23 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             showCommandPalette: anchor => ShowCommandPalette(anchor),
             newTab: () => _vm?.CreateNewTabCommand.Execute(null),
             fixErrors: () => SendQuickAction("@selection @errors Fix the errors in this code."),
-            openOptions: () => context.CommandRegistry?.Find("View.Options")?.Command.Execute(null));
+            openOptions: () => context.CommandRegistry?.Find("View.Options")?.Command.Execute(null),
+            manageConnections: () => ShowConnectionManager());
         var titleBarUiId = context.UIRegistry.GenerateUIId(Id, "TitleBar", "Button");
         context.UIRegistry.RegisterTitleBarItem(titleBarUiId, Id, titleBarContributor);
 
-        // ── 9. Status bar ───────────────────────────────────────────────────
-        var statusUiId = context.UIRegistry.GenerateUIId(Id, "StatusBar", "Connection");
-        context.UIRegistry.RegisterStatusBarItem(statusUiId, Id, new StatusBarItemDescriptor
-        {
-            Text = "Claude · Connecting...",
-            Alignment = StatusBarAlignment.Right,
-            ToolTip = "Claude AI Assistant connection status",
-            Order = 50
-        });
-
+        // ── 9. Connection status (titlebar only — no status bar item) ──────
         _connectionService.StatusChanged += (_, status) =>
         {
-            var opts = ClaudeAssistantOptions.Instance;
-            var text = status switch
+            _panel?.Dispatcher.InvokeAsync(() =>
             {
-                ClaudeConnectionStatus.Connected => $"Claude · {opts.DefaultModelId} · Connected",
-                ClaudeConnectionStatus.Connecting => "Claude · Connecting...",
-                ClaudeConnectionStatus.NotConfigured => "Claude · No API key",
-                ClaudeConnectionStatus.RateLimited => "Claude · Rate limited",
-                ClaudeConnectionStatus.Error => "Claude · Error",
-                ClaudeConnectionStatus.Offline => "Claude · Offline",
-                _ => "Claude"
-            };
-            _panel?.Dispatcher.InvokeAsync(() => _vm!.StatusText = text);
+                // Auto-show connection manager on first NotConfigured
+                if (status == ClaudeConnectionStatus.NotConfigured && !_shownConnectionManagerOnce)
+                {
+                    _shownConnectionManagerOnce = true;
+                    ShowConnectionManager();
+                }
+            });
         };
 
         // ── 10. Terminal commands ───────────────────────────────────────────
@@ -150,6 +141,14 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             DefaultGesture: "Ctrl+Shift+A",
             IconGlyph: "\uE734",
             Command: new RelayCommand(() => SafeGuard.Run(() => ShowCommandPalette()))));
+
+        context.CommandRegistry?.Register(new SDK.Commands.SdkCommandDefinition(
+            Id: "ClaudeAssistant.ManageConnections",
+            Name: "Claude AI: Manage Connections",
+            Category: "AI & Assistants",
+            DefaultGesture: null,
+            IconGlyph: "\uE8D7",
+            Command: new RelayCommand(() => SafeGuard.Run(() => ShowConnectionManager()))));
 
         context.CommandRegistry?.Register(new SDK.Commands.SdkCommandDefinition(
             Id: "ClaudeAssistant.NewTab",
@@ -210,6 +209,7 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             showHistory: () => _vm?.ToggleHistoryCommand.Execute(null),
             openOptions: () => _context?.CommandRegistry?.Find("View.Options")?.Command.Execute(null),
             switchModel: () => ShowModelSwitcher(),
+            manageConnections: () => ShowConnectionManager(),
             currentModel: currentModel,
             presets: PromptPresetsService.Instance.Presets);
 
@@ -221,21 +221,32 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         palette.Show();
     }
 
+    private void ShowConnectionManager()
+    {
+        if (_vm?.ActiveTab?.Registry is not { } registry) return;
+
+        var owner = (_panel != null ? Window.GetWindow(_panel) : null)
+                 ?? Application.Current.MainWindow;
+        var anchor = _context?.UIRegistry.GetCommandPaletteAnchor();
+        var popup = new ConnectionManagerPopup(registry, owner, anchor);
+        popup.Show();
+    }
+
     private void ShowModelSwitcher()
     {
         if (_vm?.ActiveTab is not { } tab) return;
-        var owner = (_panel != null ? Window.GetWindow(_panel) : null)
-                 ?? Application.Current.MainWindow;
-        // Use same anchor as command palette for consistent positioning
-        var anchor = _context?.UIRegistry.GetCommandPaletteAnchor();
+
         var popup = new ModelSwitcherPopup(
             tab.Registry,
             tab.SelectedProviderId,
             tab.SelectedModelId,
-            tab.ThinkingEnabled,
-            owner,
-            anchor);
-        popup.Closed += (_, _) => SafeGuard.Run(() =>
+            tab.ThinkingEnabled)
+        {
+            PlacementTarget = _panel,
+            Placement = System.Windows.Controls.Primitives.PlacementMode.Center
+        };
+
+        popup.SelectionCommitted += (_, _) => SafeGuard.Run(() =>
         {
             if (popup.SelectedProviderId is not null)
                 tab.SelectedProviderId = popup.SelectedProviderId;
@@ -243,7 +254,13 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
                 tab.SelectedModelId = popup.SelectedModelId;
             tab.ThinkingEnabled = popup.ThinkingEnabled;
         });
-        popup.Show();
+
+        popup.Closed += (_, _) => SafeGuard.Run(() =>
+        {
+            tab.ThinkingEnabled = popup.ThinkingEnabled;
+        });
+
+        popup.IsOpen = true;
     }
 
     private void SendQuickAction(string message)

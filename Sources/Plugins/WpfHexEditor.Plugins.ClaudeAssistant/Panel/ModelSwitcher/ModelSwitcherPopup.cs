@@ -6,11 +6,12 @@
 // Created: 2026-04-01
 // License: GNU Affero General Public License v3.0 (AGPL-3.0)
 // Description:
-//     Code-behind popup for model/provider selection. Grouped by provider,
-//     shows context tokens and thinking toggle. Non-modal, close on deactivate.
+//     WPF Popup-based model/provider selector. Grouped by provider,
+//     shows context tokens and thinking toggle. Closes on outside click.
 // ==========================================================
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
@@ -19,54 +20,33 @@ using WpfTextBlock = System.Windows.Controls.TextBlock;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel.ModelSwitcher;
 
-public sealed class ModelSwitcherPopup : Window
+public sealed class ModelSwitcherPopup : Popup
 {
     public string? SelectedProviderId { get; private set; }
     public string? SelectedModelId { get; private set; }
     public bool ThinkingEnabled { get; private set; }
-    private bool _closingStarted;
+
+    public event EventHandler? SelectionCommitted;
 
     public ModelSwitcherPopup(
         ModelRegistry registry,
         string currentProviderId,
         string currentModelId,
-        bool thinkingEnabled,
-        Window? owner = null,
-        Point? anchor = null)
+        bool thinkingEnabled)
     {
         SelectedProviderId = currentProviderId;
         SelectedModelId = currentModelId;
         ThinkingEnabled = thinkingEnabled;
 
-        WindowStyle = WindowStyle.None;
+        StaysOpen = false;
         AllowsTransparency = true;
-        Background = Brushes.Transparent;
-        ResizeMode = ResizeMode.NoResize;
-        ShowInTaskbar = false;
-        Width = 320;
-        SizeToContent = SizeToContent.Height;
-        MaxHeight = 400;
-
-        owner ??= Application.Current.MainWindow;
-        if (owner is not null)
-        {
-            Owner = owner;
-            WindowStartupLocation = WindowStartupLocation.Manual;
-
-            if (anchor.HasValue)
-            {
-                Left = anchor.Value.X;
-                Top = anchor.Value.Y + 2;
-            }
-            else
-            {
-                Left = owner.Left + (owner.Width - Width) / 2;
-                Top = owner.Top + owner.Height * 0.18;
-            }
-        }
+        Placement = PlacementMode.Bottom;
+        PopupAnimation = PopupAnimation.Fade;
 
         var rootBorder = new Border
         {
+            Width = 320,
+            MaxHeight = 400,
             CornerRadius = new CornerRadius(6),
             BorderThickness = new Thickness(1),
             Padding = new Thickness(8),
@@ -78,11 +58,16 @@ public sealed class ModelSwitcherPopup : Window
         rootBorder.SetResourceReference(Border.BackgroundProperty, "DockBackgroundBrush");
         rootBorder.SetResourceReference(Border.BorderBrushProperty, "DockBorderBrush");
 
+        var scroll = new ScrollViewer
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+        };
+
         var stack = new StackPanel();
 
         foreach (var provider in registry.Providers)
         {
-            // Provider header
             var header = new WpfTextBlock
             {
                 Text = provider.DisplayName.ToUpperInvariant(),
@@ -94,7 +79,6 @@ public sealed class ModelSwitcherPopup : Window
             header.SetResourceReference(WpfTextBlock.ForegroundProperty, "DockMenuForegroundBrush");
             stack.Children.Add(header);
 
-            // Models
             foreach (var modelId in provider.AvailableModels)
             {
                 var isSelected = provider.ProviderId == currentProviderId && modelId == currentModelId;
@@ -116,7 +100,8 @@ public sealed class ModelSwitcherPopup : Window
                     var (pid, mid) = ((string, string))((Border)s!).Tag;
                     SelectedProviderId = pid;
                     SelectedModelId = mid;
-                    SafeClose();
+                    IsOpen = false;
+                    SelectionCommitted?.Invoke(this, EventArgs.Empty);
                 };
 
                 var rowStack = new StackPanel { Orientation = Orientation.Horizontal };
@@ -173,17 +158,8 @@ public sealed class ModelSwitcherPopup : Window
         thinkingCheck.Unchecked += (_, _) => ThinkingEnabled = false;
         stack.Children.Add(thinkingCheck);
 
-        rootBorder.Child = stack;
-        Content = rootBorder;
-
-        PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) SafeClose(); };
-        Deactivated += (_, _) => SafeClose();
-    }
-
-    private void SafeClose()
-    {
-        if (_closingStarted) return;
-        _closingStarted = true;
-        Close();
+        scroll.Content = stack;
+        rootBorder.Child = scroll;
+        Child = rootBorder;
     }
 }

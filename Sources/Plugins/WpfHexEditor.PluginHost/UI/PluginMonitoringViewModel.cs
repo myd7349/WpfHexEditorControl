@@ -701,6 +701,9 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
         // PHASE 5: Add Force Sample command
         ForceSampleCommand = new RelayCommand(_ => _ = ForceSampleNowAsync());
 
+        // Force GC command — runs GC.Collect + adds marker on memory chart
+        ForceGcCommand = new RelayCommand(_ => ForceGcCollect());
+
         // -- Host event subscriptions --
         _host.PluginLoaded       += OnPluginLoaded;
         _host.PluginCrashed      += OnPluginCrashed;
@@ -787,6 +790,7 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
 
     public ICommand CopyTableCommand         { get; }
     public ICommand ExportEventLogCommand    { get; }
+    public ICommand ForceGcCommand           { get; }
 
     // -- Alert thresholds (hot-configurable, bound to threshold editor UI) -------
 
@@ -1120,14 +1124,9 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
             // only set by OnSamplingTick and starts at 0, giving a correct idle reading.
             totalCpu = _host.LastSampledCpuPercent;
 
-            // All loaded plugins record the same process-level GC memory per tick.
-            // Use the first plugin that has a snapshot rather than always loaded[0],
-            // which may be null during the brief window before the first sampling tick.
-            var memSnap = loaded
-                .Select(e => e.Diagnostics.GetLatest())
-                .FirstOrDefault(s => s is not null);
-            if (memSnap is not null)
-                totalMem = memSnap.MemoryBytes / (1024 * 1024);
+            // Use process WorkingSet64 for real memory (includes native, WPF, unmanaged).
+            // GC.GetTotalMemory only reports the managed heap (~8 MB) which is misleading.
+            totalMem = System.Diagnostics.Process.GetCurrentProcess().WorkingSet64 / (1024 * 1024);
         }
 
         CurrentCpu      = totalCpu;
@@ -1215,7 +1214,7 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
             row.StateColor     = StateBadgeColor(entry.State);
             row.CpuPercent     = snap?.CpuPercent ?? 0;
             row.WeightedCpu    = weightedCpu;
-            row.MemoryMb       = snap is not null ? snap.MemoryBytes / (1024 * 1024) : 0;
+            row.MemoryMb       = entry.EstimatedMemoryFootprint / (1024 * 1024);
             row.WeightedMemMb  = weightedMem;
             row.AvgExecMs      = entry.Diagnostics.AverageExecutionTime.TotalMilliseconds;
             row.InitTimeMs     = entry.InitDuration.TotalMilliseconds;
@@ -1421,6 +1420,23 @@ public sealed class PluginMonitoringViewModel : INotifyPropertyChanged, IDisposa
                 Application.Current?.Dispatcher.InvokeAsync(() => GcCleanupEvents.Add(gcTime));
             });
         }
+    }
+
+    private void ForceGcCollect()
+    {
+        _outputService?.Info("[Plugin Monitor] Manual GC triggered.");
+        var gcTime = DateTime.UtcNow;
+        Task.Run(() =>
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                GcCleanupEvents.Add(gcTime);
+                Refresh();
+            });
+        });
     }
 
     // -- Export commands ---------------------------------------------------------

@@ -288,16 +288,16 @@ public partial class MainWindow
                         return solPath is not null ? System.IO.Path.GetDirectoryName(solPath) : null;
                     });
 
-                // Catch-up: bridge any documents that were opened before the LSP service was ready.
-                _lspBridgeService.RetryOpenDocuments();
-
                 // LSP-02-D: Status bar indicator for LSP server state.
+                // Subscribe BEFORE RetryOpenDocuments so we don't miss Connecting/Ready events
+                // that fire synchronously during bridge initialization.
                 _lspStatusBarAdapter = new WpfHexEditor.App.Services.LspStatusBarAdapter(
                     _lspBridgeService,
                     onErrorClick: () => OpenSettingsAt("Code Editor", "Language Servers"));
-
-                // Wire LSP state → status bar XAML item
                 _lspBridgeService.ServerStateChanged += OnLspServerStateChanged;
+
+                // Catch-up: bridge any documents that were opened before the LSP service was ready.
+                _lspBridgeService.RetryOpenDocuments();
 
                 // LSP-02-E: Bridge LSP diagnostics → ErrorPanel (IDiagnosticSource adapter).
                 _lspDiagnosticsAdapter = new WpfHexEditor.App.Services.LspDiagnosticsAdapter(_lspBridgeService);

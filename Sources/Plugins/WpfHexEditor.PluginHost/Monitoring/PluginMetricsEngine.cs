@@ -303,7 +303,7 @@ public sealed class PluginMetricsEngine : IDisposable
         {
             Timestamp = now,
             CpuPercent = cpuPct,
-            MemoryBytes = memBytes,
+            MemoryBytes = process.WorkingSet64,
             LoadedPluginCount = loaded.Count
         });
     }

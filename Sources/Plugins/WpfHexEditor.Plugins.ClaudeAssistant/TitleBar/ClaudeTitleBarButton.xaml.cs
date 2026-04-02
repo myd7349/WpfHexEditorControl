@@ -26,6 +26,7 @@ public partial class ClaudeTitleBarButton : UserControl
     public event Action? AskSelectionRequested;
     public event Action? FixErrorsRequested;
     public event Action? OpenOptionsRequested;
+    public event Action? ManageConnectionsRequested;
 
     public ClaudeTitleBarButton()
     {
@@ -100,4 +101,5 @@ public partial class ClaudeTitleBarButton : UserControl
     private void OnAskSelectionClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => AskSelectionRequested?.Invoke());
     private void OnFixErrorsClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => FixErrorsRequested?.Invoke());
     private void OnOptionsClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => OpenOptionsRequested?.Invoke());
+    private void OnManageConnectionsClick(object sender, RoutedEventArgs e) => SafeGuard.Run(() => ManageConnectionsRequested?.Invoke());
 }

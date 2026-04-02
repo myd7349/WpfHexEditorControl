@@ -14,6 +14,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Plugins.ClaudeAssistant.Options;
+using WpfHexEditor.Plugins.ClaudeAssistant.Panel.ConnectionManager;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.Messages;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.ModelSwitcher;
 
@@ -193,41 +195,33 @@ public partial class ConversationTab : UserControl
     private void OnModelPillClick(object sender, MouseButtonEventArgs e)
         => SafeGuard.Run(() =>
         {
-            System.Diagnostics.Debug.WriteLine("[ClaudeAssistant] OnModelPillClick FIRED");
+            if (DataContext is not ConversationTabViewModel vm) return;
+            if (sender is not FrameworkElement pill) return;
 
-            if (DataContext is not ConversationTabViewModel vm)
+            // If no API key configured, open connection manager instead
+            var currentKey = ClaudeAssistantOptions.Instance.GetApiKey(vm.SelectedProviderId);
+            if (string.IsNullOrEmpty(currentKey) && vm.SelectedProviderId != "ollama")
             {
-                System.Diagnostics.Debug.WriteLine("[ClaudeAssistant] DataContext is NOT ConversationTabViewModel");
+                var owner = Window.GetWindow(this) ?? Application.Current.MainWindow;
+                Point? screenAnchor = null;
+                try { screenAnchor = pill.PointToScreen(new Point(pill.RenderSize.Width / 2, pill.RenderSize.Height)); }
+                catch { /* PointToScreen can fail if not connected to PresentationSource */ }
+                var connPopup = new ConnectionManagerPopup(vm.Registry, owner, screenAnchor);
+                connPopup.Show();
+                e.Handled = true;
                 return;
             }
-
-            // Pre-compute screen point and owner before constructing popup
-            Point? screenAnchor = null;
-            Window? ownerWin = null;
-            if (sender is FrameworkElement { IsLoaded: true } fe)
-            {
-                ownerWin = Window.GetWindow(fe);
-                System.Diagnostics.Debug.WriteLine($"[ClaudeAssistant] ownerWin={ownerWin?.GetType().Name}, IsLoaded={fe.IsLoaded}");
-                try { screenAnchor = fe.PointToScreen(new Point(0, fe.RenderSize.Height)); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[ClaudeAssistant] PointToScreen FAILED: {ex.Message}"); }
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"[ClaudeAssistant] sender type={sender?.GetType().Name}, not FrameworkElement or not loaded");
-            }
-            ownerWin ??= Application.Current.MainWindow;
-
-            System.Diagnostics.Debug.WriteLine($"[ClaudeAssistant] Opening ModelSwitcherPopup: owner={ownerWin?.GetType().Name}, anchor={screenAnchor}");
 
             var popup = new ModelSwitcherPopup(
                 vm.Registry,
                 vm.SelectedProviderId,
                 vm.SelectedModelId,
-                vm.ThinkingEnabled,
-                ownerWin,
-                screenAnchor);
+                vm.ThinkingEnabled)
+            {
+                PlacementTarget = pill
+            };
 
-            popup.Closed += (_, _) => SafeGuard.Run(() =>
+            popup.SelectionCommitted += (_, _) => SafeGuard.Run(() =>
             {
                 if (popup.SelectedProviderId is not null)
                     vm.SelectedProviderId = popup.SelectedProviderId;
@@ -236,7 +230,12 @@ public partial class ConversationTab : UserControl
                 vm.ThinkingEnabled = popup.ThinkingEnabled;
             });
 
-            popup.Show();
-            System.Diagnostics.Debug.WriteLine("[ClaudeAssistant] ModelSwitcherPopup.Show() called");
+            popup.Closed += (_, _) => SafeGuard.Run(() =>
+            {
+                vm.ThinkingEnabled = popup.ThinkingEnabled;
+            });
+
+            popup.IsOpen = true;
+            e.Handled = true;
         });
 }

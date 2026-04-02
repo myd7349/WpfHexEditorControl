@@ -314,8 +314,8 @@ public sealed class PluginManagerViewModel : INotifyPropertyChanged, IDisposable
         // first plugin's diagnostics was equivalent but semantically misleading.
         GlobalCpuPercent = _host.LastSampledCpuPercent;
 
-        // Memory: total managed heap (process-wide).
-        GlobalMemoryMb = GC.GetTotalMemory(forceFullCollection: false) / (1024 * 1024);
+        // Memory: process working set (includes native, WPF, unmanaged).
+        GlobalMemoryMb = System.Diagnostics.Process.GetCurrentProcess().WorkingSet64 / (1024 * 1024);
 
         var running = Plugins.Count(p => p.State == PluginState.Loaded);
         var total   = Plugins.Count;
