@@ -14,9 +14,18 @@
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
         <conv:ToolCallStatusToGlyphConverter x:Key="StatusToGlyph"/>
         <conv:ToolCallStatusToBrushConverter x:Key="StatusToBrush"/>
+        <!-- Suggestion chip style with hover -->
+        <Style x:Key="SuggestionChipStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CA_ToolCallBackgroundBrush}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
-    <Grid Background="{DynamicResource DockBackgroundBrush}">
+    <Grid Background="{DynamicResource DockBackgroundBrush}" AllowDrop="True" Drop="OnFileDrop">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -40,7 +49,7 @@
             <!-- Suggestion chips -->
             <WrapPanel HorizontalAlignment="Center" Margin="0,0,0,4">
                 <Border CornerRadius="12" Padding="10,5" Margin="3" Cursor="Hand"
-                        Background="{DynamicResource CA_ToolCallBackgroundBrush}"
+                        Style="{StaticResource SuggestionChipStyle}"
                         MouseLeftButtonDown="OnSuggestionClick" Tag="@selection Explain this code in detail.">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="11"
@@ -52,7 +61,7 @@
                     </StackPanel>
                 </Border>
                 <Border CornerRadius="12" Padding="10,5" Margin="3" Cursor="Hand"
-                        Background="{DynamicResource CA_ToolCallBackgroundBrush}"
+                        Style="{StaticResource SuggestionChipStyle}"
                         MouseLeftButtonDown="OnSuggestionClick" Tag="@errors Fix the errors in this code.">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE90F;" FontFamily="Segoe MDL2 Assets" FontSize="11"
@@ -64,7 +73,7 @@
                     </StackPanel>
                 </Border>
                 <Border CornerRadius="12" Padding="10,5" Margin="3" Cursor="Hand"
-                        Background="{DynamicResource CA_ToolCallBackgroundBrush}"
+                        Style="{StaticResource SuggestionChipStyle}"
                         MouseLeftButtonDown="OnSuggestionClick" Tag="@selection Generate xUnit tests for this code.">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8A1;" FontFamily="Segoe MDL2 Assets" FontSize="11"
@@ -76,7 +85,7 @@
                     </StackPanel>
                 </Border>
                 <Border CornerRadius="12" Padding="10,5" Margin="3" Cursor="Hand"
-                        Background="{DynamicResource CA_ToolCallBackgroundBrush}"
+                        Style="{StaticResource SuggestionChipStyle}"
                         MouseLeftButtonDown="OnSuggestionClick" Tag="@hex Explain this binary format.">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="11"
@@ -158,11 +167,29 @@
 
                             <!-- Message bubble + hover action bar -->
                             <Grid Grid.Column="1" Margin="4,0,0,0" Background="Transparent">
+                            <Grid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Copy" Click="OnCopyMessageClick" InputGestureText="Ctrl+C">
+                                        <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="14"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Copy as Markdown" Click="OnCopyMarkdownClick">
+                                        <MenuItem.Icon><TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="14"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Header="Regenerate response" Click="OnRegenerateClick">
+                                        <MenuItem.Icon><TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="14"/></MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="Delete message" Click="OnDeleteMessageClick">
+                                        <MenuItem.Icon><TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14"/></MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </Grid.ContextMenu>
                             <Border Padding="10,8" CornerRadius="4">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Background" Value="{DynamicResource CA_MessageAssistantBackgroundBrush}"/>
                                         <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Opacity" Value="1.0"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsUser}" Value="True">
                                                 <Setter Property="Background" Value="{DynamicResource CA_MessageUserBackgroundBrush}"/>
@@ -171,6 +198,9 @@
                                                 <Setter Property="BorderThickness" Value="2,0,0,0"/>
                                                 <Setter Property="BorderBrush" Value="{DynamicResource CA_ErrorBrush}"/>
                                             </DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="0.85"/>
+                                            </Trigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
@@ -343,6 +373,7 @@
                                      AcceptsReturn="True" TextWrapping="Wrap" MaxHeight="100"
                                      Padding="10,8" FontSize="12.5"
                                      KeyDown="OnInputKeyDown"
+                                     PreviewKeyDown="OnInputPreviewKeyDown"
                                      TextChanged="OnInputTextChanged"/>
                         </Grid>
                     </Border>
@@ -376,6 +407,31 @@
                        Placement="Top" StaysOpen="False" AllowsTransparency="True">
                     <input:MentionCompletionPopup x:Name="MentionControl"/>
                 </Popup>
+
+                <!-- Attachments bar -->
+                <ItemsControl ItemsSource="{Binding Attachments}" Margin="0,4,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="4" Padding="6,2" Margin="0,0,4,2"
+                                    Background="{DynamicResource CA_ToolCallBackgroundBrush}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding DisplayName}" FontSize="10"
+                                               Foreground="{DynamicResource CA_ToolCallForegroundBrush}"
+                                               VerticalAlignment="Center"/>
+                                    <Border Cursor="Hand" MouseLeftButtonDown="OnRemoveAttachment"
+                                            Margin="6,0,0,0" Padding="2,0">
+                                        <TextBlock Text="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="8"
+                                                   Foreground="{DynamicResource CA_ToolCallForegroundBrush}"
+                                                   VerticalAlignment="Center" Opacity="0.6"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
                 <!-- Model pill -->
                 <Border Margin="0,4,0,0" Padding="6,2" CornerRadius="10"

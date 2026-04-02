@@ -119,7 +119,7 @@ public sealed class ClaudeConnectionService : IDisposable
         {
             if (ClaudeCodeModelProvider.FindClaudeExecutable() is not null)
             {
-                NotifySuccess(0);
+                SetStatus(ClaudeConnectionStatus.CliConnected);
                 return;
             }
             SetStatus(ClaudeConnectionStatus.NotConfigured);

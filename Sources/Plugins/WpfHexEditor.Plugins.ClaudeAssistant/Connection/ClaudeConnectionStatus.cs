@@ -15,6 +15,7 @@ public enum ClaudeConnectionStatus
     NotConfigured,
     Connecting,
     Connected,
+    CliConnected,
     RateLimited,
     Error,
     Offline

@@ -27,6 +27,7 @@ public partial class ConversationTab : UserControl
     private bool _mentionWired;
     private NotifyCollectionChangedEventHandler? _collectionHandler;
     private PropertyChangedEventHandler? _propertyHandler;
+    private System.Windows.Threading.DispatcherTimer? _scrollTimer;
 
     public ConversationTab()
     {
@@ -95,6 +96,24 @@ public partial class ConversationTab : UserControl
                 UpdateWatermark();
                 CheckMentionTrigger();
             }
+            else if (args.PropertyName == nameof(vm.IsStreaming))
+            {
+                // Auto-scroll during streaming
+                if (vm.IsStreaming)
+                {
+                    _scrollTimer ??= new System.Windows.Threading.DispatcherTimer
+                    {
+                        Interval = TimeSpan.FromMilliseconds(200)
+                    };
+                    _scrollTimer.Tick += (_, _) => ScrollChatToEnd();
+                    _scrollTimer.Start();
+                }
+                else
+                {
+                    _scrollTimer?.Stop();
+                    ScrollChatToEnd();
+                }
+            }
         };
 
         ((INotifyCollectionChanged)vm.Messages).CollectionChanged += _collectionHandler;
@@ -140,6 +159,48 @@ public partial class ConversationTab : UserControl
                 Vm.CancelCommand.Execute(null);
                 e.Handled = true;
             }
+        });
+
+    private void OnInputPreviewKeyDown(object sender, KeyEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            if (e.Key == Key.V && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (Clipboard.ContainsImage())
+                {
+                    var img = Clipboard.GetImage();
+                    if (img is not null)
+                        Vm?.AddImageAttachment(img);
+                    e.Handled = true;
+                }
+                else if (Clipboard.ContainsFileDropList())
+                {
+                    var files = Clipboard.GetFileDropList();
+                    foreach (string? file in files)
+                        if (file is not null) Vm?.AddFileAttachment(file);
+                    e.Handled = true;
+                }
+                // else: normal text paste, don't handle
+            }
+        });
+
+    private void OnFileDrop(object sender, DragEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if (files is not null)
+                    foreach (var file in files)
+                        Vm?.AddFileAttachment(file);
+            }
+        });
+
+    private void OnRemoveAttachment(object sender, MouseButtonEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            if (sender is FrameworkElement { DataContext: Messages.AttachmentViewModel att } && Vm is not null)
+                Vm.Attachments.Remove(att);
         });
 
     private void OnSendClick(object sender, MouseButtonEventArgs e)
@@ -188,11 +249,52 @@ public partial class ConversationTab : UserControl
         MentionPopup.IsOpen = false;
     }
 
+    private ChatMessageViewModel? GetMessageFromSender(object sender)
+    {
+        // Direct DataContext (from hover button)
+        if (sender is FrameworkElement { DataContext: ChatMessageViewModel msg })
+            return msg;
+        // From ContextMenu MenuItem → PlacementTarget is the Grid
+        if (sender is MenuItem mi && mi.Parent is System.Windows.Controls.ContextMenu ctx
+            && ctx.PlacementTarget is FrameworkElement { DataContext: ChatMessageViewModel ctxMsg })
+            return ctxMsg;
+        return null;
+    }
+
     private void OnCopyMessageClick(object sender, RoutedEventArgs e)
         => SafeGuard.Run(() =>
         {
-            if (sender is FrameworkElement { DataContext: ChatMessageViewModel msg } && !string.IsNullOrEmpty(msg.Text))
+            var msg = GetMessageFromSender(sender);
+            if (msg is not null && !string.IsNullOrEmpty(msg.Text))
                 Clipboard.SetText(msg.Text);
+        });
+
+    private void OnCopyMarkdownClick(object sender, RoutedEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            var msg = GetMessageFromSender(sender);
+            if (msg is not null && !string.IsNullOrEmpty(msg.Text))
+                Clipboard.SetText(msg.Text);
+        });
+
+    private void OnRegenerateClick(object sender, RoutedEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            if (Vm is null) return;
+            // Find last user message and resend
+            var lastUserMsg = Vm.Messages.LastOrDefault(m => m.Role == "user");
+            if (lastUserMsg is null) return;
+            Vm.InputText = lastUserMsg.Text;
+            if (Vm.SendCommand is { } cmd && cmd.CanExecute(null))
+                cmd.Execute(null);
+        });
+
+    private void OnDeleteMessageClick(object sender, RoutedEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            var msg = GetMessageFromSender(sender);
+            if (msg is not null && Vm is not null)
+                Vm.Messages.Remove(msg);
         });
 
     private void OnModelPillClick(object sender, MouseButtonEventArgs e)

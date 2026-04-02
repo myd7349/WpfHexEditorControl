@@ -151,8 +151,11 @@ public sealed class ClaudeCodeModelProvider : IModelProvider
             RedirectStandardInput = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-            StandardOutputEncoding = Encoding.UTF8
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
         };
+        psi.Environment["LANG"] = "en_US.UTF-8";
+        psi.Environment["PYTHONIOENCODING"] = "utf-8";
 
         Process? proc = null;
         try
@@ -164,9 +167,11 @@ public sealed class ClaudeCodeModelProvider : IModelProvider
                 yield break;
             }
 
-            // Send prompt via stdin to avoid shell escaping issues
-            await proc.StandardInput.WriteAsync(prompt);
-            proc.StandardInput.Close();
+            // Send prompt via stdin in UTF-8 to avoid encoding issues
+            using (var utf8Writer = new System.IO.StreamWriter(proc.StandardInput.BaseStream, Encoding.UTF8, leaveOpen: false))
+            {
+                await utf8Writer.WriteAsync(prompt);
+            }
 
             // Register cancellation to kill the process
             ct.Register(() =>
@@ -215,11 +220,11 @@ public sealed class ClaudeCodeModelProvider : IModelProvider
         yield return new ChatStreamChunk(ChunkKind.Done, IsFinal: true);
     }
 
-    /// <summary>Builds a single prompt string from conversation messages.</summary>
+    /// <summary>Builds a single prompt string from conversation messages, saving images to temp files.</summary>
     private static string BuildPrompt(IReadOnlyList<ChatMessage> messages)
     {
         if (messages.Count == 1)
-            return messages[0].GetTextContent();
+            return BuildMessageText(messages[0]);
 
         var sb = new StringBuilder();
         foreach (var msg in messages)
@@ -231,7 +236,45 @@ public sealed class ClaudeCodeModelProvider : IModelProvider
                 "system" => "System",
                 _ => msg.Role
             };
-            sb.AppendLine($"{role}: {msg.GetTextContent()}");
+            sb.AppendLine($"{role}: {BuildMessageText(msg)}");
+        }
+        return sb.ToString();
+    }
+
+    private static string BuildMessageText(ChatMessage msg)
+    {
+        var sb = new StringBuilder();
+        foreach (var block in msg.Content)
+        {
+            switch (block)
+            {
+                case TextBlock tb:
+                    sb.Append(tb.Text);
+                    break;
+                case ImageBlock img:
+                    try
+                    {
+                        var ext = img.MediaType switch
+                        {
+                            "image/jpeg" => ".jpg",
+                            "image/gif" => ".gif",
+                            "image/webp" => ".webp",
+                            _ => ".png"
+                        };
+                        var tmpDir = Path.Combine(Path.GetTempPath(), "claude_assistant");
+                        Directory.CreateDirectory(tmpDir);
+                        var tmpPath = Path.Combine(tmpDir, $"img_{Guid.NewGuid():N}{ext}");
+                        File.WriteAllBytes(tmpPath, Convert.FromBase64String(img.Base64Data));
+                        sb.AppendLine();
+                        sb.AppendLine($"[Image attached — saved at: {tmpPath}]");
+                        sb.AppendLine("Use your Read tool to view this image file.");
+                    }
+                    catch
+                    {
+                        sb.Append("\n[Image attachment failed to save]");
+                    }
+                    break;
+            }
         }
         return sb.ToString();
     }

@@ -9,6 +9,8 @@
 //     ViewModel for a conversation tab. Streaming loop, Send/Cancel, tool execution.
 // ==========================================================
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -28,6 +30,7 @@ public sealed partial class ConversationTabViewModel : ObservableObject
 
     public ConversationSession Session { get; }
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
+    public ObservableCollection<AttachmentViewModel> Attachments { get; } = [];
 
     [ObservableProperty] private string _inputText = "";
     [ObservableProperty] private bool _isStreaming;
@@ -51,16 +54,94 @@ public sealed partial class ConversationTabViewModel : ObservableObject
 
     public void SetMcpManager(IMcpServerManager manager) => _mcpManager = manager;
 
+    public void AddImageAttachment(System.Windows.Media.Imaging.BitmapSource image)
+    {
+        using var ms = new System.IO.MemoryStream();
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image));
+        encoder.Save(ms);
+        var base64 = Convert.ToBase64String(ms.ToArray());
+        Attachments.Add(new AttachmentViewModel
+        {
+            DisplayName = $"Image ({image.PixelWidth}x{image.PixelHeight})",
+            Base64Data = base64,
+            MediaType = "image/png",
+            IsImage = true
+        });
+    }
+
+    public void AddFileAttachment(string filePath)
+    {
+        var name = System.IO.Path.GetFileName(filePath);
+        var ext = System.IO.Path.GetExtension(filePath).ToLowerInvariant();
+        var isImage = ext is ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".bmp";
+
+        string? base64 = null;
+        string mediaType = "application/octet-stream";
+        if (isImage)
+        {
+            base64 = Convert.ToBase64String(System.IO.File.ReadAllBytes(filePath));
+            mediaType = ext switch
+            {
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".gif" => "image/gif",
+                ".webp" => "image/webp",
+                _ => "image/png"
+            };
+        }
+        else
+        {
+            mediaType = "text/plain";
+        }
+
+        Attachments.Add(new AttachmentViewModel
+        {
+            DisplayName = name,
+            FilePath = filePath,
+            Base64Data = base64,
+            MediaType = mediaType,
+            IsImage = isImage
+        });
+    }
+
     [RelayCommand(CanExecute = nameof(CanSend))]
     private async Task SendAsync()
     {
         var text = InputText.Trim();
-        if (string.IsNullOrEmpty(text)) return;
+        if (string.IsNullOrEmpty(text) && Attachments.Count == 0) return;
+
+        // Build content blocks from text + attachments
+        var content = new List<ContentBlock>();
+        if (!string.IsNullOrEmpty(text))
+            content.Add(new TextBlock(text));
+
+        var displayText = text;
+        foreach (var att in Attachments)
+        {
+            if (att.IsImage && att.Base64Data is not null)
+            {
+                content.Add(new ImageBlock(att.Base64Data, att.MediaType));
+                displayText += $"\n[Attached: {att.DisplayName}]";
+            }
+            else if (att.FilePath is not null)
+            {
+                // Read file content and append as text
+                try
+                {
+                    var fileText = System.IO.File.ReadAllText(att.FilePath);
+                    content.Add(new TextBlock($"\n--- {att.DisplayName} ---\n{fileText}\n---"));
+                    displayText += $"\n[Attached: {att.DisplayName}]";
+                }
+                catch { displayText += $"\n[Failed to read: {att.DisplayName}]"; }
+            }
+        }
+        Attachments.Clear();
 
         // Add user message
-        var userMsg = ChatMessage.User(text);
+        var userMsg = new ChatMessage { Role = "user", Content = content };
         Session.AddMessage(userMsg);
-        Messages.Add(new ChatMessageViewModel { Role = "user", Text = text });
+        Messages.Add(new ChatMessageViewModel { Role = "user", Text = displayText ?? "" });
         InputText = "";
 
         // Auto-title from first message
@@ -101,20 +182,44 @@ public sealed partial class ConversationTabViewModel : ObservableObject
             ToolCallViewModel? currentToolCall = null;
             string? currentToolCallId = null;
 
+            // Batched text accumulation for smooth streaming
+            var textBuf = new StringBuilder();
+            var lastFlush = Stopwatch.GetTimestamp();
+
             await foreach (var chunk in provider.StreamAsync(
                 Session.Messages, SelectedModelId, tools, thinking, _streamCts.Token))
             {
-                Application.Current.Dispatcher.Invoke(() =>
+                switch (chunk.Kind)
                 {
-                    switch (chunk.Kind)
-                    {
-                        case ChunkKind.TextDelta:
-                            assistantVm.AppendText(chunk.Text ?? "");
-                            break;
-                        case ChunkKind.ThinkingDelta:
-                            assistantVm.AppendThinking(chunk.ThinkingText ?? "");
-                            break;
-                        case ChunkKind.ToolUseStart:
+                    case ChunkKind.TextDelta:
+                        textBuf.Append(chunk.Text ?? "");
+                        if (Stopwatch.GetElapsedTime(lastFlush).TotalMilliseconds >= 50)
+                        {
+                            var batch = textBuf.ToString();
+                            textBuf.Clear();
+                            lastFlush = Stopwatch.GetTimestamp();
+                            await Application.Current.Dispatcher.InvokeAsync(() => assistantVm.AppendText(batch));
+                        }
+                        break;
+
+                    case ChunkKind.ThinkingDelta:
+                        // Flush text first
+                        if (textBuf.Length > 0)
+                        {
+                            var tb = textBuf.ToString(); textBuf.Clear();
+                            await Application.Current.Dispatcher.InvokeAsync(() => assistantVm.AppendText(tb));
+                        }
+                        await Application.Current.Dispatcher.InvokeAsync(() => assistantVm.AppendThinking(chunk.ThinkingText ?? ""));
+                        break;
+
+                    case ChunkKind.ToolUseStart:
+                        if (textBuf.Length > 0)
+                        {
+                            var tb = textBuf.ToString(); textBuf.Clear();
+                            await Application.Current.Dispatcher.InvokeAsync(() => assistantVm.AppendText(tb));
+                        }
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
                             currentToolCallId = chunk.ToolCallId;
                             currentToolCall = new ToolCallViewModel
                             {
@@ -122,19 +227,29 @@ public sealed partial class ConversationTabViewModel : ObservableObject
                                 Status = ToolCallStatus.Running
                             };
                             assistantVm.ToolCalls.Add(currentToolCall);
-                            break;
-                        case ChunkKind.ToolInputDelta:
-                            currentToolCall?.AppendArgs(chunk.ToolInputJson ?? "");
-                            break;
-                        case ChunkKind.Error:
+                        });
+                        break;
+
+                    case ChunkKind.ToolInputDelta:
+                        await Application.Current.Dispatcher.InvokeAsync(() => currentToolCall?.AppendArgs(chunk.ToolInputJson ?? ""));
+                        break;
+
+                    case ChunkKind.Error:
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
                             assistantVm.Text = $"Error: {chunk.ErrorMessage}";
                             assistantVm.IsError = true;
-                            break;
-                        case ChunkKind.Done:
-                            break;
-                    }
-                });
+                        });
+                        break;
+
+                    case ChunkKind.Done:
+                        break;
+                }
             }
+
+            // Final flush
+            if (textBuf.Length > 0)
+                await Application.Current.Dispatcher.InvokeAsync(() => assistantVm.AppendText(textBuf.ToString()));
 
             // Execute pending tool calls and feed results back
             if (assistantVm.HasToolCalls && _mcpManager is not null)

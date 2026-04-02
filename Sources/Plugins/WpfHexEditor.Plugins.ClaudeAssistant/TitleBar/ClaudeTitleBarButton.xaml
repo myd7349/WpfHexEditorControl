@@ -18,6 +18,12 @@
                      HorizontalAlignment="Right" VerticalAlignment="Bottom"
                      Margin="0,0,2,4"
                      Fill="{DynamicResource CA_TitleBarBadgeIdleBrush}"/>
+
+            <!-- CLI badge text (shown when connected via CLI) -->
+            <TextBlock x:Name="CliBadgeText" Text="CLI" FontSize="7" FontWeight="Bold"
+                       HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                       Margin="1,0,0,3" Visibility="Collapsed"
+                       Foreground="{DynamicResource DockTabActiveBrush}"/>
         </Grid>
     </Border>
 

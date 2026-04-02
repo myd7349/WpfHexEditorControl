@@ -44,23 +44,31 @@ public partial class ClaudeTitleBarButton : UserControl
                 ClaudeConnectionStatus.NotConfigured => "DockBorderBrush",
                 ClaudeConnectionStatus.Connecting => "DockTabActiveBrush",
                 ClaudeConnectionStatus.Connected => "DockTabActiveBrush",
+                ClaudeConnectionStatus.CliConnected => "DockTabActiveBrush",
                 ClaudeConnectionStatus.RateLimited => "DockBorderBrush",
                 ClaudeConnectionStatus.Error => "DockBorderBrush",
                 ClaudeConnectionStatus.Offline => "DockBorderBrush",
                 _ => "DockBorderBrush"
             };
 
-            if (TryFindResource(brushKey) is Brush brush)
+            if (status == ClaudeConnectionStatus.CliConnected)
+                StatusBadge.Fill = new SolidColorBrush(Color.FromRgb(0x4E, 0xC9, 0xB0)); // green
+            else if (TryFindResource(brushKey) is Brush brush)
                 StatusBadge.Fill = brush;
 
             if (status is ClaudeConnectionStatus.Connecting or ClaudeConnectionStatus.RateLimited)
                 _pulseStoryboard?.Begin();
+
+            // Show/hide CLI badge text
+            CliBadgeText.Visibility = status == ClaudeConnectionStatus.CliConnected
+                ? Visibility.Visible : Visibility.Collapsed;
 
             ToolTip = status switch
             {
                 ClaudeConnectionStatus.NotConfigured => "Claude AI — No API key configured",
                 ClaudeConnectionStatus.Connecting => "Claude AI — Connecting...",
                 ClaudeConnectionStatus.Connected => "Claude AI Assistant (Ctrl+Shift+A)",
+                ClaudeConnectionStatus.CliConnected => "Claude AI — Connected via CLI (claude.ai)",
                 ClaudeConnectionStatus.RateLimited => "Claude AI — Rate limited",
                 ClaudeConnectionStatus.Error => "Claude AI — Connection error",
                 ClaudeConnectionStatus.Offline => "Claude AI — Offline",

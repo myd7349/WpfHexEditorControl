@@ -180,6 +180,23 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             catch (Exception ex) { context.Output?.Warning($"[ClaudeAssistant] MCP startup: {ex.Message}"); }
             await PromptPresetsService.Instance.LoadAsync();
             await _vm!.RestoreSessionsAsync();
+
+            // Warm up Claude CLI in background (reduces cold start on first message)
+            if (ClaudeCodeModelProvider.FindClaudeExecutable() is { } cliPath)
+            {
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        var psi = new System.Diagnostics.ProcessStartInfo(cliPath, "-p --output-format json \"warmup\"")
+                        { RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true, UseShellExecute = false };
+                        using var p = System.Diagnostics.Process.Start(psi);
+                        p?.WaitForExit(10000);
+                    }
+                    catch { /* warm-up is best-effort */ }
+                });
+            }
+
             context.Output?.Info($"[ClaudeAssistant] Deferred init done — {_mcpManager.GetAllTools().Count} MCP tools");
         }, System.Windows.Threading.DispatcherPriority.Background);
     }
