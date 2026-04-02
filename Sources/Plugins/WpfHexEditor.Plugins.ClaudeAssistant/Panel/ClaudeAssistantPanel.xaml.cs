@@ -12,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Plugins.ClaudeAssistant.Panel.AccountUsage;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.Tabs;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Panel;
@@ -203,6 +204,52 @@ public partial class ClaudeAssistantPanel : UserControl
                 tab.NotifyTitleChanged();
             }
         });
+
+    // ── Toolbar: Provider chip ─────────────────────────────────────────
+    public event Action<UIElement?>? ShowModelSwitcherRequested;
+
+    private void OnProviderChipClick(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        SafeGuard.Run(() => ShowModelSwitcherRequested?.Invoke(sender as UIElement));
+    }
+
+    // ── Toolbar: Usage button ───────────────────────────────────────────
+    private void OnUsageClick(object sender, MouseButtonEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            var providerId = Vm?.ActiveTab?.SelectedProviderId ?? "anthropic";
+            var owner = Window.GetWindow(this);
+            var anchor = (sender as UIElement)?.TranslatePoint(new Point(11, 26), owner);
+            var screenAnchor = anchor.HasValue ? owner!.PointToScreen(anchor.Value) : (Point?)null;
+            var popup = new AccountUsagePopup(providerId, owner, screenAnchor);
+            popup.Show();
+        });
+
+    // ── Toolbar: More menu ──────────────────────────────────────────────
+    public event Action? ManageConnectionsRequested;
+    public event Action? OpenPresetsRequested;
+    public event Action? OpenOptionsRequested;
+
+    private void OnMoreMenuClick(object sender, MouseButtonEventArgs e)
+        => SafeGuard.Run(() =>
+        {
+            if (sender is FrameworkElement fe && fe.ContextMenu is not null)
+            {
+                fe.ContextMenu.PlacementTarget = fe;
+                fe.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                fe.ContextMenu.IsOpen = true;
+            }
+        });
+
+    private void OnMoreConnectionsClick(object sender, RoutedEventArgs e)
+        => SafeGuard.Run(() => ManageConnectionsRequested?.Invoke());
+
+    private void OnMorePresetsClick(object sender, RoutedEventArgs e)
+        => SafeGuard.Run(() => OpenPresetsRequested?.Invoke());
+
+    private void OnMoreOptionsClick(object sender, RoutedEventArgs e)
+        => SafeGuard.Run(() => OpenOptionsRequested?.Invoke());
 
     private static ConversationTabViewModel? GetTabFromMenuItem(object sender)
     {

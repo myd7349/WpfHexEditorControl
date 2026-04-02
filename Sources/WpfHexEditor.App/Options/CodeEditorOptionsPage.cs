@@ -37,8 +37,10 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
     private readonly CheckBox _stickyScrollCheck;
     private readonly CheckBox _showRefreshRateCheck;
     private readonly CheckBox _bracketPairColorizationCheck;
+    private readonly CheckBox _rainbowScopeGuidesCheck;
     private readonly CheckBox _colorSwatchPreviewCheck;
     private readonly CheckBox _formatOnSaveCheck;
+    private readonly CheckBox _showColumnRulersCheck;
 
     public CodeEditorOptionsPage()
     {
@@ -52,6 +54,9 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
 
         _foldDoubleClickCheck = MakeCheck("Fold/unfold on double-click");
         root.Children.Add(_foldDoubleClickCheck);
+
+        _showColumnRulersCheck = MakeCheck("Show column rulers");
+        root.Children.Add(_showColumnRulersCheck);
 
         _showRefreshRateCheck = MakeCheck("Show refresh rate in status bar");
         root.Children.Add(_showRefreshRateCheck);
@@ -125,6 +130,9 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
         _bracketPairColorizationCheck = MakeCheck("Bracket pair colorization (CE_Bracket_1/2/3/4 by depth)");
         root.Children.Add(_bracketPairColorizationCheck);
 
+        _rainbowScopeGuidesCheck = MakeCheck("Rainbow scope guides (color folding lines by bracket depth)");
+        root.Children.Add(_rainbowScopeGuidesCheck);
+
         _colorSwatchPreviewCheck = MakeCheck("Color swatch preview (e.g. #FF5733 in CSS/XAML/C#)");
         root.Children.Add(_colorSwatchPreviewCheck);
 
@@ -147,6 +155,7 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
         {
             var s = settings.CodeEditorDefaults;
             _wordWrapCheck.IsChecked         = s.WordWrap;
+            _showColumnRulersCheck.IsChecked = s.ShowColumnRulers;
             _foldDoubleClickCheck.IsChecked  = s.FoldToggleOnDoubleClick;
             _showRefreshRateCheck.IsChecked   = s.ShowRefreshRateInStatusBar;
             _autoCloseBracketsCheck.IsChecked = s.AutoClosingBrackets;
@@ -161,6 +170,7 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
             _minimapSideCombo.SelectedIndex   = s.MinimapSide;
             _minimapVerticalSizeCombo.SelectedIndex = s.MinimapVerticalSize;
             _bracketPairColorizationCheck.IsChecked = s.BracketPairColorization;
+            _rainbowScopeGuidesCheck.IsChecked     = s.RainbowScopeGuides;
             _colorSwatchPreviewCheck.IsChecked      = s.ColorSwatchPreview;
             _formatOnSaveCheck.IsChecked            = s.FormatOnSave;
         }
@@ -171,6 +181,7 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
     {
         var s = settings.CodeEditorDefaults;
         s.WordWrap                    = _wordWrapCheck.IsChecked == true;
+        s.ShowColumnRulers            = _showColumnRulersCheck.IsChecked == true;
         s.FoldToggleOnDoubleClick     = _foldDoubleClickCheck.IsChecked == true;
         s.ShowRefreshRateInStatusBar  = _showRefreshRateCheck.IsChecked == true;
         s.AutoClosingBrackets         = _autoCloseBracketsCheck.IsChecked == true;
@@ -185,6 +196,7 @@ public sealed class CodeEditorOptionsPage : UserControl, IOptionsPage
         s.MinimapSide                 = _minimapSideCombo.SelectedIndex;
         s.MinimapVerticalSize         = _minimapVerticalSizeCombo.SelectedIndex;
         s.BracketPairColorization     = _bracketPairColorizationCheck.IsChecked == true;
+        s.RainbowScopeGuides          = _rainbowScopeGuidesCheck.IsChecked == true;
         s.ColorSwatchPreview          = _colorSwatchPreviewCheck.IsChecked == true;
         s.FormatOnSave                = _formatOnSaveCheck.IsChecked == true;
     }

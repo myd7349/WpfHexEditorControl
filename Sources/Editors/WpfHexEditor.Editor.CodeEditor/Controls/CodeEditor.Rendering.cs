@@ -67,10 +67,27 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Determine the innermost block containing the cursor for active-guide highlight.
             var activeRegion = FindInnermostContainingRegion(_cursorLine);
 
+            bool useRainbow = RainbowScopeGuidesEnabled && BracketPairColorizationEnabled;
+            if (useRainbow) EnsureRainbowGuidePens();
+
+            // Stack-based O(n) nesting depth computation.
+            // _visibleRegions is sorted by StartLine — pop finished regions to get current depth.
+            var endLineStack = useRainbow ? new Stack<int>() : null;
+
             // OPT-PERF-03: iterate pre-filtered _visibleRegions (populated in CalculateVisibleLines)
             // instead of all regions — avoids O(total-regions) scan every frame.
             foreach (var region in _visibleRegions)
             {
+                // Compute nesting depth for rainbow mode.
+                int depth = 0;
+                if (useRainbow)
+                {
+                    while (endLineStack!.Count > 0 && endLineStack.Peek() < region.StartLine)
+                        endLineStack.Pop();
+                    depth = endLineStack.Count;
+                    endLineStack.Push(region.EndLine);
+                }
+
                 double guideX = ComputeScopeGuideX(textX, region);
                 if (guideX < textX) continue; // never draw before text area origin
 
@@ -84,10 +101,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 double yTop    = ScopeLineIndexToY(bodyStart);
                 double yBottom = ScopeLineIndexToY(region.EndLine);
 
-                // Use the active pen for the innermost block containing the cursor (VS Code style).
-                var pen = (activeRegion != null && ReferenceEquals(region, activeRegion))
-                    ? s_scopeGuideActivePen
-                    : s_scopeGuidePen;
+                bool isActive = activeRegion != null && ReferenceEquals(region, activeRegion);
+                Pen pen;
+                if (useRainbow)
+                {
+                    int colorIdx = depth % 4;
+                    pen = isActive ? _rainbowGuideActivePens![colorIdx] : _rainbowGuidePens![colorIdx];
+                }
+                else
+                {
+                    pen = isActive ? s_scopeGuideActivePen : s_scopeGuidePen;
+                }
 
                 dc.DrawLine(pen, new Point(guideX, yTop), new Point(guideX, yBottom));
             }
@@ -124,14 +148,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return textX;
 
             var startText = _document.Lines[region.StartLine].Text ?? string.Empty;
-            int spaces = 0;
+
+            // Count leading whitespace characters (not visual width) to find the indent column,
+            // then use ComputeVisualX which correctly expands tabs to TabSize character widths.
+            int indentChars = 0;
             foreach (char c in startText)
             {
-                if      (c == ' ')  spaces++;
-                else if (c == '\t') spaces += IndentSize;
+                if (c == ' ' || c == '\t') indentChars++;
                 else break;
             }
-            return textX + spaces * _charWidth;
+            return textX + _glyphRenderer.ComputeVisualX(startText, indentChars);
         }
 
         /// <summary>
@@ -807,7 +833,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     // Single-line — simple rounded rect.
                     if (_lineYLookup.TryGetValue(execStart0, out double ey) && _document != null)
                     {
-                        double w = Math.Max(_document.Lines[execStart0].Length * _charWidth, _charWidth);
+                        string execLineText = _document.Lines[execStart0].Text ?? string.Empty;
+                        double w = Math.Max(_glyphRenderer.ComputeVisualX(execLineText, _document.Lines[execStart0].Length), _charWidth);
                         dc.DrawRoundedRectangle(execBrush, null,
                             new Rect(bpLeft, ey, w, _lineHeight),
                             SelectionCornerRadius, SelectionCornerRadius);
@@ -820,7 +847,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     for (int j = execStart0; j <= execEnd0; j++)
                     {
                         if (!_lineYLookup.TryGetValue(j, out double ly) || _document == null) continue;
-                        double w    = Math.Max(_document.Lines[j].Length * _charWidth, _charWidth);
+                        string execJText = _document.Lines[j].Text ?? string.Empty;
+                        double w    = Math.Max(_glyphRenderer.ComputeVisualX(execJText, _document.Lines[j].Length), _charWidth);
                         double yAdj = j == execStart0 ? ly : ly - SelectionCornerRadius;
                         double hAdj = j == execStart0 ? _lineHeight + SelectionCornerRadius
                                     : j == execEnd0   ? _lineHeight + SelectionCornerRadius
@@ -961,6 +989,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     _horizontalScrollOffset,
                     patterns);
             }
+
+            // 6d. Whitespace markers (dots for spaces, arrows for tabs)
+            RenderWhitespaceMarkers(dc);
 
             // 7. Validation errors (Phase 5)
             if (EnableValidation)
@@ -1787,8 +1818,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                             ? TopMargin + _virtualizationEngine.GetLineYPosition(start.Line)
                             : TopMargin + (start.Line - _firstVisibleLine) * _lineHeight);
 
-                    double x1 = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + (start.Column * _charWidth);
-                    double x2 = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + (end.Column * _charWidth);
+                    double leftEdgeSingle = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+                    string lineText = _document!.Lines[start.Line].Text ?? string.Empty;
+                    double x1 = leftEdgeSingle + _glyphRenderer.ComputeVisualX(lineText, start.Column);
+                    double x2 = leftEdgeSingle + _glyphRenderer.ComputeVisualX(lineText, end.Column);
 
                     dc.DrawRoundedRectangle(selectionBrush, null, new Rect(x1, y, x2 - x1, _lineHeight), SelectionCornerRadius, SelectionCornerRadius);
                 }
@@ -1808,8 +1841,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         : TopMargin + (EnableVirtualScrolling && _virtualizationEngine != null
                             ? _virtualizationEngine.GetLineYPosition(start.Line)
                             : (start.Line - _firstVisibleLine) * _lineHeight);
-                    double x1 = leftEdge + (start.Column * _charWidth);
-                    double x2 = leftEdge + (_document.Lines[start.Line].Length * _charWidth);
+                    string firstLineText = _document.Lines[start.Line].Text ?? string.Empty;
+                    double x1 = leftEdge + _glyphRenderer.ComputeVisualX(firstLineText, start.Column);
+                    double x2 = leftEdge + _glyphRenderer.ComputeVisualX(firstLineText, _document.Lines[start.Line].Length);
                     segments.Add(new RectangleGeometry(new Rect(x1, y, Math.Max(x2 - x1, _charWidth), _lineHeight + SelectionCornerRadius), SelectionCornerRadius, SelectionCornerRadius));
                 }
 
@@ -1824,7 +1858,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                             ? _virtualizationEngine.GetLineYPosition(line)
                             : (line - _firstVisibleLine) * _lineHeight);
                     double y = lineBaseY - SelectionCornerRadius;
-                    double width = _document.Lines[line].Length * _charWidth;
+                    string midLineText = _document.Lines[line].Text ?? string.Empty;
+                    double width = _glyphRenderer.ComputeVisualX(midLineText, _document.Lines[line].Length);
                     segments.Add(new RectangleGeometry(new Rect(leftEdge, y, Math.Max(width, _charWidth), _lineHeight + SelectionCornerRadius * 2), SelectionCornerRadius, SelectionCornerRadius));
                 }
 
@@ -1835,7 +1870,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         : TopMargin + (EnableVirtualScrolling && _virtualizationEngine != null
                             ? _virtualizationEngine.GetLineYPosition(end.Line)
                             : (end.Line - _firstVisibleLine) * _lineHeight)) - SelectionCornerRadius;
-                    double x2 = leftEdge + (end.Column * _charWidth);
+                    string lastLineText = _document.Lines[end.Line].Text ?? string.Empty;
+                    double x2 = leftEdge + _glyphRenderer.ComputeVisualX(lastLineText, end.Column);
                     segments.Add(new RectangleGeometry(new Rect(leftEdge, y, x2 - leftEdge, _lineHeight + SelectionCornerRadius), SelectionCornerRadius, SelectionCornerRadius));
                 }
 
@@ -1907,7 +1943,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double leftEdge = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
             double y = _lineYLookup.TryGetValue(drop.Line, out double ly) ? ly
                 : TopMargin + (drop.Line - _firstVisibleLine) * _lineHeight;
-            double x = leftEdge + drop.Column * _charWidth;
+            string dropLineText = _document!.Lines[drop.Line].Text ?? string.Empty;
+            double x = leftEdge + _glyphRenderer.ComputeVisualX(dropLineText, drop.Column);
 
             var caretBrush = TryFindResource("CE_DragCaret") as Brush ?? Brushes.Orange;
             dc.DrawRectangle(caretBrush, null, new Rect(x - 1, y, 2, _lineHeight));
@@ -2713,6 +2750,61 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
         }
 
+        // ── Whitespace markers ─────────────────────────────────────────────
+
+        private void EnsureWhitespaceRenderer()
+        {
+            if (_whitespaceRenderer != null) return;
+
+            var brush = TryFindResource("CE_WhitespaceMarker") as Brush
+                        ?? new SolidColorBrush(Color.FromArgb(0x50, 0x80, 0x80, 0x80));
+            if (brush.CanFreeze) brush.Freeze();
+
+            var typeface = new Typeface(EditorFontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+            _whitespaceRenderer = new WhitespaceRenderer(brush, typeface, EditorFontSize)
+            {
+                CharWidth  = _charWidth,
+                CharHeight = _lineHeight
+            };
+        }
+
+        private void RenderWhitespaceMarkers(DrawingContext dc)
+        {
+            if (_whitespaceMode == Options.WhitespaceDisplayMode.None) return;
+            if (_whitespaceMode == Options.WhitespaceDisplayMode.Selection && _selection.IsEmpty) return;
+
+            EnsureWhitespaceRenderer();
+            _whitespaceRenderer!.CharWidth  = _charWidth;
+            _whitespaceRenderer.CharHeight = _lineHeight;
+
+            double textX = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
+            var start = _selection.NormalizedStart;
+            var end   = _selection.NormalizedEnd;
+            bool selMode = _whitespaceMode == Options.WhitespaceDisplayMode.Selection;
+            int tabSize = IndentSize > 0 ? IndentSize : 4;
+
+            int visIdx = 0;
+            for (int i = _firstVisibleLine; i <= _lastVisibleLine && i < _document.Lines.Count; i++)
+            {
+                if (_foldingEngine != null && _foldingEngine.IsLineHidden(i)) continue;
+                double y = GetFoldAwareLineY(visIdx);
+                visIdx++;
+
+                var lineText = _document.Lines[i].Text;
+                if (string.IsNullOrEmpty(lineText)) continue;
+
+                int colStart = 0, colEnd = lineText.Length;
+                if (selMode)
+                {
+                    if (i < start.Line || i > end.Line) continue;
+                    colStart = (i == start.Line) ? start.Column : 0;
+                    colEnd   = (i == end.Line)   ? end.Column   : lineText.Length;
+                }
+
+                _whitespaceRenderer.RenderLine(dc, lineText, textX, y, tabSize, colStart, colEnd);
+            }
+        }
+
         /// <summary>
         /// Render bracket matching highlights (Phase 6)
         /// </summary>
@@ -2781,7 +2873,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 : (EnableVirtualScrolling && _virtualizationEngine != null
                     ? TopMargin + _virtualizationEngine.GetLineYPosition(line)
                     : TopMargin + (line - _firstVisibleLine) * _lineHeight);
-            double x = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + (column * _charWidth);
+            string lineText = _document!.Lines[line].Text ?? string.Empty;
+            double x = (ShowLineNumbers ? TextAreaLeftOffset : LeftMargin) + _glyphRenderer.ComputeVisualX(lineText, column);
 
             // Draw background highlight
             dc.DrawRectangle(background, null, new Rect(x, y, _charWidth, _lineHeight));

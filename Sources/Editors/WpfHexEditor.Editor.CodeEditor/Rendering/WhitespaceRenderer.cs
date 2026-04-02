@@ -69,7 +69,9 @@ public sealed class WhitespaceRenderer
         string         lineText,
         double         originX,
         double         originY,
-        int            tabSize = 4)
+        int            tabSize  = 4,
+        int            startCol = 0,
+        int            endCol   = int.MaxValue)
     {
         if (string.IsNullOrEmpty(lineText)) return;
 
@@ -77,26 +79,32 @@ public sealed class WhitespaceRenderer
 
         for (int i = 0; i < lineText.Length; i++)
         {
-            char c = lineText[i];
+            if (i >= endCol) break;
 
-            if (c == ' ')
-            {
-                DrawGlyph(dc, SpaceMarker, x, originY);
-                x += CharWidth;
-            }
-            else if (c == '\t')
-            {
-                DrawGlyph(dc, TabMarker, x, originY);
-                // Draw the horizontal rule up to the next tab stop.
-                double ruleEnd = x + CharWidth * tabSize;
-                double ruleY   = originY - CharHeight * 0.35; // mid-line
-                dc.DrawLine(new Pen(_markerBrush, 0.5), new Point(x + CharWidth, ruleY), new Point(ruleEnd, ruleY));
-                x = ruleEnd;
-            }
-            else
-            {
-                x += CharWidth;
-            }
+            char c = lineText[i];
+            double advance = c == '\t' ? CharWidth * tabSize : CharWidth;
+
+            if (i >= startCol)
+                DrawWhitespaceChar(dc, c, x, originY, advance, tabSize);
+
+            x += advance;
+        }
+    }
+
+    private void DrawWhitespaceChar(
+        DrawingContext dc, char c, double x, double y, double advance, int tabSize)
+    {
+        if (c == ' ')
+        {
+            DrawGlyph(dc, SpaceMarker, x, y);
+        }
+        else if (c == '\t')
+        {
+            DrawGlyph(dc, TabMarker, x, y);
+            double ruleY = y + CharHeight * 0.5;
+            dc.DrawLine(new Pen(_markerBrush, 0.5),
+                new Point(x + CharWidth, ruleY),
+                new Point(x + advance, ruleY));
         }
     }
 
@@ -115,6 +123,6 @@ public sealed class WhitespaceRenderer
             _markerBrush,
             pixelsPerDip: 1.0);
 
-        dc.DrawText(text, new Point(x, y - _emSize));
+        dc.DrawText(text, new Point(x, y + (CharHeight - text.Height) / 2));
     }
 }

@@ -529,6 +529,9 @@ public sealed class CodeEditorDefaultSettings
     /// <summary>Wrap long lines visually at the viewport edge (hides horizontal scrollbar).</summary>
     public bool WordWrap { get; set; } = false;
 
+    /// <summary>Show vertical column ruler guide lines defined by the active language's whfmt.</summary>
+    public bool ShowColumnRulers { get; set; } = true;
+
     // -- End-of-Block Hint ---------------------------------------------------
 
     /// <summary>
@@ -649,6 +652,9 @@ public sealed class CodeEditorDefaultSettings
 
     /// <summary>Color bracket pairs with CE_Bracket_1/2/3/4 based on nesting depth.</summary>
     public bool BracketPairColorization { get; set; } = true;
+
+    /// <summary>Color scope guide lines with CE_Bracket_1/2/3/4 matching bracket depth (requires BracketPairColorization).</summary>
+    public bool RainbowScopeGuides { get; set; } = true;
 
     /// <summary>Show a 12×12 color swatch next to color literals (e.g. #FF5733) in CSS/XAML/C# files.</summary>
     public bool ColorSwatchPreview { get; set; } = true;

@@ -45,6 +45,11 @@
                 </MenuItem.Icon>
             </MenuItem>
             <Separator/>
+            <MenuItem Header="Account &amp; Usage..." Click="OnAccountUsageClick">
+                <MenuItem.Icon>
+                    <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                </MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Manage Connections..." Click="OnManageConnectionsClick">
                 <MenuItem.Icon>
                     <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>

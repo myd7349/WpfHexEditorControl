@@ -34,6 +34,7 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
     private int     _tabSize             = 4;
     private bool    _convertTabsToSpaces = true;
     private bool    _showWhitespace      = false;
+    private WhitespaceDisplayMode _whitespaceMode = WhitespaceDisplayMode.Selection;
     private bool    _showLineNumbers     = true;
     private bool    _wordWrap            = false;
     private bool    _enableFolding            = true;
@@ -75,8 +76,18 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
 
     public bool ShowWhitespace
     {
-        get => _showWhitespace;
-        set { _showWhitespace = value; Notify(); }
+        get => _whitespaceMode != WhitespaceDisplayMode.None;
+        set { WhitespaceMode = value ? WhitespaceDisplayMode.Always : WhitespaceDisplayMode.None; }
+    }
+
+    /// <summary>
+    /// Controls when whitespace markers (dots/arrows) are rendered:
+    /// None = never, Selection = only in selected text, Always = everywhere.
+    /// </summary>
+    public WhitespaceDisplayMode WhitespaceMode
+    {
+        get => _whitespaceMode;
+        set { _whitespaceMode = value; Notify(); Notify(nameof(ShowWhitespace)); }
     }
 
     public bool ShowLineNumbers
@@ -253,6 +264,18 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
     {
         get => _bracketPairColorization;
         set { _bracketPairColorization = value; Notify(); }
+    }
+
+    private bool _rainbowScopeGuides = true;
+
+    /// <summary>
+    /// When true and bracket pair colorization is enabled, scope guide lines
+    /// are colored with CE_Bracket_1/2/3/4 based on nesting depth.
+    /// </summary>
+    public bool RainbowScopeGuides
+    {
+        get => _rainbowScopeGuides;
+        set { _rainbowScopeGuides = value; Notify(); }
     }
 
     // -- Color Swatch Preview (#168) ------------------------------------------

@@ -31,10 +31,62 @@ public sealed partial class ClaudeAssistantPanelViewModel : ObservableObject
     public ObservableCollection<ConversationTabViewModel> Tabs { get; } = [];
     [ObservableProperty] private ConversationTabViewModel? _activeTab;
 
-    partial void OnActiveTabChanged(ConversationTabViewModel? value)
+    partial void OnActiveTabChanged(ConversationTabViewModel? oldValue, ConversationTabViewModel? newValue)
     {
         foreach (var tab in Tabs)
-            tab.IsActive = ReferenceEquals(tab, value);
+            tab.IsActive = ReferenceEquals(tab, newValue);
+
+        // Unsubscribe from old tab
+        if (oldValue is not null)
+            oldValue.PropertyChanged -= OnActiveTabPropertyChanged;
+
+        // Subscribe to new tab for provider/model changes
+        if (newValue is not null)
+            newValue.PropertyChanged += OnActiveTabPropertyChanged;
+
+        OnPropertyChanged(nameof(ActiveProviderDisplayName));
+    }
+
+    private void OnActiveTabPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(ConversationTabViewModel.SelectedProviderId)
+            or nameof(ConversationTabViewModel.SelectedModelId))
+        {
+            OnPropertyChanged(nameof(ActiveProviderDisplayName));
+        }
+    }
+
+    public string ActiveProviderDisplayName
+    {
+        get
+        {
+            var tab = ActiveTab;
+            if (tab is null) return "No provider";
+
+            var provider = _registry.Providers.FirstOrDefault(p => p.ProviderId == tab.SelectedProviderId);
+            var providerName = provider?.DisplayName ?? tab.SelectedProviderId;
+
+            // Shorten model ID for display (e.g. "claude-sonnet-4-6" → "Sonnet 4.6")
+            var modelId = tab.SelectedModelId;
+            var shortModel = FormatModelName(modelId);
+
+            return $"{providerName} — {shortModel}";
+        }
+    }
+
+    private static string FormatModelName(string modelId)
+    {
+        // Common patterns: claude-sonnet-4-6, gpt-4o, gemini-2.5-pro, sonnet, opus, haiku
+        if (modelId.Contains("sonnet")) return "Sonnet";
+        if (modelId.Contains("opus")) return "Opus";
+        if (modelId.Contains("haiku")) return "Haiku";
+        if (modelId.Contains("gpt-4o-mini")) return "GPT-4o Mini";
+        if (modelId.Contains("gpt-4o")) return "GPT-4o";
+        if (modelId.Contains("o3")) return "o3";
+        if (modelId.Contains("o4-mini")) return "o4-mini";
+        if (modelId.Contains("gemini-2.5-pro")) return "Gemini 2.5 Pro";
+        if (modelId.Contains("gemini-2.0-flash")) return "Gemini 2.0 Flash";
+        return modelId;
     }
     [ObservableProperty] private string _statusText = "Ready";
     [ObservableProperty] private bool _isHistoryVisible;

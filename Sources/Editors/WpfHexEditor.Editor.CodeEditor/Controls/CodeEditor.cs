@@ -519,6 +519,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // Color swatch preview (#168) — renders + tracks hit areas.
         private readonly Services.ColorSwatchRenderer _colorSwatchRenderer = new();
 
+        // Whitespace markers — rendered as pale dots/arrows in selection or always.
+        private Rendering.WhitespaceRenderer? _whitespaceRenderer;
+        private Options.WhitespaceDisplayMode _whitespaceMode = Options.WhitespaceDisplayMode.Selection;
+
         // 500ms folding debounce timer (P1-CE-01) — prevents O(n) scan on every keystroke
         private System.Windows.Threading.DispatcherTimer? _foldingDebounceTimer;
 
@@ -1579,6 +1583,51 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             set => SetValue(BracketPairColorizationEnabledProperty, value);
         }
 
+        // -- Rainbow Scope Guides -------------------------------------------------
+
+        public static readonly DependencyProperty RainbowScopeGuidesEnabledProperty =
+            DependencyProperty.Register(nameof(RainbowScopeGuidesEnabled), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        /// <summary>
+        /// When true and bracket pair colorization is enabled, scope guide lines
+        /// are colored with CE_Bracket_1/2/3/4 based on nesting depth.
+        /// </summary>
+        [Category("Behavior.Advanced")]
+        [DisplayName("Rainbow Scope Guides")]
+        [Description("Color scope guide lines by bracket depth using CE_Bracket_1/2/3/4.")]
+        public bool RainbowScopeGuidesEnabled
+        {
+            get => (bool)GetValue(RainbowScopeGuidesEnabledProperty);
+            set => SetValue(RainbowScopeGuidesEnabledProperty, value);
+        }
+
+        // Rainbow scope guide pen cache — instance fields because they depend on theme resources.
+        private Pen[]? _rainbowGuidePens;
+        private Pen[]? _rainbowGuideActivePens;
+
+        /// <summary>
+        /// Lazily creates 4 inactive + 4 active frozen pens from the CE_Bracket_1..4 theme resources.
+        /// </summary>
+        private void EnsureRainbowGuidePens()
+        {
+            if (_rainbowGuidePens != null) return;
+
+            _rainbowGuidePens = new Pen[4];
+            _rainbowGuideActivePens = new Pen[4];
+
+            for (int i = 0; i < 4; i++)
+            {
+                var res = TryFindResource($"CE_Bracket_{i + 1}");
+                Color color = res is SolidColorBrush scb ? scb.Color
+                            : res is Color c             ? c
+                            : Colors.Gray;
+
+                _rainbowGuidePens[i] = MakeFrozenPen(Color.FromArgb(120, color.R, color.G, color.B), 1.0);
+                _rainbowGuideActivePens[i] = MakeFrozenPen(Color.FromArgb(220, color.R, color.G, color.B), 1.5);
+            }
+        }
+
         // -- Color Swatch Preview (#168) -----------------------------------------
 
         public static readonly DependencyProperty ColorSwatchPreviewEnabledProperty =
@@ -2415,6 +2464,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             SetResourceReference(SyntaxNullColorProperty,             "CE_Keyword");
             SetResourceReference(SyntaxDeprecatedColorProperty,       "CE_Operator");
             SetResourceReference(SyntaxErrorColorProperty,            "CE_Error");
+
+            // Invalidate rainbow scope guide pen cache so it picks up new theme colors.
+            _rainbowGuidePens = null;
+            _rainbowGuideActivePens = null;
         }
 
         /// <summary>
@@ -2455,11 +2508,17 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Bracket pair depth colorization (#162)
             BracketPairColorizationEnabled = options.BracketPairColorization;
 
+            // Rainbow scope guides (bracket-colored folding lines)
+            RainbowScopeGuidesEnabled = options.RainbowScopeGuides;
+
             // Color swatch preview (#168)
             ColorSwatchPreviewEnabled = options.ColorSwatchPreview;
 
             // Code formatting (#159)
             _formatOnSave = options.FormatOnSave;
+
+            // Whitespace markers
+            _whitespaceMode = options.WhitespaceMode;
 
             // Sticky scroll (#160)
             _stickyScrollEnabled         = options.StickyScrollEnabled;
@@ -3148,6 +3207,28 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             miColumnRulers.SetBinding(MenuItem.IsCheckedProperty,
                 new System.Windows.Data.Binding(nameof(ShowColumnRulers)) { Source = this, Mode = System.Windows.Data.BindingMode.TwoWay });
             contextMenu.Items.Add(miColumnRulers);
+
+            // Show Whitespace submenu (radio-style: None / Selection / Always)
+            var wsMenu = new MenuItem { Header = "Show _Whitespace", Icon = MakeMenuIcon("\uE7C5") };
+            var wsNone = new MenuItem { Header = "None",           IsCheckable = true };
+            var wsSel  = new MenuItem { Header = "Selection Only", IsCheckable = true };
+            var wsAll  = new MenuItem { Header = "Always",         IsCheckable = true };
+
+            wsNone.Click += (_, _) => { _whitespaceMode = Options.WhitespaceDisplayMode.None;      InvalidateVisual(); };
+            wsSel.Click  += (_, _) => { _whitespaceMode = Options.WhitespaceDisplayMode.Selection;  InvalidateVisual(); };
+            wsAll.Click  += (_, _) => { _whitespaceMode = Options.WhitespaceDisplayMode.Always;     InvalidateVisual(); };
+
+            wsMenu.Items.Add(wsNone);
+            wsMenu.Items.Add(wsSel);
+            wsMenu.Items.Add(wsAll);
+
+            contextMenu.Opened += (_, _) =>
+            {
+                wsNone.IsChecked = _whitespaceMode == Options.WhitespaceDisplayMode.None;
+                wsSel.IsChecked  = _whitespaceMode == Options.WhitespaceDisplayMode.Selection;
+                wsAll.IsChecked  = _whitespaceMode == Options.WhitespaceDisplayMode.Always;
+            };
+            contextMenu.Items.Add(wsMenu);
 
             // Set context menu
             ContextMenu = contextMenu;

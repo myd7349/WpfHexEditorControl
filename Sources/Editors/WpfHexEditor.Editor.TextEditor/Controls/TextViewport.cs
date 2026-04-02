@@ -89,6 +89,10 @@ internal sealed class TextViewport : FrameworkElement
     // OnVmPropertyChanged does not queue a redundant background render.
     private bool _suppressVmNotify;
 
+    // Whitespace markers — pale dots/arrows, configurable mode
+    internal enum WhitespaceMode { None, Selection, Always }
+    internal WhitespaceMode WhitespaceDisplayMode { get; set; } = WhitespaceMode.Selection;
+
     // Feature A — Rectangular (block/column) selection (Alt+LeftClick+drag)
     private readonly RectangularSelection _rectSelection = new();
     private bool _isRectSelecting;
@@ -123,7 +127,8 @@ internal sealed class TextViewport : FrameworkElement
     private readonly DrawingVisual _backgroundVisual  = new(); // layer 0
     private readonly DrawingVisual _textContentVisual = new(); // layer 1
     private readonly DrawingVisual _cursorOverlay     = new(); // layer 2
-    private readonly DrawingVisual _panOverlay        = new(); // layer 3 — pan mode indicator (topmost)
+    private readonly DrawingVisual _whitespaceVisual  = new(); // layer 3 — whitespace markers
+    private readonly DrawingVisual _panOverlay        = new(); // layer 4 — pan mode indicator (topmost)
 
     private readonly VisualCollection _visuals;
 
@@ -156,7 +161,8 @@ internal sealed class TextViewport : FrameworkElement
         _visuals.Add(_backgroundVisual);   // z = 0 (bottom — below text)
         _visuals.Add(_textContentVisual);  // z = 1
         _visuals.Add(_cursorOverlay);      // z = 2
-        _visuals.Add(_panOverlay);         // z = 3 (topmost — pan mode indicator)
+        _visuals.Add(_whitespaceVisual);   // z = 3 (whitespace markers)
+        _visuals.Add(_panOverlay);         // z = 4 (topmost — pan mode indicator)
 
         _panMode = new PanModeController(this, (_, dy) =>
         {
@@ -442,6 +448,7 @@ internal sealed class TextViewport : FrameworkElement
 
         UpdateBackground();
         UpdateTextContent();
+        DrawWhitespaceMarkers();
         DrawCursor();
         DrawPanOverlay();
 
@@ -780,6 +787,85 @@ internal sealed class TextViewport : FrameworkElement
                     RenderPlainLineCached(dc, li, line, codeX, y);
             }
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Whitespace markers (dots for spaces, arrows for tabs)
+    // -----------------------------------------------------------------------
+
+    private static readonly char WsSpaceChar = '\u00B7'; // middle dot ·
+    private static readonly char WsTabChar   = '\u2192'; // right arrow →
+
+    private void DrawWhitespaceMarkers()
+    {
+        using var dc = _whitespaceVisual.RenderOpen();
+
+        if (WhitespaceDisplayMode == WhitespaceMode.None) return;
+        if (_vm is null || _lineHeight <= 0) return;
+
+        bool selOnly = WhitespaceDisplayMode == WhitespaceMode.Selection;
+        if (selOnly && !_vm.HasSelection) return;
+
+        var markerBrush = GetBrush("CE_WhitespaceMarker")
+                          ?? new SolidColorBrush(Color.FromArgb(0x50, 0x80, 0x80, 0x80));
+
+        int firstLine = Math.Max(0, _firstVisibleLine);
+        int lastLine  = Math.Min(_vm.Lines.Count - 1, firstLine + _visibleLineCount);
+        double codeX  = LineNumberColumnWidth + LeftMargin - _horizontalOffset;
+
+        // Selection range
+        int selStartLine = 0, selStartCol = 0, selEndLine = 0, selEndCol = 0;
+        if (selOnly)
+            GetNormalizedSelection(out selStartLine, out selStartCol, out selEndLine, out selEndCol);
+
+        for (int li = firstLine; li <= lastLine; li++)
+        {
+            var line = _vm.Lines[li];
+            if (string.IsNullOrEmpty(line)) continue;
+
+            int colStart = 0, colEnd = line.Length;
+            if (selOnly)
+            {
+                if (li < selStartLine || li > selEndLine) continue;
+                colStart = (li == selStartLine) ? selStartCol : 0;
+                colEnd   = (li == selEndLine)   ? selEndCol   : line.Length;
+            }
+
+            double y = (li - firstLine) * _lineHeight;
+            DrawWhitespaceForLine(dc, line, codeX, y, colStart, colEnd, markerBrush);
+        }
+    }
+
+    private void DrawWhitespaceForLine(
+        DrawingContext dc, string line, double codeX, double y,
+        int colStart, int colEnd, Brush brush)
+    {
+        double x = codeX;
+        for (int i = 0; i < line.Length && i < colEnd; i++)
+        {
+            char c = line[i];
+            double advance = c == '\t' ? _charWidth * 4 : _charWidth;
+
+            if (i >= colStart && (c == ' ' || c == '\t'))
+            {
+                char marker = c == ' ' ? WsSpaceChar : WsTabChar;
+                var ft = BuildFormattedText(marker.ToString(), brush);
+                dc.DrawText(ft, new Point(x, y + (_lineHeight - ft.Height) / 2));
+            }
+            x += advance;
+        }
+    }
+
+    private void GetNormalizedSelection(
+        out int startLine, out int startCol, out int endLine, out int endCol)
+    {
+        int aL = _vm!.SelectionAnchorLine, aC = _vm.SelectionAnchorColumn;
+        int cL = _vm.CaretLine,            cC = _vm.CaretColumn;
+        bool anchorFirst = aL < cL || (aL == cL && aC <= cC);
+        startLine = anchorFirst ? aL : cL;
+        startCol  = anchorFirst ? aC : cC;
+        endLine   = anchorFirst ? cL : aL;
+        endCol    = anchorFirst ? cC : aC;
     }
 
     /// <summary>

@@ -22,6 +22,7 @@ using WpfHexEditor.Plugins.ClaudeAssistant.Panel.ModelSwitcher;
 using WpfHexEditor.Plugins.ClaudeAssistant.Presets;
 using WpfHexEditor.Plugins.ClaudeAssistant.TitleBar;
 using WpfHexEditor.SDK.Contracts;
+using WpfHexEditor.Plugins.ClaudeAssistant.Panel.AccountUsage;
 using WpfHexEditor.Plugins.ClaudeAssistant.Panel.ConnectionManager;
 using WpfHexEditor.Plugins.ClaudeAssistant.Providers.ClaudeCode;
 using WpfHexEditor.SDK.Descriptors;
@@ -107,7 +108,8 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             newTab: () => _vm?.CreateNewTabCommand.Execute(null),
             fixErrors: () => SendQuickAction("@selection @errors Fix the errors in this code."),
             openOptions: () => context.CommandRegistry?.Find("View.Options")?.Command.Execute(null),
-            manageConnections: () => ShowConnectionManager());
+            manageConnections: () => ShowConnectionManager(),
+            accountUsage: () => ShowAccountUsage());
         var titleBarUiId = context.UIRegistry.GenerateUIId(Id, "TitleBar", "Button");
         context.UIRegistry.RegisterTitleBarItem(titleBarUiId, Id, titleBarContributor);
 
@@ -162,6 +164,14 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             Command: new RelayCommand(() => SafeGuard.Run(() => ShowConnectionManager()))));
 
         context.CommandRegistry?.Register(new SDK.Commands.SdkCommandDefinition(
+            Id: "ClaudeAssistant.AccountUsage",
+            Name: "Claude AI: Account & Usage",
+            Category: "AI & Assistants",
+            DefaultGesture: null,
+            IconGlyph: "\uE77B",
+            Command: new RelayCommand(() => SafeGuard.Run(() => ShowAccountUsage()))));
+
+        context.CommandRegistry?.Register(new SDK.Commands.SdkCommandDefinition(
             Id: "ClaudeAssistant.NewTab",
             Name: "Claude AI: New Conversation",
             Category: "AI & Assistants",
@@ -169,8 +179,14 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             IconGlyph: "\uE710",
             Command: new RelayCommand(() => SafeGuard.Run(() => _vm?.CreateNewTabCommand.Execute(null)))));
 
+        // ── Wire panel toolbar events ───────────────────────────────────────
+        _panel.ShowModelSwitcherRequested += anchor => SafeGuard.Run(() => ShowModelSwitcher(anchor));
+        _panel.ManageConnectionsRequested += () => SafeGuard.Run(ShowConnectionManager);
+        _panel.OpenOptionsRequested += () => SafeGuard.Run(
+            () => context.CommandRegistry?.Find("View.Options")?.Command.Execute(null));
+
         // ── Done (lightweight init) ─────────────────────────────────────────
-        context.Output?.Info($"[ClaudeAssistant] Plugin initialized (v{Version}) — 4 providers");
+        context.Output?.Info($"[ClaudeAssistant] Plugin initialized (v{Version}) — 5 providers");
 
         // ── Deferred heavy work (runs AFTER init measurement completes) ─────
         _ = _panel.Dispatcher.InvokeAsync(async () =>
@@ -260,7 +276,17 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
         popup.Show();
     }
 
-    private void ShowModelSwitcher()
+    private void ShowAccountUsage()
+    {
+        var providerId = _vm?.ActiveTab?.SelectedProviderId ?? "anthropic";
+        var owner = (_panel != null ? Window.GetWindow(_panel) : null)
+                 ?? Application.Current.MainWindow;
+        var anchor = _context?.UIRegistry.GetCommandPaletteAnchor();
+        var popup = new AccountUsagePopup(providerId, owner, anchor);
+        popup.Show();
+    }
+
+    private void ShowModelSwitcher(UIElement? anchor = null)
     {
         if (_vm?.ActiveTab is not { } tab) return;
 
@@ -270,8 +296,10 @@ public sealed class ClaudeAssistantPlugin : IWpfHexEditorPlugin, IPluginWithOpti
             tab.SelectedModelId,
             tab.ThinkingEnabled)
         {
-            PlacementTarget = _panel,
-            Placement = System.Windows.Controls.Primitives.PlacementMode.Center
+            PlacementTarget = anchor ?? _panel,
+            Placement = anchor is not null
+                ? System.Windows.Controls.Primitives.PlacementMode.Bottom
+                : System.Windows.Controls.Primitives.PlacementMode.Center
         };
 
         popup.SelectionCommitted += (_, _) => SafeGuard.Run(() =>

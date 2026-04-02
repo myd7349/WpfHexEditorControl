@@ -79,6 +79,7 @@ public sealed class EditorSettingsService
         ce.ZoomLevel                = d.DefaultZoom;
         ce.FoldToggleOnDoubleClick  = d.FoldToggleOnDoubleClick;
         ce.IsWordWrapEnabled        = d.WordWrap;
+        ce.ShowColumnRulers         = d.ShowColumnRulers;
         ce.ShowInlineHints          = d.ShowInlineHints;
         ce.InlineHintsVisibleKinds  = d.InlineHintsVisibleKinds == 0
             ? WpfHexEditor.Editor.Core.InlineHintsSymbolKinds.All
@@ -90,6 +91,7 @@ public sealed class EditorSettingsService
         ce.SkipOverClosingChar       = d.SkipOverClosingChar;
         ce.WrapSelectionInPairs          = d.WrapSelectionInPairs;
         ce.BracketPairColorizationEnabled = d.BracketPairColorization;
+        ce.RainbowScopeGuidesEnabled      = d.RainbowScopeGuides;
         ce.ColorSwatchPreviewEnabled      = d.ColorSwatchPreview;
         ce.FormatOnSave                   = d.FormatOnSave;
 

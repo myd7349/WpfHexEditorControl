@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:WpfHexEditor.Editor.CodeEditor.Options"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="500"
              Background="{DynamicResource DockMenuBackgroundBrush}"
@@ -94,10 +95,26 @@
                       Margin="0,2,0,2"
                       Foreground="{DynamicResource DockMenuForegroundBrush}" />
 
-            <CheckBox Content="Show whitespace characters"
-                      IsChecked="{Binding ShowWhitespace}"
-                      Margin="0,2,0,2"
-                      Foreground="{DynamicResource DockMenuForegroundBrush}" />
+            <Grid Margin="0,2,0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="Show whitespace:"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource DockMenuForegroundBrush}" />
+                <ComboBox  Grid.Column="2"
+                           SelectedItem="{Binding WhitespaceMode}"
+                           Background="{DynamicResource DockMenuBackgroundBrush}"
+                           Foreground="{DynamicResource DockMenuForegroundBrush}"
+                           BorderBrush="{DynamicResource DockBorderBrush}"
+                           MinWidth="120">
+                    <local:WhitespaceDisplayMode>None</local:WhitespaceDisplayMode>
+                    <local:WhitespaceDisplayMode>Selection</local:WhitespaceDisplayMode>
+                    <local:WhitespaceDisplayMode>Always</local:WhitespaceDisplayMode>
+                </ComboBox>
+            </Grid>
 
             <CheckBox Content="Enable code folding"
                       IsChecked="{Binding EnableFolding}"

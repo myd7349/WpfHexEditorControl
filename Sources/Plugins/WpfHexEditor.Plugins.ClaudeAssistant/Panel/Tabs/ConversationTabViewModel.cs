@@ -126,14 +126,28 @@ public sealed partial class ConversationTabViewModel : ObservableObject
             }
             else if (att.FilePath is not null)
             {
-                // Read file content and append as text
-                try
+                var ext = System.IO.Path.GetExtension(att.FilePath).ToLowerInvariant();
+                var isTextFile = ext is ".txt" or ".cs" or ".xml" or ".json" or ".md" or ".yaml" or ".yml"
+                    or ".html" or ".css" or ".js" or ".ts" or ".py" or ".cpp" or ".h" or ".c"
+                    or ".java" or ".rb" or ".go" or ".rs" or ".toml" or ".ini" or ".cfg"
+                    or ".log" or ".csv" or ".sql" or ".sh" or ".bat" or ".ps1" or ".xaml";
+
+                if (isTextFile)
                 {
-                    var fileText = System.IO.File.ReadAllText(att.FilePath);
-                    content.Add(new TextBlock($"\n--- {att.DisplayName} ---\n{fileText}\n---"));
+                    try
+                    {
+                        var fileText = System.IO.File.ReadAllText(att.FilePath);
+                        content.Add(new TextBlock($"\n--- {att.DisplayName} ---\n{fileText}\n---"));
+                        displayText += $"\n[Attached: {att.DisplayName}]";
+                    }
+                    catch { displayText += $"\n[Failed to read: {att.DisplayName}]"; }
+                }
+                else
+                {
+                    // Binary file — just mention the path so CLI can access it
+                    content.Add(new TextBlock($"\n[File attached: {att.FilePath}]"));
                     displayText += $"\n[Attached: {att.DisplayName}]";
                 }
-                catch { displayText += $"\n[Failed to read: {att.DisplayName}]"; }
             }
         }
         Attachments.Clear();

@@ -15,6 +15,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using WpfHexEditor.Plugins.ClaudeAssistant.Api;
+using WpfHexEditor.Plugins.ClaudeAssistant.Connection;
 using WpfHexEditor.Plugins.ClaudeAssistant.Options;
 
 namespace WpfHexEditor.Plugins.ClaudeAssistant.Providers.OpenAI;
@@ -72,6 +73,7 @@ public sealed class OpenAIModelProvider : IModelProvider
         };
 
         using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+        UsageTracker.Instance.RecordRateLimitHeaders("openai", resp.Headers);
 
         if (!resp.IsSuccessStatusCode)
         {

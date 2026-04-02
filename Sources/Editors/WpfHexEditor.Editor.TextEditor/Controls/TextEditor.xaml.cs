@@ -134,6 +134,21 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IBufferAw
         miWordWrap.Click += (_, _) => IsWordWrapEnabled = !IsWordWrapEnabled;
         cm.Items.Add(miWordWrap);
 
+        // Show Whitespace submenu (radio-style: None / Selection / Always)
+        var wsMenu = new MenuItem { Header = "Show _Whitespace", Icon = MakeMenuIcon("\uE7C5") };
+        var wsNone = new MenuItem { Header = "None",           IsCheckable = true };
+        var wsSel  = new MenuItem { Header = "Selection Only", IsCheckable = true };
+        var wsAll  = new MenuItem { Header = "Always",         IsCheckable = true };
+
+        wsNone.Click += (_, _) => { Viewport.WhitespaceDisplayMode = TextViewport.WhitespaceMode.None;      Viewport.InvalidateVisual(); };
+        wsSel.Click  += (_, _) => { Viewport.WhitespaceDisplayMode = TextViewport.WhitespaceMode.Selection;  Viewport.InvalidateVisual(); };
+        wsAll.Click  += (_, _) => { Viewport.WhitespaceDisplayMode = TextViewport.WhitespaceMode.Always;     Viewport.InvalidateVisual(); };
+
+        wsMenu.Items.Add(wsNone);
+        wsMenu.Items.Add(wsSel);
+        wsMenu.Items.Add(wsAll);
+        cm.Items.Add(wsMenu);
+
         // Update undo/redo headers and word wrap checkmark dynamically when menu opens.
         cm.Opened += (_, _) =>
         {
@@ -142,6 +157,9 @@ public sealed partial class TextEditor : UserControl, IDocumentEditor, IBufferAw
             _undoMenuItem.Header      = undoCount > 0 ? $"_Undo ({undoCount})" : "_Undo";
             _redoMenuItem.Header      = redoCount > 0 ? $"_Redo ({redoCount})" : "_Redo";
             miWordWrap.IsChecked      = IsWordWrapEnabled;
+            wsNone.IsChecked = Viewport.WhitespaceDisplayMode == TextViewport.WhitespaceMode.None;
+            wsSel.IsChecked  = Viewport.WhitespaceDisplayMode == TextViewport.WhitespaceMode.Selection;
+            wsAll.IsChecked  = Viewport.WhitespaceDisplayMode == TextViewport.WhitespaceMode.Always;
         };
 
         Viewport.ContextMenu = cm;

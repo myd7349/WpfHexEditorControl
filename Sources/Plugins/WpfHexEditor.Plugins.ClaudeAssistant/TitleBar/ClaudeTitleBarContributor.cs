@@ -23,6 +23,7 @@ public sealed class ClaudeTitleBarContributor : ITitleBarContributor
     private readonly Action _fixErrors;
     private readonly Action _openOptions;
     private readonly Action _manageConnections;
+    private readonly Action _accountUsage;
     private ClaudeTitleBarButton? _button;
 
     public string ContributorId => "ClaudeAssistant.TitleBar";
@@ -34,7 +35,8 @@ public sealed class ClaudeTitleBarContributor : ITitleBarContributor
         Action newTab,
         Action fixErrors,
         Action openOptions,
-        Action manageConnections)
+        Action manageConnections,
+        Action accountUsage)
     {
         _connectionService = connectionService;
         _showCommandPalette = showCommandPalette;
@@ -42,6 +44,7 @@ public sealed class ClaudeTitleBarContributor : ITitleBarContributor
         _fixErrors = fixErrors;
         _openOptions = openOptions;
         _manageConnections = manageConnections;
+        _accountUsage = accountUsage;
         _connectionService.StatusChanged += OnStatusChanged;
     }
 
@@ -54,6 +57,7 @@ public sealed class ClaudeTitleBarContributor : ITitleBarContributor
         _button.FixErrorsRequested += () => SafeGuard.Run(_fixErrors);
         _button.OpenOptionsRequested += () => SafeGuard.Run(_openOptions);
         _button.ManageConnectionsRequested += () => SafeGuard.Run(_manageConnections);
+        _button.AccountUsageRequested += () => SafeGuard.Run(_accountUsage);
         _button.UpdateStatus(_connectionService.Status);
         return _button;
     }

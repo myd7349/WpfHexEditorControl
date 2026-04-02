@@ -298,7 +298,8 @@
     <SolidColorBrush x:Key="CE_Keyword"       Color="#FFFF00"/>
     <SolidColorBrush x:Key="CE_ControlFlow"   Color="#FFFF00"/>
     <SolidColorBrush x:Key="CE_Comment"       Color="#3FF23F"/>
-    <SolidColorBrush x:Key="CE_String"        Color="#1AEBFF"/>
+        <SolidColorBrush x:Key="CE_WhitespaceMarker" Color="#50606060"/>
+<SolidColorBrush x:Key="CE_String"        Color="#1AEBFF"/>
     <SolidColorBrush x:Key="CE_Number"        Color="#1AEBFF"/>
     <SolidColorBrush x:Key="CE_Type"          Color="#1AEBFF"/>
     <SolidColorBrush x:Key="CE_Identifier"    Color="#FFFFFF"/>
@@ -318,7 +319,7 @@
     <SolidColorBrush x:Key="CE_LineNumFg"     Color="#FFFFFF"/>
     <SolidColorBrush x:Key="CE_CurrentLine"   Color="#1A1A1A"/>
     <SolidColorBrush x:Key="CE_Selection"         Color="#1A1A1A"/>
-    <SolidColorBrush x:Key="CE_SelectionInactive" Color="#111111"/>
+    <SolidColorBrush x:Key="CE_SelectionInactive" Color="#333333"/>
     <SolidColorBrush x:Key="CE_GutterError"       Color="#FF0000"/>
     <SolidColorBrush x:Key="CE_GutterWarning"     Color="#FFFF00"/>
     <SolidColorBrush x:Key="CE_RulerBrush"    Color="#80808080"/>

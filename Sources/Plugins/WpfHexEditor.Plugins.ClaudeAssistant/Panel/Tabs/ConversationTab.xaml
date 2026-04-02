@@ -433,34 +433,6 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- Model pill -->
-                <Border Margin="0,4,0,0" Padding="6,2" CornerRadius="10"
-                        HorizontalAlignment="Left" Cursor="Hand"
-                        PreviewMouseLeftButtonDown="OnModelPillClick">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="{DynamicResource CA_ToolCallBackgroundBrush}"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource Panel_ToolbarButtonHoverBrush}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <StackPanel Orientation="Horizontal">
-                        <Ellipse Width="6" Height="6" Margin="0,0,4,0"
-                                 Fill="{DynamicResource CA_AccentBrandingBrush}"/>
-                        <TextBlock FontSize="10" Opacity="0.7"
-                                   Foreground="{DynamicResource CA_InputForegroundBrush}">
-                            <Run Text="{Binding SelectedProviderId, Mode=OneWay}"/>
-                            <Run Text=" / "/>
-                            <Run Text="{Binding SelectedModelId, Mode=OneWay}"/>
-                        </TextBlock>
-                        <TextBlock Text=" &#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="8"
-                                   VerticalAlignment="Center" Opacity="0.5"
-                                   Foreground="{DynamicResource CA_InputForegroundBrush}"/>
-                    </StackPanel>
-                </Border>
             </StackPanel>
         </Border>
     </Grid>
