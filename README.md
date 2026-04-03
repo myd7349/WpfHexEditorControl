@@ -6,7 +6,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
-  [![IDE Version](https://img.shields.io/badge/IDE-v0.6.4.1-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
+  [![IDE Version](https://img.shields.io/badge/IDE-v0.6.4.3-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![Status](https://img.shields.io/badge/Status-Active%20Development-orange)](https://github.com/abbaye/WpfHexEditorIDE/commits/master)
   [![Roadmap](https://img.shields.io/badge/Roadmap-ROADMAP.md-brightgreen)](docs/ROADMAP.md)
@@ -44,7 +44,8 @@
 | **🪟 Docking** *(100% in-house)* | Float · dock · auto-hide · colored tabs · **19 built-in themes** (Dark, Light, VS2022Dark, DarkGlass, Dracula, Nord, Tokyo Night, Catppuccin Mocha/Latte, Gruvbox Dark, Forest, Matrix, Synthwave 84, Cyberpunk, High Contrast…) · tab placement L/R/Bottom |
 | **📋 IDE Infrastructure** | `IDocumentEditor` plugin contract · shared `UndoEngine` (coalescence 500 ms, transactions, HexEditor block-undo, VS-style history dropdown) · `Ctrl+Z/Y` across all editors · rect selection (Alt+Click) · VS2022 status bar · Options (9 pages) · Workspace system `.whidews` · Dynamic View Menu (Flat/Categorized/ByDockSide) · Middle-click pan mode · NuGet Solution Manager · DI via `Microsoft.Extensions.DependencyInjection` |
 | **⌨️ Command & Terminal** | Command Palette (`Ctrl+Shift+P`, 9 modes) · `CommandRegistry` (~50 commands) · `KeyBindingService` · Integrated Terminal (`Ctrl+\``, 35+ commands incl. `plugin-reload`) · `ITerminalService` plugin API |
-| **🔌 Plugin System** | SDK 2.0.0 (frozen) · `.whxplugin` packages · Plugin Manager · EventBus (39+ events) · Capability Registry · Extension Points · Dependency Graph · plugin signing · out-of-process sandbox |
+| **🤖 AI Assistant** | Multi-provider AI chat (Anthropic, OpenAI, Gemini, Ollama, Claude Code CLI) · MCP integration (24 IDE tools) · streaming chat · inline apply · command palette (`Ctrl+Shift+A`) · @mentions (`@file`/`@selection`/`@errors`) · terminal commands (`/ai-ask`, `/ai-explain`, `/ai-fix`) · conversation history · prompt presets |
+| **🔌 Plugin System** | SDK 2.0.0 (frozen) · `.whxplugin` packages · Plugin Manager · EventBus (39+ events) · Capability Registry · Extension Points · Dependency Graph · plugin signing · out-of-process sandbox · **27 built-in plugins** |
 | **🔍 Binary Intelligence** | 400+ format detection · `.whfmt` v2.0 (`repeating`/`union`/`versionedBlocks`/`pointer`/`checksums`/`assertions`/`forensic`/`aiHints`) · 20 critical formats upgraded (PE/ELF/ZIP/PNG/MP4/SQLITE/PDF/JPEG/WASM…) · Parsed Fields (reactive, forensic alerts, FormatNavigator) · Format Field Overlay · Data Inspector (40+ types) · Assembly Explorer (.NET PE + ILSpy decompilation) |
 
 ---
@@ -119,6 +120,7 @@ All controls are **independently reusable** — no IDE required.
 
 | Panel | Progress | Description |
 |-------|----------|-------------|
+| **[AI Assistant](Sources/Plugins/WpfHexEditor.Plugins.AIAssistant/README.md)** | ~80% | Multi-provider AI chat — Anthropic/OpenAI/Gemini/Ollama/Claude Code CLI, 24 MCP tools, streaming, inline apply, @mentions |
 | **[Solution Explorer](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~75% | Project tree — virtual/physical folders, D&D, lazy source outline (types/members navigation) |
 | **[Parsed Fields](Sources/Plugins/WpfHexEditor.Plugins.ParsedFields/README.md)** | ~65% | 400+ format detection — reactive, expandable groups, FormatNavigator, forensic alerts |
 | **[Data Inspector](Sources/Plugins/WpfHexEditor.Plugins.DataInspector/README.md)** | ~60% | 40+ byte interpretations at caret (int/float/GUID/date/color/…) |
@@ -209,6 +211,7 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, pre
 | **Integrated Terminal** — full multi-shell + macro recording | 🔧 ~70% | #92 |
 | **Editors Phase 2** — TextEditor LSP, DiffViewer 3-way merge, AudioViewer, TileEditor | 🔜 Planned | #169–178 |
 | **LSP Phase 3 + Roslyn** — Roslyn C#/VB.NET/F# parser (pull-diagnostics + linked editing ✅ done) | 🔧 ~40% | #190–191 |
+| **AI Assistant** — Multi-provider chat, 24 MCP tools, streaming, inline apply, @mentions | ✅ Done | — |
 | **Code Intelligence** — AI suggestions (SmartComplete ✅ done · Snippets ✅ done · AI pending) | 🔧 ~65% | #86–89 |
 | **Git Integration** | 🔜 Planned | #91 |
 | **Plugin Marketplace & Auto-Update** | 🔜 Planned | #41–43 |
@@ -221,6 +224,8 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, pre
 
 | Feature | Version |
 |---------|---------|
+| **AI Assistant Plugin** — 5 providers (Anthropic/OpenAI/Gemini/Ollama/Claude Code CLI), 24 MCP tools, streaming chat, inline apply, @mentions, command palette, conversation history, prompt presets | v0.6.4.3 |
+| **Roslyn Integration** — In-process C#/VB.NET analysis replacing OmniSharp | v0.6.4.3 |
 | **Document Editor WYSIWYG** — RTF/DOCX/ODT, DrawingContext renderer, cursor/formatting/tables, styles panel, find/replace, page settings, 3 savers, 22 `DE_*` tokens | v0.6.4.1 |
 | **WHFMT v2.0** — `TypeDecoderRegistry`, `ChecksumEngine`, `AssertionRunner`, `repeating`/`union`/`versionedBlocks`/`pointer`, 20 critical formats, FormatNavigator, forensic alerts | v0.6.4.1 |
 | **Diff Canvas Overkill** — `BinaryDiffCanvas`/`TextDiffCanvas`/`StructureDiffCanvas` GlyphRun renderers, O(n) builder, O(1) patience sort, ThreadStatic pools, format overlay | v0.6.4.1 |

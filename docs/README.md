@@ -2,7 +2,7 @@
 
 Complete documentation for the WpfHexEditor IDE.
 
-**Last Updated:** 2026-03-19
+**Last Updated:** 2026-04-02
 
 ---
 
@@ -45,7 +45,7 @@ Complete documentation for the WpfHexEditor IDE.
 ### IDE Application
 
 - **[WpfHexEditor.App](../Sources/WpfHexEditor.App/README.md)** — Main IDE host, plugin system, build integration
-- **[WpfHexEditor.Shell](../Sources/WpfHexEditor.Shell/README.md)** — Docking engine + 8 themes
+- **[WpfHexEditor.Shell](../Sources/WpfHexEditor.Shell/README.md)** — Docking engine + 19 themes
 - **[WpfHexEditor.Panels.IDE](../Sources/WpfHexEditor.Panels.IDE/README.md)** — Solution Explorer, Properties, Error List
 - **[WpfHexEditor.Options](../Sources/WpfHexEditor.Options/README.md)** — Options panel
 
@@ -59,8 +59,14 @@ Complete documentation for the WpfHexEditor IDE.
 - **[Script Editor](../Sources/WpfHexEditor.Editor.ScriptEditor/README.md)** — `.hxscript` editor
 - **[Image Viewer](../Sources/WpfHexEditor.Editor.ImageViewer/README.md)** — Binary image viewer
 - **[Entropy Viewer](../Sources/WpfHexEditor.Editor.EntropyViewer/README.md)** — Entropy graph
-- **[Diff Viewer](../Sources/WpfHexEditor.Editor.DiffViewer/README.md)** — Binary diff
+- **[Diff Viewer](../Sources/WpfHexEditor.Editor.DiffViewer/README.md)** — Binary + text + structure diff (GlyphRun canvas renderers)
 - **[Structure Editor](../Sources/WpfHexEditor.Editor.StructureEditor/README.md)** — `.whfmt` binary template editor
+- **[Document Editor](../Sources/WpfHexEditor.Editor.DocumentEditor/README.md)** — WYSIWYG RTF/DOCX/ODT
+- **[Disassembly Viewer](../Sources/WpfHexEditor.Editor.DisassemblyViewer/README.md)** — x86/x64/ARM disassembler
+- **[Audio Viewer](../Sources/WpfHexEditor.Editor.AudioViewer/README.md)** — Waveform display (WAV/MP3/FLAC/OGG)
+- **[Markdown Editor](../Sources/WpfHexEditor.Editor.MarkdownEditor/README.md)** — Markdown with live preview
+- **[JSON Editor](../Sources/WpfHexEditor.Editor.JsonEditor/README.md)** — JSON viewer
+- **[Class Diagram](../Sources/WpfHexEditor.Editor.ClassDiagram/README.md)** — UML class diagram generator
 
 ### Infrastructure
 
@@ -74,9 +80,14 @@ Complete documentation for the WpfHexEditor IDE.
 - **[Terminal](../Sources/WpfHexEditor.Terminal/README.md)** — Integrated terminal panel
 - **[PluginHost](../Sources/WpfHexEditor.PluginHost/README.md)** — Plugin discovery + loading
 - **[Docking Core](../Sources/WpfHexEditor.Docking.Core/README.md)** — Docking engine contracts
+- **[Core.Roslyn](../Sources/WpfHexEditor.Core.Roslyn/README.md)** — In-process Roslyn C#/VB.NET analysis
+- **[Core.Workspaces](../Sources/WpfHexEditor.Core.Workspaces/README.md)** — `.whidews` workspace engine
+- **[Core.Diff](../Sources/WpfHexEditor.Core.Diff/README.md)** — Myers/Binary/Semantic diff algorithms
+- **[Core.MCP](../Sources/WpfHexEditor.Core.MCP/README.md)** — Model Context Protocol support
 
 ### Plugins
 
+- **[AI Assistant](../Sources/Plugins/WpfHexEditor.Plugins.AIAssistant/README.md)** — Multi-provider AI chat (Anthropic/OpenAI/Gemini/Ollama/Claude Code CLI), 24 MCP tools, streaming, inline apply
 - **[SynalysisGrammar](../Sources/Plugins/WpfHexEditor.Plugins.SynalysisGrammar/README.md)** — UFWB binary grammar support
 - **[XamlDesigner Plugin](../Sources/Plugins/WpfHexEditor.Plugins.XamlDesigner/README.md)** — XAML designer IDE integration
 - **[SolutionLoader.Folder](../Sources/WpfHexEditor.Plugins.SolutionLoader.Folder/README.md)** — Open-folder VS Code–style
@@ -86,6 +97,14 @@ Complete documentation for the WpfHexEditor IDE.
 - **[AssemblyExplorer](../Sources/Plugins/WpfHexEditor.Plugins.AssemblyExplorer/README.md)** — .NET PE inspection + decompilation
 - **[ParsedFields](../Sources/Plugins/WpfHexEditor.Plugins.ParsedFields/README.md)** — Binary structure overlay
 - **[DataInspector](../Sources/Plugins/WpfHexEditor.Plugins.DataInspector/README.md)** — 40+ type interpretations
+- **[ArchiveExplorer](../Sources/Plugins/WpfHexEditor.Plugins.ArchiveExplorer/README.md)** — ZIP/7z/TAR tree browser
+- **[FileComparison](../Sources/Plugins/WpfHexEditor.Plugins.FileComparison/README.md)** — DiffHub + binary/text/structure diff
+- **[LSPTools](../Sources/Plugins/WpfHexEditor.Plugins.LSPTools/README.md)** — Call/Type Hierarchy panels
+- **[UnitTesting](../Sources/Plugins/WpfHexEditor.Plugins.UnitTesting/README.md)** — Unit test runner (xunit/nunit/mstest)
+- **[Debugger](../Sources/Plugins/WpfHexEditor.Plugins.Debugger/README.md)** — Integrated debugger UI
+- **[Git](../Sources/Plugins/WpfHexEditor.Plugins.Git/README.md)** — Git integration
+- **[ScriptRunner](../Sources/Plugins/WpfHexEditor.Plugins.ScriptRunner/README.md)** — Script execution panel
+- **[DiagnosticTools](../Sources/Plugins/WpfHexEditor.Plugins.DiagnosticTools/README.md)** — CPU/memory monitoring
 
 ### Sample Applications
 
@@ -114,7 +133,7 @@ Complete documentation for the WpfHexEditor IDE.
 ## 🔗 Resources
 
 - **[Main README](../README.md)** — Project overview and feature table
-- **[CHANGELOG](CHANGELOG.md)** — Version history (v0.5.8+, v0.6.0)
+- **[CHANGELOG](CHANGELOG.md)** — Version history (v0.5.0 → v0.6.4.3)
 - **[ROADMAP](ROADMAP.md)** — Planned features and progress
 - **[CONTRIBUTING](../.github/CONTRIBUTING.md)** — How to contribute
 - **[SECURITY](../.github/SECURITY.md)** — Security policy

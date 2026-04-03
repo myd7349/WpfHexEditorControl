@@ -6,6 +6,50 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
+## [0.6.4.3] — 2026-04-02 — AI Assistant Plugin + Roslyn Integration
+
+### ✨ Added — AI Assistant Plugin (`WpfHexEditor.Plugins.AIAssistant`)
+
+- **Multi-provider AI chat** — 5 built-in providers: Anthropic (SSE + tool_use + thinking), OpenAI (function_calling), Google Gemini (1M context), Ollama (local), Claude Code CLI (stdio JSON)
+- **24 MCP IDE tools** — `McpServerManager` orchestrates stdio + in-process servers: Whfmt (3), HexBuffer (4), Solution (5), Build (5), Debugger (7)
+- **Streaming chat UI** — `AIAssistantPanel` with tab strip, chat bubbles, streaming dots animation, model pill, accent Send button
+- **Inline apply** — `ApplyCodeCommand` extracts fenced code blocks → `IDiffService` preview before apply
+- **@mentions** — `@file`/`@selection`/`@errors`/`@solution`/`@hex` resolved via `ContextInjector` + IDE services
+- **Command palette** — `AICommandPalette` (`Ctrl+Shift+A`), 5 quick actions + user prompt presets
+- **Connection manager** — `AIConnectionService` with 6-state health check (5 min), `ConnectionManagerPopup` for per-provider API key config
+- **Model switcher** — `ModelSwitcherPopup` grouped by provider, context tokens display, thinking toggle
+- **Inline chat** — `InlineChatPopup` (`Ctrl+I`) Copilot-style floating popup
+- **Account & usage** — `AccountUsagePopup` with per-provider token/cost tracking (`UsageTracker`)
+- **Terminal commands** — `/ai-ask`, `/ai-explain`, `/ai-fix`, `/ai-new-tab`
+- **Context menu** — `AISolutionExplorerContributor` (explain/review/document file)
+- **Conversation persistence** — JSON in `%AppData%/WpfHexEditor/AIAssistant/conversations/`
+- **6 built-in presets** — Explain, Tests, Review, Docs, Refactor, Binary Format
+- **Titlebar icon** — `AITitleBarContributor` with sparkle glyph, status tooltip
+- **17 `CA_*` theme tokens** × 18 Colors.xaml
+- **Auto-fallback** — when no API key configured, auto-selects Claude Code CLI if installed
+
+### ✨ Added — Roslyn Integration (`WpfHexEditor.Core.Roslyn`)
+
+- **In-process Roslyn** — `RoslynLanguageClient` replaces OmniSharp for C#/VB.NET analysis
+- Non-blocking load with LSP status bar integration
+
+### 🔧 Changed
+
+- **Plugin renamed** — `ClaudeAssistant` → `AIAssistant` across all namespaces, classes, strings, and command IDs to reflect multi-provider support
+- **AppData migration** — auto-migrates `%AppData%/WpfHexEditor/Claude/` → `AIAssistant/` on first run
+- **SDK** — `ITitleBarContributor` interface, `IUIRegistry.RegisterTitleBarItem/UnregisterTitleBarItem`, `UIElementKind.TitleBar`
+- **SDK** — `GetCommandPaletteAnchor()` for DPI-aware plugin popup positioning
+
+### 🐛 Fixed
+
+- Model switcher popup positioning and DPI awareness
+- Code Editor whitespace rendering mode persistence
+- Column rulers persistence across sessions
+- Code Editor collapsed fold label misalignment with tab characters
+- LSP status bar now follows active document (non-blocking Roslyn load)
+
+---
+
 ## [0.6.4.2] — 2026-03-30 — Options Reorganization + Code Editor Settings Wiring
 
 ### ✨ Added — Code Editor Settings
