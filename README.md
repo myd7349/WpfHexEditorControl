@@ -93,42 +93,42 @@ All controls are **independently reusable** — no IDE required.
 
 | Control | Progress | Description |
 |---------|----------|-------------|
-| **[HexEditor](Sources/WpfHexEditor.HexEditor/README.md)** | ~70% | Full hex editor UserControl — MVVM, 16 services, 400+ format detection |
-| **[HexBox](Sources/WpfHexEditor.HexBox/README.md)** | ~70% | Lightweight hex input field — zero dependencies |
-| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/README.md)** | ~90% | RGB/HSV/hex color picker |
-| **[BarChart](Sources/WpfHexEditor.BarChart/README.md)** | ~80% | Byte-frequency bar chart (net48 \| net8.0-windows) |
-| **[ProgressBar](Sources/WpfHexEditor.ProgressBar/README.md)** | ~85% | Customizable progress/loading control |
-| **[Terminal](Sources/WpfHexEditor.Terminal/README.md)** | ~65% | WPF terminal emulator — multi-tab shell session management |
-| **[Shell](Sources/WpfHexEditor.Shell/README.md)** | ~60% | 100% in-house VS-style docking engine — 19 themes, float/dock/auto-hide |
+| **[HexEditor](Sources/WpfHexEditor.HexEditor/README.md)** | ~70% | Full-featured hex editor control — insert/overwrite modes, 400+ format auto-detection, multi-mode search, bookmarks, TBL encoding, block undo/redo, MVVM architecture with 16 injectable services |
+| **[HexBox](Sources/WpfHexEditor.HexBox/README.md)** | ~70% | Lightweight single-value hex input field — drop-in replacement for TextBox, zero external dependencies |
+| **[ColorPicker](Sources/WpfHexEditor.ColorPicker/README.md)** | ~90% | RGB/HSV/hex color picker with eyedropper, alpha channel, and recent colors palette |
+| **[BarChart](Sources/WpfHexEditor.BarChart/README.md)** | ~80% | Byte-frequency bar chart for binary analysis — dual-target net48 + net8.0-windows |
+| **[ProgressBar](Sources/WpfHexEditor.ProgressBar/README.md)** | ~85% | Animated progress and loading indicator — determinate/indeterminate modes, themeable |
+| **[Terminal](Sources/WpfHexEditor.Terminal/README.md)** | ~65% | Integrated terminal emulator — multi-tab shell sessions, ANSI color support, command history, plugin-extensible via `ITerminalService` |
+| **[Shell](Sources/WpfHexEditor.Shell/README.md)** | ~60% | 100% in-house VS-style docking engine — float/dock/auto-hide/pin, colored tabs, 19 built-in themes, layout undo/redo, serializable workspace state |
 
 ### Libraries
 
 | Library | Description |
 |---------|-------------|
-| **[Core](Sources/WpfHexEditor.Core/README.md)** | ByteProvider, 16 services, data layer |
-| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/README.md)** | `IDocumentEditor` contract, editor registry, changeset system, `PanModeController` |
-| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/README.md)** | 400+ format detection engine, binary templates, DataInspector |
-| **[Definitions](Sources/WpfHexEditor.Definitions/README.md)** | Embedded format catalog (400+ signatures) + 55+ syntax definitions |
-| **[Events](Sources/WpfHexEditor.Events/README.md)** | Typed EventBus — 39+ event types, weak refs, IPC bridge |
-| **[SDK](Sources/WpfHexEditor.SDK/README.md)** | **SemVer 2.0.0 frozen** — `IWpfHexEditorPlugin`, `IIDEHostContext`, 15+ service contracts |
-| **[Core.Roslyn](Sources/WpfHexEditor.Core.Roslyn/README.md)** | In-process Roslyn C#/VB.NET analysis — replaces OmniSharp |
-| **[Core.LSP.Client](Sources/WpfHexEditor.Core.LSP.Client/README.md)** | Full JSON-RPC LSP 3.17 client — 13 providers, document sync, server capabilities |
-| **[Core.Diff](Sources/WpfHexEditor.Core.Diff/README.md)** | Myers/Binary/Semantic diff algorithms, `DiffExportService`, `GitDiffService` |
-| **[Core.Workspaces](Sources/WpfHexEditor.Core.Workspaces/README.md)** | `.whidews` workspace engine — ZIP+JSON, layout/solution/theme restore |
-| **[Core.MCP](Sources/WpfHexEditor.Core.MCP/README.md)** | Model Context Protocol — JSON-RPC tool definitions for AI integration |
-| **[Core.BuildSystem](Sources/WpfHexEditor.Core.BuildSystem/README.md)** | MSBuild integration — parallel builds, incremental dirty tracking |
-| **[Core.Debugger](Sources/WpfHexEditor.Core.Debugger/README.md)** | Debug adapter infrastructure — breakpoints, stepping, evaluation |
-| **[Core.Scripting](Sources/WpfHexEditor.Core.Scripting/README.md)** | `HxScriptEngine` — C#Script execution via Roslyn |
-| **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/README.md)** | Command engine — 35+ built-in commands, `CommandHistory` |
-| **[Core.Commands](Sources/WpfHexEditor.Core.Commands/README.md)** | `CommandRegistry` (~50 commands), `KeyBindingService`, Command Palette |
-| **[Core.SourceAnalysis](Sources/WpfHexEditor.Core.SourceAnalysis/README.md)** | BCL-only regex source outline engine (types/members) |
-| **[Core.AssemblyAnalysis](Sources/WpfHexEditor.Core.AssemblyAnalysis/README.md)** | BCL-only .NET PE analysis — PEReader + assembly model |
-| **[Core.Decompiler](Sources/WpfHexEditor.Core.Decompiler/README.md)** | `IDecompiler` contract + ILSpy backend |
-| **[ProjectSystem](Sources/WpfHexEditor.ProjectSystem/README.md)** | `.whsln` / `.whproj` model — serialization, P2P references, dialogs |
-| **[PluginHost](Sources/WpfHexEditor.PluginHost/README.md)** | Plugin discovery, load, watchdog, `PluginManagerControl` |
-| **[PluginSandbox](Sources/WpfHexEditor.PluginSandbox/README.md)** | Out-of-process plugin host — HWND embed, IPC, Job Object isolation |
-| **[Docking.Core](Sources/WpfHexEditor.Docking.Core/README.md)** | Abstract docking contracts — `DockEngine`, layout model |
-| **[Options](Sources/WpfHexEditor.Options/README.md)** | `AppSettingsService`, `OptionsEditorControl` — settings persistence |
+| **[Core](Sources/WpfHexEditor.Core/README.md)** | Foundation library — ByteProvider (stream-based byte management), 16 injectable services (search, replace, copy, bookmark, undo…), format detection, data layer |
+| **[Editor.Core](Sources/WpfHexEditor.Editor.Core/README.md)** | Shared editor infrastructure — `IDocumentEditor` plugin contract, editor registry, changeset tracking, shared `UndoEngine`, middle-click pan mode |
+| **[BinaryAnalysis](Sources/WpfHexEditor.BinaryAnalysis/README.md)** | Binary intelligence engine — 400+ format signatures, `.whfmt` v2.0 template parser, type decoders, checksum/assertion validation, DataInspector (40+ types) |
+| **[Definitions](Sources/WpfHexEditor.Definitions/README.md)** | Embedded catalog — 400+ binary format signatures, 55+ syntax highlighting definitions (`.whfmt`/`.whlang`), shipped as embedded resources |
+| **[Events](Sources/WpfHexEditor.Events/README.md)** | Typed pub/sub event bus — 39+ domain events, weak references to prevent leaks, cross-process IPC bridge for sandboxed plugins |
+| **[SDK](Sources/WpfHexEditor.SDK/README.md)** | **Plugin SDK (SemVer 2.0.0 frozen)** — `IWpfHexEditorPlugin` entry point, `IIDEHostContext` host services, 15+ contracts (menus, toolbar, titlebar, panels, status bar, settings, terminal commands) |
+| **[Core.Roslyn](Sources/WpfHexEditor.Core.Roslyn/README.md)** | In-process Roslyn integration — C#/VB.NET incremental analysis, replaces external OmniSharp process for faster and more reliable code intelligence |
+| **[Core.LSP.Client](Sources/WpfHexEditor.Core.LSP.Client/README.md)** | Language Server Protocol 3.17 client — full JSON-RPC transport, 13 provider types (completion, hover, signature help, code actions, rename, inlay hints, code lens, semantic tokens…), document sync |
+| **[Core.Diff](Sources/WpfHexEditor.Core.Diff/README.md)** | Diff engine — Myers (text), binary (byte-level), semantic (structure-aware) algorithms, Git integration, export to HTML/patch |
+| **[Core.Workspaces](Sources/WpfHexEditor.Core.Workspaces/README.md)** | Workspace persistence — `.whidews` format (ZIP+JSON), captures and restores full IDE state: dock layout, open files, solution, theme, editor settings |
+| **[Core.MCP](Sources/WpfHexEditor.Core.MCP/README.md)** | Model Context Protocol support — JSON-RPC tool definitions enabling AI assistants to interact with IDE services (build, debug, navigate, analyze) |
+| **[Core.BuildSystem](Sources/WpfHexEditor.Core.BuildSystem/README.md)** | Build orchestration — MSBuild API integration, parallel project builds, incremental dirty tracking (FileSystemWatcher per project), build progress events |
+| **[Core.Debugger](Sources/WpfHexEditor.Core.Debugger/README.md)** | .NET debug adapter — breakpoint management (conditions, hit counts, persistence), step over/into/out, variable evaluation, debug session lifecycle |
+| **[Core.Scripting](Sources/WpfHexEditor.Core.Scripting/README.md)** | Script execution engine — C#Script via Roslyn, IDE globals injection (`HxScriptEngine`), REPL support for automation and data exploration |
+| **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/README.md)** | Terminal command engine — 35+ built-in commands, command history with persistence, extensible via `ITerminalService` plugin API |
+| **[Core.Commands](Sources/WpfHexEditor.Core.Commands/README.md)** | Command infrastructure — central registry (~50 commands), configurable keyboard shortcuts, conflict detection, Command Palette (`Ctrl+Shift+P`, 9 search modes) |
+| **[Core.SourceAnalysis](Sources/WpfHexEditor.Core.SourceAnalysis/README.md)** | Lightweight source analysis — regex-based type/member outline for Solution Explorer tree navigation, BCL-only (no Roslyn dependency) |
+| **[Core.AssemblyAnalysis](Sources/WpfHexEditor.Core.AssemblyAnalysis/README.md)** | .NET assembly inspector — `System.Reflection.Metadata` PEReader, type/method/field model, no ILSpy dependency (BCL-only) |
+| **[Core.Decompiler](Sources/WpfHexEditor.Core.Decompiler/README.md)** | Decompilation service — `IDecompiler` abstraction with ILSpy backend, C#/VB.NET output, assembly-to-source navigation |
+| **[ProjectSystem](Sources/WpfHexEditor.ProjectSystem/README.md)** | Project model — `.whsln`/`.whproj` + VS `.sln`/`.csproj` support, project-to-project references, serialization, New Project dialog with templates |
+| **[PluginHost](Sources/WpfHexEditor.PluginHost/README.md)** | Plugin lifecycle manager — discovery (scan + manifest), ALC-isolated loading, health watchdog, hot-reload via `CollectibleAssemblyLoadContext`, Plugin Manager UI |
+| **[PluginSandbox](Sources/WpfHexEditor.PluginSandbox/README.md)** | Plugin isolation sandbox — out-of-process host with HWND embedding, bidirectional IPC, Job Object resource limits, crash containment |
+| **[Docking.Core](Sources/WpfHexEditor.Docking.Core/README.md)** | Docking abstraction layer — `DockEngine` contracts, layout model (dock/float/auto-hide/tab groups), serializable state |
+| **[Options](Sources/WpfHexEditor.Options/README.md)** | Settings framework — `AppSettingsService` with JSON persistence, `OptionsEditorControl` tree UI, 20+ pages, plugin-extensible via `IOptionsPage` |
 
 ---
 
