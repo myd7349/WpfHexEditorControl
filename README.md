@@ -38,7 +38,7 @@
 
 ## 🖥️ The IDE Application
 
-$\color{#2E7BDE}\texttt{<}$$\color{#E87A20}\texttt{WpfHexEditor}$ $\color{#2E7BDE}\texttt{Studio/>}$ is a full-featured binary analysis IDE for Windows, built with WPF and .NET 8. Think Visual Studio for binary files.
+${\color{#2E7BDE}\texttt{<}}{\color{#E87A20}\texttt{WpfHexEditor}}\ {\color{#2E7BDE}\texttt{Studio/>}}$ is a full-featured binary analysis IDE for Windows, built with WPF and .NET 8. Think Visual Studio for binary files.
 
 | | |
 |---|---|
