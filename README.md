@@ -14,6 +14,8 @@
   <br/>
 
   > 🚧 **Active Development** — New features, editors and panels are added regularly. Contributions welcome!
+  >
+  > 📅 *Last revised: 2026-04-02*
 
   <br/>
 
@@ -41,14 +43,14 @@
 | | |
 |---|---|
 | **🏗️ Project System** | Open and build `.whsln`/`.whproj` native projects or Visual Studio `.sln`/`.csproj`/`.vbproj` solutions — MSBuild build/rebuild/clean with parallel project compilation, real-time build progress bar, virtual and physical folder organization, per-file editor state persistence, project template scaffolding |
-| **🪟 Docking** *(100% in-house)* | Fully custom VS-style docking engine — float, dock, auto-hide, pin, colored tab strips, **19 built-in themes** (Dark, Light, VS2022Dark, DarkGlass, Dracula, Nord, Tokyo Night, Catppuccin Mocha/Latte, Gruvbox Dark, Forest, Matrix, Synthwave 84, Cyberpunk, High Contrast…), tab placement left/right/bottom, layout undo/redo (`Ctrl+Shift+Z/Y`), serializable workspace state |
+| **🪟 Docking** *(100% in-house)* | Fully custom VS-style docking engine — float, dock, auto-hide, pin, colored tab strips, **16 built-in themes** (Dark, Light, VS2022Dark, DarkGlass, Dracula, Nord, Tokyo Night, Catppuccin Mocha/Latte, Gruvbox Dark, Forest, Matrix, Synthwave 84, Cyberpunk, High Contrast…), tab placement left/right/bottom, layout undo/redo (`Ctrl+Shift+Z/Y`), serializable workspace state |
 | **📋 IDE Infrastructure** | Unified editor plugin architecture via `IDocumentEditor` — shared undo engine with coalescence and VS-style history dropdown, `Ctrl+Z/Y` across all editors, rectangular block selection (`Alt+Click`), adaptive status bar, 20+ options pages, workspace system (`.whidews` save/restore), dynamic View menu (Flat/Categorized/ByDockSide), middle-click pan mode, NuGet Solution Manager, dependency injection via `Microsoft.Extensions.DependencyInjection` |
 | **🧠 Code Intelligence** | **In-process Roslyn** for C#/VB.NET analysis (no external OmniSharp process) — full LSP 3.17 client supporting 13 provider types: completion, hover, signature help, code actions, rename, inlay hints, code lens, semantic tokens, call hierarchy, type hierarchy, pull diagnostics, linked editing, breadcrumb navigation bar |
-| **⌨️ Command & Terminal** | Command Palette (`Ctrl+Shift+P`) with 9 search modes (commands, files, symbols, go-to-line…) — central command registry (~50 commands) with configurable keyboard shortcuts, integrated multi-tab terminal (`Ctrl+\``) with 35+ built-in commands including `plugin-reload`, extensible by plugins via `ITerminalService` API |
-| **🤖 AI Assistant** | Multi-provider AI chat panel — supports Anthropic, OpenAI, Google Gemini, Ollama, and Claude Code CLI out of the box, 24 MCP tools for deep IDE integration (build, debug, navigate, analyze), streaming responses with inline code apply, `@mentions` for context injection (`@file`/`@selection`/`@errors`/`@solution`), dedicated command palette (`Ctrl+Shift+A`), conversation history, customizable prompt presets |
+| **⌨️ Command & Terminal** | Command Palette (`Ctrl+Shift+P`) with 9 search modes (commands, files, symbols, go-to-line…) — central command registry (~100 commands) with configurable keyboard shortcuts, integrated multi-tab terminal (`Ctrl+\``) with 35+ built-in commands including `plugin-reload`, extensible by plugins via `ITerminalService` API |
+| **🤖 AI Assistant** | Multi-provider AI chat panel — supports Anthropic, OpenAI, Google Gemini, Ollama, and Claude Code CLI out of the box, 25 MCP tools for deep IDE integration (build, debug, navigate, analyze), streaming responses with inline code apply, `@mentions` for context injection (`@file`/`@selection`/`@errors`/`@solution`), dedicated command palette (`Ctrl+Shift+A`), conversation history, customizable prompt presets |
 | **🐞 .NET Debugger** *(~60%)* | Integrated .NET debugging UI — Debug menu (Start/Stop/Restart, Step Over/Into/Out), collapsible toolbar pod, execution line highlight, full breakpoint system with conditions, hit counts, enable/disable toggle, and solution-scoped persistence, Breakpoint Explorer panel, right-click gutter popup for breakpoint editing, debug status bar · ⚠️ *Debug launch not yet functional — UI and breakpoint infrastructure are ready, runtime attach pending* |
 | **🧪 Unit Testing** | Built-in test runner — auto-detects xunit, nunit, and mstest projects, runs via `dotnet test` with TRX result parsing, pass/fail/skip counters with color-coded outcome glyphs, context-sensitive detail panel (project summary, class summary, or individual test details), auto-run on successful build |
-| **🔌 Plugin System** | Extensible plugin architecture — SDK 2.0.0 (API frozen, semver), `.whxplugin` package format, Plugin Manager UI, typed EventBus (39+ domain events), capability registry, extension points (menus, toolbar, titlebar, panels, status bar, terminal commands), dependency graph, plugin signing with signature validation, out-of-process sandbox with HWND embedding — **27 built-in plugins** ship with the IDE |
+| **🔌 Plugin System** | Extensible plugin architecture — SDK 2.0.0 (API frozen, semver), `.whxplugin` package format, Plugin Manager UI, typed EventBus (39+ domain events), capability registry, extension points (menus, toolbar, titlebar, panels, status bar, terminal commands), dependency graph, plugin signing with signature validation, out-of-process sandbox with HWND embedding — **28 built-in plugins** ship with the IDE |
 | **🔍 Binary Intelligence** | Deep binary analysis toolkit — 400+ format auto-detection, `.whfmt` v2.0 template engine (repeating blocks, unions, versioned structures, pointers, checksums, assertions, forensic alerts, AI hints), 20 critical formats fully defined (PE, ELF, ZIP, PNG, MP4, SQLite, PDF, JPEG, WASM…), reactive Parsed Fields panel with FormatNavigator bookmarks, format field overlay on hex view, Data Inspector (40+ type interpretations), Assembly Explorer (.NET PE tree + ILSpy C#/VB.NET decompilation) |
 
 ---
@@ -99,7 +101,7 @@ All controls are **independently reusable** — no IDE required.
 | **[BarChart](Sources/WpfHexEditor.BarChart/README.md)** | ~80% | Byte-frequency bar chart for binary analysis — dual-target net48 + net8.0-windows |
 | **[ProgressBar](Sources/WpfHexEditor.ProgressBar/README.md)** | ~85% | Animated progress and loading indicator — determinate/indeterminate modes, themeable |
 | **[Terminal](Sources/WpfHexEditor.Terminal/README.md)** | ~65% | Integrated terminal emulator — multi-tab shell sessions, ANSI color support, command history, plugin-extensible via `ITerminalService` |
-| **[Shell](Sources/WpfHexEditor.Shell/README.md)** | ~60% | 100% in-house VS-style docking engine — float/dock/auto-hide/pin, colored tabs, 19 built-in themes, layout undo/redo, serializable workspace state |
+| **[Shell](Sources/WpfHexEditor.Shell/README.md)** | ~60% | 100% in-house VS-style docking engine — float/dock/auto-hide/pin, colored tabs, 16 built-in themes, layout undo/redo, serializable workspace state |
 
 ### Libraries
 
@@ -120,7 +122,7 @@ All controls are **independently reusable** — no IDE required.
 | **[Core.Debugger](Sources/WpfHexEditor.Core.Debugger/README.md)** | .NET debug adapter — breakpoint management (conditions, hit counts, persistence), step over/into/out, variable evaluation, debug session lifecycle |
 | **[Core.Scripting](Sources/WpfHexEditor.Core.Scripting/README.md)** | Script execution engine — C#Script via Roslyn, IDE globals injection (`HxScriptEngine`), REPL support for automation and data exploration |
 | **[Core.Terminal](Sources/WpfHexEditor.Core.Terminal/README.md)** | Terminal command engine — 35+ built-in commands, command history with persistence, extensible via `ITerminalService` plugin API |
-| **[Core.Commands](Sources/WpfHexEditor.Core.Commands/README.md)** | Command infrastructure — central registry (~50 commands), configurable keyboard shortcuts, conflict detection, Command Palette (`Ctrl+Shift+P`, 9 search modes) |
+| **[Core.Commands](Sources/WpfHexEditor.Core.Commands/README.md)** | Command infrastructure — central registry (~100 commands), configurable keyboard shortcuts, conflict detection, Command Palette (`Ctrl+Shift+P`, 9 search modes) |
 | **[Core.SourceAnalysis](Sources/WpfHexEditor.Core.SourceAnalysis/README.md)** | Lightweight source analysis — regex-based type/member outline for Solution Explorer tree navigation, BCL-only (no Roslyn dependency) |
 | **[Core.AssemblyAnalysis](Sources/WpfHexEditor.Core.AssemblyAnalysis/README.md)** | .NET assembly inspector — `System.Reflection.Metadata` PEReader, type/method/field model, no ILSpy dependency (BCL-only) |
 | **[Core.Decompiler](Sources/WpfHexEditor.Core.Decompiler/README.md)** | Decompilation service — `IDecompiler` abstraction with ILSpy backend, C#/VB.NET output, assembly-to-source navigation |
@@ -136,7 +138,7 @@ All controls are **independently reusable** — no IDE required.
 
 | Panel | Progress | Description |
 |-------|----------|-------------|
-| **[AI Assistant](Sources/Plugins/WpfHexEditor.Plugins.AIAssistant/README.md)** | ~80% | Multi-provider AI chat — Anthropic/OpenAI/Gemini/Ollama/Claude Code CLI, 24 MCP tools, streaming, inline apply, @mentions |
+| **[AI Assistant](Sources/Plugins/WpfHexEditor.Plugins.AIAssistant/README.md)** | ~80% | Multi-provider AI chat — Anthropic/OpenAI/Gemini/Ollama/Claude Code CLI, 25 MCP tools, streaming, inline apply, @mentions |
 | **[Solution Explorer](Sources/WpfHexEditor.Panels.IDE/README.md)** | ~75% | Project tree — virtual/physical folders, D&D, lazy source outline (types/members navigation) |
 | **[Parsed Fields](Sources/Plugins/WpfHexEditor.Plugins.ParsedFields/README.md)** | ~65% | 400+ format detection — reactive, expandable groups, FormatNavigator, forensic alerts |
 | **[Data Inspector](Sources/Plugins/WpfHexEditor.Plugins.DataInspector/README.md)** | ~60% | 40+ byte interpretations at caret (int/float/GUID/date/color/…) |
@@ -178,7 +180,7 @@ All controls are **independently reusable** — no IDE required.
 | | |
 |---|---|
 | <a href="Images/App-ParsedFields.png"><img src="Images/App-ParsedFields.png" alt="Parsed Fields" width="440"/></a><br/><sub>🔬 Parsed Fields — 400+ format detection</sub> | <a href="Images/App-Editors.png"><img src="Images/App-Editors.png" alt="Multiple Editors" width="440"/></a><br/><sub>📝 Multi-Editor Tabs</sub> |
-| <a href="Images/App-SolutionExplorer.png"><img src="Images/App-SolutionExplorer.png" alt="Solution Explorer" width="440"/></a><br/><sub>🗂️ Solution Explorer</sub> | <a href="Images/App-Theme-Light.png"><img src="Images/App-Theme-Light.png" alt="Light Theme" width="440"/></a><br/><sub>☀️ Light Theme (19 built-in themes)</sub> |
+| <a href="Images/App-SolutionExplorer.png"><img src="Images/App-SolutionExplorer.png" alt="Solution Explorer" width="440"/></a><br/><sub>🗂️ Solution Explorer</sub> | <a href="Images/App-Theme-Light.png"><img src="Images/App-Theme-Light.png" alt="Light Theme" width="440"/></a><br/><sub>☀️ Light Theme (16 built-in themes)</sub> |
 | <a href="Images/App-Output.png"><img src="Images/App-Output.png" alt="Output Panel" width="440"/></a><br/><sub>📤 Output Panel</sub> | <a href="Images/App-ErrorList.png"><img src="Images/App-ErrorList.png" alt="Error Panel" width="440"/></a><br/><sub>🔴 Error Panel</sub> |
 | <a href="Images/App-TBLEditor.png"><img src="Images/App-TBLEditor.png" alt="TBL Editor" width="440"/></a><br/><sub>📋 TBL Editor</sub> | <a href="Images/TBLExplain.png"><img src="Images/TBLExplain.png" alt="TBL Explained" width="440"/></a><br/><sub>🎮 TBL Format</sub> |
 
@@ -217,57 +219,59 @@ Open `WpfHexEditorControl.sln`, set **WpfHexEditor.App** as startup project, pre
 
 > Full details: **[ROADMAP.md](docs/ROADMAP.md)** · **[CHANGELOG.md](docs/CHANGELOG.md)**
 
-**In Progress / Planned:**
+**In Progress:**
 
 | Feature | Status | # |
 |---------|--------|---|
-| **Code Editor Phase 2** — gutter change markers, peek definition, remaining LSP providers | 🔧 ~93% | #158–168 |
-| **Assembly Explorer** — ILSpy backend, Ctrl+Click cross-assembly nav | 🔧 ~75% | #104–106 |
-| **Document Model Phase 2** — multi-editor collaboration, buffer unification | 🔧 ~40% | #107 |
-| **Integrated Terminal** — full multi-shell + macro recording | 🔧 ~70% | #92 |
-| **Editors Phase 2** — TextEditor LSP, DiffViewer 3-way merge, AudioViewer, TileEditor | 🔜 Planned | #169–178 |
-| **LSP Phase 3 + Roslyn** — Roslyn C#/VB.NET/F# parser (pull-diagnostics + linked editing ✅ done) | 🔧 ~40% | #190–191 |
-| **AI Assistant** — Multi-provider chat, 24 MCP tools, streaming, inline apply, @mentions | ✅ Done | — |
-| **Code Intelligence** — AI suggestions (SmartComplete ✅ done · Snippets ✅ done · AI pending) | 🔧 ~65% | #86–89 |
-| **Git Integration** | 🔜 Planned | #91 |
-| **Plugin Marketplace & Auto-Update** | 🔜 Planned | #41–43 |
-| **IDE Localization Engine** | 🔜 Planned | #100 |
-| **Installable Package** — MSI / MSIX / WinGet | 🔜 Planned | #109 |
-| **In-IDE Plugin Development** — write/debug/deploy plugins in the IDE (hot-reload ✅ done) | 🔧 ~40% | #138 |
+| **Code Editor Phase 2** — remaining: peek definition (`Alt+F12`), gutter change markers, code minimap, expand/collapse all folds | 🔧 ~93% | #158–168 |
+| **.NET Debugger** — UI complete (menus, toolbar, breakpoints, explorer), remaining: runtime attach and debug launch | 🔧 ~60% | #44, #90 |
+| **Assembly Explorer Phase 2** — full ILSpy backend, ECMA-335 token→offset, hex sync, PDB source-link | 🔧 ~75% | #104–106, #186 |
+| **Integrated Terminal Phase 2** — ANSI/Xterm emulation, split panes, SSH/WSL, macro recording | 🔧 ~70% | #92, #180 |
+| **Document Model Phase 2** — multi-editor collaboration, cross-editor undo/redo unification | 🔧 ~70% | #107 |
+| **LSP Phase 3 + Roslyn** — Roslyn in-process ✅ done, remaining: F# parser, cross-language symbol resolution | 🔧 ~60% | #190–193 |
+| **Code Intelligence** — AI Assistant ✅ done, SmartComplete ✅ done, remaining: inline ghost-text completions, AI refactoring | 🔧 ~70% | #86–89 |
+| **In-IDE Plugin Development** — hot-reload ✅ done, remaining: integrated scaffolding, debug-in-IDE, packaging UI | 🔧 ~40% | #138 |
+
+**Planned:**
+
+| Feature | Status | # |
+|---------|--------|---|
+| **Editors Phase 2** — TextEditor LSP, DiffViewer 3-way merge, AudioViewer playback, TileEditor pixel tools | 🔜 Planned | #169–178 |
+| **Git Integration** — commit/push/pull/branch, inline gutter diff, blame | 🔜 Planned | #91 |
+| **Plugin Marketplace & Auto-Update** — online registry, signed packages, auto-update | 🔜 Planned | #41–43 |
+| **IDE Localization Engine** — full i18n for IDE UI (EN/FR initial, plugin-provided translations) | 🔜 Planned | #100 |
+| **Installable Package** — MSI / MSIX / WinGet, auto-update channel, no SDK required | 🔜 Planned | #109 |
+| **Official Website** — landing page, feature showcase, documentation browser, plugin registry | 🔜 Planned | #108 |
 
 <details>
 <summary>✅ Completed features</summary>
 
 | Feature | Version |
 |---------|---------|
-| **AI Assistant Plugin** — 5 providers (Anthropic/OpenAI/Gemini/Ollama/Claude Code CLI), 24 MCP tools, streaming chat, inline apply, @mentions, command palette, conversation history, prompt presets | v0.6.4.3 |
-| **Roslyn Integration** — In-process C#/VB.NET analysis replacing OmniSharp | v0.6.4.3 |
-| **Document Editor WYSIWYG** — RTF/DOCX/ODT, DrawingContext renderer, cursor/formatting/tables, styles panel, find/replace, page settings, 3 savers, 22 `DE_*` tokens | v0.6.4.1 |
-| **WHFMT v2.0** — `TypeDecoderRegistry`, `ChecksumEngine`, `AssertionRunner`, `repeating`/`union`/`versionedBlocks`/`pointer`, 20 critical formats, FormatNavigator, forensic alerts | v0.6.4.1 |
-| **Diff Canvas Overkill** — `BinaryDiffCanvas`/`TextDiffCanvas`/`StructureDiffCanvas` GlyphRun renderers, O(n) builder, O(1) patience sort, ThreadStatic pools, format overlay | v0.6.4.1 |
-| **Breakpoint System Overkill** — hover popup, gutter ghost, solution-scoped persistence, hit counts, Breakpoint Explorer panel | v0.6.4.1 |
-| **LSP Tools Plugin** — Call Hierarchy (`Shift+Alt+H`), Type Hierarchy (`Ctrl+Alt+F12`), Linked Editing Range | v0.6.4.1 |
-| **Archive Explorer Plugin** — ZIP/7z/TAR tree, extract, in-place hex preview, `AR_*` tokens | v0.6.4.1 |
-| **Code Editor Phase 2** — column rulers (`CE_RulerBrush`), bracket-depth colorizer (4-level `CE_Bracket_1/2/3/4`), color swatch preview, `BasicIndentFormatter`, format-on-save, `BracketDepthColorizer` direct-scan engine | v0.6.4.1 |
-| **LSP C1/C2** — pull-diagnostics (LSP 3.18), linked editing ranges (`textDocument/linkedEditingRange`) | v0.6.4.1 |
-| **CollectibleALC Hot-Reload** — `IWpfHexEditorPluginV2.ReloadAsync`, `PluginDevLoader` FileSystemWatcher, `plugin-reload` terminal command, cascade reload | v0.6.4.1 |
-| **Script Editor Overkill** — `CodeEditorSplitHost` + C#Script language definition, `ScriptGlobalsCompletionProvider`, SmartComplete for script globals | v0.6.4.1 |
-| **Options Tree Reorganization** — Code Editor: Appearance & Colors / Inline Hints / Navigation / Features / Language Servers | v0.6.4.1 |
-| **Dynamic View Menu** — Flat/Categorized/ByDockSide modes, pin system | v0.6.4.1 |
-| **Middle-click Pan Mode** — `PanModeController` across all editors/viewports | v0.6.4.1 |
-| **Debugger Full Audit** — 11-bug fix, BP line highlight, `DB_*` tokens | v0.6.4.1 |
-| **Architectural Refactoring 1–3** — `CompositeDisposable`, service extractions, `CodeEditor.cs` split into 5 partials | v0.6.4.1 |
-| **HexEditor Block Undo** — `UndoGroup`, `BeginUndoTransaction`, coalescence, VS-style history dropdown | v0.6.3.8 |
-| **Sticky Scroll** — allocation-free `OnRender`, 6 options, perf fix (100% CPU loop eliminated) | v0.6.3.7 |
-| **Find All References** — `Shift+F12`, dockable panel, `F8` nav | v0.6.3.7 |
-| **Integrated Debugger UI** — Debug menu, toolbar pod, execution line highlight, `BreakpointInfoPopup` | v0.6.3.7 |
-| **Workspace System** — `.whidews` ZIP+JSON, layout/solution/file/theme restore | v0.6.3.7 |
-| **Compare Files Overkill** — Myers/Binary/Semantic engines, Git diff, `DiffExportService`, `DiffHub` | v0.6.3.7 |
-| **End-of-Block Hover Hint** — `}` / `#endregion` / `</Tag>` → VS-style popup | v0.6.3.7 |
-| **LSP Engine** — full JSON-RPC client, 13 providers, breadcrumb, inlay hints, code lens, semantic tokens | v0.6.3.6 |
-| **Command Palette** — `Ctrl+Shift+P`, 9 modes | v0.6.3.6 |
-| **IDE EventBus** — 39+ typed events, IPC bridge | v0.6.3.6 |
-| **VS `.sln` / MSBuild build** — incremental dirty tracking | v0.5.0 |
+| **AI Assistant Plugin** — multi-provider AI chat with 5 built-in providers, 25 MCP IDE tools, streaming responses, inline code apply, @mentions for context, conversation history | v0.6.4.3 |
+| **Roslyn Integration** — in-process C#/VB.NET code analysis replacing external OmniSharp process | v0.6.4.3 |
+| **Document Editor** — WYSIWYG rich document editing for RTF, DOCX, and ODT with formatting toolbar, tables, styles panel, find/replace, page settings | v0.6.4.1 |
+| **Binary Format Engine v2.0** — repeating blocks, unions, versioned structures, pointers, checksums, assertions, forensic alerts across 20 critical formats (PE/ELF/ZIP/PNG/MP4/SQLite/PDF…) | v0.6.4.1 |
+| **Diff Viewer Upgrade** — high-performance GlyphRun canvas renderers for binary, text, and structure diffs with word-level highlighting and format field overlay | v0.6.4.1 |
+| **Breakpoint System** — full breakpoint management with conditions, hit counts, solution-scoped persistence, Breakpoint Explorer panel, right-click gutter editing popup | v0.6.4.1 |
+| **Call & Type Hierarchy** — LSP-powered call hierarchy (`Shift+Alt+H`) and type hierarchy (`Ctrl+Alt+F12`) panels with linked editing ranges | v0.6.4.1 |
+| **Archive Explorer** — browse ZIP, 7z, and TAR archives as trees, extract entries, preview binary content in-place | v0.6.4.1 |
+| **Code Editor Enhancements** — column rulers, bracket-depth colorizer (4 levels), inline color swatch preview, format-on-save, auto-close brackets/quotes | v0.6.4.1 |
+| **Plugin Hot-Reload** — live-reload plugins during development without restarting the IDE, cascade reload for dependencies | v0.6.4.1 |
+| **Script Editor** — split-view C#Script editor with Roslyn-powered SmartComplete and IDE globals injection | v0.6.4.1 |
+| **Dynamic View Menu** — organize panels by category, dock side, or flat list with pin favorites | v0.6.4.1 |
+| **Middle-click Pan** — hold middle mouse button to pan across all editors and viewports | v0.6.4.1 |
+| **Debugger UI Foundation** — debug menu, toolbar pod, execution line highlight, gutter hover ghost, 11-bug audit fix | v0.6.4.1 |
+| **HexEditor Block Undo** — atomic undo for paste/cut/delete, coalescence for hex digit typing, VS-style history dropdown | v0.6.3.8 |
+| **Sticky Scroll** — scope headers pinned at top while scrolling, allocation-free rendering, click-to-navigate | v0.6.3.7 |
+| **Find All References** — `Shift+F12` with dockable results panel, `F8`/`Shift+F8` navigation between matches | v0.6.3.7 |
+| **Workspace System** — save and restore full IDE state (layout, files, theme, solution) as `.whidews` workspace files | v0.6.3.7 |
+| **Compare Files** — Myers, binary, and semantic diff algorithms with Git integration, DiffHub launcher, export as patch | v0.6.3.7 |
+| **End-of-Block Hover Hint** — hover over `}`, `#endregion`, or `</Tag>` to see the opening block header in a VS-style popup | v0.6.3.7 |
+| **LSP Engine** — full JSON-RPC Language Server Protocol client with 13 provider types, breadcrumb bar, inlay hints, code lens, semantic tokens | v0.6.3.6 |
+| **Command Palette** — `Ctrl+Shift+P` with 9 search modes (commands, files, symbols, go-to-line, recent, help…) | v0.6.3.6 |
+| **IDE EventBus** — typed pub/sub event system with 39+ domain events and cross-process IPC bridge for sandboxed plugins | v0.6.3.6 |
+| **VS Solution + MSBuild** — open Visual Studio solutions, build/rebuild/clean via MSBuild API with incremental dirty tracking | v0.5.0 |
 
 </details>
 

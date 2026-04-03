@@ -4,6 +4,8 @@ This document tracks all planned and in-progress features for the WpfHexEditor I
 Features already shipped are in [CHANGELOG.md](CHANGELOG.md).
 
 > **Legend:** 🔧 In Progress · 🔜 Planned · ✅ Done (see CHANGELOG)
+>
+> 📅 *Last revised: 2026-04-02*
 
 ---
 
@@ -61,7 +63,7 @@ Cette section présente les concepts VS-level de l’IDE, en se concentrant uniq
 | #85 | **LSP Engine** | *(In Progress ~92% — see above)* Remaining: call hierarchy (#190), linked editing, inline value hints, LSP 3.18 pull-diagnostics. |
 | #86 | **SmartComplete v4 (LSP)** | Advanced autocomplete, signature help, quick-info, multi-caret editing, virtual scroll for >1 GB files. |
 | #88 | **Dynamic Snippets** | `SnippetsManager` with context-aware snippets, dynamic variables (`CurrentLine`, `FileName`, `CursorPosition`); user/plugin/language-scoped. |
-| #89 | **AI-Assisted Code Suggestions** | AI Assistant plugin shipped (v0.6.4.3) with 5 providers, 24 MCP tools, streaming chat, inline apply. Remaining: `AICompletionEngine` (inline ghost-text completions), `AIRefactoringAssistant`, plugin-extensible AI rules. |
+| #89 | **AI-Assisted Code Suggestions** | AI Assistant plugin shipped (v0.6.4.3) with 5 providers, 25 MCP tools, streaming chat, inline apply. Remaining: `AICompletionEngine` (inline ghost-text completions), `AIRefactoringAssistant`, plugin-extensible AI rules. |
 | #94 | **Advanced Refactoring** | Rename symbol (workspace-wide), extract method/class, inline variable, move file between projects; AI-assisted suggestions. |
 | #96 | **Code Analysis & Metrics** | Cyclomatic complexity, code duplication detection, dependency graphs; dedicated panel with filter/sort. |
 | #106 | **.NET Decompilation via ILSpy** | C# skeleton view + full IL disassembly per method; "Go to Metadata Token" navigation; decompiled source in Code Editor tab. |
@@ -258,7 +260,7 @@ Cette section présente les concepts VS-level de l’IDE, en se concentrant uniq
 
 | Feature | Version / Release |
 |---------|-------------------|
-| **AI Assistant Plugin** — 5 providers (Anthropic/OpenAI/Gemini/Ollama/Claude Code CLI), 24 MCP tools, streaming chat, inline apply, @mentions, command palette (`Ctrl+Shift+A`), conversation history, prompt presets, auto-fallback to CLI, 17 `CA_*` tokens × 18 themes | [0.6.4.3] — 2026-04-02 |
+| **AI Assistant Plugin** — 5 providers (Anthropic/OpenAI/Gemini/Ollama/Claude Code CLI), 25 MCP tools, streaming chat, inline apply, @mentions, command palette (`Ctrl+Shift+A`), conversation history, prompt presets, auto-fallback to CLI, 17 `CA_*` tokens × 18 themes | [0.6.4.3] — 2026-04-02 |
 | **Roslyn Integration** — In-process `RoslynLanguageClient` replacing OmniSharp for C#/VB.NET; non-blocking load + LSP status bar follows active document | [0.6.4.3] — 2026-04-02 |
 | **LSP Client Engine** — full JSON-RPC LSP client; 10 providers (completion, hover, sig-help, code actions, rename, inlay hints, code lens, semantic tokens, breadcrumb bar, workspace symbols); `LspDocumentBridgeService`; `LspStatusBarAdapter`; 30 tokens × 18 themes | [0.6.3.6] — 2026-03-23 |
 | **Command Palette** — `Ctrl+Shift+P`, 9 search modes (`>`/`@`/`:`/`#`/`%`/`?`/Tab), fuzzy scoring, frequency boost, context boost, `CommandPaletteSettings` 14 props, `CommandPaletteOptionsPage` | [0.6.3.6] — 2026-03-23 |

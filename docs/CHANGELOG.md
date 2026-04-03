@@ -11,7 +11,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 ### ✨ Added — AI Assistant Plugin (`WpfHexEditor.Plugins.AIAssistant`)
 
 - **Multi-provider AI chat** — 5 built-in providers: Anthropic (SSE + tool_use + thinking), OpenAI (function_calling), Google Gemini (1M context), Ollama (local), Claude Code CLI (stdio JSON)
-- **24 MCP IDE tools** — `McpServerManager` orchestrates stdio + in-process servers: Whfmt (3), HexBuffer (4), Solution (5), Build (5), Debugger (7)
+- **25 MCP IDE tools** — `McpServerManager` orchestrates stdio + in-process servers: Whfmt (4), HexBuffer (4), Solution (5), Build (5), Debugger (7)
 - **Streaming chat UI** — `AIAssistantPanel` with tab strip, chat bubbles, streaming dots animation, model pill, accent Send button
 - **Inline apply** — `ApplyCodeCommand` extracts fenced code blocks → `IDiffService` preview before apply
 - **@mentions** — `@file`/`@selection`/`@errors`/`@solution`/`@hex` resolved via `ContextInjector` + IDE services
