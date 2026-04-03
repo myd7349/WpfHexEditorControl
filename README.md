@@ -2,9 +2,7 @@
   <a href="Images/Logo2026.png"><img src="Images/Logo2026.png" width="600" height="250" /></a>
   <br/><br/>
 
-  <h1><code>&lt;WpfHexEditor Studio/&gt;</code></h1>
-  <h3>Professional Binary & Source Editor</h3>
-  <p>🖥️ A full-featured open-source IDE for .NET — Binary analysis, reverse engineering & build tooling</p>
+  <h3>🖥️ A full-featured open-source IDE for .NET — Binary analysis, reverse engineering & build tooling</h3>
 
 [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
@@ -40,7 +38,7 @@
 
 ## 🖥️ The IDE Application
 
-**&lt;WpfHexEditor Studio/&gt;** is a full-featured binary analysis IDE for Windows, built with WPF and .NET 8. Think Visual Studio for binary files.
+$\color{#2E7BDE}\texttt{<}$$\color{#E87A20}\texttt{WpfHexEditor}$ $\color{#2E7BDE}\texttt{Studio/>}$ is a full-featured binary analysis IDE for Windows, built with WPF and .NET 8. Think Visual Studio for binary files.
 
 | | |
 |---|---|
