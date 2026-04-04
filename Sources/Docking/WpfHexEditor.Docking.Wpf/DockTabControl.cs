@@ -494,12 +494,11 @@ public class DockTabControl : TabControl
                 Margin = new Thickness(0, 0, 0, 8)
             };
 
-            var progress = new WpfHexEditor.ProgressBar.Controls.LinearProgressBar
+            var progress = new System.Windows.Controls.ProgressBar
             {
                 IsIndeterminate = true,
                 Width = 140,
                 Height = 4,
-                BarHeight = 4,
             };
 
             var stack = new StackPanel

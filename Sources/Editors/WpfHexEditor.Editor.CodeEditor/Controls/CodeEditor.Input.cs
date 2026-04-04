@@ -431,6 +431,15 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                         break;
                     }
 
+                    // Feature C: annuler la sélection de texte normale.
+                    if (!_selection.IsEmpty)
+                    {
+                        _selection.Start = _selection.End; // replier sur la position courante du curseur
+                        InvalidateVisual();
+                        e.Handled = true;
+                        break;
+                    }
+
                     // Dismiss Quick Info popup on Escape.
                     _quickInfoPopup?.Hide();
                     _hoverQuickInfoService?.Cancel();

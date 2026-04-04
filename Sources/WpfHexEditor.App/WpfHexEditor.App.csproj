@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\WpfHexEditor.Core.AssemblyAnalysis\WpfHexEditor.Core.AssemblyAnalysis.csproj" />
-    <ProjectReference Include="..\Docking\WpfHexEditor.Docking.Core\WpfHexEditor.Docking.Core.csproj" />
     <ProjectReference Include="..\Shell\WpfHexEditor.Shell\WpfHexEditor.Shell.csproj" />
     <ProjectReference Include="..\Core\WpfHexEditor.Core\WpfHexEditor.Core.csproj" />
     <ProjectReference Include="..\Editors\WpfHexEditor.HexEditor\WpfHexEditor.HexEditor.csproj" />

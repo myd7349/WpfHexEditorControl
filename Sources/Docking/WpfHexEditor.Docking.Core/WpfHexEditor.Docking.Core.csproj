@@ -9,6 +9,29 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- NuGet packaging -->
+  <PropertyGroup>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>WpfHexEditor.Docking.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Derek Tremblay</Authors>
+    <Company>WpfHexEditor</Company>
+    <Product>WpfHexEditor Docking Core</Product>
+    <Description>Platform-agnostic docking layout engine for WpfHexEditor. Contains the core abstractions (panels, documents, layout persistence) with no WPF dependency.</Description>
+    <PackageTags>docking;layout;wpf;hexeditor</PackageTags>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/abbaye/WpfHexEditorIDE</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/abbaye/WpfHexEditorIDE</PackageProjectUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="WpfHexEditor.Docking.Tests" />
     <InternalsVisibleTo Include="WpfHexEditor.Docking.Wpf" />

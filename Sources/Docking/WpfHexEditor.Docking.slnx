@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="WpfHexEditor.Docking.Core/WpfHexEditor.Docking.Core.csproj" />
+    <Project Path="WpfHexEditor.Docking.Wpf/WpfHexEditor.Docking.Wpf.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="../Tests/WpfHexEditor.Docking.Tests/WpfHexEditor.Docking.Tests.csproj" />
+  </Folder>
+</Solution>

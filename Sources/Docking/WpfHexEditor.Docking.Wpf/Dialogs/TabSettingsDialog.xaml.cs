@@ -30,7 +30,7 @@ namespace WpfHexEditor.Shell.Dialogs;
 /// Live-preview options dialog for the document tab bar.
 /// Changes are applied immediately to the shared <see cref="DocumentTabBarSettings"/> instance.
 /// </summary>
-public partial class TabSettingsDialog : WpfHexEditor.Editor.Core.Views.ThemedDialog, INotifyPropertyChanged
+public partial class TabSettingsDialog : ThemedDialog, INotifyPropertyChanged
 {
     // --- Dependencies ---------------------------------------------------------
 

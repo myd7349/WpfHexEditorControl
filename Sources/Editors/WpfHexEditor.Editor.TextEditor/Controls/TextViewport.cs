@@ -1154,7 +1154,7 @@ internal sealed class TextViewport : FrameworkElement
 
         switch (e.Key)
         {
-            // Feature A/B: Escape clears rect selection or cancels drag.
+            // Feature A/B/C: Escape clears rect selection, cancels drag, or clears text selection.
             case Key.Escape:
                 if (!_rectSelection.IsEmpty)
                 {
@@ -1176,6 +1176,13 @@ internal sealed class TextViewport : FrameworkElement
                         _vm.CaretColumn = _textDragDrop.SnapshotEndCol;
                     }
                     _textDragDrop.Reset();
+                    UpdateBackground();
+                    e.Handled = true;
+                }
+                else if (_vm.HasSelection)
+                {
+                    // Feature C: annuler la sélection de texte normale.
+                    _vm.ClearSelection();
                     UpdateBackground();
                     e.Handled = true;
                 }

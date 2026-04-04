@@ -15,10 +15,31 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- NuGet packaging -->
+  <PropertyGroup>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>WpfHexEditor.Docking.Wpf</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Derek Tremblay</Authors>
+    <Company>WpfHexEditor</Company>
+    <Product>WpfHexEditor Docking WPF</Product>
+    <Description>WPF docking framework for WpfHexEditor. Provides VS Code-like docking chrome, panel/document hosting, theme switching and JSON layout persistence.</Description>
+    <PackageTags>docking;layout;wpf;hexeditor;shell</PackageTags>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/abbaye/WpfHexEditorIDE</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/abbaye/WpfHexEditorIDE</PackageProjectUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\..\Controls\WpfHexEditor.ProgressBar\WpfHexEditor.ProgressBar.csproj" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\WpfHexEditor.Docking.Core\WpfHexEditor.Docking.Core.csproj" />
-    <ProjectReference Include="..\..\Editors\WpfHexEditor.Editor.Core\WpfHexEditor.Editor.Core.csproj" />
   </ItemGroup>
 
 </Project>
