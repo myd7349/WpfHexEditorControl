@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    VB.NET Source File
    Category:  Programming
    Ext:       .vb
    Editor:    code-editor
    Desc:      Visual Basic .NET language source file (Microsoft .NET platform).
-   Updated:   2026-03-25
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "semantic",
   "formatName": "VB.NET Source File",
-  "version": "1.0",
+  "version": "2.1",
   "extensions": [
     ".vb"
   ],
@@ -26,7 +28,7 @@
     "DocumentationLevel": "standard",
     "BlocksDefined": 0,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-25",
+    "LastUpdated": "2026-04-04",
     "PriorityFormat": true,
     "AutoRefined": false
   },
@@ -176,9 +178,82 @@
         "triggerDirective": true
       }
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"}],
-        "columnRulers": [120],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      }
+    ],
+    "columnRulers": [
+      120
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": true,
+      "maxLineLength": 120,
+      "blockOpenKeywords": ["Then", "Do", "Else"],
+      "blockCloseKeywords": [
+        "End If", "End Sub", "End Function", "End Class", "End Module",
+        "End Interface", "End Structure", "End Enum", "End Namespace",
+        "End Property", "End With", "End Select", "End Try", "End While",
+        "Loop", "Next", "Else", "ElseIf", "Catch", "Finally"
+      ]
+    },
+    "previewSnippet": "Imports System.IO\nImports System\n\nDim a = 1\nIf a>=0 Then\n    Dim x=a+b*2\n    Console.Write(x,a)\nEnd If",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "If x>=0 Then",
+        "after": "If x >= 0 Then"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2",
+        "after": "a = b + c * 2"
+      },
+      "spaceAfterComma": {
+        "before": "Go(x,y,z)",
+        "after": "Go(x, y, z)"
+      },
+      "organizeImports": {
+        "before": "Imports System.IO\nImports System",
+        "after": "Imports System\nImports System.IO"
+      },
+      "trimTrailingWhitespace": {
+        "before": "Dim x = 1   ",
+        "after": "Dim x = 1"
+      },
+      "insertFinalNewline": {
+        "before": "End Class",
+        "after": "End Class\n"
+      }
+    },
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "^\\s*'",
+        "^\\s*REM\\s",
+        "^\\s*$",
+        "^\\s*Imports\\s",
+        "^\\s*Namespace\\b"
+      ],
+      "statementContinuationPatterns": [
+        "_\\s*$"
+      ]
+    }
   },
   "forensic": {
     "category": "other",
@@ -191,18 +266,6 @@
       "Verify VB.NET Source File file signature and header structure",
       "Check data integrity and field boundaries",
       "Inspect metadata and version information"
-    ]
-  },
-  "breakpointRules": {
-    "nonExecutablePatterns": [
-      "^\\s*'",
-      "^\\s*REM\\s",
-      "^\\s*$",
-      "^\\s*Imports\\s",
-      "^\\s*Namespace\\b"
-    ],
-    "statementContinuationPatterns": [
-      "_\\s*$"
     ]
   }
 }

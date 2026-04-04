@@ -76,7 +76,7 @@ internal static class JsonSyntaxDefinitionParser
                     var pattern  = r.TryGetProperty("pattern",  out var pp) ? pp.GetString() ?? string.Empty : string.Empty;
                     var colorKey = r.TryGetProperty("colorKey", out var cp) ? cp.GetString() ?? string.Empty : string.Empty;
 
-                    if (!string.IsNullOrEmpty(pattern))
+                    if (!string.IsNullOrEmpty(pattern) && IsValidRegex(pattern))
                         rules.Add(new SyntaxRule { Type = type, Pattern = pattern, ColorKey = colorKey });
                 }
             }
@@ -167,7 +167,7 @@ internal static class JsonSyntaxDefinitionParser
                     if (string.IsNullOrEmpty(colorKey) && !string.IsNullOrEmpty(type))
                         colorKey = ResolveColorKeyFromType(type);
 
-                    if (!string.IsNullOrEmpty(pattern))
+                    if (!string.IsNullOrEmpty(pattern) && IsValidRegex(pattern))
                         rules.Add(new SyntaxRule { Type = type, Pattern = pattern, ColorKey = colorKey });
                 }
             }
@@ -261,4 +261,21 @@ internal static class JsonSyntaxDefinitionParser
     /// </summary>
     private static string ResolveColorKeyFromType(string type)
         => _typeToColorKey.TryGetValue(type, out var key) ? key : string.Empty;
+
+    /// <summary>
+    /// Returns <see langword="true"/> when <paramref name="pattern"/> is a syntactically
+    /// valid .NET regular expression, <see langword="false"/> otherwise.
+    /// </summary>
+    private static bool IsValidRegex(string pattern)
+    {
+        try
+        {
+            _ = new System.Text.RegularExpressions.Regex(pattern);
+            return true;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
 }

@@ -192,6 +192,70 @@
 
             <Separator Margin="0,8,0,10" Background="{DynamicResource DockBorderBrush}" />
 
+            <!-- ── Code Formatting (overrides .whfmt) ───────────────── -->
+            <TextBlock Text="Code Formatting"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,6"
+                       Foreground="{DynamicResource DockMenuForegroundBrush}" />
+
+            <TextBlock Text="These settings override the language .whfmt defaults. Leave unchecked checkboxes at their default (indeterminate) state to inherit the language rules."
+                       TextWrapping="Wrap"
+                       FontSize="11"
+                       Margin="0,0,0,8"
+                       Foreground="{DynamicResource DockMenuForegroundBrush}"
+                       Opacity="0.65" />
+
+            <CheckBox Content="Trim trailing whitespace"
+                      IsThreeState="True"
+                      IsChecked="{Binding TrimTrailingWhitespace}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Remove trailing spaces/tabs on each line. Indeterminate = use .whfmt language default." />
+
+            <CheckBox Content="Insert final newline"
+                      IsThreeState="True"
+                      IsChecked="{Binding InsertFinalNewline}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Ensure the file ends with exactly one newline. Indeterminate = use .whfmt language default." />
+
+            <CheckBox Content="Space after keywords (if, for, while)"
+                      IsThreeState="True"
+                      IsChecked="{Binding SpaceAfterKeywords}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Insert a space between control keywords and opening paren: if (...) vs if(...). Indeterminate = .whfmt default." />
+
+            <CheckBox Content="Space around binary operators"
+                      IsThreeState="True"
+                      IsChecked="{Binding SpaceAroundBinaryOperators}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Insert spaces around +, -, *, /, ==, etc. Indeterminate = .whfmt default." />
+
+            <CheckBox Content="Space after commas"
+                      IsThreeState="True"
+                      IsChecked="{Binding SpaceAfterComma}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Insert a space after commas in argument/parameter lists. Indeterminate = .whfmt default." />
+
+            <CheckBox Content="Indent case/when labels"
+                      IsThreeState="True"
+                      IsChecked="{Binding IndentCaseLabels}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Add one indent level to case/when labels inside switch. Indeterminate = .whfmt default." />
+
+            <CheckBox Content="Organize imports on format"
+                      IsThreeState="True"
+                      IsChecked="{Binding OrganizeImports}"
+                      Margin="0,2,0,2"
+                      Foreground="{DynamicResource DockMenuForegroundBrush}"
+                      ToolTip="Sort using/import directives alphabetically when formatting. Indeterminate = .whfmt default." />
+
+            <Separator Margin="0,8,0,10" Background="{DynamicResource DockBorderBrush}" />
+
             <!-- ── Syntax Colors ─────────────────────────────────────── -->
             <Grid Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>

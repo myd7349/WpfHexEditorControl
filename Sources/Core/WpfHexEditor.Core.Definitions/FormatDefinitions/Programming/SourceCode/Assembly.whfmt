@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Assembly Source File
    Category:  Programming
    Ext:       .asm, .s, .z80, .arm, .mips, .65s, .6502
    Editor:    code-editor
    Desc:      Assembly language source files for various architectures (x86, ARM, Z80, 6502, MIPS).
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Assembly Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".asm",
     ".s",
@@ -58,6 +60,18 @@
       ".s"
     ],
     "lineCommentPrefix": ";",
+    "formattingRules": {
+      "indentSize": 8,
+      "useTabs": true,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": false,
+      "spaceAfterComma": true,
+      "maxLineLength": 80
+    },
     "rules": [
       {
         "type": "Keyword",
@@ -94,7 +108,22 @@
         "pattern": ";.*$",
         "colorKey": "TE_Comment"
       }
-    ]
+    ],
+    "previewSnippet": "section .text\nglobal _start\n\n_start:\n    mov eax,1\n    mov ebx,0\n    int 0x80",
+    "previewSamples": {
+      "spaceAfterComma": {
+        "before": "mov eax,1",
+        "after": "mov eax, 1"
+      },
+      "trimTrailingWhitespace": {
+        "before": "    mov eax, 1   ",
+        "after": "    mov eax, 1"
+      },
+      "insertFinalNewline": {
+        "before": "    int 0x80",
+        "after": "    int 0x80\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

@@ -109,12 +109,26 @@ internal sealed class SyntaxColoringService : ISyntaxColoringService
         var langDef = LanguageRegistry.Instance.FindById(id);
         if (langDef is null || langDef.SyntaxRules.Count == 0) return null;
 
-        var rules = langDef.SyntaxRules.Select(rule => new RegexHighlightRule(
-            rule.Pattern,
-            TokenKindToBrush(rule.Kind),
-            isBold:   rule.Kind is SyntaxTokenKind.Keyword,
-            isItalic: rule.Kind is SyntaxTokenKind.Comment,
-            kind:     rule.Kind));
+        var rules = langDef.SyntaxRules
+            .Select(rule =>
+            {
+                try
+                {
+                    return new RegexHighlightRule(
+                        rule.Pattern,
+                        TokenKindToBrush(rule.Kind),
+                        isBold:   rule.Kind is SyntaxTokenKind.Keyword,
+                        isItalic: rule.Kind is SyntaxTokenKind.Comment,
+                        kind:     rule.Kind);
+                }
+                catch (System.Text.RegularExpressions.RegexParseException)
+                {
+                    // Skip rules with invalid patterns — avoids crashing the preview
+                    return null;
+                }
+            })
+            .Where(r => r is not null)
+            .Cast<RegexHighlightRule>();
 
         return new SyntaxRuleHighlighter(
             rules,

@@ -143,6 +143,45 @@ public sealed class LanguageDefinition
     /// to provide context-aware completions for script globals and their members.
     /// </summary>
     public IReadOnlyList<ScriptGlobalEntry> ScriptGlobals { get; init; } = [];
+
+    // ── Formatting preview (whfmt-driven) ───────────────────────────────────
+
+    /// <summary>
+    /// A short multi-line code snippet representative of this language's syntax.
+    /// Used as the live preview source in the Formatting options page.
+    /// Sourced from "previewSnippet" in the whfmt syntaxDefinition block.
+    /// Null = the preview panel will synthesise a fallback from <see cref="PreviewSamples"/>.
+    /// </summary>
+    public string? PreviewSnippet { get; init; }
+
+    /// <summary>
+    /// Per-rule before/after micro-snippets for the Formatting options page tooltips.
+    /// Key = formatting rule name (e.g. "spaceAfterKeywords").
+    /// Sourced from "previewSamples" in the whfmt syntaxDefinition block.
+    /// Rules absent from the dictionary → tooltip disabled for that rule in this language.
+    /// </summary>
+    public IReadOnlyDictionary<string, FormattingPreviewSample> PreviewSamples { get; init; }
+        = new Dictionary<string, FormattingPreviewSample>();
+}
+
+// ==========================================================
+// File: FormattingPreviewSample
+//       (embedded in LanguageDefinition.cs)
+// Description: Before/after micro-snippet for one formatting rule.
+// ==========================================================
+
+/// <summary>
+/// A pair of before/after code fragments illustrating the effect of a single
+/// formatting rule. Sourced from "previewSamples" in the .whfmt file.
+/// Consumed by <c>FormattingRuleTooltip</c> in the Formatting options page.
+/// </summary>
+public sealed record FormattingPreviewSample
+{
+    /// <summary>Code fragment showing how the rule transforms the source (unformatted state).</summary>
+    public string Before { get; init; } = string.Empty;
+
+    /// <summary>Code fragment showing the result after the rule is applied.</summary>
+    public string After  { get; init; } = string.Empty;
 }
 
 // ==========================================================
@@ -331,21 +370,173 @@ public sealed record EndOfBlockHintSettings(
 // Description: Per-language code formatting configuration from whfmt.
 // ==========================================================
 
+/// <summary>Brace placement style for languages with C-style blocks.</summary>
+public enum BraceStyle
+{
+    /// <summary>Opening brace on its own line (Allman / BSD style).</summary>
+    Allman,
+    /// <summary>Opening brace at the end of the previous line (K&amp;R / 1TBS style).</summary>
+    KR,
+    /// <summary>Opening brace at end of line for functions, own line for control flow (Stroustrup).</summary>
+    Stroustrup,
+}
+
+/// <summary>Preferred quote character for string literals.</summary>
+public enum QuoteStyle { Double, Single, Backtick }
+
+/// <summary>Line ending normalisation mode.</summary>
+public enum LineEndingStyle { Auto, LF, CRLF }
+
+/// <summary>Trailing comma insertion mode (JS/TS/JSON).</summary>
+public enum TrailingCommaStyle { None, ES5, All }
+
 /// <summary>
 /// Language-specific formatting preferences read from whfmt "formattingRules".
-/// Used by CodeFormattingService as fallback when no LSP formatter is available.
+/// Used by <c>CodeFormattingService</c> as fallback when no LSP formatter is available.
+/// All properties can be overridden by <c>CodeEditorOptions</c> at the user level.
 /// </summary>
 public sealed record FormattingRules
 {
+    // ── Whitespace ──────────────────────────────────────────────────────────
+
     /// <summary>Number of spaces per indent level. Default = 4.</summary>
     public int IndentSize { get; init; } = 4;
 
     /// <summary>When true, indent uses tab characters instead of spaces.</summary>
     public bool UseTabs { get; init; }
 
-    /// <summary>Remove trailing whitespace on save. Default = true.</summary>
+    /// <summary>Remove trailing whitespace on each line. Default = true.</summary>
     public bool TrimTrailingWhitespace { get; init; } = true;
 
-    /// <summary>Ensure file ends with a newline. Default = true.</summary>
+    /// <summary>Ensure file ends with exactly one newline. Default = true.</summary>
     public bool InsertFinalNewline { get; init; } = true;
+
+    /// <summary>Line ending normalisation. Default = Auto (preserve existing).</summary>
+    public LineEndingStyle LineEnding { get; init; } = LineEndingStyle.Auto;
+
+    // ── Braces ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Brace placement style. <see langword="null"/> = no brace reformatting
+    /// (e.g. Python, SQL, Markdown).
+    /// </summary>
+    public BraceStyle? BraceStyle { get; init; } = null;
+
+    /// <summary>Insert a space between the keyword/identifier and the opening brace.</summary>
+    public bool SpaceBeforeOpenBrace { get; init; } = true;
+
+    /// <summary>Insert a space between a control-flow keyword and its opening paren: <c>if (</c> vs <c>if(</c>.</summary>
+    public bool SpaceAfterKeywords { get; init; } = true;
+
+    /// <summary>Insert spaces inside parentheses: <c>( x )</c> vs <c>(x)</c>.</summary>
+    public bool SpaceInsideParens { get; init; }
+
+    /// <summary>Indent <c>case</c>/<c>when</c> labels inside <c>switch</c>. Default = false.</summary>
+    public bool IndentCaseLabels { get; init; }
+
+    // ── Blank lines ─────────────────────────────────────────────────────────
+
+    /// <summary>Maximum number of consecutive blank lines allowed. Default = 2.</summary>
+    public int MaxConsecutiveBlankLines { get; init; } = 2;
+
+    /// <summary>Ensure a blank line before method/function declarations.</summary>
+    public bool BlankLineBeforeMethod { get; init; } = true;
+
+    /// <summary>Ensure a blank line after the import/using block.</summary>
+    public bool BlankLineAfterImports { get; init; } = true;
+
+    // ── Spacing ─────────────────────────────────────────────────────────────
+
+    /// <summary>Insert spaces around binary operators: <c>a + b</c> vs <c>a+b</c>.</summary>
+    public bool SpaceAroundBinaryOperators { get; init; } = true;
+
+    /// <summary>Insert a space after commas in argument/parameter lists.</summary>
+    public bool SpaceAfterComma { get; init; } = true;
+
+    // ── Imports ─────────────────────────────────────────────────────────────
+
+    /// <summary>Sort import/using directives alphabetically on format.</summary>
+    public bool OrganizeImports { get; init; }
+
+    /// <summary>
+    /// Separate <c>System.*</c> imports into their own group with a blank line
+    /// (C#, Java, Kotlin). Ignored when <see cref="OrganizeImports"/> is false.
+    /// </summary>
+    public bool SeparateSystemImports { get; init; }
+
+    // ── Language-specific ───────────────────────────────────────────────────
+
+    /// <summary>Preferred quote style for string literals. <see langword="null"/> = no change.</summary>
+    public QuoteStyle? QuoteStyle { get; init; } = null;
+
+    /// <summary>Trailing comma insertion strategy for JS/TS/JSON.</summary>
+    public TrailingCommaStyle TrailingCommas { get; init; } = TrailingCommaStyle.None;
+
+    /// <summary>Maximum line length for diagnostics and optional wrapping. 0 = disabled.</summary>
+    public int MaxLineLength { get; init; } = 120;
+
+    /// <summary>Uppercase SQL reserved keywords (SELECT, FROM, WHERE…). Only relevant for SQL.</summary>
+    public bool SqlKeywordsUppercase { get; init; }
+
+    // ── Keyword-based block delimiters ───────────────────────────────────────
+
+    /// <summary>
+    /// Words that open an indented block (e.g. "Then", "Do", "Sub", "Function",
+    /// "Class", "def", "do"). A line whose <em>last non-whitespace word</em>
+    /// matches one of these causes the <em>next</em> line to be indented one level.
+    /// Null or empty = use brace-based indentation only.
+    /// </summary>
+    public IReadOnlyList<string> BlockOpenKeywords { get; init; } = [];
+
+    /// <summary>
+    /// Words that close an indented block (e.g. "End Sub", "End Class", "end",
+    /// "End If", "End Select"). A line whose trimmed content starts with one of
+    /// these is de-dented before being emitted.
+    /// </summary>
+    public IReadOnlyList<string> BlockCloseKeywords { get; init; } = [];
+
+    // ── Override merge ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates a new <see cref="FormattingRules"/> by merging this instance with
+    /// user-level overrides.  Non-null override values take precedence over the
+    /// whfmt-sourced values stored in this record.
+    /// </summary>
+    public FormattingRules WithOverrides(FormattingOverrides? ov)
+    {
+        if (ov is null) return this;
+        return this with
+        {
+            IndentSize                 = ov.IndentSize ?? IndentSize,
+            UseTabs                    = ov.UseTabs ?? UseTabs,
+            TrimTrailingWhitespace     = ov.TrimTrailingWhitespace ?? TrimTrailingWhitespace,
+            InsertFinalNewline         = ov.InsertFinalNewline ?? InsertFinalNewline,
+            BraceStyle                 = ov.BraceStyle ?? BraceStyle,
+            SpaceAfterKeywords         = ov.SpaceAfterKeywords ?? SpaceAfterKeywords,
+            SpaceAroundBinaryOperators = ov.SpaceAroundBinaryOperators ?? SpaceAroundBinaryOperators,
+            SpaceAfterComma            = ov.SpaceAfterComma ?? SpaceAfterComma,
+            IndentCaseLabels           = ov.IndentCaseLabels ?? IndentCaseLabels,
+            OrganizeImports            = ov.OrganizeImports ?? OrganizeImports,
+            MaxLineLength              = ov.MaxLineLength ?? MaxLineLength,
+        };
+    }
+}
+
+/// <summary>
+/// User-level formatting overrides.  <see langword="null"/> values mean
+/// "use the whfmt language default".
+/// </summary>
+public sealed class FormattingOverrides
+{
+    public int?        IndentSize                 { get; set; }
+    public bool?       UseTabs                    { get; set; }
+    public bool?       TrimTrailingWhitespace     { get; set; }
+    public bool?       InsertFinalNewline         { get; set; }
+    public BraceStyle? BraceStyle                 { get; set; }
+    public bool?       SpaceAfterKeywords         { get; set; }
+    public bool?       SpaceAroundBinaryOperators { get; set; }
+    public bool?       SpaceAfterComma            { get; set; }
+    public bool?       IndentCaseLabels           { get; set; }
+    public bool?       OrganizeImports            { get; set; }
+    public int?        MaxLineLength              { get; set; }
 }

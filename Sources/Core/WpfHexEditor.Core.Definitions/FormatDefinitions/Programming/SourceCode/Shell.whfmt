@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Shell Script
    Category:  Programming
    Ext:       .sh, .bash, .zsh, .fish
    Editor:    code-editor
    Desc:      Unix/Linux shell script files (Bash, Zsh, Fish).
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Shell Script",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".sh",
     ".bash",
@@ -116,9 +118,62 @@
         "\\\\\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [80],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      80
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "kr",
+      "spaceBeforeOpenBrace": true,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": false,
+      "blankLineAfterImports": false,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": false,
+      "separateSystemImports": false,
+      "quoteStyle": "double",
+      "maxLineLength": 80
+    },
+    "previewSnippet": "#!/bin/bash\n\ngo() {\n    if [ $1 -gt 0 ]; then\n        echo $1\n    fi\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if[$1 -gt 0];then",
+        "after": "if [ $1 -gt 0 ]; then"
+      },
+      "spaceAfterComma": {
+        "before": "echo $1,$2",
+        "after": "echo $1, $2"
+      },
+      "trimTrailingWhitespace": {
+        "before": "echo ok   ",
+        "after": "echo ok"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

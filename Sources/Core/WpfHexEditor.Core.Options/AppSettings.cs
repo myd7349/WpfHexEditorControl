@@ -662,6 +662,29 @@ public sealed class CodeEditorDefaultSettings
     /// <summary>Automatically format the document on Ctrl+S save.</summary>
     public bool FormatOnSave { get; set; } = false;
 
+    // -- Formatting overrides (null = use .whfmt language default) ----------------
+
+    /// <summary>Override whfmt trimTrailingWhitespace. Null = inherit language default.</summary>
+    public bool? TrimTrailingWhitespace { get; set; }
+
+    /// <summary>Override whfmt insertFinalNewline. Null = inherit language default.</summary>
+    public bool? InsertFinalNewline { get; set; }
+
+    /// <summary>Override whfmt spaceAfterKeywords. Null = inherit language default.</summary>
+    public bool? SpaceAfterKeywords { get; set; }
+
+    /// <summary>Override whfmt spaceAroundBinaryOperators. Null = inherit.</summary>
+    public bool? SpaceAroundBinaryOperators { get; set; }
+
+    /// <summary>Override whfmt spaceAfterComma. Null = inherit.</summary>
+    public bool? SpaceAfterComma { get; set; }
+
+    /// <summary>Override whfmt indentCaseLabels. Null = inherit.</summary>
+    public bool? IndentCaseLabels { get; set; }
+
+    /// <summary>Override whfmt organizeImports. Null = inherit.</summary>
+    public bool? OrganizeImports { get; set; }
+
     // -- Column Rulers (#165) ---------------------------------------------------
 
     /// <summary>

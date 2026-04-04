@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    HTML Source File
    Category:  Programming
    Ext:       .html, .htm
    Editor:    code-editor
    Desc:      HyperText Markup Language source file for web pages.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "semantic",
   "formatName": "HTML Source File",
-  "version": "2.3",
+  "version": "2.1",
   "extensions": [
     ".html",
     ".htm"
@@ -45,6 +47,19 @@
     "Static site generation"
   ],
   "syntaxDefinition": {
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": false,
+      "blankLineAfterImports": false,
+      "spaceAfterComma": true,
+      "quoteStyle": "double",
+      "maxLineLength": 120
+    },
     "diagnosticPrefix": "HTML",
     "id": "html",
     "name": "HTML",
@@ -126,6 +141,17 @@
         "maxContextLines": 1,
         "triggerBrace": true,
         "triggerDirective": false
+      }
+    },
+    "previewSnippet": "<!DOCTYPE html>\n<html>\n<head><title>Test</title></head>\n<body>\n<div class=\"box\"><p>Hello</p></div>\n</body>\n</html>",
+    "previewSamples": {
+      "trimTrailingWhitespace": {
+        "before": "<p>Hello</p>   ",
+        "after": "<p>Hello</p>"
+      },
+      "insertFinalNewline": {
+        "before": "</html>",
+        "after": "</html>\n"
       }
     }
   },

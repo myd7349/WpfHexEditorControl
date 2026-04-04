@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    F# Source File
    Category:  Programming
    Ext:       .fs | .fsx | .fsi
    Editor:    code-editor
    Desc:      F# functional-first language for .NET (Microsoft).
-   Updated:   2026-03-25
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "semantic",
   "formatName": "F# Source File",
-  "version": "1.0",
+  "version": "2.1",
   "extensions": [
     ".fs",
     ".fsx",
@@ -28,7 +30,7 @@
     "DocumentationLevel": "standard",
     "BlocksDefined": 0,
     "ValidationRules": 0,
-    "LastUpdated": "2026-03-25",
+    "LastUpdated": "2026-04-04",
     "PriorityFormat": true,
     "AutoRefined": false
   },
@@ -183,9 +185,82 @@
         "triggerDirective": false
       }
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [100],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      100
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "allman",
+      "spaceBeforeOpenBrace": false,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": true,
+      "maxLineLength": 120
+    },
+    "previewSnippet": "open System.IO\nopen System\n\nlet go x y=\n    if x>0 then\n        match x with\n        | 1 -> ()\n        | _ -> ()",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if x>0 then",
+        "after": "if x > 0 then"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2",
+        "after": "a = b + c * 2"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z)",
+        "after": "go (x, y, z)"
+      },
+      "organizeImports": {
+        "before": "open System.IO\nopen System",
+        "after": "open System\nopen System.IO"
+      },
+      "trimTrailingWhitespace": {
+        "before": "let x = 1   ",
+        "after": "let x = 1"
+      },
+      "insertFinalNewline": {
+        "before": "()",
+        "after": "()\n"
+      }
+    },
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "^\\s*//",
+        "^\\s*\\(\\*",
+        "^\\s*$",
+        "^\\s*open\\s",
+        "^\\s*module\\b"
+      ],
+      "statementContinuationPatterns": [
+        "\\|>\\s*$",
+        ",\\s*$"
+      ]
+    }
   },
   "forensic": {
     "category": "other",
@@ -198,19 +273,6 @@
       "Verify F# Source File file signature and header structure",
       "Check data integrity and field boundaries",
       "Inspect metadata and version information"
-    ]
-  },
-  "breakpointRules": {
-    "nonExecutablePatterns": [
-      "^\\s*//",
-      "^\\s*\\(\\*",
-      "^\\s*$",
-      "^\\s*open\\s",
-      "^\\s*module\\b"
-    ],
-    "statementContinuationPatterns": [
-      "\\|>\\s*$",
-      ",\\s*$"
     ]
   }
 }

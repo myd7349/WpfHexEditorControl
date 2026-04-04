@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    XML Markup Source File
    Category:  Programming
    Ext:       .xsl, .xslt, .xhtml, .svg, .tasks, .targets, .props
    Editor:    code-editor
    Desc:      XML-derived markup source files: XSLT, XHTML, SVG, and MSBuild project files (.tasks, .targets, .props).
-   Updated:   2026-03-30
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "semantic",
   "formatName": "XML Markup Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".xsl",
     ".xslt",
@@ -56,6 +58,20 @@
     "MSBuild targets and props (.targets, .props)"
   ],
   "syntaxDefinition": {
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "maxConsecutiveBlankLines": 1,
+      "blankLineBeforeMethod": false,
+      "blankLineAfterImports": false,
+      "spaceAfterKeywords": false,
+      "spaceAroundBinaryOperators": false,
+      "spaceAfterComma": false,
+      "quoteStyle": "double"
+    },
     "diagnosticPrefix": "XML",
     "id": "xml_markup",
     "name": "XML Markup",
@@ -100,17 +116,17 @@
         "colorKey": "TE_Directive"
       },
       {
-        "type": "XmlNsDecl",
+        "type": "AttrName",
         "pattern": "xmlns(?::[A-Za-z_][A-Za-z0-9_-]*)?\\s*=\\s*\"[^\"]*\"",
         "colorKey": "TE_Type"
       },
       {
-        "type": "TagOpenName",
+        "type": "Tag",
         "pattern": "(?<=<)[A-Za-z_][A-Za-z0-9_:.-]*",
         "colorKey": "TE_Keyword"
       },
       {
-        "type": "TagCloseName",
+        "type": "Tag",
         "pattern": "(?<=</)[A-Za-z_][A-Za-z0-9_:.-]*",
         "colorKey": "TE_Keyword"
       },
@@ -148,6 +164,21 @@
         "maxContextLines": 1,
         "triggerBrace": true,
         "triggerDirective": false
+      }
+    },
+    "previewSnippet": "<?xml version='1.0'?>\n<root>\n<item id='1' name='test'/>\n</root>",
+    "previewSamples": {
+      "quoteStyle": {
+        "before": "<item id='1' name='test'/>",
+        "after": "<item id=\"1\" name=\"test\"/>"
+      },
+      "trimTrailingWhitespace": {
+        "before": "<item id=\"1\"/>   ",
+        "after": "<item id=\"1\"/>"
+      },
+      "insertFinalNewline": {
+        "before": "</root>",
+        "after": "</root>\n"
       }
     }
   },

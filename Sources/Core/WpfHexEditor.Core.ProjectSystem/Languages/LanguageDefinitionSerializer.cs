@@ -242,6 +242,8 @@ public static class LanguageDefinitionSerializer
             ColorLiteralPatterns      = MapColorLiteralPatterns(dto.ColorLiteralPatterns),
             DiagnosticPrefix          = dto.DiagnosticPrefix,
             ScriptGlobals             = MapScriptGlobals(dto.ScriptGlobals),
+            PreviewSnippet            = dto.PreviewSnippet,
+            PreviewSamples            = MapPreviewSamples(dto.PreviewSamples),
         };
     }
 
@@ -402,6 +404,12 @@ public static class LanguageDefinitionSerializer
 
         [JsonPropertyName("scriptGlobals")]
         public ScriptGlobalDto[]?    ScriptGlobals            { get; set; }
+
+        [JsonPropertyName("previewSnippet")]
+        public string?               PreviewSnippet           { get; set; }
+
+        [JsonPropertyName("previewSamples")]
+        public Dictionary<string, PreviewSampleDto>? PreviewSamples { get; set; }
     }
 
     private sealed class ScriptGlobalDto
@@ -418,6 +426,13 @@ public static class LanguageDefinitionSerializer
         [JsonPropertyName("type")]          public string? Type          { get; set; }
         [JsonPropertyName("kind")]          public string? Kind          { get; set; }
         [JsonPropertyName("documentation")] public string? Documentation { get; set; }
+    }
+
+    /// <summary>DTO for a single before/after formatting preview micro-snippet.</summary>
+    private sealed class PreviewSampleDto
+    {
+        [JsonPropertyName("before")] public string? Before { get; set; }
+        [JsonPropertyName("after")]  public string? After  { get; set; }
     }
 
     private sealed class FoldingRulesDto
@@ -470,10 +485,40 @@ public static class LanguageDefinitionSerializer
 
     private sealed class FormattingRulesDto
     {
-        [JsonPropertyName("indentSize")]              public int  IndentSize              { get; set; } = 4;
-        [JsonPropertyName("useTabs")]                 public bool UseTabs                 { get; set; }
-        [JsonPropertyName("trimTrailingWhitespace")]  public bool TrimTrailingWhitespace  { get; set; } = true;
-        [JsonPropertyName("insertFinalNewline")]       public bool InsertFinalNewline       { get; set; } = true;
+        // ── Whitespace ──────────────────────────────────────────────────────
+        [JsonPropertyName("indentSize")]             public int    IndentSize             { get; set; } = 4;
+        [JsonPropertyName("useTabs")]                public bool   UseTabs                { get; set; }
+        [JsonPropertyName("trimTrailingWhitespace")] public bool   TrimTrailingWhitespace { get; set; } = true;
+        [JsonPropertyName("insertFinalNewline")]      public bool   InsertFinalNewline      { get; set; } = true;
+        [JsonPropertyName("lineEnding")]             public string? LineEnding             { get; set; }
+
+        // ── Braces ──────────────────────────────────────────────────────────
+        [JsonPropertyName("braceStyle")]             public string? BraceStyle            { get; set; }
+        [JsonPropertyName("spaceBeforeOpenBrace")]   public bool   SpaceBeforeOpenBrace   { get; set; } = true;
+        [JsonPropertyName("spaceAfterKeywords")]     public bool   SpaceAfterKeywords     { get; set; } = true;
+        [JsonPropertyName("spaceInsideParens")]      public bool   SpaceInsideParens      { get; set; }
+        [JsonPropertyName("indentCaseLabels")]       public bool   IndentCaseLabels       { get; set; }
+
+        // ── Blank lines ─────────────────────────────────────────────────────
+        [JsonPropertyName("maxConsecutiveBlankLines")] public int  MaxConsecutiveBlankLines { get; set; } = 2;
+        [JsonPropertyName("blankLineBeforeMethod")]  public bool   BlankLineBeforeMethod  { get; set; } = true;
+        [JsonPropertyName("blankLineAfterImports")]  public bool   BlankLineAfterImports  { get; set; } = true;
+
+        // ── Spacing ─────────────────────────────────────────────────────────
+        [JsonPropertyName("spaceAroundBinaryOperators")] public bool SpaceAroundBinaryOperators { get; set; } = true;
+        [JsonPropertyName("spaceAfterComma")]        public bool   SpaceAfterComma        { get; set; } = true;
+
+        // ── Imports ─────────────────────────────────────────────────────────
+        [JsonPropertyName("organizeImports")]        public bool   OrganizeImports        { get; set; }
+        [JsonPropertyName("separateSystemImports")]  public bool   SeparateSystemImports  { get; set; }
+
+        // ── Language-specific ───────────────────────────────────────────────
+        [JsonPropertyName("quoteStyle")]             public string? QuoteStyle            { get; set; }
+        [JsonPropertyName("trailingCommas")]         public string? TrailingCommas        { get; set; }
+        [JsonPropertyName("maxLineLength")]          public int    MaxLineLength          { get; set; } = 120;
+        [JsonPropertyName("sqlKeywordsUppercase")]   public bool   SqlKeywordsUppercase   { get; set; }
+        [JsonPropertyName("blockOpenKeywords")]      public string[]? BlockOpenKeywords    { get; set; }
+        [JsonPropertyName("blockCloseKeywords")]     public string[]? BlockCloseKeywords   { get; set; }
     }
 
     // -- New mapping helpers ------------------------------------------------
@@ -496,12 +541,65 @@ public static class LanguageDefinitionSerializer
         if (dto is null) return null;
         return new FormattingRules
         {
-            IndentSize             = dto.IndentSize,
-            UseTabs                = dto.UseTabs,
-            TrimTrailingWhitespace = dto.TrimTrailingWhitespace,
-            InsertFinalNewline     = dto.InsertFinalNewline,
+            IndentSize                 = dto.IndentSize,
+            UseTabs                    = dto.UseTabs,
+            TrimTrailingWhitespace     = dto.TrimTrailingWhitespace,
+            InsertFinalNewline         = dto.InsertFinalNewline,
+            LineEnding                 = ParseLineEnding(dto.LineEnding),
+            BraceStyle                 = ParseBraceStyle(dto.BraceStyle),
+            SpaceBeforeOpenBrace       = dto.SpaceBeforeOpenBrace,
+            SpaceAfterKeywords         = dto.SpaceAfterKeywords,
+            SpaceInsideParens          = dto.SpaceInsideParens,
+            IndentCaseLabels           = dto.IndentCaseLabels,
+            MaxConsecutiveBlankLines   = dto.MaxConsecutiveBlankLines,
+            BlankLineBeforeMethod      = dto.BlankLineBeforeMethod,
+            BlankLineAfterImports      = dto.BlankLineAfterImports,
+            SpaceAroundBinaryOperators = dto.SpaceAroundBinaryOperators,
+            SpaceAfterComma            = dto.SpaceAfterComma,
+            OrganizeImports            = dto.OrganizeImports,
+            SeparateSystemImports      = dto.SeparateSystemImports,
+            QuoteStyle                 = ParseQuoteStyle(dto.QuoteStyle),
+            TrailingCommas             = ParseTrailingCommas(dto.TrailingCommas),
+            MaxLineLength              = dto.MaxLineLength,
+            SqlKeywordsUppercase       = dto.SqlKeywordsUppercase,
+            BlockOpenKeywords          = (IReadOnlyList<string>?)dto.BlockOpenKeywords ?? [],
+            BlockCloseKeywords         = (IReadOnlyList<string>?)dto.BlockCloseKeywords ?? [],
         };
     }
+
+    private static LineEndingStyle ParseLineEnding(string? value) =>
+        value?.ToLowerInvariant() switch
+        {
+            "lf"   => LineEndingStyle.LF,
+            "crlf" => LineEndingStyle.CRLF,
+            _      => LineEndingStyle.Auto,
+        };
+
+    private static BraceStyle? ParseBraceStyle(string? value) =>
+        value?.ToLowerInvariant() switch
+        {
+            "allman"            => Languages.BraceStyle.Allman,
+            "kr" or "k&r"       => Languages.BraceStyle.KR,
+            "stroustrup"        => Languages.BraceStyle.Stroustrup,
+            _                   => null,
+        };
+
+    private static QuoteStyle? ParseQuoteStyle(string? value) =>
+        value?.ToLowerInvariant() switch
+        {
+            "double"   => Languages.QuoteStyle.Double,
+            "single"   => Languages.QuoteStyle.Single,
+            "backtick" => Languages.QuoteStyle.Backtick,
+            _          => null,
+        };
+
+    private static TrailingCommaStyle ParseTrailingCommas(string? value) =>
+        value?.ToLowerInvariant() switch
+        {
+            "es5" => TrailingCommaStyle.ES5,
+            "all" => TrailingCommaStyle.All,
+            _     => TrailingCommaStyle.None,
+        };
 
     private static IReadOnlyList<ScriptGlobalEntry> MapScriptGlobals(ScriptGlobalDto[]? dtos)
     {
@@ -519,6 +617,25 @@ public static class LanguageDefinitionSerializer
                                Documentation: m.Documentation ?? string.Empty))
                            .ToList()))
             .ToList();
+    }
+
+    private static IReadOnlyDictionary<string, FormattingPreviewSample> MapPreviewSamples(
+        Dictionary<string, PreviewSampleDto>? dtos)
+    {
+        if (dtos is null or { Count: 0 })
+            return new Dictionary<string, FormattingPreviewSample>();
+
+        var result = new Dictionary<string, FormattingPreviewSample>(dtos.Count, StringComparer.Ordinal);
+        foreach (var (key, dto) in dtos)
+        {
+            if (!string.IsNullOrEmpty(dto.Before) || !string.IsNullOrEmpty(dto.After))
+                result[key] = new FormattingPreviewSample
+                {
+                    Before = dto.Before ?? string.Empty,
+                    After  = dto.After  ?? string.Empty,
+                };
+        }
+        return result;
     }
 
     private static IReadOnlyList<Regex>? MapColorLiteralPatterns(string[]? patterns)

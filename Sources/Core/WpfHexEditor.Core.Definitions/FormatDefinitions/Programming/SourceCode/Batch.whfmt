@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Batch Script
    Category:  Programming
    Ext:       .bat, .cmd
    Editor:    code-editor
    Desc:      Windows batch script files for command-line automation.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Batch Script",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".bat",
     ".cmd"
@@ -44,6 +46,7 @@
     "Build scripts"
   ],
   "syntaxDefinition": {
+    "diagnosticPrefix": "BAT",
     "id": "batch",
     "name": "Batch / CMD",
     "extensions": [
@@ -52,6 +55,17 @@
       ".btm"
     ],
     "lineCommentPrefix": "REM",
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "crlf",
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": false,
+      "blankLineAfterImports": false,
+      "maxLineLength": 80
+    },
     "rules": [
       {
         "type": "Comment",
@@ -88,7 +102,45 @@
         "pattern": "\\b[0-9]+\\b",
         "colorKey": "TE_Number"
       }
-    ]
+    ],
+    "columnRulers": [
+      80
+    ],
+    "bracketPairs": [
+      { "open": "(", "close": ")" },
+      { "open": "[", "close": "]" }
+    ],
+    "foldingRules": {
+      "startPatterns": [
+        "^\\s*:[A-Za-z_][A-Za-z0-9_]*\\b"
+      ],
+      "endPatterns": [
+        "(?i)\\bGOTO\\b",
+        "(?i)\\bEXIT\\b"
+      ]
+    },
+    "previewSnippet": "@echo off\nSETLOCAL   \n\n:go\nIF \"%1\" == \"\" GOTO end\nECHO %1   \n:end",
+    "previewSamples": {
+      "trimTrailingWhitespace": {
+        "before": "ECHO %1   ",
+        "after": "ECHO %1"
+      },
+      "insertFinalNewline": {
+        "before": ":end",
+        "after": ":end\n"
+      }
+    },
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "(?i)^\\s*REM\\b",
+        "(?i)^\\s*::",
+        "^\\s*$",
+        "^@echo",
+        "(?i)^\\s*SETLOCAL\\b",
+        "(?i)^\\s*ENDLOCAL\\b"
+      ],
+      "statementContinuationPatterns": []
+    }
   },
   "forensic": {
     "category": "other",

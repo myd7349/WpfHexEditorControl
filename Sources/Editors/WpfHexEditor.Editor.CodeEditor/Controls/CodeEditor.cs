@@ -513,7 +513,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             set => _formatOnSave = value;
         }
 
-        // Formatting service — LSP-first, fallback BasicIndentFormatter.
+        // Stored reference to CodeEditorOptions for formatting overrides.
+        private Options.CodeEditorOptions? _codeEditorOptions;
+
+        // Formatting service — LSP-first, fallback StructuralFormatter.
         private readonly Services.CodeFormattingService _codeFormattingService = new();
 
         // Color swatch preview (#168) — renders + tracks hit areas.
@@ -1651,6 +1654,12 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         public event EventHandler<ColorSwatchClickedEventArgs>? ColorSwatchClicked;
 
+        /// <summary>
+        /// Raised when the user clicks "Options…" in the Formatting context menu.
+        /// The host should open the Code Editor options page.
+        /// </summary>
+        public event EventHandler? FormattingOptionsRequested;
+
         public static readonly DependencyProperty EnableBracketMatchingProperty =
             DependencyProperty.Register(nameof(EnableBracketMatching), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -2480,6 +2489,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         public void ApplyOptions(CodeEditorOptions options)
         {
             if (options is null) return;
+            _codeEditorOptions = options;
 
             // Font / display
             if (!string.IsNullOrEmpty(options.FontFamily))
@@ -3104,6 +3114,31 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Separator
             contextMenu.Items.Add(new Separator());
 
+            // ── Formatting submenu ──────────────────────────────────────────────
+            var formattingMenu = new MenuItem { Header = "_Formatting", Icon = MakeMenuIcon("\uE8E3") };
+
+            // Format Document (Ctrl+K, Ctrl+D)
+            var formatDocMenuItem = new MenuItem
+            {
+                Header           = "Format _Document",
+                InputGestureText = "Ctrl+K, Ctrl+D",
+                Icon             = MakeMenuIcon("\uE8E3")
+            };
+            formatDocMenuItem.Click += (_, _) => _ = FormatDocumentAsync();
+
+            // Format Selection (Ctrl+K, Ctrl+F)
+            var formatSelMenuItem = new MenuItem
+            {
+                Header           = "Format _Selection",
+                InputGestureText = "Ctrl+K, Ctrl+F",
+                Icon             = MakeMenuIcon("\uE762")
+            };
+            formatSelMenuItem.Click += (_, _) => _ = FormatSelectionAsync();
+
+            formattingMenu.Items.Add(formatDocMenuItem);
+            formattingMenu.Items.Add(formatSelMenuItem);
+            formattingMenu.Items.Add(new Separator());
+
             // Format JSON
             var formatJsonMenuItem = new MenuItem
             {
@@ -3112,9 +3147,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 Icon             = MakeMenuIcon("\uE70F")
             };
             formatJsonMenuItem.Click += FormatJsonMenuItem_Click;
-            contextMenu.Items.Add(formatJsonMenuItem);
 
-            // Validate
+            // Validate JSON
             var validateMenuItem = new MenuItem
             {
                 Header           = "_Validate JSON",
@@ -3122,7 +3156,29 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 Icon             = MakeMenuIcon("\uE73E")
             };
             validateMenuItem.Click += ValidateMenuItem_Click;
-            contextMenu.Items.Add(validateMenuItem);
+
+            formattingMenu.Items.Add(formatJsonMenuItem);
+            formattingMenu.Items.Add(validateMenuItem);
+            formattingMenu.Items.Add(new Separator());
+
+            // Options...
+            var formattingOptionsMenuItem = new MenuItem
+            {
+                Header = "_Options...",
+                Icon   = MakeMenuIcon("\uE713")   // Settings gear
+            };
+            formattingOptionsMenuItem.Click += (_, _) =>
+                FormattingOptionsRequested?.Invoke(this, EventArgs.Empty);
+            formattingMenu.Items.Add(formattingOptionsMenuItem);
+
+            // Enable/disable formatting items based on edit state and selection.
+            contextMenu.Opened += (_, _) =>
+            {
+                formatDocMenuItem.IsEnabled = !IsReadOnly;
+                formatSelMenuItem.IsEnabled = !IsReadOnly && !_selection.IsEmpty;
+            };
+
+            contextMenu.Items.Add(formattingMenu);
 
             // Separator
             contextMenu.Items.Add(new Separator());
@@ -3809,7 +3865,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         /// <summary>
         /// Formats the full document (Ctrl+K, Ctrl+D).
-        /// LSP textDocument/formatting is tried first; falls back to BasicIndentFormatter.
+        /// LSP textDocument/formatting is tried first; falls back to StructuralFormatter.
         /// The change is applied as a single undoable transaction.
         /// </summary>
         public async System.Threading.Tasks.Task FormatDocumentAsync(
@@ -3818,14 +3874,18 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (IsReadOnly || _document is null) return;
 
             string original = GetText();
-            bool   insertSpaces = Language?.FormattingRules?.UseTabs != true;
-            int    tabSize      = IndentSize;
+
+            // Build merged rules: whfmt base → user overrides
+            var baseRules   = Language?.FormattingRules ?? new FormattingRules();
+            var mergedRules = baseRules.WithOverrides(_codeEditorOptions?.BuildOverrides());
+            bool insertSpaces = !mergedRules.UseTabs;
+            int  tabSize      = mergedRules.IndentSize;
 
             string formatted = await _codeFormattingService
                 .FormatDocumentAsync(
                     _currentFilePath ?? string.Empty,
                     original,
-                    Language,
+                    mergedRules,
                     _lspClient,
                     tabSize,
                     insertSpaces,
@@ -3864,8 +3924,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
 
             string original    = GetText();
-            bool   insertSpaces = Language?.FormattingRules?.UseTabs != true;
-            int    tabSize     = IndentSize;
+            var    baseRules   = Language?.FormattingRules ?? new FormattingRules();
+            var    mergedRules = baseRules.WithOverrides(_codeEditorOptions?.BuildOverrides());
+            bool   insertSpaces = !mergedRules.UseTabs;
+            int    tabSize     = mergedRules.IndentSize;
             var    start       = _selection.NormalizedStart;
             var    end         = _selection.NormalizedEnd;
 
@@ -3875,7 +3937,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     original,
                     start.Line, start.Column,
                     end.Line,   end.Column,
-                    Language,
+                    mergedRules,
                     _lspClient,
                     tabSize,
                     insertSpaces,

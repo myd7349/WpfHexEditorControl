@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    PowerShell Script
    Category:  Programming
    Ext:       .ps1, .psm1, .psd1
    Editor:    code-editor
    Desc:      PowerShell script and module files (Windows/cross-platform scripting).
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "PowerShell Script",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".ps1",
     ".psm1",
@@ -133,9 +135,81 @@
         "triggerDirective": true
       }
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [120],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      120
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "allman",
+      "spaceBeforeOpenBrace": false,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "indentCaseLabels": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": false,
+      "separateSystemImports": false,
+      "quoteStyle": "double",
+      "maxLineLength": 120
+    },
+    "previewSnippet": "function Go($x,$y){\nif($x -gt 0){\nswitch($x){\n1{ return }\n}\n}\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if($x -gt 0){",
+        "after": "if ($x -gt 0) {"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "$a=$b+$c*2",
+        "after": "$a = $b + $c * 2"
+      },
+      "spaceAfterComma": {
+        "before": "Go($x,$y,$z)",
+        "after": "Go($x, $y, $z)"
+      },
+      "trimTrailingWhitespace": {
+        "before": "$x = 1   ",
+        "after": "$x = 1"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      },
+      "braceStyle": {
+        "before": "function Go($x,$y){",
+        "after": "function Go($x,$y)\n{"
+      }
+    },
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "^\\s*#",
+        "^\\s*<#",
+        "^\\s*$"
+      ],
+      "statementContinuationPatterns": [
+        "`\\s*$"
+      ]
+    }
   },
   "forensic": {
     "category": "other",
@@ -148,16 +222,6 @@
       "Verify PowerShell Script file signature and header structure",
       "Check data integrity and field boundaries",
       "Inspect metadata and version information"
-    ]
-  },
-  "breakpointRules": {
-    "nonExecutablePatterns": [
-      "^\\s*#",
-      "^\\s*<#",
-      "^\\s*$"
-    ],
-    "statementContinuationPatterns": [
-      "`\\s*$"
     ]
   }
 }

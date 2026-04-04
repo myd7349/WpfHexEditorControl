@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Lua Script
    Category:  Programming
    Ext:       .lua
    Editor:    code-editor
    Desc:      Lua scripting language source file (embedded scripting, game modding).
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Lua Script",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".lua"
   ],
@@ -105,9 +107,70 @@
         "^\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [120],
-        "formattingRules": {"indentSize":2,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      120
+    ],
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": false,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": false,
+      "separateSystemImports": false,
+      "quoteStyle": "double",
+      "maxLineLength": 80,
+      "blockOpenKeywords": ["then", "do", "else"],
+      "blockCloseKeywords": ["end", "else", "elseif", "until"]
+    },
+    "previewSnippet": "local io = require('io')\nlocal math = require('math')\n\nlocal x = 0\nif x>=0 then\n    x = x+1\nend",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if x>=0 then",
+        "after": "if x >= 0 then"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2",
+        "after": "a = b + c * 2"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z)",
+        "after": "go(x, y, z)"
+      },
+      "quoteStyle": {
+        "before": "require('io')",
+        "after": "require(\"io\")"
+      },
+      "trimTrailingWhitespace": {
+        "before": "local x = 1   ",
+        "after": "local x = 1"
+      },
+      "insertFinalNewline": {
+        "before": "end",
+        "after": "end\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

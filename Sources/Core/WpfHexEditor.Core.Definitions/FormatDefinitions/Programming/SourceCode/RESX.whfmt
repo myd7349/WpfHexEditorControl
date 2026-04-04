@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    .NET XML Resource File
    Category:  Programming/SourceCode
    Ext:       .resx
    Editor:    resx-editor
    Desc:      Standard .NET XML-based resource file containing string tables, images, binary blobs, and file references.
-   Updated:   2026-03-23
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "binary",
   "formatName": ".NET XML Resource File",
-  "version": "1.0",
+  "version": "2.1",
   "extensions": [
     ".resx"
   ],

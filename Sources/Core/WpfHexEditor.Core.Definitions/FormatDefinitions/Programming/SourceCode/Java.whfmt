@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Java Source File
    Category:  Programming
    Ext:       .java
    Editor:    code-editor
    Desc:      Java programming language source file.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Java Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".java"
   ],
@@ -121,9 +123,71 @@
         "[^;{}]\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [80, 120],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      80,
+      120
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "allman",
+      "spaceBeforeOpenBrace": false,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "indentCaseLabels": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": true,
+      "maxLineLength": 120
+    },
+    "previewSnippet": "import java.util.List;\nimport java.io.File;\n\nclass Example{\nvoid go(int x,int y){\nif(x>0){\nswitch(x){\ncase 1:\nreturn;\n}\n}\n}\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if(x>0){",
+        "after": "if (x > 0) {"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2;",
+        "after": "a = b + c * 2;"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z);",
+        "after": "go(x, y, z);"
+      },
+      "organizeImports": {
+        "before": "import java.util.List;\nimport java.io.File;",
+        "after": "import java.io.File;\nimport java.util.List;"
+      },
+      "trimTrailingWhitespace": {
+        "before": "int x = 1;   ",
+        "after": "int x = 1;"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

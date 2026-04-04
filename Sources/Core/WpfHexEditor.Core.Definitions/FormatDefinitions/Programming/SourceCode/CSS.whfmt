@@ -1,16 +1,18 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    CSS / SCSS / SASS / LESS Stylesheet
    Category:  Programming
    Ext:       .css, .scss, .sass, .less, .styl
    Editor:    code-editor
    Desc:      Cascading Style Sheets and pre-processor variants.
-              Covers CSS3, SCSS (Sass), LESS, and Stylus syntaxes.
-   Updated:   2026-03-30
-   ============================================================ */
+   Covers CSS3, SCSS (Sass), LESS, and Stylus syntaxes.
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "CSS Stylesheet",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".css",
     ".scss",
@@ -164,10 +166,69 @@
       ],
       "statementContinuationPatterns": []
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [80],
-        "formattingRules": {"indentSize":2,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true},
-        "colorLiteralPatterns": ["#[0-9A-Fa-f]{8}","#[0-9A-Fa-f]{6}","#[0-9A-Fa-f]{3}","rgb\\(","rgba\\(","hsl\\("]
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      80
+    ],
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "kr",
+      "spaceBeforeOpenBrace": true,
+      "spaceAfterKeywords": false,
+      "spaceInsideParens": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": false,
+      "spaceAroundBinaryOperators": false,
+      "spaceAfterComma": true,
+      "organizeImports": false,
+      "separateSystemImports": false,
+      "maxLineLength": 80
+    },
+    "colorLiteralPatterns": [
+      "#[0-9A-Fa-f]{8}",
+      "#[0-9A-Fa-f]{6}",
+      "#[0-9A-Fa-f]{3}",
+      "rgb\\(",
+      "rgba\\(",
+      "hsl\\("
+    ],
+    "previewSnippet": ".box{display:flex;margin:0 auto;}\n@media(max-width:768px){.box{display:block;}}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "@media(max-width:768px)",
+        "after": "@media (max-width: 768px)"
+      },
+      "spaceAfterComma": {
+        "before": ".a,.b,.c {",
+        "after": ".a, .b, .c {"
+      },
+      "trimTrailingWhitespace": {
+        "before": "color: red;   ",
+        "after": "color: red;"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   },
   "navigation": {
     "bookmarkPatterns": [

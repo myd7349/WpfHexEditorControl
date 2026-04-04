@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Go Source File
    Category:  Programming
    Ext:       .go
    Editor:    code-editor
    Desc:      Go (Golang) programming language source file.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Go Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".go"
   ],
@@ -116,9 +118,68 @@
         "[^;{})]\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [80, 120],
-        "formattingRules": {"indentSize":1,"useTabs":true,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      80,
+      120
+    ],
+    "formattingRules": {
+      "indentSize": 1,
+      "useTabs": true,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "kr",
+      "spaceBeforeOpenBrace": true,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "indentCaseLabels": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": true,
+      "quoteStyle": "double",
+      "maxLineLength": 100
+    },
+    "previewSnippet": "import (\n    \"fmt\"\n    \"os\"\n)\n\nfunc goFunc(x,y int){\nif x>0{\nswitch x{\ncase 1:\nreturn\n}\n}\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if x>0{",
+        "after": "if x > 0 {"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2",
+        "after": "a = b + c * 2"
+      },
+      "spaceAfterComma": {
+        "before": "goFunc(x,y,z)",
+        "after": "goFunc(x, y, z)"
+      },
+      "trimTrailingWhitespace": {
+        "before": "x := 1   ",
+        "after": "x := 1"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

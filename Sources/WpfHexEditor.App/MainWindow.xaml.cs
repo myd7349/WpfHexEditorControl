@@ -650,6 +650,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             () => new WpfHexEditor.App.Options.CodeEditorOptionsPage(),
             "\uE943");
 
+        // Override the static Code Editor › Formatting registration with a colorizer-aware version.
+        // The static entry (no colorizer) is kept as fallback if this line is not reached.
+        WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
+            "Code Editor", "Formatting",
+            () => new WpfHexEditor.Core.Options.Pages.CodeEditorFormattingPage(
+                      new WpfHexEditor.App.Services.PreviewColorizerAdapter(
+                          new WpfHexEditor.App.Services.SyntaxColoringService()),
+                      new WpfHexEditor.App.Services.PreviewFormatterAdapter()),
+            "\uE943");
+
         // Register Debugger options page
         WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
             "Debugger", "General",
@@ -2267,6 +2277,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     plainCe.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
                     plainCe.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
                     plainCe.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
+                    plainCe.FormattingOptionsRequested      += (_, _) => OpenSettingsAt("Code Editor", "Formatting");
                 }
                 if (editor is CodeEditorSplitHost splitHostProj)
                 {
@@ -2275,9 +2286,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     splitHostProj.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
                     splitHostProj.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
                     splitHostProj.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
+                    splitHostProj.FormattingOptionsRequested      += (_, _) => OpenSettingsAt("Code Editor", "Formatting");
                 }
 
-                // Register as diagnostic source (e.g. TblEditor with IDiagnosticSource)
+                // Register as diagnostic source
                 if (editor is IDiagnosticSource diagSrc)
                     EnsureErrorPanelInstance().AddSource(diagSrc);
 
@@ -2455,7 +2467,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 json.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
                 json.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
                 json.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
-                // No Background + default IsHitTestVisible=True → empty areas let clicks
+                json.FormattingOptionsRequested      += (_, _) => OpenSettingsAt("Code Editor", "Formatting");
+                // No Background + default IsHitTestVisible=True
                 // through to the editor; the QuickSearchBar captures clicks in its own area.
                 var canvas = new Canvas();
                 Panel.SetZIndex(canvas, 5);
@@ -2484,9 +2497,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 splitHost.GoToExternalDefinitionRequested += OnGoToExternalDefinitionRequested;
                 splitHost.CallHierarchyDockRequested      += OnCallHierarchyDockRequested;
                 splitHost.TypeHierarchyDockRequested      += OnTypeHierarchyDockRequested;
+                splitHost.FormattingOptionsRequested      += (_, _) => OpenSettingsAt("Code Editor", "Formatting");
             }
 
-            // Wire breakpoint gutter adapter so the gutter can render breakpoints immediately.
+            // Wire breakpoint gutter adapter
             WireBreakpointSourceToEditor(editor);
 
             // Publish FileOpenedEvent so plugins with fileExtension activation triggers fire.

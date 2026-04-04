@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    XAML Source File
    Category:  Programming
    Ext:       .xaml
    Editor:    xaml-designer
    Desc:      XAML markup files for WPF, Silverlight, UWP, and WinUI user interfaces.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "semantic",
   "formatName": "XAML Source File",
-  "version": "2.3",
+  "version": "2.1",
   "extensions": [
     ".xaml"
   ],
@@ -133,8 +135,48 @@
         "triggerDirective": false
       }
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "colorLiteralPatterns": ["#[0-9A-Fa-f]{8}","#[0-9A-Fa-f]{6}","#[0-9A-Fa-f]{3}","Colors\\.[A-Za-z]+"]
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "maxConsecutiveBlankLines": 1,
+      "blankLineBeforeMethod": false,
+      "blankLineAfterImports": false,
+      "quoteStyle": "double"
+    },
+    "colorLiteralPatterns": [
+      "#[0-9A-Fa-f]{8}",
+      "#[0-9A-Fa-f]{6}",
+      "#[0-9A-Fa-f]{3}",
+      "Colors\\.[A-Za-z]+"
+    ],
+    "previewSnippet": "<Window xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\">\n    <Grid>\n        <Button Content=\"Click\" Width=\"100\"/>\n    </Grid>\n</Window>",
+    "previewSamples": {
+      "trimTrailingWhitespace": {
+        "before": "    <Button Content=\"Click\"/>   ",
+        "after": "    <Button Content=\"Click\"/>"
+      },
+      "insertFinalNewline": {
+        "before": "</Window>",
+        "after": "</Window>\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

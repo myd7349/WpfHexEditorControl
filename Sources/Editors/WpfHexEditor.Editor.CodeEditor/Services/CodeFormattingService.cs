@@ -34,7 +34,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Services;
 
 /// <summary>
 /// Formats document text, preferring an LSP server and falling back to
-/// <see cref="BasicIndentFormatter"/> when no server capability is available.
+/// <see cref="StructuralFormatter"/> when no server capability is available.
 /// </summary>
 internal sealed class CodeFormattingService
 {
@@ -46,13 +46,13 @@ internal sealed class CodeFormattingService
     /// no changes are needed.
     /// </summary>
     public async Task<string> FormatDocumentAsync(
-        string           filePath,
-        string           text,
-        LanguageDefinition? language,
-        ILspClient?      lspClient,
-        int              tabSize,
-        bool             insertSpaces,
-        CancellationToken ct = default)
+        string              filePath,
+        string              text,
+        FormattingRules?    mergedRules,
+        ILspClient?         lspClient,
+        int                 tabSize,
+        bool                insertSpaces,
+        CancellationToken   ct = default)
     {
         if (lspClient?.IsInitialized == true)
         {
@@ -66,11 +66,11 @@ internal sealed class CodeFormattingService
                     return ApplyEdits(text, edits);
             }
             catch (OperationCanceledException) { throw; }
-            catch { /* LSP error — fall through to BasicIndentFormatter */ }
+            catch { /* LSP error — fall through to StructuralFormatter */ }
         }
 
-        // Fallback: whitespace-level formatting from whfmt rules.
-        return BasicIndentFormatter.FormatDocument(text, language?.FormattingRules);
+        // Fallback: structural formatting from merged whfmt + user rules.
+        return StructuralFormatter.FormatDocument(text, mergedRules);
     }
 
     /// <summary>
@@ -78,17 +78,17 @@ internal sealed class CodeFormattingService
     /// (0-based, inclusive).  LSP range formatting is used when available.
     /// </summary>
     public async Task<string> FormatSelectionAsync(
-        string           filePath,
-        string           text,
-        int              startLine,
-        int              startColumn,
-        int              endLine,
-        int              endColumn,
-        LanguageDefinition? language,
-        ILspClient?      lspClient,
-        int              tabSize,
-        bool             insertSpaces,
-        CancellationToken ct = default)
+        string              filePath,
+        string              text,
+        int                 startLine,
+        int                 startColumn,
+        int                 endLine,
+        int                 endColumn,
+        FormattingRules?    mergedRules,
+        ILspClient?         lspClient,
+        int                 tabSize,
+        bool                insertSpaces,
+        CancellationToken   ct = default)
     {
         if (lspClient?.IsInitialized == true)
         {
@@ -110,7 +110,7 @@ internal sealed class CodeFormattingService
             catch { /* LSP error — fall through */ }
         }
 
-        return BasicIndentFormatter.FormatSelection(text, startLine, endLine, language?.FormattingRules);
+        return StructuralFormatter.FormatSelection(text, startLine, endLine, mergedRules);
     }
 
     // -- Helpers ------------------------------------------------------------------

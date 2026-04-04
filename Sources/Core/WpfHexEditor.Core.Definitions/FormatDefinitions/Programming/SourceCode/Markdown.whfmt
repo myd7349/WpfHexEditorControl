@@ -1,11 +1,13 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Markdown Document
    Category:  Programming
    Ext:       .md, .markdown, .mkd, .mdx
    Editor:    markdown-editor
    Desc:      Markdown lightweight markup language document.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Markdown Document",
@@ -47,6 +49,16 @@
     "Static site content"
   ],
   "syntaxDefinition": {
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": false,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "maxConsecutiveBlankLines": 1,
+      "blankLineBeforeMethod": false,
+      "blankLineAfterImports": false
+    },
     "diagnosticPrefix": "MD",
     "id": "markdown",
     "name": "Markdown",
@@ -262,7 +274,18 @@
         "id": "c",
         "extension": ".c"
       }
-    ]
+    ],
+    "previewSnippet": "# Title\n\nSome paragraph text.\n\n## Section\n\n- item one\n- item two",
+    "previewSamples": {
+      "trimTrailingWhitespace": {
+        "before": "Some text   ",
+        "after": "Some text"
+      },
+      "insertFinalNewline": {
+        "before": "- item two",
+        "after": "- item two\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

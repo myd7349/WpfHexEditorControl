@@ -38,6 +38,7 @@ public static class OptionsPageRegistry
         new("Code Editor",        "Appearance & Colors", () => new CodeEditorOptionsPage(),      "💻"),
         new("Code Editor",        "Inline Hints",     () => new CodeEditorInlineHintsPage(),    "💻"),
         new("Code Editor",        "Navigation",       () => new CodeEditorNavigationPage(),     "💻"),
+        new("Code Editor",        "Formatting",       () => new CodeEditorFormattingPage(),     "💻"),
 
         // Text Editor
         new("Text Editor",        "General",          () => new TextEditorOptionsPage(),      "📝"),

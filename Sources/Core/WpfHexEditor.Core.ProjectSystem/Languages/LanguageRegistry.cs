@@ -234,10 +234,30 @@ public sealed class LanguageRegistry
             .Concat(definition.SyntaxRules)
             .ToArray();
 
-        // Inherit FoldingRules from the first base that declares them when the child has none.
-        var foldingRules = definition.FoldingRules ?? resolvedBases
-            .Select(b => b.FoldingRules)
-            .FirstOrDefault(r => r is not null);
+        // Child property wins; fall back to the first base that declares a non-null value.
+        var foldingRules = definition.FoldingRules
+            ?? resolvedBases.Select(b => b.FoldingRules).FirstOrDefault(r => r is not null);
+
+        var breakpointRules = definition.BreakpointRules
+            ?? resolvedBases.Select(b => b.BreakpointRules).FirstOrDefault(r => r is not null);
+
+        var columnRulers = definition.ColumnRulers
+            ?? resolvedBases.Select(b => b.ColumnRulers).FirstOrDefault(r => r is not null);
+
+        var bracketPairs = definition.BracketPairs
+            ?? resolvedBases.Select(b => b.BracketPairs).FirstOrDefault(r => r is not null);
+
+        var formattingRules = definition.FormattingRules
+            ?? resolvedBases.Select(b => b.FormattingRules).FirstOrDefault(r => r is not null);
+
+        var colorLiteralPatterns = definition.ColorLiteralPatterns
+            ?? resolvedBases.Select(b => b.ColorLiteralPatterns).FirstOrDefault(r => r is not null);
+
+        var diagnosticPrefix = definition.DiagnosticPrefix
+            ?? resolvedBases.Select(b => b.DiagnosticPrefix).FirstOrDefault(r => r is not null);
+
+        var previewSnippet = definition.PreviewSnippet
+            ?? resolvedBases.Select(b => b.PreviewSnippet).FirstOrDefault(r => r is not null);
 
         return new LanguageDefinition
         {
@@ -256,6 +276,15 @@ public sealed class LanguageRegistry
             Includes                  = definition.Includes,
             EditorHint                = definition.EditorHint,
             FoldingRules              = foldingRules,
+            BreakpointRules           = breakpointRules,
+            ColumnRulers              = columnRulers,
+            BracketPairs              = bracketPairs,
+            FormattingRules           = formattingRules,
+            ColorLiteralPatterns      = colorLiteralPatterns,
+            DiagnosticPrefix          = diagnosticPrefix,
+            ScriptGlobals             = definition.ScriptGlobals,
+            PreviewSnippet            = previewSnippet,
+            PreviewSamples            = definition.PreviewSamples,
         };
     }
 }

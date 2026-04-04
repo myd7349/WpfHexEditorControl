@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    SQL Source File
    Category:  Programming
    Ext:       .sql, .ddl, .dml
    Editor:    code-editor
    Desc:      Structured Query Language source files for databases.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "SQL Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".sql",
     ".ddl",
@@ -102,8 +104,70 @@
         "\\bEND\\b"
       ]
     },
-        "columnRulers": [120],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "columnRulers": [
+      120
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": false,
+      "blankLineAfterImports": false,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": false,
+      "separateSystemImports": false,
+      "maxLineLength": 80,
+      "sqlKeywordsUppercase": true
+    },
+    "previewSnippet": "select id,name,email\nfrom users\nwhere id>0\norder by name",
+    "previewSamples": {
+      "sqlKeywordsUppercase": {
+        "before": "select id from users where id>0",
+        "after": "SELECT id FROM users WHERE id > 0"
+      },
+      "spaceAfterKeywords": {
+        "before": "WHERE(id>0)",
+        "after": "WHERE (id > 0)"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "id>0",
+        "after": "id > 0"
+      },
+      "spaceAfterComma": {
+        "before": "id,name,email",
+        "after": "id, name, email"
+      },
+      "trimTrailingWhitespace": {
+        "before": "SELECT id   ",
+        "after": "SELECT id"
+      },
+      "insertFinalNewline": {
+        "before": "ORDER BY name",
+        "after": "ORDER BY name\n"
+      }
+    },
+    "bracketPairs": [
+      { "open": "(", "close": ")" },
+      { "open": "[", "close": "]" }
+    ],
+    "breakpointRules": {
+      "nonExecutablePatterns": [
+        "^\\s*--",
+        "^\\s*/\\*",
+        "^\\s*$"
+      ],
+      "statementContinuationPatterns": [
+        ",\\s*$",
+        "\\bAND\\s*$",
+        "\\bOR\\s*$"
+      ]
+    }
   },
   "forensic": {
     "category": "other",

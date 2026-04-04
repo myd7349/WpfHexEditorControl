@@ -308,6 +308,92 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
         set { _formatOnSave = value; Notify(); }
     }
 
+    // ── Formatting overrides (null = use whfmt language default) ─────────────
+
+    private bool? _trimTrailingWhitespace;
+    private bool? _insertFinalNewline;
+    private BraceStyle? _braceStyleOverride;
+    private bool? _spaceAfterKeywords;
+    private bool? _spaceAroundBinaryOperators;
+    private bool? _spaceAfterComma;
+    private bool? _indentCaseLabels;
+    private bool? _organizeImports;
+
+    /// <summary>Override whfmt trimTrailingWhitespace. Null = inherit language default.</summary>
+    public bool? TrimTrailingWhitespace
+    {
+        get => _trimTrailingWhitespace;
+        set { _trimTrailingWhitespace = value; Notify(); }
+    }
+
+    /// <summary>Override whfmt insertFinalNewline. Null = inherit language default.</summary>
+    public bool? InsertFinalNewline
+    {
+        get => _insertFinalNewline;
+        set { _insertFinalNewline = value; Notify(); }
+    }
+
+    /// <summary>Override whfmt braceStyle. Null = inherit language default.</summary>
+    public BraceStyle? BraceStyleOverride
+    {
+        get => _braceStyleOverride;
+        set { _braceStyleOverride = value; Notify(); }
+    }
+
+    /// <summary>Override whfmt spaceAfterKeywords. Null = inherit language default.</summary>
+    public bool? SpaceAfterKeywords
+    {
+        get => _spaceAfterKeywords;
+        set { _spaceAfterKeywords = value; Notify(); }
+    }
+
+    /// <summary>Override whfmt spaceAroundBinaryOperators. Null = inherit.</summary>
+    public bool? SpaceAroundBinaryOperators
+    {
+        get => _spaceAroundBinaryOperators;
+        set { _spaceAroundBinaryOperators = value; Notify(); }
+    }
+
+    /// <summary>Override whfmt spaceAfterComma. Null = inherit.</summary>
+    public bool? SpaceAfterComma
+    {
+        get => _spaceAfterComma;
+        set { _spaceAfterComma = value; Notify(); }
+    }
+
+    /// <summary>Override whfmt indentCaseLabels. Null = inherit.</summary>
+    public bool? IndentCaseLabels
+    {
+        get => _indentCaseLabels;
+        set { _indentCaseLabels = value; Notify(); }
+    }
+
+    /// <summary>Override whfmt organizeImports. Null = inherit.</summary>
+    public bool? OrganizeImports
+    {
+        get => _organizeImports;
+        set { _organizeImports = value; Notify(); }
+    }
+
+    /// <summary>
+    /// Builds a <see cref="FormattingOverrides"/> from the user's current settings.
+    /// Properties left at <see langword="null"/> inherit the whfmt language default.
+    /// TabSize and ConvertTabsToSpaces are always applied (non-nullable).
+    /// </summary>
+    public FormattingOverrides BuildOverrides() => new()
+    {
+        IndentSize                 = TabSize,
+        UseTabs                    = !ConvertTabsToSpaces,
+        TrimTrailingWhitespace     = _trimTrailingWhitespace,
+        InsertFinalNewline         = _insertFinalNewline,
+        BraceStyle                 = _braceStyleOverride,
+        SpaceAfterKeywords         = _spaceAfterKeywords,
+        SpaceAroundBinaryOperators = _spaceAroundBinaryOperators,
+        SpaceAfterComma            = _spaceAfterComma,
+        IndentCaseLabels           = _indentCaseLabels,
+        OrganizeImports            = _organizeImports,
+    };
+
     // -- Sticky Scroll (#160) -------------------------------------------------
 
     private bool   _stickyScrollEnabled          = true;

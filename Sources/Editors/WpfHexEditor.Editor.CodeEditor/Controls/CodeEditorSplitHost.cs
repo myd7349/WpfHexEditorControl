@@ -178,11 +178,13 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
         _primaryEditor.GoToExternalDefinitionRequested    += (s, e) => GoToExternalDefinitionRequested?.Invoke(this, e);
         _primaryEditor.CallHierarchyDockRequested         += (s, e) => CallHierarchyDockRequested?.Invoke(this, e);
         _primaryEditor.TypeHierarchyDockRequested         += (s, e) => TypeHierarchyDockRequested?.Invoke(this, e);
+        _primaryEditor.FormattingOptionsRequested          += (s, e) => FormattingOptionsRequested?.Invoke(this, e);
         _secondaryEditor.ReferenceNavigationRequested     += (s, e) => ReferenceNavigationRequested?.Invoke(this, e);
         _secondaryEditor.FindAllReferencesDockRequested   += (s, e) => FindAllReferencesDockRequested?.Invoke(this, e);
         _secondaryEditor.GoToExternalDefinitionRequested  += (s, e) => GoToExternalDefinitionRequested?.Invoke(this, e);
         _secondaryEditor.CallHierarchyDockRequested       += (s, e) => CallHierarchyDockRequested?.Invoke(this, e);
         _secondaryEditor.TypeHierarchyDockRequested       += (s, e) => TypeHierarchyDockRequested?.Invoke(this, e);
+        _secondaryEditor.FormattingOptionsRequested       += (s, e) => FormattingOptionsRequested?.Invoke(this, e);
 
         // Attach breadcrumb bar to primary editor so it tracks caret position.
         _breadcrumbBar.Attach(_primaryEditor, filePath: null);
@@ -713,6 +715,12 @@ public sealed class CodeEditorSplitHost : Grid, IDocumentEditor, IBufferAwareEdi
     /// Forwarded from whichever editor pane fires it.
     /// </summary>
     public event EventHandler<GoToExternalDefinitionEventArgs>? GoToExternalDefinitionRequested;
+
+    /// <summary>
+    /// Raised when the user clicks "Options…" in the Formatting context menu.
+    /// Forwarded from whichever editor pane fires it so the host can open the options page.
+    /// </summary>
+    public event EventHandler? FormattingOptionsRequested;
 
     #endregion
 

@@ -16,6 +16,9 @@
     <ProjectReference Include="..\..\Editors\WpfHexEditor.Editor.DocumentEditor.Core\WpfHexEditor.Editor.DocumentEditor.Core.csproj" />
     <ProjectReference Include="..\..\Editors\WpfHexEditor.HexEditor\WpfHexEditor.HexEditor.csproj" />
     <ProjectReference Include="..\..\Shell\WpfHexEditor.Shell\WpfHexEditor.Shell.csproj" />
+    <!-- Core.ProjectSystem expose LanguageRegistry, LanguageDefinition,
+         ISyntaxColoringService et FormattingPreviewSample — suffisant pour le preview. -->
+    <ProjectReference Include="..\..\Core\WpfHexEditor.Core.ProjectSystem\WpfHexEditor.Core.ProjectSystem.csproj" />
   </ItemGroup>
 
 </Project>

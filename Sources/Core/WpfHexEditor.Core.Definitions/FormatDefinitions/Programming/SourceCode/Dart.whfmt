@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Dart Source File
    Category:  Programming
    Ext:       .dart
    Editor:    code-editor
    Desc:      Dart programming language source file (Flutter, web, server).
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Dart Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".dart"
   ],
@@ -122,9 +124,67 @@
         "[^;{}]\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [80],
-        "formattingRules": {"indentSize":2,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      80
+    ],
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "kr",
+      "spaceBeforeOpenBrace": true,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "indentCaseLabels": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": false,
+      "quoteStyle": "single",
+      "maxLineLength": 80
+    },
+    "previewSnippet": "import 'dart:io';\nimport 'dart:math';\n\nvoid go(int x,int y){\nif(x>0){\nswitch(x){\ncase 1:\nreturn;\n}\n}\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if(x>0){",
+        "after": "if (x > 0) {"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2;",
+        "after": "a = b + c * 2;"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z);",
+        "after": "go(x, y, z);"
+      },
+      "trimTrailingWhitespace": {
+        "before": "int x = 1;   ",
+        "after": "int x = 1;"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

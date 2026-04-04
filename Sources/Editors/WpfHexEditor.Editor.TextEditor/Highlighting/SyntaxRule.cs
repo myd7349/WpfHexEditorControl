@@ -30,10 +30,29 @@ public sealed class SyntaxRule
 
     /// <summary>
     /// Pre-compiled regex (lazy, thread-safe).
+    /// Returns <see langword="null"/> when <see cref="Pattern"/> is not a valid regular expression.
     /// </summary>
-    public Regex CompiledRegex => _regex ??= new Regex(Pattern,
-        RegexOptions.Compiled | RegexOptions.Multiline,
-        TimeSpan.FromMilliseconds(250));
+    public Regex? CompiledRegex
+    {
+        get
+        {
+            if (_regexResolved) return _regex;
+            _regexResolved = true;
+            try
+            {
+                _regex = new Regex(Pattern,
+                    RegexOptions.Compiled | RegexOptions.Multiline,
+                    TimeSpan.FromMilliseconds(250));
+            }
+            catch (ArgumentException)
+            {
+                // Invalid pattern from .whlang file — silently skip this rule.
+                _regex = null;
+            }
+            return _regex;
+        }
+    }
 
     private Regex? _regex;
+    private bool   _regexResolved;
 }

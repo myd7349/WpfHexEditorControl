@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Kotlin Source File
    Category:  Programming
    Ext:       .kt, .kts
    Editor:    code-editor
    Desc:      Kotlin programming language source files (JVM and Android).
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Kotlin Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".kt",
     ".kts"
@@ -123,9 +125,66 @@
         "[^;{}]\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [120],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      120
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "kr",
+      "spaceBeforeOpenBrace": true,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "indentCaseLabels": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": false,
+      "maxLineLength": 120
+    },
+    "previewSnippet": "import kotlin.io.*\nimport kotlin.math.*\n\nfun go(x:Int,y:Int){\nif(x>0){\nwhen(x){\n1->return\n}\n}\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if(x>0){",
+        "after": "if (x > 0) {"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2",
+        "after": "a = b + c * 2"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z)",
+        "after": "go(x, y, z)"
+      },
+      "trimTrailingWhitespace": {
+        "before": "val x = 1   ",
+        "after": "val x = 1"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

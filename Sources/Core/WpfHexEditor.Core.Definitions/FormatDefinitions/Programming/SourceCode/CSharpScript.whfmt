@@ -1,26 +1,87 @@
 {
   "formatId": "CSharpScript",
   "name": "C# Script",
-  "extensions": [ ".csx" ],
-  "mimeTypes": [ "text/x-csharp" ],
+  "extensions": [
+    ".csx"
+  ],
+  "mimeTypes": [
+    "text/x-csharp"
+  ],
   "preferredEditor": "code-editor",
-  "includes": [ "csharp" ],
   "syntaxDefinition": {
     "id": "csharp-script",
     "name": "C# Script",
+    "includes": [
+      "csharp"
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "allman",
+      "spaceBeforeOpenBrace": false,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "indentCaseLabels": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": true,
+      "maxLineLength": 120
+    },
     "scriptGlobals": [
       {
         "name": "HexEditor",
         "type": "IHexEditorService",
         "documentation": "Hex editor service: read/write bytes, navigate, inspect selection.",
         "members": [
-          { "name": "CurrentFilePath", "type": "string?",  "kind": "property", "documentation": "Path of the currently open file." },
-          { "name": "FileSize",        "type": "long",      "kind": "property", "documentation": "Size of the open file in bytes." },
-          { "name": "SelectionStart",  "type": "long",      "kind": "property", "documentation": "Start offset of current selection." },
-          { "name": "SelectionLength", "type": "long",      "kind": "property", "documentation": "Length of current selection in bytes." },
-          { "name": "ReadBytes",       "type": "byte[]",    "kind": "method",   "documentation": "ReadBytes(offset, count) — read raw bytes from the file." },
-          { "name": "WriteBytes",      "type": "void",      "kind": "method",   "documentation": "WriteBytes(offset, data) — write raw bytes to the file." },
-          { "name": "SetSelection",    "type": "void",      "kind": "method",   "documentation": "SetSelection(start, length) — set the selection range." }
+          {
+            "name": "CurrentFilePath",
+            "type": "string?",
+            "kind": "property",
+            "documentation": "Path of the currently open file."
+          },
+          {
+            "name": "FileSize",
+            "type": "long",
+            "kind": "property",
+            "documentation": "Size of the open file in bytes."
+          },
+          {
+            "name": "SelectionStart",
+            "type": "long",
+            "kind": "property",
+            "documentation": "Start offset of current selection."
+          },
+          {
+            "name": "SelectionLength",
+            "type": "long",
+            "kind": "property",
+            "documentation": "Length of current selection in bytes."
+          },
+          {
+            "name": "ReadBytes",
+            "type": "byte[]",
+            "kind": "method",
+            "documentation": "ReadBytes(offset, count) — read raw bytes from the file."
+          },
+          {
+            "name": "WriteBytes",
+            "type": "void",
+            "kind": "method",
+            "documentation": "WriteBytes(offset, data) — write raw bytes to the file."
+          },
+          {
+            "name": "SetSelection",
+            "type": "void",
+            "kind": "method",
+            "documentation": "SetSelection(start, length) — set the selection range."
+          }
         ]
       },
       {
@@ -28,9 +89,24 @@
         "type": "IDocumentHostService",
         "documentation": "Document host: open, activate, and navigate to documents in the IDE.",
         "members": [
-          { "name": "OpenAsync",       "type": "Task",       "kind": "method",   "documentation": "OpenAsync(path) — open a file in the IDE." },
-          { "name": "ActiveDocument",  "type": "IDocument?", "kind": "property", "documentation": "Currently active document." },
-          { "name": "CloseAsync",      "type": "Task",       "kind": "method",   "documentation": "CloseAsync(path) — close a document by path." }
+          {
+            "name": "OpenAsync",
+            "type": "Task",
+            "kind": "method",
+            "documentation": "OpenAsync(path) — open a file in the IDE."
+          },
+          {
+            "name": "ActiveDocument",
+            "type": "IDocument?",
+            "kind": "property",
+            "documentation": "Currently active document."
+          },
+          {
+            "name": "CloseAsync",
+            "type": "Task",
+            "kind": "method",
+            "documentation": "CloseAsync(path) — close a document by path."
+          }
         ]
       },
       {
@@ -38,9 +114,24 @@
         "type": "IOutputService",
         "documentation": "Output panel service: write to the Output panel.",
         "members": [
-          { "name": "Info",    "type": "void", "kind": "method", "documentation": "Info(message) — write an informational line to the Output panel." },
-          { "name": "Warning", "type": "void", "kind": "method", "documentation": "Warning(message) — write a warning line to the Output panel." },
-          { "name": "Error",   "type": "void", "kind": "method", "documentation": "Error(message) — write an error line to the Output panel." }
+          {
+            "name": "Info",
+            "type": "void",
+            "kind": "method",
+            "documentation": "Info(message) — write an informational line to the Output panel."
+          },
+          {
+            "name": "Warning",
+            "type": "void",
+            "kind": "method",
+            "documentation": "Warning(message) — write a warning line to the Output panel."
+          },
+          {
+            "name": "Error",
+            "type": "void",
+            "kind": "method",
+            "documentation": "Error(message) — write an error line to the Output panel."
+          }
         ]
       },
       {
@@ -48,8 +139,18 @@
         "type": "ITerminalService?",
         "documentation": "Terminal service: register or unregister HxTerminal commands from scripts. May be null when terminal is not available.",
         "members": [
-          { "name": "RegisterCommand",   "type": "void", "kind": "method", "documentation": "RegisterCommand(provider) — register a terminal command." },
-          { "name": "UnregisterCommand", "type": "void", "kind": "method", "documentation": "UnregisterCommand(name) — unregister a command by name." }
+          {
+            "name": "RegisterCommand",
+            "type": "void",
+            "kind": "method",
+            "documentation": "RegisterCommand(provider) — register a terminal command."
+          },
+          {
+            "name": "UnregisterCommand",
+            "type": "void",
+            "kind": "method",
+            "documentation": "UnregisterCommand(name) — unregister a command by name."
+          }
         ]
       },
       {
@@ -57,8 +158,18 @@
         "type": "CancellationToken",
         "documentation": "Cancellation token linked to the Cancel button in the script runner.",
         "members": [
-          { "name": "IsCancellationRequested",     "type": "bool", "kind": "property", "documentation": "True when cancellation has been requested." },
-          { "name": "ThrowIfCancellationRequested","type": "void", "kind": "method",   "documentation": "Throws OperationCanceledException if cancellation was requested." }
+          {
+            "name": "IsCancellationRequested",
+            "type": "bool",
+            "kind": "property",
+            "documentation": "True when cancellation has been requested."
+          },
+          {
+            "name": "ThrowIfCancellationRequested",
+            "type": "void",
+            "kind": "method",
+            "documentation": "Throws OperationCanceledException if cancellation was requested."
+          }
         ]
       },
       {
@@ -73,6 +184,29 @@
         "documentation": "Printf(format, args) — write formatted text to Output panel. Equivalent to Console.WriteLine(string.Format(...)).",
         "members": []
       }
-    ]
+    ],
+    "previewSnippet": "using System;\n\nvar x = 1;\nif(x>0){\nConsole.WriteLine(x+1);\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if(x>0){",
+        "after": "if (x > 0) {"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "x+1",
+        "after": "x + 1"
+      },
+      "spaceAfterComma": {
+        "before": "Console.Write(x,y);",
+        "after": "Console.Write(x, y);"
+      },
+      "trimTrailingWhitespace": {
+        "before": "var x = 1;   ",
+        "after": "var x = 1;"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   }
 }

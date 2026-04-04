@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Ruby Source File
    Category:  Programming
    Ext:       .rb, .rbw, .rake, .gemspec
    Editor:    code-editor
    Desc:      Ruby programming language source files and Rake build scripts.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Ruby Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".rb",
     ".rbw",
@@ -94,7 +96,27 @@
       }
     ],
     "foldingRules": {
-      "type": "indent"
+      "startPatterns": [
+        "(?<!\\bend\\s)\\bdef\\b",
+        "(?<!\\bend\\s)\\bclass\\b",
+        "(?<!\\bend\\s)\\bmodule\\b",
+        "\\bdo\\b",
+        "(?<!\\bend\\s)\\bbegin\\b",
+        "(?<!\\bend\\s)\\bif\\b",
+        "(?<!\\bend\\s)\\bunless\\b",
+        "(?<!\\bend\\s)\\bwhile\\b",
+        "(?<!\\bend\\s)\\buntil\\b",
+        "(?<!\\bend\\s)\\bcase\\b"
+      ],
+      "endPatterns": [
+        "\\bend\\b"
+      ],
+      "endOfBlockHint": {
+        "enabled": true,
+        "maxContextLines": 3,
+        "triggerBrace": false,
+        "triggerDirective": false
+      }
     },
     "breakpointRules": {
       "nonExecutablePatterns": [
@@ -108,9 +130,66 @@
         ",\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [120],
-        "formattingRules": {"indentSize":2,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      120
+    ],
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": false,
+      "separateSystemImports": false,
+      "quoteStyle": "double",
+      "maxLineLength": 120,
+      "blockOpenKeywords": ["do"],
+      "blockCloseKeywords": ["end", "else", "elsif", "rescue", "ensure", "when"]
+    },
+    "previewSnippet": "require 'ostruct'\nrequire 'json'\n\nx = 10\n3.times do\n  x = x+1\nend",
+    "previewSamples": {
+      "spaceAroundBinaryOperators": {
+        "before": "x = y+z*2",
+        "after": "x = y + z * 2"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z)",
+        "after": "go(x, y, z)"
+      },
+      "quoteStyle": {
+        "before": "require 'ostruct'",
+        "after": "require \"ostruct\""
+      },
+      "trimTrailingWhitespace": {
+        "before": "x = 1   ",
+        "after": "x = 1"
+      },
+      "insertFinalNewline": {
+        "before": "end",
+        "after": "end\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

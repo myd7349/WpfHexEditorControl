@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Rust Source File
    Category:  Programming
    Ext:       .rs
    Editor:    code-editor
    Desc:      Rust programming language source file.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Rust Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".rs"
   ],
@@ -133,9 +135,71 @@
         "[^;{}]\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [100],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      100
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "kr",
+      "spaceBeforeOpenBrace": true,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "indentCaseLabels": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": false,
+      "quoteStyle": "double",
+      "maxLineLength": 100
+    },
+    "previewSnippet": "use std::io;\nuse std::fs;\n\nfn go(x:i32,y:i32){\nif x>0{\nmatch x{\n1=>return,\n_=>{}\n}\n}\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if x>0{",
+        "after": "if x > 0 {"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2;",
+        "after": "a = b + c * 2;"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z);",
+        "after": "go(x, y, z);"
+      },
+      "organizeImports": {
+        "before": "use std::io;\nuse std::fs;",
+        "after": "use std::fs;\nuse std::io;"
+      },
+      "trimTrailingWhitespace": {
+        "before": "let x = 1;   ",
+        "after": "let x = 1;"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

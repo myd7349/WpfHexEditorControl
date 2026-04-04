@@ -41,9 +41,12 @@ public sealed class RegexSyntaxHighlighter
             if (string.IsNullOrEmpty(rule.Pattern))
                 continue;
 
+            var compiledRegex = rule.CompiledRegex;
+            if (compiledRegex is null) continue;
+
             try
             {
-                foreach (Match m in rule.CompiledRegex.Matches(line))
+                foreach (Match m in compiledRegex.Matches(line))
                 {
                     if (!m.Success || m.Length == 0)
                         continue;

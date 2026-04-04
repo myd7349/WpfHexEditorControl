@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    JavaScript Source File
    Category:  Programming
    Ext:       .js, .mjs, .cjs, .jsx
    Editor:    code-editor
    Desc:      JavaScript programming language source file (ECMAScript).
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "JavaScript Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".js",
     ".mjs",
@@ -143,10 +145,78 @@
         "[^;{}]\\s*$"
       ]
     },
-    "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-    "columnRulers": [80],
-    "formattingRules": {"indentSize":2,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true},
-    "colorLiteralPatterns": ["#[0-9A-Fa-f]{8}","#[0-9A-Fa-f]{6}","#[0-9A-Fa-f]{3}","rgb\\(\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*\\)"]
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      80
+    ],
+    "formattingRules": {
+      "indentSize": 2,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "braceStyle": "kr",
+      "spaceBeforeOpenBrace": true,
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "indentCaseLabels": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": false,
+      "quoteStyle": "double",
+      "trailingCommas": "es5",
+      "maxLineLength": 100
+    },
+    "colorLiteralPatterns": [
+      "#[0-9A-Fa-f]{8}",
+      "#[0-9A-Fa-f]{6}",
+      "#[0-9A-Fa-f]{3}",
+      "rgb\\(\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*\\)"
+    ],
+    "previewSnippet": "import path from 'path';\nimport fs from 'fs';\n\nfunction go(x,y){\nif(x>0){\nswitch(x){\ncase 1:\nreturn;\n}\n}\n}",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if(x>0){",
+        "after": "if (x > 0) {"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2;",
+        "after": "a = b + c * 2;"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z);",
+        "after": "go(x, y, z);"
+      },
+      "organizeImports": {
+        "before": "import path from 'path';\nimport fs from 'fs';",
+        "after": "import fs from 'fs';\nimport path from 'path';"
+      },
+      "trimTrailingWhitespace": {
+        "before": "let x = 1;   ",
+        "after": "let x = 1;"
+      },
+      "insertFinalNewline": {
+        "before": "}",
+        "after": "}\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",

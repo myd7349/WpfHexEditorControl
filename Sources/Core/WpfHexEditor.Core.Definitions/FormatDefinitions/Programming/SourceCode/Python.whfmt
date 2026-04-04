@@ -1,15 +1,17 @@
-/* ============================================================
+/*
+   ============================================================
    Format:    Python Source File
    Category:  Programming
    Ext:       .py, .pyw, .pyi
    Editor:    code-editor
    Desc:      Python programming language source file.
-   Updated:   2026-03-22
-   ============================================================ */
+   Updated:   2026-04-04
+   ============================================================
+*/
 {
   "diffMode": "text",
   "formatName": "Python Source File",
-  "version": "2.0",
+  "version": "2.1",
   "extensions": [
     ".py",
     ".pyw",
@@ -100,9 +102,68 @@
         "\\\\\\s*$"
       ]
     },
-        "bracketPairs": [{"open":"(","close":")"},{"open":"[","close":"]"},{"open":"{","close":"}"}],
-        "columnRulers": [79],
-        "formattingRules": {"indentSize":4,"useTabs":false,"trimTrailingWhitespace":true,"insertFinalNewline":true}
+    "bracketPairs": [
+      {
+        "open": "(",
+        "close": ")"
+      },
+      {
+        "open": "[",
+        "close": "]"
+      },
+      {
+        "open": "{",
+        "close": "}"
+      }
+    ],
+    "columnRulers": [
+      79
+    ],
+    "formattingRules": {
+      "indentSize": 4,
+      "useTabs": false,
+      "trimTrailingWhitespace": true,
+      "insertFinalNewline": true,
+      "lineEnding": "lf",
+      "spaceAfterKeywords": true,
+      "spaceInsideParens": false,
+      "maxConsecutiveBlankLines": 2,
+      "blankLineBeforeMethod": true,
+      "blankLineAfterImports": true,
+      "spaceAroundBinaryOperators": true,
+      "spaceAfterComma": true,
+      "organizeImports": true,
+      "separateSystemImports": false,
+      "quoteStyle": "double",
+      "maxLineLength": 79
+    },
+    "previewSnippet": "import os\nimport abc\n\ndef go(x,y):\n    if x>0:\n        return x+y",
+    "previewSamples": {
+      "spaceAfterKeywords": {
+        "before": "if x>0:",
+        "after": "if x > 0:"
+      },
+      "spaceAroundBinaryOperators": {
+        "before": "a=b+c*2",
+        "after": "a = b + c * 2"
+      },
+      "spaceAfterComma": {
+        "before": "go(x,y,z)",
+        "after": "go(x, y, z)"
+      },
+      "organizeImports": {
+        "before": "import os\nimport abc",
+        "after": "import abc\nimport os"
+      },
+      "trimTrailingWhitespace": {
+        "before": "x = 1   ",
+        "after": "x = 1"
+      },
+      "insertFinalNewline": {
+        "before": "return x",
+        "after": "return x\n"
+      }
+    }
   },
   "forensic": {
     "category": "other",
