@@ -61,6 +61,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             finally
             {
                 _isInternalEdit = false;
+                _changeTracker.Invalidate();
             }
         }
 
@@ -81,6 +82,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             finally
             {
                 _isInternalEdit = false;
+                _changeTracker.Invalidate();
             }
         }
 
@@ -699,6 +701,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _breakpointGutterControl?.SetFilePath(_currentFilePath);
             if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = filePath;
             _undoEngine.MarkSaved();  // Stamp save-point so Undo can detect "back to clean".
+            _changeTracker.MarkSavePoint();
             _lspClient?.SaveDocument(filePath);
             _isDirty = false;
             ModifiedChanged?.Invoke(this, EventArgs.Empty);
@@ -724,6 +727,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _currentFilePath = filePath;
             _breakpointGutterControl?.SetFilePath(_currentFilePath);
             if (_smartCompletePopup is not null) _smartCompletePopup.CurrentFilePath = filePath;
+            // Seed save-point AFTER load so opened content is the baseline (not the empty doc).
+            _changeTracker.MarkSavePoint();
             TitleChanged?.Invoke(this, BuildTitle());
             StatusMessage?.Invoke(this, $"Opened: {Path.GetFileName(filePath)}");
             RefreshJsonStatusBarItems();
@@ -782,6 +787,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
             _undoEngine.Reset();    // Loaded content is the new baseline.
             _undoEngine.MarkSaved();
+            _changeTracker.MarkSavePoint();
             _isDirty = false;
             _cursorLine             = 0;
             _cursorColumn           = 0;

@@ -1145,13 +1145,30 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 }
             }
 
-            // Breakpoint gutter: immediately right of blame gutter.
+            // Change-marker gutter (#166): 4px strip immediately right of blame.
+            double changeW = 0.0;
+            if (_changeMarkerGutterControl != null)
+            {
+                bool showChange = ShowChangeMarkers && ShowLineNumbers;
+                _changeMarkerGutterControl.Visibility = showChange ? Visibility.Visible : Visibility.Collapsed;
+                if (showChange)
+                {
+                    changeW = ChangeMarkerGutterControl.GutterWidth;
+                    _changeMarkerGutterControl.Arrange(new Rect(blameW, 0, changeW, contentH));
+                }
+                else
+                {
+                    _changeMarkerGutterControl.Arrange(new Rect(0, 0, 0, 0));
+                }
+            }
+
+            // Breakpoint gutter: immediately right of change-marker gutter.
             if (_breakpointGutterControl != null)
             {
                 bool showBp = ShowLineNumbers;
                 _breakpointGutterControl.Visibility = showBp ? Visibility.Visible : Visibility.Collapsed;
                 _breakpointGutterControl.Arrange(showBp
-                    ? new Rect(blameW, 0, BreakpointGutterControl.GutterWidth, contentH)
+                    ? new Rect(blameW + changeW, 0, BreakpointGutterControl.GutterWidth, contentH)
                     : new Rect(0, 0, 0, 0));
             }
 
@@ -1161,7 +1178,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 bool showGutter = IsFoldingEnabled && ShowLineNumbers;
                 _gutterControl.Visibility = showGutter ? Visibility.Visible : Visibility.Collapsed;
                 _gutterControl.Arrange(showGutter
-                    ? new Rect(blameW + BreakpointGutterControl.GutterWidth, 0, _gutterControl.Width, contentH)
+                    ? new Rect(blameW + changeW + BreakpointGutterControl.GutterWidth, 0, _gutterControl.Width, contentH)
                     : new Rect(0, 0, 0, 0));
             }
 
@@ -1416,6 +1433,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Sync blame gutter with same visible range.
             _blameGutterControl?.Update(
                 _lineHeight, _firstVisibleLine, _lastVisibleLine, TopMargin, _lineYLookup);
+
+            // Sync change-marker gutter with latest change map.
+            _changeMarkerGutterControl?.Update(
+                _lineHeight, _firstVisibleLine, _lastVisibleLine, TopMargin, _lineYLookup, _changeMap);
         }
 
         /// <summary>
