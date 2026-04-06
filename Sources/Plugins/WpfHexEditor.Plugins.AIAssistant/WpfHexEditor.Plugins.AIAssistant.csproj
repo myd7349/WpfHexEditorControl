@@ -21,6 +21,9 @@
     <PluginLoadPriority>200</PluginLoadPriority>
     <PluginSdkVersion>2.0.0</PluginSdkVersion>
     <PluginMinIDEVersion>0.6.0</PluginMinIDEVersion>
+    <PluginActivationOnStartup>false</PluginActivationOnStartup>
+    <PluginActivationCommands>"View.AIAssistant"</PluginActivationCommands>
+    <PluginMenuContributionsJson>[{"commandId":"View.AIAssistant","label":"_AI Assistant","parentPath":"View","group":"Panels","category":"AI &amp; Assistants","iconGlyph":"\uE734"}]</PluginMenuContributionsJson>
 
     <!-- Permissions -->
     <PluginPermAccessHexEditor>true</PluginPermAccessHexEditor>

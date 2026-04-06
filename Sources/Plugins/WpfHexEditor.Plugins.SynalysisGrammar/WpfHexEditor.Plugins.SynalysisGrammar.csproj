@@ -20,6 +20,10 @@
     <PluginLoadPriority>45</PluginLoadPriority>
     <PluginSdkVersion>1.2.0</PluginSdkVersion>
     <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+    <PluginActivationOnStartup>false</PluginActivationOnStartup>
+    <PluginActivationExtensions>".grammar"</PluginActivationExtensions>
+    <PluginActivationCommands>"View.GrammarExplorer"</PluginActivationCommands>
+    <PluginMenuContributionsJson>[{"commandId":"View.GrammarExplorer","label":"_Grammar Explorer","parentPath":"View","group":"Analysis","category":"Analysis","iconGlyph":"\uE8A5"}]</PluginMenuContributionsJson>
     <PluginPermAccessHexEditor>true</PluginPermAccessHexEditor>
     <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
     <PluginPermAccessNetwork>false</PluginPermAccessNetwork>

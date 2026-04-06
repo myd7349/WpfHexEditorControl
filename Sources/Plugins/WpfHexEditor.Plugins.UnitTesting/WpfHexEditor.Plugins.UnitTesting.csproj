@@ -20,6 +20,9 @@
     <PluginLoadPriority>50</PluginLoadPriority>
     <PluginSdkVersion>1.2.0</PluginSdkVersion>
     <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+    <PluginActivationOnStartup>false</PluginActivationOnStartup>
+    <PluginActivationCommands>"View.UnitTesting"</PluginActivationCommands>
+    <PluginMenuContributionsJson>[{"commandId":"View.UnitTesting","label":"_Unit Testing","parentPath":"View","group":"Testing","category":"Testing","iconGlyph":"\uE9E6"}]</PluginMenuContributionsJson>
     <PluginPermAccessHexEditor>false</PluginPermAccessHexEditor>
     <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
     <PluginPermAccessNetwork>false</PluginPermAccessNetwork>

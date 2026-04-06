@@ -23,6 +23,10 @@
     <PluginLoadPriority>35</PluginLoadPriority>
     <PluginSdkVersion>1.2.0</PluginSdkVersion>
     <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+    <PluginActivationOnStartup>false</PluginActivationOnStartup>
+    <PluginActivationExtensions>".cs"</PluginActivationExtensions>
+    <PluginActivationCommands>"View.ClassDiagram"</PluginActivationCommands>
+    <PluginMenuContributionsJson>[{"commandId":"View.ClassDiagram","label":"_Class Diagram","parentPath":"View","group":"ClassDiagram","category":"Designers","iconGlyph":"\uE8A5"}]</PluginMenuContributionsJson>
     <PluginPermAccessHexEditor>false</PluginPermAccessHexEditor>
     <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
     <PluginPermAccessNetwork>false</PluginPermAccessNetwork>
