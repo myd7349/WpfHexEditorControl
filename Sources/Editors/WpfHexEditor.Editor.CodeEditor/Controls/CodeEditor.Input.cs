@@ -830,9 +830,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private void InsertNewLine()
         {
-            _document.InsertNewLine(_cursorLine, _cursorColumn);
+            if (!_selection.IsEmpty)
+                DeleteSelection();
+
+            _document.InsertNewLine(_cursorLine, _cursorColumn, (int)AutoIndentMode);
             _cursorLine++;
             _cursorColumn = CalculateAutoIndentColumn();
+            _selection.Clear();
+            EnsureCursorVisible();
         }
 
         private void InsertTab()
@@ -1050,21 +1055,20 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private int CalculateAutoIndentColumn()
         {
+            // The document's InsertNewLine already placed the correct indent on the new line
+            // based on AutoIndentMode. Read back the leading whitespace so the caret lands
+            // at the first content column.
             if (_cursorLine >= _document.Lines.Count)
                 return 0;
 
-            var line = _document.Lines[_cursorLine];
-            int spaces = 0;
-
-            foreach (char ch in line.Text)
+            var text = _document.Lines[_cursorLine].Text ?? string.Empty;
+            int col = 0;
+            foreach (char ch in text)
             {
-                if (ch == ' ')
-                    spaces++;
-                else
-                    break;
+                if (ch == ' ' || ch == '\t') col++;
+                else break;
             }
-
-            return spaces;
+            return col;
         }
 
         #endregion

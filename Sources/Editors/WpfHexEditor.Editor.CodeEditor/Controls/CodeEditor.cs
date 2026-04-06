@@ -488,6 +488,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // Breakpoint gutter (ADR-DBG-01).
         private BreakpointGutterControl? _breakpointGutterControl;
         private BlameGutterControl?      _blameGutterControl;
+
+        // Change-marker gutter (#166): 4px strip left of the breakpoint gutter.
+        private ChangeMarkerGutterControl?                              _changeMarkerGutterControl;
+        private readonly Services.GutterChangeTracker                  _changeTracker = new();
+        private IReadOnlyDictionary<int, Models.LineChangeKind>        _changeMap
+            = new Dictionary<int, Models.LineChangeKind>();
+
         // 1-based execution line (null when no debug session is paused).
         private int? _executionLineOneBased;
 
@@ -851,6 +858,30 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         public void SetBlame(IReadOnlyList<WpfHexEditor.Editor.Core.LSP.BlameEntry>? entries)
             => _blameGutterControl?.SetBlame(entries);
+
+        // ── Change Marker Gutter (#166) ───────────────────────────────────────
+
+        public static readonly DependencyProperty ShowChangeMarkersProperty =
+            DependencyProperty.Register(nameof(ShowChangeMarkers), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true, OnShowChangeMarkersChanged));
+
+        [Category("Features")]
+        [DisplayName("Show Change Markers")]
+        [Description("Shows Added / Modified / Deleted line indicators in the gutter.")]
+        public bool ShowChangeMarkers
+        {
+            get => (bool)GetValue(ShowChangeMarkersProperty);
+            set => SetValue(ShowChangeMarkersProperty, value);
+        }
+
+        private static void OnShowChangeMarkersChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not CodeEditor ce || ce._changeMarkerGutterControl is null) return;
+            ce._changeMarkerGutterControl.Visibility = (bool)e.NewValue
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+            ce.InvalidateMeasure();
+        }
 
         public static readonly DependencyProperty ShowInlineHintsProperty =
             DependencyProperty.Register(nameof(ShowInlineHints), typeof(bool), typeof(CodeEditor),
@@ -1531,6 +1562,19 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             get => (int)GetValue(IndentSizeProperty);
             set => SetValue(IndentSizeProperty, value);
+        }
+
+        public static readonly DependencyProperty AutoIndentModeProperty =
+            DependencyProperty.Register(nameof(AutoIndentMode), typeof(AutoIndentMode), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(AutoIndentMode.KeepIndent));
+
+        [Category("Behavior")]
+        [DisplayName("Auto-Indent Mode")]
+        [Description("Controls automatic indentation when Enter is pressed: None, KeepIndent, or Smart.")]
+        public AutoIndentMode AutoIndentMode
+        {
+            get => (AutoIndentMode)GetValue(AutoIndentModeProperty);
+            set => SetValue(AutoIndentModeProperty, value);
         }
 
         public static readonly DependencyProperty SmartCompleteDelayProperty =
@@ -2430,6 +2474,20 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _blameGutterControl = new BlameGutterControl { Visibility = System.Windows.Visibility.Collapsed };
             _scrollBarChildren.Add(_blameGutterControl);
 
+            // Change-marker gutter (#166): 4px strip between blame and breakpoint gutters.
+            _changeMarkerGutterControl = new ChangeMarkerGutterControl();
+            _scrollBarChildren.Add(_changeMarkerGutterControl);
+            _changeTracker.SetLinesProvider(() => _document.Lines.Select(l => l.Text).ToList());
+            _changeTracker.Changed += (_, map) =>
+            {
+                _changeMap = map;
+                _changeMarkerGutterControl?.Update(
+                    _lineHeight, _firstVisibleLine, _lastVisibleLine,
+                    TopMargin, _lineYLookup, _changeMap);
+            };
+            // Hot path: just restart the debounce timer — zero allocations per keystroke.
+            _document.TextChanged += (_, _) => _changeTracker.Invalidate();
+
             // Initialize word-highlight scroll marker overlay.
             _codeScrollMarkerPanel = new CodeScrollMarkerPanel();
             _scrollBarChildren.Add(_codeScrollMarkerPanel); // renders on top of _vScrollBar
@@ -2579,6 +2637,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             EnableWordHighlight      = options.EnableWordHighlight;
             ShowEndOfBlockHint      = options.ShowEndOfBlockHint;
             EndOfBlockHintDelayMs   = options.EndOfBlockHintDelayMs;
+
+            // Auto-indent
+            AutoIndentMode = options.AutoIndentMode;
 
             // Auto-close / smart editing
             EnableAutoClosingBrackets = options.AutoClosingBrackets;

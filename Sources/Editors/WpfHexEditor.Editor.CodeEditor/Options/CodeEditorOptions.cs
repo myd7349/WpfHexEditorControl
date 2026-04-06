@@ -273,6 +273,22 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
         set { _wrapSelectionInPairs = value; Notify(); }
     }
 
+    private AutoIndentMode _autoIndentMode = AutoIndentMode.KeepIndent;
+
+    /// <summary>
+    /// Controls automatic indentation when Enter is pressed.
+    /// <list type="bullet">
+    ///   <item><term>None</term><description>No indentation — caret lands at column 0.</description></item>
+    ///   <item><term>KeepIndent</term><description>Copy leading whitespace of the previous line (default).</description></item>
+    ///   <item><term>Smart</term><description>Language-aware: increases indent after <c>{</c>, decreases after <c>}</c>.</description></item>
+    /// </list>
+    /// </summary>
+    public AutoIndentMode AutoIndentMode
+    {
+        get => _autoIndentMode;
+        set { _autoIndentMode = value; Notify(); }
+    }
+
     private bool _enableWordHighlight = true;
 
     /// <summary>
