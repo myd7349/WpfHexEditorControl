@@ -169,6 +169,14 @@ public sealed class AppSettings
     /// <summary>Plugin Marketplace preferences (GitHub token, auto-update check).</summary>
     public MarketplaceSettings Marketplace { get; set; } = new();
 
+    // -- Lazy Plugin Persistence --------------------------------------------------
+
+    /// <summary>
+    /// IDs of lazy (Dormant→Loaded) plugins whose panels were visible at last shutdown.
+    /// Restored eagerly at next startup so the docking layout can re-anchor their panels.
+    /// </summary>
+    public List<string> LazyPluginsToRestore { get; set; } = [];
+
     // -- Layout Customization -----------------------------------------------------
 
     /// <summary>Layout visibility, positions, and mode preferences (Customize Layout popup).</summary>

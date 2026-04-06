@@ -488,6 +488,21 @@ public partial class MainWindow
                 await _pluginHost.LoadAllAsync(
                     extraDirectories: Directory.Exists(bundledPluginsDir) ? [bundledPluginsDir] : null,
                     ct: CancellationToken.None).ConfigureAwait(false);
+
+                // Eagerly activate lazy plugins whose panels were open at last shutdown.
+                // Must happen BEFORE ResumeRebuild so the dock layout can anchor their panels.
+                var toRestore = AppSettingsService.Instance.Current.LazyPluginsToRestore;
+                if (toRestore.Count > 0)
+                {
+                    OutputLogger.PluginInfo($"[PluginSystem] Restoring {toRestore.Count} lazy plugin(s) from last session.");
+                    foreach (var id in toRestore)
+                    {
+                        try { await _pluginHost.ActivateDormantPluginAsync(id, CancellationToken.None).ConfigureAwait(false); }
+                        catch (Exception ex) { OutputLogger.PluginError($"[PluginSystem] Failed to restore lazy plugin '{id}': {ex.Message}"); }
+                    }
+                    AppSettingsService.Instance.Current.LazyPluginsToRestore = [];
+                    AppSettingsService.Instance.Save();
+                }
             }
             finally
             {
@@ -1124,6 +1139,14 @@ public partial class MainWindow
     private async Task ShutdownPluginSystemAsync()
     {
         if (_pluginHost is null) return;
+
+        // Persist which lazy-loaded plugin panels were open so they auto-restore next session.
+        var lazyWithPanels = _pluginHost.GetLazyPluginsWithOpenPanels();
+        AppSettingsService.Instance.Current.LazyPluginsToRestore = lazyWithPanels;
+        AppSettingsService.Instance.Save();
+        if (lazyWithPanels.Count > 0)
+            OutputLogger.PluginInfo($"[PluginSystem] Saved {lazyWithPanels.Count} lazy plugin(s) for next session restore: {string.Join(", ", lazyWithPanels)}");
+
         _pluginHost.PluginCrashed      -= OnPluginCrashed;
         _pluginHost.SlowPluginDetected -= OnSlowPluginDetected;
         _pluginHost.PluginLoaded       -= OnPluginLoadedOrUnloaded;

@@ -42,6 +42,12 @@ public sealed class WpfPluginHost : IAsyncDisposable
     private readonly Dispatcher _dispatcher;
 
     private readonly Dictionary<string, PluginEntry> _entries = new(StringComparer.OrdinalIgnoreCase);
+
+    // Tracks command IDs registered as dormant-plugin stubs (keyed by pluginId).
+    // Cleaned up when the plugin activates, before it registers its own handlers.
+    private readonly Dictionary<string, List<string>> _dormantStubCommandIds
+        = new(StringComparer.OrdinalIgnoreCase);
+    private const string StubPluginSuffix = ".__stub__";
     private readonly object _lock = new();
 
     // -- Feature 5 & 6 --
@@ -509,8 +515,31 @@ public sealed class WpfPluginHost : IAsyncDisposable
             _activationToastService = new PluginActivationToastService(
                 _hostContext.IDEEvents, _hostContext.Notifications);
 
+        // Pre-register menu stubs for dormant plugins so they appear in menus + Command Palette.
+        RegisterDormantStubs();
+
         // PHASE 1: Initialize MetricsEngine after all plugins loaded
         await _metricsEngine.InitializeAsync(delayMs: 150).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Returns the IDs of lazy (originally Dormant) plugins that are currently Loaded
+    /// and have at least one visible docked panel. Used to persist panel state across restarts.
+    /// </summary>
+    public List<string> GetLazyPluginsWithOpenPanels()
+    {
+        var result = new List<string>();
+        lock (_lock)
+        {
+            foreach (var (id, entry) in _entries)
+            {
+                if (entry.State != PluginState.Loaded) continue;
+                if (entry.Manifest.Activation?.IsStartupLoad == true) continue; // eagerly loaded — not lazy
+                if (_uiRegistry.HasVisiblePanelForPlugin(id))
+                    result.Add(id);
+            }
+        }
+        return result;
     }
 
     /// <summary>
@@ -535,6 +564,9 @@ public sealed class WpfPluginHost : IAsyncDisposable
 
         _log($"[PluginSystem] Activating dormant plugin '{entry.Manifest.Name}'...");
 
+        // Remove stub menu/command entries — the plugin will register its own on InitializeAsync.
+        UnregisterDormantStubs(entry.Manifest.Id);
+
         // Notify the IDE so toast services can show a "Loading X…" indicator.
         _hostContext.IDEEvents.Publish(new PluginActivatingEvent
         {
@@ -544,6 +576,125 @@ public sealed class WpfPluginHost : IAsyncDisposable
         });
 
         await LoadPluginAsync(entry.Manifest, ct).ConfigureAwait(false);
+    }
+
+    // --- Dormant stub registration -------------------------------------------
+
+    /// <summary>
+    /// Pre-registers lightweight stub menu items and commands for every dormant plugin
+    /// that declares <see cref="PluginManifest.MenuContributions"/>.
+    /// Stubs make the plugin discoverable in menus and Command Palette before it loads.
+    /// </summary>
+    private void RegisterDormantStubs()
+    {
+        foreach (var entry in _entries.Values)
+        {
+            if (entry.State != PluginState.Dormant) continue;
+            if (entry.Manifest.MenuContributions.Count == 0) continue;
+
+            var stubIds = new List<string>(entry.Manifest.MenuContributions.Count);
+            var manifestId = entry.Manifest.Id;
+            var manifestName = entry.Manifest.Name;
+
+            foreach (var mc in entry.Manifest.MenuContributions)
+            {
+                if (string.IsNullOrWhiteSpace(mc.CommandId)) continue;
+
+                // 1. Register in SDK CommandRegistry so Command Palette picks it up.
+                _hostContext.CommandRegistry?.Register(new SDK.Commands.SdkCommandDefinition(
+                    mc.CommandId,
+                    mc.Label,
+                    mc.Category ?? "Plugins",
+                    mc.Shortcut,
+                    mc.IconGlyph,
+                    new SDK.Commands.RelayCommand(_ => ActivateAndExecuteStub(manifestId, mc.CommandId))));
+
+                stubIds.Add(mc.CommandId);
+
+                // 2. Register menu item on the UI thread so the View/Tools menus expose it.
+                var captured = mc;
+                _dispatcher.InvokeAsync(() =>
+                {
+                    var uiId = $"{manifestId}{StubPluginSuffix}.{captured.CommandId}";
+                    if (_uiRegistry.Exists(uiId)) return;
+
+                    _uiRegistry.RegisterMenuItem(uiId, $"{manifestId}{StubPluginSuffix}",
+                        new SDK.Descriptors.MenuItemDescriptor
+                        {
+                            Header     = captured.Label,
+                            ParentPath = captured.ParentPath,
+                            Group      = captured.Group,
+                            Category   = captured.Category,
+                            IconGlyph  = captured.IconGlyph,
+                            GestureText = captured.Shortcut,
+                            ToolTip    = $"Load {manifestName} and open",
+                            Command    = new SDK.Commands.RelayCommand(
+                                _ => ActivateAndExecuteStub(manifestId, captured.CommandId)),
+                        });
+                }, System.Windows.Threading.DispatcherPriority.Normal);
+            }
+
+            if (stubIds.Count > 0)
+                _dormantStubCommandIds[manifestId] = stubIds;
+
+            _log($"[PluginSystem] '{manifestName}' — {stubIds.Count} stub(s) registered.");
+        }
+    }
+
+    /// <summary>
+    /// Removes all stub menu items and commands for the given plugin.
+    /// Called just before the plugin activates so its own registrations take over cleanly.
+    /// </summary>
+    private void UnregisterDormantStubs(string pluginId)
+    {
+        // Remove stub menu items (on UI thread).
+        _dispatcher.InvokeAsync(
+            () => _uiRegistry.UnregisterAllForPlugin($"{pluginId}{StubPluginSuffix}"),
+            System.Windows.Threading.DispatcherPriority.Normal);
+
+        // Remove stub commands from SDK registry.
+        if (!_dormantStubCommandIds.TryGetValue(pluginId, out var cmdIds)) return;
+        foreach (var id in cmdIds)
+            _hostContext.CommandRegistry?.Unregister(id);
+        _dormantStubCommandIds.Remove(pluginId);
+    }
+
+    /// <summary>
+    /// Activates a dormant plugin and, after it finishes loading, invokes the WPF ICommand
+    /// the plugin registered for its View panel toggle — no second click required.
+    /// </summary>
+    private void ActivateAndExecuteStub(string pluginId, string commandId)
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                await ActivateDormantPluginAsync(pluginId).ConfigureAwait(false);
+
+                // Plugin's InitializeAsync has completed — find the ICommand it registered
+                // for its View menu item and invoke it directly on the UI thread.
+                await _dispatcher.InvokeAsync(() =>
+                {
+                    // 1. Try the plugin's own View menu ICommand (primary path).
+                    var cmd = _uiRegistry.GetFirstViewCommandForPlugin(pluginId);
+                    if (cmd?.CanExecute(null) == true)
+                    {
+                        cmd.Execute(null);
+                        return;
+                    }
+
+                    // 2. Fallback: try the SDK command registry (plugins that call Register there).
+                    var sdkDef = _hostContext.CommandRegistry?.Find(commandId);
+                    if (sdkDef?.Command.CanExecute(null) == true)
+                        sdkDef.Command.Execute(null);
+
+                }, System.Windows.Threading.DispatcherPriority.Normal);
+            }
+            catch (Exception ex)
+            {
+                _logError($"[PluginSystem] Stub activation failed for '{pluginId}': {ex.Message}");
+            }
+        });
     }
 
     /// <summary>
