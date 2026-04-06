@@ -30,10 +30,10 @@ public partial class MainWindow
     private void InitCommandPaletteOptions()
     {
         OptionsPageRegistry.RegisterDynamic(
-            category:     "Command Palette",
-            pageName:     "Général",
+            category:     "Tools",
+            pageName:     "Command Palette",
             factory:      () => new CommandPaletteOptionsPage(),
-            categoryIcon: "🔍");
+            categoryIcon: "🛠");
     }
 
     // ── Quick File Open (Ctrl+P) ──────────────────────────────────────────────

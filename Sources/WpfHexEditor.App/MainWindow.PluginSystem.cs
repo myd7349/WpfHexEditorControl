@@ -459,9 +459,9 @@ public partial class MainWindow
                 "Event Bus",
                 () => new IDEEventBusOptionsPage(capturedBus));
 
-            // 4d. Register Plugins → Marketplace options page.
+            // 4d. Register Extensions → Marketplace options page.
             OptionsPageRegistry.RegisterDynamic(
-                "Plugins",
+                "Extensions",
                 "Marketplace",
                 () => new MarketplaceOptionsPage());
 
@@ -491,33 +491,17 @@ public partial class MainWindow
                 foreach (var adapter in hostContext.ExtensionRegistry.GetExtensions<IBuildAdapter>())
                     _buildSystem.RegisterAdapter(adapter);
 
-            // Register a dynamic Options page for every in-process plugin that supports IPluginWithOptions.
-            foreach (var entry in _pluginHost.OptionsRegistry.GetAll())
-            {
-                var captured = entry;
-                OptionsPageRegistry.RegisterDynamic(
-                    "Plugins",
-                    captured.PluginName,
-                    () =>
-                    {
-                        captured.Plugin.LoadOptions();
-                        var page = captured.Plugin.CreateOptionsPage();
-                        if (page is System.Windows.Controls.UserControl uc) return uc;
-                        // Wrap arbitrary FrameworkElement in a UserControl for the Options panel.
-                        var wrapper = new System.Windows.Controls.UserControl { Content = page };
-                        return wrapper;
-                    });
-            }
-
             // Phase 11: Register options pages for sandbox plugins that implement IPluginWithOptions.
-            // Each sandbox plugin eagerly creates its options page HwndSource during init and sends
-            // the HWND here. We wrap it in HwndPanelHost inside a UserControl for the Options dialog.
+            // In-process plugins are already registered by PluginOptionsRegistry under their custom
+            // category (via IPluginWithOptions.GetOptionsCategory). Sandbox plugins communicate via
+            // HWND cross-process and cannot implement IPluginWithOptions directly, so we register
+            // them here under "Extensions".
             foreach (var (pluginId, pluginName, hwnd) in _pluginHost.GetSandboxOptionsPages())
             {
                 var capturedId   = pluginId;
                 var capturedHwnd = new IntPtr(hwnd);
                 OptionsPageRegistry.RegisterDynamic(
-                    "Plugins",
+                    "Extensions",
                     pluginName,
                     () =>
                     {

@@ -53,8 +53,8 @@ public static class OptionsPageRegistry
         // Debugger
         new("Debugger",           "Breakpoints",      () => new DebuggerBreakpointOptionsPage(), "🐛"),
 
-        // Plugins
-        new("Plugins",            "Marketplace",      () => new MarketplaceOptionsPage(),        "🔌"),
+        // Extensions
+        new("Extensions",         "Marketplace",      () => new MarketplaceOptionsPage(),        "🔌"),
     ];
 
     /// <summary>
