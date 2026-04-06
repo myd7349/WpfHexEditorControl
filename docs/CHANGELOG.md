@@ -6,6 +6,74 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) · Versioning: 
 
 ---
 
+## [0.6.4.6] — 2026-04-06 — Lazy Plugins, Tab Groups, Document Structure, Roslyn Inline Hints
+
+### ✨ Added — Lazy / Standby Plugin Loading (ADR-LAZY-01)
+
+- **5 plugins now lazy-loaded**: Archive Explorer, Assembly Explorer, File Comparison, Custom Parser Template, Document Loaders — stay `Dormant` until first invoked, reducing startup time and memory footprint
+- **Manifest-driven stubs** — dormant plugins declare `menuContributions` in `manifest.json`; the host registers placeholder menu items and SDK commands so plugins are fully discoverable in menus and Command Palette before they load
+- **Single-click activation** — clicking a stub activates the plugin in the background, then executes its View `ICommand` directly (no second click required)
+- **Activation toast** — `PluginActivatingToastService` shows a brief non-blocking notification while the plugin loads
+- **`CommandInvokedEvent` + `PluginActivatingEvent`** — two new IDE events for command-triggered and activation lifecycle hooks
+- **Panel state persistence** — at shutdown, open lazy plugin panels are saved to `AppSettings.LazyPluginsToRestore`; at next startup they are eagerly re-activated inside the `SuspendRebuild` block so the dock layout restores their panels correctly
+- **Plugin Monitor** — standby plugins shown with purple "Standby" badge; `SuspendPluginAsync` support
+- **`WpfHexEditor.SDK.targets`** — `PluginActivationOnStartup`, `PluginActivationExtensions`, `PluginActivationCommands`, `PluginMenuContributionsJson` MSBuild properties generate `activation` + `menuContributions` blocks automatically on every build
+
+### ✨ Added — Tab Groups (ADR-TABGROUP-01)
+
+- **`ITabGroupService`** SDK contract — split active document tab horizontally or vertically, move tabs between groups, close groups
+- **`TabGroupService`** implementation in the IDE shell
+- **16 `TG_*` theme tokens** × 18 Colors.xaml themes — `TG_ActiveTabBrush`, `TG_InactiveTabBrush`, `TG_SplitterBrush`, `TG_BadgeBrush`…
+- **Keyboard shortcuts** — split horizontal (`Ctrl+Alt+→`), split vertical (`Ctrl+Alt+↓`), move to next group, close group
+- **Tab group badges** — document count badge on group headers
+- **Drag visual** — `IsDocumentDrag` flag enables distinct drag-between-groups visual feedback
+- **Options page** — `TabGroupsOptionsPage` with tab group behavior settings
+- **77 integration tests** across `DockEngineTabGroupTests` + `TabGroupSettingsTests`
+
+### ✨ Added — Document Structure Panel (ADR-DOCSTRUCT-01)
+
+- **`WpfHexEditor.Plugins.DocumentStructure`** — new plugin providing a VS-style outline panel that shows the structural skeleton of the active document
+- **8 providers**: LSP (`LspDocumentStructureProvider`), Source Outline, JSON, XML, Markdown, INI, Binary Format, Folding Regions — auto-selected by `DocumentStructureProviderResolver`
+- **`DocumentStructureViewModel`** — full INPC, background refresh, debounce, expand/collapse all, filter
+- **`StructureListCommand` + `StructureNavigateCommand`** — terminal commands for scripted navigation
+- **18 `DS_*` theme tokens** × 18 Colors.xaml — `DS_HeaderBrush`, `DS_KindBrush`, `DS_HoverBrush`…
+- **`DocumentStructureRefreshRequestedEvent`** — IDE event for requesting a provider refresh
+- **`IDocumentStructureProvider`** SDK extension point — plugins can register custom providers
+
+### ✨ Added — Roslyn Semantic Inline Hints Upgrade (ADR-ROSLYN-INLINEHINTS-01)
+
+- **`IReferenceCountProvider`** SDK contract — decouples reference counting from the Roslyn implementation; exposed via `IDEHostContext`
+- **`RoslynReferenceCountProvider`** — Roslyn-backed implementation using `FindReferencesAsync`; gracefully degrades to regex fallback when Roslyn workspace is unavailable
+- **`IsRoslyn` tuple flag** on `InlineHintsService` — hints tagged as Roslyn-backed render with a subtle "R" indicator
+- **`_hintTooltip`** — hover tooltip on inline hints shows full semantic context (type, members count, file locations)
+- **whfmt-driven `CanProvide`** — each language `.whfmt` declares `ideMetadata.inlineHints.enabled` to opt in/out
+
+### ✨ Added — Code Editor: Ctrl+Click Links & Emails (ADR-CTRL-LINK-01)
+
+- **`ClickableLinksEnabled`** DP — toggleable via options; Ctrl+Click URLs open in default browser
+- **`ClickableEmailsEnabled`** DP — toggleable separately; Ctrl+Click email addresses open default mail client
+- **`LinkHitZone` + `IsEmail`** — hit-test model distinguishes URLs from email addresses for separate toggle control
+- **`s_emailRegex`** — compiled static regex for email detection
+- **TextEditor** — `ScanLinksInText` + `RefreshLinkAdorner` backported from CodeEditor
+
+### 🔧 Changed
+
+- **whfmt schema** — `whfmt.schema.json` updated with `ideMetadata` block (`inlineHints.enabled`, `inlineHints.provider`, `diffMode`); `DiffModeDetector` reads `ideMetadata.diffMode`; 33 language files updated
+- **View menu classification** — `ViewMenuClassifier` cascade: user override → explicit `Category` → Group mapping → keyword heuristics; `"Core IDE"` category places items at root View level (below Solution Explorer)
+- **Options pages** — `OptionsPageHelper` shared utility extracted (Core + App); 19 options pages refactored to use it
+- **Docking themes** — new color tokens added to Dark/Light docking themes
+- **Assembly Explorer** — menu contribution `category` corrected to `"Core IDE"` so it appears in the main View menu section, not a submenu
+
+### 🐛 Fixed
+
+- **WPF Binding errors 4 & 5** — suppressed across 6 docking theme files (ADR-WPF-BIND-01)
+- **JSON parse noise** — `FormatDetectionService` no longer logs spurious JSON deserialization warnings
+- **DocumentStructure** — `Background=DockBackgroundBrush`, `ComboBox=DockComboBoxStyle` explicit, buttons `Dock=Left`, deferred initialization, Options page guard
+- **Lazy plugin activation** — stubs required two clicks to open panel; fixed by executing the plugin's registered WPF `ICommand` directly via `UIRegistry.GetFirstViewCommandForPlugin()` after `ActivateDormantPluginAsync`
+- **Assembly Explorer bin manifest** — `menuContributions` and `activation.commands` overwritten on rebuild; fixed by moving all activation metadata into `WpfHexEditor.SDK.targets` MSBuild properties
+
+---
+
 ## [0.6.4.3] — 2026-04-02 — AI Assistant Plugin + Roslyn Integration
 
 ### ✨ Added — AI Assistant Plugin (`WpfHexEditor.Plugins.AIAssistant`)

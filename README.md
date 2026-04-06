@@ -6,7 +6,7 @@
 
 [![.NET](https://img.shields.io/badge/.NET-8.0--windows-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/Platform-Windows%20WPF-0078D4?logo=windows)](https://github.com/abbaye/WpfHexEditorIDE)
-  [![IDE Version](https://img.shields.io/badge/IDE-v0.6.4.3-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
+  [![IDE Version](https://img.shields.io/badge/IDE-v0.6.4.6-6A0DAD?logo=visualstudiocode&logoColor=white)](https://github.com/abbaye/WpfHexEditorIDE/releases)
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![Status](https://img.shields.io/badge/Status-Active%20Development-orange)](https://github.com/abbaye/WpfHexEditorIDE/commits/master)
   [![Roadmap](https://img.shields.io/badge/Roadmap-ROADMAP.md-brightgreen)](docs/ROADMAP.md)
@@ -15,7 +15,7 @@
 
   > 🚧 **Active Development** — New features, editors and panels are added regularly. Contributions welcome!
   >
-  > 📅 *Last revised: 2026-04-02*
+  > 📅 *Last revised: 2026-04-06*
 
   <br/>
 
@@ -48,11 +48,11 @@ ${\color{#2E7BDE}\texttt{<}}{\color{#E87A20}\texttt{WpfHexEditor}}\ {\color{#2E7
 | **🔍 Binary Intelligence** | Deep binary analysis toolkit — 460+ format auto-detection via magic bytes with confidence scoring, reactive Parsed Fields panel with expandable groups and FormatNavigator bookmark strip, format field color overlay directly on the hex view, Data Inspector showing 40+ type interpretations at caret (integers, floats, strings, GUIDs, dates, colors, IP addresses…), Assembly Explorer for .NET PE inspection with ILSpy C#/VB.NET decompilation |
 | **🧠 Code Intelligence** | **In-process Roslyn** for C#/VB.NET analysis — full LSP 3.17 client supporting 13 provider types: completion, hover, signature help, code actions, rename, inlay hints, code lens, semantic tokens, call hierarchy, type hierarchy, pull diagnostics, linked editing, breadcrumb navigation bar |
 | **🤖 AI Assistant** | Multi-provider AI chat panel — supports Anthropic, OpenAI, Google Gemini, Ollama, and Claude Code CLI out of the box, 25 MCP tools for deep IDE integration (build, debug, navigate, analyze), streaming responses with inline code apply, `@mentions` for context injection (`@file`/`@selection`/`@errors`/`@solution`), dedicated command palette (`Ctrl+Shift+A`), conversation history, customizable prompt presets |
-| **🔌 Plugin System** | Extensible plugin architecture — SDK 2.0.0 (API frozen, semver), `.whxplugin` package format, Plugin Manager UI, typed EventBus (39+ domain events), capability registry, extension points (menus, toolbar, titlebar, panels, status bar, terminal commands), dependency graph, plugin signing with signature validation, out-of-process sandbox with HWND embedding — **28 built-in plugins** ship with the IDE |
+| **🔌 Plugin System** | Extensible plugin architecture — SDK 2.0.0 (API frozen, semver), `.whxplugin` package format, Plugin Manager UI, typed EventBus (39+ domain events), capability registry, extension points (menus, toolbar, titlebar, panels, status bar, terminal commands), dependency graph, plugin signing with signature validation, out-of-process sandbox with HWND embedding — **28 built-in plugins** ship with the IDE. **Lazy/Standby loading** — file-extension and command-based activation triggers; dormant plugins stay unloaded until invoked; manifest-driven stubs keep menus and Command Palette fully discoverable; open panel state persists across restarts |
 | **⌨️ Command & Terminal** | Command Palette (`Ctrl+Shift+P`) with 9 search modes (commands, files, symbols, go-to-line…) — central command registry (~100 commands) with configurable keyboard shortcuts, integrated multi-tab terminal (`Ctrl+\``) with 35+ built-in commands including `plugin-reload`, extensible by plugins via `ITerminalService` API |
 | **🐞 .NET Debugger** *(~60%)* | Integrated .NET debugging UI — Debug menu (Start/Stop/Restart, Step Over/Into/Out), collapsible toolbar pod, execution line highlight, full breakpoint system with conditions, hit counts, enable/disable toggle, and solution-scoped persistence, Breakpoint Explorer panel, right-click gutter popup for breakpoint editing, debug status bar · ⚠️ *Debug launch not yet functional — UI and breakpoint infrastructure are ready, runtime attach pending* |
 | **🧪 Unit Testing** | Built-in test runner — auto-detects xunit, nunit, and mstest projects, runs via `dotnet test` with TRX result parsing, pass/fail/skip counters with color-coded outcome glyphs, context-sensitive detail panel (project summary, class summary, or individual test details), auto-run on successful build |
-| **📋 IDE Infrastructure** | Unified editor plugin architecture via `IDocumentEditor` — shared undo engine with coalescence and VS-style history dropdown, `Ctrl+Z/Y` across all editors, rectangular block selection (`Alt+Click`), adaptive status bar, 30+ options pages, workspace system (`.whidews` save/restore), dynamic View menu (Flat/Categorized/ByDockSide), middle-click pan mode, NuGet Solution Manager, dependency injection via `Microsoft.Extensions.DependencyInjection` |
+| **📋 IDE Infrastructure** | Unified editor plugin architecture via `IDocumentEditor` — shared undo engine with coalescence and VS-style history dropdown, `Ctrl+Z/Y` across all editors, rectangular block selection (`Alt+Click`), adaptive status bar, 30+ options pages, workspace system (`.whidews` save/restore), dynamic View menu (Flat/Categorized/ByDockSide), middle-click pan mode, NuGet Solution Manager, dependency injection via `Microsoft.Extensions.DependencyInjection`, **tab groups** (split editors horizontally/vertically, `ITabGroupService`, 16 `TG_*` theme tokens, keyboard shortcuts, settings page) |
 
 ---
 
@@ -62,7 +62,7 @@ Every editor is a standalone `IDocumentEditor` plugin — reusable outside the I
 
 | Editor | Progress | Description |
 |--------|----------|-------------|
-| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ~85% | Advanced source editor — 55+ languages (incl. F# + VB.NET), **Roslyn in-process C#/VB.NET analysis**, full LSP 3.17 suite (13 providers: completion, hover, signature help, code actions, rename, inlay hints, code lens, semantic tokens, call/type hierarchy, linked editing, pull diagnostics), sticky scroll, Find All References (`Shift+F12`), multi-caret (`Ctrl+Alt+Click`), bracket-depth colorizer, color swatch preview, column rulers, format-on-save, split view |
+| **[Code Editor](Sources/WpfHexEditor.Editor.CodeEditor/README.md)** | ~87% | Advanced source editor — 55+ languages (incl. F# + VB.NET), **Roslyn in-process C#/VB.NET analysis**, full LSP 3.17 suite (13 providers: completion, hover, signature help, code actions, rename, inlay hints, code lens, semantic tokens, call/type hierarchy, linked editing, pull diagnostics), sticky scroll, Find All References (`Shift+F12`), multi-caret (`Ctrl+Alt+Click`), bracket-depth colorizer, color swatch preview, column rulers, format-on-save, split view, **Ctrl+Click links and emails** (toggleable, `ClickableLinksEnabled`/`ClickableEmailsEnabled`), **upgraded Roslyn semantic inline hints** (`IReferenceCountProvider`, whfmt-driven `CanProvide`) |
 | **[TBL Editor](Sources/WpfHexEditor.Editor.TblEditor/README.md)** | ~75% | Character table editor — create and edit custom `.tbl` encoding tables for ROM hacking and retro game translation, bidirectional hex↔text preview |
 | **[Hex Editor](Sources/WpfHexEditor.HexEditor/README.md)** | ~65% | Full binary editor — insert/overwrite modes, 460+ format auto-detection, multi-mode search (hex/text/regex/wildcard/TBL), persistent bookmarks, custom encoding tables, block-level undo/redo with VS-style history dropdown |
 | **[Diff / Changeset Viewer](Sources/WpfHexEditor.Editor.DiffViewer/README.md)** | ~65% | File comparison tool — binary, text, and structure diff modes with GlyphRun canvas renderers for high performance, word-level highlighting, overview ruler, Myers/Binary/Semantic algorithms, format field overlay for binary diffs |
@@ -163,6 +163,7 @@ All controls are **independently reusable** — no IDE required.
 | **Advanced Search** | ~40% | Multi-mode search panel — 5 search modes: Hex pattern, plain text, regex, TBL-encoded, and wildcard matching |
 | **[Pattern Analysis](Sources/Plugins/WpfHexEditor.Plugins.PatternAnalysis/README.md)** | ~35% | Pattern scanner — detects known byte sequences, recognizable data structures, and anomalies within binary files for reverse engineering and forensic analysis |
 | **[Assembly Explorer](Sources/Plugins/WpfHexEditor.Plugins.AssemblyExplorer/README.md)** | ~30% | .NET assembly browser — load any .NET DLL/EXE to inspect namespaces, types, methods, and fields in a tree view, double-click to decompile to C# or VB.NET in a syntax-highlighted Code Editor tab |
+| **[Document Structure](Sources/Plugins/WpfHexEditor.Plugins.DocumentStructure/README.md)** | ~55% | VS-style outline panel — shows the structural skeleton of the active document (classes, methods, regions, headings, sections…) with 8 providers: LSP, Source Outline, JSON, XML, Markdown, INI, Binary Format, Folding Regions; click any node to jump; 18 `DS_*` theme tokens |
 | **[Custom Parser Template](Sources/Plugins/WpfHexEditor.Plugins.CustomParserTemplate/README.md)** | ~25% | Template-driven parser — define custom binary structure schemas (similar to 010 Editor `.bt` templates) and see live parsed field output in the Parsed Fields panel |
 
 ---
