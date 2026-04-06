@@ -3908,6 +3908,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _cursorLine   = 0;
             _cursorColumn = 0;
             EnsureCursorVisible();
+
+            // Formatting is a bulk replace — skip the 500 ms debounce and re-analyse
+            // folding immediately so toggle arrows and fold lines reflect the new structure.
+            if (IsFoldingEnabled && _foldingEngine != null)
+            {
+                _foldingDebounceTimer?.Stop();
+                _foldingEngine.Analyze(_document.Lines);
+            }
+
+            InvalidateMeasure();
             InvalidateVisual();
         }
 
@@ -3958,6 +3968,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
 
             _selection.Clear();
+
+            // Formatting is a bulk replace — skip the 500 ms debounce and re-analyse
+            // folding immediately so toggle arrows and fold lines reflect the new structure.
+            if (IsFoldingEnabled && _foldingEngine != null)
+            {
+                _foldingDebounceTimer?.Stop();
+                _foldingEngine.Analyze(_document.Lines);
+            }
+
+            InvalidateMeasure();
             InvalidateVisual();
         }
 
