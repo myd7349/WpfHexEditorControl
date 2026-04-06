@@ -415,6 +415,26 @@ public sealed class DocumentStructureViewModel : ViewModelBase
     public void OnNodeActivated(StructureNodeVm node)
         => NavigateRequested?.Invoke(this, node);
 
+    /// <summary>
+    /// Highlights the node whose Tag is the given designer element UID.
+    /// Called by DocumentStructurePlugin when the XAML Designer canvas selection changes.
+    /// </summary>
+    public void HighlightNodeByUid(int uid)
+    {
+        _dispatcher.Invoke(() =>
+        {
+            foreach (var root in RootNodes)
+                SetUidHighlightRecursive(root, uid);
+        });
+    }
+
+    private static void SetUidHighlightRecursive(StructureNodeVm node, int uid)
+    {
+        node.IsHighlighted = node.Tag is int nodeUid && nodeUid == uid;
+        foreach (var child in node.Children)
+            SetUidHighlightRecursive(child, uid);
+    }
+
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Auto-Expand
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

@@ -29,6 +29,7 @@ using WpfHexEditor.SDK.Contracts.Focus;
 using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Events;
+using WpfHexEditor.SDK.ExtensionPoints.XamlDesigner;
 using WpfHexEditor.SDK.Models;
 
 namespace WpfHexEditor.Plugins.DocumentStructure;
@@ -58,6 +59,10 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
     private IDisposable?  _lspSymbolSub;
     private IDisposable?  _cursorMovedSub;
     private IDisposable?  _refreshSub;
+    private IDisposable?  _pluginLoadedSub;
+
+    // XAML Designer integration (optional — null when XamlDesignerPlugin is not loaded).
+    private IXamlDesignerService? _designerService;
 
     private bool _isPanelVisible = true;
     private bool _hexEditorHandledLastSwitch;
@@ -93,6 +98,22 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         _resolver.Register(new BinaryFormatStructureProvider());
         _resolver.Register(new IniStructureProvider());
         _resolver.Register(new FoldingRegionStructureProvider());
+
+        // ── XAML Designer integration (optional) ─────────────────────────
+        var designerSvc = context.ExtensionRegistry
+            .GetExtensions<IXamlDesignerService>().FirstOrDefault();
+        if (designerSvc is not null)
+            WireDesignerService(designerSvc);
+
+        // Late registration: XamlDesignerPlugin may load after us.
+        _pluginLoadedSub = context.IDEEvents.Subscribe<PluginLoadedEvent>(evt =>
+        {
+            if (evt.PluginId != "WpfHexEditor.Plugins.XamlDesigner") return;
+            if (_designerService is not null) return; // already wired
+            var svc = context.ExtensionRegistry
+                .GetExtensions<IXamlDesignerService>().FirstOrDefault();
+            if (svc is not null) WireDesignerService(svc);
+        });
 
         // ── Create ViewModel + Panel ─────────────────────────────────────
         _vm = new DocumentStructureViewModel(_resolver)
@@ -174,11 +195,40 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         return Task.CompletedTask;
     }
 
+    // ── XAML Designer wiring ──────────────────────────────────────────────────
+
+    private void WireDesignerService(IXamlDesignerService svc)
+    {
+        _designerService = svc;
+        _resolver.Register(new XamlDesignerStructureProvider(svc));
+        svc.SelectedElementChanged += OnDesignerSelectionChanged;
+        svc.ElementTreeChanged     += OnDesignerTreeChanged;
+    }
+
+    private void OnDesignerSelectionChanged(object? sender, int uid)
+        => _vm?.HighlightNodeByUid(uid);
+
+    private void OnDesignerTreeChanged(object? sender, EventArgs e)
+    {
+        var filePath = _context?.FocusContext.ActiveDocument?.FilePath;
+        var docType  = _context?.FocusContext.ActiveDocument?.DocumentType;
+        if (!string.IsNullOrEmpty(filePath))
+            QueueOrRefresh(filePath, docType, "xaml");
+    }
+
     public Task ShutdownAsync(CancellationToken ct = default)
     {
         _lspSymbolSub?.Dispose();
         _cursorMovedSub?.Dispose();
         _refreshSub?.Dispose();
+        _pluginLoadedSub?.Dispose();
+
+        if (_designerService is not null)
+        {
+            _designerService.SelectedElementChanged -= OnDesignerSelectionChanged;
+            _designerService.ElementTreeChanged     -= OnDesignerTreeChanged;
+            _designerService = null;
+        }
 
         if (_context is not null)
         {
@@ -380,6 +430,13 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
     private void OnNavigateRequested(object? sender, StructureNodeVm node)
     {
         if (_context is null) return;
+
+        // XAML Designer: navigate by element UID (bidirectional selection sync).
+        if (node.Tag is int uid && _designerService?.IsDesignerActive == true)
+        {
+            _designerService.SelectElement(uid);
+            return;
+        }
 
         if (node.ByteOffset >= 0 && _context.HexEditor.IsActive)
         {

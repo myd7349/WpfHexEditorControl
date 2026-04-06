@@ -42,6 +42,7 @@ public sealed class StructureNodeVm : ViewModelBase
     public long ByteOffset { get; }
     public long ByteLength { get; }
     public int IndentLevel { get; init; }
+    public object? Tag { get; set; }
     public ObservableCollection<StructureNodeVm> Children { get; } = [];
 
     public bool IsExpanded
@@ -79,6 +80,7 @@ public sealed class StructureNodeVm : ViewModelBase
         EndLine = node.EndLine;
         ByteOffset = node.ByteOffset;
         ByteLength = node.ByteLength;
+        Tag = node.Tag;
 
         foreach (var child in node.Children)
             Children.Add(new StructureNodeVm(child));
@@ -99,6 +101,7 @@ public sealed class StructureNodeVm : ViewModelBase
         ByteOffset = source.ByteOffset;
         ByteLength = source.ByteLength;
         IndentLevel = indentLevel;
+        Tag = source.Tag;
     }
 
     // ── Icon Resolution ─────────────────────────────────────────────────────
