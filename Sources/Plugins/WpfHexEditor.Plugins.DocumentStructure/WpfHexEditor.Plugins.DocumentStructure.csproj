@@ -26,7 +26,7 @@
     <PluginPermAccessFileSystem>false</PluginPermAccessFileSystem>
     <PluginPermAccessNetwork>false</PluginPermAccessNetwork>
     <PluginPermRegisterMenus>true</PluginPermRegisterMenus>
-    <PluginPermWriteOutput>false</PluginPermWriteOutput>
+    <PluginPermWriteOutput>true</PluginPermWriteOutput>
     <PluginPermRegisterTerminalCommands>true</PluginPermRegisterTerminalCommands>
     <!-- Required so WpfHexEditor.Core.DocumentStructure.dll lands in $(OutputPath)
          and CopyToPluginsDir can pick it up alongside the plugin DLL. -->

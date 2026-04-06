@@ -322,6 +322,9 @@
     <SolidColorBrush x:Key="CE_SelectionInactive" Color="#333333"/>
     <SolidColorBrush x:Key="CE_GutterError"       Color="#FF0000"/>
     <SolidColorBrush x:Key="CE_GutterWarning"     Color="#FFFF00"/>
+    <SolidColorBrush x:Key="CE_GutterAdded"    Color="#00FF00"/>
+    <SolidColorBrush x:Key="CE_GutterModified" Color="#FFFF00"/>
+    <SolidColorBrush x:Key="CE_GutterDeleted" Color="#FF0000"/>
     <SolidColorBrush x:Key="CE_RulerBrush"    Color="#80808080"/>
     <SolidColorBrush x:Key="CE_Bracket_1"    Color="#FFFF00"/>
     <SolidColorBrush x:Key="CE_Bracket_2"    Color="#FF00FF"/>

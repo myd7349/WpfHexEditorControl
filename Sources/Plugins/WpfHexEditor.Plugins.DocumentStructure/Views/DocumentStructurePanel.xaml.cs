@@ -43,8 +43,25 @@ public partial class DocumentStructurePanel : UserControl
 
     private void OnTreeDoubleClick(object sender, MouseButtonEventArgs e)
     {
+        // MouseDoubleClick bubbles through each TreeViewItem — guard against multi-fire.
+        if (e.Handled) return;
+        if (e.OriginalSource is not DependencyObject src) return;
+        var tvi = FindAncestorOrSelf<TreeViewItem>(src);
+        if (tvi is null) return;
+
+        e.Handled = true;
         if (StructureTree.SelectedItem is StructureNodeVm node)
             Vm?.OnNodeActivated(node);
+    }
+
+    private static T? FindAncestorOrSelf<T>(DependencyObject obj) where T : DependencyObject
+    {
+        while (obj is not null)
+        {
+            if (obj is T t) return t;
+            obj = System.Windows.Media.VisualTreeHelper.GetParent(obj);
+        }
+        return null;
     }
 
     // ── Flat list ───────────────────────────────────────────────────────────
@@ -53,6 +70,8 @@ public partial class DocumentStructurePanel : UserControl
 
     private void OnFlatDoubleClick(object sender, MouseButtonEventArgs e)
     {
+        if (e.Handled) return;
+        e.Handled = true;
         if (FlatList.SelectedItem is StructureNodeVm node)
             Vm?.OnNodeActivated(node);
     }

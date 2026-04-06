@@ -46,7 +46,7 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         AccessHexEditor          = true,
         AccessFileSystem         = false,
         RegisterMenus            = true,
-        WriteOutput              = false,
+        WriteOutput              = true,
         RegisterTerminalCommands = true,
     };
 
@@ -86,8 +86,7 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
                 var sln = context.SolutionManager?.CurrentSolution;
                 return sln is not null ? System.IO.Path.GetDirectoryName(sln.FilePath) : null;
             }));
-        _resolver.Register(new SourceOutlineStructureProvider(
-            new SourceOutlineEngine()));
+        _resolver.Register(new SourceOutlineStructureProvider(new SourceOutlineEngine()));
         _resolver.Register(new MarkdownStructureProvider());
         _resolver.Register(new JsonStructureProvider());
         _resolver.Register(new XmlStructureProvider());
@@ -96,7 +95,10 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         _resolver.Register(new FoldingRegionStructureProvider());
 
         // ── Create ViewModel + Panel ─────────────────────────────────────
-        _vm = new DocumentStructureViewModel(_resolver);
+        _vm = new DocumentStructureViewModel(_resolver)
+        {
+            Logger = msg => context.Output.Write("DocStructure", msg)
+        };
         _panel = new DocumentStructurePanel { DataContext = _vm };
 
         // Wire navigate requests
@@ -151,31 +153,22 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         // before we attempt the first refresh (mirrors ParsedFieldsPlugin pattern).
         _panel?.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, (Action)(() =>
         {
-            // Force visible — at ApplicationIdle everything is rendered and focus established
             _isPanelVisible = true;
 
-            // Try HexEditor first (most specific)
+            // HexEditor takes priority
             if (_context?.HexEditor.IsActive == true)
             {
                 var fp = _context.HexEditor.CurrentFilePath;
                 if (!string.IsNullOrEmpty(fp)) { QueueOrRefresh(fp, "hex", null); return; }
             }
 
-            // Use active document from FocusContext — works regardless of IsActive state
-            // at startup when CodeEditor focus isn't established yet.
             var activeDoc = _context?.FocusContext.ActiveDocument;
-            if (activeDoc is null) return;
+            if (activeDoc is null || string.IsNullOrEmpty(activeDoc.FilePath)) return;
 
             var filePath = activeDoc.FilePath;
-            var docType  = activeDoc.DocumentType;
-            var language = _context?.CodeEditor.CurrentLanguage;
+            if (!File.Exists(filePath)) return;
 
-            // File not on disk (virtual/decompiled): write content to temp file
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                filePath = WriteVirtualToTempFile(language ?? "csharp");
-
-            if (!string.IsNullOrEmpty(filePath))
-                QueueOrRefresh(filePath, docType, language);
+            QueueOrRefresh(filePath, activeDoc.DocumentType, InferLanguage(filePath));
         }));
 
         return Task.CompletedTask;
@@ -254,18 +247,14 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         if (e.ActiveDocument is null) return;
         if (e.ActiveDocument.ContentId == e.PreviousDocument?.ContentId) return;
 
-        // Skip non-content panels (Options, Settings…) where no editor is active.
-        // Do NOT skip decompiled/virtual files: they have no FilePath but CodeEditor.IsActive = true.
-        var codeActive = _context?.CodeEditor.IsActive == true;
-        var hexActive  = _context?.HexEditor.IsActive  == true;
-        if (string.IsNullOrEmpty(e.ActiveDocument.FilePath) && !codeActive && !hexActive)
-            return;
+        // Skip panels with no file (Options, Settings…)
+        if (string.IsNullOrEmpty(e.ActiveDocument.FilePath)) return;
 
         _hexEditorHandledLastSwitch = false;
 
         var filePath = e.ActiveDocument.FilePath;
         var docType  = e.ActiveDocument.DocumentType;
-        var language = _context?.CodeEditor.IsActive == true ? _context.CodeEditor.CurrentLanguage : null;
+        var language = InferLanguage(filePath);
 
         // Defer to ContextIdle so OnActiveEditorChanged (Background priority) runs first
         _panel?.Dispatcher.InvokeAsync(() =>
@@ -274,6 +263,20 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
             QueueOrRefresh(filePath, docType, language);
         }, System.Windows.Threading.DispatcherPriority.ContextIdle);
     }
+
+    /// <summary>Infers language ID from file extension (fallback when NullCodeEditorService is active).</summary>
+    private static string? InferLanguage(string? filePath) =>
+        Path.GetExtension(filePath)?.ToLowerInvariant() switch
+        {
+            ".cs"   => "csharp",
+            ".vb"   => "vb",
+            ".xaml" => "xaml",
+            ".xml"  => "xml",
+            ".json" => "json",
+            ".md"   => "markdown",
+            ".ini"  => "ini",
+            _       => null,
+        };
 
     private void OnActiveEditorChanged(object? sender, EventArgs e)
     {
@@ -296,16 +299,12 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
 
     private void OnCodeEditorDocumentChanged(object? sender, EventArgs e)
     {
-        if (_context?.CodeEditor.IsActive != true) return;
-        var filePath = _context.CodeEditor.CurrentFilePath;
-        var language = _context.CodeEditor.CurrentLanguage;
-
-        // Decompiled/virtual file: path is null or does not exist on disk (e.g. "decompiled://...").
-        // Write content to a temp file so SourceOutlineEngine can parse it from disk.
-        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-            filePath = WriteVirtualToTempFile(language);
-
-        QueueOrRefresh(filePath, "code", language);
+        // NullCodeEditorService: IsActive=false, CurrentFilePath=null — event never fires anyway.
+        // Fallback to FocusContext which is always accurate.
+        var activeDoc = _context?.FocusContext.ActiveDocument;
+        if (activeDoc is null || string.IsNullOrEmpty(activeDoc.FilePath)) return;
+        if (!File.Exists(activeDoc.FilePath)) return;
+        QueueOrRefresh(activeDoc.FilePath, activeDoc.DocumentType, InferLanguage(activeDoc.FilePath));
     }
 
     /// <summary>

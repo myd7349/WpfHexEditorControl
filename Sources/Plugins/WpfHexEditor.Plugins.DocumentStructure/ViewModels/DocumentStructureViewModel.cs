@@ -112,6 +112,9 @@ public sealed class DocumentStructureViewModel : ViewModelBase
     /// <summary>Raised when a node is activated (clicked) and the editor should navigate to it.</summary>
     public event EventHandler<StructureNodeVm>? NavigateRequested;
 
+    /// <summary>Optional logger for diagnostics — set by plugin to route to Output panel.</summary>
+    public Action<string>? Logger { get; set; }
+
     public DocumentStructureViewModel(DocumentStructureProviderResolver resolver)
     {
         _resolver = resolver;
@@ -150,9 +153,12 @@ public sealed class DocumentStructureViewModel : ViewModelBase
             return;
         }
 
-        var provider = _resolver.Resolve(filePath, documentType, language);
-        if (provider is null)
+        var candidates = _resolver.ResolveAll(filePath, documentType, language);
+        Logger?.Invoke($"[RefreshAsync] fp={filePath} docType={documentType} lang={language} candidates={candidates.Count} [{string.Join(",", candidates.Select(c => c.DisplayName))}]");
+
+        if (candidates.Count == 0)
         {
+            Logger?.Invoke("[RefreshAsync] No provider matched — No structure available");
             _dispatcher.Invoke(() => ClearUI("No structure available"));
             return;
         }
@@ -161,14 +167,26 @@ public sealed class DocumentStructureViewModel : ViewModelBase
 
         try
         {
-            var result = await provider.GetStructureAsync(filePath, ct).ConfigureAwait(false);
-            ct.ThrowIfCancellationRequested();
-
-            if (result is null || result.Nodes.Count == 0)
+            // Try providers in priority order — fall through to next if one returns empty
+            DocumentStructureResult? result = null;
+            IDocumentStructureProvider? usedProvider = null;
+            foreach (var candidate in candidates)
             {
+                Logger?.Invoke($"[RefreshAsync] Trying provider: {candidate.DisplayName}");
+                result = await candidate.GetStructureAsync(filePath, ct).ConfigureAwait(false);
+                ct.ThrowIfCancellationRequested();
+                Logger?.Invoke($"[RefreshAsync] Provider {candidate.DisplayName} returned {result?.Nodes.Count ?? -1} nodes");
+                if (result is not null && result.Nodes.Count > 0) { usedProvider = candidate; break; }
+            }
+
+            if (result is null || result.Nodes.Count == 0 || usedProvider is null)
+            {
+                Logger?.Invoke("[RefreshAsync] All providers returned empty — Empty structure");
                 _dispatcher.Invoke(() => ClearUI("Empty structure"));
                 return;
             }
+
+            Logger?.Invoke($"[RefreshAsync] SUCCESS via {usedProvider.DisplayName} — {result.Nodes.Count} root nodes");
 
             // Build VMs on background thread
             var vms = result.Nodes.Select(n => new StructureNodeVm(n)).ToList();
@@ -177,7 +195,7 @@ public sealed class DocumentStructureViewModel : ViewModelBase
             _dispatcher.Invoke(() =>
             {
                 _allRootNodes = vms;
-                ActiveProviderName = provider.DisplayName;
+                ActiveProviderName = usedProvider.DisplayName;
                 StatusText = $"{totalCount} symbols";
                 IsLoading = false;
 
@@ -449,7 +467,7 @@ public sealed class DocumentStructureViewModel : ViewModelBase
     // ── INPC ────────────────────────────────────────────────────────────────
 
 
-    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    private new bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;
