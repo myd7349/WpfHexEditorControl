@@ -20,6 +20,9 @@
     <PluginLoadPriority>60</PluginLoadPriority>
     <PluginSdkVersion>1.2.0</PluginSdkVersion>
     <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+    <PluginActivationOnStartup>false</PluginActivationOnStartup>
+    <PluginActivationCommands>"View.ScriptRunner"</PluginActivationCommands>
+    <PluginMenuContributionsJson>[{"commandId":"View.ScriptRunner","label":"_Script Runner","parentPath":"View","group":"Tools","category":"Scripting","iconGlyph":"\uE943"}]</PluginMenuContributionsJson>
     <PluginPermAccessHexEditor>true</PluginPermAccessHexEditor>
     <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
     <PluginPermAccessNetwork>false</PluginPermAccessNetwork>

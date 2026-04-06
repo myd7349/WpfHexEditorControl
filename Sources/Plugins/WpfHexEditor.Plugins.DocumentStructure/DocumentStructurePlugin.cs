@@ -149,30 +149,33 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         // ── Deferred startup load ─────────────────────────────────────────
         // Defer to Loaded priority so the docking layout has finished rendering
         // before we attempt the first refresh (mirrors ParsedFieldsPlugin pattern).
-        _panel?.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, (Action)(() =>
+        _panel?.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, (Action)(() =>
         {
-            _isPanelVisible = _context?.UIRegistry.IsPanelVisible(PanelUiId) ?? false;
+            // Force visible — at ApplicationIdle everything is rendered and focus established
+            _isPanelVisible = true;
 
-            if (_context?.CodeEditor.IsActive == true)
-            {
-                // Reuse OnCodeEditorDocumentChanged logic (handles virtual files too)
-                OnCodeEditorDocumentChanged(null, EventArgs.Empty);
-            }
-            else if (_context?.HexEditor.IsActive == true)
+            // Try HexEditor first (most specific)
+            if (_context?.HexEditor.IsActive == true)
             {
                 var fp = _context.HexEditor.CurrentFilePath;
-                if (!string.IsNullOrEmpty(fp))
-                    QueueOrRefresh(fp, "hex", null);
+                if (!string.IsNullOrEmpty(fp)) { QueueOrRefresh(fp, "hex", null); return; }
             }
-            else
-            {
-                var activeDoc = _context?.FocusContext.ActiveDocument;
-                if (activeDoc is not null && !string.IsNullOrEmpty(activeDoc.FilePath))
-                {
-                    var lang = _context?.CodeEditor.CurrentLanguage;
-                    QueueOrRefresh(activeDoc.FilePath, activeDoc.DocumentType, lang);
-                }
-            }
+
+            // Use active document from FocusContext — works regardless of IsActive state
+            // at startup when CodeEditor focus isn't established yet.
+            var activeDoc = _context?.FocusContext.ActiveDocument;
+            if (activeDoc is null) return;
+
+            var filePath = activeDoc.FilePath;
+            var docType  = activeDoc.DocumentType;
+            var language = _context?.CodeEditor.CurrentLanguage;
+
+            // File not on disk (virtual/decompiled): write content to temp file
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                filePath = WriteVirtualToTempFile(language ?? "csharp");
+
+            if (!string.IsNullOrEmpty(filePath))
+                QueueOrRefresh(filePath, docType, language);
         }));
 
         return Task.CompletedTask;
@@ -297,9 +300,9 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         var filePath = _context.CodeEditor.CurrentFilePath;
         var language = _context.CodeEditor.CurrentLanguage;
 
-        // Decompiled/virtual file: no real path — write content to a temp file
-        // so SourceOutlineEngine can read and parse it from disk.
-        if (string.IsNullOrEmpty(filePath))
+        // Decompiled/virtual file: path is null or does not exist on disk (e.g. "decompiled://...").
+        // Write content to a temp file so SourceOutlineEngine can parse it from disk.
+        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             filePath = WriteVirtualToTempFile(language);
 
         QueueOrRefresh(filePath, "code", language);

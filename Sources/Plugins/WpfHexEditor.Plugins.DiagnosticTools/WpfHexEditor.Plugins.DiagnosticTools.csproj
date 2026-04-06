@@ -20,6 +20,9 @@
     <PluginLoadPriority>45</PluginLoadPriority>
     <PluginSdkVersion>1.2.0</PluginSdkVersion>
     <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+    <PluginActivationOnStartup>false</PluginActivationOnStartup>
+    <PluginActivationCommands>"View.DiagnosticTools"</PluginActivationCommands>
+    <PluginMenuContributionsJson>[{"commandId":"View.DiagnosticTools","label":"_Diagnostic Tools","parentPath":"View","group":"Diagnostics","category":"Diagnostics","iconGlyph":"\uE9D9"}]</PluginMenuContributionsJson>
     <PluginPermAccessHexEditor>false</PluginPermAccessHexEditor>
     <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
     <PluginPermAccessNetwork>false</PluginPermAccessNetwork>

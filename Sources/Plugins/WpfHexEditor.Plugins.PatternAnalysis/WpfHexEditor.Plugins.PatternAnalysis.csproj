@@ -20,6 +20,9 @@
     <PluginLoadPriority>70</PluginLoadPriority>
     <PluginSdkVersion>1.2.0</PluginSdkVersion>
     <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+    <PluginActivationOnStartup>false</PluginActivationOnStartup>
+    <PluginActivationCommands>"View.PatternAnalysis"</PluginActivationCommands>
+    <PluginMenuContributionsJson>[{"commandId":"View.PatternAnalysis","label":"_Pattern Analysis","parentPath":"View","group":"Statistics","category":"Analysis","iconGlyph":"\uE773"}]</PluginMenuContributionsJson>
     <PluginPermAccessHexEditor>true</PluginPermAccessHexEditor>
     <PluginPermAccessFileSystem>false</PluginPermAccessFileSystem>
     <PluginPermAccessNetwork>false</PluginPermAccessNetwork>

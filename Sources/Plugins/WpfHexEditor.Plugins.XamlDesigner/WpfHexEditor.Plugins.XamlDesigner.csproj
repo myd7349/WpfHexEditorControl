@@ -20,6 +20,10 @@
     <PluginLoadPriority>30</PluginLoadPriority>
     <PluginSdkVersion>1.2.0</PluginSdkVersion>
     <PluginMinIDEVersion>0.3.0</PluginMinIDEVersion>
+    <PluginActivationOnStartup>false</PluginActivationOnStartup>
+    <PluginActivationExtensions>".xaml"</PluginActivationExtensions>
+    <PluginActivationCommands>"View.XamlDesigner"</PluginActivationCommands>
+    <PluginMenuContributionsJson>[{"commandId":"View.XamlDesigner","label":"XAML _Outline","parentPath":"View","group":"Panels","category":"Designers","iconGlyph":"\uE8A5"}]</PluginMenuContributionsJson>
     <PluginPermAccessHexEditor>false</PluginPermAccessHexEditor>
     <PluginPermAccessFileSystem>true</PluginPermAccessFileSystem>
     <PluginPermAccessNetwork>false</PluginPermAccessNetwork>
