@@ -540,6 +540,21 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         // Resolve Includes chains after all definitions are registered.
         registry.ResolveIncludes();
+
+        // Configure DiffModeDetector with the whfmt-driven language registry.
+        // This removes the static extension HashSets from the diff engine.
+        WpfHexEditor.Core.Diff.Services.DiffModeDetector.Configure(ext =>
+        {
+            var lang = registry.FindByExtension(ext);
+            if (lang is null) return null;
+            return lang.IdeDiffMode?.ToLowerInvariant() switch
+            {
+                "semantic" => WpfHexEditor.Core.Diff.Models.DiffMode.Semantic,
+                "text"     => WpfHexEditor.Core.Diff.Models.DiffMode.Text,
+                "binary"   => WpfHexEditor.Core.Diff.Models.DiffMode.Binary,
+                _          => null,
+            };
+        });
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

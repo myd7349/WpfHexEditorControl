@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />
+    <ProjectReference Include="..\..\Core\WpfHexEditor.Core.ProjectSystem\WpfHexEditor.Core.ProjectSystem.csproj" />
   </ItemGroup>
 
   <Import Project="..\WpfHexEditor.SDK\Build\WpfHexEditor.SDK.targets" />

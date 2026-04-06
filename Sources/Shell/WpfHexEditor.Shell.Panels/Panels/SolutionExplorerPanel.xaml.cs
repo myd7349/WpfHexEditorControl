@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Core.ProjectSystem.Languages;
 using WpfHexEditor.Core.SourceAnalysis.Models;
 using WpfHexEditor.Core.SourceAnalysis.Services;
 using WpfHexEditor.Editor.Core;
@@ -74,10 +75,9 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
                     _vm.SetFileModifiedExternally(args.FullPath, modified));
             }
 
-            // Invalidate the source outline cache for .cs / .xaml files
+            // Invalidate the source outline cache for files that support source outline.
             var ext = Path.GetExtension(args.FullPath);
-            if (string.Equals(ext, ".cs",   StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(ext, ".xaml", StringComparison.OrdinalIgnoreCase))
+            if (LanguageRegistry.Instance.FindByExtension(ext)?.SupportsSourceOutline == true)
             {
                 _sourceOutline.Invalidate(args.FullPath);
                 Dispatcher.BeginInvoke(() => RefreshExpandedOutlineNode(args.FullPath));

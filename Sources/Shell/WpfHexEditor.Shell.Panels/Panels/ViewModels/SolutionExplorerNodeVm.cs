@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using WpfHexEditor.Core.ProjectSystem.Languages;
 using WpfHexEditor.Editor.Core;
 
 namespace WpfHexEditor.Shell.Panels.ViewModels;
@@ -189,14 +190,20 @@ public sealed class ProjectNodeVm : SolutionExplorerNodeVm
     /// VS-like language color for the project icon.
     /// Resolved from <see cref="IProjectWithReferences.Language"/> when available.
     /// </summary>
-    public string LanguageColor =>
-        (_project is IProjectWithReferences r ? r.Language : null) switch
+    public string LanguageColor
+    {
+        get
         {
-            "C#"  => "#4FC1FF",   // VS blue for C#
-            "VB"  => "#C8A018",   // VS amber for VB
-            "F#"  => "#C586C0",   // VS purple for F#
-            _     => "#4EC9B0",   // teal default
-        };
+            var lang = _project is IProjectWithReferences r ? r.Language : null;
+            if (lang is not null)
+            {
+                var def = LanguageRegistry.Instance.FindByDisplayName(lang)
+                       ?? LanguageRegistry.Instance.FindByAlias(lang);
+                if (def?.LanguageColor is { } color) return color;
+            }
+            return "#4EC9B0"; // teal default
+        }
+    }
 
     // -- Inline rename -------------------------------------------------------
 

@@ -244,6 +244,17 @@ public static class LanguageDefinitionSerializer
             ScriptGlobals             = MapScriptGlobals(dto.ScriptGlobals),
             PreviewSnippet            = dto.PreviewSnippet,
             PreviewSamples            = MapPreviewSamples(dto.PreviewSamples),
+            IsSourceFile          = dto.IdeMetadata?.IsSourceFile         ?? false,
+            IsStructuredDataFile  = dto.IdeMetadata?.IsStructuredDataFile ?? false,
+            IsSolutionFile        = dto.IdeMetadata?.IsSolutionFile       ?? false,
+            IsProjectFile         = dto.IdeMetadata?.IsProjectFile        ?? false,
+            SupportsClassDiagram  = dto.IdeMetadata?.SupportsClassDiagram  ?? false,
+            SupportsSourceOutline = dto.IdeMetadata?.SupportsSourceOutline ?? false,
+            IsProjectLanguage     = dto.IdeMetadata?.IsProjectLanguage     ?? false,
+            LanguageColor         = dto.IdeMetadata?.LanguageColor,
+            Aliases               = (IReadOnlyList<string>?)dto.IdeMetadata?.Aliases ?? [],
+            IconGlyph             = dto.IdeMetadata?.IconGlyph,
+            IdeDiffMode           = dto.IdeMetadata?.DiffMode,
         };
     }
 
@@ -410,6 +421,24 @@ public static class LanguageDefinitionSerializer
 
         [JsonPropertyName("previewSamples")]
         public Dictionary<string, PreviewSampleDto>? PreviewSamples { get; set; }
+
+        [JsonPropertyName("ideMetadata")]
+        public IdeMetadataDto? IdeMetadata { get; set; }
+    }
+
+    private sealed class IdeMetadataDto
+    {
+        [JsonPropertyName("isSourceFile")]          public bool      IsSourceFile          { get; set; }
+        [JsonPropertyName("isStructuredDataFile")]  public bool      IsStructuredDataFile  { get; set; }
+        [JsonPropertyName("isSolutionFile")]        public bool      IsSolutionFile        { get; set; }
+        [JsonPropertyName("isProjectFile")]         public bool      IsProjectFile         { get; set; }
+        [JsonPropertyName("supportsClassDiagram")]  public bool      SupportsClassDiagram  { get; set; }
+        [JsonPropertyName("supportsSourceOutline")] public bool      SupportsSourceOutline { get; set; }
+        [JsonPropertyName("isProjectLanguage")]     public bool      IsProjectLanguage     { get; set; }
+        [JsonPropertyName("languageColor")]         public string?   LanguageColor         { get; set; }
+        [JsonPropertyName("aliases")]               public string[]? Aliases               { get; set; }
+        [JsonPropertyName("iconGlyph")]             public string?   IconGlyph             { get; set; }
+        [JsonPropertyName("diffMode")]              public string?   DiffMode              { get; set; }
     }
 
     private sealed class ScriptGlobalDto

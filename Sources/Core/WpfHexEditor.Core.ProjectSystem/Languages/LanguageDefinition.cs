@@ -127,6 +127,82 @@ public sealed class LanguageDefinition
     /// </summary>
     public IReadOnlyList<System.Text.RegularExpressions.Regex>? ColorLiteralPatterns { get; init; }
 
+    // ── IDE Metadata (whfmt-driven) ──────────────────────────────────────────
+
+    /// <summary>
+    /// When true, this language represents a programming source file (C#, JS, Python, etc.).
+    /// Drives Solution Explorer expansion, Class Diagram availability, etc.
+    /// Sourced from "ideMetadata.isSourceFile" in the .whfmt syntaxDefinition block.
+    /// </summary>
+    public bool IsSourceFile { get; init; }
+
+    /// <summary>
+    /// When true, this language represents a structured data file (JSON, XML, YAML, etc.)
+    /// that benefits from semantic diff mode.
+    /// Sourced from "ideMetadata.isStructuredDataFile" in the .whfmt syntaxDefinition block.
+    /// </summary>
+    public bool IsStructuredDataFile { get; init; }
+
+    /// <summary>
+    /// When true, this language/format represents a solution file (.sln, .slnx, .whsln, etc.)
+    /// Sourced from "ideMetadata.isSolutionFile" in the .whfmt syntaxDefinition block.
+    /// </summary>
+    public bool IsSolutionFile { get; init; }
+
+    /// <summary>
+    /// When true, this language/format represents a project file (.csproj, .vbproj, etc.)
+    /// Sourced from "ideMetadata.isProjectFile" in the .whfmt syntaxDefinition block.
+    /// </summary>
+    public bool IsProjectFile { get; init; }
+
+    /// <summary>
+    /// When true, the Class Diagram plugin can analyze files of this language.
+    /// Sourced from "ideMetadata.supportsClassDiagram" in the .whfmt syntaxDefinition block.
+    /// </summary>
+    public bool SupportsClassDiagram { get; init; }
+
+    /// <summary>
+    /// When true, the Source Outline provider can produce a document structure for this language.
+    /// Sourced from "ideMetadata.supportsSourceOutline" in the .whfmt syntaxDefinition block.
+    /// </summary>
+    public bool SupportsSourceOutline { get; init; }
+
+    /// <summary>
+    /// When true, this language can be used as a project language in the New Project dialog.
+    /// Sourced from "ideMetadata.isProjectLanguage" in the .whfmt syntaxDefinition block.
+    /// </summary>
+    public bool IsProjectLanguage { get; init; }
+
+    /// <summary>
+    /// VS-like hex color string for IDE language badges (e.g. "#4FC1FF" for C#).
+    /// Sourced from "ideMetadata.languageColor" in the .whfmt syntaxDefinition block.
+    /// Null = fall back to a generic teal (#4EC9B0).
+    /// </summary>
+    public string? LanguageColor { get; init; }
+
+    /// <summary>
+    /// Common alternate identifiers for this language (e.g. ["c#","cs"] for csharp).
+    /// Used by <see cref="LanguageRegistry.FindByAlias"/> and ISyntaxColoringService.ResolveLanguageId
+    /// to resolve fenced code block aliases without a static dictionary in C# code.
+    /// Sourced from "ideMetadata.aliases" in the .whfmt syntaxDefinition block.
+    /// </summary>
+    public IReadOnlyList<string> Aliases { get; init; } = [];
+
+    /// <summary>
+    /// Segoe MDL2 icon glyph for this language, used in Archive Explorer and similar icon-based UIs.
+    /// Sourced from "ideMetadata.iconGlyph" in the .whfmt syntaxDefinition block.
+    /// Null = use the generic document icon (\uE8A5).
+    /// </summary>
+    public string? IconGlyph { get; init; }
+
+    /// <summary>
+    /// Preferred diff algorithm for files of this language.
+    /// "semantic" | "text" | "binary".
+    /// Sourced from "ideMetadata.diffMode" in the .whfmt syntaxDefinition block.
+    /// Null = auto-detect via content sniffing.
+    /// </summary>
+    public string? IdeDiffMode { get; init; }
+
     /// <summary>
     /// Language-specific prefix for diagnostic error codes shown in the Error List
     /// (e.g. "CS" for C#, "PY" for Python, "JSON" for JSON).

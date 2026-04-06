@@ -12,6 +12,7 @@
 //     Delegates to ISourceOutlineService which is regex-based (no Roslyn).
 // ==========================================================
 
+using WpfHexEditor.Core.ProjectSystem.Languages;
 using WpfHexEditor.Core.SourceAnalysis.Models;
 using WpfHexEditor.Core.SourceAnalysis.Services;
 using WpfHexEditor.SDK.ExtensionPoints.DocumentStructure;
@@ -53,7 +54,8 @@ public sealed class SourceOutlineStructureProvider : IDocumentStructureProvider
         {
             Nodes = nodes,
             FilePath = filePath,
-            Language = model.Kind == SourceFileKind.CSharp ? "csharp" : "xaml",
+            Language = LanguageRegistry.Instance.GetLanguageForFile(filePath)?.Id
+                    ?? (model.Kind == SourceFileKind.CSharp ? "csharp" : "xaml"),
         };
     }
 

@@ -203,10 +203,14 @@ public partial class MainWindow
                 var registry = new WpfHexEditor.Core.LSP.Client.Services.LspServerRegistry(Dispatcher);
 
                 // Register in-process Roslyn client for C# and VB.NET (replaces OmniSharp).
+                // Extensions are sourced from the whfmt-driven LanguageRegistry — no hardcoded lists.
                 var dispatcher = Dispatcher;
-                registry.RegisterInProcess("csharp", [".cs", ".csx"],
+                var langRegistry = WpfHexEditor.Core.ProjectSystem.Languages.LanguageRegistry.Instance;
+                var csharpExts   = langRegistry.FindById("csharp")?.Extensions.ToArray() ?? [".cs", ".csx"];
+                var vbnetExts    = langRegistry.FindById("vbnet")?.Extensions.ToArray()  ?? [".vb"];
+                registry.RegisterInProcess("csharp", csharpExts,
                     () => new WpfHexEditor.Core.Roslyn.RoslynLanguageClient(dispatcher));
-                registry.RegisterInProcess("vbnet", [".vb"],
+                registry.RegisterInProcess("vbnet", vbnetExts,
                     () => new WpfHexEditor.Core.Roslyn.RoslynLanguageClient(dispatcher));
 
                 lspRegistry = registry;
