@@ -2043,10 +2043,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // -- URL hit-zone (per-render, rebuilt in RenderTextContent) ---------------
 
         /// <summary>
-        /// Represents a single URL token position for hit-testing (cursor + Ctrl+Click).
+        /// Represents a single URL or email token position for hit-testing (cursor + Ctrl+Click).
         /// The list of active zones is rebuilt in <see cref="RenderTextContent"/> on each render.
         /// </summary>
-        private readonly record struct UrlHitZone(int Line, int StartCol, int EndCol, string Url);
+        private readonly record struct LinkHitZone(int Line, int StartCol, int EndCol, string Url, bool IsEmail);
 
         // -- Symbol hit-zone (per-render when Ctrl is held) ────────────────────
 

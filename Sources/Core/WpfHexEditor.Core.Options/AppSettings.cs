@@ -597,6 +597,14 @@ public sealed class CodeEditorDefaultSettings
     /// </summary>
     public bool ChangesetEnabled { get; set; } = false;
 
+    // -- Clickable links --------------------------------------------------
+
+    /// <summary>When true, HTTP/HTTPS URLs are detected and Ctrl+Click opens them in the browser.</summary>
+    public bool ClickableLinksEnabled  { get; set; } = true;
+
+    /// <summary>When true, email addresses are detected and Ctrl+Click opens the mail client.</summary>
+    public bool ClickableEmailsEnabled { get; set; } = true;
+
     // -- Syntax colours --------------------------------------------------
     // Stored as HTML hex strings (e.g. "#FF8C00").  Empty string = use theme default.
 
@@ -787,6 +795,14 @@ public sealed class TextEditorDefaultSettings
     /// (requires save mode Tracked to be effective).
     /// </summary>
     public bool ChangesetEnabled { get; set; } = false;
+
+    // -- Clickable links --------------------------------------------------
+
+    /// <summary>When true, HTTP/HTTPS URLs are detected and Ctrl+Click opens them in the browser.</summary>
+    public bool ClickableLinksEnabled  { get; set; } = true;
+
+    /// <summary>When true, email addresses are detected and Ctrl+Click opens the mail client.</summary>
+    public bool ClickableEmailsEnabled { get; set; } = true;
 
     // -- Syntax colours --------------------------------------------------
 

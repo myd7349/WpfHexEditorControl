@@ -69,8 +69,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
 
         private CodeSyntaxHighlighter _highlighter;
 
-        // URL hit-zones: rebuilt on every render pass; used for cursor + Ctrl+Click.
-        private readonly List<UrlHitZone> _urlHitZones = new();
+        // Link hit-zones (URLs + emails): rebuilt on every render pass; used for cursor + Ctrl+Click.
+        private readonly List<LinkHitZone> _linkHitZones = new();
 
         // Fold-label hit-zones: rebuilt on every render pass; used for click-to-toggle.
         private readonly List<(Rect rect, int line)> _foldLabelHitZones = new();
@@ -86,9 +86,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private int                _endBlockHintHoveredLine = -1;
         private FoldingRegion?     _endBlockHintActiveRegion;
 
-        // The URL zone currently under the mouse pointer (null = none).
+        // The link zone (URL or email) currently under the mouse pointer (null = none).
         // Drives hover underline; changing it triggers InvalidateVisual().
-        private UrlHitZone? _hoveredUrlZone;
+        private LinkHitZone? _hoveredLinkZone;
 
         // Explicit tooltip object opened/closed in OnMouseMove.
         // Using ToolTip directly (instead of the ToolTip property) ensures the tooltip
@@ -99,6 +99,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private static readonly Regex s_urlRegex = new(
             @"https?://[^\s""'<>\[\]{}|\\^`]+",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        // Compiled email regex — same lifetime guarantee as s_urlRegex.
+        private static readonly Regex s_emailRegex = new(
+            @"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}",
+            RegexOptions.Compiled);
 
         /// <summary>
         /// Optional external syntax highlighter (e.g. RegexBasedSyntaxHighlighter for .whlang languages).
@@ -757,6 +762,38 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 SetValue(EnableSmartCompleteProperty, value);
                 _enableSmartComplete = value;
             }
+        }
+
+        public static readonly DependencyProperty ClickableLinksEnabledProperty =
+            DependencyProperty.Register(nameof(ClickableLinksEnabled), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true));
+
+        /// <summary>
+        /// When <see langword="true"/>, HTTP/HTTPS URLs are detected and Ctrl+Click opens them in the default browser.
+        /// </summary>
+        [Category("Features")]
+        [DisplayName("Clickable Links")]
+        [Description("Ctrl+Click on http(s):// URLs opens them in the default browser.")]
+        public bool ClickableLinksEnabled
+        {
+            get => (bool)GetValue(ClickableLinksEnabledProperty);
+            set => SetValue(ClickableLinksEnabledProperty, value);
+        }
+
+        public static readonly DependencyProperty ClickableEmailsEnabledProperty =
+            DependencyProperty.Register(nameof(ClickableEmailsEnabled), typeof(bool), typeof(CodeEditor),
+                new FrameworkPropertyMetadata(true));
+
+        /// <summary>
+        /// When <see langword="true"/>, email addresses are detected and Ctrl+Click opens the default mail client.
+        /// </summary>
+        [Category("Features")]
+        [DisplayName("Clickable Emails")]
+        [Description("Ctrl+Click on email addresses opens the default mail client (mailto:).")]
+        public bool ClickableEmailsEnabled
+        {
+            get => (bool)GetValue(ClickableEmailsEnabledProperty);
+            set => SetValue(ClickableEmailsEnabledProperty, value);
         }
 
         public static readonly DependencyProperty EnableFindAllReferencesProperty =
@@ -2506,6 +2543,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             FoldToggleOnDoubleClick  = options.FoldToggleOnDoubleClick;
             IsWordWrapEnabled        = options.WordWrap;
             EnableFindAllReferences  = options.EnableFindAllReferences;
+            ClickableLinksEnabled    = options.ClickableLinksEnabled;
+            ClickableEmailsEnabled   = options.ClickableEmailsEnabled;
             ShowInlineHints             = options.ShowInlineHints;
             InlineHintsVisibleKinds     = options.InlineHintsVisibleKinds;
             EnableWordHighlight      = options.EnableWordHighlight;

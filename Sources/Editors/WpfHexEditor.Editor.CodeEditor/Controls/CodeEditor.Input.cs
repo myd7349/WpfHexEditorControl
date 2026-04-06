@@ -597,9 +597,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         {
             base.OnMouseLeave(e);
 
-            if (_hoveredUrlZone.HasValue)
+            if (_hoveredLinkZone.HasValue)
             {
-                _hoveredUrlZone = null;
+                _hoveredLinkZone = null;
                 Cursor = Cursors.IBeam;
                 HideUrlTooltip();
                 InvalidateVisual();
@@ -642,9 +642,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
         }
 
-        private void ShowUrlTooltip()
+        private void ShowUrlTooltip(bool isEmail = false)
         {
-            _urlTooltip ??= new ToolTip { Content = "Ctrl+Click to open" };
+            _urlTooltip ??= new ToolTip();
+            _urlTooltip.Content         = isEmail ? "Ctrl+Click to send email" : "Ctrl+Click to open";
             _urlTooltip.PlacementTarget = this;
             _urlTooltip.Placement       = System.Windows.Controls.Primitives.PlacementMode.Mouse;
             _urlTooltip.IsOpen          = true;
@@ -1236,18 +1237,21 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 }
             }
 
-            // Ctrl+Left-click on a URL → open in browser.
+            // Ctrl+Left-click on a URL or email → open in browser / mail client.
             if (e.LeftButton == MouseButtonState.Pressed
                 && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
             {
-                var urlZone = FindUrlZone(textPos.Line, textPos.Column);
-                if (urlZone.HasValue)
+                var linkZone = FindLinkZone(textPos.Line, textPos.Column);
+                if (linkZone.HasValue)
                 {
+                    var target = linkZone.Value.IsEmail
+                        ? $"mailto:{linkZone.Value.Url}"
+                        : linkZone.Value.Url;
                     try
                     {
-                        Process.Start(new ProcessStartInfo(urlZone.Value.Url) { UseShellExecute = true });
+                        Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
                     }
-                    catch { /* Ignore failures to launch browser (e.g. malformed URL) */ }
+                    catch { /* Ignore failures to launch browser / mail client */ }
                     e.Handled = true;
                     return;
                 }
@@ -1370,16 +1374,16 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // In pan mode: update directional cursor; suppress normal hover logic.
             if (_panMode.HandleMouseMove(e)) return;
 
-            // URL hover: show Hand cursor + underline when the pointer is over a URL zone.
+            // Link hover: show Hand cursor + underline when the pointer is over a URL/email zone.
             if (!_isSelecting)
             {
                 var hoverPos = PixelToTextPosition(e.GetPosition(this));
-                var urlZone  = FindUrlZone(hoverPos.Line, hoverPos.Column);
+                var linkZone = FindLinkZone(hoverPos.Line, hoverPos.Column);
 
                 // Only repaint when the hovered zone actually changes (avoids per-mousemove redraws).
-                if (urlZone != _hoveredUrlZone)
+                if (linkZone != _hoveredLinkZone)
                 {
-                    _hoveredUrlZone = urlZone;
+                    _hoveredLinkZone = linkZone;
                     InvalidateVisual();
                 }
 
@@ -1445,10 +1449,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                     Cursor = Cursors.Hand;
                     HideUrlTooltip();
                 }
-                else if (urlZone.HasValue)
+                else if (linkZone.HasValue)
                 {
                     Cursor = Cursors.Hand;
-                    ShowUrlTooltip();
+                    ShowUrlTooltip(linkZone.Value.IsEmail);
                 }
                 else if (overFoldLabel)
                 {
@@ -1478,7 +1482,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if (_ctrlDown && (Language is null || Language.EnableCtrlClickNavigation))
                 {
                     HandleCtrlHover(hoverPos);
-                    if (!overLens && !urlZone.HasValue)
+                    if (!overLens && !linkZone.HasValue)
                         Cursor = _hoveredSymbolZone.HasValue ? Cursors.Hand
                         : mousePixel.X < TextAreaLeftOffset ? Cursors.Arrow
                         : Cursors.IBeam;
@@ -1672,13 +1676,13 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
-        /// Returns the <see cref="UrlHitZone"/> that contains <paramref name="column"/> on
-        /// <paramref name="line"/>, or <see langword="null"/> if no URL occupies that position.
+        /// Returns the <see cref="LinkHitZone"/> (URL or email) that contains <paramref name="column"/> on
+        /// <paramref name="line"/>, or <see langword="null"/> if no link occupies that position.
         /// Hit-zones are rebuilt on every render pass by <see cref="OverlayUrlTokens"/>.
         /// </summary>
-        private UrlHitZone? FindUrlZone(int line, int column)
+        private LinkHitZone? FindLinkZone(int line, int column)
         {
-            foreach (var zone in _urlHitZones)
+            foreach (var zone in _linkHitZones)
             {
                 if (zone.Line == line && column >= zone.StartCol && column < zone.EndCol)
                     return zone;
