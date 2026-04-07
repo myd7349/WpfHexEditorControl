@@ -9,6 +9,37 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <conv:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis"/>
         <conv:NullToVisibilityConverter x:Key="NullToVis"/>
+
+        <!-- Context menu for tree nodes -->
+        <ContextMenu x:Key="TreeNodeContextMenu">
+            <MenuItem Header="Navigate To"         Tag="navigate"       Click="OnContextMenuClick">
+                <MenuItem.Icon><TextBlock Text="&#xE7B0;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Copy Name"           Tag="copy-name"      Click="OnContextMenuClick">
+                <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Copy Qualified Name" Tag="copy-qualified" Click="OnContextMenuClick">
+                <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Expand All"          Tag="expand-all"     Click="OnContextMenuClick"/>
+            <MenuItem Header="Collapse All"        Tag="collapse-all"   Click="OnContextMenuClick"/>
+        </ContextMenu>
+
+        <!-- Context menu for flat list nodes -->
+        <ContextMenu x:Key="FlatNodeContextMenu">
+            <MenuItem Header="Navigate To"         Tag="navigate"       Click="OnContextMenuClick">
+                <MenuItem.Icon><TextBlock Text="&#xE7B0;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Copy Name"           Tag="copy-name"      Click="OnContextMenuClick">
+                <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Copy Qualified Name" Tag="copy-qualified" Click="OnContextMenuClick">
+                <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
     </UserControl.Resources>
 
     <DockPanel Background="{DynamicResource DockBackgroundBrush}">
@@ -175,25 +206,7 @@
                     <Setter Property="IsSelected"  Value="{Binding IsSelected, Mode=TwoWay}"/>
                     <Setter Property="Visibility"  Value="{Binding Visibility}"/>
                     <Setter Property="Background"  Value="Transparent"/>
-                    <Setter Property="ContextMenu">
-                        <Setter.Value>
-                            <ContextMenu Tag="{Binding}">
-                                <MenuItem Header="Navigate To"          Tag="navigate"       Click="OnContextMenuClick">
-                                    <MenuItem.Icon><TextBlock Text="&#xE7B0;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
-                                </MenuItem>
-                                <Separator/>
-                                <MenuItem Header="Copy Name"            Tag="copy-name"      Click="OnContextMenuClick">
-                                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Copy Qualified Name"  Tag="copy-qualified" Click="OnContextMenuClick">
-                                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
-                                </MenuItem>
-                                <Separator/>
-                                <MenuItem Header="Expand All"           Tag="expand-all"     Click="OnContextMenuClick"/>
-                                <MenuItem Header="Collapse All"         Tag="collapse-all"   Click="OnContextMenuClick"/>
-                            </ContextMenu>
-                        </Setter.Value>
-                    </Setter>
+                    <Setter Property="ContextMenu" Value="{StaticResource TreeNodeContextMenu}"/>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="{DynamicResource DS_RowHoverBrush}"/>
@@ -223,22 +236,7 @@
                 <Style TargetType="ListBoxItem">
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="Padding"    Value="2,1"/>
-                    <Setter Property="ContextMenu">
-                        <Setter.Value>
-                            <ContextMenu Tag="{Binding}">
-                                <MenuItem Header="Navigate To"         Tag="navigate"       Click="OnContextMenuClick">
-                                    <MenuItem.Icon><TextBlock Text="&#xE7B0;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
-                                </MenuItem>
-                                <Separator/>
-                                <MenuItem Header="Copy Name"           Tag="copy-name"      Click="OnContextMenuClick">
-                                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Copy Qualified Name" Tag="copy-qualified" Click="OnContextMenuClick">
-                                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
-                                </MenuItem>
-                            </ContextMenu>
-                        </Setter.Value>
-                    </Setter>
+                    <Setter Property="ContextMenu" Value="{StaticResource FlatNodeContextMenu}"/>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="{DynamicResource DS_RowHoverBrush}"/>
