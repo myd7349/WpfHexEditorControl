@@ -1011,6 +1011,20 @@ public sealed class PluginSystemSettings
 
     /// <summary>Color for critical threshold (red). Default: #EF4444</summary>
     public string MemoryCriticalColor { get; set; } = "#EF4444";
+
+    // -- Plugin Dev Loader ------------------------------------------------
+
+    /// <summary>When true, the Plugin Dev Loader watch mode is available in the Plugin Manager.</summary>
+    public bool EnablePluginDevLoader { get; set; } = true;
+
+    /// <summary>
+    /// Additional folders watched by the Plugin Dev Loader (semicolon-separated paths).
+    /// Plugins changed in these folders are hot-reloaded automatically.
+    /// </summary>
+    public string WatchedFolders { get; set; } = string.Empty;
+
+    /// <summary>Debounce delay (ms) before triggering a hot-reload after a file change.</summary>
+    public int DevLoaderDebounceMs { get; set; } = 500;
 }
 
 // --------------------------------------------------------------------------------

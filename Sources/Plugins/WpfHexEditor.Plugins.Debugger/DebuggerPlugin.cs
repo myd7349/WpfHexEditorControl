@@ -96,7 +96,9 @@ public sealed class DebuggerPlugin : IWpfHexEditorPluginV2
         ui.RegisterPanel("panel-dbg-watch", new WatchesPanel { DataContext = _watchVm }, Id,
             new PanelDescriptor { Title = "Watch", DefaultDockSide = "Bottom", DefaultAutoHide = false });
 
-        ui.RegisterPanel("panel-dbg-console", new DebugConsolePanel { DataContext = _consoleVm }, Id,
+        var consolePanel = new DebugConsolePanel { DataContext = _consoleVm };
+        consolePanel.SetSessionManager(_sessionMgrVm);
+        ui.RegisterPanel("panel-dbg-console", consolePanel, Id,
             new PanelDescriptor { Title = "Debug Console", DefaultDockSide = "Bottom", DefaultAutoHide = false });
 
         // Launch configuration editor panel

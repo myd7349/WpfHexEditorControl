@@ -347,6 +347,28 @@ public sealed class PluginMonitorRow : ViewModelBase
     /// <summary>Prefix shown before metric values. Empty for dormant plugins (they show "â€”").</summary>
     public string MetricsPrefix => IsDormant ? string.Empty : (_isMetricsEstimated ? "~" : string.Empty);
 
+    // -- Watch mode ──────────────────────────────────────────────────────────
+
+    private bool    _isWatching;
+    private string? _watchDirectory;
+
+    /// <summary>True when this plugin is currently watched by PluginDevLoader.</summary>
+    public bool IsWatching
+    {
+        get => _isWatching;
+        set { _isWatching = value; OnPropertyChanged(); OnPropertyChanged(nameof(WatchBadge)); }
+    }
+
+    /// <summary>Directory being watched, or null when not watching.</summary>
+    public string? WatchDirectory
+    {
+        get => _watchDirectory;
+        set { _watchDirectory = value; OnPropertyChanged(); }
+    }
+
+    /// <summary>Short badge string shown in the Watch column.</summary>
+    public string WatchBadge => _isWatching ? "👁" : string.Empty;
+
     // -- Hot-reload mode badge -----------------------------------------------
 
     private string _reloadMode = "Full";

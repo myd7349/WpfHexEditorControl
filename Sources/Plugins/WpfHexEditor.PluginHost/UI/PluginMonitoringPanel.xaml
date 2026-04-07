@@ -688,6 +688,9 @@
                     <DataGridTextColumn Header="Init ms" Binding="{Binding InitTimeMs, StringFormat={}{0:F0}}"       Width="60" MinWidth="50"/>
                     <DataGridTextColumn Header="Reload"  Binding="{Binding ReloadMode}"                              Width="50" MinWidth="45"
                                         ToolTipService.ToolTip="Fast = IWpfHexEditorPluginV2.SupportsHotReload; Full = full unload+GC+reload cycle"/>
+
+                    <DataGridTextColumn Header="Watch"   Binding="{Binding WatchBadge}"                             Width="42" MinWidth="38"
+                                        ToolTipService.ToolTip="👁 = Plugin Dev Loader is watching this plugin's output directory for changes"/>
                 </DataGrid.Columns>
 
                 <!--
