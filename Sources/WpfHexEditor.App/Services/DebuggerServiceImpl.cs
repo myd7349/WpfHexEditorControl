@@ -104,6 +104,14 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
     /// <summary>Launch a new debug session for the given configuration.</summary>
     public async Task LaunchAsync(DebugLaunchConfig config)
     {
+        // Route attach requests through the existing AttachAsync path.
+        if (config.Request.Equals("attach", StringComparison.OrdinalIgnoreCase)
+            && config.ProcessId.HasValue)
+        {
+            await AttachAsync(config.ProcessId.Value);
+            return;
+        }
+
         if (_session.IsActive) await StopSessionAsync();
 
         // Reset hit counts for the new session.
@@ -512,7 +520,8 @@ public sealed class DebuggerServiceImpl : IDebuggerService, IAsyncDisposable
         Args:        config.Args.Length > 0 ? config.Args : null,
         Cwd:         config.WorkDir,
         Env:         config.Env.Count > 0 ? config.Env : null,
-        StopAtEntry: config.StopAtEntry);
+        StopAtEntry: config.StopAtEntry,
+        JustMyCode:  config.JustMyCode);
 
     // ── Internal helpers ──────────────────────────────────────────────────────
 

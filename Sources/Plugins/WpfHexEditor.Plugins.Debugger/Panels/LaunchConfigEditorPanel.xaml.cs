@@ -188,12 +188,16 @@ public sealed partial class LaunchConfigEditorPanel : UserControl
         return new()
         {
             LanguageId   = Get("type", "csharp"),
+            Request      = Get("request", "launch"),
             ProgramPath  = Get("program"),
             ProjectPath  = Get("projectPath"),
             Args         = GetArgs(),
             WorkDir      = cfg.TryGetProperty("cwd", out var cwd) ? cwd.GetString() : null,
             Env          = env,
             StopAtEntry  = cfg.TryGetProperty("stopAtEntry", out var sae) && sae.GetBoolean(),
+            ProcessId    = cfg.TryGetProperty("processId", out var pid) ? pid.GetInt32() : null,
+            JustMyCode   = !cfg.TryGetProperty("justMyCode", out var jmc) || jmc.GetBoolean(),
+            Console      = Get("console", "internalConsole"),
         };
     }
 
