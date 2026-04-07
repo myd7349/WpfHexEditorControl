@@ -82,6 +82,24 @@ internal sealed class XamlDesignerServiceImpl : IXamlDesignerService
     public void SelectElement(int uid)
         => _activeHost?.Canvas?.SelectElementByUid(uid);
 
+    public void NavigateToElement(int uid)
+    {
+        if (uid < 0 || _activeHost is not { } host) return;
+
+        // Ensure we're on the UI thread (canvas operations + DocumentManager SetActive).
+        if (!_dispatcher.CheckAccess()) { _dispatcher.Invoke(() => NavigateToElement(uid)); return; }
+
+        // Bring the designer tab to front.
+        var model = _documentHost.Documents.OpenDocuments
+            .FirstOrDefault(d => ReferenceEquals(d.AssociatedEditor, host));
+        if (model is not null)
+            _documentHost.Documents.SetActive(model.ContentId);
+
+        // Select in canvas + navigate code editor to source line.
+        host.Canvas?.SelectElementByUid(uid);
+        host.NavigateCodeEditorToUid(uid);
+    }
+
     // ── Focus tracking ───────────────────────────────────────────────────────
 
     private void OnFocusChanged(object? sender, FocusChangedEventArgs e)

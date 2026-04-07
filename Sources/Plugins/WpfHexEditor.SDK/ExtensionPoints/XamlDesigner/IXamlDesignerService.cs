@@ -47,4 +47,11 @@ public interface IXamlDesignerService
 
     /// <summary>Selects the element with the given UID on the active design canvas.</summary>
     void SelectElement(int uid);
+
+    /// <summary>
+    /// Selects the element by UID in the designer canvas AND navigates the code editor
+    /// to the element's source line.  Also activates (brings to front) the designer tab.
+    /// No-op when the UID is invalid or the designer is not active.
+    /// </summary>
+    void NavigateToElement(int uid) { }
 }

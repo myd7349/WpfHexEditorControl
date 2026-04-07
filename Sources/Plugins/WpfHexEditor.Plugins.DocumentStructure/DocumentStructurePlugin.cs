@@ -439,10 +439,10 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
     {
         if (_context is null) return;
 
-        // XAML Designer: navigate by element UID (bidirectional selection sync).
+        // XAML Designer: navigate by element UID — activates designer tab + syncs code editor.
         if (node.Tag is int uid && _designerService?.IsDesignerActive == true)
         {
-            _designerService.SelectElement(uid);
+            _designerService.NavigateToElement(uid);
             return;
         }
 
