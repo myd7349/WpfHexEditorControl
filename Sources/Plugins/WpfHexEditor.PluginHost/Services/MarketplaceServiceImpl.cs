@@ -33,8 +33,10 @@ public sealed class MarketplaceServiceImpl : IMarketplaceService, IDisposable
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "WpfHexEditor", "PluginDownloadCache");
 
-    private static string PluginsDir => Path.Combine(
-        AppContext.BaseDirectory, "Plugins");
+    private readonly string? _pluginsBaseDirOverride;
+    private string PluginsDir => _pluginsBaseDirOverride is not null
+        ? Path.Combine(_pluginsBaseDirOverride, "Plugins")
+        : Path.Combine(AppContext.BaseDirectory, "Plugins");
 
     // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -53,8 +55,17 @@ public sealed class MarketplaceServiceImpl : IMarketplaceService, IDisposable
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
+    /// <summary>Creates a production instance backed by <c>AppContext.BaseDirectory/Plugins</c>.</summary>
     public MarketplaceServiceImpl(string? gitHubToken = null, Action<string>? logger = null)
+        : this(pluginsBaseDir: null, gitHubToken, logger) { }
+
+    /// <summary>
+    /// Creates a test-isolation instance with a custom base directory.
+    /// Only for use in unit tests — allows injecting a temp dir for PluginsDir.
+    /// </summary>
+    internal MarketplaceServiceImpl(string? pluginsBaseDir, string? gitHubToken = null, Action<string>? logger = null)
     {
+        _pluginsBaseDirOverride = pluginsBaseDir;
         _log      = logger ?? (_ => { });
         _http     = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
         _ghClient = new GitHubReleasesClient(gitHubToken);
