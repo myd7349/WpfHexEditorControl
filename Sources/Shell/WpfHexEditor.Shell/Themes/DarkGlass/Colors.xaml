@@ -958,6 +958,8 @@
     <SolidColorBrush x:Key="DS_CountBadgeBackground" Color="#1A2520"/>
     <SolidColorBrush x:Key="DS_RowHoverBrush"        Color="#18FFFFFF"/>
     <SolidColorBrush x:Key="DS_RowSelectedBrush"     Color="#1A2535"/>
+    <Color x:Key="DS_RowSelectedColor">#1A2535</Color>
+    <Color x:Key="DS_RowSelectedTextColor">#FFFFFF</Color>
     <SolidColorBrush x:Key="DS_ClassIconBrush" Color="#4EC9B0"/>
     <SolidColorBrush x:Key="DS_MethodIconBrush" Color="#DCDCAA"/>
     <SolidColorBrush x:Key="DS_PropertyIconBrush" Color="#9CDCFE"/>

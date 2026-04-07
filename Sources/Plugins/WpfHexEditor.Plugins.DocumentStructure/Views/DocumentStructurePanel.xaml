@@ -183,20 +183,38 @@
                   Background="Transparent"
                   SelectedItemChanged="OnTreeSelectedItemChanged"
                   MouseDoubleClick="OnTreeDoubleClick">
+            <!-- Override system selection brushes so DS_ theme tokens take effect -->
+            <TreeView.Resources>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+                                 Color="{DynamicResource DS_RowSelectedColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+                                 Color="{DynamicResource DS_RowSelectedTextColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
+                                 Color="{DynamicResource DS_RowSelectedColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
+                                 Color="{DynamicResource DS_RowSelectedTextColor}"/>
+            </TreeView.Resources>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type vm:StructureNodeVm}"
                                           ItemsSource="{Binding Children}">
                     <StackPanel Orientation="Horizontal" Margin="0,1" Visibility="{Binding Visibility}">
+                        <!-- Kind icon — colored glyph -->
                         <TextBlock Text="{Binding IconGlyph}"
                                    FontFamily="Segoe MDL2 Assets" FontSize="12"
                                    Width="16" VerticalAlignment="Center"
                                    Foreground="{Binding Kind, Converter={StaticResource KindToBrush}}"
-                                   Margin="0,0,4,0"/>
+                                   Margin="0,0,3,0"/>
+                        <!-- Symbol name -->
                         <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource DS_NodeForeground}"/>
-                        <TextBlock Text="{Binding Detail}" VerticalAlignment="Center"
+                        <!-- " : ReturnType" separator + detail, VS Solution Explorer style -->
+                        <TextBlock VerticalAlignment="Center"
                                    Foreground="{DynamicResource DS_DetailForeground}"
-                                   Opacity="0.6" Margin="6,0,0,0"/>
+                                   FontSize="11"
+                                   Visibility="{Binding Detail, Converter={StaticResource NullToVis}}">
+                            <Run Text=" : "/>
+                            <Run Text="{Binding Detail}"/>
+                        </TextBlock>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
@@ -254,12 +272,16 @@
                                    FontFamily="Segoe MDL2 Assets" FontSize="12"
                                    Width="16" VerticalAlignment="Center"
                                    Foreground="{Binding Kind, Converter={StaticResource KindToBrush}}"
-                                   Margin="0,0,4,0"/>
+                                   Margin="0,0,3,0"/>
                         <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource DS_NodeForeground}"/>
-                        <TextBlock Text="{Binding Detail}" VerticalAlignment="Center"
+                        <TextBlock VerticalAlignment="Center"
                                    Foreground="{DynamicResource DS_DetailForeground}"
-                                   Opacity="0.6" Margin="6,0,0,0"/>
+                                   FontSize="11"
+                                   Visibility="{Binding Detail, Converter={StaticResource NullToVis}}">
+                            <Run Text=" : "/>
+                            <Run Text="{Binding Detail}"/>
+                        </TextBlock>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

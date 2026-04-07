@@ -91,8 +91,13 @@ public partial class DocumentStructurePanel : UserControl
 
     private void OnContextMenuClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not MenuItem { Tag: string tag }) return;
-        var node = (StructureNodeVm?)(StructureTree.SelectedItem ?? FlatList.SelectedItem);
+        if (sender is not MenuItem { Tag: string tag } mi) return;
+
+        // Prefer the right-clicked item's DataContext over SelectedItem
+        StructureNodeVm? node = null;
+        if (mi.Parent is ContextMenu cm && cm.PlacementTarget is FrameworkElement pt)
+            node = pt.DataContext as StructureNodeVm;
+        node ??= (StructureNodeVm?)(StructureTree.SelectedItem ?? FlatList.SelectedItem);
         if (node is null) return;
 
         switch (tag)
