@@ -5,16 +5,18 @@
 // Contributors: Claude Sonnet 4.6
 // Created: 2026-03-19
 // Description:
-//     Main diagram canvas. Manages ClassBoxControl and
-//     RelationshipArrowControl children, adorner-layer selection
-//     and rubber-band selection, and canvas-level context menus.
+//     Main diagram canvas. Uses DiagramVisualLayer for high-performance
+//     rendering of all class nodes and relationship arrows in a single
+//     DrawingVisual-backed pass. Handles mouse interaction, selection,
+//     rubber-band, drag-move, and context menus.
 //
 // Architecture Notes:
 //     Pattern: Composite + Mediator.
-//     ApplyDocument rebuilds all children from the DiagramDocument.
-//     Selection state is maintained via ClassBoxSelectAdorner.
-//     RubberBandAdorner is used for drag-select on empty space.
-//     Context menus use DynamicResource DockMenu* tokens.
+//     DiagramVisualLayer is the only child of this Canvas — zero per-node
+//     FrameworkElement overhead. Hit-testing is manual coordinate math.
+//     Selection adorner is retained on the AdornerLayer for clear visual
+//     feedback without polluting the visual layer render pass.
+//     ApplyPatch is exposed for Phase 3 live-sync incremental updates.
 // ==========================================================
 
 using System.Windows;
@@ -29,177 +31,108 @@ using WpfHexEditor.Editor.ClassDiagram.ViewModels;
 namespace WpfHexEditor.Editor.ClassDiagram.Controls;
 
 /// <summary>
-/// Canvas that hosts class box controls and relationship arrows for a <see cref="DiagramDocument"/>.
+/// Canvas that hosts a <see cref="DiagramVisualLayer"/> for high-performance rendering
+/// and manages selection, hover, drag-move, and context menus via manual hit-testing.
 /// </summary>
 public sealed class DiagramCanvas : Canvas
 {
-    private readonly Dictionary<string, ClassBoxControl> _classBoxes = [];
-    private readonly List<RelationshipArrowControl> _arrows = [];
+    // ── Children ──────────────────────────────────────────────────────────────
+    private readonly DiagramVisualLayer _layer = new();
 
-    private AdornerLayer? _adornerLayer;
-    private ClassBoxSelectAdorner? _selectAdorner;
-    private RubberBandAdorner? _rubberBandAdorner;
-
-    private ClassBoxControl? _selectedBox;
-    private ClassBoxControl? _dragBox;
+    // ── State ─────────────────────────────────────────────────────────────────
+    private DiagramDocument?  _doc;
+    private ClassNode?        _selectedNode;
+    private ClassNode?        _hoveredNode;
+    private ClassNode?        _dragNode;
 
     private readonly DiagramCanvasViewModel _vm = new();
 
-    // Drag state
-    private bool _isDragging;
-    private Point _dragStart;
+    // ── Adorners ──────────────────────────────────────────────────────────────
+    private AdornerLayer?          _adornerLayer;
+    private ClassBoxSelectAdorner? _selectAdorner;
+    private RubberBandAdorner?     _rubberBandAdorner;
+
+    // ── Drag ──────────────────────────────────────────────────────────────────
+    private Point  _dragStart;
     private double _dragNodeStartX;
     private double _dragNodeStartY;
 
-    // Rubber-band state
-    private bool _isRubberBanding;
+    // ── Rubber-band ───────────────────────────────────────────────────────────
+    private bool  _isRubberBanding;
     private Point _rubberStart;
 
-    // ---------------------------------------------------------------------------
-    // Events
-    // ---------------------------------------------------------------------------
+    // ── Events ────────────────────────────────────────────────────────────────
+    public event EventHandler<ClassNode?>?  SelectedClassChanged;
+    public event EventHandler<ClassNode?>?  HoveredClassChanged;
+    public event EventHandler<ClassNode?>?  AddMemberRequested;
 
-    public event EventHandler<ClassNode?>? SelectedClassChanged;
-    public event EventHandler<ClassNode?>? HoveredClassChanged;
-    public event EventHandler<ClassNode?>? AddMemberRequested;
-
-    // ---------------------------------------------------------------------------
-    // Constructor
-    // ---------------------------------------------------------------------------
+    // ── Constructor ───────────────────────────────────────────────────────────
 
     public DiagramCanvas()
     {
-        Background = Brushes.Transparent; // Required for hit-testing on empty space
+        Background = Brushes.Transparent;
         Focusable  = true;
         Loaded    += OnLoaded;
+
+        Children.Add(_layer);
+        Canvas.SetLeft(_layer, 0);
+        Canvas.SetTop(_layer, 0);
     }
 
-    // ---------------------------------------------------------------------------
-    // Public API
-    // ---------------------------------------------------------------------------
+    // ── Public API ────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Rebuilds all children (class boxes and arrows) from the given document.
-    /// </summary>
+    /// <summary>Rebuilds all visuals from the given document.</summary>
     public void ApplyDocument(DiagramDocument doc)
     {
+        _doc          = doc;
+        _selectedNode = null;
+        _hoveredNode  = null;
+
         ClearAdorners();
-        Children.Clear();
-        _classBoxes.Clear();
-        _arrows.Clear();
-        _selectedBox = null;
+        _layer.RenderAll(doc);
+        SelectedClassChanged?.Invoke(this, null);
+    }
 
-        foreach (ClassNode node in doc.Classes)
-        {
-            var box = CreateClassBox(node);
-            _classBoxes[node.Id] = box;
-
-            Canvas.SetLeft(box, node.X);
-            Canvas.SetTop(box, node.Y);
-            Children.Add(box);
-        }
-
-        foreach (ClassRelationship rel in doc.Relationships)
-        {
-            var arrow = CreateArrow(rel, doc);
-            _arrows.Add(arrow);
-            Children.Add(arrow);
-        }
-
-        // Ensure arrows are below boxes in Z-order
-        foreach (var arrow in _arrows)
-            Panel.SetZIndex(arrow, 0);
-
-        foreach (var box in _classBoxes.Values)
-            Panel.SetZIndex(box, 1);
+    /// <summary>Incremental update: re-renders only the nodes in the patch.</summary>
+    public void ApplyPatch(IEnumerable<string> dirtyNodeIds)
+    {
+        if (_doc is null) return;
+        _layer.InvalidateNodes(_doc, dirtyNodeIds, _selectedNode?.Id, _hoveredNode?.Id);
+        UpdateSelectAdornerPosition();
     }
 
     /// <summary>Returns the currently selected class node, or null.</summary>
-    public ClassNode? SelectedNode => _selectedBox?.Node;
+    public ClassNode? SelectedNode => _selectedNode;
 
-    // ---------------------------------------------------------------------------
-    // Loaded
-    // ---------------------------------------------------------------------------
+    // ── Loaded ────────────────────────────────────────────────────────────────
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _adornerLayer = AdornerLayer.GetAdornerLayer(this);
     }
 
-    // ---------------------------------------------------------------------------
-    // ClassBoxControl factory
-    // ---------------------------------------------------------------------------
+    // ── Selection ─────────────────────────────────────────────────────────────
 
-    private ClassBoxControl CreateClassBox(ClassNode node)
+    private void SelectNode(ClassNode? node)
     {
-        var box = new ClassBoxControl { Node = node };
+        if (_selectedNode == node) return;
+        _selectedNode = node;
+        RemoveSelectAdorner();
 
-        box.MouseLeftButtonDown += OnBoxMouseLeftButtonDown;
-        box.MouseMove           += OnBoxMouseMove;
-        box.MouseLeftButtonUp   += OnBoxMouseLeftButtonUp;
-        box.HoveredClassChanged += (_, n) => HoveredClassChanged?.Invoke(this, n);
-        box.DeleteRequested     += (_, n) => OnDeleteNodeRequested(n);
-        box.AddMemberRequested  += (_, t) => AddMemberRequested?.Invoke(this, t.Item1);
+        if (_selectedNode is not null)
+            AttachSelectAdorner(_selectedNode);
 
-        return box;
+        _layer.UpdateSelection(_selectedNode?.Id, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, _selectedNode);
     }
 
-    // ---------------------------------------------------------------------------
-    // RelationshipArrow factory
-    // ---------------------------------------------------------------------------
-
-    private RelationshipArrowControl CreateArrow(ClassRelationship rel, DiagramDocument doc)
-    {
-        var arrow = new RelationshipArrowControl { Relationship = rel };
-        UpdateArrowBounds(arrow, rel, doc);
-        arrow.DeleteRequested += (_, _) => OnDeleteRelationshipRequested(rel);
-        return arrow;
-    }
-
-    private static void UpdateArrowBounds(RelationshipArrowControl arrow,
-        ClassRelationship rel, DiagramDocument doc)
-    {
-        ClassNode? srcNode = doc.FindClass(rel.SourceId);
-        ClassNode? tgtNode = doc.FindClass(rel.TargetId);
-
-        if (srcNode is not null)
-            arrow.SourceBounds = new Rect(srcNode.X, srcNode.Y, srcNode.Width, srcNode.Height);
-        if (tgtNode is not null)
-            arrow.TargetBounds = new Rect(tgtNode.X, tgtNode.Y, tgtNode.Width, tgtNode.Height);
-    }
-
-    // ---------------------------------------------------------------------------
-    // Selection management
-    // ---------------------------------------------------------------------------
-
-    private void SelectBox(ClassBoxControl? box)
-    {
-        if (_selectedBox is not null)
-        {
-            _selectedBox.IsSelected = false;
-            RemoveSelectAdorner();
-        }
-
-        _selectedBox = box;
-
-        if (_selectedBox is not null)
-        {
-            _selectedBox.IsSelected = true;
-            AttachSelectAdorner(_selectedBox);
-        }
-
-        SelectedClassChanged?.Invoke(this, _selectedBox?.Node);
-    }
-
-    private void AttachSelectAdorner(ClassBoxControl box)
+    private void AttachSelectAdorner(ClassNode node)
     {
         if (_adornerLayer is null) return;
-
-        double left = Canvas.GetLeft(box).IfNaN(0);
-        double top  = Canvas.GetTop(box).IfNaN(0);
-        Rect bounds = new(left, top, box.RenderSize.Width, box.RenderSize.Height);
-
-        _selectAdorner = new ClassBoxSelectAdorner(this) { AdornedBounds = bounds };
+        _selectAdorner = new ClassBoxSelectAdorner(this)
+        {
+            AdornedBounds = new Rect(node.X, node.Y, node.Width, node.Height)
+        };
         _adornerLayer.Add(_selectAdorner);
     }
 
@@ -210,24 +143,25 @@ public sealed class DiagramCanvas : Canvas
         _selectAdorner = null;
     }
 
+    private void UpdateSelectAdornerPosition()
+    {
+        if (_selectAdorner is null || _selectedNode is null) return;
+        _selectAdorner.AdornedBounds =
+            new Rect(_selectedNode.X, _selectedNode.Y, _selectedNode.Width, _selectedNode.Height);
+    }
+
     private void ClearAdorners()
     {
         RemoveSelectAdorner();
         RemoveRubberBandAdorner();
     }
 
-    // ---------------------------------------------------------------------------
-    // Rubber-band adorner
-    // ---------------------------------------------------------------------------
+    // ── Rubber-band ───────────────────────────────────────────────────────────
 
     private void AttachRubberBand(Point start)
     {
         if (_adornerLayer is null) return;
-        _rubberBandAdorner = new RubberBandAdorner(this)
-        {
-            StartPoint = start,
-            EndPoint   = start
-        };
+        _rubberBandAdorner = new RubberBandAdorner(this) { StartPoint = start, EndPoint = start };
         _adornerLayer.Add(_rubberBandAdorner);
     }
 
@@ -238,145 +172,165 @@ public sealed class DiagramCanvas : Canvas
         _rubberBandAdorner = null;
     }
 
-    // ---------------------------------------------------------------------------
-    // Box mouse handlers
-    // ---------------------------------------------------------------------------
-
-    private void OnBoxMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is not ClassBoxControl box) return;
-
-        SelectBox(box);
-
-        _dragBox = box;
-        _isDragging = false;
-        _dragStart = e.GetPosition(this);
-        _dragNodeStartX = box.Node?.X ?? 0;
-        _dragNodeStartY = box.Node?.Y ?? 0;
-
-        box.CaptureMouse();
-        e.Handled = true;
-    }
-
-    private void OnBoxMouseMove(object sender, MouseEventArgs e)
-    {
-        if (sender is not ClassBoxControl box || _dragBox != box) return;
-        if (e.LeftButton != MouseButtonState.Pressed) return;
-
-        _isDragging = true;
-        Point pos   = e.GetPosition(this);
-        double dx   = pos.X - _dragStart.X;
-        double dy   = pos.Y - _dragStart.Y;
-
-        double newX = Math.Max(0, _dragNodeStartX + dx);
-        double newY = Math.Max(0, _dragNodeStartY + dy);
-
-        if (box.Node is not null)
-        {
-            box.Node.X = newX;
-            box.Node.Y = newY;
-        }
-
-        Canvas.SetLeft(box, newX);
-        Canvas.SetTop(box, newY);
-
-        // Update select adorner position
-        if (_selectAdorner is not null)
-            _selectAdorner.AdornedBounds = new Rect(newX, newY, box.RenderSize.Width, box.RenderSize.Height);
-
-        e.Handled = true;
-    }
-
-    private void OnBoxMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is not ClassBoxControl box || _dragBox != box) return;
-        box.ReleaseMouseCapture();
-        _dragBox    = null;
-        _isDragging = false;
-        e.Handled   = true;
-    }
-
-    // ---------------------------------------------------------------------------
-    // Canvas mouse handlers (rubber-band, deselect, empty context menu)
-    // ---------------------------------------------------------------------------
+    // ── Mouse – canvas level ──────────────────────────────────────────────────
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
+        Focus();
 
-        // Click on empty canvas — deselect and begin rubber-band
-        if (e.OriginalSource == this || e.OriginalSource is DrawingVisual)
+        Point pt   = e.GetPosition(this);
+        var   node = _layer.HitTestNode(pt);
+
+        if (node is not null)
         {
-            SelectBox(null);
+            SelectNode(node);
+            _dragNode       = node;
+            _dragStart      = pt;
+            _dragNodeStartX = node.X;
+            _dragNodeStartY = node.Y;
+            CaptureMouse();
+        }
+        else
+        {
+            SelectNode(null);
             _isRubberBanding = true;
-            _rubberStart     = e.GetPosition(this);
+            _rubberStart     = pt;
             AttachRubberBand(_rubberStart);
             CaptureMouse();
         }
+
+        e.Handled = true;
     }
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-        if (!_isRubberBanding || _rubberBandAdorner is null) return;
-        _rubberBandAdorner.EndPoint = e.GetPosition(this);
+        Point pt = e.GetPosition(this);
+
+        if (_dragNode is not null && e.LeftButton == MouseButtonState.Pressed)
+        {
+            double dx = pt.X - _dragStart.X;
+            double dy = pt.Y - _dragStart.Y;
+
+            _dragNode.X = Math.Max(0, _dragNodeStartX + dx);
+            _dragNode.Y = Math.Max(0, _dragNodeStartY + dy);
+
+            ApplyPatch([_dragNode.Id]);
+        }
+        else if (_isRubberBanding && _rubberBandAdorner is not null)
+        {
+            _rubberBandAdorner.EndPoint = pt;
+        }
+        else
+        {
+            // Hover tracking
+            var hovered = _layer.HitTestNode(pt);
+            if (hovered != _hoveredNode)
+            {
+                _hoveredNode = hovered;
+                _layer.UpdateSelection(_selectedNode?.Id, _hoveredNode?.Id);
+                HoveredClassChanged?.Invoke(this, _hoveredNode);
+            }
+        }
     }
 
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonUp(e);
-        if (!_isRubberBanding) return;
-
-        _isRubberBanding = false;
-        RemoveRubberBandAdorner();
         ReleaseMouseCapture();
+
+        if (_dragNode is not null)
+        {
+            _dragNode = null;
+        }
+        else if (_isRubberBanding)
+        {
+            _isRubberBanding = false;
+            RemoveRubberBandAdorner();
+        }
     }
 
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseRightButtonUp(e);
+        Point pt = e.GetPosition(this);
 
-        if (e.OriginalSource == this)
+        var node = _layer.HitTestNode(pt);
+        if (node is not null)
         {
-            BuildEmptyCanvasContextMenu().IsOpen = true;
+            BuildNodeContextMenu(node).IsOpen = true;
             e.Handled = true;
+            return;
         }
-    }
 
-    // ---------------------------------------------------------------------------
-    // Delete handlers
-    // ---------------------------------------------------------------------------
-
-    private void OnDeleteNodeRequested(ClassNode? node)
-    {
-        if (node is null) return;
-
-        if (_classBoxes.TryGetValue(node.Id, out var box))
+        var rel = _layer.HitTestArrow(pt);
+        if (rel is not null)
         {
-            if (_selectedBox == box) SelectBox(null);
-            Children.Remove(box);
-            _classBoxes.Remove(node.Id);
+            BuildArrowContextMenu(rel).IsOpen = true;
+            e.Handled = true;
+            return;
+        }
+
+        BuildEmptyCanvasContextMenu().IsOpen = true;
+        e.Handled = true;
+    }
+
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        if (_hoveredNode is not null)
+        {
+            _hoveredNode = null;
+            _layer.UpdateSelection(_selectedNode?.Id, null);
+            HoveredClassChanged?.Invoke(this, null);
         }
     }
 
-    private void OnDeleteRelationshipRequested(ClassRelationship rel)
+    // ── Context menus ─────────────────────────────────────────────────────────
+
+    private ContextMenu BuildNodeContextMenu(ClassNode node)
     {
-        var arrow = _arrows.FirstOrDefault(a => a.Relationship == rel);
-        if (arrow is null) return;
-        Children.Remove(arrow);
-        _arrows.Remove(arrow);
+        var menu = StyledMenu();
+        menu.Items.Add(MakeItem("\uE70F", "Rename",    () => { }));
+        menu.Items.Add(MakeItem("\uE74D", "Delete",    () => DeleteNode(node)));
+        menu.Items.Add(MakeItem("\uE8C8", "Duplicate", () => { }));
+        menu.Items.Add(new Separator());
+
+        var addMenu = new MenuItem { Header = "Add Member" };
+        addMenu.Items.Add(MakeItem("\uE192", "Field",    () => AddMemberRequested?.Invoke(this, node)));
+        addMenu.Items.Add(MakeItem("\uE10C", "Property", () => AddMemberRequested?.Invoke(this, node)));
+        addMenu.Items.Add(MakeItem("\uE8F4", "Method",   () => AddMemberRequested?.Invoke(this, node)));
+        addMenu.Items.Add(MakeItem("\uECAD", "Event",    () => AddMemberRequested?.Invoke(this, node)));
+        menu.Items.Add(addMenu);
+
+        menu.Items.Add(new Separator());
+        menu.Items.Add(MakeItem("\uE8D4", "Properties", () => { }));
+        return menu;
     }
 
-    // ---------------------------------------------------------------------------
-    // Empty canvas context menu
-    // ---------------------------------------------------------------------------
+    private ContextMenu BuildArrowContextMenu(ClassRelationship rel)
+    {
+        var menu = StyledMenu();
+        menu.Items.Add(MakeItem("\uE70F", "Edit Label",       () => { }));
+        menu.Items.Add(new Separator());
+
+        var changeType = new MenuItem { Header = "Change Type" };
+        foreach (RelationshipKind rk in Enum.GetValues<RelationshipKind>())
+        {
+            var captured = rk;
+            changeType.Items.Add(MakeItem("\uE8AB", rk.ToString(), () => ChangeRelationshipType(rel, captured)));
+        }
+        menu.Items.Add(changeType);
+        menu.Items.Add(MakeItem("\uE7A8", "Reverse Direction", () => { }));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(MakeItem("\uE74D", "Delete",            () => DeleteRelationship(rel)));
+        return menu;
+    }
 
     private ContextMenu BuildEmptyCanvasContextMenu()
     {
-        var menu = new ContextMenu();
-        menu.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, "DockMenuBackgroundBrush");
-        menu.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "DockMenuForegroundBrush");
-
+        var menu = StyledMenu();
         menu.Items.Add(MakeItem("\uE710", "Add Class",     () => { }));
         menu.Items.Add(MakeItem("\uE710", "Add Interface", () => { }));
         menu.Items.Add(MakeItem("\uE710", "Add Enum",      () => { }));
@@ -389,31 +343,59 @@ public sealed class DiagramCanvas : Canvas
         menu.Items.Add(MakeItem("\uE904", "Zoom to Fit",   () => { }));
         menu.Items.Add(new Separator());
 
-        var exportMenu = new MenuItem { Header = "Export" };
-        exportMenu.Items.Add(MakeItem("\uEB9F", "Export PNG",     () => { }));
-        exportMenu.Items.Add(MakeItem("\uE781", "Export SVG",     () => { }));
-        exportMenu.Items.Add(MakeItem("\uE8A5", "Export C#",      () => { }));
-        exportMenu.Items.Add(MakeItem("\uE8A5", "Export Mermaid", () => { }));
-        menu.Items.Add(exportMenu);
+        var export = new MenuItem { Header = "Export" };
+        export.Items.Add(MakeItem("\uEB9F", "Export PNG",     () => { }));
+        export.Items.Add(MakeItem("\uE781", "Export SVG",     () => { }));
+        export.Items.Add(MakeItem("\uE8A5", "Export C#",      () => { }));
+        export.Items.Add(MakeItem("\uE8A5", "Export Mermaid", () => { }));
+        menu.Items.Add(export);
 
         return menu;
     }
 
-    // ---------------------------------------------------------------------------
-    // Context menu helper
-    // ---------------------------------------------------------------------------
+    // ── Delete / change helpers ───────────────────────────────────────────────
+
+    private void DeleteNode(ClassNode node)
+    {
+        if (_doc is null) return;
+        _doc.Classes.Remove(node);
+        _doc.Relationships.RemoveAll(r => r.SourceId == node.Id || r.TargetId == node.Id);
+        if (_selectedNode == node) SelectNode(null);
+        _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
+    }
+
+    private void DeleteRelationship(ClassRelationship rel)
+    {
+        if (_doc is null) return;
+        _doc.Relationships.Remove(rel);
+        _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
+    }
+
+    private void ChangeRelationshipType(ClassRelationship rel, RelationshipKind newKind)
+    {
+        if (_doc is null) return;
+        int idx = _doc.Relationships.IndexOf(rel);
+        if (idx < 0) return;
+        _doc.Relationships[idx] = rel with { Kind = newKind };
+        _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
+    }
+
+    // ── Context menu helpers ──────────────────────────────────────────────────
+
+    private ContextMenu StyledMenu()
+    {
+        var menu = new ContextMenu();
+        menu.SetResourceReference(Control.BackgroundProperty, "DockMenuBackgroundBrush");
+        menu.SetResourceReference(Control.ForegroundProperty, "DockMenuForegroundBrush");
+        return menu;
+    }
 
     private static MenuItem MakeItem(string icon, string header, Action action)
     {
         var item = new MenuItem
         {
             Header = header,
-            Icon   = new TextBlock
-            {
-                Text       = icon,
-                FontFamily = new FontFamily("Segoe MDL2 Assets"),
-                FontSize   = 14
-            }
+            Icon   = new TextBlock { Text = icon, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 14 }
         };
         item.Click += (_, _) => action();
         return item;

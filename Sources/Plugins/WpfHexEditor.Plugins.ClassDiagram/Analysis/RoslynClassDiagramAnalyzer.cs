@@ -5,7 +5,7 @@
 // Created: 2026-04-07
 // Description:
 //     Roslyn syntax-tree based analyzer that replaces the regex-based
-//     ClassDiagramSourceAnalyzer. Uses Microsoft.CodeAnalysis.CSharp
+//     Uses Microsoft.CodeAnalysis.CSharp
 //     syntax trees (no workspace, no MSBuild) to extract type declarations,
 //     members, relationships, source locations, XML doc summaries,
 //     and modifier flags from C# source files.
@@ -23,10 +23,8 @@
 // Architecture Notes:
 //     Pattern: Static Service. Thread-safe (immutable per-parse state).
 //     Syntax-only: no SemanticModel required → fast, no compilation errors.
-//     VB.NET files (.vb) fall back to ClassDiagramSourceAnalyzer (regex)
-//     since there is no VB syntax tree integration here.
-//     AutoLayout is delegated to the existing ApplyGridAutoLayout helper
-//     inside ClassDiagramSourceAnalyzer.
+//     VB.NET files (.vb) are skipped (no VB syntax tree integration).
+//     AutoLayout via internal ApplyGridLayout helper.
 // ==========================================================
 
 using System.IO;
