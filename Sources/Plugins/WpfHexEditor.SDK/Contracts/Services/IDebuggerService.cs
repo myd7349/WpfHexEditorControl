@@ -88,6 +88,9 @@ public interface IDebuggerService
     /// <summary>Raised whenever session state changes.</summary>
     event EventHandler? SessionChanged;
 
+    /// <summary>Launch a new debug session using the given configuration.</summary>
+    Task LaunchAsync(WpfHexEditor.Core.Debugger.Models.DebugLaunchConfig config);
+
     /// <summary>Stop the active debug session. No-op when idle.</summary>
     Task StopSessionAsync();
 
