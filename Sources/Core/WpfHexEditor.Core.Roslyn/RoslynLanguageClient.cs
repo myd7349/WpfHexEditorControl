@@ -121,6 +121,14 @@ public sealed class RoslynLanguageClient : ILspClient, IReferenceCountProvider, 
         _analysisService.NotifyChanged(filePath);
     }
 
+    // Roslyn manages its own in-process workspace; incremental range sync is not
+    // applicable — the workspace is always updated via the full-text DidChange path.
+    // This method intentionally does nothing; callers check IIncrementalSyncClient
+    // before choosing the incremental code path.
+    public void DidChangeIncremental(string filePath, int version,
+        int startLine, int startCol, int endLine, int endCol,
+        int rangeLength, string newText) { }
+
     public void CloseDocument(string filePath) => _workspace.CloseDocument(filePath);
 
     public void SaveDocument(string filePath, string? text = null)

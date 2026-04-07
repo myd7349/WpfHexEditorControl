@@ -30,7 +30,9 @@ namespace WpfHexEditor.Core.LSP.Client;
 /// Full <see cref="ILspClient"/> implementation backed by a language server process.
 /// Created by <see cref="LspServerRegistry.CreateClient"/>.
 /// </summary>
-public sealed class LspClientImpl : ILspClient, WpfHexEditor.Editor.Core.LSP.IDiagnosticsModeClient
+public sealed class LspClientImpl : ILspClient,
+    WpfHexEditor.Editor.Core.LSP.IDiagnosticsModeClient,
+    WpfHexEditor.Editor.Core.LSP.IIncrementalSyncClient
 {
     // ── Fields ─────────────────────────────────────────────────────────────────
     private readonly string           _executablePath;
@@ -70,6 +72,9 @@ public sealed class LspClientImpl : ILspClient, WpfHexEditor.Editor.Core.LSP.IDi
 
     /// <inheritdoc cref="WpfHexEditor.Editor.Core.LSP.IDiagnosticsModeClient.UsesPullDiagnostics"/>
     public bool UsesPullDiagnostics => Capabilities.HasDiagnosticProvider;
+
+    /// <inheritdoc cref="WpfHexEditor.Editor.Core.LSP.IIncrementalSyncClient.SupportsIncrementalSync"/>
+    public bool SupportsIncrementalSync => Capabilities.TextDocumentSyncKind == 2;
 
     internal LspClientImpl(
         string  executablePath,

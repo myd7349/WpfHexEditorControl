@@ -151,7 +151,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Models
 
         /// <summary>
         /// Raised when the entire document content is replaced via <see cref="LoadLines"/>.
-        /// Subscribers that cache structural information (navigation bar, code lens) must refresh.
+        /// Subscribers that cache structural information (navigation bar, declaration hints) must refresh.
         /// </summary>
         public event EventHandler? ContentReplaced;
 
@@ -565,7 +565,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Models
             IsModified = false;
             InvalidateAllCache();
 
-            // Notify structural caches (navigation bar, code lens) that content was fully replaced.
+            // Notify structural caches (navigation bar, declaration hints) that content was fully replaced.
             ContentReplaced?.Invoke(this, EventArgs.Empty);
         }
 

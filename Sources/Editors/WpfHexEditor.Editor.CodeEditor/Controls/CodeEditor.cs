@@ -238,6 +238,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // Debounce timer for textDocument/didChange — 300 ms after last keystroke.
         private System.Windows.Threading.DispatcherTimer? _lspChangeTimer;
 
+        // Pending incremental change for the next timer tick.
+        // Null = multiple changes collapsed → use full-text DidChange fallback.
+        private (int SL, int SC, int EL, int EC, int OldLen, string NewText)? _pendingLspChange;
+
         // Inline "Find All References" popup (lazily created on first use).
         private ReferencesPopup?           _referencesPopup;
 
@@ -253,7 +257,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private          int                            _inlineHintsSource   = 0; // 0=Auto, 1=RoslynOnly, 2=RegexAlways
         private readonly Services.InlineHintsService                                                                                              _inlineHintsService  = new();
         private readonly Layers.LspInlayHintsLayer                                                                                                 _lspInlayHintsLayer  = new();
-        private readonly Layers.LspCodeLensLayer                                                                                                   _lspCodeLensLayer    = new();
+        private readonly Layers.LspDeclarationHintsLayer                                                                                                   _lspDeclarationHintsLayer    = new();
         private          IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, System.Windows.Media.Brush IconBrush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds Kind, bool IsRoslyn)> _hintsData = new Dictionary<int, (int, string, string, System.Windows.Media.Brush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds, bool)>();
         private          int                                                                                                                   _visibleHintsCount = 0;
         private readonly List<(Rect Zone, int LineIndex, string Symbol)>                                                                       _hintsHitZones     = new();
@@ -1044,19 +1048,19 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             set => SetValue(ShowLspInlayHintsProperty, value);
         }
 
-        public static readonly DependencyProperty ShowLspCodeLensProperty =
-            DependencyProperty.Register(nameof(ShowLspCodeLens), typeof(bool), typeof(CodeEditor),
+        public static readonly DependencyProperty ShowLspDeclarationHintsProperty =
+            DependencyProperty.Register(nameof(ShowLspDeclarationHints), typeof(bool), typeof(CodeEditor),
                 new FrameworkPropertyMetadata(true,
                     FrameworkPropertyMetadataOptions.AffectsRender,
-                    (d, _) => (d as CodeEditor)?._lspCodeLensLayer.SetContext(null, 0, 0, 0, 0)));
+                    (d, _) => (d as CodeEditor)?._lspDeclarationHintsLayer.SetContext(null, 0, 0, 0, 0)));
 
         [Category("Features")]
         [DisplayName("Show LSP Code Lens")]
         [Description("Shows reference counts and test runner hints above declarations (requires LSP).")]
-        public bool ShowLspCodeLens
+        public bool ShowLspDeclarationHints
         {
-            get => (bool)GetValue(ShowLspCodeLensProperty);
-            set => SetValue(ShowLspCodeLensProperty, value);
+            get => (bool)GetValue(ShowLspDeclarationHintsProperty);
+            set => SetValue(ShowLspDeclarationHintsProperty, value);
         }
 
         public static readonly DependencyProperty InlineHintsVisibleKindsProperty =
@@ -2678,10 +2682,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             _stickyScrollHeader.ScopeClicked += OnStickyScrollScopeClicked;
             _scrollBarChildren.Add(_stickyScrollHeader);
 
-            // LSP overlay layers: inlay hints (parameter names) and code lens (test runner hints).
+            // LSP overlay layers: inlay hints (parameter names) and declaration hints (test runner hints).
             // Added before caret so caret composites on top.
             _scrollBarChildren.Add(_lspInlayHintsLayer);
-            _scrollBarChildren.Add(_lspCodeLensLayer);
+            _scrollBarChildren.Add(_lspDeclarationHintsLayer);
 
             // Caret visual is always last so it composites on top of all content.
             _scrollBarChildren.Add(_caretVisual);
@@ -2825,7 +2829,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             ShowVarTypeHints            = options.ShowVarTypeHints;
             ShowLambdaReturnTypeHints   = options.ShowLambdaReturnTypeHints;
             ShowLspInlayHints           = options.ShowLspInlayHints;
-            ShowLspCodeLens             = options.ShowLspCodeLens;
+            ShowLspDeclarationHints             = options.ShowLspDeclarationHints;
             EnableWordHighlight      = options.EnableWordHighlight;
             ShowEndOfBlockHint      = options.ShowEndOfBlockHint;
             EndOfBlockHintDelayMs   = options.EndOfBlockHintDelayMs;

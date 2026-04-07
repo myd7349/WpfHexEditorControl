@@ -557,6 +557,24 @@ public interface IInlineHintsOptionsClient
     void SetInlineHintsOptions(bool showVarTypeHints, bool showLambdaReturnTypeHints);
 }
 
+// ── IIncrementalSyncClient ────────────────────────────────────────────────────
+
+/// <summary>
+/// Optional interface implemented by LSP clients whose underlying server declared
+/// <c>TextDocumentSyncKind.Incremental</c> (2). CodeEditor checks
+/// <c>ILspClient as IIncrementalSyncClient</c> before using
+/// <see cref="ILspClient.DidChangeIncremental"/>. Clients that do not implement
+/// this interface (e.g. Roslyn) always receive full-text <c>DidChange</c> calls.
+/// </summary>
+public interface IIncrementalSyncClient
+{
+    /// <summary>
+    /// <see langword="true"/> when the connected server can process incremental
+    /// textDocument/didChange messages (TextDocumentSyncKind = 2).
+    /// </summary>
+    bool SupportsIncrementalSync { get; }
+}
+
 // ── IDiagnosticsModeClient ────────────────────────────────────────────────────
 
 /// <summary>

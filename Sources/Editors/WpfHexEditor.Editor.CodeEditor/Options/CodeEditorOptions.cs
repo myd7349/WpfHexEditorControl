@@ -231,12 +231,12 @@ public sealed class CodeEditorOptions : INotifyPropertyChanged
         set { _showLspInlayHints = value; Notify(); }
     }
 
-    private bool _showLspCodeLens = true;
-    /// <summary>Show LSP code lens hints (reference counts and test runner indicators) above declarations.</summary>
-    public bool ShowLspCodeLens
+    private bool _showLspDeclarationHints = true;
+    /// <summary>Show LSP declaration hints hints (reference counts and test runner indicators) above declarations.</summary>
+    public bool ShowLspDeclarationHints
     {
-        get => _showLspCodeLens;
-        set { _showLspCodeLens = value; Notify(); }
+        get => _showLspDeclarationHints;
+        set { _showLspDeclarationHints = value; Notify(); }
     }
 
     private int  _maxUndoHistory      = 500;

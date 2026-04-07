@@ -622,8 +622,8 @@
     <SolidColorBrush x:Key="LSP_ErrorDot"               Color="#F14C4C" />
     <SolidColorBrush x:Key="CE_InlayHintForeground"     Color="#495495" />
     <SolidColorBrush x:Key="CE_InlayHintBackground"     Color="#1A1929" />
-    <SolidColorBrush x:Key="CE_CodeLensForeground"      Color="#495495" />
-    <SolidColorBrush x:Key="CE_CodeLensHoverBackground" Color="#2D2B55" />
+    <SolidColorBrush x:Key="CE_DeclarationHintsForeground"      Color="#495495" />
+    <SolidColorBrush x:Key="CE_DeclarationHintsHoverBackground" Color="#2D2B55" />
     <SolidColorBrush x:Key="SE_TypeColor"               Color="#30264F78" />
     <SolidColorBrush x:Key="SE_MethodColor"             Color="#30DCDC00" />
     <SolidColorBrush x:Key="SE_VariableColor"           Color="#209CDCFE" />

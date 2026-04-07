@@ -276,6 +276,37 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Debounce LSP didChange — 300 ms (Phase 4: LSP Integration).
             if (_lspClient is not null && _currentFilePath is not null)
             {
+                // Capture incremental delta for servers that declared TextDocumentSyncKind=2.
+                // Multi-change operations (DeleteLine, multi-caret) collapse to full-text fallback.
+                if (_lspClient is WpfHexEditor.Editor.Core.LSP.IIncrementalSyncClient inc
+                    && inc.SupportsIncrementalSync)
+                {
+                    if (_pendingLspChange is not null)
+                    {
+                        // Second change within the debounce window → fall back to full text.
+                        _pendingLspChange = null;
+                    }
+                    else
+                    {
+                        _pendingLspChange = e.ChangeType switch
+                        {
+                            Models.TextChangeType.Insert =>
+                                (e.Position.Line, e.Position.Column,
+                                 e.Position.Line, e.Position.Column, 0, e.Text),
+                            Models.TextChangeType.NewLine =>
+                                (e.Position.Line, e.Position.Column,
+                                 e.Position.Line, e.Position.Column, 0, "\n"),
+                            Models.TextChangeType.Delete =>
+                                (e.Position.Line, e.Position.Column,
+                                 e.Position.Line, e.Position.Column + e.Length, e.Length, string.Empty),
+                            Models.TextChangeType.Replace =>
+                                (e.Position.Line, e.Position.Column,
+                                 e.Position.Line, e.Position.Column + e.Length, e.Length, e.Text),
+                            _ => null, // DeleteLine and others → full-text fallback
+                        };
+                    }
+                }
+
                 _lspChangeTimer?.Stop();
                 _lspChangeTimer?.Start();
             }

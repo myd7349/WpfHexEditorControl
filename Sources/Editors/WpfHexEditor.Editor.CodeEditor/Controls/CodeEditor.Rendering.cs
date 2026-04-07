@@ -784,8 +784,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Push updated viewport context to LSP overlay layers (debounced internally).
             if (ShowLspInlayHints)
                 _lspInlayHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight);
-            if (ShowLspCodeLens)
-                _lspCodeLensLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, BuildVisibleSourceLines());
+            if (ShowLspDeclarationHints)
+                _lspDeclarationHintsLayer.SetContext(_currentFilePath, _firstVisibleLine, _lastVisibleLine, _charWidth, _lineHeight, BuildVisibleSourceLines());
 
             // Sticky scroll header: refresh only when the true scroll-line changes.
             // Guard: never call InvalidateArrange() unconditionally inside OnRender —
@@ -1238,7 +1238,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // LSP overlay layers: fill the full content area so their DrawingVisual children
             // are clipped to the same bounds as the editor text area.
             _lspInlayHintsLayer.Arrange(new Rect(0, 0, contentW, contentH));
-            _lspCodeLensLayer.Arrange(new Rect(0, 0, contentW, contentH));
+            _lspDeclarationHintsLayer.Arrange(new Rect(0, 0, contentW, contentH));
 
             UpdateScrollBars(contentW, contentH);
             return finalSize;
@@ -1482,7 +1482,7 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         }
 
         /// <summary>
-        /// Builds a snapshot of the currently visible logical lines for the LspCodeLensLayer
+        /// Builds a snapshot of the currently visible logical lines for the LspDeclarationHintsLayer
         /// test-attribute scanner. Returns at most the visible range lines.
         /// </summary>
         private IReadOnlyList<(int Line, string Text)> BuildVisibleSourceLines()
