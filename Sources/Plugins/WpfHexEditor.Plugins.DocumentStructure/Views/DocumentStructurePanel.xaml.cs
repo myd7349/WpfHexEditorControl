@@ -24,7 +24,7 @@ namespace WpfHexEditor.Plugins.DocumentStructure.Views;
 public partial class DocumentStructurePanel : UserControl
 {
     // 5 left buttons (~30px each) + filter box (140px) + sort combo (110px) + margins ≈ 450px
-    private const double CollapseThreshold = 460.0;
+    private const double CollapseThreshold = 320.0;
 
     private DocumentStructureViewModel? Vm => DataContext as DocumentStructureViewModel;
 

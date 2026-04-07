@@ -52,6 +52,9 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// <summary>Triggers Go to Implementation at the current caret position.</summary>
         public Task GoToImplementationAsync() => GoToImplementationAtCaretAsync();
 
+        /// <summary>Triggers Peek Definition (inline panel) at the current caret position.</summary>
+        public Task PeekDefinitionAsync() => ShowPeekDefinitionAsync();
+
         // -- LSP Client Wiring (Phase 4) ──────────────────────────────────
 
         /// <summary>
@@ -706,6 +709,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             if (_inlinePeekHost is null)
             {
                 _inlinePeekHost = new InlinePeekHost();
+                // Add to visual tree first so TryFindResource can resolve theme brushes.
+                _scrollBarChildren.Add(_inlinePeekHost);
                 _inlinePeekHost.CloseRequested         += CloseInlinePeek;
                 _inlinePeekHost.GoToDefinitionRequested += () => _ = GoToDefinitionAtCaretAsync();
                 _inlinePeekHost.ResultIndexChanged      += i  => _ = OpenInlinePeekAsync(anchorLine, locs, i);
@@ -727,8 +732,6 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             // Register in layout engine.
             _peekHostLine   = anchorLine;
             _peekHostHeight = _inlinePeekHost.PeekHeight;
-            if (!_scrollBarChildren.Contains(_inlinePeekHost))
-                _scrollBarChildren.Add(_inlinePeekHost);
 
             _linePositionsDirty = true;
             InvalidateMeasure();

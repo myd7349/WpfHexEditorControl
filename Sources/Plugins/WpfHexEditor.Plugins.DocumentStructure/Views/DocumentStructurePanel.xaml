@@ -80,6 +80,21 @@
                                   IsChecked="{Binding ScrollSyncEnabled}"/>
                 </StackPanel>
 
+                <!-- Left: collapsible sort combo -->
+                <StackPanel x:Name="TbgSort" Orientation="Horizontal"
+                            DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <ComboBox x:Name="SortCombo"
+                              Style="{DynamicResource DockComboBoxStyle}"
+                              Width="110" Height="20" FontSize="11"
+                              VerticalContentAlignment="Center"
+                              SelectedIndex="{Binding SortModeIndex}"
+                              ToolTip="Sort order">
+                        <ComboBoxItem Content="Source Order"/>
+                        <ComboBoxItem Content="Alphabetical"/>
+                        <ComboBoxItem Content="By Kind"/>
+                    </ComboBox>
+                </StackPanel>
+
                 <!-- Right: overflow — declared first = far right -->
                 <Button x:Name="ToolbarOverflowButton"
                         DockPanel.Dock="Right"
@@ -106,21 +121,6 @@
                          Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}"
                          VerticalAlignment="Center"
                          Tag="Filter symbols…"/>
-
-                <!-- Right: collapsible sort combo -->
-                <StackPanel x:Name="TbgSort" Orientation="Horizontal"
-                            DockPanel.Dock="Right" VerticalAlignment="Center">
-                    <ComboBox x:Name="SortCombo"
-                              Style="{DynamicResource DockComboBoxStyle}"
-                              Width="110" Height="20" FontSize="11"
-                              VerticalContentAlignment="Center"
-                              SelectedIndex="{Binding SortModeIndex}"
-                              ToolTip="Sort order">
-                        <ComboBoxItem Content="Source Order"/>
-                        <ComboBoxItem Content="Alphabetical"/>
-                        <ComboBoxItem Content="By Kind"/>
-                    </ComboBox>
-                </StackPanel>
 
             </DockPanel>
         </Border>
