@@ -54,6 +54,10 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
     private readonly CheckBox _skipOverClose;
     private readonly CheckBox _wrapSelection;
 
+    // XML / XAML (global — not per-language overrides)
+    private readonly ComboBox _xmlAttrIndentLevels;
+    private readonly CheckBox _xmlOneAttrPerLine;
+
     // ── Preview ───────────────────────────────────────────────────────────
     private readonly FormattingPreviewPanel? _preview;
 
@@ -253,6 +257,35 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
         stack.Children.Add(_skipOverClose);
         stack.Children.Add(_wrapSelection);
 
+        // ── XML / XAML ────────────────────────────────────────────────────
+        stack.Children.Add(MakeSectionHeader("XML / XAML"));
+
+        var attrLevelRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Margin      = new Thickness(0, 4, 0, 4),
+        };
+        attrLevelRow.Children.Add(new TextBlock
+        {
+            Text              = "Attribute continuation indent:",
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin            = new Thickness(0, 0, 8, 0),
+            Width             = 220,
+        });
+        _xmlAttrIndentLevels = new ComboBox { Width = 230 };
+        _xmlAttrIndentLevels.Items.Add("1 level  (4 spaces at root)");
+        _xmlAttrIndentLevels.Items.Add("2 levels (8 spaces at root) — VS default");
+        _xmlAttrIndentLevels.Items.Add("3 levels (12 spaces at root)");
+        _xmlAttrIndentLevels.SelectedIndex = 1;
+        _xmlAttrIndentLevels.SelectionChanged += (_, _) => { if (!_loading) { Changed?.Invoke(this, EventArgs.Empty); _preview?.Refresh(BuildOverrides()); } };
+        attrLevelRow.Children.Add(_xmlAttrIndentLevels);
+        stack.Children.Add(attrLevelRow);
+
+        _xmlOneAttrPerLine = MakeCheckBox(
+            "Each XML/XAML attribute on its own line  (first attribute stays on tag line)",
+            false, null, null);
+        stack.Children.Add(_xmlOneAttrPerLine);
+
         leftScroll.Content = stack;
         content.Children.Add(leftScroll);
 
@@ -312,6 +345,8 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
             _autoQuotes.IsChecked           = ce.AutoClosingQuotes;
             _skipOverClose.IsChecked        = ce.SkipOverClosingChar;
             _wrapSelection.IsChecked        = ce.WrapSelectionInPairs;
+            _xmlAttrIndentLevels.SelectedIndex = Math.Clamp(ce.XmlAttributeIndentLevels - 1, 0, 2);
+            _xmlOneAttrPerLine.IsChecked       = ce.XmlOneAttributePerLine;
         }
         finally { _loading = false; }
 
@@ -336,6 +371,8 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
         ce.AutoClosingQuotes          = _autoQuotes.IsChecked    == true;
         ce.SkipOverClosingChar        = _skipOverClose.IsChecked == true;
         ce.WrapSelectionInPairs       = _wrapSelection.IsChecked == true;
+        ce.XmlAttributeIndentLevels   = _xmlAttrIndentLevels.SelectedIndex + 1;
+        ce.XmlOneAttributePerLine     = _xmlOneAttrPerLine.IsChecked == true;
 
         if (_currentLangId is not null)
             PersistLanguageOverrides(_currentLangId, ce.PerLanguageOverrides);
