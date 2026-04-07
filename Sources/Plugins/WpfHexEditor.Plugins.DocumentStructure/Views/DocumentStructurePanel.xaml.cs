@@ -89,13 +89,6 @@ public partial class DocumentStructurePanel : UserControl
 
     // ── Context menu ────────────────────────────────────────────────────────
 
-    private void OnNodeContextMenuOpened(object sender, RoutedEventArgs e)
-    {
-        if (sender is not ContextMenu cm) return;
-        if (cm.FindName("ExpandAllItem") is MenuItem expandItem)
-            expandItem.Visibility = Vm?.IsTreeMode == true ? Visibility.Visible : Visibility.Collapsed;
-    }
-
     private void OnContextMenuClick(object sender, RoutedEventArgs e)
     {
         if (sender is not MenuItem { Tag: string tag }) return;

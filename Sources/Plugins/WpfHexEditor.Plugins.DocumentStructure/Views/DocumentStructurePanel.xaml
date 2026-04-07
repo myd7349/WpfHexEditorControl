@@ -177,7 +177,7 @@
                     <Setter Property="Background"  Value="Transparent"/>
                     <Setter Property="ContextMenu">
                         <Setter.Value>
-                            <ContextMenu Opened="OnNodeContextMenuOpened" Tag="{Binding}">
+                            <ContextMenu Tag="{Binding}">
                                 <MenuItem Header="Navigate To"          Tag="navigate"       Click="OnContextMenuClick">
                                     <MenuItem.Icon><TextBlock Text="&#xE7B0;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
                                 </MenuItem>
@@ -189,7 +189,7 @@
                                     <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
                                 </MenuItem>
                                 <Separator/>
-                                <MenuItem Header="Expand All"           Tag="expand-all"     Click="OnContextMenuClick" x:Name="ExpandAllItem"/>
+                                <MenuItem Header="Expand All"           Tag="expand-all"     Click="OnContextMenuClick"/>
                                 <MenuItem Header="Collapse All"         Tag="collapse-all"   Click="OnContextMenuClick"/>
                             </ContextMenu>
                         </Setter.Value>
