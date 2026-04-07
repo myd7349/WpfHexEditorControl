@@ -160,7 +160,8 @@
       "blankLineAfterImports": false,
       "quoteStyle": "double",
       "xmlAttributeIndentLevels": 2,
-      "xmlOneAttributePerLine": false
+      "xmlOneAttributePerLine": true,
+      "supportedRules": ["trimTrailingWhitespace", "insertFinalNewline", "xmlAttributeIndentLevels", "xmlOneAttributePerLine"]
     },
     "colorLiteralPatterns": [
       "#[0-9A-Fa-f]{8}",
