@@ -58,6 +58,10 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
     private readonly ComboBox _xmlAttrIndentLevels;
     private readonly CheckBox _xmlOneAttrPerLine;
 
+    // Section panels — enabled/disabled based on selected language FormatterStrategy.
+    private readonly StackPanel _codeSectionsPanel;  // SPACING + STRUCTURE
+    private readonly StackPanel _xmlSectionPanel;    // XML / XAML
+
     // ── Preview ───────────────────────────────────────────────────────────
     private readonly FormattingPreviewPanel? _preview;
 
@@ -209,8 +213,11 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
         stack.Children.Add(_trimTrailing);
         stack.Children.Add(_insertFinalNewline);
 
-        // ── Spacing ───────────────────────────────────────────────────────
-        stack.Children.Add(MakeSectionHeader("SPACING"));
+        // ── Code-specific sections (SPACING + STRUCTURE) ─────────────────
+        // Wrapped in a panel so IsEnabled=false grays them out for XML languages.
+        _codeSectionsPanel = new StackPanel();
+
+        _codeSectionsPanel.Children.Add(MakeSectionHeader("SPACING"));
 
         _spaceAfterKeywords = MakeThreeStateCheckBox(
             "Space after keywords (if, for, while, switch, catch)",
@@ -226,12 +233,11 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
             "Insert a space after commas: (a, b, c) vs (a,b,c)",
             "spaceAfterComma", "Space after commas");
 
-        stack.Children.Add(_spaceAfterKeywords);
-        stack.Children.Add(_spaceAroundOperators);
-        stack.Children.Add(_spaceAfterComma);
+        _codeSectionsPanel.Children.Add(_spaceAfterKeywords);
+        _codeSectionsPanel.Children.Add(_spaceAroundOperators);
+        _codeSectionsPanel.Children.Add(_spaceAfterComma);
 
-        // ── Structure ─────────────────────────────────────────────────────
-        stack.Children.Add(MakeSectionHeader("STRUCTURE"));
+        _codeSectionsPanel.Children.Add(MakeSectionHeader("STRUCTURE"));
 
         _indentCaseLabels = MakeThreeStateCheckBox("Indent case/when labels inside switch",
             "Add one indent level to case and default labels",
@@ -241,8 +247,9 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
             "Sort using/import directives alphabetically when formatting",
             "organizeImports", "Organize imports");
 
-        stack.Children.Add(_indentCaseLabels);
-        stack.Children.Add(_organizeImports);
+        _codeSectionsPanel.Children.Add(_indentCaseLabels);
+        _codeSectionsPanel.Children.Add(_organizeImports);
+        stack.Children.Add(_codeSectionsPanel);
 
         // ── Smart Editing ─────────────────────────────────────────────────
         stack.Children.Add(MakeSectionHeader("SMART EDITING"));
@@ -257,8 +264,10 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
         stack.Children.Add(_skipOverClose);
         stack.Children.Add(_wrapSelection);
 
-        // ── XML / XAML ────────────────────────────────────────────────────
-        stack.Children.Add(MakeSectionHeader("XML / XAML"));
+        // ── XML / XAML (tag-based languages only) ─────────────────────────
+        // Wrapped in a panel so IsEnabled=false grays it out for non-XML languages.
+        _xmlSectionPanel = new StackPanel();
+        _xmlSectionPanel.Children.Add(MakeSectionHeader("XML / XAML"));
 
         var attrLevelRow = new StackPanel
         {
@@ -281,12 +290,13 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
         if (_colorizer is not null)
             WireComboTooltip(_xmlAttrIndentLevels, "xmlAttributeIndentLevels", "Attribute continuation indent");
         attrLevelRow.Children.Add(_xmlAttrIndentLevels);
-        stack.Children.Add(attrLevelRow);
+        _xmlSectionPanel.Children.Add(attrLevelRow);
 
         _xmlOneAttrPerLine = MakeCheckBox(
             "Each XML/XAML attribute on its own line  (first attribute stays on tag line)",
             false, "xmlOneAttributePerLine", "One attribute per line");
-        stack.Children.Add(_xmlOneAttrPerLine);
+        _xmlSectionPanel.Children.Add(_xmlOneAttrPerLine);
+        stack.Children.Add(_xmlSectionPanel);
 
         leftScroll.Content = stack;
         content.Children.Add(leftScroll);
@@ -453,14 +463,33 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
             }
         }
     }
+    /// <summary>
+    /// Enables/disables section panels based on the selected language's
+    /// <see cref="FormatterStrategy"/>: Xml languages disable code-specific sections
+    /// (SPACING, STRUCTURE) and enable XML/XAML; Brace languages do the reverse.
+    /// </summary>
+    private void UpdateSectionAvailability(LanguageDefinition? lang)
+    {
+        bool isXml = lang?.FormattingRules?.FormatterStrategy == WpfHexEditor.Core.ProjectSystem.Languages.FormatterStrategy.Xml;
+        _codeSectionsPanel.IsEnabled = !isXml;
+        _codeSectionsPanel.Opacity   = isXml ? 0.38 : 1.0;
+        _xmlSectionPanel.IsEnabled   = isXml;
+        _xmlSectionPanel.Opacity     = isXml ? 1.0 : 0.38;
+    }
+
     private void ApplyLanguageOverrides(string langId)
     {
         _currentLangId = langId;
         if (_settings is null) return;
 
         // Sync the preview panel to the newly selected language
-        if (LanguageRegistry.Instance.FindById(langId) is { } lang)
+        LanguageDefinition? lang = null;
+        if (LanguageRegistry.Instance.FindById(langId) is { } l)
+        {
+            lang = l;
             _preview?.SelectLanguage(lang);
+        }
+        UpdateSectionAvailability(lang);
 
         // Always sync checkboxes: use stored per-language override when available,
         // or reset to null (indeterminate = inherit .whfmt default) when none is saved.
