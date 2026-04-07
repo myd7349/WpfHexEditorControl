@@ -123,9 +123,15 @@
                                Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
                     <Button.ContextMenu>
                         <ContextMenu x:Name="OverflowContextMenu" Opened="OnOverflowMenuOpened">
-                            <MenuItem Header="Source Order" Tag="0" Click="OnOverflowSortClicked"/>
-                            <MenuItem Header="Alphabetical" Tag="1" Click="OnOverflowSortClicked"/>
-                            <MenuItem Header="By Kind"      Tag="2" Click="OnOverflowSortClicked"/>
+                            <MenuItem Header="Source Order" Tag="s0" Click="OnOverflowSortClicked"/>
+                            <MenuItem Header="Alphabetical" Tag="s1" Click="OnOverflowSortClicked"/>
+                            <MenuItem Header="By Kind"      Tag="s2" Click="OnOverflowSortClicked"/>
+                            <Separator/>
+                            <MenuItem Header="&#x221E; Depth" Tag="d0" Click="OnOverflowDepthClicked"/>
+                            <MenuItem Header="2 Levels"       Tag="d1" Click="OnOverflowDepthClicked"/>
+                            <MenuItem Header="3 Levels"       Tag="d2" Click="OnOverflowDepthClicked"/>
+                            <MenuItem Header="5 Levels"       Tag="d3" Click="OnOverflowDepthClicked"/>
+                            <MenuItem Header="10 Levels"      Tag="d4" Click="OnOverflowDepthClicked"/>
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>

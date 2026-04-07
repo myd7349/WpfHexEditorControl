@@ -187,6 +187,7 @@ public partial class DocumentStructurePanel : UserControl
     {
         var collapsed = e.NewSize.Width < CollapseThreshold;
         TbgSort.Visibility               = collapsed ? Visibility.Collapsed : Visibility.Visible;
+        TbgDepth.Visibility              = collapsed ? Visibility.Collapsed : Visibility.Visible;
         ToolbarOverflowButton.Visibility = collapsed ? Visibility.Visible   : Visibility.Collapsed;
     }
 
@@ -196,18 +197,29 @@ public partial class DocumentStructurePanel : UserControl
     private void OnOverflowMenuOpened(object sender, RoutedEventArgs e)
     {
         if (Vm is null) return;
-        var idx = Vm.SortModeIndex;
-        foreach (MenuItem item in OverflowContextMenu.Items)
+        var sortIdx  = Vm.SortModeIndex;
+        var depthIdx = Vm.MaxDepthIndex;
+        foreach (var obj in OverflowContextMenu.Items)
         {
-            if (item.Tag is string tag && int.TryParse(tag, out var tagIdx))
-                item.IsChecked = tagIdx == idx;
+            if (obj is not MenuItem item || item.Tag is not string tag) continue;
+            if (tag.StartsWith('s') && int.TryParse(tag[1..], out var sIdx))
+                item.IsChecked = sIdx == sortIdx;
+            else if (tag.StartsWith('d') && int.TryParse(tag[1..], out var dIdx))
+                item.IsChecked = dIdx == depthIdx;
         }
     }
 
     private void OnOverflowSortClicked(object sender, RoutedEventArgs e)
     {
         if (Vm is null) return;
-        if (sender is MenuItem { Tag: string tag } && int.TryParse(tag, out var idx))
+        if (sender is MenuItem { Tag: string tag } && tag.StartsWith('s') && int.TryParse(tag[1..], out var idx))
             Vm.SortModeIndex = idx;
+    }
+
+    private void OnOverflowDepthClicked(object sender, RoutedEventArgs e)
+    {
+        if (Vm is null) return;
+        if (sender is MenuItem { Tag: string tag } && tag.StartsWith('d') && int.TryParse(tag[1..], out var idx))
+            Vm.MaxDepthIndex = idx;
     }
 }
