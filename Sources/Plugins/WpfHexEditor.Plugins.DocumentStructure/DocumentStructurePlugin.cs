@@ -15,6 +15,7 @@
 
 using System.IO;
 using WpfHexEditor.Core.DocumentStructure;
+using WpfHexEditor.Core.Options;
 using WpfHexEditor.Core.DocumentStructure.Providers;
 using WpfHexEditor.Core.Events;
 using WpfHexEditor.Core.Events.IDEEvents;
@@ -119,9 +120,17 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         // ── Create ViewModel + Panel ─────────────────────────────────────
         _vm = new DocumentStructureViewModel(_resolver)
         {
-            Logger = msg => context.Output.Write("DocStructure", msg)
+            Logger        = msg => context.Output.Write("DocStructure", msg),
+            MaxDepthIndex = AppSettingsService.Instance.Current.DocumentStructure.MaxDepthIndex,
         };
         _panel = new DocumentStructurePanel { DataContext = _vm };
+
+        // Persist max-depth changes to AppSettings.
+        _vm.MaxDepthChanged += (_, idx) =>
+        {
+            AppSettingsService.Instance.Current.DocumentStructure.MaxDepthIndex = idx;
+            AppSettingsService.Instance.Save();
+        };
 
         // Wire navigate requests
         _vm.NavigateRequested += OnNavigateRequested;

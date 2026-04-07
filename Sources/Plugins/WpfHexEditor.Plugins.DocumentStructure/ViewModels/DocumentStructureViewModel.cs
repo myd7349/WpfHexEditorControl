@@ -46,9 +46,15 @@ public sealed class DocumentStructureViewModel : ViewModelBase
     private string? _activeProviderName;
     private string _breadcrumbText = string.Empty;
     private int _autoExpandDepth = 2;
+    private int _maxDepthIndex;
     private StructureNodeVm? _highlightedNode;
 
-    // ── Backing data (unfiltered) ─────────────────────────────────────────
+    // ── Depth-limiting ────────────────────────────────────────────────────
+    // Maps dropdown index → max nesting depth (int.MaxValue = unlimited).
+    private static readonly int[] s_depthValues = [int.MaxValue, 2, 3, 5, 10];
+
+    // ── Backing data (unfiltered, full depth) ─────────────────────────────
+    private IReadOnlyList<DocumentStructureNode> _rawNodes = [];
     private IReadOnlyList<StructureNodeVm> _allRootNodes = [];
 
     public ObservableCollection<StructureNodeVm> RootNodes { get; } = [];
@@ -112,6 +118,25 @@ public sealed class DocumentStructureViewModel : ViewModelBase
         get => _autoExpandDepth;
         set => SetField(ref _autoExpandDepth, value);
     }
+
+    /// <summary>
+    /// Index into the max-depth dropdown (0 = ∞, 1 = 2, 2 = 3, 3 = 5, 4 = 10).
+    /// Changing this rebuilds the visible tree from the last fetched raw nodes.
+    /// </summary>
+    public int MaxDepthIndex
+    {
+        get => _maxDepthIndex;
+        set
+        {
+            if (!SetField(ref _maxDepthIndex, Math.Clamp(value, 0, s_depthValues.Length - 1))) return;
+            if (_rawNodes.Count > 0)
+                _dispatcher.Invoke(RebuildWithCurrentDepth);
+            MaxDepthChanged?.Invoke(this, _maxDepthIndex);
+        }
+    }
+
+    /// <summary>Fired when the user changes the max-depth dropdown so the plugin can persist it.</summary>
+    public event EventHandler<int>? MaxDepthChanged;
 
     public bool IsDocumentOpen
     {
@@ -219,12 +244,15 @@ public sealed class DocumentStructureViewModel : ViewModelBase
 
             Logger?.Invoke($"[RefreshAsync] SUCCESS via {usedProvider.DisplayName} — {result.Nodes.Count} root nodes");
 
-            // Build VMs on background thread
-            var vms = result.Nodes.Select(n => new StructureNodeVm(n)).ToList();
-            var totalCount = CountNodes(result.Nodes);
+            // Store raw nodes; build VMs with current depth limit on background thread.
+            var rawNodes = result.Nodes;
+            var effective = ApplyDepthLimit(rawNodes, s_depthValues[_maxDepthIndex]);
+            var vms = effective.Select(n => new StructureNodeVm(n)).ToList();
+            var totalCount = CountNodesVm(vms);
 
             _dispatcher.Invoke(() =>
             {
+                _rawNodes = rawNodes;
                 _allRootNodes = vms;
                 ActiveProviderName = usedProvider.DisplayName;
                 StatusText = $"{totalCount} symbols";
@@ -543,6 +571,48 @@ public sealed class DocumentStructureViewModel : ViewModelBase
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Helpers
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+    // ── Depth limiting ────────────────────────────────────────────────────────────
+
+    private void RebuildWithCurrentDepth()
+    {
+        var effective = ApplyDepthLimit(_rawNodes, s_depthValues[_maxDepthIndex]);
+        var vms = effective.Select(n => new StructureNodeVm(n)).ToList();
+        _allRootNodes = vms;
+        RebuildTreeFromSource(vms);
+        BuildFlatList(vms);
+        AutoExpand(vms, 0);
+        StatusText = $"{CountNodesVm(vms)} symbols";
+    }
+
+    private static IReadOnlyList<DocumentStructureNode> ApplyDepthLimit(
+        IReadOnlyList<DocumentStructureNode> nodes, int maxDepth)
+    {
+        if (maxDepth == int.MaxValue) return nodes;
+        return nodes.Select(n => TrimDepth(n, maxDepth)).ToList();
+    }
+
+    private static DocumentStructureNode TrimDepth(DocumentStructureNode node, int remaining)
+    {
+        var children = remaining <= 0
+            ? (IReadOnlyList<DocumentStructureNode>)[]
+            : node.Children.Select(c => TrimDepth(c, remaining - 1)).ToList();
+
+        return new DocumentStructureNode
+        {
+            Name        = node.Name,
+            Kind        = node.Kind,
+            IconGlyph   = node.IconGlyph,
+            Detail      = node.Detail,
+            StartLine   = node.StartLine,
+            StartColumn = node.StartColumn,
+            EndLine     = node.EndLine,
+            ByteOffset  = node.ByteOffset,
+            ByteLength  = node.ByteLength,
+            Tag         = node.Tag,
+            Children    = children,
+        };
+    }
 
     private static int CountNodes(IReadOnlyList<DocumentStructureNode> nodes)
     {

@@ -95,6 +95,23 @@
                     </ComboBox>
                 </StackPanel>
 
+                <!-- Left: max depth combo -->
+                <StackPanel x:Name="TbgDepth" Orientation="Horizontal"
+                            DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <ComboBox x:Name="DepthCombo"
+                              Style="{DynamicResource DockComboBoxStyle}"
+                              Width="72" Height="20" FontSize="11"
+                              VerticalContentAlignment="Center"
+                              SelectedIndex="{Binding MaxDepthIndex}"
+                              ToolTip="Max tree depth">
+                        <ComboBoxItem Content="&#x221E; Depth"/>
+                        <ComboBoxItem Content="2 Levels"/>
+                        <ComboBoxItem Content="3 Levels"/>
+                        <ComboBoxItem Content="5 Levels"/>
+                        <ComboBoxItem Content="10 Levels"/>
+                    </ComboBox>
+                </StackPanel>
+
                 <!-- Right: overflow — declared first = far right -->
                 <Button x:Name="ToolbarOverflowButton"
                         DockPanel.Dock="Right"
