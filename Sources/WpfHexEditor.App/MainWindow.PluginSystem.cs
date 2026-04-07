@@ -34,7 +34,6 @@ using WpfHexEditor.Shell;
 using WpfHexEditor.Core.Events;
 using WpfHexEditor.Core.Events.IDEEvents;
 using WpfHexEditor.PluginHost;
-using WpfHexEditor.PluginHost.DevTools;
 using WpfHexEditor.PluginHost.Monitoring;
 using WpfHexEditor.PluginHost.Services;
 using WpfHexEditor.PluginHost.UI;
@@ -97,8 +96,7 @@ public partial class MainWindow
     // registered at startup. Opened at the end of InitializePluginSystemAsync once loaders are live.
     private string? _pendingRestoreSolutionPath;
 
-    // Dev tools (instantiated on first use)
-    private PluginDevLoader? _pluginDevLoader;
+    // Dev tools — Watch Mode is now managed by WpfPluginHost.EnableWatchMode
 
     // StatusBar fault-blink timer (DispatcherTimer, 800 ms toggle)
     private DispatcherTimer? _statusBarBlinkTimer;
@@ -983,8 +981,8 @@ public partial class MainWindow
         // Derive plugin ID from the folder name (user can rename via the folder they pick)
         var pluginId = new DirectoryInfo(dir).Name;
 
-        _pluginDevLoader ??= new PluginDevLoader(_pluginHost, Dispatcher, msg => OutputLogger.PluginInfo(msg));
-        _pluginDevLoader.Watch(pluginId, dir);
+        // Route through WpfPluginHost.EnableWatchMode so EventBus + toast are wired automatically
+        _pluginHost.EnableWatchMode(pluginId, dir);
 
         OutputLogger.PluginInfo($"[DevWatch] Watching '{pluginId}' → {dir}");
     }
@@ -1004,18 +1002,14 @@ public partial class MainWindow
 
     private void OnPluginHotReload(object sender, RoutedEventArgs e)
     {
-        if (_pluginDevLoader is null)
+        if (_pluginHost is null)
         {
-            OutputLogger.PluginWarn("[HotReload] No active plugin dev session — use Plugin Dev Watch first.");
+            OutputLogger.PluginWarn("[HotReload] Plugin system not initialised.");
             return;
         }
 
-        // The PluginDevLoader in PluginHost does not expose a direct hot-reload
-        // by project path from the App layer; we log a helpful hint instead.
-        // Full hot-reload is triggered automatically when AutoRebuildOnSave is on
-        // and a source file changes, or manually via the PluginDevToolbar.
-        OutputLogger.PluginInfo("[HotReload] Hot-reload is managed by the Plugin Dev toolbar. " +
-            "Ensure the Plugin Dev Watch is active and AutoRebuildOnSave is enabled in Options.");
+        OutputLogger.PluginInfo("[HotReload] Hot-reload is managed by Watch Mode. " +
+            "Enable Watch Mode on a plugin via Plugin Manager → Watch Mode, or use Plugin Dev Watch.");
     }
 
     // --- LSP state indicator -------------------------------------------
