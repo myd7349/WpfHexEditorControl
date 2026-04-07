@@ -1299,36 +1299,40 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         layout.Children.Add(titleBar);
         layout.Children.Add(tabControl);
 
-        // VS-like: the active-panel indicator should stop at the content/tab-strip boundary.
-        // We use an overlay Border (hit-test invisible, transparent interior) that is drawn
-        // on top of the content and clipped to exclude the tab strip height. This means the
-        // colored border lines appear only around the content area; the tab strip below is
-        // visually outside the border rectangle.
+        // VS-like active-panel indicator: border around the CONTENT AREA only (title + body).
+        // The tab strip sits below the border with no border lines on its sides.
+        // The overlay is hit-test-invisible and has a transparent interior so content shows through.
+        // CornerRadius=0 matches VS (square corners where the border meets the tab strip).
         var overlayBorder = new Border
         {
             BorderThickness     = new Thickness(0),
+            CornerRadius        = new CornerRadius(0),
             IsHitTestVisible    = false,
             SnapsToDevicePixels = true,
         };
         overlayBorder.SetResourceReference(Border.BorderBrushProperty, "DockTabActiveBrush");
 
-        void UpdateOverlayClip()
+        // Size the overlay to the content area only (exclude tab strip height).
+        // Using Margin.Bottom = tabStripHeight lets WPF layout shrink the overlay so its
+        // bottom border line falls exactly at the content/tab boundary — no clip needed
+        // (clip approach hides the bottom line because it draws at element edge, outside clip).
+        tabControl.Loaded += (_, _) =>
         {
-            double tabH = tabControl.GetTabStripHeight();
-            double w    = overlayBorder.ActualWidth;
-            double h    = overlayBorder.ActualHeight - tabH;
-            overlayBorder.Clip = w > 0 && h > 0
-                ? new RectangleGeometry(new Rect(0, 0, w, h))
-                : null;
-        }
-        overlayBorder.SizeChanged += (_, _) => UpdateOverlayClip();
-        tabControl.SizeChanged    += (_, _) => UpdateOverlayClip();
+            tabControl.ApplyTemplate();
+            if (tabControl.Template?.FindName("PART_TabStrip", tabControl) is FrameworkElement tabStrip)
+            {
+                void UpdateMargin() =>
+                    overlayBorder.Margin = new Thickness(0, 0, 0, tabStrip.ActualHeight);
+
+                tabStrip.SizeChanged += (_, _) => UpdateMargin();
+                UpdateMargin();
+            }
+        };
 
         var outer = new Grid { Margin = new Thickness(2) };
-        outer.Children.Add(layout);        // z=0: actual content + tab strip
+        outer.Children.Add(layout);        // z=0: actual content (title + body + tab strip)
         outer.Children.Add(overlayBorder); // z=1: border visual over content area only
 
-        // Activate panel on any mouse click or keyboard focus inside (including tab strip)
         outer.AddHandler(
             UIElement.PreviewMouseDownEvent,
             new MouseButtonEventHandler((_, _) => SetActivePanel(overlayBorder)),
@@ -1662,15 +1666,18 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         {
             Child               = content,
             BorderThickness     = new Thickness(0),
-            CornerRadius        = new CornerRadius(radius),
+            // VS-like: top corners square (flush with IDE chrome), bottom corners rounded
+            // (rounds over the tab strip bottom edge).
+            CornerRadius        = new CornerRadius(0, 0, radius, radius),
             Margin              = new Thickness(2),
             SnapsToDevicePixels = true
         };
         border.SetResourceReference(Border.BorderBrushProperty, "DockTabActiveBrush");
 
-        // Clip children to the rounded rectangle so corners are clean
+        // Clip children to bottom-only rounded rectangle: top corners stay sharp,
+        // bottom corners match the CornerRadius so child content is cleanly clipped.
         border.SizeChanged += (_, e) =>
-            border.Clip = new RectangleGeometry(new Rect(e.NewSize), radius, radius);
+            border.Clip = BuildBottomRoundedClip(e.NewSize, radius);
 
         // Activate on ANY mouse click inside the panel (tunneling catches handled events)
         border.AddHandler(
@@ -1685,6 +1692,35 @@ public class DockControl : ContentControl, IDockHost, IDisposable
             handledEventsToo: true);
 
         return border;
+    }
+
+    /// <summary>
+    /// Clip geometry with square top corners and rounded bottom corners.
+    /// Matches <see cref="CreatePanelBorder"/>'s <c>CornerRadius(0,0,r,r)</c>
+    /// so child content is precisely clipped at the tab strip's rounded bottom edge.
+    /// </summary>
+    private static StreamGeometry BuildBottomRoundedClip(Size size, double radius)
+    {
+        double w = size.Width;
+        double h = size.Height;
+        double r = Math.Min(radius, Math.Min(w / 2.0, h / 2.0));
+
+        var sg = new StreamGeometry();
+        using (var ctx = sg.Open())
+        {
+            ctx.BeginFigure(new Point(0, 0), isFilled: true, isClosed: true);
+            ctx.LineTo(new Point(w, 0),     isStroked: true, isSmoothJoin: false);
+            ctx.LineTo(new Point(w, h - r), isStroked: true, isSmoothJoin: false);
+            ctx.ArcTo(new Point(w - r, h),  new Size(r, r), 0,
+                      isLargeArc: false, sweepDirection: SweepDirection.Clockwise,
+                      isStroked: true, isSmoothJoin: false);
+            ctx.LineTo(new Point(r, h),     isStroked: true, isSmoothJoin: false);
+            ctx.ArcTo(new Point(0, h - r),  new Size(r, r), 0,
+                      isLargeArc: false, sweepDirection: SweepDirection.Clockwise,
+                      isStroked: true, isSmoothJoin: false);
+        }
+        sg.Freeze();
+        return sg;
     }
 
     /// <summary>

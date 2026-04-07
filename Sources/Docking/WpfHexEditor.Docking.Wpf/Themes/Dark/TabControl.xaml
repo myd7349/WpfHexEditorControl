@@ -125,11 +125,12 @@
                                           ContentSource="SelectedContent"
                                           KeyboardNavigation.TabNavigation="Local"
                                           KeyboardNavigation.DirectionalNavigation="Contained" />
+                        <!-- No top separator: the outer panel border's bottom edge serves as the
+                             visual boundary between the content area and the tab strip. -->
                         <Border x:Name="PART_TabStrip"
                                 Grid.Row="1"
                                 Background="{DynamicResource DockMenuBackgroundBrush}"
-                                BorderBrush="{DynamicResource DockBorderBrush}"
-                                BorderThickness="0,1,0,0">
+                                BorderThickness="0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
