@@ -73,7 +73,8 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
     // ── UI ID constants ───────────────────────────────────────────────────────
 
-    public const string OutlinePanelUiId       = "WpfHexEditor.Plugins.ClassDiagram.Panel.Outline";
+    public const string MetricsPanelUiId        = "WpfHexEditor.Plugins.ClassDiagram.Panel.Metrics";
+    public const string OutlinePanelUiId        = "WpfHexEditor.Plugins.ClassDiagram.Panel.Outline";
     public const string PropertiesPanelUiId    = "WpfHexEditor.Plugins.ClassDiagram.Panel.Properties";
     public const string ToolboxPanelUiId       = "WpfHexEditor.Plugins.ClassDiagram.Panel.Toolbox";
     public const string RelationshipsPanelUiId = "WpfHexEditor.Plugins.ClassDiagram.Panel.Relationships";
@@ -83,12 +84,13 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
     // ── Panel instances (long-lived, reused across document switches) ─────────
 
-    private ClassOutlinePanel?     _outlinePanel;
-    private ClassPropertiesPanel?  _propertiesPanel;
-    private ClassToolboxPanel?     _toolboxPanel;
-    private RelationshipsPanel?    _relPanel;
-    private ClassHistoryPanel?     _historyPanel;
-    private DiagramSearchPanel?    _searchPanel;
+    private ClassOutlinePanel?      _outlinePanel;
+    private ClassPropertiesPanel?   _propertiesPanel;
+    private ClassToolboxPanel?      _toolboxPanel;
+    private RelationshipsPanel?     _relPanel;
+    private ClassHistoryPanel?      _historyPanel;
+    private DiagramSearchPanel?     _searchPanel;
+    private MetricsDashboardPanel?  _metricsPanel;
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -122,6 +124,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         _relPanel        = new RelationshipsPanel();
         _historyPanel    = new ClassHistoryPanel();
         _searchPanel     = new DiagramSearchPanel();
+        _metricsPanel    = new MetricsDashboardPanel();
 
         // Register panels in the IDE dock layout.
         context.UIRegistry.RegisterPanel(
@@ -202,6 +205,19 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                 PreferredHeight = 160
             });
 
+        context.UIRegistry.RegisterPanel(
+            MetricsPanelUiId,
+            _metricsPanel,
+            Id,
+            new PanelDescriptor
+            {
+                Title           = "Metrics Dashboard",
+                DefaultDockSide = "Right",
+                DefaultAutoHide = true,
+                CanClose        = true,
+                PreferredWidth  = 320
+            });
+
         // Status bar item (left, order=20) — shows the selected class name.
         _sbNode = new StatusBarItemDescriptor
         {
@@ -244,6 +260,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         _relPanel        = null;
         _historyPanel    = null;
         _searchPanel     = null;
+        _metricsPanel    = null;
         _context         = null;
         _optionsPage     = null;
         _sbNode          = null;
@@ -363,6 +380,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         _outlinePanel?.ViewModel.SetDocument(host.Document);
         _relPanel?.ViewModel.SetDocument(host.Document);
         _searchPanel?.ViewModel.SetDocument(host.Document);
+        _metricsPanel?.ViewModel.SetDocument(host.Document);
         _propertiesPanel?.ViewModel.SetSelection(null);
         UpdateStatusBar(null);
     }
@@ -378,6 +396,8 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             _relPanel.ViewModel.SetDocument(new DiagramDocument());
         if (_searchPanel is not null)
             _searchPanel.ViewModel.SetDocument(new DiagramDocument());
+        if (_metricsPanel is not null)
+            _metricsPanel.ViewModel.SetDocument(null);
         if (_propertiesPanel is not null)
             _propertiesPanel.ViewModel.SetSelection(null);
         UpdateStatusBar(null);
@@ -540,6 +560,20 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                 IconGlyph  = "\uE721",
                 ToolTip    = "Show / hide the Diagram Search panel (Ctrl+Shift+D)",
                 Command    = new RelayCommand(_ => context.UIRegistry.TogglePanel(SearchPanelUiId)),
+                Group      = "ClassDiagram"
+            });
+
+        // View > Metrics Dashboard panel.
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.View.Metrics",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "_Metrics Dashboard",
+                ParentPath = "View",
+                IconGlyph  = "\uE9F3",
+                ToolTip    = "Show / hide the coupling metrics dashboard",
+                Command    = new RelayCommand(_ => context.UIRegistry.TogglePanel(MetricsPanelUiId)),
                 Group      = "ClassDiagram"
             });
 

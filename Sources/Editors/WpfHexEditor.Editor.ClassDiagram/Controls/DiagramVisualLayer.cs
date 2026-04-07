@@ -52,13 +52,17 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     private readonly DrawingVisual                  _arrowLayer  = new();
     private readonly Dictionary<string, DrawingVisual> _nodeVisuals = [];
-    private readonly List<Visual>                   _visuals     = [];
+    private readonly DrawingVisual                     _swimlaneLayer = new();
+    private readonly List<Visual>                      _visuals       = [];
 
     // ── State ────────────────────────────────────────────────────────────────
 
     private DiagramDocument?  _doc;
     private string?           _selectedNodeId;
     private string?           _hoveredNodeId;
+
+    // ── Toggles (set by ClassDiagramSplitHost toolbar) ───────────────────────
+    public bool ShowSwimLanes { get; set; } = false;
 
     // ── FrameworkElement visual tree overrides ───────────────────────────────
 
@@ -69,7 +73,9 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     public DiagramVisualLayer()
     {
-        _visuals.Add(_arrowLayer);    // arrows rendered below nodes
+        _visuals.Add(_swimlaneLayer); // swimlane lanes behind everything
+        AddVisualChild(_swimlaneLayer);
+        _visuals.Add(_arrowLayer);    // arrows above swimlanes, below nodes
         AddVisualChild(_arrowLayer);
     }
 
@@ -108,6 +114,7 @@ public sealed class DiagramVisualLayer : FrameworkElement
         }
 
         RenderAllArrows();
+        RenderSwimLanes();
     }
 
     /// <summary>
@@ -126,6 +133,7 @@ public sealed class DiagramVisualLayer : FrameworkElement
             if (node is not null) RenderNode(node);
         }
         RenderAllArrows();
+        RenderSwimLanes();
     }
 
     /// <summary>
@@ -483,6 +491,40 @@ public sealed class DiagramVisualLayer : FrameworkElement
             var ft = new FormattedText(rel.TargetMultiplicity!, CultureInfo.InvariantCulture,
                 FlowDirection.LeftToRight, new Typeface("Segoe UI"), 9.0, brush, 96.0);
             dc.DrawText(ft, labelPos);
+        }
+    }
+
+    // ── Swimlane rendering ────────────────────────────────────────────────────
+
+    private void RenderSwimLanes()
+    {
+        using var dc = _swimlaneLayer.RenderOpen();
+        if (!ShowSwimLanes || _doc is null || _doc.Classes.Count == 0) return;
+
+        var groups = _doc.Classes
+            .Where(n => !string.IsNullOrEmpty(n.Namespace))
+            .GroupBy(n => n.Namespace!)
+            .OrderBy(g => g.Key);
+
+        var laneBrush  = new SolidColorBrush(Color.FromArgb(20, 120, 160, 220));
+        var lanePen    = new Pen(new SolidColorBrush(Color.FromArgb(80, 100, 140, 200)), 1.0);
+        lanePen.DashStyle = DashStyles.Dash;
+        const double Pad = 12.0;
+
+        foreach (var grp in groups)
+        {
+            var nodes = grp.ToList();
+            double minX = nodes.Min(n => n.X) - Pad;
+            double minY = nodes.Min(n => n.Y) - Pad - 16;  // space for header
+            double maxX = nodes.Max(n => n.X + n.Width)  + Pad;
+            double maxY = nodes.Max(n => n.Y + n.Height) + Pad;
+
+            var laneRect = new Rect(minX, minY, maxX - minX, maxY - minY);
+            dc.DrawRoundedRectangle(laneBrush, lanePen, laneRect, 4, 4);
+
+            // Namespace label header
+            var ft = MakeFT(grp.Key, new SolidColorBrush(Color.FromArgb(160, 180, 200, 240)), 10.0);
+            dc.DrawText(ft, new Point(minX + Pad, minY + 2));
         }
     }
 
