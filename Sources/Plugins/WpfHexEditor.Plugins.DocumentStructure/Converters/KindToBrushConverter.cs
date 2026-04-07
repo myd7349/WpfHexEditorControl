@@ -22,12 +22,15 @@ public sealed class KindToBrushConverter : IValueConverter
 
         var resourceKey = kind.ToLowerInvariant() switch
         {
-            "class" or "struct" or "record" or "object" => "DS_ClassIconBrush",
-            "method" or "function" or "constructor"     => "DS_MethodIconBrush",
+            "class" or "record" or "object"             => "DS_ClassIconBrush",
+            "struct"                                    => "DS_MethodIconBrush",   // teal — distinct from class
+            "method" or "function"                      => "DS_MethodIconBrush",
+            "constructor"                               => "DS_MethodIconBrush",
             "property"                                  => "DS_PropertyIconBrush",
-            "field" or "variable"                       => "DS_FieldIconBrush",
+            "field" or "variable" or "constant"         => "DS_FieldIconBrush",
             "enum" or "enummember"                      => "DS_EnumIconBrush",
             "interface"                                 => "DS_InterfaceIconBrush",
+            "event"                                     => "DS_EventIconBrush",
             _                                           => "DS_NodeForeground",
         };
 

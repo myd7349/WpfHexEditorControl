@@ -220,15 +220,14 @@
                         </Rectangle>
                         <!-- Kind badge: colored box with letter label -->
                         <Border Grid.Column="2"
-                                Width="15" Height="15"
-                                CornerRadius="2"
+                                Width="16" Height="16"
+                                CornerRadius="1"
                                 Background="{Binding Kind, Converter={StaticResource KindToBrush}}"
                                 VerticalAlignment="Center">
                             <TextBlock Text="{Binding IconGlyph}"
-                                       FontSize="8" FontWeight="SemiBold"
+                                       FontFamily="Segoe UI" FontSize="9" FontWeight="SemiBold"
                                        Foreground="White"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       LineHeight="15"/>
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <!-- Name + : ReturnType -->
                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
@@ -314,15 +313,14 @@
                             </Rectangle.Style>
                         </Rectangle>
                         <Border Grid.Column="2"
-                                Width="15" Height="15"
-                                CornerRadius="2"
+                                Width="16" Height="16"
+                                CornerRadius="1"
                                 Background="{Binding Kind, Converter={StaticResource KindToBrush}}"
                                 VerticalAlignment="Center">
                             <TextBlock Text="{Binding IconGlyph}"
-                                       FontSize="8" FontWeight="SemiBold"
+                                       FontFamily="Segoe UI" FontSize="9" FontWeight="SemiBold"
                                        Foreground="White"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       LineHeight="15"/>
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}"
