@@ -278,12 +278,14 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
         _xmlAttrIndentLevels.Items.Add("3 levels (12 spaces at root)");
         _xmlAttrIndentLevels.SelectedIndex = 1;
         _xmlAttrIndentLevels.SelectionChanged += (_, _) => { if (!_loading) { Changed?.Invoke(this, EventArgs.Empty); _preview?.Refresh(BuildOverrides()); } };
+        if (_colorizer is not null)
+            WireComboTooltip(_xmlAttrIndentLevels, "xmlAttributeIndentLevels", "Attribute continuation indent");
         attrLevelRow.Children.Add(_xmlAttrIndentLevels);
         stack.Children.Add(attrLevelRow);
 
         _xmlOneAttrPerLine = MakeCheckBox(
             "Each XML/XAML attribute on its own line  (first attribute stays on tag line)",
-            false, null, null);
+            false, "xmlOneAttributePerLine", "One attribute per line");
         stack.Children.Add(_xmlOneAttrPerLine);
 
         leftScroll.Content = stack;
@@ -578,6 +580,26 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
             cb.ToolTip = tip;
             ToolTipService.SetShowDuration(cb, 30_000);
             ToolTipService.SetInitialShowDelay(cb, 300);
+        };
+    }
+
+    /// <summary>Same as <see cref="WireTooltip"/> but for a <see cref="ComboBox"/>.</summary>
+    private void WireComboTooltip(ComboBox combo, string ruleId, string displayName)
+    {
+        combo.MouseEnter += (_, _) =>
+        {
+            if (_colorizer is null) return;
+            if (!_tooltips.TryGetValue(ruleId, out var tip))
+            {
+                tip = new FormattingRuleTooltip(ruleId, displayName);
+                _tooltips[ruleId] = tip;
+            }
+            var langId  = _preview?.SelectedLanguageId;
+            var langDef = langId is not null ? LanguageRegistry.Instance.FindById(langId) : null;
+            tip.Refresh(langDef, _colorizer);
+            combo.ToolTip = tip;
+            ToolTipService.SetShowDuration(combo, 30_000);
+            ToolTipService.SetInitialShowDelay(combo, 300);
         };
     }
 

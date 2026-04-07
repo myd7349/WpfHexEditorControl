@@ -177,6 +177,14 @@
       "insertFinalNewline": {
         "before": "</Window>",
         "after": "</Window>\n"
+      },
+      "xmlOneAttributePerLine": {
+        "before": "<Button Grid.Row=\"0\" Width=\"100\" Height=\"30\" Click=\"OnClick\"/>",
+        "after": "<Button Grid.Row=\"0\"\n        Width=\"100\"\n        Height=\"30\"\n        Click=\"OnClick\"/>"
+      },
+      "xmlAttributeIndentLevels": {
+        "before": "<Button\n    Width=\"100\"\n    Height=\"30\"/>",
+        "after": "<Button\n        Width=\"100\"\n        Height=\"30\"/>"
       }
     },
     "ideMetadata": {
