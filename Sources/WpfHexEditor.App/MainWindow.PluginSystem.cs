@@ -663,7 +663,10 @@ public partial class MainWindow
 
         // Panel tabs (tool windows) must not override the active document.
         // Focusing a tool panel does not change the active editor — VS-like behavior.
+        // Covers both built-in "panel-*" IDs and plugin-registered panels (any UID).
         if (activeItem.ContentId.StartsWith("panel-", StringComparison.Ordinal))
+            return;
+        if (_ideHostContext?.UIRegistry.IsRegisteredPanel(activeItem.ContentId) == true)
             return;
 
         // Resolve the actual editor content
