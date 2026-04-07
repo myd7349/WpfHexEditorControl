@@ -34,6 +34,10 @@
     <PluginPermWriteOutput>true</PluginPermWriteOutput>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Roslyn syntax tree analysis for RoslynClassDiagramAnalyzer (syntax-only, no workspace) -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\Editors\WpfHexEditor.Editor.ClassDiagram\WpfHexEditor.Editor.ClassDiagram.csproj" />
     <ProjectReference Include="..\..\Editors\WpfHexEditor.Editor.ClassDiagram.Core\WpfHexEditor.Editor.ClassDiagram.Core.csproj" />
     <ProjectReference Include="..\WpfHexEditor.SDK\WpfHexEditor.SDK.csproj" />

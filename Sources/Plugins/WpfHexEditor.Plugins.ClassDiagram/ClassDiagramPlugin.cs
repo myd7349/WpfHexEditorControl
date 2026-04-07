@@ -39,6 +39,7 @@ using WpfHexEditor.Editor.ClassDiagram.Controls;
 using WpfHexEditor.Editor.ClassDiagram.Core.Model;
 using WpfHexEditor.Editor.ClassDiagram.Core.Serializer;
 using WpfHexEditor.Editor.ClassDiagram.ViewModels;
+using WpfHexEditor.Plugins.ClassDiagram.Analysis;
 using WpfHexEditor.Plugins.ClassDiagram.Options;
 using WpfHexEditor.Plugins.ClassDiagram.Panels;
 using WpfHexEditor.SDK.Commands;
@@ -609,7 +610,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         context.Output.Info($"[Class Diagram] Analyzing {csFiles.Length} source files…");
 
         DiagramDocument doc = await Task.Run(() =>
-            ClassDiagramSourceAnalyzer.AnalyzeFiles(csFiles, _options));
+            RoslynClassDiagramAnalyzer.AnalyzeFiles(csFiles, _options));
 
         string title = "Solution [Class Diagram]";
         string uiId  = $"doc-class-diagram-{Guid.NewGuid():N}";
@@ -649,7 +650,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         }
 
         DiagramDocument doc = await Task.Run(() =>
-            ClassDiagramSourceAnalyzer.AnalyzeFile(csharpFilePath, _options));
+            RoslynClassDiagramAnalyzer.AnalyzeFile(csharpFilePath, _options));
 
         string title = Path.GetFileNameWithoutExtension(csharpFilePath) + " [Class Diagram]";
         string uiId  = $"doc-class-diagram-{Guid.NewGuid():N}";
@@ -695,7 +696,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             .ToArray();
 
         DiagramDocument doc = await Task.Run(() =>
-            ClassDiagramSourceAnalyzer.AnalyzeFiles(sourceFiles, _options));
+            RoslynClassDiagramAnalyzer.AnalyzeFiles(sourceFiles, _options));
 
         string folderName = Path.GetFileName(folderPath.TrimEnd('/', '\\', Path.DirectorySeparatorChar));
         string title      = folderName + " [Class Diagram]";
