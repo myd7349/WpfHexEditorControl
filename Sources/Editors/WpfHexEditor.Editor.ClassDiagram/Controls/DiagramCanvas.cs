@@ -65,6 +65,10 @@ public sealed class DiagramCanvas : Canvas
     private readonly DiagramMinimapControl _minimap = new();
     private bool _minimapVisible = true;
 
+    // ── Filter bar (Phase 12) ─────────────────────────────────────────────────
+    private readonly DiagramFilterBar _filterBar = new();
+    private bool _filterVisible;
+
     // ── Events ────────────────────────────────────────────────────────────────
     public event EventHandler<ClassNode?>?                    SelectedClassChanged;
     public event EventHandler<ClassNode?>?                    HoveredClassChanged;
@@ -91,6 +95,14 @@ public sealed class DiagramCanvas : Canvas
         _minimap.ViewportNavigateRequested += OnMinimapNavigate;
         SizeChanged += (_, _) => UpdateMinimapPosition();
         UpdateMinimapPosition();
+
+        // Filter bar — top-center, hidden by default.
+        _filterBar.Visibility  = Visibility.Collapsed;
+        _filterBar.FilterChanged  += OnFilterChanged;
+        _filterBar.CloseRequested += (_, _) => HideFilterBar();
+        Children.Add(_filterBar);
+        Panel.SetZIndex(_filterBar, 200);
+        SizeChanged += (_, _) => UpdateFilterBarPosition();
     }
 
     // ── Minimap API ───────────────────────────────────────────────────────────
@@ -175,6 +187,68 @@ public sealed class DiagramCanvas : Canvas
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _adornerLayer = AdornerLayer.GetAdornerLayer(this);
+    }
+
+    // ── Filter bar (Phase 12) ─────────────────────────────────────────────────
+
+    /// <summary>Shows the inline filter bar and focuses the input.</summary>
+    public void ShowFilterBar()
+    {
+        _filterVisible            = true;
+        _filterBar.Visibility     = Visibility.Visible;
+        UpdateFilterBarPosition();
+        _filterBar.FocusInput();
+    }
+
+    /// <summary>Hides the filter bar and clears focus mode.</summary>
+    public void HideFilterBar()
+    {
+        _filterVisible        = false;
+        _filterBar.Visibility = Visibility.Collapsed;
+        _filterBar.Clear();
+        _layer.SetFocusNodes(null);
+        _filterBar.SetMatchCount(0, 0);
+        Focus();
+    }
+
+    private void UpdateFilterBarPosition()
+    {
+        _filterBar.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        double barW = _filterBar.DesiredSize.Width > 0 ? _filterBar.DesiredSize.Width : 420;
+        ScrollViewer? sv = FindAncestorScrollViewer();
+        double viewOffX = sv?.HorizontalOffset ?? 0;
+        double viewW    = sv?.ViewportWidth > 0 ? sv.ViewportWidth : ActualWidth;
+        Canvas.SetLeft(_filterBar, viewOffX + (viewW - barW) / 2);
+        Canvas.SetTop(_filterBar, (sv?.VerticalOffset ?? 0) + 8);
+    }
+
+    private void OnFilterChanged(object? sender, DiagramFilterArgs args)
+    {
+        if (_doc is null) return;
+
+        if (string.IsNullOrEmpty(args.Text))
+        {
+            _layer.SetFocusNodes(null);
+            _filterBar.SetMatchCount(0, 0);
+            return;
+        }
+
+        string term = args.Text;
+        var matched = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var node in _doc.Classes)
+        {
+            if (node.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+             || node.Namespace.Contains(term, StringComparison.OrdinalIgnoreCase)
+             || node.Members.Any(m =>
+                    m.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+                 || m.TypeName.Contains(term, StringComparison.OrdinalIgnoreCase)))
+            {
+                matched.Add(node.Id);
+            }
+        }
+
+        _filterBar.SetMatchCount(matched.Count, _doc.Classes.Count);
+        _layer.SetFocusNodes(args.FocusMode && matched.Count > 0 ? matched : null);
     }
 
     // ── Selection ─────────────────────────────────────────────────────────────
@@ -363,6 +437,20 @@ public sealed class DiagramCanvas : Canvas
             _layer.UpdateSelection(_selectedNode?.Id, null);
             HoveredClassChanged?.Invoke(this, null);
         }
+    }
+
+    // ── Keyboard (Ctrl+F → filter bar) ───────────────────────────────────────
+
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+        {
+            if (_filterVisible) HideFilterBar();
+            else ShowFilterBar();
+            e.Handled = true;
+            return;
+        }
+        base.OnPreviewKeyDown(e);
     }
 
     // ── Context menus ─────────────────────────────────────────────────────────

@@ -1041,7 +1041,7 @@ public partial class MainWindow
                 LspStatusDot.Text        = "●";
                 LspStatusDot.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, "LSP_ReadyDot");
                 LspStatusText.Text       = e.ServerName ?? e.LanguageId;
-                LspStatusItem.ToolTip    = $"LSP: {e.ServerName} ready for {e.LanguageId}";
+                LspStatusItem.ToolTip    = $"LSP: {e.ServerName} ready for {e.LanguageId} — Diag: {(e.UsesPullDiagnostics ? "Pull" : "Push")}";
                 LspStatusItem.Visibility = Visibility.Visible;
                 break;
             case LspServerState.Error:

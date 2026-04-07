@@ -155,6 +155,13 @@ public sealed class LspClientImpl : ILspClient, WpfHexEditor.Editor.Core.LSP.IDi
     public void DidChange(string filePath, int version, string newText)
         => _ = _sync?.DidChangeAsync(filePath, version, newText, CancellationToken.None);
 
+    public void DidChangeIncremental(string filePath, int version,
+        int startLine, int startCol, int endLine, int endCol,
+        int rangeLength, string newText)
+        => _ = _sync?.DidChangeIncrementalAsync(filePath, version,
+               startLine, startCol, endLine, endCol, rangeLength, newText,
+               CancellationToken.None);
+
     public void CloseDocument(string filePath)
         => _ = _sync?.DidCloseAsync(filePath, CancellationToken.None);
 

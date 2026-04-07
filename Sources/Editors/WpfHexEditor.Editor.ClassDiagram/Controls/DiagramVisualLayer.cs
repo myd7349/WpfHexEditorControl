@@ -61,6 +61,9 @@ public sealed class DiagramVisualLayer : FrameworkElement
     private string?           _selectedNodeId;
     private string?           _hoveredNodeId;
 
+    // ── Focus mode (Phase 12 filter) ─────────────────────────────────────────
+    private HashSet<string>?  _focusedNodeIds;   // null = all visible; empty = all dimmed
+
     // ── Toggles (set by ClassDiagramSplitHost toolbar) ───────────────────────
     public bool ShowSwimLanes { get; set; } = false;
 
@@ -155,6 +158,20 @@ public sealed class DiagramVisualLayer : FrameworkElement
         }
     }
 
+    // ── Focus / filter mode (Phase 12) ──────────────────────────────────────
+
+    /// <summary>
+    /// Sets the nodes that are "in focus". Nodes outside the set are rendered at 20% opacity.
+    /// Pass <c>null</c> to clear focus mode and show all nodes at full opacity.
+    /// </summary>
+    public void SetFocusNodes(HashSet<string>? focusedIds)
+    {
+        _focusedNodeIds = focusedIds;
+        if (_doc is null) return;
+        foreach (var node in _doc.Classes)
+            RenderNode(node);
+    }
+
     // ── Hit-testing ──────────────────────────────────────────────────────────
 
     /// <summary>Returns the node at <paramref name="pt"/>, or null if none.</summary>
@@ -207,6 +224,7 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
         bool isSelected = node.Id == _selectedNodeId;
         bool isHovered  = node.Id == _hoveredNodeId;
+        bool isDimmed   = _focusedNodeIds is not null && !_focusedNodeIds.Contains(node.Id);
 
         double width  = ComputeNodeWidth(node);
         double height = HeaderHeight + node.Members.Count * MemberHeight + MemberPadding * 2;
@@ -219,6 +237,8 @@ public sealed class DiagramVisualLayer : FrameworkElement
         dv.Offset = new Vector(node.X, node.Y);
 
         using var dc = dv.RenderOpen();
+
+        if (isDimmed) dc.PushOpacity(0.2);
 
         Brush boxBg     = Res("CD_ClassBoxBackground",       Color.FromRgb(50, 50, 60));
         Brush headerBg  = Res("CD_ClassBoxHeaderBackground", Color.FromRgb(40, 40, 70));
@@ -308,6 +328,8 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
             memberY += MemberHeight;
         }
+
+        if (isDimmed) dc.Pop();
     }
 
     private void DrawMetricsBadge(DrawingContext dc, ClassNode node, double boxWidth)

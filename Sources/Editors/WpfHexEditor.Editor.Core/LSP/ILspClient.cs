@@ -311,6 +311,16 @@ public interface ILspClient : IAsyncDisposable
     /// </summary>
     void DidChange(string filePath, int version, string newText);
 
+    /// <summary>
+    /// Sends textDocument/didChange with a single incremental content change.
+    /// Use only when the server declared TextDocumentSyncKind.Incremental (2);
+    /// callers must fall back to <see cref="DidChange"/> for multi-edit operations
+    /// (paste, undo, multi-caret).
+    /// </summary>
+    void DidChangeIncremental(string filePath, int version,
+        int startLine, int startCol, int endLine, int endCol,
+        int rangeLength, string newText);
+
     /// <summary>Sends textDocument/didClose.</summary>
     void CloseDocument(string filePath);
 
