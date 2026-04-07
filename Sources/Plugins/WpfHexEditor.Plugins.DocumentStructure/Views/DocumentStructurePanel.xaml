@@ -19,7 +19,7 @@
                 SizeChanged="OnToolbarSizeChanged">
             <DockPanel LastChildFill="False">
 
-                <!-- Left: standard action buttons (refresh + tree toggle) -->
+                <!-- Left: standard action buttons (refresh + tree toggle + collapse + pin + sync) -->
                 <StackPanel x:Name="ToolbarLeftPanel" Orientation="Horizontal"
                             DockPanel.Dock="Left" VerticalAlignment="Center">
                     <Button x:Name="RefreshButton"
@@ -32,6 +32,21 @@
                                   Content="&#xE8B7;"
                                   ToolTip="Tree view"
                                   IsChecked="{Binding IsTreeMode}"/>
+                    <Button x:Name="CollapseAllButton"
+                            Style="{DynamicResource PanelIconButtonStyle}"
+                            Content="&#xE8B6;"
+                            ToolTip="Collapse All"
+                            Click="OnCollapseAllClicked"/>
+                    <ToggleButton x:Name="PinButton"
+                                  Style="{DynamicResource PanelIconToggleStyle}"
+                                  Content="&#xE840;"
+                                  ToolTip="Pin document (keep structure while navigating)"
+                                  IsChecked="{Binding IsPinned}"/>
+                    <ToggleButton x:Name="ScrollSyncButton"
+                                  Style="{DynamicResource PanelIconToggleStyle}"
+                                  Content="&#xE8B1;"
+                                  ToolTip="Sync with editor cursor"
+                                  IsChecked="{Binding ScrollSyncEnabled}"/>
                 </StackPanel>
 
                 <!-- Right: overflow — declared first = far right -->
@@ -97,11 +112,26 @@
                                Foreground="{DynamicResource DS_NodeForeground}"/>
                 </Border>
 
-                <!-- Symbol count (left) -->
+                <!-- Symbol count / breadcrumb (left) -->
+                <TextBlock Text="{Binding BreadcrumbText}"
+                           FontSize="10" VerticalAlignment="Center"
+                           Foreground="{DynamicResource DS_DetailForeground}"
+                           Visibility="{Binding BreadcrumbText, Converter={StaticResource NullToVis}}"
+                           TextTrimming="CharacterEllipsis"/>
                 <TextBlock Text="{Binding StatusText}"
-                           FontSize="10"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource DS_DetailForeground}"/>
+                           FontSize="10" VerticalAlignment="Center"
+                           Foreground="{DynamicResource DS_DetailForeground}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding BreadcrumbText, Converter={StaticResource NullToVis}}" Value="Visible">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
 
             </DockPanel>
         </Border>
@@ -145,6 +175,25 @@
                     <Setter Property="IsSelected"  Value="{Binding IsSelected, Mode=TwoWay}"/>
                     <Setter Property="Visibility"  Value="{Binding Visibility}"/>
                     <Setter Property="Background"  Value="Transparent"/>
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu Opened="OnNodeContextMenuOpened" Tag="{Binding}">
+                                <MenuItem Header="Navigate To"          Tag="navigate"       Click="OnContextMenuClick">
+                                    <MenuItem.Icon><TextBlock Text="&#xE7B0;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Copy Name"            Tag="copy-name"      Click="OnContextMenuClick">
+                                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Copy Qualified Name"  Tag="copy-qualified" Click="OnContextMenuClick">
+                                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Expand All"           Tag="expand-all"     Click="OnContextMenuClick" x:Name="ExpandAllItem"/>
+                                <MenuItem Header="Collapse All"         Tag="collapse-all"   Click="OnContextMenuClick"/>
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="{DynamicResource DS_RowHoverBrush}"/>
@@ -174,6 +223,22 @@
                 <Style TargetType="ListBoxItem">
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="Padding"    Value="2,1"/>
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu Tag="{Binding}">
+                                <MenuItem Header="Navigate To"         Tag="navigate"       Click="OnContextMenuClick">
+                                    <MenuItem.Icon><TextBlock Text="&#xE7B0;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Copy Name"           Tag="copy-name"      Click="OnContextMenuClick">
+                                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Copy Qualified Name" Tag="copy-qualified" Click="OnContextMenuClick">
+                                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" FontFamily="Segoe MDL2 Assets" FontSize="13"/></MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="{DynamicResource DS_RowHoverBrush}"/>
@@ -201,6 +266,21 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+
+        <!-- ── Empty state ─────────────────────────────────────────── -->
+        <Grid Visibility="{Binding IsDocumentOpen, Converter={StaticResource InverseBoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Opacity="0.4">
+                <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="32"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource DS_NodeForeground}"/>
+                <TextBlock Text="Open a document to see its structure"
+                           FontSize="11" HorizontalAlignment="Center"
+                           Foreground="{DynamicResource DS_DetailForeground}"
+                           Margin="0,8,0,0" TextWrapping="Wrap"
+                           MaxWidth="180" TextAlignment="Center"/>
+            </StackPanel>
+        </Grid>
 
     </DockPanel>
 </UserControl>

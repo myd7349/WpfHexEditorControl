@@ -60,11 +60,11 @@ public sealed class IndentToMarginConverter : MarkupExtensionValueConverter
         => throw new NotSupportedException();
 }
 
-/// <summary>Converts null to Collapsed, non-null to Visible.</summary>
+/// <summary>Converts null or empty string to Collapsed, any other value to Visible.</summary>
 public sealed class NullToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object parameter, CultureInfo culture)
-        => value is null ? Visibility.Collapsed : Visibility.Visible;
+        => value is null || (value is string s && s.Length == 0) ? Visibility.Collapsed : Visibility.Visible;
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => throw new NotSupportedException();

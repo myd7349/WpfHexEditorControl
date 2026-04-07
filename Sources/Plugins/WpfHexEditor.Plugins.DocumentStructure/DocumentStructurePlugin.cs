@@ -200,7 +200,7 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
     private void WireDesignerService(IXamlDesignerService svc)
     {
         _designerService = svc;
-        _resolver.Register(new XamlDesignerStructureProvider(svc));
+        _resolver?.Register(new XamlDesignerStructureProvider(svc));
         svc.SelectedElementChanged += OnDesignerSelectionChanged;
         svc.ElementTreeChanged     += OnDesignerTreeChanged;
     }
@@ -282,6 +282,7 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
 
     private void QueueOrRefresh(string? filePath, string? docType, string? language)
     {
+        if (_vm?.IsPinned == true) return;
         if (_isPanelVisible)
             _vm?.QueueRefresh(filePath, docType, language);
         else
@@ -294,7 +295,11 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
 
     private void OnFocusChanged(object? sender, FocusChangedEventArgs e)
     {
-        if (e.ActiveDocument is null) return;
+        if (e.ActiveDocument is null)
+        {
+            _vm?.ClearForNoDocument();
+            return;
+        }
         if (e.ActiveDocument.ContentId == e.PreviousDocument?.ContentId) return;
 
         // Skip panels with no file (Options, Settings…)

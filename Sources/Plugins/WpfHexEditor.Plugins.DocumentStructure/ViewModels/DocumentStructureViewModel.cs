@@ -39,8 +39,12 @@ public sealed class DocumentStructureViewModel : ViewModelBase
     private SortMode _currentSort = SortMode.SourceOrder;
     private bool _isTreeMode = true;
     private bool _isLoading;
+    private bool _isDocumentOpen;
+    private bool _isPinned;
+    private bool _scrollSyncEnabled;
     private string _statusText = "No document";
     private string? _activeProviderName;
+    private string _breadcrumbText = string.Empty;
     private int _autoExpandDepth = 2;
     private StructureNodeVm? _highlightedNode;
 
@@ -108,6 +112,33 @@ public sealed class DocumentStructureViewModel : ViewModelBase
         get => _autoExpandDepth;
         set => SetField(ref _autoExpandDepth, value);
     }
+
+    public bool IsDocumentOpen
+    {
+        get => _isDocumentOpen;
+        private set => SetField(ref _isDocumentOpen, value);
+    }
+
+    public bool IsPinned
+    {
+        get => _isPinned;
+        set => SetField(ref _isPinned, value);
+    }
+
+    public bool ScrollSyncEnabled
+    {
+        get => _scrollSyncEnabled;
+        set => SetField(ref _scrollSyncEnabled, value);
+    }
+
+    public string BreadcrumbText
+    {
+        get => _breadcrumbText;
+        private set => SetField(ref _breadcrumbText, value);
+    }
+
+    /// <summary>Raised when scroll sync is active and the panel should scroll to a node.</summary>
+    public event EventHandler<StructureNodeVm>? ScrollToNodeRequested;
 
     /// <summary>Raised when a node is activated (clicked) and the editor should navigate to it.</summary>
     public event EventHandler<StructureNodeVm>? NavigateRequested;
@@ -198,6 +229,7 @@ public sealed class DocumentStructureViewModel : ViewModelBase
                 ActiveProviderName = usedProvider.DisplayName;
                 StatusText = $"{totalCount} symbols";
                 IsLoading = false;
+                IsDocumentOpen = true;
 
                 RebuildTreeFromSource(vms);
                 BuildFlatList(vms);
@@ -217,8 +249,58 @@ public sealed class DocumentStructureViewModel : ViewModelBase
         RootNodes.Clear();
         FlatNodes.Clear();
         StatusText = status;
+        BreadcrumbText = string.Empty;
         ActiveProviderName = null;
         IsLoading = false;
+        IsDocumentOpen = false;
+    }
+
+    /// <summary>Clears the panel when no document is open (distinct from "no structure available").</summary>
+    public void ClearForNoDocument()
+    {
+        _dispatcher.Invoke(() =>
+        {
+            ClearUI(string.Empty);
+        });
+    }
+
+    public void CollapseAll()
+    {
+        foreach (var root in RootNodes)
+            SetExpandedRecursive(root, false);
+    }
+
+    public void ExpandAll()
+    {
+        foreach (var root in RootNodes)
+            SetExpandedRecursive(root, true);
+    }
+
+    private static void SetExpandedRecursive(StructureNodeVm node, bool expanded)
+    {
+        node.IsExpanded = expanded;
+        foreach (var child in node.Children)
+            SetExpandedRecursive(child, expanded);
+    }
+
+    public string BuildQualifiedName(StructureNodeVm node)
+    {
+        var path = new List<string>();
+        if (FindPath(_allRootNodes, node, path))
+            return string.Join(".", path);
+        return node.Name;
+    }
+
+    private static bool FindPath(IReadOnlyList<StructureNodeVm> nodes, StructureNodeVm target, List<string> path)
+    {
+        foreach (var n in nodes)
+        {
+            path.Add(n.Name);
+            if (ReferenceEquals(n, target)) return true;
+            if (FindPath(n.Children, target, path)) return true;
+            path.RemoveAt(path.Count - 1);
+        }
+        return false;
     }
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -381,6 +463,13 @@ public sealed class DocumentStructureViewModel : ViewModelBase
             {
                 deepest.IsHighlighted = true;
                 _highlightedNode = deepest;
+                UpdateBreadcrumb(deepest);
+                if (ScrollSyncEnabled)
+                    ScrollToNodeRequested?.Invoke(this, deepest);
+            }
+            else
+            {
+                BreadcrumbText = string.Empty;
             }
         }, DispatcherPriority.Background);
     }
@@ -475,6 +564,14 @@ public sealed class DocumentStructureViewModel : ViewModelBase
             count += CountNodesVm(n.Children);
         }
         return count;
+    }
+
+    private void UpdateBreadcrumb(StructureNodeVm? node)
+    {
+        if (node is null) { BreadcrumbText = string.Empty; return; }
+        var path = new List<string>();
+        if (FindPath(_allRootNodes, node, path))
+            BreadcrumbText = string.Join(" › ", path);
     }
 
     private static void SetVisibilityRecursive(StructureNodeVm node, System.Windows.Visibility vis)

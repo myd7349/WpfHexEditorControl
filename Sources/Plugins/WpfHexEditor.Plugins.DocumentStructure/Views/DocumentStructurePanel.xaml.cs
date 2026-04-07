@@ -16,6 +16,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using WpfHexEditor.Plugins.DocumentStructure.ViewModels;
 
 namespace WpfHexEditor.Plugins.DocumentStructure.Views;
@@ -32,6 +33,16 @@ public partial class DocumentStructurePanel : UserControl
     public DocumentStructurePanel()
     {
         InitializeComponent();
+        Loaded += (_, _) =>
+        {
+            if (Vm is { } vm)
+                vm.ScrollToNodeRequested += OnScrollToNodeRequested;
+        };
+        Unloaded += (_, _) =>
+        {
+            if (Vm is { } vm)
+                vm.ScrollToNodeRequested -= OnScrollToNodeRequested;
+        };
     }
 
     // ── Tree ────────────────────────────────────────────────────────────────
@@ -74,6 +85,93 @@ public partial class DocumentStructurePanel : UserControl
         e.Handled = true;
         if (FlatList.SelectedItem is StructureNodeVm node)
             Vm?.OnNodeActivated(node);
+    }
+
+    // ── Context menu ────────────────────────────────────────────────────────
+
+    private void OnNodeContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu cm) return;
+        if (cm.FindName("ExpandAllItem") is MenuItem expandItem)
+            expandItem.Visibility = Vm?.IsTreeMode == true ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void OnContextMenuClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string tag }) return;
+        var node = (StructureNodeVm?)(StructureTree.SelectedItem ?? FlatList.SelectedItem);
+        if (node is null) return;
+
+        switch (tag)
+        {
+            case "navigate":       Vm?.OnNodeActivated(node); break;
+            case "copy-name":      Clipboard.SetText(node.Name); break;
+            case "copy-qualified": Clipboard.SetText(Vm?.BuildQualifiedName(node) ?? node.Name); break;
+            case "expand-all":     Vm?.ExpandAll(); break;
+            case "collapse-all":   Vm?.CollapseAll(); break;
+        }
+    }
+
+    // ── Toolbar extra buttons ────────────────────────────────────────────────
+
+    private void OnCollapseAllClicked(object sender, RoutedEventArgs e)
+        => Vm?.CollapseAll();
+
+    // ── Scroll sync ──────────────────────────────────────────────────────────
+
+    private void OnScrollToNodeRequested(object? sender, StructureNodeVm node)
+    {
+        if (Vm?.IsTreeMode == true)
+            ScrollTreeToNode(node);
+        else
+            ScrollFlatToNode(node);
+    }
+
+    private void ScrollTreeToNode(StructureNodeVm target)
+    {
+        // Ensure all ancestors are expanded so the item is in the visual tree.
+        if (Vm is { } vm) ExpandPathTo(vm.RootNodes, target);
+        StructureTree.UpdateLayout();
+        BringTreeItemIntoView(StructureTree, StructureTree.ItemContainerGenerator, target);
+    }
+
+    private static bool ExpandPathTo(System.Collections.ObjectModel.ObservableCollection<StructureNodeVm> nodes, StructureNodeVm target)
+    {
+        foreach (var n in nodes)
+        {
+            if (ReferenceEquals(n, target)) return true;
+            if (ExpandPathTo(n.Children, target))
+            {
+                n.IsExpanded = true;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void BringTreeItemIntoView(
+        ItemsControl container,
+        ItemContainerGenerator generator,
+        StructureNodeVm target)
+    {
+        foreach (var item in container.Items)
+        {
+            if (generator.ContainerFromItem(item) is TreeViewItem tvi)
+            {
+                if (item is StructureNodeVm vm && ReferenceEquals(vm, target))
+                {
+                    tvi.BringIntoView();
+                    return;
+                }
+                tvi.UpdateLayout();
+                BringTreeItemIntoView(tvi, tvi.ItemContainerGenerator, target);
+            }
+        }
+    }
+
+    private void ScrollFlatToNode(StructureNodeVm target)
+    {
+        FlatList.ScrollIntoView(target);
     }
 
     // ── Refresh ─────────────────────────────────────────────────────────────
