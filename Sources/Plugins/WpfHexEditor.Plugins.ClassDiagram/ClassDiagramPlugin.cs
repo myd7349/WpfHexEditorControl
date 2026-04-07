@@ -648,6 +648,21 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             });
 
         // Tools menu — Solution Explorer context menu actions.
+        // Tools menu — AI generation.
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Tools.AIGenerate",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "✨ Generate Diagram from Description (AI)…",
+                ParentPath = "Tools",
+                IconGlyph  = "\uE8D4",
+                ToolTip    = "Generate a class diagram from a natural-language description using AI",
+                Command    = new RelayCommand(
+                    execute: _ => _ = OpenAIGeneratedDiagramAsync(context)),
+                Group = "ClassDiagram"
+            });
+
         context.UIRegistry.RegisterMenuItem(
             $"{Id}.Menu.Tools.ViewDiagram",
             Id,
@@ -843,6 +858,38 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             Title     = title,
             ContentId = uiId,
             ToolTip   = folderPath,
+            CanClose  = true,
+        });
+    }
+
+    private async Task OpenAIGeneratedDiagramAsync(IIDEHostContext context)
+    {
+        string? prompt = ShowInputDialog(
+            "Describe the classes to generate (e.g. 'Repository pattern for User entity'):",
+            "✨ AI Generate Diagram");
+
+        if (string.IsNullOrWhiteSpace(prompt)) return;
+
+        context.Output.Info("[Class Diagram] Sending prompt to AI…");
+
+        using var generator = new ClassDiagramAIGenerator();
+        generator.ProgressChanged += (_, msg) => context.Output.Info($"[AI Diagram] {msg}");
+
+        DiagramDocument doc = await Task.Run(() =>
+            generator.GenerateAsync(prompt, _options));
+
+        string shortPrompt = prompt.Length > 40 ? prompt[..40] + "…" : prompt;
+        string title = $"AI: {shortPrompt} [Class Diagram]";
+        string uiId  = $"doc-class-diagram-ai-{Guid.NewGuid():N}";
+
+        var host = new ClassDiagramSplitHost();
+        host.LoadDocument(doc, title);
+
+        context.UIRegistry.RegisterDocumentTab(uiId, host, Id, new DocumentDescriptor
+        {
+            Title     = title,
+            ContentId = uiId,
+            ToolTip   = $"AI-generated class diagram: {prompt}",
             CanClose  = true,
         });
     }

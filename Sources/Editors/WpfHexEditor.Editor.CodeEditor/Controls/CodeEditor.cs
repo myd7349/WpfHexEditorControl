@@ -252,6 +252,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         // ── InlineHints ──────────────────────────────────────────────────────────
         private          int                            _inlineHintsSource   = 0; // 0=Auto, 1=RoslynOnly, 2=RegexAlways
         private readonly Services.InlineHintsService                                                                                              _inlineHintsService  = new();
+        private readonly Layers.LspInlayHintsLayer                                                                                                 _lspInlayHintsLayer  = new();
+        private readonly Layers.LspCodeLensLayer                                                                                                   _lspCodeLensLayer    = new();
         private          IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, System.Windows.Media.Brush IconBrush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds Kind, bool IsRoslyn)> _hintsData = new Dictionary<int, (int, string, string, System.Windows.Media.Brush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds, bool)>();
         private          int                                                                                                                   _visibleHintsCount = 0;
         private readonly List<(Rect Zone, int LineIndex, string Symbol)>                                                                       _hintsHitZones     = new();
