@@ -16,27 +16,43 @@ namespace WpfHexEditor.Plugins.DocumentStructure.Converters;
 
 public sealed class KindToBrushConverter : IValueConverter
 {
+    // Hardcoded palette — identical to CodeEditor NavigationBar (NavigationBarItem.IconBrush).
+    private static readonly Dictionary<string, SolidColorBrush> KindBrushMap =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["namespace"]     = Freeze("#DCDCAA"),
+            ["module"]        = Freeze("#DCDCAA"),
+            ["class"]         = Freeze("#4FC1FF"),
+            ["record"]        = Freeze("#4FC1FF"),
+            ["object"]        = Freeze("#4FC1FF"),
+            ["interface"]     = Freeze("#B8D7A3"),
+            ["struct"]        = Freeze("#4EC9B0"),
+            ["enum"]          = Freeze("#CE9178"),
+            ["enummember"]    = Freeze("#CE9178"),
+            ["delegate"]      = Freeze("#C586C0"),
+            ["method"]        = Freeze("#C586C0"),
+            ["function"]      = Freeze("#C586C0"),
+            ["constructor"]   = Freeze("#C586C0"),
+            ["property"]      = Freeze("#9CDCFE"),
+            ["indexer"]       = Freeze("#9CDCFE"),
+            ["field"]         = Freeze("#9CDCFE"),
+            ["variable"]      = Freeze("#9CDCFE"),
+            ["constant"]      = Freeze("#9CDCFE"),
+            ["typeparameter"] = Freeze("#9CDCFE"),
+            ["event"]         = Freeze("#DCDCAA"),
+        };
+
+    private static SolidColorBrush Freeze(string hex)
+    {
+        var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+        b.Freeze();
+        return b;
+    }
+
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         if (value is not string kind) return DependencyProperty.UnsetValue;
-
-        var resourceKey = kind.ToLowerInvariant() switch
-        {
-            "class" or "record" or "object"             => "DS_ClassIconBrush",
-            "struct"                                    => "DS_MethodIconBrush",   // teal — distinct from class
-            "method" or "function"                      => "DS_MethodIconBrush",
-            "constructor"                               => "DS_MethodIconBrush",
-            "property"                                  => "DS_PropertyIconBrush",
-            "field" or "variable" or "constant"         => "DS_FieldIconBrush",
-            "enum" or "enummember"                      => "DS_EnumIconBrush",
-            "interface"                                 => "DS_InterfaceIconBrush",
-            "event"                                     => "DS_EventIconBrush",
-            _                                           => "DS_NodeForeground",
-        };
-
-        return Application.Current.TryFindResource(resourceKey) is Brush brush
-            ? brush
-            : Brushes.Gray;
+        return KindBrushMap.TryGetValue(kind, out var brush) ? brush : Brushes.Gray;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

@@ -1513,6 +1513,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             PluginManagerContentId         => CreatePluginManagerContent(),
             MarkdownOutlinePanelContentId  => CreateMarkdownOutlinePanelContent(),
             _ when item.ContentId.StartsWith("doc-file-")      => CreateSmartFileEditorContent(item),
+            _ when item.ContentId.StartsWith("doc-src-nav-")   => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")       => WrapHexDocItemWithInfoBar(item),
             _ when item.ContentId.StartsWith("doc-projprops-") => CreateProjectPropertiesContent(item),
             _ when item.ContentId.StartsWith("doc-nuget-solution-") => CreateNuGetSolutionManagerContent(item),

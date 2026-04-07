@@ -218,17 +218,14 @@
                                 </Style>
                             </Rectangle.Style>
                         </Rectangle>
-                        <!-- Kind badge: colored box with letter label -->
-                        <Border Grid.Column="2"
-                                Width="16" Height="16"
-                                CornerRadius="1"
-                                Background="{Binding Kind, Converter={StaticResource KindToBrush}}"
-                                VerticalAlignment="Center">
-                            <TextBlock Text="{Binding IconGlyph}"
-                                       FontFamily="Segoe UI" FontSize="9" FontWeight="SemiBold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <!-- Kind icon: Segoe MDL2 glyph, colored by symbol type -->
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding IconGlyph}"
+                                   FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   Foreground="{Binding Kind, Converter={StaticResource KindToBrush}}"
+                                   Width="16" Height="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   TextAlignment="Center"/>
                         <!-- Name + : ReturnType -->
                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}"
@@ -312,16 +309,13 @@
                                 </Style>
                             </Rectangle.Style>
                         </Rectangle>
-                        <Border Grid.Column="2"
-                                Width="16" Height="16"
-                                CornerRadius="1"
-                                Background="{Binding Kind, Converter={StaticResource KindToBrush}}"
-                                VerticalAlignment="Center">
-                            <TextBlock Text="{Binding IconGlyph}"
-                                       FontFamily="Segoe UI" FontSize="9" FontWeight="SemiBold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding IconGlyph}"
+                                   FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                   Foreground="{Binding Kind, Converter={StaticResource KindToBrush}}"
+                                   Width="16" Height="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   TextAlignment="Center"/>
                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}"
                                        Foreground="{DynamicResource DS_NodeForeground}"/>

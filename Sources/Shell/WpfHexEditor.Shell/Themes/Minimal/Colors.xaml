@@ -662,6 +662,8 @@
     <!-- Peek Definition popup tokens (GD_*) -->
     <SolidColorBrush x:Key="GD_PeekBackground"       Color="#F3F3F3" />
     <SolidColorBrush x:Key="GD_PeekBorder"           Color="#C8C8C8" />
+    <SolidColorBrush x:Key="GD_PeekTargetLine"       Color="#C8DFFB" />
+    <SolidColorBrush x:Key="GD_PeekHoverLine"         Color="#F0F0F0" />
     <SolidColorBrush x:Key="GD_PeekTitleBar"         Color="#E8E8E8" />
     <SolidColorBrush x:Key="GD_PeekTitleForeground"  Color="#1E1E1E" />
     <SolidColorBrush x:Key="GD_PeekNavLinkForeground" Color="#0066CC" />

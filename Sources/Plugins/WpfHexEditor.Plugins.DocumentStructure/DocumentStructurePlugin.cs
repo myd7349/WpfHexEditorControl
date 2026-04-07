@@ -66,6 +66,7 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
 
     private bool _isPanelVisible = true;
     private bool _hexEditorHandledLastSwitch;
+    private bool _isNavigating;           // suppresses focus-change refresh caused by our own navigation
     private string? _lastTrackedFilePath;
 
     // ── Pending update when panel is hidden ──────────────────────────────────
@@ -295,6 +296,8 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
 
     private void OnFocusChanged(object? sender, FocusChangedEventArgs e)
     {
+        if (_isNavigating) return;   // triggered by our own ActivateAndNavigateTo — ignore
+
         if (e.ActiveDocument is null)
         {
             _vm?.ClearForNoDocument();
@@ -453,7 +456,13 @@ public sealed class DocumentStructurePlugin : IWpfHexEditorPlugin
         {
             var filePath = _context.FocusContext.ActiveDocument?.FilePath;
             if (!string.IsNullOrEmpty(filePath))
+            {
+                _isNavigating = true;
                 _context.DocumentHost.ActivateAndNavigateTo(filePath!, node.StartLine, node.StartColumn > 0 ? node.StartColumn : 1);
+                // Reset after dispatcher flushes the focus-change event
+                _panel?.Dispatcher.InvokeAsync(() => _isNavigating = false,
+                    System.Windows.Threading.DispatcherPriority.ContextIdle);
+            }
         }
     }
 

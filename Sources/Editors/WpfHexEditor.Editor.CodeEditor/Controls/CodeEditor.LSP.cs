@@ -653,9 +653,14 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         /// </summary>
         private async Task ShowPeekDefinitionAsync()
         {
-            if (_lspClient?.IsInitialized != true || _currentFilePath is null)
+            if (_lspClient is null || !_lspClient.IsInitialized)
             {
-                StatusMessage?.Invoke(this, "LSP not ready.");
+                StatusMessage?.Invoke(this, "Peek Definition: LSP client not initialized.");
+                return;
+            }
+            if (_currentFilePath is null)
+            {
+                StatusMessage?.Invoke(this, "Peek Definition: file not saved (no path).");
                 return;
             }
 
