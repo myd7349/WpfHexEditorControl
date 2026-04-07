@@ -58,9 +58,12 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
     private readonly ComboBox _xmlAttrIndentLevels;
     private readonly CheckBox _xmlOneAttrPerLine;
 
-    // Section panels — enabled/disabled based on selected language FormatterStrategy.
+    // Section panels (layout only — opacity updated per supportedRules).
     private readonly StackPanel _codeSectionsPanel;  // SPACING + STRUCTURE
     private readonly StackPanel _xmlSectionPanel;    // XML / XAML
+
+    // ruleId → control — used by UpdateSectionAvailability to enable/disable per whfmt.
+    private readonly Dictionary<string, Control> _ruleControls = new();
 
     // ── Preview ───────────────────────────────────────────────────────────
     private readonly FormattingPreviewPanel? _preview;
@@ -298,6 +301,17 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
         _xmlSectionPanel.Children.Add(_xmlOneAttrPerLine);
         stack.Children.Add(_xmlSectionPanel);
 
+        // ── ruleId → control mapping (used by UpdateSectionAvailability) ────
+        _ruleControls["trimTrailingWhitespace"]     = _trimTrailing;
+        _ruleControls["insertFinalNewline"]         = _insertFinalNewline;
+        _ruleControls["spaceAfterKeywords"]         = _spaceAfterKeywords;
+        _ruleControls["spaceAroundBinaryOperators"] = _spaceAroundOperators;
+        _ruleControls["spaceAfterComma"]            = _spaceAfterComma;
+        _ruleControls["indentCaseLabels"]           = _indentCaseLabels;
+        _ruleControls["organizeImports"]            = _organizeImports;
+        _ruleControls["xmlAttributeIndentLevels"]   = _xmlAttrIndentLevels;
+        _ruleControls["xmlOneAttributePerLine"]     = _xmlOneAttrPerLine;
+
         leftScroll.Content = stack;
         content.Children.Add(leftScroll);
 
@@ -464,17 +478,33 @@ public sealed class CodeEditorFormattingPage : UserControl, IOptionsPage
         }
     }
     /// <summary>
-    /// Enables/disables section panels based on the selected language's
-    /// <see cref="FormatterStrategy"/>: Xml languages disable code-specific sections
-    /// (SPACING, STRUCTURE) and enable XML/XAML; Brace languages do the reverse.
+    /// Enables or disables each formatting control based on the language's
+    /// <c>supportedRules</c> list from its whfmt file.
+    /// When <c>supportedRules</c> is absent (null), all controls are enabled.
+    /// Section panels get dimmed (Opacity 0.38) when all their rules are disabled.
     /// </summary>
     private void UpdateSectionAvailability(LanguageDefinition? lang)
     {
-        bool isXml = lang?.FormattingRules?.FormatterStrategy == WpfHexEditor.Core.ProjectSystem.Languages.FormatterStrategy.Xml;
-        _codeSectionsPanel.IsEnabled = !isXml;
-        _codeSectionsPanel.Opacity   = isXml ? 0.38 : 1.0;
-        _xmlSectionPanel.IsEnabled   = isXml;
-        _xmlSectionPanel.Opacity     = isXml ? 1.0 : 0.38;
+        var supported = lang?.FormattingRules?.SupportedRules;
+
+        // Enable/disable individual controls.
+        foreach (var (ruleId, control) in _ruleControls)
+        {
+            bool on = supported is null || supported.Contains(ruleId);
+            control.IsEnabled = on;
+            control.Opacity   = on ? 1.0 : 0.38;
+        }
+
+        // Dim entire section panels when none of their rules are supported.
+        bool anyCode = IsAnyOn("spaceAfterKeywords", "spaceAroundBinaryOperators",
+                               "spaceAfterComma", "indentCaseLabels", "organizeImports");
+        _codeSectionsPanel.Opacity = anyCode ? 1.0 : 0.38;
+
+        bool anyXml = IsAnyOn("xmlAttributeIndentLevels", "xmlOneAttributePerLine");
+        _xmlSectionPanel.Opacity = anyXml ? 1.0 : 0.38;
+
+        bool IsAnyOn(params string[] ids)
+            => supported is null || ids.Any(id => supported.Contains(id));
     }
 
     private void ApplyLanguageOverrides(string langId)

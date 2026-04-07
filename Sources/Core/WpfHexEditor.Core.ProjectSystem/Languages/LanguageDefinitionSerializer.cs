@@ -553,6 +553,9 @@ public static class LanguageDefinitionSerializer
         [JsonPropertyName("xmlAttributeIndentLevels")] public int?  XmlAttributeIndentLevels { get; set; }
         [JsonPropertyName("xmlOneAttributePerLine")]   public bool? XmlOneAttributePerLine   { get; set; }
 
+        // ── Formatting capabilities ──────────────────────────────────────────
+        [JsonPropertyName("supportedRules")] public List<string>? SupportedRules { get; set; }
+
         // ── Pattern keywords (whfmt-driven regexes) ─────────────────────────
         [JsonPropertyName("keywordParenKeywords")]   public string[]? KeywordParenKeywords { get; set; }
         [JsonPropertyName("binaryOperators")]        public string[]? BinaryOperators      { get; set; }
@@ -612,6 +615,9 @@ public static class LanguageDefinitionSerializer
             SqlKeywords                = dto.SqlKeywords is { Length: > 0 } ? dto.SqlKeywords : null,
             XmlAttributeIndentLevels   = dto.XmlAttributeIndentLevels ?? 2,
             XmlOneAttributePerLine     = dto.XmlOneAttributePerLine   ?? false,
+            SupportedRules             = dto.SupportedRules is { Count: > 0 } sr
+                                             ? sr.AsReadOnly()
+                                             : null,
         };
     }
 

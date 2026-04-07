@@ -591,6 +591,15 @@ public sealed record FormattingRules
     /// </summary>
     public FormatterStrategy FormatterStrategy { get; init; } = FormatterStrategy.Brace;
 
+    /// <summary>
+    /// Optional allow-list of formatting rule IDs supported by this language.
+    /// When <see langword="null"/>, all formatting controls are enabled (backward-compatible default).
+    /// When set, only the listed rule IDs are enabled in the Formatting options page.
+    /// Rule IDs match the JSON keys in the whfmt <c>formattingRules</c> block
+    /// (e.g. "spaceAfterKeywords", "xmlOneAttributePerLine").
+    /// </summary>
+    public IReadOnlyList<string>? SupportedRules { get; init; }
+
     // ── Pattern keywords (whfmt-driven, replaces hardcoded regexes) ─────────
 
     /// <summary>
