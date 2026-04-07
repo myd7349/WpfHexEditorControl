@@ -71,7 +71,10 @@ public partial class DocumentStructurePanel : UserControl
         while (obj is not null)
         {
             if (obj is T t) return t;
-            obj = System.Windows.Media.VisualTreeHelper.GetParent(obj);
+            // FrameworkContentElement (Run, Span, etc.) is not a Visual — use logical tree.
+            obj = obj is Visual or System.Windows.Media.Media3D.Visual3D
+                ? VisualTreeHelper.GetParent(obj)
+                : LogicalTreeHelper.GetParent(obj);
         }
         return null;
     }

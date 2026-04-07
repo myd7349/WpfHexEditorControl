@@ -16,6 +16,7 @@
 
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Threading;
 using WpfHexEditor.Editor.Core.Documents;
 using WpfHexEditor.Editor.XamlDesigner.Controls;
 using WpfHexEditor.SDK.Contracts;
@@ -33,11 +34,15 @@ internal sealed class XamlDesignerServiceImpl : IXamlDesignerService
 {
     private readonly IFocusContextService    _focusContext;
     private readonly IDocumentHostService    _documentHost;
+    private readonly Dispatcher              _dispatcher = Application.Current.Dispatcher;
     private XamlDesignerSplitHost?           _activeHost;
+
+    // Cached on the UI thread so CanProvide() is safe from background threads.
+    private volatile bool _isDesignerActive;
 
     // ── IXamlDesignerService ─────────────────────────────────────────────────
 
-    public bool IsDesignerActive => _activeHost?.Canvas?.DesignRoot is not null;
+    public bool IsDesignerActive => _isDesignerActive;
 
     public int SelectedElementUid => _activeHost?.Canvas?.SelectedElementUid ?? -1;
 
@@ -63,6 +68,10 @@ internal sealed class XamlDesignerServiceImpl : IXamlDesignerService
 
     public IReadOnlyList<XamlDesignerNode> GetElementTree()
     {
+        // Must walk the WPF visual tree on the UI thread — marshal if called from background.
+        if (!_dispatcher.CheckAccess())
+            return _dispatcher.Invoke(GetElementTree);
+
         var root = _activeHost?.Canvas?.DesignRoot;
         if (root is null) return [];
 
@@ -82,6 +91,7 @@ internal sealed class XamlDesignerServiceImpl : IXamlDesignerService
 
         UnwireHost();
         _activeHost = host;
+        _isDesignerActive = host?.Canvas?.DesignRoot is not null;
         WireHost(host);
 
         ElementTreeChanged?.Invoke(this, EventArgs.Empty);
@@ -102,7 +112,10 @@ internal sealed class XamlDesignerServiceImpl : IXamlDesignerService
     }
 
     private void OnDesignRendered(object? sender, UIElement? _)
-        => ElementTreeChanged?.Invoke(this, EventArgs.Empty);
+    {
+        _isDesignerActive = _activeHost?.Canvas?.DesignRoot is not null;
+        ElementTreeChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     private void OnCanvasSelectionChanged(object? sender, EventArgs _)
         => SelectedElementChanged?.Invoke(this, _activeHost?.Canvas?.SelectedElementUid ?? -1);
