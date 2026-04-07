@@ -349,10 +349,49 @@ public sealed class DiagramVisualLayer : FrameworkElement
             if (rel.Kind == RelationshipKind.Dependency || rel.Kind == RelationshipKind.Realization)
                 pen.DashStyle = DashedStyle;
 
-            dc.DrawLine(pen, p1, p2);
-            DrawArrowHead(dc, p1, p2, rel.Kind, lineBrush, 1.5);
-            DrawTailDecoration(dc, p2, p1, rel.Kind, lineBrush, 1.5);
+            // Build waypoint chain: p1 → waypoints → p2
+            var wayPts = rel.Waypoints;
+            if (wayPts.Count > 0)
+            {
+                Point prev = p1;
+                foreach (var (wx, wy) in wayPts)
+                {
+                    var wp = new Point(wx, wy);
+                    dc.DrawLine(pen, prev, wp);
+                    prev = wp;
+                }
+                dc.DrawLine(pen, prev, p2);
+                // Arrow points at the last segment direction.
+                Point lastWp = new(wayPts[^1].X, wayPts[^1].Y);
+                DrawArrowHead(dc, lastWp, p2, rel.Kind, lineBrush, 1.5);
+                DrawTailDecoration(dc, p1, new Point(wayPts[0].X, wayPts[0].Y), rel.Kind, lineBrush, 1.5);
+            }
+            else
+            {
+                dc.DrawLine(pen, p1, p2);
+                DrawArrowHead(dc, p1, p2, rel.Kind, lineBrush, 1.5);
+                DrawTailDecoration(dc, p2, p1, rel.Kind, lineBrush, 1.5);
+            }
+
             DrawMultiplicity(dc, p1, p2, rel, lineBrush);
+
+            // Role labels
+            if (!string.IsNullOrWhiteSpace(rel.SourceRole))
+            {
+                Vector d = p2 - p1; if (d.LengthSquared > 0.001) d.Normalize();
+                Vector perp = new(-d.Y, d.X);
+                Point labelPos = p1 + d * 20 - perp * 12;
+                var ft = MakeFT(rel.SourceRole!, lineBrush, 9.0);
+                dc.DrawText(ft, labelPos);
+            }
+            if (!string.IsNullOrWhiteSpace(rel.TargetRole))
+            {
+                Vector d = p1 - p2; if (d.LengthSquared > 0.001) d.Normalize();
+                Vector perp = new(-d.Y, d.X);
+                Point labelPos = p2 + d * 20 - perp * 12;
+                var ft = MakeFT(rel.TargetRole!, lineBrush, 9.0);
+                dc.DrawText(ft, labelPos);
+            }
 
             if (!string.IsNullOrWhiteSpace(rel.Label))
             {
