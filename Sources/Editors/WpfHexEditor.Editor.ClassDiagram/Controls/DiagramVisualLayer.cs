@@ -112,9 +112,10 @@ public sealed class DiagramVisualLayer : FrameworkElement
     /// </summary>
     public void SetMultiSelection(HashSet<string> ids)
     {
-        var toRepaint = new HashSet<string>(_multiSelectedIds);
+        // Always copy — caller may clear the source set after this call.
+        var toRepaint = new HashSet<string>(_multiSelectedIds, StringComparer.Ordinal);
         toRepaint.UnionWith(ids);
-        _multiSelectedIds = ids;
+        _multiSelectedIds = new HashSet<string>(ids, StringComparer.Ordinal);
         if (_doc is null) return;
         foreach (var node in _doc.Classes.Where(n => toRepaint.Contains(n.Id)))
             RenderNode(node);

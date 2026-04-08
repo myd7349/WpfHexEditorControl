@@ -489,6 +489,7 @@ public sealed class DiagramCanvas : Canvas
                 SelectSingleNode(node);
 
             // Capture start positions of all selected nodes for multi-drag
+            HideHoverTooltip();
             _dragNode  = node;
             _dragStart = pt;
             _dragStartPositions.Clear();
