@@ -1189,6 +1189,7 @@ public partial class MainWindow
         _lspStatusBarAdapter?.Dispose();
         _lspStatusBarAdapter = null;
         ShutdownDebugIntegration();
+        ShutdownGitIntegration();
         _lspFirstRunService?.Dispose();
         _lspFirstRunService = null;
         _notificationBellAdapter?.Dispose();

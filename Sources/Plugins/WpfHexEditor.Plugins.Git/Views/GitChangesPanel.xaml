@@ -10,6 +10,77 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
+        <!-- Dark TextBox — DockDarkTextBoxStyle does not exist in docking themes;
+             define inline so the commit message area follows the panel theme. -->
+        <Style x:Key="GC_CommitTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background"   Value="{DynamicResource DockBackgroundBrush}"/>
+            <Setter Property="Foreground"   Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="CaretBrush"   Value="{DynamicResource DockMenuForegroundBrush}"/>
+            <Setter Property="BorderBrush"  Value="{DynamicResource DockBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"      Value="4"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource GC_CommitButtonBackground}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Focusable="False"
+                                          Padding="{TemplateBinding Padding}"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Auto"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush"
+                                        Value="{DynamicResource GC_CommitButtonBackground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Commit button — default WPF Button template ignores Background DP on Aero2;
+             define a themed template that respects it. -->
+        <Style x:Key="GC_CommitButtonStyle" TargetType="Button">
+            <Setter Property="Background"   Value="{DynamicResource GC_CommitButtonBackground}"/>
+            <Setter Property="Foreground"   Value="{DynamicResource GC_CommitButtonForeground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"      Value="14,4"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Section header style -->
         <Style x:Key="SectionHeader" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="10" />
@@ -205,7 +276,7 @@
                          AcceptsReturn="True" MaxLines="4" MinHeight="52"
                          TextWrapping="Wrap"
                          ToolTip="Commit message (Ctrl+Enter to commit)"
-                         Style="{DynamicResource DockDarkTextBoxStyle}">
+                         Style="{StaticResource GC_CommitTextBoxStyle}">
                     <TextBox.InputBindings>
                         <KeyBinding Key="Return" Modifiers="Ctrl" Command="{Binding CommitCommand}" />
                     </TextBox.InputBindings>
@@ -220,10 +291,7 @@
                               VerticalAlignment="Center" FontSize="11"/>
                     <Button Grid.Column="1" Content="Commit"
                             Command="{Binding CommitCommand}"
-                            Padding="14,4"
-                            Background="{DynamicResource GC_CommitButtonBackground}"
-                            Foreground="{DynamicResource GC_CommitButtonForeground}"
-                            BorderThickness="0"/>
+                            Style="{StaticResource GC_CommitButtonStyle}"/>
                 </Grid>
             </Grid>
         </Border>
@@ -236,7 +304,7 @@
                 <StackPanel>
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
-                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Setter Property="Visibility" Value="Visible"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding ConflictFiles.Count}" Value="0">
                                     <Setter Property="Visibility" Value="Collapsed"/>

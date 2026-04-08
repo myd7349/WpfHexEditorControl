@@ -280,6 +280,7 @@ public sealed class GitChangesPanelViewModel : ViewModelBase, IDisposable
             await _vcs.StashDropAsync(index);
             var stash = await _vcs.GetStashListAsync();
             PopulateStash(stash);
+            RefreshAsync();
         }
         catch (Exception ex) { _output.Write("Git", $"[Git Stash Drop] {ex.Message}"); }
         finally { IsLoading = false; }

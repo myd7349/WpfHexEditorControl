@@ -172,13 +172,15 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
     public Task ShutdownAsync(CancellationToken ct = default)
     {
         _cts.Cancel();
+
+        // Unsubscribe events before disposing VCS to prevent race on in-flight file open
+        if (_context is not null)
+            _context.HexEditor.FileOpened -= OnFileOpened;
+
         _vcs?.StopPolling();
         _vcs?.Dispose();
         _changesVm?.Dispose();
         _historyVm?.Dispose();
-
-        if (_context is not null)
-            _context.HexEditor.FileOpened -= OnFileOpened;
 
         return Task.CompletedTask;
     }

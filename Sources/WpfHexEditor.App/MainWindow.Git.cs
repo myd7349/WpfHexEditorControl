@@ -19,6 +19,7 @@ namespace WpfHexEditor.App;
 
 public partial class MainWindow
 {
+    private IDisposable[]? _gitSubs;
 
     // ── Initialization ────────────────────────────────────────────────────────
 
@@ -26,55 +27,66 @@ public partial class MainWindow
     {
         if (_ideEventBus is null) return;
 
-        _ideEventBus.Subscribe<GitStatusChangedEvent>(e =>
-        {
-            Dispatcher.InvokeAsync(() => UpdateGitStatusBar(e));
-            return System.Threading.Tasks.Task.CompletedTask;
-        });
-
-        _ideEventBus.Subscribe<GitBlameLoadedEvent>(e =>
-        {
-            Dispatcher.InvokeAsync(() => OnGitBlameLoaded(e));
-            return System.Threading.Tasks.Task.CompletedTask;
-        });
-
-        _ideEventBus.Subscribe<GitBlameToggleRequestedEvent>(_ =>
-        {
-            Dispatcher.InvokeAsync(() =>
+        _gitSubs =
+        [
+            _ideEventBus.Subscribe<GitStatusChangedEvent>(e =>
             {
-                var editor = GetActiveCodeEditor();
-                if (editor is not null)
-                    editor.ShowBlameGutter = !editor.ShowBlameGutter;
-            });
-            return System.Threading.Tasks.Task.CompletedTask;
-        });
+                Dispatcher.InvokeAsync(() => UpdateGitStatusBar(e));
+                return System.Threading.Tasks.Task.CompletedTask;
+            }),
 
-        _ideEventBus.Subscribe<GitOperationStartedEvent>(e =>
-        {
-            Dispatcher.InvokeAsync(() =>
+            _ideEventBus.Subscribe<GitBlameLoadedEvent>(e =>
             {
-                GitOperationStatusText.Text       = $"Git: {e.OperationName}…";
-                GitOperationStatusText.Visibility = System.Windows.Visibility.Visible;
-            });
-            return System.Threading.Tasks.Task.CompletedTask;
-        });
+                Dispatcher.InvokeAsync(() => OnGitBlameLoaded(e));
+                return System.Threading.Tasks.Task.CompletedTask;
+            }),
 
-        _ideEventBus.Subscribe<GitOperationCompletedEvent>(e =>
-        {
-            Dispatcher.InvokeAsync(() =>
+            _ideEventBus.Subscribe<GitBlameToggleRequestedEvent>(_ =>
             {
-                if (e.Success)
+                Dispatcher.InvokeAsync(() =>
                 {
-                    GitOperationStatusText.Visibility = System.Windows.Visibility.Collapsed;
-                }
-                else
+                    var editor = GetActiveCodeEditor();
+                    if (editor is not null)
+                        editor.ShowBlameGutter = !editor.ShowBlameGutter;
+                });
+                return System.Threading.Tasks.Task.CompletedTask;
+            }),
+
+            _ideEventBus.Subscribe<GitOperationStartedEvent>(e =>
+            {
+                Dispatcher.InvokeAsync(() =>
                 {
-                    GitOperationStatusText.Text       = $"Git {e.OperationName} failed";
+                    GitOperationStatusText.Text       = $"Git: {e.OperationName}…";
                     GitOperationStatusText.Visibility = System.Windows.Visibility.Visible;
-                }
-            });
-            return System.Threading.Tasks.Task.CompletedTask;
-        });
+                });
+                return System.Threading.Tasks.Task.CompletedTask;
+            }),
+
+            _ideEventBus.Subscribe<GitOperationCompletedEvent>(e =>
+            {
+                Dispatcher.InvokeAsync(() =>
+                {
+                    if (e.Success)
+                    {
+                        GitOperationStatusText.Visibility = System.Windows.Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        GitOperationStatusText.Text       = $"Git {e.OperationName} failed";
+                        GitOperationStatusText.Visibility = System.Windows.Visibility.Visible;
+                    }
+                });
+                return System.Threading.Tasks.Task.CompletedTask;
+            }),
+        ];
+    }
+
+    /// <summary>Disposes Git event bus subscriptions. Called from ShutdownPluginSystemAsync.</summary>
+    private void ShutdownGitIntegration()
+    {
+        if (_gitSubs is not null)
+            foreach (var s in _gitSubs) s.Dispose();
+        _gitSubs = null;
     }
 
     // ── Handlers ─────────────────────────────────────────────────────────────

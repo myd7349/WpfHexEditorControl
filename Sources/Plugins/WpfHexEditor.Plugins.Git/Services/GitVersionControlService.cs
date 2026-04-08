@@ -135,12 +135,35 @@ internal sealed class GitVersionControlService : IVersionControlService, IDispos
     {
         if (_repoRoot is null) return;
         var amendFlag = amend ? "--amend" : string.Empty;
-        // Use -m with escaped message (replace " with ')
-        var safeMsg = message.Replace("\"", "'");
-        await Task.Run(() => RunGit(_repoRoot, $"commit {amendFlag} -m \"{safeMsg}\""), ct);
+
+        // Use -F - (read message from stdin) to avoid any shell quoting issues
+        await Task.Run(() =>
+        {
+            using var proc = new Process
+            {
+                StartInfo = new ProcessStartInfo("git", $"commit {amendFlag} -F -")
+                {
+                    WorkingDirectory       = _repoRoot,
+                    RedirectStandardInput  = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError  = true,
+                    UseShellExecute        = false,
+                    CreateNoWindow         = true
+                }
+            };
+            proc.Start();
+            proc.StandardInput.Write(message);
+            proc.StandardInput.Close();
+            var errTask = System.Threading.Tasks.Task.Run(() => proc.StandardError.ReadToEnd());
+            proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit(TimeoutMs);
+            var err = errTask.GetAwaiter().GetResult();
+            if (proc.ExitCode != 0)
+                throw new InvalidOperationException(err.Trim());
+        }, ct);
+
         _blameCache.Clear(); // HEAD moved
         await RefreshAsync(ct);
-        // Refresh ahead/behind after commit
         _ = RefreshAheadBehindAsync(ct);
     }
 
@@ -562,8 +585,19 @@ internal sealed class GitVersionControlService : IVersionControlService, IDispos
                 }
             };
             proc.Start();
-            var output = proc.StandardOutput.ReadToEnd();
+
+            // Read stdout and stderr concurrently to avoid pipe-buffer deadlock
+            var stdoutTask = System.Threading.Tasks.Task.Run(() => proc.StandardOutput.ReadToEnd());
+            var stderrTask = System.Threading.Tasks.Task.Run(() => proc.StandardError.ReadToEnd());
+
             proc.WaitForExit(timeoutMs);
+            var output = stdoutTask.GetAwaiter().GetResult();
+            var error  = stderrTask.GetAwaiter().GetResult();
+
+            // Non-zero exit → surface stderr so callers can detect failures
+            if (proc.ExitCode != 0 && !string.IsNullOrWhiteSpace(error))
+                return $"error: {error.Trim()}";
+
             return output;
         }
         catch
