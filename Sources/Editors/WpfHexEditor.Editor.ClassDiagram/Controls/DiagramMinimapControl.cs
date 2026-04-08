@@ -62,21 +62,13 @@ public sealed class DiagramMinimapControl : FrameworkElement
     /// <summary>Raised when the user chooses "Hide Minimap" from the context menu.</summary>
     public event EventHandler?                 HideRequested;
 
-    // ── Brushes (resolved from DynamicResource or fallback) ──────────────────
-    private static readonly Brush _bgBrush       = new SolidColorBrush(Color.FromArgb(200, 30, 30, 40));
-    private static readonly Brush _nodeBrush     = new SolidColorBrush(Color.FromRgb(80, 100, 160));
-    private static readonly Brush _viewportBrush = new SolidColorBrush(Color.FromArgb(60, 100, 160, 255));
-    private static readonly Pen   _borderPen     = new(new SolidColorBrush(Color.FromArgb(180, 100, 160, 255)), 1.0);
-    private static readonly Pen   _mapBorderPen  = new(new SolidColorBrush(Color.FromArgb(100, 180, 180, 200)), 1.0);
-
-    static DiagramMinimapControl()
-    {
-        ((SolidColorBrush)_bgBrush).Freeze();
-        ((SolidColorBrush)_nodeBrush).Freeze();
-        ((SolidColorBrush)_viewportBrush).Freeze();
-        _borderPen.Freeze();
-        _mapBorderPen.Freeze();
-    }
+    // ── Brushes resolved at render time from theme tokens (never frozen) ──────
+    // Resolved via TryFindResource each OnRender so theme switches take effect immediately.
+    private static readonly Brush _bgBrushFallback       = new SolidColorBrush(Color.FromArgb(200, 30, 30, 40));
+    private static readonly Brush _nodeBrushFallback     = new SolidColorBrush(Color.FromRgb(80, 100, 160));
+    private static readonly Brush _viewportBrushFallback = new SolidColorBrush(Color.FromArgb(60, 100, 160, 255));
+    private static readonly Color _borderColorFallback   = Color.FromArgb(180, 100, 160, 255);
+    private static readonly Color _mapBorderColorFallback= Color.FromArgb(100, 180, 180, 200);
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -111,10 +103,22 @@ public sealed class DiagramMinimapControl : FrameworkElement
 
     protected override void OnRender(DrawingContext dc)
     {
+        // Resolve brushes from theme tokens each frame so theme switches take effect.
+        var bgBrush       = TryFindResource("CD_CanvasBackground")      as Brush ?? _bgBrushFallback;
+        var nodeBrush     = TryFindResource("CD_ClassBoxBackground")     as Brush ?? _nodeBrushFallback;
+        var viewportBrush = TryFindResource("CD_MinimapViewportBrush")   as Brush ?? _viewportBrushFallback;
+        var borderColor   = TryFindResource("CD_SelectionBorderBrush") is SolidColorBrush sb
+            ? Color.FromArgb(180, sb.Color.R, sb.Color.G, sb.Color.B) : _borderColorFallback;
+        var mapBorderBrush= TryFindResource("CD_ClassBoxBorderBrush")    as Brush
+            ?? new SolidColorBrush(_mapBorderColorFallback);
+
+        var borderPen    = new Pen(new SolidColorBrush(borderColor), 1.0);
+        var mapBorderPen = new Pen(mapBorderBrush, 1.0);
+
         var mapRect = new Rect(0, 0, MapWidth, MapHeight);
 
         // Background + border
-        dc.DrawRectangle(_bgBrush, _mapBorderPen, mapRect);
+        dc.DrawRectangle(bgBrush, mapBorderPen, mapRect);
 
         if (_doc is null || _doc.Classes.Count == 0)
         {
@@ -127,14 +131,14 @@ public sealed class DiagramMinimapControl : FrameworkElement
         {
             var nr = ToMapRect(new Rect(node.X, node.Y, node.Width, node.Height));
             if (nr.Width < 1) nr = new Rect(nr.X, nr.Y, 1, 1);
-            dc.DrawRectangle(_nodeBrush, null, nr);
+            dc.DrawRectangle(nodeBrush, null, nr);
         }
 
         // Draw viewport rectangle
         if (!_viewport.IsEmpty)
         {
             var vr = ToMapRect(_viewport);
-            dc.DrawRectangle(_viewportBrush, _borderPen, Clip(vr, mapRect));
+            dc.DrawRectangle(viewportBrush, borderPen, Clip(vr, mapRect));
         }
     }
 

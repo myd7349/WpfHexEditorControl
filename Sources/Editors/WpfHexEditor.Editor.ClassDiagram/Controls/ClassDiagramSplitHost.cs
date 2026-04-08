@@ -472,6 +472,8 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         if (_document.Classes.Count == 0) return;
         _canvas.ApplyDocument(_document);
+        // Minimap uses TryFindResource brushes resolved at OnRender time — just invalidate.
+        _canvas._minimap.InvalidateVisual();
     }
 
     /// <summary>Selects a single node on the canvas and fires SelectedClassChanged.</summary>
