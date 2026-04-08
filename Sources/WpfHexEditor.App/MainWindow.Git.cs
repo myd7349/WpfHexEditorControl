@@ -3,20 +3,21 @@
 // File: MainWindow.Git.cs
 // Description:
 //     Git / VCS status bar wiring for MainWindow.
-//     Subscribes to GitStatusChangedEvent and GitBlameLoadedEvent
-//     published by WpfHexEditor.Plugins.Git (fully decoupled).
+//     Subscribes to GitStatusChangedEvent, GitBlameLoadedEvent,
+//     GitOperationStartedEvent, GitOperationCompletedEvent.
+//     Branch button click → BranchPickerPopup.
 // Architecture Notes:
 //     Pattern: identical to MainWindow.Debug.cs — subscribe on bus,
 //     update XAML controls on Dispatcher.
 // ==========================================================
 
 using WpfHexEditor.Core.Events.IDEEvents;
-using WpfHexEditor.Editor.Core.LSP;
 
 namespace WpfHexEditor.App;
 
 public partial class MainWindow
 {
+
     // ── Initialization ────────────────────────────────────────────────────────
 
     private void InitializeGitIntegration()
@@ -32,6 +33,33 @@ public partial class MainWindow
         _ideEventBus.Subscribe<GitBlameLoadedEvent>(e =>
         {
             Dispatcher.InvokeAsync(() => OnGitBlameLoaded(e));
+            return System.Threading.Tasks.Task.CompletedTask;
+        });
+
+        _ideEventBus.Subscribe<GitOperationStartedEvent>(e =>
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                GitOperationStatusText.Text       = $"Git: {e.OperationName}…";
+                GitOperationStatusText.Visibility = System.Windows.Visibility.Visible;
+            });
+            return System.Threading.Tasks.Task.CompletedTask;
+        });
+
+        _ideEventBus.Subscribe<GitOperationCompletedEvent>(e =>
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (e.Success)
+                {
+                    GitOperationStatusText.Visibility = System.Windows.Visibility.Collapsed;
+                }
+                else
+                {
+                    GitOperationStatusText.Text       = $"Git {e.OperationName} failed";
+                    GitOperationStatusText.Visibility = System.Windows.Visibility.Visible;
+                }
+            });
             return System.Threading.Tasks.Task.CompletedTask;
         });
     }
@@ -56,8 +84,14 @@ public partial class MainWindow
     private void OnGitBlameLoaded(GitBlameLoadedEvent e)
     {
         // Blame data is already cached in GitVersionControlService.
-        // The active CodeEditor will pull it via IDEHostContext.VersionControl.GetBlameAsync
-        // when the user toggles ShowBlameGutter — nothing to do here from the App layer.
+        // CodeEditor BlameGutterControl will pull it on next SetContext call.
         _ = e;
+    }
+
+    private void OnGitBranchButtonClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        // Publish event — GitPlugin subscribes and shows BranchPickerPopup
+        // (fully decoupled: App cannot reference Git plugin types directly)
+        _ideEventBus?.Publish(new GitBranchClickRequestedEvent(GitBranchButton));
     }
 }

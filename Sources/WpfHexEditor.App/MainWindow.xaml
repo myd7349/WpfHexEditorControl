@@ -1940,21 +1940,32 @@
                 </StackPanel>
             </StatusBarItem>
 
+            <!-- Git remote operation status (push/pull/fetch) -->
+            <StatusBarItem x:Name="GitOpStatusItem">
+                <TextBlock x:Name="GitOperationStatusText" FontSize="11"
+                           Foreground="{DynamicResource GC_ModifiedForeground}"
+                           Visibility="Collapsed"/>
+            </StatusBarItem>
+
             <!-- Git branch / dirty indicator (shown when a VCS repo is active) -->
             <StatusBarItem x:Name="GitStatusItem" Visibility="Collapsed">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="&#xE7C1;" FontFamily="Segoe MDL2 Assets" FontSize="11"
-                               Foreground="{DynamicResource DockTabActiveTextBrush}"
-                               VerticalAlignment="Center" Margin="4,0,4,0"
-                               ToolTip="Git branch"/>
-                    <TextBlock x:Name="GitBranchText"
-                               Foreground="{DynamicResource DockTabActiveTextBrush}"
-                               FontSize="11" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                    <TextBlock x:Name="GitDirtyDot" Text="●" FontSize="9"
-                               Foreground="#E8A838" VerticalAlignment="Center"
-                               Margin="0,0,6,0" Visibility="Collapsed"
-                               ToolTip="Uncommitted changes"/>
-                </StackPanel>
+                <Button x:Name="GitBranchButton"
+                        Background="Transparent" BorderThickness="0" Padding="0"
+                        Cursor="Hand" Click="OnGitBranchButtonClick"
+                        ToolTip="Click to switch branch">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="&#xE7C1;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                   Foreground="{DynamicResource DockTabActiveTextBrush}"
+                                   VerticalAlignment="Center" Margin="4,0,4,0"/>
+                        <TextBlock x:Name="GitBranchText"
+                                   Foreground="{DynamicResource DockTabActiveTextBrush}"
+                                   FontSize="11" VerticalAlignment="Center" Margin="0,0,2,0"/>
+                        <TextBlock x:Name="GitDirtyDot" Text="●" FontSize="9"
+                                   Foreground="#E8A838" VerticalAlignment="Center"
+                                   Margin="0,0,6,0" Visibility="Collapsed"
+                                   ToolTip="Uncommitted changes"/>
+                    </StackPanel>
+                </Button>
             </StatusBarItem>
 
             <!-- Debug session status indicator -->

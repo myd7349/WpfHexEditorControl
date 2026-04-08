@@ -50,6 +50,7 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
     private IIDEHostContext?           _context;
     private GitVersionControlService?  _vcs;
     private GitChangesPanelViewModel?  _changesVm;
+    private Views.BranchPickerPopup?   _branchPicker;
     private readonly CancellationTokenSource _cts = new();
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -64,8 +65,19 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
         // Register as IVersionControlService so context.VersionControl resolves it
         context.ExtensionRegistry.Register<IVersionControlService>(Id, _vcs);
 
+        // Wire event bus for long-running git ops (push/pull/fetch/ahead-behind)
+        _vcs.PublishEvent = e =>
+        {
+            switch (e)
+            {
+                case GitOperationStartedEvent s:    context.IDEEvents.Publish(s); break;
+                case GitOperationCompletedEvent c:  context.IDEEvents.Publish(c); break;
+                case GitAheadBehindChangedEvent ab: context.IDEEvents.Publish(ab); break;
+            }
+        };
+
         // Create panel VM and panel
-        _changesVm = new GitChangesPanelViewModel(_vcs, context.Output);
+        _changesVm = new GitChangesPanelViewModel(_vcs, context.Output, context.IDEEvents);
         var panel  = new GitChangesPanel { DataContext = _changesVm };
 
         // Register dockable panel
@@ -86,6 +98,14 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
 
         // Subscribe to VCS status changes → publish IDE event
         _vcs.StatusChanged += OnVcsStatusChanged;
+
+        // Subscribe to branch button click → show BranchPickerPopup
+        context.IDEEvents.Subscribe<GitBranchClickRequestedEvent>(e =>
+        {
+            System.Windows.Application.Current?.Dispatcher.InvokeAsync(
+                () => ShowBranchPicker(e.PlacementTarget as System.Windows.UIElement));
+            return Task.CompletedTask;
+        });
 
         // Register View menu items
         context.UIRegistry.RegisterMenuItem(
@@ -176,5 +196,23 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
             _vcs.BranchName,
             _vcs.IsDirty,
             0));
+    }
+
+    private void ShowBranchPicker(System.Windows.UIElement? placementTarget)
+    {
+        if (_vcs is null) return;
+
+        _branchPicker ??= new Views.BranchPickerPopup();
+
+        var vm = new ViewModels.BranchPickerViewModel(_vcs);
+        vm.RequestClose += (_, _) =>
+        {
+            _branchPicker.IsOpen      = false;
+            _branchPicker.DataContext = null;
+        };
+        _branchPicker.DataContext     = vm;
+        _branchPicker.PlacementTarget = placementTarget;
+        _branchPicker.IsOpen          = true;
+        vm.LoadAsync();
     }
 }

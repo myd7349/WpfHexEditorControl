@@ -1,4 +1,4 @@
-<!-- ==========================================================
+﻿<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: Forest/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -964,4 +964,20 @@
     <!-- Options page section header foreground -->
     <SolidColorBrush x:Key="Opt_SectionForegroundBrush" Color="#888888"/>
 
-</ResourceDictionary>
+
+    <!-- ══ Git Panel (GC_*) ══════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="GC_AddedForeground"            Color="#90C290"/>
+    <SolidColorBrush x:Key="GC_ModifiedForeground"         Color="#D4A853"/>
+    <SolidColorBrush x:Key="GC_DeletedForeground"          Color="#D46060"/>
+    <SolidColorBrush x:Key="GC_StagedForeground"           Color="#90C290"/>
+    <SolidColorBrush x:Key="GC_UntrackedForeground"        Color="#888888"/>
+    <SolidColorBrush x:Key="GC_ConflictForeground"         Color="#FF6B6B"/>
+    <SolidColorBrush x:Key="GC_CommitButtonBackground"     Color="#3D6B3D"/>
+    <SolidColorBrush x:Key="GC_CommitButtonForeground"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="GC_AheadBadgeForeground"       Color="#90C290"/>
+    <SolidColorBrush x:Key="GC_BehindBadgeForeground"      Color="#D4A853"/>
+    <SolidColorBrush x:Key="GC_BlameAuthorForeground"      Color="#7BA3C0"/>
+    <SolidColorBrush x:Key="GC_BlameHashForeground"        Color="#C4985A"/>
+    <SolidColorBrush x:Key="GC_BranchPickerHoverBackground" Color="#2A3A2A"/>
+    <SolidColorBrush x:Key="GC_SectionHeaderForeground"    Color="#888888"/>
+    <SolidColorBrush x:Key="GC_StashForeground"            Color="#B0B0B0"/></ResourceDictionary>
