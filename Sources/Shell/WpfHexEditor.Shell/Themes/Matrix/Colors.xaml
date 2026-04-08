@@ -1,4 +1,4 @@
-﻿<!-- ==========================================================
+<!-- ==========================================================
      Project: WpfHexEditor.Shell
      File: Matrix/Colors.xaml
      Author: Derek Tremblay (derektremblay666@gmail.com)
@@ -539,28 +539,28 @@
     <SolidColorBrush x:Key="MD_PreviewBorder"       Color="#00FF41"/>
 
     <!-- Class Diagram (CD_*) -->
-    <SolidColorBrush x:Key="CD_CanvasBackground"             Color="#2A2A2A" />
-    <SolidColorBrush x:Key="CD_CanvasBorderBrush"            Color="#3F3F46" />
-    <SolidColorBrush x:Key="CD_CanvasGridLineBrush"          Color="#333333" />
-    <SolidColorBrush x:Key="CD_ClassBoxBackground"           Color="#252526" />
-    <SolidColorBrush x:Key="CD_ClassBoxBorderBrush"          Color="#3F3F46" />
-    <SolidColorBrush x:Key="CD_ClassBoxHeaderBackground"     Color="#1E1E1E" />
-    <SolidColorBrush x:Key="CD_ClassBoxSectionDivider"       Color="#3F3F46" />
+    <SolidColorBrush x:Key="CD_CanvasBackground"             Color="#000000" />
+    <SolidColorBrush x:Key="CD_CanvasBorderBrush"            Color="#003300" />
+    <SolidColorBrush x:Key="CD_CanvasGridLineBrush"          Color="#001800" />
+    <SolidColorBrush x:Key="CD_ClassBoxBackground"           Color="#001200" />
+    <SolidColorBrush x:Key="CD_ClassBoxBorderBrush"          Color="#00AA44" />
+    <SolidColorBrush x:Key="CD_ClassBoxHeaderBackground"     Color="#000A00" />
+    <SolidColorBrush x:Key="CD_ClassBoxSectionDivider"       Color="#003300" />
     <SolidColorBrush x:Key="CD_ClassBoxSelectedBorderBrush"  Color="#569CD6" />
     <SolidColorBrush x:Key="CD_ClassBoxHoverBorderBrush"     Color="#4EC9B0" />
-    <SolidColorBrush x:Key="CD_ClassNameForeground"          Color="#4FC1FF" />
-    <SolidColorBrush x:Key="CD_StereotypeForeground"         Color="#9B9B9B" />
-    <SolidColorBrush x:Key="CD_MemberTextForeground"         Color="#D4D4D4" />
-    <SolidColorBrush x:Key="CD_FieldForeground"              Color="#9CDCFE" />
-    <SolidColorBrush x:Key="CD_PropertyForeground"           Color="#4EC9B0" />
-    <SolidColorBrush x:Key="CD_MethodForeground"             Color="#C586C0" />
-    <SolidColorBrush x:Key="CD_EventForeground"              Color="#CE9178" />
-    <SolidColorBrush x:Key="CD_InheritanceArrowBrush"        Color="#4FC1FF" />
-    <SolidColorBrush x:Key="CD_AssociationArrowBrush"        Color="#569CD6" />
-    <SolidColorBrush x:Key="CD_DependencyArrowBrush"         Color="#7F7F7F" />
-    <SolidColorBrush x:Key="CD_AggregationArrowBrush"        Color="#4EC9B0" />
-    <SolidColorBrush x:Key="CD_CompositionArrowBrush"        Color="#CE9178" />
-    <SolidColorBrush x:Key="CD_RelationshipLabelForeground"  Color="#9B9B9B" />
+    <SolidColorBrush x:Key="CD_ClassNameForeground"          Color="#00FF41" />
+    <SolidColorBrush x:Key="CD_StereotypeForeground"         Color="#00CC33" />
+    <SolidColorBrush x:Key="CD_MemberTextForeground"         Color="#00EE33" />
+    <SolidColorBrush x:Key="CD_FieldForeground"              Color="#00CC33" />
+    <SolidColorBrush x:Key="CD_PropertyForeground"           Color="#00FF80" />
+    <SolidColorBrush x:Key="CD_MethodForeground"             Color="#00FF41" />
+    <SolidColorBrush x:Key="CD_EventForeground"              Color="#66FF44" />
+    <SolidColorBrush x:Key="CD_InheritanceArrowBrush"        Color="#00AA44" />
+    <SolidColorBrush x:Key="CD_AssociationArrowBrush"        Color="#00CC33" />
+    <SolidColorBrush x:Key="CD_DependencyArrowBrush"         Color="#005500" />
+    <SolidColorBrush x:Key="CD_AggregationArrowBrush"        Color="#00EE33" />
+    <SolidColorBrush x:Key="CD_CompositionArrowBrush"        Color="#88FF44" />
+    <SolidColorBrush x:Key="CD_RelationshipLabelForeground"  Color="#00CC33" />
     <SolidColorBrush x:Key="CD_PanelToolbarBrush"            Color="#2D2D30" />
     <SolidColorBrush x:Key="CD_PanelToolbarBorderBrush"      Color="#3F3F46" />
     <SolidColorBrush x:Key="CD_OutlineSelectedBrush"         Color="#094771" />

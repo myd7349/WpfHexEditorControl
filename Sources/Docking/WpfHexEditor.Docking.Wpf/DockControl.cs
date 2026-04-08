@@ -45,6 +45,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     private FloatingWindowManager? _floatingManager;
     private DockKeyboardNavigation? _keyboardNav;
     private readonly List<DockTabEventWirer> _tabWirers = [];
+    private readonly List<DockTabControl>    _managedTabControls = [];
     private readonly Dictionary<string, object> _contentCache = new();
 
     // Batch-close support: suppresses intermediate rebuilds during multi-item close operations.
@@ -1292,6 +1293,8 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     private UIElement CreateTabControl(DockGroupNode group)
     {
         var tabControl = CreateTabControlForGroup(group);
+        _managedTabControls.Add(tabControl);
+        tabControl.ApplyHighlightMode(PanelHighlightMode);
         var titleBar   = CreateGroupTitleBar(group, tabControl);
 
         var layout = new DockPanel { LastChildFill = true };
@@ -1306,7 +1309,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         var overlayBorder = new Border
         {
             BorderThickness     = new Thickness(0),
-            CornerRadius        = new CornerRadius(0),
+            CornerRadius        = new CornerRadius(4, 4, 0, 0),
             IsHitTestVisible    = false,
             SnapsToDevicePixels = true,
         };
@@ -1315,6 +1318,13 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         // Size the overlay to the content area only (exclude tab strip height).
         // The bottom border line gets a gap punched above the active tab via CombinedGeometry
         // (GeometryCombineMode.Exclude) — VS classic "active tab connected to content" effect.
+        var outer = new Grid { Margin = new Thickness(2) };
+        outer.Children.Add(layout);        // z=0: actual content (title + body + tab strip)
+        outer.Children.Add(overlayBorder); // z=1: border visual over content area only
+
+        // Clip the overlay to the content area (= outer minus tab strip height) and punch a gap
+        // above the active tab so the selected tab's U-shape connects flush to the content area.
+        // 'outer' is captured so h uses the real rendered height of the overlay (title + body).
         tabControl.Loaded += (_, _) =>
         {
             tabControl.ApplyTemplate();
@@ -1326,31 +1336,26 @@ public class DockControl : ContentControl, IDockHost, IDisposable
             void UpdateOverlay()
             {
                 double tabH = tabStrip.ActualHeight;
-
-                // Use tabControl dimensions directly — overlayBorder.ActualHeight is stale
-                // when read in the same pass that sets Margin (layout hasn't updated yet).
-                double w = tabControl.ActualWidth;
-                double h = tabControl.ActualHeight - tabH;
+                double w    = outer.ActualWidth;
+                double h    = outer.ActualHeight - tabH; // full overlay height: title bar + content body
 
                 overlayBorder.Margin = new Thickness(0, 0, 0, tabH);
 
                 if (w <= 0 || h <= 0) { overlayBorder.Clip = null; return; }
 
-                // contentArea covers the full overlay render rect in local coords.
                 var contentArea = new RectangleGeometry(new Rect(0, 0, w, h));
 
                 int selIdx = tabControl.SelectedIndex;
                 if (selIdx >= 0 &&
                     tabControl.ItemContainerGenerator.ContainerFromIndex(selIdx) is FrameworkElement activeTab)
                 {
-                    // activeTab coords in tabControl space → same X origin as the overlay.
-                    var pos  = activeTab.TranslatePoint(new Point(0, 0), tabControl);
+                    // X position of active tab relative to outer (same x origin as overlay).
+                    var pos   = activeTab.TranslatePoint(new Point(0, 0), outer);
                     double gapX = Math.Max(0, pos.X);
                     double gapW = activeTab.ActualWidth;
                     if (gapW > 0)
                     {
-                        // Punch a gap at the bottom edge of the overlay (= top of tab strip).
-                        // gapH*2 ensures the rectangle straddles the border line completely.
+                        // Exclude a rectangle straddling the bottom border line above the active tab.
                         var gap = new RectangleGeometry(new Rect(gapX, h - gapH, gapW, gapH * 2));
                         overlayBorder.Clip = new CombinedGeometry(GeometryCombineMode.Exclude, contentArea, gap);
                         return;
@@ -1360,16 +1365,12 @@ public class DockControl : ContentControl, IDockHost, IDisposable
                 overlayBorder.Clip = contentArea;
             }
 
-            tabStrip.SizeChanged         += (_, _) => UpdateOverlay();
-            overlayBorder.SizeChanged    += (_, _) => UpdateOverlay();
-            tabControl.SelectionChanged  += (_, _) => UpdateOverlay();
-            tabControl.LayoutUpdated     += (_, _) => UpdateOverlay();
+            tabStrip.SizeChanged        += (_, _) => UpdateOverlay();
+            outer.SizeChanged           += (_, _) => UpdateOverlay();
+            tabControl.SelectionChanged += (_, _) => UpdateOverlay();
+            tabControl.LayoutUpdated    += (_, _) => UpdateOverlay();
             UpdateOverlay();
         };
-
-        var outer = new Grid { Margin = new Thickness(2) };
-        outer.Children.Add(layout);        // z=0: actual content (title + body + tab strip)
-        outer.Children.Add(overlayBorder); // z=1: border visual over content area only
 
         outer.AddHandler(
             UIElement.PreviewMouseDownEvent,
@@ -1637,8 +1638,8 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         }
 
         _activePanel = panelBorder;
-        // Highlight the newly active panel using the themed token
-        _activePanel.SetResourceReference(Border.BorderBrushProperty, "TG_ActiveGroupBorderBrush");
+        // Use the same accent as the tab selector's SelectionBorder for visual consistency.
+        _activePanel.SetResourceReference(Border.BorderBrushProperty, "DockTabActiveBrush");
         ApplyHighlightToBorder(_activePanel);
     }
 
@@ -1649,6 +1650,9 @@ public class DockControl : ContentControl, IDockHost, IDisposable
     public void ApplyHighlightMode(ActivePanelHighlightMode mode)
     {
         PanelHighlightMode = mode;
+
+        foreach (var tc in _managedTabControls)
+            tc.ApplyHighlightMode(mode);
 
         if (_activePanel is null) return;
 
@@ -1669,7 +1673,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
                 break;
 
             case ActivePanelHighlightMode.FullBorder:
-                border.BorderThickness = new Thickness(2);
+                border.BorderThickness = new Thickness(1);
                 break;
 
             case ActivePanelHighlightMode.Glow:

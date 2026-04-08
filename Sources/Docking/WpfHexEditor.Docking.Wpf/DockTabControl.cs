@@ -100,6 +100,38 @@ public class DockTabControl : TabControl
         return (Template?.FindName("PART_TabStrip", this) as FrameworkElement)?.ActualHeight ?? 0;
     }
 
+    // ── Highlight mode ─────────────────────────────────────────────────────────
+
+    private ActivePanelHighlightMode _highlightMode = ActivePanelHighlightMode.FullBorder;
+
+    /// <summary>
+    /// Updates the SelectionBorder thickness on every tab item to match the active
+    /// panel highlight mode (TopBar = bottom-only, FullBorder = U-shape 1px, Glow = U-shape 2px).
+    /// </summary>
+    internal void ApplyHighlightMode(ActivePanelHighlightMode mode)
+    {
+        _highlightMode = mode;
+        foreach (var obj in Items)
+        {
+            if (ItemContainerGenerator.ContainerFromItem(obj) is TabItem tab)
+                ApplySelectionBorderThickness(tab);
+        }
+    }
+
+    private void ApplySelectionBorderThickness(TabItem tab)
+    {
+        tab.ApplyTemplate();
+        if (tab.Template?.FindName("SelectionBorder", tab) is not Border sb) return;
+        sb.BorderThickness = SelectionBorderThicknessFor(_highlightMode);
+    }
+
+    private static Thickness SelectionBorderThicknessFor(ActivePanelHighlightMode mode) => mode switch
+    {
+        ActivePanelHighlightMode.TopBar    => new Thickness(0, 0, 0, 2), // bottom only
+        ActivePanelHighlightMode.Glow      => new Thickness(2, 0, 2, 2), // U-shape 2px
+        _                                  => new Thickness(1, 0, 1, 1), // FullBorder / default
+    };
+
     private Func<DockItem, object>? _contentFactory;
 
     // Tracks DockItems whose plugin panel has already been created at least once.
@@ -285,6 +317,9 @@ public class DockTabControl : TabControl
         };
         // DockTabControl is always bottom-placed: use inverted CornerRadius (0,0,4,4) style
         tabItem.SetResourceReference(StyleProperty, "DockTabItemBottomStyle");
+
+        // Apply the current highlight mode once the template is available.
+        tabItem.Loaded += (_, _) => ApplySelectionBorderThickness(tabItem);
 
         if (deferPluginContent)
         {
