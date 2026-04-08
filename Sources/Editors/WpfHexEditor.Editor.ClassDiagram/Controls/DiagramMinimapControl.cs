@@ -45,14 +45,12 @@ public sealed class DiagramMinimapControl : FrameworkElement
     private double           _scale       = 1.0;
     private Vector           _offset;                     // diagram-space top-left corner
 
-    // Viewport drag (left-button click outside grip strip)
-    private bool   _dragging;
-    private Point  _dragStart;
-    private Vector _dragViewportOrigin;
-
-    // Reposition drag (left-button on grip strip — top 10px)
-    private bool   _repositionDragging;
-    private Point  _repoParentStart;   // parent-canvas-space start for reposition drag
+    // Unified drag state — drag anywhere on minimap repositions it; click navigates viewport
+    private bool   _mouseDown;
+    private Point  _mouseDownParentPt;   // parent-canvas coords at mouse-down
+    private Point  _lastParentPt;        // last parent-canvas coords during drag
+    private bool   _repositionConfirmed; // true once drag exceeds DragThreshold
+    private const double DragThreshold = 5.0;
 
     // ── Events ────────────────────────────────────────────────────────────────
     /// <summary>Raised when the user drags the viewport rect inside the minimap.</summary>
@@ -204,82 +202,74 @@ public sealed class DiagramMinimapControl : FrameworkElement
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
-        var pt = e.GetPosition(this);
-
-        if (pt.Y <= GripHeight)
-        {
-            // Reposition drag — track parent-canvas-space position (same coordinate system as
-            // Canvas.SetLeft/Top) so the delta can be applied directly without zoom correction.
-            _repositionDragging = true;
-            _repoParentStart    = e.GetPosition((IInputElement)Parent);
-            Cursor              = Cursors.SizeAll;
-        }
-        else
-        {
-            // Viewport drag
-            _dragging           = true;
-            _dragStart          = pt;
-            _dragViewportOrigin = _viewport.IsEmpty
-                ? new Vector(0, 0)
-                : new Vector(_viewport.X, _viewport.Y);
-        }
+        _mouseDown           = true;
+        _repositionConfirmed = false;
+        _mouseDownParentPt   = e.GetPosition((IInputElement)Parent);
+        _lastParentPt        = _mouseDownParentPt;
         CaptureMouse();
         e.Handled = true;
     }
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
-        if (_repositionDragging)
+        if (!_mouseDown) { e.Handled = false; return; }
+
+        Point  cur   = e.GetPosition((IInputElement)Parent);
+        Vector delta = cur - _lastParentPt;
+
+        if (!_repositionConfirmed)
         {
-            // Compute delta in parent-canvas coordinate space.
-            // GetPosition(Parent) travels through the ZoomPanCanvas RenderTransform chain
-            // so the returned value is already in DiagramCanvas local units — the same
-            // space used by Canvas.SetLeft/Top, so no zoom correction is needed.
-            Point  cur   = e.GetPosition((IInputElement)Parent);
-            Vector delta = cur - _repoParentStart;
-            _repoParentStart = cur;
-            PositionDeltaRequested?.Invoke(this, delta);
-            e.Handled = true;
-            return;
+            Vector total = cur - _mouseDownParentPt;
+            if (Math.Abs(total.X) > DragThreshold || Math.Abs(total.Y) > DragThreshold)
+            {
+                _repositionConfirmed = true;
+                Cursor = Cursors.SizeAll;
+            }
         }
 
-        if (_dragging)
+        if (_repositionConfirmed)
         {
-            Point cur    = e.GetPosition(this);
-            Vector delta = (Vector)(cur - _dragStart);
-            double diagDX = delta.X / _scale;
-            double diagDY = delta.Y / _scale;
-            ViewportNavigateRequested?.Invoke(this,
-                new Point(_dragViewportOrigin.X + diagDX, _dragViewportOrigin.Y + diagDY));
+            _lastParentPt = cur;
+            PositionDeltaRequested?.Invoke(this, delta);
         }
-        e.Handled = _dragging;
+
+        e.Handled = true;
     }
 
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
-        if (_repositionDragging)
+        bool wasRepo = _repositionConfirmed;
+        _mouseDown           = false;
+        _repositionConfirmed = false;
+        ReleaseMouseCapture();
+        Cursor = Cursors.Hand;
+
+        if (!wasRepo)
         {
-            // Determine new corner based on final mouse position relative to parent canvas
-            var parent = Parent as Canvas;
-            if (parent is not null)
+            // Treat as click — navigate viewport to clicked diagram point
+            Point mapPt  = e.GetPosition(this);
+            Point diagPt = ToDiagramPoint(mapPt);
+            ViewportNavigateRequested?.Invoke(this, diagPt);
+        }
+        else
+        {
+            // Corner snap on release
+            if (Parent is Canvas parent)
             {
-                Point posInParent = e.GetPosition(parent);
-                double cx = parent.ActualWidth  / 2;
-                double cy = parent.ActualHeight / 2;
-                var corner = (posInParent.X < cx, posInParent.Y < cy) switch
+                Point pos  = e.GetPosition(parent);
+                bool  left = pos.X < parent.ActualWidth  / 2;
+                bool  top  = pos.Y < parent.ActualHeight / 2;
+                var corner = (left, top) switch
                 {
                     (true,  true)  => MinimapCorner.TopLeft,
                     (false, true)  => MinimapCorner.TopRight,
                     (true,  false) => MinimapCorner.BottomLeft,
-                    (false, false) => MinimapCorner.BottomRight
+                    _              => MinimapCorner.BottomRight
                 };
                 CornerChangeRequested?.Invoke(this, corner);
             }
-            Cursor = Cursors.Hand;
         }
-        _dragging           = false;
-        _repositionDragging = false;
-        ReleaseMouseCapture();
+
         e.Handled = true;
     }
 

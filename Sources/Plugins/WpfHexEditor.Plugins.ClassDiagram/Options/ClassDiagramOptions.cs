@@ -20,6 +20,19 @@ using WpfHexEditor.Editor.ClassDiagram.Core.Layout;
 
 namespace WpfHexEditor.Plugins.ClassDiagram.Options;
 
+/// <summary>Controls which .cs files are analyzed when opening a class diagram from a single file.</summary>
+public enum PartialClassScopeMode
+{
+    /// <summary>Automatically include all .cs files with the same base name (e.g. MainWindow.*.cs).</summary>
+    AllSiblings,
+    /// <summary>Analyze only the clicked file, ignoring other partial class files.</summary>
+    ActiveFileOnly,
+    /// <summary>Analyze all .cs files in the same directory.</summary>
+    WholeDirectory,
+    /// <summary>Show a prompt when more than one sibling file is found.</summary>
+    AskWhenAmbiguous
+}
+
 /// <summary>
 /// Persisted settings for the Class Diagram plugin.
 /// </summary>
@@ -131,4 +144,9 @@ public sealed class ClassDiagramOptions
 
     /// <summary>When true the last zoom, pan, selected node, and minimap position are restored on reopen.</summary>
     public bool RestoreLastState { get; set; } = true;
+
+    // ── Partial class scope ───────────────────────────────────────────────────
+
+    /// <summary>Controls partial class file discovery scope when opening a diagram from a single file.</summary>
+    public PartialClassScopeMode PartialClassScope { get; set; } = PartialClassScopeMode.AllSiblings;
 }

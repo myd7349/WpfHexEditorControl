@@ -91,8 +91,9 @@ public sealed class ClassDiagramSplitHost : Grid,
     // View state
     // ---------------------------------------------------------------------------
 
-    private CdViewMode    _viewMode = CdViewMode.Split;
-    private CdSplitLayout _layout   = CdSplitLayout.SplitRight;
+    private CdViewMode         _viewMode         = CdViewMode.DiagramOnly;
+    private CdSplitLayout      _layout           = CdSplitLayout.SplitRight;
+    private LayoutStrategyKind _layoutStrategy   = LayoutStrategyKind.ForceDirected;
 
     // Persisted split ratios so dragging the splitter survives layout rebuilds
     private double _splitColRatio = 0.35;   // code / (code+diagram) for H splits
@@ -124,6 +125,7 @@ public sealed class ClassDiagramSplitHost : Grid,
     public ObservableCollection<EditorToolbarItem> ToolbarItems { get; } = [];
     private EditorToolbarItem? _podUndoItem;
     private EditorToolbarItem? _podRedoItem;
+    private readonly List<EditorToolbarItem> _layoutStrategyItems = [];
 
     // ---------------------------------------------------------------------------
     // Status bar items
@@ -164,6 +166,8 @@ public sealed class ClassDiagramSplitHost : Grid,
 
     public ClassDiagramSplitHost()
     {
+        this.SetResourceReference(BackgroundProperty, "DockBackgroundBrush");
+
         // Services
         _undoManager        = new ClassDiagramUndoManager();
         _snap               = new ClassSnapEngineService();
@@ -902,7 +906,28 @@ public sealed class ClassDiagramSplitHost : Grid,
             Command   = new RelayCommand(() => _canvas.IsMinimapVisible = !_canvas.IsMinimapVisible)
         });
 
-        // Auto-layout strategy dropdown
+        // Auto-layout strategy dropdown — mutually exclusive radio-style toggles
+        _layoutStrategyItems.Clear();
+        EditorToolbarItem MakeStrategyItem(string label, LayoutStrategyKind kind)
+        {
+            EditorToolbarItem item = null!;
+            item = new EditorToolbarItem
+            {
+                Label     = label,
+                IsToggle  = true,
+                IsChecked = _layoutStrategy == kind,
+                Command   = new RelayCommand(() =>
+                {
+                    _layoutStrategy = kind;
+                    foreach (var mi in _layoutStrategyItems)
+                        mi.IsChecked = ReferenceEquals(mi, item);
+                    ApplyLayout(kind);
+                })
+            };
+            _layoutStrategyItems.Add(item);
+            return item;
+        }
+
         ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
         ToolbarItems.Add(new EditorToolbarItem
         {
@@ -911,9 +936,9 @@ public sealed class ClassDiagramSplitHost : Grid,
             Tooltip = "Apply auto-layout strategy",
             DropdownItems = new ObservableCollection<EditorToolbarItem>
             {
-                new() { Label = "Force-Directed", Command = new RelayCommand(() => ApplyLayout(LayoutStrategyKind.ForceDirected)) },
-                new() { Label = "Hierarchical",   Command = new RelayCommand(() => ApplyLayout(LayoutStrategyKind.Hierarchical))  },
-                new() { Label = "Sugiyama",       Command = new RelayCommand(() => ApplyLayout(LayoutStrategyKind.Sugiyama))      }
+                MakeStrategyItem("Force-Directed", LayoutStrategyKind.ForceDirected),
+                MakeStrategyItem("Hierarchical",   LayoutStrategyKind.Hierarchical),
+                MakeStrategyItem("Sugiyama",       LayoutStrategyKind.Sugiyama)
             }
         });
 

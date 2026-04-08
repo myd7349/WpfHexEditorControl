@@ -1513,6 +1513,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             PluginMonitorContentId         => CreatePluginMonitorPanelContent(),
             PluginManagerContentId         => CreatePluginManagerContent(),
             MarkdownOutlinePanelContentId  => CreateMarkdownOutlinePanelContent(),
+            _ when item.ContentId.StartsWith("doc-class-diagram-") => CreateClassDiagramGhostContent(item),
             _ when item.ContentId.StartsWith("doc-file-")      => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-src-nav-")   => CreateSmartFileEditorContent(item),
             _ when item.ContentId.StartsWith("doc-hex-")       => WrapHexDocItemWithInfoBar(item),
@@ -1523,6 +1524,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             _ when item.ContentId.StartsWith("doc-proj-")      => CreateProjectItemContent(item),
             _ => CreateDocumentContent(item)
         };
+
+    private UIElement CreateClassDiagramGhostContent(DockItem item)
+    {
+        // Class diagram tabs are reopened by the plugin on startup via BeginInvoke(ApplicationIdle).
+        // Close this stale layout entry silently so the plugin can create a fresh tab.
+        Dispatcher.InvokeAsync(() => CloseTab(item, promptIfDirty: false),
+            System.Windows.Threading.DispatcherPriority.Background);
+        return new Border();
+    }
 
     // --- Panel factories -----------------------------------------------
 

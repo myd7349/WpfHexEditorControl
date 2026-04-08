@@ -48,6 +48,9 @@ public sealed class DiagramVisualLayer : FrameworkElement
     // Nodes the user has explicitly expanded past MaxNodeHeight
     private readonly HashSet<string> _expandedNodes = new(StringComparer.Ordinal);
 
+    // Nodes explicitly collapsed to header-only (double-click or context menu)
+    private readonly HashSet<string> _collapsedNodes = new(StringComparer.Ordinal);
+
     // Per-node custom heights set by the resize gripper drag
     private readonly Dictionary<string, double> _customHeights = new(StringComparer.Ordinal);
 
@@ -407,6 +410,13 @@ public sealed class DiagramVisualLayer : FrameworkElement
             DrawMetricsBadge(dc, node, width);
         }
 
+        // Skip member rendering for collapsed nodes — header already drawn above
+        if (_collapsedNodes.Contains(node.Id))
+        {
+            if (isDimmed) dc.Pop();
+            return;
+        }
+
         // Member rows
         double memberY = HeaderHeight + MemberPadding;
         MemberKind? lastKind   = null;
@@ -761,6 +771,10 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     public double ComputeNodeHeight(ClassNode node)
     {
+        // Collapsed nodes show only the header.
+        if (_collapsedNodes.Contains(node.Id))
+            return HeaderHeight;
+
         // Custom height set by the resize gripper takes priority.
         if (_customHeights.TryGetValue(node.Id, out double custom))
             return Math.Max(custom, HeaderHeight + MemberHeight);
@@ -832,6 +846,31 @@ public sealed class DiagramVisualLayer : FrameworkElement
         if (!_expandedNodes.Remove(nodeId))
             _expandedNodes.Add(nodeId);
     }
+
+    /// <summary>Toggles the collapsed state of a node (header-only display).</summary>
+    public void ToggleCollapsed(string nodeId)
+    {
+        if (!_collapsedNodes.Remove(nodeId))
+            _collapsedNodes.Add(nodeId);
+        // Clear expand/custom-height state when collapsing
+        if (_collapsedNodes.Contains(nodeId))
+        {
+            _expandedNodes.Remove(nodeId);
+            _customHeights.Remove(nodeId);
+        }
+    }
+
+    /// <summary>Returns whether the node is collapsed.</summary>
+    public bool IsCollapsed(string nodeId) => _collapsedNodes.Contains(nodeId);
+
+    /// <summary>Collapses all nodes.</summary>
+    public void CollapseAll(IEnumerable<ClassNode> nodes)
+    {
+        foreach (var n in nodes) _collapsedNodes.Add(n.Id);
+    }
+
+    /// <summary>Expands all nodes (clears collapse state).</summary>
+    public void ExpandAll() => _collapsedNodes.Clear();
 
     /// <summary>Returns the node whose "N more" footer pill is at <paramref name="pt"/>, or null.</summary>
     public ClassNode? HitTestMoreFooter(IReadOnlyList<ClassNode> classes, Point pt)

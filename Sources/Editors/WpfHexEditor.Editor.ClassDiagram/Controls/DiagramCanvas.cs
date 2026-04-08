@@ -409,8 +409,9 @@ public sealed class DiagramCanvas : Canvas
     private void UpdateSelectAdornerPosition()
     {
         if (_selectAdorner is null || _selectedNode is null) return;
+        double h = _layer.ComputeNodeHeight(_selectedNode);
         _selectAdorner.AdornedBounds =
-            new Rect(_selectedNode.X, _selectedNode.Y, _selectedNode.Width, _selectedNode.Height);
+            new Rect(_selectedNode.X, _selectedNode.Y, _selectedNode.Width, h);
     }
 
     private void ClearAdorners()
@@ -451,6 +452,20 @@ public sealed class DiagramCanvas : Canvas
 
         Point pt   = e.GetPosition(this);
         var   node = _layer.HitTestNode(pt);
+
+        // Double-click on any node → toggle collapse
+        if (e.ClickCount == 2 && _doc is not null)
+        {
+            var dblNode = _layer.HitTestNode(pt);
+            if (dblNode is not null)
+            {
+                _layer.ToggleCollapsed(dblNode.Id);
+                _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+                UpdateSelectAdornerPosition();
+                e.Handled = true;
+                return;
+            }
+        }
 
         // Resize gripper — bottom edge of any node
         if (_doc is not null)
@@ -540,8 +555,9 @@ public sealed class DiagramCanvas : Canvas
         if (_resizingNode is not null)
         {
             double dy = pt.Y - _resizeStartY;
-            _layer.SetCustomHeight(_resizingNode.Id, _resizeStartHeight + dy);
+            _layer.SetCustomHeight(_resizingNode.Id, Math.Max(_resizeStartHeight + dy, 40));
             _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+            UpdateSelectAdornerPosition();
             e.Handled = true;
             return;
         }
@@ -792,6 +808,16 @@ public sealed class DiagramCanvas : Canvas
         menu.Items.Add(addMenu);
 
         menu.Items.Add(new Separator());
+        bool isCollapsed = _layer.IsCollapsed(node.Id);
+        menu.Items.Add(MakeItem(isCollapsed ? "\uE8A4" : "\uE89A",
+            isCollapsed ? "Expand Node" : "Collapse Node",
+            () =>
+            {
+                _layer.ToggleCollapsed(node.Id);
+                _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+                UpdateSelectAdornerPosition();
+            }));
+        menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("\uE8D4", "Properties", () => { }));
         return menu;
     }
@@ -818,6 +844,19 @@ public sealed class DiagramCanvas : Canvas
     private ContextMenu BuildEmptyCanvasContextMenu()
     {
         var menu = StyledMenu();
+        menu.Items.Add(MakeItem("\uE71C", "Collapse All",
+            () =>
+            {
+                _layer.CollapseAll(_doc!.Classes);
+                _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+            }));
+        menu.Items.Add(MakeItem("\uE740", "Expand All",
+            () =>
+            {
+                _layer.ExpandAll();
+                _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+            }));
+        menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("\uE710", "Add Class",     () => { }));
         menu.Items.Add(MakeItem("\uE710", "Add Interface", () => { }));
         menu.Items.Add(MakeItem("\uE710", "Add Enum",      () => { }));

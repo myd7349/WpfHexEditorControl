@@ -107,6 +107,10 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     private readonly Dictionary<string, string> _openTabs =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // Open diagram hosts keyed by uiId for status bar and cleanup.
+    private readonly Dictionary<string, ClassDiagramSplitHost> _openHosts =
+        new(StringComparer.Ordinal);
+
     // Live-sync services keyed by uiId; disposed when the plugin unloads.
     private readonly Dictionary<string, DiagramLiveSyncService> _liveSyncServices =
         new(StringComparer.Ordinal);
@@ -238,6 +242,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
         // Subscribe to document focus changes so panels sync to the active diagram.
         context.FocusContext.FocusChanged += OnFocusChanged;
+        context.FocusContext.FocusChanged += OnFocusSyncStatusBar;
 
         // Seed panels immediately for any document open at plugin-load time.
         SeedFromCurrentDocument(context);
@@ -261,7 +266,10 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     public Task ShutdownAsync(CancellationToken ct = default)
     {
         if (_context is not null)
+        {
             _context.FocusContext.FocusChanged -= OnFocusChanged;
+            _context.FocusContext.FocusChanged -= OnFocusSyncStatusBar;
+        }
 
         UnwireCurrentHost();
 
@@ -319,6 +327,18 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         }
 
         WireHost(host);
+    }
+
+    /// <summary>
+    /// Syncs the IDE status bar when focus switches to an open class diagram tab.
+    /// The MainWindow's OnActiveDocumentChanged path handles normal editors; this
+    /// handler covers plugin-owned document tabs that bypass CreateSmartFileEditorContent.
+    /// </summary>
+    private void OnFocusSyncStatusBar(object? sender, FocusChangedEventArgs e)
+    {
+        var host = ResolveActiveHost(e.ActiveDocument);
+        if (host is not null)
+            host.RefreshStatusBarItems();
     }
 
     /// <summary>
@@ -815,30 +835,35 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                 .ToArray()
             : [csharpFilePath];
         string[] filesToAnalyze;
-        if (siblings.Length > 5)
+        switch (_options.PartialClassScope)
         {
-            // C2 — Many siblings: let the user choose scope
-            var result = System.Windows.MessageBox.Show(
-                $"Found {siblings.Length} files starting with '{baseName}' in this folder.\n\n" +
-                $"[Yes]  Analyze all {siblings.Length} sibling files (recommended — merges partial classes)\n" +
-                $"[No]   Analyze only the active file\n" +
-                $"[Cancel] Analyze entire directory",
-                "Class Diagram — File Scope",
-                System.Windows.MessageBoxButton.YesNoCancel,
-                System.Windows.MessageBoxImage.Question);
-
-            if (result == System.Windows.MessageBoxResult.Cancel)
-            {
-                await OpenClassDiagramForFolderAsync(dir, context);
-                return;
-            }
-            filesToAnalyze = result == System.Windows.MessageBoxResult.Yes
-                ? siblings
-                : [csharpFilePath];
-        }
-        else
-        {
-            filesToAnalyze = siblings.Length > 1 ? siblings : [csharpFilePath];
+            case PartialClassScopeMode.ActiveFileOnly:
+                filesToAnalyze = [csharpFilePath];
+                break;
+            case PartialClassScopeMode.WholeDirectory:
+                filesToAnalyze = Directory.Exists(dir)
+                    ? Directory.GetFiles(dir, "*.cs")
+                    : [csharpFilePath];
+                break;
+            case PartialClassScopeMode.AskWhenAmbiguous when siblings.Length > 1:
+                var result = System.Windows.MessageBox.Show(
+                    $"Found {siblings.Length} files starting with '{baseName}'.\n\n" +
+                    "[Yes]  Include all sibling files (merges partial classes)\n" +
+                    "[No]   Analyze only the active file\n" +
+                    "[Cancel]  Analyze entire directory",
+                    "Class Diagram — File Scope",
+                    System.Windows.MessageBoxButton.YesNoCancel,
+                    System.Windows.MessageBoxImage.Question);
+                if (result == System.Windows.MessageBoxResult.Cancel)
+                {
+                    await OpenClassDiagramForFolderAsync(dir, context);
+                    return;
+                }
+                filesToAnalyze = result == System.Windows.MessageBoxResult.Yes ? siblings : [csharpFilePath];
+                break;
+            default: // AllSiblings
+                filesToAnalyze = siblings.Length > 1 ? siblings : [csharpFilePath];
+                break;
         }
 
         DiagramDocument doc = await Task.Run(() =>
@@ -860,6 +885,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         }
 
         _openTabs[csharpFilePath] = uiId;
+        _openHosts[uiId]          = host;
         context.UIRegistry.RegisterDocumentTab(uiId, host, Id, new DocumentDescriptor
         {
             Title     = title,
@@ -881,7 +907,8 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                     host.ApplyPatch(e.Patch, e.Document);
                 else
                 {
-                    // Tab has been closed — dispose silently.
+                    // Tab has been closed — remove host mapping and dispose silently.
+                    _openHosts.Remove(uiId);
                     svc.Dispose();
                     _liveSyncServices.Remove(uiId);
                 }
