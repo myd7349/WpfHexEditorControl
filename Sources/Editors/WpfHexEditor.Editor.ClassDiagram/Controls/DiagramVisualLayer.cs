@@ -427,8 +427,9 @@ public sealed class DiagramVisualLayer : FrameworkElement
         dc.PushClip(new System.Windows.Media.RectangleGeometry(
             new Rect(0, HeaderHeight, width, Math.Max(0, height - HeaderHeight))));
 
-        // Pre-compute the Y limit: leave room for the footer bar if there are hidden members
-        bool isCapped  = !_expandedNodes.Contains(node.Id) && ComputeNodeHeightFull(node) > MaxNodeHeight;
+        // isCapped = there are members that don't fit at the CURRENT display height
+        // (custom height via gripper may already show all members — fullH <= height → not capped)
+        bool isCapped  = !_expandedNodes.Contains(node.Id) && ComputeNodeHeightFull(node) > height;
         double memberYLimit = isCapped ? height - FooterHeight : height;
 
         foreach (var member in node.Members)
@@ -516,7 +517,7 @@ public sealed class DiagramVisualLayer : FrameworkElement
         // "N more" footer when node is capped
         if (isCapped)
         {
-            int hidden = CountHiddenMembers(node);
+            int hidden = CountHiddenMembers(node, height);
             if (hidden > 0)
             {
                 double footerY = height - FooterHeight;
@@ -832,9 +833,10 @@ public sealed class DiagramVisualLayer : FrameworkElement
         return null;
     }
 
-    private int CountHiddenMembers(ClassNode node)
+    private int CountHiddenMembers(ClassNode node, double displayHeight)
     {
         double h = HeaderHeight + MemberPadding * 2;
+        double limit = displayHeight - FooterHeight; // room for the footer itself
         int hidden = 0;
         bool capping = false;
         MemberKind? lastKind = null;
@@ -845,7 +847,7 @@ public sealed class DiagramVisualLayer : FrameworkElement
             if (!IsSectionCollapsed(node.Id, sec))
             {
                 h += MemberHeight;
-                if (h > MaxNodeHeight) { capping = true; hidden++; }
+                if (h > limit) { capping = true; hidden++; }
             }
             lastKind = m.Kind;
         }

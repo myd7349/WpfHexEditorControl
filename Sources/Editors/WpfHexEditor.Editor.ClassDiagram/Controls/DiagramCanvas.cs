@@ -329,10 +329,12 @@ public sealed class DiagramCanvas : Canvas
 
     private void UpdateSelectAdornerPosition()
     {
-        if (_selectAdorner is null || _selectedNode is null) return;
-        double h = _layer.ComputeNodeHeight(_selectedNode);
-        _selectAdorner.AdornedBounds =
-            new Rect(_selectedNode.X, _selectedNode.Y, _selectedNode.Width, h);
+        if (_selectAdorner is null) return;
+        // During resize, _resizingNode may differ from _selectedNode — use whichever is active
+        var node = _resizingNode ?? _selectedNode;
+        if (node is null) return;
+        double h = _layer.ComputeNodeHeight(node);
+        _selectAdorner.AdornedBounds = new Rect(node.X, node.Y, node.Width, h);
     }
 
     private void ClearAdorners()
@@ -396,6 +398,9 @@ public sealed class DiagramCanvas : Canvas
                 _resizingNode      = gripNode;
                 _resizeStartY      = pt.Y;
                 _resizeStartHeight = _layer.ComputeNodeHeight(gripNode);
+                // Ensure adorner is attached so it tracks during the resize drag
+                if (_selectAdorner is null) AttachSelectAdorner(gripNode);
+                UpdateSelectAdornerPosition();
                 CaptureMouse();
                 e.Handled = true;
                 return;
