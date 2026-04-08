@@ -1075,7 +1075,7 @@ public sealed class ClassDiagramSplitHost : Grid,
         {
             case Key.Delete: DeleteSelected();  e.Handled = true; break;
             case Key.F2:     BeginRename();     e.Handled = true; break;
-            case Key.Escape: ClearSelection();  e.Handled = true; break;
+            case Key.Escape: _canvas.ClearSelection(); e.Handled = true; break;
         }
     }
 

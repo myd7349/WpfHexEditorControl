@@ -501,16 +501,8 @@ public sealed class DiagramCanvas : Canvas
         }
         else
         {
-            // Click on empty area — clear selection
-            if (_selectedIds.Count > 0)
-            {
-                _selectedIds.Clear();
-                _primarySelected = null;
-                _layer.SetMultiSelection(_selectedIds);
-                _layer.ClearSelection();
-                _layer.UpdateSelection(null, _hoveredNode?.Id);
-                SelectedClassChanged?.Invoke(this, null);
-            }
+            // Click on empty area — clear selection then start rubber-band
+            if (_selectedIds.Count > 0) ClearSelection();
             _isRubberBanding = true;
             _rubberStart     = pt;
             AttachRubberBand(_rubberStart);
