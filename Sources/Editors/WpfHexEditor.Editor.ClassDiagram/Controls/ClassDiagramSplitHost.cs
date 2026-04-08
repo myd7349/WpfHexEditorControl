@@ -94,6 +94,10 @@ public sealed class ClassDiagramSplitHost : Grid,
     private CdViewMode    _viewMode = CdViewMode.Split;
     private CdSplitLayout _layout   = CdSplitLayout.SplitRight;
 
+    // Persisted split ratios so dragging the splitter survives layout rebuilds
+    private double _splitColRatio = 0.35;   // code / (code+diagram) for H splits
+    private double _splitRowRatio = 0.35;   // code / (code+diagram) for V splits
+
     // ---------------------------------------------------------------------------
     // Domain
     // ---------------------------------------------------------------------------
@@ -231,7 +235,7 @@ public sealed class ClassDiagramSplitHost : Grid,
         _zoomPan.TransformChanged  += (_, _) => UpdateScrollBars();
         DiagramChanged             += (_, _) => UpdateScrollBars();
 
-        // GridSplitter
+        // GridSplitter — 6px wide, uses DockSplitterBrush for a visible handle
         _splitter = new GridSplitter
         {
             ShowsPreview        = false,
@@ -240,7 +244,8 @@ public sealed class ClassDiagramSplitHost : Grid,
             VerticalAlignment   = VerticalAlignment.Stretch,
             Cursor              = Cursors.SizeWE
         };
-        _splitter.SetResourceReference(BackgroundProperty, "DockToolBarBorderBrush");
+        _splitter.SetResourceReference(BackgroundProperty, "DockSplitterBrush");
+        _splitter.DragCompleted += (_, _) => SaveSplitRatio();
 
         // Toolbar
         _toolbarPanel     = new StackPanel { Orientation = Orientation.Horizontal };
@@ -617,44 +622,56 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         _codeHost.Visibility      = Visibility.Visible;
         _diagramBorder.Visibility = Visibility.Visible;
-        _diagramBorder.BorderThickness = new Thickness(1, 0, 0, 0);  // 1px left separator
         _splitter.Visibility      = Visibility.Visible;
 
         switch (_layout)
         {
             case CdSplitLayout.SplitRight:
+            {
                 // Toolbar row + [code | splitter | diagram]
+                _diagramBorder.BorderThickness = new Thickness(1, 0, 0, 0);
                 RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                var colCode    = new ColumnDefinition { Width = new GridLength(_splitColRatio,         GridUnitType.Star) };
+                var colSplitter= new ColumnDefinition { Width = new GridLength(6) };
+                var colDiagram = new ColumnDefinition { Width = new GridLength(1 - _splitColRatio,     GridUnitType.Star) };
+                ColumnDefinitions.Add(colCode);
+                ColumnDefinitions.Add(colSplitter);
+                ColumnDefinitions.Add(colDiagram);
 
                 SetColumnSpan(_toolbarContainer, 3);
                 AddToGrid(_toolbarContainer, 0, 0);
                 AddToGrid(_codeHost,         1, 0);
                 AddToGrid(_splitter,         1, 1);
-                AddToGrid(_diagramBorder,      1, 2);
+                AddToGrid(_diagramBorder,    1, 2);
 
                 _splitter.ResizeDirection     = GridResizeDirection.Columns;
-                _splitter.Width               = double.NaN;   // column definition controls width
+                _splitter.Width               = double.NaN;
                 _splitter.Height              = double.NaN;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
                 _splitter.Cursor              = Cursors.SizeWE;
                 break;
+            }
 
             case CdSplitLayout.SplitLeft:
+            {
                 // Toolbar row + [diagram | splitter | code]
+                _diagramBorder.BorderThickness = new Thickness(0, 0, 1, 0);
                 RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                var colDiagram = new ColumnDefinition { Width = new GridLength(1 - _splitColRatio,     GridUnitType.Star) };
+                var colSplitter= new ColumnDefinition { Width = new GridLength(6) };
+                var colCode    = new ColumnDefinition { Width = new GridLength(_splitColRatio,         GridUnitType.Star) };
+                ColumnDefinitions.Add(colDiagram);
+                ColumnDefinitions.Add(colSplitter);
+                ColumnDefinitions.Add(colCode);
 
                 SetColumnSpan(_toolbarContainer, 3);
                 AddToGrid(_toolbarContainer, 0, 0);
-                AddToGrid(_diagramBorder,      1, 0);
+                AddToGrid(_diagramBorder,    1, 0);
                 AddToGrid(_splitter,         1, 1);
                 AddToGrid(_codeHost,         1, 2);
 
@@ -665,18 +682,24 @@ public sealed class ClassDiagramSplitHost : Grid,
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
                 _splitter.Cursor              = Cursors.SizeWE;
                 break;
+            }
 
             case CdSplitLayout.SplitBottom:
+            {
                 // Toolbar row + code row + splitter + diagram row
+                _diagramBorder.BorderThickness = new Thickness(0, 1, 0, 0);
                 RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(8) });
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                var rowCode    = new RowDefinition { Height = new GridLength(_splitRowRatio,         GridUnitType.Star) };
+                var rowSplitter= new RowDefinition { Height = new GridLength(6) };
+                var rowDiagram = new RowDefinition { Height = new GridLength(1 - _splitRowRatio,     GridUnitType.Star) };
+                RowDefinitions.Add(rowCode);
+                RowDefinitions.Add(rowSplitter);
+                RowDefinitions.Add(rowDiagram);
 
                 AddToGrid(_toolbarContainer, 0, 0);
                 AddToGrid(_codeHost,         1, 0);
                 AddToGrid(_splitter,         2, 0);
-                AddToGrid(_diagramBorder,      3, 0);
+                AddToGrid(_diagramBorder,    3, 0);
 
                 _splitter.ResizeDirection     = GridResizeDirection.Rows;
                 _splitter.Width               = double.NaN;
@@ -685,16 +708,22 @@ public sealed class ClassDiagramSplitHost : Grid,
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
                 _splitter.Cursor              = Cursors.SizeNS;
                 break;
+            }
 
             case CdSplitLayout.SplitTop:
+            {
                 // Toolbar row + diagram row + splitter + code row
+                _diagramBorder.BorderThickness = new Thickness(0, 0, 0, 1);
                 RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(8) });
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                var rowDiagram = new RowDefinition { Height = new GridLength(1 - _splitRowRatio,     GridUnitType.Star) };
+                var rowSplitter= new RowDefinition { Height = new GridLength(6) };
+                var rowCode    = new RowDefinition { Height = new GridLength(_splitRowRatio,         GridUnitType.Star) };
+                RowDefinitions.Add(rowDiagram);
+                RowDefinitions.Add(rowSplitter);
+                RowDefinitions.Add(rowCode);
 
                 AddToGrid(_toolbarContainer, 0, 0);
-                AddToGrid(_diagramBorder,      1, 0);
+                AddToGrid(_diagramBorder,    1, 0);
                 AddToGrid(_splitter,         2, 0);
                 AddToGrid(_codeHost,         3, 0);
 
@@ -705,6 +734,35 @@ public sealed class ClassDiagramSplitHost : Grid,
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
                 _splitter.Cursor              = Cursors.SizeNS;
                 break;
+            }
+        }
+    }
+
+    private void SaveSplitRatio()
+    {
+        if (_layout is CdSplitLayout.SplitRight or CdSplitLayout.SplitLeft)
+        {
+            // Column 0 = code (SplitRight) or diagram (SplitLeft), column 2 = other
+            if (ColumnDefinitions.Count >= 3)
+            {
+                double codeW  = _layout == CdSplitLayout.SplitRight
+                    ? ColumnDefinitions[0].ActualWidth
+                    : ColumnDefinitions[2].ActualWidth;
+                double total  = ColumnDefinitions[0].ActualWidth + ColumnDefinitions[2].ActualWidth;
+                if (total > 0) _splitColRatio = Math.Clamp(codeW / total, 0.1, 0.9);
+            }
+        }
+        else
+        {
+            // Row 1 = code (SplitBottom) or diagram (SplitTop), row 3 = other
+            if (RowDefinitions.Count >= 4)
+            {
+                double codeH  = _layout == CdSplitLayout.SplitBottom
+                    ? RowDefinitions[1].ActualHeight
+                    : RowDefinitions[3].ActualHeight;
+                double total  = RowDefinitions[1].ActualHeight + RowDefinitions[3].ActualHeight;
+                if (total > 0) _splitRowRatio = Math.Clamp(codeH / total, 0.1, 0.9);
+            }
         }
     }
 
