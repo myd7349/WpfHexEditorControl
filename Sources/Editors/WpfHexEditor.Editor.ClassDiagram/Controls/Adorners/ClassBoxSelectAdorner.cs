@@ -59,17 +59,18 @@ public sealed class ClassBoxSelectAdorner : Adorner
     {
         if (_adornedBounds == Rect.Empty) return;
 
-        // The AdornerLayer sits in AdornerDecorator coordinate space, ABOVE the
-        // ZoomPanCanvas RenderTransform (scale + translate). We must map the
-        // diagram-local bounds through the full transform chain so the selection
-        // rectangle tracks the node correctly at any zoom level and pan position.
+        // Map diagram-local bounds → adorner-layer coordinate space.
+        // TransformToAncestor fails here because AdornerLayer and DiagramCanvas are
+        // in SEPARATE branches under AdornerDecorator (not a true ancestor relationship).
+        // TransformToVisual traverses via the common visual ancestor and handles
+        // ZoomPanCanvas.RenderTransform (scale + translate) correctly.
         var adornerLayer = AdornerLayer.GetAdornerLayer(AdornedElement);
         Rect bounds = _adornedBounds;
         if (adornerLayer is not null)
         {
             try
             {
-                GeneralTransform gt = AdornedElement.TransformToAncestor(adornerLayer);
+                GeneralTransform gt = AdornedElement.TransformToVisual(adornerLayer);
                 bounds = gt.TransformBounds(_adornedBounds);
             }
             catch { /* visual tree not ready — fall back to diagram-local coords */ }
