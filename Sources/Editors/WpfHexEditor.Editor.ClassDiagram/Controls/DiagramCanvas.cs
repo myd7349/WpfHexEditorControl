@@ -57,10 +57,9 @@ public sealed class DiagramCanvas : Canvas
 
     private readonly DiagramCanvasViewModel _vm = new();
 
-    // ── Adorners ──────────────────────────────────────────────────────────────
-    private AdornerLayer?          _adornerLayer;
-    private ClassBoxSelectAdorner? _selectAdorner;
-    private RubberBandAdorner?     _rubberBandAdorner;
+    // ── Adorners (rubber-band only — selection rect drawn by _layer directly) ──
+    private AdornerLayer?      _adornerLayer;
+    private RubberBandAdorner? _rubberBandAdorner;
 
     // ── Drag ──────────────────────────────────────────────────────────────────
     private Point  _dragStart;
@@ -191,13 +190,6 @@ public sealed class DiagramCanvas : Canvas
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         _adornerLayer = AdornerLayer.GetAdornerLayer(this);
-
-        // Subscribe to parent ZoomPanCanvas so the selection adorner repaints
-        // synchronously on every zoom/pan frame. Without this the adorner only
-        // repaints when AdornedBounds is explicitly set (node drag) and lags
-        // behind during wheel-zoom and middle-mouse-pan.
-        if (Parent is ZoomPanCanvas zpc)
-            zpc.TransformChanged += (_, _) => _selectAdorner?.InvalidateVisual();
     }
 
     // B1 — Dot-grid background rendered in OnRender (only redraws when Canvas is invalidated)
@@ -301,47 +293,29 @@ public sealed class DiagramCanvas : Canvas
     {
         if (_selectedNode == node) return;
         _selectedNode = node;
-        RemoveSelectAdorner();
 
         if (_selectedNode is not null)
-            AttachSelectAdorner(_selectedNode);
+            UpdateSelectAdornerPosition();
+        else
+            _layer.ClearSelection();
 
         _layer.UpdateSelection(_selectedNode?.Id, _hoveredNode?.Id);
         SelectedClassChanged?.Invoke(this, _selectedNode);
     }
 
-    private void AttachSelectAdorner(ClassNode node)
-    {
-        // Retry layer lookup in case OnLoaded fired before the AdornerDecorator was connected
-        _adornerLayer ??= AdornerLayer.GetAdornerLayer(this);
-        if (_adornerLayer is null) return;
-        _selectAdorner = new ClassBoxSelectAdorner(this)
-        {
-            AdornedBounds = new Rect(node.X, node.Y, node.Width, _layer.ComputeNodeHeight(node))
-        };
-        _adornerLayer.Add(_selectAdorner);
-    }
-
-    private void RemoveSelectAdorner()
-    {
-        if (_selectAdorner is null || _adornerLayer is null) return;
-        _adornerLayer.Remove(_selectAdorner);
-        _selectAdorner = null;
-    }
-
     private void UpdateSelectAdornerPosition()
     {
-        if (_selectAdorner is null) return;
-        // During resize, _resizingNode may differ from _selectedNode — use whichever is active
+        // During resize, _resizingNode may differ from _selectedNode — use whichever is active.
+        // DrawingVisual lives inside ZoomPanCanvas → diagram coords work directly, no transform needed.
         var node = _resizingNode ?? _selectedNode;
         if (node is null) return;
         double h = _layer.ComputeNodeHeight(node);
-        _selectAdorner.AdornedBounds = new Rect(node.X, node.Y, node.Width, h);
+        _layer.DrawSelection(new Rect(node.X, node.Y, node.Width, h));
     }
 
     private void ClearAdorners()
     {
-        RemoveSelectAdorner();
+        _layer.ClearSelection();
         RemoveRubberBandAdorner();
     }
 
@@ -400,8 +374,6 @@ public sealed class DiagramCanvas : Canvas
                 _resizingNode      = gripNode;
                 _resizeStartY      = pt.Y;
                 _resizeStartHeight = _layer.ComputeNodeHeight(gripNode);
-                // Ensure adorner is attached so it tracks during the resize drag
-                if (_selectAdorner is null) AttachSelectAdorner(gripNode);
                 UpdateSelectAdornerPosition();
                 CaptureMouse();
                 e.Handled = true;
@@ -593,6 +565,18 @@ public sealed class DiagramCanvas : Canvas
             _hoveredNode = null;
             _layer.UpdateSelection(_selectedNode?.Id, null);
             HoveredClassChanged?.Invoke(this, null);
+        }
+    }
+
+    // ── Keyboard ──────────────────────────────────────────────────────────────
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Key == Key.Escape)
+        {
+            SelectNode(null);
+            e.Handled = true;
         }
     }
 

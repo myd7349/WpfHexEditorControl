@@ -62,10 +62,11 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     // ── Visual children ──────────────────────────────────────────────────────
 
-    private readonly DrawingVisual                  _arrowLayer  = new();
+    private readonly DrawingVisual                  _arrowLayer     = new();
     private readonly Dictionary<string, DrawingVisual> _nodeVisuals = [];
-    private readonly DrawingVisual                     _swimlaneLayer = new();
-    private readonly List<Visual>                      _visuals       = [];
+    private readonly DrawingVisual                     _swimlaneLayer  = new();
+    private readonly DrawingVisual                     _selectionVisual = new();  // top-most: selection rect
+    private readonly List<Visual>                      _visuals        = [];
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -92,10 +93,70 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     public DiagramVisualLayer()
     {
-        _visuals.Add(_swimlaneLayer); // swimlane lanes behind everything
+        _visuals.Add(_swimlaneLayer);    // swimlane lanes behind everything
         AddVisualChild(_swimlaneLayer);
-        _visuals.Add(_arrowLayer);    // arrows above swimlanes, below nodes
+        _visuals.Add(_arrowLayer);       // arrows above swimlanes, below nodes
         AddVisualChild(_arrowLayer);
+        // _selectionVisual added AFTER all node visuals so it renders on top
+        // It is appended in EnsureSelectionVisualOnTop() after nodes are built.
+    }
+
+    // ── Selection visual (diagram-space DrawingVisual — no adorner needed) ─────
+
+    /// <summary>
+    /// Draws the selection rectangle (border + 8 handles) in diagram coordinates.
+    /// Because this DrawingVisual lives inside ZoomPanCanvas it follows zoom/pan
+    /// automatically — no coordinate transform is needed.
+    /// </summary>
+    public void DrawSelection(Rect bounds)
+    {
+        EnsureSelectionVisualOnTop();
+        const double HandlePx = 5.0;
+
+        Brush borderBrush = TryFindResource("CD_SelectionBorderBrush") as Brush
+            ?? new SolidColorBrush(Color.FromRgb(0, 120, 215));
+        Brush handleFill = TryFindResource("CD_SelectionHandleFill") as Brush
+            ?? Brushes.White;
+        var pen    = new Pen(borderBrush, 1.5) { DashStyle = DashStyles.Solid };
+        var hPen   = new Pen(borderBrush, 1.0);
+
+        using var dc = _selectionVisual.RenderOpen();
+        dc.DrawRectangle(null, pen, bounds);
+
+        double l = bounds.Left,  r = bounds.Right;
+        double t = bounds.Top,   b = bounds.Bottom;
+        double mx = (l + r) / 2, my = (t + b) / 2;
+        double h = HandlePx;
+
+        void Handle(double cx, double cy) =>
+            dc.DrawRectangle(handleFill, hPen, new Rect(cx - h, cy - h, h * 2, h * 2));
+
+        Handle(l, t); Handle(mx, t); Handle(r, t);
+        Handle(r, my);
+        Handle(r, b); Handle(mx, b); Handle(l, b);
+        Handle(l, my);
+    }
+
+    /// <summary>Clears the selection visual.</summary>
+    public void ClearSelection()
+    {
+        using var dc = _selectionVisual.RenderOpen();
+        // empty — clears the visual
+    }
+
+    private void EnsureSelectionVisualOnTop()
+    {
+        if (!_visuals.Contains(_selectionVisual))
+        {
+            _visuals.Add(_selectionVisual);
+            AddVisualChild(_selectionVisual);
+        }
+        else if (_visuals[^1] != _selectionVisual)
+        {
+            // Move to top
+            _visuals.Remove(_selectionVisual);
+            _visuals.Add(_selectionVisual);
+        }
     }
 
     // ── Public API ───────────────────────────────────────────────────────────
