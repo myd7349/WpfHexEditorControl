@@ -66,7 +66,33 @@ public class ZoomPanCanvas : Canvas
         RenderTransform = group;
         RenderTransformOrigin = new Point(0, 0);
 
-        ClipToBounds = false;
+        ClipToBounds = true;
+        Background   = Brushes.Transparent;   // hit-testable in empty areas
+    }
+
+    // ---------------------------------------------------------------------------
+    // Layout overrides — fill parent viewport so right-clicks hit children
+    // ---------------------------------------------------------------------------
+
+    protected override Size MeasureOverride(Size constraint)
+    {
+        // Give children their natural infinite measure (they lay out in diagram space).
+        foreach (UIElement child in InternalChildren)
+            child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        // ZoomPanCanvas itself fills the available viewport.
+        return new Size(
+            double.IsInfinity(constraint.Width)  ? 0 : constraint.Width,
+            double.IsInfinity(constraint.Height) ? 0 : constraint.Height);
+    }
+
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        // Arrange children at (0,0) with a large virtual canvas so that any
+        // panned or zoomed position is still within the arranged hit-test region.
+        const double VirtualExtent = 100_000.0;
+        foreach (UIElement child in InternalChildren)
+            child.Arrange(new Rect(0, 0, VirtualExtent, VirtualExtent));
+        return finalSize;
     }
 
     // ---------------------------------------------------------------------------
@@ -107,6 +133,18 @@ public class ZoomPanCanvas : Canvas
             c._translate.X = c.OffsetX;
             c._translate.Y = c.OffsetY;
         }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Content bounds (for scrollbar wiring in ClassDiagramSplitHost)
+    // ---------------------------------------------------------------------------
+
+    /// <summary>Returns the diagram extent in logical (unscaled) coordinates.</summary>
+    public Rect GetContentBounds()
+    {
+        if (Children.Count > 0 && Children[0] is DiagramCanvas dc)
+            return dc.GetDiagramBounds();
+        return new Rect(0, 0, 800, 600);
     }
 
     // ---------------------------------------------------------------------------

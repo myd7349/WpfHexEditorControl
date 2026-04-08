@@ -735,7 +735,7 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private double ComputeNodeHeight(ClassNode node)
+    public double ComputeNodeHeight(ClassNode node)
     {
         double h = HeaderHeight + MemberPadding * 2;
         MemberKind? lastKind = null;

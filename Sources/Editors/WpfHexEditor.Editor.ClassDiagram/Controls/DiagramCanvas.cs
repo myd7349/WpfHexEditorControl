@@ -246,6 +246,20 @@ public sealed class DiagramCanvas : Canvas
         if (node is not null) SelectNode(node);
     }
 
+    /// <summary>
+    /// Returns the bounding rectangle of all diagram nodes in logical coordinates,
+    /// with 40px padding. Used by ZoomPanCanvas.GetContentBounds() for scrollbar sizing.
+    /// </summary>
+    public Rect GetDiagramBounds()
+    {
+        if (_doc is null || _doc.Classes.Count == 0) return new Rect(0, 0, 800, 600);
+        double minX = _doc.Classes.Min(n => n.X);
+        double minY = _doc.Classes.Min(n => n.Y);
+        double maxX = _doc.Classes.Max(n => n.X + n.Width);
+        double maxY = _doc.Classes.Max(n => n.Y + _layer.ComputeNodeHeight(n));
+        return new Rect(minX - 40, minY - 40, maxX - minX + 80, maxY - minY + 80);
+    }
+
     // ── Loaded ────────────────────────────────────────────────────────────────
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -793,7 +807,11 @@ public sealed class DiagramCanvas : Canvas
 
     private ContextMenu StyledMenu()
     {
-        var menu = new ContextMenu();
+        var menu = new ContextMenu
+        {
+            PlacementTarget = this,
+            Placement       = System.Windows.Controls.Primitives.PlacementMode.MousePoint
+        };
         menu.SetResourceReference(Control.BackgroundProperty, "DockMenuBackgroundBrush");
         menu.SetResourceReference(Control.ForegroundProperty, "DockMenuForegroundBrush");
         return menu;
