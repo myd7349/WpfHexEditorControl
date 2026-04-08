@@ -312,6 +312,8 @@ public sealed class DiagramCanvas : Canvas
 
     private void AttachSelectAdorner(ClassNode node)
     {
+        // Retry layer lookup in case OnLoaded fired before the AdornerDecorator was connected
+        _adornerLayer ??= AdornerLayer.GetAdornerLayer(this);
         if (_adornerLayer is null) return;
         _selectAdorner = new ClassBoxSelectAdorner(this)
         {

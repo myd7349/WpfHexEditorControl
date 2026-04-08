@@ -10,14 +10,12 @@
 //
 // Architecture Notes:
 //     Pattern: Decorator (WPF Adorner).
-//     Handle size is fixed at 6x6 logical pixels on screen.
-//     AdornedBounds is set by DiagramCanvas in DIAGRAM coordinates (node.X/Y/W/H).
-//     The WPF AdornerLayer applies GetDesiredTransform (AdornedElement → AdornerLayer)
-//     as a RenderTransform on this adorner, so OnRender coordinates ARE diagram coords.
-//     Drawing at _adornedBounds directly is correct — zoom/pan is handled by the
-//     adorner layer transform, not by manual coordinate mapping.
-//     Handle size is kept screen-constant by dividing by the zoom factor extracted
-//     from the adorner layer transform.
+//     AdornedBounds is supplied in DIAGRAM coordinates (node.X/Y/Width/Height).
+//     OnRender maps diagram coords → adorner-layer coords via TransformToVisual.
+//     TransformToVisual traverses via the common visual root and includes
+//     ZoomPanCanvas.RenderTransform (scale + translate) automatically.
+//     InvalidateVisual must be called on every drag step AND on every zoom/pan
+//     frame so the adorner repaints with the updated transform.
 //     Colors use CD_SelectionBorderBrush and CD_SelectionHandleFill tokens.
 // ==========================================================
 
@@ -29,7 +27,6 @@ namespace WpfHexEditor.Editor.ClassDiagram.Controls.Adorners;
 
 /// <summary>
 /// Selection adorner with 8 resize handles drawn around a class box.
-/// Draws in diagram (node) coordinates — AdornerLayer applies the zoom/pan transform.
 /// </summary>
 public sealed class ClassBoxSelectAdorner : Adorner
 {
@@ -48,7 +45,7 @@ public sealed class ClassBoxSelectAdorner : Adorner
 
     /// <summary>
     /// Bounds of the adorned class box in DIAGRAM coordinates (node.X/Y/Width/Height).
-    /// The AdornerLayer transform handles mapping to screen. Setting this triggers a redraw.
+    /// Setting this triggers a redraw.
     /// </summary>
     public Rect AdornedBounds
     {
@@ -64,14 +61,26 @@ public sealed class ClassBoxSelectAdorner : Adorner
     {
         if (_adornedBounds == Rect.Empty) return;
 
-        // Diagram-space bounds — the adorner layer's GetDesiredTransform has already
-        // applied zoom+pan as a RenderTransform, so OnRender coordinates = diagram coords.
+        // Map diagram-local bounds → adorner-layer coordinate space.
+        // The adorner layer is a sibling of ZoomPanCanvas under the AdornerDecorator;
+        // TransformToVisual traverses via the common visual root and correctly includes
+        // ZoomPanCanvas.RenderTransform (scale + translate).
+        var adornerLayer = AdornerLayer.GetAdornerLayer(AdornedElement);
         Rect bounds = _adornedBounds;
-
-        // Extract zoom factor from the adorner's current transform so handles stay
-        // a fixed size on screen regardless of zoom level.
-        double zoom = GetZoomFromTransform();
-        double halfH = zoom > 0 ? ScreenHandleSize / zoom / 2.0 : ScreenHandleSize / 2.0;
+        double zoom  = 1.0;
+        if (adornerLayer is not null)
+        {
+            try
+            {
+                GeneralTransform gt = AdornedElement.TransformToVisual(adornerLayer);
+                bounds = gt.TransformBounds(_adornedBounds);
+                // Extract zoom so handles + stroke stay pixel-constant on screen
+                zoom = bounds.Width > 0 && _adornedBounds.Width > 0
+                    ? bounds.Width / _adornedBounds.Width
+                    : 1.0;
+            }
+            catch { /* visual tree not ready — fall back to diagram-local coords */ }
+        }
 
         Brush? borderBrush = TryFindResource("CD_SelectionBorderBrush") as Brush
             ?? new SolidColorBrush(Color.FromRgb(0, 120, 215));
@@ -79,41 +88,14 @@ public sealed class ClassBoxSelectAdorner : Adorner
         Brush? handleFill = TryFindResource("CD_SelectionHandleFill") as Brush
             ?? Brushes.White;
 
-        double strokeThickness = zoom > 0 ? 1.5 / zoom : 1.5;
-        var selectionPen = new Pen(borderBrush, strokeThickness);
-        var handlePen    = new Pen(borderBrush, zoom > 0 ? 1.0 / zoom : 1.0);
+        var selectionPen = new Pen(borderBrush, 1.5);
+        var handlePen    = new Pen(borderBrush, 1.0);
 
-        // Selection border
         drawingContext.DrawRectangle(null, selectionPen, bounds);
 
-        // 8 handle positions in diagram space (size adjusted for zoom)
+        double halfH = ScreenHandleSize / 2.0;   // handles already in adorner-layer (screen) px
         foreach (Rect handle in ComputeHandleRects(bounds, halfH))
             drawingContext.DrawRectangle(handleFill, handlePen, handle);
-    }
-
-    // ---------------------------------------------------------------------------
-    // Zoom extraction
-    // ---------------------------------------------------------------------------
-
-    private double GetZoomFromTransform()
-    {
-        // The adorner layer sets a RenderTransform on the adorner via GetDesiredTransform.
-        // For a uniform scale + translate, ScaleX gives the zoom factor.
-        try
-        {
-            var adornerLayer = AdornerLayer.GetAdornerLayer(AdornedElement);
-            if (adornerLayer is null) return 1.0;
-            GeneralTransform gt = AdornedElement.TransformToVisual(adornerLayer);
-            if (gt is MatrixTransform mt)
-                return mt.Matrix.M11;
-            if (gt is Transform t)
-            {
-                var matrix = t.Value;
-                return matrix.M11;
-            }
-        }
-        catch { /* visual tree not ready */ }
-        return 1.0;
     }
 
     // ---------------------------------------------------------------------------
