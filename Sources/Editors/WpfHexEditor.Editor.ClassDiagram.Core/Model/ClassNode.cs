@@ -94,6 +94,13 @@ public sealed class ClassNode
     /// <summary>All members declared inside this node.</summary>
     public List<ClassMember> Members { get; init; } = [];
 
+    /// <summary>
+    /// Attribute names applied to this type (e.g. "Serializable", "DataContract").
+    /// Populated by <c>RoslynClassDiagramAnalyzer</c>; empty when using the regex fallback.
+    /// The "Attribute" suffix is stripped for display brevity.
+    /// </summary>
+    public List<string> Attributes { get; init; } = [];
+
     // -------------------------------------------------------
     // Layout Properties (mutated by AutoLayoutEngine and drag)
     // -------------------------------------------------------

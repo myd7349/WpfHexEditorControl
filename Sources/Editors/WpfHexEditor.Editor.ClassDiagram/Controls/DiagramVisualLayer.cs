@@ -286,6 +286,18 @@ public sealed class DiagramVisualLayer : FrameworkElement
             textY += sterFt.Height + 1.0;
         }
 
+        // Attributes (e.g. «Serializable, DataContract»)
+        if (node.Attributes.Count > 0)
+        {
+            string attrText = "«" + string.Join(", ", node.Attributes) + "»";
+            var attrFt = MakeFT(attrText, sterColor, 8.5, italic: true);
+            attrFt.MaxTextWidth = width - HorizPadding * 2;
+            attrFt.Trimming     = System.Windows.TextTrimming.CharacterEllipsis;
+            double attrX = (width - Math.Min(attrFt.Width, attrFt.MaxTextWidth)) / 2;
+            dc.DrawText(attrFt, new Point(attrX, textY));
+            textY += attrFt.Height + 1.0;
+        }
+
         // Class name (bold)
         var nameFt = MakeFT(node.Name, nameColor, 13.0, bold: true);
         dc.DrawText(nameFt, new Point((width - nameFt.Width) / 2, textY));

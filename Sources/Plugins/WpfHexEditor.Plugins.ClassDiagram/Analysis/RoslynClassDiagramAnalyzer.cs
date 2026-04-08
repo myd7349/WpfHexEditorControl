@@ -135,6 +135,7 @@ public static class RoslynClassDiagramAnalyzer
                 node.SourceLineOneBased = typeDecl.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
                 node.Width              = options.DefaultNodeWidth;
                 node.Height             = options.DefaultNodeHeight;
+                node.Attributes.AddRange(ExtractAttributes(typeDecl.AttributeLists));
 
                 nodeMap[fullKey] = node;
             }
@@ -232,6 +233,7 @@ public static class RoslynClassDiagramAnalyzer
                 Kind                = MemberKind.Field,
                 Visibility          = vis,
                 IsStatic            = isStatic,
+                Attributes          = ExtractAttributes(field.AttributeLists),
                 XmlDocSummary       = ExtractXmlDocSummary(field),
                 SourceFilePath      = filePath,
                 SourceLineOneBased  = field.GetLocation().GetLineSpan().StartLinePosition.Line + 1
@@ -260,6 +262,7 @@ public static class RoslynClassDiagramAnalyzer
             IsStatic            = prop.Modifiers.Any(SyntaxKind.StaticKeyword),
             IsAbstract          = prop.Modifiers.Any(SyntaxKind.AbstractKeyword),
             IsOverride          = prop.Modifiers.Any(SyntaxKind.OverrideKeyword),
+            Attributes          = ExtractAttributes(prop.AttributeLists),
             XmlDocSummary       = ExtractXmlDocSummary(prop),
             SourceFilePath      = filePath,
             SourceLineOneBased  = prop.GetLocation().GetLineSpan().StartLinePosition.Line + 1
@@ -285,6 +288,7 @@ public static class RoslynClassDiagramAnalyzer
             Kind                = MemberKind.Event,
             Visibility          = vis,
             IsStatic            = evt.Modifiers.Any(SyntaxKind.StaticKeyword),
+            Attributes          = ExtractAttributes(evt.AttributeLists),
             XmlDocSummary       = ExtractXmlDocSummary(evt),
             SourceFilePath      = filePath,
             SourceLineOneBased  = evt.GetLocation().GetLineSpan().StartLinePosition.Line + 1
@@ -315,6 +319,7 @@ public static class RoslynClassDiagramAnalyzer
                 Kind                = MemberKind.Event,
                 Visibility          = vis,
                 IsStatic            = isStatic,
+                Attributes          = ExtractAttributes(evtField.AttributeLists),
                 XmlDocSummary       = ExtractXmlDocSummary(evtField),
                 SourceFilePath      = filePath,
                 SourceLineOneBased  = evtField.GetLocation().GetLineSpan().StartLinePosition.Line + 1
@@ -353,6 +358,7 @@ public static class RoslynClassDiagramAnalyzer
             IsAsync             = method.Modifiers.Any(SyntaxKind.AsyncKeyword),
             Parameters          = method.ParameterList.Parameters.Select(p => p.ToString()).ToList(),
             GenericConstraints  = constraints,
+            Attributes          = ExtractAttributes(method.AttributeLists),
             XmlDocSummary       = ExtractXmlDocSummary(method),
             SourceFilePath      = filePath,
             SourceLineOneBased  = method.GetLocation().GetLineSpan().StartLinePosition.Line + 1
@@ -379,6 +385,7 @@ public static class RoslynClassDiagramAnalyzer
             Visibility          = vis,
             IsStatic            = ctor.Modifiers.Any(SyntaxKind.StaticKeyword),
             Parameters          = ctor.ParameterList.Parameters.Select(p => p.ToString()).ToList(),
+            Attributes          = ExtractAttributes(ctor.AttributeLists),
             XmlDocSummary       = ExtractXmlDocSummary(ctor),
             SourceFilePath      = filePath,
             SourceLineOneBased  = ctor.GetLocation().GetLineSpan().StartLinePosition.Line + 1
@@ -611,6 +618,32 @@ public static class RoslynClassDiagramAnalyzer
             // "TypeName paramName" — show only the type
             return p.Type?.ToString() ?? p.ToString();
         }));
+
+    /// <summary>
+    /// Extracts attribute names from an attribute list, stripping the "Attribute" suffix.
+    /// E.g. "[SerializableAttribute]" → "Serializable", "[DataContract]" → "DataContract".
+    /// </summary>
+    private static List<string> ExtractAttributes(SyntaxList<AttributeListSyntax> attrLists)
+    {
+        var result = new List<string>();
+        foreach (var attrList in attrLists)
+            foreach (var attr in attrList.Attributes)
+            {
+                string name = attr.Name switch
+                {
+                    IdentifierNameSyntax id          => id.Identifier.ValueText,
+                    QualifiedNameSyntax q            => q.Right.Identifier.ValueText,
+                    GenericNameSyntax g              => g.Identifier.ValueText,
+                    _                                => attr.Name.ToString()
+                };
+                // Strip "Attribute" suffix for brevity (convention in .NET)
+                if (name.EndsWith("Attribute", StringComparison.Ordinal) && name.Length > 9)
+                    name = name[..^9];
+                if (!result.Contains(name))
+                    result.Add(name);
+            }
+        return result;
+    }
 
     private static string? ExtractXmlDocSummary(SyntaxNode node)
     {

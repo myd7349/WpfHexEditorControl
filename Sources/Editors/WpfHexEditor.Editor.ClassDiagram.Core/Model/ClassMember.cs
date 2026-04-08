@@ -68,6 +68,12 @@ public sealed record ClassMember
     public string? GenericConstraints { get; init; }
 
     /// <summary>
+    /// Attribute names applied to this member (e.g. "Obsolete", "XmlElement").
+    /// Populated by <c>RoslynClassDiagramAnalyzer</c>; empty when using the regex fallback.
+    /// </summary>
+    public List<string> Attributes { get; init; } = [];
+
+    /// <summary>
     /// First-line XML documentation summary for this member.
     /// <see langword="null"/> when not present or when using the regex fallback.
     /// </summary>
