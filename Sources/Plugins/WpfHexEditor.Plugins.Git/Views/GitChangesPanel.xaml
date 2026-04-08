@@ -189,13 +189,11 @@
                 <Separator Width="1" Margin="2,4"
                            Background="{DynamicResource Panel_ToolbarBorderBrush}"/>
                 <Button Style="{StaticResource PanelIconButtonStyle}"
-                        Content="+"
-                        FontFamily="{x:Null}" FontSize="14" FontWeight="Bold"
+                        Content="&#xE710;"
                         Command="{Binding StageAllCommand}"
                         ToolTip="Stage All"/>
                 <Button Style="{StaticResource PanelIconButtonStyle}"
-                        Content="&#x2212;"
-                        FontFamily="{x:Null}" FontSize="14"
+                        Content="&#xE738;"
                         Command="{Binding UnstageAllCommand}"
                         ToolTip="Unstage All"/>
                 <Button Style="{StaticResource PanelIconButtonStyle}"
