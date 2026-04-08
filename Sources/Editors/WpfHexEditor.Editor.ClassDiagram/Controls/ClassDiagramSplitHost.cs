@@ -165,6 +165,8 @@ public sealed class ClassDiagramSplitHost : Grid,
         _canvas.HoveredClassChanged      += (_, _) => { };
         _canvas.ExportRequested          += OnCanvasExportRequested;
         _canvas.LayoutStrategyRequested  += (_, strategy) => ApplyLayout(strategy);
+        _canvas.ZoomToNodeRequested      += (_, node) =>
+            _zoomPan.ZoomToRect(new Rect(node.X, node.Y, node.Width, node.Height), 40);
 
         // DSL pane
         _dslTextBox = new TextBox();
@@ -1118,13 +1120,42 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         switch (format)
         {
-            case "png":         ExportPng();         break;
-            case "svg":         ExportSvg();         break;
-            case "csharp":      ExportCSharp();      break;
-            case "mermaid":     ExportMermaid();     break;
-            case "plantUml":    ExportPlantUml();    break;
-            case "structurizr": ExportStructurizr(); break;
+            case "png":               ExportPng();                    break;
+            case "svg":               ExportSvg();                    break;
+            case "csharp":            ExportCSharp();                 break;
+            case "mermaid":           ExportMermaid();                break;
+            case "plantUml":          ExportPlantUml();               break;
+            case "structurizr":       ExportStructurizr();            break;
+            case "clipboard-mermaid": _ = CopyMermaidToClipboard();   break;
+            case "clipboard-plantUml":_ = CopyPlantUmlToClipboard();  break;
+            case "clipboard-png":     _ = CopyPngToClipboard();       break;
         }
+    }
+
+    private async Task CopyMermaidToClipboard()
+    {
+        string text = await _exportService.ExportMermaidAsync(_document);
+        Clipboard.SetText(text);
+        StatusMessage?.Invoke(this, "Mermaid copied to clipboard.");
+    }
+
+    private async Task CopyPlantUmlToClipboard()
+    {
+        string text = await _exportService.ExportPlantUmlAsync(_document);
+        Clipboard.SetText(text);
+        StatusMessage?.Invoke(this, "PlantUML copied to clipboard.");
+    }
+
+    private async Task CopyPngToClipboard()
+    {
+        // Export to a temp file then load as BitmapImage
+        string tmp = Path.GetTempFileName() + ".png";
+        await _exportService.ExportPngAsync(_document, tmp);
+        if (!File.Exists(tmp)) return;
+        var bmp = new System.Windows.Media.Imaging.BitmapImage(new Uri(tmp));
+        Clipboard.SetImage(bmp);
+        File.Delete(tmp);
+        StatusMessage?.Invoke(this, "PNG copied to clipboard.");
     }
 
     private void ShowExportDialog()

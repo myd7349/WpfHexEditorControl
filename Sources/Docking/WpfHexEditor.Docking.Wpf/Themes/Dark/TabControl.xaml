@@ -263,7 +263,6 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="TabBorder"       Property="Background"  Value="{DynamicResource DockBackgroundBrush}" />
                             <Setter TargetName="SelectionBorder" Property="Visibility"  Value="Visible" />
-                            <Setter TargetName="TopRightArc"     Property="Visibility"  Value="Visible" />
                             <Setter TargetName="ColorStripe"     Property="Opacity"     Value="1.0" />
                             <Setter Property="Foreground"                               Value="{DynamicResource DockTabActiveTextBrush}" />
                         </Trigger>

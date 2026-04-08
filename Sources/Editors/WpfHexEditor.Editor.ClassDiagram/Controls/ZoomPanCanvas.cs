@@ -154,6 +154,25 @@ public class ZoomPanCanvas : Canvas
         OffsetY    = -minY * zoom + padding;
     }
 
+    /// <summary>
+    /// Zooms and pans so that the given rectangle fills the viewport with the specified padding.
+    /// </summary>
+    public void ZoomToRect(Rect r, double padding = 40.0)
+    {
+        if (r.Width < 1 || r.Height < 1) return;
+        double availableWidth  = ActualWidth  > 0 ? ActualWidth  : 800;
+        double availableHeight = ActualHeight > 0 ? ActualHeight : 600;
+
+        double scaleX = (availableWidth  - padding * 2) / r.Width;
+        double scaleY = (availableHeight - padding * 2) / r.Height;
+        double zoom   = Math.Min(scaleX, scaleY);
+        zoom = Math.Max(0.1, Math.Min(4.0, zoom));
+
+        ZoomFactor = zoom;
+        OffsetX    = -(r.X * zoom) + padding;
+        OffsetY    = -(r.Y * zoom) + padding;
+    }
+
     // ---------------------------------------------------------------------------
     // Mouse handling — wheel zoom + middle-mouse pan
     // ---------------------------------------------------------------------------

@@ -97,6 +97,7 @@ public sealed class DiagramCanvas : Canvas
     public event EventHandler<(ClassNode Node, ClassMember Member)>? NavigateToMemberRequested;
     public event EventHandler<string>?                        ExportRequested;  // format: "png","plantUml","structurizr","mermaid","svg","csharp"
     public event EventHandler<LayoutStrategyKind>?            LayoutStrategyRequested;
+    public event EventHandler<ClassNode>?                     ZoomToNodeRequested;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -410,6 +411,15 @@ public sealed class DiagramCanvas : Canvas
                 return;
             }
 
+            // Double-click → navigate to source
+            if (e.ClickCount == 2)
+            {
+                var member = _layer.HitTestMember(pt, node);
+                NavigateToMemberRequested?.Invoke(this, (node, member ?? node.Members.FirstOrDefault()!));
+                e.Handled = true;
+                return;
+            }
+
             // Ctrl+Click → navigate to source
             if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
             {
@@ -657,9 +667,13 @@ public sealed class DiagramCanvas : Canvas
     private ContextMenu BuildNodeContextMenu(ClassNode node)
     {
         var menu = StyledMenu();
-        menu.Items.Add(MakeItem("\uE70F", "Rename…",   () => RenameNodeRequested?.Invoke(this, (node, null))));
-        menu.Items.Add(MakeItem("\uE74D", "Delete",    () => DeleteNode(node)));
-        menu.Items.Add(MakeItem("\uE8C8", "Duplicate", () => { }));
+        menu.Items.Add(MakeItem("\uE70F", "Rename…",              () => RenameNodeRequested?.Invoke(this, (node, null))));
+        menu.Items.Add(MakeItem("\uE74D", "Delete",               () => DeleteNode(node)));
+        menu.Items.Add(MakeItem("\uE8C8", "Duplicate",            () => { }));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(MakeItem("\uE71E", "Zoom to This Node",    () => ZoomToNodeRequested?.Invoke(this, node)));
+        menu.Items.Add(MakeItem("\uE16C", "Copy Name",            () => Clipboard.SetText(node.Name)));
+        menu.Items.Add(MakeItem("\uE7C5", "Navigate to Source",   () => NavigateToMemberRequested?.Invoke(this, (node, node.Members.FirstOrDefault()!))));
         menu.Items.Add(new Separator());
 
         var addMenu = new MenuItem { Header = "Add Member" };
@@ -718,12 +732,16 @@ public sealed class DiagramCanvas : Canvas
         menu.Items.Add(new Separator());
 
         var export = new MenuItem { Header = "Export" };
-        export.Items.Add(MakeItem("\uEB9F", "Export PNG",        () => ExportRequested?.Invoke(this, "png")));
-        export.Items.Add(MakeItem("\uE781", "Export SVG",        () => ExportRequested?.Invoke(this, "svg")));
-        export.Items.Add(MakeItem("\uE8A5", "Export C#",         () => ExportRequested?.Invoke(this, "csharp")));
-        export.Items.Add(MakeItem("\uE8A5", "Export Mermaid",    () => ExportRequested?.Invoke(this, "mermaid")));
-        export.Items.Add(MakeItem("\uE8A5", "Export PlantUML",   () => ExportRequested?.Invoke(this, "plantUml")));
-        export.Items.Add(MakeItem("\uE8A5", "Export Structurizr",() => ExportRequested?.Invoke(this, "structurizr")));
+        export.Items.Add(MakeItem("\uEB9F", "Export PNG",           () => ExportRequested?.Invoke(this, "png")));
+        export.Items.Add(MakeItem("\uE781", "Export SVG",           () => ExportRequested?.Invoke(this, "svg")));
+        export.Items.Add(MakeItem("\uE8A5", "Export C#",            () => ExportRequested?.Invoke(this, "csharp")));
+        export.Items.Add(MakeItem("\uE8A5", "Export Mermaid",       () => ExportRequested?.Invoke(this, "mermaid")));
+        export.Items.Add(MakeItem("\uE8A5", "Export PlantUML",      () => ExportRequested?.Invoke(this, "plantUml")));
+        export.Items.Add(MakeItem("\uE8A5", "Export Structurizr",   () => ExportRequested?.Invoke(this, "structurizr")));
+        export.Items.Add(new Separator());
+        export.Items.Add(MakeItem("\uE16C", "Copy as PNG",          () => ExportRequested?.Invoke(this, "clipboard-png")));
+        export.Items.Add(MakeItem("\uE16C", "Copy PlantUML",        () => ExportRequested?.Invoke(this, "clipboard-plantUml")));
+        export.Items.Add(MakeItem("\uE16C", "Copy Mermaid",         () => ExportRequested?.Invoke(this, "clipboard-mermaid")));
         menu.Items.Add(export);
 
         return menu;

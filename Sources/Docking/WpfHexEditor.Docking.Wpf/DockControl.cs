@@ -1317,12 +1317,26 @@ public class DockControl : ContentControl, IDockHost, IDisposable
         };
         overlayBorder.SetResourceReference(Border.BorderBrushProperty, "DockTabActiveBrush");
 
+        // Corner arc: draws a small CW quarter-circle at the top-right of the active tab,
+        // connecting the separator line (y=h) to the tab's right SelectionBorder (x=tabRight).
+        // Visible only when the panel has focus (overlayBorder.BorderThickness > 0).
+        // Must live in the outer Grid so it can span both overlay and tab-strip coordinate space.
+        var cornerArc = new System.Windows.Shapes.Path
+        {
+            StrokeThickness  = 1,
+            Fill             = Brushes.Transparent,
+            IsHitTestVisible = false,
+            Visibility       = Visibility.Collapsed,
+        };
+        cornerArc.SetResourceReference(System.Windows.Shapes.Path.StrokeProperty, "DockTabActiveBrush");
+
         // Size the overlay to the content area only (exclude tab strip height).
         // The bottom border line gets a gap punched above the active tab via CombinedGeometry
         // (GeometryCombineMode.Exclude) — VS classic "active tab connected to content" effect.
         var outer = new Grid { Margin = new Thickness(2) };
         outer.Children.Add(layout);        // z=0: actual content (title + body + tab strip)
         outer.Children.Add(overlayBorder); // z=1: border visual over content area only
+        outer.Children.Add(cornerArc);     // z=2: junction arc between separator and tab border
 
         // Clip the overlay to the content area (= outer minus tab strip height) and punch a gap
         // above the active tab so the selected tab's U-shape connects flush to the content area.
@@ -1343,7 +1357,7 @@ public class DockControl : ContentControl, IDockHost, IDisposable
 
                 overlayBorder.Margin = new Thickness(0, 0, 0, tabH);
 
-                if (w <= 0 || h <= 0) { overlayBorder.Clip = null; return; }
+                if (w <= 0 || h <= 0) { overlayBorder.Clip = null; cornerArc.Visibility = Visibility.Collapsed; return; }
 
                 var contentArea = new RectangleGeometry(new Rect(0, 0, w, h));
 
@@ -1357,21 +1371,42 @@ public class DockControl : ContentControl, IDockHost, IDisposable
                     double gapW = activeTab.ActualWidth;
                     if (gapW > 0)
                     {
-                        // Shrink the gap by 1px on each side so the overlay's vertical border
-                        // pixel aligns flush with the tab's SelectionBorder vertical pixel,
-                        // creating a seamless corner junction (no floating line).
-                        // Hardcode 1.0 — BorderThickness.Left may still be 0 if the panel
-                        // hasn't been activated yet when UpdateOverlay first fires.
+                        // Shrink gap by 1px each side so overlay vertical borders align with tab SelectionBorder.
                         const double bt = 1.0;
-                        double gX  = gapX + bt;
-                        double gW  = Math.Max(0, gapW - bt * 2);
+                        double gX = gapX + bt;
+                        double gW = Math.Max(0, gapW - bt * 2);
                         var gap = new RectangleGeometry(new Rect(gX, h - gapH, gW, gapH * 2));
                         overlayBorder.Clip = new CombinedGeometry(GeometryCombineMode.Exclude, contentArea, gap);
+
+                        // Corner arc: quarter-circle from the separator (y=h) to the tab's right
+                        // SelectionBorder (x=tabRight), visible only when panel has focus.
+                        // Center at (tabRight, h); CW arc from (tabRight+r, h) to (tabRight, h+r).
+                        bool focused = overlayBorder.BorderThickness.Left > 0
+                                    || overlayBorder.BorderThickness.Top  > 0;
+                        if (focused)
+                        {
+                            const double arcR  = 4.0;
+                            double arcX = gapX + gapW; // outer-right edge of active tab
+                            var fig = new PathFigure { StartPoint = new Point(arcX + arcR, h) };
+                            fig.Segments.Add(new ArcSegment(
+                                new Point(arcX, h + arcR),
+                                new Size(arcR, arcR),
+                                0, false,
+                                SweepDirection.Clockwise,
+                                isStroked: true));
+                            cornerArc.Data       = new PathGeometry([fig]);
+                            cornerArc.Visibility = Visibility.Visible;
+                        }
+                        else
+                        {
+                            cornerArc.Visibility = Visibility.Collapsed;
+                        }
                         return;
                     }
                 }
 
-                overlayBorder.Clip = contentArea;
+                overlayBorder.Clip       = contentArea;
+                cornerArc.Visibility     = Visibility.Collapsed;
             }
 
             tabStrip.SizeChanged        += (_, _) => UpdateOverlay();
