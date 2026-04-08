@@ -440,6 +440,19 @@ public sealed class DiagramCanvas : Canvas
         Point pt   = e.GetPosition(this);
         var   node = _layer.HitTestNode(pt);
 
+        // Check "N more" footer hit BEFORE node-level checks
+        if (_doc is not null)
+        {
+            var footerNode = _layer.HitTestMoreFooter(_doc.Classes, pt);
+            if (footerNode is not null)
+            {
+                _layer.ToggleExpanded(footerNode.Id);
+                _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
+                e.Handled = true;
+                return;
+            }
+        }
+
         if (node is not null)
         {
             // Check section header hit first (collapse/expand toggle)
@@ -830,11 +843,18 @@ public sealed class DiagramCanvas : Canvas
 
     private static MenuItem MakeItem(string icon, string header, Action action)
     {
-        var item = new MenuItem
+        var iconBlock = new TextBlock
         {
-            Header = header,
-            Icon   = new TextBlock { Text = icon, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 14 }
+            Text              = icon,
+            FontFamily        = new FontFamily("Segoe MDL2 Assets, Segoe UI Symbol"),
+            FontSize          = 13,
+            Width             = 16,
+            TextAlignment     = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
         };
+        iconBlock.SetResourceReference(TextBlock.ForegroundProperty, "DockMenuForegroundBrush");
+
+        var item = new MenuItem { Header = header, Icon = iconBlock };
         item.Click += (_, _) => action();
         return item;
     }

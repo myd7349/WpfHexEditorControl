@@ -41,6 +41,11 @@ public sealed class DiagramVisualLayer : FrameworkElement
     private const double HorizPadding  = 8.0;
     private const double CornerRadius  = 3.0;
     private const double BoxMinWidth   = 160.0;
+    private const double MaxNodeHeight = 380.0;  // cap — "N more" footer shown when exceeded
+    private const double FooterHeight  = 18.0;
+
+    // Nodes the user has explicitly expanded past MaxNodeHeight
+    private readonly HashSet<string> _expandedNodes = new(StringComparer.Ordinal);
 
     private const double ArrowHeadLen  = 12.0;
     private const double ArrowHalfAng  = 25.0 * Math.PI / 180.0;
@@ -484,6 +489,21 @@ public sealed class DiagramVisualLayer : FrameworkElement
             memberY += MemberHeight;
         }
 
+        // "N more" footer when node is capped
+        if (!_expandedNodes.Contains(node.Id))
+        {
+            int hidden = CountHiddenMembers(node);
+            if (hidden > 0)
+            {
+                double footerY = height - FooterHeight;
+                var footerBg = new SolidColorBrush(Color.FromArgb(80, 120, 120, 180));
+                dc.DrawRectangle(footerBg, null, new Rect(0, footerY, width, FooterHeight));
+                string label = $"▼  {hidden} more member{(hidden > 1 ? "s" : "")}…";
+                var footerFt = MakeFT(label, sterColor, 9.5);
+                dc.DrawText(footerFt, new Point((width - footerFt.Width) / 2, footerY + (FooterHeight - footerFt.Height) / 2));
+            }
+        }
+
         if (isDimmed) dc.Pop();
     }
 
@@ -746,6 +766,64 @@ public sealed class DiagramVisualLayer : FrameworkElement
             string sec = GetSectionName(m.Kind);
             if (!IsSectionCollapsed(node.Id, sec))
                 h += MemberHeight;
+            lastKind = m.Kind;
+        }
+        if (!_expandedNodes.Contains(node.Id) && h > MaxNodeHeight)
+            return MaxNodeHeight;  // capped; "N more" footer rendered at bottom
+        return h;
+    }
+
+    private int CountHiddenMembers(ClassNode node)
+    {
+        double h = HeaderHeight + MemberPadding * 2;
+        int hidden = 0;
+        bool capping = false;
+        MemberKind? lastKind = null;
+        foreach (var m in node.Members)
+        {
+            if (lastKind.HasValue && m.Kind != lastKind) h += 14.0;
+            string sec = GetSectionName(m.Kind);
+            if (!IsSectionCollapsed(node.Id, sec))
+            {
+                h += MemberHeight;
+                if (h > MaxNodeHeight) { capping = true; hidden++; }
+            }
+            lastKind = m.Kind;
+        }
+        return capping ? hidden : 0;
+    }
+
+    /// <summary>Toggles the expanded state of a node (bypass MaxNodeHeight cap).</summary>
+    public void ToggleExpanded(string nodeId)
+    {
+        if (!_expandedNodes.Remove(nodeId))
+            _expandedNodes.Add(nodeId);
+    }
+
+    /// <summary>Returns the node whose "N more" footer pill is at <paramref name="pt"/>, or null.</summary>
+    public ClassNode? HitTestMoreFooter(IReadOnlyList<ClassNode> classes, Point pt)
+    {
+        foreach (var node in classes)
+        {
+            if (_expandedNodes.Contains(node.Id)) continue;
+            double fullH = ComputeNodeHeightFull(node);
+            if (fullH <= MaxNodeHeight) continue;
+            // Footer occupies the last FooterHeight pixels of the capped box
+            var footerRect = new Rect(node.X, node.Y + MaxNodeHeight - FooterHeight, node.Width, FooterHeight);
+            if (footerRect.Contains(pt)) return node;
+        }
+        return null;
+    }
+
+    private double ComputeNodeHeightFull(ClassNode node)
+    {
+        double h = HeaderHeight + MemberPadding * 2;
+        MemberKind? lastKind = null;
+        foreach (var m in node.Members)
+        {
+            if (lastKind.HasValue && m.Kind != lastKind) h += 14.0;
+            string sec = GetSectionName(m.Kind);
+            if (!IsSectionCollapsed(node.Id, sec)) h += MemberHeight;
             lastKind = m.Kind;
         }
         return h;
