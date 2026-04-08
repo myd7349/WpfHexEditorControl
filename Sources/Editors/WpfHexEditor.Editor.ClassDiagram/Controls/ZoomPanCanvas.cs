@@ -66,7 +66,11 @@ public class ZoomPanCanvas : Canvas
         RenderTransform = group;
         RenderTransformOrigin = new Point(0, 0);
 
-        ClipToBounds = true;
+        // ClipToBounds must be false here. ZoomPanCanvas applies zoom+pan via
+        // RenderTransform on *itself*, so its LOCAL coordinate space never shifts.
+        // ClipToBounds would permanently clip nodes at X > ActualWidth regardless of pan.
+        // The parent _diagramHost (Border, ClipToBounds=true) provides the correct clip.
+        ClipToBounds = false;
         Background   = Brushes.Transparent;   // hit-testable in empty areas
     }
 
