@@ -109,22 +109,12 @@ public sealed class DiagramMinimapControl : FrameworkElement
 
     // ── Rendering ─────────────────────────────────────────────────────────────
 
-    private const double GripHeight = 10.0;
-
     protected override void OnRender(DrawingContext dc)
     {
         var mapRect = new Rect(0, 0, MapWidth, MapHeight);
 
         // Background + border
         dc.DrawRectangle(_bgBrush, _mapBorderPen, mapRect);
-
-        // Grip strip at top (drag to reposition)
-        var gripBrush = new SolidColorBrush(Color.FromArgb(120, 150, 150, 200));
-        dc.DrawRectangle(gripBrush, null, new Rect(0, 0, MapWidth, GripHeight));
-        // Grip dots
-        var dotBrush = new SolidColorBrush(Color.FromArgb(160, 220, 220, 240));
-        for (double x = 6; x < MapWidth - 4; x += 5)
-            dc.DrawEllipse(dotBrush, null, new Point(x, GripHeight / 2), 1.0, 1.0);
 
         if (_doc is null || _doc.Classes.Count == 0)
         {
