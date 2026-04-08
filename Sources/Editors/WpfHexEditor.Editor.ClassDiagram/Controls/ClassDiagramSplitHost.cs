@@ -35,6 +35,7 @@ using WpfHexEditor.Editor.ClassDiagram.Core.Parser;
 using WpfHexEditor.Editor.ClassDiagram.Core.Serializer;
 using WpfHexEditor.Editor.ClassDiagram.Services;
 using WpfHexEditor.Editor.ClassDiagram.ViewModels;
+using WpfHexEditor.Editor.CodeEditor.Controls;
 using WpfHexEditor.Editor.Core;
 using WpfHexEditor.SDK.Commands;
 using EditorStatusBarItem = WpfHexEditor.Editor.Core.StatusBarItem;
@@ -69,8 +70,8 @@ public sealed class ClassDiagramSplitHost : Grid,
 
     private readonly DiagramCanvas _canvas;
     private readonly ZoomPanCanvas _zoomPan;
-    private readonly TextBox       _dslTextBox;
-    private readonly Border        _codeHost;
+    private readonly CodeEditorSplitHost _dslEditor;
+    private readonly Border              _codeHost;
     private readonly Border        _diagramHost;
     private readonly GridSplitter  _splitter;
     private readonly Border        _toolbarContainer;
@@ -168,22 +169,11 @@ public sealed class ClassDiagramSplitHost : Grid,
         _canvas.ZoomToNodeRequested      += (_, node) =>
             _zoomPan.ZoomToRect(new Rect(node.X, node.Y, node.Width, node.Height), 40);
 
-        // DSL pane
-        _dslTextBox = new TextBox();
-        _dslTextBox.SetResourceReference(TextBox.BackgroundProperty, "CD_DslEditorBackground");
-        _dslTextBox.SetResourceReference(TextBox.ForegroundProperty, "CD_DslEditorForeground");
-        _dslTextBox.SetResourceReference(TextBox.CaretBrushProperty, "CD_DslEditorForeground");
-        _dslTextBox.FontFamily              = new FontFamily("Consolas, Courier New");
-        _dslTextBox.FontSize                = 13;
-        _dslTextBox.AcceptsReturn           = true;
-        _dslTextBox.AcceptsTab              = true;
-        _dslTextBox.HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
-        _dslTextBox.VerticalScrollBarVisibility   = ScrollBarVisibility.Auto;
-        _dslTextBox.BorderThickness         = new Thickness(0);
-        _dslTextBox.Padding                 = new Thickness(8, 6, 8, 6);
-        _dslTextBox.TextChanged            += OnDslTextChanged;
+        // DSL pane — full CodeEditor for syntax-highlighted DSL editing
+        _dslEditor = new CodeEditorSplitHost();
+        _dslEditor.PrimaryEditor.Document.TextChanged += OnDslDocumentTextChanged;
 
-        _codeHost = new Border { Child = _dslTextBox };
+        _codeHost = new Border { Child = _dslEditor };
         _codeHost.SetResourceReference(Border.BackgroundProperty, "CD_DslEditorBackground");
 
         _diagramHost = new Border { Child = _zoomPan };
@@ -320,7 +310,7 @@ public sealed class ClassDiagramSplitHost : Grid,
             _document.FilePath = filePath;
 
             _suppressCodeSync = true;
-            _dslTextBox.Text  = dsl;
+            _dslEditor.PrimaryEditor.LoadText(dsl);
             _suppressCodeSync = false;
 
             _canvas.ApplyDocument(_document);
@@ -413,7 +403,7 @@ public sealed class ClassDiagramSplitHost : Grid,
         string dsl = ClassDiagramSerializer.Serialize(doc);
 
         _suppressCodeSync = true;
-        _dslTextBox.Text  = dsl;
+        _dslEditor.PrimaryEditor.LoadText(dsl);
         _suppressCodeSync = false;
 
         _canvas.ApplyDocument(_document);
@@ -484,7 +474,7 @@ public sealed class ClassDiagramSplitHost : Grid,
 
         // Keep DSL pane in sync (suppress canvas re-trigger).
         _suppressCodeSync = true;
-        _dslTextBox.Text  = ClassDiagramSerializer.Serialize(_document);
+        _dslEditor.PrimaryEditor.LoadText(ClassDiagramSerializer.Serialize(_document));
         _suppressCodeSync = false;
 
         // Repaint only the dirty nodes.
@@ -593,7 +583,7 @@ public sealed class ClassDiagramSplitHost : Grid,
                 AddToGrid(_diagramHost,      1, 2);
 
                 _splitter.ResizeDirection     = GridResizeDirection.Columns;
-                _splitter.Width               = 8;
+                _splitter.Width               = double.NaN;   // column definition controls width
                 _splitter.Height              = double.NaN;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
@@ -615,7 +605,7 @@ public sealed class ClassDiagramSplitHost : Grid,
                 AddToGrid(_codeHost,         1, 2);
 
                 _splitter.ResizeDirection     = GridResizeDirection.Columns;
-                _splitter.Width               = 8;
+                _splitter.Width               = double.NaN;
                 _splitter.Height              = double.NaN;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
@@ -636,7 +626,7 @@ public sealed class ClassDiagramSplitHost : Grid,
 
                 _splitter.ResizeDirection     = GridResizeDirection.Rows;
                 _splitter.Width               = double.NaN;
-                _splitter.Height              = 8;
+                _splitter.Height              = double.NaN;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
                 _splitter.Cursor              = Cursors.SizeNS;
@@ -656,7 +646,7 @@ public sealed class ClassDiagramSplitHost : Grid,
 
                 _splitter.ResizeDirection     = GridResizeDirection.Rows;
                 _splitter.Width               = double.NaN;
-                _splitter.Height              = 8;
+                _splitter.Height              = double.NaN;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
                 _splitter.Cursor              = Cursors.SizeNS;
@@ -940,11 +930,11 @@ public sealed class ClassDiagramSplitHost : Grid,
     // DSL sync
     // ---------------------------------------------------------------------------
 
-    private void OnDslTextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    private void OnDslDocumentTextChanged(object? sender, WpfHexEditor.Editor.CodeEditor.Models.TextChangedEventArgs e)
     {
         if (_suppressCodeSync) return;
 
-        string dsl = _dslTextBox.Text;
+        string dsl = _dslEditor.PrimaryEditor.GetText();
         var result = ClassDiagramParser.Parse(dsl);
         _document  = result.Document;
 
@@ -955,9 +945,9 @@ public sealed class ClassDiagramSplitHost : Grid,
 
     private void OnCodeUpdateReady(object? sender, string dsl)
     {
-        _suppressCodeSync  = true;
-        _dslTextBox.Text   = dsl;
-        _suppressCodeSync  = false;
+        _suppressCodeSync = true;
+        _dslEditor.PrimaryEditor.LoadText(dsl);
+        _suppressCodeSync = false;
     }
 
     private void OnCanvasUpdateReady(object? sender, DiagramDocument doc)
@@ -1229,7 +1219,7 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         string dsl        = ClassDiagramSerializer.Serialize(_document);
         _suppressCodeSync = true;
-        _dslTextBox.Text  = dsl;
+        _dslEditor.PrimaryEditor.LoadText(dsl);
         _suppressCodeSync = false;
     }
 }
