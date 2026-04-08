@@ -79,6 +79,23 @@ public class ZoomPanCanvas : Canvas
     // (DiagramCanvas is sized to its content so empty-area right-clicks land here)
     // ---------------------------------------------------------------------------
 
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        base.OnMouseLeftButtonDown(e);
+        if (e.Handled) return;
+
+        // Click landed on ZoomPanCanvas (outside DiagramCanvas bounds) → clear selection.
+        foreach (UIElement child in InternalChildren)
+        {
+            if (child is DiagramCanvas dc)
+            {
+                dc.ClearSelection();
+                e.Handled = true;
+                return;
+            }
+        }
+    }
+
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseRightButtonUp(e);
@@ -171,39 +188,22 @@ public class ZoomPanCanvas : Canvas
     /// </summary>
     public void FitToContent()
     {
-        if (Children.Count == 0) return;
-
-        double minX = double.MaxValue, minY = double.MaxValue;
-        double maxX = double.MinValue, maxY = double.MinValue;
-
-        foreach (UIElement child in Children)
-        {
-            double left   = GetLeft(child).IfNaN(0);
-            double top    = GetTop(child).IfNaN(0);
-            double width  = child.RenderSize.Width;
-            double height = child.RenderSize.Height;
-
-            minX = Math.Min(minX, left);
-            minY = Math.Min(minY, top);
-            maxX = Math.Max(maxX, left + width);
-            maxY = Math.Max(maxY, top + height);
-        }
-
-        double contentWidth  = maxX - minX;
-        double contentHeight = maxY - minY;
-        if (contentWidth < 1 || contentHeight < 1) return;
+        // Use GetContentBounds() which reads actual node positions from DiagramDocument
+        // rather than DiagramCanvas.RenderSize (which is the Canvas size, not content extent).
+        var b = GetContentBounds();
+        if (b.Width < 1 || b.Height < 1) return;
 
         double availableWidth  = ActualWidth  > 0 ? ActualWidth  : 800;
         double availableHeight = ActualHeight > 0 ? ActualHeight : 600;
 
         const double padding = 40.0;
-        double scaleX = (availableWidth  - padding * 2) / contentWidth;
-        double scaleY = (availableHeight - padding * 2) / contentHeight;
-        double zoom   = Math.Max(0.1, Math.Min(1.0, Math.Min(scaleX, scaleY)));
+        double scaleX = (availableWidth  - padding * 2) / b.Width;
+        double scaleY = (availableHeight - padding * 2) / b.Height;
+        double zoom   = Math.Max(0.1, Math.Min(4.0, Math.Min(scaleX, scaleY)));
 
         ZoomFactor = zoom;
-        OffsetX    = -minX * zoom + padding;
-        OffsetY    = -minY * zoom + padding;
+        OffsetX    = -b.X * zoom + padding;
+        OffsetY    = -b.Y * zoom + padding;
     }
 
     /// <summary>
