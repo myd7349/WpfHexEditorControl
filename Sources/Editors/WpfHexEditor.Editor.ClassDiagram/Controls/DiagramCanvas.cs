@@ -564,13 +564,21 @@ public sealed class DiagramCanvas : Canvas
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseRightButtonUp(e);
-        Point pt = e.GetPosition(this);
+        HandleEmptyAreaRightClick(e.GetPosition(this));
+        e.Handled = true;
+    }
 
+    /// <summary>
+    /// Performs a hit-test at <paramref name="pt"/> (in DiagramCanvas local coordinates)
+    /// and opens the appropriate context menu. Called by ZoomPanCanvas when the right-click
+    /// lands on an empty area outside the DiagramCanvas visual bounds.
+    /// </summary>
+    internal void HandleEmptyAreaRightClick(Point pt)
+    {
         var node = _layer.HitTestNode(pt);
         if (node is not null)
         {
             BuildNodeContextMenu(node).IsOpen = true;
-            e.Handled = true;
             return;
         }
 
@@ -578,12 +586,10 @@ public sealed class DiagramCanvas : Canvas
         if (rel is not null)
         {
             BuildArrowContextMenu(rel).IsOpen = true;
-            e.Handled = true;
             return;
         }
 
         BuildEmptyCanvasContextMenu().IsOpen = true;
-        e.Handled = true;
     }
 
     protected override void OnMouseLeave(MouseEventArgs e)

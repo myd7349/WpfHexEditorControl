@@ -71,28 +71,27 @@ public class ZoomPanCanvas : Canvas
     }
 
     // ---------------------------------------------------------------------------
-    // Layout overrides — fill parent viewport so right-clicks hit children
+    // Right-click delegation — forward to DiagramCanvas when empty area is hit
+    // (DiagramCanvas is sized to its content so empty-area right-clicks land here)
     // ---------------------------------------------------------------------------
 
-    protected override Size MeasureOverride(Size constraint)
+    protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
     {
-        // Give children their natural infinite measure (they lay out in diagram space).
-        foreach (UIElement child in InternalChildren)
-            child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        // ZoomPanCanvas itself fills the available viewport.
-        return new Size(
-            double.IsInfinity(constraint.Width)  ? 0 : constraint.Width,
-            double.IsInfinity(constraint.Height) ? 0 : constraint.Height);
-    }
+        base.OnMouseRightButtonUp(e);
+        if (e.Handled) return;
 
-    protected override Size ArrangeOverride(Size finalSize)
-    {
-        // Arrange children at (0,0) with a large virtual canvas so that any
-        // panned or zoomed position is still within the arranged hit-test region.
-        const double VirtualExtent = 100_000.0;
+        // Find the first DiagramCanvas child and let it handle the right-click.
+        // e.GetPosition(dc) correctly transforms screen→diagram-local coordinates
+        // via the ancestor RenderTransform chain, so HitTestNode/Arrow work correctly.
         foreach (UIElement child in InternalChildren)
-            child.Arrange(new Rect(0, 0, VirtualExtent, VirtualExtent));
-        return finalSize;
+        {
+            if (child is DiagramCanvas dc)
+            {
+                dc.HandleEmptyAreaRightClick(e.GetPosition(dc));
+                e.Handled = true;
+                return;
+            }
+        }
     }
 
     // ---------------------------------------------------------------------------
