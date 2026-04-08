@@ -27,6 +27,7 @@ using System.IO;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfHexEditor.Editor.ClassDiagram.Core.Layout;
@@ -73,10 +74,18 @@ public sealed class ClassDiagramSplitHost : Grid,
     private readonly ZoomPanCanvas _zoomPan;
     private readonly CodeEditorSplitHost _dslEditor;
     private readonly Border              _codeHost;
-    private readonly Border        _diagramHost;
-    private readonly GridSplitter  _splitter;
-    private readonly Border        _toolbarContainer;
-    private readonly StackPanel    _toolbarPanel;
+    private readonly Border              _diagramHost;
+    private readonly Border              _diagramBorder;   // 1px separator + scroll overlay container
+    private readonly GridSplitter        _splitter;
+    private readonly Border              _toolbarContainer;
+    private readonly StackPanel          _toolbarPanel;
+
+    // Scrollbars overlaid on the diagram viewport
+    private readonly System.Windows.Controls.Primitives.ScrollBar _hScroll
+        = new() { Orientation = Orientation.Horizontal, Height = 12, Visibility = Visibility.Collapsed };
+    private readonly System.Windows.Controls.Primitives.ScrollBar _vScroll
+        = new() { Orientation = Orientation.Vertical,   Width  = 12, Visibility = Visibility.Collapsed };
+    private bool _syncingScrollBars;
 
     // ---------------------------------------------------------------------------
     // View state
@@ -188,6 +197,37 @@ public sealed class ClassDiagramSplitHost : Grid,
 
         _diagramHost = new Border { Child = _zoomPan };
         _diagramHost.SetResourceReference(Border.BackgroundProperty, "CD_CanvasBackground");
+
+        // Build scroll overlay: zoomPan + h/v scrollbars in a Grid
+        var scrollGrid = new Grid();
+        scrollGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        scrollGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        scrollGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        scrollGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetRow(_diagramHost, 0); Grid.SetColumn(_diagramHost, 0);
+        Grid.SetRow(_vScroll, 0);     Grid.SetColumn(_vScroll, 1);
+        Grid.SetRow(_hScroll, 1);     Grid.SetColumn(_hScroll, 0);
+        scrollGrid.Children.Add(_diagramHost);
+        scrollGrid.Children.Add(_vScroll);
+        scrollGrid.Children.Add(_hScroll);
+
+        // _diagramBorder adds a 1px left separator + wraps the scroll overlay
+        _diagramBorder = new Border { Child = scrollGrid, BorderThickness = new Thickness(1, 0, 0, 0) };
+        _diagramBorder.SetResourceReference(Border.BorderBrushProperty, "DockToolBarBorderBrush");
+
+        // Wire scrollbars
+        _hScroll.ValueChanged += (_, e) =>
+        {
+            if (!_syncingScrollBars) _zoomPan.OffsetX = -e.NewValue;
+        };
+        _vScroll.ValueChanged += (_, e) =>
+        {
+            if (!_syncingScrollBars) _zoomPan.OffsetY = -e.NewValue;
+        };
+
+        // Update scrollbars when viewport size or zoom changes
+        _zoomPan.SizeChanged += (_, _) => UpdateScrollBars();
+        DiagramChanged       += (_, _) => UpdateScrollBars();
 
         // GridSplitter
         _splitter = new GridSplitter
@@ -554,7 +594,7 @@ public sealed class ClassDiagramSplitHost : Grid,
         AddToGrid(_toolbarContainer, 0, 0);
         AddToGrid(_codeHost,         1, 0);
         _codeHost.Visibility    = Visibility.Visible;
-        _diagramHost.Visibility = Visibility.Collapsed;
+        _diagramBorder.Visibility = Visibility.Collapsed;
         _splitter.Visibility    = Visibility.Collapsed;
     }
 
@@ -564,17 +604,19 @@ public sealed class ClassDiagramSplitHost : Grid,
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
         AddToGrid(_toolbarContainer, 0, 0);
-        AddToGrid(_diagramHost,      1, 0);
-        _codeHost.Visibility    = Visibility.Collapsed;
-        _diagramHost.Visibility = Visibility.Visible;
-        _splitter.Visibility    = Visibility.Collapsed;
+        AddToGrid(_diagramBorder,      1, 0);
+        _codeHost.Visibility      = Visibility.Collapsed;
+        _diagramBorder.Visibility = Visibility.Visible;
+        _diagramBorder.BorderThickness = new Thickness(0);   // no separator in full-diagram mode
+        _splitter.Visibility      = Visibility.Collapsed;
     }
 
     private void BuildSplitLayout()
     {
-        _codeHost.Visibility    = Visibility.Visible;
-        _diagramHost.Visibility = Visibility.Visible;
-        _splitter.Visibility    = Visibility.Visible;
+        _codeHost.Visibility      = Visibility.Visible;
+        _diagramBorder.Visibility = Visibility.Visible;
+        _diagramBorder.BorderThickness = new Thickness(1, 0, 0, 0);  // 1px left separator
+        _splitter.Visibility      = Visibility.Visible;
 
         switch (_layout)
         {
@@ -590,7 +632,7 @@ public sealed class ClassDiagramSplitHost : Grid,
                 AddToGrid(_toolbarContainer, 0, 0);
                 AddToGrid(_codeHost,         1, 0);
                 AddToGrid(_splitter,         1, 1);
-                AddToGrid(_diagramHost,      1, 2);
+                AddToGrid(_diagramBorder,      1, 2);
 
                 _splitter.ResizeDirection     = GridResizeDirection.Columns;
                 _splitter.Width               = double.NaN;   // column definition controls width
@@ -610,7 +652,7 @@ public sealed class ClassDiagramSplitHost : Grid,
 
                 SetColumnSpan(_toolbarContainer, 3);
                 AddToGrid(_toolbarContainer, 0, 0);
-                AddToGrid(_diagramHost,      1, 0);
+                AddToGrid(_diagramBorder,      1, 0);
                 AddToGrid(_splitter,         1, 1);
                 AddToGrid(_codeHost,         1, 2);
 
@@ -632,7 +674,7 @@ public sealed class ClassDiagramSplitHost : Grid,
                 AddToGrid(_toolbarContainer, 0, 0);
                 AddToGrid(_codeHost,         1, 0);
                 AddToGrid(_splitter,         2, 0);
-                AddToGrid(_diagramHost,      3, 0);
+                AddToGrid(_diagramBorder,      3, 0);
 
                 _splitter.ResizeDirection     = GridResizeDirection.Rows;
                 _splitter.Width               = double.NaN;
@@ -650,7 +692,7 @@ public sealed class ClassDiagramSplitHost : Grid,
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
                 AddToGrid(_toolbarContainer, 0, 0);
-                AddToGrid(_diagramHost,      1, 0);
+                AddToGrid(_diagramBorder,      1, 0);
                 AddToGrid(_splitter,         2, 0);
                 AddToGrid(_codeHost,         3, 0);
 
@@ -1218,6 +1260,42 @@ public sealed class ClassDiagramSplitHost : Grid,
         _suppressCodeSync = true;
         _dslEditor.PrimaryEditor.LoadText(dsl);
         _suppressCodeSync = false;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Scrollbar sync
+    // ---------------------------------------------------------------------------
+
+    private void UpdateScrollBars()
+    {
+        if (_zoomPan.ActualWidth < 1 || _zoomPan.ActualHeight < 1) return;
+
+        var b  = _zoomPan.GetContentBounds();
+        double z  = _zoomPan.ZoomFactor;
+        double vw = _zoomPan.ActualWidth;
+        double vh = _zoomPan.ActualHeight;
+
+        _syncingScrollBars = true;
+        try
+        {
+            double hMax = Math.Max(0, b.Right * z - vw);
+            _hScroll.Minimum      = 0;
+            _hScroll.Maximum      = hMax;
+            _hScroll.ViewportSize = vw;
+            _hScroll.Value        = Math.Clamp(-_zoomPan.OffsetX, 0, hMax);
+            _hScroll.Visibility   = hMax > 1 ? Visibility.Visible : Visibility.Collapsed;
+
+            double vMax = Math.Max(0, b.Bottom * z - vh);
+            _vScroll.Minimum      = 0;
+            _vScroll.Maximum      = vMax;
+            _vScroll.ViewportSize = vh;
+            _vScroll.Value        = Math.Clamp(-_zoomPan.OffsetY, 0, vMax);
+            _vScroll.Visibility   = vMax > 1 ? Visibility.Visible : Visibility.Collapsed;
+        }
+        finally
+        {
+            _syncingScrollBars = false;
+        }
     }
 }
 
