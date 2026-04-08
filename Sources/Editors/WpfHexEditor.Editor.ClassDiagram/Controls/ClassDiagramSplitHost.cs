@@ -30,6 +30,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using WpfHexEditor.Editor.ClassDiagram.Core.Layout;
 using WpfHexEditor.Editor.ClassDiagram.Core.Model;
 using WpfHexEditor.Editor.ClassDiagram.Core.Parser;
@@ -98,6 +99,10 @@ public sealed class ClassDiagramSplitHost : Grid,
     // Persisted split ratios so dragging the splitter survives layout rebuilds
     private double _splitColRatio = 0.35;   // code / (code+diagram) for H splits
     private double _splitRowRatio = 0.35;   // code / (code+diagram) for V splits
+
+    // Minimap overlay (owned here, not in DiagramCanvas)
+    private MinimapCorner _minimapCorner = MinimapCorner.BottomLeft;
+    private Canvas?       _minimapOverlay;
 
     // ---------------------------------------------------------------------------
     // Domain
@@ -219,6 +224,14 @@ public sealed class ClassDiagramSplitHost : Grid,
         scrollGrid.Children.Add(_vScroll);
         scrollGrid.Children.Add(_hScroll);
 
+        // Minimap overlay — lives in screen/viewport coordinates, ABOVE the ZoomPanCanvas
+        // transform chain. This is the correct parent so zoom/pan never affect the minimap position.
+        var minimapOverlay = new Canvas { IsHitTestVisible = true, ClipToBounds = true };
+        Grid.SetRow(minimapOverlay, 0); Grid.SetColumn(minimapOverlay, 0);
+        Panel.SetZIndex(minimapOverlay, 200);
+        scrollGrid.Children.Add(minimapOverlay);
+        WireMinimapOverlay(_canvas._minimap, minimapOverlay);
+
         // _diagramBorder adds a 1px left separator + wraps the scroll overlay; ClipToBounds
         // prevents diagram content from bleeding into the adjacent DSL editor column.
         _diagramBorder = new Border { Child = scrollGrid, BorderThickness = new Thickness(1, 0, 0, 0), ClipToBounds = true };
@@ -234,10 +247,10 @@ public sealed class ClassDiagramSplitHost : Grid,
             if (!_syncingScrollBars) _zoomPan.OffsetY = -e.NewValue;
         };
 
-        // Update scrollbars when viewport size, zoom, or pan changes
-        _zoomPan.SizeChanged       += (_, _) => UpdateScrollBars();
-        _zoomPan.TransformChanged  += (_, _) => UpdateScrollBars();
-        DiagramChanged             += (_, _) => UpdateScrollBars();
+        // Update scrollbars + minimap viewport when viewport size, zoom, or pan changes
+        _zoomPan.SizeChanged      += (_, _) => { UpdateScrollBars(); UpdateMinimapViewport(); };
+        _zoomPan.TransformChanged += (_, _) => { UpdateScrollBars(); UpdateMinimapViewport(); };
+        DiagramChanged            += (_, _) => UpdateScrollBars();
 
         // GridSplitter — 6px wide, uses DockSplitterBrush for a visible handle
         _splitter = new GridSplitter
@@ -1350,6 +1363,89 @@ public sealed class ClassDiagramSplitHost : Grid,
     // ---------------------------------------------------------------------------
     // Scrollbar sync
     // ---------------------------------------------------------------------------
+
+    // ── Minimap overlay ───────────────────────────────────────────────────────
+
+    private void WireMinimapOverlay(DiagramMinimapControl minimap, Canvas overlay)
+    {
+        _minimapOverlay = overlay;
+        overlay.Children.Add(minimap);
+
+        minimap.PositionDeltaRequested += (_, delta) =>
+        {
+            double left = Canvas.GetLeft(minimap) + delta.X;
+            double top  = Canvas.GetTop(minimap)  + delta.Y;
+            left = Math.Clamp(left, 0, Math.Max(0, overlay.ActualWidth  - minimap.ActualWidth));
+            top  = Math.Clamp(top,  0, Math.Max(0, overlay.ActualHeight - minimap.ActualHeight));
+            minimap.BeginAnimation(Canvas.LeftProperty, null);   // cancel any running snap animation
+            minimap.BeginAnimation(Canvas.TopProperty,  null);
+            Canvas.SetLeft(minimap, left);
+            Canvas.SetTop(minimap, top);
+        };
+
+        minimap.CornerChangeRequested += (_, corner) => SnapMinimapToCorner(corner, animate: true);
+
+        minimap.ViewportNavigateRequested += (_, diagPt) =>
+        {
+            double z = _zoomPan.ZoomFactor;
+            double vw = overlay.ActualWidth;
+            double vh = overlay.ActualHeight;
+            _zoomPan.OffsetX = -(diagPt.X * z) + vw / 2;
+            _zoomPan.OffsetY = -(diagPt.Y * z) + vh / 2;
+        };
+
+        minimap.HideRequested += (_, _) => _canvas.IsMinimapVisible = false;
+
+        overlay.SizeChanged += (_, _) => SnapMinimapToCorner(_minimapCorner, animate: false);
+    }
+
+    private void SnapMinimapToCorner(MinimapCorner corner, bool animate)
+    {
+        _minimapCorner = corner;
+        var minimap = _canvas._minimap;
+        var overlay = _minimapOverlay;
+        if (overlay is null) return;
+
+        double pw = overlay.ActualWidth;
+        double ph = overlay.ActualHeight;
+        if (pw <= 0 || ph <= 0) return;
+
+        const double margin = 8.0;
+        double targetLeft = corner is MinimapCorner.TopLeft or MinimapCorner.BottomLeft
+            ? margin : pw - DiagramMinimapControl.MapWidth  - margin;
+        double targetTop  = corner is MinimapCorner.TopLeft or MinimapCorner.TopRight
+            ? margin : ph - DiagramMinimapControl.MapHeight - margin;
+
+        if (animate)
+        {
+            var dur  = new Duration(TimeSpan.FromMilliseconds(150));
+            var ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+            minimap.BeginAnimation(Canvas.LeftProperty, new DoubleAnimation(targetLeft, dur) { EasingFunction = ease });
+            minimap.BeginAnimation(Canvas.TopProperty,  new DoubleAnimation(targetTop,  dur) { EasingFunction = ease });
+        }
+        else
+        {
+            Canvas.SetLeft(minimap, targetLeft);
+            Canvas.SetTop(minimap,  targetTop);
+        }
+        Panel.SetZIndex(minimap, 10);
+    }
+
+    private void UpdateMinimapViewport()
+    {
+        var overlay = _minimapOverlay;
+        if (overlay is null) return;
+        double z  = _zoomPan.ZoomFactor;
+        double vw = overlay.ActualWidth;
+        double vh = overlay.ActualHeight;
+        if (z <= 0 || vw <= 0 || vh <= 0) return;
+
+        double diagX = -_zoomPan.OffsetX / z;
+        double diagY = -_zoomPan.OffsetY / z;
+        _canvas._minimap.SetViewport(new Rect(diagX, diagY, vw / z, vh / z));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void UpdateScrollBars()
     {

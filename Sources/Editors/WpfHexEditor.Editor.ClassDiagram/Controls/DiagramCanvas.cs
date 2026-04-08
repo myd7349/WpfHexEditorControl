@@ -77,11 +77,8 @@ public sealed class DiagramCanvas : Canvas
     private Point _rubberStart;
 
     // ── Minimap ───────────────────────────────────────────────────────────────
-    private readonly DiagramMinimapControl _minimap = new();
-    private bool          _minimapVisible = true;
-    private MinimapCorner _minimapCorner  = MinimapCorner.BottomLeft;
-
-    private const double MinimapMargin = 8.0;
+    // Owned by ClassDiagramSplitHost (overlay canvas) — not a child of DiagramCanvas.
+    internal readonly DiagramMinimapControl _minimap = new();
 
     // ── Filter bar (Phase 12) ─────────────────────────────────────────────────
     private readonly DiagramFilterBar _filterBar = new();
@@ -120,15 +117,6 @@ public sealed class DiagramCanvas : Canvas
         Canvas.SetLeft(_layer, 0);
         Canvas.SetTop(_layer, 0);
 
-        // Minimap — bottom-left by default, above main layer.
-        Children.Add(_minimap);
-        _minimap.ViewportNavigateRequested += OnMinimapNavigate;
-        _minimap.PositionDeltaRequested    += OnMinimapPositionDelta;
-        _minimap.CornerChangeRequested     += (_, corner) => SetMinimapCorner(corner);
-        _minimap.HideRequested             += (_, _) => IsMinimapVisible = false;
-        SizeChanged += (_, _) => UpdateMinimapPosition();
-        UpdateMinimapPosition();
-
         // Filter bar — top-center, hidden by default.
         _filterBar.Visibility  = Visibility.Collapsed;
         _filterBar.FilterChanged  += OnFilterChanged;
@@ -140,93 +128,15 @@ public sealed class DiagramCanvas : Canvas
 
     // ── Minimap API ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Show/hide the minimap. ClassDiagramSplitHost owns the minimap's parent canvas;
+    /// this property simply toggles Visibility so the session-save code still works.
+    /// </summary>
     public bool IsMinimapVisible
     {
-        get => _minimapVisible;
-        set
-        {
-            _minimapVisible     = value;
-            _minimap.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
-        }
+        get => _minimap.Visibility == Visibility.Visible;
+        set => _minimap.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
     }
-
-    public MinimapCorner MinimapCorner
-    {
-        get => _minimapCorner;
-        private set => _minimapCorner = value;
-    }
-
-    /// <summary>Moves the minimap to a corner with a smooth animation.</summary>
-    public void SetMinimapCorner(MinimapCorner corner)
-    {
-        _minimapCorner = corner;
-        UpdateMinimapPosition(animate: true);
-    }
-
-    private void UpdateMinimapPosition(bool animate = false)
-    {
-        double pw = ActualWidth;
-        double ph = ActualHeight;
-        if (pw <= 0 || ph <= 0) { Panel.SetZIndex(_minimap, 100); return; }
-
-        double targetLeft = _minimapCorner is MinimapCorner.TopLeft or MinimapCorner.BottomLeft
-            ? MinimapMargin
-            : pw - DiagramMinimapControl.MapWidth - MinimapMargin;
-
-        double targetTop = _minimapCorner is MinimapCorner.TopLeft or MinimapCorner.TopRight
-            ? MinimapMargin
-            : ph - DiagramMinimapControl.MapHeight - MinimapMargin;
-
-        if (animate)
-        {
-            var dur = new Duration(TimeSpan.FromMilliseconds(150));
-            var ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
-            var animL = new DoubleAnimation(targetLeft, dur) { EasingFunction = ease };
-            var animT = new DoubleAnimation(targetTop,  dur) { EasingFunction = ease };
-            _minimap.BeginAnimation(Canvas.LeftProperty, animL);
-            _minimap.BeginAnimation(Canvas.TopProperty,  animT);
-        }
-        else
-        {
-            Canvas.SetLeft(_minimap, targetLeft);
-            Canvas.SetTop(_minimap,  targetTop);
-        }
-        Panel.SetZIndex(_minimap, 100);
-    }
-
-    private void OnMinimapPositionDelta(object? sender, Vector screenDelta)
-    {
-        double left = Canvas.GetLeft(_minimap) + screenDelta.X;
-        double top  = Canvas.GetTop(_minimap)  + screenDelta.Y;
-        left = Math.Clamp(left, 0, Math.Max(0, ActualWidth  - _minimap.ActualWidth));
-        top  = Math.Clamp(top,  0, Math.Max(0, ActualHeight - _minimap.ActualHeight));
-        Canvas.SetLeft(_minimap, left);
-        Canvas.SetTop (_minimap, top);
-    }
-
-    private void OnMinimapNavigate(object? sender, System.Windows.Point diagPos)
-    {
-        // Walk up to find a ScrollViewer ancestor and set its scroll offset.
-        ScrollViewer? sv = FindAncestorScrollViewer();
-        if (sv is null) return;
-        sv.ScrollToHorizontalOffset(diagPos.X);
-        sv.ScrollToVerticalOffset(diagPos.Y);
-    }
-
-    private ScrollViewer? FindAncestorScrollViewer()
-    {
-        DependencyObject? el = VisualTreeHelper.GetParent(this);
-        while (el is not null)
-        {
-            if (el is ScrollViewer sv) return sv;
-            el = VisualTreeHelper.GetParent(el);
-        }
-        return null;
-    }
-
-    /// <summary>Notifies the minimap of a new scroll viewport (call from the parent scroll host).</summary>
-    public void SetMinimapViewport(Rect viewportInDiagramCoords) =>
-        _minimap.SetViewport(viewportInDiagramCoords);
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -332,6 +242,17 @@ public sealed class DiagramCanvas : Canvas
         _layer.SetFocusNodes(null);
         _filterBar.SetMatchCount(0, 0);
         Focus();
+    }
+
+    private ScrollViewer? FindAncestorScrollViewer()
+    {
+        DependencyObject? el = VisualTreeHelper.GetParent(this);
+        while (el is not null)
+        {
+            if (el is ScrollViewer sv) return sv;
+            el = VisualTreeHelper.GetParent(el);
+        }
+        return null;
     }
 
     private void UpdateFilterBarPosition()
@@ -442,10 +363,9 @@ public sealed class DiagramCanvas : Canvas
     {
         base.OnMouseLeftButtonDown(e);
 
-        // Don't steal mouse capture from the minimap or filter bar when they originated the click
+        // Don't steal mouse capture from the filter bar when it originated the click
         if (e.OriginalSource is DependencyObject origSrc
-            && (_minimap.IsAncestorOf(origSrc) || _minimap == origSrc
-             || _filterBar.IsAncestorOf(origSrc) || _filterBar == origSrc))
+            && (_filterBar.IsAncestorOf(origSrc) || _filterBar == origSrc))
             return;
 
         Focus();
