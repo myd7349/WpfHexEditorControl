@@ -315,7 +315,7 @@ public sealed class DiagramCanvas : Canvas
         if (_adornerLayer is null) return;
         _selectAdorner = new ClassBoxSelectAdorner(this)
         {
-            AdornedBounds = new Rect(node.X, node.Y, node.Width, node.Height)
+            AdornedBounds = new Rect(node.X, node.Y, node.Width, _layer.ComputeNodeHeight(node))
         };
         _adornerLayer.Add(_selectAdorner);
     }
