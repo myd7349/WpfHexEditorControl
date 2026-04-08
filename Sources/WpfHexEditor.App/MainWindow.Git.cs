@@ -12,6 +12,8 @@
 // ==========================================================
 
 using WpfHexEditor.Core.Events.IDEEvents;
+using WpfHexEditor.Editor.CodeEditor.Controls;
+using WpfHexEditor.Editor.Core.LSP;
 
 namespace WpfHexEditor.App;
 
@@ -81,11 +83,32 @@ public partial class MainWindow
         GitStatusItem.Visibility = System.Windows.Visibility.Visible;
     }
 
-    private void OnGitBlameLoaded(GitBlameLoadedEvent e)
+    private async void OnGitBlameLoaded(GitBlameLoadedEvent e)
     {
-        // Blame data is already cached in GitVersionControlService.
-        // CodeEditor BlameGutterControl will pull it on next SetContext call.
-        _ = e;
+        // Get the active CodeEditor — only wire blame if it's showing the right file
+        var activeEditor = GetActiveCodeEditor();
+        if (activeEditor is null) return;
+
+        // Retrieve blame entries from VCS cache
+        var vcs = _ideHostContext?.ExtensionRegistry
+            .GetExtensions<IVersionControlService>().FirstOrDefault();
+        if (vcs is null) return;
+
+        try
+        {
+            var entries = await vcs.GetBlameAsync(e.FilePath);
+            activeEditor.SetBlame(entries);
+        }
+        catch { /* blame is cosmetic — swallow */ }
+    }
+
+    // Returns the active CodeEditor if any document tab hosts one
+    private CodeEditor? GetActiveCodeEditor()
+    {
+        if (_documentManager?.ActiveDocument?.AssociatedEditor
+                is WpfHexEditor.Editor.CodeEditor.Controls.CodeEditorSplitHost host)
+            return host.PrimaryEditor;
+        return null;
     }
 
     private void OnGitBranchButtonClick(object sender, System.Windows.RoutedEventArgs e)
