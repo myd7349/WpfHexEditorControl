@@ -381,19 +381,17 @@ public sealed class DiagramCanvas : Canvas
     }
 
     // ── Rubber-band ───────────────────────────────────────────────────────────
-
-    private void AttachRubberBand(Point start)
-    {
-        if (_adornerLayer is null) return;
-        _rubberBandAdorner = new RubberBandAdorner(this) { StartPoint = start, EndPoint = start };
-        _adornerLayer.Add(_rubberBandAdorner);
-    }
+    // Drawn as a DrawingVisual in _layer (diagram coords) — no AdornerLayer needed.
 
     private void RemoveRubberBandAdorner()
     {
-        if (_rubberBandAdorner is null || _adornerLayer is null) return;
-        _adornerLayer.Remove(_rubberBandAdorner);
-        _rubberBandAdorner = null;
+        // Legacy: also clean up old adorner if somehow present
+        if (_rubberBandAdorner is not null && _adornerLayer is not null)
+        {
+            _adornerLayer.Remove(_rubberBandAdorner);
+            _rubberBandAdorner = null;
+        }
+        _layer.ClearRubberBand();
     }
 
     // ── Mouse – canvas level ──────────────────────────────────────────────────
@@ -506,7 +504,6 @@ public sealed class DiagramCanvas : Canvas
             if (_selectedIds.Count > 0) ClearSelection();
             _isRubberBanding = true;
             _rubberStart     = pt;
-            AttachRubberBand(_rubberStart);
             CaptureMouse();
         }
 
@@ -551,9 +548,9 @@ public sealed class DiagramCanvas : Canvas
                 ApplyPatch([_dragNode.Id]);
             }
         }
-        else if (_isRubberBanding && _rubberBandAdorner is not null)
+        else if (_isRubberBanding)
         {
-            _rubberBandAdorner.EndPoint = pt;
+            _layer.DrawRubberBand(_rubberStart, pt);
         }
         else
         {
@@ -602,11 +599,12 @@ public sealed class DiagramCanvas : Canvas
         else if (_isRubberBanding)
         {
             _isRubberBanding = false;
-            if (_rubberBandAdorner is not null && _doc is not null)
-            {
-                Rect selRect = _rubberBandAdorner.SelectionRect;
-                RemoveRubberBandAdorner();
+            Point end     = e.GetPosition(this);
+            Rect selRect  = DiagramVisualLayer.GetRubberBandRect(_rubberStart, end);
+            _layer.ClearRubberBand();
 
+            if (_doc is not null && selRect.Width > 2 && selRect.Height > 2)
+            {
                 // Ctrl held → add to existing set; plain → replace
                 if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                     _selectedIds.Clear();
@@ -623,10 +621,6 @@ public sealed class DiagramCanvas : Canvas
                 RedrawSelectionVisual();
                 _layer.UpdateSelection(_primarySelected?.Id, _hoveredNode?.Id);
                 SelectedClassChanged?.Invoke(this, _primarySelected);
-            }
-            else
-            {
-                RemoveRubberBandAdorner();
             }
         }
     }

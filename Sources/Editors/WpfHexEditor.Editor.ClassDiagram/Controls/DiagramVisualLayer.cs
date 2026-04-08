@@ -62,11 +62,12 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     // ── Visual children ──────────────────────────────────────────────────────
 
-    private readonly DrawingVisual                  _arrowLayer     = new();
-    private readonly Dictionary<string, DrawingVisual> _nodeVisuals = [];
-    private readonly DrawingVisual                     _swimlaneLayer  = new();
-    private readonly DrawingVisual                     _selectionVisual = new();  // top-most: selection rect
-    private readonly List<Visual>                      _visuals        = [];
+    private readonly DrawingVisual                  _arrowLayer      = new();
+    private readonly Dictionary<string, DrawingVisual> _nodeVisuals  = [];
+    private readonly DrawingVisual                     _swimlaneLayer = new();
+    private readonly DrawingVisual                     _selectionVisual = new();
+    private readonly DrawingVisual                     _rubberBandVisual = new(); // top-most: rubber-band drag rect
+    private readonly List<Visual>                      _visuals       = [];
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -159,6 +160,52 @@ public sealed class DiagramVisualLayer : FrameworkElement
     {
         using var dc = _selectionVisual.RenderOpen();
         // empty — clears the visual
+    }
+
+    // ── Rubber-band (Windows-Explorer-style drag selection) ───────────────────
+
+    /// <summary>Draws the rubber-band rectangle between two diagram-space points.</summary>
+    public void DrawRubberBand(Point start, Point end)
+    {
+        EnsureRubberBandVisualOnTop();
+        var rect = new Rect(
+            Math.Min(start.X, end.X), Math.Min(start.Y, end.Y),
+            Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
+
+        var fillBrush = new SolidColorBrush(Color.FromArgb(30, 0, 120, 215));
+        fillBrush.Freeze();
+        var pen = new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 120, 215)), 1.0)
+            { DashStyle = new DashStyle([4, 4], 0) };
+        pen.Freeze();
+
+        using var dc = _rubberBandVisual.RenderOpen();
+        dc.DrawRectangle(fillBrush, pen, rect);
+    }
+
+    /// <summary>Returns the normalized Rect between start and end in diagram coords.</summary>
+    public static Rect GetRubberBandRect(Point start, Point end) =>
+        new(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y),
+            Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
+
+    /// <summary>Clears the rubber-band visual.</summary>
+    public void ClearRubberBand()
+    {
+        using var dc = _rubberBandVisual.RenderOpen();
+        // empty
+    }
+
+    private void EnsureRubberBandVisualOnTop()
+    {
+        if (!_visuals.Contains(_rubberBandVisual))
+        {
+            _visuals.Add(_rubberBandVisual);
+            AddVisualChild(_rubberBandVisual);
+        }
+        else if (_visuals[^1] != _rubberBandVisual)
+        {
+            _visuals.Remove(_rubberBandVisual);
+            _visuals.Add(_rubberBandVisual);
+        }
     }
 
     private void EnsureSelectionVisualOnTop()
