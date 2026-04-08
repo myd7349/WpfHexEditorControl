@@ -110,7 +110,7 @@
                 <!-- ── Fixed LEFT: title + health badge + alert badge (always visible) ── -->
                 <StackPanel x:Name="ToolbarLeftPanel" DockPanel.Dock="Left"
                             Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="PLUGIN MONITOR"
+                    <TextBlock Text="EXTENSIONS MONITOR"
                                FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"
                                Foreground="{DynamicResource Panel_ToolbarForegroundBrush}"/>
                     <Border CornerRadius="3" Padding="5,1" Margin="8,0,4,0"

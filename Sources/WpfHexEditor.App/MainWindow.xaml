@@ -711,9 +711,9 @@
                         </MenuItem>
                     </MenuItem>
 
-                    <!-- ═══════════ Plugins ═══════════ -->
-                    <MenuItem Header="_Plugins">
-                        <MenuItem Header="_Plugin Manager"
+                    <!-- ═══════════ Extensions ═══════════ -->
+                    <MenuItem Header="_Extensions">
+                        <MenuItem Header="_Extension Manager"
                                   Command="{x:Static local:MainWindow.OpenPluginManagerCommand}"
                                   CommandTarget="{Binding ElementName=ThisWindow}">
                             <MenuItem.Icon>
@@ -722,14 +722,14 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Plugin _Monitor" Click="OnOpenPluginMonitor">
+                        <MenuItem Header="Extensions _Monitor" Click="OnOpenPluginMonitor">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Plugin _Marketplace" Click="OnOpenMarketplace">
+                        <MenuItem Header="Extension _Marketplace" Click="OnOpenMarketplace">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE719;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -744,14 +744,14 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="_Refresh All Plugins" Click="OnRefreshAllPlugins">
+                        <MenuItem Header="_Refresh All Extensions" Click="OnRefreshAllPlugins">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Plugin _Dev Watch..." Click="OnOpenPluginDevWatch">
+                        <MenuItem Header="Extension _Dev Watch..." Click="OnOpenPluginDevWatch">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xECC6;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"
@@ -759,7 +759,7 @@
                             </MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="Plugin System _Settings..." Click="OnOpenPluginSettings">
+                        <MenuItem Header="Extension System _Settings..." Click="OnOpenPluginSettings">
                             <MenuItem.Icon>
                                 <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="13"
                                            Foreground="{DynamicResource DockMenuForegroundBrush}"

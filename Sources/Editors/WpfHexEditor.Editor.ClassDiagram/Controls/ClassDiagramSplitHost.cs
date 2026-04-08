@@ -192,10 +192,11 @@ public sealed class ClassDiagramSplitHost : Grid,
         // GridSplitter
         _splitter = new GridSplitter
         {
-            ShowsPreview       = false,
-            ResizeBehavior     = GridResizeBehavior.PreviousAndNext,
+            ShowsPreview        = false,
+            ResizeBehavior      = GridResizeBehavior.PreviousAndNext,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment   = VerticalAlignment.Stretch
+            VerticalAlignment   = VerticalAlignment.Stretch,
+            Cursor              = Cursors.SizeWE
         };
         _splitter.SetResourceReference(BackgroundProperty, "DockToolBarBorderBrush");
 
@@ -582,7 +583,7 @@ public sealed class ClassDiagramSplitHost : Grid,
                 RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
+                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
                 ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
                 SetColumnSpan(_toolbarContainer, 3);
@@ -591,11 +592,12 @@ public sealed class ClassDiagramSplitHost : Grid,
                 AddToGrid(_splitter,         1, 1);
                 AddToGrid(_diagramHost,      1, 2);
 
-                _splitter.ResizeDirection   = GridResizeDirection.Columns;
-                _splitter.Width             = 5;
-                _splitter.Height            = double.NaN;
+                _splitter.ResizeDirection     = GridResizeDirection.Columns;
+                _splitter.Width               = 8;
+                _splitter.Height              = double.NaN;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
+                _splitter.Cursor              = Cursors.SizeWE;
                 break;
 
             case CdSplitLayout.SplitLeft:
@@ -603,7 +605,7 @@ public sealed class ClassDiagramSplitHost : Grid,
                 RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
+                ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
                 ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
                 SetColumnSpan(_toolbarContainer, 3);
@@ -612,18 +614,19 @@ public sealed class ClassDiagramSplitHost : Grid,
                 AddToGrid(_splitter,         1, 1);
                 AddToGrid(_codeHost,         1, 2);
 
-                _splitter.ResizeDirection   = GridResizeDirection.Columns;
-                _splitter.Width             = 5;
-                _splitter.Height            = double.NaN;
+                _splitter.ResizeDirection     = GridResizeDirection.Columns;
+                _splitter.Width               = 8;
+                _splitter.Height              = double.NaN;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
+                _splitter.Cursor              = Cursors.SizeWE;
                 break;
 
             case CdSplitLayout.SplitBottom:
                 // Toolbar row + code row + splitter + diagram row
                 RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(5) });
+                RowDefinitions.Add(new RowDefinition { Height = new GridLength(8) });
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
                 AddToGrid(_toolbarContainer, 0, 0);
@@ -631,18 +634,19 @@ public sealed class ClassDiagramSplitHost : Grid,
                 AddToGrid(_splitter,         2, 0);
                 AddToGrid(_diagramHost,      3, 0);
 
-                _splitter.ResizeDirection   = GridResizeDirection.Rows;
-                _splitter.Width             = double.NaN;
-                _splitter.Height            = 5;
+                _splitter.ResizeDirection     = GridResizeDirection.Rows;
+                _splitter.Width               = double.NaN;
+                _splitter.Height              = 8;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
+                _splitter.Cursor              = Cursors.SizeNS;
                 break;
 
             case CdSplitLayout.SplitTop:
                 // Toolbar row + diagram row + splitter + code row
                 RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                RowDefinitions.Add(new RowDefinition { Height = new GridLength(5) });
+                RowDefinitions.Add(new RowDefinition { Height = new GridLength(8) });
                 RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
                 AddToGrid(_toolbarContainer, 0, 0);
@@ -650,11 +654,12 @@ public sealed class ClassDiagramSplitHost : Grid,
                 AddToGrid(_splitter,         2, 0);
                 AddToGrid(_codeHost,         3, 0);
 
-                _splitter.ResizeDirection   = GridResizeDirection.Rows;
-                _splitter.Width             = double.NaN;
-                _splitter.Height            = 5;
+                _splitter.ResizeDirection     = GridResizeDirection.Rows;
+                _splitter.Width               = double.NaN;
+                _splitter.Height              = 8;
                 _splitter.HorizontalAlignment = HorizontalAlignment.Stretch;
                 _splitter.VerticalAlignment   = VerticalAlignment.Stretch;
+                _splitter.Cursor              = Cursors.SizeNS;
                 break;
         }
     }

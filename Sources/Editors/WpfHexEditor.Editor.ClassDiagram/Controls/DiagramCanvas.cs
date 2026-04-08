@@ -403,6 +403,13 @@ public sealed class DiagramCanvas : Canvas
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
+
+        // Don't steal mouse capture from the minimap or filter bar when they originated the click
+        if (e.OriginalSource is DependencyObject origSrc
+            && (_minimap.IsAncestorOf(origSrc) || _minimap == origSrc
+             || _filterBar.IsAncestorOf(origSrc) || _filterBar == origSrc))
+            return;
+
         Focus();
 
         Point pt   = e.GetPosition(this);
