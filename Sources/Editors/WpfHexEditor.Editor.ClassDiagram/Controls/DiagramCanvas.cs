@@ -51,9 +51,15 @@ public sealed class DiagramCanvas : Canvas
 
     // ── State ─────────────────────────────────────────────────────────────────
     private DiagramDocument?  _doc;
-    private ClassNode?        _selectedNode;
     private ClassNode?        _hoveredNode;
     private ClassNode?        _dragNode;
+
+    // ── Multi-selection ───────────────────────────────────────────────────────
+    // _selectedIds = full selection set; _primarySelected = last explicit click target
+    private readonly HashSet<string> _selectedIds = new(StringComparer.Ordinal);
+    private ClassNode? _primarySelected;
+    // Compat shim: external code that reads _selectedNode gets the primary node
+    private ClassNode? _selectedNode => _primarySelected;
 
     private readonly DiagramCanvasViewModel _vm = new();
 
@@ -65,6 +71,7 @@ public sealed class DiagramCanvas : Canvas
     private Point  _dragStart;
     private double _dragNodeStartX;
     private double _dragNodeStartY;
+    private Dictionary<string, Point> _dragStartPositions = []; // for multi-node drag
 
     // ── Resize gripper ────────────────────────────────────────────────────────
     private ClassNode? _resizingNode;
@@ -142,9 +149,10 @@ public sealed class DiagramCanvas : Canvas
     /// <summary>Rebuilds all visuals from the given document.</summary>
     public void ApplyDocument(DiagramDocument doc)
     {
-        _doc          = doc;
-        _selectedNode = null;
-        _hoveredNode  = null;
+        _doc              = doc;
+        _selectedIds.Clear();
+        _primarySelected  = null;
+        _hoveredNode      = null;
 
         ClearAdorners();
         _layer.RenderAll(doc);
@@ -160,18 +168,41 @@ public sealed class DiagramCanvas : Canvas
         UpdateSelectAdornerPosition();
     }
 
-    /// <summary>Returns the currently selected class node, or null.</summary>
-    public ClassNode? SelectedNode => _selectedNode;
+    /// <summary>Returns the primary selected class node, or null.</summary>
+    public ClassNode? SelectedNode => _primarySelected;
 
-    /// <summary>Clears the current selection (ESC key or external call).</summary>
-    public void ClearSelection() => SelectNode(null);
+    /// <summary>Returns all currently selected node IDs.</summary>
+    public IReadOnlyCollection<string> SelectedIds => _selectedIds;
+
+    /// <summary>Clears the entire selection.</summary>
+    public void ClearSelection()
+    {
+        _selectedIds.Clear();
+        _primarySelected = null;
+        _layer.ClearSelection();
+        _layer.SetMultiSelection(_selectedIds);
+        _layer.UpdateSelection(null, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, null);
+    }
 
     /// <summary>Selects the node with the given Id; no-op if not found.</summary>
     public void SelectNodeById(string nodeId)
     {
         if (_doc is null) return;
         var node = _doc.Classes.FirstOrDefault(n => n.Id == nodeId);
-        if (node is not null) SelectNode(node);
+        if (node is not null) SelectSingleNode(node);
+    }
+
+    /// <summary>Selects all nodes (Ctrl+A).</summary>
+    public void SelectAll()
+    {
+        if (_doc is null) return;
+        _selectedIds.UnionWith(_doc.Classes.Select(n => n.Id));
+        _primarySelected = null;
+        _layer.SetMultiSelection(_selectedIds);
+        RedrawSelectionVisual();
+        _layer.UpdateSelection(null, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, null);
     }
 
     /// <summary>
@@ -292,29 +323,56 @@ public sealed class DiagramCanvas : Canvas
 
     // ── Selection ─────────────────────────────────────────────────────────────
 
-    private void SelectNode(ClassNode? node)
+    /// <summary>Selects exactly one node, clearing the multi-selection set.</summary>
+    private void SelectSingleNode(ClassNode? node)
     {
-        if (_selectedNode == node) return;
-        _selectedNode = node;
+        _selectedIds.Clear();
+        if (node is not null) _selectedIds.Add(node.Id);
+        _primarySelected = node;
+        _layer.SetMultiSelection(_selectedIds);
+        RedrawSelectionVisual();
+        _layer.UpdateSelection(_primarySelected?.Id, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, _primarySelected);
+    }
 
-        if (_selectedNode is not null)
-            UpdateSelectAdornerPosition();
+    /// <summary>Toggles a node in the multi-selection set (Ctrl+Click).</summary>
+    private void ToggleNodeSelection(ClassNode node)
+    {
+        if (_selectedIds.Contains(node.Id))
+            _selectedIds.Remove(node.Id);
         else
-            _layer.ClearSelection();
+            _selectedIds.Add(node.Id);
 
-        _layer.UpdateSelection(_selectedNode?.Id, _hoveredNode?.Id);
-        SelectedClassChanged?.Invoke(this, _selectedNode);
+        _primarySelected = _selectedIds.Count == 1
+            ? _doc!.Classes.FirstOrDefault(n => _selectedIds.Contains(n.Id))
+            : null;
+        _layer.SetMultiSelection(_selectedIds);
+        RedrawSelectionVisual();
+        _layer.UpdateSelection(_primarySelected?.Id, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, _primarySelected);
     }
 
-    private void UpdateSelectAdornerPosition()
+    /// <summary>Redraws the selection visual for all currently selected nodes.</summary>
+    private void RedrawSelectionVisual()
     {
-        // During resize, _resizingNode may differ from _selectedNode — use whichever is active.
-        // DrawingVisual lives inside ZoomPanCanvas → diagram coords work directly, no transform needed.
-        var node = _resizingNode ?? _selectedNode;
-        if (node is null) return;
-        double h = _layer.ComputeNodeHeight(node);
-        _layer.DrawSelection(new Rect(node.X, node.Y, node.Width, h));
+        if (_selectedIds.Count == 0) { _layer.ClearSelection(); return; }
+
+        // During resize use the resizing node bounds
+        if (_resizingNode is not null)
+        {
+            double rh = _layer.ComputeNodeHeight(_resizingNode);
+            _layer.DrawSelection(new Rect(_resizingNode.X, _resizingNode.Y, _resizingNode.Width, rh));
+            return;
+        }
+
+        var rects = _doc!.Classes
+            .Where(n => _selectedIds.Contains(n.Id))
+            .Select(n => new Rect(n.X, n.Y, n.Width, _layer.ComputeNodeHeight(n)));
+        _layer.DrawSelectionSet(rects);
     }
+
+    // Keep compat name used in resize/drag paths
+    private void UpdateSelectAdornerPosition() => RedrawSelectionVisual();
 
     private void ClearAdorners()
     {
@@ -417,28 +475,42 @@ public sealed class DiagramCanvas : Canvas
                 return;
             }
 
-            // Ctrl+Click → navigate to source
+            // Ctrl+Click → toggle multi-selection (no navigate)
             if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
             {
-                var member = _layer.HitTestMember(pt, node);
-                if (member is not null)
-                    NavigateToMemberRequested?.Invoke(this, (node, member));
-                else
-                    NavigateToMemberRequested?.Invoke(this, (node, node.Members.FirstOrDefault()!));
+                ToggleNodeSelection(node);
                 e.Handled = true;
                 return;
             }
 
-            SelectNode(node);
-            _dragNode       = node;
-            _dragStart      = pt;
+            // Plain click: if node already in selection, keep the set and just start drag;
+            // otherwise collapse to single selection.
+            if (!_selectedIds.Contains(node.Id))
+                SelectSingleNode(node);
+
+            // Capture start positions of all selected nodes for multi-drag
+            _dragNode  = node;
+            _dragStart = pt;
+            _dragStartPositions.Clear();
+            if (_doc is not null)
+                foreach (var n in _doc.Classes.Where(n => _selectedIds.Contains(n.Id)))
+                    _dragStartPositions[n.Id] = new Point(n.X, n.Y);
             _dragNodeStartX = node.X;
             _dragNodeStartY = node.Y;
             CaptureMouse();
         }
         else
         {
-            SelectNode(null);
+            // Click on empty area — clear selection
+            if (_selectedIds.Count > 0)
+            {
+                _selectedIds.Clear();
+                _primarySelected = null;
+                _layer.SetMultiSelection(_selectedIds);
+                _layer.ClearSelection();
+                _layer.UpdateSelection(null, _hoveredNode?.Id);
+                SelectedClassChanged?.Invoke(this, null);
+            }
             _isRubberBanding = true;
             _rubberStart     = pt;
             AttachRubberBand(_rubberStart);
@@ -469,10 +541,22 @@ public sealed class DiagramCanvas : Canvas
             double dx = pt.X - _dragStart.X;
             double dy = pt.Y - _dragStart.Y;
 
-            _dragNode.X = Math.Max(0, _dragNodeStartX + dx);
-            _dragNode.Y = Math.Max(0, _dragNodeStartY + dy);
-
-            ApplyPatch([_dragNode.Id]);
+            if (_selectedIds.Count > 1 && _dragStartPositions.Count > 0)
+            {
+                // Move all selected nodes together
+                foreach (var n in _doc!.Classes.Where(n => _dragStartPositions.ContainsKey(n.Id)))
+                {
+                    n.X = Math.Max(0, _dragStartPositions[n.Id].X + dx);
+                    n.Y = Math.Max(0, _dragStartPositions[n.Id].Y + dy);
+                }
+                ApplyPatch(_selectedIds);
+            }
+            else
+            {
+                _dragNode.X = Math.Max(0, _dragNodeStartX + dx);
+                _dragNode.Y = Math.Max(0, _dragNodeStartY + dy);
+                ApplyPatch([_dragNode.Id]);
+            }
         }
         else if (_isRubberBanding && _rubberBandAdorner is not null)
         {
@@ -520,11 +604,37 @@ public sealed class DiagramCanvas : Canvas
         if (_dragNode is not null)
         {
             _dragNode = null;
+            _dragStartPositions.Clear();
         }
         else if (_isRubberBanding)
         {
             _isRubberBanding = false;
-            RemoveRubberBandAdorner();
+            if (_rubberBandAdorner is not null && _doc is not null)
+            {
+                Rect selRect = _rubberBandAdorner.SelectionRect;
+                RemoveRubberBandAdorner();
+
+                // Ctrl held → add to existing set; plain → replace
+                if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                    _selectedIds.Clear();
+
+                foreach (var n in _doc.Classes)
+                {
+                    var nb = new Rect(n.X, n.Y, n.Width, _layer.ComputeNodeHeight(n));
+                    if (selRect.IntersectsWith(nb)) _selectedIds.Add(n.Id);
+                }
+                _primarySelected = _selectedIds.Count == 1
+                    ? _doc.Classes.FirstOrDefault(n => _selectedIds.Contains(n.Id))
+                    : null;
+                _layer.SetMultiSelection(_selectedIds);
+                RedrawSelectionVisual();
+                _layer.UpdateSelection(_primarySelected?.Id, _hoveredNode?.Id);
+                SelectedClassChanged?.Invoke(this, _primarySelected);
+            }
+            else
+            {
+                RemoveRubberBandAdorner();
+            }
         }
     }
 
@@ -566,7 +676,7 @@ public sealed class DiagramCanvas : Canvas
         if (_hoveredNode is not null)
         {
             _hoveredNode = null;
-            _layer.UpdateSelection(_selectedNode?.Id, null);
+            _layer.UpdateSelection(_primarySelected?.Id, null);
             HoveredClassChanged?.Invoke(this, null);
         }
     }
@@ -578,7 +688,7 @@ public sealed class DiagramCanvas : Canvas
         base.OnKeyDown(e);
         if (e.Key == Key.Escape)
         {
-            SelectNode(null);
+            ClearSelection();
             e.Handled = true;
         }
     }
@@ -815,7 +925,7 @@ public sealed class DiagramCanvas : Canvas
         if (_doc is null) return;
         _doc.Classes.Remove(node);
         _doc.Relationships.RemoveAll(r => r.SourceId == node.Id || r.TargetId == node.Id);
-        if (_selectedNode == node) SelectNode(null);
+        if (_selectedNode == node) ClearSelection();
         _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
     }
 

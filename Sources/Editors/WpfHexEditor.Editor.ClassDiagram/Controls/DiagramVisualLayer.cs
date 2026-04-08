@@ -77,6 +77,9 @@ public sealed class DiagramVisualLayer : FrameworkElement
     // ── Focus mode (Phase 12 filter) ─────────────────────────────────────────
     private HashSet<string>?  _focusedNodeIds;   // null = all visible; empty = all dimmed
 
+    // ── Multi-selection set (for border highlight on all selected nodes) ──────
+    private HashSet<string> _multiSelectedIds = [];
+
     // ── Collapsible sections ──────────────────────────────────────────────────
     // key: nodeId, value: set of collapsed section names ("Fields","Properties","Methods","Events")
     private readonly Dictionary<string, HashSet<string>> _collapsedSections = [];
@@ -104,11 +107,21 @@ public sealed class DiagramVisualLayer : FrameworkElement
     // ── Selection visual (diagram-space DrawingVisual — no adorner needed) ─────
 
     /// <summary>
-    /// Draws the selection rectangle (border + 8 handles) in diagram coordinates.
-    /// Because this DrawingVisual lives inside ZoomPanCanvas it follows zoom/pan
-    /// automatically — no coordinate transform is needed.
+    /// Updates the multi-selection set and re-renders all affected nodes
+    /// (previously selected + newly selected) so border colors update immediately.
     /// </summary>
-    public void DrawSelection(Rect bounds)
+    public void SetMultiSelection(HashSet<string> ids)
+    {
+        var toRepaint = new HashSet<string>(_multiSelectedIds);
+        toRepaint.UnionWith(ids);
+        _multiSelectedIds = ids;
+        if (_doc is null) return;
+        foreach (var node in _doc.Classes.Where(n => toRepaint.Contains(n.Id)))
+            RenderNode(node);
+    }
+
+    /// <summary>Draws selection rects for a set of nodes (multi-select).</summary>
+    public void DrawSelectionSet(IEnumerable<Rect> nodeBounds)
     {
         EnsureSelectionVisualOnTop();
         const double HandlePx = 5.0;
@@ -117,25 +130,28 @@ public sealed class DiagramVisualLayer : FrameworkElement
             ?? new SolidColorBrush(Color.FromRgb(0, 120, 215));
         Brush handleFill = TryFindResource("CD_SelectionHandleFill") as Brush
             ?? Brushes.White;
-        var pen    = new Pen(borderBrush, 1.5) { DashStyle = DashStyles.Solid };
-        var hPen   = new Pen(borderBrush, 1.0);
+        var pen  = new Pen(borderBrush, 1.5) { DashStyle = DashStyles.Solid };
+        var hPen = new Pen(borderBrush, 1.0);
 
         using var dc = _selectionVisual.RenderOpen();
-        dc.DrawRectangle(null, pen, bounds);
-
-        double l = bounds.Left,  r = bounds.Right;
-        double t = bounds.Top,   b = bounds.Bottom;
-        double mx = (l + r) / 2, my = (t + b) / 2;
-        double h = HandlePx;
-
-        void Handle(double cx, double cy) =>
-            dc.DrawRectangle(handleFill, hPen, new Rect(cx - h, cy - h, h * 2, h * 2));
-
-        Handle(l, t); Handle(mx, t); Handle(r, t);
-        Handle(r, my);
-        Handle(r, b); Handle(mx, b); Handle(l, b);
-        Handle(l, my);
+        foreach (var bounds in nodeBounds)
+        {
+            dc.DrawRectangle(null, pen, bounds);
+            double l = bounds.Left,  r = bounds.Right;
+            double t = bounds.Top,   b = bounds.Bottom;
+            double mx = (l + r) / 2, my = (t + b) / 2;
+            double h = HandlePx;
+            void Handle(double cx, double cy) =>
+                dc.DrawRectangle(handleFill, hPen, new Rect(cx - h, cy - h, h * 2, h * 2));
+            Handle(l, t); Handle(mx, t); Handle(r, t);
+            Handle(r, my);
+            Handle(r, b); Handle(mx, b); Handle(l, b);
+            Handle(l, my);
+        }
     }
+
+    /// <summary>Draws the selection rectangle for a single node.</summary>
+    public void DrawSelection(Rect bounds) => DrawSelectionSet([bounds]);
 
     /// <summary>Clears the selection visual.</summary>
     public void ClearSelection()
@@ -368,7 +384,7 @@ public sealed class DiagramVisualLayer : FrameworkElement
     {
         if (!_nodeVisuals.TryGetValue(node.Id, out var dv)) return;
 
-        bool isSelected = node.Id == _selectedNodeId;
+        bool isSelected = node.Id == _selectedNodeId || _multiSelectedIds.Contains(node.Id);
         bool isHovered  = node.Id == _hoveredNodeId;
         bool isDimmed   = _focusedNodeIds is not null && !_focusedNodeIds.Contains(node.Id);
 

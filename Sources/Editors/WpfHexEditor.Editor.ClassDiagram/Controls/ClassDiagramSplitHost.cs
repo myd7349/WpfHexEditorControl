@@ -86,7 +86,9 @@ public sealed class ClassDiagramSplitHost : Grid,
         = new() { Orientation = Orientation.Horizontal, Height = 12, Visibility = Visibility.Collapsed };
     private readonly System.Windows.Controls.Primitives.ScrollBar _vScroll
         = new() { Orientation = Orientation.Vertical,   Width  = 12, Visibility = Visibility.Collapsed };
-    private bool _syncingScrollBars;
+    private bool   _syncingScrollBars;
+    private double _scrollContentLeft;  // b.Left * zoom — used in ValueChanged to compute OffsetX
+    private double _scrollContentTop;   // b.Top  * zoom
 
     // ---------------------------------------------------------------------------
     // View state
@@ -245,11 +247,11 @@ public sealed class ClassDiagramSplitHost : Grid,
         // Wire scrollbars
         _hScroll.ValueChanged += (_, e) =>
         {
-            if (!_syncingScrollBars) _zoomPan.OffsetX = -e.NewValue;
+            if (!_syncingScrollBars) _zoomPan.OffsetX = -(e.NewValue + _scrollContentLeft);
         };
         _vScroll.ValueChanged += (_, e) =>
         {
-            if (!_syncingScrollBars) _zoomPan.OffsetY = -e.NewValue;
+            if (!_syncingScrollBars) _zoomPan.OffsetY = -(e.NewValue + _scrollContentTop);
         };
 
         // Update scrollbars + minimap viewport when viewport size, zoom, or pan changes
@@ -1051,7 +1053,7 @@ public sealed class ClassDiagramSplitHost : Grid,
                 case Key.D0: _zoomPan.ZoomFactor = 1.0;          e.Handled = true; return;
                 case Key.S: Save();                               e.Handled = true; return;
                 case Key.D: DuplicateSelected();                  e.Handled = true; return;
-                case Key.A: /* Select all */                      e.Handled = true; return;
+                case Key.A: _canvas.SelectAll();                  e.Handled = true; return;
                 case Key.G: AddNewClass(ClassKind.Class);         e.Handled = true; return;
                 case Key.I: AddNewClass(ClassKind.Interface);     e.Handled = true; return;
                 case Key.E: AddNewClass(ClassKind.Enum);          e.Handled = true; return;
@@ -1465,26 +1467,34 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         if (_zoomPan.ActualWidth < 1 || _zoomPan.ActualHeight < 1) return;
 
-        var b  = _zoomPan.GetContentBounds();
+        var    b  = _zoomPan.GetContentBounds();
         double z  = _zoomPan.ZoomFactor;
         double vw = _zoomPan.ActualWidth;
         double vh = _zoomPan.ActualHeight;
 
+        // Scaled content origin — needed to map OffsetX ↔ scroll value correctly.
+        // OffsetX = -(scrollValue + contentLeft * z)  →  scrollValue = -OffsetX - contentLeft*z
+        _scrollContentLeft = b.Left * z;
+        _scrollContentTop  = b.Top  * z;
+
         _syncingScrollBars = true;
         try
         {
-            double hMax = Math.Max(0, b.Right * z - vw);
+            // Total scaled extent vs viewport
+            double hMax   = Math.Max(0, b.Width  * z - vw);
+            double scrollX = Math.Clamp(-_zoomPan.OffsetX - _scrollContentLeft, 0, Math.Max(0, hMax));
             _hScroll.Minimum      = 0;
             _hScroll.Maximum      = hMax;
             _hScroll.ViewportSize = vw;
-            _hScroll.Value        = Math.Clamp(-_zoomPan.OffsetX, 0, hMax);
+            _hScroll.Value        = scrollX;
             _hScroll.Visibility   = hMax > 1 ? Visibility.Visible : Visibility.Collapsed;
 
-            double vMax = Math.Max(0, b.Bottom * z - vh);
+            double vMax   = Math.Max(0, b.Height * z - vh);
+            double scrollY = Math.Clamp(-_zoomPan.OffsetY - _scrollContentTop,  0, Math.Max(0, vMax));
             _vScroll.Minimum      = 0;
             _vScroll.Maximum      = vMax;
             _vScroll.ViewportSize = vh;
-            _vScroll.Value        = Math.Clamp(-_zoomPan.OffsetY, 0, vMax);
+            _vScroll.Value        = scrollY;
             _vScroll.Visibility   = vMax > 1 ? Visibility.Visible : Visibility.Collapsed;
         }
         finally
