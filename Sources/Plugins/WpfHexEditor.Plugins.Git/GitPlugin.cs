@@ -43,14 +43,16 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
 
     // ── UI IDs ────────────────────────────────────────────────────────────────
 
-    private const string GitChangesPanelId = "WpfHexEditor.Plugins.Git.Panel.Changes";
+    private const string GitChangesPanelId  = "WpfHexEditor.Plugins.Git.Panel.Changes";
+    private const string GitHistoryPanelId  = "WpfHexEditor.Plugins.Git.Panel.History";
 
     // ── State ─────────────────────────────────────────────────────────────────
 
-    private IIDEHostContext?           _context;
-    private GitVersionControlService?  _vcs;
-    private GitChangesPanelViewModel?  _changesVm;
-    private Views.BranchPickerPopup?   _branchPicker;
+    private IIDEHostContext?               _context;
+    private GitVersionControlService?      _vcs;
+    private GitChangesPanelViewModel?      _changesVm;
+    private GitHistoryPanelViewModel?      _historyVm;
+    private Views.BranchPickerPopup?       _branchPicker;
     private readonly CancellationTokenSource _cts = new();
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -76,18 +78,29 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
             }
         };
 
-        // Create panel VM and panel
+        // Create panels
         _changesVm = new GitChangesPanelViewModel(_vcs, context.Output, context.IDEEvents);
-        var panel  = new GitChangesPanel { DataContext = _changesVm };
+        var changesPanel = new GitChangesPanel { DataContext = _changesVm };
 
-        // Register dockable panel
+        _historyVm = new GitHistoryPanelViewModel(_vcs, context.IDEEvents);
+        var historyPanel = new GitHistoryPanel { DataContext = _historyVm };
+
+        // Register dockable panels
         context.UIRegistry.RegisterPanel(
-            GitChangesPanelId,
-            panel,
-            Id,
+            GitChangesPanelId, changesPanel, Id,
             new PanelDescriptor
             {
                 Title           = "Git Changes",
+                DefaultDockSide = "Bottom",
+                CanClose        = true,
+                Category        = "Source Control"
+            });
+
+        context.UIRegistry.RegisterPanel(
+            GitHistoryPanelId, historyPanel, Id,
+            new PanelDescriptor
+            {
+                Title           = "Git History",
                 DefaultDockSide = "Bottom",
                 CanClose        = true,
                 Category        = "Source Control"
@@ -120,6 +133,21 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
             });
 
         context.UIRegistry.RegisterMenuItem(
+            "WpfHexEditor.Plugins.Git.Menu.GitHistory", Id,
+            new MenuItemDescriptor
+            {
+                ParentPath = "View",
+                Header     = "Git _History",
+                Group      = "Git",
+                IconGlyph  = "\uE81C",
+                Command    = new RelayCommand(_ =>
+                {
+                    context.UIRegistry.TogglePanel(GitHistoryPanelId);
+                    _historyVm?.LoadHistoryAsync();
+                })
+            });
+
+        context.UIRegistry.RegisterMenuItem(
             "WpfHexEditor.Plugins.Git.Menu.BlameGutter", Id,
             new MenuItemDescriptor
             {
@@ -146,6 +174,8 @@ public sealed class GitPlugin : IWpfHexEditorPlugin
         _cts.Cancel();
         _vcs?.StopPolling();
         _vcs?.Dispose();
+        _changesVm?.Dispose();
+        _historyVm?.Dispose();
 
         if (_context is not null)
             _context.HexEditor.FileOpened -= OnFileOpened;

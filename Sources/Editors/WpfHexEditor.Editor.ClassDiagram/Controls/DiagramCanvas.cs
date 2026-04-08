@@ -21,10 +21,12 @@
 
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using WpfHexEditor.Editor.ClassDiagram.Controls.Adorners;
 using WpfHexEditor.Editor.ClassDiagram.Core.Layout;
 using WpfHexEditor.Editor.ClassDiagram.Core.Model;
@@ -80,6 +82,12 @@ public sealed class DiagramCanvas : Canvas
     private readonly DiagramFilterBar _filterBar = new();
     private bool _filterVisible;
 
+    // ── Hover tooltip ─────────────────────────────────────────────────────────
+    private readonly DispatcherTimer _tooltipTimer;
+    private Popup?    _tooltipPopup;
+    private ClassNode? _tooltipNode;
+    public  int TooltipDelayMs { get; set; } = 400;
+
     // ── Events ────────────────────────────────────────────────────────────────
     public event EventHandler<ClassNode?>?                    SelectedClassChanged;
     public event EventHandler<ClassNode?>?                    HoveredClassChanged;
@@ -97,6 +105,10 @@ public sealed class DiagramCanvas : Canvas
         Background = Brushes.Transparent;
         Focusable  = true;
         Loaded    += OnLoaded;
+
+        // Tooltip timer
+        _tooltipTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(TooltipDelayMs) };
+        _tooltipTimer.Tick += (_, _) => { _tooltipTimer.Stop(); ShowHoverTooltip(); };
 
         Children.Add(_layer);
         Canvas.SetLeft(_layer, 0);
@@ -448,6 +460,15 @@ public sealed class DiagramCanvas : Canvas
                 _hoveredNode = hovered;
                 _layer.UpdateSelection(_selectedNode?.Id, _hoveredNode?.Id);
                 HoveredClassChanged?.Invoke(this, _hoveredNode);
+
+                // Reset tooltip timer
+                HideHoverTooltip();
+                if (hovered is not null)
+                {
+                    _tooltipNode = hovered;
+                    _tooltipTimer.Interval = TimeSpan.FromMilliseconds(TooltipDelayMs);
+                    _tooltipTimer.Start();
+                }
             }
         }
     }
@@ -496,11 +517,109 @@ public sealed class DiagramCanvas : Canvas
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
+        HideHoverTooltip();
         if (_hoveredNode is not null)
         {
             _hoveredNode = null;
             _layer.UpdateSelection(_selectedNode?.Id, null);
             HoveredClassChanged?.Invoke(this, null);
+        }
+    }
+
+    // ── Hover tooltip ─────────────────────────────────────────────────────────
+
+    private void ShowHoverTooltip()
+    {
+        if (_tooltipNode is null) return;
+        HideHoverTooltip();
+
+        var node = _tooltipNode;
+
+        // Build content
+        var panel = new StackPanel { Margin = new Thickness(8) };
+
+        // Name row
+        var nameBlock = new TextBlock
+        {
+            Text       = node.Name,
+            FontWeight = FontWeights.Bold,
+            FontSize   = 13,
+            Foreground = (Brush?)TryFindResource("CD_ClassNameForeground")
+                         ?? Brushes.White
+        };
+        panel.Children.Add(nameBlock);
+
+        // Namespace (if present)
+        if (!string.IsNullOrEmpty(node.Namespace))
+            panel.Children.Add(new TextBlock
+            {
+                Text      = node.Namespace,
+                FontSize  = 10,
+                Opacity   = 0.7,
+                Foreground= (Brush?)TryFindResource("CD_ClassNameForeground") ?? Brushes.LightGray
+            });
+
+        // XmlDoc summary
+        if (!string.IsNullOrEmpty(node.XmlDocSummary))
+        {
+            panel.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 4), Opacity = 0.3 });
+            panel.Children.Add(new TextBlock
+            {
+                Text        = node.XmlDocSummary,
+                TextWrapping= TextWrapping.Wrap,
+                MaxWidth    = 300,
+                FontSize    = 11,
+                Foreground  = (Brush?)TryFindResource("DockMenuForegroundBrush") ?? Brushes.White
+            });
+        }
+
+        // Metrics row
+        panel.Children.Add(new Separator { Margin = new Thickness(0, 4, 0, 4), Opacity = 0.3 });
+        int memberCount = node.Members.Count;
+        var m = node.Metrics;
+        var metricsBlock = new TextBlock
+        {
+            FontSize   = 10,
+            Foreground = (Brush?)TryFindResource("DockMenuForegroundBrush") ?? Brushes.LightGray
+        };
+        metricsBlock.Inlines.Add(new System.Windows.Documents.Run($"Members: {memberCount}   "));
+        metricsBlock.Inlines.Add(new System.Windows.Documents.Run($"Ce: {m.EfferentCoupling}   Ca: {m.AfferentCoupling}   "));
+        metricsBlock.Inlines.Add(new System.Windows.Documents.Run($"I: {m.Instability:F2}")
+        {
+            Foreground = m.Instability > 0.7 ? Brushes.OrangeRed
+                       : m.Instability > 0.4 ? Brushes.Gold
+                       : Brushes.LightGreen
+        });
+        panel.Children.Add(metricsBlock);
+
+        var border = new Border
+        {
+            Background      = (Brush?)TryFindResource("CD_ClassBoxBackground") ?? new SolidColorBrush(Color.FromRgb(30, 30, 40)),
+            BorderBrush     = (Brush?)TryFindResource("CD_ClassBoxBorderBrush") ?? Brushes.DimGray,
+            BorderThickness = new Thickness(1),
+            CornerRadius    = new CornerRadius(4),
+            Child           = panel,
+            Effect          = new System.Windows.Media.Effects.DropShadowEffect
+                              { BlurRadius = 8, ShadowDepth = 2, Opacity = 0.5 }
+        };
+
+        _tooltipPopup = new Popup
+        {
+            Child            = border,
+            Placement        = PlacementMode.Mouse,
+            AllowsTransparency= true,
+            IsOpen           = true,
+            StaysOpen        = false
+        };
+    }
+
+    private void HideHoverTooltip()
+    {
+        _tooltipTimer.Stop();
+        if (_tooltipPopup is not null)
+        {
+            _tooltipPopup.IsOpen = false;
+            _tooltipPopup = null;
         }
     }
 

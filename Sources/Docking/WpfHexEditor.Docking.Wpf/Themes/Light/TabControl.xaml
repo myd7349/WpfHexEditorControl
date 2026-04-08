@@ -245,14 +245,22 @@
                                               VerticalAlignment="Center"
                                               HorizontalAlignment="Center" />
                         </Border>
-                        <!-- U-shape: left + bottom + right, open at top (connects to content area).
-                             CornerRadius topRight=4 curves the right border inward at the top,
-                             creating a convex outward arc from the content area's perspective. -->
+                        <!-- U-shape: left + bottom + right, open at top. -->
                         <Border x:Name="SelectionBorder"
                                 BorderThickness="1,0,1,1"
                                 BorderBrush="{DynamicResource DockTabActiveBrush}"
-                                CornerRadius="0,4,4,4"
+                                CornerRadius="0,0,4,4"
                                 Visibility="Collapsed" />
+                        <!-- Outward (convex) arc at top-right corner — see Dark theme for geometry notes. -->
+                        <Path x:Name="TopRightArc"
+                              VerticalAlignment="Top"
+                              HorizontalAlignment="Right"
+                              Width="4" Height="4"
+                              Data="M 0,4 A 4,4 0 0,1 4,0"
+                              Stroke="{DynamicResource DockTabActiveBrush}"
+                              StrokeThickness="1"
+                              Fill="Transparent"
+                              Visibility="Collapsed" />
                         <Border x:Name="ColorStripe"
                                 Height="2"
                                 HorizontalAlignment="Stretch"
@@ -265,6 +273,7 @@
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="TabBorder"       Property="Background"  Value="{DynamicResource DockBackgroundBrush}" />
                             <Setter TargetName="SelectionBorder" Property="Visibility"  Value="Visible" />
+                            <Setter TargetName="TopRightArc"     Property="Visibility"  Value="Visible" />
                             <Setter TargetName="ColorStripe"     Property="Opacity"     Value="1.0" />
                             <Setter Property="Foreground"                               Value="{DynamicResource DockTabActiveTextBrush}" />
                         </Trigger>
