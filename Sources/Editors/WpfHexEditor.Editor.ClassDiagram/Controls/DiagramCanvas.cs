@@ -54,6 +54,12 @@ public sealed class DiagramCanvas : Canvas
     private ClassNode?        _hoveredNode;
     private ClassNode?        _dragNode;
 
+    // ── Member hover + selection ──────────────────────────────────────────────
+    private ClassNode?   _hoveredMemberNode;
+    private ClassMember? _hoveredMember;
+    private ClassNode?   _selectedMemberNode;
+    private ClassMember? _selectedMember;
+
     // ── Multi-selection ───────────────────────────────────────────────────────
     // _selectedIds = full selection set; _primarySelected = last explicit click target
     private readonly HashSet<string> _selectedIds = new(StringComparer.Ordinal);
@@ -153,6 +159,8 @@ public sealed class DiagramCanvas : Canvas
         _selectedIds.Clear();
         _primarySelected  = null;
         _hoveredNode      = null;
+        _hoveredMember    = null; _hoveredMemberNode = null;
+        _selectedMember   = null; _selectedMemberNode = null;
 
         ClearAdorners();
         _layer.RenderAll(doc);
@@ -481,6 +489,17 @@ public sealed class DiagramCanvas : Canvas
                 return;
             }
 
+            // Member selection: single-click on a member row selects it
+            {
+                var clickedMember = _layer.HitTestMember(pt, node);
+                if (clickedMember != _selectedMember || node != _selectedMemberNode)
+                {
+                    _selectedMember     = clickedMember;
+                    _selectedMemberNode = clickedMember is not null ? node : null;
+                    _layer.SetSelectedMember(_selectedMemberNode?.Id, _selectedMember?.Name);
+                }
+            }
+
             // Plain click: if node already in selection, keep the set and just start drag;
             // otherwise collapse to single selection.
             if (!_selectedIds.Contains(node.Id))
@@ -562,6 +581,13 @@ public sealed class DiagramCanvas : Canvas
                 _layer.UpdateSelection(_selectedNode?.Id, _hoveredNode?.Id);
                 HoveredClassChanged?.Invoke(this, _hoveredNode);
 
+                // Clear member hover when leaving a node
+                if (hovered is null && _hoveredMember is not null)
+                {
+                    _hoveredMember = null; _hoveredMemberNode = null;
+                    _layer.SetHoveredMember(null, null);
+                }
+
                 // Reset tooltip timer
                 HideHoverTooltip();
                 if (hovered is not null)
@@ -569,6 +595,18 @@ public sealed class DiagramCanvas : Canvas
                     _tooltipNode = hovered;
                     _tooltipTimer.Interval = TimeSpan.FromMilliseconds(TooltipDelayMs);
                     _tooltipTimer.Start();
+                }
+            }
+
+            // Member hover tracking
+            if (_hoveredNode is not null)
+            {
+                var member = _layer.HitTestMember(pt, _hoveredNode);
+                if (member != _hoveredMember)
+                {
+                    _hoveredMember     = member;
+                    _hoveredMemberNode = member is not null ? _hoveredNode : null;
+                    _layer.SetHoveredMember(_hoveredMemberNode?.Id, _hoveredMember?.Name);
                 }
             }
 

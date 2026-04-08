@@ -81,6 +81,12 @@ public sealed class DiagramVisualLayer : FrameworkElement
     // ── Multi-selection set (for border highlight on all selected nodes) ──────
     private HashSet<string> _multiSelectedIds = [];
 
+    // ── Member hover + selection ──────────────────────────────────────────────
+    private string? _hoveredMemberNodeId;
+    private string? _hoveredMemberId;       // ClassMember.Name (unique within node)
+    private string? _selectedMemberNodeId;
+    private string? _selectedMemberId;
+
     // ── Collapsible sections ──────────────────────────────────────────────────
     // key: nodeId, value: set of collapsed section names ("Fields","Properties","Methods","Events")
     private readonly Dictionary<string, HashSet<string>> _collapsedSections = [];
@@ -205,6 +211,44 @@ public sealed class DiagramVisualLayer : FrameworkElement
         {
             _visuals.Remove(_rubberBandVisual);
             _visuals.Add(_rubberBandVisual);
+        }
+    }
+
+    // ── Member hover + selection public API ───────────────────────────────────
+
+    /// <summary>
+    /// Updates the hovered member and re-renders the affected node(s).
+    /// Pass null/null to clear.
+    /// </summary>
+    public void SetHoveredMember(string? nodeId, string? memberId)
+    {
+        if (_hoveredMemberNodeId == nodeId && _hoveredMemberId == memberId) return;
+        var toRepaint = new HashSet<string?> { _hoveredMemberNodeId, nodeId };
+        _hoveredMemberNodeId = nodeId;
+        _hoveredMemberId     = memberId;
+        if (_doc is null) return;
+        foreach (var id in toRepaint)
+        {
+            var node = _doc.Classes.FirstOrDefault(n => n.Id == id);
+            if (node is not null) RenderNode(node);
+        }
+    }
+
+    /// <summary>
+    /// Updates the selected member and re-renders the affected node(s).
+    /// Pass null/null to clear.
+    /// </summary>
+    public void SetSelectedMember(string? nodeId, string? memberId)
+    {
+        if (_selectedMemberNodeId == nodeId && _selectedMemberId == memberId) return;
+        var toRepaint = new HashSet<string?> { _selectedMemberNodeId, nodeId };
+        _selectedMemberNodeId = nodeId;
+        _selectedMemberId     = memberId;
+        if (_doc is null) return;
+        foreach (var id in toRepaint)
+        {
+            var node = _doc.Classes.FirstOrDefault(n => n.Id == id);
+            if (node is not null) RenderNode(node);
         }
     }
 
@@ -594,6 +638,16 @@ public sealed class DiagramVisualLayer : FrameworkElement
             // Skip rendering if section is collapsed
             if (IsSectionCollapsed(node.Id, GetSectionName(member.Kind)))
                 continue;
+
+            // Member row hover / selection highlight
+            bool memberHovered  = node.Id == _hoveredMemberNodeId  && member.Name == _hoveredMemberId;
+            bool memberSelected = node.Id == _selectedMemberNodeId && member.Name == _selectedMemberId;
+            if (memberSelected)
+                dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(60, 0, 120, 215)), null,
+                    new Rect(0, memberY, width, MemberHeight));
+            else if (memberHovered)
+                dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(30, 160, 160, 255)), null,
+                    new Rect(0, memberY, width, MemberHeight));
 
             // B3 — Visibility color circle
             Color circleColor = member.Visibility switch
