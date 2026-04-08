@@ -29,6 +29,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using WpfHexEditor.Editor.ClassDiagram.Core.Layout;
 using WpfHexEditor.Editor.ClassDiagram.Core.Model;
 using WpfHexEditor.Editor.ClassDiagram.Core.Parser;
 using WpfHexEditor.Editor.ClassDiagram.Core.Serializer;
@@ -160,9 +161,10 @@ public sealed class ClassDiagramSplitHost : Grid,
         _zoomPan = new ZoomPanCanvas();
         _zoomPan.Children.Add(_canvas);
 
-        _canvas.SelectedClassChanged += OnCanvasSelectedClassChanged;
-        _canvas.HoveredClassChanged  += (_, _) => { };
-        _canvas.ExportRequested      += OnCanvasExportRequested;
+        _canvas.SelectedClassChanged     += OnCanvasSelectedClassChanged;
+        _canvas.HoveredClassChanged      += (_, _) => { };
+        _canvas.ExportRequested          += OnCanvasExportRequested;
+        _canvas.LayoutStrategyRequested  += (_, strategy) => ApplyLayout(strategy);
 
         // DSL pane
         _dslTextBox = new TextBox();
@@ -738,7 +740,22 @@ public sealed class ClassDiagramSplitHost : Grid,
             IsChecked = true
         });
 
-        // Layout dropdown
+        // Auto-layout strategy dropdown
+        ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
+        ToolbarItems.Add(new EditorToolbarItem
+        {
+            Icon  = "\uE947",
+            Label = "Auto Layout",
+            Tooltip = "Apply auto-layout strategy",
+            DropdownItems = new ObservableCollection<EditorToolbarItem>
+            {
+                new() { Label = "Force-Directed", Command = new RelayCommand(() => ApplyLayout(LayoutStrategyKind.ForceDirected)) },
+                new() { Label = "Hierarchical",   Command = new RelayCommand(() => ApplyLayout(LayoutStrategyKind.Hierarchical))  },
+                new() { Label = "Sugiyama",       Command = new RelayCommand(() => ApplyLayout(LayoutStrategyKind.Sugiyama))      }
+            }
+        });
+
+        // Split layout dropdown
         ToolbarItems.Add(new EditorToolbarItem { IsSeparator = true });
         ToolbarItems.Add(new EditorToolbarItem
         {
@@ -1027,6 +1044,27 @@ public sealed class ClassDiagramSplitHost : Grid,
     }
 
     // ---------------------------------------------------------------------------
+    // Layout strategy
+    // ---------------------------------------------------------------------------
+
+    /// <summary>
+    /// Applies the given layout strategy to the current document and fits the canvas.
+    /// </summary>
+    public void ApplyLayout(LayoutStrategyKind strategy)
+    {
+        if (_document.Classes.Count == 0) return;
+        LayoutStrategyFactory.Create(strategy).Layout(_document, new LayoutOptions
+        {
+            Strategy      = strategy,
+            ColSpacing    = 60,
+            RowSpacing    = 80,
+            CanvasPadding = 40
+        });
+        _canvas.ApplyDocument(_document);
+        _zoomPan.FitToContent();
+        SetDirty(true);
+    }
+
     // Export actions
     // ---------------------------------------------------------------------------
 

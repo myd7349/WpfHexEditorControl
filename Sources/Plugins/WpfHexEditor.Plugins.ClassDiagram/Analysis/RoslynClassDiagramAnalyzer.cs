@@ -86,11 +86,13 @@ public static class RoslynClassDiagramAnalyzer
         if (options.AutoLayout)
             LayoutStrategyFactory.Create(options.LayoutStrategy).Layout(document, new LayoutOptions
             {
-                Strategy      = options.LayoutStrategy,
-                ColSpacing    = 60,
-                RowSpacing    = 80,
-                CanvasPadding = 40,
-                MinBoxWidth   = options.DefaultNodeWidth
+                Strategy           = options.LayoutStrategy,
+                ColSpacing         = 60,
+                RowSpacing         = 80,
+                CanvasPadding      = 40,
+                MinBoxWidth        = options.DefaultNodeWidth,
+                ForceIterations    = options.ForceDirectedIterations,
+                SpringLength       = options.SpringLength
             });
 
         return document;

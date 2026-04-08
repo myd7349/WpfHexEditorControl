@@ -40,6 +40,20 @@ public sealed class ClassDiagramOptions
     public LayoutStrategyKind LayoutStrategy { get; set; } = LayoutStrategyKind.ForceDirected;
 
     /// <summary>
+    /// Number of iterations for the ForceDirected layout simulation.
+    /// Higher values produce better layout at the cost of more CPU time.
+    /// Valid range: 100–2000.
+    /// </summary>
+    public int ForceDirectedIterations { get; set; } = 800;
+
+    /// <summary>
+    /// Spring rest length in logical pixels for the ForceDirected layout.
+    /// Larger values spread nodes further apart.
+    /// Valid range: 100–600.
+    /// </summary>
+    public double SpringLength { get; set; } = 320;
+
+    /// <summary>
     /// Grid snap granularity in logical pixels used when dragging nodes on the canvas.
     /// Valid range: 1–128 px.
     /// </summary>

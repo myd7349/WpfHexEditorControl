@@ -25,6 +25,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using WpfHexEditor.Editor.ClassDiagram.Controls.Adorners;
+using WpfHexEditor.Editor.ClassDiagram.Core.Layout;
 using WpfHexEditor.Editor.ClassDiagram.Core.Model;
 using WpfHexEditor.Editor.ClassDiagram.ViewModels;
 
@@ -80,6 +81,7 @@ public sealed class DiagramCanvas : Canvas
     public event EventHandler<(ClassNode Node, ClassMember Member)>? DeleteMemberRequested;
     public event EventHandler<(ClassNode Node, ClassMember Member)>? NavigateToMemberRequested;
     public event EventHandler<string>?                        ExportRequested;  // format: "png","plantUml","structurizr","mermaid","svg","csharp"
+    public event EventHandler<LayoutStrategyKind>?            LayoutStrategyRequested;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -530,7 +532,16 @@ public sealed class DiagramCanvas : Canvas
         menu.Items.Add(MakeItem("\uE77F", "Paste",         () => { }));
         menu.Items.Add(MakeItem("\uE8B3", "Select All",    () => { }));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MakeItem("\uE8D3", "Auto Layout",   () => { }));
+        var layoutSub = new MenuItem { Header = "Auto Layout" };
+        layoutSub.Icon = new System.Windows.Controls.TextBlock
+            { Text = "\uE947", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12 };
+        layoutSub.Items.Add(MakeItem("\uE947", "Force-Directed",
+            () => LayoutStrategyRequested?.Invoke(this, LayoutStrategyKind.ForceDirected)));
+        layoutSub.Items.Add(MakeItem("\uE947", "Hierarchical",
+            () => LayoutStrategyRequested?.Invoke(this, LayoutStrategyKind.Hierarchical)));
+        layoutSub.Items.Add(MakeItem("\uE947", "Sugiyama",
+            () => LayoutStrategyRequested?.Invoke(this, LayoutStrategyKind.Sugiyama)));
+        menu.Items.Add(layoutSub);
         menu.Items.Add(MakeItem("\uE904", "Zoom to Fit",   () => { }));
         menu.Items.Add(new Separator());
 
