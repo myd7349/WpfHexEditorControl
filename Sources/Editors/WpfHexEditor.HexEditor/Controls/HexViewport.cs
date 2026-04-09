@@ -1359,12 +1359,6 @@ namespace WpfHexEditor.HexEditor.Controls
         public double AsciiPanelActualStartX => CalculateFixedSeparatorX(1) + SeparatorWidth;
 
         /// <summary>
-        /// The ASCII-panel rect of the byte currently under the cursor, in HexViewport coordinates (no zoom).
-        /// Null when the cursor is not over a visible byte or the ASCII panel is hidden.
-        /// </summary>
-        public Rect? CursorAsciiRect => _cursorAsciiRect;
-
-        /// <summary>
         /// Gets the width of one ASCII character cell (fixed layout constant).
         /// </summary>
         public double AsciiCharacterWidth => AsciiCharWidth;
