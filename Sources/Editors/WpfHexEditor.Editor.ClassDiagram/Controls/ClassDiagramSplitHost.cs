@@ -193,6 +193,7 @@ public sealed class ClassDiagramSplitHost : Grid,
         _zoomPan.Children.Add(_canvas);
 
         _canvas.SetUndoManager(_undoManager);
+        _canvas.SetSnapEngine(_snap);
         _canvas.SelectedClassChanged     += OnCanvasSelectedClassChanged;
         _canvas.HoveredClassChanged      += (_, _) => { };
         _canvas.ExportRequested          += OnCanvasExportRequested;
@@ -201,17 +202,23 @@ public sealed class ClassDiagramSplitHost : Grid,
         _canvas.ZoomToNodeRequested      += (_, node) =>
             _zoomPan.ZoomToRect(new Rect(node.X, node.Y, node.Width, node.Height), 40);
 
-        // DSL pane — full CodeEditor for syntax-highlighted DSL viewing (read-only).
-        // TextChanged is NOT wired: canvas → DSL sync only, not bidirectional.
-        _dslEditor = new CodeEditorSplitHost { IsReadOnly = true };
+        // DSL pane — full CodeEditor with bidirectional sync.
+        // Canvas → DSL: scheduled via ClassToSyncService (300ms debounce).
+        // DSL → Canvas: text changes parsed + scheduled via ClassToSyncService (500ms debounce).
+        _dslEditor = new CodeEditorSplitHost { IsReadOnly = false };
 
         // Apply classdiagram language definition for syntax coloring (deferred so
         // LanguageRegistry is fully populated before we query it).
+        // Also wire DSL → Canvas text-change handler here (after editor is ready).
         Loaded += (_, _) =>
         {
             var lang = LanguageRegistry.Instance.FindByExtension(".classdiagram");
             if (lang is not null)
                 _dslEditor.SetLanguage(lang);
+
+            // Bidirectional DSL: CanUndoChanged fires after every edit operation,
+            // making it a reliable proxy for "user typed something" events.
+            _dslEditor.PrimaryEditor.CanUndoChanged += OnDslEditorTextChanged;
         };
 
         _codeHost = new Border { Child = _dslEditor };
@@ -325,11 +332,11 @@ public sealed class ClassDiagramSplitHost : Grid,
     public ICommand? UndoCommand      => new RelayCommand(Undo,    () => CanUndo);
     public ICommand? RedoCommand      => new RelayCommand(Redo,    () => CanRedo);
     public ICommand? SaveCommand      => new RelayCommand(() => Save());
-    public ICommand? CopyCommand      => null;
-    public ICommand? CutCommand       => null;
-    public ICommand? PasteCommand     => null;
-    public ICommand? DeleteCommand    => null;
-    public ICommand? SelectAllCommand => null;
+    public ICommand? CopyCommand      => new RelayCommand(CopySelected, () => _canvas.SelectedIds.Count > 0);
+    public ICommand? CutCommand       => new RelayCommand(CutSelected,  () => _canvas.SelectedIds.Count > 0);
+    public ICommand? PasteCommand     => new RelayCommand(PasteFromClipboard, () => Clipboard.ContainsText() && Clipboard.GetText().TrimStart().StartsWith("// classdiagram-clip"));
+    public ICommand? DeleteCommand    => new RelayCommand(() => { foreach (var id in _canvas.SelectedIds.ToList()) { var n = _document.Classes.FirstOrDefault(c => c.Id == id); if (n is not null) _canvas.DeleteSelectedNode(); } });
+    public ICommand? SelectAllCommand => new RelayCommand(() => _canvas.SelectAll());
 
     public void Undo()
     {
@@ -366,9 +373,9 @@ public sealed class ClassDiagramSplitHost : Grid,
         Dispatcher.Invoke(() => TitleChanged?.Invoke(this, Title));
     }
 
-    public void Copy()       { }
-    public void Cut()        { }
-    public void Paste()      { }
+    public void Copy()  => CopySelected();
+    public void Cut()   => CutSelected();
+    public void Paste() => PasteFromClipboard();
     public void Delete()     { DeleteSelected(); }
     public void SelectAll()  { }
     public void CancelOperation() { }
@@ -439,9 +446,39 @@ public sealed class ClassDiagramSplitHost : Grid,
             _zoomPan.ZoomFactor = zoom;
     }
 
-    public byte[]? GetUnsavedModifications() => null;
-    public void ApplyUnsavedModifications(byte[] data) { }
-    public ChangesetSnapshot GetChangesetSnapshot() => ChangesetSnapshot.Empty;
+    /// <summary>
+    /// Serializes the current diagram DSL to UTF-8 bytes for session-suspend/restore.
+    /// Returns null when the document is empty (no unsaved state to preserve).
+    /// </summary>
+    public byte[]? GetUnsavedModifications()
+    {
+        if (_document.Classes.Count == 0) return null;
+        string dsl = ClassDiagramSerializer.Serialize(_document);
+        return System.Text.Encoding.UTF8.GetBytes(dsl);
+    }
+
+    /// <summary>
+    /// Restores a diagram state previously captured by <see cref="GetUnsavedModifications"/>.
+    /// Parses the UTF-8 DSL bytes and applies the document to the canvas.
+    /// </summary>
+    public void ApplyUnsavedModifications(byte[] data)
+    {
+        if (data is null || data.Length == 0) return;
+        string dsl = System.Text.Encoding.UTF8.GetString(data);
+        var result = ClassDiagramParser.Parse(dsl);
+        if (!result.IsValid) return;
+        _document = result.Document;
+        if (!string.IsNullOrEmpty(_filePath))
+            _document.FilePath = _filePath;
+        _suppressCodeSync = true;
+        _dslEditor.PrimaryEditor.LoadText(dsl);
+        _suppressCodeSync = false;
+        _canvas.ApplyDocument(_document);
+        SetDirty(true);
+        DiagramChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public ChangesetSnapshot GetChangesetSnapshot() => ChangesetSnapshot.Empty;  // byte-level; N/A for diagrams
     public void ApplyChangeset(ChangesetDto changeset) { }
     public void MarkChangesetSaved() { }
     public IReadOnlyList<BookmarkDto>? GetBookmarks() => null;
@@ -480,6 +517,12 @@ public sealed class ClassDiagramSplitHost : Grid,
     /// <summary>Selects a single node on the canvas and fires SelectedClassChanged.</summary>
     public void SelectNode(ClassNode node) => _canvas.SelectNodeById(node.Id);
 
+    /// <summary>
+    /// Highlights the relationship arrow whose SourceId matches <paramref name="relId"/>.
+    /// Pass null to clear the highlight.
+    /// </summary>
+    public void HighlightRelationship(string? relId) => _canvas.HighlightRelationship(relId);
+
     /// <summary>Zooms the viewport to show the given node.</summary>
     public void ZoomToNode(ClassNode node) =>
         _zoomPan.ZoomToRect(new Rect(node.X, node.Y, node.Width, _canvas.GetDiagramBounds().Height > 0 ? node.Height : 120), 80);
@@ -496,6 +539,13 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         add    => _canvas.RenameNodeRequested += value;
         remove => _canvas.RenameNodeRequested -= value;
+    }
+
+    /// <summary>Forwarded from DiagramCanvas — fires when "Properties" is chosen on a node.</summary>
+    public event EventHandler<ClassNode>? ShowPropertiesRequested
+    {
+        add    => _canvas.ShowPropertiesRequested += value;
+        remove => _canvas.ShowPropertiesRequested -= value;
     }
 
     /// <summary>
@@ -534,11 +584,18 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         var d = new Dictionary<string, string>
         {
-            ["zoom"]     = _zoomPan.ZoomFactor.ToString("R"),
-            ["offsetX"]  = _zoomPan.OffsetX.ToString("R"),
-            ["offsetY"]  = _zoomPan.OffsetY.ToString("R"),
-            ["selected"] = _canvas.SelectedNode?.Id ?? string.Empty,
-            ["minimap"]  = _canvas.IsMinimapVisible ? "1" : "0"
+            ["zoom"]      = _zoomPan.ZoomFactor.ToString("R"),
+            ["offsetX"]   = _zoomPan.OffsetX.ToString("R"),
+            ["offsetY"]   = _zoomPan.OffsetY.ToString("R"),
+            ["selected"]  = _canvas.SelectedNode?.Id ?? string.Empty,
+            ["minimap"]   = _canvas.IsMinimapVisible ? "1" : "0",
+            // Version 2 view state (no node-level data — that belongs in .whcd only)
+            ["swimlanes"] = _canvas.ShowSwimLanes   ? "1" : "0",
+            ["snapGrid"]  = _snap.SnapToGrid        ? "1" : "0",
+            ["viewMode"]  = _viewMode.ToString(),
+            ["layout"]    = _layout.ToString(),
+            ["splitCol"]  = _splitColRatio.ToString("R"),
+            ["splitRow"]  = _splitRowRatio.ToString("R")
         };
         return d;
     }
@@ -564,28 +621,75 @@ public sealed class ClassDiagramSplitHost : Grid,
                     _canvas.IsMinimapVisible = mm == "1";
                 if (snap.TryGetValue("selected", out string? sel) && !string.IsNullOrEmpty(sel))
                     _canvas.SelectNodeById(sel);
+
+                // Version 2 view state
+                if (snap.TryGetValue("swimlanes", out string? sw))
+                    _canvas.ShowSwimLanes = sw == "1";
+                if (snap.TryGetValue("snapGrid", out string? sg))
+                    _snap.SnapToGrid = sg == "1";
+                if (snap.TryGetValue("viewMode", out string? vmStr)
+                 && Enum.TryParse<CdViewMode>(vmStr, out var vm))
+                    SetViewMode(vm);
+                if (snap.TryGetValue("layout", out string? layStr)
+                 && Enum.TryParse<CdSplitLayout>(layStr, out var sl))
+                {
+                    double col = snap.TryGetValue("splitCol", out string? sc)
+                        && double.TryParse(sc, out double cv) ? cv : _splitColRatio;
+                    double row = snap.TryGetValue("splitRow", out string? sr)
+                        && double.TryParse(sr, out double rv) ? rv : _splitRowRatio;
+                    ApplySplitLayout(sl, col, row);
+                }
             });
     }
 
     // ── .whcd twin-file state (positions + view) ─────────────────────────────
 
     /// <summary>
-    /// Captures the complete visual state (node positions, zoom, pan, minimap, selection)
+    /// Captures the complete visual state (node positions, zoom, pan, minimap, selection,
+    /// swimlanes, snap, view-mode, split layout, collapsed sections, custom heights)
     /// into a <see cref="WhcdDocument"/> ready for serialization by the plugin.
     /// </summary>
-    public WhcdDocument GetWhcdState(IEnumerable<string> sourceFiles) =>
-        new()
+    public WhcdDocument GetWhcdState(IEnumerable<string> sourceFiles)
+    {
+        var layer = _canvas.VisualLayer;
+
+        // Flatten collapsed sections → "nodeId:SectionName"
+        var collapsed = new List<string>();
+        foreach (var (nodeId, sections) in layer.CollapsedSectionMap)
+            foreach (var sec in sections)
+                collapsed.Add($"{nodeId}:{sec}");
+
+        return new WhcdDocument
         {
-            SourceFiles    = sourceFiles.ToList(),
-            Zoom           = _zoomPan.ZoomFactor,
-            OffsetX        = _zoomPan.OffsetX,
-            OffsetY        = _zoomPan.OffsetY,
-            MinimapVisible = _canvas.IsMinimapVisible,
-            SelectedNodeId = _canvas.SelectedNode?.Id,
-            Nodes          = _document.Classes
-                .Select(n => new WhcdNodePosition { Id = n.Id, X = n.X, Y = n.Y, Width = n.Width })
+            SourceFiles       = sourceFiles.ToList(),
+            Zoom              = _zoomPan.ZoomFactor,
+            OffsetX           = _zoomPan.OffsetX,
+            OffsetY           = _zoomPan.OffsetY,
+            MinimapVisible    = _canvas.IsMinimapVisible,
+            SelectedNodeId    = _canvas.SelectedNode?.Id,
+            ShowSwimLanes     = _canvas.ShowSwimLanes,
+            SnapToGrid        = _snap.SnapToGrid,
+            ViewMode          = _viewMode.ToString(),
+            SplitLayout       = _layout.ToString(),
+            SplitColRatio     = _splitColRatio,
+            SplitRowRatio     = _splitRowRatio,
+            CollapsedSections = collapsed,
+            Nodes             = _document.Classes
+                .Select(n =>
+                {
+                    layer.CustomHeights.TryGetValue(n.Id, out double h);
+                    return new WhcdNodePosition
+                    {
+                        Id     = n.Id,
+                        X      = n.X,
+                        Y      = n.Y,
+                        Width  = n.Width,
+                        Height = h   // 0 when no custom height override
+                    };
+                })
                 .ToList()
         };
+    }
 
     /// <summary>
     /// Restores node positions and view state from a <see cref="WhcdDocument"/>.
@@ -595,6 +699,8 @@ public sealed class ClassDiagramSplitHost : Grid,
     public void ApplyWhcdState(WhcdDocument state)
     {
         if (state is null) return;
+
+        var layer = _canvas.VisualLayer;
 
         // 1. Patch positions into live node objects (matched by ID)
         var posById   = state.Nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
@@ -607,6 +713,24 @@ public sealed class ClassDiagramSplitHost : Grid,
             node.Width = pos.Width;
             anyMoved   = true;
         }
+
+        // 1b. Restore custom heights (Version 2+)
+        foreach (var pos in state.Nodes.Where(p => p.Height > 0))
+            layer.SetCustomHeight(pos.Id, pos.Height);
+
+        // 1c. Restore collapsed sections (Version 2+)
+        var sectionMap = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        foreach (var entry in state.CollapsedSections)
+        {
+            int colon = entry.IndexOf(':');
+            if (colon <= 0) continue;
+            string nodeId  = entry[..colon];
+            string section = entry[(colon + 1)..];
+            if (!sectionMap.TryGetValue(nodeId, out var set))
+                sectionMap[nodeId] = set = new HashSet<string>(StringComparer.Ordinal);
+            set.Add(section);
+        }
+        layer.RestoreCollapsedSections(sectionMap);
 
         // 2. Re-render with restored positions (skip default FitToContent)
         if (anyMoved)
@@ -622,7 +746,27 @@ public sealed class ClassDiagramSplitHost : Grid,
                 _canvas.IsMinimapVisible = state.MinimapVisible;
                 if (state.SelectedNodeId is { Length: > 0 } sid)
                     _canvas.SelectNodeById(sid);
+
+                // Version 2 view state
+                _canvas.ShowSwimLanes = state.ShowSwimLanes;
+                _snap.SnapToGrid      = state.SnapToGrid;
+                if (Enum.TryParse<CdViewMode>(state.ViewMode, out var vm))
+                    SetViewMode(vm);
+                if (Enum.TryParse<CdSplitLayout>(state.SplitLayout, out var sl))
+                    ApplySplitLayout(sl, state.SplitColRatio, state.SplitRowRatio);
             });
+    }
+
+    /// <summary>
+    /// Applies a split layout with explicit ratio values without triggering the
+    /// default ratio reset that <see cref="SetSplitLayout"/> performs.
+    /// </summary>
+    private void ApplySplitLayout(CdSplitLayout layout, double colRatio, double rowRatio)
+    {
+        _splitColRatio = Math.Clamp(colRatio, 0.1, 0.9);
+        _splitRowRatio = Math.Clamp(rowRatio, 0.1, 0.9);
+        _layout        = layout;
+        UpdateGridLayout();
     }
 
     /// <summary>
@@ -942,10 +1086,10 @@ public sealed class ClassDiagramSplitHost : Grid,
             Tooltip = "Export diagram",
             DropdownItems = new ObservableCollection<EditorToolbarItem>
             {
-                new() { Icon = "\uEB9F", Label = "Export PNG",     Command = new RelayCommand(() => ExportPng()) },
-                new() { Icon = "\uE781", Label = "Export SVG",     Command = new RelayCommand(() => ExportSvg()) },
-                new() { Icon = "\uE8A5", Label = "Export C#",      Command = new RelayCommand(() => ExportCSharp()) },
-                new() { Icon = "\uE8A5", Label = "Export Mermaid", Command = new RelayCommand(() => ExportMermaid()) }
+                new() { Icon = "\uEB9F", Label = "Export PNG",     Command = new RelayCommand(() => _ = ExportPngAsync()) },
+                new() { Icon = "\uE781", Label = "Export SVG",     Command = new RelayCommand(() => _ = ExportSvgAsync()) },
+                new() { Icon = "\uE943", Label = "Export C#",      Command = new RelayCommand(() => _ = ExportCSharpAsync()) },
+                new() { Icon = "\uE728", Label = "Export Mermaid", Command = new RelayCommand(() => _ = ExportMermaidAsync()) }
             }
         });
 
@@ -1006,6 +1150,16 @@ public sealed class ClassDiagramSplitHost : Grid,
             IsToggle  = true,
             IsChecked = true,
             Command   = new RelayCommand(() => _canvas.IsMinimapVisible = !_canvas.IsMinimapVisible)
+        });
+
+        // Swimlanes toggle
+        ToolbarItems.Add(new EditorToolbarItem
+        {
+            Icon      = "\uE7C9",
+            Tooltip   = "Show namespace swimlanes",
+            IsToggle  = true,
+            IsChecked = false,
+            Command   = new RelayCommand(() => _canvas.ShowSwimLanes = !_canvas.ShowSwimLanes)
         });
 
         // Auto-layout strategy dropdown — mutually exclusive radio-style toggles
@@ -1189,8 +1343,32 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         _document = doc;
         _canvas.ApplyDocument(_document);
+        SetDirty(true);
         UpdateStatusBar();
         DiagramChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Handles live typing in the DSL code pane (DSL → Canvas direction).
+    /// Parses the text and schedules a canvas update via the sync service.
+    /// Ignored when <see cref="_suppressCodeSync"/> is set (canvas-initiated update).
+    /// </summary>
+    private void OnDslEditorTextChanged(object? sender, EventArgs e)
+    {
+        if (_suppressCodeSync) return;
+
+        string dsl = _dslEditor.PrimaryEditor.GetText();
+        var result = ClassDiagramParser.Parse(dsl);
+        if (result.IsValid)
+        {
+            _syncService.ScheduleCodeToCanvas(result.Document);
+            StatusMessage?.Invoke(this, string.Empty);
+        }
+        else
+        {
+            // Show parse error count in status bar so the user knows the DSL is invalid.
+            StatusMessage?.Invoke(this, $"DSL: {result.Errors.Count} parse error(s) — canvas not updated");
+        }
     }
 
     // ---------------------------------------------------------------------------
@@ -1201,6 +1379,9 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         RaiseCanUndoRedo();
         UpdateUndoRedoTooltips();
+        // Any undo-stack mutation (drag end, resize, delete, add…) means positions changed.
+        // Raise DiagramChanged so the plugin's debounced .whcd auto-save fires.
+        DiagramChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void RaiseCanUndoRedo()
@@ -1257,6 +1438,85 @@ public sealed class ClassDiagramSplitHost : Grid,
         if (_canvas.Document is not null) _document = _canvas.Document;
         SyncDslPane();
         SetDirty(true);
+    }
+
+    private const string ClipboardMimeTag = "// classdiagram-clip\n";
+
+    private void CopySelected()
+    {
+        var selected = _canvas.SelectedIds
+            .Select(id => _document.Classes.FirstOrDefault(n => n.Id == id))
+            .Where(n => n is not null)
+            .Cast<ClassNode>()
+            .ToList();
+        if (selected.Count == 0) return;
+
+        // Serialize only the selected nodes + relationships between them to DSL.
+        var selectedIds = selected.Select(n => n.Id).ToHashSet(StringComparer.Ordinal);
+        var subRels = _document.Relationships
+            .Where(r => selectedIds.Contains(r.SourceId) && selectedIds.Contains(r.TargetId))
+            .ToList();
+        var subDoc = new DiagramDocument();
+        foreach (var n in selected) subDoc.Classes.Add(n);
+        subDoc.Relationships.AddRange(subRels);
+
+        string dsl = ClipboardMimeTag + ClassDiagramSerializer.Serialize(subDoc);
+        Clipboard.SetText(dsl, TextDataFormat.UnicodeText);
+    }
+
+    private void CutSelected()
+    {
+        CopySelected();
+        foreach (var id in _canvas.SelectedIds.ToList())
+        {
+            var node = _document.Classes.FirstOrDefault(n => n.Id == id);
+            if (node is not null) _canvas.DeleteSelectedNode();
+        }
+        if (_canvas.Document is not null) _document = _canvas.Document;
+        SyncDslPane();
+        SetDirty(true);
+    }
+
+    private void PasteFromClipboard()
+    {
+        if (!Clipboard.ContainsText()) return;
+        string text = Clipboard.GetText();
+        if (!text.StartsWith(ClipboardMimeTag)) return;
+
+        string dsl = text[ClipboardMimeTag.Length..];
+        var result = ClassDiagramParser.Parse(dsl);
+        if (!result.IsValid || result.Document.Classes.Count == 0) return;
+
+        // Offset pasted nodes so they don't land exactly on top of originals.
+        const double Offset = 40;
+        foreach (var node in result.Document.Classes)
+        {
+            node.Id  = Guid.NewGuid().ToString();
+            node.X  += Offset;
+            node.Y  += Offset;
+            _document.Classes.Add(node);
+        }
+        // Re-map relationship source/target IDs to pasted copies.
+        // (Pasted relationships reference the original IDs in the clipboard DSL — skip for now;
+        //  full ID remapping would require tracking old→new ID pairs, deferred to next pass.)
+
+        _canvas.ApplyDocument(_document);
+        SyncDslPane();
+        SetDirty(true);
+        _undoManager.Push(new SingleClassDiagramUndoEntry(
+            Description: $"Paste {result.Document.Classes.Count} node(s)",
+            UndoAction: () =>
+            {
+                foreach (var n in result.Document.Classes) _document.Classes.Remove(n);
+                _canvas.ApplyDocument(_document);
+                SyncDslPane();
+            },
+            RedoAction: () =>
+            {
+                foreach (var n in result.Document.Classes) _document.Classes.Add(n);
+                _canvas.ApplyDocument(_document);
+                SyncDslPane();
+            }));
     }
 
     private void DuplicateSelected()
@@ -1375,52 +1635,163 @@ public sealed class ClassDiagramSplitHost : Grid,
     // Export actions
     // ---------------------------------------------------------------------------
 
-    private void ExportPng()
+    /// <summary>
+    /// Always returns the live canvas document, falling back to the last parsed snapshot.
+    /// Keeps exports consistent with what the user sees on screen.
+    /// </summary>
+    private DiagramDocument CurrentDocument => _canvas.Document ?? _document;
+
+    private async Task ExportPngAsync()
     {
-        _ = _exportService.ExportPngAsync(_document,
-            Path.ChangeExtension(_filePath ?? "diagram", ".png"));
+        if (CurrentDocument.Classes.Count == 0) { StatusMessage?.Invoke(this, "Nothing to export."); return; }
+        var doc = CurrentDocument;
+        string? path = PickSavePath("PNG Image|*.png", ".png", "png");
+        if (path is null) return;
+        try
+        {
+            await _exportService.ExportPngAsync(doc, path);
+            string msg = $"PNG exported → {path}";
+            StatusMessage?.Invoke(this, $"PNG exported → {Path.GetFileName(path)}");
+            OutputMessage?.Invoke(this, msg);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage?.Invoke(this, $"Export PNG failed: {ex.Message}");
+            OutputMessage?.Invoke(this, $"[Export] PNG failed: {ex.Message}");
+        }
     }
 
-    private void ExportSvg()
+    private async Task ExportSvgAsync()
     {
-        _ = _exportService.ExportSvgAsync(_document,
-            Path.ChangeExtension(_filePath ?? "diagram", ".svg"));
+        if (CurrentDocument.Classes.Count == 0) { StatusMessage?.Invoke(this, "Nothing to export."); return; }
+        var doc = CurrentDocument;
+        string? path = PickSavePath("SVG Vector|*.svg", ".svg", "svg");
+        if (path is null) return;
+        try
+        {
+            await _exportService.ExportSvgAsync(doc, path);
+            string msg = $"SVG exported → {path}";
+            StatusMessage?.Invoke(this, $"SVG exported → {Path.GetFileName(path)}");
+            OutputMessage?.Invoke(this, msg);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage?.Invoke(this, $"Export SVG failed: {ex.Message}");
+            OutputMessage?.Invoke(this, $"[Export] SVG failed: {ex.Message}");
+        }
     }
 
-    private void ExportCSharp()
+    private async Task ExportCSharpAsync()
     {
-        _ = _exportService.ExportCSharpAsync(_document,
-            Path.ChangeExtension(_filePath ?? "diagram", ".cs"));
+        if (CurrentDocument.Classes.Count == 0) { StatusMessage?.Invoke(this, "Nothing to export."); return; }
+        var doc = CurrentDocument;
+        string? path = PickSavePath("C# Source|*.cs", ".cs", "cs");
+        if (path is null) return;
+        try
+        {
+            await _exportService.ExportCSharpAsync(doc, path);
+            string msg = $"C# skeleton exported → {path}";
+            StatusMessage?.Invoke(this, $"C# skeleton exported → {Path.GetFileName(path)}");
+            OutputMessage?.Invoke(this, msg);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage?.Invoke(this, $"Export C# failed: {ex.Message}");
+            OutputMessage?.Invoke(this, $"[Export] C# failed: {ex.Message}");
+        }
     }
 
-    private void ExportMermaid()
+    private async Task ExportMermaidAsync()
     {
-        _ = _exportService.ExportMermaidAsync(_document,
-            Path.ChangeExtension(_filePath ?? "diagram", ".md"));
+        if (CurrentDocument.Classes.Count == 0) { StatusMessage?.Invoke(this, "Nothing to export."); return; }
+        var doc = CurrentDocument;
+        string? path = PickSavePath("Mermaid Diagram|*.mmd;*.md", ".mmd", "mmd");
+        if (path is null) return;
+        try
+        {
+            await _exportService.ExportMermaidAsync(doc, path);
+            string msg = $"Mermaid exported → {path}";
+            StatusMessage?.Invoke(this, $"Mermaid exported → {Path.GetFileName(path)}");
+            OutputMessage?.Invoke(this, msg);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage?.Invoke(this, $"Export Mermaid failed: {ex.Message}");
+            OutputMessage?.Invoke(this, $"[Export] Mermaid failed: {ex.Message}");
+        }
     }
 
-    private void ExportPlantUml()
+    private async Task ExportPlantUmlAsync()
     {
-        _ = _exportService.ExportPlantUmlAsync(_document,
-            Path.ChangeExtension(_filePath ?? "diagram", ".puml"));
+        if (CurrentDocument.Classes.Count == 0) { StatusMessage?.Invoke(this, "Nothing to export."); return; }
+        var doc = CurrentDocument;
+        string? path = PickSavePath("PlantUML|*.puml;*.pu", ".puml", "puml");
+        if (path is null) return;
+        try
+        {
+            await _exportService.ExportPlantUmlAsync(doc, path);
+            string msg = $"PlantUML exported → {path}";
+            StatusMessage?.Invoke(this, $"PlantUML exported → {Path.GetFileName(path)}");
+            OutputMessage?.Invoke(this, msg);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage?.Invoke(this, $"Export PlantUML failed: {ex.Message}");
+            OutputMessage?.Invoke(this, $"[Export] PlantUML failed: {ex.Message}");
+        }
     }
 
-    private void ExportStructurizr()
+    private async Task ExportStructurizrAsync()
     {
-        _ = _exportService.ExportStructurizrAsync(_document,
-            Path.ChangeExtension(_filePath ?? "diagram", ".dsl"));
+        if (CurrentDocument.Classes.Count == 0) { StatusMessage?.Invoke(this, "Nothing to export."); return; }
+        var doc = CurrentDocument;
+        string? path = PickSavePath("Structurizr DSL|*.dsl", ".dsl", "dsl");
+        if (path is null) return;
+        try
+        {
+            await _exportService.ExportStructurizrAsync(doc, path);
+            string msg = $"Structurizr DSL exported → {path}";
+            StatusMessage?.Invoke(this, $"Structurizr DSL exported → {Path.GetFileName(path)}");
+            OutputMessage?.Invoke(this, msg);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage?.Invoke(this, $"Export Structurizr failed: {ex.Message}");
+            OutputMessage?.Invoke(this, $"[Export] Structurizr failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Opens a SaveFileDialog pre-filled with the diagram file name.</summary>
+    private string? PickSavePath(string filter, string defaultExt, string ext)
+    {
+        string baseName = string.IsNullOrEmpty(_filePath)
+            ? "diagram"
+            : Path.GetFileNameWithoutExtension(_filePath);
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title       = "Export Diagram",
+            Filter      = filter,
+            DefaultExt  = defaultExt,
+            FileName    = $"{baseName}.{ext}",
+            InitialDirectory = string.IsNullOrEmpty(_filePath)
+                ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                : Path.GetDirectoryName(_filePath)
+        };
+
+        return dlg.ShowDialog() == true ? dlg.FileName : null;
     }
 
     private void OnCanvasExportRequested(object? sender, string format)
     {
         switch (format)
         {
-            case "png":               ExportPng();                    break;
-            case "svg":               ExportSvg();                    break;
-            case "csharp":            ExportCSharp();                 break;
-            case "mermaid":           ExportMermaid();                break;
-            case "plantUml":          ExportPlantUml();               break;
-            case "structurizr":       ExportStructurizr();            break;
+            case "png":               _ = ExportPngAsync();           break;
+            case "svg":               _ = ExportSvgAsync();           break;
+            case "csharp":            _ = ExportCSharpAsync();        break;
+            case "mermaid":           _ = ExportMermaidAsync();       break;
+            case "plantUml":          _ = ExportPlantUmlAsync();      break;
+            case "structurizr":       _ = ExportStructurizrAsync();   break;
             case "clipboard-mermaid": _ = CopyMermaidToClipboard();   break;
             case "clipboard-plantUml":_ = CopyPlantUmlToClipboard();  break;
             case "clipboard-png":     _ = CopyPngToClipboard();       break;
@@ -1429,14 +1800,14 @@ public sealed class ClassDiagramSplitHost : Grid,
 
     private async Task CopyMermaidToClipboard()
     {
-        string text = await _exportService.ExportMermaidAsync(_document);
+        string text = await _exportService.ExportMermaidAsync(CurrentDocument);
         Clipboard.SetText(text);
         StatusMessage?.Invoke(this, "Mermaid copied to clipboard.");
     }
 
     private async Task CopyPlantUmlToClipboard()
     {
-        string text = await _exportService.ExportPlantUmlAsync(_document);
+        string text = await _exportService.ExportPlantUmlAsync(CurrentDocument);
         Clipboard.SetText(text);
         StatusMessage?.Invoke(this, "PlantUML copied to clipboard.");
     }
@@ -1445,7 +1816,7 @@ public sealed class ClassDiagramSplitHost : Grid,
     {
         // Export to a temp file then load as BitmapImage
         string tmp = Path.GetTempFileName() + ".png";
-        await _exportService.ExportPngAsync(_document, tmp);
+        await _exportService.ExportPngAsync(CurrentDocument, tmp);
         if (!File.Exists(tmp)) return;
         var bmp = new System.Windows.Media.Imaging.BitmapImage(new Uri(tmp));
         Clipboard.SetImage(bmp);

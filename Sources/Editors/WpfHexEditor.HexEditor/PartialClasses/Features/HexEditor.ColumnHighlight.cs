@@ -24,6 +24,7 @@
 using System;
 using System.Windows;
 using WpfHexEditor.Core;
+using WpfHexEditor.Core.Events;
 using WpfHexEditor.HexEditor.Controls;
 
 namespace WpfHexEditor.HexEditor
@@ -38,7 +39,7 @@ namespace WpfHexEditor.HexEditor
                 nameof(ShowColumnHighlight),
                 typeof(bool),
                 typeof(HexEditor),
-                new PropertyMetadata(true, OnColumnHighlightOptionChanged));
+                new PropertyMetadata(false, OnColumnHighlightOptionChanged));
 
         public bool ShowColumnHighlight
         {
@@ -66,7 +67,7 @@ namespace WpfHexEditor.HexEditor
                 nameof(ShowAsciiColumnHighlight),
                 typeof(bool),
                 typeof(HexEditor),
-                new PropertyMetadata(true, OnColumnHighlightOptionChanged));
+                new PropertyMetadata(false, OnColumnHighlightOptionChanged));
 
         public bool ShowAsciiColumnHighlight
         {
@@ -97,11 +98,15 @@ namespace WpfHexEditor.HexEditor
 
             SelectionStartChanged += OnColumnHighlightSelectionChanged;
             ZoomScaleChanged     += OnColumnHighlightSelectionChanged;
+            PositionChanged      += OnColumnHighlightPositionChanged;
         }
 
         // ── Event Handlers ────────────────────────────────────────────────────
 
         private void OnColumnHighlightSelectionChanged(object? sender, EventArgs e)
+            => UpdateColumnHighlight();
+
+        private void OnColumnHighlightPositionChanged(object? sender, PositionChangedEventArgs e)
             => UpdateColumnHighlight();
 
         private void UpdateColumnHighlight()
@@ -115,7 +120,10 @@ namespace WpfHexEditor.HexEditor
                 return;
             }
 
-            if (_viewModel is null || !_viewModel.SelectionStart.IsValid)
+            long caretOffset = Position;
+            if (caretOffset < 0 && _viewModel?.SelectionStart.IsValid == true)
+                caretOffset = _viewModel.SelectionStart.Value;
+            if (caretOffset < 0)
             {
                 _columnHighlight.Hide();
                 return;
@@ -124,7 +132,7 @@ namespace WpfHexEditor.HexEditor
             int bytesPerLine = HexViewport.BytesPerLine;
             if (bytesPerLine <= 0) { _columnHighlight.Hide(); return; }
 
-            long   offset    = _viewModel.SelectionStart.Value;
+            long   offset    = caretOffset;
             int    colIdx    = (int)(offset % bytesPerLine);
             double zoom      = ZoomScale;
             double cellWidth = HexViewport.CalculateCellWidthForByteCount(1) * zoom;
