@@ -1525,17 +1525,21 @@ public sealed class ClassDiagramSplitHost : Grid,
         _syncingScrollBars = true;
         try
         {
-            // Total scaled extent vs viewport
-            double hMax   = Math.Max(0, b.Width  * z - vw);
-            double scrollX = Math.Clamp(-_zoomPan.OffsetX - _scrollContentLeft, 0, Math.Max(0, hMax));
+            // Total scaled extent vs viewport.
+            // Extend the range to cover the current viewport offset so scrollbars never
+            // disappear after an unconstrained middle-mouse pan beyond the content bounds.
+            double rawScrollX = -_zoomPan.OffsetX - _scrollContentLeft;
+            double hMax   = Math.Max(0, Math.Max(b.Width  * z - vw, rawScrollX + 1));
+            double scrollX = Math.Clamp(rawScrollX, 0, hMax);
             _hScroll.Minimum      = 0;
             _hScroll.Maximum      = hMax;
             _hScroll.ViewportSize = vw;
             _hScroll.Value        = scrollX;
             _hScroll.Visibility   = hMax > 1 ? Visibility.Visible : Visibility.Collapsed;
 
-            double vMax   = Math.Max(0, b.Height * z - vh);
-            double scrollY = Math.Clamp(-_zoomPan.OffsetY - _scrollContentTop,  0, Math.Max(0, vMax));
+            double rawScrollY = -_zoomPan.OffsetY - _scrollContentTop;
+            double vMax   = Math.Max(0, Math.Max(b.Height * z - vh, rawScrollY + 1));
+            double scrollY = Math.Clamp(rawScrollY, 0, vMax);
             _vScroll.Minimum      = 0;
             _vScroll.Maximum      = vMax;
             _vScroll.ViewportSize = vh;

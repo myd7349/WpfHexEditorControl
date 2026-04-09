@@ -235,10 +235,11 @@ public class ZoomPanCanvas : Canvas
 
         if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
         {
-            // Ctrl+Wheel → zoom (centred on mouse cursor)
-            double step  = e.Delta > 0 ? 0.1 : -0.1;
+            // Ctrl+Wheel → zoom (centred on mouse cursor); step proportional to delta
+            double step  = e.Delta / 120.0 * 0.1;
             double oldZ  = ZoomFactor;
-            double newZ  = Math.Max(0.1, Math.Min(10.0, oldZ + step));
+            double newZ  = Math.Clamp(oldZ + step, 0.1, 10.0);
+            if (Math.Abs(newZ - oldZ) < 1e-10) { e.Handled = true; return; }
 
             // Adjust offset so the point under the cursor stays fixed
             Point mouse  = e.GetPosition(this);

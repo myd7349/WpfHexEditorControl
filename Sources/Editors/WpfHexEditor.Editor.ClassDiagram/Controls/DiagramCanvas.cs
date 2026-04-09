@@ -431,7 +431,10 @@ public sealed class DiagramCanvas : Canvas
         // Don't steal mouse capture from the filter bar when it originated the click
         if (e.OriginalSource is DependencyObject origSrc
             && (_filterBar.IsAncestorOf(origSrc) || _filterBar == origSrc))
+        {
+            e.Handled = true;
             return;
+        }
 
         Focus();
 
@@ -718,6 +721,16 @@ public sealed class DiagramCanvas : Canvas
                 SelectedClassChanged?.Invoke(this, _primarySelected);
             }
         }
+    }
+
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        base.OnLostMouseCapture(e);
+        _dragNode = null;
+        _dragStartPositions.Clear();
+        _resizingNode    = null;
+        _isRubberBanding = false;
+        Cursor = null;
     }
 
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
