@@ -47,6 +47,7 @@ using WpfHexEditor.Plugins.ClassDiagram.Panels;
 using WpfHexEditor.SDK.Commands;
 using WpfHexEditor.SDK.Contracts;
 using WpfHexEditor.SDK.Contracts.Focus;
+using WpfHexEditor.SDK.Contracts.Services;
 using WpfHexEditor.SDK.Descriptors;
 using WpfHexEditor.SDK.Models;
 
@@ -107,11 +108,22 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     private readonly Dictionary<string, string> _openTabs =
         new(StringComparer.OrdinalIgnoreCase);
 
+    // Open diagram hosts keyed by uiId for status bar and cleanup.
+    private readonly Dictionary<string, ClassDiagramSplitHost> _openHosts =
+        new(StringComparer.Ordinal);
+
     // Live-sync services keyed by uiId; disposed when the plugin unloads.
     private readonly Dictionary<string, DiagramLiveSyncService> _liveSyncServices =
         new(StringComparer.Ordinal);
 
     private bool _liveSyncEnabled = true;
+
+    // Debounce timer for .whcd auto-save (avoids rapid writes during drag/resize)
+    private System.Threading.Timer? _whcdSaveDebounce;
+    private const int WhcdSaveDelayMs = 1500;
+
+    // Last successfully analyzed document — used by the PlantUML/Mermaid export commands.
+    private DiagramDocument? _lastAnalyzedDocument;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -238,21 +250,30 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
         // Subscribe to document focus changes so panels sync to the active diagram.
         context.FocusContext.FocusChanged += OnFocusChanged;
+        context.FocusContext.FocusChanged += OnFocusSyncStatusBar;
+
+        // Re-render all open diagram hosts when the IDE theme changes.
+        // DiagramVisualLayer uses TryFindResource (CD_* tokens) which resolves at draw time,
+        // but DrawingVisuals are not automatically invalidated by WPF on resource changes.
+        context.Theme.ThemeChanged += OnThemeChanged;
 
         // Seed panels immediately for any document open at plugin-load time.
         SeedFromCurrentDocument(context);
 
         // B8 — Restore last diagram on startup if RestoreLastState is enabled.
+        // GetSolutionDir is deferred to ApplicationIdle so the solution is fully
+        // loaded before we read the session file path (which is next to the .sln).
         if (_options.RestoreLastState)
         {
-            string? solutionDir = GetSolutionDir(context);
-            var session = ClassDiagramSessionStateSerializer.Load(solutionDir);
-            if (session?.LastFilePath is { Length: > 0 } path && System.IO.File.Exists(path))
-            {
-                System.Windows.Application.Current?.Dispatcher.BeginInvoke(
-                    System.Windows.Threading.DispatcherPriority.ApplicationIdle,
-                    new Action(async () => await OpenClassDiagramForFileAsync(path, context)));
-            }
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+                new Action(async () =>
+                {
+                    string? solutionDir = GetSolutionDir(context);
+                    var session = ClassDiagramSessionStateSerializer.Load(solutionDir);
+                    if (session?.LastFilePath is { Length: > 0 } path && System.IO.File.Exists(path))
+                        await OpenClassDiagramForFileAsync(path, context);
+                }));
         }
 
         return Task.CompletedTask;
@@ -261,7 +282,11 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     public Task ShutdownAsync(CancellationToken ct = default)
     {
         if (_context is not null)
+        {
             _context.FocusContext.FocusChanged -= OnFocusChanged;
+            _context.FocusContext.FocusChanged -= OnFocusSyncStatusBar;
+            _context.Theme.ThemeChanged        -= OnThemeChanged;
+        }
 
         UnwireCurrentHost();
 
@@ -297,7 +322,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
     public void LoadOptions() => _optionsPage?.Load();
 
-    public string GetOptionsCategory()     => "Editors";
+    public string GetOptionsCategory()     => "Class Diagram";
     public string GetOptionsCategoryIcon() => "📐";
 
     // ── Focus tracking ────────────────────────────────────────────────────────
@@ -319,6 +344,18 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         }
 
         WireHost(host);
+    }
+
+    /// <summary>
+    /// Syncs the IDE status bar when focus switches to an open class diagram tab.
+    /// The MainWindow's OnActiveDocumentChanged path handles normal editors; this
+    /// handler covers plugin-owned document tabs that bypass CreateSmartFileEditorContent.
+    /// </summary>
+    private void OnFocusSyncStatusBar(object? sender, FocusChangedEventArgs e)
+    {
+        var host = ResolveActiveHost(e.ActiveDocument);
+        if (host is not null)
+            host.RefreshStatusBarItems();
     }
 
     /// <summary>
@@ -346,6 +383,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         host.DiagramChanged              += OnDiagramChanged;
         host.NavigateToMemberRequested   += OnNavigateToMember;
         host.RenameNodeRequested         += OnRenameNode;
+        host.ShowPropertiesRequested     += OnShowPropertiesRequested;
 
         // History panel — bind to the host's undo manager.
         if (_historyPanel is not null)
@@ -357,6 +395,10 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         // Wire search panel result selection → canvas selection.
         if (_searchPanel is not null)
             _searchPanel.ViewModel.ResultSelected += OnSearchResultSelected;
+
+        // Wire relationships panel selection → highlight arrow + select source node.
+        if (_relPanel is not null)
+            _relPanel.ViewModel.SelectedRelationshipChanged += OnRelationshipSelected;
 
         // Seed panel content from the current document state.
         // DispatcherPriority.ApplicationIdle ensures the AssociatedEditor is fully
@@ -377,6 +419,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         _wiredHost.DiagramChanged              -= OnDiagramChanged;
         _wiredHost.NavigateToMemberRequested   -= OnNavigateToMember;
         _wiredHost.RenameNodeRequested         -= OnRenameNode;
+        _wiredHost.ShowPropertiesRequested     -= OnShowPropertiesRequested;
 
         if (_historyPanel is not null)
         {
@@ -386,6 +429,9 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
         if (_searchPanel is not null)
             _searchPanel.ViewModel.ResultSelected -= OnSearchResultSelected;
+
+        if (_relPanel is not null)
+            _relPanel.ViewModel.SelectedRelationshipChanged -= OnRelationshipSelected;
 
         _wiredHost = null;
     }
@@ -446,6 +492,18 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         if (_wiredHost is null) return;
         _outlinePanel?.ViewModel.SetDocument(_wiredHost.Document);
         _relPanel?.ViewModel.SetDocument(_wiredHost.Document);
+        _searchPanel?.ViewModel.SetDocument(_wiredHost.Document);
+    }
+
+    /// <summary>
+    /// Forces a full re-render of every open diagram after a theme change.
+    /// DrawingVisuals don't auto-refresh when DynamicResource tokens change;
+    /// we must explicitly call RenderAll so brushes are re-resolved.
+    /// </summary>
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        foreach (var host in _openHosts.Values)
+            host.RefreshDiagramVisuals();
     }
 
     private void OnHistoryJumpRequested(object? sender, int targetIndex)
@@ -509,9 +567,41 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     {
         if (result is null || _wiredHost is null) return;
 
-        // Navigate the canvas to the selected class node.
-        // The canvas exposes SelectByNode via SelectedClassChanged event round-trip.
+        // Select the node on canvas + zoom to it
+        _wiredHost.SelectNode(result.Node);
+        _wiredHost.ZoomToNode(result.Node);
         _propertiesPanel?.ViewModel.SetSelection(result.Node, result.Member);
+    }
+
+    private void OnRelationshipSelected(object? sender, WpfHexEditor.Editor.ClassDiagram.Core.Model.ClassRelationship? rel)
+    {
+        if (_wiredHost is null) return;
+
+        // Clear arrow highlight when selection is cleared.
+        if (rel is null)
+        {
+            _wiredHost.HighlightRelationship(null);
+            return;
+        }
+
+        // Highlight the arrow and select the source node.
+        _wiredHost.HighlightRelationship(rel.SourceId);
+
+        var srcNode = _wiredHost.Document.Classes.FirstOrDefault(n => n.Id == rel.SourceId);
+        if (srcNode is not null)
+        {
+            _wiredHost.SelectNode(srcNode);
+            _wiredHost.ZoomToNode(srcNode);
+            _propertiesPanel?.ViewModel.SetSelection(srcNode, null);
+        }
+    }
+
+    private void OnShowPropertiesRequested(object? sender, WpfHexEditor.Editor.ClassDiagram.Core.Model.ClassNode node)
+    {
+        if (_context is null) return;
+        // Show / focus the properties panel and update it for the selected node.
+        _context.UIRegistry.ShowPanel(PropertiesPanelUiId);
+        _propertiesPanel?.ViewModel.SetSelection(node, null);
     }
 
     // ── Status bar ────────────────────────────────────────────────────────────
@@ -695,15 +785,88 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             Id,
             new MenuItemDescriptor
             {
-                Header     = "_Generate Class Diagram for Solution Files",
+                Header     = "_Generate Class Diagram for Solution",
                 ParentPath = "Tools",
                 IconGlyph  = "\uE8A5",
-                ToolTip    = "Analyze all C# files in the active solution and open a combined class diagram",
+                ToolTip    = "Analyze all C# files in the active solution and open a combined class diagram with per-project swimlanes",
                 Command    = new RelayCommand(
                     execute: _ => _ = OpenDiagramForSolutionAsync(context),
                     canExecute: _ => context.SolutionExplorer.HasActiveSolution),
                 Group = "ClassDiagram"
             });
+
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Tools.ExportPlantUml",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "Export Class Diagram as _PlantUML…",
+                ParentPath = "Tools",
+                IconGlyph  = "\uE8A4",
+                ToolTip    = "Export the active class diagram to PlantUML text format",
+                Command    = new RelayCommand(
+                    execute:    _ => ExportActiveDiagram(context, ExportFormat.PlantUml),
+                    canExecute: _ => _wiredHost is not null),
+                Group = "ClassDiagramExport"
+            });
+
+        context.UIRegistry.RegisterMenuItem(
+            $"{Id}.Menu.Tools.ExportMermaid",
+            Id,
+            new MenuItemDescriptor
+            {
+                Header     = "Export Class Diagram as _Mermaid…",
+                ParentPath = "Tools",
+                IconGlyph  = "\uE8A4",
+                ToolTip    = "Export the active class diagram to Mermaid classDiagram format",
+                Command    = new RelayCommand(
+                    execute:    _ => ExportActiveDiagram(context, ExportFormat.Mermaid),
+                    canExecute: _ => _wiredHost is not null),
+                Group = "ClassDiagramExport"
+            });
+    }
+
+    private enum ExportFormat { PlantUml, Mermaid }
+
+    private void ExportActiveDiagram(IIDEHostContext context, ExportFormat format)
+    {
+        if (_wiredHost is null) return;
+
+        if (_lastAnalyzedDocument is null)
+        {
+            context.Output.Info("[Class Diagram] No analyzed document available for export.");
+            return;
+        }
+
+        string text   = format == ExportFormat.PlantUml
+            ? DiagramExportService.ToPlantUml(_lastAnalyzedDocument)
+            : DiagramExportService.ToMermaid(_lastAnalyzedDocument);
+
+        string ext    = format == ExportFormat.PlantUml ? "puml" : "md";
+        string filter = format == ExportFormat.PlantUml
+            ? "PlantUML files (*.puml)|*.puml|Text files (*.txt)|*.txt"
+            : "Markdown files (*.md)|*.md|Text files (*.txt)|*.txt";
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title            = format == ExportFormat.PlantUml ? "Export as PlantUML" : "Export as Mermaid",
+            Filter           = filter,
+            DefaultExt       = ext,
+            FileName         = "ClassDiagram." + ext
+        };
+
+        if (dlg.ShowDialog() == true)
+        {
+            try
+            {
+                File.WriteAllText(dlg.FileName, text, System.Text.Encoding.UTF8);
+                context.Output.Info($"[Class Diagram] Exported to {dlg.FileName}");
+            }
+            catch (Exception ex)
+            {
+                context.Output.Info($"[Class Diagram] Export failed: {ex.Message}");
+            }
+        }
     }
 
     // ── Solution Explorer actions ─────────────────────────────────────────────
@@ -738,8 +901,10 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
     }
 
     /// <summary>
-    /// Called from the "Generate Class Diagram for Solution Files" menu item.
-    /// Analyzes all .cs files in the active solution and opens a combined diagram.
+    /// Called from the "Generate Class Diagram for Solution" menu item.
+    /// Analyzes all .cs files per project in the active solution, opens a combined
+    /// diagram with per-project swimlane grouping, and persists state to a .whscd
+    /// twin file next to the solution file.
     /// </summary>
     public async Task OpenDiagramForSolutionAsync(IIDEHostContext context)
     {
@@ -751,39 +916,183 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             return;
         }
 
-        string[] csFiles = context.SolutionExplorer.GetSolutionFilePaths()
-            .Where(f => IsSourceFile(f))
-            .ToArray();
+        // ── 1. Collect projects + source files ───────────────────────────────
+        IReadOnlyList<SolutionProjectInfo> projects = context.SolutionExplorer.GetSolutionProjects();
 
-        if (csFiles.Length == 0)
+        // Filter each project's source files to those supported by the analyzer
+        var filtered = projects
+            .Where(p => !(_options.SolutionExcludeTestProjects && IsTestProject(p.Name)))
+            .Select(p => (
+                Name:  p.Name,
+                Path:  p.ProjectPath,
+                Files: (IReadOnlyList<string>)p.SourceFiles
+                    .Where(IsSourceFile)
+                    .ToList()))
+            .Where(p => p.Files.Count > 0)
+            .ToList();
+
+        int totalFiles = filtered.Sum(p => p.Files.Count);
+        if (totalFiles == 0)
         {
             context.Output.Info("[Class Diagram] No C# or VB.NET files found in the active solution.");
             return;
         }
 
-        context.Output.Info($"[Class Diagram] Analyzing {csFiles.Length} source files…");
+        // Optional large-solution warning
+        if (_options.SolutionMaxFilesPromptThreshold > 0
+            && totalFiles > _options.SolutionMaxFilesPromptThreshold)
+        {
+            var answer = MessageBox.Show(
+                $"The solution contains {totalFiles} source files ({filtered.Count} projects).\n\n" +
+                $"Generating the diagram may take a moment for large solutions.\n\n" +
+                "[Yes]  Continue\n[No]   Cancel",
+                "Generate Class Diagram for Solution",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (answer != MessageBoxResult.Yes) return;
+        }
 
-        DiagramDocument doc = await Task.Run(() =>
-            RoslynClassDiagramAnalyzer.AnalyzeFiles(csFiles, _options));
+        context.Output.Info(
+            $"[Class Diagram] Analyzing {totalFiles} source file(s) across {filtered.Count} project(s)…");
 
-        string title = "Solution [Class Diagram]";
+        // ── 2. Analyze with per-file progress reporting ──────────────────────
+        using var cts = new System.Threading.CancellationTokenSource();
+        var progress  = new Progress<RoslynClassDiagramAnalyzer.ClassDiagramProgress>(p =>
+            context.Output.Info($"[Class Diagram] [{p.Analyzed}/{p.Total}] {p.CurrentFile}"));
+
+        DiagramDocument doc;
+        try
+        {
+            doc = await Task.Run(
+                () => RoslynClassDiagramAnalyzer.AnalyzeProjects(filtered, _options, progress, cts.Token),
+                cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            context.Output.Info("[Class Diagram] Analysis cancelled.");
+            return;
+        }
+        catch (Exception ex)
+        {
+            context.Output.Info($"[Class Diagram] Analysis error: {ex.GetType().Name}: {ex.Message}");
+            return;
+        }
+
+        context.Output.Info($"[Class Diagram] Analysis done — {doc.Classes.Count} classes, {doc.Relationships.Count} relationships, {doc.ProjectGroups.Count} groups. Opening tab…");
+
+        try
+        {
+            OpenSolutionDiagramTab(doc, context);
+        }
+        catch (Exception ex)
+        {
+            context.Output.Info($"[Class Diagram] Tab open error: {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    private void OpenSolutionDiagramTab(
+        DiagramDocument doc,
+        IIDEHostContext context)
+    {
+        const string key = "solution";
+
+        // ── 3. Load .whscd twin (restore positions + filters) ────────────────
+        string? solutionPath = context.SolutionExplorer.ActiveSolutionPath;
+        string? whscdPath    = solutionPath is not null
+            ? WhscdSerializer.GetWhscdPath(solutionPath)
+            : null;
+
+        WhscdDocument? whscd = whscdPath is not null ? WhscdSerializer.Load(whscdPath) : null;
+
+        // Apply saved project group colors to the diagram groups
+        if (whscd is not null)
+        {
+            var colorMap = whscd.ProjectGroups
+                .ToDictionary(g => g.ProjectPath, g => g.Color, StringComparer.OrdinalIgnoreCase);
+            foreach (var group in doc.ProjectGroups)
+                if (colorMap.TryGetValue(group.ProjectPath, out string? color))
+                    group.Color = color;
+        }
+
+        _lastAnalyzedDocument = doc;
+
+        // ── 4. Build and register the tab ────────────────────────────────────
+        string solutionName = context.SolutionExplorer.ActiveSolutionName ?? "Solution";
+        string title = $"{solutionName} [Class Diagram]";
         string uiId  = $"doc-class-diagram-{Guid.NewGuid():N}";
 
         var host = new ClassDiagramSplitHost();
         host.LoadDocument(doc, title);
 
-        _openTabs[key] = uiId;
+        // Apply swimlane default from options when no saved state exists
+        if (whscd is null && _options.SolutionShowSwimLanesByDefault)
+        {
+            // Defer until after layout so the canvas is measured first
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Loaded,
+                () => host.ApplyWhcdState(new WhcdDocument { ShowSwimLanes = true }));
+        }
+
+        // Restore view state from .whscd
+        if (whscd is not null)
+        {
+            // Convert WhscdDocument → WhcdDocument for ApplyWhcdState reuse
+            var legacyState = new WhcdDocument
+            {
+                Zoom              = whscd.Zoom,
+                OffsetX           = whscd.OffsetX,
+                OffsetY           = whscd.OffsetY,
+                MinimapVisible    = whscd.MinimapVisible,
+                SelectedNodeId    = whscd.SelectedNodeId,
+                ShowSwimLanes     = whscd.ShowSwimLanes,
+                SnapToGrid        = whscd.SnapToGrid,
+                ViewMode          = whscd.ViewMode,
+                SplitLayout       = whscd.SplitLayout,
+                SplitColRatio     = whscd.SplitColRatio,
+                SplitRowRatio     = whscd.SplitRowRatio,
+                CollapsedSections = whscd.CollapsedSections,
+                Nodes             = whscd.Nodes
+            };
+            host.ApplyWhcdState(legacyState);
+            context.Output.Info(
+                $"[WHSCD] Restored {whscd.Nodes.Count} node positions from {Path.GetFileName(whscdPath)}");
+        }
+
+        _openTabs[key]   = uiId;
+        _openHosts[uiId] = host;
         context.UIRegistry.RegisterDocumentTab(uiId, host, Id, new DocumentDescriptor
         {
             Title     = title,
             ContentId = uiId,
-            ToolTip   = "Class diagram for all solution source files",
+            ToolTip   = $"Solution class diagram — {solutionPath ?? "no path"}",
             CanClose  = true,
         });
 
+        // ── 5. Save .whscd immediately + auto-save on change (debounced 1.5 s) ──
+        if (whscdPath is not null)
+        {
+            string capturedWhscdPath    = whscdPath;
+            string capturedSolutionPath = solutionPath!;
+
+            // Initial save so the file is always created on first open
+            SaveWhscdState(host, doc, capturedSolutionPath, capturedWhscdPath, context);
+
+            host.DiagramChanged += (_, _) =>
+            {
+                _whcdSaveDebounce?.Dispose();
+                _whcdSaveDebounce = new System.Threading.Timer(_ =>
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                        SaveWhscdState(host, doc, capturedSolutionPath, capturedWhscdPath, context)),
+                    null, WhcdSaveDelayMs, System.Threading.Timeout.Infinite);
+            };
+        }
+
+        // ── 6. Report ────────────────────────────────────────────────────────
         context.Output.Info(
-            $"[Class Diagram] Generated diagram with {doc.Classes.Count} classes " +
-            $"and {doc.Relationships.Count} relationships.");
+            $"[Class Diagram] Generated diagram with {doc.Classes.Count} classes, " +
+            $"{doc.Relationships.Count} relationships, " +
+            $"{doc.ProjectGroups.Count} project group(s). " +
+            $"Export via Tools → Export Class Diagram.");
     }
 
     /// <summary>
@@ -796,11 +1105,16 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         IIDEHostContext context)
     {
         // Reactivate the existing tab if already open for this file.
-        if (_openTabs.TryGetValue(csharpFilePath, out string? existingId)
-            && context.UIRegistry.Exists(existingId))
+        if (_openTabs.TryGetValue(csharpFilePath, out string? existingId))
         {
-            context.UIRegistry.FocusPanel(existingId);
-            return;
+            if (context.UIRegistry.Exists(existingId))
+            {
+                context.UIRegistry.FocusPanel(existingId);
+                return;
+            }
+            // Tab was closed but _openTabs wasn't purged — remove stale entry and fall through.
+            _openTabs.Remove(csharpFilePath);
+            _openHosts.Remove(existingId);
         }
 
         // Discover partial-class sibling files in the same directory
@@ -815,34 +1129,40 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                 .ToArray()
             : [csharpFilePath];
         string[] filesToAnalyze;
-        if (siblings.Length > 5)
+        switch (_options.PartialClassScope)
         {
-            // C2 — Many siblings: let the user choose scope
-            var result = System.Windows.MessageBox.Show(
-                $"Found {siblings.Length} files starting with '{baseName}' in this folder.\n\n" +
-                $"[Yes]  Analyze all {siblings.Length} sibling files (recommended — merges partial classes)\n" +
-                $"[No]   Analyze only the active file\n" +
-                $"[Cancel] Analyze entire directory",
-                "Class Diagram — File Scope",
-                System.Windows.MessageBoxButton.YesNoCancel,
-                System.Windows.MessageBoxImage.Question);
-
-            if (result == System.Windows.MessageBoxResult.Cancel)
-            {
-                await OpenClassDiagramForFolderAsync(dir, context);
-                return;
-            }
-            filesToAnalyze = result == System.Windows.MessageBoxResult.Yes
-                ? siblings
-                : [csharpFilePath];
-        }
-        else
-        {
-            filesToAnalyze = siblings.Length > 1 ? siblings : [csharpFilePath];
+            case PartialClassScopeMode.ActiveFileOnly:
+                filesToAnalyze = [csharpFilePath];
+                break;
+            case PartialClassScopeMode.WholeDirectory:
+                filesToAnalyze = Directory.Exists(dir)
+                    ? Directory.GetFiles(dir, "*.cs")
+                    : [csharpFilePath];
+                break;
+            case PartialClassScopeMode.AskWhenAmbiguous when siblings.Length > 1:
+                var result = System.Windows.MessageBox.Show(
+                    $"Found {siblings.Length} files starting with '{baseName}'.\n\n" +
+                    "[Yes]  Include all sibling files (merges partial classes)\n" +
+                    "[No]   Analyze only the active file\n" +
+                    "[Cancel]  Analyze entire directory",
+                    "Class Diagram — File Scope",
+                    System.Windows.MessageBoxButton.YesNoCancel,
+                    System.Windows.MessageBoxImage.Question);
+                if (result == System.Windows.MessageBoxResult.Cancel)
+                {
+                    await OpenClassDiagramForFolderAsync(dir, context);
+                    return;
+                }
+                filesToAnalyze = result == System.Windows.MessageBoxResult.Yes ? siblings : [csharpFilePath];
+                break;
+            default: // AllSiblings
+                filesToAnalyze = siblings.Length > 1 ? siblings : [csharpFilePath];
+                break;
         }
 
         DiagramDocument doc = await Task.Run(() =>
             RoslynClassDiagramAnalyzer.AnalyzeFiles(filesToAnalyze, _options));
+        _lastAnalyzedDocument = doc;
 
         string title = Path.GetFileNameWithoutExtension(csharpFilePath) + " [Class Diagram]";
         string uiId  = $"doc-class-diagram-{Guid.NewGuid():N}";
@@ -850,16 +1170,26 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         var host = new ClassDiagramSplitHost();
         host.LoadDocument(doc, title);
 
-        // Restore session state if enabled
-        if (_options.RestoreLastState)
+        // Restore .whcd twin (positions + view). Fall back to session view snapshot.
+        string whcdPath  = WhcdSerializer.GetWhcdPath(csharpFilePath);
+        var    whcdState = WhcdSerializer.Load(whcdPath);
+        context.Output.Info($"[WHCD] path={whcdPath}  exists={File.Exists(whcdPath)}");
+        if (whcdState is not null)
+        {
+            context.Output.Info($"[WHCD] Restoring {whcdState.Nodes.Count} positions, zoom={whcdState.Zoom:F2}");
+            host.ApplyWhcdState(whcdState);
+        }
+        else if (_options.RestoreLastState)
         {
             string? solutionDir = GetSolutionDir(context);
             var session = ClassDiagramSessionStateSerializer.Load(solutionDir);
-            if (session?.LastFilePath == csharpFilePath)
+            if (session is not null &&
+                string.Equals(session.LastFilePath, csharpFilePath, StringComparison.OrdinalIgnoreCase))
                 host.ApplyViewSnapshot(session.ViewSnapshot);
         }
 
         _openTabs[csharpFilePath] = uiId;
+        _openHosts[uiId]          = host;
         context.UIRegistry.RegisterDocumentTab(uiId, host, Id, new DocumentDescriptor
         {
             Title     = title,
@@ -868,8 +1198,44 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             CanClose  = true,
         });
 
-        // Wire session auto-save whenever diagram changes (replaces TitleChanged trigger)
-        host.DiagramChanged += (_, _) => SaveSession(host, csharpFilePath, context);
+        // ── Save .whcd immediately on open (creates file even before any interaction) ──
+        Application.Current?.Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Background, () =>
+            {
+                try
+                {
+                    var initial = host.GetWhcdState([csharpFilePath]);
+                    WhcdSerializer.Save(whcdPath, initial);
+                    context.Output.Info($"[WHCD] Initial save: {initial.Nodes.Count} nodes → {whcdPath}");
+                }
+                catch (Exception ex) { context.Output.Info($"[WHCD] Initial save FAILED: {ex.Message}"); }
+            });
+
+        // ── Auto-save on every diagram change (DispatcherTimer debounce, UI thread) ──
+        var whcdTimer = new System.Windows.Threading.DispatcherTimer(
+            System.Windows.Threading.DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(WhcdSaveDelayMs)
+        };
+        whcdTimer.Tick += (_, _) =>
+        {
+            whcdTimer.Stop();
+            try
+            {
+                var whcd = host.GetWhcdState([csharpFilePath]);
+                WhcdSerializer.Save(whcdPath, whcd);
+                context.Output.Info($"[WHCD] Auto-saved {whcd.Nodes.Count} nodes → {whcdPath}");
+            }
+            catch (Exception ex) { context.Output.Info($"[WHCD] Auto-save FAILED: {ex.Message}"); }
+        };
+
+        host.DiagramChanged += (_, _) =>
+        {
+            context.Output.Info("[WHCD] DiagramChanged fired");
+            SaveSession(host, csharpFilePath, context);
+            whcdTimer.Stop();
+            whcdTimer.Start();
+        };
 
         // Attach live-sync service for this file.
         if (_liveSyncEnabled && File.Exists(csharpFilePath))
@@ -881,7 +1247,9 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
                     host.ApplyPatch(e.Patch, e.Document);
                 else
                 {
-                    // Tab has been closed — dispose silently.
+                    // Tab has been closed — purge all mappings so reopen works cleanly.
+                    _openTabs.Remove(csharpFilePath);
+                    _openHosts.Remove(uiId);
                     svc.Dispose();
                     _liveSyncServices.Remove(uiId);
                 }
@@ -939,6 +1307,7 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
 
         DiagramDocument doc = await Task.Run(() =>
             RoslynClassDiagramAnalyzer.AnalyzeFiles(sourceFiles, _options));
+        _lastAnalyzedDocument = doc;
 
         string folderName = Path.GetFileName(folderPath.TrimEnd('/', '\\', Path.DirectorySeparatorChar));
         string title      = folderName + " [Class Diagram]";
@@ -947,7 +1316,14 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         var host = new ClassDiagramSplitHost();
         host.LoadDocument(doc, title);
 
+        // Restore .whcd twin for folder diagram
+        string folderWhcdPath  = WhcdSerializer.GetFolderWhcdPath(folderPath);
+        var    folderWhcdState = WhcdSerializer.Load(folderWhcdPath);
+        if (folderWhcdState is not null)
+            host.ApplyWhcdState(folderWhcdState);
+
         _openTabs[folderPath] = uiId;
+        _openHosts[uiId]      = host;
         context.UIRegistry.RegisterDocumentTab(uiId, host, Id, new DocumentDescriptor
         {
             Title     = title,
@@ -955,6 +1331,19 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
             ToolTip   = folderPath,
             CanClose  = true,
         });
+
+        // Auto-save .whcd on diagram change (debounced)
+        host.DiagramChanged += (_, _) =>
+        {
+            _whcdSaveDebounce?.Dispose();
+            _whcdSaveDebounce = new System.Threading.Timer(_ =>
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    var whcd = host.GetWhcdState(sourceFiles);
+                    WhcdSerializer.Save(folderWhcdPath, whcd);
+                }),
+                null, WhcdSaveDelayMs, System.Threading.Timeout.Infinite);
+        };
     }
 
     private async Task OpenAIGeneratedDiagramAsync(IIDEHostContext context)
@@ -1032,9 +1421,69 @@ public sealed class ClassDiagramPlugin : IWpfHexEditorPlugin, IPluginWithOptions
         return !string.IsNullOrEmpty(path) && IsSourceFile(path);
     }
 
+    private void SaveWhscdState(
+        ClassDiagramSplitHost host,
+        DiagramDocument doc,
+        string solutionPath,
+        string whscdPath,
+        IIDEHostContext context)
+    {
+        try
+        {
+            WhcdDocument snap = host.GetWhcdState([]);
+            var state = new WhscdDocument
+            {
+                SolutionPath      = solutionPath,
+                GeneratedAt       = DateTime.UtcNow,
+                Zoom              = snap.Zoom,
+                OffsetX           = snap.OffsetX,
+                OffsetY           = snap.OffsetY,
+                MinimapVisible    = snap.MinimapVisible,
+                SelectedNodeId    = snap.SelectedNodeId,
+                ShowSwimLanes     = snap.ShowSwimLanes,
+                SnapToGrid        = snap.SnapToGrid,
+                ViewMode          = snap.ViewMode,
+                SplitLayout       = snap.SplitLayout,
+                SplitColRatio     = snap.SplitColRatio,
+                SplitRowRatio     = snap.SplitRowRatio,
+                CollapsedSections = snap.CollapsedSections,
+                Nodes             = snap.Nodes,
+                ProjectGroups     = doc.ProjectGroups
+                    .Select(g => new WhscdProjectGroup
+                    {
+                        ProjectName = g.ProjectName,
+                        ProjectPath = g.ProjectPath,
+                        Color       = g.Color
+                    })
+                    .ToList()
+            };
+            WhscdSerializer.Save(whscdPath, state);
+            context.Output.Info(
+                $"[WHSCD] Saved {state.Nodes.Count} nodes → {Path.GetFileName(whscdPath)}");
+        }
+        catch (Exception ex)
+        {
+            context.Output.Info($"[WHSCD] Save failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Returns true when a project name looks like a test project.</summary>
+    private static bool IsTestProject(string projectName) =>
+        projectName.Contains("Test",  StringComparison.OrdinalIgnoreCase)
+     || projectName.Contains("Tests", StringComparison.OrdinalIgnoreCase)
+     || projectName.Contains("Spec",  StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Returns true for files of languages that support class diagrams.</summary>
-    private static bool IsSourceFile(string path) =>
-        LanguageRegistry.Instance.FindByExtension(Path.GetExtension(path))?.SupportsClassDiagram == true;
+    private static bool IsSourceFile(string path)
+    {
+        // Primary: ask LanguageRegistry (respects whfmt SupportsClassDiagram flag).
+        if (LanguageRegistry.Instance.FindByExtension(Path.GetExtension(path))?.SupportsClassDiagram == true)
+            return true;
+        // Fallback: accept .cs/.vb directly so files with build warnings (or an
+        // unregistered language definition) are never incorrectly rejected.
+        return path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith(".vb", StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 // ==========================================================

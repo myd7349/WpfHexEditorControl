@@ -20,7 +20,6 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -46,14 +45,12 @@ public sealed class DiagramMinimapControl : FrameworkElement
     private double           _scale       = 1.0;
     private Vector           _offset;                     // diagram-space top-left corner
 
-    // Viewport drag (left-button click outside grip strip)
-    private bool   _dragging;
-    private Point  _dragStart;
-    private Vector _dragViewportOrigin;
-
-    // Reposition drag (left-button on grip strip — top 10px)
-    private bool   _repositionDragging;
-    private Point  _repoScreenStart;   // screen-space start for reposition drag
+    // Unified drag state — drag anywhere on minimap repositions it; click navigates viewport
+    private bool   _mouseDown;
+    private Point  _mouseDownParentPt;   // parent-canvas coords at mouse-down
+    private Point  _lastParentPt;        // last parent-canvas coords during drag
+    private bool   _repositionConfirmed; // true once drag exceeds DragThreshold
+    private const double DragThreshold = 5.0;
 
     // ── Events ────────────────────────────────────────────────────────────────
     /// <summary>Raised when the user drags the viewport rect inside the minimap.</summary>
@@ -65,21 +62,13 @@ public sealed class DiagramMinimapControl : FrameworkElement
     /// <summary>Raised when the user chooses "Hide Minimap" from the context menu.</summary>
     public event EventHandler?                 HideRequested;
 
-    // ── Brushes (resolved from DynamicResource or fallback) ──────────────────
-    private static readonly Brush _bgBrush       = new SolidColorBrush(Color.FromArgb(200, 30, 30, 40));
-    private static readonly Brush _nodeBrush     = new SolidColorBrush(Color.FromRgb(80, 100, 160));
-    private static readonly Brush _viewportBrush = new SolidColorBrush(Color.FromArgb(60, 100, 160, 255));
-    private static readonly Pen   _borderPen     = new(new SolidColorBrush(Color.FromArgb(180, 100, 160, 255)), 1.0);
-    private static readonly Pen   _mapBorderPen  = new(new SolidColorBrush(Color.FromArgb(100, 180, 180, 200)), 1.0);
-
-    static DiagramMinimapControl()
-    {
-        ((SolidColorBrush)_bgBrush).Freeze();
-        ((SolidColorBrush)_nodeBrush).Freeze();
-        ((SolidColorBrush)_viewportBrush).Freeze();
-        _borderPen.Freeze();
-        _mapBorderPen.Freeze();
-    }
+    // ── Brushes resolved at render time from theme tokens (never frozen) ──────
+    // Resolved via TryFindResource each OnRender so theme switches take effect immediately.
+    private static readonly Brush _bgBrushFallback       = new SolidColorBrush(Color.FromArgb(200, 30, 30, 40));
+    private static readonly Brush _nodeBrushFallback     = new SolidColorBrush(Color.FromRgb(80, 100, 160));
+    private static readonly Brush _viewportBrushFallback = new SolidColorBrush(Color.FromArgb(60, 100, 160, 255));
+    private static readonly Color _borderColorFallback   = Color.FromArgb(180, 100, 160, 255);
+    private static readonly Color _mapBorderColorFallback= Color.FromArgb(100, 180, 180, 200);
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -112,22 +101,24 @@ public sealed class DiagramMinimapControl : FrameworkElement
 
     // ── Rendering ─────────────────────────────────────────────────────────────
 
-    private const double GripHeight = 10.0;
-
     protected override void OnRender(DrawingContext dc)
     {
+        // Resolve brushes from theme tokens each frame so theme switches take effect.
+        var bgBrush       = TryFindResource("CD_CanvasBackground")      as Brush ?? _bgBrushFallback;
+        var nodeBrush     = TryFindResource("CD_ClassBoxBackground")     as Brush ?? _nodeBrushFallback;
+        var viewportBrush = TryFindResource("CD_MinimapViewportBrush")   as Brush ?? _viewportBrushFallback;
+        var borderColor   = TryFindResource("CD_SelectionBorderBrush") is SolidColorBrush sb
+            ? Color.FromArgb(180, sb.Color.R, sb.Color.G, sb.Color.B) : _borderColorFallback;
+        var mapBorderBrush= TryFindResource("CD_ClassBoxBorderBrush")    as Brush
+            ?? new SolidColorBrush(_mapBorderColorFallback);
+
+        var borderPen    = new Pen(new SolidColorBrush(borderColor), 1.0);
+        var mapBorderPen = new Pen(mapBorderBrush, 1.0);
+
         var mapRect = new Rect(0, 0, MapWidth, MapHeight);
 
         // Background + border
-        dc.DrawRectangle(_bgBrush, _mapBorderPen, mapRect);
-
-        // Grip strip at top (drag to reposition)
-        var gripBrush = new SolidColorBrush(Color.FromArgb(120, 150, 150, 200));
-        dc.DrawRectangle(gripBrush, null, new Rect(0, 0, MapWidth, GripHeight));
-        // Grip dots
-        var dotBrush = new SolidColorBrush(Color.FromArgb(160, 220, 220, 240));
-        for (double x = 6; x < MapWidth - 4; x += 5)
-            dc.DrawEllipse(dotBrush, null, new Point(x, GripHeight / 2), 1.0, 1.0);
+        dc.DrawRectangle(bgBrush, mapBorderPen, mapRect);
 
         if (_doc is null || _doc.Classes.Count == 0)
         {
@@ -140,14 +131,14 @@ public sealed class DiagramMinimapControl : FrameworkElement
         {
             var nr = ToMapRect(new Rect(node.X, node.Y, node.Width, node.Height));
             if (nr.Width < 1) nr = new Rect(nr.X, nr.Y, 1, 1);
-            dc.DrawRectangle(_nodeBrush, null, nr);
+            dc.DrawRectangle(nodeBrush, null, nr);
         }
 
         // Draw viewport rectangle
         if (!_viewport.IsEmpty)
         {
             var vr = ToMapRect(_viewport);
-            dc.DrawRectangle(_viewportBrush, _borderPen, Clip(vr, mapRect));
+            dc.DrawRectangle(viewportBrush, borderPen, Clip(vr, mapRect));
         }
     }
 
@@ -205,103 +196,96 @@ public sealed class DiagramMinimapControl : FrameworkElement
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
-        var pt = e.GetPosition(this);
-
-        if (pt.Y <= GripHeight)
-        {
-            // Reposition drag — track screen-space position so we can snap to parent canvas corners
-            _repositionDragging = true;
-            _repoScreenStart    = PointToScreen(pt);
-            Cursor              = Cursors.SizeAll;
-        }
-        else
-        {
-            // Viewport drag
-            _dragging           = true;
-            _dragStart          = pt;
-            _dragViewportOrigin = _viewport.IsEmpty
-                ? new Vector(0, 0)
-                : new Vector(_viewport.X, _viewport.Y);
-        }
+        _mouseDown           = true;
+        _repositionConfirmed = false;
+        _mouseDownParentPt   = e.GetPosition((IInputElement)Parent);
+        _lastParentPt        = _mouseDownParentPt;
         CaptureMouse();
         e.Handled = true;
     }
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
-        if (_repositionDragging)
+        if (!_mouseDown) { e.Handled = false; return; }
+
+        Point  cur   = e.GetPosition((IInputElement)Parent);
+        Vector delta = cur - _lastParentPt;
+
+        if (!_repositionConfirmed)
         {
-            // Compute screen-space delta and raise event so DiagramCanvas can
-            // move us in real-time; corner-snap happens on MouseUp.
-            Point curScreen  = PointToScreen(e.GetPosition(this));
-            Vector screenDelta = curScreen - _repoScreenStart;
-            _repoScreenStart = curScreen;
-            PositionDeltaRequested?.Invoke(this, screenDelta);
-            e.Handled = true;
-            return;
+            Vector total = cur - _mouseDownParentPt;
+            if (Math.Abs(total.X) > DragThreshold || Math.Abs(total.Y) > DragThreshold)
+            {
+                _repositionConfirmed = true;
+                Cursor = Cursors.SizeAll;
+            }
         }
 
-        if (_dragging)
+        if (_repositionConfirmed)
         {
-            Point cur    = e.GetPosition(this);
-            Vector delta = (Vector)(cur - _dragStart);
-            double diagDX = delta.X / _scale;
-            double diagDY = delta.Y / _scale;
-            ViewportNavigateRequested?.Invoke(this,
-                new Point(_dragViewportOrigin.X + diagDX, _dragViewportOrigin.Y + diagDY));
+            _lastParentPt = cur;
+            PositionDeltaRequested?.Invoke(this, delta);
         }
-        e.Handled = _dragging;
+
+        e.Handled = true;
     }
 
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
-        if (_repositionDragging)
+        bool wasRepo = _repositionConfirmed;
+        _mouseDown           = false;
+        _repositionConfirmed = false;
+        ReleaseMouseCapture();
+        Cursor = Cursors.Hand;
+
+        if (!wasRepo)
         {
-            // Determine new corner based on final mouse position relative to parent canvas
-            var parent = Parent as Canvas;
-            if (parent is not null)
+            // Treat as click — navigate viewport to clicked diagram point
+            Point mapPt  = e.GetPosition(this);
+            Point diagPt = ToDiagramPoint(mapPt);
+            ViewportNavigateRequested?.Invoke(this, diagPt);
+        }
+        else
+        {
+            // Corner snap on release
+            if (Parent is Canvas parent)
             {
-                Point posInParent = e.GetPosition(parent);
-                double cx = parent.ActualWidth  / 2;
-                double cy = parent.ActualHeight / 2;
-                var corner = (posInParent.X < cx, posInParent.Y < cy) switch
+                Point pos  = e.GetPosition(parent);
+                bool  left = pos.X < parent.ActualWidth  / 2;
+                bool  top  = pos.Y < parent.ActualHeight / 2;
+                var corner = (left, top) switch
                 {
                     (true,  true)  => MinimapCorner.TopLeft,
                     (false, true)  => MinimapCorner.TopRight,
                     (true,  false) => MinimapCorner.BottomLeft,
-                    (false, false) => MinimapCorner.BottomRight
+                    _              => MinimapCorner.BottomRight
                 };
                 CornerChangeRequested?.Invoke(this, corner);
             }
-            Cursor = Cursors.Hand;
         }
-        _dragging           = false;
-        _repositionDragging = false;
-        ReleaseMouseCapture();
+
         e.Handled = true;
     }
 
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
     {
-        var menu = new ContextMenu();
+        var menu = DiagramMenuHelpers.StyledMenu();
 
-        var hideItem = new MenuItem { Header = "Hide Minimap" };
-        hideItem.Click += (_, _) => HideRequested?.Invoke(this, EventArgs.Empty);
-        menu.Items.Add(hideItem);
+        menu.Items.Add(DiagramMenuHelpers.MakeItem("\uE7BA", "Hide Minimap",
+            () => HideRequested?.Invoke(this, EventArgs.Empty)));
 
         menu.Items.Add(new Separator());
 
-        var moveMenu = new MenuItem { Header = "Move to" };
-        void AddCorner(string label, MinimapCorner corner) {
-            var item = new MenuItem { Header = label };
-            item.Click += (_, _) => CornerChangeRequested?.Invoke(this, corner);
-            moveMenu.Items.Add(item);
-        }
-        AddCorner("Top-Left",     MinimapCorner.TopLeft);
-        AddCorner("Top-Right",    MinimapCorner.TopRight);
-        AddCorner("Bottom-Left",  MinimapCorner.BottomLeft);
-        AddCorner("Bottom-Right", MinimapCorner.BottomRight);
-        menu.Items.Add(moveMenu);
+        var moveSub = DiagramMenuHelpers.MakeItem("\uE893", "Move to Corner", null);
+        moveSub.Items.Add(DiagramMenuHelpers.MakeItem("\uE893", "Top-Left",
+            () => CornerChangeRequested?.Invoke(this, MinimapCorner.TopLeft)));
+        moveSub.Items.Add(DiagramMenuHelpers.MakeItem("\uE893", "Top-Right",
+            () => CornerChangeRequested?.Invoke(this, MinimapCorner.TopRight)));
+        moveSub.Items.Add(DiagramMenuHelpers.MakeItem("\uE893", "Bottom-Left",
+            () => CornerChangeRequested?.Invoke(this, MinimapCorner.BottomLeft)));
+        moveSub.Items.Add(DiagramMenuHelpers.MakeItem("\uE893", "Bottom-Right",
+            () => CornerChangeRequested?.Invoke(this, MinimapCorner.BottomRight)));
+        menu.Items.Add(moveSub);
 
         menu.IsOpen = true;
         e.Handled   = true;

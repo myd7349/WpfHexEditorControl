@@ -38,6 +38,10 @@ public class ZoomPanCanvas : Canvas
     private double _panStartOffsetX;
     private double _panStartOffsetY;
 
+    // Rubber-band lasso — owned here because DiagramCanvas is too small to receive
+    // empty-area hit-tests (Canvas without explicit size = 0x0 effective hit area).
+    private DiagramCanvas? _rubberBandTarget;
+
     // ---------------------------------------------------------------------------
     // Dependency Properties
     // ---------------------------------------------------------------------------
@@ -66,14 +70,66 @@ public class ZoomPanCanvas : Canvas
         RenderTransform = group;
         RenderTransformOrigin = new Point(0, 0);
 
-        ClipToBounds = true;
+        // ClipToBounds must be false here. ZoomPanCanvas applies zoom+pan via
+        // RenderTransform on *itself*, so its LOCAL coordinate space never shifts.
+        // ClipToBounds would permanently clip nodes at X > ActualWidth regardless of pan.
+        // The parent _diagramHost (Border, ClipToBounds=true) provides the correct clip.
+        ClipToBounds = false;
         Background   = Brushes.Transparent;   // hit-testable in empty areas
     }
 
     // ---------------------------------------------------------------------------
+    // Layout override — Canvas.MeasureOverride returns the desired size of its
+    // children (≈ diagram content size), which is much smaller than the viewport.
+    // Clicks on empty viewport area then land on the parent Border, not here.
+    // We return the available size so ZoomPanCanvas always fills its container,
+    // making the entire viewport hit-testable for rubber-band / right-click.
+    // ---------------------------------------------------------------------------
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        base.MeasureOverride(availableSize);
+        return new Size(
+            double.IsInfinity(availableSize.Width)  ? 0 : availableSize.Width,
+            double.IsInfinity(availableSize.Height) ? 0 : availableSize.Height);
+    }
+
+    // HitTestCore: with MeasureOverride filling the container, the layout bounds
+    // now cover the full viewport. We still keep the override so panned views
+    // (where RenderTransform shifts content to negative local coords) remain clickable.
+
+    protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)
+        => new PointHitTestResult(this, hitTestParameters.HitPoint);
+
+    protected override GeometryHitTestResult HitTestCore(GeometryHitTestParameters hitTestParameters)
+        => new GeometryHitTestResult(this, IntersectionDetail.FullyContains);
+
     // Right-click delegation — forward to DiagramCanvas when empty area is hit
     // (DiagramCanvas is sized to its content so empty-area right-clicks land here)
     // ---------------------------------------------------------------------------
+
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        base.OnMouseLeftButtonDown(e);
+        if (e.Handled) return;
+        if (_isPanning) return;   // Middle-mouse pan takes priority
+
+        // Click landed on ZoomPanCanvas (empty viewport area outside diagram content).
+        // Start rubber-band lasso; use e.GetPosition(dc) which WPF transforms through
+        // the ancestor RenderTransform chain → correct diagram-space coordinates.
+        foreach (UIElement child in InternalChildren)
+        {
+            if (child is DiagramCanvas dc)
+            {
+                _rubberBandTarget = dc;
+                dc.StartRubberBandAt(e.GetPosition(dc));
+                Mouse.OverrideCursor = Cursors.Cross;
+                CaptureMouse();
+                e.Handled = true;
+                return;
+            }
+        }
+    }
 
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
     {
@@ -93,6 +149,16 @@ public class ZoomPanCanvas : Canvas
             }
         }
     }
+
+    // ---------------------------------------------------------------------------
+    // Events
+    // ---------------------------------------------------------------------------
+
+    /// <summary>
+    /// Raised whenever ZoomFactor, OffsetX, or OffsetY changes so that external
+    /// consumers (e.g. ClassDiagramSplitHost scrollbars) can update synchronously.
+    /// </summary>
+    public event EventHandler? TransformChanged;
 
     // ---------------------------------------------------------------------------
     // CLR wrappers
@@ -122,16 +188,17 @@ public class ZoomPanCanvas : Canvas
 
     private static void OnZoomFactorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is ZoomPanCanvas c) c._scale.ScaleX = c._scale.ScaleY = (double)e.NewValue;
+        if (d is not ZoomPanCanvas c) return;
+        c._scale.ScaleX = c._scale.ScaleY = (double)e.NewValue;
+        c.TransformChanged?.Invoke(c, EventArgs.Empty);
     }
 
     private static void OnOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is ZoomPanCanvas c)
-        {
-            c._translate.X = c.OffsetX;
-            c._translate.Y = c.OffsetY;
-        }
+        if (d is not ZoomPanCanvas c) return;
+        c._translate.X = c.OffsetX;
+        c._translate.Y = c.OffsetY;
+        c.TransformChanged?.Invoke(c, EventArgs.Empty);
     }
 
     // ---------------------------------------------------------------------------
@@ -156,39 +223,22 @@ public class ZoomPanCanvas : Canvas
     /// </summary>
     public void FitToContent()
     {
-        if (Children.Count == 0) return;
-
-        double minX = double.MaxValue, minY = double.MaxValue;
-        double maxX = double.MinValue, maxY = double.MinValue;
-
-        foreach (UIElement child in Children)
-        {
-            double left   = GetLeft(child).IfNaN(0);
-            double top    = GetTop(child).IfNaN(0);
-            double width  = child.RenderSize.Width;
-            double height = child.RenderSize.Height;
-
-            minX = Math.Min(minX, left);
-            minY = Math.Min(minY, top);
-            maxX = Math.Max(maxX, left + width);
-            maxY = Math.Max(maxY, top + height);
-        }
-
-        double contentWidth  = maxX - minX;
-        double contentHeight = maxY - minY;
-        if (contentWidth < 1 || contentHeight < 1) return;
+        // Use GetContentBounds() which reads actual node positions from DiagramDocument
+        // rather than DiagramCanvas.RenderSize (which is the Canvas size, not content extent).
+        var b = GetContentBounds();
+        if (b.Width < 1 || b.Height < 1) return;
 
         double availableWidth  = ActualWidth  > 0 ? ActualWidth  : 800;
         double availableHeight = ActualHeight > 0 ? ActualHeight : 600;
 
         const double padding = 40.0;
-        double scaleX = (availableWidth  - padding * 2) / contentWidth;
-        double scaleY = (availableHeight - padding * 2) / contentHeight;
-        double zoom   = Math.Max(0.1, Math.Min(1.0, Math.Min(scaleX, scaleY)));
+        double scaleX = (availableWidth  - padding * 2) / b.Width;
+        double scaleY = (availableHeight - padding * 2) / b.Height;
+        double zoom   = Math.Max(0.1, Math.Min(4.0, Math.Min(scaleX, scaleY)));
 
         ZoomFactor = zoom;
-        OffsetX    = -minX * zoom + padding;
-        OffsetY    = -minY * zoom + padding;
+        OffsetX    = -b.X * zoom + padding;
+        OffsetY    = -b.Y * zoom + padding;
     }
 
     /// <summary>
@@ -218,9 +268,32 @@ public class ZoomPanCanvas : Canvas
     {
         base.OnMouseWheel(e);
 
-        double delta = e.Delta > 0 ? 0.1 : -0.1;
-        ZoomFactor   = Math.Max(0.1, Math.Min(10.0, ZoomFactor + delta));
-        e.Handled    = true;
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
+        {
+            // Ctrl+Wheel → zoom (centred on mouse cursor); step proportional to delta
+            double step  = e.Delta / 120.0 * 0.1;
+            double oldZ  = ZoomFactor;
+            double newZ  = Math.Clamp(oldZ + step, 0.1, 10.0);
+            if (Math.Abs(newZ - oldZ) < 1e-10) { e.Handled = true; return; }
+
+            // Adjust offset so the point under the cursor stays fixed
+            Point mouse  = e.GetPosition(this);
+            OffsetX      = mouse.X - (mouse.X - OffsetX) * (newZ / oldZ);
+            OffsetY      = mouse.Y - (mouse.Y - OffsetY) * (newZ / oldZ);
+            ZoomFactor   = newZ;
+        }
+        else if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+        {
+            // Shift+Wheel → pan horizontally
+            OffsetX += e.Delta > 0 ? 40 : -40;
+        }
+        else
+        {
+            // Plain Wheel → pan vertically (standard editor behaviour)
+            OffsetY += e.Delta > 0 ? 40 : -40;
+        }
+
+        e.Handled = true;
     }
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -239,21 +312,55 @@ public class ZoomPanCanvas : Canvas
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-        if (!_isPanning) return;
 
-        Point current = e.GetPosition(Parent as IInputElement);
-        OffsetX = _panStartOffsetX + (current.X - _panStartMouse.X);
-        OffsetY = _panStartOffsetY + (current.Y - _panStartMouse.Y);
-        e.Handled = true;
+        if (_isPanning)
+        {
+            Point current = e.GetPosition(Parent as IInputElement);
+            OffsetX = _panStartOffsetX + (current.X - _panStartMouse.X);
+            OffsetY = _panStartOffsetY + (current.Y - _panStartMouse.Y);
+            e.Handled = true;
+            return;
+        }
+
+        if (_rubberBandTarget is not null)
+        {
+            _rubberBandTarget.UpdateRubberBandAt(e.GetPosition(_rubberBandTarget));
+            e.Handled = true;
+        }
     }
 
     protected override void OnMouseUp(MouseButtonEventArgs e)
     {
         base.OnMouseUp(e);
-        if (!_isPanning) return;
+
+        if (_isPanning && e.ChangedButton == MouseButton.Middle)
+        {
+            _isPanning = false;
+            ReleaseMouseCapture();
+            e.Handled = true;
+            return;
+        }
+
+        if (_rubberBandTarget is not null && e.ChangedButton == MouseButton.Left)
+        {
+            _rubberBandTarget.FinishRubberBandAt(e.GetPosition(_rubberBandTarget));
+            _rubberBandTarget = null;
+            Mouse.OverrideCursor = null;
+            ReleaseMouseCapture();
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        base.OnLostMouseCapture(e);
+        if (_rubberBandTarget is not null)
+        {
+            _rubberBandTarget.CancelRubberBand();
+            _rubberBandTarget = null;
+            Mouse.OverrideCursor = null;
+        }
         _isPanning = false;
-        ReleaseMouseCapture();
-        e.Handled = true;
     }
 }
 

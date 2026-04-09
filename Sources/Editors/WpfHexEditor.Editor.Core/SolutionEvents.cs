@@ -194,6 +194,30 @@ public sealed class PhysicalFileIncludeRequestedEventArgs : EventArgs
 }
 
 /// <summary>
+/// Fired when the user chooses "Include in Project" on a physical <em>folder</em>
+/// that has no tracked descendants (Show All Files mode).
+/// The host should recursively add all files under the folder.
+/// </summary>
+public sealed class PhysicalFolderIncludeRequestedEventArgs : EventArgs
+{
+    /// <summary>Absolute path of the physical folder to include recursively.</summary>
+    public string   FolderPath { get; init; } = string.Empty;
+    public IProject Project    { get; init; } = null!;
+}
+
+/// <summary>
+/// Fired when the user chooses "Exclude from Project" on a physical <em>folder</em>
+/// that has tracked descendants (Show All Files mode).
+/// The host should remove all project items whose path falls under the folder.
+/// </summary>
+public sealed class PhysicalFolderExcludeRequestedEventArgs : EventArgs
+{
+    /// <summary>Absolute path of the physical folder whose items should be excluded.</summary>
+    public string   FolderPath { get; init; } = string.Empty;
+    public IProject Project    { get; init; } = null!;
+}
+
+/// <summary>
 /// Fired when the user chooses "Import into Project" on a file node that lives
 /// outside the project directory.  The host copies the file into the project
 /// directory and updates the item reference via <see cref="ISolutionManager"/>.

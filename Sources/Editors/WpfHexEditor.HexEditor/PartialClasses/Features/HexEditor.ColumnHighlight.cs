@@ -24,6 +24,7 @@
 using System;
 using System.Windows;
 using WpfHexEditor.Core;
+using WpfHexEditor.Core.Events;
 using WpfHexEditor.HexEditor.Controls;
 
 namespace WpfHexEditor.HexEditor
@@ -38,7 +39,7 @@ namespace WpfHexEditor.HexEditor
                 nameof(ShowColumnHighlight),
                 typeof(bool),
                 typeof(HexEditor),
-                new PropertyMetadata(true, OnColumnHighlightOptionChanged));
+                new PropertyMetadata(false, OnColumnHighlightOptionChanged));
 
         public bool ShowColumnHighlight
         {
@@ -66,7 +67,7 @@ namespace WpfHexEditor.HexEditor
                 nameof(ShowAsciiColumnHighlight),
                 typeof(bool),
                 typeof(HexEditor),
-                new PropertyMetadata(true, OnColumnHighlightOptionChanged));
+                new PropertyMetadata(false, OnColumnHighlightOptionChanged));
 
         public bool ShowAsciiColumnHighlight
         {
@@ -95,13 +96,21 @@ namespace WpfHexEditor.HexEditor
             _columnHighlight = this.FindName("ColHighlightOverlay") as ColumnHighlightOverlay;
             if (_columnHighlight is null) return;
 
-            SelectionStartChanged += OnColumnHighlightSelectionChanged;
-            ZoomScaleChanged     += OnColumnHighlightSelectionChanged;
+            SelectionStartChanged    += OnColumnHighlightSelectionChanged;
+            ZoomScaleChanged         += OnColumnHighlightSelectionChanged;
+            PositionChanged          += OnColumnHighlightPositionChanged;
+            VerticalScrollBarChanged += OnColumnHighlightScrollChanged;
         }
 
         // ── Event Handlers ────────────────────────────────────────────────────
 
         private void OnColumnHighlightSelectionChanged(object? sender, EventArgs e)
+            => UpdateColumnHighlight();
+
+        private void OnColumnHighlightPositionChanged(object? sender, PositionChangedEventArgs e)
+            => UpdateColumnHighlight();
+
+        private void OnColumnHighlightScrollChanged(object? sender, ByteEventArgs e)
             => UpdateColumnHighlight();
 
         private void UpdateColumnHighlight()
@@ -115,7 +124,10 @@ namespace WpfHexEditor.HexEditor
                 return;
             }
 
-            if (!_viewModel.SelectionStart.IsValid)
+            long caretOffset = Position;
+            if (caretOffset < 0 && _viewModel?.SelectionStart.IsValid == true)
+                caretOffset = _viewModel.SelectionStart.Value;
+            if (caretOffset < 0)
             {
                 _columnHighlight.Hide();
                 return;
@@ -124,7 +136,7 @@ namespace WpfHexEditor.HexEditor
             int bytesPerLine = HexViewport.BytesPerLine;
             if (bytesPerLine <= 0) { _columnHighlight.Hide(); return; }
 
-            long   offset    = _viewModel.SelectionStart.Value;
+            long   offset    = caretOffset;
             int    colIdx    = (int)(offset % bytesPerLine);
             double zoom      = ZoomScale;
             double cellWidth = HexViewport.CalculateCellWidthForByteCount(1) * zoom;
@@ -141,40 +153,43 @@ namespace WpfHexEditor.HexEditor
                 spacerOffset = spacerCount * (int)HexViewport.ByteSpacerWidthTickness * zoom;
             }
 
+            // Fetch visible lines once — used for both row and ASCII column calculations.
+            var visibleLinesList = HexViewport.GetVisibleLinesForHighlight();
+
             // Visible content height — clamps all stripes so they don't bleed
             // into the empty space below the last rendered line.
-            double lineHeight   = HexViewport.LineHeight * zoom;
-            int    visibleLines = HexViewport.GetVisibleLinesForHighlight().Count;
-            double visibleH     = visibleLines > 0 ? visibleLines * lineHeight : 0;
+            double lineHeight = HexViewport.LineHeight * zoom;
+            double visibleH   = visibleLinesList.Count > 0 ? visibleLinesList.Count * lineHeight : 0;
 
-            // Each stripe only renders in its own panel when that panel is active.
+            // Column stripe: shown only in the currently active panel.
             bool hexActive   = HexViewport.ActivePanel == Controls.ActivePanelType.Hex;
             bool asciiActive = HexViewport.ActivePanel == Controls.ActivePanelType.Ascii;
 
-            // Hex column stripe: shown when hex panel is active.
+            // Hex column stripe: only when hex panel is active.
             // Re-use colIdx = -1 to tell the overlay to skip the hex stripe.
             int effectiveColIdx = (ShowColumnHighlight && hexActive) ? colIdx : -1;
 
-            // ASCII stripe parameters (negative = don't draw).
-            double asciiX     = -1;
-            double asciiCW    = 0;
+            // ASCII stripe: geometric — same column index as the cursor.
+            double asciiX  = -1;
+            double asciiCW = 0;
             if (ShowAsciiColumnHighlight && asciiActive && HexViewport.ShowAscii)
             {
-                asciiX  = HexViewport.AsciiPanelStartX * zoom;
-                asciiCW = HexViewport.AsciiCharacterWidth * zoom;
+                double charW  = HexViewport.AsciiCharacterWidth;
+                double panelX = HexViewport.AsciiPanelActualStartX;
+                asciiX  = (panelX + colIdx * charW) * zoom;
+                asciiCW = charW * zoom;
             }
 
             // Row highlight position: which line number is the cursor on?
             double rowY      = -1;
             double rowHeight = lineHeight;
-            if (ShowRowHighlight && visibleLines > 0 && lineHeight > 0)
+            if (ShowRowHighlight && visibleLinesList.Count > 0 && lineHeight > 0)
             {
-                var lines = HexViewport.GetVisibleLinesForHighlight();
-                if (lines.Count > 0)
+                if (visibleLinesList.Count > 0)
                 {
-                    long firstOffset = lines[0].Bytes[0].VirtualPos;
+                    long firstOffset = visibleLinesList[0].Bytes[0].VirtualPos;
                     long lineIndex   = (offset - firstOffset) / bytesPerLine;
-                    if (lineIndex >= 0 && lineIndex < lines.Count)
+                    if (lineIndex >= 0 && lineIndex < visibleLinesList.Count)
                         rowY = lineIndex * lineHeight;
                 }
             }

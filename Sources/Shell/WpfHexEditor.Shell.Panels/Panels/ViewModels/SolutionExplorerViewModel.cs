@@ -499,6 +499,12 @@ public sealed class SolutionExplorerViewModel : ViewModelBase
             isTextFile = fn.Source.ItemType is not (
                 ProjectItemType.Binary or ProjectItemType.Image or ProjectItemType.Tile);
         }
+        else if (node is PhysicalFileNodeVm pfn)
+        {
+            filePath   = pfn.PhysicalPath;
+            isTextFile = MapPhysicalItemType(pfn.PhysicalPath) is not (
+                ProjectItemType.Binary or ProjectItemType.Image or ProjectItemType.Tile);
+        }
 
         cache.Add(new FlatNode(node, parent, node.DisplayName.ToLowerInvariant(), filePath, isTextFile));
 
@@ -588,7 +594,7 @@ public sealed class SolutionExplorerViewModel : ViewModelBase
         // Filter is a view concern: here we just collapse non-matching file nodes
         // by leaving them out. Since we rebuild, we can remove them.
         var toRemove = children
-            .Where(n => n is FileNodeVm && !PassesFilter(n))
+            .Where(n => (n is FileNodeVm || n is PhysicalFileNodeVm) && !PassesFilter(n))
             .ToList();
         foreach (var n in toRemove) children.Remove(n);
 
@@ -934,16 +940,24 @@ public sealed class SolutionExplorerViewModel : ViewModelBase
         return node;
     }
 
-    private static void BuildPhysicalSubDir(
+    /// <summary>
+    /// Recursively populates <paramref name="children"/> with physical sub-directories and files.
+    /// Returns <see langword="true"/> if any file in the subtree is tracked in the project
+    /// (used to set <see cref="PhysicalFolderNodeVm.IsInProject"/> bottom-up).
+    /// </summary>
+    private static bool BuildPhysicalSubDir(
         ObservableCollection<SolutionExplorerNodeVm> children,
         string dir, IProject project,
         Dictionary<string, IProjectItem> itemsByPath,
         string projectFilePath)
     {
+        bool anyInProject = false;
+
         foreach (var subDir in Directory.GetDirectories(dir))
         {
             var folderVm = new PhysicalFolderNodeVm(subDir) { Project = project, IsExpanded = false };
-            BuildPhysicalSubDir(folderVm.Children, subDir, project, itemsByPath, projectFilePath);
+            folderVm.IsInProject = BuildPhysicalSubDir(folderVm.Children, subDir, project, itemsByPath, projectFilePath);
+            if (folderVm.IsInProject) anyInProject = true;
             children.Add(folderVm);
         }
 
@@ -952,8 +966,12 @@ public sealed class SolutionExplorerViewModel : ViewModelBase
             if (string.Equals(file, projectFilePath, StringComparison.OrdinalIgnoreCase))
                 continue;
             itemsByPath.TryGetValue(file, out var linkedItem);
-            children.Add(new PhysicalFileNodeVm(file) { Project = project, LinkedItem = linkedItem });
+            var fileVm = new PhysicalFileNodeVm(file) { Project = project, LinkedItem = linkedItem };
+            if (fileVm.IsInProject) anyInProject = true;
+            children.Add(fileVm);
         }
+
+        return anyInProject;
     }
 
     private static void MarkDefaultTbl(SolutionExplorerNodeVm node, string? defaultId)
@@ -1091,15 +1109,42 @@ public sealed class SolutionExplorerViewModel : ViewModelBase
     private bool PassesFilter(SolutionExplorerNodeVm node)
     {
         if (_currentFilter == FilterMode.All) return true;
-        if (node is not FileNodeVm fn) return true;  // always show folders
+
+        ProjectItemType itemType;
+        if (node is FileNodeVm fn)
+            itemType = fn.Source.ItemType;
+        else if (node is PhysicalFileNodeVm pfn)
+            itemType = MapPhysicalItemType(pfn.PhysicalPath);
+        else
+            return true;  // always show folders and non-file nodes
 
         return _currentFilter switch
         {
-            FilterMode.Binary   => fn.Source.ItemType is ProjectItemType.Binary,
-            FilterMode.Text     => fn.Source.ItemType is ProjectItemType.Text or ProjectItemType.Tbl or ProjectItemType.Json,
-            FilterMode.Image    => fn.Source.ItemType is ProjectItemType.Image or ProjectItemType.Tile,
-            FilterMode.Language => fn.Source.ItemType is ProjectItemType.FormatDefinition or ProjectItemType.Script,
+            FilterMode.Binary   => itemType is ProjectItemType.Binary,
+            FilterMode.Text     => itemType is ProjectItemType.Text or ProjectItemType.Tbl or ProjectItemType.Json,
+            FilterMode.Image    => itemType is ProjectItemType.Image or ProjectItemType.Tile,
+            FilterMode.Language => itemType is ProjectItemType.FormatDefinition or ProjectItemType.Script,
             _                   => true
+        };
+    }
+
+    /// <summary>
+    /// Maps a physical file path to a <see cref="ProjectItemType"/> using extension heuristics.
+    /// Mirrors the mapping in FolderFileEnumerator so filter behaviour is consistent.
+    /// </summary>
+    private static ProjectItemType MapPhysicalItemType(string path)
+    {
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext switch
+        {
+            ".json"                               => ProjectItemType.Json,
+            ".tbl"                                => ProjectItemType.Tbl,
+            ".txt" or ".log" or ".md" or ".rst"   => ProjectItemType.Text,
+            ".png" or ".bmp" or ".jpg" or ".jpeg"
+                or ".gif" or ".ico" or ".webp"    => ProjectItemType.Image,
+            ".bin" or ".rom" or ".img" or ".iso"
+                or ".dat" or ".raw"               => ProjectItemType.Binary,
+            _                                     => ProjectItemType.Text,
         };
     }
 

@@ -19,6 +19,7 @@
 //     ApplyPatch is exposed for Phase 3 live-sync incremental updates.
 // ==========================================================
 
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -30,6 +31,7 @@ using System.Windows.Threading;
 using WpfHexEditor.Editor.ClassDiagram.Controls.Adorners;
 using WpfHexEditor.Editor.ClassDiagram.Core.Layout;
 using WpfHexEditor.Editor.ClassDiagram.Core.Model;
+using WpfHexEditor.Editor.ClassDiagram.Services;
 using WpfHexEditor.Editor.ClassDiagram.ViewModels;
 
 namespace WpfHexEditor.Editor.ClassDiagram.Controls;
@@ -51,32 +53,55 @@ public sealed class DiagramCanvas : Canvas
 
     // ── State ─────────────────────────────────────────────────────────────────
     private DiagramDocument?  _doc;
-    private ClassNode?        _selectedNode;
     private ClassNode?        _hoveredNode;
     private ClassNode?        _dragNode;
 
+    // ── Member hover + selection ──────────────────────────────────────────────
+    private ClassNode?   _hoveredMemberNode;
+    private ClassMember? _hoveredMember;
+    private ClassNode?   _selectedMemberNode;
+    private ClassMember? _selectedMember;
+
+    // ── Multi-selection ───────────────────────────────────────────────────────
+    // _selectedIds = full selection set; _primarySelected = last explicit click target
+    private readonly HashSet<string> _selectedIds = new(StringComparer.Ordinal);
+    private ClassNode? _primarySelected;
+    // Compat shim: external code that reads _selectedNode gets the primary node
+    private ClassNode? _selectedNode => _primarySelected;
+
     private readonly DiagramCanvasViewModel _vm = new();
 
-    // ── Adorners ──────────────────────────────────────────────────────────────
-    private AdornerLayer?          _adornerLayer;
-    private ClassBoxSelectAdorner? _selectAdorner;
-    private RubberBandAdorner?     _rubberBandAdorner;
+    // ── Adorners (rubber-band only — selection rect drawn by _layer directly) ──
+    private AdornerLayer?      _adornerLayer;
+    private RubberBandAdorner? _rubberBandAdorner;
 
     // ── Drag ──────────────────────────────────────────────────────────────────
     private Point  _dragStart;
     private double _dragNodeStartX;
     private double _dragNodeStartY;
+    private Dictionary<string, Point> _dragStartPositions = []; // for multi-node drag
+
+    // ── Resize gripper ────────────────────────────────────────────────────────
+    private ClassNode? _resizingNode;
+    private double     _resizeStartY;
+    private double     _resizeStartHeight;
 
     // ── Rubber-band ───────────────────────────────────────────────────────────
     private bool  _isRubberBanding;
     private Point _rubberStart;
 
-    // ── Minimap ───────────────────────────────────────────────────────────────
-    private readonly DiagramMinimapControl _minimap = new();
-    private bool          _minimapVisible = true;
-    private MinimapCorner _minimapCorner  = MinimapCorner.BottomLeft;
+    // ── Undo manager (injected by ClassDiagramSplitHost) ─────────────────────
+    private ClassDiagramUndoManager? _undoManager;
 
-    private const double MinimapMargin = 8.0;
+    // ── Snap engine (injected by ClassDiagramSplitHost) ──────────────────────
+    private ClassSnapEngineService? _snapEngine;
+
+    // ── Last right-click canvas position (diagram coordinates) ───────────────
+    private Point _lastMenuPoint;
+
+    // ── Minimap ───────────────────────────────────────────────────────────────
+    // Owned by ClassDiagramSplitHost (overlay canvas) — not a child of DiagramCanvas.
+    internal readonly DiagramMinimapControl _minimap = new();
 
     // ── Filter bar (Phase 12) ─────────────────────────────────────────────────
     private readonly DiagramFilterBar _filterBar = new();
@@ -98,6 +123,9 @@ public sealed class DiagramCanvas : Canvas
     public event EventHandler<string>?                        ExportRequested;  // format: "png","plantUml","structurizr","mermaid","svg","csharp"
     public event EventHandler<LayoutStrategyKind>?            LayoutStrategyRequested;
     public event EventHandler<ClassNode>?                     ZoomToNodeRequested;
+    public event EventHandler?                                FitToContentRequested;
+    /// <summary>Fired when the user clicks "Properties" on a node's context menu.</summary>
+    public event EventHandler<ClassNode>?                     ShowPropertiesRequested;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -105,6 +133,7 @@ public sealed class DiagramCanvas : Canvas
     {
         Background = Brushes.Transparent;
         Focusable  = true;
+        AllowDrop  = true;
         Loaded    += OnLoaded;
 
         // Tooltip timer
@@ -114,15 +143,6 @@ public sealed class DiagramCanvas : Canvas
         Children.Add(_layer);
         Canvas.SetLeft(_layer, 0);
         Canvas.SetTop(_layer, 0);
-
-        // Minimap — bottom-left by default, above main layer.
-        Children.Add(_minimap);
-        _minimap.ViewportNavigateRequested += OnMinimapNavigate;
-        _minimap.PositionDeltaRequested    += OnMinimapPositionDelta;
-        _minimap.CornerChangeRequested     += (_, corner) => SetMinimapCorner(corner);
-        _minimap.HideRequested             += (_, _) => IsMinimapVisible = false;
-        SizeChanged += (_, _) => UpdateMinimapPosition();
-        UpdateMinimapPosition();
 
         // Filter bar — top-center, hidden by default.
         _filterBar.Visibility  = Visibility.Collapsed;
@@ -135,102 +155,33 @@ public sealed class DiagramCanvas : Canvas
 
     // ── Minimap API ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Show/hide the minimap. ClassDiagramSplitHost owns the minimap's parent canvas;
+    /// this property simply toggles Visibility so the session-save code still works.
+    /// </summary>
     public bool IsMinimapVisible
     {
-        get => _minimapVisible;
-        set
-        {
-            _minimapVisible     = value;
-            _minimap.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
-        }
+        get => _minimap.Visibility == Visibility.Visible;
+        set => _minimap.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
     }
-
-    public MinimapCorner MinimapCorner
-    {
-        get => _minimapCorner;
-        private set => _minimapCorner = value;
-    }
-
-    /// <summary>Moves the minimap to a corner with a smooth animation.</summary>
-    public void SetMinimapCorner(MinimapCorner corner)
-    {
-        _minimapCorner = corner;
-        UpdateMinimapPosition(animate: true);
-    }
-
-    private void UpdateMinimapPosition(bool animate = false)
-    {
-        double pw = ActualWidth;
-        double ph = ActualHeight;
-        if (pw <= 0 || ph <= 0) { Panel.SetZIndex(_minimap, 100); return; }
-
-        double targetLeft = _minimapCorner is MinimapCorner.TopLeft or MinimapCorner.BottomLeft
-            ? MinimapMargin
-            : pw - DiagramMinimapControl.MapWidth - MinimapMargin;
-
-        double targetTop = _minimapCorner is MinimapCorner.TopLeft or MinimapCorner.TopRight
-            ? MinimapMargin
-            : ph - DiagramMinimapControl.MapHeight - MinimapMargin;
-
-        if (animate)
-        {
-            var dur = new Duration(TimeSpan.FromMilliseconds(150));
-            var ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
-            var animL = new DoubleAnimation(targetLeft, dur) { EasingFunction = ease };
-            var animT = new DoubleAnimation(targetTop,  dur) { EasingFunction = ease };
-            _minimap.BeginAnimation(Canvas.LeftProperty, animL);
-            _minimap.BeginAnimation(Canvas.TopProperty,  animT);
-        }
-        else
-        {
-            Canvas.SetLeft(_minimap, targetLeft);
-            Canvas.SetTop(_minimap,  targetTop);
-        }
-        Panel.SetZIndex(_minimap, 100);
-    }
-
-    private void OnMinimapPositionDelta(object? sender, Vector screenDelta)
-    {
-        double left = Canvas.GetLeft(_minimap) + screenDelta.X;
-        double top  = Canvas.GetTop(_minimap)  + screenDelta.Y;
-        left = Math.Clamp(left, 0, Math.Max(0, ActualWidth  - _minimap.ActualWidth));
-        top  = Math.Clamp(top,  0, Math.Max(0, ActualHeight - _minimap.ActualHeight));
-        Canvas.SetLeft(_minimap, left);
-        Canvas.SetTop (_minimap, top);
-    }
-
-    private void OnMinimapNavigate(object? sender, System.Windows.Point diagPos)
-    {
-        // Walk up to find a ScrollViewer ancestor and set its scroll offset.
-        ScrollViewer? sv = FindAncestorScrollViewer();
-        if (sv is null) return;
-        sv.ScrollToHorizontalOffset(diagPos.X);
-        sv.ScrollToVerticalOffset(diagPos.Y);
-    }
-
-    private ScrollViewer? FindAncestorScrollViewer()
-    {
-        DependencyObject? el = VisualTreeHelper.GetParent(this);
-        while (el is not null)
-        {
-            if (el is ScrollViewer sv) return sv;
-            el = VisualTreeHelper.GetParent(el);
-        }
-        return null;
-    }
-
-    /// <summary>Notifies the minimap of a new scroll viewport (call from the parent scroll host).</summary>
-    public void SetMinimapViewport(Rect viewportInDiagramCoords) =>
-        _minimap.SetViewport(viewportInDiagramCoords);
 
     // ── Public API ────────────────────────────────────────────────────────────
+
+    /// <summary>Injects the undo manager so drag/resize/delete ops are undoable.</summary>
+    public void SetUndoManager(ClassDiagramUndoManager um) => _undoManager = um;
+
+    /// <summary>Injects the snap engine so drag-move snaps to grid when enabled.</summary>
+    public void SetSnapEngine(ClassSnapEngineService snap) => _snapEngine = snap;
 
     /// <summary>Rebuilds all visuals from the given document.</summary>
     public void ApplyDocument(DiagramDocument doc)
     {
-        _doc          = doc;
-        _selectedNode = null;
-        _hoveredNode  = null;
+        _doc              = doc;
+        _selectedIds.Clear();
+        _primarySelected  = null;
+        _hoveredNode      = null;
+        _hoveredMember    = null; _hoveredMemberNode = null;
+        _selectedMember   = null; _selectedMemberNode = null;
 
         ClearAdorners();
         _layer.RenderAll(doc);
@@ -246,15 +197,139 @@ public sealed class DiagramCanvas : Canvas
         UpdateSelectAdornerPosition();
     }
 
-    /// <summary>Returns the currently selected class node, or null.</summary>
-    public ClassNode? SelectedNode => _selectedNode;
+    /// <summary>Returns the primary selected class node, or null.</summary>
+    public ClassNode? SelectedNode => _primarySelected;
+
+    /// <summary>The document currently rendered by this canvas.</summary>
+    public DiagramDocument? Document => _doc;
+
+    /// <summary>Deletes the primary selected node (with undo entry). No-op when nothing selected.</summary>
+    public void DeleteSelectedNode()
+    {
+        if (_primarySelected is not null)
+            DeleteNode(_primarySelected);
+    }
+
+    /// <summary>Returns all currently selected node IDs.</summary>
+    public IReadOnlyCollection<string> SelectedIds => _selectedIds;
+
+    /// <summary>Clears the entire selection.</summary>
+    public void ClearSelection()
+    {
+        _selectedIds.Clear();
+        _primarySelected = null;
+        _layer.ClearPreSelection();
+        _layer.ClearSelection();
+        _layer.SetMultiSelection(_selectedIds);
+        _layer.UpdateSelection(null, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, null);
+    }
+
+    // ── Rubber-band API (called by ZoomPanCanvas in diagram-space coordinates) ──
+
+    /// <summary>
+    /// Begins a rubber-band lasso drag at <paramref name="diagramPt"/>.
+    /// Called by ZoomPanCanvas when a left-button-down lands on empty viewport area.
+    /// Coordinates must be in diagram (logical, unscaled) space.
+    /// </summary>
+    public void StartRubberBandAt(Point diagramPt)
+    {
+        if (_selectedIds.Count > 0) ClearSelection();
+        _isRubberBanding = true;
+        _rubberStart     = diagramPt;
+    }
+
+    /// <summary>
+    /// Updates the rubber-band lasso to <paramref name="diagramPt"/> and refreshes the
+    /// Explorer-style live pre-selection. Called by ZoomPanCanvas on every MouseMove.
+    /// </summary>
+    public void UpdateRubberBandAt(Point diagramPt)
+    {
+        if (!_isRubberBanding) return;
+
+        // Only draw lasso once drag exceeds platform drag-threshold (avoids 1-pixel flicker on click)
+        double dx = diagramPt.X - _rubberStart.X;
+        double dy = diagramPt.Y - _rubberStart.Y;
+        if (Math.Abs(dx) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(dy) < SystemParameters.MinimumVerticalDragDistance)
+            return;
+
+        _layer.DrawRubberBand(_rubberStart, diagramPt);
+
+        if (_doc is not null)
+        {
+            var lasso = DiagramVisualLayer.GetRubberBandRect(_rubberStart, diagramPt);
+            var hits  = new HashSet<string>(StringComparer.Ordinal);
+            if (lasso.Width > 2 && lasso.Height > 2)
+                foreach (var n in _doc.Classes)
+                {
+                    var nb = new Rect(n.X, n.Y, n.Width, _layer.ComputeNodeHeight(n));
+                    if (lasso.IntersectsWith(nb)) hits.Add(n.Id);
+                }
+            _layer.SetPreSelection(hits);
+        }
+    }
+
+    /// <summary>
+    /// Finishes the rubber-band lasso at <paramref name="diagramPt"/>, promotes pre-selection
+    /// to the real selection set, and clears the lasso visuals.
+    /// </summary>
+    public void FinishRubberBandAt(Point diagramPt)
+    {
+        if (!_isRubberBanding) return;
+        _isRubberBanding = false;
+
+        Rect selRect = DiagramVisualLayer.GetRubberBandRect(_rubberStart, diagramPt);
+        _layer.ClearRubberBand();
+        _layer.ClearPreSelection();
+
+        if (_doc is not null && selRect.Width > 2 && selRect.Height > 2)
+        {
+            if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                _selectedIds.Clear();
+
+            foreach (var n in _doc.Classes)
+            {
+                var nb = new Rect(n.X, n.Y, n.Width, _layer.ComputeNodeHeight(n));
+                if (selRect.IntersectsWith(nb)) _selectedIds.Add(n.Id);
+            }
+            _primarySelected = _selectedIds.Count == 1
+                ? _doc.Classes.FirstOrDefault(n => _selectedIds.Contains(n.Id))
+                : null;
+            _layer.SetMultiSelection(_selectedIds);
+            RedrawSelectionVisual();
+            _layer.UpdateSelection(_primarySelected?.Id, _hoveredNode?.Id);
+            SelectedClassChanged?.Invoke(this, _primarySelected);
+        }
+    }
+
+    /// <summary>Cancels an in-progress rubber-band without updating selection.</summary>
+    public void CancelRubberBand()
+    {
+        if (!_isRubberBanding) return;
+        _isRubberBanding = false;
+        _layer.ClearRubberBand();
+        _layer.ClearPreSelection();
+    }
 
     /// <summary>Selects the node with the given Id; no-op if not found.</summary>
     public void SelectNodeById(string nodeId)
     {
         if (_doc is null) return;
         var node = _doc.Classes.FirstOrDefault(n => n.Id == nodeId);
-        if (node is not null) SelectNode(node);
+        if (node is not null) SelectSingleNode(node);
+    }
+
+    /// <summary>Selects all nodes (Ctrl+A).</summary>
+    public void SelectAll()
+    {
+        if (_doc is null) return;
+        _selectedIds.UnionWith(_doc.Classes.Select(n => n.Id));
+        _primarySelected = null;
+        _layer.SetMultiSelection(_selectedIds);
+        RedrawSelectionVisual();
+        _layer.UpdateSelection(null, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, null);
     }
 
     /// <summary>
@@ -269,6 +344,27 @@ public sealed class DiagramCanvas : Canvas
         double maxX = _doc.Classes.Max(n => n.X + n.Width);
         double maxY = _doc.Classes.Max(n => n.Y + _layer.ComputeNodeHeight(n));
         return new Rect(minX - 40, minY - 40, maxX - minX + 80, maxY - minY + 80);
+    }
+
+    /// <summary>
+    /// Highlights the given relationship arrow (accent pen, thicker stroke).
+    /// Pass null to clear the current highlight.
+    /// </summary>
+    public void HighlightRelationship(string? relId) => _layer.HighlightRelationship(relId);
+
+    /// <summary>Exposes the visual layer for .whcd persistence (same assembly only).</summary>
+    internal DiagramVisualLayer VisualLayer => _layer;
+
+    /// <summary>Gets or sets whether namespace swimlane backgrounds are rendered.</summary>
+    public bool ShowSwimLanes
+    {
+        get => _layer.ShowSwimLanes;
+        set
+        {
+            _layer.ShowSwimLanes = value;
+            if (_doc is not null)
+                _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
+        }
     }
 
     // ── Loaded ────────────────────────────────────────────────────────────────
@@ -322,6 +418,17 @@ public sealed class DiagramCanvas : Canvas
         Focus();
     }
 
+    private ScrollViewer? FindAncestorScrollViewer()
+    {
+        DependencyObject? el = VisualTreeHelper.GetParent(this);
+        while (el is not null)
+        {
+            if (el is ScrollViewer sv) return sv;
+            el = VisualTreeHelper.GetParent(el);
+        }
+        return null;
+    }
+
     private void UpdateFilterBarPosition()
     {
         _filterBar.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -364,63 +471,75 @@ public sealed class DiagramCanvas : Canvas
 
     // ── Selection ─────────────────────────────────────────────────────────────
 
-    private void SelectNode(ClassNode? node)
+    /// <summary>Selects exactly one node, clearing the multi-selection set.</summary>
+    private void SelectSingleNode(ClassNode? node)
     {
-        if (_selectedNode == node) return;
-        _selectedNode = node;
-        RemoveSelectAdorner();
-
-        if (_selectedNode is not null)
-            AttachSelectAdorner(_selectedNode);
-
-        _layer.UpdateSelection(_selectedNode?.Id, _hoveredNode?.Id);
-        SelectedClassChanged?.Invoke(this, _selectedNode);
+        _selectedIds.Clear();
+        if (node is not null) _selectedIds.Add(node.Id);
+        _primarySelected = node;
+        _layer.SetMultiSelection(_selectedIds);
+        RedrawSelectionVisual();
+        _layer.UpdateSelection(_primarySelected?.Id, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, _primarySelected);
     }
 
-    private void AttachSelectAdorner(ClassNode node)
+    /// <summary>Toggles a node in the multi-selection set (Ctrl+Click).</summary>
+    private void ToggleNodeSelection(ClassNode node)
     {
-        if (_adornerLayer is null) return;
-        _selectAdorner = new ClassBoxSelectAdorner(this)
+        if (_selectedIds.Contains(node.Id))
+            _selectedIds.Remove(node.Id);
+        else
+            _selectedIds.Add(node.Id);
+
+        _primarySelected = _selectedIds.Count == 1
+            ? _doc!.Classes.FirstOrDefault(n => _selectedIds.Contains(n.Id))
+            : null;
+        _layer.SetMultiSelection(_selectedIds);
+        RedrawSelectionVisual();
+        _layer.UpdateSelection(_primarySelected?.Id, _hoveredNode?.Id);
+        SelectedClassChanged?.Invoke(this, _primarySelected);
+    }
+
+    /// <summary>Redraws the selection visual for all currently selected nodes.</summary>
+    private void RedrawSelectionVisual()
+    {
+        if (_selectedIds.Count == 0) { _layer.ClearSelection(); return; }
+
+        // During resize use the resizing node bounds
+        if (_resizingNode is not null)
         {
-            AdornedBounds = new Rect(node.X, node.Y, node.Width, node.Height)
-        };
-        _adornerLayer.Add(_selectAdorner);
+            double rh = _layer.ComputeNodeHeight(_resizingNode);
+            _layer.DrawSelection(new Rect(_resizingNode.X, _resizingNode.Y, _resizingNode.Width, rh));
+            return;
+        }
+
+        var rects = _doc!.Classes
+            .Where(n => _selectedIds.Contains(n.Id))
+            .Select(n => new Rect(n.X, n.Y, n.Width, _layer.ComputeNodeHeight(n)));
+        _layer.DrawSelectionSet(rects);
     }
 
-    private void RemoveSelectAdorner()
-    {
-        if (_selectAdorner is null || _adornerLayer is null) return;
-        _adornerLayer.Remove(_selectAdorner);
-        _selectAdorner = null;
-    }
-
-    private void UpdateSelectAdornerPosition()
-    {
-        if (_selectAdorner is null || _selectedNode is null) return;
-        _selectAdorner.AdornedBounds =
-            new Rect(_selectedNode.X, _selectedNode.Y, _selectedNode.Width, _selectedNode.Height);
-    }
+    // Keep compat name used in resize/drag paths
+    private void UpdateSelectAdornerPosition() => RedrawSelectionVisual();
 
     private void ClearAdorners()
     {
-        RemoveSelectAdorner();
+        _layer.ClearSelection();
         RemoveRubberBandAdorner();
     }
 
     // ── Rubber-band ───────────────────────────────────────────────────────────
-
-    private void AttachRubberBand(Point start)
-    {
-        if (_adornerLayer is null) return;
-        _rubberBandAdorner = new RubberBandAdorner(this) { StartPoint = start, EndPoint = start };
-        _adornerLayer.Add(_rubberBandAdorner);
-    }
+    // Drawn as a DrawingVisual in _layer (diagram coords) — no AdornerLayer needed.
 
     private void RemoveRubberBandAdorner()
     {
-        if (_rubberBandAdorner is null || _adornerLayer is null) return;
-        _adornerLayer.Remove(_rubberBandAdorner);
-        _rubberBandAdorner = null;
+        // Legacy: also clean up old adorner if somehow present
+        if (_rubberBandAdorner is not null && _adornerLayer is not null)
+        {
+            _adornerLayer.Remove(_rubberBandAdorner);
+            _rubberBandAdorner = null;
+        }
+        _layer.ClearRubberBand();
     }
 
     // ── Mouse – canvas level ──────────────────────────────────────────────────
@@ -429,16 +548,48 @@ public sealed class DiagramCanvas : Canvas
     {
         base.OnMouseLeftButtonDown(e);
 
-        // Don't steal mouse capture from the minimap or filter bar when they originated the click
+        // Don't steal mouse capture from the filter bar when it originated the click
         if (e.OriginalSource is DependencyObject origSrc
-            && (_minimap.IsAncestorOf(origSrc) || _minimap == origSrc
-             || _filterBar.IsAncestorOf(origSrc) || _filterBar == origSrc))
+            && (_filterBar.IsAncestorOf(origSrc) || _filterBar == origSrc))
+        {
+            e.Handled = true;
             return;
+        }
 
         Focus();
 
         Point pt   = e.GetPosition(this);
         var   node = _layer.HitTestNode(pt);
+
+        // Double-click on any node → toggle collapse
+        if (e.ClickCount == 2 && _doc is not null)
+        {
+            var dblNode = _layer.HitTestNode(pt);
+            if (dblNode is not null)
+            {
+                _layer.ToggleCollapsed(dblNode.Id);
+                _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+                UpdateSelectAdornerPosition();
+                e.Handled = true;
+                return;
+            }
+        }
+
+        // Resize gripper — bottom edge of any node
+        if (_doc is not null)
+        {
+            var gripNode = _layer.IsGripperHit(_doc.Classes, pt);
+            if (gripNode is not null)
+            {
+                _resizingNode      = gripNode;
+                _resizeStartY      = pt.Y;
+                _resizeStartHeight = _layer.ComputeNodeHeight(gripNode);
+                UpdateSelectAdornerPosition();
+                CaptureMouse();
+                e.Handled = true;
+                return;
+            }
+        }
 
         // Check "N more" footer hit BEFORE node-level checks
         if (_doc is not null)
@@ -473,32 +624,47 @@ public sealed class DiagramCanvas : Canvas
                 return;
             }
 
-            // Ctrl+Click → navigate to source
+            // Ctrl+Click → toggle multi-selection (no navigate)
             if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
             {
-                var member = _layer.HitTestMember(pt, node);
-                if (member is not null)
-                    NavigateToMemberRequested?.Invoke(this, (node, member));
-                else
-                    NavigateToMemberRequested?.Invoke(this, (node, node.Members.FirstOrDefault()!));
+                ToggleNodeSelection(node);
                 e.Handled = true;
                 return;
             }
 
-            SelectNode(node);
-            _dragNode       = node;
-            _dragStart      = pt;
+            // Member selection: single-click on a member row selects it
+            {
+                var clickedMember = _layer.HitTestMember(pt, node);
+                if (clickedMember != _selectedMember || node != _selectedMemberNode)
+                {
+                    _selectedMember     = clickedMember;
+                    _selectedMemberNode = clickedMember is not null ? node : null;
+                    _layer.SetSelectedMember(_selectedMemberNode?.Id, _selectedMember?.Name);
+                }
+            }
+
+            // Plain click: if node already in selection, keep the set and just start drag;
+            // otherwise collapse to single selection.
+            if (!_selectedIds.Contains(node.Id))
+                SelectSingleNode(node);
+
+            // Capture start positions of all selected nodes for multi-drag
+            HideHoverTooltip();
+            _dragNode  = node;
+            _dragStart = pt;
+            _dragStartPositions.Clear();
+            if (_doc is not null)
+                foreach (var n in _doc.Classes.Where(n => _selectedIds.Contains(n.Id)))
+                    _dragStartPositions[n.Id] = new Point(n.X, n.Y);
             _dragNodeStartX = node.X;
             _dragNodeStartY = node.Y;
             CaptureMouse();
         }
         else
         {
-            SelectNode(null);
-            _isRubberBanding = true;
-            _rubberStart     = pt;
-            AttachRubberBand(_rubberStart);
-            CaptureMouse();
+            // Click on empty area within DiagramCanvas bounds — rubber-band is handled
+            // by ZoomPanCanvas (which fills the full viewport). Nothing to do here.
+            if (_selectedIds.Count > 0) ClearSelection();
         }
 
         e.Handled = true;
@@ -509,29 +675,72 @@ public sealed class DiagramCanvas : Canvas
         base.OnMouseMove(e);
         Point pt = e.GetPosition(this);
 
+        // Node resize in progress
+        if (_resizingNode is not null)
+        {
+            double dy = pt.Y - _resizeStartY;
+            _layer.SetCustomHeight(_resizingNode.Id, Math.Max(_resizeStartHeight + dy, 40));
+            _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+            UpdateSelectAdornerPosition();
+            e.Handled = true;
+            return;
+        }
+
         if (_dragNode is not null && e.LeftButton == MouseButtonState.Pressed)
         {
             double dx = pt.X - _dragStart.X;
             double dy = pt.Y - _dragStart.Y;
 
-            _dragNode.X = Math.Max(0, _dragNodeStartX + dx);
-            _dragNode.Y = Math.Max(0, _dragNodeStartY + dy);
-
-            ApplyPatch([_dragNode.Id]);
+            if (_selectedIds.Count > 1 && _dragStartPositions.Count > 0)
+            {
+                // Move all selected nodes together
+                foreach (var n in _doc!.Classes.Where(n => _dragStartPositions.ContainsKey(n.Id)))
+                {
+                    double rawX = Math.Max(0, _dragStartPositions[n.Id].X + dx);
+                    double rawY = Math.Max(0, _dragStartPositions[n.Id].Y + dy);
+                    if (_snapEngine is { SnapToGrid: true })
+                    {
+                        var snapped = _snapEngine.SnapPoint(rawX, rawY, []);
+                        n.X = snapped.X; n.Y = snapped.Y;
+                    }
+                    else { n.X = rawX; n.Y = rawY; }
+                }
+                ApplyPatch(_selectedIds);
+            }
+            else
+            {
+                double rawX = Math.Max(0, _dragNodeStartX + dx);
+                double rawY = Math.Max(0, _dragNodeStartY + dy);
+                if (_snapEngine is { SnapToGrid: true })
+                {
+                    var snapped = _snapEngine.SnapPoint(rawX, rawY, []);
+                    _dragNode.X = snapped.X; _dragNode.Y = snapped.Y;
+                }
+                else { _dragNode.X = rawX; _dragNode.Y = rawY; }
+                ApplyPatch([_dragNode.Id]);
+            }
         }
-        else if (_isRubberBanding && _rubberBandAdorner is not null)
+        else if (_isRubberBanding)
         {
-            _rubberBandAdorner.EndPoint = pt;
+            // Rubber-band move is driven by ZoomPanCanvas (which owns the capture).
+            // UpdateRubberBandAt() is called directly from there with diagram-space coords.
         }
         else
         {
-            // Hover tracking
+            // Hover tracking + resize gripper cursor
             var hovered = _layer.HitTestNode(pt);
             if (hovered != _hoveredNode)
             {
                 _hoveredNode = hovered;
                 _layer.UpdateSelection(_selectedNode?.Id, _hoveredNode?.Id);
                 HoveredClassChanged?.Invoke(this, _hoveredNode);
+
+                // Clear member hover when leaving a node
+                if (hovered is null && _hoveredMember is not null)
+                {
+                    _hoveredMember = null; _hoveredMemberNode = null;
+                    _layer.SetHoveredMember(null, null);
+                }
 
                 // Reset tooltip timer
                 HideHoverTooltip();
@@ -542,6 +751,22 @@ public sealed class DiagramCanvas : Canvas
                     _tooltipTimer.Start();
                 }
             }
+
+            // Member hover tracking
+            if (_hoveredNode is not null)
+            {
+                var member = _layer.HitTestMember(pt, _hoveredNode);
+                if (member != _hoveredMember)
+                {
+                    _hoveredMember     = member;
+                    _hoveredMemberNode = member is not null ? _hoveredNode : null;
+                    _layer.SetHoveredMember(_hoveredMemberNode?.Id, _hoveredMember?.Name);
+                }
+            }
+
+            // Show SizeNS cursor when hovering over a node's bottom-edge gripper
+            bool onGripper = _doc is not null && _layer.IsGripperHit(_doc.Classes, pt) is not null;
+            Cursor = onGripper ? Cursors.SizeNS : null;
         }
     }
 
@@ -550,15 +775,67 @@ public sealed class DiagramCanvas : Canvas
         base.OnMouseLeftButtonUp(e);
         ReleaseMouseCapture();
 
+        if (_resizingNode is not null)
+        {
+            // Commit resize undo entry
+            if (_undoManager is not null && _doc is not null)
+            {
+                double finalH  = _layer.ComputeNodeHeight(_resizingNode);
+                double startH  = _resizeStartHeight;
+                var    rNode   = _resizingNode;
+                var    rDoc    = _doc;   // capture current doc
+                if (Math.Abs(finalH - startH) > 0.5)
+                {
+                    _undoManager.Push(new SingleClassDiagramUndoEntry(
+                        Description: $"Resize {rNode.Name}",
+                        UndoAction: () => { _layer.SetCustomHeight(rNode.Id, startH); _layer.RenderAll(rDoc, _selectedNode?.Id, _hoveredNode?.Id); },
+                        RedoAction: () => { _layer.SetCustomHeight(rNode.Id, finalH); _layer.RenderAll(rDoc, _selectedNode?.Id, _hoveredNode?.Id); }));
+                }
+            }
+            _resizingNode = null;
+            Cursor = null;
+            e.Handled = true;
+            return;
+        }
+
         if (_dragNode is not null)
         {
+            // Commit drag undo entry for all moved nodes
+            if (_undoManager is not null && _doc is not null && _dragStartPositions.Count > 0)
+            {
+                var dragDoc = _doc;   // capture current doc
+                var moves = _dragStartPositions
+                    .Select(kv =>
+                    {
+                        var n = dragDoc.Classes.FirstOrDefault(x => x.Id == kv.Key);
+                        return n is null ? ((ClassNode?)null, kv.Value, new Point()) : (n, kv.Value, new Point(n.X, n.Y));
+                    })
+                    .Where(t => t.Item1 is not null && (Math.Abs(t.Item3.X - t.Item2.X) > 0.5 || Math.Abs(t.Item3.Y - t.Item2.Y) > 0.5))
+                    .Select(t => (Node: t.Item1!, From: t.Item2, To: t.Item3))
+                    .ToList();
+                if (moves.Count > 0)
+                {
+                    string desc = moves.Count == 1 ? $"Move {moves[0].Node.Name}" : $"Move {moves.Count} nodes";
+                    _undoManager.Push(new SingleClassDiagramUndoEntry(
+                        Description: desc,
+                        UndoAction: () => { foreach (var m in moves) { m.Node.X = m.From.X; m.Node.Y = m.From.Y; } _layer.RenderAll(dragDoc, _selectedNode?.Id, _hoveredNode?.Id); },
+                        RedoAction: () => { foreach (var m in moves) { m.Node.X = m.To.X;   m.Node.Y = m.To.Y;   } _layer.RenderAll(dragDoc, _selectedNode?.Id, _hoveredNode?.Id); }));
+                }
+            }
             _dragNode = null;
+            _dragStartPositions.Clear();
         }
-        else if (_isRubberBanding)
-        {
-            _isRubberBanding = false;
-            RemoveRubberBandAdorner();
-        }
+        // Rubber-band release is handled by ZoomPanCanvas via FinishRubberBandAt().
+    }
+
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        base.OnLostMouseCapture(e);
+        _dragNode = null;
+        _dragStartPositions.Clear();
+        _resizingNode    = null;
+        _isRubberBanding = false;
+        Cursor = null;
     }
 
     protected override void OnMouseRightButtonUp(MouseButtonEventArgs e)
@@ -575,6 +852,7 @@ public sealed class DiagramCanvas : Canvas
     /// </summary>
     internal void HandleEmptyAreaRightClick(Point pt)
     {
+        _lastMenuPoint = pt;
         var node = _layer.HitTestNode(pt);
         if (node is not null)
         {
@@ -599,8 +877,53 @@ public sealed class DiagramCanvas : Canvas
         if (_hoveredNode is not null)
         {
             _hoveredNode = null;
-            _layer.UpdateSelection(_selectedNode?.Id, null);
+            _layer.UpdateSelection(_primarySelected?.Id, null);
             HoveredClassChanged?.Invoke(this, null);
+        }
+    }
+
+    // ── Toolbox drag-drop ──────────────────────────────────────────────────────
+
+    protected override void OnDrop(DragEventArgs e)
+    {
+        base.OnDrop(e);
+        if (_doc is null) return;
+        if (!e.Data.GetDataPresent("ClassDiagramToolboxEntry")) return;
+
+        if (e.Data.GetData("ClassDiagramToolboxEntry") is not ToolboxEntry entry) return;
+
+        Point pt   = e.GetPosition(this);
+        var   node = new ClassNode
+        {
+            Id      = Guid.NewGuid().ToString("N"),
+            Name    = entry.Name,
+            Kind    = entry.Kind,
+            X       = Math.Max(0, pt.X - 80),
+            Y       = Math.Max(0, pt.Y - 20),
+            Width   = 160,
+            Members = entry.DefaultMembers.ToList()
+        };
+        var dropDoc = _doc;   // capture current doc
+        dropDoc.Classes.Add(node);
+        _layer.RenderAll(dropDoc, _selectedNode?.Id, _hoveredNode?.Id);
+
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: $"Add {node.Name}",
+            UndoAction: () => { dropDoc.Classes.Remove(node); _layer.RenderAll(dropDoc, _selectedNode?.Id, _hoveredNode?.Id); },
+            RedoAction: () => { dropDoc.Classes.Add(node);    _layer.RenderAll(dropDoc, _selectedNode?.Id, _hoveredNode?.Id); }));
+        e.Handled = true;
+    }
+
+    // ── Keyboard ──────────────────────────────────────────────────────────────
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (e.Key == Key.Escape)
+        {
+            CancelRubberBand();   // Cancel in-progress lasso first
+            ClearSelection();
+            e.Handled = true;
         }
     }
 
@@ -728,7 +1051,7 @@ public sealed class DiagramCanvas : Canvas
         var menu = StyledMenu();
         menu.Items.Add(MakeItem("\uE70F", "Rename…",              () => RenameNodeRequested?.Invoke(this, (node, null))));
         menu.Items.Add(MakeItem("\uE74D", "Delete",               () => DeleteNode(node)));
-        menu.Items.Add(MakeItem("\uE8C8", "Duplicate",            () => { }));
+        menu.Items.Add(MakeItem("\uE8C8", "Duplicate",            () => DuplicateNode(node)));
         menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("\uE71E", "Zoom to This Node",    () => ZoomToNodeRequested?.Invoke(this, node)));
         menu.Items.Add(MakeItem("\uE16C", "Copy Name",            () => Clipboard.SetText(node.Name)));
@@ -743,14 +1066,24 @@ public sealed class DiagramCanvas : Canvas
         menu.Items.Add(addMenu);
 
         menu.Items.Add(new Separator());
-        menu.Items.Add(MakeItem("\uE8D4", "Properties", () => { }));
+        bool isCollapsed = _layer.IsCollapsed(node.Id);
+        menu.Items.Add(MakeItem(isCollapsed ? "\uE8A4" : "\uE89A",
+            isCollapsed ? "Expand Node" : "Collapse Node",
+            () =>
+            {
+                _layer.ToggleCollapsed(node.Id);
+                _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+                UpdateSelectAdornerPosition();
+            }));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(MakeItem("\uE8D4", "Properties", () => ShowPropertiesRequested?.Invoke(this, node)));
         return menu;
     }
 
     private ContextMenu BuildArrowContextMenu(ClassRelationship rel)
     {
         var menu = StyledMenu();
-        menu.Items.Add(MakeItem("\uE70F", "Edit Label",       () => { }));
+        menu.Items.Add(MakeItem("\uE70F", "Edit Label",       () => EditRelationshipLabel(rel)));
         menu.Items.Add(new Separator());
 
         var changeType = new MenuItem { Header = "Change Type" };
@@ -760,7 +1093,7 @@ public sealed class DiagramCanvas : Canvas
             changeType.Items.Add(MakeItem("\uE8AB", rk.ToString(), () => ChangeRelationshipType(rel, captured)));
         }
         menu.Items.Add(changeType);
-        menu.Items.Add(MakeItem("\uE7A8", "Reverse Direction", () => { }));
+        menu.Items.Add(MakeItem("\uE7A8", "Reverse Direction", () => ReverseRelationshipDirection(rel)));
         menu.Items.Add(new Separator());
         menu.Items.Add(MakeItem("\uE74D", "Delete",            () => DeleteRelationship(rel)));
         return menu;
@@ -769,13 +1102,25 @@ public sealed class DiagramCanvas : Canvas
     private ContextMenu BuildEmptyCanvasContextMenu()
     {
         var menu = StyledMenu();
-        menu.Items.Add(MakeItem("\uE710", "Add Class",     () => { }));
-        menu.Items.Add(MakeItem("\uE710", "Add Interface", () => { }));
-        menu.Items.Add(MakeItem("\uE710", "Add Enum",      () => { }));
-        menu.Items.Add(MakeItem("\uE710", "Add Struct",    () => { }));
+        menu.Items.Add(MakeItem("\uE71C", "Collapse All",
+            () =>
+            {
+                _layer.CollapseAll(_doc!.Classes);
+                _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+            }));
+        menu.Items.Add(MakeItem("\uE740", "Expand All",
+            () =>
+            {
+                _layer.ExpandAll();
+                _layer.RenderAll(_doc!, _selectedNode?.Id, _hoveredNode?.Id);
+            }));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MakeItem("\uE77F", "Paste",         () => { }));
-        menu.Items.Add(MakeItem("\uE8B3", "Select All",    () => { }));
+        menu.Items.Add(MakeItem("\uE710", "Add Class",     () => AddNodeAtMenuPoint(ClassKind.Class)));
+        menu.Items.Add(MakeItem("\uE710", "Add Interface", () => AddNodeAtMenuPoint(ClassKind.Interface)));
+        menu.Items.Add(MakeItem("\uE710", "Add Enum",      () => AddNodeAtMenuPoint(ClassKind.Enum)));
+        menu.Items.Add(MakeItem("\uE710", "Add Struct",    () => AddNodeAtMenuPoint(ClassKind.Struct)));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(MakeItem("\uE8B3", "Select All",    () => SelectAll()));
         menu.Items.Add(new Separator());
         var layoutSub = new MenuItem { Header = "Auto Layout" };
         layoutSub.Icon = new System.Windows.Controls.TextBlock
@@ -787,7 +1132,7 @@ public sealed class DiagramCanvas : Canvas
         layoutSub.Items.Add(MakeItem("\uE947", "Sugiyama",
             () => LayoutStrategyRequested?.Invoke(this, LayoutStrategyKind.Sugiyama)));
         menu.Items.Add(layoutSub);
-        menu.Items.Add(MakeItem("\uE904", "Zoom to Fit",   () => { }));
+        menu.Items.Add(MakeItem("\uE904", "Zoom to Fit",   () => FitToContentRequested?.Invoke(this, EventArgs.Empty)));
         menu.Items.Add(new Separator());
 
         var export = new MenuItem { Header = "Export" };
@@ -811,57 +1156,177 @@ public sealed class DiagramCanvas : Canvas
     private void DeleteNode(ClassNode node)
     {
         if (_doc is null) return;
-        _doc.Classes.Remove(node);
-        _doc.Relationships.RemoveAll(r => r.SourceId == node.Id || r.TargetId == node.Id);
-        if (_selectedNode == node) SelectNode(null);
-        _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
+        var doc        = _doc;   // capture current doc — live-sync may swap _doc later
+        var removedRels = doc.Relationships.Where(r => r.SourceId == node.Id || r.TargetId == node.Id).ToList();
+        doc.Classes.Remove(node);
+        doc.Relationships.RemoveAll(r => r.SourceId == node.Id || r.TargetId == node.Id);
+        if (_selectedNode == node) ClearSelection();
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: $"Delete {node.Name}",
+            UndoAction: () => { doc.Classes.Add(node); foreach (var r in removedRels) doc.Relationships.Add(r); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); },
+            RedoAction: () => { doc.Classes.Remove(node); foreach (var r in removedRels) doc.Relationships.Remove(r); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }));
     }
 
     private void DeleteRelationship(ClassRelationship rel)
     {
         if (_doc is null) return;
-        _doc.Relationships.Remove(rel);
-        _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
+        var doc = _doc;   // capture current doc
+        doc.Relationships.Remove(rel);
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: "Delete relationship",
+            UndoAction: () => { doc.Relationships.Add(rel); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); },
+            RedoAction: () => { doc.Relationships.Remove(rel); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }));
     }
 
     private void ChangeRelationshipType(ClassRelationship rel, RelationshipKind newKind)
     {
         if (_doc is null) return;
-        int idx = _doc.Relationships.IndexOf(rel);
+        var doc = _doc;   // capture current doc
+        int idx = doc.Relationships.IndexOf(rel);
         if (idx < 0) return;
-        _doc.Relationships[idx] = rel with { Kind = newKind };
-        _layer.RenderAll(_doc, _selectedNode?.Id, _hoveredNode?.Id);
+        var newRel = rel with { Kind = newKind };
+        doc.Relationships[idx] = newRel;
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: "Change relationship kind",
+            UndoAction: () => { int i = doc.Relationships.IndexOf(newRel); if (i >= 0) { doc.Relationships[i] = rel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); } },
+            RedoAction: () => { int i = doc.Relationships.IndexOf(rel);    if (i >= 0) { doc.Relationships[i] = newRel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); } }));
     }
 
-    // ── Context menu helpers ──────────────────────────────────────────────────
+    // ── Phase 1A — Duplicate node ────────────────────────────────────────────
 
-    private ContextMenu StyledMenu()
+    private void DuplicateNode(ClassNode node)
     {
-        var menu = new ContextMenu
-        {
-            PlacementTarget = this,
-            Placement       = System.Windows.Controls.Primitives.PlacementMode.MousePoint
-        };
-        menu.SetResourceReference(Control.BackgroundProperty, "DockMenuBackgroundBrush");
-        menu.SetResourceReference(Control.ForegroundProperty, "DockMenuForegroundBrush");
-        return menu;
+        if (_doc is null) return;
+        var doc  = _doc;
+        var copy = node.DeepClone();
+        copy.Id  = Guid.NewGuid().ToString();
+        copy.X  += 30;
+        copy.Y  += 30;
+        doc.Classes.Add(copy);
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: $"Duplicate {node.Name}",
+            UndoAction: () => { doc.Classes.Remove(copy); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); },
+            RedoAction: () => { doc.Classes.Add(copy);    _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }));
+        SelectSingleNode(copy);
+        RenameNodeRequested?.Invoke(this, (copy, null));
     }
+
+    // ── Phase 1C — Edit relationship label (inline Popup TextBox) ───────────
+
+    private void EditRelationshipLabel(ClassRelationship rel)
+    {
+        if (_doc is null) return;
+        var doc = _doc;
+
+        var tb = new TextBox
+        {
+            Text   = rel.Label ?? string.Empty,
+            MinWidth  = 140,
+            Padding   = new Thickness(4),
+            BorderThickness = new Thickness(1)
+        };
+        tb.SetResourceReference(TextBox.BackgroundProperty, "DockBackgroundBrush");
+        tb.SetResourceReference(TextBox.ForegroundProperty, "DockForegroundBrush");
+
+        var popup = new Popup
+        {
+            Child              = new Border { Child = tb, Padding = new Thickness(2) },
+            Placement          = PlacementMode.Mouse,
+            AllowsTransparency = true,
+            IsOpen             = true,
+            StaysOpen          = true
+        };
+        tb.SelectAll();
+        tb.Focus();
+
+        void Commit()
+        {
+            if (!popup.IsOpen) return;
+            popup.IsOpen = false;
+            int idx = doc.Relationships.IndexOf(rel);
+            if (idx < 0) return;
+            string newLabel = tb.Text.Trim();
+            if ((rel.Label ?? string.Empty) == newLabel) return;
+            var newRel = rel with { Label = newLabel };
+            doc.Relationships[idx] = newRel;
+            _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+            _undoManager?.Push(new SingleClassDiagramUndoEntry(
+                Description: "Edit relationship label",
+                UndoAction: () =>
+                {
+                    int i = doc.Relationships.IndexOf(newRel);
+                    if (i >= 0) { doc.Relationships[i] = rel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }
+                },
+                RedoAction: () =>
+                {
+                    int i = doc.Relationships.IndexOf(rel);
+                    if (i >= 0) { doc.Relationships[i] = newRel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }
+                }));
+        }
+
+        tb.KeyDown   += (_, ke) => { if (ke.Key == Key.Return) { Commit(); ke.Handled = true; } if (ke.Key == Key.Escape) { popup.IsOpen = false; ke.Handled = true; } };
+        tb.LostFocus += (_, _)  => Commit();
+    }
+
+    // ── Phase 1D — Reverse relationship direction ────────────────────────────
+
+    private void ReverseRelationshipDirection(ClassRelationship rel)
+    {
+        if (_doc is null) return;
+        var doc = _doc;
+        int idx = doc.Relationships.IndexOf(rel);
+        if (idx < 0) return;
+        var newRel = rel with { SourceId = rel.TargetId, TargetId = rel.SourceId };
+        doc.Relationships[idx] = newRel;
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: "Reverse relationship direction",
+            UndoAction: () =>
+            {
+                int i = doc.Relationships.IndexOf(newRel);
+                if (i >= 0) { doc.Relationships[i] = rel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }
+            },
+            RedoAction: () =>
+            {
+                int i = doc.Relationships.IndexOf(rel);
+                if (i >= 0) { doc.Relationships[i] = newRel; _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }
+            }));
+    }
+
+    // ── Phase 1E — Add new node at canvas right-click position ───────────────
+
+    private void AddNodeAtMenuPoint(ClassKind kind)
+    {
+        if (_doc is null) return;
+        var doc = _doc;
+        string typeName = kind switch
+        {
+            ClassKind.Interface => "NewInterface",
+            ClassKind.Enum      => "NewEnum",
+            ClassKind.Struct    => "NewStruct",
+            _                   => "NewClass"
+        };
+        var node = new ClassNode { Name = typeName, Id = Guid.NewGuid().ToString(), Kind = kind };
+        node.X = Math.Max(0, _lastMenuPoint.X - node.Width / 2);
+        node.Y = Math.Max(0, _lastMenuPoint.Y - 40);
+        doc.Classes.Add(node);
+        _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id);
+        _undoManager?.Push(new SingleClassDiagramUndoEntry(
+            Description: $"Add {kind} {typeName}",
+            UndoAction: () => { doc.Classes.Remove(node); _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); },
+            RedoAction: () => { doc.Classes.Add(node);    _layer.RenderAll(doc, _selectedNode?.Id, _hoveredNode?.Id); }));
+        SelectSingleNode(node);
+        RenameNodeRequested?.Invoke(this, (node, null));
+    }
+
+    // ── Context menu helpers (delegates to shared DiagramMenuHelpers) ─────────
+
+    private ContextMenu StyledMenu() => DiagramMenuHelpers.StyledMenu(this);
 
     private static MenuItem MakeItem(string icon, string header, Action action)
-    {
-        var iconBlock = new TextBlock
-        {
-            Text              = icon,
-            FontFamily        = new FontFamily("Segoe MDL2 Assets, Segoe UI Symbol"),
-            FontSize          = 13,
-            Width             = 16,
-            TextAlignment     = TextAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-        };
-        iconBlock.SetResourceReference(TextBlock.ForegroundProperty, "DockMenuForegroundBrush");
-
-        var item = new MenuItem { Header = header, Icon = iconBlock };
-        item.Click += (_, _) => action();
-        return item;
-    }
+        => DiagramMenuHelpers.MakeItem(icon, header, action);
 }

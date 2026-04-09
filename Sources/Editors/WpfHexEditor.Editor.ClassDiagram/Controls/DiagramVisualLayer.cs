@@ -41,11 +41,18 @@ public sealed class DiagramVisualLayer : FrameworkElement
     private const double HorizPadding  = 8.0;
     private const double CornerRadius  = 3.0;
     private const double BoxMinWidth   = 160.0;
-    private const double MaxNodeHeight = 380.0;  // cap — "N more" footer shown when exceeded
-    private const double FooterHeight  = 18.0;
+    private const double MaxNodeHeight  = 380.0;  // cap — "N more" footer shown when exceeded
+    private const double FooterHeight   = 18.0;
+    private const double GripperHeight  = 6.0;    // bottom-edge drag zone height
 
     // Nodes the user has explicitly expanded past MaxNodeHeight
     private readonly HashSet<string> _expandedNodes = new(StringComparer.Ordinal);
+
+    // Nodes explicitly collapsed to header-only (double-click or context menu)
+    private readonly HashSet<string> _collapsedNodes = new(StringComparer.Ordinal);
+
+    // Per-node custom heights set by the resize gripper drag
+    private readonly Dictionary<string, double> _customHeights = new(StringComparer.Ordinal);
 
     private const double ArrowHeadLen  = 12.0;
     private const double ArrowHalfAng  = 25.0 * Math.PI / 180.0;
@@ -55,9 +62,11 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     // ── Visual children ──────────────────────────────────────────────────────
 
-    private readonly DrawingVisual                  _arrowLayer  = new();
-    private readonly Dictionary<string, DrawingVisual> _nodeVisuals = [];
+    private readonly DrawingVisual                  _arrowLayer      = new();
+    private readonly Dictionary<string, DrawingVisual> _nodeVisuals  = [];
     private readonly DrawingVisual                     _swimlaneLayer = new();
+    private readonly DrawingVisual                     _selectionVisual = new();
+    private readonly DrawingVisual                     _rubberBandVisual = new(); // top-most: rubber-band drag rect
     private readonly List<Visual>                      _visuals       = [];
 
     // ── State ────────────────────────────────────────────────────────────────
@@ -69,12 +78,57 @@ public sealed class DiagramVisualLayer : FrameworkElement
     // ── Focus mode (Phase 12 filter) ─────────────────────────────────────────
     private HashSet<string>?  _focusedNodeIds;   // null = all visible; empty = all dimmed
 
+    // ── Multi-selection set (for border highlight on all selected nodes) ──────
+    private HashSet<string> _multiSelectedIds = [];
+
+    // ── Pre-selection set (live rubber-band hover — Explorer-style) ───────────
+    private HashSet<string> _preSelectedIds = [];
+
+    // ── Member hover + selection ──────────────────────────────────────────────
+    private string? _hoveredMemberNodeId;
+    private string? _hoveredMemberId;       // ClassMember.Name (unique within node)
+    private string? _selectedMemberNodeId;
+    private string? _selectedMemberId;
+
     // ── Collapsible sections ──────────────────────────────────────────────────
     // key: nodeId, value: set of collapsed section names ("Fields","Properties","Methods","Events")
     private readonly Dictionary<string, HashSet<string>> _collapsedSections = [];
 
+    // ── Highlighted relationship (set by Relationships panel selection) ─────
+    private string? _highlightedRelId;
+
+    /// <summary>
+    /// Highlights the relationship with the given source-id in the arrow layer (accent pen).
+    /// Pass null to clear the highlight.
+    /// </summary>
+    public void HighlightRelationship(string? relId)
+    {
+        if (_highlightedRelId == relId) return;
+        _highlightedRelId = relId;
+        RenderAllArrows();
+    }
+
     // ── Toggles (set by ClassDiagramSplitHost toolbar) ───────────────────────
     public bool ShowSwimLanes { get; set; } = false;
+
+    // ── Persistence accessors (used by ClassDiagramSplitHost.GetWhcdState) ───
+
+    /// <summary>Read-only snapshot of per-node custom heights for .whcd persistence.</summary>
+    public IReadOnlyDictionary<string, double> CustomHeights => _customHeights;
+
+    /// <summary>Read-only snapshot of collapsed sections for .whcd persistence.</summary>
+    public IReadOnlyDictionary<string, HashSet<string>> CollapsedSectionMap => _collapsedSections;
+
+    /// <summary>
+    /// Restores collapsed-section state from a deserialized .whcd document.
+    /// Replaces any existing in-memory state; call before RenderAll.
+    /// </summary>
+    public void RestoreCollapsedSections(Dictionary<string, HashSet<string>> map)
+    {
+        _collapsedSections.Clear();
+        foreach (var kv in map)
+            _collapsedSections[kv.Key] = kv.Value;
+    }
 
     // ── FrameworkElement visual tree overrides ───────────────────────────────
 
@@ -85,10 +139,189 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     public DiagramVisualLayer()
     {
-        _visuals.Add(_swimlaneLayer); // swimlane lanes behind everything
+        _visuals.Add(_swimlaneLayer);    // swimlane lanes behind everything
         AddVisualChild(_swimlaneLayer);
-        _visuals.Add(_arrowLayer);    // arrows above swimlanes, below nodes
+        _visuals.Add(_arrowLayer);       // arrows above swimlanes, below nodes
         AddVisualChild(_arrowLayer);
+        // _selectionVisual added AFTER all node visuals so it renders on top
+        // It is appended in EnsureSelectionVisualOnTop() after nodes are built.
+    }
+
+    // ── Selection visual (diagram-space DrawingVisual — no adorner needed) ─────
+
+    /// <summary>
+    /// Updates the multi-selection set and re-renders all affected nodes
+    /// (previously selected + newly selected) so border colors update immediately.
+    /// </summary>
+    public void SetMultiSelection(HashSet<string> ids)
+    {
+        // Always copy — caller may clear the source set after this call.
+        var toRepaint = new HashSet<string>(_multiSelectedIds, StringComparer.Ordinal);
+        toRepaint.UnionWith(ids);
+        _multiSelectedIds = new HashSet<string>(ids, StringComparer.Ordinal);
+        if (_doc is null) return;
+        foreach (var node in _doc.Classes.Where(n => toRepaint.Contains(n.Id)))
+            RenderNode(node);
+    }
+
+    /// <summary>
+    /// Updates the live pre-selection set (Explorer-style rubber-band hover) and
+    /// re-renders all affected nodes in real-time. Nodes that were pre-selected but are
+    /// no longer in <paramref name="ids"/> revert to their normal appearance.
+    /// </summary>
+    public void SetPreSelection(HashSet<string> ids)
+    {
+        var toRepaint = new HashSet<string>(_preSelectedIds, StringComparer.Ordinal);
+        toRepaint.UnionWith(ids);
+        _preSelectedIds = new HashSet<string>(ids, StringComparer.Ordinal);
+        if (_doc is null) return;
+        foreach (var node in _doc.Classes.Where(n => toRepaint.Contains(n.Id)))
+            RenderNode(node);
+    }
+
+    /// <summary>Clears the live pre-selection set and reverts all pre-selected nodes.</summary>
+    public void ClearPreSelection()
+    {
+        if (_preSelectedIds.Count == 0) return;
+        SetPreSelection([]);
+    }
+
+    /// <summary>Draws selection rects for a set of nodes (multi-select).</summary>
+    public void DrawSelectionSet(IEnumerable<Rect> nodeBounds)
+    {
+        EnsureSelectionVisualOnTop();
+        const double HandlePx = 5.0;
+
+        Brush borderBrush = TryFindResource("CD_SelectionBorderBrush") as Brush
+            ?? new SolidColorBrush(Color.FromRgb(0, 120, 215));
+        Brush handleFill = TryFindResource("CD_SelectionHandleFill") as Brush
+            ?? Brushes.White;
+        var pen  = new Pen(borderBrush, 1.5) { DashStyle = DashStyles.Solid };
+        var hPen = new Pen(borderBrush, 1.0);
+
+        using var dc = _selectionVisual.RenderOpen();
+        foreach (var bounds in nodeBounds)
+        {
+            dc.DrawRectangle(null, pen, bounds);
+            double l = bounds.Left,  r = bounds.Right;
+            double t = bounds.Top,   b = bounds.Bottom;
+            double mx = (l + r) / 2, my = (t + b) / 2;
+            double h = HandlePx;
+            void Handle(double cx, double cy) =>
+                dc.DrawRectangle(handleFill, hPen, new Rect(cx - h, cy - h, h * 2, h * 2));
+            Handle(l, t); Handle(mx, t); Handle(r, t);
+            Handle(r, my);
+            Handle(r, b); Handle(mx, b); Handle(l, b);
+            Handle(l, my);
+        }
+    }
+
+    /// <summary>Draws the selection rectangle for a single node.</summary>
+    public void DrawSelection(Rect bounds) => DrawSelectionSet([bounds]);
+
+    /// <summary>Clears the selection visual.</summary>
+    public void ClearSelection()
+    {
+        using var dc = _selectionVisual.RenderOpen();
+        // empty — clears the visual
+    }
+
+    // ── Rubber-band (Windows-Explorer-style drag selection) ───────────────────
+
+    /// <summary>Draws the rubber-band rectangle between two diagram-space points.</summary>
+    public void DrawRubberBand(Point start, Point end)
+    {
+        EnsureRubberBandVisualOnTop();
+        var rect = new Rect(
+            Math.Min(start.X, end.X), Math.Min(start.Y, end.Y),
+            Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
+
+        var fillBrush = new SolidColorBrush(Color.FromArgb(40, 0, 120, 215));
+        fillBrush.Freeze();
+        var pen = new Pen(new SolidColorBrush(Color.FromArgb(200, 0, 120, 215)), 1.0);
+        pen.Freeze();
+
+        using var dc = _rubberBandVisual.RenderOpen();
+        dc.DrawRectangle(fillBrush, pen, rect);
+    }
+
+    /// <summary>Returns the normalized Rect between start and end in diagram coords.</summary>
+    public static Rect GetRubberBandRect(Point start, Point end) =>
+        new(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y),
+            Math.Abs(end.X - start.X), Math.Abs(end.Y - start.Y));
+
+    /// <summary>Clears the rubber-band visual.</summary>
+    public void ClearRubberBand()
+    {
+        using var dc = _rubberBandVisual.RenderOpen();
+        // empty
+    }
+
+    private void EnsureRubberBandVisualOnTop()
+    {
+        if (!_visuals.Contains(_rubberBandVisual))
+        {
+            _visuals.Add(_rubberBandVisual);
+            AddVisualChild(_rubberBandVisual);
+        }
+        else if (_visuals[^1] != _rubberBandVisual)
+        {
+            _visuals.Remove(_rubberBandVisual);
+            _visuals.Add(_rubberBandVisual);
+        }
+    }
+
+    // ── Member hover + selection public API ───────────────────────────────────
+
+    /// <summary>
+    /// Updates the hovered member and re-renders the affected node(s).
+    /// Pass null/null to clear.
+    /// </summary>
+    public void SetHoveredMember(string? nodeId, string? memberId)
+    {
+        if (_hoveredMemberNodeId == nodeId && _hoveredMemberId == memberId) return;
+        var toRepaint = new HashSet<string?> { _hoveredMemberNodeId, nodeId };
+        _hoveredMemberNodeId = nodeId;
+        _hoveredMemberId     = memberId;
+        if (_doc is null) return;
+        foreach (var id in toRepaint)
+        {
+            var node = _doc.Classes.FirstOrDefault(n => n.Id == id);
+            if (node is not null) RenderNode(node);
+        }
+    }
+
+    /// <summary>
+    /// Updates the selected member and re-renders the affected node(s).
+    /// Pass null/null to clear.
+    /// </summary>
+    public void SetSelectedMember(string? nodeId, string? memberId)
+    {
+        if (_selectedMemberNodeId == nodeId && _selectedMemberId == memberId) return;
+        var toRepaint = new HashSet<string?> { _selectedMemberNodeId, nodeId };
+        _selectedMemberNodeId = nodeId;
+        _selectedMemberId     = memberId;
+        if (_doc is null) return;
+        foreach (var id in toRepaint)
+        {
+            var node = _doc.Classes.FirstOrDefault(n => n.Id == id);
+            if (node is not null) RenderNode(node);
+        }
+    }
+
+    private void EnsureSelectionVisualOnTop()
+    {
+        if (!_visuals.Contains(_selectionVisual))
+        {
+            _visuals.Add(_selectionVisual);
+            AddVisualChild(_selectionVisual);
+        }
+        else if (_visuals[^1] != _selectionVisual)
+        {
+            // Move to top
+            _visuals.Remove(_selectionVisual);
+            _visuals.Add(_selectionVisual);
+        }
     }
 
     // ── Public API ───────────────────────────────────────────────────────────
@@ -300,9 +533,10 @@ public sealed class DiagramVisualLayer : FrameworkElement
     {
         if (!_nodeVisuals.TryGetValue(node.Id, out var dv)) return;
 
-        bool isSelected = node.Id == _selectedNodeId;
-        bool isHovered  = node.Id == _hoveredNodeId;
-        bool isDimmed   = _focusedNodeIds is not null && !_focusedNodeIds.Contains(node.Id);
+        bool isSelected    = node.Id == _selectedNodeId || _multiSelectedIds.Contains(node.Id);
+        bool isPreSelected = !isSelected && _preSelectedIds.Contains(node.Id);
+        bool isHovered     = node.Id == _hoveredNodeId;
+        bool isDimmed      = _focusedNodeIds is not null && !_focusedNodeIds.Contains(node.Id);
 
         double width  = ComputeNodeWidth(node);
         double height = ComputeNodeHeight(node);
@@ -326,11 +560,13 @@ public sealed class DiagramVisualLayer : FrameworkElement
         Brush divBrush  = Res("CD_ClassBoxSectionDivider",   Color.FromRgb(70, 70, 90));
         Brush boxBorder = isSelected
             ? Res("CD_ClassBoxSelectedBorderBrush", Color.FromRgb(0, 120, 215))
-            : (isHovered
-                ? Res("CD_ClassBoxHoverBorderBrush", Color.FromRgb(110, 110, 150))
-                : Res("CD_ClassBoxBorderBrush", Color.FromRgb(80, 80, 100)));
+            : (isPreSelected
+                ? Res("CD_ClassBoxSelectedBorderBrush", Color.FromRgb(0, 120, 215))
+                : (isHovered
+                    ? Res("CD_ClassBoxHoverBorderBrush", Color.FromRgb(110, 110, 150))
+                    : Res("CD_ClassBoxBorderBrush", Color.FromRgb(80, 80, 100))));
 
-        double borderThk = isSelected ? 2.0 : 1.0;
+        double borderThk = isSelected ? 2.0 : (isPreSelected ? 1.5 : 1.0);
         var boxPen  = new Pen(boxBorder, borderThk);
         var divPen  = new Pen(divBrush, 0.5);
 
@@ -343,6 +579,14 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
         // Box background
         dc.DrawRoundedRectangle(boxBg, boxPen, boxRect, CornerRadius, CornerRadius);
+
+        // Explorer-style pre-selection overlay (rubber-band hover, live feedback)
+        if (isPreSelected)
+        {
+            var preBrush = new SolidColorBrush(Color.FromArgb(55, 0, 120, 215));
+            preBrush.Freeze();
+            dc.DrawRoundedRectangle(preBrush, null, boxRect, CornerRadius, CornerRadius);
+        }
 
         // B5 — Gradient header (top lighter → base color)
         Color headerBase = headerBg is SolidColorBrush scb ? scb.Color : Color.FromRgb(37, 40, 64);
@@ -403,14 +647,32 @@ public sealed class DiagramVisualLayer : FrameworkElement
             DrawMetricsBadge(dc, node, width);
         }
 
-        // Member rows
+        // Skip member rendering for collapsed nodes — header already drawn above
+        if (_collapsedNodes.Contains(node.Id))
+        {
+            if (isDimmed) dc.Pop();
+            return;
+        }
+
+        // Member rows — clipped to the box height so content never overflows below the border
         double memberY = HeaderHeight + MemberPadding;
         MemberKind? lastKind   = null;
         double textClipW       = width - HorizPadding - IconWidth - HorizPadding;
         var    divPenDashed    = new Pen(divBrush, 0.5) { DashStyle = new DashStyle([2, 2], 0) };
 
+        // Clip entire member section to [HeaderHeight … height] so capped nodes don't bleed
+        dc.PushClip(new System.Windows.Media.RectangleGeometry(
+            new Rect(0, HeaderHeight, width, Math.Max(0, height - HeaderHeight))));
+
+        // isCapped = there are members that don't fit at the CURRENT display height
+        // (custom height via gripper may already show all members — fullH <= height → not capped)
+        bool isCapped  = !_expandedNodes.Contains(node.Id) && ComputeNodeHeightFull(node) > height;
+        double memberYLimit = isCapped ? height - FooterHeight : height;
+
         foreach (var member in node.Members)
         {
+            // Stop drawing members when we've reached the cap boundary
+            if (isCapped && memberY + MemberHeight > memberYLimit) break;
             // B4 — Section group header when kind changes
             if (lastKind.HasValue && member.Kind != lastKind)
             {
@@ -444,6 +706,16 @@ public sealed class DiagramVisualLayer : FrameworkElement
             // Skip rendering if section is collapsed
             if (IsSectionCollapsed(node.Id, GetSectionName(member.Kind)))
                 continue;
+
+            // Member row hover / selection highlight
+            bool memberHovered  = node.Id == _hoveredMemberNodeId  && member.Name == _hoveredMemberId;
+            bool memberSelected = node.Id == _selectedMemberNodeId && member.Name == _selectedMemberId;
+            if (memberSelected)
+                dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(60, 0, 120, 215)), null,
+                    new Rect(0, memberY, width, MemberHeight));
+            else if (memberHovered)
+                dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(30, 160, 160, 255)), null,
+                    new Rect(0, memberY, width, MemberHeight));
 
             // B3 — Visibility color circle
             Color circleColor = member.Visibility switch
@@ -490,9 +762,9 @@ public sealed class DiagramVisualLayer : FrameworkElement
         }
 
         // "N more" footer when node is capped
-        if (!_expandedNodes.Contains(node.Id))
+        if (isCapped)
         {
-            int hidden = CountHiddenMembers(node);
+            int hidden = CountHiddenMembers(node, height);
             if (hidden > 0)
             {
                 double footerY = height - FooterHeight;
@@ -503,6 +775,8 @@ public sealed class DiagramVisualLayer : FrameworkElement
                 dc.DrawText(footerFt, new Point((width - footerFt.Width) / 2, footerY + (FooterHeight - footerFt.Height) / 2));
             }
         }
+
+        dc.Pop(); // pop member-area clip
 
         if (isDimmed) dc.Pop();
     }
@@ -563,8 +837,13 @@ public sealed class DiagramVisualLayer : FrameworkElement
             Point p1 = NearestEdgePoint(srcRect, tgtRect);
             Point p2 = NearestEdgePoint(tgtRect, srcRect);
 
-            Brush lineBrush = GetArrowBrush(rel.Kind);
-            var pen = new Pen(lineBrush, 1.5);
+            bool isHighlighted = _highlightedRelId is not null && rel.SourceId == _highlightedRelId;
+            Brush lineBrush = isHighlighted
+                ? (TryFindResource("CD_ClassBoxSelectedBorderBrush") as Brush
+                   ?? new SolidColorBrush(Color.FromRgb(0, 120, 215)))
+                : GetArrowBrush(rel.Kind);
+            double lineThickness = isHighlighted ? 2.5 : 1.5;
+            var pen = new Pen(lineBrush, lineThickness);
             if (rel.Kind == RelationshipKind.Dependency || rel.Kind == RelationshipKind.Realization)
                 pen.DashStyle = DashedStyle;
 
@@ -582,14 +861,14 @@ public sealed class DiagramVisualLayer : FrameworkElement
                 dc.DrawLine(pen, prev, p2);
                 // Arrow points at the last segment direction.
                 Point lastWp = new(wayPts[^1].X, wayPts[^1].Y);
-                DrawArrowHead(dc, lastWp, p2, rel.Kind, lineBrush, 1.5);
-                DrawTailDecoration(dc, p1, new Point(wayPts[0].X, wayPts[0].Y), rel.Kind, lineBrush, 1.5);
+                DrawArrowHead(dc, lastWp, p2, rel.Kind, lineBrush, lineThickness);
+                DrawTailDecoration(dc, p1, new Point(wayPts[0].X, wayPts[0].Y), rel.Kind, lineBrush, lineThickness);
             }
             else
             {
                 dc.DrawLine(pen, p1, p2);
-                DrawArrowHead(dc, p1, p2, rel.Kind, lineBrush, 1.5);
-                DrawTailDecoration(dc, p1, p2, rel.Kind, lineBrush, 1.5);
+                DrawArrowHead(dc, p1, p2, rel.Kind, lineBrush, lineThickness);
+                DrawTailDecoration(dc, p1, p2, rel.Kind, lineBrush, lineThickness);
             }
 
             DrawMultiplicity(dc, p1, p2, rel, lineBrush);
@@ -757,6 +1036,14 @@ public sealed class DiagramVisualLayer : FrameworkElement
 
     public double ComputeNodeHeight(ClassNode node)
     {
+        // Collapsed nodes show only the header.
+        if (_collapsedNodes.Contains(node.Id))
+            return HeaderHeight;
+
+        // Custom height set by the resize gripper takes priority.
+        if (_customHeights.TryGetValue(node.Id, out double custom))
+            return Math.Max(custom, HeaderHeight + MemberHeight);
+
         double h = HeaderHeight + MemberPadding * 2;
         MemberKind? lastKind = null;
         foreach (var m in node.Members)
@@ -773,9 +1060,38 @@ public sealed class DiagramVisualLayer : FrameworkElement
         return h;
     }
 
-    private int CountHiddenMembers(ClassNode node)
+    /// <summary>Pins the node to a custom height (set by the resize gripper drag).</summary>
+    public void SetCustomHeight(string nodeId, double height)
+    {
+        _customHeights[nodeId] = height;
+        _expandedNodes.Remove(nodeId); // custom height overrides the expand toggle
+    }
+
+    /// <summary>Removes a custom height override, restoring auto-computed height.</summary>
+    public void ClearCustomHeight(string nodeId)
+        => _customHeights.Remove(nodeId);
+
+    /// <summary>
+    /// Returns the node whose bottom-edge gripper is at <paramref name="pt"/>, or null.
+    /// The gripper zone is GripperHeight pixels above and below the node bottom edge.
+    /// </summary>
+    public ClassNode? IsGripperHit(IReadOnlyList<ClassNode> nodes, Point pt)
+    {
+        foreach (var node in nodes)
+        {
+            double h    = ComputeNodeHeight(node);
+            double edgeY = node.Y + h;
+            if (pt.X >= node.X && pt.X <= node.X + node.Width
+                && pt.Y >= edgeY - GripperHeight && pt.Y <= edgeY + GripperHeight)
+                return node;
+        }
+        return null;
+    }
+
+    private int CountHiddenMembers(ClassNode node, double displayHeight)
     {
         double h = HeaderHeight + MemberPadding * 2;
+        double limit = displayHeight - FooterHeight; // room for the footer itself
         int hidden = 0;
         bool capping = false;
         MemberKind? lastKind = null;
@@ -786,7 +1102,7 @@ public sealed class DiagramVisualLayer : FrameworkElement
             if (!IsSectionCollapsed(node.Id, sec))
             {
                 h += MemberHeight;
-                if (h > MaxNodeHeight) { capping = true; hidden++; }
+                if (h > limit) { capping = true; hidden++; }
             }
             lastKind = m.Kind;
         }
@@ -800,16 +1116,42 @@ public sealed class DiagramVisualLayer : FrameworkElement
             _expandedNodes.Add(nodeId);
     }
 
+    /// <summary>Toggles the collapsed state of a node (header-only display).</summary>
+    public void ToggleCollapsed(string nodeId)
+    {
+        if (!_collapsedNodes.Remove(nodeId))
+            _collapsedNodes.Add(nodeId);
+        // Clear expand/custom-height state when collapsing
+        if (_collapsedNodes.Contains(nodeId))
+        {
+            _expandedNodes.Remove(nodeId);
+            _customHeights.Remove(nodeId);
+        }
+    }
+
+    /// <summary>Returns whether the node is collapsed.</summary>
+    public bool IsCollapsed(string nodeId) => _collapsedNodes.Contains(nodeId);
+
+    /// <summary>Collapses all nodes.</summary>
+    public void CollapseAll(IEnumerable<ClassNode> nodes)
+    {
+        foreach (var n in nodes) _collapsedNodes.Add(n.Id);
+    }
+
+    /// <summary>Expands all nodes (clears collapse state).</summary>
+    public void ExpandAll() => _collapsedNodes.Clear();
+
     /// <summary>Returns the node whose "N more" footer pill is at <paramref name="pt"/>, or null.</summary>
     public ClassNode? HitTestMoreFooter(IReadOnlyList<ClassNode> classes, Point pt)
     {
         foreach (var node in classes)
         {
             if (_expandedNodes.Contains(node.Id)) continue;
-            double fullH = ComputeNodeHeightFull(node);
-            if (fullH <= MaxNodeHeight) continue;
+            double height = ComputeNodeHeight(node);
+            double fullH  = ComputeNodeHeightFull(node);
+            if (fullH <= height) continue;
             // Footer occupies the last FooterHeight pixels of the capped box
-            var footerRect = new Rect(node.X, node.Y + MaxNodeHeight - FooterHeight, node.Width, FooterHeight);
+            var footerRect = new Rect(node.X, node.Y + height - FooterHeight, node.Width, FooterHeight);
             if (footerRect.Contains(pt)) return node;
         }
         return null;
