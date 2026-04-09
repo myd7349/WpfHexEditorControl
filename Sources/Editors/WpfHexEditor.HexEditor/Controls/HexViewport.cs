@@ -1352,6 +1352,13 @@ namespace WpfHexEditor.HexEditor.Controls
         public double AsciiPanelStartX => SeparatorStartX + SeparatorWidth;
 
         /// <summary>
+        /// Gets the actual starting X position for the ASCII panel using the font-metric-based
+        /// separator calculation (matches actual rendered geometry).
+        /// Use this for overlay alignment instead of AsciiPanelStartX.
+        /// </summary>
+        public double AsciiPanelActualStartX => CalculateFixedSeparatorX(1) + SeparatorWidth;
+
+        /// <summary>
         /// Gets the width of one ASCII character cell (fixed layout constant).
         /// </summary>
         public double AsciiCharacterWidth => AsciiCharWidth;

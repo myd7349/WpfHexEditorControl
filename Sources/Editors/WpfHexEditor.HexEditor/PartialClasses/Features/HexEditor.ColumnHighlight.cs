@@ -157,26 +157,28 @@ namespace WpfHexEditor.HexEditor
             // Re-use colIdx = -1 to tell the overlay to skip the hex stripe.
             int effectiveColIdx = (ShowColumnHighlight && hexActive) ? colIdx : -1;
 
-            // ASCII stripe: read pixel position from the pre-computed AsciiRect and convert
-            // to overlay coordinate space via TranslatePoint (handles LayoutTransform + scroll).
+            // ASCII stripe: computed from actual separator geometry (same coordinate space as hex stripe).
+            // AsciiPanelActualStartX uses CalculateFixedSeparatorX(1) — font-metric-based, matches render.
+            // TranslatePoint is NOT used: it traverses the ScrollViewer template and picks up content
+            // offsets that shift the result unpredictably.
             double asciiX  = -1;
             double asciiCW = 0;
             if (ShowAsciiColumnHighlight && asciiActive && HexViewport.ShowAscii)
             {
-                foreach (var line in visibleLinesList)
+                double asciiStart = HexViewport.AsciiPanelActualStartX * zoom;
+                double charW      = HexViewport.AsciiCharacterWidth     * zoom;
+
+                // Account for byte spacers in the ASCII panel (ByteSpacerPositioning = Both / StringBytePanel).
+                double asciiSpacerOff = 0;
+                if (bytesPerLine >= groupSize &&
+                    (HexViewport.ByteSpacerPositioning == ByteSpacerPosition.Both ||
+                     HexViewport.ByteSpacerPositioning == ByteSpacerPosition.StringBytePanel))
                 {
-                    if (colIdx < line.Bytes.Count && line.Bytes[colIdx].AsciiRect.HasValue)
-                    {
-                        var rect = line.Bytes[colIdx].AsciiRect.Value;
-                        var originInOverlay = HexViewport.TranslatePoint(new System.Windows.Point(rect.X, 0), _columnHighlight);
-                        if (!double.IsNaN(originInOverlay.X))
-                        {
-                            asciiX  = originInOverlay.X;
-                            asciiCW = rect.Width * zoom;   // width scales with zoom
-                        }
-                        break;
-                    }
+                    asciiSpacerOff = (colIdx / groupSize) * (int)HexViewport.ByteSpacerWidthTickness * zoom;
                 }
+
+                asciiX  = asciiStart + colIdx * charW + asciiSpacerOff;
+                asciiCW = charW;
             }
 
             // Row highlight position: which line number is the cursor on?
