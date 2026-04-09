@@ -157,27 +157,18 @@ namespace WpfHexEditor.HexEditor
             // Re-use colIdx = -1 to tell the overlay to skip the hex stripe.
             int effectiveColIdx = (ShowColumnHighlight && hexActive) ? colIdx : -1;
 
-            // ASCII stripe: read AsciiRect.X from the line that contains the cursor.
-            // AsciiRect is set by DrawAsciiByte with the exact draw position — it is the
-            // pixel-perfect ground truth and accounts for spacers, TBL widths, etc.
+            // ASCII stripe: use HexViewport.CursorAsciiRect — the exact same rect used to
+            // draw the cursor box in the ASCII panel. Pixel-perfect by construction.
             double asciiX  = -1;
             double asciiCW = 0;
             if (ShowAsciiColumnHighlight && asciiActive && HexViewport.ShowAscii)
             {
-                foreach (var line in visibleLinesList)
+                var cursorRect = HexViewport.CursorAsciiRect;
+                if (cursorRect.HasValue)
                 {
-                    if (line.Bytes.Count == 0) continue;
-                    foreach (var b in line.Bytes)
-                    {
-                        if ((long)b.VirtualPos == offset && b.AsciiRect.HasValue)
-                        {
-                            asciiX  = b.AsciiRect.Value.X     * zoom;
-                            asciiCW = b.AsciiRect.Value.Width * zoom;
-                            goto foundAscii;
-                        }
-                    }
+                    asciiX  = cursorRect.Value.X     * zoom;
+                    asciiCW = cursorRect.Value.Width * zoom;
                 }
-                foundAscii:;
             }
 
             // Row highlight position: which line number is the cursor on?
