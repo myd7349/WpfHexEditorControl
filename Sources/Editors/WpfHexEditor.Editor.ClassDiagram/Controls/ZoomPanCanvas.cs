@@ -79,12 +79,24 @@ public class ZoomPanCanvas : Canvas
     }
 
     // ---------------------------------------------------------------------------
-    // HitTestCore override — ZoomPanCanvas applies RenderTransform to itself, which
-    // means a panned view maps viewport clicks to negative local coordinates that fall
-    // outside the layout bounding box and are not hit by the default Canvas check.
-    // We override to always return a hit so the viewport background is fully clickable
-    // regardless of zoom or pan offset.
+    // Layout override — Canvas.MeasureOverride returns the desired size of its
+    // children (≈ diagram content size), which is much smaller than the viewport.
+    // Clicks on empty viewport area then land on the parent Border, not here.
+    // We return the available size so ZoomPanCanvas always fills its container,
+    // making the entire viewport hit-testable for rubber-band / right-click.
     // ---------------------------------------------------------------------------
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        base.MeasureOverride(availableSize);
+        return new Size(
+            double.IsInfinity(availableSize.Width)  ? 0 : availableSize.Width,
+            double.IsInfinity(availableSize.Height) ? 0 : availableSize.Height);
+    }
+
+    // HitTestCore: with MeasureOverride filling the container, the layout bounds
+    // now cover the full viewport. We still keep the override so panned views
+    // (where RenderTransform shifts content to negative local coords) remain clickable.
 
     protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)
         => new PointHitTestResult(this, hitTestParameters.HitPoint);
