@@ -141,11 +141,13 @@ namespace WpfHexEditor.HexEditor
                 spacerOffset = spacerCount * (int)HexViewport.ByteSpacerWidthTickness * zoom;
             }
 
+            // Fetch visible lines once — used for both row and ASCII column calculations.
+            var visibleLinesList = HexViewport.GetVisibleLinesForHighlight();
+
             // Visible content height — clamps all stripes so they don't bleed
             // into the empty space below the last rendered line.
-            double lineHeight   = HexViewport.LineHeight * zoom;
-            int    visibleLines = HexViewport.GetVisibleLinesForHighlight().Count;
-            double visibleH     = visibleLines > 0 ? visibleLines * lineHeight : 0;
+            double lineHeight = HexViewport.LineHeight * zoom;
+            double visibleH   = visibleLinesList.Count > 0 ? visibleLinesList.Count * lineHeight : 0;
 
             // Column stripe: shown only in the currently active panel.
             bool hexActive   = HexViewport.ActivePanel == Controls.ActivePanelType.Hex;
@@ -155,26 +157,34 @@ namespace WpfHexEditor.HexEditor
             // Re-use colIdx = -1 to tell the overlay to skip the hex stripe.
             int effectiveColIdx = (ShowColumnHighlight && hexActive) ? colIdx : -1;
 
-            // ASCII stripe parameters (negative = don't draw).
-            double asciiX     = -1;
-            double asciiCW    = 0;
+            // ASCII stripe: read pixel position directly from the pre-computed AsciiRect
+            // so alignment is always pixel-perfect (handles spacers, TBL widths, etc.).
+            double asciiX  = -1;
+            double asciiCW = 0;
             if (ShowAsciiColumnHighlight && asciiActive && HexViewport.ShowAscii)
             {
-                asciiX  = HexViewport.AsciiPanelStartX * zoom;
-                asciiCW = HexViewport.AsciiCharacterWidth * zoom;
+                foreach (var line in visibleLinesList)
+                {
+                    if (colIdx < line.Bytes.Count && line.Bytes[colIdx].AsciiRect.HasValue)
+                    {
+                        var rect = line.Bytes[colIdx].AsciiRect.Value;
+                        asciiX  = rect.X     * zoom;
+                        asciiCW = rect.Width * zoom;
+                        break;
+                    }
+                }
             }
 
             // Row highlight position: which line number is the cursor on?
             double rowY      = -1;
             double rowHeight = lineHeight;
-            if (ShowRowHighlight && visibleLines > 0 && lineHeight > 0)
+            if (ShowRowHighlight && visibleLinesList.Count > 0 && lineHeight > 0)
             {
-                var lines = HexViewport.GetVisibleLinesForHighlight();
-                if (lines.Count > 0)
+                if (visibleLinesList.Count > 0)
                 {
-                    long firstOffset = lines[0].Bytes[0].VirtualPos;
+                    long firstOffset = visibleLinesList[0].Bytes[0].VirtualPos;
                     long lineIndex   = (offset - firstOffset) / bytesPerLine;
-                    if (lineIndex >= 0 && lineIndex < lines.Count)
+                    if (lineIndex >= 0 && lineIndex < visibleLinesList.Count)
                         rowY = lineIndex * lineHeight;
                 }
             }
