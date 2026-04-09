@@ -557,6 +557,12 @@ public sealed class PhysicalFolderNodeVm : SolutionExplorerNodeVm
     public override string DisplayName => System.IO.Path.GetFileName(PhysicalPath);
     public override string Icon        => "\uE8D5";
 
+    /// <summary>
+    /// True when at least one descendant file is tracked in the project.
+    /// Set by <c>BuildPhysicalSubDir</c> after the subtree is fully populated.
+    /// </summary>
+    public bool IsInProject { get; set; }
+
     /// <summary>True when the physical folder is named "Properties" (case-insensitive).</summary>
     public bool IsPropertiesFolder =>
         System.IO.Path.GetFileName(PhysicalPath)

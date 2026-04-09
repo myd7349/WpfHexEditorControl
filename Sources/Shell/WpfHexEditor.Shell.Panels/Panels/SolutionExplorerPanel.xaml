@@ -474,16 +474,19 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:PhysicalFolderNodeVm}">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock x:Name="PhysFolderIcon" Style="{StaticResource NodeIcon}" Text="&#xE8D5;" Foreground="#F5C518" Opacity="0.75"/>
-                <TextBlock Style="{StaticResource NodeLabel}" Text="{Binding DisplayName}" Opacity="0.85"/>
+            <StackPanel x:Name="PhysFolderPanel" Orientation="Horizontal" Opacity="0.45">
+                <TextBlock x:Name="PhysFolderIcon" Style="{StaticResource NodeIcon}" Text="&#xE8D5;" Foreground="#F5C518"/>
+                <TextBlock Style="{StaticResource NodeLabel}" Text="{Binding DisplayName}"/>
             </StackPanel>
             <DataTemplate.Triggers>
+                <!-- Folder has at least one tracked descendant: restore full opacity -->
+                <DataTrigger Binding="{Binding IsInProject}" Value="True">
+                    <Setter TargetName="PhysFolderPanel" Property="Opacity" Value="1.0"/>
+                </DataTrigger>
                 <!-- Properties folder: VS-like gear icon -->
                 <DataTrigger Binding="{Binding IsPropertiesFolder}" Value="True">
                     <Setter TargetName="PhysFolderIcon" Property="Text"       Value="&#xE713;"/>
                     <Setter TargetName="PhysFolderIcon" Property="Foreground" Value="#9B9B9B"/>
-                    <Setter TargetName="PhysFolderIcon" Property="Opacity"    Value="1.0"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>

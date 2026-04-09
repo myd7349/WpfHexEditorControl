@@ -613,6 +613,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         // Pre-create OutputPanel so OutputLogger.Register is called before any Info/Error calls
         _outputPanel = new OutputPanel();
 
+        // Bootstrap DockPanelCornerRadius resources before any docking panels are created.
+        // DynamicResource keys must exist in Application.Resources before templates resolve them.
+        Application.Current.Resources["DockPanelCornerRadius"]      = new System.Windows.CornerRadius(4);
+        Application.Current.Resources["DockPanelOuterCornerRadius"] = new System.Windows.CornerRadius(0);
+
         // Load user settings then apply persisted theme before layout loads
         AppSettingsService.Instance.Load();
         LoadKeyBindingOverrides();   // populate gesture overrides from settings
@@ -621,6 +626,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         ApplyTabPreviewSettings();   // push persisted thumbnail settings to DockHost
         ApplyAutoHideSettings();     // push persisted auto-hide timing to DockHost
         ApplyUISettings();           // push persisted UI appearance settings to DockHost
+        ApplyDockCornerRadius();     // push persisted corner radius to DockHost + resources
         WpfHexEditor.Core.Options.TabPreviewAppSettings.Changed += ApplyTabPreviewSettings;
         WpfHexEditor.Core.Options.AutoHideAppSettings.Changed   += ApplyAutoHideSettings;
         WpfHexEditor.Core.Options.DocumentsAppSettings.Changed  += ApplyDocumentSettings;
@@ -686,10 +692,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             () => new WpfHexEditor.App.Options.LayoutOptionsPage(),
             "\uE713");
 
-        // Register Docking options page (Auto-Hide timing + Panel Highlight + Layout Profiles)
+        // Register Docking options page (Auto-Hide timing + Panel Highlight + Corner Radius + Layout Profiles)
         WpfHexEditor.Core.Options.OptionsPageRegistry.RegisterDynamic(
             "Environment", "Docking",
-            () => new WpfHexEditor.App.Options.DockingOptionsPage(DockHost.ApplyHighlightMode),
+            () => new WpfHexEditor.App.Options.DockingOptionsPage(
+                      DockHost.ApplyHighlightMode,
+                      r => { DockHost.UpdatePanelCornerRadius(r); ApplyDockPanelResources(r); }),
             "\uE8A0");
 
         // Register Code Editor options page (General, Auto-close, Hints, Minimap, Coloring)
@@ -1569,6 +1577,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         panel.OpenWithRequested                += OnSEOpenWith;
         panel.OpenWithSpecificRequested        += OnSEOpenWithSpecific;
         panel.PhysicalFileIncludeRequested     += OnSEPhysicalFileInclude;
+        panel.PhysicalFolderIncludeRequested   += OnSEPhysicalFolderInclude;
+        panel.PhysicalFolderExcludeRequested   += OnSEPhysicalFolderExclude;
         panel.ImportExternalFileRequested      += OnSEImportExternalFile;
         panel.PropertiesRequested              += OnSEPropertiesRequested;
         panel.ManageNuGetPackagesRequested         += OnSEManageNuGetPackages;
@@ -4007,7 +4017,34 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private async void OnSEPhysicalFileInclude(object? sender, PhysicalFileIncludeRequestedEventArgs e)
     {
+        // Read-only formats (e.g. Folder sessions) cannot be mutated via the standard item API.
+        if (_solutionManager.CurrentSolution?.IsReadOnlyFormat == true) return;
         await _solutionManager.AddItemAsync(e.Project, e.PhysicalPath, e.TargetFolderId);
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+    }
+
+    private async void OnSEPhysicalFolderInclude(object? sender, PhysicalFolderIncludeRequestedEventArgs e)
+    {
+        if (_solutionManager.CurrentSolution?.IsReadOnlyFormat == true) return;
+        if (!Directory.Exists(e.FolderPath)) return;
+
+        foreach (var file in Directory.GetFiles(e.FolderPath, "*", SearchOption.AllDirectories))
+            await _solutionManager.AddItemAsync(e.Project, file);
+
+        _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
+    }
+
+    private async void OnSEPhysicalFolderExclude(object? sender, PhysicalFolderExcludeRequestedEventArgs e)
+    {
+        if (_solutionManager.CurrentSolution?.IsReadOnlyFormat == true) return;
+
+        var items = e.Project.Items
+            .Where(i => i.AbsolutePath.StartsWith(e.FolderPath, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        foreach (var item in items)
+            await _solutionManager.RemoveItemAsync(e.Project, item, deleteFromDisk: false);
+
         _solutionExplorerPanel?.SetSolution(_solutionManager.CurrentSolution);
     }
 
@@ -5688,6 +5725,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void ApplyUISettings()
     {
         DockHost.ApplyHighlightMode(AppSettingsService.Instance.Current.UI.ActivePanelHighlight);
+    }
+
+    private void ApplyDockCornerRadius()
+    {
+        var s = AppSettingsService.Instance.Current;
+        var r = s.PanelCornerRadius;
+        ApplyDockPanelResources(r);
+        DockHost.UpdatePanelCornerRadius(r);
+    }
+
+    /// <summary>Updates the global Application resources used by TabControl.xaml DynamicResource bindings.</summary>
+    private void ApplyDockPanelResources(double r)
+    {
+        var s         = AppSettingsService.Instance.Current;
+        var fullFrame = s.PanelCornerScope == "FullFrame";
+        Application.Current.Resources["DockPanelCornerRadius"]      = new System.Windows.CornerRadius(r);
+        Application.Current.Resources["DockPanelOuterCornerRadius"] =
+            fullFrame ? new System.Windows.CornerRadius(r) : new System.Windows.CornerRadius(0);
     }
 
     private void ApplyEditorSettings(IDocumentEditor editor)

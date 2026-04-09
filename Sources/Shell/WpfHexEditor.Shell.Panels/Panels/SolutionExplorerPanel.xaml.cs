@@ -356,10 +356,11 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
         bool isFolder         = node is FolderNodeVm;
         bool isFile           = file is not null;
         bool isDep            = depFile is not null;
-        bool isPhysFolder     = node is PhysicalFolderNodeVm;
+        var  physFolder       = node as PhysicalFolderNodeVm;
+        bool isPhysFolder     = physFolder is not null;
         bool isPhysFile       = physFile is not null;
-        bool isPhysIn         = isPhysFile &&  physFile!.IsInProject;
-        bool isPhysNotIn      = isPhysFile && !physFile!.IsInProject;
+        bool isPhysIn         = (isPhysFile &&  physFile!.IsInProject) || (isPhysFolder &&  physFolder!.IsInProject);
+        bool isPhysNotIn      = (isPhysFile && !physFile!.IsInProject) || (isPhysFolder && !physFolder!.IsInProject);
         bool isChangeset      = node is ChangesetNodeVm;
         bool isSourceNode     = node is SourceTypeNodeVm or SourceMemberNodeVm;
 
@@ -857,19 +858,39 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     private void OnIncludeInProject(object sender, RoutedEventArgs e)
     {
-        if (_contextMenuTarget is not PhysicalFileNodeVm pf || pf.IsInProject || pf.Project is null) return;
-        PhysicalFileIncludeRequested?.Invoke(this, new PhysicalFileIncludeRequestedEventArgs
+        if (_contextMenuTarget is PhysicalFileNodeVm pf && !pf.IsInProject && pf.Project is not null)
         {
-            PhysicalPath = pf.PhysicalPath,
-            Project      = pf.Project,
-        });
+            PhysicalFileIncludeRequested?.Invoke(this, new PhysicalFileIncludeRequestedEventArgs
+            {
+                PhysicalPath = pf.PhysicalPath,
+                Project      = pf.Project,
+            });
+        }
+        else if (_contextMenuTarget is PhysicalFolderNodeVm pfv && !pfv.IsInProject && pfv.Project is not null)
+        {
+            PhysicalFolderIncludeRequested?.Invoke(this, new PhysicalFolderIncludeRequestedEventArgs
+            {
+                FolderPath = pfv.PhysicalPath,
+                Project    = pfv.Project,
+            });
+        }
     }
 
     private void OnExcludeFromProject(object sender, RoutedEventArgs e)
     {
-        if (_contextMenuTarget is not PhysicalFileNodeVm pf || !pf.IsInProject
-            || pf.LinkedItem is null || pf.Project is null) return;
-        ItemDeleteRequested?.Invoke(this, new ProjectItemEventArgs { Item = pf.LinkedItem, Project = pf.Project });
+        if (_contextMenuTarget is PhysicalFileNodeVm pf && pf.IsInProject
+            && pf.LinkedItem is not null && pf.Project is not null)
+        {
+            ItemDeleteRequested?.Invoke(this, new ProjectItemEventArgs { Item = pf.LinkedItem, Project = pf.Project });
+        }
+        else if (_contextMenuTarget is PhysicalFolderNodeVm pfv && pfv.IsInProject && pfv.Project is not null)
+        {
+            PhysicalFolderExcludeRequested?.Invoke(this, new PhysicalFolderExcludeRequestedEventArgs
+            {
+                FolderPath = pfv.PhysicalPath,
+                Project    = pfv.Project,
+            });
+        }
     }
 
     private void OnImportExternalFile(object sender, RoutedEventArgs e)
@@ -1470,6 +1491,12 @@ public partial class SolutionExplorerPanel : UserControl, ISolutionExplorerPanel
 
     /// <inheritdoc/>
     public event EventHandler<PhysicalFileIncludeRequestedEventArgs>? PhysicalFileIncludeRequested;
+
+    /// <inheritdoc/>
+    public event EventHandler<PhysicalFolderIncludeRequestedEventArgs>? PhysicalFolderIncludeRequested;
+
+    /// <inheritdoc/>
+    public event EventHandler<PhysicalFolderExcludeRequestedEventArgs>? PhysicalFolderExcludeRequested;
 
     /// <inheritdoc/>
     public event EventHandler<ImportExternalFileRequestedEventArgs>? ImportExternalFileRequested;

@@ -166,6 +166,20 @@ public interface ISolutionExplorerPanel
     event EventHandler<PhysicalFileIncludeRequestedEventArgs>? PhysicalFileIncludeRequested;
 
     /// <summary>
+    /// Fired when the user chooses "Include in Project" on a physical <em>folder</em>
+    /// (Show All Files mode, no tracked descendants).
+    /// The host recursively adds all files under the folder.
+    /// </summary>
+    event EventHandler<PhysicalFolderIncludeRequestedEventArgs>? PhysicalFolderIncludeRequested;
+
+    /// <summary>
+    /// Fired when the user chooses "Exclude from Project" on a physical <em>folder</em>
+    /// (Show All Files mode, has tracked descendants).
+    /// The host removes all project items whose path falls under the folder.
+    /// </summary>
+    event EventHandler<PhysicalFolderExcludeRequestedEventArgs>? PhysicalFolderExcludeRequested;
+
+    /// <summary>
     /// Fired when the user chooses "Import into Project…" on a file node whose physical
     /// path is located outside the project directory.
     /// The host copies the file into the project directory and updates the item reference.
