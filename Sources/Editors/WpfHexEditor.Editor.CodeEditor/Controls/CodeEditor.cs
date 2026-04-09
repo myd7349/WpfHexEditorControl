@@ -260,6 +260,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
         private readonly Layers.LspDeclarationHintsLayer                                                                                                   _lspDeclarationHintsLayer    = new();
         private          IReadOnlyDictionary<int, (int Count, string Symbol, string IconGlyph, System.Windows.Media.Brush IconBrush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds Kind, bool IsRoslyn)> _hintsData = new Dictionary<int, (int, string, string, System.Windows.Media.Brush, WpfHexEditor.Editor.Core.InlineHintsSymbolKinds, bool)>();
         private          int                                                                                                                   _visibleHintsCount = 0;
+        /// <summary>Cumulative hint count before each line: _hintsCumulative[i] = number of visible hints on lines 0..i-1.</summary>
+        private          int[]                                                                                                                  _hintsCumulative = System.Array.Empty<int>();
         private readonly List<(Rect Zone, int LineIndex, string Symbol)>                                                                       _hintsHitZones     = new();
         private readonly List<(int LineIndex, double Y)>                                                                                       _visLinePositions = new();
         private readonly List<int>                                                                                                              _visLineSubRows   = new(); // parallel to _visLinePositions — sub-row index within the logical line (word wrap)
@@ -2751,6 +2753,19 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 if ((entry.Kind & kinds) != 0) count++;
             }
             _visibleHintsCount = count;
+
+            // Rebuild cumulative hint array for O(1) scroll-offset → line conversion.
+            int lineCount = _document?.Lines.Count ?? 0;
+            if (_hintsCumulative.Length != lineCount + 1)
+                _hintsCumulative = new int[lineCount + 1];
+            int cum = 0;
+            for (int i = 0; i < lineCount; i++)
+            {
+                _hintsCumulative[i] = cum;
+                if (_hintsData.TryGetValue(i, out var entry) && (entry.Kind & kinds) != 0)
+                    cum++;
+            }
+            _hintsCumulative[lineCount] = cum;
         }
 
         /// <summary>
@@ -4056,8 +4071,10 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 return;
 
             // delta is already speed * _lineHeight from the caller (MouseWheelSpeed controls line count).
-            // No additional multiplier — ScrollSpeedMultiplier is kept for API compatibility only.
-            double newOffset = _virtualizationEngine.ScrollByPixels(delta);
+            // Clamp against the scrollbar maximum (which includes VS-style padding)
+            // instead of the VE's own TotalHeight (which does not).
+            double maxV = _vScrollBar?.Maximum ?? double.MaxValue;
+            double newOffset = Math.Max(0, Math.Min(_verticalScrollOffset + delta, maxV));
 
             if (SmoothScrolling)
             {
@@ -4194,6 +4211,39 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             }
 
             NotifyCaretMovedIfChanged();
+        }
+
+        /// <summary>
+        /// Returns the true Y pixel position of a line from the document top,
+        /// accounting for InlineHints extra height. O(1) via <see cref="_hintsCumulative"/>.
+        /// Does not account for folded lines (fold adjustments happen in CalculateVisibleLines).
+        /// </summary>
+        private double GetTrueLineY(int lineIndex)
+        {
+            int hintsAbove = (ShowInlineHints && lineIndex < _hintsCumulative.Length)
+                ? _hintsCumulative[lineIndex]
+                : 0;
+            return TopMargin + lineIndex * _lineHeight + hintsAbove * HintLineHeight;
+        }
+
+        /// <summary>
+        /// Inverse of <see cref="GetTrueLineY"/>: converts a scroll pixel offset
+        /// to a line index using binary search on the cumulative hint array. O(log n).
+        /// </summary>
+        private int ScrollOffsetToLine(double offset)
+        {
+            int lineCount = _document?.Lines.Count ?? 0;
+            if (lineCount == 0) return 0;
+            int lo = 0, hi = lineCount - 1;
+            while (lo < hi)
+            {
+                int mid = (lo + hi + 1) / 2;
+                if (GetTrueLineY(mid) - TopMargin <= offset)
+                    lo = mid;
+                else
+                    hi = mid - 1;
+            }
+            return lo;
         }
 
         /// <summary>

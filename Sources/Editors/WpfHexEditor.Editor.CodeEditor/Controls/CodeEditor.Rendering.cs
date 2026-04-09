@@ -1144,8 +1144,8 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
             double textLeft    = ShowLineNumbers ? TextAreaLeftOffset : LeftMargin;
             int    hiddenLines = _foldingEngine?.TotalHiddenLineCount ?? 0;
             double totalH      = TopMargin + ((_document?.Lines.Count ?? 0) - hiddenLines) * _lineHeight
-                             + (ShowInlineHints ? _visibleHintsCount * HintLineHeight : 0)
-                             + (_peekHostLine >= 0 ? _peekHostHeight : 0);
+                             + (_peekHostLine >= 0 ? _peekHostHeight : 0)
+                             + Math.Max(0, finalSize.Height - _lineHeight);
             double totalTW     = textLeft + _maxContentWidth;
 
             // Determine which scrollbars are needed (check for mutual dependency)
@@ -1292,8 +1292,11 @@ namespace WpfHexEditor.Editor.CodeEditor.Controls
                 else
                 {
                     int foldHidden = _foldingEngine?.TotalHiddenLineCount ?? 0;
+                    // Scroll space is uniform (no hint heights) so the VE can map
+                    // offset → line via (offset / lineHeight). Add (viewport - 1 line)
+                    // so the last line can scroll to the top — VS / VS Code behavior.
                     totalH = TopMargin + ((_document?.Lines.Count ?? 0) - foldHidden) * _lineHeight
-                        + (ShowInlineHints ? _visibleHintsCount * HintLineHeight : 0);
+                           + contentH - _lineHeight;
                 }
                 double maxV = Math.Max(0, totalH - contentH);
 
